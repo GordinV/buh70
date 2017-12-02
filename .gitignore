@@ -1,0 +1,35 @@
+# Dependency directories
+/node_modules
+
+# Optional eslint cache
+.eslintcache
+
+# Output of 'npm pack'
+*.tgz
+.eslintrc.js
+.idea/workspace.xml
+npm-debug.log.2494880403
+public/javascripts/arv.js
+public/javascripts/asutused.js
+public/javascripts/documentLib.js
+public/javascripts/journal.js
+public/javascripts/kontod.js
+public/javascripts/nomenclature.js
+public/javascripts/project.js
+public/javascripts/react-dom.min.js
+public/javascripts/react.min.js
+public/javascripts/react.production.min.js
+public/javascripts/scripts/
+public/javascripts/smk.js
+public/javascripts/sorder.js
+public/javascripts/tunnus.js
+public/javascripts/vmk.js
+public/javascripts/vorder.js
+.idea/dataSources.local.xml
+.idea/dataSources/
+
+# Pictures and icons
+/IcoMoon-Free-master
+
+#Temp files
+/temp

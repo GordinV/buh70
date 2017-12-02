@@ -1,0 +1,18 @@
+extends layout
+//Here we will offer to change department
+block content
+    link(rel='stylesheet', href='/stylesheets/changeDepartment.css')
+    form(name="changeDepartment", method="post")
+    h1= "vali asutus"
+    if (user)
+            div#listDepartments
+                ul
+                    each link in user.userAccessList
+                        // will leave only new ids
+                        -var nimetus = JSON.parse(link).nimetus
+                        -var id = JSON.parse(link).id
+                        -var isSameId = id !== user.asutusId
+                        if (isSameId)
+                            li.listDepartments
+                                a.linkDepartments(href='/changeDepartment/' + JSON.parse(link).id) #{nimetus}
+

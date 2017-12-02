@@ -1,0 +1,27 @@
+div.loginForm {
+    width:30%;
+}
+
+div.loginText {
+    padding:5px;
+}
+
+div.loginText input {
+    width:100%;
+}
+
+div.loginSubmit .loginSubmit {
+    width:100px;
+    margin-left:5px;
+}
+
+label.labelErrorMessage {
+    color:red;
+    margin-top:10px;
+}
+
+input {
+    border-radius:2px;
+    padding:5px;
+    display: inline-block;
+}
