@@ -1,7 +1,6 @@
 'use strict';
 
 const React = require('react');
-;
 const PropTypes = require('prop-types');
 
 const styles = require('../button-register-styles'),
@@ -24,7 +23,7 @@ class ButtonAccount extends React.PureComponent {
         this.setState({value: nextProps.value});
     }
 
-    handleClick(e) {
+    handleClick() {
         return this.props.onClick('account');
     }
 
@@ -42,13 +41,13 @@ class ButtonAccount extends React.PureComponent {
         </Button>
     }
 }
-;
+
 
 
 ButtonAccount.propTypes = {
     onClick: PropTypes.func.isRequired,
     value: PropTypes.string
-}
+};
 
 
 ButtonAccount.defaultProps = {

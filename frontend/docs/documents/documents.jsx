@@ -30,10 +30,10 @@ class Documents extends React.PureComponent {
         super(props);
 
         this.userData = {
-            userLibraryList: props.userLibraryList,
-            userAccessList: props.userAccessList,
-            asutus: props.asutus,
-            userName: props.userName
+            userLibraryList: props.userData.userLibraryList,
+            userAccessList: props.userData.userAccessList,
+            asutus: props.userData.asutus,
+            userName: props.userData.userName
         };
 
         this.gridData = [];
@@ -74,7 +74,6 @@ class Documents extends React.PureComponent {
     }
 
     render() {
-
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
         return (
             <div>
