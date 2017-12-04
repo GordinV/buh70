@@ -7,22 +7,10 @@ const ReactServer = require('react-dom/server');
 exports.get = async (req, res) => {
     // рендер грида на сервере при первой загрузке странице
     // берем тип документа из параметра в адресе
-    const documentType = req.params.id;
+    const documentType = req.params.id.toLowerCase();
 
-    try {
-        const DocumentRegister = require(`../frontend/docs/${documentType}/index.jsx`);
-    } catch (e) {
-        console.error('Wrong document type', e);
-        res.statusCode = 404;
-        return;
-    }
-
-    let results = [], // {}
-        user = require('../middleware/userData')(req),  // check for userid in session
-        sortBy,
-        sqlWhere,
-        docId;
-
+    const DocumentRegister = require(`../frontend/docs/${documentType}/index.jsx`);
+    let user = require('../middleware/userData')(req);  // check for userid in session
 
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, null, user.userId, user.asutusId);

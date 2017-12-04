@@ -127,6 +127,7 @@ class Documents extends React.PureComponent {
      * @param idx
      */
     clickHandler(action, docId, idx) {
+        console.log('clicked', docId);
         if (docId && typeof docId === 'number') {
             this.setState({value: docId});
         }
@@ -143,20 +144,39 @@ class Documents extends React.PureComponent {
      * Обработчик для кнопки Add
      */
     btnAddClick() {
-        document.location.href = "/document/" + this.docTypeId + '0';
+        if (this.props.btnAddClick) {
+            // кастомный обработчик события
+            this.props.btnAddClick(this.state.value);
+        } else {
+            document.location.href = "/document/" + this.docTypeId + '0';
+        }
     }
 
+    /**
+     * Обработчик для кнопки Edit
+     */
     btnEditClick() {
-        if (this.state.value) {
-            document.location.href = "/document/" + this.docTypeId + this.state.value;
+        if (this.props.btnEditClick) {
+            // кастомный обработчик события
+            this.props.btnEditClick(this.state.value);
+        } else {
+            if (this.state.value) {
+                document.location.href = "/document/" + this.docTypeId + this.state.value;
+            }
         }
     }
 
 
+    /**
+     * Обработчик для кнопки Delete
+     */
     btnDeleteClick() {
         console.log('btnDeleteClick');
     }
 
+    /**
+     * Обработчик для кнопки Print
+     */
     btnPrintClick() {
         console.log('btnPrintClick');
     }
@@ -308,7 +328,7 @@ class Documents extends React.PureComponent {
     prepareParamsForToolbar() {
         return {
             btnAdd: {
-                show: true,
+                show: this.docTypeId === 'DOK' ? false: true, //todo сделать поумнее
                 disabled: false
             },
             btnEdit: {

@@ -55,6 +55,8 @@ CREATE INDEX library_rekvid
 ALTER TABLE libs.library CLUSTER ON library_rekvid;
 
 /*
+
+select * from libs.library where library = 'DOK'
 insert into libs.library (rekvId, kood, nimetus, library )
 	values (1, '2', '', 'STATUS')
 

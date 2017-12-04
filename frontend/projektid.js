@@ -1,6 +1,6 @@
 'use strict';
 
-const Tunnused = require('./docs/tunnus/index.jsx');
+const DocumentRegister = require('./docs/project/index.jsx');
 
 // данные для хранилища
 //localStorage['docsStore'] = storeData;
@@ -8,6 +8,6 @@ initData = JSON.parse(initData);
 userData = JSON.parse(userData);
 
 ReactDOM.hydrate(React.createElement(
-    Tunnused,
-    {id: 'tunnused', userData: userData, initData: initData}, 'Tunnused'
+    DocumentRegister,
+    {id: 'tunnused', userData: userData, initData: initData}, 'Projektid'
 ), document.getElementById('doc'));

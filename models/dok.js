@@ -3,12 +3,13 @@ module.exports = {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
             {id: "type", name: "type", width: "20%"},
+            {id: "doc_type_id", name: "docTypeId", width: "20%", show: false},
             {id: "created", name: "created", width: "20%"},
             {id: "lastupdate", name: "Last change", width: "20%"},
             {id: "status", name: "Status", width: "30%"}
 
         ],
-        sqlString: `select d.id, trim(l.nimetus) as type, to_char(d.created, 'DD.MM.YYYY HH:MM:SS')::text as created, 
+        sqlString: `select d.id, trim(l.nimetus) as type, trim(l.kood)::text as doc_type_id, to_char(d.created, 'DD.MM.YYYY HH:MM:SS')::text as created, 
          to_char(d.lastupdate,'DD.MM.YYYY HH:MM:SS')::text as lastupdate, 
          trim(s.nimetus) as status 
          from docs.doc d 
@@ -19,4 +20,4 @@ module.exports = {
          limit 100`,
         params: ''
     },
-}
+};
