@@ -6,7 +6,7 @@ describe('test for server', () => {
     let responseHeader,
         cookieJar,
         cookies,
-        cookie
+        cookie;
 
     it('get request', async() => {
             expect.assertions(1);
@@ -49,9 +49,11 @@ describe('test for server', () => {
     });
 
     it('test of get routes, documents', async() => {
-        expect.assertions(1);
+        expect.assertions(2);
         let response = await asyncRequestGet(URL + '/documents', cookieJar, cookie);
-        expect(response.statusCode).toBe(200);
+        expect(response.statusCode).toBe(404);
+        response = await asyncRequestGet(URL + '/documents/tunnus', cookieJar, cookie);
+        expect(response.statusCode).toBe(200); //проверка для регистра с типом TUNNUS
     });
 
     it('test of get routes, document', async() => {
@@ -137,7 +139,7 @@ const asyncRequestGet = (url, jar, cookie) => {
             resolve(response);
         });
     });
-}
+};
 
 const asyncRequestDelete = (url, jar, cookie) => {
     return new Promise((resolve, reject) => {
@@ -151,7 +153,7 @@ const asyncRequestDelete = (url, jar, cookie) => {
             resolve(response);
         });
     });
-}
+};
 
 const asyncRequestPost = (url, params, jar, cookie) => {
     return new Promise((resolve, reject) => {
@@ -166,4 +168,4 @@ const asyncRequestPost = (url, params, jar, cookie) => {
             resolve(response);
         });
     });
-}
+};

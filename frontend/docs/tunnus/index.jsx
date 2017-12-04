@@ -1,6 +1,5 @@
 'use strict';
 
-const PropTypes = require('prop-types');
 const React = require('react');
 const Documents = require('./../documents/documents.jsx');
 const styles = require('./tunnused-styles');

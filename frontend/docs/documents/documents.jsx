@@ -220,7 +220,7 @@ class Documents extends React.PureComponent {
      */
     startMenuClickHandler (value) {
         this.setState({hasStartMenuVisible:false});
-        document.location.href = `/${value}`;
+        document.location.href = `/documents/${value}`;
 
     }
 

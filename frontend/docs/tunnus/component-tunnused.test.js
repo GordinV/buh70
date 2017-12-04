@@ -10,13 +10,13 @@ let docStore = require('../../stores/doc_store.js');
 describe('doc test, Tunnused', () => {
     // проверяем на наличие компонента и его пропсы и стейты
     // проверяем изменение стейтов после клика
-    const Tunnused = require('./tunnused.jsx');
+    const Tunnused = require('./index.jsx');
 
     let dataRow = require('./../../../test/fixture/project-fixture'),
         model = require('./../../../models/libs/libraries/tunnus'),
         data = {
             row: dataRow,
-        }
+        };
 
 
     let onChangeHandler = jest.fn();
@@ -88,7 +88,7 @@ describe('doc test, Tunnused', () => {
     });
 
     it.skip ('doc-toolbar docData restore test', () => {
-        expect(doc.docData.kood).not.toBe('9999');;
+        expect(doc.docData.kood).not.toBe('9999');
     });
 
     it.skip('test of onChange action', (done) => {

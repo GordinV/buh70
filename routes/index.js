@@ -17,8 +17,7 @@ module.exports = function (app) {
 //  app.get('/api/doc/', checkAuth, require('./api_doc').get);
     app.get('/document/:id', checkAuth, require('./document').get);
 
-    app.get('/tunnus', checkAuth, require('./tunnused').get); // module tunnused
-    app.get('/tunnused', checkAuth, require('./tunnused').get); // module tunnused
+    app.get('/documents/:id', checkAuth, require('./documentRegister').get); // module tunnused
 //    app.get('/tunnused/tunnus:id', checkAuth, require('./tunnus').get); // module tunnused
 
 
@@ -28,7 +27,7 @@ module.exports = function (app) {
     app.get('/changeDepartment', checkAuth, require('./changeDepartment').get);
     app.get('/changeDepartment/:id', checkAuth, require('./changeDepartment').get);
     // opens document template
-    app.get('/documents', checkAuth, require('./documents').get);
+    //app.get('/documents', checkAuth, require('./documents').get);
 
     // temorary solution> only for test
     //app.get('/docs', checkAuth, require('./docs').get);
