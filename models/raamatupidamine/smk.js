@@ -5,8 +5,8 @@ let now = new Date();
 const Smk = {
     select: [
         {
-            sql: `select d.id,  d.docs_ids, (created::date || 'T' || created::time)::text as created, 
-                (lastupdate::date || 'T' || lastupdate::time)::text as lastupdate, d.bpm, 
+            sql: `select d.id,  d.docs_ids, (to_char(created,'DD.MM.YYYY HH:MM:SS'))::text as created, 
+                (to_char(lastupdate,'DD.MM.YYYY HH:MM:SS'))::text as lastupdate, d.bpm, 
                 trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
                 trim(s.nimetus) as status, 
                 k.number as number,  to_char(k.maksepaev,'YYYY-MM-DD') as maksepaev, k.viitenr,
@@ -23,8 +23,9 @@ const Smk = {
                 inner join ou.userid u on u.id = $2::integer 
                 where d.id = $1`,
             sqlAsNew: `select $1::integer as id, $2::integer as userid, 
-                (now()::date || 'T' || now()::time)::text as created, 
-                (now()::date || 'T' || now()::time)::text as lastupdate, null as bpm,
+                to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as created, 
+                to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as lastupdate,                
+                null as bpm,
                 trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
                 trim(s.nimetus) as status, 
                 (select max(number) from docs.korder1 where tyyp = 1 )::integer + 1  as number, 
@@ -80,6 +81,8 @@ const Smk = {
             {id: "kpv", name: "Kuupäev", width: "100px"},
             {id: "number", name: "Number", width: "100px"},
             {id: "asutus", name: "Maksja", width: "200px"},
+            {id: "asutusid", name: "asutusid", width: "200px", show: false},
+            {id: "nomid", name: "nomid", width: "200px", show: false},
             {id: "aa", name: "Arveldus arve", width: "100px"},
             {id: "viitenr", name: "Viite number", width: "100px"},
             {id: "maksepaev", name: "Maksepäev", width: "100px"},

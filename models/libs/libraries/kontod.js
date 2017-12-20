@@ -1,7 +1,7 @@
 module.exports = {
     select: [{
         sql: `select case when l.tun5 = 1 then 'SD' when l.tun5 = 2 then 'SK' when l.tun5 = 3 then 'D' when l.tun5 = 4 then 'K' else null end::text as konto_tyyp, 
-                l.id, trim(l.kood) as kood, trim(l.nimetus) as nimetus, l.library, l.tun1, l.tun2, l.tun3, l.tun4, l.muud, l.properties, $2::integer as userid, 'KONTOD' as doc_type_id, l.tun5 as tyyp, 
+                l.id, trim(l.kood) as kood, trim(l.nimetus) as nimetus, l.library, l.tun1, l.tun2, l.tun3, l.tun4, l.muud, $2::integer as userid, 'KONTOD' as doc_type_id, l.tun5 as tyyp, 
                 (l.properties::jsonb ->> 'valid')::text as valid
                 from libs.library l 
                 where id = $1`,
@@ -22,7 +22,9 @@ module.exports = {
         alias: 'row',
         data: []
     }],
-    selectAsLibs: `select id, trim(kood) as kood, trim(kood) || ' ' || trim(nimetus) as name from libs.library where library = 'KONTOD' order by kood`,
+    selectAsLibs: `select * from (select 0 as id, '' as kood, '' as name 
+                        union 
+                   select id, trim(kood) as kood, trim(nimetus) as name from libs.library where library = 'KONTOD') qry order by kood`,
     returnData: {
         row: {}
     },
@@ -53,4 +55,4 @@ module.exports = {
         params: ''
     },
 
-}
+};

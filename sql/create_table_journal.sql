@@ -7,7 +7,7 @@ CREATE TABLE docs.journal
   rekvid integer,
   userid integer,
   kpv date NOT NULL DEFAULT ('now'::text)::date,
-  asutusid integer NOT NULL DEFAULT 0,
+  asutusid integer,
   selg text,
   dok  text,
   muud text,

@@ -9,13 +9,14 @@ const React = require('react'),
 class Form extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state = {
-            pages: this.props.pages
-        };
         this.handlePageClick = this.handlePageClick.bind(this);
 
     }
 
+    /**
+     * Обработчик клика вкладки
+     * @param page
+     */
     handlePageClick(page) {
 
         if (this.props.handlePageClick) {
@@ -24,11 +25,10 @@ class Form extends React.PureComponent {
     }
 
     render() {
-        let pages = this.state.pages;
-
+        let pages = this.props.pages;
         return (
             <div>
-                {pages.map((page, idx) => {
+                {pages.length ? pages.map((page, idx) => {
                         return <PageLabel
                             key={idx}
                             active={idx == 0 ? true: false }
@@ -37,27 +37,25 @@ class Form extends React.PureComponent {
                             disabled = {this.props.disabled}
                             ref={'page-' + idx}/>
                     }
-                )}
+                ): null}
                 <div style={styles.page}>
                         {this.props.children}
                 </div>
             </div>
-        )
+        );
     }
 }
-;
-
 
 Form.propTypes = {
     pages: PropTypes.array.isRequired,
     handlePageClick: PropTypes.func,
     disabled: PropTypes.bool
-}
+};
 
 
 Form.defaultProps = {
     disabled: false.valueOf(),
     pages: []
-}
+};
 
 module.exports = Form;

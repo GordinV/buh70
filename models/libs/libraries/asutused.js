@@ -19,7 +19,7 @@ module.exports = {
         alias: 'row',
         data: []
     }],
-    selectAsLibs: `select id, trim(nimetus) as name from libs.asutus`,
+    selectAsLibs: `select * from (select 0 as id, '' as name union select id, trim(nimetus) as name from libs.asutus) qry order by name`,
     returnData: {
         row: {}
     },
@@ -38,4 +38,4 @@ module.exports = {
             where (a.rekvId = $1 or a.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: ''
     },
-}
+};

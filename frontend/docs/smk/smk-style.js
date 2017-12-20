@@ -34,7 +34,21 @@ module.exports = {
         float: 'left',
         backgroundColor: 'red',
         margin: '10px'
+    },
+    grid: {
+        mainTable: {
+            width: '100%'
+        },
+        headerTable: {
+            width:'100%',
+        },
+
+        gridContainer: {
+            width: '100%'
+        }
+
     }
 
 
-}
+
+};

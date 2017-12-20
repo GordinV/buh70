@@ -2,8 +2,9 @@
 const PropTypes = require('prop-types');
 
 const React = require('react'),
-    flux = require('fluxify'),
     InputText = require('./../input-text/input-text.jsx'),
+    InputDate = require('../input-datetime/index.jsx'),
+
     styles = require('./doc-common-styles');
 
 class DocCommon extends React.PureComponent {
@@ -23,13 +24,13 @@ class DocCommon extends React.PureComponent {
                                        value={String(this.props.data.id)}
                                        disabled={true}
                                        width="75%"/>
-                            <InputText ref="created"
+                            <InputDate ref="created"
                                        title='Created'
                                        name='created'
                                        value={this.props.data.created}
                                        disabled={true}
                                        width="75%"/>
-                            <InputText ref="lastupdate"
+                            <InputDate ref="lastupdate"
                                        title='Updated'
                                        name='lastupdate'
                                        value={this.props.data.lastupdate}
@@ -45,24 +46,22 @@ class DocCommon extends React.PureComponent {
         );
     }
 
-/*
-    onChangeHandler(inputName, inputValue) {
-        // обработчик изменений
-        let data = flux.stores.docStore.data;
-        data[inputName] = inputValue;
-        // задать новое значение поля
-        flux.doAction('dataChange', data);
+
+    componentWillReceiveProps(nextProps) {
+        this.forceUpdate();
     }
-*/
+
+
 }
 
 DocCommon.propTypes = {
     readOnly: PropTypes.bool,
     data: PropTypes.object.isRequired
-}
+};
 
 DocCommon.defaultProps = {
-    readOnly: true
-}
+    readOnly: true,
+    data: []
+};
 
 module.exports = DocCommon;

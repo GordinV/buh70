@@ -10,7 +10,8 @@ const start = require('./../BP/start'),
 const Vorder = {
     select: [
         {
-            sql: `select d.id,  d.docs_ids, (created::date || 'T' || created::time)::text as created, (lastupdate::date || 'T' || lastupdate::time)::text as lastupdate, d.bpm, 
+            sql: `select d.id,  d.docs_ids, (to_char(created,'DD.MM.YYYY HH:MM:SS'))::text as created, 
+                (to_char(lastupdate,'DD.MM.YYYY HH:MM:SS'))::text as lastupdate, d.bpm, 
              trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
              trim(s.nimetus) as status, 
              k.number as number, k.summa, 

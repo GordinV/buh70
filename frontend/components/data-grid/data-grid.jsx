@@ -4,6 +4,11 @@ const PropTypes = require('prop-types');
 
 const React = require('react'),
     styles = require('./data-grid-styles'),
+    ToolbarContainer = require('./../toolbar-container/toolbar-container.jsx'),
+    GridButtonAdd = require('./../button-register/button-register-add/button-register-add.jsx'),
+    GridButtonEdit = require('./../button-register/button-register-edit/button-register-edit.jsx'),
+    GridButtonDelete = require('./../button-register/button-register-delete/button-register-delete.jsx'),
+
     keydown = require('react-keydown');
 
 //const    KEYS = [38, 40]; // мониторим только стрелки вверх и внизх
@@ -32,7 +37,7 @@ class DataGrid extends React.PureComponent {
         this.handleCellDblClick.bind(this);
         this.handleKeyDown.bind(this);
         this.prepareTableRow = this.prepareTableRow.bind(this);
-
+        this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
     }
 
     componentDidMount() {
@@ -53,10 +58,18 @@ class DataGrid extends React.PureComponent {
          onKeyDown: this.handleKeyPress('Down'),
          onDoubleClick: this.handleCellDblClick(),
          */
-        let tableStyle = Object.assign({}, styles.headerTable,  this.props.style);
-
+        let tableStyle = Object.assign({}, styles.headerTable, this.props.style);
         return (
-            <div style={{height: 'inherit'}}>
+            <div style={styles.main}>
+                {this.props.showToolBar ?
+                <ToolbarContainer
+                    ref='grid-toolbar-container'
+                    position={'left'}>
+                    <GridButtonAdd onClick={this.handleGridBtnClick.bind('add')} ref="grid-button-add"/>
+                    <GridButtonEdit onClick={this.handleGridBtnClick.bind('edit')} ref="grid-button-edit"/>
+                    <GridButtonDelete onClick={this.handleGridBtnClick.bind('delete')} ref="grid-button-delete"/>
+                </ToolbarContainer>: null }
+
                 <div style={styles.header}>
                     <table ref="dataGridTable" style={tableStyle}>
                         <tbody>
@@ -83,6 +96,11 @@ class DataGrid extends React.PureComponent {
     } // render
 
 
+    handleGridBtnClick(btnName) {
+        if (this.props.handleGridBtnClick) {
+            this.props.handleGridBtnClick(btnName);
+        }
+    }
     /**
      * ищем индех в массиве данных
      * @param docId
@@ -271,13 +289,15 @@ DataGrid.propTypes = {
     onClick: PropTypes.func,
     onDblClick: PropTypes.func,
     onHeaderClick: PropTypes.func,
-    activeRow: PropTypes.number
+    activeRow: PropTypes.number,
+    showToolBar: PropTypes.bool
 };
 
 DataGrid.defaultProps = {
     gridColumns: [],
     gridData: [],
-    style: {}
+    style: {},
+    showToolBar: false
 };
 
 module.exports = DataGrid;

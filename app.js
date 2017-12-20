@@ -114,8 +114,6 @@ app.use(session({
 app.use(csrf());
 */
 
-
-
 require('routes')(app);
 app.use(express.static(path.join(__dirname, 'public')));
 

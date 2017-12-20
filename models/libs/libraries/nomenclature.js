@@ -2,7 +2,7 @@ module.exports = {
     select: [{
         sql: `select n.*, $2::integer as userid, 'NOMENCLATURE' as doc_type_id,
                 v.valuuta, v.kuurs,
-                (n.properties::jsonb ->>'vat')::integer as vat,
+                (n.properties::jsonb ->>'vat')::text as vat,
                 (n.properties::jsonb ->>'konto_db')::text as konto_db,
                 (n.properties::jsonb ->>'konto_kr')::text as konto_kr,
                 (n.properties::jsonb ->>'projekt')::text as projekt,
@@ -24,7 +24,7 @@ module.exports = {
             null::text as muud,
             null::text as properties,
             'EUR' as valuuta, 1 as kuurs,
-            20::integer as vat,
+            '20'::text as vat,
             null::text as konto_db,
             null::text as konto_kr,
             null::text as projekt,
@@ -35,7 +35,10 @@ module.exports = {
         alias: 'row',
         data: []
     }],
-    selectAsLibs: "select id, trim(kood) as kood, trim(nimetus) as name, trim(dok) as dok from libs.nomenklatuur",
+    selectAsLibs: `select * from (select 0 as id, ''::text as kood, ''::text as name, null::text as DOK, 0::text as vat
+        union 
+        select n.id, trim(n.kood) as kood, trim(n.nimetus) as name, trim(n.dok) as dok, (n.properties::jsonb ->>'vat')::text as vat 
+            from libs.nomenklatuur n) qry order by kood`,
     returnData: {
         row: {}
     },
@@ -59,4 +62,4 @@ module.exports = {
         params: ''
     },
 
-}
+};

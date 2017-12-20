@@ -10,14 +10,14 @@ const styles = require('./document-register-styles');
 class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
-
     }
 
     render() {
-        return <DocumentRegister initData={this.props.initData} userData={this.props.userData}
-                          docTypeId='DOCUMENT'
-                          style={styles}
-                          render={this.renderer}/>;
+        return <DocumentRegister initData={this.props.initData}
+                                 userData={this.props.userData}
+                                 docTypeId='DOCUMENT'
+                                 style={styles}
+                                 render={this.renderer}/>;
     }
 
     renderer() {

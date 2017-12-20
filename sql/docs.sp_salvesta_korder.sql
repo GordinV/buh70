@@ -1,195 +1,259 @@
-﻿
-DROP FUNCTION if exists docs.sp_salvesta_korder(json, integer, integer);
+﻿DROP FUNCTION IF EXISTS docs.sp_salvesta_korder( JSON, INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_salvesta_korder(
-    data json,
-    userid integer,
-    user_rekvid integer)
-  RETURNS integer AS
+  data        JSON,
+  userid      INTEGER,
+  user_rekvid INTEGER)
+  RETURNS INTEGER AS
 $BODY$
 
-declare
-	korder_id integer;
-	korder1_id integer;
-	userName text;
-	doc_id integer = data->>'id';	
-	doc_data json = data->>'data';
-	doc_tyyp text = coalesce(doc_data->>'tyyp','1'); -- 1 -> sorder, 2 -> vorder
-	doc_type_kood text = case when doc_tyyp = '1' then 'SORDER' else 'VORDER' end/*data->>'doc_type_id'*/;
-	doc_type_id integer = (select id from libs.library where ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood))) and library = 'DOK' limit 1);
-	doc_details json = data->>'details';
-	doc_number text = coalesce(doc_data->>'number','1');
-	doc_kpv date = doc_data->>'kpv';
-	doc_asutusid integer = doc_data->>'asutusid';
-	doc_kassa_id integer = doc_data->>'kassa_id';
-	doc_dokument text = doc_data->>'dokument';
-	doc_nimi text = doc_data->>'nimi';
-	doc_aadress text = doc_data->>'aadress';
-	doc_alus text = doc_data->>'alus';
-	doc_arvid integer = doc_data->>'arvid';
-	doc_muud text = doc_data->>'muud';
-	doc_summa numeric = doc_data->>'summa';
-	tcValuuta text = coalesce(doc_data->>'valuuta','EUR') ; 
-	tnKuurs numeric(14,8) = coalesce(doc_data->>'kuurs','1'); 
-	json_object json;
-	json_record record;
-	new_history jsonb;
-	ids integer[];
-	docs integer[];
-	arv_parent_id integer;
-begin
+DECLARE
+  korder_id     INTEGER;
+  korder1_id    INTEGER;
+  userName      TEXT;
+  doc_id        INTEGER = data ->> 'id';
+  doc_data      JSON = data ->> 'data';
+  doc_tyyp      TEXT = coalesce(doc_data ->> 'tyyp', '1'); -- 1 -> sorder, 2 -> vorder
+  doc_type_kood TEXT = CASE WHEN doc_tyyp = '1'
+    THEN 'SORDER'
+                       ELSE 'VORDER' END/*data->>'doc_type_id'*/;
+  doc_type_id   INTEGER = (SELECT id
+                           FROM libs.library
+                           WHERE ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood))) AND library = 'DOK'
+                           LIMIT 1);
+  doc_details   JSON = doc_data ->> 'gridData';
+  doc_number    TEXT = coalesce(doc_data ->> 'number', '1');
+  doc_kpv       DATE = doc_data ->> 'kpv';
+  doc_asutusid  INTEGER = doc_data ->> 'asutusid';
+  doc_kassa_id  INTEGER = doc_data ->> 'kassa_id';
+  doc_dokument  TEXT = doc_data ->> 'dokument';
+  doc_nimi      TEXT = doc_data ->> 'nimi';
+  doc_aadress   TEXT = doc_data ->> 'aadress';
+  doc_alus      TEXT = doc_data ->> 'alus';
+  doc_arvid     INTEGER = doc_data ->> 'arvid';
+  doc_muud      TEXT = doc_data ->> 'muud';
+  doc_summa     NUMERIC = doc_data ->> 'summa';
+  tcValuuta     TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
+  tnKuurs       NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
+  json_object   JSON;
+  json_record   RECORD;
+  new_history   JSONB;
+  ids           INTEGER [];
+  docs          INTEGER [];
+  arv_parent_id INTEGER;
+BEGIN
 
-raise notice 'data.doc_details: %, jsonb_array_length %, data: %', doc_details, json_array_length(doc_details), data;
+  RAISE NOTICE 'data.doc_details: %, jsonb_array_length %, data: %', doc_details, json_array_length(doc_details), data;
 
-select kasutaja into userName from userid u where u.rekvid = user_rekvid and u.id = userId;
-if userName is null then
-	raise notice 'User not found %', user;
-	return 0;
-end if;
+  SELECT kasutaja
+  INTO userName
+  FROM userid u
+  WHERE u.rekvid = user_rekvid AND u.id = userId;
+  IF userName IS NULL
+  THEN
+    RAISE NOTICE 'User not found %', user;
+    RETURN 0;
+  END IF;
 
-raise notice 'kassaId %', doc_kassa_id;
-
-if doc_kassa_id is null then
-	select id into doc_kassa_id from ou.aa where parentId = user_rekvid and kassa = 1  order by default_ desc limit 1;
-	if not found then
-		raise notice 'Kassa not found %', doc_kassa_id;
-		return 0;
-	else 
-		raise notice 'kassa: %', doc_kassa_id;	
-	end if;
-end if;
--- вставка или апдейт docs.doc
-if doc_id is null or doc_id = 0 then
-
-	select row_to_json(row) into new_history from (select now() as created, userName as user) row;
-		
-	
-	insert into docs.doc (doc_type_id, history, rekvid ) 
-		values (doc_type_id, '[]'::jsonb || new_history, user_rekvid) 
-		returning id into doc_id;
-
-	insert into docs.korder1 (parentid, rekvid, userid, kpv, asutusid, tyyp, kassaId, number, dokument, nimi, aadress, alus, muud, summa, arvid)
-		values (doc_id, user_rekvid, userId, doc_kpv, doc_asutusid, doc_tyyp::integer, doc_kassa_id, doc_number, doc_dokument, doc_nimi, 
-		doc_aadress, doc_alus, doc_muud, doc_summa, doc_arvid) 
-		returning id into korder_id;
-
-		
-else
-	select row_to_json(row) into new_history from (select now() as updated, userName as user) row;
+  IF (doc_id IS NULL)
+  THEN
+    doc_id = doc_data ->> 'id';
+  END IF;
 
 
-	-- устанавливаем связи с документами
+  RAISE NOTICE 'kassaId %', doc_kassa_id;
 
-	-- получим связи документа
-	select docs_ids into docs from docs.doc where id = doc_id;	
+  IF doc_kassa_id IS NULL
+  THEN
+    SELECT id
+    INTO doc_kassa_id
+    FROM ou.aa
+    WHERE parentId = user_rekvid AND kassa = 1
+    ORDER BY default_ DESC
+    LIMIT 1;
+    IF NOT found
+    THEN
+      RAISE NOTICE 'Kassa not found %', doc_kassa_id;
+      RETURN 0;
+    ELSE
+      RAISE NOTICE 'kassa: %', doc_kassa_id;
+    END IF;
+  END IF;
+  -- вставка или апдейт docs.doc
+  IF doc_id IS NULL OR doc_id = 0
+  THEN
 
-	
-	if doc_arvid is not null then
-		select parentid into arv_parent_id from docs.arv where id = doc_arvid;
-		if (select count(*) from (
-				select unnest(docs) as element) qry
-				where element = arv_parent_id) = 0
-		then
-			docs = 	array_append(docs,arv_parent_id);
-		end if;
-	end if;
-
-	update docs.doc 
-		set 
-			docs_ids = docs,
-			lastupdate = now(),
-			history = coalesce(history,'[]')::jsonb || new_history
-		where id = doc_id;	
-
-
-	update docs.korder1 set 
-		kpv = doc_kpv, 
-		asutusid = doc_asutusid, 
-		dokument = doc_dokument, 
-		kassaid = doc_kassa_id, 
-		number = doc_number, 
-		nimi = doc_nimi, 
-		aadress = doc_aadress, 
-		muud = doc_muud, 
-		alus = doc_alus,
-		summa = doc_summa,
-		arvid = doc_arvid
-		where parentid = doc_id returning id into korder_id;
-
-end if;
--- вставка в таблицы документа
+    SELECT row_to_json(row)
+    INTO new_history
+    FROM (SELECT
+            now()    AS created,
+            userName AS user) row;
 
 
-for json_object in 
-	select * from json_array_elements(doc_details)
-loop
-	select * into json_record from json_to_record(json_object) as x(id text, nomid integer, summa numeric(14,4), nimetus text, tunnus text, proj text,
-	konto text, kood1 text, kood2 text, kood3 text, kood4 text, kood5 text, tp text,  valuuta text, kuurs numeric(14,8));
+    INSERT INTO docs.doc (doc_type_id, history, rekvid)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid)
+    RETURNING id
+      INTO doc_id;
 
-	if json_record.nimetus is null then
-		json_record.nimetus = (select nimetus from libs.nomenklatuur where id = json_record.nomid);
-	end if;	
+    INSERT INTO docs.korder1 (parentid, rekvid, userid, kpv, asutusid, tyyp, kassaId, number, dokument, nimi, aadress, alus, muud, summa, arvid)
+    VALUES
+      (doc_id, user_rekvid, userId, doc_kpv, doc_asutusid, doc_tyyp :: INTEGER, doc_kassa_id, doc_number, doc_dokument,
+               doc_nimi,
+               doc_aadress, doc_alus, doc_muud, doc_summa, doc_arvid)
+    RETURNING id
+      INTO korder_id;
 
-	if json_record.id is null or json_record.id = '0' or substring(json_record.id from 1 for 3) = 'NEW' or not exists (select id from docs.journal1 where id = json_record.id::integer) then
-		insert into docs.korder2 (parentid, nomid, nimetus, summa, tunnus, proj,konto, kood1, kood2, kood3, kood4, kood5, tp)
-			values (korder_id, json_record.nomid, json_record.nimetus, json_record.summa, json_record.tunnus, json_record.proj,json_record.konto,
-			json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5, json_record.tp)
-			 
-			returning id into korder1_id;
 
-		-- add new id into array of ids
-		ids = array_append(ids, korder1_id);
+  ELSE
+    SELECT row_to_json(row)
+    INTO new_history
+    FROM (SELECT
+            now()    AS updated,
+            userName AS user) row;
 
-		-- valuuta
-		insert into docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs) 
-			values (korder1_id, 10 ,tcValuuta, tnKuurs);
+    -- устанавливаем связи с документами
 
-			
-	else
-	
-		update docs.korder2 set 
-			nomid =json_record.nomid,
-			nimetus =json_record.nimetus,
-			summa = json_record.summa,
-			tunnus = json_record.tunnus,
-			proj = json_record.proj,
-			kood1 = json_record.kood1,
-			kood2 = json_record.kood2,
-			kood3 = json_record.kood3,
-			kood4 = json_record.kood4,
-			kood5 = json_record.kood5,
-			tp = json_record.tp
-			where id = json_record.id::integer;
-			
-		korder1_id = json_record.id::integer;
+    -- получим связи документа
+    SELECT docs_ids
+    INTO docs
+    FROM docs.doc
+    WHERE id = doc_id;
 
-		-- add existing id into array of ids
-		ids = array_append(ids,korder1_id);
 
-		if not exists (select id from docs.dokvaluuta1 where dokid = korder1_id and dokliik = 1) then
-		-- if record does 
-			insert into docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs) 
-				values (korder1_id, 10, tcValuuta, tnKuurs);
+    IF doc_arvid IS NOT NULL
+    THEN
+      SELECT parentid
+      INTO arv_parent_id
+      FROM docs.arv
+      WHERE id = doc_arvid;
+      IF (SELECT count(*)
+          FROM (
+                 SELECT unnest(docs) AS element) qry
+          WHERE element = arv_parent_id) = 0
+      THEN
+        docs = array_append(docs, arv_parent_id);
+      END IF;
+    END IF;
 
-		end if;		
-	end if;
+    UPDATE docs.doc
+    SET
+      docs_ids   = docs,
+      lastupdate = now(),
+      history    = coalesce(history, '[]') :: JSONB || new_history
+    WHERE id = doc_id;
 
-	-- delete record which not in json
 
-	delete from docs.korder2 where parentid = korder_id and id not in (select unnest(ids));
-	
-	
-end loop;	
+    UPDATE docs.korder1
+    SET
+      kpv      = doc_kpv,
+      asutusid = doc_asutusid,
+      dokument = doc_dokument,
+      kassaid  = doc_kassa_id,
+      number   = doc_number,
+      nimi     = doc_nimi,
+      aadress  = doc_aadress,
+      muud     = doc_muud,
+      alus     = doc_alus,
+      summa    = doc_summa,
+      arvid    = doc_arvid
+    WHERE parentid = doc_id
+    RETURNING id
+      INTO korder_id;
 
-return  doc_id;
+  END IF;
+  -- вставка в таблицы документа
 
-end;$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-  
 
-GRANT EXECUTE ON FUNCTION docs.sp_salvesta_korder(json, integer, integer) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_salvesta_korder(json, integer, integer) TO dbpeakasutaja;
+  FOR json_object IN
+  SELECT *
+  FROM json_array_elements(doc_details)
+  LOOP
+    SELECT *
+    INTO json_record
+    FROM json_to_record(
+             json_object) AS x(id TEXT, nomid INTEGER, summa NUMERIC(14, 4), nimetus TEXT, tunnus TEXT, proj TEXT,
+         konto TEXT, kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, tp TEXT, valuuta TEXT, kuurs NUMERIC(14, 8));
+
+    IF json_record.nimetus IS NULL
+    THEN
+      json_record.nimetus = (SELECT nimetus
+                             FROM libs.nomenklatuur
+                             WHERE id = json_record.nomid);
+    END IF;
+
+    IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
+       NOT exists(SELECT id
+                  FROM docs.journal1
+                  WHERE id = json_record.id :: INTEGER)
+    THEN
+      INSERT INTO docs.korder2 (parentid, nomid, nimetus, summa, tunnus, proj, konto, kood1, kood2, kood3, kood4, kood5, tp)
+      VALUES
+        (korder_id, json_record.nomid, json_record.nimetus, json_record.summa, json_record.tunnus, json_record.proj,
+                    json_record.konto,
+                    json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5,
+         json_record.tp)
+
+      RETURNING id
+        INTO korder1_id;
+
+      -- add new id into array of ids
+      ids = array_append(ids, korder1_id);
+
+      -- valuuta
+      INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
+      VALUES (korder1_id, 10, tcValuuta, tnKuurs);
+
+
+    ELSE
+
+      UPDATE docs.korder2
+      SET
+        nomid   = json_record.nomid,
+        nimetus = json_record.nimetus,
+        summa   = json_record.summa,
+        tunnus  = json_record.tunnus,
+        proj    = json_record.proj,
+        kood1   = json_record.kood1,
+        kood2   = json_record.kood2,
+        kood3   = json_record.kood3,
+        kood4   = json_record.kood4,
+        kood5   = json_record.kood5,
+        tp      = json_record.tp
+      WHERE id = json_record.id :: INTEGER;
+
+      korder1_id = json_record.id :: INTEGER;
+
+      -- add existing id into array of ids
+      ids = array_append(ids, korder1_id);
+
+      IF NOT exists(SELECT id
+                    FROM docs.dokvaluuta1
+                    WHERE dokid = korder1_id AND dokliik = 1)
+      THEN
+        -- if record does
+        INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
+        VALUES (korder1_id, 10, tcValuuta, tnKuurs);
+
+      END IF;
+    END IF;
+
+    -- delete record which not in json
+
+    DELETE FROM docs.korder2
+    WHERE parentid = korder_id AND id NOT IN (SELECT unnest(ids));
+
+
+  END LOOP;
+
+  RETURN doc_id;
+
+END;$BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100;
+
+
+GRANT EXECUTE ON FUNCTION docs.sp_salvesta_korder(JSON, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_salvesta_korder(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
 saving data:

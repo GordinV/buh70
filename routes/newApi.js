@@ -1,7 +1,6 @@
 'use strict';
 
 exports.post = async (req, res) => {
-    console.log('start post newapi');
     const user = require('../middleware/userData')(req), // данные пользователя
         parameter = req.body.parameter || '',// параметры если переданы
         sortBy = req.body.sortBy, //порядок сортировки

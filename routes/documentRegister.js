@@ -3,14 +3,22 @@
 
 const React = require('react');
 const ReactServer = require('react-dom/server');
+const getModule = require('./../libs/getModule');
+
 
 exports.get = async (req, res) => {
     // рендер грида на сервере при первой загрузке странице
     // берем тип документа из параметра в адресе
-    const documentType = req.params.id.toLowerCase();
+    let documentType = 'DOK';
+
+    if (req.params.id) {
+        documentType = req.params.id;
+    }
+    documentType.toLowerCase();
 
     const DocumentRegister = require(`../frontend/docs/${documentType}/index.jsx`);
     let user = require('../middleware/userData')(req);  // check for userid in session
+
 
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, null, user.userId, user.asutusId);
@@ -34,7 +42,7 @@ exports.get = async (req, res) => {
         let storeInitialData = JSON.stringify(data);
         let userData = JSON.stringify(user);
 
-        res.render(documentType, {
+        res.render(documentType + 'Register', {
             "user": user,
             "userData": userData,
             "store": storeInitialData
@@ -46,4 +54,124 @@ exports.get = async (req, res) => {
         res.statusCode = 500;
     }
 
+};
+
+exports.post = async (req, res) => {
+    let user = require('../middleware/userData')(req); // данные пользователя
+    const documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
+    const docId = Number(req.params.id); //ид документа
+
+    /*
+        if (!user) {
+            raise.error('No user', user);
+            const err = new HttpError(err);
+            if (err instanceof HttpError) {
+                return res.send({"message": 'No user'});
+            }
+        }
+    */
+
+    if (!user) {
+        user = {
+            userId: 1,
+            asutusId: 1
+        }
+    }
+
+    const params = {
+        documentType: documentType,
+        docId: docId,
+        user: user
+    };
+
+    const Doc = require('./../classes/DocumentTemplate');
+    const Document = new Doc(documentType, docId, user.userId, user.asutusId);
+
+    let data;
+
+    // вызвать метод. Есди ИД = 0, то вызывается запрос на создание нового документа
+    if (docId) {
+        data = {result: await Document.select()};
+    } else {
+        data = {result: await Document.createNew()};
+    }
+
+    const preparedData = Object.assign({}, data.result.row,
+        {gridData: data.result.details},
+        {relations: data.result.relations},
+        {gridConfig: data.result.gridConfig});
+
+    res.send({params: params, data: [preparedData]});
+
+    /*
+        try {
+
+            let data =  await db.queryDb(sqlString,params);
+            // вернуть данные
+            res.send(data);
+        } catch (error) {
+            console.error('error:', error); // @todo Обработка ошибок
+            res.send({result:'Error'});
+
+        }
+    */
+};
+
+exports.put = async (req, res) => {
+    let user = require('../middleware/userData')(req); // данные пользователя
+    let documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
+    const docId = Number(req.params.id); //ид документа
+    let data = req.body;
+
+    /*
+        if (!user) {
+            raise.error('No user', user);
+            const err = new HttpError(err);
+            if (err instanceof HttpError) {
+                return res.send({"message": 'No user'});
+            }
+        }
+    */
+
+    if (!user) {
+        user = {
+            userId: 1,
+            asutusId: 1
+        }
+    }
+
+    const params = {
+        userId: user.userId,
+        asutusId: user.asutusId,
+        data: {data}
+    };
+
+    const Doc = require('./../classes/DocumentTemplate');
+    const Document = new Doc(documentType, docId, user.userId, user.asutusId);
+
+    console.log('saving:', params);
+    let savedData = await Document.save(params);
+
+    const prepairedData = Object.assign({}, savedData.row[0],
+        {bpm: savedData.bpm ? savedData.bpm: []},
+        {gridData: savedData.details ? savedData.details: []},
+        {relations: savedData.relations ? savedData.relations: []},
+        {gridConfig: savedData.gridConfig ? savedData.gridConfig: []});
+
+
+    console.log('prepairedData',savedData, prepairedData );
+    res.send({result: {error_code: 0, error_message: null, docId: prepairedData.id}, data: [prepairedData]}); //пока нет новых данных
+
+    /*
+        try {
+
+            let data =  await db.queryDb(sqlString,params);
+            // вернуть данные
+            res.send(data);
+        } catch (error) {
+            console.error('error:', error); // @todo Обработка ошибок
+            res.send({result:'Error'});
+
+        }
+    */
 };

@@ -3,7 +3,7 @@
 const relatedDocuments = (self) => {
     // формируем зависимости
 
-    let relatedDocuments = self.state.relations;
+    let relatedDocuments = self.docData.relations || [];
     if (relatedDocuments.length > 0) {
         relatedDocuments.forEach((doc) => {
             if (doc.id) {
@@ -23,6 +23,6 @@ const relatedDocuments = (self) => {
             }
         });
     }
-}
+};
 
 module.exports = relatedDocuments;

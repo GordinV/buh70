@@ -56,7 +56,7 @@ class InputDate extends React.PureComponent {
                 </label>
 
                 <input type='date'
-                       style={styles.input}
+                       style={inputStyle}
                        name={this.props.name}
                        ref="input"
                        value={this.state.value}
@@ -98,7 +98,7 @@ InputDate.propTypes = {
     width: PropTypes.string,
     title: PropTypes.string,
     placeholder: PropTypes.string
-}
+};
 
 
 InputDate.defaultProps = {
@@ -107,7 +107,7 @@ InputDate.defaultProps = {
     valid: true,
     value: String(currentDate),
     title: ''
-}
+};
 
 
 module.exports = InputDate;

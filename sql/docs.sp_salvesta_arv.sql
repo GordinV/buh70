@@ -1,196 +1,293 @@
-﻿
-DROP FUNCTION if exists docs.sp_salvesta_arv(json, integer, integer);
+﻿DROP FUNCTION IF EXISTS docs.sp_salvesta_arv( JSON, INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_salvesta_arv(
-    data json,
-    userid integer,
-    user_rekvid integer)
-  RETURNS integer AS
+  data        JSON,
+  userid      INTEGER,
+  user_rekvid INTEGER)
+  RETURNS INTEGER AS
 $BODY$
 
-declare
-	arv_id integer;
-	arv1_id integer;
-	userName text;
-	doc_id integer = data->>'id';	
-	doc_type_kood text = 'ARV'/*data->>'doc_type_id'*/;
-	doc_type_id integer = (select id from libs.library where kood = doc_type_kood and library = 'DOK' limit 1);
-	doc_details json = data->>'details';
-	doc_data json = data->>'data';
-	doc_number text = doc_data->>'number';
-	doc_summa numeric(14,4) = coalesce((doc_data->>'summa')::numeric,0);
-	doc_liik integer = doc_data->>'liik';
-	doc_operid integer = doc_data->>'operid';
-	doc_asutusid integer = doc_data->>'asutusid';
-	doc_lisa text = doc_data->>'lisa';
-	doc_kpv date = doc_data->>'kpv';
-	doc_tahtaeg date = doc_data->>'tahtaeg';
-	doc_kbmta numeric(14,4) = coalesce((doc_data->>'kbmta')::numeric,0);
-	doc_kbm numeric(14,4) = coalesce((doc_data->>'kbm')::numeric,0);
-	doc_muud text = doc_data->>'muud';
-	doc_objektid integer = doc_data->>'objektid';
-	doc_objekt text = doc_data->>'objekt';
-	tcValuuta text = coalesce(doc_data->>'valuuta','EUR'); 
-	tnKuurs numeric(14,8) = coalesce(doc_data->>'kuurs','1'); 
-	tnDokLausId integer = coalesce((doc_data->>'doklausid')::integer,1);
-	json_object json;
-	json_record record;
-	new_history jsonb;
-	new_rights jsonb;
-	ids integer[];
-begin
+DECLARE
+  arv_id        INTEGER;
+  arv1_id       INTEGER;
+  userName      TEXT;
+  doc_id        INTEGER = data ->> 'id';
+  doc_type_kood TEXT = 'ARV'/*data->>'doc_type_id'*/;
+  doc_type_id   INTEGER = (SELECT id
+                           FROM libs.library
+                           WHERE kood = doc_type_kood AND library = 'DOK'
+                           LIMIT 1);
+  doc_data      JSON = data ->> 'data';
+  doc_details   JSON = doc_data ->> 'gridData';
 
-if doc_number is null or doc_number = '' then
-	-- присвоим новый номер
-	doc_number = docs.sp_get_number(user_rekvid, 'ARV', YEAR(doc_kpv), tnDokLausId);
-end if;
+  doc_number    TEXT = doc_data ->> 'number';
+  doc_summa     NUMERIC(14, 4) = coalesce((doc_data ->> 'summa') :: NUMERIC, 0);
+  doc_liik      INTEGER = doc_data ->> 'liik';
+  doc_operid    INTEGER = doc_data ->> 'operid';
+  doc_asutusid  INTEGER = doc_data ->> 'asutusid';
+  doc_lisa      TEXT = doc_data ->> 'lisa';
+  doc_kpv       DATE = doc_data ->> 'kpv';
+  doc_tahtaeg   DATE = doc_data ->> 'tahtaeg';
+  doc_kbmta     NUMERIC(14, 4) = coalesce((doc_data ->> 'kbmta') :: NUMERIC, 0);
+  doc_kbm       NUMERIC(14, 4) = coalesce((doc_data ->> 'kbm') :: NUMERIC, 0);
+  doc_muud      TEXT = doc_data ->> 'muud';
+  doc_objektid  INTEGER = doc_data ->> 'objektid';
+  doc_objekt    TEXT = doc_data ->> 'objekt';
+  tcValuuta     TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
+  tnKuurs       NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
+  tnDokLausId   INTEGER = coalesce((doc_data ->> 'doklausid') :: INTEGER, 1);
+  json_object   JSON;
+  json_record   RECORD;
+  new_history   JSONB;
+  new_rights    JSONB;
+  ids           INTEGER [];
+BEGIN
 
-raise notice 'data.doc_details: %, jsonb_array_length %, data: %', doc_details, json_array_length(doc_details), data;
-
-select kasutaja into userName from userid u where u.rekvid = user_rekvid and u.id = userId;
-if userName is null then
-	raise notice 'User not found %', user;
-	return 0;
-end if;
-
--- вставка или апдейт docs.doc
-if doc_id is null or doc_id = 0 then
-
-	select row_to_json(row) into new_history from (select now() as created, userName as user) row;
-	select row_to_json(row) into new_rights from (select array[userId] as "select", array[userId] as "update", array[userId] as "delete") row;
-		
-	
-	insert into docs.doc (doc_type_id, history, rigths, rekvId ) 
-		values (doc_type_id, '[]'::jsonb || new_history,new_rights, user_rekvid) 
-		returning id into doc_id;
-
-	insert into docs.arv (parentid, rekvid, userid, liik ,operid, number, kpv, asutusid, lisa, tahtaeg, kbmta, kbm, summa, muud, objektid, objekt, doklausid)
-		values (doc_id, user_rekvid, userId, doc_liik ,doc_operid, doc_number, doc_kpv, doc_asutusid, doc_lisa, doc_tahtaeg, doc_kbmta, doc_kbm, doc_summa, 
-		doc_muud, doc_objektid, doc_objekt, tnDokLausId) 
-		returning id into arv_id;
-
-	insert into docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs) 
-		values (arv_id,3,tcValuuta, tnKuurs);
-
-		
-else
-	-- history
-	select row_to_json(row) into new_history from (select now() as updated, userName as user) row;
-
-	update docs.doc 
-		set lastupdate = now(),
-			history = coalesce(history,'[]')::jsonb || new_history,
-			rekvid = user_rekvid
-		where id = doc_id;	
-
-	update docs.arv set 
-		liik = doc_liik,
-		operid = doc_operid, 
-		number = doc_number, 
-		kpv = doc_kpv, 
-		asutusid = doc_asutusid, 
-		lisa = doc_lisa, 
-		tahtaeg = doc_tahtaeg, 
-		kbmta = coalesce(doc_kbmta,0), 
-		kbm = coalesce(doc_kbm,0), 
-		summa = coalesce(doc_summa,0), 
-		muud = doc_muud, 
-		objektid = doc_objektid, 
-		objekt = doc_objekt,
-		doklausid = tnDokLausId
-		where parentid = doc_id returning id into arv_id;
-
-	-- arv jaak 	
-
-	perform docs.sp_update_arv_jaak(arv_id, doc_kpv);
-
-end if;
--- вставка в таблицы документа
+  IF (doc_id IS NULL)
+  THEN
+    doc_id = doc_data ->> 'id';
+  END IF;
 
 
-for json_object in 
-	select * from json_array_elements(doc_details)
-loop
-	select * into json_record from json_to_record(json_object) as x(id text, nomId integer, kogus numeric(14,4), hind numeric(14,4), kbm numeric(14,4),summa numeric(14,4), kood text, nimetus text);
---	raise notice 'json_record: %, nomid %', json_record, json_record.nomid;
-	if json_record.id is null or json_record.id = '0' or substring(json_record.id from 1 for 3) = 'NEW' then
-		insert into docs.arv1 (parentid, nomid, kogus, hind, kbm, summa)
-			values (arv_id, json_record.nomid, 
-			coalesce(json_record.kogus,0), 
-			coalesce(json_record.hind,0),  
-			coalesce(json_record.kbm,0), 
-			coalesce(json_record.summa,0)) returning id into arv1_id;
+  IF doc_number IS NULL OR doc_number = ''
+  THEN
+    -- присвоим новый номер
+    doc_number = docs.sp_get_number(user_rekvid, 'ARV', YEAR(doc_kpv), tnDokLausId);
+  END IF;
 
-		-- valuuta
-		insert into docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs) 
-			values (arv1_id,2,tcValuuta, tnKuurs);
+  RAISE NOTICE 'data.doc_details: %, jsonb_array_length %, data: %', doc_details, json_array_length(doc_details), data;
 
-		-- add new id into array of ids
-		ids = array_append(ids,arv1_id);	
-			
-	else
-		update docs.arv1 set 
-			parentid = arv_id, 
-			nomid = json_record.nomid, 
-			kogus = coalesce(json_record.kogus,0), 
-			hind = coalesce(json_record.hind,0), 
-			kbm = coalesce(json_record.kbm,0), 
-			summa = coalesce(json_record.summa, kogus * hind)
-			where id = json_record.id::integer returning id into arv1_id;
+  SELECT kasutaja
+  INTO userName
+  FROM userid u
+  WHERE u.rekvid = user_rekvid AND u.id = userId;
+  IF userName IS NULL
+  THEN
+    RAISE NOTICE 'User not found %', user;
+    RETURN 0;
+  END IF;
 
-		-- add new id into array of ids
-		ids = array_append(ids,arv1_id);		
+  -- вставка или апдейт docs.doc
+  IF doc_id IS NULL OR doc_id = 0
+  THEN
 
-		if not exists (select id from docs.dokvaluuta1 where dokid = arv1_id and dokliik = 2) then
-		-- if record does 
-			insert into docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs) 
-				values (arv1_id,2,tcValuuta, tnKuurs);
-
-		end if;		
-	end if;
-
-end loop;	
+    SELECT row_to_json(row)
+    INTO new_history
+    FROM (SELECT
+            now()    AS created,
+            userName AS user) row;
+    SELECT row_to_json(row)
+    INTO new_rights
+    FROM (SELECT
+            ARRAY [userId] AS "select",
+            ARRAY [userId] AS "update",
+            ARRAY [userId] AS "delete") row;
 
 
--- delete record which not in json
+    INSERT INTO docs.doc (doc_type_id, history, rigths, rekvId)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, new_rights, user_rekvid)
+    RETURNING id
+      INTO doc_id;
 
-delete from docs.arv1 where parentid = arv_id and id not in (select unnest(ids));
+    INSERT INTO docs.arv (parentid, rekvid, userid, liik, operid, number, kpv, asutusid, lisa, tahtaeg, kbmta, kbm, summa, muud, objektid, objekt, doklausid)
+    VALUES (doc_id, user_rekvid, userId, doc_liik, doc_operid, doc_number, doc_kpv, doc_asutusid, doc_lisa, doc_tahtaeg,
+                    doc_kbmta, doc_kbm, doc_summa,
+            doc_muud, doc_objektid, doc_objekt, tnDokLausId)
+    RETURNING id
+      INTO arv_id;
+
+    INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
+    VALUES (arv_id, 3, tcValuuta, tnKuurs);
 
 
--- update arv summad
-select sum(summa) as summa, sum(kbm) as kbm into doc_summa, doc_kbm
-	from docs.arv1 
-	where parentid = arv_id;
+  ELSE
+    -- history
+    SELECT row_to_json(row)
+    INTO new_history
+    FROM (SELECT
+            now()    AS updated,
+            userName AS user) row;
 
-update docs.arv set 
-	kbmta = coalesce(doc_summa,0) - coalesce(doc_kbm,0), 
-	kbm = coalesce(doc_kbm,0), 
-	summa = coalesce(doc_summa,0)
-	where parentid = doc_id;
+    UPDATE docs.doc
+    SET lastupdate = now(),
+      history      = coalesce(history, '[]') :: JSONB || new_history,
+      rekvid       = user_rekvid
+    WHERE id = doc_id;
 
-	
+    UPDATE docs.arv
+    SET
+      liik      = doc_liik,
+      operid    = doc_operid,
+      number    = doc_number,
+      kpv       = doc_kpv,
+      asutusid  = doc_asutusid,
+      lisa      = doc_lisa,
+      tahtaeg   = doc_tahtaeg,
+      kbmta     = coalesce(doc_kbmta, 0),
+      kbm       = coalesce(doc_kbm, 0),
+      summa     = coalesce(doc_summa, 0),
+      muud      = doc_muud,
+      objektid  = doc_objektid,
+      objekt    = doc_objekt,
+      doklausid = tnDokLausId
+    WHERE parentid = doc_id
+    RETURNING id
+      INTO arv_id;
+
+    -- arv jaak
+
+    PERFORM docs.sp_update_arv_jaak(arv_id, doc_kpv);
+
+  END IF;
+  -- вставка в таблицы документа
+
+
+  FOR json_object IN
+  SELECT *
+  FROM json_array_elements(doc_details)
+  LOOP
+    SELECT *
+    INTO json_record
+    FROM json_to_record(
+             json_object) AS x(id TEXT, nomId INTEGER, kogus NUMERIC(14, 4), hind NUMERIC(14, 4), kbm NUMERIC(14, 4), summa NUMERIC(14, 4), kood TEXT, nimetus TEXT);
+    	raise notice 'json_record: %, nomid %', json_record, json_record.nomid;
+    IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
+    THEN
+      INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, summa)
+      VALUES (arv_id, json_record.nomid,
+              coalesce(json_record.kogus, 0),
+              coalesce(json_record.hind, 0),
+              coalesce(json_record.kbm, 0),
+              coalesce(json_record.summa, 0))
+      RETURNING id
+        INTO arv1_id;
+
+      -- valuuta
+      INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
+      VALUES (arv1_id, 2, tcValuuta, tnKuurs);
+
+      -- add new id into array of ids
+      ids = array_append(ids, arv1_id);
+
+    ELSE
+      UPDATE docs.arv1
+      SET
+        parentid = arv_id,
+        nomid    = json_record.nomid,
+        kogus    = coalesce(json_record.kogus, 0),
+        hind     = coalesce(json_record.hind, 0),
+        kbm      = coalesce(json_record.kbm, 0),
+        summa    = coalesce(json_record.summa, kogus * hind)
+      WHERE id = json_record.id :: INTEGER
+      RETURNING id
+        INTO arv1_id;
+
+      -- add new id into array of ids
+      ids = array_append(ids, arv1_id);
+
+      IF NOT exists(SELECT id
+                    FROM docs.dokvaluuta1
+                    WHERE dokid = arv1_id AND dokliik = 2)
+      THEN
+        -- if record does
+        INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
+        VALUES (arv1_id, 2, tcValuuta, tnKuurs);
+
+      END IF;
+    END IF;
+
+  END LOOP;
+
+  -- delete record which not in json
+
+  DELETE FROM docs.arv1
+  WHERE parentid = arv_id AND id NOT IN (SELECT unnest(ids));
+
+  -- update arv summad
+  SELECT
+    sum(summa) AS summa,
+    sum(kbm)   AS kbm
+  INTO doc_summa, doc_kbm
+  FROM docs.arv1
+  WHERE parentid = arv_id;
+
+  UPDATE docs.arv
+  SET
+    kbmta = coalesce(doc_summa, 0) - coalesce(doc_kbm, 0),
+    kbm   = coalesce(doc_kbm, 0),
+    summa = coalesce(doc_summa, 0)
+  WHERE parentid = doc_id;
+
+
+  /*
+  perform docs.sp_updatearvjaak(arv_id, date());
+    perform sp_updatearvjaak(tnParentId, date());
+
+  -- Ladu
+
+    if (select count(id) from ladu_grupp where ladu_grupp.nomId = tnnomId) > 0 then
+      select rekvid into lnRekvid from arv where id = tnParentid;
+      perform sp_recalc_ladujaak(lnRekvId, tnNomId, 0);
+    end if;
+  */
+  RETURN doc_id;
+END;$BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100;
+
+GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
+
+
+SELECT docs.sp_salvesta_arv('{
+  "id": 0,
+  "doc_type_id": "ARV",
+  "data": {
+    "id": 0,
+    "created": "2016-05-05T21:39:57.050726",
+    "lastupdate": "2016-05-05T21:39:57.050726",
+    "bpm": null,
+    "doc": "Arved",
+    "doc_type_id": "ARV",
+    "status": "Черновик",
+    "number": "321",
+    "summa": 24,
+    "rekvid": null,
+    "liik": 0,
+    "operid": null,
+    "kpv": "2016-05-05",
+    "asutusid": 1,
+    "arvid": null,
+    "lisa": "lisa",
+    "tahtaeg": "2016-05-19",
+    "kbmta": null,
+    "kbm": 4,
+    "tasud": null,
+    "tasudok": null,
+    "muud": "muud",
+    "jaak": "0.00",
+    "objektid": null,
+    "objekt": null,
+    "regkood": null,
+    "asutus": null,
+    "gridData": [
+      {
+        "id": "NEW0.6577064044198089",
+        "[object Object]": null,
+        "nomid": "1",
+        "kogus": 2,
+        "hind": 10,
+        "kbm": 4,
+        "kbmta": 20,
+        "summa": 24,
+        "kood": "PAIGALDUS",
+        "nimetus": "PV paigaldamine"
+      }
+    ]
+  }
+}', 1, 1);
 
 /*
-perform docs.sp_updatearvjaak(arv_id, date());
-	perform sp_updatearvjaak(tnParentId, date());
-
--- Ladu
-
-	if (select count(id) from ladu_grupp where ladu_grupp.nomId = tnnomId) > 0 then
-		select rekvid into lnRekvid from arv where id = tnParentid;
-		perform sp_recalc_ladujaak(lnRekvId, tnNomId, 0);
-	end if;
+select * from docs.arv where parentid = 859
+select * from docs.arv1 where parentid = 321
 */
-         return  doc_id;
-end;$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-
-GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(json,integer, integer) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(json,integer, integer) TO dbpeakasutaja;
-
-
-
-select docs.sp_salvesta_arv('{"id":0,"doc_type_id":"ARV","data":{"id":0,"created":"2016-05-05T21:39:57.050726","lastupdate":"2016-05-05T21:39:57.050726","bpm":null,"doc":"Arved","doc_type_id":"ARV","status":"Черновик","number":"321","summa":24,"rekvid":null,"liik":0,"operid":null,"kpv":"2016-05-05","asutusid":1,"arvid":null,"lisa":"lisa","tahtaeg":"2016-05-19","kbmta":null,"kbm":4,"tasud":null,"tasudok":null,"muud":"muud","jaak":"0.00","objektid":null,"objekt":null,"regkood":null,"asutus":null},
-"details":[{"id":"NEW0.6577064044198089","[object Object]":null,"nomid":"1","kogus":2,"hind":10,"kbm":4,"kbmta":20,"summa":24,"kood":"PAIGALDUS","nimetus":"PV paigaldamine"}]}',1, 1);
-

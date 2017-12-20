@@ -1,5 +1,8 @@
 module.exports = {
-    selectAsLibs: "select id, trim(kood) as kood, trim(nimetus) as name from libs.library where library = 'PROJ' order by kood",
+    selectAsLibs: `select * from (
+        select 0 as id, ''::text as kood, ''::text as name 
+        union 
+        select id, trim(kood) as kood, trim(nimetus) as name from libs.library where library = 'PROJ') qry order by kood`,
     select: [{
         sql: `select l.*, $2::integer as userid, 'PROJECT' as doc_type_id
                 from libs.library l 
@@ -39,4 +42,4 @@ module.exports = {
         params: ''
     },
 
-}
+};

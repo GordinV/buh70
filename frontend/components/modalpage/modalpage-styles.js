@@ -10,7 +10,7 @@ module.exports = {
         justifyContent:'center'
     },
     modalPage: {
-        position: 'absolute',
+        position: 'relative',
         border: '1px solid black',
         background: 'white',
         margin: '8px',
@@ -18,7 +18,9 @@ module.exports = {
         outline: 'none',
         display: 'flex',
         flexDirection: 'column',
-        alignSelf: 'center'
+        alignSelf: 'center',
+        height: 'auto',
+        overflow: 'auto'
     },
     modalPageContent: {
         padding: '10px',
@@ -59,7 +61,8 @@ module.exports = {
         borderRadius: '50%',
         backgroundColor: 'lightgray',
         border:'none',
-        fontWeight: '900'
+        fontWeight: '900',
+        margin: '0px 0px'
 
     },
 
@@ -71,6 +74,9 @@ module.exports = {
     right: {
         left: 'auto',
         right: '0'
+    },
+    defaultButton: {
+        backgroundColor: 'lightBlue'
     }
 
-}
+};

@@ -1,79 +1,106 @@
-﻿
-DROP FUNCTION if exists docs.sp_salvesta_asutus(json, integer, integer);
-DROP FUNCTION if exists libs.sp_salvesta_asutus(json, integer, integer);
+﻿DROP FUNCTION IF EXISTS docs.sp_salvesta_asutus( JSON, INTEGER, INTEGER );
+DROP FUNCTION IF EXISTS libs.sp_salvesta_asutus( JSON, INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION libs.sp_salvesta_asutus(
-    data json,
-    userid integer,
-    user_rekvid integer)
-  RETURNS integer AS
+  data        JSON,
+  userid      INTEGER,
+  user_rekvid INTEGER)
+  RETURNS INTEGER AS
 $BODY$
 
-declare
-	asutus_id integer;
-	userName text;
-	doc_id integer = data->>'id';	
-	doc_data json = data->>'data';
-	doc_regkood text = doc_data->>'regkood';
-	doc_nimetus text = doc_data->>'nimetus';
-	doc_omvorm text = doc_data->>'omvorm';
-	doc_kontakt text = doc_data->>'kontakt';
-	doc_aadress text = doc_data->>'aadress';
-	doc_tel text = doc_data->>'tel';
-	doc_email text = doc_data->>'email';
-	doc_mark text = doc_data->>'mark';
-	doc_muud text = doc_data->>'muud';
-	json_object json;
-	json_record record;
-	new_history jsonb;
-	new_rights jsonb;
-	ids integer[];
-begin
+DECLARE
+  asutus_id   INTEGER;
+  userName    TEXT;
+  doc_id      INTEGER = data ->> 'id';
+  doc_data    JSON = data ->> 'data';
+  doc_regkood TEXT = doc_data ->> 'regkood';
+  doc_nimetus TEXT = doc_data ->> 'nimetus';
+  doc_omvorm  TEXT = doc_data ->> 'omvorm';
+  doc_kontakt TEXT = doc_data ->> 'kontakt';
+  doc_aadress TEXT = doc_data ->> 'aadress';
+  doc_tel     TEXT = doc_data ->> 'tel';
+  doc_email   TEXT = doc_data ->> 'email';
+  doc_mark    TEXT = doc_data ->> 'mark';
+  doc_muud    TEXT = doc_data ->> 'muud';
+  json_object JSON;
+  json_record RECORD;
+  new_history JSONB;
+  new_rights  JSONB;
+  ids         INTEGER [];
+BEGIN
 
 
-select kasutaja into userName from userid u where u.rekvid = user_rekvid and u.id = userId;
-if userName is null then
-	raise notice 'User not found %', user;
-	return 0;
-end if;
+  SELECT kasutaja
+  INTO userName
+  FROM userid u
+  WHERE u.rekvid = user_rekvid AND u.id = userId;
+  IF userName IS NULL
+  THEN
+    RAISE NOTICE 'User not found %', user;
+    RETURN 0;
+  END IF;
+	
+  IF (doc_id IS NULL)
+  THEN
+    doc_id = doc_data ->> 'id';
+  END IF;
 
--- вставка или апдейт docs.doc
-if doc_id is null or doc_id = 0 then
+  -- вставка или апдейт docs.doc
+  IF doc_id IS NULL OR doc_id = 0
+  THEN
 
-	select row_to_json(row) into new_history from (select now() as created, userName as user) row;
-	select row_to_json(row) into new_rights from (select array[userId] as "select", array[userId] as "update", array[userId] as "delete") row;
-		
-	insert into libs.asutus (rekvid, regkood, nimetus,omvorm, kontakt, aadress, tel, email, mark, muud)
-		values (user_rekvid, doc_regkood, doc_nimetus, doc_omvorm, doc_kontakt, doc_aadress, doc_tel, doc_email, doc_mark, doc_muud) 
-		returning id into asutus_id;
+    SELECT row_to_json(row)
+    INTO new_history
+    FROM (SELECT
+            now()    AS created,
+            userName AS user) row;
+    SELECT row_to_json(row)
+    INTO new_rights
+    FROM (SELECT
+            ARRAY [userId] AS "select",
+            ARRAY [userId] AS "update",
+            ARRAY [userId] AS "delete") row;
 
-		
-else
-	-- history
-	select row_to_json(row) into new_history from (select now() as updated, userName as user) row;
+    INSERT INTO libs.asutus (rekvid, regkood, nimetus, omvorm, kontakt, aadress, tel, email, mark, muud)
+    VALUES (user_rekvid, doc_regkood, doc_nimetus, doc_omvorm, doc_kontakt, doc_aadress, doc_tel, doc_email, doc_mark,
+            doc_muud)
+    RETURNING id
+      INTO asutus_id;
 
-	update libs.asutus set 
-		regkood = doc_regkood,
-		nimetus = doc_nimetus,
-		omvorm = doc_omvorm,
-		kontakt = doc_kontakt,
-		aadress = doc_aadress,
-		tel = doc_tel,
-		email = doc_email,
-		mark =  doc_mark,
-		muud = doc_muud
-		where id = doc_id returning id into asutus_id;
 
-end if;
+  ELSE
+    -- history
+    SELECT row_to_json(row)
+    INTO new_history
+    FROM (SELECT
+            now()    AS updated,
+            userName AS user) row;
 
-return  asutus_id;
+    UPDATE libs.asutus
+    SET
+      regkood = doc_regkood,
+      nimetus = doc_nimetus,
+      omvorm  = doc_omvorm,
+      kontakt = doc_kontakt,
+      aadress = doc_aadress,
+      tel     = doc_tel,
+      email   = doc_email,
+      mark    = doc_mark,
+      muud    = doc_muud
+    WHERE id = doc_id
+    RETURNING id
+      INTO asutus_id;
 
-end;$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
+  END IF;
 
-GRANT EXECUTE ON FUNCTION libs.sp_salvesta_asutus(json,integer, integer) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION libs.sp_salvesta_asutus(json,integer, integer) TO dbpeakasutaja;
+  RETURN asutus_id;
+
+END;$BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100;
+
+GRANT EXECUTE ON FUNCTION libs.sp_salvesta_asutus(JSON, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION libs.sp_salvesta_asutus(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 
 /*

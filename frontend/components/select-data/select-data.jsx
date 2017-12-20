@@ -5,7 +5,6 @@ const PropTypes = require('prop-types');
 
 
 const React = require('react'),
-//    flux=require('fluxify'),
     styles = require('./select-data-styles'),
     DataGrid = require('../../components/data-grid/data-grid.jsx'),
     Button = require('../../components/button-register/button-register.jsx'),
@@ -44,20 +43,19 @@ class SelectData extends React.PureComponent {
 
     componentDidMount() {
         // запрос
-//        flux.stores.docStore.requery('select',{})
         this.testConfiguration();
     }
 
 /*
-    shouldComponentUpdate(nextProps, nextState) {
-        // @todo добавить проверку на изменение состояния
-        return true;
-    }
-*/
+        shouldComponentUpdate(nextProps, nextState) {
+            // @todo добавить проверку на изменение состояния
+            return true;
+        }
+    */
 
     render() {
         let isEditeMode = !this.state.readOnly,
-            btnStyle = Object.assign({}, styles.button, {display: isEditeMode ? 'inline' : 'none'})
+            btnStyle = Object.assign({}, styles.button, {display: isEditeMode ? 'inline' : 'none'});
 
         return (
             <div style={styles.wrapper}>
@@ -177,7 +175,7 @@ SelectData.propTypes = {
     placeholder: PropTypes.string,
     name: PropTypes.string.isRequired,
     show: PropTypes.bool
-}
+};
 
 SelectData.defaultProps = {
     readOnly: false,
@@ -187,6 +185,6 @@ SelectData.defaultProps = {
     collId: 'id',
     title: '',
     show: false
-}
+};
 
 module.exports = SelectData;

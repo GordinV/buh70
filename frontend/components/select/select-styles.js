@@ -16,8 +16,9 @@ module.exports = {
         display: 'none'
     },
     select: {
-        width: '60%',
-        marginLeft: '5px'
+        width: '70%',
+        marginLeft: '5px',
+        borderRadius:'5px'
     },
     readOnly: {
         backgroundColor: '#F3EFEF'
@@ -27,7 +28,7 @@ module.exports = {
         margin: '5px'
     },
     button: {
-        width: '10%'
+        width: '5%'
     }
 
-}
+};

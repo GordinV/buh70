@@ -1,100 +1,178 @@
-﻿
-DROP FUNCTION if exists docs.sp_salvesta_konto(json, integer, integer);
-DROP FUNCTION if exists libs.sp_salvesta_konto(json, integer, integer);
+﻿DROP FUNCTION IF EXISTS docs.sp_salvesta_konto( JSON, INTEGER, INTEGER );
+DROP FUNCTION IF EXISTS libs.sp_salvesta_konto( JSON, INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION libs.sp_salvesta_konto(
-    data json,
-    userid integer,
-    user_rekvid integer)
-  RETURNS integer AS
+  data        JSON,
+  userid      INTEGER,
+  user_rekvid INTEGER)
+  RETURNS INTEGER AS
 $BODY$
 
-declare
-	lib_id integer;
-	userName text;
-	doc_id integer = data->>'id';	
-	doc_data json = data->>'data';
-	doc_kood text = doc_data->>'kood';
-	doc_nimetus text = doc_data->>'nimetus';
-	doc_library text = 'KONTOD';
-	doc_tun1 integer = doc_data->>'tun1';
-	doc_tun2 integer = doc_data->>'tun2';
-	doc_tun3 integer = doc_data->>'tun3';
-	doc_tun4 integer = doc_data->>'tun4';
-	doc_tun5 integer = doc_data->>'tun5';
-	doc_tyyp integer = doc_data->>'tyyp';
-	doc_valid date = doc_data->>'valid';
-	doc_properties text = doc_data->>'properties';
-	doc_muud text = doc_data->>'muud';
-	json_object json;
-	json_record record;
-	new_history jsonb;
-	new_rights jsonb;
-	ids integer[];
-begin
+DECLARE
+  lib_id         INTEGER;
+  userName       TEXT;
+  doc_id         INTEGER = data ->> 'id';
+  doc_data       JSON = data ->> 'data';
+  doc_kood       TEXT = doc_data ->> 'kood';
+  doc_nimetus    TEXT = doc_data ->> 'nimetus';
+  doc_library    TEXT = 'KONTOD';
+  doc_tun1       INTEGER = doc_data ->> 'tun1';
+  doc_tun2       INTEGER = doc_data ->> 'tun2';
+  doc_tun3       INTEGER = doc_data ->> 'tun3';
+  doc_tun4       INTEGER = doc_data ->> 'tun4';
+  doc_tyyp       INTEGER = doc_data ->> 'tyyp';
+  doc_valid      DATE = doc_data ->> 'valid';
+  doc_properties TEXT = doc_data ->> 'properties';
+  doc_muud       TEXT = doc_data ->> 'muud';
+  new_history    JSONB;
+  new_rights     JSONB;
+BEGIN
+
+  IF (doc_id IS NULL)
+  THEN
+    doc_id = doc_data ->> 'id';
+  END IF;
 
 
-select kasutaja into userName from userid u where u.rekvid = user_rekvid and u.id = userId;
-if userName is null then
-	raise notice 'User not found %', user;
-	return 0;
-end if;
+  SELECT kasutaja
+  INTO userName
+  FROM userid u
+  WHERE u.rekvid = user_rekvid AND u.id = userId;
+  IF userName IS NULL
+  THEN
+    RAISE NOTICE 'User not found %', user;
+    RETURN 0;
+  END IF;
 
-if doc_valid is not null then
-	doc_properties = coalesce(doc_properties,'') || '{"valid":"' || doc_valid || '"}'; 
-end if;
+  IF doc_valid IS NOT NULL
+  THEN
+    doc_properties = coalesce(doc_properties, '') || '{"valid":"' || doc_valid || '"}';
+  END IF;
 
-raise notice 'doc_properties %, valid %', doc_properties, doc_valid;
--- вставка или апдейт docs.doc
-if doc_id is null or doc_id = 0 then
+  RAISE NOTICE 'doc_properties %, valid %', doc_properties, doc_valid;
+  -- вставка или апдейт docs.doc
+  IF doc_id IS NULL OR doc_id = 0
+  THEN
 
-	select row_to_json(row) into new_history from (select now() as created, userName as user) row;
-	select row_to_json(row) into new_rights from (select array[userId] as "select", array[userId] as "update", array[userId] as "delete") row;
-		
-	insert into libs.library (rekvid, kood, nimetus, library, tun1, tun2, tun3, tun4, tun5, muud, properties)
-		values (user_rekvid, doc_kood, doc_nimetus, doc_library, doc_tun1, doc_tun2, doc_tun3, doc_tun4, doc_tyyp, doc_muud, doc_properties::jsonb) 
-		returning id into lib_id;
+    SELECT row_to_json(row)
+    INTO new_history
+    FROM (SELECT
+            now()    AS created,
+            userName AS "user") row;
+    SELECT row_to_json(row)
+    INTO new_rights
+    FROM (SELECT
+            ARRAY [userId] AS "select",
+            ARRAY [userId] AS "update",
+            ARRAY [userId] AS "delete") row;
 
-		
-else
-	-- history
-	select row_to_json(row) into new_history from (select now() as updated, userName as user) row;
-
-	update libs.library set 
-		kood = doc_kood,
-		nimetus = doc_nimetus,
-		library = doc_library,
-		tun1 = doc_tun1,
-		tun2 = doc_tun2,
-		tun3 = doc_tun3,
-		tun4 = doc_tun4,
-		tun5 =  doc_tyyp,
-		properties = doc_properties::jsonb,
-		muud = doc_muud
-		where id = doc_id returning id into lib_id;
-
-end if;
-
-return  lib_id;
-
-end;$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-
-GRANT EXECUTE ON FUNCTION libs.sp_salvesta_konto(json,integer, integer) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION libs.sp_salvesta_konto(json,integer, integer) TO dbpeakasutaja;
+    INSERT INTO libs.library (rekvid, kood, nimetus, library, tun1, tun2, tun3, tun4, tun5, muud, properties)
+    VALUES (user_rekvid, doc_kood, doc_nimetus, doc_library, doc_tun1, doc_tun2, doc_tun3, doc_tun4, doc_tyyp, doc_muud,
+                         doc_properties :: JSONB)
+    RETURNING id
+      INTO lib_id;
 
 
+  ELSE
+    -- history
+    SELECT row_to_json(row)
+    INTO new_history
+    FROM (SELECT
+            now()    AS updated,
+            userName AS user) row;
 
-select libs.sp_salvesta_konto('{"id":135,"data":{"id":135,"tyyp":2,"rekvid":1,"kood":"291","nimetus":"Osakapital  nimiväärtuses","library":"KONTOD","muud":"test 123", "valid":"2017-10-31"},"details":[]}',1, 1);
+    UPDATE libs.library
+    SET
+      kood       = doc_kood,
+      nimetus    = doc_nimetus,
+      library    = doc_library,
+      tun1       = doc_tun1,
+      tun2       = doc_tun2,
+      tun3       = doc_tun3,
+      tun4       = doc_tun4,
+      tun5       = doc_tyyp,
+      properties = doc_properties :: JSONB,
+      muud       = doc_muud
+    WHERE id = doc_id
+    RETURNING id
+      INTO lib_id;
+
+  END IF;
+
+  RETURN lib_id;
+
+END;$BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100;
+
+GRANT EXECUTE ON FUNCTION libs.sp_salvesta_konto(JSON, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION libs.sp_salvesta_konto(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
+
+
 
 /*
+
+
+select * from libs.library where id = 23
+SELECT libs.sp_salvesta_konto('{
+  "params": {
+    "userId": 1,
+    "asutusId": 1,
+    "data": {
+      "data": {
+        "konto_tyyp": null,
+        "id": 22,
+        "kood": "5019",
+        "nimetus": "Internet",
+        "library": "KONTOD              ",
+        "tun1": 0,
+        "tun2": 0,
+        "tun3": 0,
+        "tun4": 0,
+        "muud": "Прочее",
+        "properties": null,
+        "userid": 1,
+        "doc_type_id": "KONTOD",
+        "tyyp": 3,
+        "valid": "2017-12-30"
+      }
+    }
+  },
+  "result": {
+    "result": {
+      "error_code": 9,
+      "result": null,
+      "error_message": "duplicate key value violates unique constraint \"library_kood_status\"",
+      "data": []
+    }
+  },
+  "data": [
+    {
+      "konto_tyyp": null,
+      "id": 22,
+      "kood": "5019",
+      "nimetus": "Internet",
+      "library": "KONTOD              ",
+      "tun1": 0,
+      "tun2": 0,
+      "tun3": 0,
+      "tun4": 0,
+      "muud": "Прочее",
+      "properties": null,
+      "userid": 1,
+      "doc_type_id": "KONTOD",
+      "tyyp": 3,
+      "valid": "2017-12-30"
+    }
+  ]
+  )
+  ;
 select * from libs.asutus
 
 
-select case when l.tun5 = 1 then 'SD' when l.tun5 = 2 then 'SK' when l.tun5 = 3 then 'D' when l.tun5 = 4 then 'K' else null end::text as konto_tyyp, 
+select case when l.tun5 = 1 then 'SD' when l.tun5 = 2 then 'SK' when l.tun5 = 3 then ' D ' when l.tun5 = 4 then 'K' else null end::text as konto_tyyp,
                 l.id, trim(l.kood) as kood, trim(l.nimetus) as nimetus, l.library, l.tun1, l.tun2, l.tun3, l.tun4, l.muud, l.properties, 1::integer as userid, 'KONTOD' as doc_type_id, l.tun5 as tyyp, 
-                (l.properties::jsonb ->> 'valid')::text as valid
+                (l.properties::jsonb ->> ' VALID ')::text as valid
                 from libs.library l 
                 where id = 135
 */

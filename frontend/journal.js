@@ -1,17 +1,14 @@
 
 const ReactDOM = require('react-dom');
 
-// данные для хранилища
-localStorage['docStore'] = storeData;
-storeData = JSON.parse(storeData);
+initData = JSON.parse(initData);
 userData = JSON.parse(userData);
-
 
 // запросим компонент документа по его типу
 const Doc = require('../frontend/docs/journal/journal.jsx');
 
 ReactDOM.hydrate(
-    <Doc data={storeData.data} bpm = {storeData.bpm} userData={userData}/>
+    <Doc initData={initData} userData={userData} docId = {docId}/>
     , document.getElementById('doc')
 );
 

@@ -29,6 +29,23 @@ module.exports = {
         width: 'auto',
         opacity: '1',
         top: '100px'
+    },
+    grid: {
+        mainTable: {
+            width: '100%'
+        },
+        headerTable: {
+            width:'100%',
+        },
+
+        gridContainer: {
+            width: '100%'
+        }
+
+    },
+    summa: {
+        width: 'auto'
     }
 
-}
+
+};

@@ -10,7 +10,9 @@ const start = require('./../BP/start'),
 const Vmk = {
     select: [
         {
-            sql: `select d.id,  d.docs_ids, (created::date || 'T' || created::time)::text as created, (lastupdate::date || 'T' || lastupdate::time)::text as lastupdate, d.bpm, 
+            sql: `select d.id,  d.docs_ids, 
+            (to_char(created,'DD.MM.YYYY HH:MM:SS'))::text as created, 
+                (to_char(lastupdate,'DD.MM.YYYY HH:MM:SS'))::text as lastupdate, d.bpm, 
                 trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
                 trim(s.nimetus) as status, 
                 k.number as number,  to_char(k.maksepaev,'YYYY-MM-DD') as maksepaev, k.viitenr,
@@ -26,7 +28,10 @@ const Vmk = {
                 left outer join docs.arv as arv on k.arvid = arv.Id 
                 inner join ou.userid u on u.id = $2::integer 
                 where d.id = $1`,
-            sqlAsNew: `select $1::integer as id, $2::integer as userid, (now()::date || 'T' || now()::time)::text as created, (now()::date || 'T' || now()::time)::text as lastupdate, null as bpm,
+            sqlAsNew: `select $1::integer as id, $2::integer as userid, 
+                to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as created, 
+                to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as lastupdate, 
+                null as bpm,
                 trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
                 trim(s.nimetus) as status, 
                 coalesce((select max(number) from docs.mk where opt = 1 ),'0')::integer + 1  as number, to_char(now(),'YYYY-MM-DD') as maksepaev,  
@@ -80,6 +85,8 @@ const Vmk = {
             {id: "kpv", name: "Kuupäev", width: "100px"},
             {id: "number", name: "Number", width: "100px"},
             {id: "asutus", name: "Maksja", width: "200px"},
+            {id: "asutusid", name: "asutusid", width: "200px", show: false},
+            {id: "nomid", name: "nomid", width: "200px", show: false},
             {id: "aa", name: "Arveldus arve", width: "100px"},
             {id: "viitenr", name: "Viite number", width: "100px"},
             {id: "maksepaev", name: "Maksepäev", width: "100px"},
@@ -108,6 +115,7 @@ const Vmk = {
         gridConfig: [
             {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
             {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
+            {id: "nomid", name: "nomid", width: "200px", show: false},
             {id: 'asutus', name: 'Maksja', width: '200px', show: true, type: 'text', readOnly: false},
             {id: 'aa', name: 'Arveldus arve', width: '150px', show: true, type: 'text', readOnly: false},
             {id: 'summa', name: 'Summa', width: '100px', show: true, type: 'number', readOnly: false},

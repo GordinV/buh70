@@ -1,9 +1,12 @@
 module.exports = {
-    selectAsLibs: `select id, trim(kood) as kood, trim(nimetus) as name from libs.library where library = 'TUNNUS' order by kood`,
+    selectAsLibs: `select * from (
+        select 0 as id, ''::text as kood, ''::text as name 
+        union 
+        select id, trim(kood) as kood, trim(nimetus) as name from libs.library where library = 'TUNNUS') qry  order by kood`,
     select: [{
         sql: `select l.*, $2::integer as userid, 'TUNNUS' as doc_type_id
                 from libs.library l 
-                where l.id = $1`,
+                where l.library = 'TUNNUS' and l.id = $1`,
         sqlAsNew: `select  $1::integer as id , $2::integer as userid, 'TUNNUS' as doc_type_id,
             null::text as  kood,
             null::integer as rekvid,
@@ -17,7 +20,9 @@ module.exports = {
         data: []
     }],
     returnData: {
-        row: {}
+        row: {},
+        details: [],
+        gridConfig: []
     },
     requiredFields: [
         {name: 'kood',type: 'C'},
@@ -39,4 +44,4 @@ module.exports = {
         params: ''
     },
 
-}
+};

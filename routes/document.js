@@ -25,7 +25,7 @@ exports.get = function(req, res, params) {
 
     switch (docTypeId) {
         case 'ARV':
-            docComponent = require('../frontend/docs/arve/arve.jsx');
+            docComponent = require('../frontend/docs/arv/arv.jsx');
             moduleSource = "/javascripts/arv.js";
             docName = 'Arve';
             break;
@@ -156,6 +156,10 @@ exports.get = function(req, res, params) {
         res.render('error', {message: 'Error in document', status:500} );
 
     }
+};
+
+exports.post = (req, res, params) => {
+
 };
 
 if (!Date.prototype.toLocalISOString) {

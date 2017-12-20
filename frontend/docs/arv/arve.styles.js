@@ -21,6 +21,24 @@ module.exports = {
         border: '1px solid brown'
 */
     },
+    summa: {
+        width: 'auto'
+    },
+
+    grid: {
+        mainTable: {
+            width: '100%'
+        },
+        headerTable: {
+            width:'100%',
+        },
+
+        gridContainer: {
+            width: '100%'
+        }
+
+    },
+
     gridRow: {
 /*
         border: '1px solid black',
@@ -33,4 +51,4 @@ module.exports = {
         top: '100px'
     }
 
-}
+};

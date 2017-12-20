@@ -1,9 +1,7 @@
 
 const ReactDOM = require('react-dom');
 
-// данные для хранилища
-localStorage['docStore'] = storeData;
-storeData = JSON.parse(storeData);
+initData = JSON.parse(initData);
 userData = JSON.parse(userData);
 
 
@@ -11,7 +9,7 @@ userData = JSON.parse(userData);
 const Doc = require('../frontend/docs/asutused/asutused.jsx');
 
 ReactDOM.hydrate(
-    <Doc data={storeData.data} userData={userData}/>
+    <Doc initData={initData} userData={userData} docId = {docId}/>
     , document.getElementById('doc')
 );
 

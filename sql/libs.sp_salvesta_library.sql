@@ -1,71 +1,98 @@
-﻿DROP FUNCTION if exists libs.sp_salvesta_library(data json, userid integer, user_rekvid integer);
-    
-CREATE OR REPLACE FUNCTION libs.sp_salvesta_library(data json, userid integer, user_rekvid integer)
-  RETURNS integer AS
+﻿DROP FUNCTION IF EXISTS libs.sp_salvesta_library( DATA JSON, userid INTEGER, user_rekvid INTEGER );
+
+CREATE OR REPLACE FUNCTION libs.sp_salvesta_library(data JSON, userid INTEGER, user_rekvid INTEGER)
+  RETURNS INTEGER AS
 $BODY$
 
-declare
-	lib_id integer;
-	userName text;
-	doc_id integer = data->>'id';	
-	doc_data json = data->>'data';
-	doc_kood text = doc_data->>'kood';
-	doc_nimetus text = doc_data->>'nimetus';
-	doc_library text = doc_data->>'library';
-	doc_muud text = doc_data->>'muud';
-	doc_type text = (doc_data->>'type');
-	doc_module text = doc_data->>'module';
-	doc_props jsonb = doc_data->>'properties';
-	json_object jsonb;
-	new_history jsonb;
-	new_rights jsonb;
+DECLARE
+  lib_id       INTEGER;
+  userName     TEXT;
+  doc_id       INTEGER = data ->> 'id';
+  doc_data     JSON = data ->> 'data';
+  doc_kood     TEXT = doc_data ->> 'kood';
+  doc_nimetus  TEXT = doc_data ->> 'nimetus';
+  doc_library  TEXT = doc_data ->> 'library';
+  doc_muud     TEXT = doc_data ->> 'muud';
+  doc_type     TEXT = (doc_data ->> 'type');
+  doc_module   TEXT = doc_data ->> 'module';
+  doc_props    JSONB = doc_data ->> 'properties';
+  json_object  JSONB;
+  new_history  JSONB;
+  new_rights   JSONB;
 
-	v_dokvaluuta record;
-	lrCurRec record;
-begin
+  v_dokvaluuta RECORD;
+  lrCurRec     RECORD;
+BEGIN
 
-select kasutaja into userName from userid u where u.rekvid = user_rekvid and u.id = userId;
-if userName is null then
-	raise notice 'User not found %', user;
-	return 0;
-end if;
+  IF (doc_id IS NULL)
+  THEN
+    doc_id = doc_data ->> 'id';
+  END IF;
 
-if doc_library = 'DOK' and doc_module is null and doc_type = 'library' then
-	-- @todo hardcode, 
-	doc_module = '["Libraries"]';
-	select row_to_json(row) into json_object from (select doc_module as module) row;
-end if;
-	
-doc_props = case when doc_props is null then  json_object else doc_props || json_object end;
+  SELECT kasutaja
+  INTO userName
+  FROM userid u
+  WHERE u.rekvid = user_rekvid AND u.id = userId;
+  IF userName IS NULL
+  THEN
+    RAISE NOTICE 'User not found %', user;
+    RETURN 0;
+  END IF;
+
+  IF doc_library = 'DOK' AND doc_module IS NULL AND doc_type = 'library'
+  THEN
+    -- @todo hardcode,
+    doc_module = '["Libraries"]';
+    SELECT row_to_json(row)
+    INTO json_object
+    FROM (SELECT doc_module AS module) row;
+  END IF;
+
+  doc_props = CASE WHEN doc_props IS NULL
+    THEN json_object
+              ELSE doc_props || json_object END;
 
 
-if doc_id is null or doc_id = 0 then
+  IF doc_id IS NULL OR doc_id = 0
+  THEN
 
-	select row_to_json(row) into new_history from (select now() as created, userName as user) row;
-	select row_to_json(row) into new_rights from (select array[userId] as "select", array[userId] as "update", array[userId] as "delete") row;
+    SELECT row_to_json(row)
+    INTO new_history
+    FROM (SELECT
+            now()    AS created,
+            userName AS user) row;
+    SELECT row_to_json(row)
+    INTO new_rights
+    FROM (SELECT
+            ARRAY [userId] AS "select",
+            ARRAY [userId] AS "update",
+            ARRAY [userId] AS "delete") row;
 
-	-- uus kiri
-	insert into libs.library (rekvid, library, kood, nimetus, muud, properties) 
-		values (user_rekvid, doc_library, doc_kood, doc_nimetus, doc_muud, doc_props)
-		returning id into lib_id;
+    -- uus kiri
+    INSERT INTO libs.library (rekvid, library, kood, nimetus, muud, properties)
+    VALUES (user_rekvid, doc_library, doc_kood, doc_nimetus, doc_muud, doc_props)
+    RETURNING id
+      INTO lib_id;
 
-else
-	-- muuda 
+  ELSE
+    -- muuda
 
-	update libs.library set 
-		kood = doc_kood,
-		nimetus = doc_nimetus,
-		muud = doc_muud,
-		properties = doc_props
-	where id = doc_id
-	returning id into lib_id;
-end if;
+    UPDATE libs.library
+    SET
+      kood       = doc_kood,
+      nimetus    = doc_nimetus,
+      muud       = doc_muud,
+      properties = doc_props
+    WHERE id = doc_id
+    RETURNING id
+      INTO lib_id;
+  END IF;
 
-return  lib_id;
+  RETURN lib_id;
 
-end;$BODY$
-  LANGUAGE 'plpgsql' VOLATILE
-  COST 100;
-  
-GRANT EXECUTE ON FUNCTION libs.sp_salvesta_library(data json, userid integer, user_rekvid integer) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION libs.sp_salvesta_library(data json, userid integer, user_rekvid integer) TO dbpeakasutaja;
+END;$BODY$
+LANGUAGE 'plpgsql' VOLATILE
+COST 100;
+
+GRANT EXECUTE ON FUNCTION libs.sp_salvesta_library(data JSON, userid INTEGER, user_rekvid INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION libs.sp_salvesta_library(data JSON, userid INTEGER, user_rekvid INTEGER) TO dbpeakasutaja;

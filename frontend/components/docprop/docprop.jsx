@@ -5,8 +5,7 @@ const PropTypes = require('prop-types');
 const Select = require('../select/select.jsx');
 const Text = require ('../text-area/text-area.jsx');
 
-const React = require('react'),
-    flux = require('fluxify');
+const React = require('react');
 
     class SelectTextWidget extends React.PureComponent {
     constructor(props) {
@@ -26,23 +25,6 @@ const React = require('react'),
             let selg = this.getDescriptionBySelectValue(this.state.libData) || null;
             this.setState({value: value, description: selg});
         }
-    }
-
-    componentDidMount() {
-// создаем обработчик события на изменение библиотек.
-    const self = this;
-        // будем отслеживать момент когда справочник будет загружен
-        flux.stores.docStore.on('change:libs', function (newValue, previousValue) {
-            let vastus = JSON.stringify(newValue) !== JSON.stringify(previousValue),  // will watch libs change (from server)
-                data = newValue.filter((item) => {
-                    if (item.id === self.props.libs) {
-                        return item;
-                    }
-                }),
-                lib = data[0].data,
-                selg = data[0].data.length ? self.getDescriptionBySelectValue(lib).toString() : '';
-            self.setState({libData: lib, description: selg});
-        });
     }
 
     getDescriptionBySelectValue(libData) {
@@ -100,13 +82,13 @@ SelectTextWidget.propTypes = {
     defaultValue: PropTypes.string,
     readOnly: PropTypes.bool,
     placeholder: PropTypes.string
-}
+};
 
 
 SelectTextWidget.defaultProps = {
     readOnly: false,
     title: ''
-}
+};
 
 module.exports = SelectTextWidget;
 

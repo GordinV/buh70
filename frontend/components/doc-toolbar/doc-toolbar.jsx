@@ -24,12 +24,19 @@ class DocToolBar extends React.PureComponent {
         this.handleButtonTask = this.handleButtonTask.bind(this);
         this.handleSelectTask = this.handleSelectTask.bind(this);
 
+        this.docId = null;
+
+        if (props.docId) {
+            this.docId = props.docId
+        } else {
+            this.docId = flux.stores.docStore ? flux.stores.docStore.data.id:  0;
+        }
     }
 
     render() {
         let isEditMode = this.props.edited,
             isDocDisabled = this.props.docStatus == 2,
-            docId = flux.stores.docStore.data.id || 0,
+            docId = this.docId,
             toolbarParams = {
                 btnAdd: {
                     show: !isEditMode,
@@ -79,9 +86,13 @@ class DocToolBar extends React.PureComponent {
      * Вызовет метод перехода на новый документ
      */
     btnAddClick() {
-        flux.doAction('editedChange', true);
-        flux.doAction('savedChange', false);
-        flux.doAction('addDoc');
+        if (!this.props.btnAddClick) {
+            flux.doAction('editedChange', true);
+            flux.doAction('savedChange', false);
+            flux.doAction('addDoc');
+        } else {
+            this.props.btnAddClick();
+        }
     }
 
     /**
@@ -90,13 +101,20 @@ class DocToolBar extends React.PureComponent {
     btnEditClick() {
         // переводим документ в режим редактирования, сохранен = false
         if (!this.props.docStatus || this.props.docStatus < 2) {
-            flux.doAction('editedChange', true);
-            flux.doAction('savedChange', false);
+            if (!this.props.btnEditClick) {
+                flux.doAction('editedChange', true);
+                flux.doAction('savedChange', false);
+            } else {
+                this.props.btnEditClick();
+            }
         }
     }
 
     btnPrintClick() {
         console.log('print called');
+        if (this.props.btnPrintClick) {
+            this.props.btnPrintClick();
+        }
     }
 
     /**
@@ -104,27 +122,37 @@ class DocToolBar extends React.PureComponent {
      */
     btnSaveClick() {
         // валидатор
-        let validationMessage = this.props.validator ? this.props.validator() : 'validator do not exists',
-            isValid = this.props.validator ? !this.props.validator() : true;
+        let validationMessage = this.props.validator ? this.props.validator() : '',
+            isValid = this.props.validator ? !validationMessage : true;
 
         if (isValid) {
             // если прошли валидацию, то сохранеям
-            flux.doAction('saveData');
-            flux.doAction('editedChange', false);
-            flux.doAction('savedChange', true);
+            if (this.props.btnSaveClick) {
+                this.props.btnSaveClick();
+            } else {
+                flux.doAction('saveData');
+                flux.doAction('editedChange', false);
+                flux.doAction('savedChange', true);
+            }
 
         }
     }
 
+    /**
+     * Обработчик для события клика для кнопки Отказ
+     */
     btnCancelClick() {
-        console.log('btnCancelClick');
-        // обработчик для кнопки Cancel
-        if (this.props.eventHandler) {
-            this.props.eventHandler('CANCEL');
-        }
+        if (this.props.btnCancelClick) {
+            this.props.btnCancelClick()
+        } else {
+            // обработчик для кнопки Cancel
+            if (this.props.eventHandler) {
+                this.props.eventHandler('CANCEL');
+            }
 
-        flux.doAction('editedChange', false);
-        flux.doAction('savedChange', true);
+            flux.doAction('editedChange', false);
+            flux.doAction('savedChange', true);
+        }
     }
 
     handleButtonTask(task) {

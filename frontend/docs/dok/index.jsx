@@ -5,7 +5,7 @@ const Documents = require('./../documents/documents.jsx');
 const styles = require('./docs-register-styles');
 
 /**
- * Класс реализует документ справочника признаков.
+ * Класс реализует справочник документов пользователя.
  */
 class Docs extends React.PureComponent {
     constructor(props) {
@@ -44,7 +44,7 @@ class Docs extends React.PureComponent {
     btnEditClick(docId) {
         let docTypeId = this.getDocumentType(docId);
         if (docTypeId) {
-            document.location.href = `/document/${docTypeId}${docId}`;
+            document.location.href = `/document/${docTypeId}/${docId}`;
         }
     }
 

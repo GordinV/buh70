@@ -37,9 +37,9 @@ describe('components test, Select', () => {
     });
 
     it('should be libs data to be loaded',()=> {
-        let data = component.state.data;
+        let data = component.props.data;
         expect(data).toEqual(libs);
-    })
+    });
 
     it('should have children (options)', () => {
         expect(component.refs['option-0']).toBeDefined();
@@ -58,5 +58,4 @@ describe('components test, Select', () => {
         expect(component.state.readOnly).toBeTruthy();
     });
 
-
-})
+});

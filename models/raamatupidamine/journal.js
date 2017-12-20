@@ -6,11 +6,11 @@ const start = require('./../BP/start'),
     generateJournal = require('./../BP/generateJournal'),
     endProcess = require('./../BP/endProcess');
 
-const Journal  = {
+const Journal = {
     select: [
         {
-            sql: `select d.id, $2::integer as userid, d.docs_ids, (created::date || 'T' || created::time)::text as created, 
-                (lastupdate::date || 'T' || lastupdate::time)::text as lastupdate, d.bpm, 
+            sql: `select d.id, $2::integer as userid, d.docs_ids, (to_char(created,'DD.MM.YYYY HH:MM:SS'))::text as created, 
+                (to_char(lastupdate,'DD.MM.YYYY HH:MM:SS'))::text as lastupdate, d.bpm, 
                  trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
                  trim(s.nimetus) as status, d.status as doc_status,
                  jid.number as number, 
@@ -25,15 +25,18 @@ const Journal  = {
                  left outer join libs.library s on s.library = 'STATUS' and s.kood = d.status::text
                  left outer join libs.asutus as asutus on asutus.id = j.asutusId 
                  where d.id = $1`,
-            sqlAsNew: "select $1::integer as id, (now()::date || 'T' || now()::time)::text as created, (now()::date || 'T' || now()::time)::text as lastupdate, null as bpm," +
-            " trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, " +
-            " trim(s.nimetus) as status, 0 as doc_status, " +
-            " trim('') as number,  null as rekvId,  to_char(now(),'YYYY-MM-DD') as kpv, " +
-            " null as asutusid, null as dok, null as selg, null as muud, 0 as summa,  null as regkood, null as asutus "+
-            " from libs.library l,   libs.library s, ou.userid u " +
-            " where l.library = 'DOK' and l.kood = 'JOURNAL'" +
-            " and u.id = $2::integer " +
-            " and s.library = 'STATUS' and s.kood = '0'",
+            sqlAsNew: `select $1::integer as id, 
+                    to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as created, 
+                    to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as lastupdate,            
+                    null as bpm,
+                    trim(l.nimetus) as doc, trim(l.kood) as doc_type_id,
+                    trim(s.nimetus) as status, 0 as doc_status, 
+                    trim('') as number,  null as rekvId,  to_char(now(),'YYYY-MM-DD') as kpv, 
+                    null as asutusid, null as dok, null as selg, null as muud, 0 as summa,  null as regkood, null as asutus 
+                    from libs.library l,   libs.library s, ou.userid u
+                    where l.library = 'DOK' and l.kood = 'JOURNAL'
+                    and u.id = $2::integer 
+                    and s.library = 'STATUS' and s.kood = '0'`,
             query: null,
             multiple: false,
             alias: 'row',
@@ -41,10 +44,10 @@ const Journal  = {
         },
         {
             sql: "select j1.*, $2::integer as userid " +
-                    " from docs.journal1 as j1 "+
-                    " inner join docs.journal j on j.id = j1.parentId "+
-                    " inner join ou.userid u on u.id = $2::integer "+
-                    " where j.parentid = $1",
+            " from docs.journal1 as j1 " +
+            " inner join docs.journal j on j.id = j1.parentId " +
+            " inner join ou.userid u on u.id = $2::integer " +
+            " where j.parentid = $1",
             query: null,
             multiple: true,
             alias: 'details',
@@ -145,14 +148,13 @@ const Journal  = {
         // выполнит задачу, переданную в параметре
 
         let executeTask = task;
-        if (executeTask.length == 0 ) {
+        if (executeTask.length == 0) {
             executeTask = ['start'];
         }
 
         let taskFunction = eval(executeTask[0]);
         return taskFunction(docId, userId, Journal);
     }
-}
+};
 
 module.exports = Journal;
-

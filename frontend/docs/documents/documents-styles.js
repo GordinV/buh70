@@ -15,6 +15,8 @@ module.exports = {
         width: '50%'
     },
     doc: {
+        position: 'relative',
+        height: '90vh',
         display: 'flex',
         flexDirection: 'column',
         /*
@@ -36,4 +38,4 @@ module.exports = {
         },
 
     }
-}
+};

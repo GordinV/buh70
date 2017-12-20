@@ -61,5 +61,12 @@ module.exports = {
         proj: 'proj'
 
     }],
-    doc_status: 0
+    doc_status: 0,
+    requiredFields:[
+        {
+            name: 'kpv',
+            type: 'D',
+        },
+        {name: 'summa', type: 'N', min: null, max: null}
+    ]
 };

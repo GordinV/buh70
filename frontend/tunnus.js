@@ -2,16 +2,16 @@
 const ReactDOM = require('react-dom');
 
 // данные для хранилища
-localStorage['docStore'] = storeData;
-storeData = JSON.parse(storeData);
 userData = JSON.parse(userData);
+docId = Number(docId);
+initData = JSON.parse(initData);
 
 
 // запросим компонент документа по его типу
 const Doc = require('../frontend/docs/tunnus/tunnus.jsx');
 
 ReactDOM.hydrate(
-    <Doc data={storeData.data} userData={userData}/>
+    <Doc userData={userData} docId = {docId} initData = {initData}/>
     , document.getElementById('doc')
 );
 

@@ -53,12 +53,15 @@ module.exports = {
         overflow: 'scroll'
     },
 
+    main: {
+        height:'inherit',
+    },
+
     header: {
-        overflow: 'scroll',
-        overflowX: 'hidden'
+        overflow: 'hidden'
 
     }
 
 
-}
+};
 

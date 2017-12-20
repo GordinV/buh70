@@ -40,7 +40,9 @@ class ModalPage extends React.PureComponent {
             hideBtnCancel = this.props.modalObjects.indexOf('btnCancel') == -1 ? false : true, // управление кнопкой Cancel
             displayModal = this.state.show ? 'flex': 'none' ,
             pagePosition =  this.props.position,
-            containerStyle = Object.assign({}, styles.container, {display: displayModal}, {justifyContent:pagePosition});
+            containerStyle = Object.assign({}, styles.container, {display: displayModal}, {justifyContent:pagePosition}),
+            buttonOkStyle = Object.assign({}, styles.modalPageButtons, styles.defaultButton);
+
 
         return (
             <div ref="container" style={containerStyle}>
@@ -58,7 +60,7 @@ class ModalPage extends React.PureComponent {
                             <Button
                                 ref="btnOk"
                                 value="Ok"
-                                style={styles.modalPageButtons}
+                                style={buttonOkStyle}
                                 width={('width' in styles.modalPageButtons)? styles.modalPageButtons.width: null}
                                 height={('height' in styles.modalPageButtons)? styles.modalPageButtons.height: null}
                                 onClick={this.handleBtnClick.bind(this, 'Ok')}
@@ -71,6 +73,7 @@ class ModalPage extends React.PureComponent {
                             <Button
                                 ref="btnCancel"
                                 value="Cancel"
+                                style={styles.modalPageButtons}
                                 width={('width' in styles.modalPageButtons)? styles.modalPageButtons.width: null}
                                 height={('height' in styles.modalPageButtons)? styles.modalPageButtons.height: null}
                                 onClick={this.handleBtnClick.bind(this, 'Cancel')}
@@ -99,6 +102,6 @@ ModalPage.defaultProps = {
     modalObjects: ['btnOk', 'btnCancel'],
     position: 'center',
     show: false
-}
+};
 
 module.exports = ModalPage;

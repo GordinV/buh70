@@ -9,8 +9,8 @@ module.exports = function(docTypeId) {
             component = require('../frontend/docs/palk_oper.jsx');
             break;
         default:
-            component = require('../frontend/docs/arve/arve.jsx');
+            component = require('../frontend/docs/arv/arv.jsx');
     }
     return component;
 
-}
+};

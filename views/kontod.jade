@@ -3,12 +3,13 @@ block content
     link(rel='stylesheet', href='/stylesheets/documents.css')
     //link(rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css")
     script(type="text/babel" src="/javascripts/common.js")
-    script(type="text/babel" src="/javascripts/kontod_register.js")
-    h1= "Kontod"
-    if store
+    script(type="text/babel" src="/javascripts/kontod.js")
+    h1= "Kontoplaan"
+    if initData
         script(type='text/javascript').
             var userData=!{JSON.stringify(userData)}
-            var initData=!{JSON.stringify(store)}
+            var initData=!{JSON.stringify(initData)}
+            var docId=!{docId}
     div
         div#doc!=react
 

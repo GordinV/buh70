@@ -1,7 +1,8 @@
 module.exports = {
     input: {
         width: '70%',
-        borderRadius:'3px'
+        borderRadius:'3px',
+        marginLeft:'5px'
 
     },
     focused: {
@@ -19,5 +20,5 @@ module.exports = {
         width: '30%',
         margin: '5px'
     }
-}
+};
 

@@ -12,10 +12,10 @@ class Select extends React.PureComponent {
             value: props.value/* здесь по значению ИД */,
             readOnly: props.readOnly,
             disabled: props.disabled,
-            data: props.data,
             fieldValue: props.value /*здесь по значени поля collId */,
             btnDelete: props.btnDelete /* если истину, то рисуем рядом кнопку для очистки значения*/
         };
+
         this.onChange = this.onChange.bind(this);
         this.btnDelClick = this.btnDelClick.bind(this);
 
@@ -51,7 +51,7 @@ class Select extends React.PureComponent {
     componentWillReceiveProps(nextProps) {
         this.setState({
             value: nextProps.value,
-            readOnly: nextProps.readOnly, data: nextProps.data
+            readOnly: nextProps.readOnly
         });
     }
 
@@ -83,41 +83,26 @@ class Select extends React.PureComponent {
     }
 
     render() {
-        let dataOptions = this.props.data || [],
-            inputReadOnly = this.state.readOnly || false,
-            Options = null,
-            inputDefaultValue = this.props.defaultValue; // Дадим дефолтное значение для виджета, чтоб покать его сразу, до подгрузки библиотеки
+        let inputReadOnly = this.state.readOnly || false,
+            inputDefaultValue = this.props.defaultValue? this.props.defaultValue: this.props.value || ''; // Дадим дефолтное значение для виджета, чтоб покать его сразу, до подгрузки библиотеки
 
-        if (!this.state.value) { // добавим пустую строку в массив
+        if (!this.state.value) {
+            // добавим пустую строку в массив
+
             // проверим наличие пустой строки в массиве
-
-            let emptyObj = dataOptions.filter((obj) => {
+            let emptyObj =this.props.data.filter((obj) => {
                 if (obj.id === 0) {
                     return obj;
                 }
             });
 
-            if (!emptyObj || emptyObj.length == 0) {
-                dataOptions.splice(0, 0, {id: 0, kood: '', name: ''});
-            }
         }
 
-
-        let dataValue = dataOptions.filter((item) => {
+        let dataValue = this.props.data.filter((item) => {
             if (item[this.props.collId] === this.state.value) {
                 return item;
             }
         }, this);
-
-        if (dataOptions.length) {
-            Options = dataOptions.map((item, index) => {
-                let key = 'option-' + index;
-                return <option value={item[this.props.collId]} key={key} ref={key}> {item.name} </option>
-            }, this);
-            inputDefaultValue = dataValue.length > 0 ? dataValue[0].name : this.props.defaultValue;
-        } else {
-            Options = <option value={0} key={Math.random()}> Empty </option>
-        }
 
         let inputStyle = Object.assign({}, styles.input, inputReadOnly ? {} : styles.hide,
             inputReadOnly ? styles.readOnly: {}),
@@ -130,7 +115,8 @@ class Select extends React.PureComponent {
                    htmlFor={this.props.name}>{this.props.title}
             </label>
 
-            <input type="text" id={this.props.name}
+            <input type="text"
+                   id={this.props.name}
                    style={inputStyle}
                    ref="input"
                    value={inputDefaultValue}
@@ -140,12 +126,12 @@ class Select extends React.PureComponent {
                     style={selectStyle}
                     value={this.state.value}
                     id={this.props.name}
-                    onChange={this.onChange}>{Options}
+                    onChange={this.onChange}>{this.prepaireDataOptions()}
             </select>
             <button ref="button"
                     style={buttonStyle}
                     onClick={this.btnDelClick}>
-                Delete
+                X
             </button>
         </div>)
     }
@@ -154,6 +140,29 @@ class Select extends React.PureComponent {
         // по вызову кнопку удалить, обнуляет значение
         this.setState({value: ''});
         this.onChange(event);
+    }
+
+    /**
+     * Подготовит датасет для селекта
+     * @returns {*}
+     */
+    prepaireDataOptions() {
+        let options ;
+        let data = this.props.data.length ? this.props.data: [];
+
+//        data.unshift({id:0, kood:'', name:''});
+        if (this.props.data.length) {
+
+            options = data.map((item, index) => {
+                let key = 'option-' + index;
+                let separator = ' ';
+                let rowValue = `${item.kood ? item.kood : ''} ${separator} ${item.name}`;
+                return <option value={this.props.data.length ? item[this.props.collId]: 0} key={key} ref={key}> {rowValue} </option>
+            }, this);
+        } else {
+            options = <option value={0} key={Math.random()}></option>;
+        }
+        return options;
     }
 }
 
@@ -174,10 +183,10 @@ Select.defaultProps = {
     disabled: false,
     valid: true,
     btnDelete: false,
-    value: 0,
     collId: 'id',
     title: '',
-    defaultValue: ''
+    defaultValue: '',
+    data: [{id:0, kood:'',nimetus:''}]
 };
 
 module.exports = Select;

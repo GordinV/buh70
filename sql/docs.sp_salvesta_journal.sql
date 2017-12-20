@@ -1,158 +1,204 @@
-﻿
-DROP FUNCTION if exists docs.sp_salvesta_journal(json, integer, integer);
+﻿DROP FUNCTION IF EXISTS docs.sp_salvesta_journal( JSON, INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_salvesta_journal(
-    data json,
-    userid integer,
-    user_rekvid integer)
-  RETURNS integer AS
+  data        JSON,
+  userid      INTEGER,
+  user_rekvid INTEGER)
+  RETURNS INTEGER AS
 $BODY$
 
-declare
-	journal_id integer;
-	journal1_id integer;
-	userName text;
-	doc_id integer = data->>'id';	
-	doc_type_kood text = 'JOURNAL'/*data->>'doc_type_id'*/;
-	doc_type_id integer = (select id from libs.library where kood = doc_type_kood and library = 'DOK' limit 1);
-	doc_details json = data->>'details';
-	doc_data json = data->>'data';
-	doc_number text = doc_data->>'number';
-	doc_asutusid integer = doc_data->>'asutusid';
-	doc_dok text = doc_data->>'dok';
-	doc_kpv date = doc_data->>'kpv';
-	doc_selg text = doc_data->>'selg';
-	doc_muud text = doc_data->>'muud';
-	tcValuuta text = coalesce(doc_data->>'valuuta','EUR') ; 
-	tnKuurs numeric(14,8) = coalesce(doc_data->>'kuurs','1'); 
-	json_object json;
-	json_record record;
-	new_history jsonb;
-	ids integer[];
-begin
-
-raise notice 'data.doc_details: %, jsonb_array_length %, data: %', doc_details, json_array_length(doc_details), data;
-
-select kasutaja into userName from userid u where u.rekvid = user_rekvid and u.id = userId;
-if userName is null then
-	raise notice 'User not found %', user;
-	return 0;
-end if;
-
--- вставка или апдейт docs.doc
-if doc_id is null or doc_id = 0 then
-
-	select row_to_json(row) into new_history from (select now() as created, userName as user) row;
-		
-	
-	insert into docs.doc (doc_type_id, history, rekvid ) 
-		values (doc_type_id, '[]'::jsonb || new_history, user_rekvid) 
-		returning id into doc_id;
-
-	insert into docs.journal (parentid, rekvid, userid, kpv, asutusid, dok, selg, muud)
-		values (doc_id, user_rekvid, userId, doc_kpv, doc_asutusid, doc_dok, doc_selg, doc_muud) 
-		returning id into journal_id;
-
-	insert into docs.journalid (journalid, rekvid, aasta, number)
-		values (journal_id, user_rekvid, (date_part('year'::text, doc_kpv)::integer), (select max(number) + 1 from docs.journalid where rekvId = user_rekvid and aasta = (date_part('year'::text, doc_kpv)::integer)));
-
-		
-else
-	select row_to_json(row) into new_history from (select now() as updated, userName as user) row;
-
-	update docs.doc 
-		set lastupdate = now(),
-			history = coalesce(history,'[]')::jsonb || new_history
-		where id = doc_id;	
-
-	update docs.journal set 
-		kpv = doc_kpv, 
-		asutusid = doc_asutusid, 
-		dok = doc_dok, 
-		muud = doc_muud, 
-		selg = doc_selg
-		where parentid = doc_id returning id into journal_id;
-
-end if;
--- вставка в таблицы документа
+DECLARE
+  journal_id    INTEGER;
+  journal1_id   INTEGER;
+  userName      TEXT;
+  doc_id        INTEGER = data ->> 'id';
+  doc_type_kood TEXT = 'JOURNAL'/*data->>'doc_type_id'*/;
+  doc_type_id   INTEGER = (SELECT id
+                           FROM libs.library
+                           WHERE kood = doc_type_kood AND library = 'DOK'
+                           LIMIT 1);
+  doc_details   JSON = data ->> 'gridData';
+  doc_data      JSON = data ->> 'data';
+  doc_number    TEXT = doc_data ->> 'number';
+  doc_asutusid  INTEGER = doc_data ->> 'asutusid';
+  doc_dok       TEXT = doc_data ->> 'dok';
+  doc_kpv       DATE = doc_data ->> 'kpv';
+  doc_selg      TEXT = doc_data ->> 'selg';
+  doc_muud      TEXT = doc_data ->> 'muud';
+  tcValuuta     TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
+  tnKuurs       NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
+  json_object   JSON;
+  json_record   RECORD;
+  new_history   JSONB;
+  ids           INTEGER [];
+BEGIN
 
 
-for json_object in 
-	select * from json_array_elements(doc_details)
-loop
-	select * into json_record from json_to_record(json_object) as x(id text, summa numeric(14,4), deebet text, kreedit text, tunnus text, proj text,
-	kood1 text, kood2 text, kood3 text, kood4 text, kood5 text, lisa_d text, lisa_k text, valuuta text, kuurs numeric(14,8));
+  SELECT kasutaja
+  INTO userName
+  FROM userid u
+  WHERE u.rekvid = user_rekvid AND u.id = userId;
+  IF userName IS NULL
+  THEN
+    RAISE NOTICE 'User not found %', user;
+    RETURN 0;
+  END IF;
 
-	if json_record.id is null or json_record.id = '0' or substring(json_record.id from 1 for 3) = 'NEW' or not exists (select id from docs.journal1 where id = json_record.id::integer) then
-		insert into docs.journal1 (parentid, deebet, kreedit, summa, tunnus, proj, kood1, kood2, kood3, kood4, kood5, lisa_d, lisa_k, valuuta, kuurs, valsumma)
-			values (journal_id, json_record.deebet, json_record.kreedit, json_record.summa, json_record.tunnus, json_record.proj,
-			json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5, json_record.lisa_d, json_record.lisa_k,
-			coalesce(json_record.valuuta,'EUR'), coalesce(json_record.kuurs,1), coalesce(json_record.kuurs,1) * json_record.summa) 
-			returning id into journal1_id;
+  IF (doc_id IS NULL)
+  THEN
+    doc_id = doc_data ->> 'id';
+  END IF;
 
-		raise notice 'journal1_id %', journal1_id;	
+  -- вставка или апдейт docs.doc
+  IF doc_id IS NULL OR doc_id = 0
+  THEN
 
-		-- add new id into array of ids
-		ids = array_append(ids,journal1_id);
-
-		-- valuuta
-		insert into docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs) 
-			values (journal1_id, 1 ,tcValuuta, tnKuurs);
-
-			
-	else
-	
-		update docs.journal1 set 
-			deebet = json_record.deebet, 
-			kreedit = json_record.kreedit, 
-			summa = json_record.summa,
-			tunnus = json_record.tunnus,
-			proj = json_record.proj,
-			kood1 = json_record.kood1,
-			kood2 = json_record.kood2,
-			kood3 = json_record.kood3,
-			kood4 = json_record.kood4,
-			kood5 = json_record.kood5,
-			lisa_d = json_record.lisa_d,
-			lisa_k = json_record.lisa_k,
-			kuurs = json_record.kuurs,
-			valuuta = json_record.valuuta,
-			valsumma = json_record.kuurs * json_record.summa
-			where id = json_record.id::integer;
-			
-		journal1_id = json_record.id::integer;
-
-		-- add existing id into array of ids
-		ids = array_append(ids,journal1_id);
+    SELECT row_to_json(row)
+    INTO new_history
+    FROM (SELECT
+            now()    AS created,
+            userName AS user) row;
 
 
-		raise notice 'for update journal1_id %', journal1_id;	
+    INSERT INTO docs.doc (doc_type_id, history, rekvid)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid)
+    RETURNING id
+      INTO doc_id;
+
+    INSERT INTO docs.journal (parentid, rekvid, userid, kpv, asutusid, dok, selg, muud)
+    VALUES (doc_id, user_rekvid, userId, doc_kpv, doc_asutusid, doc_dok, doc_selg, doc_muud)
+    RETURNING id
+      INTO journal_id;
+
+    INSERT INTO docs.journalid (journalid, rekvid, aasta, number)
+    VALUES (journal_id, user_rekvid, (date_part('year' :: TEXT, doc_kpv) :: INTEGER), (SELECT max(number) + 1
+                                                                                       FROM docs.journalid
+                                                                                       WHERE rekvId = user_rekvid AND
+                                                                                             aasta =
+                                                                                             (date_part('year' :: TEXT,
+                                                                                                        doc_kpv) :: INTEGER)));
 
 
-		if not exists (select id from docs.dokvaluuta1 where dokid = journal1_id and dokliik = 1) then
-		-- if record does 
-			insert into docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs) 
-				values (journal1_id, 1, tcValuuta, tnKuurs);
+  ELSE
+    SELECT row_to_json(row)
+    INTO new_history
+    FROM (SELECT
+            now()    AS updated,
+            userName AS user) row;
 
-		end if;		
-	end if;
+    UPDATE docs.doc
+    SET lastupdate = now(),
+      history      = coalesce(history, '[]') :: JSONB || new_history
+    WHERE id = doc_id;
 
-	-- delete record which not in json
+    UPDATE docs.journal
+    SET
+      kpv      = doc_kpv,
+      asutusid = doc_asutusid,
+      dok      = doc_dok,
+      muud     = doc_muud,
+      selg     = doc_selg
+    WHERE parentid = doc_id
+    RETURNING id
+      INTO journal_id;
 
-	delete from docs.journal1 where parentid = journal_id and id not in (select unnest(ids));
-	
+  END IF;
+  -- вставка в таблицы документа
 
-end loop;	
 
-return  doc_id;
+  FOR json_object IN
+  SELECT *
+  FROM json_array_elements(doc_details)
+  LOOP
+    SELECT *
+    INTO json_record
+    FROM json_to_record(
+             json_object) AS x(id TEXT, summa NUMERIC(14, 4), deebet TEXT, kreedit TEXT, tunnus TEXT, proj TEXT,
+         kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, lisa_d TEXT, lisa_k TEXT, valuuta TEXT, kuurs NUMERIC(14, 8));
 
-end;$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-  
+    IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
+       NOT exists(SELECT id
+                  FROM docs.journal1
+                  WHERE id = json_record.id :: INTEGER)
+    THEN
+      INSERT INTO docs.journal1 (parentid, deebet, kreedit, summa, tunnus, proj, kood1, kood2, kood3, kood4, kood5, lisa_d, lisa_k, valuuta, kuurs, valsumma)
+      VALUES
+        (journal_id, json_record.deebet, json_record.kreedit, json_record.summa, json_record.tunnus, json_record.proj,
+                     json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5,
+         json_record.lisa_d, json_record.lisa_k,
+         coalesce(json_record.valuuta, 'EUR'), coalesce(json_record.kuurs, 1),
+         coalesce(json_record.kuurs, 1) * json_record.summa)
+      RETURNING id
+        INTO journal1_id;
 
-GRANT EXECUTE ON FUNCTION docs.sp_salvesta_journal(json, integer, integer) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_salvesta_journal(json, integer, integer) TO dbpeakasutaja;
+      RAISE NOTICE 'journal1_id %', journal1_id;
+
+      -- add new id into array of ids
+      ids = array_append(ids, journal1_id);
+
+      -- valuuta
+      INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
+      VALUES (journal1_id, 1, tcValuuta, tnKuurs);
+
+
+    ELSE
+
+      UPDATE docs.journal1
+      SET
+        deebet   = json_record.deebet,
+        kreedit  = json_record.kreedit,
+        summa    = json_record.summa,
+        tunnus   = json_record.tunnus,
+        proj     = json_record.proj,
+        kood1    = json_record.kood1,
+        kood2    = json_record.kood2,
+        kood3    = json_record.kood3,
+        kood4    = json_record.kood4,
+        kood5    = json_record.kood5,
+        lisa_d   = json_record.lisa_d,
+        lisa_k   = json_record.lisa_k,
+        kuurs    = json_record.kuurs,
+        valuuta  = json_record.valuuta,
+        valsumma = json_record.kuurs * json_record.summa
+      WHERE id = json_record.id :: INTEGER;
+
+      journal1_id = json_record.id :: INTEGER;
+
+      -- add existing id into array of ids
+      ids = array_append(ids, journal1_id);
+
+
+      RAISE NOTICE 'for update journal1_id %', journal1_id;
+
+
+      IF NOT exists(SELECT id
+                    FROM docs.dokvaluuta1
+                    WHERE dokid = journal1_id AND dokliik = 1)
+      THEN
+        -- if record does 
+        INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
+        VALUES (journal1_id, 1, tcValuuta, tnKuurs);
+
+      END IF;
+    END IF;
+
+    -- delete record which not in json
+
+    DELETE FROM docs.journal1
+    WHERE parentid = journal_id AND id NOT IN (SELECT unnest(ids));
+
+
+  END LOOP;
+
+  RETURN doc_id;
+
+END;$BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100;
+
+
+GRANT EXECUTE ON FUNCTION docs.sp_salvesta_journal(JSON, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_salvesta_journal(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
 sasaving data:{"id":40,"doc_type_id":"JOURNAL","data":{"id":40,"created":"2016-05-24T14:49:46.198805","lastupdate":"2016-05-25T14:15:08.329755","bpm":null,"doc":"Lausendid","doc_type_id":"JOURNAL","status":"Черновик","number":2,"rekvid":1,"kpv":"2016-05-21","asutusid":1,"dok":"lisa 3","selg":"selg parandus","muud":"muud","summa":122.01,"regkood":"123456789           ","asutus":"isik, töötaja"},"details":[

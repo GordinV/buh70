@@ -76,7 +76,7 @@ class Documents extends React.PureComponent {
     render() {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
         return (
-            <div>
+            <div style={_style.doc}>
                 <div style={_style.docRow}>
                     {/*рендерим частные компоненты */}
                     {this.props.render()}
@@ -127,7 +127,6 @@ class Documents extends React.PureComponent {
      * @param idx
      */
     clickHandler(action, docId, idx) {
-        console.log('clicked', docId);
         if (docId && typeof docId === 'number') {
             this.setState({value: docId});
         }
@@ -148,7 +147,9 @@ class Documents extends React.PureComponent {
             // кастомный обработчик события
             this.props.btnAddClick(this.state.value);
         } else {
-            document.location.href = "/document/" + this.docTypeId + '0';
+            let address = `/document/${this.docTypeId}/0`;
+            console.log('aadress:', address);
+            document.location.href = address;
         }
     }
 
@@ -161,7 +162,7 @@ class Documents extends React.PureComponent {
             this.props.btnEditClick(this.state.value);
         } else {
             if (this.state.value) {
-                document.location.href = "/document/" + this.docTypeId + this.state.value;
+                document.location.href = `/document/${this.docTypeId}/${this.state.value}`;
             }
         }
     }
@@ -328,7 +329,7 @@ class Documents extends React.PureComponent {
     prepareParamsForToolbar() {
         return {
             btnAdd: {
-                show: this.docTypeId === 'DOK' ? false: true, //todo сделать поумнее
+                show: this.docTypeId !== 'DOK', //todo сделать поумнее
                 disabled: false
             },
             btnEdit: {
