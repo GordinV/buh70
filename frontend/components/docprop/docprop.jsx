@@ -3,11 +3,11 @@
 
 const PropTypes = require('prop-types');
 const Select = require('../select/select.jsx');
-const Text = require ('../text-area/text-area.jsx');
+const Text = require('../text-area/text-area.jsx');
 
 const React = require('react');
 
-    class SelectTextWidget extends React.PureComponent {
+class SelectTextWidget extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
@@ -18,7 +18,6 @@ const React = require('react');
         this.handleSelectOnChange = this.handleSelectOnChange.bind(this);
     }
 
-
     handleSelectOnChange(e, name, value) {
         // отработаем событие и поменяем состояние
         if (this.state.libData) {
@@ -27,6 +26,11 @@ const React = require('react');
         }
     }
 
+    /**
+     * Метод ищет в справочнике описание
+     * @param libData
+     * @returns {string}
+     */
     getDescriptionBySelectValue(libData) {
         // найдем в справочнике описание и установим его состояние
         let libRow = libData.filter((lib) => {
@@ -51,7 +55,7 @@ const React = require('react');
         return (
             <div>
                 <Select className={this.props.className}
-                        ref = "select"
+                        ref="select"
                         title={this.props.title}
                         name={this.props.name}
                         libs={this.props.libs}
@@ -61,7 +65,7 @@ const React = require('react');
                         readOnly={this.props.readOnly}
                         onChange={this.handleSelectOnChange}
                 />
-                <Text ref = "text"
+                <Text ref="text"
                       name='muud'
                       placeholder='DokProp'
                       value={this.state.description || ''}

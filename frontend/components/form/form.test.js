@@ -3,8 +3,6 @@ require('./../../../test/testdom')('<html><body></body></html>'); // созда�
 import ReactTestUtils from 'react-dom/test-utils';
 
 const React = require('react');
-const flux = require('fluxify');
-const docStore = require('../../stores/doc_store.js');
 const Form = require('./form.jsx');
 //    const style = require('./datalist-styles');
 const handlePageClick = jest.fn();

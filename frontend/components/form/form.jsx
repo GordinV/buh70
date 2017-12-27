@@ -2,7 +2,6 @@
 const PropTypes = require('prop-types');
 
 const React = require('react'),
-    flux = require('fluxify'),
     PageLabel = require('../page-label/page-label.jsx'),
     styles = require('./form-styles');
 

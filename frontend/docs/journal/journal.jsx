@@ -22,7 +22,9 @@ const LIBRARIES = ['asutused', 'kontod', 'tunnus', 'project'];
 class Journal extends React.PureComponent {
     constructor(props) {
         super(props);
+        console.log('props',props);
         this.state = {
+            docId: props.docId,
             loadedData: false
         };
 
@@ -44,12 +46,13 @@ class Journal extends React.PureComponent {
     }
 
     render() {
-        return <DocumentTemplate docId={this.props.docId}
+        let initData = this.props.initData ? this.props.initData: {};
+        return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='JOURNAL'
                                  requiredFields={this.requiredFields}
                                  userData={this.props.userData}
-                                 initData={this.props.initData}
+                                 initData={initData}
                                  libs={LIBRARIES}
                                  pages={this.pages}
                                  renderer={this.renderer}
@@ -284,9 +287,11 @@ class Journal extends React.PureComponent {
 
         docData[field] = 0;
 
-        docData.gridData.forEach(row => {
-            docData[field] += Number(row[field]);
-        });
+        if (docData.gridData && docData.gridData.length) {
+            docData.gridData.forEach(row => {
+                docData[field] += Number(row[field]);
+            });
+        }
     }
 
 
@@ -298,4 +303,10 @@ Journal.propTypes = {
     userData: PropTypes.object,
 };
 
-module.exports = Journal;
+Journal.defaultProps = {
+    params: {docId: 0},
+    initData:{},
+    userData:{}
+}
+
+module.exports = (Journal);

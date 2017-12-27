@@ -1,8 +1,11 @@
 'use strict';
 
 const React = require('react');
+const {withRouter} = require('react-router-dom');
+
 const Documents = require('./../documents/documents.jsx');
 const styles = require('./tunnused-styles');
+const DOC_TYPE_ID = 'tunnus';
 
 /**
  * Класс реализует документ справочника признаков.
@@ -10,12 +13,15 @@ const styles = require('./tunnused-styles');
 class Tunnused extends React.PureComponent {
     constructor(props) {
         super(props);
-
+        this.btnEditClick = this.btnEditClick.bind(this);
     }
 
     render() {
-        return <Documents initData={this.props.initData} userData={this.props.userData}
-                          docTypeId='TUNNUS'
+        return <Documents initData={this.props.initData}
+                          userData={this.props.userData}
+                          ref = 'register'
+                          btnEditClick = {this.btnEditClick}
+                          docTypeId={DOC_TYPE_ID}
                           style={styles}
                           render={this.renderer}/>;
     }
@@ -23,9 +29,21 @@ class Tunnused extends React.PureComponent {
     renderer() {
         return <div>Tunnused register special render</div>
     }
+
+    /**
+     * кастомный вызов метода клик
+     */
+    btnEditClick() {
+        //getValue
+        let docId = this.refs['register'].state.value;
+        if (docId) {
+            return this.props.history.push(`/raama/${DOC_TYPE_ID}/${docId}`);
+        }
+    }
+
 }
 
 
-module.exports = Tunnused;
+module.exports = withRouter(Tunnused);
 
 

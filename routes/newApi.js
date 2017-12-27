@@ -14,6 +14,7 @@ exports.post = async (req, res) => {
 
         // вызвать метод
         let data = {
+            docTypeId: parameter,
             result: await doc.selectDocs(sortBy, sqlWhere),
             gridConfig: gridConfig
         };

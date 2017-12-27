@@ -14,9 +14,11 @@ const NODE_ENV = 'development';
  */
 
 module.exports = {
-    //entry: './frontend/docs.js',
 //    context: __dirname + '/frontend',
     entry: {
+        raama: './frontend/raama.js',
+        dokRegister: './frontend/dokRegister.js',
+        document_register: './frontend/document-register.js',
         arv: './frontend/arv.js',
         arv_register: './frontend/arv-register.js',
         journal: './frontend/journal.js',
@@ -29,16 +31,12 @@ module.exports = {
         smk_register: './frontend/smk-register.js',
         vmk: './frontend/vmk.js',
         vmk_register: './frontend/vmk-register.js',
-        docs: './frontend/docs.js',
-        docs_register: './frontend/docs-register.js',
-        doc: './frontend/doc.js',
-        document_register: './frontend/document-register.js',
         asutused: './frontend/asutused.js',
         asutus_register: './frontend/asutus-register.js',
         kontod: './frontend/kontod.js',
         nomenclature: './frontend/nomenclature.js',
         nomenclature_register: './frontend/nomenclature-register.js',
-        documentLib: './frontend/documentLib.js',
+        dok: './frontend/dok.js',
         project: './frontend/project.js',
         projektid: './frontend/projektid.js',
         tunnus: './frontend/tunnus.js',
@@ -73,12 +71,12 @@ module.exports = {
         new webpack.DefinePlugin({NODE_ENV: JSON.stringify(NODE_ENV)}),
         new webpack.optimize.CommonsChunkPlugin({
             name: "common",
-            chunks: ['docs', 'docs_register','doc', 'document_register', 'arv', 'arv_register',
+            chunks: ['raama','dokRegister', 'document_register', 'arv', 'arv_register',
                 'journal', 'journal_register',
                 'sorder', 'sorder_register', 'vorder','vorder_register',
                 'smk', 'smk_register', 'vmk', 'vmk_register', 'asutused','asutus_register',
                 'kontod','kontod_register',
-                'nomenclature', 'nomenclature_register','documentLib', 'project', 'projektid', 'tunnus', 'tunnused'
+                'nomenclature', 'nomenclature_register','dok', 'project', 'projektid', 'tunnus', 'tunnused'
                 ], // список модулей для выявления общих модулей
             minChunks: 3
         })

@@ -1,9 +1,9 @@
 'use strict';
 
 const PropTypes = require('prop-types');
+//const {withRouter} = require('react-router-dom');
 
 const React = require('react'),
-    flux = require('fluxify'),
     ToolbarContainer = require('./../toolbar-container/toolbar-container.jsx'),
     BtnAdd = require('./../button-register/button-register-add/button-register-add.jsx'),
     BtnEdit = require('./../button-register/button-register-edit/button-register-edit.jsx'),
@@ -28,8 +28,6 @@ class DocToolBar extends React.PureComponent {
 
         if (props.docId) {
             this.docId = props.docId
-        } else {
-            this.docId = flux.stores.docStore ? flux.stores.docStore.data.id:  0;
         }
     }
 
@@ -55,7 +53,7 @@ class DocToolBar extends React.PureComponent {
                     disabled: false
                 },
                 btnCancel: {
-                    show: isEditMode && docId !==0,
+                    show: isEditMode && docId !== 0,
                     disabled: false
                 }
             };
@@ -73,10 +71,10 @@ class DocToolBar extends React.PureComponent {
                 <BtnPrint ref='btnPrint' onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
                           disabled={toolbarParams['btnPrint'].disabled}/>
                 {this.props.bpm.length ? <TaskWidget ref='taskWidget'
-                                              taskList={this.props.bpm}
-                                              handleSelectTask={this.handleSelectTask}
-                                              handleButtonTask={this.handleButtonTask}
-                    /> : null}
+                                                     taskList={this.props.bpm}
+                                                     handleSelectTask={this.handleSelectTask}
+                                                     handleButtonTask={this.handleButtonTask}
+                /> : null}
 
             </div>
         </ToolbarContainer>
@@ -86,12 +84,10 @@ class DocToolBar extends React.PureComponent {
      * Вызовет метод перехода на новый документ
      */
     btnAddClick() {
-        if (!this.props.btnAddClick) {
-            flux.doAction('editedChange', true);
-            flux.doAction('savedChange', false);
-            flux.doAction('addDoc');
-        } else {
+        if (this.props.btnAddClick) {
             this.props.btnAddClick();
+        } else {
+            console.error('method add not exists in props')
         }
     }
 
@@ -101,17 +97,21 @@ class DocToolBar extends React.PureComponent {
     btnEditClick() {
         // переводим документ в режим редактирования, сохранен = false
         if (!this.props.docStatus || this.props.docStatus < 2) {
-            if (!this.props.btnEditClick) {
-                flux.doAction('editedChange', true);
-                flux.doAction('savedChange', false);
-            } else {
+            //this.docId
+            if (this.props.history) {
+                return this.props.history.push(`/raama/${value}`)
+            }
+
+            if (this.props.btnEditClick) {
                 this.props.btnEditClick();
+            } else {
+                console.error('method edit not exists in props')
+
             }
         }
     }
 
     btnPrintClick() {
-        console.log('print called');
         if (this.props.btnPrintClick) {
             this.props.btnPrintClick();
         }
@@ -130,11 +130,8 @@ class DocToolBar extends React.PureComponent {
             if (this.props.btnSaveClick) {
                 this.props.btnSaveClick();
             } else {
-                flux.doAction('saveData');
-                flux.doAction('editedChange', false);
-                flux.doAction('savedChange', true);
+                console.error('method save not exists in props')
             }
-
         }
     }
 
@@ -145,13 +142,7 @@ class DocToolBar extends React.PureComponent {
         if (this.props.btnCancelClick) {
             this.props.btnCancelClick()
         } else {
-            // обработчик для кнопки Cancel
-            if (this.props.eventHandler) {
-                this.props.eventHandler('CANCEL');
-            }
-
-            flux.doAction('editedChange', false);
-            flux.doAction('savedChange', true);
+            console.error('method cancel not exists in props')
         }
     }
 
@@ -159,7 +150,6 @@ class DocToolBar extends React.PureComponent {
         // метод вызывается при выборе задачи
         //@todo Закончить
 
-        flux.doAction('executeTask', task);
     }
 
 
@@ -184,4 +174,5 @@ DocToolBar.defaultProps = {
     docStatus: 0
 };
 
+//module.exports = withRouter(DocToolBar);
 module.exports = DocToolBar;

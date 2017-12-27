@@ -2,9 +2,7 @@ require('./../../../test/testdom')('<html><body></body></html>'); // созда�
 
 import ReactTestUtils from 'react-dom/test-utils';
 
-const React = require('react');
-const flux = require('fluxify');
-const docStore = require('../../stores/doc_store.js'),
+const React = require('react'),
     data = require('./../../../test/fixture/doc-common-fixture');
 
 const DocCommon = require('./doc-common.jsx');
@@ -12,7 +10,6 @@ const DocCommon = require('./doc-common.jsx');
 const handlePageClick = jest.fn();
 
 describe('components test, form', () => {
-    flux.doAction('dataChange', data);
     let component = ReactTestUtils.renderIntoDocument(<DocCommon data={data}/>);
 
     it('should be defined', () => {
@@ -31,9 +28,7 @@ describe('components test, form', () => {
         expect(idInput).toBeDefined();
         expect(idInput.refs['input']).toBeDefined();
         ReactTestUtils.Simulate.change(idInput.refs['input'], {"target": {"value": 2}});
-        setTimeout(()=>{
-            expect(flux.stores.docStore.data['id']).toBe(2);
-        }, 1000);
+        expect(idInput.refs['input'].value).toBe('2');
 
     });
 

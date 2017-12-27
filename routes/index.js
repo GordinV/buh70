@@ -15,11 +15,12 @@ module.exports = function (app) {
     app.get('/logout', require('./logout').get);
 //  app.post('/logout', require('./logout').post);
 //  app.get('/api/doc/', checkAuth, require('./api_doc').get);
-    app.get('/document/:id', checkAuth, require('./document').get);
     app.get('/document/:documentType/:id', checkAuth, require('./documentNew').get);
 
     app.get('/documents', checkAuth, require('./documentRegister').get); // module tunnused
     app.get('/documents/:id', checkAuth, require('./documentRegister').get); // module tunnused
+    app.get('/raama', require('./raama').get); // module raamatupidamine
+    app.get('/raama/:documentType', require('./raama').get); // module raamatupidamine
 //    app.get('/tunnused/tunnus:id', checkAuth, require('./tunnus').get); // module tunnused
 
 

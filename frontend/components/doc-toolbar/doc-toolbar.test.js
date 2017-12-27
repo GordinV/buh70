@@ -3,16 +3,19 @@ require('./../../../test/testdom')('<html><body></body></html>'); // созда�
 import ReactTestUtils from 'react-dom/test-utils';
 
 const React = require('react');
-const flux = require('fluxify');
-const docStore = require('../../stores/doc_store.js');
 const ToolBar = require('./doc-toolbar.jsx');
 let tasks = [{step: 0, name: 'Start', action: 'start', status: 'opened'}];
 
 describe('components test, DocToolbar', () => {
     const validator = jest.fn();
 
+    const methodClick = jest.fn();
+
 
     let component = ReactTestUtils.renderIntoDocument(<ToolBar bpm = {tasks}
+                                                               btnEditClick = {methodClick}
+                                                               btnAddClick = {methodClick}
+                                                               btnSaveClick = {methodClick}
                                                                validator ={validator}
                                                                docStatus = {0}/>);
 
@@ -29,30 +32,30 @@ describe('components test, DocToolbar', () => {
     });
 
     it('btnAddClick function test', ()=> {
+        expect(component.btnAddClick).toBeDefined();
+        let button = component.refs['btnAdd'];
         component.btnAddClick();
-        setTimeout(()=>{
-            expect(flux.stores.docStore.docId).toBe(0);
-            expect(flux.stores.docStore.edited).toBeTruthy();
-            expect(flux.stores.docStore.saved).toBeFalsy();
-        }, 1000);
-    })
+//        ReactTestUtils.Simulate.click(button);
+        expect(methodClick).toBeCalled();
+    });
 
-    it('btnEditClick function test', ()=> {
-        component.btnEditClick();
-        setTimeout(()=>{
-            expect(flux.stores.docStore.edited).toBeTruthy();
-            expect(flux.stores.docStore.saved).toBeFalsy();
-        }, 1000);
-    })
+    it.skip('btnEditClick function test', ()=> {
+        expect(component.btnEditClick).toBeDefined();
+        let button = component.refs['btnEdit'];
+        ReactTestUtils.Simulate.click(button);
+        expect(methodClick).toBeCalled();
+    });
 
     it('btnSaveClick function test', ()=> {
+        expect(component.btnSaveClick).toBeDefined();
         component.btnSaveClick();
-        expect(validator).toBeCalled();
+        expect(methodClick).toBeCalled();
+    });
 
-        setTimeout(()=>{
-            expect(flux.stores.docStore.edited).toBeFalsy();
-            expect(flux.stores.docStore.saved).toBeTruthy();
-        }, 1000);
+    it('btnCancelClick function test', ()=> {
+        expect(component.btnCancelClick).toBeDefined();
+        component.btnCancelClick();
+        expect(methodClick).toBeCalled();
     });
 
     it('taskWidget should be shown', ()=> {

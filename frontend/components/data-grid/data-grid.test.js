@@ -2,9 +2,6 @@ require('./../../../test/testdom')('<html><body></body></html>'); // созда�
 
 import ReactTestUtils from 'react-dom/test-utils';
 const React = require('react');
-const flux = require('fluxify');
-let docsStore = require('../../stores/docs_store.js');
-
 
 describe('component test, data-grid', () => {
 
@@ -136,7 +133,7 @@ describe('component test, data-grid', () => {
         let header = component.refs['th-1'];
 //        let image = header.refs['image'];
 
-        let image = ReactTestUtils.find(header,'image')
+        let image = ReactTestUtils.find(header,'image');
         expect(image).toBeDefined();
 
     })

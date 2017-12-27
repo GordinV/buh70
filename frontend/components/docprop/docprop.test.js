@@ -2,9 +2,7 @@ require('./../../../test/testdom')('<html><body></body></html>'); // созда�
 
 import ReactTestUtils from 'react-dom/test-utils';
 
-const React = require('react'),
-    flux = require('fluxify'),
-    docStore = require('./../../stores/doc_store');
+const React = require('react');
 
 describe('components test, DocProp', () => {
     // проверяем на наличие компонента и его пропсы и стейты
@@ -14,7 +12,6 @@ describe('components test, DocProp', () => {
 
     let data = require('./../../../test/fixture/doc-common-fixture');
     let onChangeHandler = jest.fn();
-
 
     let component = ReactTestUtils.renderIntoDocument(<DokProp
         title="Konteerimine: "
@@ -34,4 +31,4 @@ describe('components test, DocProp', () => {
         expect(component.refs['text']).toBeDefined();
     })
 
-})
+});

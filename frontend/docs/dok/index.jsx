@@ -21,13 +21,11 @@ class Docs extends React.PureComponent {
                           docTypeId='DOK'
                           ref = 'docs'
                           style={styles}
-                          btnAddClick = {this.btnAddClick}
-                          btnEditClick = {this.btnEditClick}
                           render={this.renderer}/>;
     }
 
     renderer() {
-        return <div>Docs register special render</div>
+        return <div>Docs types register special render</div>
     }
 
     /**

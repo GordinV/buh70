@@ -3,6 +3,13 @@
 const PropTypes = require('prop-types');
 
 const React = require('react');
+const {
+    Router,
+    Route,
+    Link,
+    NavLink
+} = require('react-router-dom');
+
 const fetchData = require('./../../../libs/fetchData');
 
 const URL = '/newApi/document';
@@ -17,7 +24,7 @@ const
 
 
 /**
- * Класс реализует базовый документ - справочник.
+ * Класс реализует базовый документ .
  */
 class DocumentTemplate extends React.PureComponent {
     constructor(props) {
@@ -35,7 +42,8 @@ class DocumentTemplate extends React.PureComponent {
             loadedLibs: false
         };
 
-        this.docData = Object.keys(props.initData).length ? props.initData : {};
+        this.docData = Object.keys(props.initData).length ? props.initData : {id: this.props.docId};
+        this.userData = Object.keys(props.userData).length ? props.userData : {};
         this.backup = {};
         this.requiredFields = props.requiredFields;
         this.pages = this.props.pages || null;
@@ -53,7 +61,6 @@ class DocumentTemplate extends React.PureComponent {
         }
 
         this.gridRowData = {}; //будем хранить строку грида
-
     }
 
     /**
@@ -262,11 +269,13 @@ class DocumentTemplate extends React.PureComponent {
 
         return (
             <div ref='doc-toolbar'>
+{/*
                 <MenuToolBar params={toolbarParams}
                              userData={this.props.userData}
                              ref='menu-toolbar'
                              btnStartClick={this.btnStartClickHanler}/>
                 {this.renderStartMenu()}
+*/}
                 <ToolbarContainer ref='toolbarContainer'>
                     <div>
                         <DocToolBar ref='doc-toolbar'
@@ -366,10 +375,12 @@ class DocumentTemplate extends React.PureComponent {
             method = 'fetchData' + protocol;
             params = this.docData;
         }
+
         return new Promise((resolved, rejected) => {
             fetchData[method](url, params).then(response => {
                 if (response.data) {
                     let result = response.data.result;
+
 
                     if (result && result.error_code > 0) {
                         //есть результат запроса
@@ -380,6 +391,12 @@ class DocumentTemplate extends React.PureComponent {
                             return rejected();
                         }
                     }
+
+                    if (response.data.userData) {
+                        //refresh userData (for auth purpose)
+                        this.userData = response.data.userData;
+                    }
+
                     if (response.data.data[0].id) {
                         this.docData = response.data.data[0];
                         //should return data and called for reload

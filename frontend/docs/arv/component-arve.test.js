@@ -4,7 +4,6 @@ import ReactTestUtils from 'react-dom/test-utils';
 
 const React = require('react');
 
-
 describe('doc test, Arve', () => {
     // проверяем на наличие компонента и его пропсы и стейты
     // проверяем изменение стейтов после клика

@@ -1,12 +1,14 @@
 'use strict';
 
 const PropTypes = require('prop-types');
+const {withRouter} = require('react-router-dom');
 
 const React = require('react'),
     ToolbarContainer = require('./../toolbar-container/toolbar-container.jsx'),
     BtnStart = require('./../button-register/button-register-start/button-register-start.jsx'),
     BtnLogin = require('./../button-register/button-login/button-login.jsx'),
     BtnRekv = require('./../button-register/button-rekv/button-rekv.jsx'),
+    StartMenu = require('./../start-menu/start-menu.jsx'),
     BtnAccount = require('./../button-register/button-account/button-account.jsx');
 
 const style = require('./menu-toolbar.styles');
@@ -17,11 +19,15 @@ class MenuToolBar extends React.PureComponent {
 
         this.state = {
             logedIn: !!props.userData,
-            rekvIds: props.userData ? props.userData.userAccessList : null
+            rekvIds: props.userData ? props.userData.userAccessList : null,
+            startMenuValue: 'parentid',
+            showStartMenu: false
         };
 
         this.btnStartClick = this.btnStartClick.bind(this);
         this.btnLoginClick = this.btnLoginClick.bind(this);
+        this.renderStartMenu = this.renderStartMenu.bind(this);
+        this.startMenuClickHandler = this.startMenuClickHandler.bind(this);
 
     }
 
@@ -75,20 +81,52 @@ class MenuToolBar extends React.PureComponent {
                                   disabled={toolbarParams['btnLogin'].disabled}/>
                     </div>
                 </ToolbarContainer>
+                {this.renderStartMenu()}
+
             </div>
         );
     }
 
+    renderStartMenu() {
+        let component;
+        if (this.state.showStartMenu) {
+            component = <StartMenu ref='startMenu'
+                                   value = {this.state.startMenuValue}
+                                   clickHandler = {this.startMenuClickHandler}/>
+        }
+        return component
+    }
+
+
     btnStartClick() {
         // обработчик для кнопки Start
-        if (this.props.btnStartClick) {
-            return this.props.btnStartClick();
+        this.setState({showStartMenu:!this.state.showStartMenu});
+
+        /*
+                if (this.props.btnStartClick) {
+                    return this.props.btnStartClick();
+                }
+
+                if (document) {
+                    document.location.href = '/documents';
+                }
+        */
+    }
+
+    /**
+     * получит от стартого меню данные, спрячет меню
+     */
+    startMenuClickHandler (value) {
+        this.setState({showStartMenu:false});
+        if (this.props.history) {
+            return this.props.history.push(`/raama/${value}`)
         }
 
-        if (document) {
-            document.location.href = '/documents';
-        }
+//        document.location.href = `/documents/${value}`;
+
     }
+
+
 
     btnLoginClick() {
 
@@ -136,4 +174,4 @@ MenuToolBar
 };
 */
 
-module.exports = MenuToolBar;
+module.exports = withRouter(MenuToolBar);

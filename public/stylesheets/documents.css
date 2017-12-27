@@ -69,6 +69,9 @@ div#gridTable {
     background-color:lightblue;
 }
 
+.active {
+    background-color:blue;
+}
 
 table {
     border:1px solid black;

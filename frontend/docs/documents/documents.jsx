@@ -1,10 +1,14 @@
 'use strict';
 
 const PropTypes = require('prop-types');
-
 const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
 const URL = '/newApi';
+/*
+const JournalDocument = require('./../journal/journal.jsx');
+const {Route, Link, NavLink, IndexRoute} = require('react-router-dom');
+*/
+
 
 //    MenuToolBar = require('./../../mixin/menuToolBar.jsx'),
 const
@@ -67,7 +71,12 @@ class Documents extends React.PureComponent {
      * пишем делаем запрос по итогу загрузки
      */
     componentDidMount() {
-        if (!this.gridData.length) {
+        let reload  = false; // if reload === true then it will call to reload
+        if (this.props.initData.docTypeId && this.props.initData.docTypeId.toUpperCase() !== this.docTypeId.toUpperCase()) {
+            reload = true;
+        }
+
+        if (reload || !this.props.initData || !this.gridData.length) {
             //делаем запрос на получение данных
             this.fetchData();
         }
@@ -77,6 +86,10 @@ class Documents extends React.PureComponent {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
         return (
             <div style={_style.doc}>
+{/*
+                <Route path="/raama/journal/:docId"
+                       render={() => <JournalDocument docId ={this.state.value} userData={this.userData} initData={{}}/>}/>
+*/}
                 <div style={_style.docRow}>
                     {/*рендерим частные компоненты */}
                     {this.props.render()}
@@ -157,7 +170,9 @@ class Documents extends React.PureComponent {
      * Обработчик для кнопки Edit
      */
     btnEditClick() {
+        console.log('btnEditClick', this.props);
         if (this.props.btnEditClick) {
+            console.log('called custom method');
             // кастомный обработчик события
             this.props.btnEditClick(this.state.value);
         } else {
@@ -286,10 +301,6 @@ class Documents extends React.PureComponent {
 
         return (
             <div>
-                <MenuToolBar params={toolbarParams}
-                         userData={this.userData}
-                         btnStartClick = {this.btnStartClickHanler}/>
-                {this.renderStartMenu()}
                 {this.renderFilterToolbar()}
                 <ToolbarContainer ref='toolbarContainer'>
                     <div>
@@ -378,7 +389,7 @@ class Documents extends React.PureComponent {
 
             fetchData.fetchDataPost(URL,params).then(response => {
                 this.gridData = response.data.result.data;
-                if (!response.data.gridConfig.length) {
+                if (response.data.gridConfig.length) {
                     this.gridConfig = response.data.gridConfig;
                 }
                 this.forceUpdate();
@@ -403,12 +414,12 @@ Documents.propTypes = {
         userName: PropTypes.string
     }).isRequired,
     initData: PropTypes.shape({
-        result: PropTypes.object.isRequired,
-        gridConfig: PropTypes.array.isRequired
-    }).isRequired,
+        result: PropTypes.object,
+        gridConfig: PropTypes.array
+    }),
     docTypeId: PropTypes.string.isRequired
 };
 
-module.exports = Documents;
+module.exports = (Documents);
 
 

@@ -19,7 +19,6 @@ exports.get = async (req, res) => {
     const DocumentRegister = require(`../frontend/docs/${documentType}/index.jsx`);
     let user = require('../middleware/userData')(req);  // check for userid in session
 
-
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, null, user.userId, user.asutusId);
 
@@ -28,7 +27,8 @@ exports.get = async (req, res) => {
     // вызвать метод
     let data = {
         result: await Document.selectDocs(),
-        gridConfig: gridConfig
+        gridConfig: gridConfig,
+        docTypeId: documentType
     };
 
     const Component = React.createElement(
@@ -96,12 +96,12 @@ exports.post = async (req, res) => {
         data = {result: await Document.createNew()};
     }
 
-    const preparedData = Object.assign({}, data.result.row,
+    const preparedData = Object.assign({}, data.result.row[0],
         {gridData: data.result.details},
         {relations: data.result.relations},
         {gridConfig: data.result.gridConfig});
 
-    res.send({params: params, data: [preparedData]});
+    res.send({data: [preparedData], userData: user});
 
     /*
         try {

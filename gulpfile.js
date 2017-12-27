@@ -29,17 +29,5 @@ gulp.task('mocha', function() {
 gulp.task('default', [
     'mocha'
 ]);
-/*
-
-
-gulp.task('default', function() {
-    gulp.run('test');
-});
-gulp.task('test', function () {
-    return gulp.src('./test/doc-button.jsx', {read: false})
-    // gulp-mocha needs filepaths so you can't have any plugins before it
-        .pipe(mocha());
-});
-*/
 
 //gulp.task('default', gulp.series('test'));

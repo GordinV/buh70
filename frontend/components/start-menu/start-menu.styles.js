@@ -6,7 +6,8 @@ module.exports = {
         border: '1px solid lightGrey',
         position: 'absolute',
         left: '20px',
-        overflow: 'auto'
+        overflow: 'auto',
+        zIndex: '999999'
     }
 
 };

@@ -1,5 +1,4 @@
 'use strict';
-const flux = require('fluxify');
 
 let validateForm = ((self, reqFields, data) => {
     // валидация формы
@@ -9,9 +8,8 @@ let validateForm = ((self, reqFields, data) => {
         notMinMaxRule = [];
 
         if (!data) {
-            data = flux.stores.docStore.data;
+            return 'no data supplied';
         }
-
 
     requiredFields.forEach((field) => {
         if (field.name in data) {
