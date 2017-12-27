@@ -1,21 +1,93 @@
-const ProjectDocument = require('./../project.jsx');
+'use strict';
+
 const React = require('react');
 const {withRouter} = require('react-router-dom');
+const PropTypes = require('prop-types');
 
-class Doc extends React.PureComponent {
+const
+    DocumentTemplate = require('./../../documentTemplate/index.jsx'),
+    InputText = require('../../../components/input-text/input-text.jsx'),
+    TextArea = require('../../../components/text-area/text-area.jsx'),
+    styles = require('./project-styles');
+
+class Project extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            docId: Number(props.match.params.docId)
-        }
+            docId: props.docId ? props.docId: Number(props.match.params.docId),
+            loadedData: false
+        };
+        this.renderer = this.renderer.bind(this);
+
+        this.requiredFields = [
+            {
+                name: 'kood',
+                type: 'C'
+            },
+            {name: 'nimetus', type: 'C'}
+        ];
     }
 
     render() {
-        return <div>
-            <ProjectDocument docId = {this.state.docId} userData = {{}}/>
-        </div>
-
+        return <DocumentTemplate docId = {this.state.docId }
+                                 ref = 'document'
+                                 docTypeId='PROJECT'
+                                 requiredFields = {this.requiredFields}
+                                 userData = {this.props.userData}
+                                 initData = {this.props.initData}
+                                 renderer={this.renderer}/>
     }
+
+    /**
+     * Метод вернет кастомный компонент
+     * @param self
+     * @returns {*}
+     */
+    renderer(self) {
+        if (!self.docData) {
+            return null;
+        }
+        return (
+            <div style={styles.doc}>
+                <div style={styles.docRow}>
+                    <InputText title="Kood "
+                               name='kood'
+                               ref="input-kood"
+                               readOnly = {!self.state.edited}
+                               value={self.docData.kood}
+                               onChange={self.handleInputChange}/>
+                </div>
+                <div style={styles.docRow}>
+                    <InputText title="Nimetus "
+                               name='nimetus'
+                               ref="input-nimetus"
+                               readOnly = {!self.state.edited}
+                               value={self.docData.nimetus}
+                               onChange={self.handleInputChange}/>
+                </div>
+
+                <div style={styles.docRow}>
+                                <TextArea title="Muud"
+                                          name='muud'
+                                          ref="textarea-muud"
+                                          onChange={self.handleInputChange}
+                                          value={self.docData.muud || ''}
+                                          readOnly={!self.state.edited}/>
+                </div>
+            </div>
+        );
+    }
+
 }
 
-module.exports = withRouter(Doc);
+Project.propTypes = {
+    docId: PropTypes.number,
+    initData: PropTypes.object,
+    userData: PropTypes.object
+};
+
+Project.defaultProps = {
+    initData:{},
+    userData:{}
+};
+module.exports = withRouter(Project);

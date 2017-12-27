@@ -90,7 +90,7 @@ exports.post = function (req, res, next) {
                 res.redirect('/login');
             } else {
                 // open main page
-                res.redirect('/documents/DOK');
+                res.redirect('/raama/docs'); //@todo переделать
             }
         });
 };

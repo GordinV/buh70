@@ -6,14 +6,23 @@ const getModule = require('./../../libs/getModule');
 //const {StaticRouter, Route, Router} = require('react-router-dom');
 
 
-const {StaticRouter }= require('react-router');
+const {StaticRouter} = require('react-router');
 const App = require('./../../frontend/modules/raama.jsx');
 
 exports.get = async (req, res) => {
-    let documentType = 'journal';
+    let documentType = 'docs',
+        returnedDocType = documentType; //вернем обратно тип документа
     if (req.params.documentType) {
         documentType = req.params.documentType;
     }
+
+
+    if (!documentType || documentType.toUpperCase() === 'DOCS') {
+        //вернет регистр документов
+        documentType = 'DOK';
+    }
+
+
 
     let user = require('./../../middleware/userData')(req);  // check for userid in session
 
@@ -23,7 +32,7 @@ exports.get = async (req, res) => {
     let gridConfig = Document.config.grid.gridConfiguration;
     // вызвать метод
     let data = {
-        docTypeId: documentType,
+        docTypeId: returnedDocType,
         result: await Document.selectDocs(),
         gridConfig: gridConfig
     };
@@ -34,7 +43,7 @@ exports.get = async (req, res) => {
 
     const Component = React.createElement(
         StaticRouter,
-        {context:context, location: req.url}, React.createElement(
+        {context: context, location: req.url}, React.createElement(
             App,
             {initData: data, userData: user}));
 
@@ -43,11 +52,11 @@ exports.get = async (req, res) => {
         if (context.url) {
             res.writeHead(301, {
                 location: context.url
-            })
+            });
             res.end()
         } else {
             res.render('index', {
-                "title":'Module raama',
+                "title": 'Module raama',
                 "user": user,
                 "userData": userData,
                 "store": storeInitialData
@@ -160,13 +169,13 @@ exports.put = async (req, res) => {
     let savedData = await Document.save(params);
 
     const prepairedData = Object.assign({}, savedData.row[0],
-        {bpm: savedData.bpm ? savedData.bpm: []},
-        {gridData: savedData.details ? savedData.details: []},
-        {relations: savedData.relations ? savedData.relations: []},
-        {gridConfig: savedData.gridConfig ? savedData.gridConfig: []});
+        {bpm: savedData.bpm ? savedData.bpm : []},
+        {gridData: savedData.details ? savedData.details : []},
+        {relations: savedData.relations ? savedData.relations : []},
+        {gridConfig: savedData.gridConfig ? savedData.gridConfig : []});
 
 
-    console.log('prepairedData',savedData, prepairedData );
+    console.log('prepairedData', savedData, prepairedData);
     res.send({result: {error_code: 0, error_message: null, docId: prepairedData.id}, data: [prepairedData]}); //пока нет новых данных
 
     /*

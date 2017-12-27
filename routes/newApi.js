@@ -28,3 +28,26 @@ exports.post = async (req, res) => {
 
     }
 };
+
+/*
+
+exports.delete = async (req, res) => {
+    let user = require('../middleware/userData')(req),
+        parameter = req.params.id,
+        docTypePattern = /[0-9]/gi,
+        docIdPattern = /[^0-9]/gi,
+        docId = parameter.replace(docIdPattern, '').trim(),
+        docTypeId = parameter.replace( docTypePattern, '').trim(),
+        params = [user.userId, docId];
+
+    try {
+        // тут вызов метода сохранение
+        let results = await DocDataObject.deleteDocPromise(docTypeId, params);
+        res.send(results);
+    } catch (err) {
+        console.error('error:', err);
+        res.send({result: 'Error'});
+
+    }
+}; //function delete
+*/

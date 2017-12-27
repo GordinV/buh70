@@ -3,6 +3,8 @@
 const React = require('react');
 const Documents = require('./../documents/documents.jsx');
 const styles = require('./docs-register-styles');
+const {withRouter} = require('react-router-dom');
+const DOC_TYPE_ID = 'document';
 
 /**
  * Класс реализует справочник документов пользователя.
@@ -10,17 +12,17 @@ const styles = require('./docs-register-styles');
 class Docs extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.getDocumentType = this.getDocumentType.bind(this);
-        this.btnEditClick = this.btnEditClick.bind(this);
         this.gridData = props.initData.result.data;
+        this.btnEditClick = this.btnEditClick.bind(this);
     }
 
     render() {
         return <Documents initData={this.props.initData}
                           userData={this.props.userData}
-                          docTypeId='DOK'
-                          ref = 'docs'
+                          docTypeId='DOCUMENT'
+                          ref = 'register'
                           style={styles}
+                          btnEditClick = {this.btnEditClick}
                           render={this.renderer}/>;
     }
 
@@ -29,36 +31,19 @@ class Docs extends React.PureComponent {
     }
 
     /**
-     * Обработчик для кнопки Add
+     * кастомный вызов метода клик
      */
-    btnAddClick() {
-//        let docId = this.getDocumentType();
-//        document.location.href = "/document/" + this.docTypeId + '0';
-    }
-
-    /**
-     * Обработчик для кнопки Edit
-     */
-    btnEditClick(docId) {
-        let docTypeId = this.getDocumentType(docId);
-        if (docTypeId) {
-            document.location.href = `/document/${docTypeId}/${docId}`;
+    btnEditClick() {
+        //getValue
+        let docId = this.refs['register'].state.value;
+        if (docId) {
+            return this.props.history.push(`/raama/${DOC_TYPE_ID}/${docId}`);
         }
-    }
-
-    /**
-     * метод ищет по ид документа его тип
-     * @param docId ид документа
-     * @returns {null} вернет тип или нул
-     */
-    getDocumentType(docId) {
-        let row = this.gridData.filter(row => row.id === docId);
-        return row[0].doc_type_id ? row[0].doc_type_id: null;
     }
 
 }
 
 
-module.exports = Docs;
+module.exports = withRouter(Docs);
 
 
