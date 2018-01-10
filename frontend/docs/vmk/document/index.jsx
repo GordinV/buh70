@@ -1,7 +1,6 @@
 'use strict';
 
 const React = require('react');
-const {withRouter} = require('react-router-dom');
 const PropTypes = require('prop-types');
 
 const DocumentTemplate = require('../../documentTemplate/index.jsx'),
@@ -376,4 +375,4 @@ Vmk.defaultProps = {
     userData:{}
 };
 
-module.exports = withRouter(Vmk);
+module.exports = (Vmk);

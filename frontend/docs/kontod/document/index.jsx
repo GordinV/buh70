@@ -1,6 +1,5 @@
 'use strict';
 const React = require('react');
-const {withRouter} = require('react-router-dom');
 const PropTypes = require('prop-types');
 
 const
@@ -119,4 +118,4 @@ Kontod.defaultProps = {
     initData:{},
     userData:{}
 };
-module.exports = withRouter(Kontod);
+module.exports = (Kontod);

@@ -1,6 +1,5 @@
 'use strict';
 
-const {withRouter} = require('react-router-dom');
 const PropTypes = require('prop-types');
 const React = require('react');
 
@@ -73,6 +72,7 @@ class Arve extends React.PureComponent {
                                  createGridRow={this.createGridRow}
                                  gridValidator={this.gridValidateFields}
                                  recalcDoc={this.recalcDocSumma}
+                                 focusElement={'input-number'}
         />
     }
 
@@ -390,4 +390,4 @@ Arve.defaultProps = {
 };
 
 
-module.exports = withRouter(Arve);
+module.exports = (Arve);

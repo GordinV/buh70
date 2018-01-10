@@ -1,6 +1,7 @@
 'use strict';
 
 const PropTypes = require('prop-types');
+const radium = require('radium');
 
 const React = require('react'),
     styles = require('./input-date-styles');
@@ -16,6 +17,13 @@ class InputDate extends React.PureComponent {
             readOnly: props.readOnly
         };
         this.onChange = this.onChange.bind(this);
+    }
+
+    /**
+     * установит фокус на элементы
+     */
+    focus() {
+        this.refs['input'].focus();
     }
 
     componentWillReceiveProps(nextProps) {
@@ -110,4 +118,4 @@ InputDate.defaultProps = {
 };
 
 
-module.exports = InputDate;
+module.exports = radium(InputDate);

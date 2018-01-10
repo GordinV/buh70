@@ -1,4 +1,5 @@
 const PropTypes = require('prop-types');
+const radium = require('radium');
 
 const React = require('react'),
     styles = require('./input-text-styles');
@@ -56,6 +57,14 @@ class Input extends React.PureComponent {
 
             </div>)
     }
+
+    /**
+     * установит фокус на элементы
+     */
+    focus() {
+        this.refs['input'].focus();
+    }
+
 }
 
 Input.propTypes = {
@@ -67,7 +76,7 @@ Input.propTypes = {
     placeholder: PropTypes.string,
     pattern: PropTypes.string,
     title: PropTypes.string
-}
+};
 
 
 Input.defaultProps = {
@@ -76,6 +85,6 @@ Input.defaultProps = {
     valid: true,
     value: '',
     title: ''
-}
+};
 
-module.exports = Input;
+module.exports = radium(Input);

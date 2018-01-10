@@ -54,6 +54,16 @@ CREATE INDEX library_rekvid
   (rekvid);
 ALTER TABLE libs.library CLUSTER ON library_rekvid;
 
+
+ALTER TABLE libs.library
+  ADD COLUMN "timestamp" timestamp without time zone NOT NULL DEFAULT LOCALTIMESTAMP;
+
+
+ALTER TABLE libs.library
+  ADD COLUMN status integer NOT NULL DEFAULT 1;
+COMMENT ON COLUMN libs.library.status
+IS '0 - draft, 1 - active, 2 - ?, 3 - deleted';
+
 /*
 
 select * from libs.library where library = 'DOK'

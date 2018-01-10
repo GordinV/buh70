@@ -1,4 +1,4 @@
-const {Client} = require('pg@7.3'),
+const {Client} = require('pg'),
     config = require('../config/config');
 
 const db = {

@@ -94,7 +94,8 @@ const Arv = {
          inner join libs.library s on s.kood = d.status::text
          left outer join libs.asutus asutus on a.asutusid = asutus.id 
          where d.rekvId = $1 
-         and docs.usersRigths(d.id, 'select', $2)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+         and docs.usersRigths(d.id, 'select', $2)
+         order by d.lastupdate desc`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
     },
     returnData: {
@@ -189,7 +190,7 @@ const Arv = {
         let taskFunction = eval(executeTask[0]);
         return taskFunction(docId, userId, this);
     }
-}
+};
 
 module.exports = Arv;
 

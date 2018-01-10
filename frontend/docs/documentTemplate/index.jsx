@@ -3,13 +3,6 @@
 const PropTypes = require('prop-types');
 
 const React = require('react');
-const {
-    Router,
-    Route,
-    Link,
-    NavLink
-} = require('react-router-dom');
-
 const fetchData = require('./../../../libs/fetchData');
 
 const URL = '/newApi/document';
@@ -48,9 +41,9 @@ class DocumentTemplate extends React.PureComponent {
         this.requiredFields = props.requiredFields;
         this.pages = this.props.pages || null;
 
-        this._bind('btnAddClick', 'btnEditClick', 'validation', 'renderStartMenu',
+        this._bind('btnAddClick', 'btnEditClick', 'validation',
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick',
-            'btnSaveClick', 'btnCancelClick', 'fetchData', 'startMenuClickHandler', 'createLibs', 'loadLibs',
+            'btnSaveClick', 'btnCancelClick', 'fetchData', 'createLibs', 'loadLibs',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
             'modalPageClick', 'handleGridRowChange');
 
@@ -72,8 +65,13 @@ class DocumentTemplate extends React.PureComponent {
             this.fetchData();
         }
 
-        if (this.props.libs.length) {
+        if (this.props.libs.length && !this.state.loadedLibs) {
             this.loadLibs();
+        }
+
+        if (this.props.docId === 0) {
+            //@todo реализовать
+//            this.focusElement()
         }
 
     }
@@ -108,12 +106,23 @@ class DocumentTemplate extends React.PureComponent {
      * Обработчик для кнопки Добавить
      */
     btnAddClick() {
-        document.location = `/document/${this.props.docTypeId}/0`;
-
-        //в режим редактирования
-        this.setState({edited: true});
         //бекап данных
         this.makeBackup();
+
+
+        if (this.props.history) {
+            this.props.history.push(`/raama/${this.props.docTypeId}/0}`);
+        } else {
+            this.setState({docId: 0, edited: true}, () => {
+                this.fetchData();
+            })
+        }
+
+        console.log('called focus',this.props.focusElement );
+        if (this.props.focusElement && this.refs[this.props.focusElement]) {
+            this.refs[this.props.focusElement].focus();
+        }
+
     }
 
     /**
@@ -124,6 +133,11 @@ class DocumentTemplate extends React.PureComponent {
         this.setState({edited: true, reloadData: true});
         //бекап данных
         this.makeBackup();
+
+        if (this.props.focusElement && this.refs[this.props.focusElement]) {
+            this.refs[this.props.focusElement].focus();
+        }
+
     }
 
     btnDeleteClick() {
@@ -138,17 +152,12 @@ class DocumentTemplate extends React.PureComponent {
      * Обработчик для кнопки сохранить
      */
     btnSaveClick() {
-        console.log('saving ...');
         this.fetchData('Put').then(() => {
             console.log('saved -> ', this.docData.id);
             if (this.props.docId === 0 && !this.docData.id) {
                 return this.setState({warning: 'Ошибка при сохранении'});
             } else {
                 this.setState({edited: false, docId: this.docData.id});
-                if (this.props.docId === 0) {
-                    //если док. новый, переоткрываем его
-                    document.location = `/document/${this.props.docTypeId}/${this.docData.id}`;
-                }
             }
         });
     }
@@ -269,7 +278,7 @@ class DocumentTemplate extends React.PureComponent {
 
         return (
             <div ref='doc-toolbar'>
-{/*
+                {/*
                 <MenuToolBar params={toolbarParams}
                              userData={this.props.userData}
                              ref='menu-toolbar'
@@ -339,31 +348,6 @@ class DocumentTemplate extends React.PureComponent {
     }
 
     /**
-     * Откроет стартовое меню
-     * @returns {*}
-     */
-    renderStartMenu() {
-        let component;
-        if (this.state.hasStartMenuVisible) {
-            component = <StartMenu ref='start-menu'
-                                   value={this.state.startMenuValue}
-                                   clickHandler={this.startMenuClickHandler}/>
-        }
-        return component
-    }
-
-    /**
-     * получит от стартого меню данные, спрячет меню
-     */
-    startMenuClickHandler(value) {
-        if (document && this.state.hasStartMenuVisible && value !== 'forTest') {
-            document.location.href = `/documents/${value}`;
-        }
-        this.setState({hasStartMenuVisible: !this.state.hasStartMenuVisible});
-
-    }
-
-    /**
      * Выполнит запросы
      */
     fetchData(protocol) {
@@ -397,7 +381,7 @@ class DocumentTemplate extends React.PureComponent {
                         this.userData = response.data.userData;
                     }
 
-                    if (response.data.data[0].id) {
+                    if (response.data.data.length && Object.keys(response.data.data[0]).indexOf('id') !== -1) {
                         this.docData = response.data.data[0];
                         //should return data and called for reload
                         this.setState({reloadData: false, warning: ''});
@@ -470,7 +454,7 @@ class DocumentTemplate extends React.PureComponent {
      */
     handlePageClick(page) {
         if (page.docId) {
-            document.location.href = `/document/${page.docTypeId}/${page.docId}`;
+            document.location.href = `/document/${page.docTypeId}/${page.docId}`;//@todo Обновить
         }
     }
 
@@ -522,10 +506,8 @@ class DocumentTemplate extends React.PureComponent {
 
         this.gridRowData = newRow;
 
-
         // откроем модальное окно для редактирования
         this.setState({gridRowEdit: true, gridRowEvent: 'add'});
-
     }
 
     /**
@@ -544,13 +526,11 @@ class DocumentTemplate extends React.PureComponent {
         this.docData.gridData.splice(this.refs['data-grid'].state.activeRow, 1);
 
         // перерасчет итогов
-
         if (this.props.recalcDoc) {
             this.props.recalcDoc();
         }
 
         this.validation();
-
 
         // изменим состояние
         this.forceUpdate();
@@ -588,12 +568,8 @@ class DocumentTemplate extends React.PureComponent {
      * @param value
      */
     handleGridRowChange(name, value) {
-        console.log('handleGridRowChange', name, value);
         this.gridRowData[name] = value;
-        console.log('handleGridRowChange', this.gridRowData);
-
         this.forceUpdate();
-
         this.validateGridRow();
 
     }
@@ -666,7 +642,8 @@ DocumentTemplate.propTypes = {
     docId: PropTypes.number.isRequired, //id документа
     libs: PropTypes.array, //список библиотек
     renderer: PropTypes.func, //частные компонеты документа
-    recalcDoc: PropTypes.func //перерасчет сумм документа
+    recalcDoc: PropTypes.func, //перерасчет сумм документа
+    focusElement: PropTypes.string //елемент на который будет отдан фокус при редактировании
 };
 
 DocumentTemplate.defaultProps = {

@@ -1,6 +1,5 @@
 'use strict';
 const React = require('react');
-const {withRouter} = require('react-router-dom');
 const PropTypes = require('prop-types');
 
 const
@@ -137,4 +136,4 @@ Asutused.defaultProps = {
     userData:{}
 };
 
-module.exports = withRouter(Asutused);
+module.exports = (Asutused);

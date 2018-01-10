@@ -1,7 +1,5 @@
 'use strict';
 const React = require('react');
-const {withRouter} = require('react-router-dom');
-
 const PropTypes = require('prop-types');
 
 const
@@ -215,4 +213,4 @@ Nomenclature.defaultProps = {
 };
 
 
-module.exports = withRouter(Nomenclature);
+module.exports = (Nomenclature);

@@ -1,8 +1,8 @@
 module.exports = {
     selectAsLibs: `select * from (
-        select 0 as id, ''::text as kood, ''::text as name 
+        select 0 as id, ''::varchar(20) as kood, ''::varchar(254) as nimetus 
         union 
-        select id, trim(kood) as kood, trim(nimetus) as name from libs.library where library = 'TUNNUS') qry  order by kood`,
+        select id, trim(kood) as kood, trim(nimetus) as name from cur_tunnus ) qry  order by kood`,
     select: [{
         sql: `select l.*, $2::integer as userid, 'TUNNUS' as doc_type_id
                 from libs.library l 
@@ -11,7 +11,7 @@ module.exports = {
             null::text as  kood,
             null::integer as rekvid,
             null::text as nimetus,
-            'TUNNUS'::text as library,
+            'TUNNUS'::varchar(20) as library,
             null::text as muud,
             null::text as properties`,
         query: null,
@@ -37,11 +37,11 @@ module.exports = {
             {id: "kood", name: "Kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
-        sqlString: `select id, kood, nimetus,  $2::integer as userId
-            from libs.library l
-            where l.library = 'TUNNUS'
-            and (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
-        params: ''
+        sqlString: `select l.*, $2::integer as userId
+            from cur_tunnus l
+            where (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        params: '',
+        alias: 'curTunnus'
     },
 
 };

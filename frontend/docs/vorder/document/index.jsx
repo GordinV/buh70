@@ -1,7 +1,5 @@
 'use strict';
 const React = require('react');
-const {withRouter} = require('react-router-dom');
-
 const PropTypes = require('prop-types');
 
 const DocumentTemplate = require('../../documentTemplate/index.jsx'),
@@ -374,4 +372,4 @@ Vorder.defaultProps = {
     userData:{}
 };
 
-module.exports = withRouter(Vorder);
+module.exports = (Vorder);

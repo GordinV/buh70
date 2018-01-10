@@ -14,6 +14,7 @@ const DocumentTemplate = require('./../../documentTemplate/index.jsx'),
 class Tunnus extends React.PureComponent {
     constructor(props) {
         super(props);
+
         this.state = {
             docId: props.docId ? props.docId: Number(props.match.params.docId),
             loadedData: false
@@ -57,7 +58,7 @@ class Tunnus extends React.PureComponent {
                                name='kood'
                                ref="input-kood"
                                readOnly = {!self.state.edited}
-                               value={self.docData.kood}
+                               value={self.docData.kood || ''}
                                onChange={self.handleInputChange}/>
                 </div>
                 <div style={styles.docRow}>
@@ -65,7 +66,7 @@ class Tunnus extends React.PureComponent {
                                name='nimetus'
                                ref="input-nimetus"
                                readOnly = {!self.state.edited}
-                               value={self.docData.nimetus}
+                               value={self.docData.nimetus || ''}
                                onChange={self.handleInputChange}/>
                 </div>
 
@@ -94,4 +95,5 @@ Tunnus.defaultProps = {
     userData:{}
 };
 
-module.exports = withRouter(Tunnus);
+
+module.exports = (Tunnus);

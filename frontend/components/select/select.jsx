@@ -1,6 +1,7 @@
 'use strict';
 
 const PropTypes = require('prop-types');
+const radium = require('radium');
 
 const React = require('react'),
     styles = require('./select-styles');
@@ -21,17 +22,27 @@ class Select extends React.PureComponent {
 
     }
 
+    /**
+     * привяжет к значеню поля
+     * @param data - коллекция
+     * @param collId - поле
+     * @param value - значение
+     */
     findFieldValue(data, collId, value) {
-        // привяжет к значеню поля
         // надо привязать данные
         data.forEach((row) => {
             if (row[collId] == value) {
                 this.setState({value: row[collId], fieldValue: row[collId]});
             }
         }, this);
-
     }
 
+    /**
+     *
+     * @param collId
+     * @param rowId
+     * @returns {*}
+     */
     getValueById(collId, rowId) {
         // вернет значения поля по выбранному ИД
 
@@ -151,7 +162,7 @@ class Select extends React.PureComponent {
         let data = this.props.data.length ? this.props.data: [];
 
 //        data.unshift({id:0, kood:'', name:''});
-        if (this.props.data.length) {
+        if (data.length) {
 
             options = data.map((item, index) => {
                 let key = 'option-' + index;
@@ -164,15 +175,27 @@ class Select extends React.PureComponent {
         }
         return options;
     }
+
+    /**
+     * установит фокус на элементы
+     */
+    focus() {
+        this.refs['select'].focus();
+    }
+
 }
 
 Select.propTypes = {
-    data: PropTypes.array,
+    data: PropTypes.arrayOf (PropTypes.shape({
+        id: PropTypes.number,
+        kood: PropTypes.string,
+        nimetus: PropTypes.string
+    })),
     readOnly: PropTypes.bool,
     disabled: PropTypes.bool,
     btnDelete: PropTypes.bool,
     libs: PropTypes.string,
-    collId: PropTypes.string,
+    collId: PropTypes.string.isRequired,
     title: PropTypes.string,
     placeholder: PropTypes.string,
     defaultValue: PropTypes.string
@@ -189,4 +212,4 @@ Select.defaultProps = {
     data: [{id:0, kood:'',nimetus:''}]
 };
 
-module.exports = Select;
+module.exports = radium(Select);

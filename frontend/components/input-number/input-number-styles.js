@@ -2,7 +2,10 @@ module.exports = {
     input: {
         width: '70%',
         marginLeft: '5px',
-        borderRadius:'3px'
+        borderRadius:'3px',
+        ':focus': {
+            backgroundColor: 'lightpink'
+        },
 
     },
     focused: {
@@ -20,5 +23,5 @@ module.exports = {
         width: '30%',
         margin: '5px'
     }
-}
+};
 

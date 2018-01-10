@@ -1,6 +1,6 @@
 'use strict';
 
-const React = require('react');;
+const React = require('react');
 const PropTypes = require('prop-types');
 
 const styles = require('./button-register-styles');
@@ -16,33 +16,41 @@ class Button extends React.PureComponent {
         }
     }
 
-    handleClick() {
-        this.props.onClick();
+    handleClick(event) {
+        switch (event.type) {
+            case 'click':
+                this.props.onClick();
+                break;
+            case 'dblclick':
+                this.props.onClick();
+                break;
+            default:
+                console.log('unhandled', event.type);
+        }
     }
 
     render() {
         // visibility
         let propStyle  = ('style' in this.props)? this.props.style: {},
-            style = Object.assign({}, styles.button, {display: this.props.show ? 'inline' : 'none'}, propStyle)
+            style = Object.assign({}, styles.button, {display: this.props.show ? 'inline' : 'none'}, propStyle);
 
         return <button
             disabled={this.state.disabled}
             ref="button"
             style={style}
+            onDoubleClick={this.handleClick}
             onClick={this.handleClick}>
             {this.props.children}
             {this.props.value}
         </button>
     }
 }
-;
-
 
 Button.propTypes = {
     onClick: PropTypes.func.isRequired,
     value: PropTypes.string.isRequired,
     style: PropTypes.object
-}
+};
 
 
 

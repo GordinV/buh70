@@ -1,5 +1,6 @@
 const React = require('react'),
     styles = require('./input-number-styles');
+const radium = require('radium');
 
 const PropTypes = require('prop-types');
 
@@ -64,6 +65,14 @@ class Input extends React.PureComponent {
 
             </div>)
     }
+
+    /**
+     * установит фокус на элементы
+     */
+    focus() {
+        this.refs['input'].focus();
+    }
+
 }
 
 Input.propTypes = {
@@ -77,7 +86,7 @@ Input.propTypes = {
     title: PropTypes.string,
     min: PropTypes.number,
     max: PropTypes.number
-}
+};
 
 
 Input.defaultProps = {
@@ -86,6 +95,6 @@ Input.defaultProps = {
     valid: true,
     min: -999999999,
     max: 999999999
-}
+};
 
-module.exports = Input;
+module.exports = radium(Input);

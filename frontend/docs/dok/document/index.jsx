@@ -2,8 +2,6 @@
 
 const PropTypes = require('prop-types');
 const React = require('react');
-const {withRouter} = require('react-router-dom');
-
 
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
@@ -125,6 +123,6 @@ Document.defaultProps = {
     userData:{}
 };
 
-module.exports = withRouter(Document);
+module.exports = (Document);
 
 

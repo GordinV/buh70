@@ -2,8 +2,10 @@ module.exports = {
     input: {
         width: '70%',
         borderRadius:'3px',
-        marginLeft:'5px'
-
+        marginLeft:'5px',
+        ':focus': {
+            backgroundColor: 'lightpink'
+        }
     },
     focused: {
         backgroundColor: 'lightblue'

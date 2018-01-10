@@ -1,13 +1,15 @@
 module.exports = {
     mainTable: {
         tableLayout: 'fixed',
-        width:'70%',
+        width:'100%',
         position:'relative',
-        top:'-30px'
+        top:'-30px',
+        borderCollapse:'collapse'
     },
     headerTable: {
         tableLayout: 'fixed',
-        width:'70%',
+        width:'100%',
+        borderCollapse:'collapse'
     },
     th: {
         borderBottom: '1px solid black',

@@ -4,6 +4,7 @@ const PropTypes = require('prop-types');
 const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
 const URL = '/newApi';
+
 /*
 const JournalDocument = require('./../journal/journal.jsx');
 const {Route, Link, NavLink, IndexRoute} = require('react-router-dom');
@@ -62,7 +63,7 @@ class Documents extends React.PureComponent {
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
             'headerClickHandler', 'btnFilterClick', 'modalPageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
-            'btnStartClickHanler','renderStartMenu', 'startMenuClickHandler', 'fetchData');
+            'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData');
 
 
     }
@@ -71,7 +72,7 @@ class Documents extends React.PureComponent {
      * пишем делаем запрос по итогу загрузки
      */
     componentDidMount() {
-        let reload  = false; // if reload === true then it will call to reload
+        let reload = false; // if reload === true then it will call to reload
         if (this.props.initData.docTypeId && this.props.initData.docTypeId.toUpperCase() !== this.docTypeId.toUpperCase()) {
             reload = true;
         }
@@ -86,7 +87,7 @@ class Documents extends React.PureComponent {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
         return (
             <div style={_style.doc}>
-{/*
+                {/*
                 <Route path="/raama/journal/:docId"
                        render={() => <JournalDocument docId ={this.state.value} userData={this.userData} initData={{}}/>}/>
 */}
@@ -160,9 +161,7 @@ class Documents extends React.PureComponent {
             // кастомный обработчик события
             this.props.btnAddClick(this.state.value);
         } else {
-            let address = `/document/${this.docTypeId}/0`;
-            console.log('aadress:', address);
-            document.location.href = address;
+            return this.props.history.push(`/raama/${this.docTypeId}/0`);
         }
     }
 
@@ -170,15 +169,11 @@ class Documents extends React.PureComponent {
      * Обработчик для кнопки Edit
      */
     btnEditClick() {
-        console.log('btnEditClick', this.props);
         if (this.props.btnEditClick) {
-            console.log('called custom method');
             // кастомный обработчик события
             this.props.btnEditClick(this.state.value);
         } else {
-            if (this.state.value) {
-                document.location.href = `/document/${this.docTypeId}/${this.state.value}`;
-            }
+            return this.props.history.push(`/raama/${this.docTypeId}/${this.state.value}`);
         }
     }
 
@@ -248,14 +243,14 @@ class Documents extends React.PureComponent {
      * Обработчик для кнопки старт меню
      */
     btnStartClickHanler() {
-        this.setState({hasStartMenuVisible:true});
+        this.setState({hasStartMenuVisible: true});
     }
 
     /**
      * получит от стартого меню данные, спрячет меню
      */
-    startMenuClickHandler (value) {
-        this.setState({hasStartMenuVisible:false});
+    startMenuClickHandler(value) {
+        this.setState({hasStartMenuVisible: false});
         document.location.href = `/documents/${value}`;
 
     }
@@ -327,8 +322,8 @@ class Documents extends React.PureComponent {
         let component;
         if (this.state.hasStartMenuVisible) {
             component = <StartMenu ref='startMenu'
-                                   value = {this.state.startMenuValue}
-                                   clickHandler = {this.startMenuClickHandler}/>
+                                   value={this.state.startMenuValue}
+                                   clickHandler={this.startMenuClickHandler}/>
         }
         return component
     }
@@ -387,7 +382,7 @@ class Documents extends React.PureComponent {
         try {
 //            fetchData.fetchDataPost(URL, params);
 
-            fetchData.fetchDataPost(URL,params).then(response => {
+            fetchData.fetchDataPost(URL, params).then(response => {
                 this.gridData = response.data.result.data;
                 if (response.data.gridConfig.length) {
                     this.gridConfig = response.data.gridConfig;
@@ -395,7 +390,7 @@ class Documents extends React.PureComponent {
                 this.forceUpdate();
             });
 
-        } catch(e) {
+        } catch (e) {
             console.error(e);
         }
     }

@@ -33,9 +33,9 @@ class DataGrid extends React.PureComponent {
                 direction: null
             }
         };
-        this.handleGridHeaderClick.bind(this);
-        this.handleCellDblClick.bind(this);
-        this.handleKeyDown.bind(this);
+        this.handleCellDblClick = this.handleGridHeaderClick.bind(this);
+        this.handleCellDblClick = this.handleCellDblClick.bind(this);
+        this.handleKeyDown = this.handleKeyDown.bind(this);
         this.prepareTableRow = this.prepareTableRow.bind(this);
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
     }
@@ -62,16 +62,16 @@ class DataGrid extends React.PureComponent {
         return (
             <div style={styles.main}>
                 {this.props.showToolBar ?
-                <ToolbarContainer
-                    ref='grid-toolbar-container'
-                    position={'left'}>
-                    <GridButtonAdd onClick={this.handleGridBtnClick.bind('add')} ref="grid-button-add"/>
-                    <GridButtonEdit onClick={this.handleGridBtnClick.bind('edit')} ref="grid-button-edit"/>
-                    <GridButtonDelete onClick={this.handleGridBtnClick.bind('delete')} ref="grid-button-delete"/>
-                </ToolbarContainer>: null }
+                    <ToolbarContainer
+                        ref='grid-toolbar-container'
+                        position={'left'}>
+                        <GridButtonAdd onClick={this.handleGridBtnClick.bind('add')} ref="grid-button-add"/>
+                        <GridButtonEdit onClick={this.handleGridBtnClick.bind('edit')} ref="grid-button-edit"/>
+                        <GridButtonDelete onClick={this.handleGridBtnClick.bind('delete')} ref="grid-button-delete"/>
+                    </ToolbarContainer> : null}
 
                 <div style={styles.header}>
-                    <table ref="dataGridTable" style={tableStyle}>
+                    <table ref="dataGridTable" style={tableStyle} onKeyPress={this.handleKeyDown}>
                         <tbody>
                         <tr>
                             {this.prepareTableHeader()}
@@ -80,9 +80,9 @@ class DataGrid extends React.PureComponent {
                     </table>
                 </div>
                 <div style={styles.wrapper}>
-                    <table style={tableStyle}>
+                    <table style={tableStyle} tabIndex = "1" onKeyDown={this.handleKeyDown} onKeyPress={this.handleKeyDown}>
                         <tbody>
-                        <tr style={{visibility:'collapse'}}>
+                        <tr style={{visibility: 'collapse'}}>
                             {this.prepareTableHeader(true)}
                         </tr>
                         {this.prepareTableRow()}
@@ -101,6 +101,7 @@ class DataGrid extends React.PureComponent {
             this.props.handleGridBtnClick(btnName);
         }
     }
+
     /**
      * ищем индех в массиве данных
      * @param docId
@@ -187,6 +188,7 @@ class DataGrid extends React.PureComponent {
      * @param e
      */
     handleKeyDown(e) {
+        console.log('handleKeyDown',e);
         // реакция на клавиатуру
         let rowIndex = this.state.activeRow;
         switch (e.which) {
@@ -283,7 +285,14 @@ class DataGrid extends React.PureComponent {
 }
 
 DataGrid.propTypes = {
-    gridColumns: PropTypes.array.isRequired,
+    gridColumns: PropTypes.arrayOf(
+        PropTypes.shape({
+            id: PropTypes.string.isRequired,
+            name: PropTypes.string.isRequired,
+            width: PropTypes.string,
+            show: PropTypes.bool,
+            type: PropTypes.oneOf(['text', 'number', 'integer', 'date', 'string','select'])
+        })).isRequired,
     gridData: PropTypes.array.isRequired,
     onChangeAction: PropTypes.string,
     onClick: PropTypes.func,

@@ -15,7 +15,7 @@ describe('components test, InputText', () => {
 
 
     let component = ReactTestUtils.renderIntoDocument(<InputText name = 'id'
-                                                                 value={data.id}
+                                                                 value={String(data.id)}
                                                                  onChange = {onChangeHandler}
                                                                  readOnly={true}
                                                                  disabled={false}
@@ -28,7 +28,7 @@ describe('components test, InputText', () => {
     it('should call onChangeHandler', ()=> {
         let input = component.refs['input'];
         expect(input).toBeDefined();
-        ReactTestUtils.Simulate.change(input, {"target": {"value": 2}})
+        ReactTestUtils.Simulate.change(input, {"target": {"value": 2}});
         let params = onChangeHandler.mock.calls[0];
         expect(params.length).toBe(2);
         expect(params[0]).toBe('id');
@@ -38,4 +38,4 @@ describe('components test, InputText', () => {
     it('should have readOnly state true',()=> {
         expect(component.state.readOnly).toBeTruthy();
     })
-})
+});

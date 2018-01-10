@@ -18,7 +18,10 @@ module.exports = {
     select: {
         width: '70%',
         marginLeft: '5px',
-        borderRadius:'5px'
+        borderRadius:'5px',
+        ':focus': {
+            backgroundColor: 'lightpink'
+        },
     },
     readOnly: {
         backgroundColor: '#F3EFEF'

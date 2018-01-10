@@ -1,6 +1,5 @@
 'use strict';
 const React = require('react');
-const {withRouter} = require('react-router-dom');
 const PropTypes = require('prop-types');
 
 const DocumentTemplate = require('../../documentTemplate/index.jsx'),
@@ -377,4 +376,4 @@ Smk.defaultProps = {
 };
 
 
-module.exports = withRouter(Smk);
+module.exports = (Smk);

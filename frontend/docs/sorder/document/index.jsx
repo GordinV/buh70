@@ -1,7 +1,6 @@
 'use strict';
 
 const React = require('react');
-const {withRouter} = require('react-router-dom');
 const PropTypes = require('prop-types');
 
 const
@@ -65,6 +64,7 @@ class Sorder extends React.PureComponent {
                                  createGridRow={this.createGridRow}
                                  gridValidator={this.gridValidateFields}
                                  recalcDoc={this.recalcDocSumma}
+                                 focusElement={'input-number'}
         />
     }
 
@@ -381,4 +381,4 @@ Sorder.defaultProps = {
     userData:{}
 };
 
-module.exports = withRouter(Sorder);
+module.exports = (Sorder);

@@ -1,5 +1,6 @@
 const React = require('react'),
     styles = require('./text-area-styles');
+const radium = require('radium');
 
 const PropTypes = require('prop-types');
 
@@ -60,7 +61,6 @@ class Input extends React.PureComponent {
     }
 
 }
-;
 
 Input.propTypes = {
     name: PropTypes.string.isRequired,
@@ -70,7 +70,7 @@ Input.propTypes = {
     valid: PropTypes.bool,
     placeholder: PropTypes.string,
     title: PropTypes.string
-}
+};
 
 Input.defaultProps = {
     readOnly: false,
@@ -78,7 +78,7 @@ Input.defaultProps = {
     valid: true,
     title: '',
     value: ''
-}
+};
 
 
-module.exports = Input;
+module.exports = radium(Input);
