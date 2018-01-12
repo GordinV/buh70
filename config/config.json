@@ -1,7 +1,7 @@
 {
   "port": 3000,
   "pg": {
-    "connection": "postgres://vlad:Vlad490710@localhost:5432/narvalv"
+    "connection": "postgres://vlad:123@localhost:5432/narvalv"
      },
   "session": {
     "secret": "SecretsOfÕuna",

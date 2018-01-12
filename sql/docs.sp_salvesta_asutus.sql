@@ -1,12 +1,21 @@
 ﻿DROP FUNCTION IF EXISTS docs.sp_salvesta_asutus( JSON, INTEGER, INTEGER );
 DROP FUNCTION IF EXISTS libs.sp_salvesta_asutus( JSON, INTEGER, INTEGER );
+-- FUNCTION: libs.sp_salvesta_asutus(json, integer, integer)
+
+-- DROP FUNCTION libs.sp_salvesta_asutus(json, integer, integer);
 
 CREATE OR REPLACE FUNCTION libs.sp_salvesta_asutus(
-  data        JSON,
-  userid      INTEGER,
-  user_rekvid INTEGER)
-  RETURNS INTEGER AS
-$BODY$
+  data json,
+  userid integer,
+  user_rekvid integer)
+  RETURNS integer
+LANGUAGE 'plpgsql'
+
+COST 100
+VOLATILE
+ROWS 0
+AS $BODY$
+
 
 DECLARE
   asutus_id   INTEGER;
@@ -22,6 +31,10 @@ DECLARE
   doc_email   TEXT = doc_data ->> 'email';
   doc_mark    TEXT = doc_data ->> 'mark';
   doc_muud    TEXT = doc_data ->> 'muud';
+  doc_pank    TEXT = doc_data ->> 'pank';
+  doc_kmkr    TEXT = doc_data ->> 'kmkr';
+  doc_KEHTIVUS DATE = doc_data ->> 'kehtivus';
+  new_properties JSONB;
   json_object JSON;
   json_record RECORD;
   new_history JSONB;
@@ -39,11 +52,15 @@ BEGIN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
   END IF;
-	
+
   IF (doc_id IS NULL)
   THEN
     doc_id = doc_data ->> 'id';
   END IF;
+
+  SELECT row_to_json(row)
+  INTO new_properties
+  FROM (SELECT doc_kehtivus as kehtivus, doc_pank as pank, doc_kmkr as kmkr) row;
 
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
@@ -61,9 +78,9 @@ BEGIN
             ARRAY [userId] AS "update",
             ARRAY [userId] AS "delete") row;
 
-    INSERT INTO libs.asutus (rekvid, regkood, nimetus, omvorm, kontakt, aadress, tel, email, mark, muud)
+    INSERT INTO libs.asutus (rekvid, regkood, nimetus, omvorm, kontakt, aadress, tel, email, mark, muud, properties)
     VALUES (user_rekvid, doc_regkood, doc_nimetus, doc_omvorm, doc_kontakt, doc_aadress, doc_tel, doc_email, doc_mark,
-            doc_muud)
+                         doc_muud, new_properties)
     RETURNING id
       INTO asutus_id;
 
@@ -86,7 +103,8 @@ BEGIN
       tel     = doc_tel,
       email   = doc_email,
       mark    = doc_mark,
-      muud    = doc_muud
+      muud    = doc_muud,
+      properties = new_properties
     WHERE id = doc_id
     RETURNING id
       INTO asutus_id;
@@ -95,9 +113,9 @@ BEGIN
 
   RETURN asutus_id;
 
-END;$BODY$
-LANGUAGE plpgsql VOLATILE
-COST 100;
+END;
+$BODY$;
+
 
 GRANT EXECUTE ON FUNCTION libs.sp_salvesta_asutus(JSON, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION libs.sp_salvesta_asutus(JSON, INTEGER, INTEGER) TO dbpeakasutaja;

@@ -7,12 +7,12 @@ const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
 
-describe('dok. type TUNNUS tests', function () {
+describe('dok. type ASUTUSED tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../libs/libraries/tunnus'),
-        docTypeId = 'TUNNUS'.toLowerCase(),
-        modelForExport = 'libs/libraries/tunnus';
+    const doc = require('../libs/libraries/asutused'),
+        docTypeId = 'ASUTUSED'.toLowerCase(),
+        modelForExport = 'libs/libraries/asutused';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -53,7 +53,7 @@ describe('dok. type TUNNUS tests', function () {
         expect(grid).toBeDefined();
         expect(_.find(grid.elements,{name:'alias'})).toBeDefined();
         let gridAlias = _.find(grid.elements,{name:'alias'});
-        expect(_.find(gridAlias.elements,{text:'curTunnus'})).toBeDefined();
+        expect(_.find(gridAlias.elements,{text:'curAsutused'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'selectAsLibs'})).toBeDefined();
     });
 
