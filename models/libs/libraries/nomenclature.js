@@ -3,10 +3,13 @@ module.exports = {
         sql: `select n.*, $2::integer as userid, 'NOMENCLATURE' as doc_type_id,
                 v.valuuta, v.kuurs,
                 (n.properties::jsonb ->>'vat')::text as vat,
-                (n.properties::jsonb ->>'konto_db')::text as konto_db,
-                (n.properties::jsonb ->>'konto_kr')::text as konto_kr,
+                (n.properties::jsonb ->>'konto')::text as konto,
                 (n.properties::jsonb ->>'projekt')::text as projekt,
-                (n.properties::jsonb ->>'tunnus')::text as tunnus
+                (n.properties::jsonb ->>'tunnus')::text as tunnus,
+                (n.properties::jsonb ->>'tegev')::text as tegev,
+                (n.properties::jsonb ->>'allikas')::text as allikas,
+                (n.properties::jsonb ->>'rahavoog')::text as rahavoog,
+                (n.properties::jsonb ->>'artikkel')::text as artikkel                
                 from libs.nomenklatuur n 
                 left outer join docs.dokvaluuta1 v on v.dokliik = 17 and v.dokid = n.id
                 where n.id = $1`,
@@ -25,20 +28,21 @@ module.exports = {
             null::text as properties,
             'EUR' as valuuta, 1 as kuurs,
             '20'::text as vat,
-            null::text as konto_db,
-            null::text as konto_kr,
+            null::text as konto,
             null::text as projekt,
-            null::text as tunnus`,
-
+            null::text as tunnus,
+            null::text as tegev,
+            null::text as allikas,
+            null::text as rahavoog,
+            null::text as artikkel`,
         query: null,
         multiple: false,
         alias: 'row',
         data: []
     }],
-    selectAsLibs: `select * from (select 0 as id, ''::text as kood, ''::text as name, null::text as DOK, 0::text as vat
-        union 
-        select n.id, trim(n.kood) as kood, trim(n.nimetus) as name, trim(n.dok) as dok, (n.properties::jsonb ->>'vat')::text as vat 
-            from libs.nomenklatuur n) qry order by kood`,
+    selectAsLibs: `select * from com_nomenclature 
+            where (rekvid = $1 or rekvid is null)
+            order by kood`,
     returnData: {
         row: {}
     },
@@ -56,10 +60,11 @@ module.exports = {
             {id: "nimetus", name: "Nimetus", width: "35%"},
             {id: "dok", name: "Dokument", width: "30%"}
         ],
-        sqlString: `select id, kood, nimetus,  $2::integer as userId, dok
+        sqlString: `select id, coalesce(kood,'') as kood, coalesce(nimetus,'') as nimetus,  $2::integer as userId, dok
             from libs.nomenklatuur n
-            where (n.rekvId = $1 or n.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
-        params: ''
+            where (n.rekvId = $1 or n.rekvid is null) and n.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        params: '',
+        alias: 'curNomenklatuur'
     },
 
 };

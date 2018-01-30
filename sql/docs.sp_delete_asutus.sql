@@ -90,7 +90,7 @@ begin
 	select row_to_json(row) into new_history from (select now() as deleted, v_doc.user_name as user, asutus_history as asutus) row;
 
 	-- Установка статуса ("Удален")  и сохранение истории
-	delete from libs.asutus where id = doc_id;
+	update libs.asutus set staatus = 3 where id = doc_id;
 	
 /*
 	update docs.doc 

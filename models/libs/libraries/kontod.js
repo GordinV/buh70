@@ -1,11 +1,14 @@
 module.exports = {
     select: [{
-        sql: `select case when l.tun5 = 1 then 'SD' when l.tun5 = 2 then 'SK' when l.tun5 = 3 then 'D' when l.tun5 = 4 then 'K' else null end::text as konto_tyyp, 
-                l.id, trim(l.kood) as kood, trim(l.nimetus) as nimetus, l.library, l.tun1, l.tun2, l.tun3, l.tun4, l.muud, $2::integer as userid, 'KONTOD' as doc_type_id, l.tun5 as tyyp, 
-                (l.properties::jsonb ->> 'valid')::text as valid
+        sql: `select l.rekvid, case when l.tun5 = 1 then 'SD' when l.tun5 = 2 then 'SK' when l.tun5 = 3 then 'D' when l.tun5 = 4 then 'K' else null end::text as konto_tyyp, 
+                l.id, trim(l.kood) as kood, trim(l.nimetus) as nimetus, 
+                l.library, l.tun1, l.tun2, l.tun3, l.tun4, l.muud, $2::integer as userid, 
+                'KONTOD' as doc_type_id, l.tun5 as tyyp, 
+                (l.properties::jsonb ->> 'valid')::date as valid
                 from libs.library l 
                 where id = $1`,
-        sqlAsNew: `select  'SD'::text as konto_tyyp, 
+        sqlAsNew: `select null::integer as rekvId, 
+            'SD'::text as konto_tyyp, 
             $1::integer as id , $2::integer as userid, 'KONTOD' as doc_type_id,
             null::text as  kood,
             null::text as nimetus,
@@ -21,10 +24,22 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    }],
-    selectAsLibs: `select * from (select 0 as id, '' as kood, '' as name 
-                        union 
-                   select id, trim(kood) as kood, trim(nimetus) as name from libs.library where library = 'KONTOD') qry order by kood`,
+    },
+        {
+            sql: `SELECT s.*,  
+                left(a.nimetus,120)::varchar AS nimetus 
+                FROM  libs.subkonto s 
+                INNER JOIN   libs.asutus a on a.id = s.asutusid 
+                inner join ou.userid u on u.id = $2
+                WHERE  s.kontoid = $1 
+                and s.rekvid = u.rekvId`,
+            query: null,
+            multiple: true,
+            alias: 'subkonto',
+            data: []
+        }
+    ],
+    selectAsLibs: `select * from com_kontoplaan l where (l.rekvId = $1 or l.rekvid is null) order by kood`,
     returnData: {
         row: {}
     },
@@ -51,8 +66,10 @@ module.exports = {
             case when l.tun5 = 1 then 'SD' when l.tun5 = 2 then 'SK' when l.tun5 = 3 then 'D' when l.tun5 = 4 then 'K' else null end::text as konto_tyyp
             from libs.library l
             where library = 'KONTOD' 
+            and l.status <> 3
             and (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
-        params: ''
+        params: '',
+        alias: 'curKontod'
     },
 
 };

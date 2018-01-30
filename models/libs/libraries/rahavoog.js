@@ -1,18 +1,18 @@
 module.exports = {
-    selectAsLibs: `select * from com_projekt l
+    selectAsLibs: `select * from com_rahavoog l
         where  (l.rekvId = $1 or l.rekvid is null)`,
     select: [{
         sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, 
-                $2::integer as userid, 'PROJECT' as doc_type_id
+                $2::integer as userid, 'RAHAVOOG' as doc_type_id
                 from libs.library l 
                 where l.id = $1`,
         sqlAsNew: `select  $1::integer as id , 
             $2::integer as userid, 
-            'PROJECT' as doc_type_id,
+            'RAHAVOOGS' as doc_type_id,
             null::text as  kood,
             null::integer as rekvid,
             null::text as nimetus,
-            'PROJ'::text as library,
+            'RAHA'::text as library,
             0::integer as status,
             null::text as muud`,
         query: null,
@@ -38,11 +38,11 @@ module.exports = {
         ],
         sqlString: `select id, kood, nimetus,  $2::integer as userId
             from libs.library l
-            where l.library = 'PROJ'
+            where l.library = 'RAHA'
             and l.status <> 3
             and (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
-        alias: 'curProjektid'
+        alias: 'curRaha'
     },
 
 };

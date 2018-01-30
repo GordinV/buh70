@@ -1,99 +1,116 @@
-﻿
-DROP FUNCTION if exists libs.sp_delete_konto(integer, integer);
+﻿DROP FUNCTION IF EXISTS libs.sp_delete_konto( INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION libs.sp_delete_konto(
-    IN userid integer,
-    IN doc_id integer,
-    OUT error_code integer,
-    OUT result integer,
-    OUT error_message text)
-  RETURNS record AS
+  IN  userid        INTEGER,
+  IN  doc_id        INTEGER,
+  OUT error_code    INTEGER,
+  OUT result        INTEGER,
+  OUT error_message TEXT)
+  RETURNS RECORD AS
 $BODY$
 
-declare
-	v_doc record;
-	v_dependid_docs record;
-	ids integer[];	
-	library_history jsonb ;
-	new_history jsonb;
-begin
-	
-	select l.*, u.ametnik as user_name into v_doc
-		from libs.library l 
-		left outer join ou.userid u on u.id = userid
-		where l.id = doc_id;
+DECLARE
+  v_doc           RECORD;
+  v_dependid_docs RECORD;
+  ids             INTEGER [];
+  library_history JSONB;
+  new_history     JSONB;
+BEGIN
 
-	if v_doc is null then
-		error_code = 6; 
-		error_message = 'Dokument ei leitud, docId: ' || coalesce(doc_id,0)::text ;
-		result  = 0;
-		return;
+  SELECT
+    l.*,
+    u.ametnik AS user_name
+  INTO v_doc
+  FROM libs.library l
+    LEFT OUTER JOIN ou.userid u ON u.id = userid
+  WHERE l.id = doc_id;
 
-	end if;
+  IF v_doc IS NULL
+  THEN
+    error_code = 6;
+    error_message = 'Dokument ei leitud, docId: ' || coalesce(doc_id, 0) :: TEXT;
+    result = 0;
+    RETURN;
 
-	if not exists (select id 
-		from ou.userid u 
-		where id = userid
-		and (u.rekvid = v_doc.rekvid or v_doc.rekvid is null or v_doc.rekvid = 0) 
-		) then
+  END IF;
 
-		error_code = 5; 
-		error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid,0)::text || ', userId:' || coalesce(userid,0)::text;
-		result  = 0;
-		return;
+  IF NOT exists(SELECT id
+                FROM ou.userid u
+                WHERE id = userid
+                      AND (u.rekvid = v_doc.rekvid OR v_doc.rekvid IS NULL OR v_doc.rekvid = 0)
+  )
+  THEN
 
-	end if;	
+    error_code = 5;
+    error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
+                    coalesce(userid, 0) :: TEXT;
+    result = 0;
+    RETURN;
 
+  END IF;
 
---	ids =  v_doc.rigths->'delete';
-/*
-	if not v_doc.rigths->'delete' @> jsonb_build_array(userid) then
-		error_code = 4; 
-		error_message = 'Ei saa kustuta dokument. Puudub õigused';
-		result  = 0;
-		return;
+  --	ids =  v_doc.rigths->'delete';
+  /*
+    if not v_doc.rigths->'delete' @> jsonb_build_array(userid) then
+      error_code = 4;
+      error_message = 'Ei saa kustuta dokument. Puudub õigused';
+      result  = 0;
+      return;
 
-	end if;
-*/			
+    end if;
+  */
 
-	if exists (
-		select 1 from (
-			select id  from docs.journal1 where deebet = v_doc.kood or kreedit = v_doc.kood limit 1
-		) qry
-	) then
+  IF exists(
+      SELECT 1
+      FROM (
+             SELECT id
+             FROM docs.journal1
+             WHERE deebet = v_doc.kood OR kreedit = v_doc.kood
+             LIMIT 1
+           ) qry
+  )
+  THEN
 
-		error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
-		error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
-		result  = 0;
-		return;
-	end if;
+    error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
+    error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
+    result = 0;
+    RETURN;
+  END IF;
 
-	library_history = row_to_json(row.*) from (select l.* 
-		from libs.library l where l.id = doc_id) row;
+  library_history = row_to_json(row.*) FROM ( SELECT l.*
+  FROM libs.library l WHERE l.id = doc_id) ROW;
 
-	select row_to_json(row) into new_history from (select now() as deleted, v_doc.user_name as user, library_history as library) row;
+  SELECT row_to_json(row)
+  INTO new_history
+  FROM (SELECT
+          now()           AS deleted,
+          v_doc.user_name AS user,
+          library_history AS library) row;
 
-	delete from libs.library where id = doc_id;
-	
-/*
-	update docs.doc 
-		set lastupdate = now(),
-			history = coalesce(history,'[]')::jsonb || new_history,
-			rekvid = v_doc.rekvid,
-			status = DOC_STATUS
-		where id = doc_id;	
-*/		
-	result  = 1;		
-	return;
-end;$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-ALTER FUNCTION libs.sp_delete_konto(integer, integer)
-  OWNER TO postgres;
+  UPDATE libs.library
+  SET status = 3
+  WHERE id = doc_id;
 
-GRANT EXECUTE ON FUNCTION libs.sp_delete_konto(integer, integer) TO postgres;
-GRANT EXECUTE ON FUNCTION libs.sp_delete_konto(integer, integer) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION libs.sp_delete_konto(integer, integer) TO dbpeakasutaja;
+  result = 1;
+  RETURN;
+
+  EXCEPTION WHEN OTHERS
+  THEN
+    RAISE NOTICE 'error % % %', MESSAGE_TEXT, PG_EXCEPTION_DETAIL, PG_EXCEPTION_HINT;
+    error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
+    error_message = MESSAGE_TEXT;
+    result = 0;
+
+    RETURN;
+END;$BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100;
+ALTER FUNCTION libs.sp_delete_konto( INTEGER, INTEGER )
+OWNER TO postgres;
+
+GRANT EXECUTE ON FUNCTION libs.sp_delete_konto(INTEGER, INTEGER) TO postgres;
+GRANT EXECUTE ON FUNCTION libs.sp_delete_konto(INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION libs.sp_delete_konto(INTEGER, INTEGER) TO dbpeakasutaja;
 
 
 /*

@@ -1,100 +1,92 @@
-﻿
-DROP FUNCTION if exists libs.sp_delete_nomenclature(integer, integer);
+﻿DROP FUNCTION IF EXISTS libs.sp_delete_nomenclature( INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION libs.sp_delete_nomenclature(
-    IN userid integer,
-    IN doc_id integer,
-    OUT error_code integer,
-    OUT result integer,
-    OUT error_message text)
-  RETURNS record AS
+  IN  userid        INTEGER,
+  IN  doc_id        INTEGER,
+  OUT error_code    INTEGER,
+  OUT result        INTEGER,
+  OUT error_message TEXT)
+  RETURNS RECORD AS
 $BODY$
 
-declare
-	v_doc record;
-	v_dependid_docs record;
-	ids integer[];	
-	nom_history jsonb ;
-	new_history jsonb;
-begin
-	
-	select n.*, u.ametnik as user_name into v_doc
-		from libs.nomenklatuur n 
-		left outer join ou.userid u on u.id = userid
-		where n.id = doc_id;
+DECLARE
+  v_doc           RECORD;
+  v_dependid_docs RECORD;
+  ids             INTEGER [];
+  nom_history     JSONB;
+  new_history     JSONB;
+  DOC_STATUS integer = 3; -- документ удален
+BEGIN
 
-	if v_doc is null then
-		error_code = 6; 
-		error_message = 'Dokument ei leitud, docId: ' || coalesce(doc_id,0)::text ;
-		result  = 0;
-		return;
+  SELECT
+    n.*,
+    u.ametnik AS user_name
+  INTO v_doc
+  FROM libs.nomenklatuur n
+    LEFT OUTER JOIN ou.userid u ON u.id = userid
+  WHERE n.id = doc_id;
 
-	end if;
+  IF v_doc IS NULL
+  THEN
+    error_code = 6;
+    error_message = 'Dokument ei leitud, docId: ' || coalesce(doc_id, 0) :: TEXT;
+    result = 0;
+    RETURN;
 
-	if not exists (select id 
-		from ou.userid u 
-		where id = userid
-		and (u.rekvid = v_doc.rekvid or v_doc.rekvid is null or v_doc.rekvid = 0) 
-		) then
+  END IF;
 
-		error_code = 5; 
-		error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid,0)::text || ', userId:' || coalesce(userid,0)::text;
-		result  = 0;
-		return;
+  IF NOT exists(SELECT id
+                FROM ou.userid u
+                WHERE id = userid
+                      AND (u.rekvid = v_doc.rekvid OR v_doc.rekvid IS NULL OR v_doc.rekvid = 0)
+  )
+  THEN
 
-	end if;	
+    error_code = 5;
+    error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
+                    coalesce(userid, 0) :: TEXT;
+    result = 0;
+    RETURN;
 
+  END IF;
 
---	ids =  v_doc.rigths->'delete';
-/*
-	if not v_doc.rigths->'delete' @> jsonb_build_array(userid) then
-		error_code = 4; 
-		error_message = 'Ei saa kustuta dokument. Puudub õigused';
-		result  = 0;
-		return;
+  IF exists(
+      SELECT 1
+      FROM (
+             SELECT id
+             FROM docs.arv1
+             WHERE nomid = v_doc.id
+             UNION
+             SELECT id
+             FROM docs.korder2
+             WHERE nomid = v_doc.id
+             UNION
+             SELECT id
+             FROM docs.leping2
+             WHERE nomid = v_doc.id
 
-	end if;
-*/			
+           ) qry
+  )
+  THEN
 
-	if exists (
-		select 1 from (
-			select id  from docs.arv1 where nomid = v_doc.id 
-			union
-			select id  from docs.korder2 where nomid = v_doc.id 			
-		) qry
-	) then
+    error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
+    error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
+    result = 0;
+    RETURN;
+  END IF;
 
-		error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
-		error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
-		result  = 0;
-		return;
-	end if;
+  UPDATE libs.nomenklatuur
+  SET status = DOC_STATUS
+  WHERE id = doc_id;
 
-	nom_history = row_to_json(row.*) from (select n.* 
-		from libs.nomenklatuur n where n.id = doc_id) row;
+  result = 1;
+  RETURN;
+END;$BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100;
 
-	select row_to_json(row) into new_history from (select now() as deleted, v_doc.user_name as user, nom_history as nomenclature) row;
-
-	delete from libs.nomenklatuur where id = doc_id;
-	
-/*
-	update docs.doc 
-		set lastupdate = now(),
-			history = coalesce(history,'[]')::jsonb || new_history,
-			rekvid = v_doc.rekvid,
-			status = DOC_STATUS
-		where id = doc_id;	
-*/		
-	result  = 1;		
-	return;
-end;$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-ALTER FUNCTION libs.sp_delete_konto(integer, integer)
-  OWNER TO postgres;
-
-GRANT EXECUTE ON FUNCTION libs.sp_delete_nomenclature(integer, integer) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION libs.sp_delete_nomenclature(integer, integer) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION libs.sp_delete_nomenclature(INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION libs.sp_delete_nomenclature(INTEGER, INTEGER) TO dbpeakasutaja;
 
 
 /*

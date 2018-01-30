@@ -21,15 +21,18 @@ DECLARE
   doc_valuuta  TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
   doc_muud     TEXT = doc_data ->> 'muud';
   doc_vat      TEXT = (doc_data ->> 'vat');
-  doc_konto_db TEXT = doc_data ->> 'konto_db';
-  doc_konto_kr TEXT = doc_data ->> 'konto_kr';
+  doc_konto    TEXT = doc_data ->> 'konto';
   doc_projekt  TEXT = doc_data ->> 'projekt';
   doc_tunnus   TEXT = doc_data ->> 'tunnus';
-  doc_props    JSONB = doc_data ->> 'properties';
+  doc_tegev    TEXT = doc_data ->> 'tegev';
+  doc_allikas  TEXT = doc_data ->> 'allikas';
+  doc_rahavoog TEXT = doc_data ->> 'rahavoog';
+  doc_artikkel TEXT = doc_data ->> 'artikkel';
   json_object  JSONB;
   new_history  JSONB;
   new_rights   JSONB;
 
+  error        TEXT;
 BEGIN
 
   IF (doc_id IS NULL)
@@ -53,17 +56,14 @@ BEGIN
   FROM
     (SELECT
        doc_vat                        AS vat,
-       coalesce(doc_konto_db, 'null') AS konto_db,
-       coalesce(doc_konto_kr, 'null') AS konto_kr,
+       coalesce(doc_konto, 'null')    AS konto,
        doc_projekt                    AS projekt,
-       coalesce(doc_tunnus, 'null')   AS tunnus) row;
-
-
-  /*
-  doc_props = case when doc_props is null then  json_object else doc_props || json_object end;
-  */
-
-
+       coalesce(doc_tunnus, 'null')   AS tunnus,
+       coalesce(doc_tegev, 'null')    AS tegev,
+       coalesce(doc_allikas, 'null')  AS allikas,
+       coalesce(doc_rahavoog, 'null') AS rahavoog,
+       coalesce(doc_artikkel, 'null') AS artikkel
+    ) row;
 
   IF doc_id IS NULL OR doc_id = 0
   THEN
@@ -92,7 +92,6 @@ BEGIN
 
     INSERT INTO docs.dokvaluuta1 (dokliik, dokid, valuuta, kuurs)
     VALUES (17, nom_id, doc_valuuta, doc_kuurs);
-
 
   ELSE
     -- muuda
@@ -135,6 +134,11 @@ BEGIN
   END IF;
 
   RETURN nom_id;
+
+  EXCEPTION WHEN OTHERS
+  THEN
+    RAISE NOTICE 'error % % %', MESSAGE_TEXT, PG_EXCEPTION_DETAIL, PG_EXCEPTION_HINT;
+    RETURN 0;
 
 END;$BODY$
 LANGUAGE 'plpgsql' VOLATILE

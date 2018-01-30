@@ -36,6 +36,9 @@ begin
 		when 'MK' then
 			lcTableName = 'docs.mk';
 			lcAdditionalWhere  = ' OPT = 1 '; 	
+		when 'LEPING' then
+			lcTableName = 'docs.leping1';
+			lcAdditionalWhere  = ' OPT = 1 '; 	
 --		when 'AVANS' then
 --			lcTableName = 'docs.avans1'; 
 	end case;
