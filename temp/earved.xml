@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<E_Invoice>
+    <Header>
+        <Date>2017-03-02</Date>
+        <FileId>382505</FileId>
+        <AppId>EARVE</AppId>
+        <Version>1.1</Version>
+    </Header>
+    <Invoice invoiceId="8600017092" regNumber="75014289">
+        <InvoiceParties>
+            <SellerParty>
+                <Name>0860001 Kultuuriosakond</Name>
+                <RegNumber>75024260</RegNumber>
+            </SellerParty>
+            <BuyerParty>
+                <Name>Tallinna Haridusamet KOV</Name>
+                <RegNumber>75014289</RegNumber>
+            </BuyerParty>
+        </InvoiceParties>
+        <InvoiceInformation>
+            <Type type="DEB"/>
+            <DocumentName>Arve</DocumentName>
+            <InvoiceNumber>8600017092</InvoiceNumber>
+            <InvoiceDate>2017-03-02</InvoiceDate>
+        </InvoiceInformation>
+        <InvoiceSumGroup>
+            <InvoiceSum>-55.32</InvoiceSum>
+            <VAT>
+                <VATRate>0</VATRate>
+                <VATSum>0.00</VATSum>
+            </VAT>
+            <TotalSum>-55.32</TotalSum>
+            <Currency>EUR</Currency>
+        </InvoiceSumGroup>
+        <InvoiceItem>
+            <InvoiceItemGroup>
+
+                <ItemEntry>
+                    <Description>Opilaskohad - Narva Kreenholmi Gumnaasium D103000-K322000</Description>
+                    <ItemDetailInfo>
+                        <ItemUnit></ItemUnit>
+                        <ItemAmount>-1.0000</ItemAmount>
+                        <ItemPrice>55.32</ItemPrice>
+                    </ItemDetailInfo>
+                    <ItemSum>-55.32</ItemSum>
+                    <VAT>
+                        <VATRate>0</VATRate>
+                        <VATSum>' + Alltrim(Str(qryeArvedDet.vatSum,14,2))+'</VATSum>'+Chr(13)+;
+                    </VAT>
+                    <ItemTotal>-55.32</ItemTotal>
+                </ItemEntry>
+            </InvoiceItemGroup>
+        </InvoiceItem>
+        <AdditionalInformation>
+            <InformationName>Lisa</InformationName>
+            <InformationContent>Perioodi eest 01-28.02.2017.a (tekkepohised tulud on kajastatud 02.2017)
+            </InformationContent>
+        </AdditionalInformation>
+        <PaymentInfo>
+            <Currency>EUR</Currency>
+            <PaymentRefId>382505</PaymentRefId>
+            <PaymentDescription>Arve 8600017092</PaymentDescription>
+            <Payable>NO</Payable>
+            <PayDueDate>2017-03-16</PayDueDate>
+            <PaymentTotalSum>-55.32</PaymentTotalSum>
+            <PayerName>Tallinna Haridusamet KOV</PayerName>
+        </PaymentInfo>
+    </Invoice>
+
+    <Footer>
+        <TotalNumberInvoices>1</TotalNumberInvoices>
+        <TotalAmount>-55.32</TotalAmount>
+    </Footer>
+</E_Invoice>

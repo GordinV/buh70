@@ -35,6 +35,14 @@ function createXMLmodel(modelForExport, callback) {
             },
             requiredFields:  {
                 validate: _.map(model.requiredFields,'name').join(',')
+            },
+            executeSql: {
+                    sql: model.executeSql.sqlString,
+                    alias: model.executeSql.alias,
+            },
+            executeCommand: {
+                sql: model.executeCommand.command,
+                alias: model.executeCommand.alias,
             }
 
         }

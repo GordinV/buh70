@@ -2,7 +2,7 @@
 <project version="4">
   <component name="DBNavigator.Project.DataEditorManager">
     <record-view-column-sorting-type value="BY_INDEX" />
-    <value-preview-text-wrapping value="true" />
+    <value-preview-text-wrapping value="false" />
     <value-preview-pinned value="false" />
   </component>
   <component name="DBNavigator.Project.DataExportManager">
@@ -23,7 +23,12 @@
     <autoscroll-to-editor value="false" />
     <autoscroll-from-editor value="true" />
     <show-object-properties value="true" />
-    <loaded-nodes />
+    <loaded-nodes>
+      <connection connection-id="7f939ec0-3e5b-485d-85ca-10cdeb362661">
+        <schema name="pg_catalog" object-types="function, table, view" />
+        <schema name="public" object-types="function, table, view" />
+      </connection>
+    </loaded-nodes>
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="7f939ec0-3e5b-485d-85ca-10cdeb362661">
@@ -34,6 +39,7 @@
     <last-used-providers />
   </component>
   <component name="DBNavigator.Project.FileConnectionMappingManager">
+    <mapping file-url="file://$APPLICATION_CONFIG_DIR$/consoles/db/6a9c2e28-e76a-43b0-bae2-54d54674b1c6/console_9.sql" connection-id="7f939ec0-3e5b-485d-85ca-10cdeb362661" current-schema="VLAD" />
     <mapping file-url="file://$PROJECT_DIR$/sql/create_view_com_allikad.sql" connection-id="8f5d13fe-782e-40b1-9f32-869f501b220f" current-schema="public" />
   </component>
   <component name="DBNavigator.Project.MethodExecutionManager">

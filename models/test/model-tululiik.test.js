@@ -7,12 +7,12 @@ const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
 
-describe('dok. type Valuuta tests', function () {
+describe('dok. type Tululiik tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../libs/libraries/valuuta'),
-        docTypeId = 'VALUUTA'.toLowerCase(),
-        modelForExport = 'libs/libraries/valuuta';
+    const doc = require('../libs/libraries/tululiik'),
+        docTypeId = 'TULULIIK'.toLowerCase(),
+        modelForExport = 'libs/libraries/tululiik';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -54,7 +54,7 @@ describe('dok. type Valuuta tests', function () {
         expect(grid).toBeDefined();
         expect(_.find(grid.elements,{name:'alias'})).toBeDefined();
         let gridAlias = _.find(grid.elements,{name:'alias'});
-        expect(_.find(gridAlias.elements,{text:'curValuuta'})).toBeDefined();
+        expect(_.find(gridAlias.elements,{text:'curMaksuKoodid'})).toBeDefined();
     });
 
     it('should have copy in buh62 folder', (done) => {

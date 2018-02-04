@@ -28,6 +28,12 @@ DECLARE
   doc_allikas  TEXT = doc_data ->> 'allikas';
   doc_rahavoog TEXT = doc_data ->> 'rahavoog';
   doc_artikkel TEXT = doc_data ->> 'artikkel';
+  doc_kalor NUMERIC = doc_data ->> 'kalor';
+  doc_valid Date = doc_data ->> 'valid';
+  doc_sahharid Numeric = doc_data ->> 'sahharid';
+  doc_rasv TEXT = doc_data ->> 'rasv';
+  doc_vailkaine NUMERIC = doc_data ->> 'vailkaine';
+  doc_gruppid Integer = doc_data ->> 'gruppid';
   json_object  JSONB;
   new_history  JSONB;
   new_rights   JSONB;
@@ -62,7 +68,13 @@ BEGIN
        coalesce(doc_tegev, 'null')    AS tegev,
        coalesce(doc_allikas, 'null')  AS allikas,
        coalesce(doc_rahavoog, 'null') AS rahavoog,
-       coalesce(doc_artikkel, 'null') AS artikkel
+       coalesce(doc_artikkel, 'null') AS artikkel,
+       doc_kalor AS kalor,
+       doc_valid AS valid,
+       doc_sahharid AS sahharid,
+       doc_rasv AS rasv,
+       doc_vailkaine AS vailkaine,
+       doc_gruppid AS gruppid
     ) row;
 
   IF doc_id IS NULL OR doc_id = 0
@@ -137,7 +149,7 @@ BEGIN
 
   EXCEPTION WHEN OTHERS
   THEN
-    RAISE NOTICE 'error % % %', MESSAGE_TEXT, PG_EXCEPTION_DETAIL, PG_EXCEPTION_HINT;
+    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
     RETURN 0;
 
 END;$BODY$
@@ -150,5 +162,6 @@ GRANT EXECUTE ON FUNCTION libs.sp_salvesta_nomenclature(data        JSON, userid
 
 /*
 select libs.sp_salvesta_nomenclature(
-'{"userId":1,"asutusId":1, "data":{"id":2,"rekvid":1,"dok":"ARV","kood":"TEENUS","nimetus":"Teenuse selgitus","uhik":"tk","hind":"10.0000","muud":"null","ulehind":"0.0000","kogus":"1.000","formula":"","vanaid":"null","status":1,"properties":"null","userid":1,"doc_type_id":"NOMENCLATURE","valuuta":"EUR","kuurs":1,"vat":"0","konto_db":"null","konto_kr":"null","projekt":"null","tunnus":"null"}}',1,1)
+'{"id":0,"data":{"allikas":"ALLIKAS","artikkel":"ART","doc_type_id":"VARA","dok":"LADU","formula":null,"gruppid":401,"hind":0,"id":0,"kalor":null,"kogus":1,"konto":"KONTO","kood":"__test3367","kuurs":1,"muud":null,"nimetus":"vfp test vara","projekt":null,"rasv":null,"rekvid":1,"sahharid":null,"status":0,"tegev":"TEGEV","tunnus":null,"uhik":null,"ulehind":0,"userid":1,"vailkaine":null,"valid":null,"valuuta":"EUR","vat":"20"}}',1,1)
+
 */
