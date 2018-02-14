@@ -9,9 +9,9 @@ const Smk = {
                 (to_char(lastupdate,'DD.MM.YYYY HH:MM:SS'))::text as lastupdate, d.bpm, 
                 trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
                 trim(s.nimetus) as status, 
-                k.number as number,  to_char(k.maksepaev,'YYYY-MM-DD') as maksepaev, k.viitenr,
+                k.number as number,  k.maksepaev as maksepaev, k.viitenr,
                 k.aaid as aa_id, trim(aa.nimetus) as pank, 
-                k.rekvId, to_char(k.kpv,'YYYY-MM-DD') as kpv, k.selg, k.muud, k.opt, 
+                k.rekvId, k.kpv as kpv, k.selg, k.muud, k.opt, 
                 k.arvid, ('Number:' || arv.number::text || ' Kuupäev:' || arv.kpv::text || ' Jääk:' || arv.jaak::text) as arvnr ,
                 (select sum(summa) from docs.mk1 where parentid = k.id) as summa
                 from docs.doc d 
@@ -29,9 +29,9 @@ const Smk = {
                 trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
                 trim(s.nimetus) as status, 
                 (select max(number) from docs.korder1 where tyyp = 1 )::integer + 1  as number, 
-                to_char(now(),'YYYY-MM-DD') as maksepaev,  
+                now()::date as maksepaev,  
                 aa.id as aa_id, trim(aa.name) as pank, 
-                null as rekvId,  to_char(now(),'YYYY-MM-DD') as kpv, null as viitenr,
+                null as rekvId,  now()::date as kpv, null as viitenr,
                 null as selg, null as muud, 0 as  tyyp, null as regkood, null as asutus, 
                 null as arvid, null as arvnr, 0 as summa
                 from libs.library l,   

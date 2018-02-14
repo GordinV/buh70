@@ -27,7 +27,7 @@ module.exports = {
     }],
     selectAsLibs: `select * from com_asutused a 
         where libs.check_asutus(a.id, $1) 
-        and (kehtivus is null or kehtivus > date())`, //$1 - rekvId
+        and (kehtivus is null or kehtivus >= date())`, //$1 - rekvId
     returnData: {
         row: {}
     },

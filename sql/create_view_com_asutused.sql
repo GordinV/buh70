@@ -4,15 +4,18 @@ CREATE OR REPLACE VIEW public.com_asutused AS
   SELECT qry.id,
     qry.regkood,
     qry.nimetus,
+    qry.tp,
     qry.kehtivus
   FROM ( SELECT 0 AS id,
                 ''::character varying(20) AS regkood,
                 ''::character varying(254) AS nimetus,
+                ''::varchar(20) as tp,
                 date() AS kehtivus
          UNION
          SELECT asutus.id,
            btrim(asutus.regkood::text) AS regkood,
            btrim(asutus.nimetus::text)::character varying(254) AS nimetus,
+           asutus.tp,
            coalesce((asutus.properties ->> 'kehtivus'::text)::date, date()) AS kehtivus
          FROM libs.asutus
          WHERE asutus.staatus <> 3) qry

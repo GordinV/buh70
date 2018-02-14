@@ -25,7 +25,7 @@ SELECT coalesce(arv.summa * coalesce(dokvaluuta1.kuurs,1),0)::numeric, coalesce(
 SELECT coalesce(sum(arvtasu.summa * ifnull(dokvaluuta1.kuurs,1)),0), coalesce(max(arvtasu.kpv),tdKpv) into lnTasuSumma, ldKpv 
 	FROM docs.arvtasu arvtasu 
 	left outer join docs.dokvaluuta1 dokvaluuta1 on (arvtasu.id = dokvaluuta1.dokid and dokvaluuta1.dokliik = 21) 
-	WHERE arvtasu.arvId = tnArvId;
+	WHERE arvtasu.doc_arv_Id = tnArvId;
 		
 	
 	if lnArvSumma < 0 then

@@ -9,7 +9,7 @@ describe('dok. type JOURNAL tests', function () {
 
     let docData = doc.returnData;
 
-    it(`${docTypeId} select New`, (done) => {
+    it.skip(`${docTypeId} select New`, (done) => {
         DocDataObject.selectDoc(docTypeId, [globalDocId, 1], (err, data) => {
             expect(err).toBeNull();
             expect(data).toBeDefined();
@@ -25,7 +25,7 @@ describe('dok. type JOURNAL tests', function () {
         });
     });
 
-    it(`${docTypeId}  validation`, () => {
+    it.skip(`${docTypeId}  validation`, () => {
         const requiredFields = doc.requiredFields;
         const validator = require('../frontend/mixin/validateForm');
 
@@ -33,7 +33,7 @@ describe('dok. type JOURNAL tests', function () {
         expect(warning).toBeNull();
     });
 
-    it(`${docTypeId} unit save test`, (done) => {
+    it.skip(`${docTypeId} unit save test`, (done) => {
         DocDataObject.saveDoc(docTypeId.toUpperCase(), [docData, 1, 1], (err, data) => {
             expect(err).toBeNull();
             expect(data).toBeDefined();
@@ -44,7 +44,7 @@ describe('dok. type JOURNAL tests', function () {
         });
     });
 
-    it(`${docTypeId} select`, (done) => {
+    it.skip(`${docTypeId} select`, (done) => {
         DocDataObject.selectDoc(docTypeId.toUpperCase(), [globalDocId, 1], (err, data) => {
             expect(err).toBeNull();
             expect(data.row.id).toBeDefined();
@@ -53,7 +53,7 @@ describe('dok. type JOURNAL tests', function () {
         });
     });
 
-    it(`${docTypeId} test for select (grid)`, (done) => {
+    it.skip(`${docTypeId} test for select (grid)`, (done) => {
         let results = {},
             user = {
                 asutusId: 1,
@@ -86,9 +86,9 @@ describe('dok. type JOURNAL tests', function () {
                 expect(data).toBeDefined();
             });
         });
-    })
+    });
 
-    it(`${docTypeId} test for deleteTask`, (done) => {
+    it.skip(`${docTypeId} test for deleteTask`, (done) => {
         let sql = doc.deleteDoc;
 
         expect(sql).toBeDefined();

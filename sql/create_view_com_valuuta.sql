@@ -8,14 +8,14 @@ CREATE OR REPLACE VIEW com_valuuta AS
           '':: VARCHAR(20) AS kood,
           '':: VARCHAR(20) AS nimetus,
           NULL :: INTEGER   AS rekvId,
-          NULL::numeric as kuurs
+          1::numeric as kuurs
         UNION
         SELECT
           l.id,
           l.kood,
           l.nimetus,
           l.rekvId,
-          coalesce((select v.kuurs from libs.valuuta v where parentid = l.id order by id desc limit 1),0)::numeric as kuurs
+          coalesce((select v.kuurs from libs.valuuta v where parentid = l.id order by id desc limit 1),1)::numeric as kuurs
         FROM libs.library l
         WHERE l.library = 'VALUUTA'
               AND l.status <> 3

@@ -14,7 +14,7 @@ const Journal = {
                  trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
                  trim(s.nimetus) as status, d.status as doc_status,
                  jid.number as number, 
-                 j.rekvId, to_char(j.kpv,'YYYY-MM-DD') as kpv, j.asutusid,  trim(j.dok) as dok, j.selg, j.muud, 
+                 j.rekvId, j.kpv as kpv, j.asutusid,  trim(j.dok) as dok, j.selg, j.muud, j.objekt,
                  (select sum(j1.summa) as summa from docs.journal1 as j1 where parentid = j.id) as summa, 
                  asutus.regkood, trim(asutus.nimetus) as asutus 
                  from docs.doc d 
@@ -28,11 +28,20 @@ const Journal = {
             sqlAsNew: `select $1::integer as id, 
                     to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as created, 
                     to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as lastupdate,            
-                    null as bpm,
+                    null::text[] as bpm,
                     trim(l.nimetus) as doc, trim(l.kood) as doc_type_id,
                     trim(s.nimetus) as status, 0 as doc_status, 
-                    trim('') as number,  null as rekvId,  to_char(now(),'YYYY-MM-DD') as kpv, 
-                    null as asutusid, null as dok, null as selg, null as muud, 0 as summa,  null as regkood, null as asutus 
+                    null::integer as number,  
+                    null::integer as rekvId,  
+                    now()::date as kpv, 
+                    null::integer as asutusid, 
+                    null::varchar(100) as dok, 
+                    null::text as selg, 
+                    null::text as muud, 
+                    null::varchar(20) as objekt,
+                    0::numeric as summa,  
+                    null::varchar(20) as regkood, 
+                    null::varchar(254) as asutus 
                     from libs.library l,   libs.library s, ou.userid u
                     where l.library = 'DOK' and l.kood = 'JOURNAL'
                     and u.id = $2::integer 
@@ -43,11 +52,14 @@ const Journal = {
             data: []
         },
         {
-            sql: "select j1.*, $2::integer as userid " +
-            " from docs.journal1 as j1 " +
-            " inner join docs.journal j on j.id = j1.parentId " +
-            " inner join ou.userid u on u.id = $2::integer " +
-            " where j.parentid = $1",
+            sql: `select j1.*, $2::integer as userid ,
+                    coalesce(v.kuurs,1)::numeric as kuurs, 
+                    coalesce(v.valuuta,'EUR')::varchar(20) as valuuta
+                    from docs.journal1 as j1 
+                    inner join docs.journal j on j.id = j1.parentId 
+                    inner join ou.userid u on u.id = $2::integer 
+                    left outer join dokvaluuta1 v on (j1.id = v.dokid and v.dokliik = 1)                      
+                    where j.parentid = $1`,
             query: null,
             multiple: true,
             alias: 'details',
@@ -81,18 +93,22 @@ const Journal = {
             {id: "lastupdate", name: "Viimane parandus", width: "150px", "type": "date"},
             {id: "status", name: "Status", width: "100px", "type": "string"}
         ],
-        sqlString: `select d.id, to_char(j.kpv,'DD.MM.YYYY') as kpv, jid.number, j.selg, j.dok, 
-         j1.deebet, j1.kreedit, j1.summa, 
-         to_char(d.created,'DD.MM.YYYY HH:MM') as created, to_char(d.lastupdate,'DD.MM.YYYY HH:MM') as lastupdate , 
-         s.nimetus as status 
-         from docs.journal j 
-         inner join docs.doc d on d.id = j.parentid 
-         inner join docs.journalid jid on j.id = jid.journalid 
-         inner join docs.journal1 j1 on j.id = j1.parentid 
-         inner join libs.library s on s.kood = d.status::text 
-         where d.rekvId = $1
-            and coalesce(docs.usersRigths(d.id, 'select', $2),true)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
-        params: ''
+        sqlString: `select j.* 
+            from cur_journal j
+            where j.rekvId = $1
+            and coalesce(docs.usersRigths(j.id, 'select', $2),true)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+        params: '',
+        alias: 'curJournal'
+    },
+    register: {
+        command: `update docs.doc set status = 1 where id = $1`,
+        type: "sql",
+        alias: 'registrateDoc'
+    },
+    endProcess: {
+        command: "update docs.doc set status = 2 where id = $1",
+        type: "sql",
+        alias: "end"
     },
     returnData: {
         row: {},
@@ -142,8 +158,6 @@ const Journal = {
     ],
     saveDoc: "select docs.sp_salvesta_journal($1, $2, $3) as id",
     deleteDoc: `select error_code, result, error_message from docs.sp_delete_journal($1, $2)`, // $1 - userId, $2 - docId
-    register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
-    endProcess: {command: "update docs.doc set status = 2 where id = $1", type: "sql"},
     executeTask: function (task, docId, userId) {
         // выполнит задачу, переданную в параметре
 

@@ -48,6 +48,7 @@ BEGIN
     doc_id = doc_data ->> 'id';
   END IF;
 
+raise notice 'doc_id: %', doc_id;
 
   IF doc_number IS NULL OR doc_number = ''
   THEN
@@ -108,6 +109,9 @@ BEGIN
             now()    AS updated,
             userName AS user) row;
 
+
+    raise notice 'new_history %', new_history;
+
     UPDATE docs.doc
     SET lastupdate = now(),
       history      = coalesce(history, '[]') :: JSONB || new_history,
@@ -149,16 +153,25 @@ BEGIN
     SELECT *
     INTO json_record
     FROM json_to_record(
-             json_object) AS x(id TEXT, nomId INTEGER, kogus NUMERIC(14, 4), hind NUMERIC(14, 4), kbm NUMERIC(14, 4), summa NUMERIC(14, 4), kood TEXT, nimetus TEXT);
-    	raise notice 'json_record: %, nomid %', json_record, json_record.nomid;
+             json_object) AS x(id TEXT, nomId INTEGER, kogus NUMERIC(14, 4), hind NUMERIC(14, 4), kbm NUMERIC(14, 4),
+         summa NUMERIC(14, 4), kood TEXT, nimetus TEXT, kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT,
+         valuuta TEXT, kuurs NUMERIC(14, 4));
+
+    RAISE NOTICE 'json_record: %, nomid %', json_record, json_record.nomid;
     IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
     THEN
-      INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, summa)
+      INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, summa, kood1, kood2, kood3, kood4, kood5)
       VALUES (arv_id, json_record.nomid,
-              coalesce(json_record.kogus, 0),
-              coalesce(json_record.hind, 0),
-              coalesce(json_record.kbm, 0),
-              coalesce(json_record.summa, 0))
+                      coalesce(json_record.kogus, 0),
+                      coalesce(json_record.hind, 0),
+                      coalesce(json_record.kbm, 0),
+                      coalesce(json_record.summa, 0),
+                      coalesce(json_record.kood1, ''),
+                      coalesce(json_record.kood2, ''),
+                      coalesce(json_record.kood3, ''),
+                      coalesce(json_record.kood4, ''),
+                      coalesce(json_record.kood5, '')
+      )
       RETURNING id
         INTO arv1_id;
 
@@ -177,7 +190,12 @@ BEGIN
         kogus    = coalesce(json_record.kogus, 0),
         hind     = coalesce(json_record.hind, 0),
         kbm      = coalesce(json_record.kbm, 0),
-        summa    = coalesce(json_record.summa, kogus * hind)
+        summa    = coalesce(json_record.summa, kogus * hind),
+        kood1 = coalesce(json_record.kood1, ''),
+        kood2 = coalesce(json_record.kood2, ''),
+        kood3 = coalesce(json_record.kood3, ''),
+        kood4 = coalesce(json_record.kood4, ''),
+        kood5 = coalesce(json_record.kood5, '')
       WHERE id = json_record.id :: INTEGER
       RETURNING id
         INTO arv1_id;
@@ -238,56 +256,15 @@ COST 100;
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
-
-SELECT docs.sp_salvesta_arv('{
-  "id": 0,
-  "doc_type_id": "ARV",
-  "data": {
-    "id": 0,
-    "created": "2016-05-05T21:39:57.050726",
-    "lastupdate": "2016-05-05T21:39:57.050726",
-    "bpm": null,
-    "doc": "Arved",
-    "doc_type_id": "ARV",
-    "status": "Черновик",
-    "number": "321",
-    "summa": 24,
-    "rekvid": null,
-    "liik": 0,
-    "operid": null,
-    "kpv": "2016-05-05",
-    "asutusid": 1,
-    "arvid": null,
-    "lisa": "lisa",
-    "tahtaeg": "2016-05-19",
-    "kbmta": null,
-    "kbm": 4,
-    "tasud": null,
-    "tasudok": null,
-    "muud": "muud",
-    "jaak": "0.00",
-    "objektid": null,
-    "objekt": null,
-    "regkood": null,
-    "asutus": null,
-    "gridData": [
-      {
-        "id": "NEW0.6577064044198089",
-        "[object Object]": null,
-        "nomid": "1",
-        "kogus": 2,
-        "hind": 10,
-        "kbm": 4,
-        "kbmta": 20,
-        "summa": 24,
-        "kood": "PAIGALDUS",
-        "nimetus": "PV paigaldamine"
-      }
-    ]
-  }
-}', 1, 1);
-
 /*
-select * from docs.arv where parentid = 859
-select * from docs.arv1 where parentid = 321
+select docs.sp_salvesta_arv('{"id":900,"data": {"arvid":0,"asutus":"Asutus","asutusid":2,"bpm":null,"created":"10.02.2018 12:02:07","doc":"Arved","doc_status":0,"doc_type_id":"ARV","doklausid":1,"doklausid1":1,"dokprop":"Arved","id":900,"jaak":30,"journalid":0,"kbm":0,"kbmta":20,"kpv":"20180210","lastupdate":"10.02.2018 02:02:56","laus_nr":0,"liik":0,"lisa":"lisa","muud":"","number":"2","objekt":"","objektid":0,"operid":0,"regkood":"6543423423423","rekvid":1,"status":"????????","summa":30,"summa1":10,"tahtaeg":"20180210","tasud":null,"tasudok":null,"userid":1,
+"gridData":[{"formula":"","hind":0,"id":0,"kbm":0,"kbmta":0,"km":"","kogus":0,"konto":"","kood":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kuurs":0,"nimetus":"","nomid":0,"proj":"","soodus":0,"summa":0,"tp":"","tunnus":"","userid":0,"valuuta":"","vastisik":""}]},
+"gridData":[{"formula":"","hind":0,"id":0,"kbm":0,"kbmta":0,"km":"","kogus":0,"konto":"","kood":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kuurs":0,"nimetus":"","nomid":0,"proj":"","soodus":0,"summa":0,"tp":"","tunnus":"","userid":0,"valuuta":"","vastisik":""}]}'
+, 1, 1);
+
+
+select * from docs.arv where parentid = 900
+select * from docs.arv1 where parentid = 331
+
+"gridData":[{"formula":"","hind":0,"id":0,"kbm":0,"kbmta":0,"km":"","kogus":0,"konto":"","kood":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kuurs":0,"nimetus":"","nomid":0,"proj":"","soodus":0,"summa":0,"tp":"","tunnus":"","userid":0,"valuuta":"","vastisik":""}]
 */

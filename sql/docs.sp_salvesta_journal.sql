@@ -17,8 +17,8 @@ DECLARE
                            FROM libs.library
                            WHERE kood = doc_type_kood AND library = 'DOK'
                            LIMIT 1);
-  doc_details   JSON = data ->> 'gridData';
   doc_data      JSON = data ->> 'data';
+  doc_details   JSON = doc_data ->> 'gridData';
   doc_number    TEXT = doc_data ->> 'number';
   doc_asutusid  INTEGER = doc_data ->> 'asutusid';
   doc_dok       TEXT = doc_data ->> 'dok';
@@ -27,6 +27,10 @@ DECLARE
   doc_muud      TEXT = doc_data ->> 'muud';
   tcValuuta     TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
   tnKuurs       NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
+  l_number INTEGER = coalesce((SELECT max(number) + 1
+                        FROM docs.journalid
+                        WHERE rekvId = user_rekvid AND
+                            aasta = (date_part('year' :: TEXT, doc_kpv) :: INTEGER)),1);
   json_object   JSON;
   json_record   RECORD;
   new_history   JSONB;
@@ -71,12 +75,7 @@ BEGIN
       INTO journal_id;
 
     INSERT INTO docs.journalid (journalid, rekvid, aasta, number)
-    VALUES (journal_id, user_rekvid, (date_part('year' :: TEXT, doc_kpv) :: INTEGER), (SELECT max(number) + 1
-                                                                                       FROM docs.journalid
-                                                                                       WHERE rekvId = user_rekvid AND
-                                                                                             aasta =
-                                                                                             (date_part('year' :: TEXT,
-                                                                                                        doc_kpv) :: INTEGER)));
+    VALUES (journal_id, user_rekvid, (date_part('year' :: TEXT, doc_kpv) :: INTEGER), l_number);
 
 
   ELSE
@@ -105,6 +104,7 @@ BEGIN
   END IF;
   -- вставка в таблицы документа
 
+  raise notice 'doc_details %',doc_details;
 
   FOR json_object IN
   SELECT *
@@ -113,8 +113,10 @@ BEGIN
     SELECT *
     INTO json_record
     FROM json_to_record(
-             json_object) AS x(id TEXT, summa NUMERIC(14, 4), deebet TEXT, kreedit TEXT, tunnus TEXT, proj TEXT,
-         kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, lisa_d TEXT, lisa_k TEXT, valuuta TEXT, kuurs NUMERIC(14, 8));
+             json_object) AS x(id TEXT, summa NUMERIC(14, 4), deebet TEXT, kreedit TEXT,
+              tunnus TEXT, proj TEXT,
+              kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, lisa_d TEXT, lisa_k TEXT,
+              valuuta TEXT, kuurs NUMERIC(14, 8));
 
     IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
        NOT exists(SELECT id
@@ -187,7 +189,6 @@ BEGIN
     DELETE FROM docs.journal1
     WHERE parentid = journal_id AND id NOT IN (SELECT unnest(ids));
 
-
   END LOOP;
 
   RETURN doc_id;
@@ -199,15 +200,15 @@ COST 100;
 
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_journal(JSON, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_journal(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT ALL ON FUNCTION docs.sp_salvesta_journal(JSON, INTEGER, INTEGER) TO dbadmin;
 
 /*
 sasaving data:{"id":40,"doc_type_id":"JOURNAL","data":{"id":40,"created":"2016-05-24T14:49:46.198805","lastupdate":"2016-05-25T14:15:08.329755","bpm":null,"doc":"Lausendid","doc_type_id":"JOURNAL","status":"Черновик","number":2,"rekvid":1,"kpv":"2016-05-21","asutusid":1,"dok":"lisa 3","selg":"selg parandus","muud":"muud","summa":122.01,"regkood":"123456789           ","asutus":"isik, töötaja"},"details":[
 {"id":16,"parentid":14,"summa":"100.0000","dokument":null,"muud":null,"kood1":null,"kood2":null,"kood3":null,"kood4":null,"kood5":null,"deebet":"113","lisa_k":null,"kreedit":"122","lisa_d":null,"valuuta":"EUR","kuurs":"1.000000","valsumma":"100.0000","tunnus":"tunnus","proj":"proj"},
 {"id":21,"parentid":14,"summa":22.01,"dokument":null,"muud":null,"kood1":null,"kood2":null,"kood3":null,"kood4":null,"kood5":null,"deebet":"111","lisa_k":null,"kreedit":"222","lisa_d":null,"valuuta":"EUR","kuurs":"1.000000","valsumma":"22.0000","tunnus":null,"proj":null}]}
 
-select docs.sp_salvesta_journal('{"id":40,"doc_type_id":"JOURNAL","data":{"id":40,"created":"2016-05-24T14:49:46.198805","lastupdate":"2016-05-25T14:15:08.329755","bpm":null,"doc":"Lausendid","doc_type_id":"JOURNAL","status":"Черновик","number":2,"rekvid":1,"kpv":"2016-05-21","asutusid":1,"dok":"lisa 3","selg":"selg parandus","muud":"muud","summa":122.01,"regkood":"123456789           ","asutus":"isik, töötaja"},"details":[
-{"id":16,"parentid":14,"summa":"100.0000","dokument":null,"muud":null,"kood1":null,"kood2":null,"kood3":null,"kood4":null,"kood5":null,"deebet":"113","lisa_k":null,"kreedit":"122","lisa_d":null,"valuuta":"EUR","kuurs":"1.000000","valsumma":"100.0000","tunnus":"tunnus","proj":"proj"},
-{"id":21,"parentid":14,"summa":22.01,"dokument":null,"muud":null,"kood1":null,"kood2":null,"kood3":null,"kood4":null,"kood5":null,"deebet":"111","lisa_k":null,"kreedit":"222","lisa_d":null,"valuuta":"EUR","kuurs":"1.000000","valsumma":"22.0000","tunnus":null,"proj":null}]}',1, 1);
+select docs.sp_salvesta_journal('{"id":0,"data": {"asutus":"","asutusid":2,"bpm":"","created":"","doc":"","docs_ids":"","doc_status":0,"doc_type_id":"","dok":"2","id":0,"kpv":"20180213","lastupdate":"","muud":"","number":0,"objekt":"","regkood":"","rekvid":1,"selg":"Test","status":"","summa":30,"userid":1,"gridData":[{"deebet":"113","dokument":"","id":0,"kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kreedit":"231","kuurs":1,"kuurs1":0,"lisa_d":"","lisa_k":"","muud":"","parentid":0,"proj":"","summa":30,"tunnus":"","userid":0,"valsumma":0,"valuuta":"EEK","valuuta1":""}]}}'
+,1, 1);
 
 select * from docs.journal1 where parentid = 14
 
