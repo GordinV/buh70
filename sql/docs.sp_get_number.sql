@@ -1,6 +1,4 @@
-﻿-- Function: docs.sp_get_number(integer, text, integer, integer)
-
--- DROP FUNCTION docs.sp_get_number(integer, text, integer, integer);
+﻿DROP FUNCTION if exists docs.sp_get_number(integer, text, integer, integer);
 
 CREATE OR REPLACE FUNCTION docs.sp_get_number(
     tnrekvid integer,
@@ -61,9 +59,6 @@ end;
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION docs.sp_get_number(integer, text, integer, integer)
-  OWNER TO postgres;
-GRANT EXECUTE ON FUNCTION docs.sp_get_number(integer, text, integer, integer) TO public;
-GRANT EXECUTE ON FUNCTION docs.sp_get_number(integer, text, integer, integer) TO postgres;
+
 GRANT EXECUTE ON FUNCTION docs.sp_get_number(integer, text, integer, integer) TO dbpeakasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_get_number(integer, text, integer, integer) TO dbkasutaja;

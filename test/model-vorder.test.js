@@ -1,6 +1,6 @@
 'use strict';
 
-describe('model dok. type VORDER tests', function () {
+describe.skip('model dok. type VORDER tests', function () {
     let globalDocId = 0; // для сохранения ид документа
     const doc = require('../models/raamatupidamine/vorder'),
         docTypeId = 'vorder',
@@ -87,7 +87,7 @@ describe('model dok. type VORDER tests', function () {
                 expect(data).toBeDefined();
             });
         });
-    })
+    });
 
     it('VORDER test for deleteTask', (done)=> {
         let sql = doc.deleteDoc;

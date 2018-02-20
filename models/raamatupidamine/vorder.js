@@ -6,74 +6,134 @@ const start = require('./../BP/start'),
     generateJournal = require('./../BP/generateJournal'),
     endProcess = require('./../BP/endProcess');
 
-
 const Vorder = {
     select: [
         {
-            sql: `select d.id,  d.docs_ids, (to_char(created,'DD.MM.YYYY HH:MM:SS'))::text as created, 
-                (to_char(lastupdate,'DD.MM.YYYY HH:MM:SS'))::text as lastupdate, d.bpm, 
-             trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
-             trim(s.nimetus) as status, 
-             k.number as number, k.summa, 
-             k.kassaid as kassa_id, trim(aa.nimetus) as kassa, 
-             k.rekvId, to_char(k.kpv,'YYYY-MM-DD') as kpv, k.asutusid,  trim(k.dokument) as dokument, k.alus, k.muud, k.nimi, k.aadress, k.tyyp, 
-             asutus.regkood, trim(asutus.nimetus) as asutus, 
-             k.arvid, ('Number:' || arv.number::text || ' Kuupäev:' || arv.kpv::text || ' Jääk:' || arv.jaak::text) as arvnr 
-             from docs.doc d 
-             inner join libs.library l on l.id = d.doc_type_id 
-             inner join docs.korder1 k on k.parentId = d.id 
-             left outer join libs.library s on s.library = 'STATUS' and s.kood = d.status::text 
-             left outer join libs.asutus as asutus on asutus.id = k.asutusId  
-             left outer join ou.aa as aa on k.kassaid = aa.Id 
-             left outer join docs.arv as arv on k.arvid = arv.Id 
-             inner join ou.userid u on u.id = $2::integer 
-             where d.id = $1`,
-            sqlAsNew: `select $1::integer as id, $2::integer as userid, 
-             (now()::date || 'T' || now()::time)::text as created, 
-             (now()::date || 'T' || now()::time)::text as lastupdate, 
-             null as bpm,
-             trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
-             trim(s.nimetus) as status, 
-             (select max(number) from docs.korder1 where tyyp = 2 )::integer + 1  as number,  
-             0 as summa, 
-             aa.id as kassa_id, trim(aa.name) as kassa, 
-             null as rekvId,  to_char(now(),'YYYY-MM-DD') as kpv, 
-             null as asutusid, null as dokument, null as alus, null as muud, null as nimi, 
-             null as aadress, 
-             2 as tyyp,  0 as summa,  null as regkood, null as asutus, 
-             null as arvid, null as arvnr
-             from libs.library l,  
-              ou.userid u,
-             libs.library s, 
-             (select id, trim(nimetus) as name 
-                from ou.aa where kassa = 1 order by default_ limit 1) as aa 
-             where l.library = 'DOK' and l.kood = 'VORDER'
-             and u.id = $2::integer 
-             and s.library = 'STATUS' and s.kood = '0'`,
+            sql: `SELECT
+                  d.id,
+                  d.docs_ids,
+                  (to_char(created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                                                   AS created,
+                  (to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                                                AS lastupdate,
+                  d.bpm,
+                  trim(l.nimetus)                                                                                     AS doc,
+                  trim(l.kood)                                                                                        AS doc_type_id,
+                  trim(s.nimetus)                                                                                     AS status,
+                  k.number                                                                                            AS number,
+                  k.summa,
+                  k.kassaid                                                                                           AS kassa_id,
+                  trim(aa.nimetus)                                                                                    AS kassa,
+                  k.rekvId,
+                  k.kpv                                                                        AS kpv,
+                  k.asutusid,
+                  trim(k.dokument)                                                                                    AS dokument,
+                  k.alus,
+                  k.muud,
+                  k.nimi,
+                  k.aadress,
+                  k.tyyp,
+                  asutus.regkood,
+                  trim(asutus.nimetus)                                                                                AS asutus,
+                  k.arvid,
+                  ('Number:' || arv.number :: TEXT || ' Kuupäev:' || arv.kpv :: TEXT || ' Jääk:' || arv.jaak :: TEXT) AS arvnr,
+                  k.doklausid,
+                  k.journalid,
+                  coalesce(jid.number,0)::integer as lausnr,
+                   coalesce((dp.details :: JSONB ->> 'konto'),'') :: VARCHAR(20)                                      AS konto,
+                   dp.selg::varchar(120)                                                                              as dokprop
+
+                FROM docs.doc d
+                  INNER JOIN libs.library l ON l.id = d.doc_type_id
+                  INNER JOIN docs.korder1 k ON k.parentId = d.id
+                  INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                  LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
+                  LEFT OUTER JOIN libs.asutus AS asutus ON asutus.id = k.asutusId
+                  LEFT OUTER JOIN ou.aa AS aa ON k.kassaid = aa.Id
+                  LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.Id
+                  left outer join docs.journalid jid on jid.journalid = k.journalid                  
+                  left outer join libs.dokprop dp on dp.id = k.doklausid 
+                WHERE d.id = $1`,
+            sqlAsNew: `SELECT
+                      $1 :: INTEGER                                   AS id,
+                      $2 :: INTEGER                                   AS userid,
+                      (now() :: DATE || 'T' || now() :: TIME) :: TEXT AS created,
+                      (now() :: DATE || 'T' || now() :: TIME) :: TEXT AS lastupdate,
+                      NULL                                            AS bpm,
+                      trim(l.nimetus)                                 AS doc,
+                      trim(l.kood)                                    AS doc_type_id,
+                      trim(s.nimetus)                                 AS status,
+                      docs.get_new_number('VORDER', 1, year(now()::date))::varchar(20)  AS number,
+                      0                                               AS summa,
+                      aa.id                                           AS kassa_id,
+                      trim(aa.name)                                   AS kassa,
+                      NULL::integer                                   AS rekvId,
+                      now()::date                                     AS kpv,
+                      NULL::integer                                   AS asutusid,
+                      NULL::varchar(120)                              AS dokument,
+                      NULL::text                                      AS alus,
+                      NULL::text                                      AS muud,
+                      NULL::text                                      AS nimi,
+                      NULL::text                                      AS aadress,
+                      2                                               AS tyyp,
+                      0::numeric(12,2)                                AS summa,
+                      NULL::varchar(20)                               AS regkood,
+                      NULL::varchar(254)                              AS asutus,
+                      NULL::integer                                   AS arvid,
+                      NULL::integer                                   AS arvnr,
+                      NULL::integer                                   as doklausid,
+                      0::integer                                      as journalid,
+                      NULL::integer as lausnr,
+                      null::varchar(120) as  dokprop,
+                      null::varchar(20) as konto
+                    FROM libs.library l,
+                      ou.userid u,
+                      libs.library s,
+                      (SELECT
+                         id,
+                         trim(nimetus) AS name
+                       FROM ou.aa
+                       WHERE kassa = 1
+                       ORDER BY default_
+                       LIMIT 1) AS aa
+                    WHERE l.library = 'DOK' AND l.kood = 'VORDER'
+                          AND u.id =$2 :: INTEGER
+                          AND s.library = 'STATUS' AND s.kood = '0'`,
             query: null,
             multiple: false,
             alias: 'row',
             data: []
         },
         {
-            sql: "select k1.id, $2::integer as userid, trim(n.kood) as kood,  trim(n.nimetus) as nimetus, trim(n.uhik) as uhik, k1.* " +
-            " from docs.korder2 as k1 " +
-            " inner join docs.korder1 k on k.id = k1.parentId " +
-            " inner join libs.nomenklatuur n on n.id = k1.nomid " +
-            " inner join ou.userid u on u.id = $2::integer " +
-            " where k.parentid = $1",
+            sql: `SELECT
+                  k1.id,
+                  $2 :: INTEGER   AS userid,
+                  trim(n.kood)    AS kood,
+                  trim(n.nimetus) AS nimetus,
+                  trim(n.uhik)    AS uhik,
+                  k1.*,
+                  coalesce(v.valuuta,'EUR')::varchar(20) as valuuta,
+                  coalesce(v.kuurs,1)::numeric(12,4) as kuurs
+                FROM docs.korder2 AS k1
+                  INNER JOIN docs.korder1 k ON k.id = k1.parentId
+                  INNER JOIN libs.nomenklatuur n ON n.id = k1.nomid
+                  INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                  left outer join docs.dokvaluuta1 v on (k1.id = v.dokid and v.dokliik = 11)                 
+                  WHERE k.parentid = $1`,
             query: null,
             multiple: true,
             alias: 'details',
             data: []
         },
         {
-            sql: "select rd.id, $2::integer as userid, trim(l.kood) as doc_type, trim(l.nimetus) as name " +
-            " from docs.doc d " +
-            " left outer join docs.doc rd on rd.id in (select unnest(d.docs_ids)) " +
-            " left outer join libs.library l on rd.doc_type_id = l.id " +
-            " inner join ou.userid u on u.id = $2::integer " +
-            " where d.id = $1",
+            sql: `SELECT
+                  rd.id,
+                  $2 :: INTEGER   AS userid,
+                  trim(l.kood)    AS doc_type,
+                  trim(l.nimetus) AS name
+                FROM docs.doc d
+                  LEFT OUTER JOIN docs.doc rd ON rd.id IN (SELECT unnest(d.docs_ids))
+                  LEFT OUTER JOIN libs.library l ON rd.doc_type_id = l.id
+                  INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                WHERE d.id = $1`,
             query: null,
             multiple: true,
             alias: 'relations',
@@ -93,43 +153,28 @@ const Vorder = {
             {id: "lastupdate", name: "Viimane parandus", width: "150px"},
             {id: "status", name: "Status", width: "100px"}
         ],
-        sqlString: `select d.id, to_char(k.kpv,'DD-MM-YYYY') as kpv, trim(k.number) as number, 
-             trim(k.nimi) as nimi, trim(k.dokument) as dokument,
-             to_char(d.created,'DD.MM.YYYY HH:MM') as created, to_char(d.lastupdate,'DD.MM.YYYY HH:MM') as lastupdate , 
-             k.summa, 
-             s.nimetus as status 
-             from docs.doc d 
-             inner join docs.korder1 k on d.id = k.parentid 
-             inner join libs.library s on s.kood = d.status::text
-             where k.tyyp = 2
-                and d.rekvId = $1
-                and coalesce(docs.usersRigths(d.id, 'select', $2),true)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
-        params: ''
+        sqlString: `SELECT *
+                    FROM cur_korder k
+                    WHERE k.rekvId = $1
+                          AND coalesce(docs.usersRigths(k.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+        params: '',
+        alias: 'curKorder'
     },
     returnData: {
         row: {},
+        relations: [],
         details: [],
         gridConfig: [
             {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
             {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
             {id: 'summa', name: 'Summa', width: '100px', show: true, type: 'number', readOnly: false},
+            {id: 'konto', name: 'Korr.konto', width: '100px', show: true, type: 'text', readOnly: false},
             {id: 'tunnus', name: 'Tunnus', width: '100px', show: true, type: 'text', readOnly: false},
             {id: 'proj', name: 'Projekt', width: '100px', show: true, type: 'text', readOnly: false}
-
-            /*
-             {
-             id: 'kood',
-             name: 'Kood',
-             width: '100px',
-             show: true,
-             type: 'select',
-             readOnly: false,
-             dataSet: 'nomenclature',
-             valueFieldName: 'nomid'
-             },
-             */
         ]
     },
+    saveDoc: `select docs.sp_salvesta_korder($1, $2, $3) as id`,
+    deleteDoc: `select error_code, result, error_message from docs.sp_delete_korder($1, $2)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',
@@ -187,11 +232,109 @@ const Vorder = {
         return taskFunction(docId, userId, Vorder);
     },
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
-    generateJournal: {command: `select docs.gen_lausend_arv($1, $2)`, type: "sql"},
+    generateJournal: {command: `select docs.gen_lausend_sorder($1, $2)`, type: "sql"},
     endProcess: {command: `update docs.doc set status = 2 where id = $1`, type: "sql"},
-    saveDoc: "select docs.sp_salvesta_korder($1, $2, $3) as id",
-    deleteDoc: `select error_code, result, error_message from docs.sp_delete_korder($1, $2)`, // $1 - userId, $2 - docId
+
 
 };
 
 module.exports = Vorder;
+
+/*
+const setBpmStatuses = (actualStepIndex, userId)=>  {
+// собираем данные на на статус документа, правим данные БП документа
+    // 1. установить на actualStep = false
+    // 2. задать статус документу
+    // 3. выставить стутус задаче (пока только finished)
+    // 4. если есть следующий шаг, то выставить там actualStep = true, статус задачи opened
+
+
+    try {
+        var bpm =  Vorder.bpm, // нельзя использовать let из - за использования try {}
+            nextStep = bpm[actualStepIndex].nextStep,
+            executors = bpm[actualStepIndex].actors || [];
+
+        if (!executors || executors.length == 0) {
+            // если исполнители не заданы, то добавляем автора
+            executors.push({
+                id: userId,
+                name: 'AUTHOR',
+                role: 'AUTHOR'
+            })
+        }
+
+        bpm[actualStepIndex].data = [{execution: Date.now(), executor: userId, vars: null}];
+        bpm[actualStepIndex].status = 'finished';  // 3. выставить стутус задаче (пока только finished)
+        bpm[actualStepIndex].actualStatus = false;  // 1. установить на actualStep = false
+        bpm[actualStepIndex].actors = executors;  // установить список акторов
+
+        // выставим флаг на следующий щаг
+        bpm = bpm.map(stepData => {
+            if (stepData.step === nextStep) {
+                // 4. если есть следующий шаг, то выставить там actualStep = true, статус задачи opened
+                stepData.actualStep = true;
+                stepData.status = 'opened';
+            }
+            return stepData;
+        });
+
+    } catch (e) {
+        console.error('try error', e);
+    }
+    return bpm;
+
+};
+
+const start =(docId, userId)=> {
+    // реализует старт БП документа
+    const DOC_STATUS = 1, // устанавливаем активный статус для документа
+        DocDataObject = require('./documents'),
+        SQL_UPDATE = 'update docs.doc set status = $1, bpm = $2, history = $4 where id = $3',
+        SQL_SELECT_DOC = Vorder.select[0].sql;
+
+    let  bpm = setBpmStatuses(0, userId), // выставим актуальный статус для следующего процесса
+        history = {user: userId, updated: Date.now()};
+
+    // выполнить запрос и вернуть промис
+    return DocDataObject.executeSqlQueryPromise(SQL_UPDATE, [DOC_STATUS, JSON.stringify(bpm), docId, JSON.stringify(history)]);
+
+};
+*/
+
+/*
+// generateJournal
+const generateJournal = (docId, userId)=> {
+    // реализует контировка
+
+    const ACTUAL_STEP_STATUS = 1, // актуальный шаг БП
+        SQL_GENERATE_LAUSEND = 'select docs.gen_lausend_sorder((select id from docs.korder1 where parentid = $1), $2) as journal_id',
+        SQL_UPDATE_DOCUMENT_BPM = 'update docs.doc set bpm = $2, history = $3  where id = $1',
+        DocDataObject = require('./documents');
+
+    let   bpm = setBpmStatuses(ACTUAL_STEP_STATUS, userId),
+        tasks = [],
+        history = {user: userId, updated: Date.now()};
+
+    // выполнить запрос и вернуть промис
+    return Promise.all([
+        DocDataObject.executeSqlQueryPromise(SQL_GENERATE_LAUSEND, [docId, userId]),
+        DocDataObject.executeSqlQueryPromise(SQL_UPDATE_DOCUMENT_BPM, [docId, JSON.stringify(bpm), JSON.stringify(history)])
+    ]);
+};
+
+const endProcess = (docId, userId)=> {
+    // реализует завершение БП документа
+
+    const   ACTUAL_TASK_STEP = 2, // устанавливаем активный статус для документа
+        DOC_STATUS = 2, // закрыт
+        SQL = 'update docs.doc set bpm = $2, history = $3, status = $4 where id = $1',
+        DocDataObject = require('./documents');
+
+    let bpm = setBpmStatuses(ACTUAL_TASK_STEP, userId), // выставим актуальный статус для следующего процесса
+        history = {user: userId, updated: Date.now()},
+        params = [docId, JSON.stringify(bpm), JSON.stringify(history), DOC_STATUS];
+
+    return DocDataObject.executeSqlQueryPromise(SQL, params);
+};
+*/
+

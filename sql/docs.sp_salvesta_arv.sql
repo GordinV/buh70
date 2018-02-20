@@ -19,7 +19,7 @@ DECLARE
                            LIMIT 1);
   doc_data      JSON = data ->> 'data';
   doc_details   JSON = doc_data ->> 'gridData';
-
+  doc_arvid     INTEGER = doc_data ->> 'arvid';
   doc_number    TEXT = doc_data ->> 'number';
   doc_summa     NUMERIC(14, 4) = coalesce((doc_data ->> 'summa') :: NUMERIC, 0);
   doc_liik      INTEGER = doc_data ->> 'liik';
@@ -48,7 +48,7 @@ BEGIN
     doc_id = doc_data ->> 'id';
   END IF;
 
-raise notice 'doc_id: %', doc_id;
+  RAISE NOTICE 'doc_id: %', doc_id;
 
   IF doc_number IS NULL OR doc_number = ''
   THEN
@@ -110,7 +110,7 @@ raise notice 'doc_id: %', doc_id;
             userName AS user) row;
 
 
-    raise notice 'new_history %', new_history;
+    RAISE NOTICE 'new_history %', new_history;
 
     UPDATE docs.doc
     SET lastupdate = now(),
@@ -191,11 +191,11 @@ raise notice 'doc_id: %', doc_id;
         hind     = coalesce(json_record.hind, 0),
         kbm      = coalesce(json_record.kbm, 0),
         summa    = coalesce(json_record.summa, kogus * hind),
-        kood1 = coalesce(json_record.kood1, ''),
-        kood2 = coalesce(json_record.kood2, ''),
-        kood3 = coalesce(json_record.kood3, ''),
-        kood4 = coalesce(json_record.kood4, ''),
-        kood5 = coalesce(json_record.kood5, '')
+        kood1    = coalesce(json_record.kood1, ''),
+        kood2    = coalesce(json_record.kood2, ''),
+        kood3    = coalesce(json_record.kood3, ''),
+        kood4    = coalesce(json_record.kood4, ''),
+        kood5    = coalesce(json_record.kood5, '')
       WHERE id = json_record.id :: INTEGER
       RETURNING id
         INTO arv1_id;

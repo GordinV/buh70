@@ -16,15 +16,17 @@ DECLARE
   doc_id        INTEGER = data ->> 'id';
   doc_data      JSON = data ->> 'data';
   doc_details   JSON = doc_data ->> 'gridData';
-  doc_type_kood TEXT = doc_data ->> 'doc_type_id';
-  doc_type_id   INTEGER = (SELECT id
+  doc_opt       TEXT = coalesce((doc_data ->> 'opt'), '1'); -- 1 -> smk, 2 -> vmk
+  doc_type_kood TEXT = coalesce((doc_data ->> 'doc_type_id'), CASE WHEN doc_opt = '1'
+    THEN 'SMK'
+                                                              ELSE 'VMK' END);
+  doc_typeId   INTEGER = (SELECT id
                            FROM libs.library
                            WHERE ltrim(rtrim(kood)) = ltrim(rtrim(upper(doc_type_kood))) AND library = 'DOK'
                            LIMIT 1);
   doc_number    TEXT = coalesce(doc_data ->> 'number', '1');
-  doc_opt       TEXT = coalesce(doc_data ->> 'opt', '0'); -- 0 -> smk, 1 -> vmk
   doc_kpv       DATE = doc_data ->> 'kpv';
-  doc_aa_id     INTEGER = doc_data ->> 'aa_id';
+  doc_aa_id     INTEGER = doc_data ->> 'aaid';
   doc_arvid     INTEGER = doc_data ->> 'arvid';
   doc_muud      TEXT = doc_data ->> 'muud';
   tcValuuta     TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
@@ -56,6 +58,7 @@ BEGIN
     doc_id = doc_data ->> 'id';
   END IF;
 
+raise notice 'doc_type_id -> %', doc_typeId;
 
   IF doc_aa_id IS NULL
   THEN
@@ -76,8 +79,6 @@ BEGIN
 
   -- вставка или апдейт docs.doc
 
-  RAISE NOTICE 'doc_id %', doc_id;
-
   IF doc_id IS NULL OR doc_id = 0
   THEN
 
@@ -89,7 +90,7 @@ BEGIN
 
 
     INSERT INTO docs.doc (doc_type_id, history, rekvid)
-    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid)
+    VALUES (doc_typeId, '[]' :: JSONB || new_history, user_rekvid)
     RETURNING id
       INTO doc_id;
 
@@ -116,7 +117,7 @@ BEGIN
     WHERE id = doc_id;
 
 
-    IF doc_arvid IS NOT NULL and doc_arvid != 0
+    IF doc_arvid IS NOT NULL AND doc_arvid != 0
     THEN
       SELECT parentid
       INTO arv_parent_id
@@ -127,12 +128,16 @@ BEGIN
                  SELECT unnest(docs) AS element) qry
           WHERE element = arv_parent_id) = 0
       THEN
-        docs = array_append(docs, arv_parent_id);
+        IF arv_parent_id IS NOT NULL
+        THEN
+          docs = array_append(docs, arv_parent_id);
+        END IF;
       END IF;
     END IF;
 
     UPDATE docs.doc
     SET
+      doc_type_id = doc_typeId,
       docs_ids   = docs,
       lastupdate = now(),
       history    = coalesce(history, '[]') :: JSONB || new_history
@@ -157,7 +162,7 @@ BEGIN
   END IF;
   -- вставка в таблицы документа
 
-
+  RAISE NOTICE 'mk_id %', mk_id;
   FOR json_object IN
   SELECT *
   FROM json_array_elements(doc_details)
@@ -245,24 +250,62 @@ GRANT EXECUTE ON FUNCTION docs.sp_salvesta_mk(JSON, INTEGER, INTEGER) TO postgre
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_mk(JSON, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_mk(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
+SELECT docs.sp_salvesta_mk('{
+  "id": 928,
+  "data": {
+    "aaid": 2,
+    "aa_id": 0,
+    "arvid": 5,
+    "arvnr": null,
+    "bpm": null,
+    "created": "15.02.2018 03:02:41",
+    "doc": null,
+    "docs_ids": null,
+    "doc_type_id": null,
+    "doklausid": 0,
+    "dokprop": null,
+    "id": 928,
+    "konto": null,
+    "kpv": "20180215",
+    "lastupdate": "15.02.2018 03:02:41",
+    "maksepaev": "20180215",
+    "muud": "",
+    "number": "001",
+    "opt": 1,
+    "pank": null,
+    "rekvid": 1,
+    "selg": "",
+    "status": "????????",
+    "summa": 0,
+    "viitenr": "123455",
+    "gridData": [
+      {
+        "aa": "",
+        "asutus": "Asutus",
+        "asutusid": 2,
+        "id": 150,
+        "id1": 150,
+        "journalid": null,
+        "konto": "111",
+        "kood": "pank",
+        "kood1": "",
+        "kood2": "",
+        "kood3": "",
+        "kood4": "",
+        "kood5": "",
+        "kuurs": 1,
+        "nimetus": "Raha arvele",
+        "nomid": 5,
+        "pank": "",
+        "parentid": 163,
+        "proj": "test",
+        "summa": 0,
+        "tp": "",
+        "tunnus": "1343205",
+        "userid": 1,
+        "valuuta": "EUR"
+      }
+    ]
+  }
+}', 1, 1);
 
-/*
-select docs.sp_salvesta_mk('{"id":0,"doc_type_id":"SMK","data":{"id":0,"created":"2017-06-24T21:39:57.050726","lastupdate":"2017-06-24T21:39:57.050726","selg":"test mk",
-"bpm":null,"doc":"v mk","doc_type_id":"SMK","status":"Черновик","number":"001-SMK","summa":24,"rekvid":null,"opt":1,"kpv":"2017-06-24","asutusid":1, "maksepaev":"2017-06-24",
-"arvid":null,"lisa":"lisa","tahtaeg":"2017-07-01","muud":"smk muud"},
-"details":[{"id":"NEW0.6577064044198089","nomid":"1","summa":24,"aa":"aatest","pank":"767", "asutusid":1}]}',1, 1);
-
-
-insert into libs.library (rekvid, kood, nimetus, library)
-	values (1, 'SMK','Sissemakse korraldus','DOK')
-
-select * from libs.library where library = 'DOK'
-
-select * from ou.aa
-
-insert into ou.aa (parentid, arve, nimetus, pank, konto)
-	values (1, 'EE1000', 'PANK1', 1, '113')
-select * from docs.mk
-
-delete from docs.mk1 where parentid > 10
-*/

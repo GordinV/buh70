@@ -10,68 +10,127 @@ const start = require('./../BP/start'),
 const Vmk = {
     select: [
         {
-            sql: `select d.id,  d.docs_ids, 
-            (to_char(created,'DD.MM.YYYY HH:MM:SS'))::text as created, 
-                (to_char(lastupdate,'DD.MM.YYYY HH:MM:SS'))::text as lastupdate, d.bpm, 
-                trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
-                trim(s.nimetus) as status, 
-                k.number as number,  to_char(k.maksepaev,'YYYY-MM-DD') as maksepaev, k.viitenr,
-                k.aaid as aa_id, trim(aa.nimetus) as pank, 
-                k.rekvId, to_char(k.kpv,'YYYY-MM-DD') as kpv, k.selg, k.muud, k.opt, 
-                k.arvid, ('Number:' || arv.number::text || ' Kuupäev:' || arv.kpv::text || ' Jääk:' || arv.jaak::text) as arvnr,
-                (select sum(summa) from docs.mk1 where parentid = k.id) as summa
-                from docs.doc d 
-                inner join libs.library l on l.id = d.doc_type_id 
-                inner join docs.mk k on k.parentId = d.id 
-                left outer join libs.library s on s.library = 'STATUS' and s.kood = d.status::text 
-                left outer join ou.aa as aa on k.aaid = aa.Id 
-                left outer join docs.arv as arv on k.arvid = arv.Id 
-                inner join ou.userid u on u.id = $2::integer 
-                where d.id = $1`,
-            sqlAsNew: `select $1::integer as id, $2::integer as userid, 
-                to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as created, 
-                to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as lastupdate, 
-                null as bpm,
-                trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
-                trim(s.nimetus) as status, 
-                coalesce((select max(number) from docs.mk where opt = 1 ),'0')::integer + 1  as number, to_char(now(),'YYYY-MM-DD') as maksepaev,  
-                aa.id as aa_id, trim(aa.name) as pank, 
-                null as rekvId,  to_char(now(),'YYYY-MM-DD') as kpv, null as viitenr,
-                null as selg, null as muud, 1 as  opt, null as regkood, null as asutus, 
-                null as arvid, null as arvnr, 0 as summa
-                from libs.library l,   libs.library s, 
-                (select id, trim(nimetus) as name from ou.aa where pank = 1 order by default_ limit 1) as aa, 
-                (select * from ou.userid u where u.id = $2::integer) as u                
-                where l.library = 'DOK' and l.kood = 'VMK'
-                and u.id = $2::integer 
-                and s.library = 'STATUS' and s.kood = '0'`,
+            sql: `SELECT
+                  d.id,
+                  d.docs_ids,
+                  (to_char(created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                                                   AS created,
+                  (to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                                                AS lastupdate,
+                  d.bpm,
+                  trim(l.nimetus)                                                                                     AS doc,
+                  trim(l.kood)                                                                                        AS doc_type_id,
+                  trim(s.nimetus)                                                                                     AS status,
+                  k.number                                                                                            AS number,
+                  k.maksepaev                                                                                         AS maksepaev,
+                  k.viitenr,
+                  k.aaid                                                                                              AS aa_id,
+                  trim(aa.nimetus)                                                                                    AS pank,
+                  k.rekvId,
+                  k.kpv                                                                                               AS kpv,
+                  k.selg,
+                  k.muud,
+                  k.opt,
+                  k.arvid,
+                  k.aaid,
+                  ('Number:' || arv.number :: TEXT || ' Kuupäev:' || arv.kpv :: TEXT || ' Jääk:' || arv.jaak :: TEXT) AS arvnr,
+                  (SELECT sum(summa)
+                   FROM docs.mk1
+                   WHERE parentid = k.id)                                                                             AS summa,
+                   coalesce((dp.details :: JSONB ->> 'konto'),'') :: VARCHAR(20)                                      AS konto,
+                   dp.selg::varchar(120)                                                                              as dokprop,
+                   k.doklausid
+                FROM docs.doc d
+                  INNER JOIN docs.mk k ON k.parentId = d.id
+                  INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                  LEFT OUTER JOIN libs.library l ON l.id = d.doc_type_id
+                  LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
+                  LEFT OUTER JOIN ou.aa AS aa ON k.aaid = aa.Id
+                  LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.Id
+                  left outer join libs.dokprop dp on dp.id = k.doklausid 
+                WHERE d.id = $1`,
+            sqlAsNew: `SELECT
+                      $1 :: INTEGER                                 AS id,
+                      $2 :: INTEGER                                 AS userid,
+                      to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT AS created,
+                      to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT AS lastupdate,
+                      NULL                                         AS bpm,
+                      trim(l.nimetus)                               AS doc,
+                      trim(l.kood)                                  AS doc_type_id,
+                      trim(s.nimetus)                               AS status,
+                      (SELECT max(number)
+                       FROM docs.korder1
+                       WHERE tyyp = 1) :: INTEGER + 1               AS number,
+                      now() :: DATE                                 AS maksepaev,
+                      aa.id                                         AS aaid,
+                      trim(aa.name)                                 AS pank,
+                      NULL::integer                                 AS rekvId,
+                      now() :: DATE                                 AS kpv,
+                      NULL::varchar(120)                            AS viitenr,
+                      NULL::TEXT                                    AS selg,
+                      NULL::TEXT                                    AS muud,
+                      1                                             AS opt,
+                      NULL::varchar(20)                             AS regkood,
+                      NULL::varchar(254)                            AS asutus,
+                      NULL::integer                                 AS arvid,
+                      NULL::varchar(20)                             AS arvnr,
+                      0::numeric(12,2)                              AS summa,
+                     null::varchar(120) as  dokprop,
+                     null::varchar(20) as konto,
+                     0 as doklausid
+                    FROM libs.library l,
+                      libs.library s,
+                      (SELECT
+                         id,
+                         trim(nimetus) AS name
+                       FROM ou.aa
+                       WHERE pank = 1
+                       ORDER BY default_
+                       LIMIT 1) AS aa,
+                      (SELECT *
+                       FROM ou.userid u
+                       WHERE u.id = $2 :: INTEGER) AS u
+                    WHERE l.library = 'DOK' AND l.kood = 'VMK'
+                          AND u.id = $2 :: INTEGER
+                          AND s.library = 'STATUS' AND s.kood = '0'`,
             query: null,
             multiple: false,
             alias: 'row',
             data: []
         },
         {
-            sql: `select k1.id, $2::integer as userid, trim(n.kood) as kood, trim(n.nimetus) as nimetus, 
-                trim(a.nimetus) as asutus,
-                k1.* 
-                from docs.mk1 as k1 
-                inner join docs.mk k on k.id = k1.parentId 
-                inner join libs.nomenklatuur n on n.id = k1.nomid 
-                inner join libs.asutus a on a.id = k1.asutusid 
-                inner join ou.userid u on u.id = $2::integer 
-                where k.parentid = $1`,
+            sql: `SELECT
+                      k1.id,
+                      $2 :: INTEGER    AS userid,
+                      trim(n.kood)    AS kood,
+                      trim(n.nimetus) AS nimetus,
+                      trim(a.nimetus) AS asutus,
+                      k1.*,
+                      coalesce(v.valuuta,'EUR')::varchar(20) as valuuta,
+                      coalesce(v.kuurs,1)::numeric(12,4) as kuurs,
+                      coalesce(jid.number,0)::integer as lausnr
+                    FROM docs.mk1 AS k1
+                      INNER JOIN docs.mk k ON k.id = k1.parentId
+                      INNER JOIN libs.nomenklatuur n ON n.id = k1.nomid
+                      INNER JOIN libs.asutus a ON a.id = k1.asutusid
+                      INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                      LEFT OUTER JOIN docs.dokvaluuta1 v ON (v.dokid = k1.id AND v.dokliik = 4)
+                      left outer join docs.journalid jid on jid.journalid = k1.journalid
+                    WHERE k.parentid = $1`,
             query: null,
             multiple: true,
             alias: 'details',
             data: []
         },
         {
-            sql: `select rd.id, $2::integer as userid,  trim(l.kood) as doc_type, trim(l.nimetus) as name 
-                from docs.doc d 
-                left outer join docs.doc rd on rd.id in (select unnest(d.docs_ids)) 
-                left outer join libs.library l on rd.doc_type_id = l.id 
-                inner join ou.userid u on u.id = $2::integer 
-                where d.id = $1`,
+            sql: `SELECT
+                      rd.id,
+                      $2 :: INTEGER   AS userid,
+                      trim(l.kood)    AS doc_type,
+                      trim(l.nimetus) AS name
+                    FROM docs.doc d
+                      LEFT OUTER JOIN docs.doc rd ON rd.id IN (SELECT unnest(d.docs_ids))
+                      LEFT OUTER JOIN libs.library l ON rd.doc_type_id = l.id
+                      INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                    WHERE d.id = $1`,
             query: null,
             multiple: true,
             alias: 'relations',
@@ -94,20 +153,14 @@ const Vmk = {
             {id: "lastupdate", name: "Viimane parandus", width: "150px"},
             {id: "status", name: "Status", width: "100px"}
         ],
-        sqlString: `select d.id, to_char(k.kpv,'DD-MM-YYYY') as kpv, trim(k.number) as number, 
-             trim(a.nimetus) as asutus, k1.aa, k1.summa, k.viitenr,
-             to_char(k.maksepaev,'DD-MM-YYYY') as maksepaev,
-             to_char(d.created,'DD.MM.YYYY HH:MM') as created, to_char(d.lastupdate,'DD.MM.YYYY HH:MM') as lastupdate , 
-             s.nimetus as status 
-             from docs.doc d 
-             inner join docs.mk k on d.id = k.parentid 
-             inner join docs.mk1 k1 on k.id = k1.parentid 
-             inner join libs.asutus a on a.id = k1.asutusid
-             inner join libs.library s on s.kood = d.status::text 
-             where k.opt = 1
-                and d.rekvId = $1
-                and coalesce(docs.usersRigths(d.id, 'select', $2),true)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
-        params: ''
+        sqlString: `SELECT
+                          d.*,
+                          0 AS valitud
+                        FROM cur_mk d
+                        WHERE d.rekvId = $1
+                              AND coalesce(docs.usersRigths(d.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+        params: '',
+        alias:'curMk'
     },
     returnData: {
         row: {},

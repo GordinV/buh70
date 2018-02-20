@@ -1,6 +1,6 @@
 'use strict';
 
-describe('model dok. type VMK tests', () => {
+describe.skip('model dok. type VMK tests', () => {
     let globalDocId = 0; // для сохранения ид документа
     const doc = require('../models/raamatupidamine/vmk'),
         docTypeId = 'vmk',
@@ -8,7 +8,7 @@ describe('model dok. type VMK tests', () => {
 
     let docData = doc.returnData;
 
-    it(`${docTypeId} select New`, (done) => {
+    it.skip(`${docTypeId} select New`, (done) => {
         DocDataObject.selectDoc(docTypeId, [globalDocId, 1], (err, data) => {
             expect(err).toBeNull();
             expect(data).toBeDefined();
@@ -93,7 +93,7 @@ describe('model dok. type VMK tests', () => {
                 expect(data).toBeDefined();
             });
         });
-    })
+    });
 
     it(`${docTypeId} test for deleteTask`, (done) => {
         let sql = doc.deleteDoc;

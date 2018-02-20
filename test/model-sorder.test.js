@@ -1,6 +1,6 @@
 'use strict';
 
-describe('model dok. type SORDER tests', function () {
+describe.skip('model dok. type SORDER tests', function () {
     let globalDocId = 0; // для сохранения ид документа
     const doc = require('../models/raamatupidamine/sorder'),
         docTypeId = 'sorder',
@@ -95,7 +95,7 @@ describe('model dok. type SORDER tests', function () {
                 expect(data).toBeDefined();
             });
         });
-    })
+    });
 
     it(`${docTypeId} test for deleteTask`, (done) => {
         let sql = doc.deleteDoc;

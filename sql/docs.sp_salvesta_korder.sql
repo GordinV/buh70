@@ -8,42 +8,41 @@ CREATE OR REPLACE FUNCTION docs.sp_salvesta_korder(
 $BODY$
 
 DECLARE
-  korder_id     INTEGER;
-  korder1_id    INTEGER;
-  userName      TEXT;
-  doc_id        INTEGER = data ->> 'id';
-  doc_data      JSON = data ->> 'data';
-  doc_tyyp      TEXT = coalesce(doc_data ->> 'tyyp', '1'); -- 1 -> sorder, 2 -> vorder
-  doc_type_kood TEXT = CASE WHEN doc_tyyp = '1'
+  korder_id       INTEGER;
+  korder1_id      INTEGER;
+  userName        TEXT;
+  doc_id          INTEGER = data ->> 'id';
+  doc_data        JSON = data ->> 'data';
+  doc_tyyp        TEXT = coalesce(doc_data ->> 'tyyp', '1'); -- 1 -> sorder, 2 -> vorder
+  doc_type_kood   TEXT = CASE WHEN doc_tyyp = '1'
     THEN 'SORDER'
-                       ELSE 'VORDER' END/*data->>'doc_type_id'*/;
-  doc_type_id   INTEGER = (SELECT id
-                           FROM libs.library
-                           WHERE ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood))) AND library = 'DOK'
-                           LIMIT 1);
-  doc_details   JSON = doc_data ->> 'gridData';
-  doc_number    TEXT = coalesce(doc_data ->> 'number', '1');
-  doc_kpv       DATE = doc_data ->> 'kpv';
-  doc_asutusid  INTEGER = doc_data ->> 'asutusid';
-  doc_kassa_id  INTEGER = doc_data ->> 'kassa_id';
-  doc_dokument  TEXT = doc_data ->> 'dokument';
-  doc_nimi      TEXT = doc_data ->> 'nimi';
-  doc_aadress   TEXT = doc_data ->> 'aadress';
-  doc_alus      TEXT = doc_data ->> 'alus';
-  doc_arvid     INTEGER = doc_data ->> 'arvid';
-  doc_muud      TEXT = doc_data ->> 'muud';
-  doc_summa     NUMERIC = doc_data ->> 'summa';
-  tcValuuta     TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
-  tnKuurs       NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
-  json_object   JSON;
-  json_record   RECORD;
-  new_history   JSONB;
-  ids           INTEGER [];
-  docs          INTEGER [];
-  arv_parent_id INTEGER;
+                         ELSE 'VORDER' END/*data->>'doc_type_id'*/;
+  doc_type_id     INTEGER = (SELECT id
+                             FROM libs.library
+                             WHERE ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood))) AND library = 'DOK'
+                             LIMIT 1);
+  doc_details     JSON = doc_data ->> 'gridData';
+  doc_number      TEXT = coalesce(doc_data ->> 'number', '1');
+  doc_kpv         DATE = doc_data ->> 'kpv';
+  doc_asutusid    INTEGER = doc_data ->> 'asutusid';
+  doc_kassa_id    INTEGER = doc_data ->> 'kassa_id';
+  doc_dokument    TEXT = doc_data ->> 'dokument';
+  doc_nimi        TEXT = doc_data ->> 'nimi';
+  doc_aadress     TEXT = doc_data ->> 'aadress';
+  doc_alus        TEXT = doc_data ->> 'alus';
+  doc_arvid       INTEGER = doc_data ->> 'arvid';
+  doc_muud        TEXT = doc_data ->> 'muud';
+  doc_summa       NUMERIC = doc_data ->> 'summa';
+  tcValuuta       TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
+  tnKuurs         NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
+  json_object     JSON;
+  json_record     RECORD;
+  new_history     JSONB;
+  ids             INTEGER [];
+  docs            INTEGER [];
+  arv_parent_id   INTEGER;
+  previous_arv_id INTEGER;
 BEGIN
-
-  RAISE NOTICE 'data.doc_details: %, jsonb_array_length %, data: %', doc_details, json_array_length(doc_details), data;
 
   SELECT kasutaja
   INTO userName
@@ -59,9 +58,6 @@ BEGIN
   THEN
     doc_id = doc_data ->> 'id';
   END IF;
-
-
-  RAISE NOTICE 'kassaId %', doc_kassa_id;
 
   IF doc_kassa_id IS NULL
   THEN
@@ -79,6 +75,22 @@ BEGIN
       RAISE NOTICE 'kassa: %', doc_kassa_id;
     END IF;
   END IF;
+
+  IF doc_arvid IS NOT NULL
+  THEN
+    SELECT parentid
+    INTO arv_parent_id
+    FROM docs.arv
+    WHERE id = doc_arvid;
+    IF (SELECT count(*)
+        FROM (
+               SELECT unnest(docs) AS element) qry
+        WHERE element = arv_parent_id) = 0
+    THEN
+      docs = array_append(docs, arv_parent_id);
+    END IF;
+  END IF;
+
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
   THEN
@@ -119,21 +131,25 @@ BEGIN
     FROM docs.doc
     WHERE id = doc_id;
 
+    -- will check if arvId exists
 
-    IF doc_arvid IS NOT NULL
+    IF doc_arvid IS NULL OR empty(doc_arvid)
     THEN
-      SELECT parentid
-      INTO arv_parent_id
+      SELECT arvid
+      INTO previous_arv_id
       FROM docs.arv
-      WHERE id = doc_arvid;
-      IF (SELECT count(*)
-          FROM (
-                 SELECT unnest(docs) AS element) qry
-          WHERE element = arv_parent_id) = 0
+      WHERE parentid = doc_id;
+      IF previous_arv_id IS NOT NULL
       THEN
-        docs = array_append(docs, arv_parent_id);
+        -- remove from docs_ids
+        docs = array_remove(docs, previous_arv_id);
+        IF array_length(docs, 1) = 0
+        THEN
+          docs = NULL;
+        END IF;
       END IF;
     END IF;
+
 
     UPDATE docs.doc
     SET
@@ -141,7 +157,6 @@ BEGIN
       lastupdate = now(),
       history    = coalesce(history, '[]') :: JSONB || new_history
     WHERE id = doc_id;
-
 
     UPDATE docs.korder1
     SET
@@ -256,18 +271,8 @@ GRANT EXECUTE ON FUNCTION docs.sp_salvesta_korder(JSON, INTEGER, INTEGER) TO dbk
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_korder(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
-saving data:
-{"id":59,"doc_type_id":"SORDER","data":{"id":59,"docs_ids":null,"created":"2016-06-01T09:54:40.504143","lastupdate":"2016-06-01T09:54:40.504143",
-"bpm":null,"doc":"Sissemakse kassaorder","doc_type_id":"SORDER","status":"Черновик","number":"1","summa":"100.0000","rekvid":1,"kpv":"2016-05-31",
-"asutusid":1,"dokument":"Arve сохранен","alus":"test","muud":"muud","nimi":"isik","aadress":"адрес","regkood":"123456789           ","asutus":"isik, töötaja"},
-"details":[
-{"kood":"PANK","nimetus":"paNK","uhik":"","id":6,"parentid":14,"nomid":3,"summa":"100.0000","konto":"113","kood1":null,"kood2":null,"kood3":null,"kood4":null,"kood5":null,"tp":null,"tunnus":"tunnus","proj":"proj"}]}
 
-select docs.sp_salvesta_korder('{"id":0,"doc_type_id":"VORDER","data":{"id":59,"docs_ids":null,"created":"2016-06-01T09:54:40.504143","lastupdate":"2016-06-01T09:54:40.504143",
-"bpm":null,"doc":"Sissemakse kassaorder","doc_type_id":"VORDER","status":"Черновик","number":"1","summa":"100.0000","rekvid":1,"kpv":"2016-05-31",
-"asutusid":1,"dokument":"Arve сохранен","alus":"test","muud":"muud","nimi":"isik","aadress":"адрес","tyyp":2, "regkood":"123456789           ","asutus":"isik, töötaja"},
-"details":[
-{"kood":"PANK","nimetus":"paNK","uhik":"","id":6,"parentid":14,"nomid":3,"summa":"100.0000","konto":"113","kood1":null,"kood2":null,"kood3":null,"kood4":null,"kood5":null,"tp":null,"tunnus":"tunnus","proj":"proj"}]}
+select docs.sp_salvesta_korder('{"id":0,"data": {"arvid":193,"aadress":"Aadress","alus":"Alus","arvid":87,"arvnr":null,"asutus":"Asutus","asutusid":2,"bpm":null,"created":"19.02.2018 09:02:11","doc":"Sissemakse kassaorder","docs_ids":null,"doc_type_id":"SORDER","doklausid":null,"dokprop":null,"dokument":"dok","id":937,"journalid":null,"kassa":"Kassa1","kassa_id":1,"konto":"","kpv":"20180219","lastupdate":"19.02.2018 09:02:11","lausnr":0,"muud":null,"nimi":"Isik","number":"13","regkood":"6543423423423","rekvid":1,"status":"????????","summa":20,"tyyp":1,"gridData":[{"id":159,"id1":159,"konto":"113","kood":"PANK","kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kuurs":1,"nimetus":"Raha pankarvele","nimetus1":"Raha pankarvele","nomid":3,"parentid":155,"proj":"","summa":30,"tp":"","tunnus":"","uhik":"","userid":1,"valuuta":"EUR"}]}}
 ',1, 1);
 
 select * from libs.nomenklatuur where dok = 'SORDER' limit 10
