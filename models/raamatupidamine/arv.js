@@ -30,7 +30,8 @@ const Arv = {
                  inner join ou.userid u on u.id = $2::integer 
                  left outer join libs.library s on s.library = 'STATUS' and s.kood = d.status::text 
                  left outer join libs.dokprop dp on dp.id = a.doklausid 
-                 left outer join docs.journalid jid on jid.journalid = a.journalid 
+                 left outer join docs.journal j on j.parentid = a.journalid
+                 left outer join docs.journalid jid on jid.journalid = j.id 
                  where d.id = $1`,
             sqlAsNew: `select $1::integer as id, $2::integer as userid,  
                     to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as created, 
@@ -291,7 +292,11 @@ const Arv = {
         }
     ],
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
-    generateJournal: {command: "select docs.gen_lausend_arv($1, $2)", type: "sql"},
+    generateJournal: {
+        command: "select error_code, result, error_message from docs.gen_lausend_arv($2, $1)", //$1 - docs.doc.id, $2 - userId
+        type: "sql",
+        alias: 'generateJournal'
+    },
     endProcess: {command: "update docs.doc set status = 2 where id = $1", type: "sql"},
     executeTask: function (task, docId, userId) {
         console.log('executeTask', task, docId, userId);

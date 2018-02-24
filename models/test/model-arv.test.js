@@ -40,6 +40,7 @@ describe('dok. type Arv tests', function () {
         expect(doc.deleteDoc).toBeDefined();
         expect(doc.register).toBeDefined();
         expect(doc.endProcess).toBeDefined();
+        expect(doc.generateJournal).toBeDefined();
         expect(doc.grid).toBeDefined();
     });
 
@@ -70,6 +71,8 @@ describe('dok. type Arv tests', function () {
         expect(_.find(end.elements,{name:'alias'})).toBeDefined();
         let endAlias = _.find(register.elements,{name:'alias'});
         expect(endAlias).toBeDefined();
+        let generateJournal = _.find(modelElements.elements, {name:'generateJournal'});
+        expect(generateJournal).toBeDefined();
 
     });
 

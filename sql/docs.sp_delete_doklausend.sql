@@ -1,7 +1,7 @@
 DROP FUNCTION IF EXISTS docs.sp_delete_doklausend( INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_delete_doklausend(
-  IN  userid        INTEGER,
+  IN  user_id        INTEGER,
   IN  doc_id        INTEGER,
   OUT error_code    INTEGER,
   OUT result        INTEGER,
@@ -32,14 +32,14 @@ BEGIN
 
   IF NOT exists(SELECT id
                 FROM ou.userid u
-                WHERE id = userid
+                WHERE id = user_id
                       AND (u.rekvid = v_doc.rekvid OR v_doc.rekvid IS NULL OR v_doc.rekvid = 0)
   )
   THEN
 
     error_code = 5;
     error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
-                    coalesce(userid, 0) :: TEXT;
+                    coalesce(user_id, 0) :: TEXT;
     result = 0;
     RETURN;
 
