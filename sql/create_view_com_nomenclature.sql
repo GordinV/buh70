@@ -43,7 +43,7 @@ CREATE OR REPLACE VIEW com_nomenclature AS
           coalesce(d.valuuta, 'EUR') :: VARCHAR                               AS valuuta,
           coalesce(d.kuurs, 1) :: NUMERIC                                     AS kuurs
         FROM libs.nomenklatuur n
-          LEFT OUTER JOIN docs.dokvaluuta1 d ON (n.id = d.dokid AND d.dokliik = 17)
+          LEFT OUTER JOIN docs.dokvaluuta1 d ON (n.id = d.dokid AND d.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'nomenklatuur'))
         WHERE n.status <> 3
        ) qry
   ORDER BY kood;

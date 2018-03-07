@@ -6,27 +6,20 @@ CREATE OR REPLACE FUNCTION docs.gen_lausend_arv(IN  tnId   INTEGER, IN userId IN
                                                 OUT result INTEGER, OUT error_message TEXT)
 AS
 $BODY$
-DECLARE lcErrorText       TEXT = '';
+DECLARE
         lcDbKonto         VARCHAR(20);
         lcKrKonto         VARCHAR(20);
         lcDbTp            VARCHAR(20);
         lcKrTp            VARCHAR(20);
         lcKood5           VARCHAR(20);
-        lnAsutusId        INT4;
-        lnJournal         INT4;
-        lcKbmTp           VARCHAR(20);
-        lcDbKbmTp         VARCHAR(20);
         v_arv             RECORD;
         v_dokprop         RECORD;
-        v_dokprop_details RECORD;
         v_arv1            RECORD;
-        v_asutus          RECORD;
         lcAllikas         VARCHAR(20);
         lcSelg            TEXT;
         v_selg            RECORD;
         l_json            TEXT;
         l_json_details    TEXT;
-        l_json_row        TEXT;
         l_row_count       INTEGER = 0;
         new_history       JSONB;
         userName          TEXT;

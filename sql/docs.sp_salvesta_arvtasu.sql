@@ -20,10 +20,12 @@ DECLARE
   doc_dok         TEXT = doc_data ->> 'dok';
   doc_pankkassa   INTEGER = doc_data ->> 'pankkassa';
   doc_muud        TEXT = doc_data ->> 'muud';
+  doc_valuuta     TEXT = coalesce((doc_data ->> 'valuuta')::text,'EUR');
+  doc_kuurs       NUMERIC(14, 4) = coalesce((doc_data ->> 'kuurs')::numeric, 1);
   json_object     JSONB;
   v_tasu_dok      RECORD;
   l_arv_id        INTEGER = 0;
-
+  a_dokvaluuta    TEXT [] = enum_range(NULL :: DOK_VALUUTA);
 BEGIN
 
   IF (doc_id IS NULL)
@@ -41,17 +43,6 @@ BEGIN
     RETURN 0;
   END IF;
 
-  /*
-  SELECT row_to_json(row)
-  INTO json_object
-  FROM (SELECT
-          doc_konto    AS konto,
-          doc_kbmkonto AS kbmkonto,
-          doc_kood1    AS kood1,
-          doc_kood2    AS kood2,
-          doc_kood3    AS kood3,
-          doc_kood5    AS kood5) row;
-*/
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
   THEN
@@ -108,6 +99,16 @@ BEGIN
       INTO lib_id;
   END IF;
 
+  IF NOT exists(SELECT id
+                FROM docs.dokvaluuta1
+                WHERE dokid = lib_id AND dokliik = array_position(a_dokvaluuta, 'arvtasu'))
+  THEN
+    -- if record does
+    INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
+    VALUES (lib_id, array_position(a_dokvaluuta, 'arvtasu'), doc_valuuta, doc_kuurs);
+
+  END IF;
+
   -- update arv jaak
   l_arv_id = docs.sp_update_arv_jaak(doc_doc_arv_id, doc_kpv);
 
@@ -128,7 +129,7 @@ GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arvtasu(JSON, INTEGER, INTEGER) TO db
 
 
 /*
-select docs.sp_salvesta_arvtasu('{"id":0,"data":{"doc_arv_id":0,"doc_tasu_id":922,"dok":"","dok_type":"","id":0,"kpv":"20180213","kuurs":0,"muud":"","number":"","pankkassa":3,"rekvid":0,"summa":30,"userid":0,"valuuta":""}}'
+select docs.sp_salvesta_arvtasu('{"id":0,"data":{"doc_arv_id":39,"doc_tasu_id":null,"dok":null,"dok_type":null,"id":0,"kpv":"20180302","kuurs":1,"muud":null,"number":null,"pankkassa":4,"rekvid":1,"summa":100,"userid":1,"valuuta":"EUR"}}'
 ,1, 1)
 
 

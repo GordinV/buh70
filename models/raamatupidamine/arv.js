@@ -18,7 +18,7 @@ const Arv = {
                  a.asutusid, a.arvId, trim(a.lisa) as lisa, a.tahtaeg as tahtaeg, a.kbmta, a.kbm, a.summa, 
                  a.tasud, trim(a.tasudok) as tasudok, a.muud, a.jaak, a.objektId, trim(a.objekt) as objekt, 
                  asutus.regkood, trim(asutus.nimetus) as asutus, 
-                 a.doklausid, a.doklausid, 
+                 a.doklausid, 
                  a.journalid, coalesce(jid.number,0)::integer as laus_nr,
                  coalesce((dp.details :: JSONB ->> 'konto'),'') :: VARCHAR(20)    AS konto,
                  coalesce((dp.details :: JSONB ->> 'kbmkonto'),'') :: VARCHAR(20) AS kbmkonto,
@@ -79,7 +79,7 @@ const Arv = {
                  inner join docs.arv a on a.id = a1.parentId 
                  inner join libs.nomenklatuur n on n.id = a1.nomId 
                  inner join ou.userid u on u.id = $2::integer 
-                 left outer join docs.dokvaluuta1 v on (a.id = v.dokid and v.dokliik = 2 ) 
+                 left outer join docs.dokvaluuta1 v on (a.id = v.dokid and v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'arv')) 
                  where a.parentid = $1::integer`,
             query: null,
             multiple: true,

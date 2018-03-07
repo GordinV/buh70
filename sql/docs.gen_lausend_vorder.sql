@@ -1,261 +1,263 @@
-﻿
-DROP FUNCTION if exists docs.gen_lausend_vorder(integer, integer);
+﻿DROP FUNCTION IF EXISTS docs.gen_lausend_vorder( INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.gen_lausend_vorder(
-    IN tnid integer,
-    IN userid integer,
-    OUT error_code integer,
-    OUT result integer,
-    OUT error_message text)
-  RETURNS record AS
+	IN  tnid          INTEGER,
+	IN  userid        INTEGER,
+	OUT error_code    INTEGER,
+	OUT result        INTEGER,
+	OUT error_message TEXT)
+as
 $BODY$
-declare lcErrorText text = '';
-	lcDbKonto varchar(20);
-	lcKrKonto varchar(20);
-	lcDbTp varchar(20);
-	lcKrTp varchar(20);
-	lcKood5 varchar(20);
-	lnAsutusId int4;
-	lnJournal int4;
-	lcKbmTp varchar(20);
-	lcDbKbmTp varchar(20);
-	v_vorder record;
-	v_dokprop record;
-	v_dokprop_details record;
-	v_vorder1 record;
-	v_asutus record;
-	lcAllikas varchar(20);
-	lcSelg text;
-	v_selg record;
-	l_json text;
-	l_json_details text;
-	l_json_row text;
-	l_row_count integer = 0;
-	new_history jsonb;
-	userName text;
-	a_docs_ids integer[];
-	rows_fetched integer = 0;
+DECLARE
+	lcDbKonto         VARCHAR(20);
+	lcKrKonto         VARCHAR(20);
+	lcDbTp            VARCHAR(20);
+	lcKrTp            VARCHAR(20);
+	lcKood5           VARCHAR(20);
+	v_journal         RECORD;
+	v_vorder          RECORD;
+	v_dokprop         RECORD;
+	v_vorder1         RECORD;
+	lcAllikas         VARCHAR(20);
+	lcSelg            TEXT;
+	v_selg            RECORD;
+	l_json            TEXT;
+	l_json_details    TEXT;
+	l_json_row        TEXT;
+	l_row_count       INTEGER = 0;
+	new_history       JSONB;
+	userName          TEXT;
+	a_docs_ids        INTEGER [];
+	rows_fetched      INTEGER = 0;
 
-	
-begin
+BEGIN
 
-
-	select d.docs_ids , k.*, asutus.tp as asutus_tp into v_vorder 
-		from docs.korder1 k
-		inner join docs.doc d on d.id = k.parentId
-		inner join libs.asutus asutus on asutus.id = k.asutusid
-		where k.id = tnId;
+	SELECT
+		d.docs_ids,
+		k.*,
+		asutus.tp AS asutus_tp
+	INTO v_vorder
+	FROM docs.korder1 k
+		INNER JOIN docs.doc d ON d.id = k.parentId
+		LEFT OUTER JOIN libs.asutus asutus ON asutus.id = k.asutusid
+	WHERE d.id = tnId;
 
 	GET DIAGNOSTICS rows_fetched = ROW_COUNT;
 
-	if rows_fetched = 0 then
-		raise notice 'rows_fetched = 0'; 
-		error_code = 4; -- No documents found 
+	IF rows_fetched = 0
+	THEN
+		RAISE NOTICE 'rows_fetched = 0, v_vorder %, tnId %', v_vorder.id, tnId;
+		error_code = 4; -- No documents found
 		error_message = 'No documents found';
-		result  = 0;
+		result = 0;
+		RETURN;
+	END IF;
 
-	end if;	
-	
-	If v_vorder.doklausid = 0 then
-		raise notice 'v_vorder.doklausid = 0'; 
+	IF v_vorder.doklausid = 0
+	THEN
+		RAISE NOTICE 'v_vorder.doklausid = 0';
 		error_code = 1; -- Konteerimine pole vajalik
 		error_message = 'Konteerimine pole vajalik';
-		result  = 0;
-	End if;
+		result = 0;
+		RETURN;
+	END IF;
 
-	select kasutaja into userName from userid u where u.rekvid = v_vorder.rekvId and u.id = userId;
-	if userName is null then
-		raise notice 'User not found %', userId;
+	SELECT kasutaja
+	INTO userName
+	FROM userid u
+	WHERE u.rekvid = v_vorder.rekvId AND u.id = userId;
+
+	IF userName IS NULL
+	THEN
+		RAISE NOTICE 'User not found %', userId;
 		error_message = 'User not found';
 		error_code = 3;
-		return;
-	end if;
+		RETURN;
+	END IF;
 
+	IF v_vorder.rekvid > 1
+	THEN
+		lcAllikas = 'LE-P'; -- narva LV @todo should create more flexible variant
+	END IF;
 
-	if result is null then
-			
-		if v_vorder.rekvid > 1 then
-			lcAllikas = 'LE-P'; -- narva LV @todo should create more flexible variant
-		end if;
+	SELECT
+		library.kood,
+		dokprop.*,
+		details.*
+	INTO v_dokprop
+	FROM libs.dokprop dokprop
+		INNER JOIN libs.library library ON library.id = dokprop.parentid
+		,
+				jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
+	WHERE dokprop.id = v_vorder.doklausid
+	LIMIT 1;
 
-		SELECT library.kood,dokprop.*, details.* into v_dokprop 
-			from libs.dokprop dokprop 
-			inner join libs.library library on library.id = dokprop.parentid ,
-			jsonb_to_record(dokprop.details) as details(konto text, kbmkonto text) 
-			where dokprop.id = v_vorder.doklausid limit 1;
+	IF NOT Found OR v_dokprop.registr = 0
+	THEN
+		RAISE NOTICE 'v_dokprop.registr = 0';
+		error_code = 1; -- Konteerimine pole vajalik
+		result = 0;
+		error_message = 'Konteerimine pole vajalik';
+		RETURN;
+	END IF;
 
-		If not Found or v_dokprop.registr = 0 then
-				raise notice 'v_dokprop.registr = 0'; 
-
-			error_code = 1; -- Konteerimine pole vajalik
-			result  = 0;
-			error_message = 'Konteerimine pole vajalik';
-
-		End if;
-	end if;	
-
-	if result is null then
-		lcDbKonto = '100000';
+	lcDbKonto = '100000';
 	-- koostame selg rea
-		lcSelg =  trim(v_dokprop.selg);
-		if (select count(id) from rekv where parentid = 119 or id = 119) > 0 then -- Narva LV kultuuriosakond. @todo need flexible solution
-			for v_selg in
-				select distinct nom.nimetus 
-					from docs.korder2 k1
-					inner join libs.nomenklatuur nom on k1.nomid = nom.id 
-					where k1.parentid = v_vorder.id
-			loop
-				lcSelg = lcSelg || ', ' || trim(v_selg.nimetus);
-			end loop;
-		else 	
-			lcSelg = trim(v_dokprop.selg);
-		end if;
+	lcSelg = trim(v_dokprop.selg);
+	IF (SELECT count(id)
+			FROM rekv
+			WHERE parentid = 119 OR id = 119) > 0
+	THEN -- Narva LV kultuuriosakond. @todo need flexible solution
+		FOR v_selg IN
+		SELECT DISTINCT nom.nimetus
+		FROM docs.korder2 k1
+			INNER JOIN libs.nomenklatuur nom ON k1.nomid = nom.id
+		WHERE k1.parentid = v_vorder.id
+		LOOP
+			lcSelg = lcSelg || ', ' || trim(v_selg.nimetus);
+		END LOOP;
+	ELSE
+		lcSelg = trim(v_dokprop.selg);
+	END IF;
 
-		
-		v_vorder.asutus_tp = coalesce(v_vorder.asutus_tp,'800599');	
-		lcKrTp = coalesce(v_vorder.asutus_tp,'800599');
+	v_vorder.asutus_tp = coalesce(v_vorder.asutus_tp, '800599');
+	lcKrTp = coalesce(v_vorder.asutus_tp, '800599');
 
-	
-		l_json = 
-			'"id":' || coalesce(v_vorder.journalid,0) || 
-			',"doc_type_id":"JOURNAL"' || 
-			',"data":{' || 			
-			'"kpv":"' || v_vorder.kpv || '"' ||
-			',"selg":"' || lcSelg || '"' || 
-			',"muud":"' || coalesce(v_vorder.muud,'null') || '"' || 
-			',"asutusid":' || v_vorder.Asutusid ||
-			',"dok": "Arve nr.' || coalesce(v_vorder.number,'null') || '"';
+	SELECT
+		coalesce(v_vorder.journalid, 0) AS id,
+		'JOURNAL'                       AS doc_type_id,
+		v_vorder.kpv                    AS kpv,
+		lcSelg                          AS selg,
+		v_vorder.muud                   AS muud,
+		v_vorder.Asutusid               AS asutusid,
+		'Arve nr. ' || v_vorder.number  AS dok
+	INTO v_journal;
 
-		raise notice 'l_json 1 %', l_json;
-		
-		
---		l_json_details = '[]';
-		for v_vorder1 in 
-			select k1.*, 
-				coalesce(dokvaluuta1.valuuta,'EUR')::varchar as valuuta, 
-				coalesce(dokvaluuta1.kuurs,1)::numeric as kuurs 
-				from docs.korder2 k1
-				left outer join docs.dokvaluuta1 dokvaluuta1 on (k1.id = dokvaluuta1.dokid and dokvaluuta1.dokliik = 10) 
-				where k1.parentid = v_vorder.Id
-		loop
+	l_json = row_to_json(v_journal);
 
-			if not empty(v_vorder1.tp) then 
-				v_vorder.asutus_tp:= v_vorder1.tp;
-			end if;
-			
-			if not empty(v_vorder1.kood2) then
-				lcAllikas = v_vorder1.kood2;
-			end if;
-			
-			lcKood5 = v_vorder1.kood5;
+	RAISE NOTICE 'l_json 1 %', l_json;
 
-			/* sisse kassa order*/	
-				lcKrKonto = v_dokprop.konto;
-				lcDbKonto = coalesce(v_vorder1.konto,'puudub');
-				
-				l_json_row =  '{' ||
-					'"id":0' ||	
-					',"summa":' || coalesce(v_vorder1.summa,0) ||
-					',"valuuta":"' || coalesce(v_vorder1.valuuta,'EUR') || '"' ||  			
-					',"kuurs":' || coalesce(v_vorder1.kuurs,1) ||
-					',"deebet":"' || lcDbKonto || '"' ||  			
-					',"lisa_d":"' || coalesce(v_vorder.asutus_tp,'800599') || '"' ||  			
-					',"kreedit":"' || lcKrKonto || '"' ||  			
-					',"lisa_k":"' || coalesce(v_vorder.asutus_tp,'800599') || '"' ||  			
-					',"tunnus":"' || coalesce(v_vorder1.tunnus,'') || '"' ||  			
-					',"proj":"' || coalesce(v_vorder1.proj,'') || '"' ||  			
-					',"kood1":"' || coalesce(v_vorder1.kood1,'') || '"' ||  			
-					',"kood2":"' || coalesce(v_vorder1.kood2,'') || '"' ||  			
-					',"kood3":"' || coalesce(v_vorder1.kood3,'') || '"' ||  			
-					',"kood4":"' || coalesce(v_vorder1.kood4,'') || '"' ||  			
-					',"kood5":"' || coalesce(v_vorder1.kood5,'') || '"' ||  			
-					'}';
+	--		l_json_details = '[]';
+	FOR v_vorder1 IN
+	SELECT
+		k1.*,
+		coalesce(dokvaluuta1.valuuta, 'EUR') :: VARCHAR AS valuuta,
+		coalesce(dokvaluuta1.kuurs, 1) :: NUMERIC       AS kuurs
+	FROM docs.korder2 k1
+		LEFT OUTER JOIN docs.dokvaluuta1 dokvaluuta1 ON (k1.id = dokvaluuta1.dokid AND dokvaluuta1.dokliik = 10)
+	WHERE k1.parentid = v_vorder.Id
+	LOOP
+		IF NOT empty(v_vorder1.tp)
+		THEN
+			v_vorder.asutus_tp:= v_vorder1.tp;
+		END IF;
 
-			if l_row_count > 0 then
-				l_json_details =  l_json_details || ',' || l_json_row;
-			else 
-				l_json_details =  l_json_row;
-			end if;
-				
-			raise notice 'l_json_details %', l_json_details;
-			l_row_count = l_row_count + 1;
-			
-		End loop;
-		if l_json_details is null then
-			l_json_details = '';
-		end if;
-		l_json = '{' || l_json || ',"details":[' || l_json_details || ']}}';
-		raise notice 'l_json 2 %', l_json::json;
+		IF NOT empty(v_vorder1.kood2)
+		THEN
+			lcAllikas = v_vorder1.kood2;
+		END IF;
 
-		
+		lcKood5 = v_vorder1.kood5;
 
-		/* salvestan lausend */
+		/* sisse kassa order*/
+		lcDbKonto = coalesce(v_vorder1.konto, 'puudub');
+		lcKrKonto = v_dokprop.konto;
 
-		result = docs.sp_salvesta_journal(l_json::json, userId, v_vorder.rekvId);
-		
-		if result is not null and result > 0 then
-			/*
-			ajalugu
-			*/
-			
-			select row_to_json(row) into new_history from (select now() as updated, userName as user) row;
+		SELECT
+			0                                      AS id,
+			coalesce(v_vorder1.summa, 0)           AS summa,
+			coalesce(v_vorder1.valuuta, 'EUR')     AS valuuta,
+			coalesce(v_vorder1.kuurs, 1)           AS kuurs,
+			lcDbKonto                              AS deebet,
+			coalesce(v_vorder.asutus_tp, '800599') AS lisa_d,
+			lcKrKonto                              AS kreedit,
+			coalesce(v_vorder.asutus_tp, '800599') AS lisa_k,
+			coalesce(v_vorder1.tunnus, '')         AS tunnus,
+			coalesce(v_vorder1.proj, '')           AS proj,
+			coalesce(v_vorder1.kood1, '')          AS kood1,
+			coalesce(v_vorder1.kood2, '')          AS kood2,
+			coalesce(v_vorder1.kood3, '')          AS kood3,
+			coalesce(v_vorder1.kood4, '')          AS kood4,
+			coalesce(v_vorder1.kood5, '')          AS kood5
+		INTO v_journal;
 
-			-- will add docs into doc's pull
-			-- arve
+		l_json_row = row_to_json(v_journal);
 
+		IF l_row_count > 0
+		THEN
+			l_json_details = l_json_details || ',' || l_json_row;
+		ELSE
+			l_json_details = l_json_row;
+		END IF;
 
+		l_row_count = l_row_count + 1;
 
-			update docs.doc set docs_ids = array(select distinct unnest(array_append(v_vorder.docs_ids, result))), 
-				lastupdate = now(),
-				history = coalesce(history,'[]')::jsonb || new_history
-			where id = v_vorder.parentId;
+	END LOOP;
+	IF l_json_details IS NULL
+	THEN
+		l_json_details = '';
+	END IF;
 
-			-- lausend
-			select docs_ids into a_docs_ids from docs.doc where id = result;
+	l_json = ('{"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":[' || l_json_details || ']}}');
 
-			-- add new id into docs. ref. array 
-			a_docs_ids = array(select distinct unnest(array_append(a_docs_ids, v_vorder.parentId)));
-			
-			update docs.doc set docs_ids = a_docs_ids where id = result;
-		
-			-- direct ref to journal	
-			update docs.korder1 set 
-				journalId = (select parentId from docs.journal where parentid = result)
-				where id = v_vorder.id;
+	/* salvestan lausend */
 
-				
-			error_code = 0;	
-		else 
-			error_code = 2;
-		end if;
-	end if;
+	result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_vorder.rekvId);
 
+	IF result IS NOT NULL AND result > 0
+	THEN
+		/*
+    ajalugu
+    */
 
-	
-end;
+		SELECT row_to_json(row)
+		INTO new_history
+		FROM (SELECT
+						now()    AS updated,
+						userName AS user) row;
+
+		-- will add docs into doc's pull
+		-- arve
+
+		UPDATE docs.doc
+		SET docs_ids = array(SELECT DISTINCT unnest(array_append(v_vorder.docs_ids, result))),
+			lastupdate = now(),
+			history    = coalesce(history, '[]') :: JSONB || new_history
+		WHERE id = v_vorder.parentId;
+
+		-- lausend
+		SELECT docs_ids
+		INTO a_docs_ids
+		FROM docs.doc
+		WHERE id = result;
+
+		-- add new id into docs. ref. array
+		a_docs_ids = array(SELECT DISTINCT unnest(array_append(a_docs_ids, v_vorder.parentId)));
+
+		UPDATE docs.doc
+		SET docs_ids = a_docs_ids
+		WHERE id = result;
+
+		-- direct ref to journal
+		UPDATE docs.korder1
+		SET
+			journalId = result
+		WHERE id = v_vorder.id;
+
+		error_code = 0;
+	ELSE
+		error_code = 2;
+	END IF;
+	RETURN;
+END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-  
-ALTER FUNCTION docs.gen_lausend_vorder(integer, integer)
-  OWNER TO postgres;
+LANGUAGE plpgsql VOLATILE
+COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.gen_lausend_vorder(integer, integer) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.gen_lausend_vorder(integer, integer) TO dbpeakasutaja;
+ALTER FUNCTION docs.gen_lausend_vorder( INTEGER, INTEGER )
+OWNER TO postgres;
 
+GRANT EXECUTE ON FUNCTION docs.gen_lausend_vorder(INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.gen_lausend_vorder(INTEGER, INTEGER) TO dbpeakasutaja;
 
-select * from docs.gen_lausend_vorder(88, 1)
-
-/*
-select * from docs.korder1 where tyyp = 2 order by id desc limit 10
-
-select * from libs.dokprop
-
-select * from libs.library where library = 'DOK'
--- 7
-
-insert into libs.dokprop (parentid, registr, selg, details, tyyp)
-	values (8, 1, 'vorder', '{"konto":"100000"}'::jsonb, 1 )
-
-update docs.korder1 set doklausid = 5 where tyyp = 2
-*/
+--select error_code, result, error_message from docs.gen_lausend_vorder(99999,998);

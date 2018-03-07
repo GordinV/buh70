@@ -22,7 +22,7 @@ module.exports = {
                 LEFT OUTER JOIN docs.journalid j on j.journalid = a.doc_tasu_id
                 LEFT OUTER JOIN docs.mk m on m.id = a.doc_tasu_id
                 LEFT OUTER JOIN docs.korder1 k on k.id = a.doc_tasu_id
-                LEFT JOIN docs.dokvaluuta1 v ON a.id = v.dokid AND v.dokliik = 10
+                LEFT JOIN docs.dokvaluuta1 v ON a.id = v.dokid AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'arvtasu')
                 WHERE a.id = $1`,
         sqlAsNew: `SELECT
                       $1::integer as id,

@@ -33,7 +33,7 @@ CREATE OR REPLACE VIEW cur_arved AS
     INNER JOIN libs.library s ON s.kood = d.status :: TEXT
     LEFT OUTER JOIN libs.asutus asutus ON a.asutusid = asutus.id
     LEFT OUTER JOIN ou.userid u ON u.id = a.userid
-    LEFT JOIN docs.dokvaluuta1 v ON a.id = v.dokid AND v.dokliik = 3
+    LEFT JOIN docs.dokvaluuta1 v ON a.id = v.dokid AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'arv')
     LEFT OUTER JOIN docs.journalid j ON j.journalid = a.journalid
   ORDER BY d.lastupdate DESC;
 

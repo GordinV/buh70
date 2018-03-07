@@ -20,7 +20,7 @@ DECLARE
   doc_type_kood TEXT = coalesce((doc_data ->> 'doc_type_id'), CASE WHEN doc_opt = '1'
     THEN 'SMK'
                                                               ELSE 'VMK' END);
-  doc_typeId   INTEGER = (SELECT id
+  doc_typeId    INTEGER = (SELECT id
                            FROM libs.library
                            WHERE ltrim(rtrim(kood)) = ltrim(rtrim(upper(doc_type_kood))) AND library = 'DOK'
                            LIMIT 1);
@@ -41,6 +41,7 @@ DECLARE
   ids           INTEGER [];
   docs          INTEGER [];
   arv_parent_id INTEGER;
+  a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
 BEGIN
 
   SELECT kasutaja
@@ -57,8 +58,6 @@ BEGIN
   THEN
     doc_id = doc_data ->> 'id';
   END IF;
-
-raise notice 'doc_type_id -> %', doc_typeId;
 
   IF doc_aa_id IS NULL
   THEN
@@ -138,9 +137,9 @@ raise notice 'doc_type_id -> %', doc_typeId;
     UPDATE docs.doc
     SET
       doc_type_id = doc_typeId,
-      docs_ids   = docs,
-      lastupdate = now(),
-      history    = coalesce(history, '[]') :: JSONB || new_history
+      docs_ids    = docs,
+      lastupdate  = now(),
+      history     = coalesce(history, '[]') :: JSONB || new_history
     WHERE id = doc_id;
 
 
@@ -162,7 +161,6 @@ raise notice 'doc_type_id -> %', doc_typeId;
   END IF;
   -- вставка в таблицы документа
 
-  RAISE NOTICE 'mk_id %', mk_id;
   FOR json_object IN
   SELECT *
   FROM json_array_elements(doc_details)
@@ -193,7 +191,7 @@ raise notice 'doc_type_id -> %', doc_typeId;
 
       -- valuuta
       INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-      VALUES (mk1_id, 4, tcValuuta, tnKuurs);
+      VALUES (mk1_id, array_position(a_dokvaluuta, 'mk1'), tcValuuta, tnKuurs);
 
 
     ELSE
@@ -222,18 +220,18 @@ raise notice 'doc_type_id -> %', doc_typeId;
 
       IF NOT exists(SELECT id
                     FROM docs.dokvaluuta1
-                    WHERE dokid = mk1_id AND dokliik = 1)
+                    WHERE dokid = mk1_id AND dokliik = array_position(a_dokvaluuta, 'mk1'))
       THEN
         -- if record does
         INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-        VALUES (mk1_id, 4, tcValuuta, tnKuurs);
+        VALUES (mk1_id, array_position(a_dokvaluuta, 'mk1'), tcValuuta, tnKuurs);
 
       END IF;
     END IF;
 
     -- delete record which not in json
 
-    DELETE FROM docs.korder2
+    DELETE FROM docs.mk1
     WHERE parentid = mk_id AND id NOT IN (SELECT unnest(ids));
 
 

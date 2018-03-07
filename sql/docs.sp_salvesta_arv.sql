@@ -41,6 +41,7 @@ DECLARE
   new_history   JSONB;
   new_rights    JSONB;
   ids           INTEGER [];
+  a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
 BEGIN
 
   IF (doc_id IS NULL)
@@ -98,7 +99,7 @@ BEGIN
       INTO arv_id;
 
     INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-    VALUES (arv_id, 3, tcValuuta, tnKuurs);
+    VALUES (arv_id, array_position(a_dokvaluuta, 'arv'), tcValuuta, tnKuurs);
 
 
   ELSE
@@ -109,8 +110,6 @@ BEGIN
             now()    AS updated,
             userName AS user) row;
 
-
-    RAISE NOTICE 'new_history %', new_history;
 
     UPDATE docs.doc
     SET lastupdate = now(),
@@ -178,7 +177,7 @@ BEGIN
 
       -- valuuta
       INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-      VALUES (arv1_id, 2, tcValuuta, tnKuurs);
+      VALUES (arv1_id, array_position(a_dokvaluuta, 'arv1'), tcValuuta, tnKuurs);
 
       -- add new id into array of ids
       ids = array_append(ids, arv1_id);
@@ -207,11 +206,11 @@ BEGIN
 
       IF NOT exists(SELECT id
                     FROM docs.dokvaluuta1
-                    WHERE dokid = arv1_id AND dokliik = 2)
+                    WHERE dokid = arv1_id AND dokliik = array_position(a_dokvaluuta, 'arv1'))
       THEN
         -- if record does
         INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-        VALUES (arv1_id, 2, tcValuuta, tnKuurs);
+        VALUES (arv1_id, array_position(a_dokvaluuta, 'arv1'), tcValuuta, tnKuurs);
 
       END IF;
     END IF;

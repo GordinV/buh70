@@ -58,7 +58,7 @@ const Journal = {
                     from docs.journal1 as j1 
                     inner join docs.journal j on j.id = j1.parentId 
                     inner join ou.userid u on u.id = $2::integer 
-                    left outer join dokvaluuta1 v on (j1.id = v.dokid and v.dokliik = 1)                      
+                    left outer join dokvaluuta1 v on (j1.id = v.dokid and v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'journal1'))                      
                     where j.parentid = $1`,
             query: null,
             multiple: true,

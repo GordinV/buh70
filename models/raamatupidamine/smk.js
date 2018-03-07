@@ -52,9 +52,12 @@ const Smk = {
                       trim(l.nimetus)                               AS doc,
                       trim(l.kood)                                  AS doc_type_id,
                       trim(s.nimetus)                               AS status,
-                      (SELECT max(number)
-                       FROM docs.korder1
-                       WHERE tyyp = 1) :: INTEGER + 1               AS number,
+                      (SELECT max(val(array_to_string(regexp_match(number, '\\d+'),'')))
+                       FROM docs.mk
+                       WHERE opt = 1
+                       and rekvid in (
+                       select rekvid from ou.userid where id = $2)
+                       ) :: INTEGER + 1                         AS number,
                       now() :: DATE                                 AS maksepaev,
                       aa.id                                         AS aaid,
                       trim(aa.name)                                 AS pank,
@@ -94,19 +97,22 @@ const Smk = {
         },
         {
             sql: `SELECT
-                      k1.id,
                       $2 :: INTEGER    AS userid,
                       trim(n.kood)    AS kood,
                       trim(n.nimetus) AS nimetus,
                       trim(a.nimetus) AS asutus,
                       k1.*,
                       coalesce(v.valuuta,'EUR')::varchar(20) as valuuta,
-                      coalesce(v.kuurs,1)::numeric(12,4) as kuurs
+                      coalesce(v.kuurs,1)::numeric(12,4) as kuurs,
+                      jid.number as lausnr
                     FROM docs.mk1 AS k1
                       INNER JOIN docs.mk k ON k.id = k1.parentId
                       INNER JOIN libs.nomenklatuur n ON n.id = k1.nomid
                       INNER JOIN libs.asutus a ON a.id = k1.asutusid
                       INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                      left outer join docs.doc d on k1.journalid = d.id
+                      left outer join docs.journal j on j.parentid = d.id
+                      left outer join docs.journalid jid on jid.journalid = j.id
                       LEFT OUTER JOIN docs.dokvaluuta1 v ON (v.dokid = k1.id AND v.dokliik = 4)
                     WHERE k.parentid = $1`,
             query: null,
@@ -220,7 +226,11 @@ const Smk = {
         return taskFunction(docId, userId);
     },
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
-    generateJournal: {command: `select docs.gen_lausend_mk($1, $2)`, type: "sql"},
+    generateJournal: {
+        command: `select error_code, result, error_message from docs.gen_lausend_smk($2, $1)`, // $1 - userId, $2 - docId
+        type: "sql",
+        alias: 'generateJournal'
+    },
     endProcess: {command: `update docs.doc set status = 2 where id = $1`, type: "sql"},
 
 

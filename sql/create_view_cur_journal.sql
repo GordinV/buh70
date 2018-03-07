@@ -41,7 +41,7 @@ CREATE OR REPLACE VIEW cur_journal AS
     INNER JOIN libs.library s ON s.kood = d.status :: TEXT
     INNER JOIN docs.journalid jid ON j.id = jid.journalid
     INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
-    LEFT JOIN docs.dokvaluuta1 v ON j1.id = v.dokid AND v.dokliik = 1
+    LEFT JOIN docs.dokvaluuta1 v ON j1.id = v.dokid AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'journal1')
     LEFT JOIN libs.asutus a ON a.id = j.asutusid
     LEFT OUTER JOIN ou.userid u ON u.id = j.userid;
 

@@ -5,40 +5,40 @@ CREATE OR REPLACE FUNCTION libs.sp_salvesta_nomenclature(data JSON, userid INTEG
 $BODY$
 
 DECLARE
-  nom_id       INTEGER;
-  userName     TEXT;
-  doc_id       INTEGER = data ->> 'id';
-  doc_data     JSON = data ->> 'data';
-  doc_kood     TEXT = doc_data ->> 'kood';
-  doc_nimetus  TEXT = doc_data ->> 'nimetus';
-  doc_dok      TEXT = doc_data ->> 'dok';
-  doc_uhik     TEXT = doc_data ->> 'uhik';
-  doc_hind     NUMERIC = coalesce((doc_data ->> 'hind') :: NUMERIC, 0);
-  doc_ulehind  NUMERIC = coalesce((doc_data ->> 'ulehind') :: NUMERIC, 0);
-  doc_kogus    NUMERIC = coalesce((doc_data ->> 'kogus') :: NUMERIC, 0);
-  doc_formula  TEXT = doc_data ->> 'formula';
-  doc_kuurs    NUMERIC = coalesce((doc_data ->> 'kuurs') :: NUMERIC, 1);
-  doc_valuuta  TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
-  doc_muud     TEXT = doc_data ->> 'muud';
-  doc_vat      TEXT = (doc_data ->> 'vat');
-  doc_konto    TEXT = doc_data ->> 'konto';
-  doc_projekt  TEXT = doc_data ->> 'projekt';
-  doc_tunnus   TEXT = doc_data ->> 'tunnus';
-  doc_tegev    TEXT = doc_data ->> 'tegev';
-  doc_allikas  TEXT = doc_data ->> 'allikas';
-  doc_rahavoog TEXT = doc_data ->> 'rahavoog';
-  doc_artikkel TEXT = doc_data ->> 'artikkel';
-  doc_kalor NUMERIC = doc_data ->> 'kalor';
-  doc_valid Date = doc_data ->> 'valid';
-  doc_sahharid Numeric = doc_data ->> 'sahharid';
-  doc_rasv TEXT = doc_data ->> 'rasv';
+  nom_id        INTEGER;
+  userName      TEXT;
+  doc_id        INTEGER = data ->> 'id';
+  doc_data      JSON = data ->> 'data';
+  doc_kood      TEXT = doc_data ->> 'kood';
+  doc_nimetus   TEXT = doc_data ->> 'nimetus';
+  doc_dok       TEXT = doc_data ->> 'dok';
+  doc_uhik      TEXT = doc_data ->> 'uhik';
+  doc_hind      NUMERIC = coalesce((doc_data ->> 'hind') :: NUMERIC, 0);
+  doc_ulehind   NUMERIC = coalesce((doc_data ->> 'ulehind') :: NUMERIC, 0);
+  doc_kogus     NUMERIC = coalesce((doc_data ->> 'kogus') :: NUMERIC, 0);
+  doc_formula   TEXT = doc_data ->> 'formula';
+  doc_kuurs     NUMERIC = coalesce((doc_data ->> 'kuurs') :: NUMERIC, 1);
+  doc_valuuta   TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
+  doc_muud      TEXT = doc_data ->> 'muud';
+  doc_vat       TEXT = (doc_data ->> 'vat');
+  doc_konto     TEXT = doc_data ->> 'konto';
+  doc_projekt   TEXT = doc_data ->> 'projekt';
+  doc_tunnus    TEXT = doc_data ->> 'tunnus';
+  doc_tegev     TEXT = doc_data ->> 'tegev';
+  doc_allikas   TEXT = doc_data ->> 'allikas';
+  doc_rahavoog  TEXT = doc_data ->> 'rahavoog';
+  doc_artikkel  TEXT = doc_data ->> 'artikkel';
+  doc_kalor     NUMERIC = doc_data ->> 'kalor';
+  doc_valid     DATE = doc_data ->> 'valid';
+  doc_sahharid  NUMERIC = doc_data ->> 'sahharid';
+  doc_rasv      TEXT = doc_data ->> 'rasv';
   doc_vailkaine NUMERIC = doc_data ->> 'vailkaine';
-  doc_gruppid Integer = doc_data ->> 'gruppid';
-  json_object  JSONB;
-  new_history  JSONB;
-  new_rights   JSONB;
+  doc_gruppid   INTEGER = doc_data ->> 'gruppid';
+  json_object   JSONB;
+  new_history   JSONB;
+  new_rights    JSONB;
+  a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
 
-  error        TEXT;
 BEGIN
 
   IF (doc_id IS NULL)
@@ -69,12 +69,12 @@ BEGIN
        coalesce(doc_allikas, 'null')  AS allikas,
        coalesce(doc_rahavoog, 'null') AS rahavoog,
        coalesce(doc_artikkel, 'null') AS artikkel,
-       doc_kalor AS kalor,
-       doc_valid AS valid,
-       doc_sahharid AS sahharid,
-       doc_rasv AS rasv,
-       doc_vailkaine AS vailkaine,
-       doc_gruppid AS gruppid
+       doc_kalor                      AS kalor,
+       doc_valid                      AS valid,
+       doc_sahharid                   AS sahharid,
+       doc_rasv                       AS rasv,
+       doc_vailkaine                  AS vailkaine,
+       doc_gruppid                    AS gruppid
     ) row;
 
   IF doc_id IS NULL OR doc_id = 0
@@ -103,7 +103,7 @@ BEGIN
     -- valuuta
 
     INSERT INTO docs.dokvaluuta1 (dokliik, dokid, valuuta, kuurs)
-    VALUES (17, nom_id, doc_valuuta, doc_kuurs);
+    VALUES (array_position(a_dokvaluuta, 'nomenklatuur'), nom_id, doc_valuuta, doc_kuurs);
 
   ELSE
     -- muuda
@@ -128,11 +128,11 @@ BEGIN
   -- valuuta
   IF NOT exists(SELECT id
                 FROM docs.dokvaluuta1
-                WHERE dokliik = 17 AND dokid = nom_id)
+                WHERE dokliik = array_position(a_dokvaluuta, 'nomenklatuur') AND dokid = nom_id)
   THEN
 
     INSERT INTO docs.dokvaluuta1 (dokliik, dokid, valuuta, kuurs)
-    VALUES (17, nom_id, doc_valuuta, doc_kuurs);
+    VALUES (array_position(a_dokvaluuta, 'nomenklatuur'), nom_id, doc_valuuta, doc_kuurs);
 
   ELSE
     UPDATE docs.dokvaluuta1
@@ -141,7 +141,7 @@ BEGIN
       kuurs   = doc_kuurs
     WHERE id IN (SELECT id
                  FROM docs.dokvaluuta1
-                 WHERE dokliik = 17 AND dokid = nom_id);
+                 WHERE dokliik = array_position(a_dokvaluuta, 'nomenklatuur') AND dokid = nom_id);
 
   END IF;
 

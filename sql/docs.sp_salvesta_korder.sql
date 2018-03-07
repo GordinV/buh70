@@ -26,6 +26,7 @@ DECLARE
   doc_kpv         DATE = doc_data ->> 'kpv';
   doc_asutusid    INTEGER = doc_data ->> 'asutusid';
   doc_kassa_id    INTEGER = doc_data ->> 'kassa_id';
+  doc_doklausid   INTEGER = doc_data ->> 'doklausid';
   doc_dokument    TEXT = doc_data ->> 'dokument';
   doc_nimi        TEXT = doc_data ->> 'nimi';
   doc_aadress     TEXT = doc_data ->> 'aadress';
@@ -42,6 +43,7 @@ DECLARE
   docs            INTEGER [];
   arv_parent_id   INTEGER;
   previous_arv_id INTEGER;
+  a_dokvaluuta    TEXT [] = enum_range(NULL :: DOK_VALUUTA);
 BEGIN
 
   SELECT kasutaja
@@ -107,11 +109,11 @@ BEGIN
     RETURNING id
       INTO doc_id;
 
-    INSERT INTO docs.korder1 (parentid, rekvid, userid, kpv, asutusid, tyyp, kassaId, number, dokument, nimi, aadress, alus, muud, summa, arvid)
+    INSERT INTO docs.korder1 (parentid, rekvid, userid, kpv, asutusid, tyyp, kassaId, number, dokument, nimi, aadress, alus, muud, summa, arvid, doklausid)
     VALUES
       (doc_id, user_rekvid, userId, doc_kpv, doc_asutusid, doc_tyyp :: INTEGER, doc_kassa_id, doc_number, doc_dokument,
                doc_nimi,
-               doc_aadress, doc_alus, doc_muud, doc_summa, doc_arvid)
+               doc_aadress, doc_alus, doc_muud, doc_summa, doc_arvid, doc_doklausid)
     RETURNING id
       INTO korder_id;
 
@@ -160,17 +162,18 @@ BEGIN
 
     UPDATE docs.korder1
     SET
-      kpv      = doc_kpv,
-      asutusid = doc_asutusid,
-      dokument = doc_dokument,
-      kassaid  = doc_kassa_id,
-      number   = doc_number,
-      nimi     = doc_nimi,
-      aadress  = doc_aadress,
-      muud     = doc_muud,
-      alus     = doc_alus,
-      summa    = doc_summa,
-      arvid    = doc_arvid
+      kpv       = doc_kpv,
+      asutusid  = doc_asutusid,
+      dokument  = doc_dokument,
+      kassaid   = doc_kassa_id,
+      doklausid = doc_doklausid,
+      number    = doc_number,
+      nimi      = doc_nimi,
+      aadress   = doc_aadress,
+      muud      = doc_muud,
+      alus      = doc_alus,
+      summa     = doc_summa,
+      arvid     = doc_arvid
     WHERE parentid = doc_id
     RETURNING id
       INTO korder_id;
@@ -216,7 +219,7 @@ BEGIN
 
       -- valuuta
       INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-      VALUES (korder1_id, 10, tcValuuta, tnKuurs);
+      VALUES (korder1_id, array_position(a_dokvaluuta, 'korder2'), tcValuuta, tnKuurs);
 
 
     ELSE
@@ -243,11 +246,11 @@ BEGIN
 
       IF NOT exists(SELECT id
                     FROM docs.dokvaluuta1
-                    WHERE dokid = korder1_id AND dokliik = 1)
+                    WHERE dokid = korder1_id AND dokliik = array_position(a_dokvaluuta, 'korder2'))
       THEN
         -- if record does
         INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-        VALUES (korder1_id, 10, tcValuuta, tnKuurs);
+        VALUES (korder1_id, array_position(a_dokvaluuta, 'korder2'), tcValuuta, tnKuurs);
 
       END IF;
     END IF;

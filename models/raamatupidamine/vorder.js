@@ -49,7 +49,8 @@ const Vorder = {
                   LEFT OUTER JOIN libs.asutus AS asutus ON asutus.id = k.asutusId
                   LEFT OUTER JOIN ou.aa AS aa ON k.kassaid = aa.Id
                   LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.Id
-                  left outer join docs.journalid jid on jid.journalid = k.journalid                  
+                  left outer join docs.journal j on j.parentid = k.journalid                  
+                  left outer join docs.journalid jid on jid.journalid = j.id                  
                   left outer join libs.dokprop dp on dp.id = k.doklausid 
                 WHERE d.id = $1`,
             sqlAsNew: `SELECT
@@ -232,109 +233,15 @@ const Vorder = {
         return taskFunction(docId, userId, Vorder);
     },
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
-    generateJournal: {command: `select docs.gen_lausend_sorder($1, $2)`, type: "sql"},
+    generateJournal: {
+        command: `select error_code, result, error_message from docs.gen_lausend_vorder($2, $1)`, // $1 - userId, $2 - docId
+        type: "sql",
+        alias: 'generateJournal'
+    },
     endProcess: {command: `update docs.doc set status = 2 where id = $1`, type: "sql"},
 
 
 };
 
 module.exports = Vorder;
-
-/*
-const setBpmStatuses = (actualStepIndex, userId)=>  {
-// собираем данные на на статус документа, правим данные БП документа
-    // 1. установить на actualStep = false
-    // 2. задать статус документу
-    // 3. выставить стутус задаче (пока только finished)
-    // 4. если есть следующий шаг, то выставить там actualStep = true, статус задачи opened
-
-
-    try {
-        var bpm =  Vorder.bpm, // нельзя использовать let из - за использования try {}
-            nextStep = bpm[actualStepIndex].nextStep,
-            executors = bpm[actualStepIndex].actors || [];
-
-        if (!executors || executors.length == 0) {
-            // если исполнители не заданы, то добавляем автора
-            executors.push({
-                id: userId,
-                name: 'AUTHOR',
-                role: 'AUTHOR'
-            })
-        }
-
-        bpm[actualStepIndex].data = [{execution: Date.now(), executor: userId, vars: null}];
-        bpm[actualStepIndex].status = 'finished';  // 3. выставить стутус задаче (пока только finished)
-        bpm[actualStepIndex].actualStatus = false;  // 1. установить на actualStep = false
-        bpm[actualStepIndex].actors = executors;  // установить список акторов
-
-        // выставим флаг на следующий щаг
-        bpm = bpm.map(stepData => {
-            if (stepData.step === nextStep) {
-                // 4. если есть следующий шаг, то выставить там actualStep = true, статус задачи opened
-                stepData.actualStep = true;
-                stepData.status = 'opened';
-            }
-            return stepData;
-        });
-
-    } catch (e) {
-        console.error('try error', e);
-    }
-    return bpm;
-
-};
-
-const start =(docId, userId)=> {
-    // реализует старт БП документа
-    const DOC_STATUS = 1, // устанавливаем активный статус для документа
-        DocDataObject = require('./documents'),
-        SQL_UPDATE = 'update docs.doc set status = $1, bpm = $2, history = $4 where id = $3',
-        SQL_SELECT_DOC = Vorder.select[0].sql;
-
-    let  bpm = setBpmStatuses(0, userId), // выставим актуальный статус для следующего процесса
-        history = {user: userId, updated: Date.now()};
-
-    // выполнить запрос и вернуть промис
-    return DocDataObject.executeSqlQueryPromise(SQL_UPDATE, [DOC_STATUS, JSON.stringify(bpm), docId, JSON.stringify(history)]);
-
-};
-*/
-
-/*
-// generateJournal
-const generateJournal = (docId, userId)=> {
-    // реализует контировка
-
-    const ACTUAL_STEP_STATUS = 1, // актуальный шаг БП
-        SQL_GENERATE_LAUSEND = 'select docs.gen_lausend_sorder((select id from docs.korder1 where parentid = $1), $2) as journal_id',
-        SQL_UPDATE_DOCUMENT_BPM = 'update docs.doc set bpm = $2, history = $3  where id = $1',
-        DocDataObject = require('./documents');
-
-    let   bpm = setBpmStatuses(ACTUAL_STEP_STATUS, userId),
-        tasks = [],
-        history = {user: userId, updated: Date.now()};
-
-    // выполнить запрос и вернуть промис
-    return Promise.all([
-        DocDataObject.executeSqlQueryPromise(SQL_GENERATE_LAUSEND, [docId, userId]),
-        DocDataObject.executeSqlQueryPromise(SQL_UPDATE_DOCUMENT_BPM, [docId, JSON.stringify(bpm), JSON.stringify(history)])
-    ]);
-};
-
-const endProcess = (docId, userId)=> {
-    // реализует завершение БП документа
-
-    const   ACTUAL_TASK_STEP = 2, // устанавливаем активный статус для документа
-        DOC_STATUS = 2, // закрыт
-        SQL = 'update docs.doc set bpm = $2, history = $3, status = $4 where id = $1',
-        DocDataObject = require('./documents');
-
-    let bpm = setBpmStatuses(ACTUAL_TASK_STEP, userId), // выставим актуальный статус для следующего процесса
-        history = {user: userId, updated: Date.now()},
-        params = [docId, JSON.stringify(bpm), JSON.stringify(history), DOC_STATUS];
-
-    return DocDataObject.executeSqlQueryPromise(SQL, params);
-};
-*/
 

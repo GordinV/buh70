@@ -1,136 +1,161 @@
 ﻿-- Function: docs.sp_delete_mk(integer, integer)
 
-DROP FUNCTION if exists docs.sp_delete_korder(integer, integer);
+DROP FUNCTION IF EXISTS docs.sp_delete_korder( INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_delete_korder(
-    IN userid integer,
-    IN doc_id integer,
-    OUT error_code integer,
-    OUT result integer,
-    OUT error_message text)
-  RETURNS record AS
+  IN  userid        INTEGER,
+  IN  doc_id        INTEGER,
+  OUT error_code    INTEGER,
+  OUT result        INTEGER,
+  OUT error_message TEXT)
+  RETURNS RECORD AS
 $BODY$
 
-declare
-	v_doc record;
-	v_dependid_docs record;
-	ids integer[];	
-	korder1_history jsonb ;
-	korder2_history jsonb ;
-	arvtasu_history jsonb ;
-	new_history jsonb;
-	DOC_STATUS integer = 3; -- документ удален
-begin
-	
-	select d.*, u.ametnik as user_name into v_doc
-		from docs.doc d 
-		left outer join ou.userid u on u.id = userid
-		where d.id = doc_id;
+DECLARE
+  v_doc           RECORD;
+  v_dependid_docs RECORD;
+  ids             INTEGER [];
+  korder1_history JSONB;
+  korder2_history JSONB;
+  arvtasu_history JSONB;
+  new_history     JSONB;
+  DOC_STATUS      INTEGER = 3; -- документ удален
+BEGIN
 
-	-- проверка на пользователя и его соответствие учреждению
+  SELECT
+    d.*,
+    u.ametnik AS user_name
+  INTO v_doc
+  FROM docs.doc d
+    LEFT OUTER JOIN ou.userid u ON u.id = userid
+  WHERE d.id = doc_id;
 
-	if v_doc is null then
-		error_code = 6; 
-		error_message = 'Dokument ei leitud, docId: ' || coalesce(doc_id,0)::text ;
-		result  = 0;
-		return;
+  -- проверка на пользователя и его соответствие учреждению
 
-	end if;
+  IF v_doc IS NULL
+  THEN
+    error_code = 6;
+    error_message = 'Dokument ei leitud, docId: ' || coalesce(doc_id, 0) :: TEXT;
+    result = 0;
+    RETURN;
 
-	if not exists (select id 
-		from ou.userid u 
-		where id = userid
-		and u.rekvid = v_doc.rekvid
-		) then
+  END IF;
 
-		error_code = 5; 
-		error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid,0)::text || ', userId:' || coalesce(userid,0)::text;
-		result  = 0;
-		return;
+  IF NOT exists(SELECT id
+                FROM ou.userid u
+                WHERE id = userid
+                      AND u.rekvid = v_doc.rekvid
+  )
+  THEN
 
-	end if;	
+    error_code = 5;
+    error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
+                    coalesce(userid, 0) :: TEXT;
+    result = 0;
+    RETURN;
 
-	-- проверка на права. Предполагает наличие прописанных прав на удаление для данного пользователя в поле rigths
+  END IF;
+
+  -- проверка на права. Предполагает наличие прописанных прав на удаление для данного пользователя в поле rigths
 
 
---	ids =  v_doc.rigths->'delete';
-	if not v_doc.rigths->'delete' @> jsonb_build_array(userid) then
-		raise notice 'У пользователя нет прав на удаление'; 
-		error_code = 4; 
-		error_message = 'Ei saa kustuta dokument. Puudub õigused';
-		result  = 0;
-		return;
+  --	ids =  v_doc.rigths->'delete';
+  IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(userid)
+  THEN
+    RAISE NOTICE 'У пользователя нет прав на удаление';
+    error_code = 4;
+    error_message = 'Ei saa kustuta dokument. Puudub õigused';
+    result = 0;
+    RETURN;
 
-	end if;
-			
-	-- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
+  END IF;
 
-	if exists (
-		select d.id 
-			from docs.doc d 
-			inner join libs.library l on l.id = d.doc_type_id
-			where d.id in (select unnest(v_doc.docs_ids))
-			and l.kood in (	
-				select kood from libs.library where library = 'DOK' 
-					AND (properties is  null or properties::jsonb  @> '{"type":"document"}' )
-				)) then
+  -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя кроме проводки)
 
-		raise notice 'Есть связанные доку менты. удалять нельзя'; 
-		error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
-		error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
-		result  = 0;
-		return;
-	end if;
+  IF exists(
+      SELECT d.id
+      FROM docs.doc d
+        INNER JOIN libs.library l ON l.id = d.doc_type_id
+      WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
+            AND l.kood IN (
+        SELECT kood
+        FROM libs.library
+        WHERE library = 'DOK'
+          and kood not in ('JOURNAL')
+              AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')
+      ))
+  THEN
 
-	-- Логгирование удаленного документа
-	-- docs.arv
+    RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
+    error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
+    error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
+    result = 0;
+    RETURN;
+  END IF;
 
-	korder1_history = row_to_json(row.*) from (select a.* 
-		from docs.korder1 a where a.parentid = doc_id) row;
+  -- Логгирование удаленного документа
+  -- docs.arv
 
-	-- docs.mk1
-		
-	korder2_history = jsonb_build_array(array(select row_to_json(row.*) from (select k1.* 
-		from docs.mk1 k1 
-		inner join docs.mk k on k.id = k1.parentid
-		where k.parentid = doc_id) row));
-	-- docs.arvtasu
-		
-	arvtasu_history = jsonb_build_array(array(select row_to_json(row.*) from (select at.* 
-		from docs.arvtasu at 
-		inner join docs.korder1 k on k.id = at.doc_tasu_id
-		where k.parentid = doc_id) row));
+  korder1_history = row_to_json(row.*) FROM ( SELECT a.*
+  FROM docs.korder1 a WHERE a.parentid = doc_id) ROW;
 
-	select row_to_json(row) into new_history from (select now() as deleted, v_doc.user_name as user, korder1_history as korder1, korder2_history as korder2, 
-		arvtasu_history as arvtasu ) row;
+  -- docs.mk1
 
-	
-	-- Удаление данных из связанных таблиц (удаляем проводки)
+  korder2_history = jsonb_build_array(array(SELECT row_to_json(row.*)
+                                            FROM (SELECT k1.*
+                                                  FROM docs.mk1 k1
+                                                    INNER JOIN docs.mk k ON k.id = k1.parentid
+                                                  WHERE k.parentid = doc_id) row));
+  -- docs.arvtasu
 
-	if (v_doc.docs_ids is not null) then
-		delete from docs.journal where id in (select unnest(v_doc.docs_ids)); -- @todo процедура удаления
-		delete from docs.journal1 where parentid in (select unnest(v_doc.docs_ids)); -- @todo констрейн на удаление
-	end if;
+  arvtasu_history = jsonb_build_array(array(SELECT row_to_json(row.*)
+                                            FROM (SELECT at.*
+                                                  FROM docs.arvtasu at
+                                                    INNER JOIN docs.korder1 k ON k.id = at.doc_tasu_id
+                                                  WHERE k.parentid = doc_id) row));
 
-	delete from docs.korder2 where parentid in (select id from docs.arv where parentid =  v_doc.id);
-	delete from docs.korder1 where parentid = v_doc.id; --@todo констрейн на удаление
+  SELECT row_to_json(row)
+  INTO new_history
+  FROM (SELECT
+          now()           AS deleted,
+          v_doc.user_name AS user,
+          korder1_history AS korder1,
+          korder2_history AS korder2,
+          arvtasu_history AS arvtasu) row;
 
-	-- Установка статуса ("Удален")  и сохранение истории
+  -- Удаление данных из связанных таблиц (удаляем проводки)
 
-	update docs.doc 
-		set lastupdate = now(),
-			history = coalesce(history,'[]')::jsonb || new_history,
-			rekvid = v_doc.rekvid,
-			status = DOC_STATUS
-		where id = doc_id;	
-		
-	result  = 1;		
-	return;
-end;$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-ALTER FUNCTION docs.sp_delete_korder(integer, integer)
-  OWNER TO postgres;
+  IF (v_doc.docs_ids IS NOT NULL)
+  THEN
+    DELETE FROM docs.journal
+    WHERE id IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
+    DELETE FROM docs.journal1
+    WHERE parentid IN (SELECT unnest(v_doc.docs_ids)); -- @todo констрейн на удаление
+  END IF;
 
-GRANT EXECUTE ON FUNCTION docs.sp_delete_korder(integer, integer) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_delete_korder(integer, integer) TO dbpeakasutaja;
+  DELETE FROM docs.korder2
+  WHERE parentid IN (SELECT id
+                     FROM docs.arv
+                     WHERE parentid = v_doc.id);
+  DELETE FROM docs.korder1
+  WHERE parentid = v_doc.id; --@todo констрейн на удаление
+
+  -- Установка статуса ("Удален")  и сохранение истории
+
+  UPDATE docs.doc
+  SET lastupdate = now(),
+    history      = coalesce(history, '[]') :: JSONB || new_history,
+    rekvid       = v_doc.rekvid,
+    status       = DOC_STATUS
+  WHERE id = doc_id;
+
+  result = 1;
+  RETURN;
+END;$BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100;
+ALTER FUNCTION docs.sp_delete_korder( INTEGER, INTEGER )
+OWNER TO postgres;
+
+GRANT EXECUTE ON FUNCTION docs.sp_delete_korder(INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_delete_korder(INTEGER, INTEGER) TO dbpeakasutaja;

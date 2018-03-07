@@ -49,7 +49,8 @@ const Sorder = {
                   LEFT OUTER JOIN libs.asutus AS asutus ON asutus.id = k.asutusId
                   LEFT OUTER JOIN ou.aa AS aa ON k.kassaid = aa.Id
                   LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.Id
-                  left outer join docs.journalid jid on jid.journalid = k.journalid                  
+                  left outer join docs.journal j on j.parentid = k.journalid                  
+                  left outer join docs.journalid jid on jid.journalid = j.id                  
                   left outer join libs.dokprop dp on dp.id = k.doklausid 
                 WHERE d.id = $1`,
             sqlAsNew: `SELECT
@@ -116,7 +117,7 @@ const Sorder = {
                   INNER JOIN docs.korder1 k ON k.id = k1.parentId
                   INNER JOIN libs.nomenklatuur n ON n.id = k1.nomid
                   INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                  left outer join docs.dokvaluuta1 v on (k1.id = v.dokid and v.dokliik = 11)                 
+                  left outer join docs.dokvaluuta1 v on (k1.id = v.dokid and v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'korder2'))                 
                   WHERE k.parentid = $1`,
             query: null,
             multiple: true,
@@ -232,7 +233,11 @@ const Sorder = {
         return taskFunction(docId, userId, Sorder);
     },
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
-    generateJournal: {command: `select docs.gen_lausend_sorder($1, $2)`, type: "sql"},
+    generateJournal: {
+        command: `select error_code, result, error_message from docs.gen_lausend_sorder($2, $1)`, // $1 - userId, $2 - docId
+        type: "sql",
+        alias: 'generateJournal'
+    },
     endProcess: {command: `update docs.doc set status = 2 where id = $1`, type: "sql"},
 
 

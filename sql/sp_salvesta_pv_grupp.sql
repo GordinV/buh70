@@ -9,19 +9,21 @@ CREATE OR REPLACE FUNCTION libs.sp_salvesta_pv_grupp(
 $BODY$
 
 DECLARE
-  lib_id      INTEGER;
-  userName    TEXT;
-  doc_id      INTEGER = data ->> 'id';
-  doc_data    JSON = data ->> 'data';
-  doc_kood    TEXT = doc_data ->> 'kood';
-  doc_nimetus TEXT = doc_data ->> 'nimetus';
-  doc_library TEXT = 'PVGRUPP';
-  doc_tun1    INTEGER = doc_data ->> 'tun1';
-  doc_tun2    INTEGER = doc_data ->> 'tun2';
-  doc_konto varchar(20) = doc_data ->> 'konto';
-  doc_kulum_konto varchar(20) = doc_data ->> 'kulum_konto';
-  doc_muud text = doc_data ->> 'muud';
-  json_object JSONB;
+  lib_id          INTEGER;
+  userName        TEXT;
+  doc_id          INTEGER = data ->> 'id';
+  doc_data        JSON = data ->> 'data';
+  doc_kood        TEXT = doc_data ->> 'kood';
+  doc_nimetus     TEXT = doc_data ->> 'nimetus';
+  doc_library     TEXT = 'PVGRUPP';
+  doc_tun1        INTEGER = doc_data ->> 'tun1';
+  doc_tun2        INTEGER = doc_data ->> 'tun2';
+  doc_konto       VARCHAR(20) = doc_data ->> 'konto';
+  doc_kulum_konto VARCHAR(20) = doc_data ->> 'kulum_konto';
+  doc_muud        TEXT = doc_data ->> 'muud';
+  json_object     JSONB;
+
+  v_pv_kaart      RECORD;
 BEGIN
 
   IF (doc_id IS NULL)
@@ -42,7 +44,9 @@ BEGIN
 
   SELECT row_to_json(row)
   INTO json_object
-  FROM (SELECT doc_kulum_konto as kulum_konto,doc_konto as konto) row;
+  FROM (SELECT
+          doc_kulum_konto AS kulum_konto,
+          doc_konto       AS konto) row;
 
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
@@ -69,10 +73,24 @@ BEGIN
     RETURNING id
       INTO lib_id;
 
+    -- uuenda pv_kaart konto
 
--- uuenda pv_kaart konto
+    FOR v_pv_kaart IN
+    SELECT l.*
+    FROM libs.library l
+    WHERE l.rekvid = user_rekvid
+          AND l.library = 'POHIVARA'
+          AND (l.properties ->> 'gruppid') :: INTEGER = lib_id
+    LOOP
+      SELECT row_to_json(row)
+      INTO json_object
+      FROM (SELECT doc_konto AS konto) row;
 
---	UPDATE docs.pv_kaart SET konto = doc_konto WHERE gruppid = lib_id;
+      json_object = v_pv_kaart.properties :: JSONB || json_object;
+      UPDATE libs.library
+      SET properties = json_object
+      WHERE id = v_pv_kaart.id;
+    END LOOP;
 
   END IF;
 
@@ -80,8 +98,8 @@ BEGIN
 
   EXCEPTION WHEN OTHERS
   THEN
-     RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-     RETURN 0;
+    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+    RETURN 0;
 
 
 END;$BODY$
@@ -94,7 +112,7 @@ GRANT EXECUTE ON FUNCTION libs.sp_salvesta_pv_grupp(JSON, INTEGER, INTEGER) TO d
 
 /*
 
-SELECT libs.sp_salvesta_pv_grupp('{"id":0,"data":{"doc_type_id":"PVGRUPP","id":0,"konto":"5001","kood":"__test3367","kulum_konto":"1901","library":"PVGRUPP","muud":null,"nimetus":"vfp test PVGRUPP","rekvid":1,"status":0,"tun1":null,"tun2":null,"userid":1}}'
+SELECT libs.sp_salvesta_pv_grupp('{"id":0,"data":{"doc_type_id":"PVGRUPP","id":0,"konto":"5001","kood":"__test8331943","kulum_konto":"1901","library":"PVGRUPP","muud":null,"nimetus":"vfp test PVGRUPP","rekvid":1,"status":0,"tun1":null,"tun2":null,"userid":1}}'
 ,1, 1)
 
 */
