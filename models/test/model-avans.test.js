@@ -11,7 +11,7 @@ describe('dok. type Avans tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
     const doc = require('../raamatupidamine/avans'),
-        docTypeId = 'ARV'.toLowerCase(),
+        docTypeId = 'AVANS'.toLowerCase(),
         modelForExport = 'raamatupidamine/avans';
 
     moduleLocator.register(docTypeId, doc);
@@ -42,6 +42,7 @@ describe('dok. type Avans tests', function () {
         expect(doc.endProcess).toBeDefined();
         expect(doc.generateJournal).toBeDefined();
         expect(doc.grid).toBeDefined();
+        expect(doc.executeCommand).toBeDefined();
     });
 
     it (`${docTypeId} must have fields in xml model`,() => {
@@ -55,6 +56,7 @@ describe('dok. type Avans tests', function () {
         expect(_.find(modelElements.elements, {name:'endProcess'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'grid'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'generateJournal'})).toBeDefined();
+        expect(_.find(modelElements.elements, {name:'executeCommand'})).toBeDefined();
 
         let grid = _.find(modelElements.elements, {name:'grid'});
         expect(grid).toBeDefined();
@@ -74,6 +76,8 @@ describe('dok. type Avans tests', function () {
         expect(endAlias).toBeDefined();
         let generateJournal = _.find(modelElements.elements, {name:'generateJournal'});
         expect(generateJournal).toBeDefined();
+        let executeCommand = _.find(modelElements.elements, {name:'executeCommand'});
+        expect(executeCommand).toBeDefined();
 
     });
 

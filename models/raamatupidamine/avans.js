@@ -11,36 +11,41 @@ const Avans = {
     select: [
         {
             sql: `SELECT
-                  d.id,
-                  d.docs_ids,
-                  (to_char(created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                                                   AS created,
-                  (to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                                                AS lastupdate,
-                  d.bpm,
-                  trim(l.nimetus)                                                                                     AS doc,
-                  trim(l.kood)                                                                                        AS doc_type_id,
-                  trim(s.nimetus)                                                                                     AS status,
-                  d1.number                                                                                            AS number,
-                  d1.kpv as kpv,
-                  d1.rekvid,
-                  d1.selg as selg,
-                  coalesce((select sum(summa) from docs.avans2 where parentid = d1.id),0)::numeric(12,2) as summa,
-                  d1.jaak as jaak,
-                  d1.muud as muud,
-                   coalesce((dp.details :: JSONB ->> 'konto'),'') :: VARCHAR(20)                                      AS konto,
-                   dp.selg::varchar(120)                                                                              as dokprop,
-                   d1.doklausid,
-                   coalesce(jid.number,0)::integer as lausend
-                FROM docs.doc d
-                  INNER JOIN docs.avans1 d1 ON d1.parentId = d.id
-                  INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                  INNER JOIN libs.asutus a on a.id = d1.asutusid
-                  LEFT OUTER JOIN libs.library l ON l.id = d.doc_type_id
-                  LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
-                  left outer join libs.dokprop dp on dp.id = d1.doklausid 
-                      left outer join docs.doc d on d1.journalid = d.id
-                      left outer join docs.journal j on j.parentid = d.id
-                      left outer join docs.journalid jid on jid.journalid = j.id
-                WHERE d.id = $1`,
+                      d.id,
+                      d.docs_ids,
+                      (to_char(d.created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT              AS created,
+                      (to_char(d.lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT           AS lastupdate,
+                      d.bpm,
+                      trim(l.nimetus)                                                AS doc,
+                      trim(l.kood)                                                   AS doc_type_id,
+                      trim(s.nimetus)                                                AS status,
+                      d1.number                                                      AS number,
+                      d1.kpv                                                         AS kpv,
+                      d1.rekvid,
+                      d1.selg                                                        AS selg,
+                      d1.asutusid,
+                      d1.journalid,
+                      d1.dokpropid,
+                      coalesce((SELECT sum(summa)
+                                FROM docs.avans2
+                                WHERE parentid = d1.id), 0) :: NUMERIC(12, 2)        AS summa,
+                      d1.jaak                                                        AS jaak,
+                      d1.muud                                                        AS muud,
+                      coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20) AS konto,
+                      dp.selg :: VARCHAR(120)                                        AS dokprop,
+                      d1.dokpropid,
+                      coalesce(jid.number, 0) :: INTEGER                             AS lausend
+                    FROM docs.doc d
+                      INNER JOIN docs.avans1 d1 ON d1.parentId = d.id
+                      INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                      INNER JOIN libs.asutus a ON a.id = d1.asutusid
+                      LEFT OUTER JOIN libs.library l ON l.id = d.doc_type_id
+                      LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
+                      LEFT OUTER JOIN libs.dokprop dp ON dp.id = d1.dokpropid
+                      LEFT OUTER JOIN docs.doc dj ON d1.journalid = dj.id
+                      LEFT OUTER JOIN docs.journal j ON j.parentid = dj.id
+                      LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
+                    WHERE d.id = $1`,
             sqlAsNew: `SELECT
                       $1 :: INTEGER                                 AS id,
                       $2 :: INTEGER                                 AS userid,
@@ -59,6 +64,7 @@ const Avans = {
                       now() :: DATE                                 AS kpv,
                       NULL::TEXT                                    AS selg,
                       NULL::TEXT                                    AS muud,
+                      NULL::integer as asutusid,
                       NULL::varchar(20)                             AS regkood,
                       NULL::varchar(254)                            AS asutus,
                       0::numeric(12,2) as summa,
@@ -66,6 +72,8 @@ const Avans = {
                      null::varchar(120) as  dokprop,
                      null::varchar(20) as konto,
                      0 as doklausid,
+                     null::integer as journalid,
+                     null::integer as dokpropid,
                      null::integer as lausend
                     FROM libs.library l,
                       libs.library s,
@@ -89,7 +97,7 @@ const Avans = {
                       coalesce(v.valuuta,'EUR')::varchar(20) as valuuta,
                       coalesce(v.kuurs,1)::numeric(12,4) as kuurs
                     FROM docs.avans1 AS a1
-                      INNER JOIN docs.avans2 a2 ON a2.id = a1.parentId
+                      INNER JOIN docs.avans2 a2 ON a2.parentid = a1.Id
                       INNER JOIN libs.nomenklatuur n ON n.id = a2.nomid
                       INNER JOIN libs.asutus a ON a.id = a1.asutusid
                       INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
@@ -97,7 +105,7 @@ const Avans = {
                       left outer join docs.doc d on a1.journalid = d.id
                       left outer join docs.journal j on j.parentid = d.id
                       left outer join docs.journalid jid on jid.journalid = j.id
-                    WHERE k.parentid = $1`,
+                    WHERE a1.parentid = $1`,
             query: null,
             multiple: true,
             alias: 'details',
@@ -231,6 +239,11 @@ const Avans = {
         alias: 'generateJournal'
     },
     endProcess: {command: `update docs.doc set status = 2 where id = $1`, type: "sql"},
+    executeCommand: {
+        command: `select result, error_message from docs.fnc_avansijaak(?tnId)`,
+        type:'sql',
+        alias:'fncAvansiJaak'
+    },
 
 
 };

@@ -37,7 +37,7 @@ DECLARE
   a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
 BEGIN
 
-  raise notice 'start';
+  RAISE NOTICE 'start';
 
   SELECT kasutaja
   INTO userName
@@ -180,6 +180,25 @@ BEGIN
 
     DELETE FROM docs.journal1
     WHERE parentid = journal_id AND id NOT IN (SELECT unnest(ids));
+
+    -- avans
+    SELECT avans1.parentid
+    INTO lnId
+    FROM docs.avans1 a1
+      INNER JOIN libs.dokprop d ON d.id = a1.dokpropid
+    WHERE ltrim(rtrim(a1.number)) = ltrim(rtrim(doc_dok))
+          AND a1.rekvid = user_rekvid
+          AND a1.asutusId = doc_asutusid
+          AND (ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.deebet)) OR
+               ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.kreedit)))
+    ORDER BY a1.kpv DESC
+    LIMIT 1;
+
+    IF lnId IS NOT NULL
+    THEN
+
+      PERFORM fnc_avansijaak(lnId);
+    END IF;
 
   END LOOP;
 

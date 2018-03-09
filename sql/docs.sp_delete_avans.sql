@@ -1,22 +1,21 @@
-﻿DROP FUNCTION IF EXISTS docs.sp_delete_arv( INTEGER, INTEGER );
+-- Function: docs.sp_delete_mk(integer, integer)
 
-CREATE OR REPLACE FUNCTION docs.sp_delete_arv(
+DROP FUNCTION IF EXISTS docs.sp_delete_avans( INTEGER, INTEGER );
+
+CREATE OR REPLACE FUNCTION docs.sp_delete_avans(
   IN  userid        INTEGER,
   IN  doc_id        INTEGER,
   OUT error_code    INTEGER,
   OUT result        INTEGER,
   OUT error_message TEXT)
-AS
+  RETURNS RECORD AS
 $BODY$
 
 DECLARE
   v_doc           RECORD;
-  v_dependid_docs RECORD;
-  arv_id          INTEGER;
-  ids             INTEGER [];
-  arv_history     JSONB;
-  arv1_history    JSONB;
-  arvtasu_history JSONB;
+  avans1_history JSONB;
+  avans2_history JSONB;
+  avanstasu_history JSONB;
   new_history     JSONB;
   DOC_STATUS      INTEGER = 3; -- документ удален
 BEGIN
@@ -31,6 +30,15 @@ BEGIN
 
   -- проверка на пользователя и его соответствие учреждению
 
+  IF v_doc IS NULL
+  THEN
+    error_code = 6;
+    error_message = 'Dokument ei leitud, docId: ' || coalesce(doc_id, 0) :: TEXT;
+    result = 0;
+    RETURN;
+
+  END IF;
+
   IF NOT exists(SELECT id
                 FROM ou.userid u
                 WHERE id = userid
@@ -39,7 +47,8 @@ BEGIN
   THEN
 
     error_code = 5;
-    error_message = 'Kasutaja ei leitud';
+    error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
+                    coalesce(userid, 0) :: TEXT;
     result = 0;
     RETURN;
 
@@ -59,14 +68,20 @@ BEGIN
 
   END IF;
 
-  -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
+  -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя кроме проводки)
 
   IF exists(
       SELECT d.id
       FROM docs.doc d
         INNER JOIN libs.library l ON l.id = d.doc_type_id
       WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
-            AND l.kood IN ('ARV', 'MK', 'SORDER', 'KORDER'))
+            AND l.kood IN (
+        SELECT kood
+        FROM libs.library
+        WHERE library = 'DOK'
+              and kood not in ('JOURNAL')
+              AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')
+      ))
   THEN
 
     RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
@@ -79,32 +94,30 @@ BEGIN
   -- Логгирование удаленного документа
   -- docs.arv
 
-  arv_history = row_to_json(row.*) FROM ( SELECT a.*
-  FROM docs.arv a WHERE a.parentid = doc_id) ROW;
+  avans1_history = row_to_json(row.*) FROM ( SELECT a.*
+  FROM docs.avans1 a WHERE a.parentid = doc_id) ROW;
 
-  -- docs.arv1
-
-  arv1_history = jsonb_build_array(array(SELECT row_to_json(row.*)
-                                         FROM (SELECT a1.*
-                                               FROM docs.arv1 a1
-                                                 INNER JOIN docs.arv a ON a.id = a1.parentid
-                                               WHERE a.parentid = doc_id) row));
+  avans2_history = jsonb_build_array(array(SELECT row_to_json(row.*)
+                                            FROM (SELECT a2.*
+                                                  FROM docs.avans2 a2
+                                                    INNER JOIN docs.avans1 a1 ON a1.id = a2.parentid
+                                                  WHERE a1.parentid = doc_id) row));
   -- docs.arvtasu
 
-  arvtasu_history = jsonb_build_array(array(SELECT row_to_json(row.*)
-                                            FROM (SELECT at.*
-                                                  FROM docs.arvtasu at
-                                                    INNER JOIN docs.arv a ON a.id = at.doc_arv_id
-                                                  WHERE a.parentid = doc_id) row));
+  avanstasu_history = jsonb_build_array(array(SELECT row_to_json(row.*)
+                                            FROM (SELECT a3.*
+                                                  FROM docs.avans3 a3
+                                                    INNER JOIN docs.avans1 a1 ON a1.id = a3.parentid
+                                                  WHERE a1.parentid = doc_id) row));
 
   SELECT row_to_json(row)
   INTO new_history
   FROM (SELECT
           now()           AS deleted,
           v_doc.user_name AS user,
-          arv_history     AS arv,
-          arv1_history    AS arv1,
-          arvtasu_history AS arvtasu) row;
+          avans1_history AS avans1,
+          avans2_history AS avans2,
+          avanstasu_history AS avans3) row;
 
   -- Удаление данных из связанных таблиц (удаляем проводки)
 
@@ -116,11 +129,12 @@ BEGIN
     WHERE parentid IN (SELECT unnest(v_doc.docs_ids)); -- @todo констрейн на удаление
   END IF;
 
-  DELETE FROM docs.arv1
+  DELETE FROM docs.avans2
   WHERE parentid IN (SELECT id
-                     FROM docs.arv
+                     FROM docs.avans1
                      WHERE parentid = v_doc.id);
-  DELETE FROM docs.arv
+
+  DELETE FROM docs.avans1
   WHERE parentid = v_doc.id; --@todo констрейн на удаление
 
   -- Установка статуса ("Удален")  и сохранение истории
@@ -138,18 +152,5 @@ END;$BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.sp_delete_arv(INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_delete_arv(INTEGER, INTEGER) TO dbpeakasutaja;
-
-
-SELECT
-  error_code,
-  result,
-  error_message
-FROM docs.sp_delete_arv(1, 125);
-
-/*
-select docs.sp_salvesta_arv('{"id":0,"doc_type_id":"ARV","data":{"id":0,"created":"2016-05-05T21:39:57.050726","lastupdate":"2016-05-05T21:39:57.050726","bpm":null,"doc":"Arved","doc_type_id":"ARV","status":"Черновик","number":"321","summa":24,"rekvid":null,"liik":0,"operid":null,"kpv":"2016-05-05","asutusid":1,"arvid":null,"lisa":"lisa","tahtaeg":"2016-05-19","kbmta":null,"kbm":4,"tasud":null,"tasudok":null,"muud":"muud","jaak":"0.00","objektid":null,"objekt":null,"regkood":null,"asutus":null},
-"details":[{"id":"NEW0.6577064044198089","[object Object]":null,"nomid":"1","kogus":2,"hind":10,"kbm":4,"kbmta":20,"summa":24,"kood":"PAIGALDUS","nimetus":"PV paigaldamine"}]}',1, 1);
-
-*/
+GRANT EXECUTE ON FUNCTION docs.sp_delete_avans(INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_delete_avans(INTEGER, INTEGER) TO dbpeakasutaja;

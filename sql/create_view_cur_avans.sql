@@ -31,7 +31,9 @@ CREATE VIEW cur_avans AS
     INNER JOIN docs.avans2 a2 ON a1.id = a2.parentid
     INNER JOIN libs.asutus a ON a.id = a1.asutusId
     INNER JOIN userid u ON a1.userid = u.id
-    LEFT OUTER JOIN docs.journalid jid ON a1.journalid = jid.journalid
+    LEFT OUTER JOIN docs.doc dd ON a1.journalid = dd.id
+    LEFT OUTER JOIN docs.journal j ON j.parentid = dd.id
+    LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
     INNER JOIN libs.nomenklatuur n ON a2.nomid = n.id
     LEFT OUTER JOIN docs.dokvaluuta1 v
       ON (v.dokid = a2.id AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'avans2'));
@@ -42,5 +44,9 @@ GRANT SELECT ON TABLE cur_avans TO dbkasutaja;
 GRANT SELECT ON TABLE cur_avans TO dbvaatleja;
 GRANT ALL ON TABLE cur_avans TO dbadmin;
 
-
+/*
 select * from cur_avans
+
+select * from docs.avans1 where parentid = 1276
+
+*/
