@@ -1,8 +1,6 @@
 'use strict';
 
-let now = new Date();
-
-const Tulud = {
+const Kulud = {
     select: [
         {
             sql: `SELECT
@@ -20,7 +18,7 @@ const Tulud = {
                     e.kood5::varchar(20) as kood5,
                     e.tunnus,
                     e.is_parandus,
-                    coalesce(e.is_kulud,0)::integer as is_kulud,
+                    coalesce(e.is_kulud,1)::integer as is_kulud,
                     e.kpv  as kpv,
                     coalesce(v.valuuta,'EUR') as valuuta,
                     coalesce(v.kuurs,1) as kuurs,
@@ -49,7 +47,7 @@ const Tulud = {
                       'new' as dok_status,
                       null::date as kpv,
                       0 as is_paranadus,
-                      0 as is_kulud`,
+                      1 as is_kulud`,
             query: null,
             multiple: false,
             alias: 'row',
@@ -73,7 +71,7 @@ const Tulud = {
         ],
         sqlString: `SELECT
                           d.*
-                        FROM cur_tulud d
+                        FROM cur_kulud d
                         WHERE d.rekvId in (select rekv_id from get_asutuse_struktuur($1)) 
                               AND coalesce(docs.usersRigths(d.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
@@ -95,7 +93,7 @@ const Tulud = {
         ]
     },
     saveDoc: `select docs.sp_salvesta_eelarve($1, $2, $3) as id`,
-    deleteDoc: `select error_code, result, error_message from eelarve.sp_delete_eelarve($1, $2, 0)`, // $1 - userId, $2 - docId
+    deleteDoc: `select error_code, result, error_message from eelarve.sp_delete_eelarve($1, $2, 1)`, // $1 - userId, $2 - docId, 1 - kulud
     requiredFields: [
         {
             name: 'summa',
@@ -114,4 +112,4 @@ const Tulud = {
     ]
 };
 
-module.exports = Tulud;
+module.exports = Kulud;
