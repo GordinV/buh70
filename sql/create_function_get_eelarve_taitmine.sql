@@ -112,7 +112,7 @@ GRANT EXECUTE ON FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLE
 GRANT EXECUTE ON FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN,
                                                         JSON) TO eelkoostaja;
 
-
+/*
 SELECT *
 FROM get_eelarve_taitmine(FALSE, FALSE, FALSE, NULL)
 UNION ALL
@@ -132,7 +132,7 @@ SELECT *
 FROM get_eelarve_taitmine(TRUE, TRUE, TRUE, NULL);
 
 
-/*
+
 
 
 CREATE VIEW cur_asutuse_struktuur
