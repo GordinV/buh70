@@ -1,6 +1,7 @@
+DROP FUNCTION IF EXISTS eelarve.sp_salvesta_eelarve( JSON, INTEGER, INTEGER );
 DROP FUNCTION IF EXISTS docs.sp_salvesta_eelarve( JSON, INTEGER, INTEGER );
 
-CREATE OR REPLACE FUNCTION docs.sp_salvesta_eelarve(
+CREATE OR REPLACE FUNCTION eelarve.sp_salvesta_eelarve(
   data        JSON,
   userid      INTEGER,
   user_rekvid INTEGER)
@@ -113,8 +114,8 @@ LANGUAGE plpgsql VOLATILE
 COST 100;
 
 
-GRANT EXECUTE ON FUNCTION docs.sp_salvesta_eelarve(JSON, INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_salvesta_eelarve(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.sp_salvesta_eelarve(JSON, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.sp_salvesta_eelarve(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
 SELECT docs.sp_salvesta_eelarve('{"id":0,"data":{"aasta":2018,"id":0,"is_kulud":0,"kood1":"test","kood2":"__test9088","kood3":"","kood4":null,"kood5":"123","kpv":null,"kuu":null,"muud":"test","rekvid":1,"summa":100,"userid":1}}', 1, 1);

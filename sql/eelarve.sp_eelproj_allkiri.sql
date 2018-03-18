@@ -42,5 +42,4 @@ BEGIN
 END;
 $$;
 
-
 GRANT EXECUTE ON FUNCTION eelarve.sp_eelproj_allkiri(tnId INTEGER, tnAmetnikId INTEGER) TO eelaktsepterja;

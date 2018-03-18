@@ -1,64 +1,86 @@
-﻿DROP FUNCTION if exists docs.sp_get_number(integer, text, integer, integer);
+﻿DROP FUNCTION IF EXISTS docs.sp_get_number( INTEGER, TEXT, INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_get_number(
-    tnrekvid integer,
-    tcdok text,
-    tnyear integer,
-    tndokpropid integer)
-  RETURNS text AS
+  tnrekvid    INTEGER,
+  tcdok       TEXT,
+  tnyear      INTEGER,
+  tndokpropid INTEGER)
+  RETURNS TEXT AS
 $BODY$
-DECLARE 
-	v_number record;
-	lcPref text;
-	lcNumber text = '0';
-	lcTableName text;
-	lcAdditionalWhere text = '';
-	lcSqlString text;
-begin
-	if tnDokPropId is not null then
-		select ltrim(rtrim(proc_)) into lcPref from libs.dokprop where id = tnDokPropId;
-	end if;
-	
-	lcPref = coalesce(lcPref,'');
+DECLARE
+  v_number          RECORD;
+  lcPref            TEXT = '%';
+  lcNumber          TEXT = '0';
+  lcTableName       TEXT;
+  lcAdditionalWhere TEXT = '';
+  lcSqlString       TEXT;
+BEGIN
+  IF tnDokPropId IS NOT NULL
+  THEN
+    SELECT ltrim(rtrim(proc_))
+    INTO lcPref
+    FROM libs.dokprop
+    WHERE id = tnDokPropId;
+  END IF;
 
-	case  tcDok
-		when 'ARV' then
-			lcTableName = 'docs.arv';
-			
-		when 'SORDER' then
-			lcTableName = 'docs.korder1';
-			lcAdditionalWhere  = ' and tyyp = 1 '; 	
-		when 'VORDER' then
-			lcTableName = 'docs.korder1';
-			lcAdditionalWhere  = ' and tyyp = 2 '; 	
-		when 'MK' then
-			lcTableName = 'docs.mk';
-			lcAdditionalWhere  = ' OPT = 1 '; 	
-		when 'LEPING' then
-			lcTableName = 'docs.leping1';
-			lcAdditionalWhere  = ' OPT = 1 '; 	
---		when 'AVANS' then
---			lcTableName = 'docs.avans1'; 
-	end case;
+  lcPref = coalesce(lcPref, '');
 
-	-- building sql query with regexp for only numbers 
-	lcSqlString = 'select max(SUBSTRING(coalesce(number,''0''), ' || quote_literal('Y*[0-9]\d+') || ')::integer) ::integer as number from ' 
-		|| lcTableName 
-		|| ' where rekvId = $1::integer and year(kpv) = $2::integer and number ilike $3::text '
-		|| lcAdditionalWhere ;
+  CASE tcDok
+    WHEN 'ARV'
+    THEN
+      lcTableName = 'docs.arv';
 
-	execute lcSqlString into v_number using tnRekvId, tnYear, lcPref || '%';
+    WHEN 'SORDER'
+    THEN
+      lcTableName = 'docs.korder1';
+      lcAdditionalWhere = ' and tyyp = 1 ';
+    WHEN 'VORDER'
+    THEN
+      lcTableName = 'docs.korder1';
+      lcAdditionalWhere = ' and tyyp = 2 ';
+    WHEN 'MK'
+    THEN
+      lcTableName = 'docs.mk';
+      lcAdditionalWhere = ' OPT = 1 ';
+    WHEN 'LEPING'
+    THEN
+      lcTableName = 'docs.leping1';
+      lcAdditionalWhere = ' OPT = 1 ';
+    WHEN 'TAOTLUS'
+    THEN
+      lcTableName = 'eelarve.taotlus';
+  END CASE;
 
-	-- will plus pref and encrement
+  -- building sql query with regexp for only numbers
+  lcSqlString = 'select max(SUBSTRING(''0'' || coalesce(number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
+                ')::integer) ::integer as number from '
+                || lcTableName
+                || ' where rekvId = $1::integer and year(kpv) = $2::integer and number ilike $3::text';
 
-	raise notice 'lcSqlString %', lcSqlString;
-	lcNumber = lcPref || (coalesce(v_number.number,0) + 1)::text;
-	
-        return lcNumber ;
-end; 
+  lcSqlString = lcSqlString || lcAdditionalWhere;
+
+  EXECUTE lcSqlString
+  INTO v_number
+  USING tnRekvId, tnYear, lcPref;
+
+  -- will plus pref and encrement
+
+  RAISE NOTICE 'lcSqlString %', lcSqlString;
+  if lcPref = '%' THEN
+    lcPref = '';
+  END IF;
+
+  lcNumber = lcPref || (coalesce(v_number.number, 0) + 1) :: TEXT;
+
+  RETURN lcNumber;
+END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
+LANGUAGE plpgsql VOLATILE
+COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.sp_get_number(integer, text, integer, integer) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_get_number(integer, text, integer, integer) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_get_number(INTEGER, TEXT, INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_get_number(INTEGER, TEXT, INTEGER, INTEGER) TO dbkasutaja;
+
+/*
+select docs.sp_get_number(1, 'TAOTLUS', 2018, NULL)
+ */
