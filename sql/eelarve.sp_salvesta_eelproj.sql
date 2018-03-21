@@ -22,7 +22,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
 
   IF userName IS NULL

@@ -39,6 +39,7 @@ describe('dok. type EelProj tests', function () {
         expect(doc.saveDoc).toBeDefined();
         expect(doc.deleteDoc).toBeDefined();
         expect(doc.grid).toBeDefined();
+        expect(doc.executeCommand).toBeDefined();
     });
 
     it (`${docTypeId} must have fields in xml model`,() => {
@@ -49,6 +50,7 @@ describe('dok. type EelProj tests', function () {
         expect(_.find(modelElements.elements, {name:'saveDoc'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'deleteDoc'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'grid'})).toBeDefined();
+        expect(_.find(modelElements.elements, {name:'executeCommand'})).toBeDefined();
 
         let grid = _.find(modelElements.elements, {name:'grid'});
         expect(grid).toBeDefined();

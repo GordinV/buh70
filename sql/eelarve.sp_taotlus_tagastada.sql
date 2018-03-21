@@ -34,38 +34,32 @@ BEGIN
     RETURN;
   END IF;
 
-  IF tmpTaotlus.status = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'esitatud')
-  THEN
-    UPDATE eelarve.taotlus
-    SET status  = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'tagastatud'),
-      aktseptID = user_id,
-      muud      = tcMuud
-    WHERE parentid = doc_id;
+  UPDATE eelarve.taotlus
+  SET status  = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'tagastatud'),
+    aktseptID = user_id,
+    muud      = tcMuud
+  WHERE parentid = doc_id;
 
-    -- ajalugu
-    SELECT row_to_json(row)
-    INTO new_history
-    FROM (SELECT
-            now()             AS updated,
-            (SELECT kasutaja
-             FROM ou.userid
-             WHERE id = user_id
-             LIMIT 1) :: TEXT AS user,
-            'tagastatud'      AS status
-         ) row;
+  -- ajalugu
+  SELECT row_to_json(row)
+  INTO new_history
+  FROM (SELECT
+          now()             AS updated,
+          (SELECT kasutaja
+           FROM ou.userid
+           WHERE id = user_id
+           LIMIT 1) :: TEXT AS user,
+          'tagastatud'      AS status
+       ) row;
 
-    -- will check if arvId exists
-    UPDATE docs.doc
-    SET
-      lastupdate = now(),
-      history    = coalesce(history, '[]') :: JSONB || new_history :: JSONB
-    WHERE id = doc_id;
+  -- will check if arvId exists
+  UPDATE docs.doc
+  SET
+    lastupdate = now(),
+    history    = coalesce(history, '[]') :: JSONB || new_history :: JSONB
+  WHERE id = doc_id;
 
-    result = 1;
-  ELSE
-    error_message = 'Vale taotluse staatus';
-    result = 0;
-  END IF;
+  result = 1;
 
   RETURN;
 END;

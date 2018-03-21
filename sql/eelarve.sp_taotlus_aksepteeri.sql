@@ -53,7 +53,7 @@ BEGIN
       timestamp = now()
     WHERE parentid = doc_id;
 
-    -- ajalugu
+     -- ajalugu
     SELECT row_to_json(row)
     INTO new_history
     FROM (SELECT
@@ -79,112 +79,9 @@ BEGIN
     RETURN;
   END IF;
 
-  lnKuurs = fnc_currentkuurs(tmpTaotlus.Kpv);
-
-  --* eelarve projektide side
-  SELECT
-    e.id,
-    e.status,
-    e.muud
-  INTO tmpEelProj
-  FROM eelarve.eelproj e
-  WHERE e.aasta = tmptaotlus.aasta
-        AND e.status > 0
-        AND e.rekvid = tmpTaotlus.rekvid
-  ORDER BY e.status DESC
-  LIMIT 1;
-
-  IF tmpEelProj IS NULL
-  THEN
-    result = 0;
-    error_code = 6;
-    error_message = 'Eelarve projekt ei leidnud , docId: ' || coalesce(doc_id, 0) :: TEXT;
-    RETURN;
-  END IF;
-
-  --* eelarve side
-  IF tmpEelProj.status = array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
-  THEN
-    --		* eelarve mitte projekt
-
-    lnTunnus = 1;
-    --		* eelarve juba kinnitatud siis see on parandamine
-    FOR tmpTaotlus1 IN
-    SELECT t1.*
-    FROM eelarve.taotlus1 t1
-    WHERE t1.parentid = tmpTaotlus.id AND (t1.eelarveid IS NULL OR empty(t1.eelarveid))
-    LOOP
-
-      IF tmpTaotlus.tunnus = 1
-      THEN
-        lnTunnus = 1;
-        ldKpv = tmpTaotlus.kpv;
-        lcSelg = tmpTaotlus.muud;
-        -- parandamine
-        IF NOT empty(ttMuud)
-        THEN
-          lcSelg = ttMuud;
-        END IF;
-
-      ELSE
-        lnTunnus = 0;
-        ldKpv = NULL;
-        lcSelg = tmpEelProj.muud;
-
-      END IF;
-
-      --koostame eelarve
-
-      SELECT
-        tmpTaotlus.aasta,
-        tmpTaotlus1.summa,
-        tmpTaotlus1.tunnus,
-        tmpTaotlus1.kood1,
-        tmpTaotlus1.kood2,
-        tmpTaotlus1.kood3,
-        tmpTaotlus1.kood4,
-        tmpTaotlus1.kood5,
-        (exists(SELECT id
-                FROM libs.library l
-                WHERE l.library = 'TULUDEALLIKAD'
-                      AND kood = tmpTaotlus1.kood5
-                      AND l.tun5 =
-                          array_position((enum_range(NULL :: ARTIKKEL_TYPE)), 'kulud'))) :: INTEGER AS is_kulud,
-        lnTunnus                                                                                    AS is_parandus,
-        tmpEelProj.id                                                                               AS variantid,
-        ldKpv :: DATE                                                                               AS kpv,
-        'EUR'                                                                                       AS valuuta,
-        1                                                                                           AS kuurs,
-        lcSelg                                                                                      AS muud
-      INTO tmpEelarve;
-
-      SELECT row_to_json(row)
-      INTO new_eelarve
-      FROM (SELECT
-              0          AS id,
-              tmpEelarve AS data
-           ) row;
-
-
-      lnId = eelarve.sp_salvesta_eelarve(new_eelarve, user_id, tmpTaotlus.rekvId);
-
-      IF lnId > 0
-      THEN
-        UPDATE eelarve.taotlus1
-        SET eelarveId = lnId
-        WHERE id = tmpTaotlus1.id;
-
-      ELSE
-        result = 0;
-        error_code = 1;
-        error_message = 'Eelarve salvestamine õnnestu';
-        EXIT;
-      END IF;
-
-    END LOOP;
-  ELSE
-    error_message = 'Eelarve projekt ei ole kinnitatud';
-  END IF;
+  SELECT *
+  INTO error_code, result, error_message
+  FROM eelarve.sp_eelproj_kinnitamine(user_id, ('{"taotlus_id":' || doc_id :: TEXT || '}') :: JSON);
 
   RETURN;
 

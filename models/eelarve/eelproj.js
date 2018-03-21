@@ -18,11 +18,12 @@ const EelProj = {
             sqlAsNew: `SELECT 
                       $1 :: INTEGER                                 AS id,
                       $2 :: INTEGER                                 AS userid,
-                      null::integer as rekvid,
+                      0::integer as rekvid,
                       extract(year from current_date)::integer as aasta,
-                      null::integer as kuu,
-                      null::integer as kinnitaja,
+                      0::integer as kuu,
+                      $2::integer as kinnitaja,
                       null::text as muud,
+                      1::integer as status,
                       'new' as dok_status`,
             query: null,
             multiple: false,
@@ -84,7 +85,13 @@ const EelProj = {
         }
 
 
-    ]
+    ],
+    executeCommand: {
+        command: `select error_code, result, error_message from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task
+        type:'sql',
+        alias:'executeTask'
+    },
+
 };
 
 module.exports = EelProj;

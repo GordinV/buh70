@@ -13,7 +13,6 @@ CREATE OR REPLACE FUNCTION sp_execute_task(
 $BODY$
 
 DECLARE
-  DOC_STATUS INTEGER = array_position((enum_range(NULL :: DOK_STATUS)), 'deleted'); -- документ удален
   tulemus    RECORD;
 BEGIN
 
