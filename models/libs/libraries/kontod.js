@@ -4,6 +4,7 @@ module.exports = {
                 l.id, trim(l.kood) as kood, trim(l.nimetus) as nimetus, 
                 l.library, l.tun1, l.tun2, l.tun3, l.tun4, l.muud, $2::integer as userid, 
                 'KONTOD' as doc_type_id, l.tun5 as tyyp, 
+                l.status,
                 (l.properties::jsonb ->> 'valid')::date as valid
                 from libs.library l 
                 where id = $1`,
@@ -18,6 +19,7 @@ module.exports = {
             null::integer as tun3,
             null::integer as tun4,
             2 as tyyp,
+            0 as status,
             null::text as muud,
             null::date as valid`,
         query: null,
