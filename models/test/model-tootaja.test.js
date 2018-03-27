@@ -8,13 +8,12 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-
-describe('dok. type EelProj tests', function () {
+describe('dok. type Tootaja tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../eelarve/eelproj'),
-        docTypeId = 'EELPROJ'.toLowerCase(),
-        modelForExport = 'eelarve/eelproj';
+    const doc = require('../palk/tootaja'),
+        docTypeId = 'TOOTAJA'.toLowerCase(),
+        modelForExport = 'palk/tootaja';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -41,7 +40,7 @@ describe('dok. type EelProj tests', function () {
         expect(doc.saveDoc).toBeDefined();
         expect(doc.deleteDoc).toBeDefined();
         expect(doc.grid).toBeDefined();
-        expect(doc.executeCommand).toBeDefined();
+//        expect(doc.executeCommand).toBeDefined();
     });
 
     it (`${docTypeId} must have fields in xml model`,() => {
@@ -52,13 +51,13 @@ describe('dok. type EelProj tests', function () {
         expect(_.find(modelElements.elements, {name:'saveDoc'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'deleteDoc'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'grid'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'executeCommand'})).toBeDefined();
+//        expect(_.find(modelElements.elements, {name:'executeCommand'})).toBeDefined();
 
         let grid = _.find(modelElements.elements, {name:'grid'});
         expect(grid).toBeDefined();
         expect(_.find(grid.elements,{name:'alias'})).toBeDefined();
         let gridAlias = _.find(grid.elements,{name:'alias'});
-        expect(_.find(gridAlias.elements,{text:'curEelproj'})).toBeDefined();
+        expect(_.find(gridAlias.elements,{text:'curTootajad'})).toBeDefined();
     });
 
     it('should have copy in buh62 folder', (done) => {
@@ -75,8 +74,8 @@ describe('dok. type EelProj tests', function () {
         });
     });
 
-    it('doc type library should contain EELPROJ doc.type', async()=> {
-        let sql = `select id from libs.library where kood = 'EELPROJ' and  library = 'DOK' limit 1`;
+    it('doc type library should contain TOOTAJA doc.type', async()=> {
+        let sql = `select id from libs.library where kood = 'TOOTAJA' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -84,8 +83,16 @@ describe('dok. type EelProj tests', function () {
 
     });
 
-    it('should exists view cur_eelproj', async()=> {
-        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_eelproj'`;
+    it('should exists view com_tootajad', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'com_tootajad'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+    it('should exists view cur_tootajad', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_tootajad'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -93,7 +100,13 @@ describe('dok. type EelProj tests', function () {
 
     });
 
+    it('should exists view cur_palk_kaart', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palk_kaart'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
 
-
+    });
 });
 

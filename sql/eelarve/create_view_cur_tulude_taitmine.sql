@@ -19,7 +19,7 @@ CREATE VIEW cur_tulude_taitmine AS
     LEFT OUTER JOIN libs.library l ON l.kood = j1.kood5 AND l.library = 'ARTIKKEL'
     LEFT OUTER JOIN docs.dokvaluuta1 v
       ON v.dokid = j1.id AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'journal1')
-    JOIN fakttulud ON ((ltrim(rtrim((j1.kreedit) :: TEXT)) ~~ ltrim(rtrim((fakttulud.kood) :: TEXT))))
+    JOIN eelarve.fakt_tulud fakttulud ON ((ltrim(rtrim((j1.kreedit) :: TEXT)) ~~ ltrim(rtrim((fakttulud.kood) :: TEXT))))
   GROUP BY (year(j.kpv)), (month(j.kpv)), j.rekvid, rekv.parentid, rekv.nimetus, j1.kreedit,
     j1.kood1, j1.kood5, j1.kood2, j1.tunnus, l.nimetus
   ORDER BY (year(j.kpv)), (month(j.kpv)), j.rekvid, rekv.parentid, rekv.nimetus, j1.kreedit,

@@ -5,41 +5,35 @@ DROP FUNCTION IF EXISTS libs.sp_salvesta_asutus( JSON, INTEGER, INTEGER );
 -- DROP FUNCTION libs.sp_salvesta_asutus(json, integer, integer);
 
 CREATE OR REPLACE FUNCTION libs.sp_salvesta_asutus(
-  data json,
-  userid integer,
-  user_rekvid integer)
-  RETURNS integer
+  data        JSON,
+  userid      INTEGER,
+  user_rekvid INTEGER)
+  RETURNS INTEGER
 LANGUAGE 'plpgsql'
-
-COST 100
-VOLATILE
-ROWS 0
 AS $BODY$
 
-
 DECLARE
-  asutus_id   INTEGER;
-  userName    TEXT;
-  doc_id      INTEGER = data ->> 'id';
-  doc_data    JSON = data ->> 'data';
-  doc_regkood TEXT = doc_data ->> 'regkood';
-  doc_nimetus TEXT = doc_data ->> 'nimetus';
-  doc_omvorm  TEXT = doc_data ->> 'omvorm';
-  doc_kontakt TEXT = doc_data ->> 'kontakt';
-  doc_aadress TEXT = doc_data ->> 'aadress';
-  doc_tel     TEXT = doc_data ->> 'tel';
-  doc_email   TEXT = doc_data ->> 'email';
-  doc_mark    TEXT = doc_data ->> 'mark';
-  doc_muud    TEXT = doc_data ->> 'muud';
-  doc_pank    TEXT = doc_data ->> 'pank';
-  doc_kmkr    TEXT = doc_data ->> 'kmkr';
-  doc_KEHTIVUS DATE = doc_data ->> 'kehtivus';
+  asutus_id      INTEGER;
+  userName       TEXT;
+  doc_id         INTEGER = data ->> 'id';
+  doc_data       JSON = data ->> 'data';
+  doc_regkood    TEXT = doc_data ->> 'regkood';
+  doc_nimetus    TEXT = doc_data ->> 'nimetus';
+  doc_omvorm     TEXT = doc_data ->> 'omvorm';
+  doc_kontakt    TEXT = doc_data ->> 'kontakt';
+  doc_aadress    TEXT = doc_data ->> 'aadress';
+  doc_tel        TEXT = doc_data ->> 'tel';
+  doc_email      TEXT = doc_data ->> 'email';
+  doc_mark       TEXT = doc_data ->> 'mark';
+  doc_muud       TEXT = doc_data ->> 'muud';
+  doc_pank       TEXT = doc_data ->> 'pank';
+  doc_kmkr       TEXT = doc_data ->> 'kmkr';
+  doc_KEHTIVUS   DATE = doc_data ->> 'kehtivus';
+  doc_is_tootaja BOOLEAN = coalesce((doc_data ->> 'is_tootaja') :: BOOLEAN, FALSE);
+  doc_asutus_aa  JSONB = doc_data ->> 'asutus_aa';
   new_properties JSONB;
-  json_object JSON;
-  json_record RECORD;
-  new_history JSONB;
-  new_rights  JSONB;
-  ids         INTEGER [];
+  new_history    JSONB;
+  new_rights     JSONB;
 BEGIN
 
 
@@ -60,11 +54,26 @@ BEGIN
 
   SELECT row_to_json(row)
   INTO new_properties
-  FROM (SELECT doc_kehtivus as kehtivus, doc_pank as pank, doc_kmkr as kmkr) row;
+  FROM (SELECT
+          doc_kehtivus           AS kehtivus,
+          doc_pank               AS pank,
+          doc_is_tootaja         AS is_tootaja,
+          doc_asutus_aa :: JSONB AS asutus_aa,
+          doc_kmkr               AS kmkr) row;
+
+  /*
+    IF doc_pank IS NOT NULL
+    THEN
+      -- join pank field with another properties
+      new_properties = new_properties || ('{"pank":' || doc_pank :: TEXT || '}') :: JSONB;
+    END IF;
+  */
 
   -- вставка или апдейт docs.doc
+
   IF doc_id IS NULL OR doc_id = 0
   THEN
+
 
     SELECT row_to_json(row)
     INTO new_history
@@ -95,15 +104,15 @@ BEGIN
 
     UPDATE libs.asutus
     SET
-      regkood = doc_regkood,
-      nimetus = doc_nimetus,
-      omvorm  = doc_omvorm,
-      kontakt = doc_kontakt,
-      aadress = doc_aadress,
-      tel     = doc_tel,
-      email   = doc_email,
-      mark    = doc_mark,
-      muud    = doc_muud,
+      regkood    = doc_regkood,
+      nimetus    = doc_nimetus,
+      omvorm     = doc_omvorm,
+      kontakt    = doc_kontakt,
+      aadress    = doc_aadress,
+      tel        = doc_tel,
+      email      = doc_email,
+      mark       = doc_mark,
+      muud       = doc_muud,
       properties = new_properties
     WHERE id = doc_id
     RETURNING id
@@ -122,8 +131,7 @@ GRANT EXECUTE ON FUNCTION libs.sp_salvesta_asutus(JSON, INTEGER, INTEGER) TO dbp
 
 
 /*
-select docs.sp_salvesta_asutus('{"id":0,"data":{"id":0,"number":"321","summa":24,"rekvid":null,"liik":0,"operid":null,"kpv":"2016-05-05","asutusid":1,"arvid":null,"lisa":"lisa","tahtaeg":"2016-05-19","kbmta":null,"kbm":4,"tasud":null,"tasudok":null,"muud":"muud","jaak":"0.00","objektid":null,"objekt":null,"regkood":null,"asutus":null},
-"details":[{"id":"NEW0.6577064044198089","[object Object]":null,"nomid":"1","kogus":2,"hind":10,"kbm":4,"kbmta":20,"summa":24,"kood":"PAIGALDUS","nimetus":"PV paigaldamine"}]}',1, 1);
+select libs.sp_salvesta_asutus('{"id":0,"data":{"aadress":null,"doc_type_id":"TOOTAJA","email":null,"faks":null,"id":0,"is_tootaja":"1","kontakt":null,"mark":null,"muud":null,"nimetus":"vfp tootaja test","omvorm":"ISIK","pank":null,"regkood":"1234_isik_test3367","staatus":0,"tel":null,"tp":"800699","userid":1}}',1, 1);
 
 select * from libs.asutus
 

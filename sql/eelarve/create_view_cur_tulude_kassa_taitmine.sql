@@ -19,8 +19,8 @@ CREATE VIEW cur_tulude_kassa_taitmine AS
     LEFT OUTER JOIN libs.library l ON l.kood = j1.kood5 AND l.library = 'ARTIKKEL'
     LEFT OUTER JOIN docs.dokvaluuta1 v
       ON v.dokid = j1.id AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'journal1')
-    JOIN kassatulud ON ltrim(rtrim(j1.kreedit)) ~~ ltrim(rtrim(kassatulud.kood))
-    JOIN kassakontod ON ltrim(rtrim((j1.deebet)::text)) ~~ ltrim(rtrim(kassakontod.kood))
+    JOIN eelarve.kassa_tulud as kassatulud ON ltrim(rtrim(j1.kreedit)) ~~ ltrim(rtrim(kassatulud.kood))
+    JOIN eelarve.kassa_kontod kassakontod ON ltrim(rtrim((j1.deebet)::text)) ~~ ltrim(rtrim(kassakontod.kood))
   GROUP BY (year(j.kpv)), (month(j.kpv)), j.rekvid, rekv.parentid, rekv.nimetus, j1.kreedit,
     j1.kood1, j1.kood5, j1.kood2, j1.tunnus, l.nimetus
   ORDER BY (year(j.kpv)), (month(j.kpv)), j.rekvid, rekv.parentid, rekv.nimetus, j1.kreedit,

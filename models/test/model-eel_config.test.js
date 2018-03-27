@@ -8,13 +8,12 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-
-describe('dok. type EelProj tests', function () {
+describe('eel_config tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../eelarve/eelproj'),
-        docTypeId = 'EELPROJ'.toLowerCase(),
-        modelForExport = 'eelarve/eelproj';
+    const doc = require('../eelarve/eel_config'),
+        docTypeId = 'EEL_CONFIG'.toLowerCase(),
+        modelForExport = 'eelarve/eel_config';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -39,9 +38,6 @@ describe('dok. type EelProj tests', function () {
         expect(doc.returnData).toBeDefined();
         expect(doc.requiredFields).toBeDefined();
         expect(doc.saveDoc).toBeDefined();
-        expect(doc.deleteDoc).toBeDefined();
-        expect(doc.grid).toBeDefined();
-        expect(doc.executeCommand).toBeDefined();
     });
 
     it (`${docTypeId} must have fields in xml model`,() => {
@@ -50,15 +46,6 @@ describe('dok. type EelProj tests', function () {
         let modelElements = xmlModel.elements[0];
         expect(_.find(modelElements.elements, {name:'select'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'saveDoc'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'deleteDoc'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'grid'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'executeCommand'})).toBeDefined();
-
-        let grid = _.find(modelElements.elements, {name:'grid'});
-        expect(grid).toBeDefined();
-        expect(_.find(grid.elements,{name:'alias'})).toBeDefined();
-        let gridAlias = _.find(grid.elements,{name:'alias'});
-        expect(_.find(gridAlias.elements,{text:'curEelproj'})).toBeDefined();
     });
 
     it('should have copy in buh62 folder', (done) => {
@@ -75,8 +62,8 @@ describe('dok. type EelProj tests', function () {
         });
     });
 
-    it('doc type library should contain EELPROJ doc.type', async()=> {
-        let sql = `select id from libs.library where kood = 'EELPROJ' and  library = 'DOK' limit 1`;
+    it('doc type library should contain EEL_CONFIG doc.type', async()=> {
+        let sql = `select id from libs.library where kood = 'EEL_CONFIG' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -84,16 +71,42 @@ describe('dok. type EelProj tests', function () {
 
     });
 
-    it('should exists view cur_eelproj', async()=> {
-        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_eelproj'`;
+    it('should exists view fakt_tulud', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'fakt_tulud'`;
         let returnValue = await db.queryDb(sql, []);
+        console.log('returnValue',returnValue);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
 
     });
 
+    it('should exists view fakt_kulud', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'fakt_kulud'`;
+        let returnValue = await db.queryDb(sql, []);
+        console.log('returnValue',returnValue);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
 
+    it('should exists view kassa_tulud', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'kassa_tulud'`;
+        let returnValue = await db.queryDb(sql, []);
+        console.log('returnValue',returnValue);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists view kassa_kulud', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'kassa_kulud'`;
+        let returnValue = await db.queryDb(sql, []);
+        console.log('returnValue',returnValue);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
 
 });
 
