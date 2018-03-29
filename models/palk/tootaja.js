@@ -16,7 +16,7 @@ module.exports = {
                   a.staatus,
                   true::boolean as is_tootaja,
                   a.mark,
-                    1:: INTEGER AS userid,
+                    $2:: INTEGER AS userid,
                 'TOOTAJA' AS doc_type_id,
                 (properties->>'pank'):: TEXT AS pank,
                 a.tp
@@ -58,35 +58,7 @@ module.exports = {
 
     },
         {
-        sql: `SELECT
-                  t.id,
-                  t.lopp,
-                  t.ametid,
-                  t.osakondid,
-                  t.muud,
-                  t.parentid,
-                  t.rekvid,
-                  t.algab,
-                  t.ametnik,
-                  t.koormus,
-                  t.palgamaar,
-                  t.palk,
-                  t.pohikoht,
-                  t.resident,
-                  t.riik,
-                  t.toend,
-                  t.toopaev,
-                  t.tasuliik,
-                  osakond.kood                          AS osakond,
-                  amet.kood                             AS amet,
-                  coalesce(v.valuuta, 'EUR') :: VARCHAR AS valuuta,
-                  coalesce(v.kuurs, 1) :: NUMERIC       AS kuurs,
-                  $2 :: INTEGER            AS userid
-                FROM palk.tooleping t
-                  INNER JOIN libs.library osakond ON osakond.id = t.osakondid
-                  INNER JOIN libs.library amet ON amet.id = t.ametid
-                  LEFT OUTER JOIN docs.dokvaluuta1 v
-                    ON (v.dokid = t.id AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'tooleping'))
+        sql: `SELECT * from palk.cur_toolepingud t
                 WHERE t.parentid = $1`,
         query: null,
         multiple: true,
