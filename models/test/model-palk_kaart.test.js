@@ -102,5 +102,23 @@ describe('dok. type Palk_Kaart tests', function () {
 
     });
 
+    it('call import from tmpl procedure, shoul not return error_code', async () => {
+        let sql = `WITH qry AS (SELECT pk.id
+                                 FROM palk.palk_kaart pk
+                                 LIMIT 1)
+                    SELECT *
+                    FROM palk.change_kaart_status(
+                        ((SELECT id
+                          FROM qry)),
+                        1)`;
+
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.error_code;
+        expect(result).toBe(0);
+
+    })
+
+
 });
 

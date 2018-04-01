@@ -45,17 +45,6 @@ BEGIN
     doc_id = doc_data ->> 'id';
   END IF;
 
-  /*
-    SELECT row_to_json(row)
-    INTO new_properties
-    FROM (SELECT
-            doc_kehtivus           AS kehtivus,
-            doc_pank               AS pank,
-            doc_is_tootaja         AS is_tootaja,
-            doc_asutus_aa :: JSONB AS asutus_aa,
-            doc_kmkr               AS kmkr) row;
-  */
-
   -- вставка или апдейт docs.doc
 
   IF doc_id IS NULL OR doc_id = 0
@@ -92,7 +81,7 @@ BEGIN
             userName     AS user,
             v_palk_kaart AS palk_kaart) row;
 
-    UPDATE palk.tooleping
+    UPDATE palk.palk_kaart
     SET
       libid     = doc_libid,
       lepingid  = doc_lepingid,

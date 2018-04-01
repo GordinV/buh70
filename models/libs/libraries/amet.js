@@ -27,9 +27,19 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
+    },
+        {
+        sql:`select tmpl.*, $2::integer as userid
+            from palk.cur_palk_tmpl tmpl
+            where parentid = $1`,
+            query: null,
+            multiple: true,
+            alias: 'details',
+            data: []
     }],
     returnData: {
-        row: {}
+        row: {},
+        details:[]
     },
     requiredFields: [
         {name: 'kood', type: 'C'},

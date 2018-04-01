@@ -87,4 +87,9 @@ module.exports = {
         params: '',
         alias: 'curPalkKaart'
     },
+    executeCommand: {
+        command: `select error_code, result, error_message from palk.change_kaart_status($1, $2)`, //$1 - palk_kaart.id, $2 - user_id
+        type:'sql',
+        alias:'changeStatus'
+    },
 };
