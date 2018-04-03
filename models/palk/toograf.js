@@ -1,0 +1,67 @@
+module.exports = {
+    select: [{
+        sql: `SELECT
+                  $2 :: INTEGER            AS userid,
+                 'TOOGRAF' AS doc_type_id,
+                  p.id,
+                  p.lepingid,
+                  p.kuu,
+                  p.aasta,
+                  p.tund,
+                  p.status,
+                  p.muud,
+                  t.parentid
+                FROM palk.toograf p
+                inner join palk.tooleping t on t.id = p.lepingid
+                WHERE p.id = $1`,
+        sqlAsNew: `SELECT
+                      $1 :: INTEGER        AS id,
+                      $2 :: INTEGER        AS userid,
+                     'TOOGRAF' AS doc_type_id,
+                      0 as id,
+                      0::integer as lepingid,
+                      month(current_date)::integer as kuu,
+                      year(current_date)::integer as aasta,
+                      0::numeric(12,4) as tund,
+                      1 as status,
+                      0::integer          as parentid,
+                      null::text as muud`,
+        query: null,
+        multiple: false,
+        alias: 'row',
+        data: []
+    }],
+    returnData: {
+        row: {}
+    },
+    requiredFields: [
+        {name: 'lepingid', type: 'I'},
+        {name: 'kuu', type: 'I'},
+        {name: 'aasta', type: 'I'}
+    ],
+    saveDoc: `select palk.sp_salvesta_toograafik($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    deleteDoc: `select error_code, result, error_message from palk.sp_delete_toograafik($1, $2)`, // $1 - userId, $2 - docId
+    grid: {
+        gridConfiguration: [
+            {id: "id", name: "id", width: "1%", show: false},
+            {id: "isik", name: "Isik", width: "25%"},
+            {id: "osakond", name: "Osakond", width: "15%"},
+            {id: "amet", name: "Amet", width: "15%"},
+            {id: "tund", name: "Tunnid", width: "15%"},
+            {id: "kuu", name: "Kuu", width: "15%"},
+            {id: "aasta", name: "Aasta", width: "15%"},
+        ],
+        sqlString: `select t.*, $2::integer as userId
+            from palk.cur_toografik t
+            where (t.rekvid = $1 or rekvid is null)`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
+        params: '',
+        alias: 'curToograf'
+    },
+    /*
+        executeCommand: {
+            command: `select error_code, result, error_message from palk.sp_calc_puhkuse_paevad($1, $2)`, //$1 - user_id, $2 - params (lepingid, tyyp)
+            type: 'sql',
+            alias: 'calcPuhkusePaevad'
+        },
+    */
+};

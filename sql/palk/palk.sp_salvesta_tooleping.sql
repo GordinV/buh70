@@ -34,6 +34,9 @@ DECLARE
   new_properties JSONB;
   new_history    JSONB;
   v_tooleping    RECORD;
+  l_status       INTEGER = CASE WHEN doc_lopp IS NOT NULL AND doc_lopp < curent_date
+    THEN array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
+                           ELSE array_position((enum_range(NULL :: DOK_STATUS)), 'active') END;
 BEGIN
 
 
@@ -117,6 +120,7 @@ BEGIN
       koormus   = doc_koormus,
       toopaev   = doc_toopaev,
       ajalugu   = new_history,
+      status    = l_status,
       muud      = doc_muud
     WHERE id = doc_id
     RETURNING id
