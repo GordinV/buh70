@@ -9,7 +9,10 @@ CREATE OR REPLACE VIEW palk.com_tootajad AS
     qry.osakond,
     qry.amet,
     qry.lopp,
-    qry.rekvid
+    qry.rekvid,
+    qry.osakondid,
+    qry.ametid,
+    qry.lepingid
   FROM (SELECT
           0                            AS id,
           '' :: CHARACTER VARYING(20)  AS isikukood,
@@ -19,7 +22,10 @@ CREATE OR REPLACE VIEW palk.com_tootajad AS
           '' :: VARCHAR(254)           AS amet,
           NULL :: DATE                 AS lopp,
           NULL :: INTEGER              AS rekvid,
-          TRUE :: BOOLEAN              AS is_tootaja
+          TRUE :: BOOLEAN              AS is_tootaja,
+          0 :: INTEGER                 AS osakondid,
+          0 :: INTEGER                 AS ametid,
+          0 :: INTEGER                 AS lepingid
         UNION
         SELECT
           a.id,
@@ -30,7 +36,10 @@ CREATE OR REPLACE VIEW palk.com_tootajad AS
           amet.kood                                          AS amet,
           t.lopp,
           t.rekvid,
-          TRUE                                               AS is_tootaja
+          TRUE                                               AS is_tootaja,
+          t.osakondid,
+          t.ametid,
+          t.id                                               AS lepingid
         FROM libs.asutus a
           LEFT OUTER JOIN palk.tooleping t ON a.id = t.parentid
           LEFT OUTER JOIN libs.library osakond ON osakond.id = t.osakondid

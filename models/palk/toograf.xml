@@ -57,8 +57,8 @@
     <alias></alias>
   </executeSql>
   <executeCommand>
-    <sql></sql>
-    <alias></alias>
+    <sql>select palk.sp_calc_taabel1($1) as tunnid</sql>
+    <alias>calcTaabel</alias>
   </executeCommand>
   <register>
     <sql></sql>

@@ -73,11 +73,9 @@ module.exports = {
         params: '',
         alias: 'curTaabel1'
     },
-/*
     executeCommand: {
-        command: `select error_code, result, error_message from palk.sp_calc_puhkuse_paevad($1, $2)`, //$1 - user_id, $2 - params (lepingid, tyyp)
+        command: `select error_code, result, error_message from palk.gen_taabel1($1, $2::json)`, //$1 - user_id, $2 - params
         type: 'sql',
-        alias: 'calcPuhkusePaevad'
+        alias: 'genTaabel'
     },
-*/
 };

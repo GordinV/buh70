@@ -47,15 +47,10 @@ module.exports = {
             {id: "aasta", name: "Aasta", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
-        sqlString: `select l.id, l.nimetus, 
-            (l.properties::JSONB ->> 'paev') :: integer as paev,        
-            (l.properties::JSONB ->> 'kuu') :: integer as kuu,        
-            (l.properties::JSONB ->> 'aasta') :: integer as aasta,        
-            $2::integer as userId
-            from libs.library l
-            where l.library = 'TAHTPAEV'
-            and l.status <> 3
-            and (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `select 
+                $2::integer as userId, *
+                from cur_tahtpaevad l       
+                where (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curHoliday'
     },

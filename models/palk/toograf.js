@@ -57,11 +57,10 @@ module.exports = {
         params: '',
         alias: 'curToograf'
     },
-    /*
         executeCommand: {
-            command: `select error_code, result, error_message from palk.sp_calc_puhkuse_paevad($1, $2)`, //$1 - user_id, $2 - params (lepingid, tyyp)
+            command: `select palk.sp_calc_taabel1($1) as tunnid`, //$1 - params ("lepingid":4, "kuu":4, "aasta":2018)
             type: 'sql',
-            alias: 'calcPuhkusePaevad'
+            alias: 'calcTaabel'
         },
-    */
+
 };

@@ -71,8 +71,8 @@
     <alias></alias>
   </executeSql>
   <executeCommand>
-    <sql></sql>
-    <alias></alias>
+    <sql>select error_code, result, error_message from palk.gen_taabel1($1, $2::json)</sql>
+    <alias>genTaabel</alias>
   </executeCommand>
   <register>
     <sql></sql>

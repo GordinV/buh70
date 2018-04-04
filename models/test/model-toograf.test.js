@@ -40,7 +40,7 @@ describe('dok. type Toograafik tests', function () {
         expect(doc.saveDoc).toBeDefined();
         expect(doc.deleteDoc).toBeDefined();
         expect(doc.grid).toBeDefined();
-//        expect(doc.executeCommand).toBeDefined();
+        expect(doc.executeCommand).toBeDefined();
     });
 
     it (`${docTypeId} must have fields in xml model`,() => {
@@ -51,7 +51,7 @@ describe('dok. type Toograafik tests', function () {
         expect(_.find(modelElements.elements, {name:'saveDoc'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'deleteDoc'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'grid'})).toBeDefined();
-//        expect(_.find(modelElements.elements, {name:'executeCommand'})).toBeDefined();
+        expect(_.find(modelElements.elements, {name:'executeCommand'})).toBeDefined();
 
         let grid = _.find(modelElements.elements, {name:'grid'});
         expect(grid).toBeDefined();
@@ -93,21 +93,20 @@ describe('dok. type Toograafik tests', function () {
 
     });
 
- /*   it.skip('call calc_puhkuse paevad, should not return error_code', async () => {
+    it('call sp_calc_taabel1, shouldreturn tunnid > 0', async () => {
         let sql = `WITH qry AS (SELECT t.id as lepingid
              FROM palk.tooleping t
              LIMIT 1)
-            SELECT *
-            FROM palk.sp_calc_puhkuse_paevad(1, ('{"lepingid":' || (SELECT lepingid
-              FROM qry)::text || '}')::json)`;
+            SELECT palk.sp_calc_taabel1(('{"kuu":4, "aasta":2018, "lepingid":' || (SELECT lepingid
+              FROM qry)::text || '}')::jsonb)::numeric as tunnid`;
 
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
-        let result = returnValue.result;
+        let result = Number(returnValue.data[0].tunnid);
         expect(result).toBeGreaterThan(0);
 
     })
-*/
+
 
 });
 
