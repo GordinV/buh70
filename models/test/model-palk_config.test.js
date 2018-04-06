@@ -8,12 +8,12 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-describe('dok. type taotlus_mvt tests', function () {
+describe('dok. type palk_config tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../palk/taotlus_mvt'),
-        docTypeId = 'TAOTLUS_MVT'.toLowerCase(),
-        modelForExport = 'palk/taotlus_mvt';
+    const doc = require('../palk/palk_config'),
+        docTypeId = 'PALK_CONFIG'.toLowerCase(),
+        modelForExport = 'palk/palk_config';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -38,9 +38,6 @@ describe('dok. type taotlus_mvt tests', function () {
         expect(doc.returnData).toBeDefined();
         expect(doc.requiredFields).toBeDefined();
         expect(doc.saveDoc).toBeDefined();
-        expect(doc.deleteDoc).toBeDefined();
-        expect(doc.grid).toBeDefined();
-//        expect(doc.executeCommand).toBeDefined();
     });
 
     it (`${docTypeId} must have fields in xml model`,() => {
@@ -49,15 +46,6 @@ describe('dok. type taotlus_mvt tests', function () {
         let modelElements = xmlModel.elements[0];
         expect(_.find(modelElements.elements, {name:'select'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'saveDoc'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'deleteDoc'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'grid'})).toBeDefined();
-//        expect(_.find(modelElements.elements, {name:'executeCommand'})).toBeDefined();
-
-        let grid = _.find(modelElements.elements, {name:'grid'});
-        expect(grid).toBeDefined();
-        expect(_.find(grid.elements,{name:'alias'})).toBeDefined();
-        let gridAlias = _.find(grid.elements,{name:'alias'});
-        expect(_.find(gridAlias.elements,{text:'curTaotlus_mvt'})).toBeDefined();
     });
 
     it('should have copy in buh62 folder', (done) => {
@@ -74,8 +62,8 @@ describe('dok. type taotlus_mvt tests', function () {
         });
     });
 
-    it('doc type library should contain TAOTLUS_MVT doc.type', async()=> {
-        let sql = `select id from libs.library where kood = 'TAOTLUS_MVT' and  library = 'DOK' limit 1`;
+    it('doc type library should contain PALK_CONFIG doc.type', async()=> {
+        let sql = `select id from libs.library where kood = 'PALK_CONFIG' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -83,28 +71,16 @@ describe('dok. type taotlus_mvt tests', function () {
 
     });
 
-    it('call palk.get_taotlus_mvt_data, should return data', async () => {
-        let sql = `WITH qry AS (SELECT t.parentid as isik_id
-             FROM palk.tooleping t
-             LIMIT 1)
-            SELECT *
-            FROM palk.get_taotlus_mvt_data((SELECT isik_id FROM qry),1)`;
 
-        let returnValue = await db.queryDb(sql, []);
-        expect(returnValue).toBeDefined();
-        console.log(returnValue);
-        expect(returnValue.error_code).toBe(0);
-    });
-
-    //palk.isiku_mvt_taotlused
-    it('should exists view isiku_mvt_taotlused', async()=> {
-        let sql = `select 1 FROM pg_views WHERE viewname = 'isiku_mvt_taotlused'`;
+    it.skip('should exists view cur_palk_taabel', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palk_taabel'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
 
     });
+
 
 });
 
