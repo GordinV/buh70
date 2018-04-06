@@ -84,6 +84,21 @@ module.exports = {
             multiple: true,
             alias: 'taotlus_mvt',
             data: []
+        },
+        {
+            sql: `select sum(p.summa) as summa,
+                    p.isik,
+                    p.amet
+                    from palk.cur_used_mvt p
+                    where p.isikid = $1
+                    and month(alg_kpv) <= $2
+                    and month(lopp_kpv) >= $2
+                    and year(alg_kpv) = $3 
+                    group by isik, amet`, //$1 - isik_id, $2 - kuu, $3 - aasta
+            query: null,
+            multiple: true,
+            alias: 'curUsed_mvt',
+            data: []
         }],
     selectAsLibs: `select * from palk.com_tootajad a 
         where (rekvid = $1 or rekvid is null)`, //$1 - rekvId

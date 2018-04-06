@@ -84,6 +84,20 @@
     <multiple>true</multiple>
     <alias>taotlus_mvt</alias>
   </select>
+  <select>
+    <sql>select sum(p.summa) as summa,
+                    p.isik,
+                    p.amet
+                    from palk.cur_used_mvt p
+                    where p.isikid = $1
+                    and month(alg_kpv) &lt;= $2
+                    and month(lopp_kpv) &gt;= $2
+                    and year(alg_kpv) = $3 
+                    group by isik, amet</sql>
+    <query />
+    <multiple>true</multiple>
+    <alias>curUsed_mvt</alias>
+  </select>
   <selectAsLibs>
     <sql>select * from palk.com_tootajad a 
         where (rekvid = $1 or rekvid is null)</sql>

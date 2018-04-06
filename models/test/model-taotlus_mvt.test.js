@@ -8,12 +8,12 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-describe('dok. type Tootaja tests', function () {
+describe('dok. type taotlus_mvt tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../palk/tootaja'),
-        docTypeId = 'TOOTAJA'.toLowerCase(),
-        modelForExport = 'palk/tootaja';
+    const doc = require('../palk/taotlus_mvt'),
+        docTypeId = 'TAOTLUS_MVT'.toLowerCase(),
+        modelForExport = 'palk/taotlus_mvt';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -57,7 +57,7 @@ describe('dok. type Tootaja tests', function () {
         expect(grid).toBeDefined();
         expect(_.find(grid.elements,{name:'alias'})).toBeDefined();
         let gridAlias = _.find(grid.elements,{name:'alias'});
-        expect(_.find(gridAlias.elements,{text:'curTootajad'})).toBeDefined();
+        expect(_.find(gridAlias.elements,{text:'curTaotlus_mvt'})).toBeDefined();
     });
 
     it('should have copy in buh62 folder', (done) => {
@@ -74,8 +74,8 @@ describe('dok. type Tootaja tests', function () {
         });
     });
 
-    it('doc type library should contain TOOTAJA doc.type', async()=> {
-        let sql = `select id from libs.library where kood = 'TOOTAJA' and  library = 'DOK' limit 1`;
+    it('doc type library should contain TAOTLUS_MVT doc.type', async()=> {
+        let sql = `select id from libs.library where kood = 'TAOTLUS_MVT' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -83,16 +83,9 @@ describe('dok. type Tootaja tests', function () {
 
     });
 
-    it('should exists view com_tootajad', async()=> {
-        let sql = `select 1 FROM pg_views WHERE viewname = 'com_tootajad'`;
-        let returnValue = await db.queryDb(sql, []);
-        expect(returnValue).toBeDefined();
-        let result = returnValue.result;
-        expect(result).toBeGreaterThan(0);
 
-    });
-    it('should exists view cur_tootajad', async()=> {
-        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_tootajad'`;
+    it.skip('should exists view cur_palk_taabel', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palk_taabel'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -100,16 +93,22 @@ describe('dok. type Tootaja tests', function () {
 
     });
 
-    it('should exists view cur_palk_kaart', async()=> {
-        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palk_kaart'`;
+    it('call palk.get_taotlus_mvt_data, should return data', async () => {
+        let sql = `WITH qry AS (SELECT t.parentid as isik_id
+             FROM palk.tooleping t
+             LIMIT 1)
+            SELECT *
+            FROM palk.get_taotlus_mvt_data((SELECT isik_id FROM qry),1)`;
+
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
-        let result = returnValue.result;
-        expect(result).toBeGreaterThan(0);
-
+        console.log(returnValue);
+        expect(returnValue.error_code).toBe(0);
     });
-    it('should exists view palk.cur_used_mvt', async()=> {
-        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_used_mvt'`;
+
+    //palk.isiku_mvt_taotlused
+    it.skip('should exists view palk.isiku_mvt_taotlused', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'palk.isiku_mvt_taotlused'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;

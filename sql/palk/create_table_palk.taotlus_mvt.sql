@@ -3,15 +3,16 @@ DROP TABLE if exists palk.taotlus_mvt;
 CREATE TABLE palk.taotlus_mvt
 (
   id serial NOT NULL,
-  parentid integer,
-  rekvid integer NOT NULL,
-  userid integer NOT NULL,
   kpv date NOT NULL,
   alg_kpv date NOT NULL,
   lopp_kpv date NOT NULL,
   lepingid integer NOT NULL,
   summa numeric(14,4) NOT NULL DEFAULT 0,
-  muud text
+  muud text,
+  status dok_status not null DEFAULT 'active',
+  ajalugu jsonb,
+  properties jsonb,
+  timestamp TIMESTAMP not null default now()
 
 )
 WITH (
@@ -36,7 +37,3 @@ CREATE INDEX taotlus_mvt_lepingid
   (lepingid);
 
 
-CREATE INDEX taotlus_mvt_rekvid
-  ON palk.taotlus_mvt
-  USING btree
-  (rekvid);

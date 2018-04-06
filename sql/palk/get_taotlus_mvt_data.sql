@@ -19,21 +19,23 @@ BEGIN
     INNER JOIN palk.tooleping l ON l.id = t.lepingid
     INNER JOIN libs.library amet ON amet.id = l.ametid
   WHERE l.parentid = isik_id AND l.rekvid = rekv_id
+        AND t.status <> 'deleted'
   ORDER BY t.alg_kpv, t.lepingid
   LOOP
     l_kuud =
     (YEAR(v_taotlus.lopp_kpv) - YEAR(v_taotlus.alg_kpv)) * 12 + (MONTH(v_taotlus.lopp_kpv) - month(v_taotlus.alg_kpv)) +
     1;
+
     l_kuu = month(v_taotlus.alg_kpv);
     l_aasta = YEAR(v_taotlus.alg_kpv);
     FOR i IN 1..l_kuud LOOP
       SELECT sum(mvt) AS mvt
       INTO tmpPalkJaak
       FROM (SELECT
-              kuu,
-              aasta,
-              lepingId,
-              g31 AS mvt,
+              p.kuu,
+              p.aasta,
+              p.lepingId,
+              p.g31 AS mvt,
               t.parentId,
               t.rekvId
             FROM palk.palk_jaak p
@@ -41,9 +43,9 @@ BEGIN
             WHERE t.parentid = isik_id
                   AND t.rekvid = rekv_id
             ORDER BY p.aasta, p.kuu, p.lepingid) AS CURPALKJAAK_MVT
-      WHERE kuu = l_kuu
-            AND aasta = l_aasta
-            AND lepingid = v_taotlus.lepingid;
+      WHERE CURPALKJAAK_MVT.kuu = l_kuu
+            AND CURPALKJAAK_MVT.aasta = l_aasta
+            AND CURPALKJAAK_MVT.lepingid = v_taotlus.lepingid;
 
       RETURN QUERY SELECT
                      v_taotlus.id,
@@ -51,8 +53,9 @@ BEGIN
                      l_kuu,
                      l_aasta,
                      v_taotlus.summa,
-                     tmpPalkJaak.mvt,
-                     v_taotlus.amet;
+                     coalesce(tmpPalkJaak.mvt,0)::numeric,
+                     v_taotlus.muud,
+                     v_taotlus.amet::VARCHAR(254);
 
       l_kuu = l_kuu + 1;
       IF l_kuu > 12
@@ -67,9 +70,9 @@ END;
 $$
 LANGUAGE plpgsql;
 
-GRANT EXECUTE on FUNCTION palk.get_taotlus_mvt_data(isik_id INTEGER, rekv_id INTEGER ) to dbkasutaja;
-GRANT EXECUTE on FUNCTION palk.get_taotlus_mvt_data(isik_id INTEGER, rekv_id INTEGER ) to dbpeakasutaja;
-GRANT EXECUTE on FUNCTION palk.get_taotlus_mvt_data(isik_id INTEGER, rekv_id INTEGER ) to dbvaatleja;
+GRANT EXECUTE ON FUNCTION palk.get_taotlus_mvt_data(isik_id INTEGER, rekv_id INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION palk.get_taotlus_mvt_data(isik_id INTEGER, rekv_id INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION palk.get_taotlus_mvt_data(isik_id INTEGER, rekv_id INTEGER) TO dbvaatleja;
 
 /*
 select * from palk.get_taotlus_mvt_data(1, 1)
