@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS palk.palk_oper;
+DROP TABLE IF EXISTS palk.palk_oper CASCADE;
 
 CREATE TABLE palk.palk_oper
 (
@@ -15,15 +15,16 @@ CREATE TABLE palk.palk_oper
   journalid   INTEGER,
   journal1id  INTEGER,
   muud        TEXT,
-  kood1       VARCHAR(20) DEFAULT space(20)        NOT NULL,
-  kood2       VARCHAR(20) DEFAULT space(20)        NOT NULL,
-  kood3       VARCHAR(20) DEFAULT space(20)        NOT NULL,
-  kood4       VARCHAR(20) DEFAULT space(20)        NOT NULL,
-  kood5       VARCHAR(20) DEFAULT space(20)        NOT NULL,
-  konto       VARCHAR(20) DEFAULT space(20)        NOT NULL,
-  tp          VARCHAR(20) DEFAULT space(20)        NOT NULL,
-  tunnus      VARCHAR(20) DEFAULT space(20)        NOT NULL,
-  proj        VARCHAR(20) DEFAULT space(1)         NOT NULL,
+  tululiik    VARCHAR(20),
+  kood1       VARCHAR(20),
+  kood2       VARCHAR(20),
+  kood3       VARCHAR(20),
+  kood4       VARCHAR(20),
+  kood5       VARCHAR(20),
+  konto       VARCHAR(20),
+  tp          VARCHAR(20),
+  tunnus      VARCHAR(20),
+  proj        VARCHAR(20),
   palk_lehtid INTEGER,
   tulumaks    NUMERIC(18, 2),
   sotsmaks    NUMERIC(18, 2),
