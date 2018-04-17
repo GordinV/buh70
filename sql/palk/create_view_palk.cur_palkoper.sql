@@ -16,6 +16,7 @@ CREATE VIEW palk.cur_palkoper AS
     p.tka,
     p.tootumaks,
     p.tulumaks,
+    p.period,
     a.regkood                                                                                        AS isikukood,
     p.lepingid,
     a.nimetus                                                                                        AS isik,
