@@ -3,10 +3,11 @@
 const db = require('./../libs/db');
 const async = require('async');
 let tulemus;
-let sql = `select palk.sp_calc_kinni($1 :: JSONB)::numeric as summa`;
+let sql = `select palk.get_work_hours($1 :: JSONB)::numeric as summa`;
+let tunnid = 0;
 
-describe('palk.palk.sp_calc_kinni tests', () => {
-    it(` should return result`, async() => {
+describe('palk.get_work_hours tests', () => {
+    it(` should return result from toograafik`, async() => {
         let params = {
             lepingid: 4,
             kpv: new Date(),
@@ -18,13 +19,25 @@ describe('palk.palk.sp_calc_kinni tests', () => {
         let result = returnValue.result;
         expect (result).toBe(1);
         let summa = Number(returnValue.data[0].summa);
-        expect(summa).toBe(0);
+        expect(summa).toBeGreaterThan(0);
     });
 
-    it(` call with alus summa,TKI should return result = 100 * 0.016`, async() => {
+    it(` should return kuu result`, async() => {
+        let params;
+
+        let returnValue = await db.queryDb(sql, [params]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect (result).toBe(1);
+        tunnid = Number(returnValue.data[0].summa);
+        expect(tunnid).toBeGreaterThan(0);
+    });
+
+    it(` call with paev, should return result < tunnid`, async() => {
         let params = {
-            alus_summa: 100,
-            liik: 7
+            lepingid: 4,
+            kpv: new Date(),
+            paev: 10
         };
 
         let returnValue = await db.queryDb(sql, [params]);
@@ -32,13 +45,12 @@ describe('palk.palk.sp_calc_kinni tests', () => {
         let result = returnValue.result;
         expect (result).toBe(1);
         let summa = Number(returnValue.data[0].summa);
-        expect(summa).toBe(1.6);
+        expect(summa).toBeLessThan(tunnid);
     });
 
-    it(` call with alus summa,PM should return result = 100 * 0.02`, async() => {
+    it(` call with lõpppaev, should return result < tunnid`, async() => {
         let params = {
-            alus_summa: 100,
-            liik: 8
+            lopp: 20
         };
 
         let returnValue = await db.queryDb(sql, [params]);
@@ -46,14 +58,13 @@ describe('palk.palk.sp_calc_kinni tests', () => {
         let result = returnValue.result;
         expect (result).toBe(1);
         let summa = Number(returnValue.data[0].summa);
-        expect(summa).toBe(2);
+        expect(summa).toBeLessThan(tunnid);
     });
 
-    it(` call with alus summa and % = 3, should return result = 100 * 0.03`, async() => {
+    it(` call with tööpaev, should return result = tunnid / 2`, async() => {
         let params = {
-            alus_summa: 100,
-            liik: 8,
-            summa: 3
+            kpv: new Date(),
+            toopaev: 4
         };
 
         let returnValue = await db.queryDb(sql, [params]);
@@ -61,21 +72,6 @@ describe('palk.palk.sp_calc_kinni tests', () => {
         let result = returnValue.result;
         expect (result).toBe(1);
         let summa = Number(returnValue.data[0].summa);
-        expect(summa).toBe(3);
-    });
-
-    it(` call with fixed alus summa, should return result = 100`, async() => {
-        let params = {
-            alus_summa: 0,
-            is_percent: false,
-            summa: 100
-        };
-
-        let returnValue = await db.queryDb(sql, [params]);
-        expect(returnValue).toBeDefined();
-        let result = returnValue.result;
-        expect (result).toBe(1);
-        let summa = Number(returnValue.data[0].summa);
-        expect(summa).toBe(100);
+        expect(summa).toBe(tunnid / 2);
     });
 });

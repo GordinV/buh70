@@ -12,6 +12,7 @@ CREATE VIEW palk.cur_palk_taabel AS
     coalesce(pt.paev, 0) :: NUMERIC     AS paev,
     coalesce(pt.tahtpaev, 0) :: NUMERIC AS tahtpaev,
     coalesce(pt.puhapaev, 0) :: NUMERIC AS puhapaev,
+    coalesce(pt.uleajatoo, 0) :: NUMERIC AS uleajatoo,
     pt.kuu,
     pt.aasta,
     amet.kood                           AS ametikood,

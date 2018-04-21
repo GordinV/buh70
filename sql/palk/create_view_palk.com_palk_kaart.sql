@@ -6,6 +6,7 @@ CREATE VIEW palk.com_palk_kaart AS
     pk.libid,
     pk.lepingid,
     pk.summa,
+    pk.minsots,
     l.kood,
     l.nimetus,
     l.rekvid,
@@ -20,8 +21,10 @@ CREATE VIEW palk.com_palk_kaart AS
     (l.properties::jsonb->>'liik')::integer as liik,
     (l.properties::jsonb->>'tund')::integer as tund,
     (l.properties::jsonb->>'percent_')::integer as percent_,
+    (l.properties::jsonb->>'maks')::integer as tulumaks,
     (l.properties::jsonb->>'asutusest')::integer as asutusest,
-    (l.properties::jsonb->>'round')::numeric as round
+    (l.properties::jsonb->>'round')::numeric as round,
+    pk.status
   FROM libs.library l
     INNER JOIN palk.palk_kaart pk ON pk.libId = l.id
   WHERE pk.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');

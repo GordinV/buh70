@@ -18,14 +18,8 @@ DECLARE
   l_params                   JSON;
 
   l_sotsmaksu_summa          NUMERIC(12, 4) = 0;
-  v_palk_kaart               RECORD;
   v_tooleping                RECORD;
   l_min_palk                 NUMERIC(12, 4) = 470; --alus arvestada sots.maks min palgast
-  lnKuurs                    NUMERIC(12, 4) = 1;
-
-  ltSelgitus                 TEXT = '';
-  ltEnter                    CHARACTER;
-  lcTimestamp                VARCHAR(20);
 
   ln_umardamine              NUMERIC(14, 4) = 0;
   l_sotsmaks_min_palgast     NUMERIC(14, 4) = 0;
@@ -39,15 +33,6 @@ DECLARE
   l_last_paev                DATE = (date(year(l_kpv), month(l_kpv), 1) + INTERVAL '1 month') :: DATE - 1;
 
 BEGIN
-  /*
-    ltEnter = '
-  ';
-  */
-
-  /*lcTimestamp = left(
-      'SOTS' + LTRIM(RTRIM(str(l_lepingid))) + LTRIM(RTRIM(str(l_libId))) + ltrim(rtrim(str(dateasint(l_kpv)))), 20);
-*/
-
   IF l_alus_summa IS NULL
   THEN
     -- meil ei ole alus summa, vaja arvestada alus
@@ -220,7 +205,7 @@ BEGIN
             AND po.lepingId = l_lepingid
             AND (po.is_sotsmaks);
     END IF;
-    RAISE NOTICE 'is_percent %', is_percent;
+
     IF is_percent
     THEN
       l_sotsmaksu_summa = l_pk_summa * 0.01 * l_alus_summa;
@@ -230,18 +215,6 @@ BEGIN
 
   END IF;
   l_sotsmaksu_summa = f_round(l_sotsmaksu_summa, l_round);
-  /*
-    ltSelgitus = ltSelgitus + 'Umardamine:' + ltrim(lnSumma :: VARCHAR);
-  */
-
-  -- salvestame arvetuse analuus
-  /*
-    DELETE FROM tmp_viivis
-    WHERE timestamp = lcTimestamp;
-    INSERT INTO tmp_viivis (rekvid, dkpv, timestamp, muud, volg2)
-    VALUES (qryTooleping.rekvid, l_kpv, lcTimestamp, ltSelgitus, lnSotsmaksMinPalk);
-  */
-
   RETURN coalesce(l_sotsmaksu_summa, 0)::numeric;
 
 END;

@@ -119,7 +119,10 @@ BEGIN
       ELSE
         l_mvt = l_mvt - l_kasutatud_mvt_summa;
       END IF;
-      l_tm_summa = f_round(((l_alus_summa - l_mvt - l_tm_miinus_summa) * l_pk_summa * 0.01), l_round);
+      l_tm_summa = f_round (palk.fnc_calc_tm(l_alus_summa, l_mvt, l_tm_miinus_summa, 0,
+                       null:: TEXT, l_pk_summa), l_round);
+
+--      l_tm_summa = f_round(((l_alus_summa - l_mvt - l_tm_miinus_summa) * l_pk_summa * 0.01), l_round);
     END IF;
 
   END IF;

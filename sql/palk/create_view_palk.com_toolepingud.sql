@@ -20,7 +20,8 @@ CREATE VIEW palk.com_toolepingud AS
     t.pank,
     t.aa,
     t.rekvid,
-    t.parentid
+    t.parentid,
+    t.tasuliik
   FROM libs.asutus a
     INNER JOIN palk.tooleping t ON a.id = t.parentid
     INNER JOIN libs.library osakonnad ON t.osakondid = osakonnad.id

@@ -30,8 +30,8 @@ CREATE VIEW palk.cur_palkoper AS
     ((enum_range(NULL :: PALK_TUND_LIIK)) [(lib.properties :: JSONB ->> 'tund') :: INTEGER]) :: TEXT AS tund,
     (lib.properties :: JSONB ->> 'asutusest') :: BOOLEAN                                             AS is_asutusest,
     (lib.properties :: JSONB ->> 'maks') :: BOOLEAN                                                  AS is_maksustatav,
-    (lib.properties :: JSONB ->> 'sost') :: BOOLEAN                                                  AS is_sotsmaks
-
+    (lib.properties :: JSONB ->> 'sost') :: BOOLEAN                                                  AS is_sotsmaks,
+    (lib.properties :: JSONB ->> 'tululiik') :: text                                                  AS tululiik
   FROM docs.doc d
     INNER JOIN libs.library s ON (s.kood :: TEXT = d.status :: TEXT AND s.library = 'STATUS')
     INNER JOIN libs.library dok ON d.doc_type_id = dok.id AND dok.library = 'DOK'
