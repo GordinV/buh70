@@ -43,8 +43,8 @@ const PalkOper = {
                       p.doklausid                                            AS dokpropid,
                       coalesce(jid.number, 0) :: INTEGER                     AS lausend,
                       t.parentid,
-                      (pl.properties::jsonb->>'liik')::integer as liik
-                                             
+                      (pl.properties::jsonb->>'liik')::integer as liik,
+                      (pl.properties::jsonb->>'asutusest')::integer as asutusest                                             
                     FROM docs.doc d
                       INNER JOIN palk.palk_oper p ON p.parentId = d.id
                       INNER JOIN palk.tooleping t ON t.id = p.lepingid
@@ -173,6 +173,12 @@ const PalkOper = {
         type: "sql",
         alias: 'generateJournal'
     },
+    executeCommand: {
+        command: `select * from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task
+        type:'sql',
+        alias:'executeTask'
+    },
+
 
     /*
     bpm: [

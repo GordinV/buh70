@@ -2,7 +2,7 @@
 
 const db = require('./../libs/db');
 const async = require('async');
-let sql = `select * from palk.sp_calc_arv($1 :: jsonb)`;
+let sql = `select * from palk.sp_calc_arv(1, $1 :: json)`;
 
 describe('palk.sp_calc_arv tests', () => {
     it(` should return result`, async() => {
@@ -14,8 +14,8 @@ describe('palk.sp_calc_arv tests', () => {
 
         let returnValue = await db.queryDb(sql, [params]);
         expect(returnValue).toBeDefined();
-        let result = returnValue.result;
-        expect (result).toBe(1);
+//        let result = returnValue.result;
+        expect (returnValue.error_code).toBe(null);
 
     });
     it(`alus_summa 100, should return 100`, async() => {
@@ -25,13 +25,14 @@ describe('palk.sp_calc_arv tests', () => {
 
         let returnValue = await db.queryDb(sql, [params]);
         expect(returnValue).toBeDefined();
+        console.log(returnValue);
         let result = returnValue.result;
         expect (result).toBe(1);
-        let summa = Number(returnValue.data[0].summa);
-        let sm = Number(returnValue.data[0].sm);
-        let tki = Number(returnValue.data[0].tki);
-        let tka = Number(returnValue.data[0].tka);
-        let tm = Number(returnValue.data[0].tm);
+        let summa = Number(returnValue.summa);
+        let sm = Number(returnValue.sm);
+        let tki = Number(returnValue.tki);
+        let tka = Number(returnValue.tka);
+        let tm = Number(returnValue.tm);
         expect(summa).toBe(100);
         expect(sm).toBe(33);
         expect(tki).toBe(1.6);
@@ -48,7 +49,7 @@ describe('palk.sp_calc_arv tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        let tki = Number(returnValue.data[0].tki);
+        let tki = Number(returnValue.tki);
         expect(tki).toBe(0);
     });
     it(`palk 1200, pk_summa = 100 (%), tunnid_kokku = 168 should return full arvestus va mvt`, async() => {
@@ -62,12 +63,12 @@ describe('palk.sp_calc_arv tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        let summa = Number(returnValue.data[0].summa);
-        let sm = Number(returnValue.data[0].sm);
-        let tki = Number(returnValue.data[0].tki);
-        let tka = Number(returnValue.data[0].tka);
-        let pm = Number(returnValue.data[0].pm);
-        let tm = Number(returnValue.data[0].tm);
+        let summa = Number(returnValue.summa);
+        let sm = Number(returnValue.sm);
+        let tki = Number(returnValue.tki);
+        let tka = Number(returnValue.tka);
+        let pm = Number(returnValue.pm);
+        let tm = Number(returnValue.tm);
         expect(summa).toBe(1200);
         expect(sm).toBe(396);
         expect(tki).toBe(19.2);
@@ -88,7 +89,7 @@ describe('palk.sp_calc_arv tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        let pm = Number(returnValue.data[0].pm);
+        let pm = Number(returnValue.pm);
         expect(pm).toBe(0);
     });
     it(`palk 1200, is_percent = false should return palk = 1200`, async() => {
@@ -101,7 +102,7 @@ describe('palk.sp_calc_arv tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        let summa = Number(returnValue.data[0].summa);
+        let summa = Number(returnValue.summa);
         expect(summa).toBe(1200);
     });
     it(`without sm  should return sm = 0`, async() => {
@@ -115,7 +116,7 @@ describe('palk.sp_calc_arv tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        let sm = Number(returnValue.data[0].sm);
+        let sm = Number(returnValue.sm);
         expect(sm).toBe(0);
     });
 

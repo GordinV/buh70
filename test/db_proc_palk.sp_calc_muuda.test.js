@@ -2,7 +2,7 @@
 
 const db = require('./../libs/db');
 const async = require('async');
-let sql = `select palk.sp_calc_muuda($1 :: JSONB)::integer as summa`;
+let sql = `select * from palk.sp_calc_muuda(1, $1 :: JSON)`;
 
 describe('palk.palk.sp_calc_kinni tests', () => {
     it(` should return result`, async() => {
@@ -16,7 +16,7 @@ describe('palk.palk.sp_calc_kinni tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        let summa = returnValue.data[0].summa;
+        let summa = Number(returnValue.summa);
         expect(summa).toBe(0);
     });
 
@@ -30,7 +30,7 @@ describe('palk.palk.sp_calc_kinni tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        let summa = Number(returnValue.data[0].summa);
+        let summa = Number(returnValue.summa);
         expect(summa).toBe(3);
     });
 
@@ -45,7 +45,7 @@ describe('palk.palk.sp_calc_kinni tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        let summa = Number(returnValue.data[0].summa);
+        let summa = Number(returnValue.summa);
         expect(summa).toBe(100);
     });
 

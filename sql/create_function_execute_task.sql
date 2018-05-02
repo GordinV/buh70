@@ -8,12 +8,14 @@ CREATE OR REPLACE FUNCTION sp_execute_task(
   IN  task          TEXT,
   OUT error_code    INTEGER,
   OUT result        INTEGER,
-  OUT error_message TEXT)
+  OUT error_message TEXT,
+  OUT data          JSONB
+)
   RETURNS RECORD AS
 $BODY$
 
 DECLARE
-  tulemus    RECORD;
+  tulemus RECORD;
 BEGIN
 
   -- проверка на пользователя и его соответствие учреждению
@@ -51,7 +53,7 @@ BEGIN
 
   --call the task
 
-  EXECUTE 'select error_code, result, error_message from ' || task || '($1, $2)'
+  EXECUTE 'select * from ' || task || '($1, $2)'
   INTO STRICT tulemus
   USING user_id, params;
 
@@ -60,10 +62,15 @@ BEGIN
   result = tulemus.result;
   error_message = tulemus.error_message;
 
+
   IF tulemus.result IS NULL
   THEN
     result = 1;
   END IF;
+
+  -- отправим результат в json
+  data = row_to_json(tulemus);
+
   RETURN;
 
   EXCEPTION WHEN OTHERS

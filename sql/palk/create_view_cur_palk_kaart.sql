@@ -31,6 +31,7 @@ CREATE VIEW palk.cur_palk_kaart AS
            (l.properties :: JSONB ->> 'tund') :: INTEGER      AS tund,
            (l.properties :: JSONB ->> 'maks') :: INTEGER      AS maks,
            (l.properties :: JSONB ->> 'asutusest') :: INTEGER AS asutusest,
+           (l.properties :: JSONB ->> 'round') :: NUMERIC(12, 4)  AS round,
            coalesce(v.valuuta, 'EUR') :: VARCHAR              AS valuuta,
            coalesce(v.kuurs, 1) :: NUMERIC                    AS kuurs,
            CASE WHEN coalesce((l.properties :: JSONB ->> 'tululiik'), '99') = ''

@@ -3,7 +3,7 @@
 const db = require('./../libs/db');
 const async = require('async');
 let tulemus;
-let sql = `select palk.sp_calc_sots($1 :: JSONB)::numeric as summa`;
+let sql = `select * from palk.sp_calc_sots(1, $1 :: JSON)`;
 
 describe('palk.palk.sp_calc_sots tests', () => {
     it(` should return result`, async() => {
@@ -17,7 +17,7 @@ describe('palk.palk.sp_calc_sots tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        let summa = Number(returnValue.data[0].summa);
+        let summa = Number(returnValue.summa);
         expect(summa).toBe(0);
     });
 
@@ -34,7 +34,7 @@ describe('palk.palk.sp_calc_sots tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        let summa = Number(returnValue.data[0].summa);
+        let summa = Number(returnValue.summa);
         expect(summa).toBe(33);
     });
 
@@ -52,17 +52,14 @@ describe('palk.palk.sp_calc_sots tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        let summa = Number(returnValue.data[0].summa);
+        let summa = Number(returnValue.summa);
         expect(summa).toBe(100);
     });
 
     it(` call with min_sotsmaks, should return result = 470 * 0.33 = 155.10`, async() => {
         let params = {
-            lepingid: 4,
-            kpv: new Date(),
-            libid: 386,
             summa: 33,
-            alus_summa: 0,
+            alus_summa: 100,
             is_percent: true,
             minsots: 1
         };
@@ -71,8 +68,7 @@ describe('palk.palk.sp_calc_sots tests', () => {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect (result).toBe(1);
-        console.log('returnValue',returnValue);
-        let summa = Number(returnValue.data[0].summa);
+        let summa = Number(returnValue.summa);
         expect(summa).toBe(155.1);
     });
 });

@@ -1,8 +1,13 @@
 DROP FUNCTION IF EXISTS palk.sp_calc_tasu( INTEGER, INTEGER, INTEGER, INTEGER );
 DROP FUNCTION IF EXISTS palk.sp_calc_tasu(params JSONB );
+DROP FUNCTION IF EXISTS palk.sp_calc_tasu(user_id INTEGER, params JSON );
 
-CREATE FUNCTION palk.sp_calc_tasu(params JSONB)
-  RETURNS NUMERIC
+CREATE FUNCTION palk.sp_calc_tasu(user_id       INTEGER, params JSON,
+  OUT                             summa         NUMERIC,
+  OUT                             selg          TEXT,
+  OUT                             error_code    INTEGER,
+  OUT                             result        INTEGER,
+  OUT                             error_message TEXT)
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -13,8 +18,6 @@ DECLARE
                                   TRUE); -- kas pk summa percentis (100%)
   l_alus_summa NUMERIC(12, 4) = params ->> 'alus_summa'; -- tasu summa , milliest arvestame VM
   l_pk_summa   NUMERIC = coalesce((params ->> 'summa') :: NUMERIC, 100);
-
-  l_tasu_summa NUMERIC(12, 4) = 0;
   l_round      NUMERIC = 0.01;
 BEGIN
 
@@ -46,17 +49,20 @@ BEGIN
 
   IF is_percent
   THEN
-    l_tasu_summa = f_round(l_pk_summa * 0.01 * l_alus_summa, l_round);
+    summa = f_round(l_pk_summa * 0.01 * l_alus_summa, l_round);
+    selg = l_pk_summa :: TEXT || ' * 0.01 * ' || l_alus_summa :: TEXT;
   ELSE
-    l_tasu_summa = f_round(l_pk_summa, l_round);
+    summa = f_round(l_pk_summa, l_round);
+    selg = l_pk_summa :: TEXT;
   END IF;
-
-  RETURN coalesce(l_tasu_summa, 0);
+  summa = coalesce(summa, 0);
+  result = 1;
+  RETURN;
 END;
 $$;
 
 /*
-select palk.sp_calc_tasu('{"lepingid":4, "libid":386, "kpv":"2018-04-09"}'::JSONB)
-select palk.sp_calc_tasu('{"alus_summa":100}'::JSONB)
-select palk.sp_calc_tasu('{"alus_summa":0,"summa":100,"is_percent":false}'::JSONB)
+select * from palk.sp_calc_tasu(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09"}'::JSON)
+select * from  palk.sp_calc_tasu(1, '{"alus_summa":100}'::JSON)
+select * from palk.sp_calc_tasu(1, '{"alus_summa":0,"summa":100,"is_percent":false}'::JSON)
 */

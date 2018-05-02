@@ -3,7 +3,7 @@
 const db = require('./../libs/db');
 const async = require('async');
 let tulemus;
-let sql = `select palk.sp_calc_kinni($1 :: JSONB)::numeric as summa`;
+let sql = `select summa from palk.sp_calc_kinni(1, $1 :: JSON)`;
 
 describe('palk.palk.sp_calc_kinni tests', () => {
     it(` should return result`, async() => {

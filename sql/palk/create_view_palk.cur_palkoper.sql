@@ -17,6 +17,7 @@ CREATE VIEW palk.cur_palkoper AS
     p.tootumaks,
     p.tulumaks,
     p.period,
+    p.muud,
     a.regkood                                                                                        AS isikukood,
     p.lepingid,
     a.nimetus                                                                                        AS isik,
@@ -25,18 +26,29 @@ CREATE VIEW palk.cur_palkoper AS
     t.osakondid,
     lib.kood,
     lib.nimetus,
-    ((enum_range(NULL :: PALK_OPER_LIIK)) [(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS liik,
+    ((enum_range(NULL :: PALK_OPER_LIIK)) [CASE (lib.properties :: JSONB ->> 'liik') :: INTEGER
+                                           WHEN 1
+                                             THEN 1
+                                           WHEN 2
+                                             THEN 2
+                                           WHEN 4
+                                             THEN 2
+                                           WHEN 8
+                                             THEN 2
+                                           WHEN 6
+                                             THEN 2
+                                           ELSE 3 END]) :: TEXT                                      AS liik,
     ((enum_range(NULL :: PALK_LIIK)) [(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT      AS palk_liik,
     ((enum_range(NULL :: PALK_TUND_LIIK)) [(lib.properties :: JSONB ->> 'tund') :: INTEGER]) :: TEXT AS tund,
     (lib.properties :: JSONB ->> 'asutusest') :: BOOLEAN                                             AS is_asutusest,
     (lib.properties :: JSONB ->> 'maks') :: BOOLEAN                                                  AS is_maksustatav,
     (lib.properties :: JSONB ->> 'sost') :: BOOLEAN                                                  AS is_sotsmaks,
-    (lib.properties :: JSONB ->> 'tululiik') :: text                                                  AS tululiik
+    (lib.properties :: JSONB ->> 'tululiik') :: TEXT                                                 AS tululiik
   FROM docs.doc d
     INNER JOIN libs.library s ON (s.kood :: TEXT = d.status :: TEXT AND s.library = 'STATUS')
     INNER JOIN libs.library dok ON d.doc_type_id = dok.id AND dok.library = 'DOK'
     INNER JOIN palk.palk_oper p ON p.parentid = d.id
-    INNER JOIN libs.library lib ON p.libid = lib.id and lib.library = 'PALK'
+    INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
     INNER JOIN palk.tooleping t ON p.lepingid = t.id
     INNER JOIN libs.asutus a ON t.parentid = a.id
     LEFT OUTER JOIN docs.doc dd ON p.journalid = dd.id

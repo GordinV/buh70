@@ -1,8 +1,13 @@
 DROP FUNCTION IF EXISTS palk.sp_calc_sots( INTEGER, INTEGER, INTEGER, INTEGER );
 DROP FUNCTION IF EXISTS palk.sp_calc_sots(params JSONB );
+DROP FUNCTION IF EXISTS palk.sp_calc_sots(user_id INTEGER, params JSON );
 
-CREATE FUNCTION palk.sp_calc_sots(params JSONB)
-  RETURNS NUMERIC
+CREATE FUNCTION palk.sp_calc_sots(user_id       INTEGER, params JSON,
+  OUT                             summa         NUMERIC,
+  OUT                             selg          TEXT,
+  OUT                             error_code    INTEGER,
+  OUT                             result        INTEGER,
+  OUT                             error_message TEXT)
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -17,7 +22,6 @@ DECLARE
   l_round                    NUMERIC = 0.01;
   l_params                   JSON;
 
-  l_sotsmaksu_summa          NUMERIC(12, 4) = 0;
   v_tooleping                RECORD;
   l_min_palk                 NUMERIC(12, 4) = 470; --alus arvestada sots.maks min palgast
 
@@ -25,14 +29,13 @@ DECLARE
   l_sotsmaks_min_palgast     NUMERIC(14, 4) = 0;
   l_enne_arvestatud_sotsmaks NUMERIC(14, 4) = 0; -- summa, mis ole arvestatud koos tulu summaga, palk.oper.sotsmaks
   l_enne_koostatud_sotsmaks  NUMERIC(14, 4) = 0; -- sotsmaks, arvestatus selles kuues enne kaesolev arvestus
-  lnEnneArvestatudSM         NUMERIC(14, 4) = 0;
-  l_kuu_paevad               INTEGER =
-  (gomonth(date(year(l_kpv), month(l_kpv), 1), 1) - 1) - date(year(l_kpv), month(l_kpv), 1) + 1; -- paevad kuus
   l_too_paevad               INTEGER = 30;
   l_puudu_paevad             INTEGER = 0;
   l_last_paev                DATE = (date(year(l_kpv), month(l_kpv), 1) + INTERVAL '1 month') :: DATE - 1;
 
 BEGIN
+  raise notice 'l_kpv %, l_lepingid  %, l_alus_summa %', l_kpv, l_lepingid, l_alus_summa ;
+
   IF l_alus_summa IS NULL
   THEN
     -- meil ei ole alus summa, vaja arvestada alus
@@ -67,7 +70,7 @@ BEGIN
     SELECT
       sum(po.sotsmaks) AS sotsmaks,
       sum(po.summa)
-    INTO l_sotsmaksu_summa, l_alus_summa
+    INTO summa, l_alus_summa
     FROM palk.cur_palkoper po
       INNER JOIN libs.library l ON l.id = po.libid
     WHERE po.kpv = l_kpv
@@ -75,6 +78,8 @@ BEGIN
           AND po.lepingId = l_lepingid
           AND po.palk_liik = 'ARVESTUSED'
           AND po.sotsmaks IS NOT NULL;
+
+    raise notice 'summa %, l_alus_summa %', summa, l_alus_summa;
 
     --parandame tööpäevad, kui töötaja töötas mitte täis kuu
     l_too_paevad = CASE WHEN COALESCE(v_tooleping.lopp, l_last_paev) < l_last_paev
@@ -145,54 +150,38 @@ BEGIN
     l_too_paevad = 30;
   END IF;
 
-  IF NOT empty(l_min_sots) --arvetsame sotsmaks min.palgast
+  IF NOT empty(l_min_sots) and not empty(l_min_palk) --arvetsame sotsmaks min.palgast
   THEN
     l_sotsmaks_min_palgast = ((l_min_palk * l_min_sots * l_pk_summa * 0.01) / 30 * (l_too_paevad))
                              - coalesce(l_enne_arvestatud_sotsmaks, 0);
 
+    raise notice 'l_sotsmaks_min_palgast %, l_enne_arvestatud_sotsmaks %, l_min_palk %',l_sotsmaks_min_palgast, l_enne_arvestatud_sotsmaks, l_min_palk;
 
     IF l_sotsmaks_min_palgast <= 0
     THEN
       l_sotsmaks_min_palgast = 0;
       IF NOT EMPTY(l_min_sots)
       THEN
-        l_sotsmaksu_summa = 0; -- min. sotsmaks juba kasutusel
+        raise notice 'l_min_sots %, l_sotsmaks_min_palgast %',l_min_sots, l_sotsmaks_min_palgast;
+        summa = 0; -- min. sotsmaks juba kasutusel
       END IF;
     END IF;
   END IF;
 
-  IF l_sotsmaksu_summa < l_sotsmaks_min_palgast AND (l_alus_summa = 0 OR l_sotsmaksu_summa > 0)
+  IF coalesce(summa,0) < l_sotsmaks_min_palgast AND (l_alus_summa = 0 OR summa > 0)
 
   THEN
     -- ainult , kui olid tulud
-    l_sotsmaks_min_palgast = (l_sotsmaks_min_palgast - l_sotsmaksu_summa);
+    l_sotsmaks_min_palgast = (l_sotsmaks_min_palgast - summa);
 
-    /*
-      ltSelgitus =
-      ltSelgitus + 'SM kasutame min.palk (' + v_Palk_kaart.MinPalk :: TEXT + ' / 30 * (30 - ' + l_puudu_paevad :: TEXT +
-      '))' +
-      CASE WHEN coalesce(lnEnneArvestatudSotsmaks, 0) <> 0
-        THEN ' Enne arvestatud sotsmaks' + lnEnneArvestatudSotsmaks :: TEXT
-      ELSE '' END +
-      ' parandus maksusumma ' + round(lnSotsmaksMinPalk, 2) :: TEXT + ltEnter;
-    */
-    --		lnSumma = lnSotsmaksMinPalk + lnSumma;
-    /*
-      ELSE
-        l_sotsmaks_min_palgast = 0;
-    */
   END IF;
 
-  /*
-  IF lnSumma <> 0
-  THEN
-    ltSelgitus = ltSelgitus + ' Enne arvestatud sotsmaks: ' + coalesce(lnSumma, 0) :: VARCHAR + ltEnter;
-  END IF;
-  */
+  raise notice 'summa arvestus oli %',summa;
+  summa = f_round(coalesce(summa,0) + l_sotsmaks_min_palgast + ln_umardamine, l_round);
+  raise notice 'summa arvestus praegu %',summa;
 
-  l_sotsmaksu_summa = f_round(l_sotsmaksu_summa + l_sotsmaks_min_palgast + ln_umardamine, l_round);
-
-  IF (coalesce(l_sotsmaksu_summa, 0) = 0 AND empty(l_min_sots))
+  selg = coalesce(summa,0)::text || ' + ' || l_sotsmaks_min_palgast::text || ' + ' || ln_umardamine::text;
+  IF (coalesce(summa, 0) = 0 AND empty(l_min_sots))
   THEN
     -- puudub arvestus või sotsmaks = 0, kontrollime
     IF is_percent AND l_alus_summa IS NULL
@@ -208,24 +197,29 @@ BEGIN
 
     IF is_percent
     THEN
-      l_sotsmaksu_summa = l_pk_summa * 0.01 * l_alus_summa;
+      summa = l_pk_summa * 0.01 * l_alus_summa;
+      selg = l_pk_summa::text || ' * 0.01 * ' ||  l_alus_summa::text;
     ELSE
-      l_sotsmaksu_summa = l_pk_summa;
+      summa = l_pk_summa;
+      selg = l_pk_summa::text;
     END IF;
 
   END IF;
-  l_sotsmaksu_summa = f_round(l_sotsmaksu_summa, l_round);
-  RETURN coalesce(l_sotsmaksu_summa, 0)::numeric;
+  result = 1;
+  summa = coalesce(f_round(summa, l_round),0);
+  RETURN;
 
 END;
 $$;
 
+select * from palk.sp_calc_sots(1,'{"lepingid":4,"libid":524,"kpv":20180407}'::JSON)
 
 /*
-select palk.sp_calc_sots('{"lepingid":4, "libid":386, "kpv":"2018-04-09"}'::JSONB)
-select palk.sp_calc_sots('{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":100, "summa":33}'::JSONB)
-select palk.sp_calc_sots('{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":0, "summa":50, "is_percent":false}'::JSONB)
-select palk.sp_calc_sots('{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":100, "summa":33, "is_percent":true,"minsots":1}'::JSONB)
-select palk.sp_calc_sots('{"alus_summa":100, "summa":33, "is_percent":true,"minsots":1}'::JSONB)
+select * from palk.sp_calc_sots(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09"}'::JSON)
+select * from palk.sp_calc_sots(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":100, "summa":33}'::JSON)
+select * from palk.sp_calc_sots(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":0, "summa":50, "is_percent":false}'::JSON)
+select * from  palk.sp_calc_sots(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":100, "summa":33, "is_percent":true,"minsots":1}'::JSON)
+select * from palk.sp_calc_sots(1, '{"alus_summa":100, "summa":33, "is_percent":true,"minsots":1}'::JSON)
+select * from palk.sp_calc_sots(1,'{"lepingid":4,"libid":524,"kpv":20180407}'::JSON)
 
  */

@@ -1,8 +1,14 @@
 DROP FUNCTION IF EXISTS sp_calc_muuda( INTEGER, INTEGER, INTEGER, INTEGER );
 DROP FUNCTION IF EXISTS palk.sp_calc_muuda(params JSONB );
+DROP FUNCTION IF EXISTS palk.sp_calc_muuda(user_id INTEGER, params JSONB );
+DROP FUNCTION IF EXISTS palk.sp_calc_muuda(user_id INTEGER, params JSON );
 
-CREATE FUNCTION palk.sp_calc_muuda(params JSONB)
-  RETURNS NUMERIC
+CREATE FUNCTION palk.sp_calc_muuda(user_id       INTEGER, params JSON,
+  OUT                              summa         NUMERIC,
+  OUT                              selg          TEXT,
+  OUT                              error_code    INTEGER,
+  OUT                              result        INTEGER,
+  OUT                              error_message TEXT)
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -18,12 +24,13 @@ DECLARE
                                   array_position((enum_range(NULL :: PALK_LIIK)), 'TÖÖTUSKINDLUSTUSMAKS'));
   l_round      NUMERIC = 0.01;
 
-  l_summa      NUMERIC(14, 4) = 0;
   v_tulemus    RECORD;
+  l_enter text = '(r)';
 BEGIN
 
   IF l_alus_summa IS NULL
   THEN
+    selg = coalesce(selg,'') || 'sql' || l_enter;
     --load metadata
     SELECT
       p.summa,
@@ -55,36 +62,42 @@ BEGIN
         WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'TÖÖTUSKINDLUSTUSMAKS')
              AND empty(l_asutusest)
         THEN
-          l_summa = v_tulemus.tki;
+          summa = v_tulemus.tki;
         WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'TÖÖTUSKINDLUSTUSMAKS')
              AND NOT empty(l_asutusest)
         THEN
-          l_summa = v_tulemus.tka;
-
+          summa = v_tulemus.tka;
         WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'PENSIONIMAKS')
         THEN
-          l_summa = f_round(v_tulemus.pm, l_round);
-
+          summa = f_round(v_tulemus.pm, l_round);
       END CASE;
+
+      selg = coalesce(selg,'') || 'ennearvestatud maksud ' || summa::text || l_enter;
     END IF;
   ELSE
     IF is_percent
     THEN
-      l_summa = f_round(l_alus_summa * 0.01 * l_pk_summa, l_round);
+      summa = f_round(l_alus_summa * 0.01 * l_pk_summa, l_round);
+      selg = coalesce(selg,'') || 'arvestus ' || l_alus_summa :: TEXT || '* 0.01 * ' || l_pk_summa :: TEXT || '%' || l_enter;
     END IF;
   END IF;
 
   IF NOT is_percent
   THEN
-    l_summa = f_round(l_pk_summa, l_round);
+    summa = f_round(l_pk_summa, l_round);
+    selg = coalesce(selg,'') || 'pk summa ' || l_pk_summa :: TEXT || l_enter;
   END IF;
-  RETURN coalesce(l_summa, 0);
+  summa = coalesce(summa, 0);
+  result = 1;
+  RETURN;
 END;
 $$;
 
 /*
-select palk.sp_calc_muuda('{"lepingid":4, "libid":386, "kpv":"2018-04-09"}'::JSONB)
-select palk.sp_calc_muuda('{"alus_summa":100}'::JSONB)
-select palk.sp_calc_muuda('{"alus_summa":100, "summa":2}'::JSONB)
-select palk.sp_calc_muuda('{"alus_summa":0, "summa":100, "is_percent":false}'::JSONB)
+select * from palk.sp_calc_muuda(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09"}'::JSON)
+select * from palk.sp_calc_muuda(1, '{"alus_summa":100}'::JSON)
+select * from palk.sp_calc_muuda(1, '{"alus_summa":100, "summa":2}'::JSON)
+select * from palk.sp_calc_muuda(1, '{"alus_summa":0, "summa":100, "is_percent":false}'::JSON)
+select * from palk.sp_calc_muuda(1, '{"lepingid":4,"libid":529,"kpv":20180501}'::JSON)
+
  */
