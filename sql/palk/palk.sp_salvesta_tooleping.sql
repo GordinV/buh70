@@ -17,7 +17,9 @@ DECLARE
   doc_osakondid  INTEGER = doc_data ->> 'osakondid';
   doc_ametid     INTEGER = doc_data ->> 'ametid';
   doc_algab      DATE = coalesce((doc_data ->> 'algab') :: DATE, now() :: DATE);
-  doc_lopp       DATE = doc_data ->> 'lopp';
+  doc_lopp       DATE = CASE WHEN ltrim(rtrim((doc_data ->> 'lopp') :: TEXT)) = ''
+    THEN NULL :: DATE
+                        ELSE (doc_data ->> 'lopp') :: DATE END;
   doc_palk       NUMERIC(14, 2) = doc_data ->> 'palk';
   doc_palgamaar  INTEGER = coalesce((doc_data ->> 'palgamaar') :: INTEGER,
                                     array_position((enum_range(NULL :: PALK_TASU_LIIK)), 'ASTMEPALK'));
@@ -34,7 +36,7 @@ DECLARE
   new_properties JSONB;
   new_history    JSONB;
   v_tooleping    RECORD;
-  l_status       INTEGER = CASE WHEN doc_lopp IS NOT NULL AND doc_lopp < curent_date
+  l_status       INTEGER = CASE WHEN doc_lopp IS NOT NULL AND doc_lopp < current_date
     THEN array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
                            ELSE array_position((enum_range(NULL :: DOK_STATUS)), 'active') END;
 BEGIN

@@ -63,6 +63,7 @@ DECLARE
   l_isik_id       INTEGER;
 
 BEGIN
+raise notice 'arv params %, l_lepingid %',params, l_lepingid;
 
   IF l_lepingid IS NOT NULL
   THEN
@@ -201,7 +202,7 @@ BEGIN
   END IF;
 
   --TKI arvestus
-  SELECT row_to_json(row)
+    SELECT row_to_json(row)
   INTO l_params
   FROM (SELECT
           summa      AS alus_summa,
@@ -211,6 +212,9 @@ BEGIN
   tki = f_round((select qry.summa from palk.sp_calc_kinni(user_id, l_params :: JSON) as qry), l_round);
   selg = coalesce(selg,'') + 'TKI arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_TKI_maar) :: TEXT + '*' +
          l_TKI_maar :: TEXT + ltEnter;
+
+  raise notice 'TKI arvestus tki %', tki;
+
 
   -- PM arvestus
   SELECT row_to_json(row)
@@ -223,6 +227,8 @@ BEGIN
 
   selg = coalesce(selg,'') + 'PM arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_PM_maar) :: TEXT + '*' +
          coalesce(l_PM_maksustav,0) :: TEXT + ltEnter;
+
+  raise notice 'pm arvestus tki %', pm;
 
   --SM arvestus
   SELECT row_to_json(row)
@@ -239,6 +245,8 @@ BEGIN
                                    ELSE round(summa, 2) END) :: TEXT +
          '*' + (0.01 * l_SM_maar) :: TEXT + '*' + coalesce(l_SM_maksustav,0) :: TEXT + ltEnter;
 
+  raise notice 'sm arvestus sm %', sm;
+
   -- TKA arvestus
   SELECT row_to_json(row)
   INTO l_params
@@ -251,6 +259,8 @@ BEGIN
   tka = f_round(coalesce((select qry.summa from palk.sp_calc_muuda(user_id,l_params :: JSON) as qry),0), l_round);
   selg = coalesce(selg,'') + 'TKA arvestus:' + round(summa, 2) :: TEXT +
          '*' + (0.01 * l_TKA_maar) :: TEXT + ltEnter;
+
+  raise notice 'sm arvestus tka %', tka;
 
   IF l_lepingid IS NOT NULL AND l_libid IS NOT NULL
   THEN
@@ -340,5 +350,6 @@ SELECT * FROM palk.sp_calc_arv(1,'{"kpv": "2018-04-09", "palk": 1200,  "summa":1
 SELECT * FROM palk.sp_calc_arv(1,'{"kpv": "2018-04-09", "palk": 1200, "is_percent":false}' :: JSON)
 SELECT * FROM palk.sp_calc_arv(1,'{"kpv": "2018-04-09", "palk": 1200, "is_percent":false, "pm_maksustav":0}' :: JSON)
 SELECT * FROM palk.sp_calc_arv(1,'{"kpv": "2018-04-09", "palk": 1200, "is_percent":false, "sm_maksustav":0}' :: JSON)
-SELECT * FROM palk.sp_calc_arv(1,'{"lepingid":4,"libid":384,"kpv":20180501}'::json)
+SELECT * FROM palk.sp_calc_arv(1,'{"lepingid":4,"libid":526,"kpv":20180630}'::json)
+        {"kpv":"2018-06-30","lepingid":4,"lib":526}
 */

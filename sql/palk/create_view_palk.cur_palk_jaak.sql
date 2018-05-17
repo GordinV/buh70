@@ -23,7 +23,8 @@ CREATE VIEW palk.cur_palk_jaak
       p.muud,
       l.kood  AS osakond,
       p.g31   AS mvt,
-      t.osakondid
+      t.osakondid,
+      t.status
     FROM palk.palk_jaak p
       INNER JOIN palk.tooleping t ON p.lepingid = t.id
       JOIN ou.rekv rekv ON rekv.id = t.rekvid

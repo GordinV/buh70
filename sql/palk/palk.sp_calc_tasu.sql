@@ -21,7 +21,7 @@ DECLARE
   l_round      NUMERIC = 0.01;
 BEGIN
 
-  IF l_alus_summa IS NULL
+  IF l_alus_summa IS NULL or l_alus_summa = 0
   THEN
     -- parameter puudub, võttame summad andmebaasist
 
@@ -65,4 +65,5 @@ $$;
 select * from palk.sp_calc_tasu(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09"}'::JSON)
 select * from  palk.sp_calc_tasu(1, '{"alus_summa":100}'::JSON)
 select * from palk.sp_calc_tasu(1, '{"alus_summa":0,"summa":100,"is_percent":false}'::JSON)
+select * from palk.sp_calc_tasu(1, '{"alus_summa":           0.00,"lepingid":4,"libid":531,"kpv":20180503}')
 */

@@ -142,5 +142,12 @@ describe('dok. type Palk_oper tests', function () {
 
     });
 
+    it('should exists view palk.cur_palk_oper_lausend', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palk_oper_lausend'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
 });
 

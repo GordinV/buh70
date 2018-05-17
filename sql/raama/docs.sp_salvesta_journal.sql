@@ -218,6 +218,7 @@ GRANT ALL ON FUNCTION docs.sp_salvesta_journal(JSON, INTEGER, INTEGER) TO dbadmi
 select docs.sp_salvesta_journal('{"data":{"id":0,"doc_type_id":"JOURNAL","kpv":"2018-03-04","selg":"Kulum","muud":null,"dok":"Inv.number RCT_76861","asutusid":null,"gridData":[{"id":0,"summa":100.0000,"valuuta":"EUR","kuurs":1.0000,"deebet":"5001","lisa_d":"800599","kreedit":"133","lisa_k":"800401","tunnus":"","proj":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":""}]}}'
 ,1, 1);
 
+{"data":{"id":1436,"doc_type_id":"JOURNAL","kpv":"2018-05-17","selg":"Palk","muud":"test","asutusid":56},"gridData":[{"id":0,"summa":289.2000,"deebet":"2610","lisa_d":"800699","kreedit":"2530","lisa_k":"800699","tunnus":null,"proj":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":""}]}
 
 select * from docs.journal1 where parentid = 14
 

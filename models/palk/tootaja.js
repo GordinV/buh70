@@ -46,26 +46,26 @@ module.exports = {
         data: []
     },
         {
-        sql: `SELECT (e.element ->> 'aa') :: varchar(20) AS aa,
+            sql: `SELECT (e.element ->> 'aa') :: varchar(20) AS aa,
                 $2 :: INTEGER            AS userid
                 FROM libs.asutus a,
                       json_array_elements((a.properties -> 'asutus_aa') :: JSON) AS e(element)
                 WHERE a.id = $1`, //$1 - doc_id, $2 0 userId
-        query: null,
-        multiple: true,
-        alias: 'asutus_aa',
-        data: []
+            query: null,
+            multiple: true,
+            alias: 'asutus_aa',
+            data: []
 
-    },
+        },
         {
-        sql: `SELECT * from palk.cur_toolepingud t
+            sql: `SELECT * from palk.cur_toolepingud t
                 WHERE t.parentid = $1`,
-        query: null,
-        multiple: true,
-        alias: 'tooleping',
-        data: []
+            query: null,
+            multiple: true,
+            alias: 'tooleping',
+            data: []
 
-    },
+        },
         {
             sql: `select * from palk.cur_palk_kaart pk
                     WHERE pk.parentid = $1 --asutus_id
@@ -108,7 +108,6 @@ module.exports = {
         tooleping: [],
         palk_kaart: [],
         taotlus_mvt: []
-
 
 
     },

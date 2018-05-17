@@ -20,6 +20,7 @@ CREATE VIEW palk.cur_palkoper AS
     p.muud,
     a.regkood                                                                                        AS isikukood,
     p.lepingid,
+    p.journalid as lausend_id,
     a.nimetus                                                                                        AS isik,
     a.id                                                                                             AS isikid,
     coalesce(jid.number, 0)                                                                          AS journalid,

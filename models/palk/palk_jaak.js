@@ -28,6 +28,11 @@ const PalkJaak = {
     saveDoc: null,
     deleteDoc: null,
     requiredFields: [],
+    executeCommand: {
+        command: `select palk.sp_calc_palgajaak($1::integer, $2::JSON)::integer as result`, //$1- userId, $2 - params
+        type:'sql',
+        alias:'executeTask'
+    },
 
 };
 

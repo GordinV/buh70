@@ -57,7 +57,6 @@ BEGIN
   INTO STRICT tulemus
   USING user_id, params;
 
-  RAISE NOTICE 'tulemus -> %', tulemus;
   error_code = tulemus.error_code;
   result = tulemus.result;
   error_message = tulemus.error_message;

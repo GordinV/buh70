@@ -97,7 +97,7 @@ BEGIN
   ELSE
     UPDATE palk.palk_jaak
     SET
-      arvestatud = v_palk_jaak.arvestatud,
+      arvestatud = coalesce(v_palk_jaak.arvestatud,0),
       kinni      = (coalesce(v_palk_jaak.kinni, 0) + coalesce(v_palk_jaak.tki, 0) + coalesce(v_palk_jaak.pm, 0) +
                     coalesce(v_palk_jaak.tasu, 0)),
       tulumaks   = coalesce(v_palk_jaak.tm, 0),

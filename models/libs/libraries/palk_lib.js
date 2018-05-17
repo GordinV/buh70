@@ -75,6 +75,7 @@ module.exports = {
         ],
         sqlString: `select l.id, l.kood, l.nimetus, l.tun5 as kehtiv,
             coalesce((l.properties::JSONB ->> 'tululiik'),'')::varchar(20) as tululiik,  
+            coalesce((l.properties::JSONB ->> 'liik')::integer,1) as liik,
             $2::integer as userId
             from libs.library l
             where l.library = 'PALK'
