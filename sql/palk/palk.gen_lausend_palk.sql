@@ -110,7 +110,7 @@ BEGIN
 
       l_kr_konto := v_palk_oper.korr_konto;
       l_db_konto := v_palk_oper.konto;
-    WHEN v_palk_oper.palk_liik = 7 AND NOT v_palk_oper.kas_asutusest
+    WHEN v_palk_oper.palk_liik = 'TÖÖTUSKINDLUSTUSMAKS' AND NOT v_palk_oper.kas_asutusest
     THEN
       -- tookindl isik
       l_kr_konto := v_palk_oper.konto;

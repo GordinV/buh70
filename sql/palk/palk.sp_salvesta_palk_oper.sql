@@ -175,7 +175,7 @@ GRANT EXECUTE ON FUNCTION palk.sp_salvesta_palk_oper(JSON, INTEGER, INTEGER) TO 
 GRANT EXECUTE ON FUNCTION palk.sp_salvesta_palk_oper(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT palk.sp_salvesta_palk_oper('{"id":1427,"data":{"asutusest":0,"bpm":null,"created":"17.05.2018 07:05:16","doc":"Palga operatsioonid","docs_ids":null,"doc_type_id":"PALK_OPER","dokprop":"Palk","dokpropid":22,"id":1427,"journalid":null,"kas_lausend":"1","konto":"2530","kood1":"","kood2":"","kood3":null,"kood4":null,"kood5":"","kpv":"20180517","lastupdate":"17.05.2018 08:05:48","lausend":0,"lepingid":4,"libid":525,"liik":4,"muud":"test","parentid":56,"pensmaks":0,"period":null,"pohjus":null,"proj":"","rekvid":1,"sotsmaks":0,"status":"????????","summa":289.2000,"tka":0,"tootumaks":0,"tp":"800699","tulubaas":0,"tululiik":"99","tulumaks":0,"tunnus":null}}', 1, 1);
+SELECT palk.sp_salvesta_palk_oper('{"id":1429,"data":{"asutusest":0,"bpm":null,"created":"17.05.2018 07:05:16","doc":"Palga operatsioonid","docs_ids":null,"doc_type_id":"PALK_OPER","dokprop":"Palk","dokpropid":22,"id":1429,"journalid":null,"kas_lausend":"1","konto":"2540","kood1":"","kood2":"","kood3":null,"kood4":null,"kood5":"","kpv":"20180517","lastupdate":"17.05.2018 09:05:22","lausend":0,"lepingid":4,"libid":528,"liik":7,"muud":null,"parentid":56,"pensmaks":0,"period":null,"pohjus":null,"proj":"","rekvid":1,"sotsmaks":0,"status":"????????","summa":24,"tka":0,"tootumaks":0,"tp":"800699","tulubaas":0,"tululiik":"99","tulumaks":0,"tunnus":null}}', 1, 1);
 
 
 */
