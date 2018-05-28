@@ -9,7 +9,7 @@
   </grid>
   <select></select>
   <selectAsLibs>
-    <sql></sql>
+    <sql>select * from com_objekt l where (l.rekvId = $1 or l.rekvid is null) order by kood</sql>
     <alias>selectAsLibs</alias>
   </selectAsLibs>
   <saveDoc>

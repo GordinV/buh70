@@ -1,4 +1,5 @@
 module.exports = {
+    selectAsLibs: `select * from com_objekt l where (l.rekvId = $1 or l.rekvid is null) order by kood`,
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
