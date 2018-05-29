@@ -12,6 +12,7 @@ DECLARE
   lib_id      INTEGER;
   userName    TEXT;
   doc_id      INTEGER = data ->> 'id';
+  is_import boolean = data->>'import';
   doc_data    JSON = data ->> 'data';
   doc_kood    TEXT = doc_data ->> 'kood';
   doc_nimetus TEXT = doc_data ->> 'nimetus';
@@ -52,7 +53,7 @@ BEGIN
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import is null and userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;

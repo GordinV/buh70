@@ -8,6 +8,7 @@ DECLARE
   nom_id        INTEGER;
   userName      TEXT;
   doc_id        INTEGER = data ->> 'id';
+  is_import     BOOLEAN = data ->> 'import';
   doc_data      JSON = data ->> 'data';
   doc_kood      TEXT = doc_data ->> 'kood';
   doc_nimetus   TEXT = doc_data ->> 'nimetus';
@@ -51,7 +52,8 @@ BEGIN
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -110,6 +112,7 @@ BEGIN
 
     UPDATE libs.nomenklatuur
     SET
+      rekvid = case when  is_import is not null then user_rekvid else rekvid end,
       dok        = doc_dok,
       kood       = doc_kood,
       nimetus    = doc_nimetus,

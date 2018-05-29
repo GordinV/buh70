@@ -31,6 +31,7 @@ BEGIN
   END IF;
 
 
+/*
   SELECT kasutaja
   INTO userName
   FROM userid u
@@ -40,6 +41,7 @@ BEGIN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
   END IF;
+*/
 
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
@@ -72,7 +74,7 @@ BEGIN
 
   EXCEPTION WHEN OTHERS
   THEN
-    RAISE NOTICE 'error % % %', MESSAGE_TEXT, PG_EXCEPTION_DETAIL, PG_EXCEPTION_HINT;
+    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
     RETURN 0;
 
 

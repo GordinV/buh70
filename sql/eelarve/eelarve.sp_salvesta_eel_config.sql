@@ -10,11 +10,11 @@ $BODY$
 DECLARE
   lib_id           INTEGER;
   userName         TEXT;
-  doc_kassa_kontod JSON = data ->> 'kassaKontod';
-  doc_kassa_kulud  JSON = data ->> 'kassaKulud';
-  doc_kulu_kontod  JSON = data ->> 'kuluKontod';
-  doc_kassa_tulud  JSON = data ->> 'kassaTulud';
-  doc_tulu_kontod  JSON = data ->> 'tuluKontod';
+  doc_kassa_kontod JSON = coalesce(data ->> 'kassaKontod',data ->> 'kassakontod');
+  doc_kassa_kulud  JSON = coalesce(data ->> 'kassaKulud',data ->> 'kassakulud');
+  doc_kulu_kontod  JSON = coalesce(data ->> 'kuluKontod',data ->> 'kulukontod');
+  doc_kassa_tulud  JSON = coalesce(data ->> 'kassaTulud',data ->> 'kassatulud');
+  doc_tulu_kontod  JSON = coalesce(data ->> 'tuluKontod',data ->> 'tulukontod');
   json_object      JSON;
   json_record      RECORD;
   new_history      JSONB;
@@ -40,7 +40,7 @@ BEGIN
 
   -- вставка в таблицы документа
 
-  raise notice 'doc_kassa_kontod %',doc_kassa_kontod;
+  raise notice 'doc_kassa_kontod %, doc_kassa_kulud %, doc_kulu_kontod %,  doc_kassa_tulud %, doc_tulu_kontod %',doc_kassa_kontod, doc_kassa_kulud, doc_kulu_kontod,  doc_kassa_tulud, doc_tulu_kontod;
   -- kassaKontod
   FOR json_object IN
   SELECT *
@@ -59,10 +59,11 @@ BEGIN
   FROM json_array_elements(doc_tulu_kontod)
 
   LOOP
+    raise notice 'loop json_object-> %',json_object;
     SELECT *
     INTO json_record
     FROM json_to_record(
-             json_object) AS x(id INTEGER, rekvid INTEGER, kood TEXT, nimetus TEXT, library TEXT, muud TEXT);
+             json_object) AS x(id INTEGER, kood TEXT, nimetus TEXT, library TEXT, muud TEXT);
 
     raise notice 'json_record %',json_record;
 
