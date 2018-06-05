@@ -33,6 +33,7 @@ DECLARE
                            WHERE library = 'DOK' AND kood = doc_dok AND (rekvid = doc_rekvid OR rekvid IS NULL)
                            LIMIT 1));
   json_object   JSONB;
+  is_import     BOOLEAN = data ->> 'import';
 
 BEGIN
 
@@ -45,7 +46,7 @@ BEGIN
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import is null and userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;

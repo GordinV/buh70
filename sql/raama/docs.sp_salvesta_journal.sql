@@ -18,7 +18,7 @@ DECLARE
                            WHERE kood = doc_type_kood AND library = 'DOK'
                            LIMIT 1);
   doc_data      JSON = data ->> 'data';
-  doc_details   JSON = doc_data ->> 'gridData';
+  doc_details   JSON = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
   doc_asutusid  INTEGER = doc_data ->> 'asutusid';
   doc_dok       TEXT = doc_data ->> 'dok';
   doc_kpv       DATE = doc_data ->> 'kpv';
@@ -35,15 +35,15 @@ DECLARE
   new_history   JSONB;
   ids           INTEGER [];
   a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
+  lnId          INTEGER;
+  is_import     BOOLEAN = data ->> 'import';
 BEGIN
-
-  RAISE NOTICE 'start';
 
   SELECT kasutaja
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import is null and userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -182,7 +182,7 @@ BEGIN
     WHERE parentid = journal_id AND id NOT IN (SELECT unnest(ids));
 
     -- avans
-    SELECT avans1.parentid
+    SELECT a1.parentid
     INTO lnId
     FROM docs.avans1 a1
       INNER JOIN libs.dokprop d ON d.id = a1.dokpropid

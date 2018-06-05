@@ -44,13 +44,14 @@ DECLARE
   arv_parent_id   INTEGER;
   previous_arv_id INTEGER;
   a_dokvaluuta    TEXT [] = enum_range(NULL :: DOK_VALUUTA);
+  is_import     BOOLEAN = data ->> 'import';
 BEGIN
 
   SELECT kasutaja
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import is null and userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -74,7 +75,7 @@ BEGIN
       RAISE NOTICE 'Kassa not found %', doc_kassa_id;
       RETURN 0;
     ELSE
-      RAISE NOTICE 'kassa: %', doc_kassa_id;
+--      RAISE NOTICE 'kassa: %', doc_kassa_id;
     END IF;
   END IF;
 
@@ -109,6 +110,8 @@ BEGIN
     RETURNING id
       INTO doc_id;
 
+
+
     INSERT INTO docs.korder1 (parentid, rekvid, userid, kpv, asutusid, tyyp, kassaId, number, dokument, nimi, aadress, alus, muud, summa, arvid, doklausid)
     VALUES
       (doc_id, user_rekvid, userId, doc_kpv, doc_asutusid, doc_tyyp :: INTEGER, doc_kassa_id, doc_number, doc_dokument,
@@ -117,6 +120,7 @@ BEGIN
     RETURNING id
       INTO korder_id;
 
+--    raise notice 'korder_id %,  doc_id %', korder_id,  doc_id;
 
   ELSE
     SELECT row_to_json(row)
@@ -275,8 +279,13 @@ GRANT EXECUTE ON FUNCTION docs.sp_salvesta_korder(JSON, INTEGER, INTEGER) TO dbp
 
 /*
 
+select docs.sp_salvesta_korder('{"id": 0, "data": {"id": 0, "kpv": "2018-03-15", "alus": "", "muud": "", "nimi": "1", "tyyp": 1, "arvid": 200513, "summa": 8.3900, "number": "15032018            ", "aadress": "1", "doktyyp": 0, "kassaid": 350, "asutusid": 121507, "dokument": "15032018", "gridData": [{"id": 0, "tp": "800699", "muud": "Raamatukogu tulud majandustegevusest                                                                                    ", "proj": "", "konto": "103000", "kood1": "08201", "kood2": "80", "kood3": "", "kood4": "", "kood5": "3221", "nomid": 8706, "summa": 8.3900, "tunnus": "0820101"}]}, "import": true}',1, 75);
+
+
 select docs.sp_salvesta_korder('{"id":0,"data": {"arvid":193,"aadress":"Aadress","alus":"Alus","arvid":87,"arvnr":null,"asutus":"Asutus","asutusid":2,"bpm":null,"created":"19.02.2018 09:02:11","doc":"Sissemakse kassaorder","docs_ids":null,"doc_type_id":"SORDER","doklausid":null,"dokprop":null,"dokument":"dok","id":937,"journalid":null,"kassa":"Kassa1","kassa_id":1,"konto":"","kpv":"20180219","lastupdate":"19.02.2018 09:02:11","lausnr":0,"muud":null,"nimi":"Isik","number":"13","regkood":"6543423423423","rekvid":1,"status":"????????","summa":20,"tyyp":1,"gridData":[{"id":159,"id1":159,"konto":"113","kood":"PANK","kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kuurs":1,"nimetus":"Raha pankarvele","nimetus1":"Raha pankarvele","nomid":3,"parentid":155,"proj":"","summa":30,"tp":"","tunnus":"","uhik":"","userid":1,"valuuta":"EUR"}]}}
 ',1, 1);
+
+
 
 select * from libs.nomenklatuur where dok = 'SORDER' limit 10
 */

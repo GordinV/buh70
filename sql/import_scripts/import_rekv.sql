@@ -50,47 +50,25 @@ BEGIN
     -- преобразование и получение параметров
 
     -- aa data
+    DELETE FROM ou.aa
+    WHERE parentid = v_rekv.id;
 
-    FOR v_aa IN
-    SELECT
-      0 as id,
-      parentid,
-      arve,
-      nimetus,
-      default_,
-      kassa,
-      pank,
-      konto,
-      muud,
-      tp
-    FROM aa
-    WHERE parentid = v_rekv.id
-    LOOP
-
-      RAISE NOTICE 'rekv -> %', v_rekv.id;
-
-      delete from ou.aa where parentid = v_rekv.id;
-
-      json_aa = coalesce(JSON_aa, '{}' :: JSONB) :: JSONB || row_to_json(v_aa) :: JSONB;
-      RAISE NOTICE 'rekv, json_aa -> %', json_aa;
-    END LOOP;
-
-    /*
-      doc_parentid INTEGER = doc_data ->> 'parentid';
-  doc_regkood  TEXT = doc_data ->> 'regkood';
-  doc_nimetus  TEXT = doc_data ->> 'nimetus';
-  doc_kbmkood  TEXT = doc_data ->> 'kbmkood';
-  doc_aadress  TEXT = doc_data ->> 'aadress';
-  doc_haldus   TEXT = doc_data ->> 'haldus';
-  doc_tel      TEXT = doc_data ->> 'tel';
-  doc_faks     TEXT = doc_data ->> 'faks';
-  doc_email    TEXT = doc_data ->> 'email';
-  doc_juht     TEXT = doc_data ->> 'juht';
-  doc_raama    TEXT = doc_data ->> 'raama';
-  doc_muud     TEXT = doc_data ->> 'muud';
-  doc_details  JSON = doc_data ->> 'gridData';
-
-     */
+    json_aa = array_to_json((SELECT array_agg(row_to_json(a1.*))
+                             FROM (SELECT
+                                     0 AS id,
+                                     parentid,
+                                     arve,
+                                     nimetus,
+                                     default_,
+                                     kassa,
+                                     pank,
+                                     konto,
+                                     muud,
+                                     tp
+                                   FROM aa
+                                   WHERE parentid = v_rekv.id
+                                  ) AS a1
+                            ));
 
     -- сохранение
     SELECT
@@ -110,7 +88,7 @@ BEGIN
 
     RAISE NOTICE 'salvestame, params';
     json_object = ('{"data":' || trim(TRAILING FROM (row_to_json(v_params)) :: TEXT, '}') :: TEXT ||
-                   ',"gridData":[' || json_aa :: TEXT || ']}}');
+                   ',"gridData":' || json_aa :: TEXT || '}}');
 
     RAISE NOTICE 'salvestame, params %', json_object;
 
@@ -168,7 +146,6 @@ END;$BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
 
-SELECT import_rekv()
 
 /*
 SELECT import_rekv()

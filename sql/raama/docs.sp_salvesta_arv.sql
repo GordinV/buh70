@@ -18,7 +18,7 @@ DECLARE
                            WHERE kood = doc_type_kood AND library = 'DOK'
                            LIMIT 1);
   doc_data      JSON = data ->> 'data';
-  doc_details   JSON = doc_data ->> 'gridData';
+  doc_details   JSON = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
   doc_arvid     INTEGER = doc_data ->> 'arvid';
   doc_number    TEXT = doc_data ->> 'number';
   doc_summa     NUMERIC(14, 4) = coalesce((doc_data ->> 'summa') :: NUMERIC, 0);
@@ -42,6 +42,7 @@ DECLARE
   new_rights    JSONB;
   ids           INTEGER [];
   a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
+  is_import     BOOLEAN = data ->> 'import';
 BEGIN
 
   IF (doc_id IS NULL)
@@ -63,7 +64,8 @@ BEGIN
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+
+  IF is_import is null and userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;

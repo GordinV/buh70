@@ -1,6 +1,7 @@
 DROP FUNCTION IF EXISTS import_nomenklatuur( );
+DROP FUNCTION IF EXISTS import_nomenklatuur( integer);
 
-CREATE OR REPLACE FUNCTION import_nomenklatuur()
+CREATE OR REPLACE FUNCTION import_nomenklatuur(in_old_id integer)
   RETURNS INTEGER AS
 $BODY$
 DECLARE
