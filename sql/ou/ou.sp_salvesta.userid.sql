@@ -25,6 +25,7 @@ DECLARE
                                    doc_peakasutaja_ AS peakasutaja,
                                    doc_admin        AS admin) row);
 
+  is_import boolean = data ->>'import';
 BEGIN
 
   SELECT kasutaja
@@ -32,7 +33,7 @@ BEGIN
   FROM ou.userid u
   WHERE u.id = userId AND NOT empty(admin);
 
-  IF userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE EXCEPTION 'kasutaja ei leidnud või puudub õigused %', user;
   END IF;
@@ -47,12 +48,12 @@ BEGIN
   THEN
 
     -- проверка наличия учетной записи
-    IF NOT exists(
+    IF is_import IS NULL AND NOT exists(
         SELECT 1
         FROM pg_roles
         WHERE rolname = doc_kasutaja)
     THEN
-      RAISE EXCEPTION 'System role for user is not esists, kasutaja %', doc_kasutaja;
+      RAISE EXCEPTION 'System role for user is not esists, kasutaja %, import %', doc_kasutaja,is_import;
       --  CREATE ROLE (doc_kasutaja);
 
     END IF;

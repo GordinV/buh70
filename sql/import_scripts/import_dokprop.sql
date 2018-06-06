@@ -1,6 +1,6 @@
 DROP FUNCTION IF EXISTS import_dokprop( );
 
-CREATE OR REPLACE FUNCTION import_dokprop(in_old_id INTEGER)
+CREATE OR REPLACE FUNCTION import_dokprop(in_old_id INTEGER, in_dok text = 'VMK')
   RETURNS INTEGER AS
 $BODY$
 DECLARE
@@ -61,6 +61,7 @@ BEGIN
     l_lib_id = (SELECT ID
                 FROM libs.library
                 WHERE kood = ltrim(rtrim(v_lib.dok)) AND library = 'DOK');
+
     IF l_lib_id IS NULL
     THEN
       RAISE EXCEPTION 'dok. type not found v_lib.dok %, l_lib_id %', v_lib.dok, l_lib_id;
@@ -144,6 +145,6 @@ COST 100;
 
 
 /*
-SELECT import_dokprop(2159)
+SELECT import_dokprop(1876)
 
 */

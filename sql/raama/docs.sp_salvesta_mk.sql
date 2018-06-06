@@ -42,13 +42,15 @@ DECLARE
   docs          INTEGER [];
   arv_parent_id INTEGER;
   a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
+  is_import     BOOLEAN = data ->> 'import';
+
 BEGIN
 
   SELECT kasutaja
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -169,7 +171,8 @@ BEGIN
     INTO json_record
     FROM json_to_record(
              json_object) AS x(id TEXT, asutusid INTEGER, nomid INTEGER, summa NUMERIC(14, 4), aa TEXT, pank TEXT,
-         tunnus TEXT, proj TEXT, konto TEXT, kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, tp TEXT, valuuta TEXT, kuurs NUMERIC(14, 8));
+         tunnus TEXT, proj TEXT, konto TEXT, kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, tp TEXT, valuuta TEXT, kuurs NUMERIC(14, 8),
+         journalid INTEGER);
 
     IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
        NOT exists(SELECT id
@@ -177,11 +180,12 @@ BEGIN
                   WHERE id = json_record.id :: INTEGER)
     THEN
 
-      INSERT INTO docs.mk1 (parentid, asutusid, nomid, summa, aa, pank, tunnus, proj, konto, kood1, kood2, kood3, kood4, kood5, tp)
+      INSERT INTO docs.mk1 (parentid, asutusid, nomid, summa, aa, pank, tunnus, proj, konto,
+                            kood1, kood2, kood3, kood4, kood5, tp, journalid)
       VALUES (mk_id, json_record.asutusid, json_record.nomid, json_record.summa, json_record.aa, json_record.pank,
                      json_record.tunnus, json_record.proj, json_record.konto,
                      json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5,
-              json_record.tp)
+              json_record.tp, json_record.journalid)
 
       RETURNING id
         INTO mk1_id;

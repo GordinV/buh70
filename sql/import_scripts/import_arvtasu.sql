@@ -58,24 +58,39 @@ BEGIN
 
     -- сохранение
     SELECT new_id
-    INTO l_asutus
+    INTO l_arv_id
     FROM import_log
-    WHERE lib_name = 'ASUTUS' AND old_id = v_arvtasu.asutusid;
+    WHERE lib_name = 'ARV' AND old_id = v_arvtasu.arvid;
+
+    IF l_arv_id IS NULL
+    THEN
+      RAISE EXCEPTION 'arve not found v_arvtasu.arvid %, l_arv_id %', v_arvtasu.arvid, l_arv_id;
+    END IF;
+
+    SELECT new_id
+    INTO l_tasu_id
+    FROM import_log
+    WHERE lib_name = (CASE WHEN v_arvtasu.pankkassa = 1
+      THEN 'MK'
+                      WHEN v_arvtasu.pankkassa = 2
+                        THEN 'KORDER'
+                      ELSE 'JOURNAL' END) AND old_id = v_arvtasu.sorderid;
+
+
+    IF l_tasu_id IS NULL
+    THEN
+      RAISE NOTICE 'tasu not found v_arvtasu.sorderid %, l_tasu_id %', v_arvtasu.sorderid, l_tasu_id;
+    END IF;
+
 
     SELECT
       coalesce(arvtasu_id, 0) AS id,
-      l_asutus                AS asutusid,
+      v_arvtasu.rekvid        AS rekvid,
+      l_arv_id                AS doc_arv_id,
       v_arvtasu.kpv           AS kpv,
-      v_arvtasu.liik          AS liik,
-      v_arvtasu.number        AS number,
-      v_arvtasu.lisa          AS lisa,
-      v_arvtasu.tahtaeg       AS tahtaeg,
-      v_arvtasu.kbmta         AS kbmta,
-      v_arvtasu.kbm           AS kbm,
-      v_arvtasu.summa         AS summa,
-      v_arvtasu.objekt        AS objekt,
-      v_arvtasu.muud          AS muud,
-      json_arv1               AS "gridData"
+      v_arvtasu.pankkassa     AS pankkassa,
+      l_tasu_id               AS doc_tasu_id,
+      v_arvtasu.summa         AS summa
     INTO v_params;
 
     SELECT row_to_json(row)
@@ -85,7 +100,7 @@ BEGIN
             TRUE                    AS import,
             v_params                AS data) row;
 
-    SELECT docs.sp_salvesta_arv(json_object :: JSON, 1, v_arvtasu.rekvid)
+    SELECT docs.sp_salvesta_arvtasu(json_object :: JSON, 1, v_arvtasu.rekvid)
     INTO arvtasu_id;
     RAISE NOTICE 'lib_id %, l_count %, json_object %', arvtasu_id, l_count, json_object;
     IF empty(arvtasu_id)
@@ -97,21 +112,6 @@ BEGIN
 
     -- правим ссылку на проводку
 
-    IF year(v_arvtasu.kpv) = 2018 AND NOT empty(v_arvtasu.journalid)
-    THEN
-      SELECT new_id
-      INTO l_journal_id
-      FROM import_log
-      WHERE old_id = v_arvtasu.journalid AND lib_name = 'JOURNAL';
-
-      IF l_journal_id IS NOT NULL
-      THEN
-        UPDATE docs.arv
-        SET journalid = l_journal_id
-        WHERE id = arvtasu_id;
-      END IF;
-    END IF;
-
     -- salvestame log info
     SELECT row_to_json(row)
     INTO hist_object
@@ -120,7 +120,7 @@ BEGIN
     IF log_id IS NULL
     THEN
       INSERT INTO import_log (new_id, old_id, lib_name, params, history)
-      VALUES (arvtasu_id, v_arvtasu.id, 'ARV', json_object :: JSON, hist_object :: JSON)
+      VALUES (arvtasu_id, v_arvtasu.id, 'ARVTASU', json_object :: JSON, hist_object :: JSON)
       RETURNING id
         INTO log_id;
 
@@ -137,32 +137,12 @@ BEGIN
       RAISE EXCEPTION 'log save failed';
     END IF;
 
-    -- проверка на сумму проводки и кол-во записей
-
-    SELECT
-      count(id),
-      sum(summa)
-    INTO l_control_count, l_control_summa
-    FROM cur_journal
-    WHERE id = arvtasu_id;
-
-    SELECT
-      count(j1.id),
-      sum(j1.summa)
-    INTO l_j_count, l_j_summa
-    FROM journal j INNER JOIN journal1 j1 ON j.id = j1.parentid
-    WHERE j.id = v_arvtasu.id;
-    IF (l_j_count) <> l_control_count OR
-       (l_j_summa) <> l_control_summa
-    THEN
-      RAISE EXCEPTION 'kontrol failed v_journal.id % , journal_id %, l_control_summa %, l_j_summa %,, l_control_count %, l_j_count %', v_arvtasu.id, arvtasu_id, l_control_summa, l_j_summa, l_control_count, l_j_count;
-    END IF;
     l_count = l_count + 1;
   END LOOP;
 
   -- control
   l_tulemus = (SELECT count(id)
-               FROM docs.journal);
+               FROM docs.arvtasu);
   IF (l_tulemus + 100)
      >= l_count
   THEN
@@ -174,7 +154,7 @@ BEGIN
 
   IF l_count = 0
   THEN
-    RAISE EXCEPTION 'arve not imported %', in_old_id;
+    RAISE EXCEPTION 'arvtasu not imported %', in_old_id;
   END IF;
 
   RETURN l_count;
@@ -190,8 +170,8 @@ COST 100;
 
 
 /*
-SELECT import_arv(420644)
+SELECT import_arvtasu(651187)
 
-SELECT import_arv(id) from arv where year(kpv) = 2018 order by kpv limit all
+SELECT import_arvtasu(id) from arvtasu where year(kpv) >= 2018 order by kpv limit all
 
 */

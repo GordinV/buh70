@@ -18,6 +18,7 @@ DECLARE
   doc_muud      TEXT = doc_data ->> 'muud';
   a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
   new_history   JSON;
+  is_import     BOOLEAN = data ->> 'import';
 BEGIN
 
   SELECT kasutaja
@@ -25,7 +26,7 @@ BEGIN
   FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
 
-  IF userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -49,7 +50,7 @@ BEGIN
 
     INSERT INTO eelarve.eelproj (rekvid, aasta, kuu, kinnitaja, muud, ajalugu, status)
     VALUES
-      (user_rekvid, doc_aasta, doc_kuu, doc_kinnitaja,  doc_muud, new_history, 1)
+      (user_rekvid, doc_aasta, doc_kuu, doc_kinnitaja, doc_muud, new_history, 1)
     RETURNING id
       INTO eelarve_id;
 
