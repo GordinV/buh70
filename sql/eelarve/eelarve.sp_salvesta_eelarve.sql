@@ -22,14 +22,15 @@ DECLARE
   doc_kood4       TEXT = doc_data ->> 'kood4';
   doc_kood5       TEXT = doc_data ->> 'kood5';
   doc_is_kulud    INTEGER = doc_data ->> 'is_kulud';
-  doc_is_parandus INTEGER = coalesce((doc_data ->> 'is_parandus')::integer,0);
+  doc_is_parandus INTEGER = coalesce((doc_data ->> 'is_parandus') :: INTEGER, 0);
   doc_variantid   INTEGER = doc_data ->> 'variantid';
   doc_kpv         DATE = doc_data ->> 'kpv';
   doc_muud        TEXT = doc_data ->> 'muud';
-  doc_valuuta        TEXT = coalesce((doc_data ->> 'valuuta'),'EUR');
-  doc_kuurs        numeric = coalesce((doc_data ->> 'kuurs')::numeric,1);
+  doc_valuuta     TEXT = coalesce((doc_data ->> 'valuuta'), 'EUR');
+  doc_kuurs       NUMERIC = coalesce((doc_data ->> 'kuurs') :: NUMERIC, 1);
   json_object     JSON;
   a_dokvaluuta    TEXT [] = enum_range(NULL :: DOK_VALUUTA);
+  is_import       BOOLEAN = data ->> 'import';
 BEGIN
 
   SELECT kasutaja
@@ -37,7 +38,7 @@ BEGIN
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
 
-  IF userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -55,7 +56,7 @@ BEGIN
     IF doc_is_kulud = 0
     THEN
       INSERT INTO eelarve.tulud (rekvid, aasta, summa, tunnus, kood1, kood2, kood3, kood4, kood5,
-                                kpv, muud, is_kulud, is_parandus, variantid)
+                                 kpv, muud, is_kulud, is_parandus, variantid)
       VALUES
         (user_rekvid, doc_aasta, doc_summa, doc_tunnus, doc_kood1, doc_kood2, doc_kood3, doc_kood4, doc_kood5,
                       doc_kpv, doc_muud, doc_is_kulud, doc_is_parandus, doc_variantid)
@@ -63,7 +64,7 @@ BEGIN
         INTO eelarve_id;
     ELSE
       INSERT INTO eelarve.kulud (rekvid, aasta, summa, tunnus, kood1, kood2, kood3, kood4, kood5,
-                                kpv, muud, is_kulud, is_parandus, variantid)
+                                 kpv, muud, is_kulud, is_parandus, variantid)
       VALUES
         (user_rekvid, doc_aasta, doc_summa, doc_tunnus, doc_kood1, doc_kood2, doc_kood3, doc_kood4, doc_kood5,
                       doc_kpv, doc_muud, doc_is_kulud, doc_is_parandus, doc_variantid)
@@ -107,7 +108,7 @@ BEGIN
 
   END IF;
 
-RETURN eelarve_id;
+  RETURN eelarve_id;
 
 END;$BODY$
 LANGUAGE plpgsql VOLATILE

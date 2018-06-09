@@ -26,7 +26,7 @@ DECLARE
   doc_aktseptid  INTEGER = doc_data ->> 'aktseptid';
   doc_aasta      INTEGER = doc_data ->> 'aasta';
   doc_kuu        INTEGER = doc_data ->> 'kuu';
-  doc_allkiri    INTEGER = coalesce((doc_data ->> 'allkiri')::integer,0);
+  doc_allkiri    INTEGER = coalesce((doc_data ->> 'allkiri') :: INTEGER, 0);
   doc_tunnus     INTEGER = doc_data ->> 'tunnus';
   doc_muud       TEXT = doc_data ->> 'muud';
   json_object    JSON;
@@ -34,15 +34,16 @@ DECLARE
   new_history    JSONB;
   ids            INTEGER [];
   docs           INTEGER [];
+  is_import      BOOLEAN = data ->> 'import';
 BEGIN
 
-  raise notice 'doc_details %',doc_details;
+  RAISE NOTICE 'doc_details %', doc_details;
 
   SELECT kasutaja
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -64,14 +65,15 @@ BEGIN
             userName AS user) row;
 
     INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
-    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, array_position((enum_range(NULL :: dok_status)), 'active'))
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid,
+            array_position((enum_range(NULL :: DOK_STATUS)), 'active'))
     RETURNING id
       INTO doc_id;
 
     INSERT INTO eelarve.taotlus (parentid, rekvid, kpv, number, koostajaid, ametnikId, aktseptid, allkiri, tunnus, muud, status, aasta)
     VALUES
       (doc_id, user_rekvid, doc_kpv, doc_number, doc_koostajaid, doc_ametnikId, doc_aktseptid, doc_allkiri, doc_tunnus,
-       doc_muud, 1, doc_aasta)
+               doc_muud, 1, doc_aasta)
     RETURNING id
       INTO taotlus_id;
 
@@ -125,23 +127,23 @@ BEGIN
     INTO json_record
     FROM json_to_record(
              json_object) AS x(id TEXT, summa NUMERIC(14, 4), tunnus TEXT, proj TEXT,
-         kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, muud TEXT, selg TEXT);
+         kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, muud TEXT, selg TEXT, eelarveid INTEGER, eelprojid INTEGER);
 
     IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
        NOT exists(SELECT id
                   FROM eelarve.taotlus1
                   WHERE id = json_record.id :: INTEGER)
     THEN
-      INSERT INTO eelarve.taotlus1 (parentid, summa, tunnus, proj, kood1, kood2, kood3, kood4, kood5, muud, selg)
+      INSERT INTO eelarve.taotlus1 (parentid, summa, tunnus, proj, kood1, kood2, kood3, kood4, kood5, muud, selg, eelarveid, eelprojid)
       VALUES
         (taotlus_id, json_record.summa, json_record.tunnus, json_record.proj,
-         json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5,
-         json_record.muud, json_record.selg)
+                     json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5,
+                     json_record.muud, json_record.selg, json_record.eelarveid, json_record.eelprojid)
 
       RETURNING id
         INTO taotlus1_id;
 
-      raise notice 'taotlus1 inserted taotlus1_id %', taotlus1_id;
+      RAISE NOTICE 'taotlus1 inserted taotlus1_id %', taotlus1_id;
       -- add new id into array of ids
       ids = array_append(ids, taotlus1_id);
 
@@ -158,7 +160,7 @@ BEGIN
         kood4  = json_record.kood4,
         kood5  = json_record.kood5,
         muud   = json_record.muud,
-        selg = json_record.selg
+        selg   = json_record.selg
       WHERE id = json_record.id :: INTEGER;
 
       taotlus1_id = json_record.id :: INTEGER;
