@@ -32,7 +32,7 @@ DECLARE
   doc_kuurs      NUMERIC(12, 4) = coalesce((doc_data ->> 'kuurs') :: NUMERIC, 1);
   json_object    JSONB;
   a_dokvaluuta   TEXT [] = enum_range(NULL :: DOK_VALUUTA);
-
+  is_import      BOOLEAN = data ->> 'import';
 BEGIN
 
   IF (doc_id IS NULL)
@@ -44,7 +44,7 @@ BEGIN
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;

@@ -39,15 +39,16 @@ DECLARE
   doc_kood5       TEXT = doc_data ->> 'kood5';
   new_history     JSONB;
   docs            INTEGER [];
-  a_pv_opers        TEXT [] = enum_range(NULL :: PV_OPERATSIOONID);
-  a_dokvaluuta        TEXT [] = enum_range(NULL :: DOK_VALUUTA);
+  a_pv_opers      TEXT [] = enum_range(NULL :: PV_OPERATSIOONID);
+  a_dokvaluuta    TEXT [] = enum_range(NULL :: DOK_VALUUTA);
+  is_import       BOOLEAN = data ->> 'import';
 BEGIN
 
   SELECT kasutaja
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -144,12 +145,15 @@ BEGIN
   IF doc_liik = array_position(a_pv_opers, 'paigutus') -- will calculate summa and change card status
   THEN
     PERFORM docs.sp_pv_oper_paigutus(doc_id);
-  ELSEIF doc_liik = array_position(a_pv_opers, 'parandus') THEN
-    PERFORM docs.sp_pv_oper_parandus(doc_pv_kaart_id); --will calculate parhind
-  ELSEIF doc_liik = array_position(a_pv_opers, 'umberhindamine') THEN
-    PERFORM docs.sp_pv_oper_umberhindamine(doc_pv_kaart_id); --will calculate parhind
-  ELSEIF doc_liik = array_position(a_pv_opers, 'mahakandmine') THEN
-    PERFORM docs.sp_pv_oper_mahakandmine(doc_id);
+  ELSEIF doc_liik = array_position(a_pv_opers, 'parandus')
+    THEN
+      PERFORM docs.sp_pv_oper_parandus(doc_pv_kaart_id); --will calculate parhind
+  ELSEIF doc_liik = array_position(a_pv_opers, 'umberhindamine')
+    THEN
+      PERFORM docs.sp_pv_oper_umberhindamine(doc_pv_kaart_id); --will calculate parhind
+  ELSEIF doc_liik = array_position(a_pv_opers, 'mahakandmine')
+    THEN
+      PERFORM docs.sp_pv_oper_mahakandmine(doc_id);
   END IF;
 
   -- calculation of jaak

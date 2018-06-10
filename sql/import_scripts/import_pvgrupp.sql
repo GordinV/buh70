@@ -1,6 +1,7 @@
 DROP FUNCTION IF EXISTS import_pvgrupp( );
+DROP FUNCTION IF EXISTS import_pvgrupp( INTEGER );
 
-CREATE OR REPLACE FUNCTION import_pvgrupp()
+CREATE OR REPLACE FUNCTION import_pvgrupp(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
 DECLARE
@@ -21,6 +22,7 @@ BEGIN
   FROM library l
     INNER JOIN rekv ON rekv.id = l.rekvid AND rekv.parentid < 999
   WHERE l.library = 'PVGRUPP'
+        AND (l.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP
 
@@ -65,8 +67,8 @@ BEGIN
       v_lib.kood          AS kood,
       v_lib.nimetus       AS nimetus,
       v_lib.muud          AS muud,
-      l_kulum_konto as kulum_konto,
-      l_pv_konto as konto
+      l_kulum_konto       AS kulum_konto,
+      l_pv_konto          AS konto
     INTO v_params;
 
     SELECT row_to_json(row)
@@ -131,6 +133,7 @@ COST 100;
 
 
 /*
-SELECT import_pvgrupp()
+SELECT import_pvgrupp(644207)
+SELECT import_pvgrupp(id) from library where library = 'PVGRUPP' and id not in (select old_id from import_log where lib_name = 'PVGRUPP')
 
 */
