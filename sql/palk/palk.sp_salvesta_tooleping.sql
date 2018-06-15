@@ -39,6 +39,7 @@ DECLARE
   l_status       INTEGER = CASE WHEN doc_lopp IS NOT NULL AND doc_lopp < current_date
     THEN array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
                            ELSE array_position((enum_range(NULL :: DOK_STATUS)), 'active') END;
+  is_import      BOOLEAN = data ->> 'import';
 BEGIN
 
 
@@ -46,7 +47,7 @@ BEGIN
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;

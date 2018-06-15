@@ -24,13 +24,15 @@ DECLARE
 
   new_history   JSONB;
   v_palk_taabel RECORD;
+  is_import     BOOLEAN = data ->> 'import';
 BEGIN
 
   SELECT kasutaja
   INTO userName
   FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;

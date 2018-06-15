@@ -47,12 +47,14 @@ DECLARE
   docs          INTEGER [];
   l_params      JSON;
   l_result      INTEGER;
+  is_import BOOLEAN = data->>'import';
 BEGIN
   SELECT kasutaja
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+
+  IF is_import is null and userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;

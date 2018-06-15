@@ -22,7 +22,7 @@ DECLARE
   doc_tun4    INTEGER = doc_data ->> 'tun4'; -- rahavoog
   doc_tun5    INTEGER = doc_data ->> 'tun5';
   doc_muud    TEXT = doc_data ->> 'muud';
-  json_object JSONB;
+  is_import   BOOLEAN = data ->> 'import';
 BEGIN
 
   IF (doc_id IS NULL)
@@ -31,17 +31,16 @@ BEGIN
   END IF;
 
 
-/*
   SELECT kasutaja
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
   END IF;
-*/
 
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
@@ -55,15 +54,15 @@ BEGIN
 
     UPDATE libs.library
     SET
-      kood       = doc_kood,
-      nimetus    = doc_nimetus,
-      library    = doc_library,
-      tun1       = doc_tun1,
-      tun2       = doc_tun2,
-      tun3       = doc_tun3,
-      tun4       = doc_tun4,
-      tun5       = doc_tun5,
-      muud       = doc_muud
+      kood    = doc_kood,
+      nimetus = doc_nimetus,
+      library = doc_library,
+      tun1    = doc_tun1,
+      tun2    = doc_tun2,
+      tun3    = doc_tun3,
+      tun4    = doc_tun4,
+      tun5    = doc_tun5,
+      muud    = doc_muud
     WHERE id = doc_id
     RETURNING id
       INTO lib_id;

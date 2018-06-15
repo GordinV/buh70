@@ -1,6 +1,7 @@
 DROP FUNCTION IF EXISTS import_palk( );
+DROP FUNCTION IF EXISTS import_palk( INTEGER );
 
-CREATE OR REPLACE FUNCTION import_palk()
+CREATE OR REPLACE FUNCTION import_palk(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
 DECLARE
@@ -12,7 +13,7 @@ DECLARE
   v_params    RECORD;
   l_count     INTEGER = 0;
   l_tunnus    INTEGER;
-  l_tulemus integer = 0;
+  l_tulemus   INTEGER = 0;
 BEGIN
   -- выборка из "старого меню"
 
@@ -44,6 +45,7 @@ BEGIN
     LEFT OUTER JOIN library t ON t.id = k.tunnusid
     INNER JOIN rekv ON l.rekvid = rekv.id AND rekv.parentid < 999
   WHERE l.library = 'PALK'
+        AND (l.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP
 
@@ -182,8 +184,10 @@ BEGIN
       LEFT OUTER JOIN library t ON t.id = k.tunnusid
       INNER JOIN rekv ON l.rekvid = rekv.id AND rekv.parentid < 999
     WHERE l.library = 'PALK'
-    and l.id not in (select old_id from import_log where import_log.lib_name = 'PALK')
-      LIMIT 1;
+          AND l.id NOT IN (SELECT old_id
+                           FROM import_log
+                           WHERE import_log.lib_name = 'PALK')
+    LIMIT 1;
     RAISE EXCEPTION 'Import failed, new_count < old_count %, new_count %, v_lib %', l_count, l_tulemus, v_lib;
   END IF;
 
@@ -201,6 +205,6 @@ COST 100;
 
 
 /*
-SELECT import_palk()
+SELECT import_palk(625237)
 
 */

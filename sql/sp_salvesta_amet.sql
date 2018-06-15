@@ -9,19 +9,20 @@ CREATE OR REPLACE FUNCTION libs.sp_salvesta_amet(
 $BODY$
 
 DECLARE
-  lib_id      INTEGER;
-  userName    TEXT;
-  doc_id      INTEGER = data ->> 'id';
-  doc_data    JSON = data ->> 'data';
-  doc_kood    TEXT = doc_data ->> 'kood';
-  doc_nimetus TEXT = doc_data ->> 'nimetus';
-  doc_library TEXT = 'AMET';
+  lib_id        INTEGER;
+  userName      TEXT;
+  doc_id        INTEGER = data ->> 'id';
+  doc_data      JSON = data ->> 'data';
+  doc_kood      TEXT = doc_data ->> 'kood';
+  doc_nimetus   TEXT = doc_data ->> 'nimetus';
+  doc_library   TEXT = 'AMET';
   doc_osakondId INTEGER = doc_data ->> 'osakondid';
-  doc_kogus numeric(18,2) = doc_data ->> 'kogus';
-  doc_palgamaar Integer = doc_data ->> 'palgamaar';
-  doc_tunnusId Integer = doc_data ->> 'tunnusid';
-  doc_muud    TEXT = doc_data ->> 'muud';
-  json_object JSONB;
+  doc_kogus     NUMERIC(18, 2) = doc_data ->> 'kogus';
+  doc_palgamaar INTEGER = doc_data ->> 'palgamaar';
+  doc_tunnusId  INTEGER = doc_data ->> 'tunnusid';
+  doc_muud      TEXT = doc_data ->> 'muud';
+  is_import     BOOLEAN = data ->> 'import';
+  json_object   JSONB;
 BEGIN
 
   IF (doc_id IS NULL)
@@ -34,7 +35,7 @@ BEGIN
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -42,15 +43,19 @@ BEGIN
 
   SELECT row_to_json(row)
   INTO json_object
-  FROM (SELECT doc_osakondId as osakondId, doc_kogus as kogus, doc_palgamaar as palgamaar, doc_tunnusId as tunnusId) row;
+  FROM (SELECT
+          doc_osakondId AS osakondId,
+          doc_kogus     AS kogus,
+          doc_palgamaar AS palgamaar,
+          doc_tunnusId  AS tunnusId) row;
 
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
   THEN
 
     INSERT INTO libs.library (rekvid, kood, nimetus, library, muud, properties)
-    VALUES (user_rekvid, doc_kood, doc_nimetus, doc_library,  doc_muud,
-                         json_object)
+    VALUES (user_rekvid, doc_kood, doc_nimetus, doc_library, doc_muud,
+            json_object)
     RETURNING id
       INTO lib_id;
 
@@ -74,8 +79,8 @@ BEGIN
 
   EXCEPTION WHEN OTHERS
   THEN
-     RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-     RETURN 0;
+    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+    RETURN 0;
 
 
 END;$BODY$
