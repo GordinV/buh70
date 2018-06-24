@@ -93,7 +93,10 @@ describe('dok. type Avans tests', function () {
             expect(fs.existsSync(targetFile)).toBeTruthy();
             done();
         });
-    })
+    });
+
+
+
 
 });
 

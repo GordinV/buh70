@@ -19,6 +19,12 @@ DECLARE
     FROM libs.library
     WHERE (properties :: JSON ->> 'module') :: TEXT ILIKE '%eelarve%'
   ));
+  is_rekl      BOOLEAN = (new.doc_type_id IN (
+    SELECT id
+    FROM libs.library
+    WHERE (properties :: JSON ->> 'module') :: TEXT ILIKE '%rekl%'
+  ));
+
 BEGIN
 
   -- 1 (ативный. Права согласно роли)
@@ -72,6 +78,22 @@ BEGIN
         doc_rigths = doc_rigths || muud_rigths;
       END IF;
 
+      IF is_rekl
+      THEN
+        -- will find add rights for eelarve module ("EelAktsepterja,EelKoostaja, EelAllkirjastaja, Eelesitaja")
+        SELECT row_to_json(row)
+        INTO muud_rigths
+        FROM
+          (SELECT
+             (CASE WHEN muud_roles ILIKE '%' || 'reklMaksuhaldur' || '%'
+               THEN ARRAY [author_id]
+              ELSE ARRAY [0] END) :: INTEGER [] AS reklMaksuhaldur,
+             (CASE WHEN muud_roles ILIKE '%' || 'reklAdministraator' || '%'
+               THEN ARRAY [author_id]
+              ELSE ARRAY [0] END) :: INTEGER [] AS reklAdministraator
+          ) ROW;
+      END IF;
+
     WHEN new.status = array_position((enum_range(NULL :: DOK_STATUS)), 'active')
     THEN
       SELECT row_to_json(row)
@@ -113,7 +135,26 @@ BEGIN
 
       END IF;
 
-    WHEN new.status = array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
+
+      IF is_rekl
+      THEN
+        -- will find add rights for eelarve module ("EelAktsepterja,EelKoostaja, EelAllkirjastaja, Eelesitaja")
+        SELECT row_to_json(row)
+        INTO muud_rigths
+        FROM
+          (SELECT
+             array(SELECT id
+                   FROM ou.userid
+                   WHERE muud ILIKE '%reklAdministraator%' AND rekvid = new.rekvid)   AS "reklAdministraator",
+             array(SELECT id
+                   FROM ou.userid
+                   WHERE muud ILIKE '%reklMaksuhaldur%' AND rekvid = new.rekvid)      AS "reklMaksuhaldur") row;
+
+        doc_rigths = doc_rigths || muud_rigths;
+
+      END IF;
+
+  WHEN new.status = array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
     THEN -- closed
       SELECT row_to_json(row)
       INTO doc_rigths
@@ -141,6 +182,19 @@ BEGIN
 
       END IF;
 
+      IF is_rekl
+      THEN
+        -- will find add rights for eelarve module ("EelAktsepterja,EelKoostaja, EelAllkirjastaja, Eelesitaja")
+        SELECT row_to_json(row)
+        INTO muud_rigths
+        FROM
+          (SELECT
+             ARRAY [0] AS "reklMaksuhaldur",
+             ARRAY [0] AS "reklAdministraator") row;
+
+        doc_rigths = doc_rigths || muud_rigths;
+
+      END IF;
 
     WHEN new.status = array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
     THEN -- deleted
@@ -170,6 +224,19 @@ BEGIN
 
       END IF;
 
+      IF is_rekl
+      THEN
+        -- will find add rights for eelarve module ("EelAktsepterja,EelKoostaja, EelAllkirjastaja, Eelesitaja")
+        SELECT row_to_json(row)
+        INTO muud_rigths
+        FROM
+          (SELECT
+             ARRAY [0] AS "reklAdministraator",
+             ARRAY [0] AS "reklMaksuhaldur") row;
+
+        doc_rigths = doc_rigths || muud_rigths;
+
+      END IF;
   END CASE;
 
   new.rigths = doc_rigths;
