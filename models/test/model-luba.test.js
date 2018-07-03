@@ -227,6 +227,26 @@ describe('dok. type Luba tests', function () {
         expect(result).toBeGreaterThan(1);
     });
 
+    it('should exists proc rekl.sp_calc_dekl', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_calc_dekl'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should succesfully execute proc rekl.sp_calc_dekl', async () => {
+        let sql = `select rekl.sp_calc_dekl($1,$2) as result`;
+        let returnValue = await db.queryDb(sql, [globalDocId,1]);
+        expect(returnValue).toBeDefined();
+        console.log('rekl.sp_calc_dekl', globalDocId, returnValue);
+        let result = returnValue.result;
+        let error = returnValue.error_code;
+        expect(result).toBeGreaterThan(0);
+    });
+
+
     it('should exists proc rekl.sp_luba_annuleri', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_luba_annuleri'`;
         let returnValue = await db.queryDb(sql, []);
@@ -260,9 +280,9 @@ describe('dok. type Luba tests', function () {
         let sql = doc.deleteDoc;
         let returnValue = await db.queryDb(sql, [1, globalDocId]);
         expect(returnValue).toBeDefined();
-        console.log(returnValue);
         let result = returnValue.result;
-        expect(result).toBeGreaterThan(0);
+        let err = returnValue.error_code;
+        expect(err).toBe(3); // ei saa
 
     });
 

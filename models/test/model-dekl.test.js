@@ -10,6 +10,19 @@ const db = require('./../../libs/db');
 
 describe('dok. type Dekl tests', function () {
     let globalDocId = 0; // для сохранения ид документа
+    let data = {
+        id: 0, data: {
+            number: 1,
+            kpv: '2018-06-19',
+            asutusid: 1,
+            alus: 'test',
+            lubaid: 294175,
+            summa: 100,
+            ettekirjutus:'test ette',
+            tyyp:'DEKL',
+            saadetud: '2018-06-19'
+        }
+    };
 
     const doc = require('../rekl/dekl'),
         docTypeId = 'DEKL'.toLowerCase(),
@@ -88,7 +101,7 @@ describe('dok. type Dekl tests', function () {
 
     });
 
-    it.skip('should exists view rekl.dekl_jaak', async () => {
+    it('should exists view rekl.dekl_jaak', async () => {
         let sql = `select 1 FROM pg_views WHERE viewname = 'dekl_jaak'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -96,17 +109,6 @@ describe('dok. type Dekl tests', function () {
         expect(result).toBeGreaterThan(0);
 
     });
-
-    it.skip('should exists view cur_luba', async () => {
-        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_luba'`;
-        let returnValue = await db.queryDb(sql, []);
-        expect(returnValue).toBeDefined();
-        let result = returnValue.result;
-        expect(result).toBeGreaterThan(0);
-
-    });
-
-
 
     it('select as new query', async () => {
         let sql = doc.select[0].sqlAsNew;
@@ -128,19 +130,6 @@ describe('dok. type Dekl tests', function () {
 
 
     it('should save data', async () => {
-        let data = {
-            id: 0, data: {
-                number: 1,
-                kpv: '2018-06-19',
-                asutusid: 1,
-                alus: 'test',
-                lubaid: 294112,
-                summa: 100,
-                ettekirjutus:'test ette',
-                tyyp:'DEKL',
-                saadetud: '2018-06-19'
-            }
-        };
 
         let sql = doc.saveDoc;
         let returnValue = await db.queryDb(sql, [data, 1, 1]);
@@ -154,6 +143,33 @@ describe('dok. type Dekl tests', function () {
         expect(globalDocId).toBeGreaterThan(0);
     });
 
+    it('should select data ', async () => {
+        let sql = doc.select[0].sql;
+        let returnValue = await db.queryDb(sql, [globalDocId, 1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(returnValue.error_code).toBe(0);
+        expect(returnValue.data[0].id).toBe(globalDocId);
+
+    });
+
+    it('should exists view cur_toiming', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_toiming'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should select data as grid query', async () => {
+        let sql = doc.grid.sqlString;
+        let returnValue = await db.queryDb(sql, [1,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+
     it('should exists proc sp_delete_toiming', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_toiming'`;
         let returnValue = await db.queryDb(sql, []);
@@ -163,10 +179,31 @@ describe('dok. type Dekl tests', function () {
 
     });
 
+    it('should exists proc rekl.sp_calc_deklsumma', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_calc_deklsumma'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should succesfully execute proc rekl.sp_calc_deklsumma', async () => {
+        let sql = `select rekl.sp_calc_deklsumma($1, $2)::numeric as summa`;
+        let returnValue = await db.queryDb(sql, [294175, '2018-06-30']);
+        expect(returnValue).toBeDefined();
+        console.log('returnValue',returnValue);
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+        let summa = Number(returnValue.data[0].summa);
+        expect(summa).toBe(100); //equal luba.summa
+    });
+
     it('should delete toiming', async () => {
         let sql = doc.deleteDoc;
         let returnValue = await db.queryDb(sql, [1, globalDocId]);
         expect(returnValue).toBeDefined();
+        console.log('delete',returnValue);
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
 

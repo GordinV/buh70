@@ -6,10 +6,10 @@ CREATE FUNCTION rekl.sp_delete_toiming(user_id INTEGER, doc_id INTEGER, OUT erro
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_doc         RECORD;
-  v_seotud_docs RECORD;
-  toiming_history  JSONB;
-  new_history   JSONB;
+  v_doc           RECORD;
+  v_seotud_docs   RECORD;
+  toiming_history JSONB;
+  new_history     JSONB;
 BEGIN
 
   SELECT
@@ -59,47 +59,20 @@ BEGIN
 
   END IF;
 
-  -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя кроме проводки)
-
-  IF exists(
-      SELECT d.id
-      FROM docs.doc d
-        INNER JOIN libs.library l ON l.id = d.doc_type_id
-      WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
-            AND l.kood IN (
-        SELECT kood
-        FROM libs.library
-        WHERE library = 'DOK'
-              AND kood NOT IN ('JOURNAL')
-              AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')
-      ))
-  THEN
-
-    RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
-    error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
-    error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
-    result = 0;
-    RETURN;
-  END IF;
-
-  -- Логгирование удаленного документа
   -- docs.arv
 
-  toiming_history = row_to_json(row.*) FROM ( SELECT a.*
-  FROM rekl.toiming a WHERE a.parentid = doc_id) ROW;
 
+  UPDATE rekl.toiming
+  SET staatus = 'deleted'
+  WHERE parentid = doc_id;
+
+  -- Установка статуса ("Удален")  и сохранение истории
   SELECT row_to_json(row)
   INTO new_history
   FROM (SELECT
           now()           AS deleted,
-          v_doc.user_name AS user,
-          toiming_history    AS toiming) row;
+          v_doc.user_name AS user) row;
 
-
-  DELETE FROM rekl.toiming
-  WHERE parentid = doc_id;
-
-  -- Установка статуса ("Удален")  и сохранение истории
 
   UPDATE docs.doc
   SET lastupdate = now(),

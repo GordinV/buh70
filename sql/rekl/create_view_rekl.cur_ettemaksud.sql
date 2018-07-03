@@ -20,4 +20,4 @@ CREATE VIEW cur_ettemaksud AS
     e.staatus
   FROM rekl.ettemaksud e
     INNER JOIN libs.asutus a ON e.asutusid = a.id
-  WHERE a.staatus <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
+  WHERE e.staatus <> 'deleted';

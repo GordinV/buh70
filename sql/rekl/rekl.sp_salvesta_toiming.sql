@@ -29,10 +29,12 @@ DECLARE
   doc_muud         TEXT = doc_data ->> 'muud';
   doc_dokpropid    INTEGER = doc_data ->> 'dokpropid';
   doc_saadetud     DATE = doc_data ->> 'saadetud';
+  doc_staatus      dok_status = doc_data->>'staatus';
   doc_deklid       INTEGER = doc_data ->> 'deklid';
   new_history      JSONB;
   docs             INTEGER [];
   is_import        BOOLEAN = data ->> 'import';
+  a_docs_ids       INTEGER [];
 BEGIN
 
   SELECT kasutaja
@@ -63,15 +65,19 @@ BEGIN
             now()    AS created,
             userName AS user) row;
 
-    INSERT INTO docs.doc (doc_type_id, history, rekvid)
-    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid)
+    -- add new id into docs. ref. array
+    a_docs_ids = array(SELECT DISTINCT unnest(array_append(a_docs_ids, doc_lubaid)));
+
+
+    INSERT INTO docs.doc (doc_type_id, history, rekvid, docs_ids)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, a_docs_ids)
     RETURNING id
       INTO doc_id;
 
     INSERT INTO rekl.toiming (parentid, asutusid, kpv, number, alus, muud, lubaid, userid, ettekirjutus, tahtaeg, summa, staatus, deklid, tyyp)
     VALUES
       (doc_id, doc_asutusid, doc_kpv, doc_number, doc_alus, doc_muud, doc_lubaid, userid, doc_ettekirjutus, doc_tahtaeg,
-               doc_summa, 'active', doc_deklid, doc_tyyp)
+               doc_summa, null, doc_deklid, doc_tyyp)
     RETURNING id
       INTO dekl_id;
 
@@ -85,16 +91,19 @@ BEGIN
     -- устанавливаем связи с документами
 
     -- получим связи документа
+
+    -- lausend
     SELECT docs_ids
-    INTO docs
+    INTO a_docs_ids
     FROM docs.doc
     WHERE id = doc_id;
 
-    -- will check if arvId exists
-    RAISE NOTICE 'dekl_id %', dekl_id;
+    -- add new lubaid into docs. ref. array
+    a_docs_ids = array(SELECT DISTINCT unnest(array_append(a_docs_ids, doc_lubaid)));
+
     UPDATE docs.doc
     SET
-      docs_ids   = docs,
+      docs_ids   = a_docs_ids,
       lastupdate = now(),
       history    = coalesce(history, '[]') :: JSONB || new_history
     WHERE id = doc_id;
@@ -110,12 +119,32 @@ BEGIN
       tahtaeg      = doc_tahtaeg,
       dokpropid    = doc_dokpropid,
       saadetud     = doc_saadetud,
-      deklid       = doc_deklid
+      deklid       = doc_deklid,
+      staatus      = doc_staatus::dok_status
     WHERE parentid = doc_id
     RETURNING id
       INTO dekl_id;
 
   END IF;
+
+  -- add deklid into luba ids
+
+  -- lausend
+  SELECT docs_ids
+  INTO a_docs_ids
+  FROM docs.doc
+  WHERE id = doc_lubaid;
+
+  -- add new lubaid into docs. ref. array
+  a_docs_ids = array(SELECT DISTINCT unnest(array_append(a_docs_ids, doc_id)));
+
+  UPDATE docs.doc
+  SET
+    docs_ids   = a_docs_ids,
+    lastupdate = now(),
+    history    = coalesce(history, '[]') :: JSONB || new_history
+  WHERE id = doc_lubaid;
+
   -- вставка в таблицы документа
   RETURN doc_id;
   EXCEPTION WHEN OTHERS
@@ -130,18 +159,8 @@ COST 100;
 
 GRANT EXECUTE ON FUNCTION rekl.sp_salvesta_toiming(JSON, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION rekl.sp_salvesta_toiming(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
+/*
+{"id":294184,"data":{"alus":"test annull","asutusid":1,"bpm":null,"created":"27.06.2018 05:06:39","deklid":null,"doc":null,"docs_ids":"{294181,294112}","doc_type_id":null,"dokprop":"","dokpropid":null,"ettekirjutus":"test ette","id":294184,"jaak":99,"journalid":null,"konto":"","kpv":"20180619","lastupdate":"01.07.2018 04:07:54","lausend":0,"lubaid":294181,"lubaid1":294181,"muud":"3 - 2","number":1,"rekvid":1,"saadetud":null,"staatus":null,"status":"????????","summa":99,"tahtaeg":"20180727","tyyp":"DEKL"}}
 
-SELECT rekl.sp_salvesta_toiming('{
-  "id": 0,
-  "data": {
-    "number": 1,
-    "kpv": "2018-06-19",
-    "asutusid": 1,
-    "alus": "test",
-    "lubaid": 294112,
-    "summa": 100,
-    "ettekirjutus": "test ette",
-    "tyyp": "DEKL",
-    "saadetud": "2018-06-19"
-  }
-}', 1, 1);
+SELECT rekl.sp_salvesta_toiming('{"id":294184,"data":{"alus":"test annull","asutusid":1,"bpm":null,"created":"27.06.2018 05:06:39","deklid":null,"doc":null,"docs_ids":"{294181,294112}","doc_type_id":null,"dokprop":"","dokpropid":null,"ettekirjutus":"test ette","id":294184,"jaak":99,"journalid":null,"konto":"","kpv":"20180619","lastupdate":"01.07.2018 04:07:18","lausend":0,"lubaid":294181,"lubaid1":294181,"muud":"3 - 2","number":1,"rekvid":1,"saadetud":null,"staatus":"active","status":"????????","summa":99,"tahtaeg":"20180727","tyyp":"DEKL"}}', 1, 1);
+*/

@@ -22,6 +22,7 @@ const Toiming = {
                       t.number                                               AS number,
                       d.rekvid,
                       t.asutusid,
+                      t.lubaid,
                       t.muud                                                 AS muud,
                       t.kpv,
                       t.summa,
@@ -33,13 +34,22 @@ const Toiming = {
                       t.journalid,
                       t.lubaid,
                       t.tahtaeg,
-                      t.ettekirjutus
+                      t.alus,
+                      t.ettekirjutus,
+                      coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20) AS konto,
+                      dp.selg :: VARCHAR(120)                                        AS dokprop,
+                      coalesce(jid.number, 0) :: INTEGER                             AS lausend,
+                      rekl.fnc_dekl_jaak(t.ID) as jaak                      
                     FROM docs.doc d
                       INNER JOIN rekl.toiming t ON t.parentId = d.id
                       INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                       INNER JOIN libs.asutus a ON a.id = t.asutusid
+                      LEFT OUTER JOIN libs.dokprop dp ON dp.id = t.dokpropid
                       LEFT OUTER JOIN libs.library dt ON t.id = d.doc_type_id
                       LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
+                      LEFT OUTER JOIN docs.doc dj ON t.journalid = dj.id
+                      LEFT OUTER JOIN docs.journal j ON j.parentid = dj.id
+                      LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
                     WHERE d.id = $1`,
             sqlAsNew: `SELECT
                       $1 :: INTEGER                                 AS id,
@@ -53,6 +63,7 @@ const Toiming = {
                       0 :: INTEGER                                  AS number,
                       NULL :: INTEGER                               AS rekvId,
                       NULL :: INTEGER                               AS asutusid,
+                      NULL::INTEGER                                 AS lubaid,
                       NULL :: TEXT                                  AS muud,
                       now() :: DATE                                 AS kpv,
                       0 :: NUMERIC                                  AS summa,
@@ -63,7 +74,11 @@ const Toiming = {
                       NULL :: INTEGER                               AS dokpropid,
                       NULL :: DATE                                  AS tahtaeg,
                       NULL :: TEXT                                  AS alus,
-                      NULL::TEXT                                    AS ettekirjutus
+                      NULL::TEXT                                    AS ettekirjutus,
+                     null::varchar(120) as  dokprop,
+                     null::varchar(20) as konto, 
+                     null::integer as lausend,
+                     0::numeric as jaak                   
                     FROM libs.library t,
                       libs.library s,
                       (SELECT *
@@ -110,7 +125,7 @@ const Toiming = {
         ],
         sqlString: `SELECT
                           d.*
-                        FROM cur_dekl d
+                        FROM cur_toiming d
                         WHERE d.rekvId = $1
                               AND coalesce(docs.usersRigths(d.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',

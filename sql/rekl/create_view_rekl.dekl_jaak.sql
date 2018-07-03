@@ -1,12 +1,14 @@
 DROP VIEW IF EXISTS rekl.dekl_jaak;
 CREATE VIEW rekl.dekl_jaak AS
   SELECT
+    d.id,
     t.id                                  AS deklid,
     t.asutusid,
     t.summa                               AS dekl,
     coalesce(qryTasud.tasu, 0) :: NUMERIC AS tasu,
     t.tyyp
-  FROM rekl.toiming t
+  FROM docs.doc d
+    INNER JOIN rekl.toiming t ON t.parentid = d.id
     LEFT OUTER JOIN (
                       SELECT
                         deklid,
