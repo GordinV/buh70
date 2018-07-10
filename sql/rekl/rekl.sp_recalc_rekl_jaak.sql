@@ -45,7 +45,7 @@ BEGIN
   FROM rekl.luba
   WHERE luba.parentid = l_id;
 
-  IF v_luba.id is null
+  IF v_luba.id IS NULL
   THEN
     error_code = 5;
     error_message = 'Dokument ei leidnud ' || l_id :: TEXT;

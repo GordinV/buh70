@@ -39,8 +39,6 @@ BEGIN
     doc_id = doc_data ->> 'id';
   END IF;
 
-  RAISE NOTICE 'doc_id %', doc_id;
-
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
   THEN

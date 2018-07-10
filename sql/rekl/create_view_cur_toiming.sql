@@ -19,7 +19,7 @@ CREATE VIEW cur_toiming
       coalesce(t.staatus :: TEXT, '')                                               AS status,
       t.saadetud,
       t.failid,
-      rekl.fnc_dekl_jaak(t.ID)                                                      AS jaak,
+      coalesce(rekl.fnc_dekl_jaak(d.ID),0)                                                      AS jaak,
       t.deklId,
       coalesce('Dekl.nr:' + (SELECT tt.number
                              FROM rekl.toiming tt

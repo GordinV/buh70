@@ -133,8 +133,8 @@ BEGIN
     THEN
       INSERT INTO rekl.luba1 (parentid, nomid, summa, kogus, maksumaar, soodus_tyyp, soodus, staatus, muud)
       VALUES
-        (luba_id, json_record.nomid, json_record.summa, coalesce(json_record.kogus,1), json_record.maksumaar,
-         json_record.soodus_tyyp, json_record.soodus, coalesce(json_record.staatus,1), json_record.muud)
+        (luba_id, json_record.nomid, json_record.summa, coalesce(json_record.kogus, 1), json_record.maksumaar,
+         json_record.soodus_tyyp, json_record.soodus, coalesce(json_record.staatus, 1), json_record.muud)
       RETURNING id
         INTO luba1_id;
 
@@ -168,7 +168,14 @@ BEGIN
   DELETE FROM rekl.luba1
   WHERE parentid = luba_id AND id NOT IN (SELECT unnest(ids));
 
+  -- uuendame dekl list
+
+  PERFORM rekl.sp_calc_dekl(doc_id, userid);
   RETURN doc_id;
+  EXCEPTION WHEN OTHERS
+  THEN
+    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+    RETURN 0;
 
 END;$BODY$
 LANGUAGE plpgsql VOLATILE

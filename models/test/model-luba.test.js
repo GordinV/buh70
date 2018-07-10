@@ -108,7 +108,6 @@ describe('dok. type Luba tests', function () {
     });
 
 
-
     it('select as new query', async () => {
         let sql = doc.select[0].sqlAsNew;
         let returnValue = await db.queryDb(sql, [0, 1]);
@@ -157,7 +156,7 @@ describe('dok. type Luba tests', function () {
         let result = returnValue.result;
         expect(returnValue.error_code).toBe(0);
         expect(returnValue.result).toBe(1);
-        globalDocId  = returnValue.data[0].id;
+        globalDocId = returnValue.data[0].id;
         expect(returnValue.result).toBeGreaterThan(0);
     });
 
@@ -181,7 +180,7 @@ describe('dok. type Luba tests', function () {
         expect(error).toBeGreaterThan(0);
         expect(result).toBe(0);
         params = {id: globalDocId, staatus: 1};
-        returnValue = await db.queryDb(sql, [1, params,'rekl.sp_muuda_lubastaatus']);
+        returnValue = await db.queryDb(sql, [1, params, 'rekl.sp_muuda_lubastaatus']);
         result = returnValue.result;
         expect(result).toBeGreaterThan(0);
 
@@ -238,11 +237,30 @@ describe('dok. type Luba tests', function () {
 
     it('should succesfully execute proc rekl.sp_calc_dekl', async () => {
         let sql = `select rekl.sp_calc_dekl($1,$2) as result`;
-        let returnValue = await db.queryDb(sql, [globalDocId,1]);
+        let returnValue = await db.queryDb(sql, [globalDocId, 1]);
         expect(returnValue).toBeDefined();
         console.log('rekl.sp_calc_dekl', globalDocId, returnValue);
         let result = returnValue.result;
         let error = returnValue.error_code;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc rekl.sp_calc_intress', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_calc_intress'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists operation in libs', async () => {
+        let sql = `select 1 FROM libs.nomenklatuur n 
+        WHERE n.dok = 'REKL'
+        AND n.kood ILIKE 'INTRESS%'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
     });
 
@@ -255,6 +273,7 @@ describe('dok. type Luba tests', function () {
         expect(result).toBeGreaterThan(0);
 
     });
+
 
     it('should succesfully execute proc rekl.sp_luba_annuleri', async () => {
         let sql = doc.executeCommand.command;

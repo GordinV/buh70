@@ -166,6 +166,22 @@ describe('dok. type Luba tests', function () {
 
     });
 
+    it('should exists proc rekl.sp_set_ettemaks_staatus', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_set_ettemaks_staatus'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succefully execute proc rekl.sp_set_ettemaks_staatus', async () => {
+        let sql = `select rekl.sp_set_ettemaks_staatus($1) as result`;
+        let returnValue = await db.queryDb(sql, [1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBe(1);
+    });
+
     it('should exists proc rekl.sp_delete_ettemaksud', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_ettemaksud'`;
         let returnValue = await db.queryDb(sql, []);

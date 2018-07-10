@@ -29,7 +29,7 @@ DECLARE
   doc_muud         TEXT = doc_data ->> 'muud';
   doc_dokpropid    INTEGER = doc_data ->> 'dokpropid';
   doc_saadetud     DATE = doc_data ->> 'saadetud';
-  doc_staatus      dok_status = doc_data->>'staatus';
+  doc_staatus      DOK_STATUS = doc_data ->> 'staatus';
   doc_deklid       INTEGER = doc_data ->> 'deklid';
   new_history      JSONB;
   docs             INTEGER [];
@@ -53,8 +53,6 @@ BEGIN
     doc_id = doc_data ->> 'id';
   END IF;
 
-  RAISE NOTICE 'doc_id %', doc_id;
-
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
   THEN
@@ -74,10 +72,10 @@ BEGIN
     RETURNING id
       INTO doc_id;
 
-    INSERT INTO rekl.toiming (parentid, asutusid, kpv, number, alus, muud, lubaid, userid, ettekirjutus, tahtaeg, summa, staatus, deklid, tyyp)
+    INSERT INTO rekl.toiming (parentid, asutusid, kpv, number, alus, muud, lubaid, userid, ettekirjutus, tahtaeg, summa, deklid, tyyp, staatus)
     VALUES
       (doc_id, doc_asutusid, doc_kpv, doc_number, doc_alus, doc_muud, doc_lubaid, userid, doc_ettekirjutus, doc_tahtaeg,
-               doc_summa, null, doc_deklid, doc_tyyp)
+               doc_summa, doc_deklid, doc_tyyp, doc_staatus)
     RETURNING id
       INTO dekl_id;
 
@@ -120,7 +118,7 @@ BEGIN
       dokpropid    = doc_dokpropid,
       saadetud     = doc_saadetud,
       deklid       = doc_deklid,
-      staatus      = doc_staatus::dok_status
+      staatus      = doc_staatus :: DOK_STATUS
     WHERE parentid = doc_id
     RETURNING id
       INTO dekl_id;

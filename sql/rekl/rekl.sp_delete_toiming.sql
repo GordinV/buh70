@@ -59,12 +59,19 @@ BEGIN
 
   END IF;
 
-  -- docs.arv
-
 
   UPDATE rekl.toiming
   SET staatus = 'deleted'
   WHERE parentid = doc_id;
+
+  IF (v_doc.docs_ids IS NOT NULL)
+  THEN
+    FOR v_seotud_docs IN
+    SELECT unnest(v_doc.docs_ids) AS id
+    LOOP
+      PERFORM docs.sp_delete_journal(user_id, v_seotud_docs.id);
+    END LOOP;
+  END IF;
 
   -- Установка статуса ("Удален")  и сохранение истории
   SELECT row_to_json(row)

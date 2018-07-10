@@ -39,7 +39,8 @@ const Toiming = {
                       coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20) AS konto,
                       dp.selg :: VARCHAR(120)                                        AS dokprop,
                       coalesce(jid.number, 0) :: INTEGER                             AS lausend,
-                      rekl.fnc_dekl_jaak(t.ID) as jaak                      
+                      rekl.fnc_dekl_jaak(t.ID) as jaak,
+                      t.lisa->>'dekltasud'::text as tasud                      
                     FROM docs.doc d
                       INNER JOIN rekl.toiming t ON t.parentId = d.id
                       INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
@@ -78,7 +79,8 @@ const Toiming = {
                      null::varchar(120) as  dokprop,
                      null::varchar(20) as konto, 
                      null::integer as lausend,
-                     0::numeric as jaak                   
+                     0::numeric as jaak,
+                     null::text as tasud                   
                     FROM libs.library t,
                       libs.library s,
                       (SELECT *
@@ -107,6 +109,20 @@ const Toiming = {
             multiple: true,
             alias: 'relations',
             data: []
+        },
+        {
+            sql:`SELECT
+                  qry.summa, qry.tasukpv as kpv
+                FROM rekl.toiming t,
+                  LATERAL (SELECT *, $2 as userid
+                           FROM jsonb_to_recordset(
+                                    (t.lisa ->> 'dekltasu') :: JSONB) AS x (summa NUMERIC, tasuid INTEGER, tasukpv DATE )) qry
+                WHERE t.parentid = $1
+                ORDER BY id DESC`,
+            query:null,
+            multiple: true,
+            alias:'tasud',
+            data:[]
         }
 
     ],

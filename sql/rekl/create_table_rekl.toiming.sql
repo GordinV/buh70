@@ -23,7 +23,8 @@ CREATE TABLE rekl.toiming
   dokpropid    INTEGER,
   saadetud     DATE,
   number       INTEGER DEFAULT 0,
-  deklid       INTEGER
+  deklid       INTEGER,
+  lisa jsonb
 );
 
 CREATE INDEX idx_toiming_parentid

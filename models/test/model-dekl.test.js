@@ -192,18 +192,93 @@ describe('dok. type Dekl tests', function () {
         let sql = `select rekl.sp_calc_deklsumma($1, $2)::numeric as summa`;
         let returnValue = await db.queryDb(sql, [294175, '2018-06-30']);
         expect(returnValue).toBeDefined();
-        console.log('returnValue',returnValue);
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
         let summa = Number(returnValue.data[0].summa);
-        expect(summa).toBe(100); //equal luba.summa
+        expect(summa).toBeGreaterThan(0); //equal luba.summa
+    });
+
+    it('should exists proc rekl.get_deklstaatus', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'get_deklstaatus'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succesfully execute proc rekl.get_deklstaatus', async () => {
+        let sql = `select rekl.get_deklstaatus($1, $2)::text as status`;
+        let returnValue = await db.queryDb(sql, [globalDocId, '2018-06-30']);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc rekl.sp_saada_dekl', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_saada_dekl'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc rekl.gen_lausend_reklmaks', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'gen_lausend_reklmaks'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc rekl.sp_tasu_dekl', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_tasu_dekl'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc rekl.gen_lausend_rekltasu', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'gen_lausend_rekltasu'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc rekl.sp_recalc_rekl_jaak', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_recalc_rekl_jaak'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc rekl.sp_set_ettemaks_staatus', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_set_ettemaks_staatus'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succesfully execute proc rekl.sp_saada_dekl', async () => {
+        let sql = `select * from rekl.sp_saada_dekl($1, $2)`;
+        let params = {
+            id: globalDocId,
+            kpv:'2018-06-30'
+        };
+        let returnValue = await db.queryDb(sql, [1, params]);
+        expect(returnValue).toBeDefined();
+        console.log('rekl.sp_saada_dekl',returnValue);
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
     });
 
     it('should delete toiming', async () => {
         let sql = doc.deleteDoc;
         let returnValue = await db.queryDb(sql, [1, globalDocId]);
         expect(returnValue).toBeDefined();
-        console.log('delete',returnValue);
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
 

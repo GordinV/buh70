@@ -83,7 +83,9 @@
                       $2 :: INTEGER                             AS userid,
                       trim(n.kood)                              AS kood,
                       trim(n.nimetus)                           AS nimetus,
-                      l1.*
+                      l1.*,
+                      null::varchar(20) as liik,
+                      null::varchar(20) as SOODUSTYYP
                     FROM rekl.luba AS l
                       INNER JOIN rekl.luba1 l1 ON l1.parentid = l.Id
                       INNER JOIN libs.nomenklatuur n ON n.id = l1.nomid

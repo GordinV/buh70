@@ -1,30 +1,25 @@
 DROP FUNCTION IF EXISTS rekl.fnc_dekl_jaak(dekl_id INTEGER );
 
-CREATE or replace FUNCTION rekl.fnc_dekl_jaak(l_dekl_id INTEGER)
+CREATE OR REPLACE FUNCTION rekl.fnc_dekl_jaak(l_dekl_id INTEGER)
   RETURNS NUMERIC
 LANGUAGE SQL
 AS $$
-SELECT sum(dekl) - sum(tasu) AS jaak
+SELECT sum(coalesce(dekl,0)) - sum(coalesce(tasu,0)) AS jaak
 FROM (
        SELECT
-         t.id,
-         t.summa                               AS dekl,
-         coalesce(qryTasud.tasu, 0) :: NUMERIC AS tasu,
-         t.tyyp
-       FROM docs.doc d
-         INNER JOIN rekl.toiming t ON t.parentid = d.id
-         LEFT OUTER JOIN (
-                           SELECT
-                             deklid,
-                             sum(summa) AS tasu
-                           FROM rekl.dekltasu
-                           GROUP BY deklid
-                         ) qryTasud ON qryTasud.deklid = t.id
+         t.parentid as id,
+         t.summa                                                                         AS dekl,
+         (SELECT sum(summa)
+          FROM jsonb_to_recordset((t.lisa ->> 'dekltasu') :: JSONB) AS x(summa NUMERIC)) AS tasu
+       FROM rekl.toiming t
        WHERE t.tyyp IN ('DEKL', 'INTRESS', 'PARANDUS')
              AND t.saadetud IS NOT NULL
+             AND t.staatus <> 'deleted'
      ) qry
 WHERE id = l_dekl_id
 $$;
 
+/*
+SELECT rekl.fnc_dekl_jaak(294136)
 
-SELECT rekl.fnc_dekl_jaak(27)
+*/
