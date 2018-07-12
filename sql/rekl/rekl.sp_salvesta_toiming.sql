@@ -143,6 +143,7 @@ BEGIN
     history    = coalesce(history, '[]') :: JSONB || new_history
   WHERE id = doc_lubaid;
 
+
   -- вставка в таблицы документа
   RETURN doc_id;
   EXCEPTION WHEN OTHERS

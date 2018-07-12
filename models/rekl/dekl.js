@@ -173,12 +173,7 @@ const Toiming = {
         {
             name: 'summa',
             type: 'N',
-        },
-        {
-            name: 'number',
-            type: 'C',
         }
-
     ],
     bpm: [
         {

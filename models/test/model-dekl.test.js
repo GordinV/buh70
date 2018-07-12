@@ -24,6 +24,8 @@ describe('dok. type Dekl tests', function () {
         }
     };
 
+    let intressId;
+
     const doc = require('../rekl/dekl'),
         docTypeId = 'DEKL'.toLowerCase(),
         modelForExport = 'rekl/dekl';
@@ -94,6 +96,15 @@ describe('dok. type Dekl tests', function () {
 
     it('doc type library should contain DEKL doc.type', async () => {
         let sql = `select id from libs.library where kood = 'DEKL' and  library = 'DOK' limit 1`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('doc type library should contain INTRESS doc.type', async () => {
+        let sql = `select id from libs.library where kood = 'INTRESS' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -270,8 +281,40 @@ describe('dok. type Dekl tests', function () {
         };
         let returnValue = await db.queryDb(sql, [1, params]);
         expect(returnValue).toBeDefined();
-        console.log('rekl.sp_saada_dekl',returnValue);
         let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc rekl.sp_calc_intress', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_calc_intress'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succesfully execute proc rekl.sp_calc_intress', async () => {
+        let sql = `select * from rekl.sp_calc_intress($1, $2)`;
+        let params = {
+            id: 294112,
+            kpv:'2018-12-31'
+        };
+        let returnValue = await db.queryDb(sql, [1, params]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+        intressId = result;
+    });
+
+    it('should exists proc rekl.gen_lausend_reklintress', async () => {
+        let sql = `select * from rekl.gen_lausend_reklintress($1, $2)`;
+        let params = {
+            id: intressId,
+        };
+        let returnValue = await db.queryDb(sql, [1, params]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        console.log('intress, kontoteerimine',returnValue);
         expect(result).toBeGreaterThan(0);
     });
 
