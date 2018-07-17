@@ -285,6 +285,25 @@ describe('dok. type Dekl tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
+    it('should exists proc rekl.sp_koosta_teatis', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_koosta_teatis'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succesfully execute proc rekl.sp_koosta_teatis', async () => {
+        let sql = `select * from rekl.sp_koosta_teatis($1, $2)`;
+        let params = {
+            id: globalDocId
+        };
+        let returnValue = await db.queryDb(sql, [1, params]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
     it('should exists proc rekl.sp_calc_intress', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_calc_intress'`;
         let returnValue = await db.queryDb(sql, []);
@@ -307,6 +326,14 @@ describe('dok. type Dekl tests', function () {
     });
 
     it('should exists proc rekl.gen_lausend_reklintress', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'gen_lausend_reklintress'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succesfully execute proc rekl.gen_lausend_reklintress', async () => {
         let sql = `select * from rekl.gen_lausend_reklintress($1, $2)`;
         let params = {
             id: intressId,
@@ -314,9 +341,29 @@ describe('dok. type Dekl tests', function () {
         let returnValue = await db.queryDb(sql, [1, params]);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
-        console.log('intress, kontoteerimine',returnValue);
         expect(result).toBeGreaterThan(0);
     });
+
+    it('should exists proc rekl.sp_tuhistada_saatmine', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_tuhistada_saatmine'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succesfully execute proc rekl.sp_tuhistada_saatmine', async () => {
+        let sql = `select * from rekl.sp_tuhistada_saatmine($1, $2)`;
+        let params = {
+            id: globalDocId,
+        };
+        let returnValue = await db.queryDb(sql, [1, params]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        console.log('rekl.sp_tuhistada_saatmine',returnValue);
+        expect(result).toBeGreaterThan(0);
+    });
+
 
     it('should delete toiming', async () => {
         let sql = doc.deleteDoc;

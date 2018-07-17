@@ -169,10 +169,6 @@ const Toiming = {
         {
             name: 'asutusid',
             type: 'I',
-        },
-        {
-            name: 'summa',
-            type: 'N',
         }
     ],
     bpm: [

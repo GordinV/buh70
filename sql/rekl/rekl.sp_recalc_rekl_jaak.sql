@@ -108,12 +108,9 @@ BEGIN
         volg    = lnVolg,
         intress = lnIntress
       WHERE id = v_luba.id;
-      result = 1;
     END IF;
-  END IF;
 
-  IF v_luba.staatus = 0
-  THEN
+  ELSE
     error_message = 'Luba anuleeritud, nullime saldo:';
 
     UPDATE rekl.luba
@@ -121,8 +118,8 @@ BEGIN
       volg    = 0,
       intress = 0
     WHERE id = v_luba.id;
-    result = 1;
   END IF;
+  result = 1;
 
   RETURN;
 END;

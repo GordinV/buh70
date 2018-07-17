@@ -264,6 +264,26 @@ describe('dok. type Luba tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
+    it('should exists proc rekl.sp_koosta_parandus', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_koosta_parandus'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should succesfully execute proc rekl.sp_koosta_parandus', async () => {
+        let sql = doc.executeCommand.command;
+        let params = {id: globalDocId};
+        let returnValue = await db.queryDb(sql, [1, params, 'rekl.sp_koosta_parandus']);
+        expect(returnValue).toBeDefined();
+        console.log('parandus', returnValue);
+        let result = returnValue.result;
+        let error = returnValue.error_code;
+        expect(result).toBeGreaterThan(0);
+    });
+
 
     it('should exists proc rekl.sp_luba_annuleri', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_luba_annuleri'`;
