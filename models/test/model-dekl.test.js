@@ -304,6 +304,26 @@ describe('dok. type Dekl tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
+    it('should exists proc rekl.sp_koosta_korraldus', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_koosta_korraldus'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succesfully execute proc rekl.sp_koosta_korraldus', async () => {
+        let sql = `select * from rekl.sp_koosta_korraldus($1, $2)`;
+        let params = {
+            id: globalDocId
+        };
+        let returnValue = await db.queryDb(sql, [1, params]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+
     it('should exists proc rekl.sp_calc_intress', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_calc_intress'`;
         let returnValue = await db.queryDb(sql, []);
