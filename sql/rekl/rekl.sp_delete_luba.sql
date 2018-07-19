@@ -10,14 +10,17 @@ DECLARE
   v_seotud_docs RECORD;
   luba_history  JSONB;
   luba1_history JSONB;
+  dekl_history JSONB;
   new_history   JSONB;
 BEGIN
 
   SELECT
     d.*,
-    u.ametnik AS user_name
+    u.ametnik AS user_name,
+    l.staatus as rekl_staatus
   INTO v_doc
   FROM docs.doc d
+    inner join rekl.luba l on l.parentid = d.id
     LEFT OUTER JOIN ou.userid u ON u.id = user_id
   WHERE d.id = doc_id;
 
@@ -62,7 +65,7 @@ BEGIN
 
   -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя кроме проводки)
 
-  IF exists(
+  IF v_doc.rekl_staatus is not null and  not empty(v_doc.rekl_staatus)  and exists(
       SELECT d.id
       FROM docs.doc d
         INNER JOIN libs.library l ON l.id = d.doc_type_id
@@ -95,17 +98,28 @@ BEGIN
                                                   INNER JOIN rekl.luba l ON l.id = l1.parentid
                                                 WHERE l.parentid = doc_id) row));
 
+  dekl_history = jsonb_build_array(array(SELECT row_to_json(row.*)
+                                          FROM (SELECT t.*
+                                                FROM rekl.toiming t
+                                                WHERE t.lubaid = doc_id) row));
+
   SELECT row_to_json(row)
   INTO new_history
   FROM (SELECT
           now()           AS deleted,
           v_doc.user_name AS user,
           luba_history    AS luba,
-          luba1_history   AS luba1) row;
+          luba1_history   AS luba1,
+          dekl_history as toiming
+       ) row;
+
+
+  DELETE FROM rekl.toiming
+  WHERE lubaid = doc_id;
 
 
   DELETE FROM rekl.luba
-  WHERE parentid = doc_id; 
+  WHERE parentid = doc_id;
 
   -- Установка статуса ("Удален")  и сохранение истории
 
@@ -129,3 +143,10 @@ BEGIN
 
 END;
 $$;
+
+
+/*
+select error_code, result, error_message from rekl.sp_delete_luba(1, 294175)
+select * from docs.doc where id =  294175
+
+ */

@@ -321,7 +321,7 @@ describe('dok. type Luba tests', function () {
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         let err = returnValue.error_code;
-        expect(err).toBe(3); // ei saa
+        expect(result).toBe(1);
 
     });
 
