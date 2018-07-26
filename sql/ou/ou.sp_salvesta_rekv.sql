@@ -24,6 +24,10 @@ DECLARE
   doc_juht     TEXT = doc_data ->> 'juht';
   doc_raama    TEXT = doc_data ->> 'raama';
   doc_muud     TEXT = doc_data ->> 'muud';
+  doc_ftp      TEXT = doc_data ->> 'ftp';
+  doc_login    TEXT = doc_data ->> 'login';
+  doc_parool   TEXT = doc_data ->> 'parool';
+
   doc_details  JSON = doc_data ->> 'gridData';
   detail_id    INTEGER;
   json_object  JSONB;
@@ -123,6 +127,16 @@ BEGIN
     aa_history = ('{"aa":' || aa_history :: TEXT || '}') :: JSON;
     new_history = new_history :: JSONB || aa_history :: JSONB;
 
+    -- rekl ftp andmed
+    json_object = (SELECT to_jsonb(row)
+                   FROM (SELECT
+                           doc_ftp    AS ftp,
+                           doc_login  AS login,
+                           doc_parool AS parool) row);
+
+    json_object = (SELECT to_jsonb(row)
+                   FROM (SELECT json_object::jsonb AS reklftp) row);
+
     UPDATE ou.rekv
     SET
       parentid = doc_parentid,
@@ -136,7 +150,8 @@ BEGIN
       juht     = doc_juht,
       raama    = doc_raama,
       muud     = doc_muud,
-      ajalugu  = new_history
+      ajalugu  = new_history,
+      properties = coalesce(properties::jsonb,'{}'::jsonb) || json_object::jsonb
     WHERE id = doc_id
     RETURNING id
       INTO rekv_id;
@@ -152,13 +167,9 @@ BEGIN
              json_object) AS x(id TEXT, parentid INTEGER, arve TEXT, nimetus TEXT, default_ INTEGER, kassa INTEGER, pank INTEGER,
          konto TEXT, tp TEXT, muud TEXT);
 
-    RAISE NOTICE 'json_to_record %, json_object %', json_record, json_object;
-
     IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
     THEN
 
-
-      RAISE NOTICE 'json_record.id %', json_record.id;
 
       INSERT INTO ou.aa (parentid, arve, nimetus, default_, kassa, pank, konto, tp, muud)
       VALUES (json_record.parentid, json_record.arve, json_record.nimetus, json_record.default_, json_record.kassa,
@@ -166,9 +177,7 @@ BEGIN
       RETURNING id
         INTO detail_id;
 
-      RAISE NOTICE 'detail_id %', detail_id;
     ELSE
-      RAISE NOTICE 'update json_record.id %', json_record.id;
       UPDATE ou.aa
       SET
         arve     = json_record.arve,
@@ -179,7 +188,7 @@ BEGIN
         konto    = json_record.konto,
         tp       = json_record.tp,
         muud     = json_record.muud
-      WHERE id = json_record.id::INTEGER
+      WHERE id = json_record.id :: INTEGER
       RETURNING id
         INTO detail_id;
     END IF;
@@ -187,7 +196,6 @@ BEGIN
     -- add new id into array of ids
     ids = array_append(ids, detail_id);
   END LOOP;
-  RAISE NOTICE 'END LOOP';
 
   -- delete record which not in json
 
@@ -211,6 +219,6 @@ GRANT EXECUTE ON FUNCTION ou.sp_salvesta_rekv(JSON, INTEGER, INTEGER) TO dbkasut
 GRANT EXECUTE ON FUNCTION ou.sp_salvesta_rekv(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT ou.sp_salvesta_rekv('{"id":1,"data":{"aadress":null,"doc_type_id":"REKV","email":null,"faks":null,"haldus":null,"id":1,"juht":null,"kbmkood":null,"muud":null,"nimetus":"test asutus","parentid":4,"regkood":"10000","tel":null,"userid":1,"gridData":[{"arve":"kassa1","default_":1,"id":1,"kassa":1,"kassapank":0,"konto":"111","muud":null,"nimetus":"Kassa1","pank":0,"parentid":1,"saldo":0,"tp":null}]}}', 1, 1);
+SELECT ou.sp_salvesta_rekv('{"id":1,"data":{"aadress":null,"doc_type_id":"REKV","email":null,"faks":null,"haldus":null,"id":1,"juht":null,"kbmkood":null,"muud":null,"nimetus":"test asutus","parentid":4,"regkood":"10000","tel":null,"userid":1,"ftp":"ftp.avpsoft.ee","login":"login","parool":"pwd","gridData":[{"arve":"kassa1","default_":1,"id":1,"kassa":1,"kassapank":0,"konto":"111","muud":null,"nimetus":"Kassa1","pank":0,"parentid":1,"saldo":0,"tp":null}]}}', 1, 1);
 
 */

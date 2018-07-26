@@ -29,7 +29,9 @@ CREATE VIEW cur_toiming
         THEN 'green'
       WHEN t.tyyp = 'DEKL' AND t.staatus IS NOT NULL AND t.saadetud IS NULL AND t.tahtaeg > current_date :: DATE
         THEN 'red'
-      ELSE 'white' END :: VARCHAR(20)                                               AS color
+      ELSE 'white' END :: VARCHAR(20)                                               AS color,
+      ((t.lisa->>'failid')::jsonb ->>'fail')::varchar(254) as fail,
+      ((t.lisa->>'failid')::jsonb ->>'tyyp')::varchar(20) as storage_type
     FROM docs.doc d
       INNER JOIN rekl.toiming t ON t.parentid = d.id
       INNER JOIN rekl.luba l ON t.lubaid = l.parentid

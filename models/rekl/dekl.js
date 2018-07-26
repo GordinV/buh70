@@ -40,7 +40,11 @@ const Toiming = {
                       dp.selg :: VARCHAR(120)                                        AS dokprop,
                       coalesce(jid.number, 0) :: INTEGER                             AS lausend,
                       rekl.fnc_dekl_jaak(t.ID) as jaak,
-                      t.lisa->>'dekltasud'::text as tasud                      
+                      t.lisa->>'dekltasud'::text as tasud,
+                      t.lisa->>'failid'::text as failid,
+                      ((lisa->>'failid')::jsonb)->>'fail' as fail, 
+                      ((lisa->>'failid')::jsonb)->>'tyyp' as storage_tyyp
+                      
                     FROM docs.doc d
                       INNER JOIN rekl.toiming t ON t.parentId = d.id
                       INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
@@ -80,7 +84,10 @@ const Toiming = {
                      null::varchar(20) as konto, 
                      null::integer as lausend,
                      0::numeric as jaak,
-                     null::text as tasud                   
+                     null::text as tasud,
+                     null::text as failid,
+                     null::text as fail,
+                     null::text as storage_type                  
                     FROM libs.library t,
                       libs.library s,
                       (SELECT *

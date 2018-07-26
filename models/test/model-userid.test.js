@@ -8,12 +8,19 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-describe('dok. type Rekv tests', function () {
+describe('dok. type Userid tests', function () {
     let globalDocId = 0; // для сохранения ид документа
+    let params = {
+        id: 0, data: {
+            kasutaja:'test_2',
+            ametnik: 'Test ',
+            is_kasutaja: true
+        }
+    };
 
-    const doc = require('../ou/rekv'),
-        docTypeId = 'REKV'.toLowerCase(),
-        modelForExport = 'ou/rekv';
+    const doc = require('../ou/userid'),
+        docTypeId = 'USERID'.toLowerCase(),
+        modelForExport = 'ou/userid';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -35,7 +42,7 @@ describe('dok. type Rekv tests', function () {
 
     it (`${docTypeId} must have fields in js model`, ()=> {
         expect(doc.select).toBeDefined();
-        expect(doc.selectAsLibs).toBeDefined();
+//        expect(doc.selectAsLibs).toBeDefined();
         expect(doc.returnData).toBeDefined();
         expect(doc.requiredFields).toBeDefined();
         expect(doc.saveDoc).toBeDefined();
@@ -48,14 +55,14 @@ describe('dok. type Rekv tests', function () {
         expect(xmlModel).toBeDefined();
         let modelElements = xmlModel.elements[0];
         expect(_.find(modelElements.elements, {name:'select'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'selectAsLibs'})).toBeDefined();
+  //      expect(_.find(modelElements.elements, {name:'selectAsLibs'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'saveDoc'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'deleteDoc'})).toBeDefined();
         let grid = _.find(modelElements.elements, {name:'grid'});
         expect(grid).toBeDefined();
         expect(_.find(grid.elements,{name:'alias'})).toBeDefined();
         let gridAlias = _.find(grid.elements,{name:'alias'});
-        expect(_.find(gridAlias.elements,{text:'curRekv'})).toBeDefined();
+        expect(_.find(gridAlias.elements,{text:'curUserid'})).toBeDefined();
     });
 
     it('should have copy in buh62 folder', (done) => {
@@ -72,8 +79,8 @@ describe('dok. type Rekv tests', function () {
         });
     });
 
-    it('doc type library should contain REKV doc.type', async()=> {
-        let sql = `select id from libs.library where kood = 'REKV' and  library = 'DOK' limit 1`;
+    it('doc type library should contain USERID doc.type', async()=> {
+        let sql = `select id from libs.library where kood = 'USERID' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -89,12 +96,69 @@ describe('dok. type Rekv tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should succefully execute sql request', async()=> {
-        let sql = doc.select[0].sqlAsNew;
+    it('should exists ou.sp_salvesta_userid', async()=> {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_userid'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succefully execute ou.sp_salvesta_userid', async()=> {
+        let sql = doc.saveDoc;
+        let returnValue = await db.queryDb(sql, [params, 1,1]);
+        expect(returnValue).toBeDefined();
+        globalDocId  = returnValue.data[0].id;
+        expect(globalDocId).toBeGreaterThan(0);
+        // should be system role
+        sql = ` SELECT 1
+        FROM pg_roles
+        WHERE rolname = '${params.data.kasutaja}'`;
+
+        returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        expect(returnValue.result).toBe(1);
+    });
+
+    it ('should select data', async() => {
+        let sql = doc.select[0].sql;
+        let returnValue = await db.queryDb(sql, [globalDocId,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it ('should select grid data', async() => {
+        let sql = doc.grid.sqlString;
         let returnValue = await db.queryDb(sql, [1,1]);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists ou.sp_delete_userid', async()=> {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_userid'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succefully execute ou.sp_delete_userid', async()=> {
+        let sql = doc.deleteDoc;
+        let returnValue = await db.queryDb(sql, [1,globalDocId]);
+        expect(returnValue).toBeDefined();
+        expect(returnValue.result).toBe(1);
+        // should not be system role
+        sql = ` SELECT 1
+        FROM pg_roles
+        WHERE rolname = '${params.data.kasutaja}'`;
+
+        returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        expect(returnValue.error_code).toBe(0);
     });
 
 });

@@ -31,6 +31,8 @@ DECLARE
   doc_saadetud     DATE = doc_data ->> 'saadetud';
   doc_staatus      DOK_STATUS = doc_data ->> 'staatus';
   doc_deklid       INTEGER = doc_data ->> 'deklid';
+  doc_failid       TEXT = doc_data ->> 'failid';
+  l_jsonb          JSONB;
   new_history      JSONB;
   docs             INTEGER [];
   is_import        BOOLEAN = data ->> 'import';
@@ -143,6 +145,18 @@ BEGIN
     history    = coalesce(history, '[]') :: JSONB || new_history
   WHERE id = doc_lubaid;
 
+
+  IF doc_failid IS NOT NULL
+  THEN
+    -- добавим ссылку на ftp fail
+    SELECT row_to_json(row)
+    INTO l_jsonb
+    FROM (SELECT doc_failid AS failid) row;
+
+    UPDATE rekl.toiming
+    SET lisa = coalesce(lisa :: JSONB, '{}' :: JSONB) || l_jsonb :: JSONB
+    WHERE parentid = doc_id;
+  END IF;
 
   -- вставка в таблицы документа
   RETURN doc_id;

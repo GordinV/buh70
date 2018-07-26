@@ -16,6 +16,7 @@ BEGIN
 
   SELECT
     u.id,
+    u.kasutaja,
     u.ametnik AS user_name
   INTO v_doc
   FROM ou.userid u
@@ -26,22 +27,22 @@ BEGIN
     error_code = 6;
     error_message = 'Dokument ei leitud, docId: ' || coalesce(doc_id, 0) :: TEXT;
     result = 0;
-    raise notice 'error_message %',error_message;
+    RAISE NOTICE 'error_message %', error_message;
     RETURN;
 
   END IF;
 
   IF NOT exists(SELECT id
-                FROM ou.userid u
+                FROM ou.cur_userid u
                 WHERE id = user_id
-                      AND not empty(u.admin))
+                      AND u.is_admin :: BOOLEAN)
   THEN
 
     error_code = 5;
     error_message = 'Kasutaja ei leitud, or puudub õigused: ' || ', userId:' ||
                     coalesce(user_id, 0) :: TEXT;
     result = 0;
-    raise notice 'error_message %',error_message;
+    RAISE NOTICE 'error_message %', error_message;
     RETURN;
 
   END IF;
@@ -50,14 +51,17 @@ BEGIN
   SELECT row_to_json(row)
   INTO new_history
   FROM (SELECT
-          now()    AS deleted,
+          now()                         AS deleted,
           ltrim(rtrim(v_doc.user_name)) AS user) row;
 
   UPDATE ou.userid
   SET
-    status = array_position((enum_range(NULL :: DOK_STATUS)), 'deleted'),
+    status  = array_position((enum_range(NULL :: DOK_STATUS)), 'deleted'),
     ajalugu = new_history
   WHERE id = doc_id;
+
+  -- drop system account
+  EXECUTE 'DROP USER IF EXISTS ' || v_doc.kasutaja;
 
   result = 1;
   RETURN;
@@ -75,5 +79,5 @@ COST 100;
 GRANT EXECUTE ON FUNCTION ou.sp_delete_userid(INTEGER, INTEGER) TO dbadmin;
 
 /*
-select error_code, result, error_message from eelarve.sp_delete_eelarve(1, 18)
+select error_code, result, error_message from ou.sp_delete_userid(1, 5690)
 */

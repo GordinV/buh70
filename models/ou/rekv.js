@@ -15,7 +15,10 @@ module.exports = {
                   r.kbmkood,
                   r.muud,
                   r.regkood,
-                  r.tel
+                  r.tel,
+                  ((r.properties->>'reklftp')::jsonb->>'ftp')::varchar(120) as ftp,
+                  ((r.properties->>'reklftp')::jsonb->>'login')::varchar(120) as login,
+                  ((r.properties->>'reklftp')::jsonb->>'parool')::varchar(120) as parool                  
                 FROM ou.rekv r 
                 where id = $1`,
         sqlAsNew: `SELECT
@@ -33,7 +36,10 @@ module.exports = {
                       NULL :: VARCHAR(254) AS email,
                       NULL :: VARCHAR(254) AS juht,
                       NULL :: VARCHAR(254) AS raama,
-                      NULL :: TEXT         AS muud`,
+                      NULL :: TEXT         AS muud,
+                     NULL :: VARCHAR(120) AS ftp,
+                     NULL :: VARCHAR(120) AS login,
+                     NULL :: VARCHAR(120) AS parool`,
         query: null,
         multiple: false,
         alias: 'row',
