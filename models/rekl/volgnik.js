@@ -1,24 +1,23 @@
 'use strict';
 
-const Saadetud = {
+const Volgnik = {
     select: [],
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "25px"},
             {id: "regkood", name: "Kood", width: "200px"},
             {id: "nimetus", name: "Nimetus", width: "400px"},
-            {id: "summa", name: "Summa", width: "100px"},
-            {id: "number", name: "Number", width: "100px"},
-            {id: "tahtaeg", name: "Tähtaeg", width: "100px"},
-            {id: "jaak", name: "Jääk", width: "100px"}
+            {id: "jaak", name: "Jääk", width: "100px"},
+            {id: "volg", name: "Võlg", width: "100px"},
+            {id: "intress", name: "Intress", width: "100px"}
         ],
         sqlString: `SELECT
                           d.*
-                        FROM cur_saadetud d
+                        FROM cur_volgnik d
                         WHERE d.rekvId = $1
                               AND coalesce(docs.usersRigths(d.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
-        alias: 'curSaadetud'
+        alias: 'curVolgnik'
     },
     returnData: null,
     saveDoc: null,
@@ -33,4 +32,4 @@ const Saadetud = {
 
 };
 
-module.exports = Saadetud;
+module.exports = Volgnik;

@@ -8,13 +8,13 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-describe('dok. type Dekl, Saadetud tests', function () {
+describe('dok. type Dekl, Volgnikud tests', function () {
 
     let intressId;
 
-    const doc = require('../rekl/saadetud'),
-        docTypeId = 'DEKL'.toLowerCase(),
-        modelForExport = 'rekl/saadetud';
+    const doc = require('../rekl/volgnik'),
+        docTypeId = 'LUBA'.toLowerCase(),
+        modelForExport = 'rekl/volgnik';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -49,7 +49,7 @@ describe('dok. type Dekl, Saadetud tests', function () {
         expect(grid).toBeDefined();
         expect(_.find(grid.elements, {name: 'alias'})).toBeDefined();
         let gridAlias = _.find(grid.elements, {name: 'alias'});
-        expect(_.find(gridAlias.elements, {text: 'curSaadetud'})).toBeDefined();
+        expect(_.find(gridAlias.elements, {text: 'curVolgnik'})).toBeDefined();
         let executeCommand = _.find(modelElements.elements, {name: 'executeCommand'});
         expect(executeCommand).toBeDefined();
 
@@ -70,8 +70,8 @@ describe('dok. type Dekl, Saadetud tests', function () {
     });
 
 
-    it('should exists view cur_saadetud', async () => {
-        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_saadetud'`;
+    it('should exists view cur_volgnik', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_volgnik'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
