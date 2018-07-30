@@ -81,6 +81,7 @@ COST 100;
 GRANT EXECUTE ON FUNCTION rekl.sp_salvesta_ettemaksud(JSON, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION rekl.sp_salvesta_ettemaksud(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
+/*
 SELECT rekl.sp_salvesta_ettemaksud('{
   "id": 0,
   "data": {
@@ -91,3 +92,5 @@ SELECT rekl.sp_salvesta_ettemaksud('{
     "summa": 100
   }
 }', 1, 1);
+
+*/

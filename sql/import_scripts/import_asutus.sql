@@ -1,6 +1,7 @@
 DROP FUNCTION IF EXISTS import_asutus( );
+DROP FUNCTION IF EXISTS import_asutus(integer);
 
-CREATE OR REPLACE FUNCTION import_asutus()
+CREATE OR REPLACE FUNCTION import_asutus(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
 DECLARE
@@ -25,6 +26,7 @@ BEGIN
       THEN a.rekvid
     ELSE NULL END AS kehtivus
   FROM asutus a
+  WHERE (a.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP
 
