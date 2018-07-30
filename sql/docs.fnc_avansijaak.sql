@@ -9,7 +9,6 @@ RETURNS RECORD AS
 $BODY$
 
 DECLARE
-  tnId ALIAS FOR $1;
   lnTasuSumma  NUMERIC(14, 2) = 0;
   lnSumma      NUMERIC(14, 2) = 0;
   lnJaak       NUMERIC(14, 2) = 0;
@@ -31,7 +30,6 @@ BEGIN
     INNER JOIN docs.avans1 a1 ON a1.parentid = d.id
     LEFT OUTER JOIN libs.dokprop dp ON dp.id = a1.dokpropId
   WHERE d.id = tnId;
-
 
   SELECT v.kuurs
   INTO lnDokValuuta

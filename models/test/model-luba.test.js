@@ -126,7 +126,6 @@ describe('dok. type Luba tests', function () {
 
     });
 
-
     it('should save data', async () => {
         let data = {
             id: 0, data: {
@@ -159,7 +158,6 @@ describe('dok. type Luba tests', function () {
         globalDocId = returnValue.data[0].id;
         expect(returnValue.result).toBeGreaterThan(0);
     });
-
 
     it('should exists proc rekl.sp_muuda_lubastaatus', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_muuda_lubastaatus'`;

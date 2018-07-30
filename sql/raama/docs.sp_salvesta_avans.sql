@@ -31,13 +31,15 @@ DECLARE
   ids           INTEGER [];
   docs          INTEGER [];
   a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
+  is_import     BOOLEAN = data ->> 'import';
+
 BEGIN
 
   SELECT kasutaja
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import is null and userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;

@@ -6,6 +6,8 @@ const fs = require('fs');
 const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
+const db = require('./../../libs/db');
+
 
 describe('dok. type Avans tests', function () {
     let globalDocId = 0; // для сохранения ид документа
@@ -93,6 +95,15 @@ describe('dok. type Avans tests', function () {
             expect(fs.existsSync(targetFile)).toBeTruthy();
             done();
         });
+    });
+
+
+    it('should exists view cur_avans_tasud', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_avans_tasud'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
     });
 
 

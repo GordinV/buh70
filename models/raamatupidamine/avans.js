@@ -112,6 +112,15 @@ const Avans = {
             data: []
         },
         {
+            sql: `select $2 :: INTEGER    AS userid,
+                    a.* 
+                    from cur_avans_tasud a where parentid = $1`,
+            query: null,
+            multiple: true,
+            alias: 'curLaekumised',
+            data: []
+        },
+        {
             sql: `SELECT
                       rd.id,
                       $2 :: INTEGER   AS userid,

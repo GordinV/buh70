@@ -37,7 +37,7 @@ BEGIN
                FROM journal1
                WHERE parentid = j.id)
         AND (j.id = in_old_id or in_old_id is null)
-    and rekvid = 63
+--    and rekvid = 63
     order by j.kpv
   LIMIT ALL
   LOOP
