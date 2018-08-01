@@ -12,6 +12,7 @@ module.exports = {
                   r.faks,
                   r.haldus,
                   r.juht,
+                  r.raama,
                   r.kbmkood,
                   r.muud,
                   r.regkood,

@@ -16,7 +16,8 @@ const Journal = {
                  jid.number as number, 
                  j.rekvId, j.kpv as kpv, j.asutusid,  trim(j.dok) as dok, j.selg, j.muud, j.objekt,
                  (select sum(j1.summa) as summa from docs.journal1 as j1 where parentid = j.id) as summa, 
-                 asutus.regkood, trim(asutus.nimetus) as asutus 
+                 asutus.regkood, trim(asutus.nimetus) as asutus,
+                 u.ametnik as kasutaja
                  from docs.doc d 
                  inner join libs.library l on l.id = d.doc_type_id 
                  inner join docs.journal j on j.parentId = d.id 
@@ -41,7 +42,8 @@ const Journal = {
                     null::varchar(20) as objekt,
                     0::numeric as summa,  
                     null::varchar(20) as regkood, 
-                    null::varchar(254) as asutus 
+                    null::varchar(254) as asutus ,
+                    null::varchar(120) as kasutaja
                     from libs.library l,   libs.library s, ou.userid u
                     where l.library = 'DOK' and l.kood = 'JOURNAL'
                     and u.id = $2::integer 
@@ -95,7 +97,7 @@ const Journal = {
         ],
         sqlString: `select j.* 
             from cur_journal j
-            where j.rekvId = $1
+            where  j.rekvId in (select rekv_id from get_asutuse_struktuur($1))
             and coalesce(docs.usersRigths(j.id, 'select', $2),true)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curJournal'
