@@ -9,7 +9,7 @@ const path = require('path');
 const db = require('./../../libs/db');
 
 
-describe('dok. type Luba tests', function () {
+describe('dok. type Ettemaksud tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
     const doc = require('../rekl/ettemaksud'),
@@ -184,6 +184,16 @@ describe('dok. type Luba tests', function () {
 
     it('should exists proc rekl.sp_delete_ettemaksud', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_ettemaksud'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+
+    it('should exists proc rekl.sp_koosta_ettemaks', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_koosta_ettemaks'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;

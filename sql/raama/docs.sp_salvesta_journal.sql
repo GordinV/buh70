@@ -8,42 +8,44 @@ CREATE OR REPLACE FUNCTION docs.sp_salvesta_journal(
 $BODY$
 
 DECLARE
-  journal_id    INTEGER;
-  journal1_id   INTEGER;
-  userName      TEXT;
-  doc_id        INTEGER = data ->> 'id';
-  doc_type_kood TEXT = 'JOURNAL'/*data->>'doc_type_id'*/;
-  doc_type_id   INTEGER = (SELECT id
-                           FROM libs.library
-                           WHERE kood = doc_type_kood AND library = 'DOK'
-                           LIMIT 1);
-  doc_data      JSON = data ->> 'data';
-  doc_details   JSON = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
-  doc_asutusid  INTEGER = doc_data ->> 'asutusid';
-  doc_dok       TEXT = doc_data ->> 'dok';
-  doc_kpv       DATE = doc_data ->> 'kpv';
-  doc_selg      TEXT = doc_data ->> 'selg';
-  doc_muud      TEXT = doc_data ->> 'muud';
-  tcValuuta     TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
-  tnKuurs       NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
-  l_number      INTEGER = coalesce((SELECT max(number) + 1
-                                    FROM docs.journalid
-                                    WHERE rekvId = user_rekvid AND
-                                          aasta = (date_part('year' :: TEXT, doc_kpv) :: INTEGER)), 1);
-  json_object   JSON;
-  json_record   RECORD;
-  new_history   JSONB;
-  ids           INTEGER [];
-  a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
-  lnId          INTEGER;
-  is_import     BOOLEAN = data ->> 'import';
+  journal_id       INTEGER;
+  journal1_id      INTEGER;
+  userName         TEXT;
+  doc_id           INTEGER = data ->> 'id';
+  doc_type_kood    TEXT = 'JOURNAL'/*data->>'doc_type_id'*/;
+  doc_type_id      INTEGER = (SELECT id
+                              FROM libs.library
+                              WHERE kood = doc_type_kood AND library = 'DOK'
+                              LIMIT 1);
+  doc_data         JSON = data ->> 'data';
+  doc_details      JSON = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
+  doc_asutusid     INTEGER = doc_data ->> 'asutusid';
+  doc_dok          TEXT = doc_data ->> 'dok';
+  doc_kpv          DATE = doc_data ->> 'kpv';
+  doc_selg         TEXT = doc_data ->> 'selg';
+  doc_muud         TEXT = doc_data ->> 'muud';
+  tcValuuta        TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
+  tnKuurs          NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
+  l_number         INTEGER = coalesce((SELECT max(number) + 1
+                                       FROM docs.journalid
+                                       WHERE rekvId = user_rekvid AND
+                                             aasta = (date_part('year' :: TEXT, doc_kpv) :: INTEGER)), 1);
+  json_object      JSON;
+  json_params      JSON;
+  json_record      RECORD;
+  new_history      JSONB;
+  ids              INTEGER [];
+  a_dokvaluuta     TEXT [] = enum_range(NULL :: DOK_VALUUTA);
+  lnId             INTEGER;
+  is_import        BOOLEAN = data ->> 'import';
+  is_rekl_ettemaks BOOLEAN = FALSE;
 BEGIN
 
   SELECT kasutaja
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF is_import is null and userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -176,11 +178,6 @@ BEGIN
       END IF;
     END IF;
 
-    -- delete record which not in json
-
-    DELETE FROM docs.journal1
-    WHERE parentid = journal_id AND id NOT IN (SELECT unnest(ids));
-
     -- avans
     SELECT a1.parentid
     INTO lnId
@@ -199,10 +196,30 @@ BEGIN
 
       PERFORM fnc_avansijaak(lnId);
     END IF;
-
+    IF (json_record.kreedit = '200060' OR json_record.kreedit = '200095') AND doc_selg <> 'Alg.saldo kreedit'
+    THEN
+      is_rekl_ettemaks = TRUE;
+    END IF;
   END LOOP;
 
-  RETURN doc_id;
+  -- delete record which not in json
+
+  DELETE FROM docs.journal1
+  WHERE parentid = journal_id AND id NOT IN (SELECT unnest(ids));
+
+  -- rekl ettemaks
+
+  IF is_rekl_ettemaks
+  THEN
+    SELECT row_to_json(row)
+    INTO json_params
+    FROM (SELECT
+            doc_id AS id,
+            1      AS liik) row;
+    PERFORM rekl.sp_koosta_ettemaks(userid, json_params);
+  END IF;
+END LOOP;
+RETURN doc_id;
 
 END;$BODY$
 LANGUAGE plpgsql VOLATILE
