@@ -39,7 +39,10 @@ const Vorder = {
                   k.journalid,
                   coalesce(jid.number,0)::integer as lausnr,
                    coalesce((dp.details :: JSONB ->> 'konto'),'') :: VARCHAR(20)                                      AS konto,
-                   dp.selg::varchar(120)                                                                              as dokprop
+                   dp.selg::varchar(120)                                                                              as dokprop,
+                  (SELECT sum(summa)
+                   FROM docs.korder2 k2
+                   WHERE parentid = k.id) :: NUMERIC(12, 2) AS kokku
 
                 FROM docs.doc d
                   INNER JOIN libs.library l ON l.id = d.doc_type_id
@@ -84,7 +87,8 @@ const Vorder = {
                       0::integer                                      as journalid,
                       NULL::integer as lausnr,
                       null::varchar(120) as  dokprop,
-                      null::varchar(20) as konto
+                      null::varchar(20) as konto,
+                      0::numeric as kokku                    
                     FROM libs.library l,
                       ou.userid u,
                       libs.library s,
@@ -111,13 +115,12 @@ const Vorder = {
                   trim(n.nimetus) AS nimetus,
                   trim(n.uhik)    AS uhik,
                   k1.*,
-                  coalesce(v.valuuta,'EUR')::varchar(20) as valuuta,
-                  coalesce(v.kuurs,1)::numeric(12,4) as kuurs
+                  'EUR'::varchar(20) as valuuta,
+                  1::numeric(12,4) as kuurs
                 FROM docs.korder2 AS k1
                   INNER JOIN docs.korder1 k ON k.id = k1.parentId
                   INNER JOIN libs.nomenklatuur n ON n.id = k1.nomid
                   INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                  left outer join docs.dokvaluuta1 v on (k1.id = v.dokid and v.dokliik = 11)                 
                   WHERE k.parentid = $1`,
             query: null,
             multiple: true,

@@ -56,7 +56,8 @@ function createXMLmodel(modelForExport, callback) {
             generateJournal: {
                 sql:  _.indexOf(keys, 'generateJournal')> -1 ? model.generateJournal.command : null,
                 alias: _.indexOf(keys, 'generateJournal')> -1 ? model.generateJournal.alias : null
-            }
+            },
+            print:  _.indexOf(keys, 'print')> -1 ? model.print : ''
 
         }
     };

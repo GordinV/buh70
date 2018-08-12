@@ -6,6 +6,7 @@ const fs = require('fs');
 const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
+const db = require('./../../libs/db');
 
 describe('dok. type PV_KAART tests', function () {
     let globalDocId = 0; // для сохранения ид документа

@@ -2,7 +2,9 @@ module.exports = {
     selectAsLibs: `select * from cur_pohivara    l
         where  (l.rekvId = $1 or l.rekvid is null)`,
     select: [{
-        sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, 
+        sql: `select 
+                l.id, 
+                l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, 
                 $2::integer as userid, 'POHIVARA' as doc_type_id,
                 (l.properties::jsonb ->> 'gruppid')::integer as gruppid,
                 (l.properties::jsonb ->> 'konto')::varchar(20) as konto,
@@ -17,10 +19,16 @@ module.exports = {
                 (l.properties::jsonb ->> 'rentnik')::text as rentnik,
                 (l.properties::jsonb ->> 'liik')::text as liik,
                 (l.properties::jsonb ->> 'mahakantud')::date as mahakantud,
-                coalesce(v.valuuta,'EUR')::varchar(20) as valuuta,
-                coalesce(v.kuurs,1)::numeric(12,2) as kuurs                
+                'EUR'::varchar(20) as valuuta,
+                1::numeric(12,2) as kuurs,
+                g.kood                                                                 AS grupp, 
+                a.nimetus                                                              AS vastisik,
+                (SELECT sum(summa)
+                   FROM docs.pv_oper po
+                   WHERE po.pv_kaart_id = l.id AND liik = 2)                             AS arv_kulum                            
                 from libs.library l 
-                left outer join docs.dokvaluuta1 v on (l.id = v.dokid and v.dokliik = 18)
+                  LEFT OUTER JOIN libs.library g ON g.id = (l.properties :: JSONB ->> 'gruppid') :: INTEGER
+                  LEFT OUTER JOIN libs.asutus a ON a.id = (l.properties :: JSONB ->> 'vastisikid') :: INTEGER
                 where l.id = $1`,
         sqlAsNew: `SELECT
                       $1 :: INTEGER       AS id,
@@ -46,6 +54,9 @@ module.exports = {
                     null::date as mahakantud,
                     'EUR'::varchar(20) as valuuta,
                     1::numeric(12,2) as kuurs,
+                    NULL::text as grupp,
+                    null::text as vastisik,
+                    0::numric as arv_kulum,
                     NULL :: TEXT AS rentnik`,
         query: null,
         multiple: false,
@@ -55,7 +66,8 @@ module.exports = {
         sql: `select $2 :: INTEGER       AS userid, 
             $1 as pv_id,
             po.*
-            from cur_pv_oper po`, //$1 doc_id, $2 userId
+            from cur_pv_oper po
+            where po.pv_kaart_id = $1`, //$1 doc_id, $2 userId
         multiple: true,
         alias: 'details',
         data: []

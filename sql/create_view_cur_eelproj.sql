@@ -16,7 +16,7 @@ CREATE VIEW cur_eelproj AS
     l.nimetus                                           AS cstaatus
   FROM eelarve.eelproj e
     INNER JOIN ou.rekv rekv ON e.rekvid = Rekv.id
-    LEFT OUTER JOIN libs.library l ON l.kood::text = e.status::text
+    LEFT OUTER JOIN libs.library l ON l.kood::text = e.status::text and l.library = 'STATUS'
     LEFT OUTER JOIN ou.userid u ON e.kinnitaja = u.id;
 
 GRANT SELECT ON TABLE cur_eelproj TO eelaktsepterja;

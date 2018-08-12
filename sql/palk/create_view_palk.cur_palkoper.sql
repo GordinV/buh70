@@ -20,11 +20,12 @@ CREATE VIEW palk.cur_palkoper AS
     p.muud,
     a.regkood                                                                                        AS isikukood,
     p.lepingid,
-    p.journalid as lausend_id,
+    p.journalid                                                                                      AS lausend_id,
     a.nimetus                                                                                        AS isik,
     a.id                                                                                             AS isikid,
     coalesce(jid.number, 0)                                                                          AS journalid,
     t.osakondid,
+    o.kood                                                                                           AS osakond,
     lib.kood,
     lib.nimetus,
     ((enum_range(NULL :: PALK_OPER_LIIK)) [CASE (lib.properties :: JSONB ->> 'liik') :: INTEGER
@@ -52,6 +53,7 @@ CREATE VIEW palk.cur_palkoper AS
     INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
     INNER JOIN palk.tooleping t ON p.lepingid = t.id
     INNER JOIN libs.asutus a ON t.parentid = a.id
+    LEFT OUTER JOIN libs.library o ON o.id = t.osakondid
     LEFT OUTER JOIN docs.doc dd ON p.journalid = dd.id
     LEFT OUTER JOIN docs.journal j ON j.parentid = dd.id
     LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id

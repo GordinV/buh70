@@ -43,7 +43,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
   IF is_import IS NULL AND userName IS NULL
   THEN
@@ -216,9 +216,10 @@ BEGIN
     FROM (SELECT
             doc_id AS id,
             1      AS liik) row;
+
     PERFORM rekl.sp_koosta_ettemaks(userid, json_params);
   END IF;
-END LOOP;
+
 RETURN doc_id;
 
 END;$BODY$

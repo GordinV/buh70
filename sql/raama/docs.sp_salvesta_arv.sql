@@ -58,8 +58,6 @@ BEGIN
     doc_number = docs.sp_get_number(user_rekvid, 'ARV', YEAR(doc_kpv), tnDokLausId);
   END IF;
 
-  RAISE NOTICE 'data.doc_details: %, jsonb_array_length %, data: %', doc_details, json_array_length(doc_details), data;
-
   SELECT kasutaja
   INTO userName
   FROM userid u
@@ -99,10 +97,6 @@ BEGIN
             doc_muud, doc_objektid, doc_objekt, tnDokLausId)
     RETURNING id
       INTO arv_id;
-
-    INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-    VALUES (arv_id, array_position(a_dokvaluuta, 'arv'), tcValuuta, tnKuurs);
-
 
   ELSE
     -- history
@@ -158,7 +152,6 @@ BEGIN
          summa NUMERIC(14, 4), kood TEXT, nimetus TEXT, kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT,
          valuuta TEXT, kuurs NUMERIC(14, 4), konto TEXT);
 
-    RAISE NOTICE 'json_record: %, nomid %', json_record, json_record.nomid;
     IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
     THEN
       INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, summa, kood1, kood2, kood3, kood4, kood5, konto)
@@ -176,10 +169,6 @@ BEGIN
       )
       RETURNING id
         INTO arv1_id;
-
-      -- valuuta
-      INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-      VALUES (arv1_id, array_position(a_dokvaluuta, 'arv1'), tcValuuta, tnKuurs);
 
       -- add new id into array of ids
       ids = array_append(ids, arv1_id);
@@ -206,15 +195,6 @@ BEGIN
       -- add new id into array of ids
       ids = array_append(ids, arv1_id);
 
-      IF NOT exists(SELECT id
-                    FROM docs.dokvaluuta1
-                    WHERE dokid = arv1_id AND dokliik = array_position(a_dokvaluuta, 'arv1'))
-      THEN
-        -- if record does
-        INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-        VALUES (arv1_id, array_position(a_dokvaluuta, 'arv1'), tcValuuta, tnKuurs);
-
-      END IF;
     END IF;
 
   END LOOP;
@@ -239,18 +219,6 @@ BEGIN
     summa = coalesce(doc_summa, 0)
   WHERE parentid = doc_id;
 
-
-  /*
-  perform docs.sp_updatearvjaak(arv_id, date());
-    perform sp_updatearvjaak(tnParentId, date());
-
-  -- Ladu
-
-    if (select count(id) from ladu_grupp where ladu_grupp.nomId = tnnomId) > 0 then
-      select rekvid into lnRekvid from arv where id = tnParentid;
-      perform sp_recalc_ladujaak(lnRekvId, tnNomId, 0);
-    end if;
-  */
   RETURN doc_id;
 END;$BODY$
 LANGUAGE plpgsql VOLATILE

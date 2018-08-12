@@ -44,8 +44,10 @@ module.exports = {
             {id: "konto", name: "Konto", width: "25%"}
         ],
         sqlString: `select l.id, l.kood, l.nimetus,
-            coalesce((l.properties::JSONB ->> 'konto'),'')::varchar(20) as konto,  
-            $2::integer as userId
+            coalesce((l.properties::JSONB ->> 'konto'),'')::varchar(20) as konto,
+            coalesce((l.properties::JSONB ->> 'kulum_konto'),'')::varchar(20) as  kulum_konto, 
+            $2::integer as userId,
+            l.muud
             from libs.library l
             where l.library = 'PVGRUPP'
             and l.status <> 3

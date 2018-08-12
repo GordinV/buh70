@@ -11,7 +11,7 @@ CREATE VIEW cur_taotlused
       t.number,
       t.aasta,
       t.kuu,
-      t.status,
+      t.status as status,
       t.allkiri,
       coalesce(t1.kood1,'')::varchar(20) as kood1,
       coalesce(t1.kood2,'')::varchar(20) as kood2,

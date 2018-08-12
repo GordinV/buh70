@@ -62,7 +62,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = v_arv.rekvId AND u.id = userId;
   IF userName IS NULL
   THEN
@@ -357,9 +357,7 @@ BEGIN
       -- direct ref to journal
       UPDATE docs.arv
       SET
-        journalId = (SELECT parentId
-                     FROM docs.journal
-                     WHERE parentid = result)
+        journalId = result
       WHERE id = v_arv.id;
 
 
@@ -382,11 +380,11 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_arv(INTEGER, INTEGER) TO dbpeakasutaj
 
 SELECT error_code, result, error_message from docs.gen_lausend_arv(121, 1)
 
-select kasutaja from userid u 
+select kasutaja from userid u
 	where u.rekvid = v_arv.rekvId and u.id = 1
 select * from userid
 
-select * from docs.arv where id = 
+select * from docs.arv where id =
 
 select array(select distinct unnest(array[1,1,2]))
 
@@ -400,8 +398,8 @@ select * from docs.arv where parentid = 75
 
 update docs.arv set doklausid = 1
 
-select * from libs.library where library = 'DOK' 
+select * from libs.library where library = 'DOK'
 
-select * from docs.arv 
+select * from docs.arv
 
 */

@@ -1,7 +1,13 @@
 module.exports = {
     select: [{
-        sql: `select n.*, $2::integer as userid, 'VARA' as doc_type_id,
-                coalesce(v.valuuta,'EUR')::varchar(20) as valuuta, coalesce(v.kuurs,1) as kuurs,
+        sql: `select n.*, $2::integer as userid, 
+                'VARA' as doc_type_id,
+                'EUR'::varchar(20) as valuuta, 1 as kuurs,
+                n.uhik,
+                n.hind,
+                n.ulehind,
+                n.dok,
+                n.kogus,
                 (n.properties::jsonb ->>'gruppid')::integer as gruppid,
                 (n.properties::jsonb ->>'vat')::text as vat,
                 (n.properties::jsonb ->>'konto')::text as konto,
@@ -16,13 +22,12 @@ module.exports = {
                 (n.properties::jsonb ->>'rasv')::numeric as rasv,                
                 (n.properties::jsonb ->>'vailkaine')::numeric as vailkaine              
                 from libs.nomenklatuur n 
-                left outer join docs.dokvaluuta1 v on v.dokliik = 17 and v.dokid = n.id
                 where n.id = $1`,
         sqlAsNew: `select  $1::integer as id , $2::integer as userid, 'VARA' as doc_type_id,
             null::text as  kood,
             null::integer as rekvid,
             null::text as nimetus,
-            'LADU'::text as dok,
+            'VARA'::text as dok,
             null::text as uhik,
             0::numeric as hind,
             0::numeric as ulehind,
@@ -71,8 +76,11 @@ module.exports = {
             {id: "nimetus", name: "Nimetus", width: "35%"},
             {id: "grupp", name: "Grupp", width: "30%"}
         ],
-        sqlString: `select n.id, coalesce(n.kood,'') as kood, coalesce(n.nimetus,'') as nimetus,  $2::integer as userId, 
-            l.nimetus as grupp
+        sqlString: `select n.id, coalesce(n.kood,'') as kood, 
+            coalesce(n.nimetus,'') as nimetus,  $2::integer as userId, 
+            l.nimetus as grupp,
+            n.hind,
+            n.uhik
             from libs.nomenklatuur n
             inner join libs.library l on l.id = (n.properties::jsonb ->>'gruppid')::integer 
             where (n.rekvId = $1 or n.rekvid is null) and n.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя

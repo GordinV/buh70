@@ -17,7 +17,10 @@ const Arv = {
                  trim(a.number) as number, a.summa, a.rekvId, a.liik, a.operid, a.kpv as kpv, 
                  a.asutusid, a.arvId, trim(a.lisa) as lisa, a.tahtaeg as tahtaeg, a.kbmta, a.kbm, a.summa, 
                  a.tasud, trim(a.tasudok) as tasudok, a.muud, a.jaak, a.objektId, trim(a.objekt) as objekt, 
-                 asutus.regkood, trim(asutus.nimetus) as asutus, 
+                 asutus.regkood, 
+                 trim(asutus.nimetus) as asutus, 
+                 asutus.aadress,
+                 (asutus.properties->>'kmkr')::varchar(20) as kmkr,
                  a.doklausid, 
                  a.journalid, coalesce(jid.number,0)::integer as laus_nr,
                  coalesce((dp.details :: JSONB ->> 'konto'),'') :: VARCHAR(20)    AS konto,
@@ -64,6 +67,8 @@ const Arv = {
                   NULL :: VARCHAR(20)                                     AS objekt,
                   NULL :: VARCHAR(20)                                     AS regkood,
                   NULL :: VARCHAR(120)                                    AS asutus,
+                  NULL :: TEXT                                            AS aadress,                  
+                  NULL :: VARCHAR(120)                                    AS kmkr,  
                   NULL :: INTEGER                                         AS doklausid,
                   NULL :: VARCHAR(120)                                    AS dokprop,
                   NULL :: TEXT                                            AS konto,
@@ -85,7 +90,9 @@ const Arv = {
                  a1.kood1, a1.kood2, a1.kood3, a1.kood4, a1.kood5, a1.tunnus, a1.proj, a1.konto, a1.tp,
                  null::text as vastisik, null::text as formula,
                  coalesce(v.valuuta,'EUR')::varchar(20) as valuuta, coalesce(v.kuurs,1)::numeric as kuurs,
-                 coalesce((n.properties :: JSONB ->> 'vat'),'-')::varchar(20) as km 
+                 coalesce((n.properties :: JSONB ->> 'vat'),'-')::varchar(20) as km ,
+                 n.uhik,
+                 a1.muud 
                  from docs.arv1 as a1 
                  inner join docs.arv a on a.id = a1.parentId 
                  inner join libs.nomenklatuur n on n.id = a1.nomId 

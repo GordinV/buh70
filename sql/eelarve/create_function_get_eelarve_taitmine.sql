@@ -11,7 +11,6 @@ DECLARE
   doc_allikas  TEXT = params ->> 'allikas';
   doc_nimetus  TEXT = params ->> 'nimetus';
   doc_tunnus   TEXT = params ->> 'tunnus';
-  doc_valuuta  TEXT = params ->> 'valuuta';
   doc_summa1   NUMERIC(12, 2) = params ->> 'summa1';
   doc_summa2   NUMERIC(12, 2) = params ->> 'summa2';
   doc_kuu1     INTEGER = params ->> 'kuu1';
@@ -35,7 +34,7 @@ DECLARE
   l_table      TEXT = 'cur_kulude_taitmine d';
   l_rekvid     INTEGER = (SELECT rekv.id
                           FROM ou.rekv rekv
-                          WHERE rekv.parentid = 0
+                          WHERE coalesce(rekv.parentid,0) = 0
                           LIMIT 1);
 
   l_where      TEXT = ' where d.rekvid in (select rekv_id from get_asutuse_struktuur(' || l_rekvid :: TEXT || '))' ||
@@ -46,17 +45,18 @@ DECLARE
                           ' and tegev ilike ' || quote_literal(doc_tegev) ||
                           ' and allikas ilike ' || quote_literal(doc_allikas) ||
                           ' and nimetus ilike ' || quote_literal(doc_nimetus) ||
-                          ' and tunnus ilike ' || quote_ident(doc_tunnus) ||
-                          ' and doc_valuuta ilike ' || quote_ident(doc_valuuta) ||
+                          ' and tunnus ilike ' || quote_literal(doc_tunnus) ||
                           ' and summa >= ' || doc_summa1 :: TEXT ||
                           ' and summa <= ' || doc_summa2 :: TEXT ||
-                          ' kuu >= ' || doc_kuu1 :: TEXT ||
-                          ' kuu <= ' || doc_kuu2 :: TEXT ||
-                          ' aasta >= ' || doc_aasta1 :: TEXT ||
-                          ' aasta <= ' || doc_aasta2 :: TEXT
+                          ' and kuu >= ' || doc_kuu1 :: TEXT ||
+                          ' and kuu <= ' || doc_kuu2 :: TEXT ||
+                          ' and aasta >= ' || doc_aasta1 :: TEXT ||
+                          ' and aasta <= ' || doc_aasta2 :: TEXT
 
                       ELSE '' END;
 BEGIN
+  raise notice 'l_sql %',l_sql;
+
   CASE WHEN NOT is_kassa AND NOT is_arhiiv AND is_kulud
     THEN
       l_table = 'cur_kulude_taitmine d';

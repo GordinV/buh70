@@ -7,29 +7,31 @@ CREATE OR REPLACE VIEW cur_kulud AS
     e.rekvid,
     e.aasta,
     e.summa,
-    coalesce(e.kood1,'')::varchar(20) as kood1,
-    coalesce(e.kood2,'')::varchar(20) as kood2,
-    coalesce(e.kood3,'')::varchar(20) as kood3,
-    coalesce(e.kood4,'')::varchar(20) as kood4,
-    coalesce(e.kood5,'')::varchar(20) as kood5,
-    coalesce(e.tunnus,'')::varchar(20) as tunnus,
-    r.nimetus                                                                AS asutus,
+    coalesce(e.kood1, '') :: VARCHAR(20)         AS kood1,
+    coalesce(e.kood2, '') :: VARCHAR(20)         AS kood2,
+    coalesce(e.kood3, '') :: VARCHAR(20)         AS kood3,
+    coalesce(e.kood4, '') :: VARCHAR(20)         AS kood4,
+    coalesce(e.kood5, '') :: VARCHAR(20)         AS kood5,
+    coalesce(e.tunnus, '') :: VARCHAR(20)        AS tunnus,
+    r.nimetus                                    AS asutus,
     r.regkood,
     r.parentid,
-    coalesce(parent.nimetus, '')::varchar(254)                                          AS parasutus,
-    coalesce(parent.regkood, '')::varchar(20)                                           AS parregkood,
+    coalesce(parent.nimetus, '') :: VARCHAR(254) AS parasutus,
+    coalesce(parent.regkood, '') :: VARCHAR(20)  AS parregkood,
     e.kuu,
     e.kpv,
     e.muud,
     e.is_parandus,
-    coalesce(v.valuuta, 'EUR') :: CHARACTER VARYING AS valuuta,
-    coalesce(v.kuurs, 1 :: NUMERIC)                                     AS kuurs,
-    e.is_parandus as tun
+    'EUR' :: CHARACTER VARYING                   AS valuuta,
+    1 :: NUMERIC                                 AS kuurs,
+    e.is_parandus                                AS tun,
+    l.nimetus
   FROM eelarve.kulud e
     JOIN ou.rekv r ON e.rekvid = r.id
-    LEFT outer JOIN ou.rekv parent ON parent.id = r.parentid
-    LEFT outer JOIN docs.dokvaluuta1 v ON v.dokid = e.id AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'eelarve')
-  where e.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
+    LEFT OUTER JOIN ou.rekv parent ON parent.id = r.parentid
+    LEFT OUTER JOIN libs.library l ON l.kood = e.kood5 AND l.library = 'TULUDEALLIKAD'
+
+  WHERE e.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
 
 GRANT SELECT ON TABLE cur_kulud TO dbpeakasutaja;
 GRANT SELECT ON TABLE cur_kulud TO dbkasutaja;

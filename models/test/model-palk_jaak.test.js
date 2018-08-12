@@ -87,6 +87,31 @@ describe('dok. type Palk_jaak tests', function () {
 
     });
 
+    it('should succesfully execute view cur_palk_jaak', async () => {
+        let sql = doc.grid.sqlString + ' limit 100';
+        let returnValue = await db.queryDb(sql, [1,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+
+    it('should exists view print_palk_jaak', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'print_palk_jaak'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succesfully execute view palk.print_palk_jaak', async () => {
+        let sql = doc.print[0].sql + ' limit 100';
+        let returnValue = await db.queryDb(sql, [1,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
     it('should exists proc sp_update_palk_jaak', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_update_palk_jaak'`;
         let returnValue = await db.queryDb(sql, []);

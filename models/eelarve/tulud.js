@@ -72,7 +72,8 @@ const Tulud = {
             {id: "status", name: "Status", width: "100px"}
         ],
         sqlString: `SELECT
-                          d.*
+                          d.*,
+                          'TULUD'::varchar(20) as liik
                         FROM cur_tulud d
                         WHERE d.rekvId in (select rekv_id from get_asutuse_struktuur($1)) 
                               AND coalesce(docs.usersRigths(d.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя

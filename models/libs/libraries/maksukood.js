@@ -3,7 +3,7 @@ module.exports = {
         where  (l.rekvId = $1 or l.rekvid is null)`,
     select: [{
         sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.status, l.library,                
-                l.muud                 
+                l.muud, l.tun1, l.tun2, l.tun3. l.tun4. l.tun5                
                 from libs.library l 
                 where l.id = $1`,
         sqlAsNew: `select  $1::integer as id , 
@@ -14,6 +14,12 @@ module.exports = {
             null::text as nimetus,
             'PALK'::text as library,
             0::integer as status,
+            0 as tun1,
+            0 as tun2,
+            0 as tun3,
+            0 as tun4,
+            0 as tun5,
+            
             null::text as muud`,
         query: null,
         multiple: false,
@@ -37,7 +43,8 @@ module.exports = {
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
         sqlString: `select l.id, l.kood, l.nimetus,
-            $2::integer as userId
+            $2::integer as userId,
+            l.tun1, l.tun2, l.tun3, l.tun4, l.tun5
             from libs.library l
             where l.library = 'MAKSUKOOD'
             and l.status <> 3

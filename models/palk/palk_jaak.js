@@ -25,13 +25,24 @@ const PalkJaak = {
         row: {},
         relations: []
     },
+    print: [
+        {
+            sql: `SELECT
+                          p.*,
+                          $2 as user_id
+                        FROM palk.print_palk_jaak p
+                        WHERE p.rekvId in (select rekv_id from get_asutuse_struktuur($1))`,     // $1 всегда ид учреждения $2 - всегда ид пользователя,
+            alias: 'printPalkJaak'
+
+        }
+    ],
     saveDoc: null,
     deleteDoc: null,
     requiredFields: [],
     executeCommand: {
         command: `select palk.sp_calc_palgajaak($1::integer, $2::JSON)::integer as result`, //$1- userId, $2 - params
-        type:'sql',
-        alias:'executeTask'
+        type: 'sql',
+        alias: 'executeTask'
     },
 
 };

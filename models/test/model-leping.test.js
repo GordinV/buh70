@@ -6,8 +6,9 @@ const fs = require('fs');
 const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
+const db = require('./../../libs/db');
 
-describe('dok. type Objekt tests', function () {
+describe('dok. type leping tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
     const doc = require('../raamatupidamine/leping'),
@@ -67,7 +68,104 @@ describe('dok. type Objekt tests', function () {
             expect(fs.existsSync(targetFile)).toBeTruthy();
             done();
         });
-    })
+    });
+
+    it('doc type library should contain LEPING doc.type', async () => {
+        let sql = `select id from libs.library where kood = 'LEPING' and  library = 'DOK' limit 1`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists view cur_lepingud', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_lepingud'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists proc docs.sp_salvesta_leping', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_leping'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should save data', async () => {
+        let sql = doc.saveDoc;
+        let data = {
+            id: 0, data: {
+                number: '001',
+                kpv: '2018-08-10',
+                tahtaeg: '2018-08-10',
+                asutusid: 1,
+                selgitus: 'test',
+                gridData: [{
+                    id: 0,
+                    nomid: 2,
+                    summa: 100,
+                    hind: 100,
+                    kbm: 0,
+                    kogus: 1,
+                    soodus: 0,
+                    muud: 'Test'
+                }]
+            }
+        };
+        let returnValue = await db.queryDb(sql, [data,1,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+        globalDocId = returnValue.data[0].id;
+        expect(globalDocId).toBeGreaterThan(0);
+    });
+
+    it('should succesfully execute view cur_lepingud', async () => {
+        let sql = doc.grid.sqlString + ' limit 100';
+        let returnValue = await db.queryDb(sql, [1,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should select data', async()=> {
+        let sql = doc.select[0].sql;
+        let returnValue = await db.queryDb(sql, [globalDocId,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should select griddata', async()=> {
+        let sql = _.find(doc.select, {alias: 'details'}).sql;
+        let returnValue = await db.queryDb(sql, [globalDocId,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc docs.sp_delete_leping', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_leping'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should delete data', async()=> {
+        let sql = doc.deleteDoc;
+        let returnValue = await db.queryDb(sql,[1,globalDocId]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
 
 });
 

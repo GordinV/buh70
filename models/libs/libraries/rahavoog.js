@@ -10,7 +10,7 @@ module.exports = {
             $2::integer as userid, 
             'RAHAVOOGS' as doc_type_id,
             null::text as  kood,
-            null::integer as rekvid,
+            0::integer as rekvid,
             null::text as nimetus,
             'RAHA'::text as library,
             0::integer as status,
@@ -36,7 +36,9 @@ module.exports = {
             {id: "kood", name: "Kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
-        sqlString: `select id, kood, nimetus,  $2::integer as userId
+        sqlString: `select id, kood, nimetus,  
+            $2::integer as userId,
+            muud 
             from libs.library l
             where l.library = 'RAHA'
             and l.status <> 3

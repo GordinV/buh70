@@ -8,12 +8,13 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-describe('dok. type Tululiik tests', function () {
+
+describe('dok. type Teenused tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../libs/libraries/tululiik'),
-        docTypeId = 'TULULIIK'.toLowerCase(),
-        modelForExport = 'libs/libraries/tululiik';
+    const doc = require('../raamatupidamine/teenused'),
+        docTypeId = 'TEENUSED'.toLowerCase(),
+        modelForExport = 'raamatupidamine/teenused';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -34,11 +35,6 @@ describe('dok. type Tululiik tests', function () {
     });
 
     it (`${docTypeId} must have fields in js model`, ()=> {
-        expect(doc.select).toBeDefined();
-        expect(doc.selectAsLibs).toBeDefined();
-        expect(doc.returnData).toBeDefined();
-        expect(doc.requiredFields).toBeDefined();
-        expect(doc.saveDoc).toBeDefined();
         expect(doc.deleteDoc).toBeDefined();
         expect(doc.grid).toBeDefined();
     });
@@ -47,16 +43,14 @@ describe('dok. type Tululiik tests', function () {
         let xmlModel = convertXml.xml2js(xml, {ignoreComment: true, alwaysChildren: true});
         expect(xmlModel).toBeDefined();
         let modelElements = xmlModel.elements[0];
-        expect(_.find(modelElements.elements, {name:'select'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'selectAsLibs'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'saveDoc'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'deleteDoc'})).toBeDefined();
+        expect(_.find(modelElements.elements, {name:'grid'})).toBeDefined();
 
         let grid = _.find(modelElements.elements, {name:'grid'});
-
+        expect(grid).toBeDefined();
+        expect(_.find(grid.elements,{name:'alias'})).toBeDefined();
         let gridAlias = _.find(grid.elements,{name:'alias'});
-        console.log('gridAlias.elements',gridAlias.elements);
-        expect(_.find(gridAlias.elements,{text:'curMaksukoodid'})).toBeDefined();
+        expect(_.find(gridAlias.elements,{text:'curTeenused'})).toBeDefined();
 
     });
 
@@ -74,16 +68,22 @@ describe('dok. type Tululiik tests', function () {
         });
     });
 
-
-    it('should execute grid sql', async()=> {
-        let sql = doc.grid.sqlString;
-        let returnValue = await db.queryDb(sql, [1,1]);
+    it('should exists view cur_teenused', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_teenused'`;
+        let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
 
     });
 
+    it('should successfully execute view cur_teenused', async() => {
+       let sql = doc.grid.sqlString;
+        let returnValue = await db.queryDb(sql, [1,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
 
 });
 

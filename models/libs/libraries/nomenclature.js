@@ -1,7 +1,7 @@
 module.exports = {
     select: [{
         sql: `select n.*, $2::integer as userid, 'NOMENCLATURE' as doc_type_id,
-                v.valuuta, v.kuurs,
+                'EUR' as valuuta, 1 as kuurs,
                 (n.properties::jsonb ->>'vat')::text as vat,
                 (n.properties::jsonb ->>'konto')::text as konto,
                 (n.properties::jsonb ->>'projekt')::text as projekt,
@@ -11,7 +11,6 @@ module.exports = {
                 (n.properties::jsonb ->>'rahavoog')::text as rahavoog,
                 (n.properties::jsonb ->>'artikkel')::text as artikkel                
                 from libs.nomenklatuur n 
-                left outer join docs.dokvaluuta1 v on v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'nomenklatuur') and v.dokid = n.id
                 where n.id = $1`,
         sqlAsNew: `select  $1::integer as id , $2::integer as userid, 'NOMENCLATURE' as doc_type_id,
             null::text as  kood,

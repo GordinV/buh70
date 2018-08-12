@@ -14,7 +14,8 @@ CREATE VIEW cur_doklausend AS
     d1.kood3 AS rahavoog,
     d1.kood5 AS artikkel,
     d1.lisa_d,
-    d1.lisa_k
+    d1.lisa_k,
+    d1.deebet || d1.kreedit as lausend
   FROM docs.doklausheader d
     INNER JOIN docs.doklausend d1 ON D.id = d1.parentid
   WHERE D.status <> 3;

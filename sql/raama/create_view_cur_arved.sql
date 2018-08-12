@@ -26,15 +26,17 @@ CREATE OR REPLACE VIEW cur_arved AS
     to_char(d.lastupdate, 'DD.MM.YYYY HH:MM')       AS lastupdate,
     trim(s.nimetus)                                 AS status,
     coalesce(u.ametnik, '') :: VARCHAR(120)         AS ametnik,
-    j.number                                        AS lausnr,
+    jid.number                                      AS lausnr,
     a.muud                                          AS markused
   FROM docs.doc d
     INNER JOIN docs.arv a ON a.parentId = d.id
     INNER JOIN libs.library s ON s.kood = d.status :: TEXT
     LEFT OUTER JOIN libs.asutus asutus ON a.asutusid = asutus.id
     LEFT OUTER JOIN ou.userid u ON u.id = a.userid
-    LEFT JOIN docs.dokvaluuta1 v ON a.id = v.dokid AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'arv')
-    LEFT OUTER JOIN docs.journalid j ON j.journalid = a.journalid
+    LEFT JOIN docs.dokvaluuta1 v
+      ON a.id = v.dokid AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'arv')
+    LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
+    LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
   ORDER BY d.lastupdate DESC;
 
 GRANT SELECT ON TABLE cur_arved TO dbpeakasutaja;

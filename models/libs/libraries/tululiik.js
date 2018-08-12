@@ -42,7 +42,9 @@ module.exports = {
             {id: "kood", name: "Kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
-        sqlString: `select id, kood, nimetus,  $2::integer as userId
+        sqlString: `select id, kood, nimetus,  
+            $2::integer as userId,
+            tun1, tun2, tun3, tun4, tun5
             from libs.library l
             where l.library = 'MAKSUKOOD'
             and l.status <> 3
