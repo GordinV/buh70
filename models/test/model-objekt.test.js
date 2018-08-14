@@ -6,9 +6,11 @@ const fs = require('fs');
 const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
+const db = require('./../../libs/db');
 
 describe('dok. type Objekt tests', function () {
     let globalDocId = 0; // для сохранения ид документа
+    let dataObject = {}; // глобальный объект с данными документа
 
     const doc = require('../libs/libraries/objekt'),
         docTypeId = 'OBJEKT'.toLowerCase(),
@@ -69,7 +71,81 @@ describe('dok. type Objekt tests', function () {
             expect(fs.existsSync(targetFile)).toBeTruthy();
             done();
         });
-    })
+    });
+
+    it('doc type library should contain OBJEKT doc.type', async () => {
+        let sql = `select id from libs.library where kood = 'OBJEKT' and  library = 'DOK' limit 1`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists view com_objekt', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'com_objekt'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists view cur_objekt', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_objekt'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should successfully call sql new query', async()=>{
+        let sql = doc.select[0].sqlAsNew;
+        let returnValue = await db.queryDb(sql, [0,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+        dataObject = returnValue.data[0];
+    });
+
+    it('should successfully save data', async()=>{
+        let sql = doc.saveDoc;
+        dataObject.kood = 'objtest';
+        dataObject.nimetus = 'objNimetus';
+        let params = {
+            id: 0,
+            data: {
+                id: 0,
+                kood: dataObject.kood,
+                nimetus: dataObject.nimetus,
+                asutusid: dataObject.asutusid,
+                parentid: dataObject.parentid
+            }
+        };
+        let returnValue = await db.queryDb(sql, [params, 1,1]);
+        expect(returnValue).toBeDefined();
+        console.log('save',params, returnValue);
+        let result = returnValue.result;
+        globalDocId = returnValue.data[0].id;
+        expect(globalDocId).toBeGreaterThan(0);
+    });
+
+    it ('should select saved data',async()=> {
+        let sql = doc.select[0].sql;
+        let returnValue = await db.queryDb(sql, [globalDocId,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it ('should succefully delete document',async()=> {
+        let sql = doc.deleteDoc;
+        let returnValue = await db.queryDb(sql, [1,globalDocId]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
 
 });
 
