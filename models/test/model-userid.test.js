@@ -138,6 +138,16 @@ describe('dok. type Userid tests', function () {
 
     });
 
+    it ('should select userid as lib', async() => {
+        let sql = doc.selectAsLibs;
+        let returnValue = await db.queryDb(sql, [1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+
     it('should exists ou.sp_delete_userid', async()=> {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_userid'`;
         let returnValue = await db.queryDb(sql, []);

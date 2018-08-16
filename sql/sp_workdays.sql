@@ -1,8 +1,13 @@
 DROP FUNCTION IF EXISTS sp_workdays( INTEGER, INTEGER, INTEGER, INTEGER, INTEGER );
 DROP FUNCTION IF EXISTS sp_workdays( JSONB );
+DROP FUNCTION IF EXISTS sp_workdays( INTEGER, JSONB );
+DROP FUNCTION IF EXISTS sp_workdays( INTEGER, JSON );
 
-CREATE FUNCTION sp_workdays(IN params JSONB)
-  RETURNS NUMERIC
+CREATE FUNCTION sp_workdays(IN  user_id    INTEGER, IN params JSON,
+                            OUT error_code INTEGER, OUT result INTEGER, OUT error_message TEXT,
+                            OUT data       JSONB)
+
+  RETURNS RECORD
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -19,7 +24,6 @@ DECLARE
   qrytoograf     RECORD;
   lnDow          INT;
 BEGIN
-
 
   IF l_lepingid IS NOT NULL
   THEN
@@ -40,7 +44,10 @@ BEGIN
             AND p.kuu = l_kuu
             AND p.aasta = l_aasta;
 
-      RETURN (coalesce(qrYtoograf.tuNd, 0) / coalesce(qrYtoograf.toOpaev, 8)) :: INTEGER;
+      data = to_jsonb(row.*) FROM ( SELECT COALESCE ((l_maxdays - l_holidays - l_esimine_paev + 1), 0) AS DAYS ) ROW;
+      result = (coalesce(qrYtoograf.tuNd, 0) / coalesce(qrYtoograf.toOpaev, 8));
+
+      RETURN ;
 
     END IF;
 
@@ -54,7 +61,7 @@ BEGIN
   THEN
     l_maxdays = l_lopp_paev;
   END IF;
-raise notice 'l_esimine_paev %', l_esimine_paev;
+  RAISE NOTICE 'l_esimine_paev %', l_esimine_paev;
   FOR i IN l_esimine_paev..l_maxdays
   LOOP
     lnDow:=DOW(l_date);
@@ -65,7 +72,8 @@ raise notice 'l_esimine_paev %', l_esimine_paev;
       IF exists(SELECT 1
                 FROM cur_tahtpaevad l
                 WHERE (l_rekvId IS NULL OR l.rekvid = l_rekvId)
-                      AND l.paEv = DAY(l_date)
+                      AND
+                      l.paEv = DAY(l_date)
                       AND kuu = MONTH(l_date)
                       AND (aasta IS NULL OR aasta = year(l_date)))
       THEN
@@ -75,12 +83,16 @@ raise notice 'l_esimine_paev %', l_esimine_paev;
     l_date := l_date + 1;
   END LOOP;
 
-  RETURN coalesce((l_maxdays - l_holidays - l_esimine_paev + 1), 0);
+  --  result
+  data = to_jsonb(row.*) FROM ( SELECT COALESCE ((l_maxdays - l_holidays - l_esimine_paev + 1), 0) AS DAYS ) ROW;
+  result = COALESCE((l_maxdays - l_holidays - l_esimine_paev + 1), 0) :: INTEGER;
+  RETURN;
+
 END;
 $$;
 
 /*
-SELECT sp_workdays(NULL :: JSONB);
+SELECT sp_workdays(1, NULL :: JSONB);
 
 SELECT sp_workdays('{"kuu":1,"aasta":2018}' :: JSONB);
 

@@ -13,7 +13,9 @@ CREATE VIEW cur_lepingud AS
     l.asutusid,
     COALESCE((objekt.properties :: JSONB ->> 'nait14') :: NUMERIC, 0) :: NUMERIC AS maja,
     COALESCE((objekt.properties :: JSONB ->> 'nait15') :: NUMERIC, 0) :: NUMERIC AS korter,
-    COALESCE((objekt.properties :: JSONB ->> 'pakett'), '') :: VARCHAR(254)      AS pakett
+    COALESCE((objekt.properties :: JSONB ->> 'pakett'), '') :: VARCHAR(254)      AS pakett,
+    objekt.kood as objkood,
+    objekt.nimetus as objnimi
   FROM docs.doc d
     JOIN docs.leping1 l ON l.parentid = d.id
     JOIN libs.asutus a ON l.asutusid = a.id

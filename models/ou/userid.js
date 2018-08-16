@@ -1,5 +1,5 @@
 module.exports = {
-    selectAsLibs: `select * from com_rekv`,
+    selectAsLibs: `select * from ou.cur_userid where rekvid = $1`, //$1 - asutuse id
     select: [{
         sql: `SELECT
                   'USERID'                                                            AS doc_type_id,

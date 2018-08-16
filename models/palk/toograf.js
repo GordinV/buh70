@@ -57,10 +57,10 @@ module.exports = {
         params: '',
         alias: 'curToograf'
     },
-        executeCommand: {
-            command: `select palk.sp_calc_taabel1($1) as tunnid`, //$1 - params ("lepingid":4, "kuu":4, "aasta":2018)
-            type: 'sql',
-            alias: 'calcTaabel'
-        },
+    executeCommand: {
+        command: `select palk.sp_calc_taabel1($1) as tunnid`, //$1 - params ("lepingid":4, "kuu":4, "aasta":2018)
+        type: 'sql',
+        alias: 'calcTaabel'
+    },
 
 };

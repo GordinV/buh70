@@ -117,7 +117,7 @@ BEGIN
             l_alg_paev  AS paev,
             l_lopp_paev AS lopp) row;
 
-    l_toopaevad = sp_workdays(params);
+    l_toopaevad = (select result from sp_workdays(null::integer, params::json));
 
     l_hours = (l_toopaevad - (ifnull(l_puhkus, 0) + ifnull(l_haigus, 0) + l_muud)) * v_Tooleping.toopaev - l_tunnid;
 
