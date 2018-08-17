@@ -6,6 +6,7 @@ CREATE OR REPLACE VIEW com_dokprop AS
     d.id,
     d.selg                                             AS nimetus,
     l.nimetus                                          AS dok,
+    l.kood,
     (d.details :: JSONB ->> 'konto') :: VARCHAR(20)    AS konto,
     (d.details :: JSONB ->> 'kbmkonto') :: VARCHAR(20) AS kbmkonto,
     (d.details :: JSONB ->> 'kood1') :: VARCHAR(20)    AS kood1,

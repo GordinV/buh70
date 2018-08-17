@@ -20,6 +20,7 @@ CREATE OR REPLACE VIEW com_nomenclature AS
           '' :: VARCHAR(20)   AS artikkel,
           0 :: INTEGER        AS tunnusId,
           '' :: TEXT          AS formula,
+          NULL :: TEXT        AS proj,
           'EUR' :: VARCHAR    AS valuuta,
           1                   AS kuurs
         UNION
@@ -40,10 +41,10 @@ CREATE OR REPLACE VIEW com_nomenclature AS
           coalesce((n.properties :: JSONB ->> 'artikkel') :: VARCHAR(20), '') AS artikkel,
           coalesce((n.properties :: JSONB ->> 'tunnusId') :: INTEGER, 0)      AS tunnusId,
           coalesce((n.properties :: JSONB ->> 'formula') :: TEXT, '')         AS formula,
-          coalesce(d.valuuta, 'EUR') :: VARCHAR                               AS valuuta,
-          coalesce(d.kuurs, 1) :: NUMERIC                                     AS kuurs
+          coalesce((n.properties :: JSONB ->> 'projekt') :: TEXT, '')         AS proj,
+          'EUR' :: VARCHAR                                                    AS valuuta,
+          1 :: NUMERIC                                                        AS kuurs
         FROM libs.nomenklatuur n
-          LEFT OUTER JOIN docs.dokvaluuta1 d ON (n.id = d.dokid AND d.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'nomenklatuur'))
         WHERE n.status <> 3
        ) qry
   ORDER BY kood;

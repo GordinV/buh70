@@ -89,7 +89,7 @@ const Arv = {
                  trim(n.kood) as kood, trim(n.nimetus) as nimetus, a1.soodus,
                  a1.kood1, a1.kood2, a1.kood3, a1.kood4, a1.kood5, a1.tunnus, a1.proj, a1.konto, a1.tp,
                  null::text as vastisik, null::text as formula,
-                 coalesce(v.valuuta,'EUR')::varchar(20) as valuuta, coalesce(v.kuurs,1)::numeric as kuurs,
+                 'EUR'::varchar(20) as valuuta, 1::numeric as kuurs,
                  coalesce((n.properties :: JSONB ->> 'vat'),'-')::varchar(20) as km ,
                  n.uhik,
                  a1.muud 
@@ -97,7 +97,6 @@ const Arv = {
                  inner join docs.arv a on a.id = a1.parentId 
                  inner join libs.nomenklatuur n on n.id = a1.nomId 
                  inner join ou.userid u on u.id = $2::integer 
-                 left outer join docs.dokvaluuta1 v on (a.id = v.dokid and v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'arv')) 
                  where a.parentid = $1::integer`,
             query: null,
             multiple: true,

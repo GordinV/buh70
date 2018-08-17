@@ -45,15 +45,14 @@ BEGIN
     WHEN 'LEPING'
     THEN
       lcTableName = 'docs.leping1';
-      lcAdditionalWhere = ' OPT = 1 ';
     WHEN 'TAOTLUS'
     THEN
       lcTableName = 'eelarve.taotlus';
   END CASE;
 
   -- building sql query with regexp for only numbers
-  lcSqlString = 'select max(SUBSTRING(''0'' || coalesce(number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
-                ')::integer) ::integer as number from '
+  lcSqlString = 'select (max(SUBSTRING(''0'' || coalesce(number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
+                ')::integer) ::integer) + 1 as number from '
                 || lcTableName
                 || ' where rekvId = $1::integer and year(kpv) = $2::integer and number ilike $3::text';
 
@@ -82,5 +81,5 @@ GRANT EXECUTE ON FUNCTION docs.sp_get_number(INTEGER, TEXT, INTEGER, INTEGER) TO
 GRANT EXECUTE ON FUNCTION docs.sp_get_number(INTEGER, TEXT, INTEGER, INTEGER) TO dbkasutaja;
 
 /*
-select docs.sp_get_number(1, 'TAOTLUS', 2018, NULL)
+select docs.sp_get_number(1, 'ARV', 2018, NULL)
  */

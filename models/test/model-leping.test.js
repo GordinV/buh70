@@ -88,6 +88,33 @@ describe('dok. type leping tests', function () {
 
     });
 
+    it('should exists view wizlepingud', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'wizlepingud'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succesfully execute view wizlepingud', async () => {
+        let sql = _.find(doc.print,{alias:'wizlepingud'}).sql + ' limit 100';
+
+        let returnValue = await db.queryDb(sql, [1,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+
+    it('should select new data', async()=> {
+        let sql = doc.select[0].sqlAsNew;
+        let returnValue = await db.queryDb(sql, [0,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+
     it('should exists proc docs.sp_salvesta_leping', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_leping'`;
         let returnValue = await db.queryDb(sql, []);

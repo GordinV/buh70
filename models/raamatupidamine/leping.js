@@ -34,7 +34,7 @@ const Arv = {
                     to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as lastupdate, null as bpm,
                  trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
                  trim(s.nimetus) as status, 0 as doc_status, 
-                 docs.sp_get_number(u.rekvId, ${DOC_TYPE_ID}, year(date()), null) as number, 
+                 docs.sp_get_number(u.rekvId, 'LEPING', year(date()), null) as number, 
                  null as rekvId, 
                  now()::date as kpv,
                  5 as doklausid,
@@ -45,7 +45,7 @@ const Arv = {
                  null::integer as pakettid, 
                  null::integer as objektId
                  from libs.library l,   libs.library s, ou.userid u  
-                 where l.library = 'DOK' and l.kood = ${DOC_TYPE_ID} 
+                 where l.library = 'DOK' and l.kood = 'LEPING' 
                  and u.id = $2::integer 
                  and s.library = 'STATUS' and s.kood = '0'`,
             query: null,
@@ -187,7 +187,24 @@ const Arv = {
 
         let taskFunction = eval(executeTask[0]);
         return taskFunction(docId, userId, this);
-    }
+    },
+    print: [
+        {
+            sql: `SELECT DISTINCT
+                  $2                                                              AS user_id,
+                  l.id,
+                  l.kood,
+                  l.nomid,
+                  left(rtrim(l.asutus) || ' ' || rtrim(nimetus), 120) :: VARCHAR AS nimetus,
+                  l.objektid,
+                  l.pakettId,
+                  l.tahtaeg
+                FROM wizlepingud l
+                WHERE l.rekvId = $1`,     // $1 всегда ид учреждения $2 - всегда ид пользователя,
+            alias: 'wizlepingud'
+
+        }
+    ],
 };
 
 module.exports = Arv;
