@@ -8,7 +8,7 @@ const start = require('./../BP/start'),
 const Arv = {
     selectAsLibs: `select * from com_arved a
         where  (a.rekvId = $1) 
-        and docs.usersRigths(a.id, 'select', $2)`,
+        and docs.usersRigths(a.id, 'select', $2)`, //$1 - rekvid, $2 userid
     select: [
         {
             sql: `select d.id, $2::integer as userid, to_char(created, 'DD.MM.YYYY HH:MM:SS')::text as created, to_char(lastupdate,'DD.MM.YYYY HH:MM:SS')::text as lastupdate, d.bpm, 

@@ -19,7 +19,7 @@ DECLARE
         lcSelg            TEXT;
         v_selg            RECORD;
         l_json            TEXT;
-        l_json_details    TEXT;
+        l_json_details    JSONB = '[]';
         l_row_count       INTEGER = 0;
         new_history       JSONB;
         userName          TEXT;
@@ -138,7 +138,7 @@ BEGIN
 
     l_json = row_to_json(v_journal);
 
-    l_json_details = '';
+--    l_json_details = '';
     FOR v_arv1 IN
     SELECT
       arv1.*,
@@ -187,9 +187,7 @@ BEGIN
           coalesce(v_arv1.kood5, '')          AS kood5
         INTO v_journal;
 
-        l_json_details = CASE WHEN len(l_json_details) > 0
-          THEN ','
-                         ELSE '' END || row_to_json(v_journal);
+        l_json_details = coalesce(l_json_details,'{}'::jsonb) || to_jsonb(v_journal);
 
         /*
                 l_json_row = '{' ||
@@ -238,9 +236,7 @@ BEGIN
             coalesce(v_arv1.kood5, '')             AS kood5
           INTO v_journal;
 
-          l_json_details = CASE WHEN len(l_json_details) > 0
-            THEN ','
-                           ELSE '' END || row_to_json(v_journal);
+          l_json_details = coalesce(l_json_details,'{}'::jsonb) || to_jsonb(v_journal);
 
         END IF;
 
@@ -270,9 +266,7 @@ BEGIN
           coalesce(v_arv1.kood5, '')          AS kood5
         INTO v_journal;
 
-        l_json_details = CASE WHEN len(l_json_details) > 0
-          THEN ','
-                         ELSE '' END || row_to_json(v_journal);
+        l_json_details = coalesce(l_json_details,'{}'::jsonb) || to_jsonb(v_journal);
 
         IF v_arv1.kbm <> 0
         THEN
@@ -300,18 +294,16 @@ BEGIN
             coalesce(v_arv1.kood5, '')             AS kood5
           INTO v_journal;
 
-          l_json_details = CASE WHEN len(l_json_details) > 0
-            THEN ','
-                           ELSE '' END || row_to_json(v_journal);
+          l_json_details = coalesce(l_json_details,'{}'::jsonb) || to_jsonb(v_journal);
 
         END IF;
       END IF;
 
       l_row_count = l_row_count + 1;
-
+      raise notice 'l_json_details %',l_json_details;
     END LOOP;
 
-    l_json = ('{"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":[' || l_json_details || ']}}');
+    l_json = ('{"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":' || l_json_details::text || '}}');
     RAISE NOTICE 'l_json 2 %', l_json :: JSON;
 
     /* salvestan lausend */
