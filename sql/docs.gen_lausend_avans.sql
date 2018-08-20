@@ -162,7 +162,7 @@ BEGIN
 
   l_json = row_to_json(v_journal);
   l_json = ('{"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":[' || l_json_details || ']}}');
-raise notice 'l_json: %', l_json;
+
   result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_avans1.rekvId);
 
   /* salvestan lausend */

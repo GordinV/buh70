@@ -34,8 +34,6 @@ DECLARE
   doc_arvid       INTEGER = doc_data ->> 'arvid';
   doc_muud        TEXT = doc_data ->> 'muud';
   doc_summa       NUMERIC = doc_data ->> 'summa';
-  tcValuuta       TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
-  tnKuurs         NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
   json_object     JSON;
   json_record     RECORD;
   new_history     JSONB;
@@ -105,14 +103,15 @@ BEGIN
             userName AS user) row;
 
 
-    INSERT INTO docs.doc (doc_type_id, history, rekvid)
-    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid)
+    INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, 1)
     RETURNING id
       INTO doc_id;
 
 
 
-    INSERT INTO docs.korder1 (parentid, rekvid, userid, kpv, asutusid, tyyp, kassaId, number, dokument, nimi, aadress, alus, muud, summa, arvid, doklausid)
+    INSERT INTO docs.korder1 (parentid, rekvid, userid, kpv, asutusid, tyyp, kassaId, number, dokument, nimi,
+                              aadress, alus, muud, summa, arvid, doklausid)
     VALUES
       (doc_id, user_rekvid, userId, doc_kpv, doc_asutusid, doc_tyyp :: INTEGER, doc_kassa_id, doc_number, doc_dokument,
                doc_nimi,
@@ -221,11 +220,6 @@ BEGIN
       -- add new id into array of ids
       ids = array_append(ids, korder1_id);
 
-      -- valuuta
-      INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-      VALUES (korder1_id, array_position(a_dokvaluuta, 'korder2'), tcValuuta, tnKuurs);
-
-
     ELSE
 
       UPDATE docs.korder2
@@ -248,15 +242,6 @@ BEGIN
       -- add existing id into array of ids
       ids = array_append(ids, korder1_id);
 
-      IF NOT exists(SELECT id
-                    FROM docs.dokvaluuta1
-                    WHERE dokid = korder1_id AND dokliik = array_position(a_dokvaluuta, 'korder2'))
-      THEN
-        -- if record does
-        INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-        VALUES (korder1_id, array_position(a_dokvaluuta, 'korder2'), tcValuuta, tnKuurs);
-
-      END IF;
     END IF;
 
     -- delete record which not in json

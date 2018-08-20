@@ -113,7 +113,7 @@ $BODY$
 LANGUAGE 'plpgsql' VOLATILE
 COST 100;
 
-
+/*
 SELECT *
 FROM docs.sp_samm_kulum(1, '{
   "ids": [
@@ -125,3 +125,5 @@ FROM docs.sp_samm_kulum(1, '{
   "kpv": "2018-08-31",
   "doklausid": 60
 }');
+
+*/

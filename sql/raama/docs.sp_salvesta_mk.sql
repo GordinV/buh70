@@ -193,11 +193,6 @@ BEGIN
       -- add new id into array of ids
       ids = array_append(ids, mk1_id);
 
-      -- valuuta
-      INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-      VALUES (mk1_id, array_position(a_dokvaluuta, 'mk1'), tcValuuta, tnKuurs);
-
-
     ELSE
 
       UPDATE docs.mk1
@@ -222,15 +217,6 @@ BEGIN
       -- add existing id into array of ids
       ids = array_append(ids, mk1_id);
 
-      IF NOT exists(SELECT id
-                    FROM docs.dokvaluuta1
-                    WHERE dokid = mk1_id AND dokliik = array_position(a_dokvaluuta, 'mk1'))
-      THEN
-        -- if record does
-        INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-        VALUES (mk1_id, array_position(a_dokvaluuta, 'mk1'), tcValuuta, tnKuurs);
-
-      END IF;
     END IF;
 
     -- delete record which not in json
