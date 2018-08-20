@@ -132,15 +132,6 @@ BEGIN
 
   END IF;
 
-  IF NOT exists(SELECT id
-                FROM docs.dokvaluuta1
-                WHERE dokid = pv_oper_id AND dokliik = array_position(a_dokvaluuta, 'pv_oper'))
-  THEN
-    -- if record does
-    INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-    VALUES (pv_oper_id, array_position(a_dokvaluuta, 'pv_oper'), tcValuuta, tnKuurs);
-
-  END IF;
 
   IF doc_liik = array_position(a_pv_opers, 'paigutus') -- will calculate summa and change card status
   THEN

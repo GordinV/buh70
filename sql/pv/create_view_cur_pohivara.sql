@@ -20,14 +20,12 @@ CREATE OR REPLACE VIEW cur_pohivara AS
     coalesce((l.properties :: JSONB ->> 'rentnik'), '') :: VARCHAR(120)         AS rentnik,
     (l.properties :: JSONB ->> 'liik') :: VARCHAR(120)                          AS liik,
     coalesce((l.properties :: JSONB ->> 'selg'), '') :: VARCHAR(120)            AS selgitus,
-    coalesce(v.valuuta, 'EUR') :: CHARACTER VARYING                             AS valuuta,
-    coalesce(v.kuurs, 1) :: NUMERIC                                             AS kuurs,
+    'EUR' :: CHARACTER VARYING                                                  AS valuuta,
+    1 :: NUMERIC                                                                AS kuurs,
     grupp.id                                                                    AS gruppid,
     grupp.nimetus                                                               AS grupp,
     l.status
   FROM libs.library l
-    LEFT JOIN docs.dokvaluuta1 v
-      ON v.dokid = l.id AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'journal1')
     JOIN libs.library grupp ON (l.properties :: JSONB ->> 'gruppid') :: INTEGER = grupp.id
     LEFT JOIN libs.asutus a ON (l.properties :: JSONB ->> 'vastisikid') :: INTEGER = a.id
   WHERE l.status <> 3;

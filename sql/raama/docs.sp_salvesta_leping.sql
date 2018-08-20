@@ -1,32 +1,33 @@
 DROP FUNCTION IF EXISTS docs.sp_salvesta_leping( JSON, INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_salvesta_leping(
-    data        JSON,
-    userid      INTEGER,
-    user_rekvid INTEGER)
-RETURNS INTEGER AS
+  data        JSON,
+  userid      INTEGER,
+  user_rekvid INTEGER)
+  RETURNS INTEGER AS
 $BODY$
 
 DECLARE
-leping_id     INTEGER;
-leping2_id    INTEGER;
-userName      TEXT;
-doc_id        INTEGER = data ->> 'id';
-doc_type_kood TEXT = 'LEPING'/*data->>'doc_type_id'*/;
-doc_type_id   INTEGER = (SELECT id
-FROM libs.library
-WHERE kood = doc_type_kood AND library = 'DOK'
-LIMIT 1);
-doc_data      JSON = data ->> 'data';
-doc_details   JSON = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
-doc_number    TEXT = doc_data ->> 'number';
-doc_asutusid  INTEGER = doc_data ->> 'asutusid';
-doc_selgitus  TEXT = doc_data ->> 'selgitus';
-doc_kpv       DATE = doc_data ->> 'kpv';
-doc_tahtaeg   DATE = doc_data ->> 'tahtaeg';
-doc_muud      TEXT = doc_data ->> 'muud';
-doc_objektid  INTEGER = doc_data ->> 'objektid';
-doc_pakettid  INTEGER = doc_data ->> 'pakettid';
+  leping_id     INTEGER;
+  leping2_id    INTEGER;
+  userName      TEXT;
+  doc_id        INTEGER = data ->> 'id';
+  doc_type_kood TEXT = 'LEPING'/*data->>'doc_type_id'*/;
+  doc_type_id   INTEGER = (SELECT id
+                           FROM libs.library
+                           WHERE kood = doc_type_kood AND library = 'DOK'
+                           LIMIT 1);
+  doc_data      JSON = data ->> 'data';
+  doc_details   JSON = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
+  doc_number    TEXT = doc_data ->> 'number';
+  doc_asutusid  INTEGER = doc_data ->> 'asutusid';
+  doc_selgitus  TEXT = doc_data ->> 'selgitus';
+  doc_kpv       DATE = doc_data ->> 'kpv';
+  doc_tahtaeg   DATE = doc_data ->> 'tahtaeg';
+  doc_muud      TEXT = doc_data ->> 'muud';
+  doc_objektid  INTEGER = doc_data ->> 'objektid';
+  doc_pakettid  INTEGER = doc_data ->> 'pakettid';
+  doc_doklausid INTEGER = doc_data ->> 'doklausid';
   json_object   JSON;
   json_record   RECORD;
   new_history   JSONB;
@@ -76,9 +77,9 @@ BEGIN
     RETURNING id
       INTO doc_id;
 
-    INSERT INTO docs.leping1 (parentid, rekvid, number, kpv, asutusid, selgitus, tahtaeg, muud, objektid, pakettid)
+    INSERT INTO docs.leping1 (parentid, rekvid, number, kpv, asutusid, selgitus, tahtaeg, muud, objektid, pakettid, doklausid)
     VALUES (doc_id, user_rekvid, doc_number, doc_kpv, doc_asutusid, doc_selgitus, doc_tahtaeg,
-            doc_muud, doc_objektid, doc_pakettid)
+                    doc_muud, doc_objektid, doc_pakettid, doc_doklausid)
     RETURNING id
       INTO leping_id;
 
@@ -98,14 +99,15 @@ BEGIN
 
     UPDATE docs.leping1
     SET
-      number   = doc_number,
-      kpv      = doc_kpv,
-      asutusid = doc_asutusid,
-      selgitus = doc_selgitus,
-      tahtaeg  = doc_tahtaeg,
-      muud     = doc_muud,
-      objektid = doc_objektid,
-      pakettid = doc_pakettid
+      number    = doc_number,
+      kpv       = doc_kpv,
+      asutusid  = doc_asutusid,
+      selgitus  = doc_selgitus,
+      tahtaeg   = doc_tahtaeg,
+      muud      = doc_muud,
+      objektid  = doc_objektid,
+      pakettid  = doc_pakettid,
+      doklausid = doc_doklausid
     WHERE parentid = doc_id
     RETURNING id
       INTO leping_id;
@@ -130,12 +132,12 @@ BEGIN
       INSERT INTO docs.leping2 (parentid, nomid, kogus, hind, kbm, summa, soodus,
                                 muud, formula)
       VALUES (leping_id, json_record.nomid,
-                         coalesce(json_record.kogus, 0),
-                         coalesce(json_record.hind, 0),
-                         coalesce(json_record.kbm, 0),
-                         coalesce(json_record.summa, 0),
-                         json_record.soodus,json_record.muud,
-                         json_record.formula)
+              coalesce(json_record.kogus, 0),
+              coalesce(json_record.hind, 0),
+              coalesce(json_record.kbm, 0),
+              coalesce(json_record.summa, 0),
+              json_record.soodus, json_record.muud,
+              json_record.formula)
       RETURNING id
         INTO leping2_id;
 
@@ -145,15 +147,15 @@ BEGIN
     ELSE
       UPDATE docs.leping2
       SET
-        parentid   = leping_id,
-        nomid      = json_record.nomid,
-        kogus      = coalesce(json_record.kogus, 0),
-        hind       = coalesce(json_record.hind, 0),
-        kbm        = coalesce(json_record.kbm, 0),
-        summa      = coalesce(json_record.summa, kogus * hind),
-        soodus     = json_record.soodus,
-        muud       = json_record.muud,
-        formula    = json_record.formula
+        parentid = leping_id,
+        nomid    = json_record.nomid,
+        kogus    = coalesce(json_record.kogus, 0),
+        hind     = coalesce(json_record.hind, 0),
+        kbm      = coalesce(json_record.kbm, 0),
+        summa    = coalesce(json_record.summa, kogus * hind),
+        soodus   = json_record.soodus,
+        muud     = json_record.muud,
+        formula  = json_record.formula
       WHERE id = json_record.id :: INTEGER
       RETURNING id
         INTO leping2_id;

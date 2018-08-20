@@ -27,10 +27,12 @@ DECLARE
   doc_ftp      TEXT = doc_data ->> 'ftp';
   doc_login    TEXT = doc_data ->> 'login';
   doc_parool   TEXT = doc_data ->> 'parool';
+  doc_tahtpaev INTEGER = doc_data ->> 'tahtpaev';
 
   doc_details  JSON = doc_data ->> 'gridData';
   detail_id    INTEGER;
   json_object  JSONB;
+  json_arved   JSONB;
   json_record  RECORD;
   ids          INTEGER [];
 
@@ -135,23 +137,32 @@ BEGIN
                            doc_parool AS parool) row);
 
     json_object = (SELECT to_jsonb(row)
-                   FROM (SELECT json_object::jsonb AS reklftp) row);
+                   FROM (SELECT json_object :: JSONB AS reklftp) row);
+
+    -- arved properties
+
+    json_arved = (SELECT to_jsonb(row)
+                  FROM (SELECT doc_tahtpaev AS tahtpaev) row);
+
+    json_object = json_object || (SELECT to_jsonb(row)
+                                  FROM (SELECT json_arved :: JSONB AS arved) row);
+
 
     UPDATE ou.rekv
     SET
-      parentid = doc_parentid,
-      regkood  = doc_regkood,
-      nimetus  = doc_nimetus,
-      aadress  = doc_aadress,
-      haldus   = doc_haldus,
-      tel      = doc_tel,
-      faks     = doc_faks,
-      email    = doc_email,
-      juht     = doc_juht,
-      raama    = doc_raama,
-      muud     = doc_muud,
-      ajalugu  = new_history,
-      properties = coalesce(properties::jsonb,'{}'::jsonb) || json_object::jsonb
+      parentid   = doc_parentid,
+      regkood    = doc_regkood,
+      nimetus    = doc_nimetus,
+      aadress    = doc_aadress,
+      haldus     = doc_haldus,
+      tel        = doc_tel,
+      faks       = doc_faks,
+      email      = doc_email,
+      juht       = doc_juht,
+      raama      = doc_raama,
+      muud       = doc_muud,
+      ajalugu    = new_history,
+      properties = coalesce(properties :: JSONB, '{}' :: JSONB) || json_object :: JSONB
     WHERE id = doc_id
     RETURNING id
       INTO rekv_id;
@@ -219,6 +230,6 @@ GRANT EXECUTE ON FUNCTION ou.sp_salvesta_rekv(JSON, INTEGER, INTEGER) TO dbkasut
 GRANT EXECUTE ON FUNCTION ou.sp_salvesta_rekv(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT ou.sp_salvesta_rekv('{"id":1,"data":{"aadress":null,"doc_type_id":"REKV","email":null,"faks":null,"haldus":null,"id":1,"juht":null,"kbmkood":null,"muud":null,"nimetus":"test asutus","parentid":4,"regkood":"10000","tel":null,"userid":1,"ftp":"ftp.avpsoft.ee","login":"login","parool":"pwd","gridData":[{"arve":"kassa1","default_":1,"id":1,"kassa":1,"kassapank":0,"konto":"111","muud":null,"nimetus":"Kassa1","pank":0,"parentid":1,"saldo":0,"tp":null}]}}', 1, 1);
+SELECT ou.sp_salvesta_rekv('{"id":1,"data":{"tahtpaev":15,"aadress":null,"doc_type_id":"REKV","email":null,"faks":null,"haldus":null,"id":1,"juht":null,"kbmkood":null,"muud":null,"nimetus":"Test","parentid":4,"regkood":"10000","tel":null,"userid":1,"ftp":"ftp.avpsoft.ee","login":"login","parool":"pwd","gridData":[{"arve":"kassa1","default_":1,"id":1,"kassa":1,"kassapank":0,"konto":"111","muud":null,"nimetus":"Kassa1","pank":0,"parentid":1,"saldo":0,"tp":null}]}}', 1, 1);
 
 */

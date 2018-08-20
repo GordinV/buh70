@@ -17,6 +17,7 @@ module.exports = {
                   r.muud,
                   r.regkood,
                   r.tel,
+                  ((r.properties->>'arved')::jsonb->>'tahtpaev')::integer as tahtpaev,
                   ((r.properties->>'reklftp')::jsonb->>'ftp')::varchar(120) as ftp,
                   ((r.properties->>'reklftp')::jsonb->>'login')::varchar(120) as login,
                   ((r.properties->>'reklftp')::jsonb->>'parool')::varchar(120) as parool                  
@@ -38,6 +39,7 @@ module.exports = {
                       NULL :: VARCHAR(254) AS juht,
                       NULL :: VARCHAR(254) AS raama,
                       NULL :: TEXT         AS muud,
+                      null::integer as tahtpaev,
                      NULL :: VARCHAR(120) AS ftp,
                      NULL :: VARCHAR(120) AS login,
                      NULL :: VARCHAR(120) AS parool`,

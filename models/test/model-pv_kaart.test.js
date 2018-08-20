@@ -70,7 +70,93 @@ describe('dok. type PV_KAART tests', function () {
             expect(fs.existsSync(targetFile)).toBeTruthy();
             done();
         });
-    })
+    });
+
+    it('doc type library should contain POHIVARA doc.type', async()=> {
+        let sql = `select id from libs.library where kood = 'POHIVARA' and  library = 'DOK' limit 1`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists view cur_pohivara', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_pohivara'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists view cur_pv_oper', async()=> {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_pv_oper'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc sp_samm_kulum', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_samm_kulum'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists proc docs.gen_lausend_pv_oper', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'gen_lausend_pv_oper'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists proc sp_salvesta_pv_oper', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_pv_oper'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should select pv_kaart as new',async()=>{
+        let sql = doc.select[0].sqlAsNew;
+        let returnValue = await db.queryDb(sql, [0,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should succesfully execute grid query', async()=>{
+       let sql = doc.grid.sqlString + ' limit 100';
+        let returnValue = await db.queryDb(sql, [1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it ('should successfully call docs.sp_samm_kulum', async()=>{
+        let sql = `SELECT * FROM docs.sp_samm_kulum($1, $2)`;
+        let params = {
+            ids: [236182, 235982,236184],
+            nomid: 76,
+            kpv: "2018-08-31",
+            doklausid: 60
+        };
+
+        let returnValue = await db.queryDb(sql, [1, params]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
 
 });
 

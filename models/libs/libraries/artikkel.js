@@ -2,7 +2,7 @@ module.exports = {
     selectAsLibs: `select * from com_artikkel l
         where  (l.rekvId = $1 or l.rekvid is null)`,
     select: [{
-        sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, 
+        sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, l.tun5,
                 $2::integer as userid, 'ARTIKKEL' as doc_type_id
                 from libs.library l 
                 where l.id = $1`,
@@ -13,6 +13,7 @@ module.exports = {
             null::integer as rekvid,
             null::text as nimetus,
             'TULUDEALLIKAD'::text as library,
+            1::integer as tun5,
             0::integer as status,
             null::text as muud`,
         query: null,
