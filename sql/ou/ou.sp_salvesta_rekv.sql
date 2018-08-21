@@ -176,15 +176,15 @@ BEGIN
     INTO json_record
     FROM jsonb_to_record(
              json_object) AS x(id TEXT, parentid INTEGER, arve TEXT, nimetus TEXT, default_ INTEGER, kassa INTEGER, pank INTEGER,
-         konto TEXT, tp TEXT, muud TEXT);
+         konto TEXT, tp TEXT, muud TEXT, kassapank INTEGER);
 
     IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
     THEN
 
 
       INSERT INTO ou.aa (parentid, arve, nimetus, default_, kassa, pank, konto, tp, muud)
-      VALUES (json_record.parentid, json_record.arve, json_record.nimetus, json_record.default_, json_record.kassa,
-              json_record.pank, json_record.konto, json_record.tp, json_record.muud)
+      VALUES (json_record.parentid, json_record.arve, json_record.nimetus, json_record.default_,
+              json_record.kassapank, json_record.pank, json_record.konto, json_record.tp, json_record.muud)
       RETURNING id
         INTO detail_id;
 
@@ -194,7 +194,7 @@ BEGIN
         arve     = json_record.arve,
         nimetus  = json_record.nimetus,
         default_ = json_record.default_,
-        kassa    = json_record.kassa,
+        kassa    = json_record.kassapank,
         pank     = json_record.pank,
         konto    = json_record.konto,
         tp       = json_record.tp,

@@ -142,11 +142,17 @@ BEGIN
 
       l_grid_params = l_grid_params || to_jsonb(v_mk1);
 
-      l_params = row_to_json(v_mk);
-      l_params = (
-        '{"data":' || trim(TRAILING FROM l_params :: TEXT, '}') :: TEXT || ',"gridData":' || l_grid_params :: TEXT ||
-        '}}');
+      SELECT json_object_agg('data', qry.data || qry."gridData")
+      INTO l_params
+      FROM (SELECT
+              to_jsonb(v_mk)                                AS data,
+              jsonb_object_agg('gridData', l_grid_params) AS "gridData") qry;
 
+      /*
+    l_params = (
+      '{"data":' || trim(TRAILING FROM l_params :: TEXT, '}') :: TEXT || ',"gridData":' || l_grid_params :: TEXT ||
+      '}}');
+*/
       -- save results
       l_dok_id = docs.sp_salvesta_mk(
           l_params :: JSON,
@@ -191,10 +197,11 @@ BEGIN
 
       l_grid_params = l_grid_params || to_jsonb(v_mk1);
 
-      l_params = row_to_json(v_mk);
-      l_params = (
-        '{"data":' || trim(TRAILING FROM l_params :: TEXT, '}') :: TEXT || ',"gridData":' || l_grid_params :: TEXT ||
-        '}}');
+      SELECT json_object_agg('data', qry.data || qry."gridData")
+      INTO l_params
+      FROM (SELECT
+              to_jsonb(v_mk)                                AS data,
+              jsonb_object_agg('gridData', l_grid_params) AS "gridData") qry;
 
       -- save results
       l_dok_id = docs.sp_salvesta_korder(
