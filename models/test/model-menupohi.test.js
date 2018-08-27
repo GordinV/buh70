@@ -75,7 +75,15 @@ describe('dok. type MenuPohi tests', function () {
 
     });
 
-    it('should exists proc sp_salvesta_menupohi', async () => {
+    it('should succefully execute sql new query', async()=> {
+        let sql = doc.select[0].sqlAsNew;
+        let returnValue = await db.queryDb(sql, [0,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc ou.sp_salvesta_menupohi', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_menupohi'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -83,6 +91,75 @@ describe('dok. type MenuPohi tests', function () {
         expect(result).toBeGreaterThan(0);
 
     });
+
+    it('should exists proc ou.sp_delete_menupohi', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_menupohi'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should save new row',async()=>{
+        let data = {
+            id: 0,
+            data: {
+            id: 0,
+            pad:'Test',
+            bar:'1',
+            level: 1,
+            idx: 1,
+            proc: '',
+            name: 'Test',
+            eesti:'Test',
+            vene:'Тест',
+            message:'Test m',
+            keyshortcut:'ctrl+1',
+            modules: ["RAAMA"],
+            groups: ["ADMIN"]
+            }
+        };
+        let sql = doc.saveDoc;
+        let returnValue = await db.queryDb(sql, [data, 1, 1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(returnValue.error_code).toBe(0);
+        expect(returnValue.result).toBe(1);
+        globalDocId = returnValue.data[0].id;
+        expect(returnValue.result).toBeGreaterThan(0);
+    });
+
+    it('should select saved row', async()=>{
+       let sql = doc.select[0].sql;
+        let returnValue = await db.queryDb(sql, [globalDocId,1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should select grid query', async()=> {
+        let sql = doc.grid.sqlString;
+        let returnValue = await db.queryDb(sql, [1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        let err = returnValue.error_code;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should delete menu', async () => {
+        let sql = doc.deleteDoc;
+        let returnValue = await db.queryDb(sql, [1, globalDocId]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        let err = returnValue.error_code;
+        expect(result).toBe(1);
+
+    });
+
+
 
 });
 
