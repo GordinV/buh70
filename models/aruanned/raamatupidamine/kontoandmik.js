@@ -13,17 +13,12 @@ module.exports = {
             {id: "lastupdate", name: "Viimane parandus", width: "150px"},
             {id: "status", name: "Staatus", width: "100px"},
         ],
-        sqlString: `select d.id, trim(a.number) as number, to_char(a.kpv,'DD.MM.YYYY') as kpv, a.summa, 
-        to_char(a.tahtaeg,'DD.MM.YYYY') as tahtaeg, a.jaak, to_char(a.tasud,'DD.MM.YYYY') as tasud,
-         trim(asutus.nimetus) as asutus,
-         to_char(d.created,'DD.MM.YYYY HH:MM') as created, to_char(d.lastupdate,'DD.MM.YYYY HH:MM') as lastupdate,
-         trim(s.nimetus) as status 
-         from docs.doc d 
-         inner join docs.arv a on a.parentId = d.id
-         inner join libs.library s on s.kood = d.status::text
-         left outer join libs.asutus asutus on a.asutusid = asutus.id 
-         where d.rekvId = $1 
-         and docs.usersRigths(d.id, 'select', $2)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT qry.*, l.nimetus, 
+                        (qry.alg_saldo + db_kokku - kr_kokku) as lopp_saldo 
+                        FROM docs.kontoandmik($1::text, $2::date, $3::date, $4::integer) qry
+                        inner join com_kontoplaan l on l.kood = qry.konto
+                        `,     //  $1 конто $2 - kpv1, $3 - kpv2, $4 - rekvid (svod)
         params: '',
+        alias: 'kontoandmik_report'
     }
-}
+};

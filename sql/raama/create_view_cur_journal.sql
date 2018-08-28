@@ -25,8 +25,8 @@ CREATE OR REPLACE VIEW cur_journal AS
     coalesce(j1.lisa_k, '') :: VARCHAR(20)                                                 AS lisa_k,
     j1.summa,
     j1.valsumma,
-    coalesce(v.valuuta, 'EUR') :: VARCHAR(20)                                              AS valuuta,
-    coalesce(v.kuurs, 1) :: NUMERIC(12, 6)                                                 AS kuurs,
+    'EUR' :: VARCHAR(20)                                                                   AS valuuta,
+    1 :: NUMERIC(12, 6)                                                                    AS kuurs,
     coalesce(j1.kood1, '') :: VARCHAR(20)                                                  AS kood1,
     coalesce(j1.kood2, '') :: VARCHAR(2)                                                   AS kood2,
     coalesce(j1.kood3, '') :: VARCHAR(20)                                                  AS kood3,
@@ -36,14 +36,13 @@ CREATE OR REPLACE VIEW cur_journal AS
     coalesce(ltrim(rtrim(a.nimetus)) || ' ' || ltrim(rtrim(a.omvorm)), '') :: VARCHAR(120) AS asutus,
     coalesce(j1.tunnus, '') :: VARCHAR(20)                                                 AS tunnus,
     coalesce(u.ametnik, '') :: VARCHAR(120)                                                AS kasutaja,
-    r.nimetus as rekvAsutus
+    r.nimetus                                                                              AS rekvAsutus
   FROM docs.journal j
     INNER JOIN docs.doc d ON d.id = j.parentid
-    INNER JOIN libs.library s ON s.kood = d.status :: TEXT and s.library = 'STATUS'
+    INNER JOIN libs.library s ON s.kood = d.status :: TEXT AND s.library = 'STATUS'
     INNER JOIN docs.journalid jid ON j.id = jid.journalid
     INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
-    inner join ou.rekv r on r.id = j.rekvid
-    LEFT JOIN docs.dokvaluuta1 v ON j1.id = v.dokid AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'journal1')
+    INNER JOIN ou.rekv r ON r.id = j.rekvid
     LEFT JOIN libs.asutus a ON a.id = j.asutusid
     LEFT OUTER JOIN ou.userid u ON u.id = j.userid;
 
