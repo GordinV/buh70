@@ -18,9 +18,10 @@ module.exports = {
                       qry.saldo,
                       a.regkood,
                       a.nimetus as asutus,
-                      a.tp
+                      a.tp,
+                      a.aadress
                     FROM docs.kontosaldoandmik($1::text, $2::integer, $3::date, $4::integer) qry
-                      INNER JOIN com_asutused a on a.id = qry.asutus_id  
+                      INNER JOIN libs.asutus a on a.id = qry.asutus_id  
                       INNER JOIN com_kontoplaan l ON l.kood = qry.konto
                       WHERE qry.saldo <> 0`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- rekvid (svod)
         params: '',

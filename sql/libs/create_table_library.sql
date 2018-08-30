@@ -54,6 +54,23 @@ CREATE INDEX library_rekvid
   (rekvid);
 ALTER TABLE libs.library CLUSTER ON library_rekvid;
 
+CREATE INDEX library_status
+  ON libs.library
+  USING btree
+  (status)
+  WHERE status <> 3;
+ALTER TABLE libs.library CLUSTER ON library_rekvid;
+
+
+CREATE INDEX library_pv_gruppid
+  ON libs.library
+  USING gin
+  ((properties::jsonb->gruppid));
+
+
+ALTER TABLE libs.library CLUSTER ON library_rekvid;
+
+
 
 ALTER TABLE libs.library
   ADD COLUMN "timestamp" timestamp without time zone NOT NULL DEFAULT LOCALTIMESTAMP;

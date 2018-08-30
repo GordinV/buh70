@@ -36,6 +36,10 @@ CREATE INDEX pv_oper_parentid_idx
   USING btree
   (parentid);
 
+CREATE INDEX pv_oper_kaart_id_idx
+  ON docs.pv_oper
+  USING btree
+  (pv_kaart_id);
 
 CREATE INDEX pv_oper_nomid_idx
   ON docs.pv_oper

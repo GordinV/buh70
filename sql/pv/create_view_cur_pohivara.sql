@@ -26,8 +26,8 @@ CREATE OR REPLACE VIEW cur_pohivara AS
     grupp.nimetus                                                               AS grupp,
     l.status
   FROM libs.library l
-    JOIN libs.library grupp ON (l.properties :: JSONB ->> 'gruppid') :: INTEGER = grupp.id
-    LEFT JOIN libs.asutus a ON (l.properties :: JSONB ->> 'vastisikid') :: INTEGER = a.id
+    JOIN libs.library grupp ON (l.properties :: JSONB -> 'gruppid')  = to_jsonb(grupp.id)
+    LEFT JOIN libs.asutus a ON (l.properties :: JSONB -> 'vastisikid') = to_jsonb(a.id)
   WHERE l.status <> 3;
 
 GRANT SELECT ON TABLE cur_pohivara TO dbpeakasutaja;
