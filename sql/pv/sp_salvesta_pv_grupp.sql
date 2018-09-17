@@ -36,6 +36,7 @@ BEGIN
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
+
   IF userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
@@ -80,7 +81,7 @@ BEGIN
     FROM libs.library l
     WHERE l.rekvid = user_rekvid
           AND l.library = 'POHIVARA'
-          AND (l.properties ->> 'gruppid') :: INTEGER = lib_id
+          AND (l.properties :: JSONB ->> 'gruppid') :: INTEGER = lib_id
     LOOP
       SELECT row_to_json(row)
       INTO json_object
@@ -88,7 +89,7 @@ BEGIN
 
       json_object = v_pv_kaart.properties :: JSONB || json_object;
       UPDATE libs.library
-      SET properties = json_object
+      SET properties = json_object :: TEXT
       WHERE id = v_pv_kaart.id;
     END LOOP;
 

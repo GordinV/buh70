@@ -14,8 +14,6 @@ DECLARE
   l_kpv     DATE = params ->> 'kpv';
   l_tyyp    INTEGER = params ->> 'type';
 
-  lcReturn  VARCHAR;
-  lcString  VARCHAR;
   lcOmaTp   VARCHAR;
   v_kulud   RECORD;
   ldKpv1    DATE;
@@ -72,11 +70,10 @@ BEGIN
     INTO v_data;
 
     l_params = row_to_json(row) FROM ( SELECT 0 AS id, v_data AS DATA ) ROW;
+
     l_id = eelarve.sp_salvesta_aastakassakulud(l_params, user_id, l_rekv_id);
 
     result = result + 1;
-
-    RAISE NOTICE 'Kassakulud salvestatud salvestatud ... %', v_kulud.eelarve;
 
   END LOOP;
 
@@ -91,23 +88,21 @@ BEGIN
   LOOP
 
     SELECT
-      0             AS id,
-      v_kulud.summa AS summa,
-      'EUR'         AS valuuta,
-      1             AS kuurs,
+      0                AS id,
+      v_kulud.summa    AS summa,
+      'EUR'            AS valuuta,
+      1                AS kuurs,
       v_kulud.tegev,
-      v_kulud.kood2 AS allikas,
-      v_kulud.kood  AS artikkel,
-      l_kpv         AS kpv,
-      l_rekv_id     AS rekvid
+      v_kulud.allikas  AS allikas,
+      v_kulud.artikkel AS artikkel,
+      l_kpv            AS kpv,
+      l_rekv_id        AS rekvid
     INTO v_data;
 
     l_params = row_to_json(row) FROM ( SELECT 0 AS id, v_data AS DATA ) ROW;
     l_id = eelarve.sp_salvesta_aastakassakulud(l_params, user_id, l_rekv_id);
 
     result = result + 1;
-    RAISE NOTICE 'Kassatulud salvestatud salvestatud ... %', v_kulud.eelarve;
-
   END LOOP;
 
   --  INTO lnSummaDb
@@ -139,7 +134,7 @@ BEGIN
   l_params = row_to_json(row) FROM ( SELECT 0 AS id, v_data AS DATA ) ROW;
   l_id = eelarve.sp_salvesta_aastakassakulud(l_params, user_id, l_rekv_id);
 
-  result = coalesce(result,0) + 1;
+  result = coalesce(result, 0) + 1;
   RETURN;
 
   EXCEPTION WHEN OTHERS
@@ -152,7 +147,15 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE  ON FUNCTION eelarve.sp_koosta_kassakulud(user_id INTEGER, params JSON ) to dbkasutaja;
-GRANT EXECUTE  ON FUNCTION eelarve.sp_koosta_kassakulud(user_id INTEGER, params JSON ) to dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.sp_koosta_kassakulud(user_id INTEGER, params JSON) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.sp_koosta_kassakulud(user_id INTEGER, params JSON) TO dbpeakasutaja;
 
-select eelarve.sp_koosta_kassakulud(1, '{"kpv":"2018-03-21", "rekvid":1}'::JSON )
+SELECT eelarve.sp_koosta_kassakulud(1, '{
+  "kpv": "2018-03-21",
+  "rekvid": 1
+}' :: JSON)
+
+
+/*
+select * from eelarve.a
+ */
