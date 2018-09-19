@@ -31,7 +31,7 @@ DECLARE
   doc_kmkr       TEXT = doc_data ->> 'kmkr';
   doc_KEHTIVUS   DATE = doc_data ->> 'kehtivus';
   doc_is_tootaja BOOLEAN = coalesce((doc_data ->> 'is_tootaja') :: BOOLEAN, FALSE);
-  doc_asutus_aa  JSONB = doc_data ->> 'asutus_aa';
+  doc_asutus_aa  JSONB = coalesce((doc_data ->> 'asutus_aa') :: JSONB, '[]');
   new_properties JSONB;
   new_history    JSONB;
   new_rights     JSONB;
