@@ -194,7 +194,7 @@ BEGIN
     IF lnId IS NOT NULL
     THEN
 
-      PERFORM fnc_avansijaak(lnId);
+--      PERFORM fnc_avansijaak(lnId);
     END IF;
     IF (json_record.kreedit = '200060' OR json_record.kreedit = '200095') AND doc_selg <> 'Alg.saldo kreedit'
     THEN

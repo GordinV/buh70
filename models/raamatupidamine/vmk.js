@@ -70,7 +70,7 @@ const Vmk = {
                       NULL::varchar(120)                            AS viitenr,
                       NULL::TEXT                                    AS selg,
                       NULL::TEXT                                    AS muud,
-                      1                                             AS opt,
+                      0                                             AS opt,
                       NULL::varchar(20)                             AS regkood,
                       NULL::varchar(254)                            AS asutus,
                       NULL::integer                                 AS arvid,

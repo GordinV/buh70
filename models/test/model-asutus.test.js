@@ -1,15 +1,11 @@
 'use strict';
 
-const moduleLocator = require('./../libs/moduleLocator.js')();
-
-describe('dok. type DOCUMENTS tests', function () {
+describe('dok. type asutus tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../models/libs/libraries/document'),
-        docTypeId = 'DOCUMENT'.toLowerCase(),
-        DocDataObject = require('../models/documents');
-
-    moduleLocator.register(docTypeId, doc);
+    const doc = require('../libs/libraries/asutused'),
+        docTypeId = 'asutused',
+        DocDataObject = require('../documents');
 
     let docData = doc.returnData;
 
@@ -21,31 +17,29 @@ describe('dok. type DOCUMENTS tests', function () {
             expect(data).toBeDefined();
             docData['data'] = data.row;
             docData['data']['rekvid'] = 1;
-            docData['data']['kood'] = Math.random().toString();
-            docData['data']['nimetus'] = 'Test DOCUMENT';
-            docData['data']['library'] = 'DOK';
+            docData['data']['regkood'] = '123456789';
+            docData['data']['nimetus'] = 'Test asutus';
+            docData['data']['omvorm'] = 'FIE';
+            docData['data']['email'] = 'vladislav.gordin@gmail.com';
             done();
         });
     });
 
     it(`${docTypeId}  validation`, () => {
         const requiredFields = doc.requiredFields;
-        const validator = require('../frontend/mixin/validateForm');
+        const validator = require('../../frontend/mixin/validateForm');
 
         let warning = validator(null, requiredFields, docData['data']);
         expect(warning).toBeNull();
     });
 
     it(`${docTypeId} unit save test`, (done) => {
-        console.log('save test start');
         DocDataObject.saveDoc(docTypeId.toUpperCase(), [docData, 1, 1], (err, data) => {
-            console.log('saving:', err, data);
             expect(err).toBeNull();
             expect(data).toBeDefined();
             expect(data['rows'].length).toBeGreaterThan(0);
             expect(data['rows'][0].id).toBeGreaterThan(0);
             globalDocId = data['rows'][0].id;
-            console.log('saved:', globalDocId);
             done();
         });
     });
@@ -76,7 +70,9 @@ describe('dok. type DOCUMENTS tests', function () {
     it(`${docTypeId} test for deleteTask`, (done) => {
         let sql = doc.deleteDoc;
         expect(sql).toBeDefined();
+//        expect.hasAssertions();
         DocDataObject.executeSqlQuery(sql, [1, globalDocId], (err, data) => {
+            console.log('received globalDocId, data',globalDocId,  data);
 
             expect(err).toBeNull();
             expect(data).toBeDefined();
@@ -86,6 +82,3 @@ describe('dok. type DOCUMENTS tests', function () {
         });
     });
 });
-
-
-

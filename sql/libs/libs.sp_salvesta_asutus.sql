@@ -22,6 +22,7 @@ DECLARE
   doc_omvorm     TEXT = doc_data ->> 'omvorm';
   doc_kontakt    TEXT = doc_data ->> 'kontakt';
   doc_aadress    TEXT = doc_data ->> 'aadress';
+  doc_tp         TEXT = doc_data ->> 'tp';
   doc_tel        TEXT = doc_data ->> 'tel';
   doc_email      TEXT = doc_data ->> 'email';
   doc_mark       TEXT = doc_data ->> 'mark';
@@ -61,14 +62,6 @@ BEGIN
           doc_asutus_aa :: JSONB AS asutus_aa,
           doc_kmkr               AS kmkr) row;
 
-  /*
-    IF doc_pank IS NOT NULL
-    THEN
-      -- join pank field with another properties
-      new_properties = new_properties || ('{"pank":' || doc_pank :: TEXT || '}') :: JSONB;
-    END IF;
-  */
-
   -- вставка или апдейт docs.doc
 
   IF doc_id IS NULL OR doc_id = 0
@@ -87,9 +80,9 @@ BEGIN
             ARRAY [userId] AS "update",
             ARRAY [userId] AS "delete") row;
 
-    INSERT INTO libs.asutus (rekvid, regkood, nimetus, omvorm, kontakt, aadress, tel, email, mark, muud, properties)
+    INSERT INTO libs.asutus (rekvid, regkood, nimetus, omvorm, kontakt, aadress, tel, email, mark, muud, properties, tp)
     VALUES (user_rekvid, doc_regkood, doc_nimetus, doc_omvorm, doc_kontakt, doc_aadress, doc_tel, doc_email, doc_mark,
-                         doc_muud, new_properties)
+                         doc_muud, new_properties, doc_tp)
     RETURNING id
       INTO asutus_id;
 
@@ -113,6 +106,7 @@ BEGIN
       email      = doc_email,
       mark       = doc_mark,
       muud       = doc_muud,
+      tp         = doc_tp,
       properties = new_properties
     WHERE id = doc_id
     RETURNING id

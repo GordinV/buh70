@@ -1,13 +1,13 @@
 'use strict';
 
-const moduleLocator = require('./../libs/moduleLocator.js')();
+const moduleLocator = require('../../libs/moduleLocator.js')();
 
 describe('dok. type PROJECT tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../models/libs/libraries/project'),
+    const doc = require('../libs/libraries/project'),
         docTypeId = 'PROJECT'.toLowerCase(),
-        DocDataObject = require('../models/documents');
+        DocDataObject = require('../documents');
 
     moduleLocator.register(docTypeId, doc);
 
@@ -30,7 +30,7 @@ describe('dok. type PROJECT tests', function () {
 
     it(`${docTypeId}  validation`, () => {
         const requiredFields = doc.requiredFields;
-        const validator = require('../frontend/mixin/validateForm');
+        const validator = require('../../frontend/mixin/validateForm');
 
         let warning = validator(null, requiredFields, docData['data']);
         expect(warning).toBeNull();

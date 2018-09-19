@@ -35,7 +35,7 @@ CREATE OR REPLACE VIEW cur_korder AS
   FROM docs.doc d
     INNER JOIN docs.korder1 k ON d.id = k.parentid
     INNER JOIN docs.korder2 k2 ON k.id = k2.parentid
-    INNER JOIN libs.library s ON s.kood = d.status :: TEXT
+    INNER JOIN libs.library s ON s.kood = d.status :: TEXT and s.library = 'STATUS'
     INNER JOIN ou.aa aa ON k.kassaid = aa.id
     LEFT OUTER JOIN libs.asutus a ON k.asutusId = a.id
     LEFT OUTER JOIN docs.journalid jid ON jid.journalid = k.journalid

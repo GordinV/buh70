@@ -117,7 +117,8 @@ const Sorder = {
                   k1.*,
                   'EUR' as valuuta,
                   1::numeric(12,4) as kuurs
-                FROM docs.korder2 AS k1
+                FROM docs.doc 
+                    docs.korder2 AS k1
                   INNER JOIN docs.korder1 k ON k.id = k1.parentId
                   INNER JOIN libs.nomenklatuur n ON n.id = k1.nomid
                   INNER JOIN ou.userid u ON u.id = $2 :: INTEGER

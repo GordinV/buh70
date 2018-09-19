@@ -28,10 +28,7 @@ DECLARE
   doc_rentnik    TEXT = doc_data ->> 'rentnik';
   doc_liik       TEXT = doc_data ->> 'liik';
   doc_muud       TEXT = doc_data ->> 'muud';
-  doc_valuuta    TEXT = coalesce((doc_data ->> 'valuuta') :: TEXT, 'EUR');
-  doc_kuurs      NUMERIC(12, 4) = coalesce((doc_data ->> 'kuurs') :: NUMERIC, 1);
   json_object    JSONB;
-  a_dokvaluuta   TEXT [] = enum_range(NULL :: DOK_VALUUTA);
   is_import      BOOLEAN = data ->> 'import';
 BEGIN
 
@@ -68,9 +65,9 @@ BEGIN
   IF doc_id IS NULL OR doc_id = 0
   THEN
 
-    INSERT INTO libs.library (rekvid, kood, nimetus, library, muud, properties, status)
+    INSERT INTO libs.library (rekvid, kood, nimetus, library, muud, properties)
     VALUES (user_rekvid, doc_kood, doc_nimetus, doc_library, doc_muud,
-            json_object, 1)
+            json_object)
     RETURNING id
       INTO lib_id;
 
@@ -87,18 +84,6 @@ BEGIN
     RETURNING id
       INTO lib_id;
   END IF;
-
-
-  IF NOT exists(SELECT id
-                FROM docs.dokvaluuta1
-                WHERE dokid = lib_id AND dokliik = array_position(a_dokvaluuta, 'pv_kaart'))
-  THEN
-    -- if record does
-    INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-    VALUES (lib_id, array_position(a_dokvaluuta, 'pv_kaart'), doc_valuuta, doc_kuurs);
-
-  END IF;
-
 
   RETURN lib_id;
 

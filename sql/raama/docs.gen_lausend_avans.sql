@@ -76,8 +76,7 @@ BEGIN
     details.*
   INTO v_dokprop
   FROM libs.dokprop dokprop
-    INNER JOIN libs.library library ON library.id = dokprop.parentid
-    ,
+    INNER JOIN libs.library library ON library.id = dokprop.parentid,
         jsonb_to_record(dokprop.details) AS details(konto TEXT)
   WHERE dokprop.id = v_avans1.dokpropid
   LIMIT 1;

@@ -24,10 +24,24 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    }],
+    },
+        {
+            sql: `SELECT (e.element ->> 'aa') :: varchar(20) AS aa,
+                $2 :: INTEGER            AS userid
+                FROM libs.asutus a,
+                      json_array_elements((a.properties -> 'asutus_aa') :: JSON) AS e(element)
+                WHERE a.id = $1`, //$1 - doc_id, $2 0 userId
+            query: null,
+            multiple: true,
+            alias: 'asutus_aa',
+            data: []
+
+        }
+    ],
     selectAsLibs: `select * from com_asutused a 
         where libs.check_asutus(a.id, $1) 
-        and (kehtivus is null or kehtivus >= date())`, //$1 - rekvId
+        and (kehtivus is null or kehtivus >= date())
+        order by nimetus`, //$1 - rekvId
     returnData: {
         row: {}
     },
