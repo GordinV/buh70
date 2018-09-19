@@ -136,11 +136,6 @@ BEGIN
       -- add new id into array of ids
       ids = array_append(ids, journal1_id);
 
-      -- valuuta
-      INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-      VALUES (journal1_id, array_position(a_dokvaluuta, 'journal1'), tcValuuta, tnKuurs);
-
-
     ELSE
 
       UPDATE docs.journal1
@@ -157,9 +152,9 @@ BEGIN
         kood5    = json_record.kood5,
         lisa_d   = json_record.lisa_d,
         lisa_k   = json_record.lisa_k,
-        kuurs    = json_record.kuurs,
-        valuuta  = json_record.valuuta,
-        valsumma = json_record.kuurs * json_record.summa
+        kuurs    = 1,
+        valuuta  = 'EUR',
+        valsumma = json_record.summa
       WHERE id = json_record.id :: INTEGER;
 
       journal1_id = json_record.id :: INTEGER;
@@ -167,15 +162,6 @@ BEGIN
       -- add existing id into array of ids
       ids = array_append(ids, journal1_id);
 
-      IF NOT exists(SELECT id
-                    FROM docs.dokvaluuta1
-                    WHERE dokid = journal1_id AND dokliik = array_position(a_dokvaluuta, 'journal1'))
-      THEN
-        -- if record does 
-        INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-        VALUES (journal1_id, array_position(a_dokvaluuta, 'journal1'), tcValuuta, tnKuurs);
-
-      END IF;
     END IF;
 
     -- avans
@@ -194,7 +180,7 @@ BEGIN
     IF lnId IS NOT NULL
     THEN
 
---      PERFORM fnc_avansijaak(lnId);
+      PERFORM docs.get_avans_jaak(lnId);
     END IF;
     IF (json_record.kreedit = '200060' OR json_record.kreedit = '200095') AND doc_selg <> 'Alg.saldo kreedit'
     THEN
@@ -220,7 +206,7 @@ BEGIN
     PERFORM rekl.sp_koosta_ettemaks(userid, json_params);
   END IF;
 
-RETURN doc_id;
+  RETURN doc_id;
 
 END;$BODY$
 LANGUAGE plpgsql VOLATILE

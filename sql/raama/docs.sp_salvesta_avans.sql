@@ -39,7 +39,7 @@ BEGIN
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF is_import is null and userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -190,6 +190,10 @@ BEGIN
 
     DELETE FROM docs.avans2
     WHERE parentid = avans1_id AND id NOT IN (SELECT unnest(ids));
+
+    -- jaak
+
+    PERFORM docs.get_avans_jaak(doc_id);
 
   END LOOP;
 

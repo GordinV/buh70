@@ -97,7 +97,6 @@ describe('dok. type Avans tests', function () {
         });
     });
 
-
     it('should exists view cur_avans_tasud', async () => {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_avans_tasud'`;
         let returnValue = await db.queryDb(sql, []);
@@ -106,8 +105,21 @@ describe('dok. type Avans tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
+    it('should exists procedure docs.get_avans_jaak', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'get_avans_jaak'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
 
-
+    it('should succesfully call procedure docs.get_avans_jaak', async () => {
+        let sql = `SELECT docs.get_avans_jaak(parentid) as jaak FROM docs.avans1 limit 1`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
 
 });
 
