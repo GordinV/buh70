@@ -21,6 +21,7 @@ DECLARE
   doc_konto       VARCHAR(20) = doc_data ->> 'konto';
   doc_kulum_konto VARCHAR(20) = doc_data ->> 'kulum_konto';
   doc_muud        TEXT = doc_data ->> 'muud';
+  is_import boolean = data->>'import';
   json_object     JSONB;
 
   v_pv_kaart      RECORD;
@@ -37,7 +38,7 @@ BEGIN
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
 
-  IF userName IS NULL
+  IF is_import is null and userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;

@@ -37,8 +37,6 @@ DECLARE
   is_import      BOOLEAN = data ->> 'import';
 BEGIN
 
-  RAISE NOTICE 'doc_details %', doc_details;
-
   SELECT kasutaja
   INTO userName
   FROM userid u
@@ -143,7 +141,6 @@ BEGIN
       RETURNING id
         INTO taotlus1_id;
 
-      RAISE NOTICE 'taotlus1 inserted taotlus1_id %', taotlus1_id;
       -- add new id into array of ids
       ids = array_append(ids, taotlus1_id);
 

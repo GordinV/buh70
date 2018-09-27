@@ -78,10 +78,11 @@ BEGIN
     WHERE lib_name = 'ASUTUS' AND old_id = v_avans1.asutusid;
 
     -- DOKPROP
+
     l_dokprop_id = NULL;
     IF NOT empty(v_avans1.dokpropid)
     THEN
-      PERFORM import_dokprop(v_avans1.dokpropid, 'AVANS');
+--      PERFORM import_dokprop(v_avans1.dokpropid, 'AVANS');
       l_dokprop_id = (SELECT new_id
                       FROM import_log
                       WHERE old_id = v_avans1.dokpropid AND lib_name = 'DOKPROP');
@@ -166,7 +167,7 @@ BEGIN
     END IF;
 
     -- проверка на сумму проводки и кол-во записей
-
+/*
     SELECT
       count(a2.id),
       sum(a2.summa)
@@ -185,7 +186,7 @@ BEGIN
     THEN
       RAISE EXCEPTION 'kontrol failed v_avans.id % , korder_id %, l_control_summa %, l_j_summa %,, l_control_count %, l_j_count %', v_avans1.id, avans_id, l_control_summa, l_j_summa, l_control_count, l_j_count;
     END IF;
-
+*/
     -- tasu
     DELETE FROM docs.avans3
     WHERE parentid = avans_id;

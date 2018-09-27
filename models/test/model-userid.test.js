@@ -147,6 +147,14 @@ describe('dok. type Userid tests', function () {
 
     });
 
+    it ('should select com_user_rekv', async() => {
+        let sql = _.find(doc.select,{alias:'com_user_rekv'}).sql;
+        let returnValue = await db.queryDb(sql, ['vlad']);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
 
     it('should exists ou.sp_delete_userid', async()=> {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_userid'`;

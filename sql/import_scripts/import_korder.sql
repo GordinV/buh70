@@ -225,6 +225,7 @@ BEGIN
   END LOOP;
 
   -- control
+  /*
   l_tulemus = (SELECT count(id)
                FROM docs.korder1);
   IF (l_tulemus + 100)
@@ -240,7 +241,7 @@ BEGIN
   THEN
     RAISE EXCEPTION 'korder not imported %', in_old_id;
   END IF;
-
+*/
   RETURN l_count;
 
   EXCEPTION WHEN OTHERS

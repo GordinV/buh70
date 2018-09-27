@@ -153,6 +153,7 @@ BEGIN
   END LOOP;
 
   -- control
+  /*
   IF (SELECT count(id)
       FROM docs.pv_oper)
      >= l_count
@@ -161,7 +162,7 @@ BEGIN
   ELSE
     RAISE EXCEPTION 'Import failed, new_count < old_count %', l_count;
   END IF;
-
+*/
 
   RETURN l_count;
 

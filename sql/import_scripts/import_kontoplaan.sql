@@ -60,7 +60,7 @@ BEGIN
             coalesce(lib_id, 0) AS id,
             v_params            AS data) row;
 
-    SELECT libs.sp_salvesta_konto(json_object :: JSON, 1, 1)
+    SELECT libs.sp_salvesta_konto(json_object :: JSON, 1, 63)
     INTO lib_id;
     RAISE NOTICE 'lib_id %, l_count %', lib_id, l_count;
 

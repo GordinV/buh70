@@ -1,5 +1,5 @@
 module.exports = {
-    selectAsLibs: `select * from com_rekv`,
+    selectAsLibs: `select id, nimetus::varchar(254), regkood::varchar(20), parentid from com_rekv`,
     select: [{
         sql: `SELECT
                 'REKV' as doc_type_id,

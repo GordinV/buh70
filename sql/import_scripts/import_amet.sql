@@ -1,6 +1,7 @@
 DROP FUNCTION IF EXISTS import_amet( );
+DROP FUNCTION IF EXISTS import_amet( integer);
 
-CREATE OR REPLACE FUNCTION import_amet()
+CREATE OR REPLACE FUNCTION import_amet(in_id integer)
   RETURNS INTEGER AS
 $BODY$
 DECLARE
@@ -35,9 +36,10 @@ BEGIN
      ELSE pa.tunnusid END) :: INTEGER  AS tunnusid
   FROM library l
     INNER JOIN palk_asutus pa ON pa.ametid = l.id
-    INNER JOIN rekv ON rekv.id = pa.rekvid AND rekv.parentid < 999
+    INNER JOIN rekv ON rekv.id = pa.rekvid AND (rekv.parentid < 999 or in_id is not null)
     INNER JOIN library o ON o.id = pa.osakondid
   WHERE l.library = 'AMET'
+        and (in_id is null or l.id = in_id )
   LIMIT ALL
   LOOP
 
@@ -161,6 +163,12 @@ COST 100;
 
 
 /*
-SELECT import_amet()
+SELECT import_amet(id) from library where library in ('AMET','OSAKOND')
+  and rekvid in (select id from rekv where parentid > 200)
+and (id in (select osakondid from tooleping where rekvid in (select id from rekv where parentid < 999))
+or  id in (select ametid from tooleping where rekvid in (select id from rekv where parentid < 999)))
+
+
+
 
 */

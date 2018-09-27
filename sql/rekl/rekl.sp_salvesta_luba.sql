@@ -68,11 +68,14 @@ BEGIN
     RETURNING id
       INTO doc_id;
 
+    RAISE NOTICE 'after doc_id %', doc_id;
+
     INSERT INTO rekl.luba (parentid, asutusid, rekvid, algkpv, loppkpv, number, alus, muud, kord)
     VALUES
       (doc_id, doc_asutusid, user_rekvid, doc_algkpv, doc_loppkpv, doc_number, doc_alus, doc_muud, doc_kord)
     RETURNING id
       INTO luba_id;
+    RAISE NOTICE 'after luba_id %', luba_id;
 
   ELSE
     SELECT row_to_json(row)
@@ -170,7 +173,10 @@ BEGIN
 
   -- uuendame dekl list
 
-  PERFORM rekl.sp_calc_dekl(doc_id, userid);
+  IF is_import IS NOT NULL
+  THEN
+    PERFORM rekl.sp_calc_dekl(doc_id, userid);
+  END IF;
   RETURN doc_id;
   EXCEPTION WHEN OTHERS
   THEN

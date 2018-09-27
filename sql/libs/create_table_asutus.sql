@@ -53,3 +53,11 @@ insert into libs.asutus (rekvid, regkood, nimetus, omvorm, staatus)
 
   */
 
+
+CREATE INDEX asutus_staatus
+  ON libs.asutus (staatus)
+where staatus <> 3;
+
+
+
+

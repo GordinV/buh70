@@ -1,36 +1,36 @@
 ﻿-- Table: public.arv
 
-DROP TABLE if exists docs.arv;
+DROP TABLE IF EXISTS docs.arv;
 
 CREATE TABLE docs.arv
 (
-  id serial,
-  rekvid integer NOT NULL,
-  userid integer NOT NULL,
-  journalid integer NOT NULL DEFAULT 0,
-  doklausid integer NOT NULL DEFAULT 0,
-  liik smallint NOT NULL DEFAULT 0,
-  operid integer NOT NULL DEFAULT 0,
-  "number" character(20) NOT NULL DEFAULT space(1),
-  kpv date NOT NULL DEFAULT ('now'::text)::date,
-  asutusid integer NOT NULL DEFAULT 0,
-  arvid integer NOT NULL DEFAULT 0,
-  lisa character(120) NOT NULL DEFAULT space(1),
-  tahtaeg date,
-  kbmta numeric(12,4) NOT NULL DEFAULT 0,
-  kbm numeric(12,4) NOT NULL DEFAULT 0,
-  summa numeric(12,4) NOT NULL DEFAULT 0,
-  tasud date,
-  tasudok character(254),
-  muud text,
-  jaak numeric(12,4) NOT NULL DEFAULT 0,
-  objektid integer NOT NULL DEFAULT 0,
-  objekt character varying(20),
-  parentId integer,
+  id        SERIAL,
+  rekvid    INTEGER        NOT NULL,
+  userid    INTEGER        NOT NULL,
+  journalid INTEGER        NOT NULL DEFAULT 0,
+  doklausid INTEGER        NOT NULL DEFAULT 0,
+  liik      SMALLINT       NOT NULL DEFAULT 0,
+  operid    INTEGER        NOT NULL DEFAULT 0,
+  "number"  CHARACTER(20)  NOT NULL DEFAULT space(1),
+  kpv       DATE           NOT NULL DEFAULT ('now' :: TEXT) :: DATE,
+  asutusid  INTEGER        NOT NULL DEFAULT 0,
+  arvid     INTEGER        NOT NULL DEFAULT 0,
+  lisa      CHARACTER(120) NOT NULL DEFAULT space(1),
+  tahtaeg   DATE,
+  kbmta     NUMERIC(12, 4) NOT NULL DEFAULT 0,
+  kbm       NUMERIC(12, 4) NOT NULL DEFAULT 0,
+  summa     NUMERIC(12, 4) NOT NULL DEFAULT 0,
+  tasud     DATE,
+  tasudok   CHARACTER(254),
+  muud      TEXT,
+  jaak      NUMERIC(12, 4) NOT NULL DEFAULT 0,
+  objektid  INTEGER        NOT NULL DEFAULT 0,
+  objekt    CHARACTER VARYING(20),
+  parentId  INTEGER,
   CONSTRAINT arv_pkey PRIMARY KEY (id)
 )
 WITH (
-  OIDS=TRUE
+OIDS = TRUE
 );
 
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE docs.arv TO dbpeakasutaja;
@@ -39,5 +39,14 @@ GRANT ALL ON TABLE docs.arv TO dbadmin;
 GRANT SELECT ON TABLE docs.arv TO dbvaatleja;
 
 
+CREATE INDEX idx_arv_parentid
+  ON docs.arv USING BTREE (parentid);
+CREATE INDEX idx_arv_rekvid
+  ON docs.arv USING BTREE (rekvid);
+CREATE INDEX idx_arv_asutusid
+  ON docs.arv USING BTREE (asutusid);
+
+/*
 insert into docs.arv
 	select * from arv
+*/

@@ -134,26 +134,6 @@ BEGIN
   END LOOP;
 
   -- проверка на сумму проводки и кол-во записей
-  /*
-    SELECT
-      count(id),
-      sum(summa)
-    INTO l_control_count, l_control_summa
-    FROM cur_luba;
-
-    SELECT
-      count(j1.id),
-      sum(j1.summa)
-    INTO l_j_count, l_j_summa
-    FROM journal j INNER JOIN journal1 j1 ON j.id = j1.parentid
-    WHERE j.id = v_arv.id;
-    IF (l_j_count) <> l_control_count OR
-       (l_j_summa) <> l_control_summa
-    THEN
-      RAISE EXCEPTION 'kontrol failed v_journal.id % , journal_id %, l_control_summa %, l_j_summa %,, l_control_count %, l_j_count %', v_arv.id, arv_id, l_control_summa, l_j_summa, l_control_count, l_j_count;
-    END IF;
-    l_count = l_count + 1;
-  */
 
   RETURN l_count;
 

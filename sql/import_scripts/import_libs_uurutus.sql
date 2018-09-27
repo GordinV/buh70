@@ -29,7 +29,7 @@ BEGIN
     WHERE old_id = v_lib.id
           AND upper(ltrim(rtrim(lib_name::text))) = upper(ltrim(rtrim(v_lib.library::text)));
 
-    RAISE NOTICE 'check for lib.. v_lib.id -> %, found -> % log_id -> %', v_lib.id, lib_id, log_id;
+--    RAISE NOTICE 'check for lib.. v_lib.id -> %, found -> % log_id -> %', v_lib.id, lib_id, log_id;
 
     -- преобразование и получение параметров
 
@@ -51,11 +51,12 @@ BEGIN
     INTO json_object
     FROM (SELECT
             coalesce(lib_id, 0) AS id,
+            true as import,
             v_params            AS data) row;
 
     SELECT libs.sp_salvesta_library(json_object :: JSON, 1, v_lib.rekvid)
     INTO lib_id;
-    RAISE NOTICE 'lib_id %, l_count %', lib_id, l_count;
+--    RAISE NOTICE 'lib_id %, l_count %', lib_id, l_count;
 
     -- salvestame log info
     SELECT row_to_json(row)
@@ -82,6 +83,7 @@ BEGIN
     l_count = l_count + 1;
   END LOOP;
 
+  /*
   -- control
   IF (SELECT count(id)
       FROM libs.library
@@ -91,14 +93,16 @@ BEGIN
     raise notice 'Import ->ok';
   ELSE
     raise exception 'Import failed, new_count < old_count %', l_count;
-END if;
 
+
+END if;
+    */
 
 RETURN l_count;
 
 EXCEPTION WHEN OTHERS
 THEN
-RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+RAISE NOTICE 'error % %, v_lib %', SQLERRM, SQLSTATE, v_lib;
 RETURN 0;
 
 END;$BODY$

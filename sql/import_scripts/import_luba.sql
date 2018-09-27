@@ -21,6 +21,7 @@ BEGIN
   FROM luba l
     INNER JOIN rekv ON rekv.id = l.rekvid AND rekv.parentid < 999
   WHERE (l.id = in_old_id OR in_old_id IS NULL)
+        and l.parentid not in (0, 30656)
   LIMIT ALL
   LOOP
   raise notice 'in_old_id %', in_old_id;
@@ -41,7 +42,7 @@ BEGIN
 
     IF l_asutus_id is null
     THEN
-      RAISE EXCEPTION 'amet or osakond not found v_leping.osakondid %,l_osakond_id %, v_leping.ametid %, l_amet_id %, v_leping.parentid %,  l_asutus_id %', v_luba.osakondid, l_osakond_id, v_luba.ametid, l_amet_id, v_luba.parentid,  l_asutus_id;
+      RAISE EXCEPTION 'asutus v_luba.parentid %,  l_asutus_id %',  v_luba.parentid,  l_asutus_id;
     END IF;
     -- преобразование и получение параметров
     json_luba1 = array_to_json((SELECT array_agg(row_to_json(l1.*))
@@ -81,8 +82,6 @@ BEGIN
 
      */
 
-
-
     SELECT row_to_json(row)
     INTO json_object
     FROM (SELECT
@@ -90,7 +89,7 @@ BEGIN
             TRUE                   AS import,
             v_params               AS data) row;
 
-    SELECT rekl.sp_salvesta_luba(json_object :: JSON, 1, 1)
+    SELECT rekl.sp_salvesta_luba(json_object :: JSON, 1, v_luba.rekvid)
     INTO luba_id;
     RAISE NOTICE 'leping_id %, l_count %', luba_id, l_count;
 

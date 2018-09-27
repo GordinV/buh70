@@ -1,7 +1,6 @@
 module.exports = {
     selectAsLibs: `SELECT menu.*
-                        FROM ou.cur_menu menu
-                          INNER JOIN ou.get_menu($1 :: TEXT [], $2 :: TEXT []) QRY_menu ON qry_menu.id = menu.id
+                        FROM get_menu($1 :: TEXT [], $2 :: TEXT [])  menu
                         ORDER BY idx`, // $1 - modules array, like '{"EELARVE","RAAMA"}', $2 array, like '{"KASUTAJA","ADMIN"}'
     select: [{
         sql: `SELECT
@@ -78,7 +77,7 @@ module.exports = {
         data: []
     }],
     grid: {
-        sqlString: `select *, $1 as rekvid
+        sqlString: `select id, pad::varchar(120), bar::varchar(20), idx, name::varchar(120), eesti::varchar(120), vene::varchar(120), proc, groups, modules,users, level,message::varchar(120), keyshortcut::varchar(120), $1 as rekvid
                         from ou.cur_menu m`,
         alias: 'curMenu'
     },

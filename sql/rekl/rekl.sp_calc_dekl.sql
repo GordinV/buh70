@@ -35,7 +35,7 @@ BEGIN
                     INNER JOIN libs.dokprop d ON l.id = d.parentid
                   WHERE l.kood = 'DEKL'
                         AND l.library = 'DOK'
-                        AND rekvid = v_luba.rekvid
+                        AND d.rekvid = v_luba.rekvid
                   ORDER BY id DESC
                   LIMIT 1);
 

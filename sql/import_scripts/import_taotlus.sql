@@ -28,11 +28,12 @@ BEGIN
   FROM taotlus t
     INNER JOIN rekv ON t.rekvid = rekv.id AND rekv.parentid < 999
   WHERE (t.id = in_old_id OR in_old_id IS NULL)
+    and t.aasta = 2018
   ORDER BY t.kpv
   LIMIT ALL
   LOOP
 
-    RAISE NOTICE 'v_taotlus.id %', v_taotlus.id;
+--    RAISE NOTICE 'v_taotlus.id %', v_taotlus.id;
 
     -- поиск и проверка на ранее сделанный импорт
     SELECT
@@ -43,7 +44,7 @@ BEGIN
     WHERE old_id = v_taotlus.id
           AND upper(ltrim(rtrim(lib_name :: TEXT))) = 'TAOTLUS';
 
-    RAISE NOTICE 'check for lib.. v_taotlus.id -> %, found -> % log_id -> %', v_taotlus.id, taotlus_id, log_id;
+ --   RAISE NOTICE 'check for lib.. v_taotlus.id -> %, found -> % log_id -> %', v_taotlus.id, taotlus_id, log_id;
 
     -- преобразование и получение параметров
 
@@ -125,7 +126,7 @@ BEGIN
     THEN
       RAISE EXCEPTION 'saving not success';
     ELSE
-      RAISE NOTICE 'saved %', taotlus_id;
+--      RAISE NOTICE 'saved %', taotlus_id;
     END IF;
 
 
@@ -153,7 +154,7 @@ BEGIN
     THEN
       RAISE EXCEPTION 'log save failed';
     END IF;
-
+/*
     -- проверка на сумму проводки и кол-во записей
 
     SELECT
@@ -175,10 +176,12 @@ BEGIN
     THEN
       RAISE EXCEPTION 'kontrol failed v_taotlus.id % , taotlus_id %, l_control_summa %, l_j_summa %,, l_control_count %, l_j_count %', v_taotlus.id, taotlus_id, l_control_summa, l_j_summa, l_control_count, l_j_count;
     END IF;
+    */
     l_count = l_count + 1;
   END LOOP;
 
   -- control
+/*
   l_tulemus = (SELECT count(id)
                FROM eelarve.taotlus);
   IF (l_tulemus + 100)
@@ -189,17 +192,18 @@ BEGIN
     RAISE EXCEPTION 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
     --    RAISE notice 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
   END IF;
+*/
 
   IF l_count = 0
   THEN
-    RAISE EXCEPTION 'arve not imported %', in_old_id;
+    RAISE EXCEPTION 'taotlused not imported %', in_old_id;
   END IF;
 
   RETURN l_count;
 
   EXCEPTION WHEN OTHERS
   THEN
-    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+    RAISE NOTICE 'error % % taotlus.id %', SQLERRM, SQLSTATE, v_taotlus.id;
     RETURN 0;
 
 END;$BODY$

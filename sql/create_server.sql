@@ -1,11 +1,12 @@
 CREATE EXTENSION postgres_fdw;
 
-CREATE SERVER db_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'db.narva.ee', dbname 'narvalv', port '5432');
+CREATE SERVER dbarch_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host '213.184.47.198', dbname 'narvalv', port '5436');
 
 CREATE USER MAPPING FOR vlad
 SERVER db_narva_ee
 OPTIONS (user 'vlad', password 'Vlad490710');
 
+/*
 CREATE FOREIGN TABLE remote_objekt (
   id serial NOT NULL,
   libid integer NOT NULL,
@@ -35,3 +36,5 @@ OPTIONS (schema_name 'public', table_name 'objekt');
 
 
 select * from remote_objekt
+
+*/

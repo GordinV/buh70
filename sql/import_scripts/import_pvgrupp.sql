@@ -75,9 +75,10 @@ BEGIN
     INTO json_object
     FROM (SELECT
             coalesce(lib_id, 0) AS id,
+            true as import,
             v_params            AS data) row;
 
-    SELECT libs.sp_salvesta_pv_grupp(json_object :: JSON, 1, 1)
+    SELECT libs.sp_salvesta_pv_grupp(json_object :: JSON, 1,v_lib.rekvid)
     INTO lib_id;
     RAISE NOTICE 'lib_id %, l_count %', lib_id, l_count;
 

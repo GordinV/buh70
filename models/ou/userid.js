@@ -48,6 +48,12 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
+    },{
+        sql: `select distinct rekvid from ou.userid where kasutaja = $1`,
+        query: null,
+        multiple: true,
+        alias:'com_user_rekv',
+        data:[]
     }],
     returnData: {
         row: {},

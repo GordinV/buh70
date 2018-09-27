@@ -64,6 +64,11 @@ CREATE INDEX korder1_parent_idx
   (parentid);
 
 
+CREATE INDEX korder1_asuitus_idx
+  ON docs.korder1
+  USING btree
+  (asutusid);
+
   -- triggers
 
 drop function if exists docs.trigiu_korderid_after_laekumine();

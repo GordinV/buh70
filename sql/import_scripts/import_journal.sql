@@ -55,20 +55,7 @@ BEGIN
 
     -- преобразование и получение параметров
     -- journal1
-    /*
-     deebet   = json_record.deebet,
-        kreedit  = json_record.kreedit,
-        summa    = json_record.summa,
-        tunnus   = json_record.tunnus,
-        proj     = json_record.proj,
-        kood1    = json_record.kood1,
-        kood2    = json_record.kood2,
-        kood3    = json_record.kood3,
-        kood4    = json_record.kood4,
-        kood5    = json_record.kood5,
-        lisa_d   = json_record.lisa_d,
-        lisa_k   = json_record.lisa_k
-     */
+
     json_journal1 = array_to_json((SELECT array_agg(row_to_json(j1.*))
                                    FROM (SELECT
                                            journal1.deebet,

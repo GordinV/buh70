@@ -20,8 +20,11 @@ BEGIN
   FOR v_leping IN
   SELECT t.*
   FROM tooleping t
-    INNER JOIN rekv ON rekv.id = t.rekvid AND rekv.parentid < 999
+    INNER JOIN rekv ON rekv.id = t.rekvid AND rekv.parentid < 999 and rekvid not in (15)
   WHERE (t.id = in_old_id OR in_old_id IS NULL)
+    and t.osakondid in (select id from library where library = 'OSAKOND')
+    and t.ametid in (select id from library where library = 'AMET')
+
   LIMIT ALL
   LOOP
 

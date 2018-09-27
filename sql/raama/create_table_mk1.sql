@@ -31,3 +31,7 @@ GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE docs.mk1 TO dbpeakasutaja;
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE docs.mk1 TO dbkasutaja;
 GRANT ALL ON TABLE docs.mk1 TO dbadmin;
 GRANT SELECT ON TABLE docs.mk1 TO dbvaatleja;
+
+create index idx_mk1_parentid on docs.mk1 USING BTREE (parentid);
+create index idx_mk1_asutusid on docs.mk1 USING BTREE (asutusid);
+create index idx_mk1_nomidid on docs.mk1 USING BTREE (nomid);

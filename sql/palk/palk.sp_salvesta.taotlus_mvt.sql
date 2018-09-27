@@ -25,7 +25,7 @@ BEGIN
   INTO userName
   FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF is_import and userName IS NULL
+  IF is_import is null  and userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;

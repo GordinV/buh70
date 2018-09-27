@@ -86,6 +86,20 @@ BEGIN
     THEN
       RAISE EXCEPTION 'log save failed';
     END IF;
+
+    -- check user account
+/*
+    if not exists (select 1 from FROM pg_user
+                   where usename = v_user.kasutaja) THEN
+
+
+      CREATE ROLE "galina.rojak" LOGIN
+      ENCRYPTED PASSWORD 'md51dd790e1a086df9ab7863d24d3fea69a'
+      NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE;
+      GRANT dbkasutaja TO "galina.rojak";
+
+    END IF;
+*/
     l_count = l_count + 1;
   END LOOP;
 

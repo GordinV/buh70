@@ -28,11 +28,11 @@
         <property name="ApplicationName" value="DataGrip" />
       </driver-properties>
     </data-source>
-    <data-source source="LOCAL" name="postgres 10@213.184.47.198" uuid="66959b98-92cd-4347-92ca-4737d7511f12">
+    <data-source source="LOCAL" name="narvalv- 10@213.184.47.198" uuid="66959b98-92cd-4347-92ca-4737d7511f12">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://213.184.47.198:5436/postgres</jdbc-url>
+      <jdbc-url>jdbc:postgresql://213.184.47.198:5436/narvalv</jdbc-url>
       <driver-properties>
         <property name="ApplicationName" value="DataGrip" />
       </driver-properties>

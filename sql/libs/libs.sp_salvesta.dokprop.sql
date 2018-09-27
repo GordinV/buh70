@@ -66,8 +66,8 @@ BEGIN
   IF doc_id IS NULL OR doc_id = 0
   THEN
 
-    INSERT INTO libs.dokprop (parentId, registr, vaatalaus, selg, muud, asutusId, details, proc_, status)
-    VALUES (l_parentId, doc_registr, doc_vaatalaus, doc_selg, doc_muud, doc_asutusId, json_object, doc_proc_,  1)
+    INSERT INTO libs.dokprop (parentId, rekvid, registr, vaatalaus, selg, muud, asutusId, details, proc_, status)
+    VALUES (l_parentId, user_rekvid, doc_registr, doc_vaatalaus, doc_selg, doc_muud, doc_asutusId, json_object, doc_proc_,  1)
     RETURNING id
       INTO lib_id;
   ELSE

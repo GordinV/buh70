@@ -41,7 +41,7 @@ BEGIN
     k.proj
   FROM library l
     INNER JOIN palk_lib p ON p.parentid = l.id
-    INNER JOIN klassiflib k ON k.libid = l.id
+    LEFT OUTER JOIN klassiflib k ON k.libid = l.id
     LEFT OUTER JOIN library t ON t.id = k.tunnusid
     INNER JOIN rekv ON l.rekvid = rekv.id AND rekv.parentid < 999
   WHERE l.library = 'PALK'
@@ -61,14 +61,6 @@ BEGIN
     RAISE NOTICE 'check for lib.. v_lib.id -> %, found -> % log_id -> %', v_lib.id, lib_id, log_id;
 
     -- преобразование и получение параметров
-    /*
-      doc_uuritus varchar(20) = doc_data ->> 'uuritus';
-      doc_proj varchar(20) = doc_data ->> 'proj';
-      doc_tegev varchar(20) = doc_data ->> 'tegev';
-      doc_allikas varchar(20) = doc_data ->> 'allikas';
-      doc_artikkel varchar(20) = doc_data ->> 'artikkel';
-
-     */
     -- ищем tunnusid
     SELECT id
     INTO l_tunnus

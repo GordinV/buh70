@@ -20,7 +20,7 @@ BEGIN
   FOR v_rekv IN
   SELECT *
   FROM rekv r
-  WHERE r.parentid < 999 AND id > 1
+  WHERE r.parentid < 999
   LIMIT ALL
   LOOP
 
@@ -146,8 +146,7 @@ END;$BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
 
-
 /*
-SELECT import_rekv()
-
+SELECT import_rekv();
+DROP FUNCTION IF EXISTS import_rekv( );
 */

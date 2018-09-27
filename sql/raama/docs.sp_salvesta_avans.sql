@@ -149,9 +149,6 @@ BEGIN
         THEN 'EUR'
                             ELSE json_record.valuuta END;
 
-      INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-      VALUES (avans2_id, array_position(a_dokvaluuta, 'avans2'), json_record.Valuuta, json_record.Kuurs);
-
 
     ELSE
 
@@ -175,15 +172,6 @@ BEGIN
       -- add existing id into array of ids
       ids = array_append(ids, avans2_id);
 
-      IF NOT exists(SELECT id
-                    FROM docs.dokvaluuta1
-                    WHERE dokid = avans2_id AND dokliik = array_position(a_dokvaluuta, 'avans2'))
-      THEN
-        -- if record does
-        INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-        VALUES (avans2_id, array_position(a_dokvaluuta, 'avans2'), json_record.Valuuta, json_record.Kuurs);
-
-      END IF;
     END IF;
 
     -- delete record which not in json

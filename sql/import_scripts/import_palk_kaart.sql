@@ -27,6 +27,9 @@ BEGIN
     INNER JOIN rekv ON rekv.id = t.rekvid AND rekv.parentid < 999
     INNER JOIN import_log il ON il.old_id = t.id AND il.lib_name = 'TOOLEPING'
   WHERE (pk.id = in_old_id OR in_old_id IS NULL)
+        and exists  (select 1 from library where id = pk.libid)
+        and exists  (select 1 from asutus where id = pk.parentid)
+
   LIMIT ALL
   LOOP
 
@@ -58,18 +61,7 @@ BEGIN
       RAISE EXCEPTION 'data not found v_pk.parentid %, l_asutus_id %, v_pk.libid %, l_lib_id %', v_pk.parentid, l_asutus_id, v_pk.libid, l_lib_id;
     END IF;
     -- преобразование и получение параметров
-    /*
-      doc_lepingid   INTEGER = doc_data ->> 'lepingid';
-      doc_summa      NUMERIC(14, 4) = doc_data ->> 'summa';
-      doc_percent_   INTEGER = doc_data ->> 'percent_';
-      doc_tulumaks   INTEGER = doc_data ->> 'tulumaks';
-      doc_tulumaar   INTEGER = doc_data ->> 'tulumaar';
-      doc_alimentid  INTEGER = doc_data ->> 'alimentid';
-      doc_tunnus     TEXT = doc_data ->> 'tunnus';
-      doc_minsots    INTEGER = doc_data ->> 'minsots';
-      doc_muud       TEXT = doc_data ->> 'muud';
 
-     */
     -- сохранение
     SELECT
       coalesce(pk_id, 0) AS id,

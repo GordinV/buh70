@@ -39,15 +39,6 @@ BEGIN
     RAISE NOTICE 'check for lib.. v_mvt.id -> %, found -> % log_id -> %', v_mvt.id, mvt_id, log_id;
 
     -- преобразование и получение параметров
-    /*
-  doc_kpv       DATE = doc_data ->> 'kpv';
-  doc_alg_kpv   DATE = doc_data ->> 'alg_kpv';
-  doc_lopp_kpv  DATE = doc_data ->> 'lopp_kpv';
-  doc_lepingid  INTEGER = doc_data ->> 'lepingid';
-  doc_summa     NUMERIC(12, 2) = doc_data ->> 'summa';
-  doc_muud      TEXT = doc_data ->> 'muud';
-
-     */
     -- сохранение
     SELECT
       coalesce(mvt_id, 0)                                    AS id,

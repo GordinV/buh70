@@ -21,6 +21,7 @@ BEGIN
   FROM curpohivara p
     INNER JOIN rekv ON rekv.id = p.rekvid AND rekv.parentid < 999
   WHERE (p.id = in_old_id OR in_old_id IS NULL)
+  and (mahakantud is null or mahakantud < date(2017,01,01))
   LIMIT ALL
   LOOP
 
@@ -39,20 +40,6 @@ BEGIN
     RAISE NOTICE 'check for lib.. v_lib.id -> %, found -> % log_id -> %', v_pv.id, pv_id, log_id;
 
     -- преобразование и получение параметров
-    /*
-      doc_soetkpv    DATE = (CASE WHEN empty((doc_data ->> 'soetkpv') :: TEXT)
-        THEN NULL
-                             ELSE (doc_data ->> 'soetkpv') END) :: DATE;
-      doc_kulum      NUMERIC(12, 4) = doc_data ->> 'kulum';
-      doc_algkulum   NUMERIC(12, 2) = doc_data ->> 'algkulum';
-      doc_soetmaks   NUMERIC(12, 2) = doc_data ->> 'soetmaks';
-      doc_selg       TEXT = doc_data ->> 'selg';
-      doc_vastisikid INTEGER = doc_data ->> 'vastisikid';
-      doc_rentnik    TEXT = doc_data ->> 'rentnik';
-      doc_liik       TEXT = doc_data ->> 'liik';
-      doc_muud       TEXT = doc_data ->> 'muud';
-
-     */
     l_grupp_id = (select new_id from import_log where old_id = v_pv.gruppid and lib_name = 'PVGRUPP');
 
     if l_grupp_id is null THEN
@@ -116,6 +103,7 @@ BEGIN
   END LOOP;
 
   -- control
+  /*
   IF (SELECT count(id)
       FROM libs.library
       WHERE LIBRARY = 'POHIVARA')
@@ -125,7 +113,7 @@ BEGIN
   ELSE
     RAISE EXCEPTION 'Import failed, new_count < old_count %', l_count;
   END IF;
-
+*/
 
   RETURN l_count;
 

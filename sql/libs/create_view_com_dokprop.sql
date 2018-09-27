@@ -14,9 +14,9 @@ CREATE OR REPLACE VIEW com_dokprop AS
     (d.details :: JSONB ->> 'kood3') :: VARCHAR(20)    AS kood3,
     (d.details :: JSONB ->> 'kood5') :: VARCHAR(20)    AS kood5,
     d.asutusid,
-    l.rekvid
+    d.rekvid
   FROM libs.library l
-    LEFT OUTER JOIN libs.dokprop d ON l.id = d.parentId
+    INNER JOIN libs.dokprop d ON l.id = d.parentId
   WHERE l.library = 'DOK'
         AND d.status <> 3
   ORDER BY kood;

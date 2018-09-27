@@ -8,7 +8,7 @@ module.exports = {
               d.selg,
               l.id as parentid,
               l.nimetus                                          AS dok,
-              l.rekvid,
+              d.rekvid,
               $2 :: INTEGER                                       AS userid,
               coalesce((d.details :: JSONB ->> 'konto'),'') :: VARCHAR(20)    AS konto,
               coalesce((d.details :: JSONB ->> 'kbmkonto'),'') :: VARCHAR(20) AS kbmkonto,
@@ -79,10 +79,10 @@ module.exports = {
                       l.nimetus AS nimetus, 
                       l.kood AS dok
                     FROM libs.library l
-                      LEFT OUTER JOIN libs.dokprop d ON l.id = d.parentId
+                      INNER JOIN libs.dokprop d ON l.id = d.parentId
                     WHERE l.library = 'DOK'
                           AND d.status <> 3
-                          AND (l.rekvId = $1 OR l.rekvid IS NULL)`,  //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                          AND d.rekvId = $1 `,  //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curDokprop'
     },

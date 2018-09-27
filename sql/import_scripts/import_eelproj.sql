@@ -40,7 +40,7 @@ BEGIN
     -- userid
     l_user_id = (select new_id from import_log where old_id = v_proj.kinnitaja and lib_name = 'USERID');
     if l_user_id is null THEN
-      raise EXCEPTION 'User not found v_proj.kinnitaja %, l_user_id %', v_proj.kinnitaja, l_user_id;
+      raise NOTICE 'User not found v_proj.kinnitaja %, l_user_id %', v_proj.kinnitaja, l_user_id;
     END IF;
 
     -- сохранение
@@ -62,7 +62,7 @@ BEGIN
 
     SELECT eelarve.sp_salvesta_eelproj(json_object :: JSON, 1, v_proj.rekvid)
     INTO proj_id;
-    RAISE NOTICE 'import dokprop proj_id %, l_count %', proj_id, l_count;
+    RAISE NOTICE 'import eelproj proj_id %, l_count %', proj_id, l_count;
 
     if empty(proj_id) THEN
       raise EXCEPTION 'eelproj not saved json_object %', json_object;

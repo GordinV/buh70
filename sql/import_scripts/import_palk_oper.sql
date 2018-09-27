@@ -70,33 +70,6 @@ BEGIN
       RAISE EXCEPTION 'leping or lib not found v_palk_oper.lepingid %, l_leping_id %, v_palk_oper.libid %, l_lib_id %', v_palk_oper.lepingid, l_leping_id, v_palk_oper.libid, l_lib_id;
     END IF;
 
-    /*
-  doc_libid     INTEGER = doc_data ->> 'libid';
-  doc_lepingid  INTEGER = doc_data ->> 'lepingid';
-  doc_kpv       DATE = doc_data ->> 'kpv';
-  doc_summa     NUMERIC = doc_data ->> 'summa';
-  doc_dokpropid INTEGER = doc_data ->> 'dokpropid';
-  doc_kood1     TEXT = doc_data ->> 'kood1';
-  doc_kood2     TEXT = doc_data ->> 'kood2';
-  doc_kood3     TEXT = doc_data ->> 'kood3';
-  doc_kood4     TEXT = doc_data ->> 'kood4';
-  doc_kood5     TEXT = doc_data ->> 'kood5';
-  doc_konto     TEXT = doc_data ->> 'konto';
-  doc_tp        TEXT = doc_data ->> 'tp';
-  doc_tunnus    TEXT = doc_data ->> 'tunnus';
-  doc_proj      TEXT = doc_data ->> 'proj';
-  doc_tulumaks  NUMERIC = doc_data ->> 'tulumaks';
-  doc_sotsmaks  NUMERIC = doc_data ->> 'sotsmaks';
-  doc_tootumaks NUMERIC = doc_data ->> 'tootumaks';
-  doc_pensmaks  NUMERIC = doc_data ->> 'pensmaks';
-  doc_tulubaas  NUMERIC = doc_data ->> 'tulubaas';
-  doc_tka       NUMERIC = doc_data ->> 'tka';
-  doc_period    DATE = doc_data ->> 'period';
-  doc_pohjus    TEXT = doc_data ->> 'pohjus';
-  doc_tululiik  TEXT = doc_data ->> 'tululiik';
-  doc_muud      TEXT = doc_data ->> 'muud';
-     */
-
     -- сохранение
     SELECT
       coalesce(palk_oper_id, 0) AS id,

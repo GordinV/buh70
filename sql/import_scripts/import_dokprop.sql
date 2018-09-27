@@ -1,6 +1,8 @@
 DROP FUNCTION IF EXISTS import_dokprop( );
+DROP FUNCTION IF EXISTS import_dokprop( INTEGER );
+DROP FUNCTION IF EXISTS import_dokprop( INTEGER, TEXT );
 
-CREATE OR REPLACE FUNCTION import_dokprop(in_old_id INTEGER, in_dok text = 'VMK')
+CREATE OR REPLACE FUNCTION import_dokprop(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
 DECLARE
@@ -13,6 +15,7 @@ DECLARE
   l_count     INTEGER = 0;
   l_asutus_id INTEGER;
   l_lib_id    INTEGER;
+  l_dok_tyyp  TEXT;
 BEGIN
   -- выборка из "старого меню"
 
@@ -24,6 +27,8 @@ BEGIN
   FROM dokprop d
     INNER JOIN library l ON l.id = d.parentid
   WHERE (d.id = in_old_id OR in_old_id IS NULL)
+        AND l.kood IN
+            ('ARV', 'AVANS','AVANSS', 'DEKL', 'KULUM', 'PALK', 'MAHAKANDMINE', 'PAIGUTUS', 'UMBERHINDAMINE', 'VORDER', 'SORDER', 'PARANDUS', 'MK')
   LIMIT ALL
   LOOP
 
@@ -58,13 +63,30 @@ BEGIN
       RAISE EXCEPTION 'asutus not found v_lib.asutusid %, l_asutus_id %', v_lib.asutusid, l_asutus_id;
     END IF;
 
+    l_dok_tyyp = ltrim(rtrim(v_lib.dok));
+    CASE ltrim(rtrim(v_lib.dok))
+      WHEN 'MK'
+      THEN
+        l_dok_tyyp = 'VMK';
+      WHEN 'AVANSS'
+      THEN
+        l_dok_tyyp = 'AVANS';
+
+      WHEN 'PALK'
+      THEN
+        l_dok_tyyp = 'PALK_OPER';
+
+    ELSE
+      l_dok_tyyp = ltrim(rtrim(v_lib.dok));
+    END CASE;
+
     l_lib_id = (SELECT ID
                 FROM libs.library
-                WHERE kood = ltrim(rtrim(v_lib.dok)) AND library = 'DOK');
+                WHERE ltrim(rtrim(kood)) = l_dok_tyyp AND library = 'DOK');
 
     IF l_lib_id IS NULL
     THEN
-      RAISE EXCEPTION 'dok. type not found v_lib.dok %, l_lib_id %', v_lib.dok, l_lib_id;
+      RAISE NOTICE 'dok. type not found v_lib.dok %, l_lib_id %', v_lib.dok, l_lib_id;
     END IF;
 
     -- сохранение
@@ -100,17 +122,17 @@ BEGIN
     INTO lib_id;
     RAISE NOTICE 'import dokprop lib_id %, l_count %', lib_id, l_count;
 
-    if empty(lib_id) THEN
-      raise EXCEPTION 'Dokprop not saved json_object %', json_object;
+    IF empty(lib_id)
+    THEN
+      RAISE EXCEPTION 'Dokprop not saved json_object %', json_object;
     END IF;
-
 
     -- salvestame log info
     SELECT row_to_json(row)
     INTO hist_object
     FROM (SELECT now() AS timestamp) row;
 
-    IF log_id IS NULL or empty(log_id)
+    IF log_id IS NULL OR empty(log_id)
     THEN
       INSERT INTO import_log (new_id, old_id, lib_name, params, history)
       VALUES (lib_id, v_lib.id, 'DOKPROP', json_object :: JSON, hist_object :: JSON)

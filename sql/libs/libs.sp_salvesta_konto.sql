@@ -23,6 +23,7 @@ DECLARE
   doc_tyyp    INTEGER = doc_data ->> 'tyyp';
   doc_valid   TEXT = doc_data ->> 'valid';
   doc_muud    TEXT = doc_data ->> 'muud';
+  is_import   BOOLEAN = data ->> 'import';
   json_object JSONB;
   new_history JSONB;
   new_rights  JSONB;
@@ -38,7 +39,7 @@ BEGIN
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;

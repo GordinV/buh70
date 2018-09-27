@@ -41,17 +41,6 @@ BEGIN
 
     l_lib_id = (select new_id from import_log where lib_name = 'PALK' and old_id = v_puudumine.libid);
     -- преобразование и получение параметров
-    /*
-  doc_kpv1            DATE = doc_data ->> 'kpv1';
-  doc_kpv2            DATE = doc_data ->> 'kpv2';
-  doc_paevad          INTEGER = doc_data ->> 'paevad';
-  doc_puudumiste_liik PUUDUMISTE_LIIGID = (doc_data ->> 'puudumiste_liik') :: TEXT;
-  doc_tyyp            INTEGER = doc_data ->> 'tyyp';
-  doc_lepingid        INTEGER = doc_data ->> 'lepingid';
-  doc_libid           INTEGER = doc_data ->> 'libid';
-  doc_summa           NUMERIC(14, 4) = doc_data ->> 'summa';
-  doc_muud            TEXT = doc_data ->> 'muud';
-     */
     -- сохранение
     SELECT
       coalesce(puudumine_id, 0)                                    AS id,

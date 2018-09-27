@@ -8,11 +8,12 @@ CREATE TABLE libs.dokprop
   vaatalaus SMALLINT NOT NULL DEFAULT 0,
   selg      TEXT     NOT NULL DEFAULT space(1),
   muud      TEXT,
-  asutusid  INTEGER  ,
+  asutusid  INTEGER,
   details   JSONB,
   proc_     TEXT,
   tyyp      INTEGER  NOT NULL DEFAULT 1,
   status    INTEGER  NOT NULL DEFAULT 0,
+  rekvid    INTEGER,
   CONSTRAINT dokprop_pkey PRIMARY KEY (id)
 )
 WITH (

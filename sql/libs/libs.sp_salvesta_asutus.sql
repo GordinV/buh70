@@ -30,6 +30,7 @@ DECLARE
   doc_pank       TEXT = doc_data ->> 'pank';
   doc_kmkr       TEXT = doc_data ->> 'kmkr';
   doc_KEHTIVUS   DATE = doc_data ->> 'kehtivus';
+  is_import      BOOLEAN = doc_data ->> 'import';
   doc_is_tootaja BOOLEAN = coalesce((doc_data ->> 'is_tootaja') :: BOOLEAN, FALSE);
   doc_asutus_aa  JSONB = coalesce((doc_data ->> 'asutus_aa') :: JSONB, '[]');
   new_properties JSONB;
@@ -42,7 +43,7 @@ BEGIN
   INTO userName
   FROM userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
