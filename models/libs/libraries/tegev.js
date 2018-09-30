@@ -1,6 +1,5 @@
 module.exports = {
-    selectAsLibs: `select * from com_tegev l
-        where  (l.rekvId = $1 or l.rekvid is null)`,
+    selectAsLibs: `select * from com_tegev l`,
     select: [{
         sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, 
                 $2::integer as userid, 'TEGEV' as doc_type_id
@@ -19,7 +18,19 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    }],
+    },
+        {
+            sql:`SELECT Library.id 
+                    FROM libs.library Library 
+                    WHERE Library.library = 'TEGEV'   
+                    AND RTRIM(LTRIM(Library.kood)) = $1`, //lib.kood
+            query: null,
+            multiple:true,
+            alias: 'validate_tegev',
+            data: []
+        }
+
+    ],
     returnData: {
         row: {}
     },

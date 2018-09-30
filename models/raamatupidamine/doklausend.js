@@ -78,7 +78,20 @@ const DokLausend = {
             {id: "rahavoog", name: "Rahavoog", width: "100px"},
             {id: "Artikkel", name: "Artikkel", width: "100px"}
         ],
-        sqlString: `SELECT *
+        sqlString: `SELECT  d.id,
+                        d.rekvid,
+                        d.dok,
+                        d.selg::varchar(254),
+                        d.deebet,
+                        d.kreedit,
+                        d.summa,
+                        d.tegev,
+                        d.allikas,
+                        d.rahavoog,
+                        d.artikkel,
+                        d.lisa_d,
+                        d.lisa_k,
+                        d.lausend
                     FROM cur_doklausend d
                     WHERE (d.rekvId = $1 or d.rekvid is null)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',

@@ -42,7 +42,7 @@ BEGIN
     FROM klassiflib k
       LEFT OUTER JOIN library l ON l.id = k.tunnusid
     WHERE nomid = v_nom.id
-    ORDER BY tyyp, konto DESC
+    ORDER BY konto DESC, tyyp
     LIMIT 1;
 
     l_vat = (SELECT CASE WHEN v_nom.doklausid = 0 OR v_nom.doklausid = 5

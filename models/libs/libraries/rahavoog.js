@@ -1,6 +1,5 @@
 module.exports = {
-    selectAsLibs: `select * from com_rahavoog l
-        where  (l.rekvId = $1 or l.rekvid is null)`,
+    selectAsLibs: `select * from com_rahavoog l`,
     select: [{
         sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, 
                 $2::integer as userid, 'RAHAVOOG' as doc_type_id
@@ -19,7 +18,19 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    }],
+    },
+        {
+            sql:`SELECT Library.id 
+                    FROM libs.library Library 
+                    WHERE Library.library = 'RAHA'   
+                    AND RTRIM(LTRIM(Library.kood)) = ltrim(rtrim($1))`, //lib.kood
+            query: null,
+            multiple:true,
+            alias: 'validate_rahavoog',
+            data: []
+        }
+
+    ],
     returnData: {
         row: {}
     },
@@ -41,8 +52,7 @@ module.exports = {
             muud 
             from libs.library l
             where l.library = 'RAHA'
-            and l.status <> 3
-            and (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+            and l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curRaha'
     },

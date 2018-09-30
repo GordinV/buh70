@@ -2,7 +2,12 @@ module.exports = {
     selectAsLibs: `select * from com_ametid l
         where  (l.rekvId = $1 or l.rekvid is null)`,
     select: [{
-        sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library,
+        sql: `select l.id, l.rekvid, 
+                l.kood::varchar(20) as kood, 
+                l.nimetus::varchar(254) as nimetus, 
+                l.muud, 
+                l.status, 
+                l.library::varchar(20) as library,
                 $2::integer as userid, 'AMET' as doc_type_id,
                 (l.properties:: JSONB ->> 'osakondid') :: INTEGER AS osakondId,
                 (l.properties:: JSONB ->> 'kogus') :: numeric(18,2) AS kogus,
@@ -13,10 +18,10 @@ module.exports = {
         sqlAsNew: `select  $1::integer as id , 
             $2::integer as userid, 
             'AMET' as doc_type_id,
-            null::text as  kood,
-            null::integer as rekvid,
-            null::text as nimetus,
-            'AMET'::text as library,
+            null::varchar(20) as  kood,
+            0::integer as rekvid,
+            null::varchar(254) as nimetus,
+            'AMET'::varchar(20) as library,
             0::integer as status,
             null::integer as osakondId,
             null::numeric(18,2) as kogus,
@@ -44,8 +49,7 @@ module.exports = {
     requiredFields: [
         {name: 'kood', type: 'C'},
         {name: 'nimetus', type: 'C'},
-        {name: 'osakondid', type: 'C'},
-        {name: 'library', type: 'C'}
+        {name: 'osakondid', type: 'C'}
     ],
     saveDoc: `select libs.sp_salvesta_amet($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `select error_code, result, error_message from libs.sp_delete_library($1::integer, $2::integer)`, // $1 - userId, $2 - docId

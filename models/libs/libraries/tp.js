@@ -1,6 +1,5 @@
 module.exports = {
-    selectAsLibs: `select * from com_tp l
-        where  (l.rekvId = $1 or l.rekvid is null)`,
+    selectAsLibs: `select * from com_tp l`,
     select: [{
         sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library,
                 l.tun1, l.tun2, l.tun3, l.tun4, l.tun5, 
@@ -45,8 +44,7 @@ module.exports = {
         sqlString: `select id, kood, nimetus,  $2::integer as userId
             from libs.library l
             where l.library = 'TP'
-            and l.status <> 3
-            and (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+            and l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curTPR'
     },

@@ -5,7 +5,7 @@ CREATE VIEW cur_doklausend AS
     D.id,
     D.rekvid,
     D.dok,
-    D.selg,
+    D.selg::varchar(254),
     d1.deebet,
     d1.kreedit,
     d1.summa,

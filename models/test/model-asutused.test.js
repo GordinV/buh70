@@ -6,6 +6,7 @@ const fs = require('fs');
 const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
+const db = require('./../../libs/db');
 
 describe('dok. type ASUTUSED tests', function () {
     let globalDocId = 0; // для сохранения ид документа
@@ -69,7 +70,41 @@ describe('dok. type ASUTUSED tests', function () {
             expect(fs.existsSync(targetFile)).toBeTruthy();
             done();
         });
-    })
+    });
+
+    it('should exists view com_asutused', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'com_asutused'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists view cur_asutused', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_asutused'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc sp_salvesta_asutus', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_asutus'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists proc libs.check_asutus', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'check_asutus'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+
 
 });
 

@@ -1,7 +1,8 @@
 module.exports = {
     select: [{
-        sql: `select l.rekvid, case when l.tun5 = 1 then 'SD' when l.tun5 = 2 then 'SK' when l.tun5 = 3 then 'D' when l.tun5 = 4 then 'K' else null end::text as konto_tyyp, 
-                l.id, trim(l.kood) as kood, trim(l.nimetus) as nimetus, 
+        sql: `select l.rekvid, 
+                case when l.tun5 = 1 then 'SD' when l.tun5 = 2 then 'SK' when l.tun5 = 3 then 'D' when l.tun5 = 4 then 'K' else null end::varchar(20) as konto_tyyp, 
+                l.id, trim(l.kood)::varchar(20) as kood, trim(l.nimetus)::varchar(254) as nimetus, 
                 l.library, l.tun1, l.tun2, l.tun3, l.tun4, l.muud, $2::integer as userid, 
                 'KONTOD' as doc_type_id, l.tun5 as tyyp, 
                 l.status,
@@ -9,10 +10,10 @@ module.exports = {
                 from libs.library l 
                 where id = $1`,
         sqlAsNew: `select null::integer as rekvId, 
-            'SD'::text as konto_tyyp, 
+            'SD'::varchar(20) as konto_tyyp, 
             $1::integer as id , $2::integer as userid, 'KONTOD' as doc_type_id,
-            null::text as  kood,
-            null::text as nimetus,
+            null::varchar(20) as  kood,
+            null::varchar(20) as nimetus,
             'KONTOD'::text as library,
             null::integer as tun1,
             null::integer as tun2,
@@ -41,7 +42,7 @@ module.exports = {
             data: []
         }
     ],
-    selectAsLibs: `select * from com_kontoplaan l where (l.rekvId = $1 or l.rekvid is null) order by kood`,
+    selectAsLibs: `select *, $1 as rekv_id from com_kontoplaan l order by kood`, //where ($1::integer is null or l.rekvId = $1 or l.rekvid is null)
     returnData: {
         row: {}
     },
@@ -64,12 +65,11 @@ module.exports = {
             {id: "nimetus", name: "Nimetus", width: "35%"},
             {id: "konto_tyyp", name: "Konto tüüp", width: "20%"}
         ],
-        sqlString: `select id, trim(kood) as kood, trim(nimetus) as nimetus,  $2::integer as userId,
-            case when l.tun5 = 1 then 'SD' when l.tun5 = 2 then 'SK' when l.tun5 = 3 then 'D' when l.tun5 = 4 then 'K' else null end::text as konto_tyyp
+        sqlString: `select id, trim(kood)::varchar(20) as kood, trim(nimetus)::varchar(254) as nimetus,  $2::integer as userId,
+            case when l.tun5 = 1 then 'SD' when l.tun5 = 2 then 'SK' when l.tun5 = 3 then 'D' when l.tun5 = 4 then 'K' else null end::varchar(20) as konto_tyyp
             from libs.library l
             where library = 'KONTOD' 
-            and l.status <> 3
-            and (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+            and l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curKontod'
     },

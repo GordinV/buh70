@@ -15,7 +15,8 @@ BEGIN
 
   SELECT
     l.*,
-    u.ametnik AS user_name
+    u.ametnik AS user_name,
+    u.rekvid as kasutaja_rekvid
   INTO v_doc
   FROM libs.library l
     LEFT OUTER JOIN ou.userid u ON u.id = userid
@@ -33,7 +34,7 @@ BEGIN
   IF NOT exists(SELECT id
                 FROM ou.userid u
                 WHERE id = userid
-                      AND (u.rekvid = v_doc.rekvid OR v_doc.rekvid IS NULL OR v_doc.rekvid = 0)
+                      AND (u.rekvid = v_doc.kasutaja_rekvid OR v_doc.kasutaja_rekvid IS NULL OR v_doc.kasutaja_rekvid = 0)
   )
   THEN
 
@@ -68,6 +69,8 @@ GRANT EXECUTE ON FUNCTION libs.sp_delete_library(INTEGER, INTEGER) TO dbpeakasut
 
 /*
 SELECT *
-FROM libs.sp_delete_library(1, 186)
+FROM libs.sp_delete_library(2477, 121358)
+
+select * from libs.library where kood = 'Kood'
 
 */

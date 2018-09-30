@@ -1,6 +1,5 @@
 module.exports = {
-    selectAsLibs: `select * from com_artikkel l
-        where  (l.rekvId = $1 or l.rekvid is null)`,
+    selectAsLibs: `select * from com_artikkel l`,
     select: [{
         sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, l.tun5,
                 $2::integer as userid, 'ARTIKKEL' as doc_type_id
@@ -20,7 +19,18 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    }],
+    },
+        {
+            sql:`SELECT Library.id 
+                    FROM libs.library Library 
+                    WHERE Library.library = 'ARTIKKEL'   
+                    AND RTRIM(LTRIM(Library.kood)) = $1`, //lib.kood
+            query: null,
+            multiple:true,
+            alias: 'validate_artikkel',
+            data: []
+        }
+    ],
     returnData: {
         row: {}
     },

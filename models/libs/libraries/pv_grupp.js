@@ -25,7 +25,18 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    }],
+    },
+        {sql:`SELECT Library.id 
+                FROM libs.library Library 
+                    WHERE Library.rekvid = $1   
+                    AND Library.library = 'PVGRUPP'   
+                    AND RTRIM(LTRIM(Library.kood)) = $2`,//$1 rekvid, $2 kood
+            query: null,
+            multiple: true,
+            alias: 'validate_pvgrupp',
+            data:[]
+        }
+    ],
     returnData: {
         row: {}
     },

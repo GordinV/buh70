@@ -1,6 +1,7 @@
 DROP FUNCTION IF EXISTS import_kontoplaan( );
+DROP FUNCTION IF EXISTS import_kontoplaan( BOOLEAN );
 
-CREATE OR REPLACE FUNCTION import_kontoplaan()
+CREATE OR REPLACE FUNCTION import_kontoplaan(is_kontrol BOOLEAN)
   RETURNS INTEGER AS
 $BODY$
 DECLARE
@@ -11,6 +12,7 @@ DECLARE
   hist_object JSONB;
   v_params    RECORD;
   l_count     INTEGER = 0;
+  v_lib_new   RECORD;
 BEGIN
   -- выборка из "старого меню"
   FOR v_lib IN
@@ -38,55 +40,74 @@ BEGIN
 
     -- преобразование и получение параметров
 
-    -- сохранение
-    SELECT
-      coalesce(lib_id, 0) AS id,
-      v_lib.kood          AS kood,
-      v_lib.nimetus       AS nimetus,
-      v_lib.library       AS library,
-      v_lib.tun1          AS tun1,
-      v_lib.tun2          AS tun2,
-      v_lib.tun3          AS tun3,
-      v_lib.tun4          AS tun4,
-      v_lib.tun5          AS tun5,
-      v_lib.valid as valid,
-      v_lib.type as tyyp,
-      v_lib.muud          AS muud
-    INTO v_params;
-
-    SELECT row_to_json(row)
-    INTO json_object
-    FROM (SELECT
-            coalesce(lib_id, 0) AS id,
-            v_params            AS data) row;
-
-    SELECT libs.sp_salvesta_konto(json_object :: JSON, 1, 63)
-    INTO lib_id;
-    RAISE NOTICE 'lib_id %, l_count %', lib_id, l_count;
-
-    -- salvestame log info
-    SELECT row_to_json(row)
-    INTO hist_object
-    FROM (SELECT now() AS timestamp) row;
-
-    IF log_id IS NULL
+    IF coalesce(lib_id, 0) > 0
     THEN
-      INSERT INTO import_log (new_id, old_id, lib_name, params, history)
-      VALUES (lib_id, v_lib.id, v_lib.library, json_object :: JSON, hist_object :: JSON)
-      RETURNING id
-        INTO log_id;
-
+      -- only check data
+      SELECT *
+      INTO v_lib_new
+      FROM libs.library
+      WHERE id = lib_id;
+      IF v_lib_new.tun1 <> v_lib.tun1 OR v_lib_new.tun2 <> v_lib.tun2 OR v_lib_new.tun3 <> v_lib.tun3 OR
+         v_lib_new.tun4 <> v_lib.tun4 OR v_lib_new.tun5 <> v_lib.tun5
+      THEN
+        UPDATE libs.library
+        SET tun1 = v_lib.tun1, tun2 = v_lib.tun2, tun3 = v_lib.tun3, tun4 = v_lib.tun4, tun5 = v_lib.tun5
+        WHERE id = lib_id;
+        RAISE NOTICE 'found diff, fixed lib_id %', lib_id;
+      END IF;
     ELSE
-      UPDATE import_log
-      SET
-        params  = json_object :: JSON,
-        history = (history :: JSONB || hist_object :: JSONB) :: JSON
-      WHERE id = log_id;
-    END IF;
+      -- сохранение
+      SELECT
+        coalesce(lib_id, 0) AS id,
+        v_lib.kood          AS kood,
+        v_lib.nimetus       AS nimetus,
+        v_lib.library       AS library,
+        v_lib.tun1          AS tun1,
+        v_lib.tun2          AS tun2,
+        v_lib.tun3          AS tun3,
+        v_lib.tun4          AS tun4,
+        v_lib.tun5          AS tun5,
+        v_lib.valid         AS valid,
+        v_lib.type          AS tyyp,
+        v_lib.muud          AS muud
+      INTO v_params;
 
-    IF empty(log_id)
-    THEN
-      RAISE EXCEPTION 'log save failed';
+      SELECT row_to_json(row)
+      INTO json_object
+      FROM (SELECT
+              coalesce(lib_id, 0) AS id,
+              v_params            AS data) row;
+
+      SELECT libs.sp_salvesta_konto(json_object :: JSON, 1, 63)
+      INTO lib_id;
+      RAISE NOTICE 'lib_id %, l_count %', lib_id, l_count;
+
+      -- salvestame log info
+      SELECT row_to_json(row)
+      INTO hist_object
+      FROM (SELECT now() AS timestamp) row;
+
+      IF log_id IS NULL
+      THEN
+        INSERT INTO import_log (new_id, old_id, lib_name, params, history)
+        VALUES (lib_id, v_lib.id, v_lib.library, json_object :: JSON, hist_object :: JSON)
+        RETURNING id
+          INTO log_id;
+
+      ELSE
+        UPDATE import_log
+        SET
+          params  = json_object :: JSON,
+          history = (history :: JSONB || hist_object :: JSONB) :: JSON
+        WHERE id = log_id;
+      END IF;
+
+      IF empty(log_id)
+      THEN
+        RAISE EXCEPTION 'log save failed';
+      END IF;
+
+
     END IF;
     l_count = l_count + 1;
   END LOOP;

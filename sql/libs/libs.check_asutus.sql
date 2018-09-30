@@ -4,7 +4,7 @@ CREATE FUNCTION libs.check_asutus(l_asutusid INTEGER, l_rekvid INTEGER)
   RETURNS BOOLEAN
 LANGUAGE SQL
 AS $$
-SELECT exists
+SELECT not exists
        (SELECT 1
         FROM palk.tooleping t
         WHERE t.parentId = l_asutusid

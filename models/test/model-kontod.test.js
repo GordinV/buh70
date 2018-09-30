@@ -6,6 +6,7 @@ const fs = require('fs');
 const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
+const db = require('./../../libs/db');
 
 describe('dok. type Kontod tests', function () {
     let globalDocId = 0; // для сохранения ид документа
@@ -69,7 +70,15 @@ describe('dok. type Kontod tests', function () {
             expect(fs.existsSync(targetFile)).toBeTruthy();
             done();
         });
-    })
+    });
+
+    it('should succesfully sql selectAsLibs', async () => {
+        let sql = doc.selectAsLibs;
+        let returnValue = await db.queryDb(sql, [null]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
 
 });
 

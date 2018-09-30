@@ -20,6 +20,8 @@ DECLARE
   doc_aasta integer = doc_data ->> 'aasta';
   doc_luhipaev integer = doc_data ->> 'luhipaev';
   doc_muud text = doc_data ->> 'muud';
+  is_import      BOOLEAN = data ->> 'import';
+
   json_object JSONB;
 BEGIN
 
@@ -45,17 +47,19 @@ end if;
 
 SELECT kasutaja
 INTO userName
-FROM userid u
+FROM ou.userid u
 WHERE u.rekvid = user_rekvid AND u.id = userId;
-IF userName IS NULL
+IF is_import is null and userName IS NULL
 THEN
-  RAISE NOTICE 'User not found %', user;
+  RAISE NOTICE 'User not found %, is_import %', user, is_import;
   RETURN 0;
 END IF;
 
 SELECT row_to_json(row)
 INTO json_object
 FROM (SELECT doc_luhipaev as luhipaev, doc_paev as paev, doc_kuu as kuu, doc_aasta as aasta) row;
+
+  raise notice 'json %', json_object;
 
 -- вставка или апдейт docs.doc
 IF doc_id IS NULL OR doc_id = 0

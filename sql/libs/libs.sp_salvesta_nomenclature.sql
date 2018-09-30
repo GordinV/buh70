@@ -50,7 +50,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
 
   IF is_import IS NULL AND userName IS NULL
@@ -102,10 +102,6 @@ BEGIN
     RETURNING id
       INTO nom_id;
 
-    -- valuuta
-
-    INSERT INTO docs.dokvaluuta1 (dokliik, dokid, valuuta, kuurs)
-    VALUES (array_position(a_dokvaluuta, 'nomenklatuur'), nom_id, doc_valuuta, doc_kuurs);
 
   ELSE
     -- muuda
@@ -126,26 +122,6 @@ BEGIN
     WHERE id = doc_id
     RETURNING id
       INTO nom_id;
-  END IF;
-
-  -- valuuta
-  IF NOT exists(SELECT id
-                FROM docs.dokvaluuta1
-                WHERE dokliik = array_position(a_dokvaluuta, 'nomenklatuur') AND dokid = nom_id)
-  THEN
-
-    INSERT INTO docs.dokvaluuta1 (dokliik, dokid, valuuta, kuurs)
-    VALUES (array_position(a_dokvaluuta, 'nomenklatuur'), nom_id, doc_valuuta, doc_kuurs);
-
-  ELSE
-    UPDATE docs.dokvaluuta1
-    SET
-      valuuta = doc_valuuta,
-      kuurs   = doc_kuurs
-    WHERE id IN (SELECT id
-                 FROM docs.dokvaluuta1
-                 WHERE dokliik = array_position(a_dokvaluuta, 'nomenklatuur') AND dokid = nom_id);
-
   END IF;
 
   RETURN nom_id;

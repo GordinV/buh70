@@ -36,6 +36,16 @@ module.exports = {
             alias: 'asutus_aa',
             data: []
 
+        },{
+            sql: `SELECT Asutus.id 
+                    FROM libs.asutus Asutus 
+                    WHERE (rtrim(ltrim(Asutus.regkood)) = $1 or empty($1))
+                    or (rtrim(ltrim(Asutus.nimetus)) = $2 or empty($2))`, //$1 regkood, $2 nimetus
+            query : null,
+            multiple: false,
+            alias: 'validate_asutus',
+            data: []
+
         }
     ],
     selectAsLibs: `select * from com_asutused a 
