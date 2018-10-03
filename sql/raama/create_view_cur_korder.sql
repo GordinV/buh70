@@ -29,17 +29,16 @@ CREATE OR REPLACE VIEW cur_korder AS
     CASE WHEN k.tyyp = 1
       THEN k2.konto
     ELSE aa.konto END :: VARCHAR(20)          AS kr,
-    coalesce(v.valuuta, 'EUR') :: VARCHAR(20) AS valuuta,
-    coalesce(v.kuurs, 1) :: NUMERIC(12, 4)    AS kuurs,
+    'EUR' :: VARCHAR(20)                      AS valuuta,
+    1 :: NUMERIC(12, 4)                       AS kuurs,
     k.journalid
   FROM docs.doc d
     INNER JOIN docs.korder1 k ON d.id = k.parentid
     INNER JOIN docs.korder2 k2 ON k.id = k2.parentid
-    INNER JOIN libs.library s ON s.kood = d.status :: TEXT and s.library = 'STATUS'
-    INNER JOIN ou.aa aa ON k.kassaid = aa.id
+    INNER JOIN libs.library s ON s.kood = d.status :: TEXT AND s.library = 'STATUS'
+    LEFT OUTER JOIN ou.aa aa ON k.kassaid = aa.id AND aa.parentid = k.rekvid
     LEFT OUTER JOIN libs.asutus a ON k.asutusId = a.id
     LEFT OUTER JOIN docs.journalid jid ON jid.journalid = k.journalid
-    LEFT OUTER JOIN docs.dokvaluuta1 v ON (k2.id = v.dokid AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'korder2'));
 
 GRANT SELECT ON TABLE cur_mk TO dbkasutaja;
 GRANT SELECT ON TABLE cur_mk TO dbvaatleja;

@@ -45,7 +45,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
   IF is_import IS NULL AND userName IS NULL
   THEN
@@ -58,18 +58,9 @@ BEGIN
     doc_id = doc_data ->> 'id';
   END IF;
 
-  /*
-    SELECT row_to_json(row)
-    INTO new_properties
-    FROM (SELECT
-            doc_kehtivus           AS kehtivus,
-            doc_pank               AS pank,
-            doc_is_tootaja         AS is_tootaja,
-            doc_asutus_aa :: JSONB AS asutus_aa,
-            doc_kmkr               AS kmkr) row;
-  */
-
   -- вставка или апдейт docs.doc
+
+  raise notice 'save leping %, user_rekvid %',doc_id, user_rekvid;
 
   IF doc_id IS NULL OR doc_id = 0
   THEN
@@ -124,7 +115,10 @@ BEGIN
       toopaev   = doc_toopaev,
       ajalugu   = new_history,
       status    = l_status,
-      muud      = doc_muud
+      muud      = doc_muud,
+      rekvid    = CASE WHEN is_import IS NOT NULL
+        THEN user_rekvid
+                  ELSE rekvid END
     WHERE id = doc_id
     RETURNING id
       INTO leping_id;

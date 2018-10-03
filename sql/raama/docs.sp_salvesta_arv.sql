@@ -60,10 +60,10 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
 
-  IF is_import is null and userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -135,7 +135,6 @@ BEGIN
 
     -- arv jaak
 
-    PERFORM docs.sp_update_arv_jaak(arv_id, doc_kpv);
 
   END IF;
   -- вставка в таблицы документа
@@ -150,11 +149,11 @@ BEGIN
     FROM json_to_record(
              json_object) AS x(id TEXT, nomId INTEGER, kogus NUMERIC(14, 4), hind NUMERIC(14, 4), kbm NUMERIC(14, 4),
          summa NUMERIC(14, 4), kood TEXT, nimetus TEXT, kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT,
-         valuuta TEXT, kuurs NUMERIC(14, 4), konto TEXT);
+         valuuta TEXT, kuurs NUMERIC(14, 4), konto TEXT, tunnus TEXT, tp TEXT);
 
     IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
     THEN
-      INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, summa, kood1, kood2, kood3, kood4, kood5, konto)
+      INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, summa, kood1, kood2, kood3, kood4, kood5, konto, tunnus, tp)
       VALUES (arv_id, json_record.nomid,
                       coalesce(json_record.kogus, 0),
                       coalesce(json_record.hind, 0),
@@ -165,7 +164,9 @@ BEGIN
                       coalesce(json_record.kood3, ''),
                       coalesce(json_record.kood4, ''),
                       coalesce(json_record.kood5, ''),
-              coalesce(json_record.konto, '')
+                      coalesce(json_record.konto, ''),
+                      coalesce(json_record.tunnus, ''),
+                      coalesce(json_record.tp, '')
       )
       RETURNING id
         INTO arv1_id;
@@ -218,6 +219,8 @@ BEGIN
     kbm   = coalesce(doc_kbm, 0),
     summa = coalesce(doc_summa, 0)
   WHERE parentid = doc_id;
+
+  PERFORM docs.sp_update_arv_jaak(doc_id);
 
   RETURN doc_id;
 END;$BODY$

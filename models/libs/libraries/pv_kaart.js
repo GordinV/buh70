@@ -93,7 +93,7 @@ module.exports = {
         ],
         sqlString: `select * 
             from cur_pohivara l
-            where (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+            where l.rekvId = $1`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curPohivara'
     },

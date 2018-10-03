@@ -42,14 +42,14 @@ DECLARE
   arv_parent_id   INTEGER;
   previous_arv_id INTEGER;
   a_dokvaluuta    TEXT [] = enum_range(NULL :: DOK_VALUUTA);
-  is_import     BOOLEAN = data ->> 'import';
+  is_import       BOOLEAN = data ->> 'import';
 BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
-  IF is_import is null and userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -73,7 +73,7 @@ BEGIN
       RAISE NOTICE 'Kassa not found %', doc_kassa_id;
       RETURN 0;
     ELSE
---      RAISE NOTICE 'kassa: %', doc_kassa_id;
+    --      RAISE NOTICE 'kassa: %', doc_kassa_id;
     END IF;
   END IF;
 
@@ -109,7 +109,6 @@ BEGIN
       INTO doc_id;
 
 
-
     INSERT INTO docs.korder1 (parentid, rekvid, userid, kpv, asutusid, tyyp, kassaId, number, dokument, nimi,
                               aadress, alus, muud, summa, arvid, doklausid)
     VALUES
@@ -119,7 +118,7 @@ BEGIN
     RETURNING id
       INTO korder_id;
 
---    raise notice 'korder_id %,  doc_id %', korder_id,  doc_id;
+    --    raise notice 'korder_id %,  doc_id %', korder_id,  doc_id;
 
   ELSE
     SELECT row_to_json(row)
@@ -153,6 +152,8 @@ BEGIN
           docs = NULL;
         END IF;
       END IF;
+    ELSE
+      docs = array_append(docs, doc_arvid);
     END IF;
 
 
@@ -251,6 +252,13 @@ BEGIN
 
 
   END LOOP;
+
+  IF doc_arvid IS NOT NULL
+  THEN
+    -- произведем оплату счета
+    PERFORM docs.sp_tasu_arv(doc_id, doc_arvid, userid);
+
+  END IF;
 
   RETURN doc_id;
 

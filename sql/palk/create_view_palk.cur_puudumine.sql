@@ -8,20 +8,19 @@ CREATE OR REPLACE VIEW palk.cur_puudumine AS
     p.kpv2,
     p.paevad,
     p.summa,
-    p.puudumiste_liik::text AS pohjus,
+    p.puudumiste_liik :: VARCHAR(20) AS pohjus,
     p.tyyp,
-    amet.nimetus      AS amet,
+    amet.nimetus                     AS amet,
     amet.rekvid,
-    a.regkood         AS isikukood,
-    a.nimetus         AS isik,
-    tyyp.eesti        AS liik
+    a.regkood                        AS isikukood,
+    a.nimetus                        AS isik,
+    tyyp.eesti :: VARCHAR(20)        AS liik
   FROM palk.puudumine p
     INNER JOIN palk.tooleping t ON p.lepingid = t.id
     INNER JOIN libs.library amet ON t.ametid = amet.id
     INNER JOIN libs.asutus a ON t.parentid = a.id
     INNER JOIN palk.com_puudumiste_tyyp tyyp ON tyyp.liik = p.puudumiste_liik AND p.tyyp = tyyp.id
-where p.status <> 'deleted'
-;
+  WHERE p.status <> 'deleted';
 
 GRANT SELECT ON TABLE palk.cur_puudumine TO dbpeakasutaja;
 GRANT SELECT ON TABLE palk.cur_puudumine TO dbkasutaja;

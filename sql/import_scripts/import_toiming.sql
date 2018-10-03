@@ -95,7 +95,7 @@ BEGIN
             TRUE                    AS import,
             v_params                AS data) row;
 
-    SELECT rekl.sp_salvesta_toiming(json_object :: JSON, 1, 1)
+    SELECT rekl.sp_salvesta_toiming(json_object :: JSON, 1, 28)
     INTO toiming_id;
     RAISE NOTICE 'leping_id %, l_count %', toiming_id, l_count;
 

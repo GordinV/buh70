@@ -21,6 +21,7 @@ DECLARE
   l_j_count       INTEGER;
   l_journal_id    INTEGER;
   l_nom_id        INTEGER;
+  l_dokpropid     INTEGER;
 BEGIN
   -- выборка из "старого меню"
 
@@ -44,6 +45,10 @@ BEGIN
     WHERE old_id = v_arv.id
           AND upper(ltrim(rtrim(lib_name :: TEXT))) = 'ARV';
 
+    l_dokpropid = (SELECT new_id
+                   FROM import_log
+                   WHERE lib_name = 'DOKPROP' AND old_id = v_arv.doklausid);
+
     RAISE NOTICE 'check for lib.. v_lib.id -> %, found -> % log_id -> %', v_arv.id, arv_id, log_id;
 
     -- преобразование и получение параметров
@@ -64,6 +69,8 @@ BEGIN
                                        kood4,
                                        kood5,
                                        konto,
+                                       tunnus,
+                                       tp,
                                        muud
                                      FROM arv1
                                      WHERE arv1.parentid = v_arv.id) AS a1
@@ -89,6 +96,7 @@ BEGIN
       v_arv.summa         AS summa,
       v_arv.objekt        AS objekt,
       v_arv.muud          AS muud,
+      l_dokpropid         AS doklausid,
       json_arv1           AS "gridData"
     INTO v_params;
 
@@ -122,8 +130,12 @@ BEGIN
       THEN
         UPDATE docs.arv
         SET journalid = l_journal_id
-        WHERE id = arv_id;
+        WHERE parentid = arv_id;
+
+        update docs.doc set docs_ids = array_append(docs_ids, l_journal_id) where id = arv_id;
       END IF;
+
+
     END IF;
 
     -- salvestame log info
@@ -186,8 +198,9 @@ BEGIN
     --    RAISE notice 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
   END IF;
 
-  if l_count = 0 THEN
-    raise exception 'arve not imported %', in_old_id;
+  IF l_count = 0
+  THEN
+    RAISE EXCEPTION 'arve not imported %', in_old_id;
   END IF;
 
   RETURN l_count;

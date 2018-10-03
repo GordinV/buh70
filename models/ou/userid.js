@@ -16,7 +16,7 @@ module.exports = {
                   coalesce((u.roles ->> 'is_eel_koostaja') :: BOOLEAN, FALSE)::boolean        AS is_eel_koostaja,
                   coalesce((u.roles ->> 'is_eel_allkirjastaja') :: BOOLEAN, FALSE)::boolean   AS is_eel_allkirjastaja,
                   coalesce((u.roles ->> 'is_eel_esitaja') :: BOOLEAN, FALSE)::boolean         AS is_eel_esitaja,
-                  coalesce((u.roles ->> 'is_eel_aAktsepterja') :: BOOLEAN, FALSE)::boolean     AS is_eel_aktsepterja,
+                  coalesce((u.roles ->> 'is_eel_aktsepterja') :: BOOLEAN, FALSE)::boolean     AS is_eel_aktsepterja,
                   coalesce((u.roles ->> 'is_asutuste_korraldaja') :: BOOLEAN, FALSE)::boolean AS is_asutuste_korraldaja,
                   coalesce((u.roles ->> 'is_rekl_administraator') :: BOOLEAN, FALSE)::boolean AS is_rekl_administraator,
                   coalesce((u.roles ->> 'is_rekl_maksuhaldur') :: BOOLEAN, FALSE)::boolean    AS is_rekl_maksuhaldur,

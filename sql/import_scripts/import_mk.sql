@@ -32,7 +32,6 @@ BEGIN
   FROM mk m
     INNER JOIN rekv ON m.rekvid = rekv.id AND rekv.parentid < 999
   WHERE (m.id = in_old_id OR in_old_id IS NULL)
-  ORDER BY m.kpv
   LIMIT ALL
   LOOP
 

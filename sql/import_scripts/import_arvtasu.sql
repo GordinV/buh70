@@ -44,17 +44,6 @@ BEGIN
     RAISE NOTICE 'check for lib.. v_lib.id -> %, found -> % log_id -> %', v_arvtasu.id, arvtasu_id, log_id;
 
     -- преобразование и получение параметров
-    /*
-      doc_rekvid      INTEGER = doc_data ->> 'rekvid';
-      doc_doc_arv_id  INTEGER = doc_data ->> 'doc_arv_id';
-      doc_doc_tasu_id INTEGER = doc_data ->> 'doc_tasu_id';
-      doc_kpv         DATE = doc_data ->> 'kpv';
-      doc_summa       NUMERIC(14, 2) = doc_data ->> 'summa';
-      doc_dok         TEXT = doc_data ->> 'dok';
-      doc_pankkassa   INTEGER = doc_data ->> 'pankkassa';
-      doc_muud        TEXT = doc_data ->> 'muud';
-
-     */
 
     -- сохранение
     SELECT new_id

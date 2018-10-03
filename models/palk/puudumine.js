@@ -10,7 +10,7 @@ module.exports = {
                   p.kpv1,
                   p.kpv2,
                   p.paevad,
-                  p.puudumiste_liik::text,
+                  p.puudumiste_liik::varchar(20),
                   p.tyyp,
                   p.status,
                   p.muud,
@@ -29,7 +29,7 @@ module.exports = {
                       now()::date as kpv1,
                       now()::date as kpv2,
                       0::integer as paevad,
-                      'PUHKUS' as puudumiste_liik,
+                      'PUHKUS'::varchar(20) as puudumiste_liik,
                       0 as tyyp,
                       1 as status,
                       null::text as muud`,
@@ -39,7 +39,8 @@ module.exports = {
         data: []
     },
         {
-            sql:`select * from palk.com_puudumiste_tyyp`,
+            sql:`select id, liik::varchar(20), eesti::varchar(120), vene::varchar(120) 
+                    from palk.com_puudumiste_tyyp`,
             query: null,
             multiple: true,
             alias: 'com_puudumised',
@@ -72,7 +73,7 @@ module.exports = {
         ],
         sqlString: `select a.*, $2::integer as userId
             from palk.cur_puudumine a
-            where (rekvid = $1 or rekvid is null)`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
+            where rekvid = $1`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curPuudumine'
     },

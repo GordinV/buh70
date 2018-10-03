@@ -29,6 +29,7 @@ DECLARE
   doc_allkiri    INTEGER = coalesce((doc_data ->> 'allkiri') :: INTEGER, 0);
   doc_tunnus     INTEGER = doc_data ->> 'tunnus';
   doc_muud       TEXT = doc_data ->> 'muud';
+  doc_status     INTEGER = doc_data ->> 'status';
   json_object    JSON;
   json_record    RECORD;
   new_history    JSONB;
@@ -39,7 +40,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
   IF is_import IS NULL AND userName IS NULL
   THEN
@@ -108,7 +109,10 @@ BEGIN
       allkiri    = doc_allkiri,
       tunnus     = doc_tunnus,
       number     = doc_number,
-      muud       = doc_muud
+      muud       = doc_muud,
+      status     = CASE WHEN is_import IS NOT NULL
+        THEN doc_status
+                   ELSE status END
     WHERE parentid = doc_id
     RETURNING id
       INTO taotlus_id;

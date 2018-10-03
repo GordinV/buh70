@@ -67,6 +67,12 @@ CREATE INDEX library_pv_gruppid
   USING gin
   ((properties::jsonb->gruppid));
 
+DROP INDEX IF EXISTS library_docs_modules;
+CREATE INDEX library_docs_modules
+  ON libs.library ((properties :: JSONB ->> 'module'))
+where library = 'DOK';
+
+
 
 ALTER TABLE libs.library CLUSTER ON library_rekvid;
 

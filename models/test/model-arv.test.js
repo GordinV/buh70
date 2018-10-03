@@ -6,6 +6,7 @@ const fs = require('fs');
 const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
+const db = require('./../../libs/db');
 
 describe('dok. type Arv tests', function () {
     let globalDocId = 0; // для сохранения ид документа
@@ -88,7 +89,31 @@ describe('dok. type Arv tests', function () {
             expect(fs.existsSync(targetFile)).toBeTruthy();
             done();
         });
-    })
+    });
+
+    it('should exists procedure docs.create_new_mk', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'create_new_mk'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists procedure docs.create_new_order', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'create_new_order'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('should exists procedure sp_tasu_arv', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_tasu_arv'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
 
 });
 

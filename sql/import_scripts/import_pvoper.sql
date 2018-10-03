@@ -20,10 +20,11 @@ BEGIN
   -- выборка из "старого меню"
 
   FOR v_pv_oper IN
-  SELECT p.*, l.rekvid
+  SELECT p.*, l.rekvid, coalesce(v.kuurs,1) as kuurs
   FROM pv_oper p
     INNER JOIN library l ON l.id = p.parentid
     INNER JOIN rekv ON rekv.id = l.rekvid AND rekv.parentid < 999
+    left outer join remote_dokvaluuta1 v on v.dokid = p.id and v.dokliik = 13
   WHERE (p.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP
@@ -95,7 +96,7 @@ BEGIN
       v_pv_oper.kpv,
       v_pv_oper.muud,
       v_pv_oper.liik,
-      v_pv_oper.summa,
+      round(v_pv_oper.summa / v_pv_oper.kuurs,14,2) as summa,
       v_pv_oper.konto,
       v_pv_oper.tunnus,
       v_pv_oper.tp,

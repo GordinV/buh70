@@ -63,7 +63,7 @@ module.exports = {
     ],
     saveDoc: `select libs.sp_salvesta_dokprop($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `select error_code, result, error_message from libs.sp_delete_dokprop($1, $2)`, // $1 - userId, $2 - docId
-    selectAsLibs: `SELECT *
+    selectAsLibs: `SELECT id, nimetus::varchar(254), dok::varchar(20), kood, kbmkonto, kood1, kood2, kood3, kood5, asutusid, rekvid
                         FROM com_dokprop l
                         WHERE (l.rekvId = $1 OR l.rekvid IS NULL)`,
     grid: {
@@ -74,9 +74,9 @@ module.exports = {
         ],
         sqlString: `SELECT
                       d.id,
-                      d.selg    AS SELG,
+                      d.selg::varchar(254)    AS SELG,
                       d.parentid,
-                      l.nimetus AS nimetus, 
+                      l.nimetus::varchar(254) AS nimetus, 
                       l.kood AS dok
                     FROM libs.library l
                       INNER JOIN libs.dokprop d ON l.id = d.parentId

@@ -67,7 +67,36 @@ module.exports = {
 
         },
         {
-            sql: `select * from palk.cur_palk_kaart pk
+            sql: `select 
+                    liik_::varchar(20),
+                    tund_::varchar(20),
+                    maks_::varchar(20),
+                    id,
+                    parentid,
+                    lepingid,
+                    libid,
+                    summa,
+                    percent_,
+                    tulumaks,
+                    tulumaar,
+                    status,
+                    muud,
+                    alimentid,
+                    tunnus,
+                    amet::varchar(20),
+                    osakond::varchar(20),
+                    osakondid,
+                    tund,
+                    liik,
+                    maks,
+                    asutusest,
+                    round,
+                    tululiik,
+                    minsots,
+                    rekvid,
+                    kood::varchar(20) as kood,
+                    nimetus::varchar(254) as nimetus                     
+                    from palk.cur_palk_kaart pk
                     WHERE pk.parentid = $1 --asutus_id
                     AND pk.rekvid IN (SELECT rekvid
                                            FROM ou.userid u
@@ -127,7 +156,7 @@ module.exports = {
         ],
         sqlString: `select a.*, $2::integer as userId
             from palk.cur_tootajad a
-            where (rekvid = $1 or rekvid is null)`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
+            where rekvid = $1`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curTootajad'
     },

@@ -27,6 +27,7 @@ COMMENT ON COLUMN docs.doc.bpm  IS 'бизнес процесс';
 ALTER TABLE docs.doc ADD COLUMN docs_ids integer[];
 COMMENT ON COLUMN docs.doc.docs_ids IS 'seotud dokumendide id';
 
+create index idx_doc_status on docs.doc USING btree (status);
 
 /*
 

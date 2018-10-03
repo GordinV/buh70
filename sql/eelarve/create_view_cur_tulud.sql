@@ -13,7 +13,7 @@ CREATE OR REPLACE VIEW cur_tulud AS
     coalesce(e.kood4, '') :: VARCHAR(20)         AS kood4,
     coalesce(e.kood5, '') :: VARCHAR(20)         AS kood5,
     coalesce(e.tunnus, '') :: VARCHAR(20)        AS tunnus,
-    r.nimetus                                    AS asutus,
+    r.nimetus :: VARCHAR(254)                    AS asutus,
     r.regkood,
     r.parentid,
     coalesce(parent.nimetus, '') :: VARCHAR(254) AS parasutus,

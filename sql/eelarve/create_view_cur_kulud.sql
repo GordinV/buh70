@@ -13,7 +13,7 @@ CREATE OR REPLACE VIEW cur_kulud AS
     coalesce(e.kood4, '') :: VARCHAR(20)         AS kood4,
     coalesce(e.kood5, '') :: VARCHAR(20)         AS kood5,
     coalesce(e.tunnus, '') :: VARCHAR(20)        AS tunnus,
-    r.nimetus                                    AS asutus,
+    r.nimetus :: VARCHAR(254)                    AS asutus,
     r.regkood,
     r.parentid,
     coalesce(parent.nimetus, '') :: VARCHAR(254) AS parasutus,
@@ -44,6 +44,8 @@ GRANT SELECT ON TABLE cur_kulud TO eelkoostaja;
 
 
 /*
+
+select * from eelarve.eelarve where rekvid = 63 and aasta = 2018
 
 select * from cur_eelarve
  */

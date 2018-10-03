@@ -55,26 +55,7 @@ BEGIN
       RAISE EXCEPTION 'amet or osakond not found v_leping.osakondid %,l_osakond_id %, v_leping.ametid %, l_amet_id %, v_leping.parentid %,  l_asutus_id %', v_leping.osakondid, l_osakond_id, v_leping.ametid, l_amet_id, v_leping.parentid,  l_asutus_id;
     END IF;
     -- преобразование и получение параметров
-    /*
-      doc_algab      DATE = coalesce((doc_data ->> 'algab') :: DATE, now() :: DATE);
-      doc_lopp       DATE = CASE WHEN ltrim(rtrim((doc_data ->> 'lopp') :: TEXT)) = ''
-        THEN NULL :: DATE
-                            ELSE (doc_data ->> 'lopp') :: DATE END;
-      doc_palk       NUMERIC(14, 2) = doc_data ->> 'palk';
-      doc_palgamaar  INTEGER = coalesce((doc_data ->> 'palgamaar') :: INTEGER,
-                                        array_position((enum_range(NULL :: PALK_TASU_LIIK)), 'ASTMEPALK'));
-      doc_muud       TEXT = doc_data ->> 'muud';
-      doc_resident   INTEGER = doc_data ->> 'resident';
-      doc_riik       TEXT = doc_data ->> 'riik';
-      doc_toend      DATE = doc_data ->> 'toend';
-      doc_koormus    NUMERIC(14, 4) = coalesce((doc_data ->> 'koormus') :: NUMERIC, 100);
-      doc_toopaev    NUMERIC(14, 4) = coalesce((doc_data ->> 'toopaev') :: NUMERIC, 8);
-      doc_pohikoht   INTEGER = coalesce((doc_data ->> 'pohikoht') :: INTEGER, 1);
-      doc_ametnik    INTEGER = coalesce((doc_data ->> 'ametnik') :: INTEGER, 0);
-      doc_tasuliik   INTEGER = coalesce((doc_data ->> 'tasuliik') :: INTEGER,
-                                        array_position((enum_range(NULL :: PALK_TASU_LIIK)), 'ASTMEPALK'));
 
-     */
     -- сохранение
     SELECT
       coalesce(leping_id, 0) AS id,
@@ -102,7 +83,7 @@ BEGIN
             TRUE                   AS import,
             v_params               AS data) row;
 
-    SELECT palk.sp_salvesta_tooleping(json_object :: JSON, 1, 1)
+    SELECT palk.sp_salvesta_tooleping(json_object :: JSON, 1, v_leping.rekvid)
     INTO leping_id;
     RAISE NOTICE 'leping_id %, l_count %', leping_id, l_count;
 
@@ -147,7 +128,12 @@ COST 100;
 
 
 /*
-SELECT import_tooleping(136489)
+SELECT import_tooleping(id) from tooleping where rekvid = 63
+
+select * from palk.tooleping where id = 8
+
+select * from tooleping where rekvid = 63 and lopp is null or year(lopp) >= 2017
+
 SELECT import_tooleping(id) from tooleping where
 lopp is null or year(lopp) >= 2017
 INSERT INTO library (id, rekvid, kood, nimetus, library, muud, tun1, tun2, tun3, tun4, tun5, vanaid) VALUES (287565, 112, '0922013             ', 'Narva Soldino G𭮡asium 0922013                                                                                                                                                                                                                              ', 'OSAKOND             ', NULL, 0, 0, 0, 0, 0, NULL);

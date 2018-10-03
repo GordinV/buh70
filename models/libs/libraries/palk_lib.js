@@ -15,7 +15,7 @@ module.exports = {
                 (l.properties::JSONB ->> 'korrkonto') :: varchar(20) as korrkonto,
                 (l.properties::JSONB ->> 'tunnusid') :: integer as tunnusId,
                 (l.properties::JSONB ->> 'elatis') :: integer as elatis,
-                (l.properties::JSONB ->> 'uritus') :: varchar(20) as uritus,
+                (l.properties::JSONB ->> 'uuritus') :: varchar(20) as uuritus,
                 (l.properties::JSONB ->> 'proj') :: varchar(20) as proj,
                 (l.properties::JSONB ->> 'tegev') :: varchar(20) as tegev,
                 (l.properties::JSONB ->> 'allikas') :: varchar(20) as allikas,
@@ -44,7 +44,7 @@ module.exports = {
             NULL::varchar(20) as korrkonto,
             null::integer as tunnusId,
             null::integer as elatis,
-            null::varchar(20) as uritus,
+            null::varchar(20) as uuritus,
             null::varchar(20) as proj,
             null::varchar(20) as tegev,
             null::varchar(20) as allikas,
@@ -76,7 +76,8 @@ module.exports = {
         sqlString: `select l.id, l.kood, l.nimetus, l.tun5 as kehtiv,
             coalesce((l.properties::JSONB ->> 'tululiik'),'')::varchar(20) as tululiik,  
             coalesce((l.properties::JSONB ->> 'liik')::integer,1) as liik,
-            $2::integer as userId
+            $2::integer as userId,
+            l.tun5 as is_arhiiv
             from libs.library l
             where l.library = 'PALK'
             and l.status <> 3

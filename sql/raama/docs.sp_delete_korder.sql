@@ -140,7 +140,13 @@ BEGIN
   DELETE FROM docs.korder1
   WHERE parentid = v_doc.id; --@todo констрейн на удаление
 
+  -- удаляем оплату
+  PERFORM docs.sp_delete_arvtasu(userid, id)
+  FROM docs.arvtasu a
+  WHERE a.doc_tasu_id = doc_id;
+
   -- Установка статуса ("Удален")  и сохранение истории
+
 
   UPDATE docs.doc
   SET lastupdate = now(),

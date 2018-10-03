@@ -17,11 +17,14 @@ BEGIN
   -- выборка из "старого меню"
 
   FOR v_pv IN
-  SELECT p.*
+  SELECT
+    p.*,
+    l.nimetus AS fixed_nimi
   FROM curpohivara p
+    INNER JOIN library_ l ON l.id = p.id
     INNER JOIN rekv ON rekv.id = p.rekvid AND rekv.parentid < 999
   WHERE (p.id = in_old_id OR in_old_id IS NULL)
-  and (mahakantud is null or mahakantud < date(2017,01,01))
+        AND (mahakantud IS NULL OR mahakantud < date(2017, 01, 01))
   LIMIT ALL
   LOOP
 
@@ -40,26 +43,31 @@ BEGIN
     RAISE NOTICE 'check for lib.. v_lib.id -> %, found -> % log_id -> %', v_pv.id, pv_id, log_id;
 
     -- преобразование и получение параметров
-    l_grupp_id = (select new_id from import_log where old_id = v_pv.gruppid and lib_name = 'PVGRUPP');
+    l_grupp_id = (SELECT new_id
+                  FROM import_log
+                  WHERE old_id = v_pv.gruppid AND lib_name = 'PVGRUPP');
 
-    if l_grupp_id is null THEN
-      raise EXCEPTION  'PV grupp not found v_pv.gruppid %, l_grupp_id %', v_pv.gruppid, l_grupp_id;
+    IF l_grupp_id IS NULL
+    THEN
+      RAISE EXCEPTION 'PV grupp not found v_pv.gruppid %, l_grupp_id %', v_pv.gruppid, l_grupp_id;
     END IF;
 
-    l_vast_isik_id = (select new_id from import_log where old_id = v_pv.vastisikid and lib_name = 'USERID');
+    l_vast_isik_id = (SELECT new_id
+                      FROM import_log
+                      WHERE old_id = v_pv.vastisikid AND lib_name = 'USERID');
     -- сохранение
     SELECT
       coalesce(pv_id, 0) AS id,
       v_pv.kood,
-      v_pv.nimetus,
-      l_grupp_id as gruppid,
+      v_pv.fixed_nimi    AS nimetus,
+      l_grupp_id         AS gruppid,
       v_pv.konto,
       v_pv.soetkpv,
       v_pv.kulum,
       v_pv.algkulum,
       v_pv.soetmaks,
-      v_pv.selgitus as selg,
-      l_vast_isik_id AS vastisikid,
+      v_pv.selgitus      AS selg,
+      l_vast_isik_id     AS vastisikid,
       v_pv.rentnik,
       v_pv.liik
     INTO v_params;
@@ -74,6 +82,21 @@ BEGIN
     SELECT libs.sp_salvesta_pv_kaart(json_object :: JSON, 1, v_pv.rekvid)
     INTO pv_id;
     RAISE NOTICE 'pv_id %, l_count %', pv_id, l_count;
+
+    IF v_pv.mahakantud IS NOT NULL AND NOT empty(v_pv.mahakantud) or exists (select id from pv_oper where parentid = v_pv.id and liik = 4)
+    THEN
+      if v_pv.mahakantud is null or empty(v_pv.mahakantud) THEN
+        v_pv.mahakantud = (select kpv from pv_oper where parentid = v_pv.id and liik = 4 LIMIT 1);
+      END IF;
+      -- списание
+
+      UPDATE libs.library
+      SET status   = 2,
+        properties = properties :: JSONB || (SELECT row_to_json(row)
+                                             FROM (SELECT v_pv.mahakantud :: DATE AS mahakantud) row) :: JSONB
+      WHERE id = pv_id;
+
+    END IF;
 
     -- salvestame log info
     SELECT row_to_json(row)

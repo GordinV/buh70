@@ -77,6 +77,13 @@ const Journal = {
             multiple: true,
             alias: 'relations',
             data: []
+        },
+        {
+            sql:`select * from libs.asutus where regkood = $1 order by staatus limit `,
+            query: null,
+            multiple: false,
+            alias: 'validate_asutus',
+            data:[]
         }
 
     ],

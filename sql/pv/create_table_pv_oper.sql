@@ -47,6 +47,9 @@ CREATE INDEX pv_oper_nomid_idx
   (nomid);
 
 
+CREATE INDEX pv_oper_journalid_idx
+  ON docs.pv_oper using btree (journalid);
+
 CREATE TRIGGER trigi_pv_oper_before
   BEFORE INSERT
   ON docs.pv_oper

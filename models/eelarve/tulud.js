@@ -22,12 +22,10 @@ const Tulud = {
                     e.is_parandus,
                     coalesce(e.is_kulud,0)::integer as is_kulud,
                     e.kpv  as kpv,
-                    coalesce(v.valuuta,'EUR') as valuuta,
-                    coalesce(v.kuurs,1) as kuurs,
-                    (enum_range(NULL :: DOK_STATUS))[e.status]::text as dok_status
+                    'EUR' as valuuta,
+                    1::numeric as kuurs,
+                    (enum_range(NULL :: DOK_STATUS))[e.status]::varchar(20) as dok_status
                     FROM eelarve.tulud e
-                    LEFT OUTER JOIN docs.dokvaluuta1 v
-                    ON v.id = dokid AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'eelarve')
                     WHERE e.id = $1`,
             sqlAsNew: `SELECT
                       $1 :: INTEGER                                 AS id,

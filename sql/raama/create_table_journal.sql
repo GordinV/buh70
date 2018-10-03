@@ -59,3 +59,7 @@ CREATE INDEX journal_rekvid_idx
 ALTER TABLE docs.journal CLUSTER ON journal_rekvid_idx;
 
 
+CREATE INDEX journal_doc_parentid_idx
+  ON docs.journal using btree (parentid);
+
+

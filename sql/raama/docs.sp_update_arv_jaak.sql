@@ -1,62 +1,75 @@
-﻿
-DROP FUNCTION if exists docs.sp_update_arv_jaak(integer, date);
-DROP FUNCTION if exists docs.sp_updatearvjaak(integer, date);
+﻿DROP FUNCTION IF EXISTS docs.sp_updatearvjaak( INTEGER, DATE );
+DROP FUNCTION IF EXISTS docs.sp_update_arv_jaak( INTEGER, DATE );
+DROP FUNCTION IF EXISTS docs.sp_update_arv_jaak( INTEGER );
 
-CREATE OR REPLACE FUNCTION docs.sp_update_arv_jaak( tnArvId integer,tdKpv date)
-  RETURNS numeric AS
+CREATE OR REPLACE FUNCTION docs.sp_update_arv_jaak(l_arv_Id INTEGER)
+  RETURNS NUMERIC AS
 $BODY$
-declare lnArvSumma numeric (12,4);
-	lnTasuSumma numeric (12,4);
-	lnJaak numeric (12,4);
-	ldKpv date;
-	v_arvtasu record;
-	lnJournalId int;
-
-	lnKuurs numeric(12,4);
-begin
+DECLARE l_arv_summa  NUMERIC(12, 4);
+        l_tasu_summa NUMERIC(12, 4);
+        l_jaak       NUMERIC(12, 4);
+        l_kpv        DATE;
+BEGIN
 
 
-SELECT coalesce(arv.summa * coalesce(dokvaluuta1.kuurs,1),0)::numeric, coalesce(dokvaluuta1.kuurs,1)  into lnArvSumma , lnKuurs
-	FROM docs.arv arv
-	inner join docs.doc d on d.id = arv.parentid
-	left outer join docs.dokvaluuta1 dokvaluuta1 on (dokvaluuta1.dokid = arv.id and dokvaluuta1.dokliik = 3) 
-	WHERE arv.id = tnArvId ;
+  l_arv_summa = (SELECT coalesce(arv.summa, 0) :: NUMERIC
+                 FROM docs.arv arv
+                   INNER JOIN docs.doc d ON d.id = arv.parentid
+                 WHERE d.id = l_arv_Id);
 
-SELECT coalesce(sum(arvtasu.summa * ifnull(dokvaluuta1.kuurs,1)),0), coalesce(max(arvtasu.kpv),tdKpv) into lnTasuSumma, ldKpv 
-	FROM docs.arvtasu arvtasu 
-	left outer join docs.dokvaluuta1 dokvaluuta1 on (arvtasu.id = dokvaluuta1.dokid and dokvaluuta1.dokliik = 21) 
-	WHERE arvtasu.doc_arv_Id = tnArvId;
-		
-	
-	if lnArvSumma < 0 then
-		-- kreeditarve
-		if lnTasuSumma < 0 then
-			lnJaak := -1 * ((-1 * lnArvSumma) - (-1 * lnTasuSumma));			
-		else
-			lnJaak := lnArvSumma + lnTasuSumma;
-		end if;
-	else
-		lnJaak := lnArvSumma - lnTasuSumma;
-	end if;
-	if lnTasuSumma = 0 then
-		ldKpv := null;
-	end if;
+  SELECT
+    coalesce(sum(arvtasu.summa), 0),
+    coalesce(max(arvtasu.kpv), NULL :: DATE)
+  INTO l_tasu_summa, l_kpv
+  FROM docs.arvtasu arvtasu
+  WHERE arvtasu.doc_arv_Id = l_arv_Id
+        AND arvtasu.status < 3;
 
-	lnJaak = lnJaak / lnKuurs; 	
+  RAISE NOTICE 'l_tasu_summa %, l_kpv %', l_tasu_summa, l_kpv;
 
-	UPDATE docs.arv SET 
-		tasud = ldkpv,
-		jaak = coalesce(lnJaak,0)  
-		WHERE id = tnArvId;		
+  IF l_arv_summa < 0
+  THEN
+    -- kreeditarve
+    IF l_tasu_summa < 0
+    THEN
+      l_jaak := -1 * ((-1 * l_arv_summa) - (-1 * l_tasu_summa));
+    ELSE
+      l_jaak := l_arv_summa + l_tasu_summa;
+    END IF;
+  ELSE
+    l_jaak := l_arv_summa - l_tasu_summa;
+  END IF;
 
-	return lnJaak;
-end; 
+  IF l_tasu_summa = 0
+  THEN
+    l_kpv := NULL;
+  END IF;
+
+  UPDATE docs.arv
+  SET
+    tasud = l_kpv,
+    jaak  = coalesce(l_jaak, 0)
+  WHERE parentid = l_arv_Id;
+
+
+  IF l_jaak = 0
+  THEN
+    UPDATE docs.doc
+    SET status = 2
+    WHERE id = l_arv_Id;
+  END IF;
+
+  RETURN l_jaak;
+END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
+LANGUAGE plpgsql VOLATILE
+COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(integer, date) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(integer, date) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER) TO dbpeakasutaja;
+/*
 
+SELECT docs.sp_update_arv_jaak(id, date())
+FROM docs.arv
 
-select docs.sp_update_arv_jaak(id, date()) from docs.arv
+*/

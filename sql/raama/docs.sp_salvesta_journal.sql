@@ -57,7 +57,9 @@ BEGIN
   END IF;
 
   -- вставка или апдейт docs.doc
-  IF doc_id IS NULL OR doc_id = 0
+  IF doc_id IS NULL OR doc_id = 0 OR NOT exists(SELECT id
+                                                FROM cur_journal
+                                                WHERE id = doc_id)
   THEN
 
     SELECT row_to_json(row)
@@ -67,8 +69,8 @@ BEGIN
             userName AS user) row;
 
 
-    INSERT INTO docs.doc (doc_type_id, history, rekvid)
-    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid)
+    INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, 1)
     RETURNING id
       INTO doc_id;
 

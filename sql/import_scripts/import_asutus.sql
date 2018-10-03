@@ -74,6 +74,7 @@ BEGIN
       v_asutus.kehtivus      AS kehtivus,
       is_tootaja             AS is_tootaja,
       v_asutus.muud          AS muud,
+      v_asutus.tp as tp,
       json_asutus_aa         AS asutus_aa
     INTO v_params;
 
@@ -84,7 +85,7 @@ BEGIN
             TRUE                   AS import,
             v_params               AS data) row;
 
-    SELECT libs.sp_salvesta_asutus(json_object :: JSON, 1, 1)
+    SELECT libs.sp_salvesta_asutus(json_object :: JSON, 1, v_asutus.rekvid)
     INTO asutus_id;
     RAISE NOTICE 'lib_id %, l_count %', asutus_id, l_count;
     IF empty(asutus_id)
@@ -120,6 +121,7 @@ BEGIN
   END LOOP;
 
   -- control
+  /*
   l_tulemus = (SELECT count(id)
                FROM libs.asutus
   );
@@ -129,7 +131,8 @@ BEGIN
     RAISE NOTICE 'Import ->ok';
 --    RAISE EXCEPTION 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
   END IF;
-
+*/
+  RAISE NOTICE 'Import ->ok';
 
   RETURN l_count;
 

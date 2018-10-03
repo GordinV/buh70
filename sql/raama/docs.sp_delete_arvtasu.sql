@@ -10,7 +10,7 @@ CREATE OR REPLACE FUNCTION docs.sp_delete_arvtasu(
 $BODY$
 
 DECLARE
-  v_doc           RECORD;
+  v_doc    RECORD;
   l_doc_id INTEGER = 0;
 BEGIN
 
@@ -49,7 +49,11 @@ BEGIN
   UPDATE docs.arvtasu
   SET status = 3
   WHERE id = doc_id
-  RETURNING ID INTO l_doc_id;
+  RETURNING ID
+    INTO l_doc_id;
+
+  -- update arv jaak
+  PERFORM docs.sp_update_arv_jaak(v_doc.doc_arv_id);
 
   result = 1;
 

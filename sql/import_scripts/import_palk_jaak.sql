@@ -1,3 +1,4 @@
+delete from palk.palk_jaak;
 INSERT INTO palk.palk_jaak (lepingid, kuu, aasta, jaak, arvestatud, kinni, tki, tka, pm, tulumaks, sotsmaks, muud, g31)
   SELECT
     i.new_id as lepingid,

@@ -11,7 +11,7 @@ CREATE VIEW cur_eelproj AS
     e.muud :: VARCHAR(254)                              AS muud,
     Rekv.regkood,
     Rekv.parentid,
-    Rekv.nimetus                                        AS asutus,
+    Rekv.nimetus::varchar(254)                                        AS asutus,
     coalesce(u.ametnik, space(254)) :: VARCHAR(254)     AS kinnitaja,
     l.nimetus                                           AS cstaatus
   FROM eelarve.eelproj e
@@ -22,16 +22,11 @@ CREATE VIEW cur_eelproj AS
 GRANT SELECT ON TABLE cur_eelproj TO eelaktsepterja;
 
 /*
+select * from cur_eelproj
+
 select * from libs.library where library = 'STATUS'
-		SELECT *  from (SELECT                          d.*                        FROM cur_eelproj d
-		WHERE d.rekvId in (select rekv_id from get_asutuse_struktuur(1))                                 ) qry
-		WHERE 	asutus ilike '%'
-	and aasta = 2018
-	and kuu >= 0
-	and kuu <= 12
-	and muud ilike '%'
-	and kinnitaja ilike '%'
-	and status = 1
+
+update libs.library set nimetus = 'Kinnitatud'  where id = 11
 
 
 */

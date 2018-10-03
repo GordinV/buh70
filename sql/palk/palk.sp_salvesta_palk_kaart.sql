@@ -24,6 +24,7 @@ DECLARE
   doc_tunnus     TEXT = doc_data ->> 'tunnus';
   doc_minsots    INTEGER = doc_data ->> 'minsots';
   doc_muud       TEXT = doc_data ->> 'muud';
+  doc_status     INTEGER = doc_data ->> 'status';
 
   new_properties JSONB;
   new_history    JSONB;
@@ -33,7 +34,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
   IF is_import IS NULL AND userName IS NULL
   THEN
@@ -63,7 +64,10 @@ BEGIN
                                  alimentid, tunnus, minsots, status, ajalugu, muud)
     VALUES
       (doc_parentid, doc_libid, doc_lepingid, doc_summa, doc_percent_, doc_tulumaks, doc_tulumaar,
-                     doc_alimentid, doc_tunnus, doc_minsots, 1, new_history, doc_muud)
+                     doc_alimentid, doc_tunnus, doc_minsots, CASE WHEN is_import IS NOT NULL
+        THEN doc_status
+                                                             ELSE 1 END,
+       new_history, doc_muud)
     RETURNING id
       INTO kaart_id;
 
@@ -94,7 +98,10 @@ BEGIN
       tunnus    = doc_tunnus,
       minsots   = doc_minsots,
       ajalugu   = new_history,
-      muud      = doc_muud
+      muud      = doc_muud,
+      status    = CASE WHEN is_import IS NOT NULL
+        THEN doc_status
+                  ELSE status END
     WHERE id = doc_id
     RETURNING id
       INTO kaart_id;

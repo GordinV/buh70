@@ -82,6 +82,7 @@ const Smk = {
                          trim(nimetus) AS name
                        FROM ou.aa
                        WHERE pank = 1
+                       and parentid in (select rekvid from ou.userid where id = $2)
                        ORDER BY default_
                        LIMIT 1) AS aa,
                       (SELECT *
@@ -102,8 +103,8 @@ const Smk = {
                       trim(n.nimetus) AS nimetus,
                       trim(a.nimetus) AS asutus,
                       k1.*,
-                      coalesce(v.valuuta,'EUR')::varchar(20) as valuuta,
-                      coalesce(v.kuurs,1)::numeric(12,4) as kuurs,
+                      'EUR'::varchar(20) as valuuta,
+                      1::numeric(12,4) as kuurs,
                       jid.number as lausnr
                     FROM docs.mk1 AS k1
                       INNER JOIN docs.mk k ON k.id = k1.parentId
@@ -113,7 +114,6 @@ const Smk = {
                       left outer join docs.doc d on k1.journalid = d.id
                       left outer join docs.journal j on j.parentid = d.id
                       left outer join docs.journalid jid on jid.journalid = j.id
-                      LEFT OUTER JOIN docs.dokvaluuta1 v ON (v.dokid = k1.id AND v.dokliik = 4)
                     WHERE k.parentid = $1`,
             query: null,
             multiple: true,

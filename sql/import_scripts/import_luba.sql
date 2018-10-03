@@ -69,18 +69,17 @@ BEGIN
       v_luba.algkpv,
       v_luba.loppkpv,
       v_luba.summa,
+      v_luba.jaak,
+      v_luba.volg,
       v_luba.alus,
       v_luba.kord,
       v_luba.number,
       v_luba.muud,
+      v_luba.staatus,
       json_luba1           AS "gridData"
     INTO v_params;
 
-    /*
-                 json_object) AS x(id TEXT, nomid INTEGER, summa NUMERIC(14, 4), kogus NUMERIC(14, 4),
-         maksumaar NUMERIC(12, 2), soodus_tyyp INTEGER, soodus NUMERIC(14, 2), staatus INTEGER, muud TEXT);
 
-     */
 
     SELECT row_to_json(row)
     INTO json_object

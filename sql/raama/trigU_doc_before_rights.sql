@@ -17,12 +17,14 @@ DECLARE
   is_eelarve   BOOLEAN = (new.doc_type_id IN (
     SELECT id
     FROM libs.library
-    WHERE (properties :: JSON ->> 'module') :: TEXT ILIKE '%eelarve%'
+    WHERE (properties :: JSONB ->> 'module') :: TEXT ILIKE '%eelarve%'
+          AND library = 'DOK'
   ));
   is_rekl      BOOLEAN = (new.doc_type_id IN (
     SELECT id
     FROM libs.library
-    WHERE (properties :: JSON ->> 'module') :: TEXT ILIKE '%rekl%'
+    WHERE (properties :: JSONB ->> 'module') :: TEXT ILIKE '%rekl%'
+          AND library = 'DOK'
   ));
 
 BEGIN
@@ -145,16 +147,16 @@ BEGIN
           (SELECT
              array(SELECT id
                    FROM ou.userid
-                   WHERE muud ILIKE '%reklAdministraator%' AND rekvid = new.rekvid)   AS "reklAdministraator",
+                   WHERE muud ILIKE '%reklAdministraator%' AND rekvid = new.rekvid) AS "reklAdministraator",
              array(SELECT id
                    FROM ou.userid
-                   WHERE muud ILIKE '%reklMaksuhaldur%' AND rekvid = new.rekvid)      AS "reklMaksuhaldur") row;
+                   WHERE muud ILIKE '%reklMaksuhaldur%' AND rekvid = new.rekvid)    AS "reklMaksuhaldur") row;
 
         doc_rigths = doc_rigths || muud_rigths;
 
       END IF;
 
-  WHEN new.status = array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
+    WHEN new.status = array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
     THEN -- closed
       SELECT row_to_json(row)
       INTO doc_rigths

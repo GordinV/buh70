@@ -24,9 +24,12 @@ DECLARE
   doc_algkpv    DATE = doc_data ->> 'algkpv';
   doc_loppkpv   DATE = doc_data ->> 'loppkpv';
   doc_summa     NUMERIC(14, 2) = doc_data ->> 'summa';
+  doc_jaak      NUMERIC(14, 2) = doc_data ->> 'jaak';
+  doc_volg      NUMERIC(14, 2) = doc_data ->> 'volg';
   doc_alus      TEXT = doc_data ->> 'alus';
   doc_kord      TEXT = doc_data ->> 'kord';
   doc_muud      TEXT = doc_data ->> 'muud';
+  doc_staatus   INTEGER = doc_data ->> 'staatus';
   json_object   JSON;
   json_record   RECORD;
   new_history   JSONB;
@@ -37,7 +40,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
 
   IF is_import IS NULL AND userName IS NULL
@@ -63,16 +66,19 @@ BEGIN
             now()    AS created,
             userName AS user) row;
 
-    INSERT INTO docs.doc (doc_type_id, history, rekvid)
-    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid)
+    INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, 1)
     RETURNING id
       INTO doc_id;
 
     RAISE NOTICE 'after doc_id %', doc_id;
 
-    INSERT INTO rekl.luba (parentid, asutusid, rekvid, algkpv, loppkpv, number, alus, muud, kord)
+    INSERT INTO rekl.luba (parentid, asutusid, rekvid, algkpv, loppkpv, number, alus, muud, kord, summa, staatus)
     VALUES
-      (doc_id, doc_asutusid, user_rekvid, doc_algkpv, doc_loppkpv, doc_number, doc_alus, doc_muud, doc_kord)
+      (doc_id, doc_asutusid, user_rekvid, doc_algkpv, doc_loppkpv, doc_number, doc_alus, doc_muud, doc_kord, doc_summa,
+               CASE WHEN is_import IS NOT NULL
+                 THEN doc_staatus
+               ELSE 0 END)
     RETURNING id
       INTO luba_id;
     RAISE NOTICE 'after luba_id %', luba_id;
@@ -93,12 +99,12 @@ BEGIN
     WHERE id = doc_id;
 
     -- will check if arvId exists
-    RAISE NOTICE 'luba_id %', luba_id;
     UPDATE docs.doc
     SET
       docs_ids   = docs,
       lastupdate = now(),
-      history    = coalesce(history, '[]') :: JSONB || new_history
+      history    = coalesce(history, '[]') :: JSONB || new_history,
+      status = case when is_import is not null THEN 1 else status END
     WHERE id = doc_id;
 
     UPDATE rekl.luba
@@ -110,12 +116,22 @@ BEGIN
       kord     = doc_kord,
       number   = doc_number,
       muud     = doc_muud,
-      summa    = doc_summa
+      summa    = doc_summa,
+      jaak     = CASE WHEN is_import IS NOT NULL
+        THEN doc_jaak
+                 ELSE jaak END,
+      volg     = CASE WHEN is_import IS NOT NULL
+        THEN doc_volg
+                 ELSE volg END,
+      staatus = case when is_import is not null then doc_staatus else staatus END
     WHERE parentid = doc_id
     RETURNING id
       INTO luba_id;
 
   END IF;
+
+  RAISE NOTICE 'luba_id %', luba_id;
+
   -- вставка в таблицы документа
 
 
@@ -173,7 +189,7 @@ BEGIN
 
   -- uuendame dekl list
 
-  IF is_import IS NOT NULL
+  IF is_import IS NULL
   THEN
     PERFORM rekl.sp_calc_dekl(doc_id, userid);
   END IF;

@@ -75,7 +75,8 @@ BEGIN
       v_pk.alimentid,
       l_tunnus           AS tunnus,
       v_pk.minsots,
-      v_pk.muud          AS muud
+      v_pk.muud          AS muud,
+      case when v_pk.status = 0 then 2 else 1 end as status
     INTO v_params;
 
     SELECT row_to_json(row)

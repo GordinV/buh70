@@ -20,13 +20,8 @@ DECLARE
   doc_dok         TEXT = doc_data ->> 'dok';
   doc_pankkassa   INTEGER = doc_data ->> 'pankkassa';
   doc_muud        TEXT = doc_data ->> 'muud';
-  doc_valuuta     TEXT = coalesce((doc_data ->> 'valuuta')::text,'EUR');
-  doc_kuurs       NUMERIC(14, 4) = coalesce((doc_data ->> 'kuurs')::numeric, 1);
-  json_object     JSONB;
   v_tasu_dok      RECORD;
-  l_arv_id        INTEGER = 0;
-  a_dokvaluuta    TEXT [] = enum_range(NULL :: DOK_VALUUTA);
-  is_import     BOOLEAN = data ->> 'import';
+  is_import       BOOLEAN = data ->> 'import';
 
 BEGIN
 
@@ -37,12 +32,12 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
 
   IF is_import IS NULL AND userName IS NULL
   THEN
-    RAISE NOTICE 'User not found %', user;
+    RAISE NOTICE 'User not found %, user_rekvid %, userId %', userName, user_rekvid, userId;
     RETURN 0;
   END IF;
 
@@ -50,6 +45,7 @@ BEGIN
   IF doc_id IS NULL OR doc_id = 0
   THEN
 
+    RAISE NOTICE 'doc_doc_arv_id %', doc_doc_arv_id;
     -- check if tasu from journal
     IF doc_doc_arv_id IS NULL OR empty(doc_doc_arv_id) AND NOT empty(doc_doc_tasu_id) AND doc_pankkassa = 3
     THEN
@@ -96,24 +92,17 @@ BEGIN
       doc_tasu_id = doc_doc_tasu_id,
       kpv         = doc_kpv,
       summa       = doc_summa,
-      muud        = doc_muud
+      muud        = doc_muud,
+      status      = CASE WHEN status = 3
+        THEN 1
+                    ELSE status END
     WHERE id = doc_id
     RETURNING id
       INTO lib_id;
   END IF;
 
-  IF NOT exists(SELECT id
-                FROM docs.dokvaluuta1
-                WHERE dokid = lib_id AND dokliik = array_position(a_dokvaluuta, 'arvtasu'))
-  THEN
-    -- if record does
-    INSERT INTO docs.dokvaluuta1 (dokid, dokliik, valuuta, kuurs)
-    VALUES (lib_id, array_position(a_dokvaluuta, 'arvtasu'), doc_valuuta, doc_kuurs);
-
-  END IF;
-
   -- update arv jaak
-  l_arv_id = docs.sp_update_arv_jaak(doc_doc_arv_id, doc_kpv);
+  PERFORM docs.sp_update_arv_jaak(doc_doc_arv_id);
 
   RETURN lib_id;
 

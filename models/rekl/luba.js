@@ -83,8 +83,8 @@ const Luba = {
         {
             sql: `SELECT
                       $2 :: INTEGER                             AS userid,
-                      trim(n.kood)                              AS kood,
-                      trim(n.nimetus)                           AS nimetus,
+                      trim(n.kood)::varchar(20)                              AS kood,
+                      trim(n.nimetus)::varchar(254)                           AS nimetus,
                       l1.*,
                       null::varchar(20) as liik,
                       null::varchar(20) as SOODUSTYYP

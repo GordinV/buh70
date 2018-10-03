@@ -20,6 +20,7 @@ DECLARE
   l_koostaja_id   INTEGER;
   l_ametnik_id    INTEGER;
   l_aktsept_id    INTEGER;
+  l_status        INTEGER;
 BEGIN
   -- выборка из "старого меню"
 
@@ -28,12 +29,11 @@ BEGIN
   FROM taotlus t
     INNER JOIN rekv ON t.rekvid = rekv.id AND rekv.parentid < 999
   WHERE (t.id = in_old_id OR in_old_id IS NULL)
-    and t.aasta = 2018
   ORDER BY t.kpv
   LIMIT ALL
   LOOP
 
---    RAISE NOTICE 'v_taotlus.id %', v_taotlus.id;
+    --    RAISE NOTICE 'v_taotlus.id %', v_taotlus.id;
 
     -- поиск и проверка на ранее сделанный импорт
     SELECT
@@ -44,7 +44,7 @@ BEGIN
     WHERE old_id = v_taotlus.id
           AND upper(ltrim(rtrim(lib_name :: TEXT))) = 'TAOTLUS';
 
- --   RAISE NOTICE 'check for lib.. v_taotlus.id -> %, found -> % log_id -> %', v_taotlus.id, taotlus_id, log_id;
+    --   RAISE NOTICE 'check for lib.. v_taotlus.id -> %, found -> % log_id -> %', v_taotlus.id, taotlus_id, log_id;
 
     -- преобразование и получение параметров
 
@@ -83,20 +83,8 @@ BEGIN
                     WHERE old_id = v_taotlus.aktseptid AND lib_name = 'USERID');
 
     -- сохранение
-    /*
-      doc_details    JSON = doc_data ->> 'gridData';
-      doc_number     TEXT = coalesce(doc_data ->> 'number', '1');
-      doc_kpv        DATE = doc_data ->> 'kpv';
-      doc_koostajaid INTEGER = doc_data ->> 'koostajaid';
-      doc_ametnikid  INTEGER = doc_data ->> 'ametnikid';
-      doc_aktseptid  INTEGER = doc_data ->> 'aktseptid';
-      doc_aasta      INTEGER = doc_data ->> 'aasta';
-      doc_kuu        INTEGER = doc_data ->> 'kuu';
-      doc_allkiri    INTEGER = coalesce((doc_data ->> 'allkiri')::integer,0);
-      doc_tunnus     INTEGER = doc_data ->> 'tunnus';
-      doc_muud       TEXT = doc_data ->> 'muud';
 
-     */
+
     SELECT
       coalesce(taotlus_id, 0) AS id,
       l_koostaja_id           AS koostajaid,
@@ -109,6 +97,7 @@ BEGIN
       v_taotlus.tunnus        AS tunnus,
       v_taotlus.number        AS number,
       v_taotlus.muud          AS muud,
+      v_taotlus.staatus       AS status,
       json_taotlus1           AS "gridData"
     INTO v_params;
 
@@ -126,9 +115,8 @@ BEGIN
     THEN
       RAISE EXCEPTION 'saving not success';
     ELSE
---      RAISE NOTICE 'saved %', taotlus_id;
+    --      RAISE NOTICE 'saved %', taotlus_id;
     END IF;
-
 
     -- salvestame log info
     SELECT row_to_json(row)
@@ -154,45 +142,22 @@ BEGIN
     THEN
       RAISE EXCEPTION 'log save failed';
     END IF;
-/*
-    -- проверка на сумму проводки и кол-во записей
-
-    SELECT
-      count(*),
-      sum(t1.summa)
-    INTO l_control_count, l_control_summa
-    FROM eelarve.taotlus t
-      INNER JOIN eelarve.taotlus1 t1 on t.id = t1.parentid
-    WHERE t.parentid = taotlus_id;
-
-    SELECT
-      count(t1.id),
-      sum(t1.summa)
-    INTO l_j_count, l_j_summa
-    FROM taotlus t INNER JOIN taotlus1 t1 ON t.id = t1.parentid
-    WHERE t.id = v_taotlus.id;
-    IF (l_j_count) <> l_control_count OR
-       (l_j_summa) <> l_control_summa
-    THEN
-      RAISE EXCEPTION 'kontrol failed v_taotlus.id % , taotlus_id %, l_control_summa %, l_j_summa %,, l_control_count %, l_j_count %', v_taotlus.id, taotlus_id, l_control_summa, l_j_summa, l_control_count, l_j_count;
-    END IF;
-    */
     l_count = l_count + 1;
   END LOOP;
 
   -- control
-/*
-  l_tulemus = (SELECT count(id)
-               FROM eelarve.taotlus);
-  IF (l_tulemus + 100)
-     >= l_count
-  THEN
-    RAISE NOTICE 'Import ->ok';
-  ELSE
-    RAISE EXCEPTION 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
-    --    RAISE notice 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
-  END IF;
-*/
+  /*
+    l_tulemus = (SELECT count(id)
+                 FROM eelarve.taotlus);
+    IF (l_tulemus + 100)
+       >= l_count
+    THEN
+      RAISE NOTICE 'Import ->ok';
+    ELSE
+      RAISE EXCEPTION 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
+      --    RAISE notice 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
+    END IF;
+  */
 
   IF l_count = 0
   THEN
@@ -212,7 +177,7 @@ COST 100;
 
 
 /*
-SELECT import_taotlus(715)
+SELECT import_taotlus(10401)
 
 SELECT import_taotlus(id) from taotlus where year(kpv) = 2018 order by kpv limit all
 

@@ -48,7 +48,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
   IF is_import IS NULL AND userName IS NULL
   THEN
@@ -90,10 +90,11 @@ BEGIN
             userName AS user) row;
 
 
-    INSERT INTO docs.doc (doc_type_id, history, rekvid)
-    VALUES (doc_typeId, '[]' :: JSONB || new_history, user_rekvid)
+    INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
+    VALUES (doc_typeId, '[]' :: JSONB || new_history, user_rekvid, 1)
     RETURNING id
       INTO doc_id;
+
 
     INSERT INTO docs.mk (parentid, rekvid, kpv, opt, aaId, number, muud, arvid, doklausid, maksepaev, selg, viitenr)
     VALUES (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, doc_number, doc_muud, coalesce(doc_arvid, 0),
@@ -102,6 +103,8 @@ BEGIN
     RETURNING id
       INTO mk_id;
 
+
+    RAISE NOTICE 'mk created doc_id %, mk_id %', doc_id, mk_id;
   ELSE
     SELECT row_to_json(row)
     INTO new_history
@@ -117,23 +120,9 @@ BEGIN
     FROM docs.doc
     WHERE id = doc_id;
 
-
-    IF doc_arvid IS NOT NULL AND doc_arvid != 0
+    IF doc_arvid IS NOT NULL
     THEN
-      SELECT parentid
-      INTO arv_parent_id
-      FROM docs.arv
-      WHERE id = doc_arvid;
-      IF (SELECT count(*)
-          FROM (
-                 SELECT unnest(docs) AS element) qry
-          WHERE element = arv_parent_id) = 0
-      THEN
-        IF arv_parent_id IS NOT NULL
-        THEN
-          docs = array_append(docs, arv_parent_id);
-        END IF;
-      END IF;
+      docs = array_append(docs, doc_arvid);
     END IF;
 
     UPDATE docs.doc
@@ -143,7 +132,6 @@ BEGIN
       lastupdate  = now(),
       history     = coalesce(history, '[]') :: JSONB || new_history
     WHERE id = doc_id;
-
 
     UPDATE docs.mk
     SET
@@ -227,17 +215,24 @@ BEGIN
 
   END LOOP;
 
+  RAISE NOTICE 'arvid %, doc_id %, userid %', doc_arvid, doc_id, userid;
+
+  IF doc_arvid IS NOT NULL
+  THEN
+    -- произведем оплату счета
+    PERFORM docs.sp_tasu_arv(doc_id, doc_arvid, userid);
+
+  END IF;
+
   RETURN doc_id;
 
 END;$BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.sp_salvesta_mk(JSON, INTEGER, INTEGER) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION docs.sp_salvesta_mk(JSON, INTEGER, INTEGER) TO postgres;
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_mk(JSON, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_mk(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
-
+/*
 SELECT docs.sp_salvesta_mk('{
   "id": 928,
   "data": {
@@ -297,3 +292,4 @@ SELECT docs.sp_salvesta_mk('{
   }
 }', 1, 1);
 
+*/

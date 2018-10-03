@@ -47,7 +47,7 @@ const EelProj = {
             {id: "status", name: "Status", width: "100px"}
         ],
         sqlString: `SELECT
-                          d.*
+                          d.
                         FROM cur_eelproj d
                         WHERE d.rekvId in (select rekv_id from get_asutuse_struktuur($1))`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',

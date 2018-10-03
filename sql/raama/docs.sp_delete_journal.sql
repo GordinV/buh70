@@ -74,7 +74,6 @@ BEGIN
       FROM docs.doc d
         INNER JOIN libs.library l ON l.id = d.doc_type_id
       WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
-            AND (l.rekvid IS NULL OR l.rekvid = v_doc.rekvid)
             AND l.kood IN (
         SELECT kood
         FROM libs.library

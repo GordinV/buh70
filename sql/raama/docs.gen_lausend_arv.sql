@@ -142,10 +142,9 @@ BEGIN
     FOR v_arv1 IN
     SELECT
       arv1.*,
-      coalesce(dokvaluuta1.valuuta, 'EUR') :: VARCHAR AS valuuta,
-      coalesce(dokvaluuta1.kuurs, 1) :: NUMERIC       AS kuurs
+      'EUR' :: VARCHAR AS valuuta,
+      1 :: NUMERIC       AS kuurs
     FROM docs.arv1 arv1
-      LEFT OUTER JOIN docs.dokvaluuta1 dokvaluuta1 ON (arv1.id = dokvaluuta1.dokid AND dokvaluuta1.dokliik = 2)
     WHERE arv1.parentid = v_arv.Id
     LOOP
 
@@ -189,27 +188,6 @@ BEGIN
 
         l_json_details = coalesce(l_json_details,'{}'::jsonb) || to_jsonb(v_journal);
 
-        /*
-                l_json_row = '{' ||
-                             '"id":0' ||
-                             ',"summa":' || CASE WHEN v_arv1.kbmta = 0
-                  THEN v_arv1.hind * v_arv1.kogus
-                                            ELSE v_arv1.kbmta END ||
-                             ',"valuuta":"' || coalesce(v_arv1.valuuta, 'EUR') || '"' ||
-                             ',"kuurs":' || coalesce(v_arv1.kuurs, 1) ||
-                             ',"deebet":"' || lcDbKonto || '"' ||
-                             ',"lisa_d":"' || coalesce(v_arv.asutus_tp, '800599') || '"' ||
-                             ',"kreedit":"' || lcKrKonto || '"' ||
-                             ',"lisa_k":"' || coalesce(v_arv.asutus_tp, '800599') || '"' ||
-                             ',"tunnus":"' || coalesce(v_arv1.tunnus, '') || '"' ||
-                             ',"proj":"' || coalesce(v_arv1.proj, '') || '"' ||
-                             ',"kood1":"' || coalesce(v_arv1.kood1, '') || '"' ||
-                             ',"kood2":"' || coalesce(v_arv1.kood2, '') || '"' ||
-                             ',"kood3":"' || coalesce(v_arv1.kood3, '') || '"' ||
-                             ',"kood4":"' || coalesce(v_arv1.kood4, '') || '"' ||
-                             ',"kood5":"' || coalesce(v_arv1.kood5, '') || '"' ||
-                             '}';
-                         */
         IF v_arv1.kbm <> 0
         THEN
 
@@ -300,11 +278,11 @@ BEGIN
       END IF;
 
       l_row_count = l_row_count + 1;
-      raise notice 'l_json_details %',l_json_details;
+--      raise notice 'l_json_details %',l_json_details;
     END LOOP;
 
-    l_json = ('{"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":' || l_json_details::text || '}}');
-    RAISE NOTICE 'l_json 2 %', l_json :: JSON;
+    l_json = ('{"id": ' || coalesce(v_arv.journalid,0)::text || ',"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":' || l_json_details::text || '}}');
+--    RAISE NOTICE 'l_json 2 %', l_json :: JSON;
 
     /* salvestan lausend */
 

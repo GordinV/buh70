@@ -134,7 +134,28 @@ module.exports = {
             {id: "tegev", name: "Tegevusalla", width: "15%"},
 
         ],
-        sqlString: `SELECT *
+        sqlString: `SELECT       
+                      id,
+                      rekvid,
+                      koostajaid,
+                      aktseptid,
+                      kpv,
+                      number,
+                      aasta,
+                      kuu,
+                      status as status,
+                      allkiri,
+                      kood1,
+                      kood2,
+                      kood3,
+                      kood4,
+                      kood5,
+                      tunnus,
+                      summa,
+                      parentid,
+                      regkood,
+                      nimetus::varchar(254),
+                      ametnik::varchar(254)
                         FROM cur_taotlused t
                         WHERE t.rekvId IN (SELECT rekv_id
                             FROM get_asutuse_struktuur($1))
