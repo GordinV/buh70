@@ -1,7 +1,7 @@
 ﻿DROP FUNCTION IF EXISTS docs.sp_delete_journal( INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_delete_journal(
-  IN  userid        INTEGER,
+  IN  user_id        INTEGER,
   IN  doc_id        INTEGER,
   OUT error_code    INTEGER,
   OUT result        INTEGER,
@@ -11,8 +11,6 @@ $BODY$
 
 DECLARE
   v_doc            RECORD;
-  v_dependid_docs  RECORD;
-  ids              INTEGER [];
   journal_history  JSONB;
   journal1_history JSONB;
   new_history      JSONB;
@@ -24,7 +22,8 @@ BEGIN
     u.ametnik AS user_name
   INTO v_doc
   FROM docs.doc d
-    LEFT OUTER JOIN ou.userid u ON u.id = userid
+    INNER JOIN docs.journal j ON j.parentid = d.id
+    LEFT OUTER JOIN ou.userid u ON u.id = user_id
   WHERE d.id = doc_id;
 
   -- проверка на пользователя и его соответствие учреждению
@@ -40,14 +39,14 @@ BEGIN
 
   IF NOT exists(SELECT id
                 FROM ou.userid u
-                WHERE id = userid
+                WHERE id = user_id
                       AND u.rekvid = v_doc.rekvid
   )
   THEN
 
     error_code = 5;
     error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
-                    coalesce(userid, 0) :: TEXT;
+                    coalesce(user_id, 0) :: TEXT;
     result = 0;
     RETURN;
 
@@ -57,7 +56,7 @@ BEGIN
 
 
   --	ids =  v_doc.rigths->'delete';
-  IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(userid)
+  IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
   THEN
     RAISE NOTICE 'У пользователя нет прав на удаление';
     error_code = 4;
@@ -119,6 +118,17 @@ BEGIN
   DELETE FROM docs.journal
   WHERE parentid = v_doc.id; --@todo констрейн на удаление
 
+
+  -- удаление связей
+  UPDATE docs.doc
+  SET docs_ids = array_remove(docs_ids, doc_id)
+  WHERE id IN (
+    SELECT unnest(docs_ids)
+    FROM docs.doc
+    WHERE id = doc_id
+  )
+        AND status < DOC_STATUS;
+
   -- Установка статуса ("Удален")  и сохранение истории
 
   UPDATE docs.doc
@@ -141,11 +151,9 @@ GRANT EXECUTE ON FUNCTION docs.sp_delete_journal(INTEGER, INTEGER) TO postgres;
 GRANT EXECUTE ON FUNCTION docs.sp_delete_journal(INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_delete_journal(INTEGER, INTEGER) TO dbpeakasutaja;
 
-
-SELECT *
-FROM docs.sp_delete_journal(1, 91)
-
 /*
+SELECT *
+FROM docs.sp_delete_journal(1, 91)/*
 select error_code, result, error_message from docs.sp_delete_mk(1, 422)
 
 select * from docs.doc where id =422 

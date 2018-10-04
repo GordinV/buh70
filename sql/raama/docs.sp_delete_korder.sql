@@ -81,7 +81,7 @@ BEGIN
         SELECT kood
         FROM libs.library
         WHERE library = 'DOK'
-          and kood not in ('JOURNAL')
+              AND kood NOT IN ('JOURNAL')
               AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')
       ))
   THEN
@@ -127,10 +127,9 @@ BEGIN
 
   IF (v_doc.docs_ids IS NOT NULL)
   THEN
-    DELETE FROM docs.journal
+    PERFORM docs.sp_delete_journal(userid, id)
+    FROM docs.journal
     WHERE id IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
-    DELETE FROM docs.journal1
-    WHERE parentid IN (SELECT unnest(v_doc.docs_ids)); -- @todo констрейн на удаление
   END IF;
 
   DELETE FROM docs.korder2
@@ -145,9 +144,17 @@ BEGIN
   FROM docs.arvtasu a
   WHERE a.doc_tasu_id = doc_id;
 
+  -- удаление связей
+  UPDATE docs.doc
+  SET docs_ids = array_remove(docs_ids, doc_id)
+  WHERE id IN (
+    SELECT unnest(docs_ids)
+    FROM docs.doc
+    WHERE id = doc_id
+  )
+        AND status < DOC_STATUS;
+
   -- Установка статуса ("Удален")  и сохранение истории
-
-
   UPDATE docs.doc
   SET lastupdate = now(),
     history      = coalesce(history, '[]') :: JSONB || new_history,

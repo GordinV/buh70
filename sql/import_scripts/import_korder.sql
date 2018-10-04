@@ -120,7 +120,7 @@ BEGIN
       END IF;
     END IF;
 
-    raise notice 'v_korder.doklausid %,l_dokprop_id %',v_korder.doklausid, l_dokprop_id;
+    RAISE NOTICE 'v_korder.doklausid %,l_dokprop_id %', v_korder.doklausid, l_dokprop_id;
 
     SELECT
       coalesce(korder_id, 0) AS id,
@@ -161,7 +161,7 @@ BEGIN
 
     -- правим ссылку на проводку
 
-    IF year(v_korder.kpv) = 2018 AND NOT empty(v_korder.journalid)
+    IF year(v_korder.kpv) = 2018 AND v_korder.journalid IS NOT NULL AND NOT empty(v_korder.journalid)
     THEN
       SELECT new_id
       INTO l_journal_id
@@ -172,7 +172,7 @@ BEGIN
       THEN
         UPDATE docs.korder1
         SET journalid = l_journal_id
-        WHERE id = korder_id;
+        WHERE parentid = korder_id;
       END IF;
     END IF;
 

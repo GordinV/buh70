@@ -38,7 +38,8 @@ CREATE OR REPLACE VIEW cur_korder AS
     INNER JOIN libs.library s ON s.kood = d.status :: TEXT AND s.library = 'STATUS'
     LEFT OUTER JOIN ou.aa aa ON k.kassaid = aa.id AND aa.parentid = k.rekvid
     LEFT OUTER JOIN libs.asutus a ON k.asutusId = a.id
-    LEFT OUTER JOIN docs.journalid jid ON jid.journalid = k.journalid
+    LEFT OUTER JOIN docs.journal j ON j.parentid = k.journalid
+    LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
 
 GRANT SELECT ON TABLE cur_mk TO dbkasutaja;
 GRANT SELECT ON TABLE cur_mk TO dbvaatleja;

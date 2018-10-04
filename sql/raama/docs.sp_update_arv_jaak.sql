@@ -5,17 +5,24 @@ DROP FUNCTION IF EXISTS docs.sp_update_arv_jaak( INTEGER );
 CREATE OR REPLACE FUNCTION docs.sp_update_arv_jaak(l_arv_Id INTEGER)
   RETURNS NUMERIC AS
 $BODY$
-DECLARE l_arv_summa  NUMERIC(12, 4);
-        l_tasu_summa NUMERIC(12, 4);
-        l_jaak       NUMERIC(12, 4);
-        l_kpv        DATE;
+DECLARE l_arv_summa       NUMERIC(12, 4);
+        l_tasu_summa      NUMERIC(12, 4);
+        l_jaak            NUMERIC(12, 4);
+        l_status          INTEGER;
+        l_kpv             DATE;
+        DOC_STATUS_CLOSED INTEGER = 2; -- документ закрыт
+        DOC_STATUS_ACTIVE INTEGER = 1; -- документ подлежит редактированию
 BEGIN
 
 
-  l_arv_summa = (SELECT coalesce(arv.summa, 0) :: NUMERIC
-                 FROM docs.arv arv
-                   INNER JOIN docs.doc d ON d.id = arv.parentid
-                 WHERE d.id = l_arv_Id);
+  SELECT
+    coalesce(arv.summa, 0) :: NUMERIC,
+    arv.jaak,
+    d.status
+  INTO l_arv_summa, l_jaak, l_status
+  FROM docs.arv arv
+    INNER JOIN docs.doc d ON d.id = arv.parentid
+  WHERE d.id = l_arv_Id;
 
   SELECT
     coalesce(sum(arvtasu.summa), 0),
@@ -52,12 +59,11 @@ BEGIN
   WHERE parentid = l_arv_Id;
 
 
-  IF l_jaak = 0
-  THEN
-    UPDATE docs.doc
-    SET status = 2
-    WHERE id = l_arv_Id;
-  END IF;
+  UPDATE docs.doc
+  SET status = CASE WHEN l_jaak <= 0
+    THEN DOC_STATUS_CLOSED
+               ELSE DOC_STATUS_ACTIVE END
+  WHERE id = l_arv_Id;
 
   RETURN l_jaak;
 END;

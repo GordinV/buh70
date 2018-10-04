@@ -110,11 +110,22 @@ BEGIN
 
   IF (v_doc.docs_ids IS NOT NULL)
   THEN
-    DELETE FROM docs.journal
+    PERFORM docs.sp_delete_journal(userid, id)
+    FROM docs.journal
     WHERE id IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
-    DELETE FROM docs.journal1
-    WHERE parentid IN (SELECT unnest(v_doc.docs_ids)); -- @todo констрейн на удаление
+
   END IF;
+
+  -- удаление связей
+  UPDATE docs.doc
+  SET docs_ids = array_remove(docs_ids, v_doc.id)
+  WHERE id IN (
+    SELECT unnest(docs_ids)
+    FROM docs.doc
+    WHERE id = v_doc.id
+  )
+        AND status < DOC_STATUS;
+
 
   DELETE FROM docs.arv1
   WHERE parentid IN (SELECT id
@@ -142,13 +153,14 @@ GRANT EXECUTE ON FUNCTION docs.sp_delete_arv(INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_delete_arv(INTEGER, INTEGER) TO dbpeakasutaja;
 
 
+/*
 SELECT
   error_code,
   result,
   error_message
 FROM docs.sp_delete_arv(1, 125);
 
-/*
+
 select docs.sp_salvesta_arv('{"id":0,"doc_type_id":"ARV","data":{"id":0,"created":"2016-05-05T21:39:57.050726","lastupdate":"2016-05-05T21:39:57.050726","bpm":null,"doc":"Arved","doc_type_id":"ARV","status":"Черновик","number":"321","summa":24,"rekvid":null,"liik":0,"operid":null,"kpv":"2016-05-05","asutusid":1,"arvid":null,"lisa":"lisa","tahtaeg":"2016-05-19","kbmta":null,"kbm":4,"tasud":null,"tasudok":null,"muud":"muud","jaak":"0.00","objektid":null,"objekt":null,"regkood":null,"asutus":null},
 "details":[{"id":"NEW0.6577064044198089","[object Object]":null,"nomid":"1","kogus":2,"hind":10,"kbm":4,"kbmta":20,"summa":24,"kood":"PAIGALDUS","nimetus":"PV paigaldamine"}]}',1, 1);
 

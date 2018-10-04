@@ -57,7 +57,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = v_vmk.rekvId AND u.id = userId;
 
   IF userName IS NULL

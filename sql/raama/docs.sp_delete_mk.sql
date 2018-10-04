@@ -138,6 +138,16 @@ BEGIN
   FROM docs.arvtasu a
   WHERE a.doc_tasu_id = doc_id;
 
+  -- удаление связей
+  UPDATE docs.doc
+  SET docs_ids = array_remove(docs_ids, doc_id)
+  WHERE id IN (
+    SELECT unnest(docs_ids)
+    FROM docs.doc
+    WHERE id = doc_id
+  )
+        AND status < DOC_STATUS;
+
   -- Установка статуса ("Удален")  и сохранение истории
 
   UPDATE docs.doc
@@ -159,11 +169,11 @@ GRANT EXECUTE ON FUNCTION docs.sp_delete_mk(INTEGER, INTEGER) TO postgres;
 GRANT EXECUTE ON FUNCTION docs.sp_delete_mk(INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_delete_mk(INTEGER, INTEGER) TO dbpeakasutaja;
 
-
+/*
 SELECT *
 FROM docs.sp_delete_mk(1, 412)
 
-/*
+
 select error_code, result, error_message from docs.sp_delete_mk(1, 422)
 
 select * from docs.doc where id =422 

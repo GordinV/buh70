@@ -109,6 +109,17 @@ BEGIN
   DELETE FROM docs.pv_oper
   WHERE parentid = v_doc.id; --@todo констрейн на удаление
 
+
+  -- удаление связей
+  UPDATE docs.doc
+  SET docs_ids = array_remove(docs_ids, doc_id)
+  WHERE id IN (
+    SELECT unnest(docs_ids)
+    FROM docs.doc
+    WHERE id = doc_id
+  )
+        AND status < array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
+
   -- Установка статуса ("Удален")  и сохранение истории
 
   UPDATE docs.doc

@@ -9,13 +9,16 @@ CREATE OR REPLACE FUNCTION docs.sp_tasu_arv(
 $BODY$
 
 DECLARE
-  l_doc_id      INTEGER;
-  v_tasu        RECORD;
-  v_params      RECORD;
-  json_object   JSONB;
-  l_tasu_type   INTEGER = 3; -- muud (lausend)
-  l_summa       NUMERIC = 0;
-  l_doc_tasu_id INTEGER;
+  l_doc_id         INTEGER;
+  v_tasu           RECORD;
+  v_params         RECORD;
+  json_object      JSONB;
+  l_tasu_type      INTEGER = 3; -- muud (lausend)
+  l_summa          NUMERIC = 0;
+  l_doc_tasu_id    INTEGER;
+  TYPE_DOK_MK      INTEGER = 1;
+  TYPE_DOK_KORDER  INTEGER = 2;
+  TYPE_DOK_JOURNAL INTEGER = 3;
 BEGIN
   SELECT
     d.*,
@@ -33,10 +36,10 @@ BEGIN
 
   l_tasu_type = (CASE
                  WHEN v_tasu.doc_type ILIKE '%MK%'
-                   THEN 1
+                   THEN TYPE_DOK_MK
                  WHEN v_tasu.doc_type ILIKE '%ORDER%'
-                   THEN 2
-                 ELSE 3 END);
+                   THEN TYPE_DOK_KORDER
+                 ELSE TYPE_DOK_JOURNAL END);
 
   l_summa = (
     SELECT sum(summa) AS summa

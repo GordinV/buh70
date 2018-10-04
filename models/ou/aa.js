@@ -2,10 +2,11 @@ module.exports = {
     selectAsLibs: `SELECT
               id,
               trim(arve)::varchar(20)    AS kood,
-              trim(nimetus)::varchar(120) AS nimetus
+              trim(nimetus)::varchar(120) AS nimetus,
+              aa.default_
             FROM ou.aa aa
-            WHERE (parentid = $1 OR aa.parentid IS NULL)
-                  AND pank = 1
+            WHERE parentid = $1
+                  AND kassa = 1
             ORDER BY default_ DESC`,
     select: [{
         sql:null,

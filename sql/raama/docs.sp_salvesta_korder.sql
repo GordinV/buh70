@@ -41,7 +41,7 @@ DECLARE
   docs            INTEGER [];
   arv_parent_id   INTEGER;
   previous_arv_id INTEGER;
-  a_dokvaluuta    TEXT [] = enum_range(NULL :: DOK_VALUUTA);
+  DOC_STATUS_ACTIVE INTEGER = 1; -- документ открыт для редактирования
   is_import       BOOLEAN = data ->> 'import';
 BEGIN
 
@@ -104,7 +104,7 @@ BEGIN
 
 
     INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
-    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, 1)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, DOC_STATUS_ACTIVE)
     RETURNING id
       INTO doc_id;
 

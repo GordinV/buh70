@@ -9,21 +9,22 @@ CREATE OR REPLACE FUNCTION docs.gen_lausend_avans(
 AS
 $BODY$
 DECLARE
-  v_journal      RECORD;
-  v_journal1     RECORD;
-  v_avans1       RECORD;
-  v_avans2       RECORD;
-  v_dokprop      RECORD;
-  lcAllikas      VARCHAR(20);
-  lcSelg         TEXT;
-  v_selg         RECORD;
-  l_json         TEXT = '';
-  l_json_row     TEXT = '';
-  l_json_details TEXT = '';
-  new_history    JSONB;
-  userName       TEXT;
-  a_docs_ids     INTEGER [];
-  rows_fetched   INTEGER = 0;
+  v_journal         RECORD;
+  v_journal1        RECORD;
+  v_avans1          RECORD;
+  v_avans2          RECORD;
+  v_dokprop         RECORD;
+  lcAllikas         VARCHAR(20);
+  lcSelg            TEXT;
+  v_selg            RECORD;
+  l_json            TEXT = '';
+  l_json_row        TEXT = '';
+  l_json_details    TEXT = '';
+  new_history       JSONB;
+  userName          TEXT;
+  a_docs_ids        INTEGER [];
+  rows_fetched      INTEGER = 0;
+  DOC_STATUS_ACTIVE INTEGER = 1;
 
 BEGIN
 
@@ -55,7 +56,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = v_avans1.rekvId AND u.id = userId;
 
   IF userName IS NULL
@@ -76,7 +77,8 @@ BEGIN
     details.*
   INTO v_dokprop
   FROM libs.dokprop dokprop
-    INNER JOIN libs.library library ON library.id = dokprop.parentid,
+    INNER JOIN libs.library library ON library.id = dokprop.parentid
+    ,
         jsonb_to_record(dokprop.details) AS details(konto TEXT)
   WHERE dokprop.id = v_avans1.dokpropid
   LIMIT 1;
@@ -184,20 +186,15 @@ BEGIN
     UPDATE docs.doc
     SET docs_ids = array(SELECT DISTINCT unnest(array_append(v_avans1.docs_ids, result))),
       lastupdate = now(),
-      history    = coalesce(history, '[]') :: JSONB || new_history
+      history    = coalesce(history, '[]') :: JSONB || new_history,
+      status     = CASE WHEN status IS NULL OR empty(status)
+        THEN DOC_STATUS_ACTIVE
+                   ELSE status END
     WHERE id = v_avans1.parentId;
 
     -- lausend
-    SELECT docs_ids
-    INTO a_docs_ids
-    FROM docs.doc
-    WHERE id = result;
-
-    -- add new id into docs. ref. array
-    a_docs_ids = array(SELECT DISTINCT unnest(array_append(a_docs_ids, v_avans1.parentId)));
-
     UPDATE docs.doc
-    SET docs_ids = a_docs_ids
+    SET docs_ids = array(SELECT DISTINCT unnest(array_append(a_docs_ids, v_avans1.parentId)))
     WHERE id = result;
 
     -- direct ref to journal

@@ -15,10 +15,10 @@ const Sorder = {
                   (to_char(created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                                                   AS created,
                   (to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                                                AS lastupdate,
                   d.bpm,
-                  trim(l.nimetus)                                                                                     AS doc,
-                  trim(l.kood)                                                                                        AS doc_type_id,
+                  trim(l.nimetus)::varchar(254)                                                                       AS doc,
+                  trim(l.kood)::varchar(20)                                                                           AS doc_type_id,
                   trim(s.nimetus)                                                                                     AS status,
-                  k.number                                                                                            AS number,
+                  k.number::varchar(20)                                                                               AS number,
                   k.summa,
                   k.kassaid                                                                                           AS kassa_id,
                   trim(aa.nimetus)                                                                                    AS kassa,
@@ -111,14 +111,13 @@ const Sorder = {
             sql: `SELECT
                   k1.id,
                   $2 :: INTEGER   AS userid,
-                  trim(n.kood)    AS kood,
-                  trim(n.nimetus) AS nimetus,
+                  trim(n.kood)::varchar(20)    AS kood,
+                  trim(n.nimetus)::varchar(20) AS nimetus,
                   trim(n.uhik)    AS uhik,
                   k1.*,
                   'EUR' as valuuta,
                   1::numeric(12,4) as kuurs
-                FROM docs.doc 
-                    docs.korder2 AS k1
+                FROM docs.korder2 AS k1
                   INNER JOIN docs.korder1 k ON k.id = k1.parentId
                   INNER JOIN libs.nomenklatuur n ON n.id = k1.nomid
                   INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
