@@ -8,17 +8,17 @@ CREATE VIEW cur_kulude_kassa_taitmine AS
     rekv.nimetus                         AS asutus,
     rekv.parentid,
     j1.tunnus                            AS tunnus,
-    sum(j1.summa * coalesce(v.kuurs, 1)) AS summa,
+    sum(j1.summa) AS summa,
     j1.kood5                             AS artikkel,
     j1.kood1                             AS tegev,
     j1.kood2                             AS allikas,
-    l.nimetus                            AS nimetus
-  FROM docs.journal j
+    l.nimetus                            AS nimetus,
+    array_agg(d.id) as docs_ids
+  FROM docs.doc d
+    inner join docs.journal j on j.parentid = d.id
     INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
     INNER JOIN ou.rekv rekv ON j.rekvid = rekv.id
-    LEFT OUTER JOIN libs.library l ON l.kood = j1.kood5 AND l.library = 'ARTIKKEL'
-    LEFT OUTER JOIN docs.dokvaluuta1 v
-      ON v.dokid = j1.id AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'journal1')
+    LEFT OUTER JOIN libs.library l ON l.kood = j1.kood5 AND l.library = 'TULUDEALLIKAD'
     JOIN kassakulud ON ltrim(rtrim(j1.deebet)) ~~ ltrim(rtrim(kassakulud.kood))
     JOIN kassakontod ON ltrim(rtrim(j1.kreedit)) ~~ ltrim(rtrim(kassakontod.kood))
   GROUP BY (YEAR(j.kpv)), (MONTH(j.kpv)), j.rekvid, rekv.parentid, rekv.nimetus, j1.kreedit,

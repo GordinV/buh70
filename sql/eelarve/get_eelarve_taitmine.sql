@@ -1,8 +1,10 @@
 DROP FUNCTION IF EXISTS get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN );
 DROP FUNCTION IF EXISTS get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN, params JSON );
+DROP FUNCTION IF EXISTS get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN, params JSON, INTEGER );
 
-CREATE FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN, params JSON)
-  RETURNS TABLE(kuu   INT, aasta INT, rekvid INT, asutus VARCHAR(254), parentid INT, tunnus VARCHAR(20), summa NUMERIC(12, 2), artikkel VARCHAR(20),
+CREATE FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN, params JSON,
+                                     user_id  INTEGER)
+  RETURNS TABLE(ids text, kuu   INT, aasta INT, rekvid INT, asutus VARCHAR(254), parentid INT, tunnus VARCHAR(20), summa NUMERIC(12, 2), artikkel VARCHAR(20),
                 tegev VARCHAR(20), allikas VARCHAR(20), nimetus VARCHAR(254)) AS $$
 DECLARE
   doc_artikkel TEXT = params ->> 'artikkel';
@@ -19,6 +21,7 @@ DECLARE
   doc_aasta2   INTEGER = params ->> 'aasta2';
 
   l_sql        TEXT = 'SELECT
+                 array_to_string(d.docs_ids,'','',''0'') as ids,
                 d.kuu :: INTEGER          AS kuu,
                 d.aasta :: INTEGER        AS aasta,
                 d.rekvid :: INTEGER       AS rekvid,
@@ -34,7 +37,9 @@ DECLARE
   l_table      TEXT = 'cur_kulude_taitmine d';
   l_rekvid     INTEGER = (SELECT rekv.id
                           FROM ou.rekv rekv
-                          WHERE coalesce(rekv.parentid,0) = 0
+                          WHERE id IN (SELECT u.rekvid
+                                       FROM ou.userid u
+                                       WHERE id = user_id)
                           LIMIT 1);
 
   l_where      TEXT = ' where d.rekvid in (select rekv_id from get_asutuse_struktuur(' || l_rekvid :: TEXT || '))' ||
@@ -55,7 +60,7 @@ DECLARE
 
                       ELSE '' END;
 BEGIN
-  raise notice 'l_sql %',l_sql;
+  RAISE NOTICE 'l_sql %', l_sql;
 
   CASE WHEN NOT is_kassa AND NOT is_arhiiv AND is_kulud
     THEN
@@ -97,20 +102,21 @@ LANGUAGE plpgsql;
 
 
 GRANT EXECUTE ON FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN,
-                                               params   JSON) TO dbpeakasutaja;
+                                               params   JSON, INTEGER) TO dbpeakasutaja;
 GRANT EXECUTE ON FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN,
-                                                        JSON) TO dbkasutaja;
-GRANT ALL ON FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN, JSON) TO dbadmin;
+                                                        JSON, INTEGER) TO dbkasutaja;
+GRANT ALL ON FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN, JSON,
+                                                    INTEGER) TO dbadmin;
 GRANT EXECUTE ON FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN,
-                                                        JSON) TO dbvaatleja;
+                                                        JSON, INTEGER) TO dbvaatleja;
 GRANT EXECUTE ON FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN,
-                                                        JSON) TO eelaktsepterja;
+                                                        JSON, INTEGER) TO eelaktsepterja;
 GRANT EXECUTE ON FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN,
-                                               is_kulud BOOLEAN, JSON) TO eelallkirjastaja;
+                                               is_kulud BOOLEAN, JSON, INTEGER) TO eelallkirjastaja;
 GRANT EXECUTE ON FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN,
-                                                        JSON) TO eelesitaja;
+                                                        JSON, INTEGER) TO eelesitaja;
 GRANT EXECUTE ON FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN,
-                                                        JSON) TO eelkoostaja;
+                                                        JSON, INTEGER) TO eelkoostaja;
 
 /*
 SELECT *

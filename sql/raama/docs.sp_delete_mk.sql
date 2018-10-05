@@ -3,7 +3,7 @@
 DROP FUNCTION IF EXISTS docs.sp_delete_mk( INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_delete_mk(
-  IN  userid        INTEGER,
+  IN  user_id        INTEGER,
   IN  doc_id        INTEGER,
   OUT error_code    INTEGER,
   OUT result        INTEGER,
@@ -27,7 +27,7 @@ BEGIN
     u.ametnik AS user_name
   INTO v_doc
   FROM docs.doc d
-    LEFT OUTER JOIN ou.userid u ON u.id = userid
+    LEFT OUTER JOIN ou.userid u ON u.id = user_id
   WHERE d.id = doc_id;
 
   -- проверка на пользователя и его соответствие учреждению
@@ -43,14 +43,14 @@ BEGIN
 
   IF NOT exists(SELECT id
                 FROM ou.userid u
-                WHERE id = userid
+                WHERE id = user_id
                       AND u.rekvid = v_doc.rekvid
   )
   THEN
 
     error_code = 5;
     error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
-                    coalesce(userid, 0) :: TEXT;
+                    coalesce(user_id, 0) :: TEXT;
     result = 0;
     RETURN;
 
@@ -60,7 +60,7 @@ BEGIN
 
 
   --	ids =  v_doc.rigths->'delete';
-  IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(userid)
+  IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
   THEN
     RAISE NOTICE 'У пользователя нет прав на удаление';
     error_code = 4;
@@ -119,13 +119,6 @@ BEGIN
 
   -- Удаление данных из связанных таблиц (удаляем проводки)
 
-  IF (v_doc.docs_ids IS NOT NULL)
-  THEN
-    PERFORM docs.sp_delete_journal(userid, id)
-    FROM docs.journal
-    WHERE id IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
-  END IF;
-
   DELETE FROM docs.mk1
   WHERE parentid IN (SELECT id
                      FROM docs.arv
@@ -134,7 +127,7 @@ BEGIN
   WHERE parentid = v_doc.id; --@todo констрейн на удаление
 
   -- удаляем оплату 
-  PERFORM docs.sp_delete_arvtasu(userid, id)
+  PERFORM docs.sp_delete_arvtasu(user_id, id)
   FROM docs.arvtasu a
   WHERE a.doc_tasu_id = doc_id;
 
@@ -148,6 +141,14 @@ BEGIN
   )
         AND status < DOC_STATUS;
 
+
+  IF (v_doc.docs_ids IS NOT NULL)
+  THEN
+    PERFORM docs.sp_delete_journal(user_id, id)
+    FROM docs.journal
+    WHERE id IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
+  END IF;
+
   -- Установка статуса ("Удален")  и сохранение истории
 
   UPDATE docs.doc
@@ -156,6 +157,8 @@ BEGIN
     rekvid       = v_doc.rekvid,
     status       = DOC_STATUS
   WHERE id = doc_id;
+
+
 
   result = 1;
   RETURN;
