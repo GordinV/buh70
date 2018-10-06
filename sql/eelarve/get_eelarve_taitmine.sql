@@ -4,7 +4,7 @@ DROP FUNCTION IF EXISTS get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN
 
 CREATE FUNCTION get_eelarve_taitmine(is_kassa BOOLEAN, is_arhiiv BOOLEAN, is_kulud BOOLEAN, params JSON,
                                      user_id  INTEGER)
-  RETURNS TABLE(ids text, kuu   INT, aasta INT, rekvid INT, asutus VARCHAR(254), parentid INT, tunnus VARCHAR(20), summa NUMERIC(12, 2), artikkel VARCHAR(20),
+  RETURNS TABLE(ids   TEXT, kuu INT, aasta INT, rekvid INT, asutus VARCHAR(254), parentid INT, tunnus VARCHAR(20), summa NUMERIC(12, 2), artikkel VARCHAR(20),
                 tegev VARCHAR(20), allikas VARCHAR(20), nimetus VARCHAR(254)) AS $$
 DECLARE
   doc_artikkel TEXT = params ->> 'artikkel';
@@ -19,7 +19,7 @@ DECLARE
   doc_kuu2     INTEGER = params ->> 'kuu2';
   doc_aasta1   INTEGER = params ->> 'aasta1';
   doc_aasta2   INTEGER = params ->> 'aasta2';
-
+  is_kassa     BOOLEAN = coalesce((params ->> 'is_kassa') :: BOOLEAN, TRUE);
   l_sql        TEXT = 'SELECT
                  array_to_string(d.docs_ids,'','',''0'') as ids,
                 d.kuu :: INTEGER          AS kuu,
@@ -27,7 +27,7 @@ DECLARE
                 d.rekvid :: INTEGER       AS rekvid,
                 d.asutus :: VARCHAR(254)  AS asutus,
                 d.parentid :: INTEGER     AS parentid,
-                d.tunnus :: VARCHAR(20)   AS tunnus,
+                coalesce(tunnus,'''') :: VARCHAR(20)   AS tunnus,
                 d.summa :: NUMERIC(12, 2) AS summa,
                 d.artikkel :: VARCHAR(20) AS artikkel,
                 d.tegev :: VARCHAR(20)    AS tegev,
@@ -50,7 +50,7 @@ DECLARE
                           ' and tegev ilike ' || quote_literal(doc_tegev) ||
                           ' and allikas ilike ' || quote_literal(doc_allikas) ||
                           ' and nimetus ilike ' || quote_literal(doc_nimetus) ||
-                          ' and tunnus ilike ' || quote_literal(doc_tunnus) ||
+                          ' and coalesce(tunnus,'''') ilike ' || quote_literal(doc_tunnus) ||
                           ' and summa >= ' || doc_summa1 :: TEXT ||
                           ' and summa <= ' || doc_summa2 :: TEXT ||
                           ' and kuu >= ' || doc_kuu1 :: TEXT ||
@@ -60,7 +60,6 @@ DECLARE
 
                       ELSE '' END;
 BEGIN
-  RAISE NOTICE 'l_sql %', l_sql;
 
   CASE WHEN NOT is_kassa AND NOT is_arhiiv AND is_kulud
     THEN

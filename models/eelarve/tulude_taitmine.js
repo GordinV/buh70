@@ -20,7 +20,7 @@ const TuludeTaitmine = {
             ],
             sqlString: `SELECT
                           d.*
-                        FROM get_eelarve_taitmine(false, $1, false, $2) as d`, //  is_kassa BOOLEAN, $1 is_arhiiv BOOLEAN, is_kulud BOOLEAN, $2 params JSON
+                        FROM get_eelarve_taitmine(false, $1, false, $2, $3) as d`, //  is_kassa BOOLEAN, $1 is_arhiiv BOOLEAN, is_kulud BOOLEAN, $2 params JSON, $3 userid
             params: '',
             alias: 'curTuluTaitm'
         }

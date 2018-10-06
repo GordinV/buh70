@@ -1,6 +1,6 @@
-DROP VIEW IF EXISTS cur_kulude_kassa_taitmine;
+DROP VIEW IF EXISTS cur_kulude_taitmine;
 
-CREATE VIEW cur_kulude_kassa_taitmine AS
+CREATE VIEW cur_kulude_taitmine AS
   SELECT
     month(j.kpv)                         AS kuu,
     year(j.kpv)                          AS aasta,
@@ -18,19 +18,18 @@ CREATE VIEW cur_kulude_kassa_taitmine AS
     inner join docs.journal j on j.parentid = d.id
     INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
     INNER JOIN ou.rekv rekv ON j.rekvid = rekv.id
-    JOIN eelarve.kassa_kulud kassakulud ON ltrim(rtrim(j1.deebet)) ~~ ltrim(rtrim(kassakulud.kood))
-    JOIN eelarve.kassa_kontod kassakontod ON ltrim(rtrim(j1.kreedit)) ~~ ltrim(rtrim(kassakontod.kood))
+    JOIN FAKT_kulud ON ltrim(rtrim(j1.deebet)) ~~ ltrim(rtrim(fakt_kulud.kood))
     LEFT OUTER JOIN libs.library l ON l.kood = j1.kood5 AND l.library = 'TULUDEALLIKAD'
   GROUP BY (YEAR(j.kpv)), (MONTH(j.kpv)), j.rekvid, rekv.parentid, rekv.nimetus,
     j1.kood1, j1.kood5, j1.kood2, j1.tunnus, l.nimetus;
 
 
-GRANT SELECT ON TABLE cur_kulude_kassa_taitmine TO dbpeakasutaja;
-GRANT SELECT ON TABLE cur_kulude_kassa_taitmine TO dbkasutaja;
-GRANT ALL ON TABLE cur_kulude_kassa_taitmine TO dbadmin;
-GRANT SELECT ON TABLE cur_kulude_kassa_taitmine TO dbvaatleja;
-GRANT SELECT ON TABLE cur_kulude_kassa_taitmine TO eelaktsepterja;
-GRANT SELECT ON TABLE cur_kulude_kassa_taitmine TO eelallkirjastaja;
-GRANT SELECT ON TABLE cur_kulude_kassa_taitmine TO eelesitaja;
-GRANT SELECT ON TABLE cur_kulude_kassa_taitmine TO eelkoostaja;
+GRANT SELECT ON TABLE cur_kulude_taitmine TO dbpeakasutaja;
+GRANT SELECT ON TABLE cur_kulude_taitmine TO dbkasutaja;
+GRANT ALL ON TABLE cur_kulude_taitmine TO dbadmin;
+GRANT SELECT ON TABLE cur_kulude_taitmine TO dbvaatleja;
+GRANT SELECT ON TABLE cur_kulude_taitmine TO eelaktsepterja;
+GRANT SELECT ON TABLE cur_kulude_taitmine TO eelallkirjastaja;
+GRANT SELECT ON TABLE cur_kulude_taitmine TO eelesitaja;
+GRANT SELECT ON TABLE cur_kulude_taitmine TO eelkoostaja;
 

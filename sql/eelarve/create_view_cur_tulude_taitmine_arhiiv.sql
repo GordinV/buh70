@@ -3,9 +3,9 @@ DROP VIEW IF EXISTS cur_eelarve_taitmine_arhiiv;
 
 CREATE VIEW cur_eelarve_taitmine_arhiiv AS
   SELECT
+    null::integer[] as docs_ids,
     e.kuu        AS kuu,
     e.aasta      AS aasta,
-
     e.rekvid,
     rekv.nimetus AS asutus,
     rekv.parentid,
@@ -18,7 +18,7 @@ CREATE VIEW cur_eelarve_taitmine_arhiiv AS
     e.is_kulud
   FROM eelarve.eeltaitmine e
     INNER JOIN ou.rekv rekv ON e.rekvid = rekv.id
-    LEFT OUTER JOIN libs.library l ON l.kood = e.kood5 AND l.library = 'ARTIKKEL'
+    LEFT OUTER JOIN libs.library l ON l.kood = e.kood5 AND l.library = 'TULUDEALLIKAD'
 
   GROUP BY e.aasta, e.kuu, e.rekvid, rekv.parentid, rekv.nimetus, e.kood1, e.kood5, e.kood2, e.tunnus, l.nimetus, e.is_kulud;
 
