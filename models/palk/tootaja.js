@@ -128,7 +128,18 @@ module.exports = {
             multiple: true,
             alias: 'curUsed_mvt',
             data: []
-        }],
+        },
+        {
+            sql:`SELECT a.id 
+                    FROM libs.asutus a
+                    WHERE  RTRIM(LTRIM(a.regkood)) = RTRIM(LTRIM($1)) order by id desc limit 1`, //isikukood
+            query: null,
+            multiple:true,
+            alias: 'validate_asutus',
+            data: []
+        }
+
+        ],
     selectAsLibs: `select * from palk.com_tootajad a 
         where rekvid = $1`, //$1 - rekvId
     returnData: {

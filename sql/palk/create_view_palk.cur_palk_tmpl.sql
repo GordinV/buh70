@@ -14,7 +14,7 @@ CREATE VIEW palk.cur_palk_tmpl AS
            pk.parentid,
            pk.libid,
            pk.summa,
-           pk.percent_,
+           case when not empty(pk.percent_) then 'JAH' else 'EI' end::varchar(20) as percent_,
            pk.tulumaks,
            pk.tulumaar,
            pk.status,

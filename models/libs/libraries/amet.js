@@ -34,7 +34,27 @@ module.exports = {
         data: []
     },
         {
-        sql:`select tmpl.*, $2::integer as userid
+        sql:`SELECT
+              tmpl.id,
+              tmpl.parentid,
+              tmpl.libid,
+              tmpl.summa,
+              tmpl.percent_,
+              tmpl.tulumaks,
+              tmpl.tulumaar,
+              tmpl.tunnus,
+              tmpl.amet,
+              tmpl.kood :: VARCHAR(20),
+              tmpl.nimetus :: VARCHAR(254),
+              tmpl.liik,
+              tmpl.tund,
+              tmpl.maks,
+              tmpl.asutusest,
+              tmpl.tululiik,
+              tmpl.liik_ :: VARCHAR(20),
+              tmpl.tund_ :: VARCHAR(20),
+              tmpl.maks_ :: VARCHAR(20),
+              $2::integer as userid
             from palk.cur_palk_tmpl tmpl
             where parentid = $1`,
             query: null,

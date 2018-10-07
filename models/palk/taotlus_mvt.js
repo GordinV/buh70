@@ -24,10 +24,10 @@ module.exports = {
                       now()::date as kpv,
                       make_date(date_part('year', now())::INT, date_part('month', now())::INT, 1)::date as alg_kpv,
                       make_date(date_part('year', now())::INT, 12, 31)::date as lopp_kpv,
-                      (select tulubaas 
+                      coalesce((select tulubaas 
                         from palk.palk_config 
                         where status <> 'deleted' 
-                        and rekvid in (select rekvid from ou.userid where id = $2) )::numeric(12,2) as summa,
+                        and rekvid in (select rekvid from ou.userid where id = $2) ),500)::numeric(12,2) as summa,
                       1 as status,
                       0::integer          as parentid,
                       null::text as muud`,
