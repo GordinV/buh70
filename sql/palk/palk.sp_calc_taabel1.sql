@@ -51,6 +51,7 @@ BEGIN
   INTO l_hours
   FROM palk.Toograf t
   WHERE t.lepingid = l_lepingid
+      and status <> 'deleted'
         AND t.kuu = l_kuu
         AND t.aasta = l_aasta;
 

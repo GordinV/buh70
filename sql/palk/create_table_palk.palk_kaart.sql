@@ -27,3 +27,10 @@ CREATE INDEX palk_kaart_lepingid
   ON palk.palk_kaart (lepingid);
 CREATE INDEX palk_kaart_libid
   ON palk.palk_kaart (libid);
+
+drop index if exists palk.palk_kaart_status ;
+
+CREATE  INDEX palk_kaart_status
+  ON palk.palk_kaart USING BTREE
+  (status)
+  WHERE (status <> 3)

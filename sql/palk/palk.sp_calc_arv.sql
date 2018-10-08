@@ -63,7 +63,6 @@ DECLARE
   l_isik_id       INTEGER;
 
 BEGIN
-raise notice 'arv params %, l_lepingid %',params, l_lepingid;
 
   IF l_lepingid IS NOT NULL
   THEN
@@ -147,8 +146,6 @@ raise notice 'arv params %, l_lepingid %',params, l_lepingid;
         AND l.kood = l_tululiik
         AND l.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
 
-  raise notice 'l_TM_maar %, l_SM_maksustav %, l_TKI_maar %, l_PM_maksustav %', l_TM_maar, l_SM_maksustav, l_TKI_maar, l_PM_maksustav;
-
   IF l_alus_summa IS NULL
   THEN
     IF is_percent
@@ -213,9 +210,6 @@ raise notice 'arv params %, l_lepingid %',params, l_lepingid;
   selg = coalesce(selg,'') + 'TKI arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_TKI_maar) :: TEXT + '*' +
          l_TKI_maar :: TEXT + ltEnter;
 
-  raise notice 'TKI arvestus tki %', tki;
-
-
   -- PM arvestus
   SELECT row_to_json(row)
   INTO l_params
@@ -227,8 +221,6 @@ raise notice 'arv params %, l_lepingid %',params, l_lepingid;
 
   selg = coalesce(selg,'') + 'PM arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_PM_maar) :: TEXT + '*' +
          coalesce(l_PM_maksustav,0) :: TEXT + ltEnter;
-
-  raise notice 'pm arvestus tki %', pm;
 
   --SM arvestus
   SELECT row_to_json(row)
@@ -245,8 +237,6 @@ raise notice 'arv params %, l_lepingid %',params, l_lepingid;
                                    ELSE round(summa, 2) END) :: TEXT +
          '*' + (0.01 * l_SM_maar) :: TEXT + '*' + coalesce(l_SM_maksustav,0) :: TEXT + ltEnter;
 
-  raise notice 'sm arvestus sm %', sm;
-
   -- TKA arvestus
   SELECT row_to_json(row)
   INTO l_params
@@ -259,8 +249,6 @@ raise notice 'arv params %, l_lepingid %',params, l_lepingid;
   tka = f_round(coalesce((select qry.summa from palk.sp_calc_muuda(user_id,l_params :: JSON) as qry),0), l_round);
   selg = coalesce(selg,'') + 'TKA arvestus:' + round(summa, 2) :: TEXT +
          '*' + (0.01 * l_TKA_maar) :: TEXT + ltEnter;
-
-  raise notice 'sm arvestus tka %', tka;
 
   IF l_lepingid IS NOT NULL AND l_libid IS NOT NULL
   THEN

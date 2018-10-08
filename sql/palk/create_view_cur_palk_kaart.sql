@@ -44,10 +44,7 @@ CREATE VIEW palk.cur_palk_kaart AS
            LEFT OUTER JOIN palk.tooleping t ON pk.lepingId = t.id
            LEFT OUTER JOIN libs.library amet ON amet.id = t.ametid
            LEFT OUTER JOIN libs.library osakond ON osakond.id = t.osakondid
-         WHERE pk.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
-         ORDER BY liik,
-           COALESCE((l.properties :: JSONB ->> 'tululiik'), '99'),
-           pk.percent_ DESC, pk.summa DESC) qry;
+         WHERE pk.status <> 3) qry;
 
 /*
 

@@ -1,6 +1,6 @@
 module.exports = {
     selectAsLibs: `select * from palk.com_palk_lib l
-        where  (l.rekvId = $1 or l.rekvid is null)`,
+        where  l.rekvId = $1`,
     select: [{
         sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.status, l.library, l.tun1, l.tun5,
                 $2::integer as userid, 'PALK_LIB' as doc_type_id,

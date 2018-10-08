@@ -3,7 +3,7 @@ DROP FUNCTION IF EXISTS sp_workdays( JSONB );
 DROP FUNCTION IF EXISTS sp_workdays( INTEGER, JSONB );
 DROP FUNCTION IF EXISTS sp_workdays( INTEGER, JSON );
 
-CREATE FUNCTION sp_workdays(IN  user_id    INTEGER, IN params JSON,
+CREATE FUNCTION sp_workdays(IN params JSON,
                             OUT error_code INTEGER, OUT result INTEGER, OUT error_message TEXT,
                             OUT data       JSONB)
 

@@ -40,8 +40,6 @@ BEGIN
 
   END IF;
 
-  RAISE NOTICE 'l_toopaev %, l_tund %', l_toopaev, l_tund;
-
   IF coalesce(l_tund, 0) = 0
   THEN
     -- parameter või tööajagraafik puudub, arvestame
@@ -54,7 +52,7 @@ BEGIN
             l_start_paev AS paev,
             l_lopp_paev  AS lopp) row;
 
-    l_tund = sp_workdays(l_params :: JSONB) * coalesce(l_toopaev, 8);
+    l_tund = (select result from sp_workdays(l_params :: JSON)) * coalesce(l_toopaev, 8);
 
   END IF;
 

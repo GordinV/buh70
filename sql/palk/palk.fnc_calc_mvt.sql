@@ -17,7 +17,6 @@ DECLARE
   l_MVT                 NUMERIC = l_isiku_MVT;
 
 BEGIN
-  RAISE NOTICE 'l_isiku_MVT %', l_isiku_MVT;
   IF l_isiku_MVT > l_alus_summa
   THEN
     -- if tulu summa more then MVT

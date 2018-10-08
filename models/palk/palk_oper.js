@@ -39,8 +39,9 @@ const PalkOper = {
                       p.tka,
                       p.period,
                       p.pohjus,
+                      coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20) AS korr_konto,
                       dp.selg :: VARCHAR(120)                                AS dokprop,
-                      (case when empty(dp.registr::integer) then false else true end)::boolean as kas_lausend,                      
+                      (case when empty(dp.registr::integer) then 0 else 1 end)::integer as kas_lausend,                      
                       p.doklausid                                            AS dokpropid,
                       coalesce(jid.number, 0) :: INTEGER                     AS lausend,
                       t.parentid,
@@ -94,8 +95,10 @@ const PalkOper = {
                           NULL :: DATE                                  AS period,
                           NULL :: TEXT                                  AS pohjus,
                           NULL :: INTEGER                               AS journalid,
+                          null :: VARCHAR(20)                           AS korr_konto,
+                          null :: VARCHAR(120)                          AS dokprop,                          
                           NULL :: INTEGER                               AS dokpropid,
-                          false as kas_lausend,
+                          0::integer                                AS kas_lausend,
                           NULL::INTEGER                                 AS parentid,
                           1                                             AS liik,
                           NULL :: INTEGER                               AS lausend`,
@@ -175,7 +178,7 @@ const PalkOper = {
         alias: 'generateJournal'
     },
     executeCommand: {
-        command: `select * from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task
+        command: `select result, error_code, error_message, data from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task
         type:'sql',
         alias:'executeTask'
     },

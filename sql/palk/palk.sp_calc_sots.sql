@@ -35,6 +35,7 @@ DECLARE
 
 BEGIN
 
+  RAISE NOTICE 'sm arv params %, l_alus_summa %', params, l_alus_summa;
   IF l_alus_summa IS NULL
   THEN
     -- meil ei ole alus summa, vaja arvestada alus
@@ -174,6 +175,10 @@ BEGIN
     summa = f_round(coalesce(summa, 0) + l_sotsmaks_min_palgast + ln_umardamine, l_round);
 
     selg = coalesce(summa, 0) :: TEXT || ' + ' || l_sotsmaks_min_palgast :: TEXT || ' + ' || ln_umardamine :: TEXT;
+  ELSE
+    -- arvestus
+    summa = l_alus_summa * l_pk_summa * 0.01;
+    selg = l_alus_summa :: TEXT || '*' || (l_pk_summa * 0.01) :: TEXT;
 
   END IF;
 

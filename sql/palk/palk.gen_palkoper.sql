@@ -59,6 +59,8 @@ BEGIN
   END IF;
 
   -- выбираем договора для подготовки расчет
+  raise notice 'l_leping_ids %, l_isik_ids %, l_osakond_ids %', l_leping_ids, l_isik_ids, l_osakond_ids;
+
   FOR v_tooleping IN
   SELECT
     t.id,

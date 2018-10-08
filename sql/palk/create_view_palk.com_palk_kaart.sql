@@ -27,4 +27,4 @@ CREATE VIEW palk.com_palk_kaart AS
     pk.status
   FROM libs.library l
     INNER JOIN palk.palk_kaart pk ON pk.libId = l.id
-  WHERE pk.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
+  WHERE pk.status <> 3;

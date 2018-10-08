@@ -101,16 +101,6 @@ BEGIN
           v_doc.user_name   AS user,
           palk_oper_history AS palk_oper) row;
 
-  -- Удаление данных из связанных таблиц (удаляем проводки)
-
-  IF (v_doc.docs_ids IS NOT NULL)
-  THEN
-    FOR v_seotud_docs IN
-    SELECT unnest(v_doc.docs_ids) AS id
-    LOOP
-      PERFORM docs.sp_delete_journal(user_id, v_seotud_docs.id);
-    END LOOP;
-  END IF;
 
   DELETE FROM palk.palk_oper
   WHERE parentid = doc_id; --@todo констрейн на удаление
@@ -134,6 +124,18 @@ BEGIN
     rekvid       = v_doc.rekvid,
     status       = array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
   WHERE id = doc_id;
+
+  -- Удаление данных из связанных таблиц (удаляем проводки)
+
+  IF (v_doc.docs_ids IS NOT NULL)
+  THEN
+    FOR v_seotud_docs IN
+    SELECT unnest(v_doc.docs_ids) AS id
+    LOOP
+      PERFORM docs.sp_delete_journal(user_id, v_seotud_docs.id);
+    END LOOP;
+  END IF;
+
 
   result = 1;
   RETURN;

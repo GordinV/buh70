@@ -76,8 +76,12 @@ module.exports = {
                     lepingid,
                     libid,
                     summa,
-                    percent_,
-                    tulumaks,
+                    case WHEN not empty(percent_::INTEGER)
+                        THEN 'JAH'
+                      ELSE 'EI' END :: VARCHAR(5) AS percent_,
+                    CASE WHEN empty(tulumaks::INTEGER)
+                        THEN 'JAH'
+                      ELSE 'EI' END :: VARCHAR(5) AS tulumaks_,                    tulumaks,
                     tulumaar,
                     status,
                     muud,

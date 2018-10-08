@@ -50,6 +50,10 @@ BEGIN
   THEN
     l_MVT = 0;
   END IF;
+
+  if l_MVT > l_max_lubatatud_MVT THEN
+    l_MVT = l_max_lubatatud_MVT;
+  END IF;
   RETURN f_round(l_MVT,0.01);
 END;
 $BODY$
