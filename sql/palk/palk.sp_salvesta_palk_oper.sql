@@ -75,8 +75,8 @@ BEGIN
             now()    AS created,
             userName AS user) row;
 
-    INSERT INTO docs.doc (doc_type_id, history, rekvid)
-    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid)
+    INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, 1)
     RETURNING id
       INTO doc_id;
 

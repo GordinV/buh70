@@ -31,7 +31,7 @@ WITH algsaldo AS (
                                   FROM get_asutuse_struktuur(l_rekvid))
            UNION ALL
            SELECT
-             D.rekvid     AS rekv_id,
+             j.rekvid     AS rekv_id,
              j.asutusid   AS asutus_id,
              0 :: NUMERIC AS deebet,
              (j1.summa)   AS kreedit,
@@ -53,8 +53,8 @@ SELECT
   sum(qry.deebet)    AS deebet,
   sum(qry.kreedit)   AS kreedit,
   qry.konto,
-  qry.rekv_id         AS rekv_id,
-  qry.asutus_id       AS asutus_id
+  qry.asutus_id       AS asutus_id,
+  qry.rekv_id         AS rekv_id
 FROM (
        SELECT
          algsaldo.rekv_id,
@@ -66,7 +66,7 @@ FROM (
        FROM algsaldo
        UNION ALL
        SELECT
-         d.rekvid            AS rekv_id,
+         j.rekvid            AS rekv_id,
          j.asutusid          AS asutus_id,
          0 :: NUMERIC(14, 2) AS alg_saldo,
          (j1.summa)          AS deebet,
@@ -78,11 +78,11 @@ FROM (
        WHERE j.kpv >= l_kpv1
              AND j.kpv <= l_kpv2
              AND j.asutusid IS NOT NULL
-             AND d.rekvid IN (SELECT rekv_id
+             AND j.rekvid IN (SELECT rekv_id
                               FROM get_asutuse_struktuur(l_rekvid))
        UNION ALL
        SELECT
-         d.rekvid            AS rekv_id,
+         j.rekvid            AS rekv_id,
          j.asutusid          AS asutus_id,
          0 :: NUMERIC(14, 2) AS alg_saldo,
          0 :: NUMERIC        AS deebet,
@@ -94,7 +94,7 @@ FROM (
        WHERE j.kpv >= l_kpv1
              AND j.kpv <= l_kpv2
              AND j.asutusid IS NOT NULL
-             AND d.rekvid IN (SELECT rekv_id
+             AND j.rekvid IN (SELECT rekv_id
                               FROM get_asutuse_struktuur(l_rekvid))
      ) qry
 WHERE NOT empty(qry.konto)

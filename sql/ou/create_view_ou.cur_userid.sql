@@ -15,6 +15,15 @@ CREATE VIEW ou.cur_userid AS
     inner join ou.rekv r on r.id = u.rekvid
   WHERE u.status <> 3;
 
+
+GRANT ALL ON TABLE curlepingud TO dbadmin;
+GRANT SELECT ON TABLE ou.cur_userid TO dbpeakasutaja;
+GRANT SELECT ON TABLE ou.cur_userid TO dbkasutaja;
+GRANT SELECT ON TABLE ou.cur_userid TO dbvaatleja;
+GRANT SELECT ON TABLE ou.cur_userid TO eelaktsepterja;
+GRANT SELECT ON TABLE ou.cur_userid TO eelallkirjastaja;
+GRANT SELECT ON TABLE ou.cur_userid TO eelallkirjastaja;
+
 /*
-select * from ou.cur_userid
+eelesitajaselect * from ou.cur_userid
  */

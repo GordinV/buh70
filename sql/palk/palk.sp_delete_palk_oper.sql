@@ -110,9 +110,7 @@ BEGIN
   UPDATE docs.doc
   SET docs_ids = array_remove(docs_ids, doc_id)
   WHERE id IN (
-    SELECT unnest(docs_ids)
-    FROM docs.doc
-    WHERE id = doc_id
+    SELECT unnest(v_doc.docs_ids)
   )
         AND status < array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
 
@@ -135,7 +133,6 @@ BEGIN
       PERFORM docs.sp_delete_journal(user_id, v_seotud_docs.id);
     END LOOP;
   END IF;
-
 
   result = 1;
   RETURN;
