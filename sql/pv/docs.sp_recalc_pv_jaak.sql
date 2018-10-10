@@ -35,8 +35,8 @@ BEGIN
       FILTER (WHERE liik = 5) AS umberhind
   INTO v_pv_oper
   FROM docs.pv_oper po
-  WHERE pv_kaart_id = pv_id
-        AND po.kpv >= v_pv_kaart.soetkpv;
+  WHERE pv_kaart_id = pv_id;
+
 
   -- calculation
 
@@ -45,6 +45,8 @@ BEGIN
             ELSE coalesce(v_pv_oper.soetmaks, 0) END)
            + coalesce(v_pv_oper.parandus, 0) - v_pv_kaart.algkulum - coalesce(v_pv_oper.kulum, 0);
 
+
+  raise notice 'v_pv_oper.soetmaks %, v_pv_oper.parandus %, v_pv_kaart.algkulum %, v_pv_oper.kulum %',v_pv_oper.soetmaks, v_pv_oper.parandus, v_pv_kaart.algkulum, v_pv_oper.kulum;
 
   SELECT row_to_json(row)
   INTO json_jaak

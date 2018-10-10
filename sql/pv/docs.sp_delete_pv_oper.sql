@@ -1,7 +1,7 @@
 DROP FUNCTION IF EXISTS docs.sp_delete_pv_oper( INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_delete_pv_oper(
-  IN  userid        INTEGER,
+  IN  user_id        INTEGER,
   IN  doc_id        INTEGER,
   OUT error_code    INTEGER,
   OUT result        INTEGER,
@@ -11,10 +11,8 @@ $BODY$
 
 DECLARE
   v_doc           RECORD;
-  v_dependid_docs RECORD;
-  ids             INTEGER [];
+  v_seotud_docs     RECORD;
   pv_oper_history JSONB;
-  arvtasu_history JSONB;
   new_history     JSONB;
   DOC_STATUS      INTEGER = 3; -- документ удален
 BEGIN
@@ -24,7 +22,7 @@ BEGIN
     u.ametnik AS user_name
   INTO v_doc
   FROM docs.doc d
-    LEFT OUTER JOIN ou.userid u ON u.id = userid
+    LEFT OUTER JOIN ou.userid u ON u.id = user_id
   WHERE d.id = doc_id;
 
   -- проверка на пользователя и его соответствие учреждению
@@ -40,14 +38,14 @@ BEGIN
 
   IF NOT exists(SELECT id
                 FROM ou.userid u
-                WHERE id = userid
+                WHERE id = user_id
                       AND u.rekvid = v_doc.rekvid
   )
   THEN
 
     error_code = 5;
     error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
-                    coalesce(userid, 0) :: TEXT;
+                    coalesce(user_id, 0) :: TEXT;
     result = 0;
     RETURN;
 
@@ -57,7 +55,7 @@ BEGIN
 
 
   --	ids =  v_doc.rigths->'delete';
-  IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(userid)
+  IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
   THEN
     RAISE NOTICE 'У пользователя нет прав на удаление';
     error_code = 4;
@@ -96,15 +94,6 @@ BEGIN
           v_doc.user_name AS user,
           pv_oper_history AS pv_oper) row;
 
-  -- Удаление данных из связанных таблиц (удаляем проводки)
-
-  IF (v_doc.docs_ids IS NOT NULL)
-  THEN
-    DELETE FROM docs.journal
-    WHERE id IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
-    DELETE FROM docs.journal1
-    WHERE parentid IN (SELECT unnest(v_doc.docs_ids)); -- @todo констрейн на удаление
-  END IF;
 
   DELETE FROM docs.pv_oper
   WHERE parentid = v_doc.id; --@todo констрейн на удаление
@@ -114,9 +103,7 @@ BEGIN
   UPDATE docs.doc
   SET docs_ids = array_remove(docs_ids, doc_id)
   WHERE id IN (
-    SELECT unnest(docs_ids)
-    FROM docs.doc
-    WHERE id = doc_id
+    SELECT unnest(v_doc.docs_ids)
   )
         AND status < array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
 
@@ -128,6 +115,16 @@ BEGIN
     rekvid       = v_doc.rekvid,
     status       = DOC_STATUS
   WHERE id = doc_id;
+
+  IF (v_doc.docs_ids IS NOT NULL)
+  THEN
+    FOR v_seotud_docs IN
+    SELECT unnest(v_doc.docs_ids) AS id
+    LOOP
+      PERFORM docs.sp_delete_journal(user_id, v_seotud_docs.id);
+    END LOOP;
+  END IF;
+
 
   result = 1;
   RETURN;

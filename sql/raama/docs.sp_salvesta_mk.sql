@@ -29,8 +29,6 @@ DECLARE
   doc_aa_id     INTEGER = doc_data ->> 'aaid';
   doc_arvid     INTEGER = doc_data ->> 'arvid';
   doc_muud      TEXT = doc_data ->> 'muud';
-  tcValuuta     TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
-  tnKuurs       NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
   doc_doklausid INTEGER = doc_data ->> 'doklausid';
   doc_maksepaev DATE = doc_data ->> 'maksepaev';
   doc_selg      TEXT = doc_data ->> 'selg';
@@ -103,8 +101,6 @@ BEGIN
     RETURNING id
       INTO mk_id;
 
-
-    RAISE NOTICE 'mk created doc_id %, mk_id %', doc_id, mk_id;
   ELSE
     SELECT row_to_json(row)
     INTO new_history

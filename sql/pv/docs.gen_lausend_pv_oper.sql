@@ -2,7 +2,7 @@ DROP FUNCTION IF EXISTS docs.gen_lausend_pv_oper( INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.gen_lausend_pv_oper(
   IN  tnid          INTEGER,
-  IN  userid        INTEGER,
+  IN  user_id        INTEGER,
   OUT error_code    INTEGER,
   OUT result        INTEGER,
   OUT error_message TEXT)
@@ -20,8 +20,6 @@ DECLARE
   new_history    JSONB;
   userName       TEXT;
   a_docs_ids     INTEGER [];
-  rows_fetched   INTEGER = 0;
-  a_dokvaluuta   TEXT [] = enum_range(NULL :: DOK_VALUUTA);
   a_pv_opers     TEXT [] = enum_range(NULL :: PV_OPERATSIOONID);
 BEGIN
 
@@ -38,8 +36,8 @@ BEGIN
     (l.properties :: JSONB ->> 'jaak') :: NUMERIC(12, 2)                                    AS jaak,
     aa.tp                                                                                   AS asutus_tp,
     (grupp.properties :: JSONB ->> 'kulum_konto') :: TEXT                                   AS kulum_konto,
-    coalesce(v.valuuta, 'EUR')                                                              AS valuuta,
-    coalesce(v.kuurs, 1)                                                                    AS kuurs
+    'EUR'                                                                                   AS valuuta,
+    1                                                                                       AS kuurs
   INTO v_pv_oper
   FROM docs.pv_oper po
     INNER JOIN docs.doc d ON d.id = po.parentId
@@ -47,12 +45,9 @@ BEGIN
     INNER JOIN libs.library grupp ON grupp.id = (l.properties :: JSONB ->> 'gruppid') :: INTEGER
     LEFT OUTER JOIN ou.aa aa ON aa.parentid = d.rekvid AND aa.arve = 'TP'
     LEFT OUTER JOIN libs.asutus a ON a.id = po.asutusid
-    LEFT OUTER JOIN docs.dokvaluuta1 v ON (v.dokid = po.id AND v.dokliik = array_position(a_dokvaluuta, 'pv_oper'))
   WHERE d.id = tnId;
 
-  GET DIAGNOSTICS rows_fetched = ROW_COUNT;
-
-  IF rows_fetched = 0
+  IF v_pv_oper.id is null
   THEN
     error_code = 4; -- No documents found
     error_message = 'No documents found';
@@ -70,8 +65,8 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
-  WHERE u.rekvid = v_pv_oper.rekvId AND u.id = userId;
+  FROM ou.userid u
+  WHERE u.rekvid = v_pv_oper.rekvId AND u.id = user_id;
 
   IF userName IS NULL
   THEN
@@ -216,9 +211,7 @@ BEGIN
   l_json = row_to_json(v_journal);
   l_json = ('{"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":[' || l_json_details || ']}}');
 
-  raise notice 'l_json %', l_json;
-
-  result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_pv_oper.rekvId);
+  result = docs.sp_salvesta_journal(l_json :: JSON, user_id, v_pv_oper.rekvId);
 
   /* salvestan lausend */
 

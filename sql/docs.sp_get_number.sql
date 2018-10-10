@@ -38,10 +38,14 @@ BEGIN
     THEN
       lcTableName = 'docs.korder1';
       lcAdditionalWhere = ' and tyyp = 2 ';
-    WHEN 'MK'
+    WHEN 'MK'  or 'SMK'
     THEN
       lcTableName = 'docs.mk';
       lcAdditionalWhere = ' OPT = 1 ';
+    WHEN 'VMK'
+    THEN
+      lcTableName = 'docs.mk';
+      lcAdditionalWhere = ' OPT = 2 ';
     WHEN 'LEPING'
     THEN
       lcTableName = 'docs.leping1';

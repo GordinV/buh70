@@ -54,6 +54,7 @@ const Sorder = {
                   LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.Id
                   left outer join docs.journal j on j.parentid = k.journalid                  
                   left outer join docs.journalid jid on jid.journalid = j.id                  
+                  
                   left outer join libs.dokprop dp on dp.id = k.doklausid 
                 WHERE d.id = $1`,
             sqlAsNew: `SELECT

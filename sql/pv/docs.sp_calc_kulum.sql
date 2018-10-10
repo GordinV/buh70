@@ -24,11 +24,10 @@ BEGIN
     coalesce((l.properties :: JSONB ->> 'kulum') :: NUMERIC(12, 2), 0) :: NUMERIC(12, 2)    AS kulum,
     coalesce((l.properties :: JSONB ->> 'jaak') :: NUMERIC(12, 2), 0) :: NUMERIC(12, 2)     AS jaak,
     l.properties,
-    coalesce(v.kuurs, 1)                                                                    AS kuurs,
+    1 :: NUMERIC                                                                            AS kuurs,
     l.rekvid
   INTO v_pv_kaart
   FROM libs.library l
-    LEFT OUTER JOIN docs.dokvaluuta1 v ON (v.dokid = l.id AND dokliik = 18)
   WHERE l.id = tnId;
 
 
@@ -49,8 +48,6 @@ BEGIN
   END IF;
 
 
-  selgitus = 'Hind: ' || v_pv_kaart.hind :: TEXT;
-
   -- kulum kokku
 
   SELECT
@@ -64,8 +61,12 @@ BEGIN
       FILTER (WHERE liik = array_position(a_pv_opers, 'umberhindamine')) AS umberhind
   INTO v_pv_oper
   FROM docs.pv_oper po
-  WHERE po.pv_kaart_id = tnId
-        AND po.kpv >= v_pv_kaart.soetkpv;
+  WHERE po.pv_kaart_id = tnId;
+  --        AND po.kpv >= v_pv_kaart.soetkpv;
+
+  v_pv_kaart.hind = case when empty( v_pv_kaart.hind) or v_pv_kaart.hind is null THEN  coalesce(v_pv_oper.soetmaks,0) + coalesce(v_pv_oper.parandus,0) else v_pv_kaart.hind end;
+
+  selgitus = 'Hind: ' || v_pv_kaart.hind :: TEXT;
 
 
   lnSummaKulum = coalesce(v_pv_oper.kulum, 0) + coalesce(v_pv_kaart.algkulum, 0);
@@ -80,10 +81,10 @@ BEGIN
 
     Selgitus = Selgitus || 'arvestatud summa:' || Summa :: TEXT;
 
-    IF summa > (v_pv_kaart.Jaak * v_pv_kaart.kuurs)
+    IF summa > (v_pv_kaart.Jaak )
     THEN
 
-      summa = v_pv_kaart.Jaak * v_pv_kaart.kuurs;
+      summa = v_pv_kaart.Jaak ;
       Selgitus = Selgitus || ' parandus, sest jaak oli vaiksem:' + summa :: TEXT;
 
     END IF;

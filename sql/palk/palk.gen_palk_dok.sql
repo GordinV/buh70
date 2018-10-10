@@ -21,6 +21,7 @@ DECLARE
   v_palk_kaart  RECORD; -- соберем все данные операции в строку
   v_user        RECORD;
   l_params      JSONB;
+  MK_TYYP       INTEGER = 0; -- VMK
 BEGIN
   SELECT
     kasutaja,
@@ -72,9 +73,10 @@ BEGIN
     a.nimetus                                                                     AS nimi,
     a.aadress,
     a.tp,
-    (SELECT aa.kassa = 1
+    (SELECT aa.kassa = 0
      FROM ou.aa aa
-     WHERE aa.parentid = d.rekvid AND konto = (l.properties :: JSON ->> 'konto')) AS is_kassa
+     WHERE aa.parentid = d.rekvid AND konto = (l.properties :: JSON ->> 'konto')) AS is_kassa,
+    d.docs_ids                                                                    AS docs_ids
   FROM palk.palk_oper po
     INNER JOIN docs.doc d ON d.id = po.parentid
     INNER JOIN palk.tooleping t ON t.id = po.lepingid
@@ -88,13 +90,12 @@ BEGIN
                      FROM json_array_elements_text(l_lib_ids)) -- только указанные операции
         AND t.osakondid IN (SELECT value :: INTEGER
                             FROM json_array_elements_text(l_osakond_ids)) -- только указанные отделы
-        AND NOT exists(SELECT d.id
-                       FROM docs.doc d
-                         INNER JOIN libs.library l ON l.id = d.doc_type_id
-
-                       WHERE d.id IN (SELECT *
-                                      FROM unnest(d.docs_ids))
-                             AND l.kood NOT IN
+        AND NOT exists(SELECT dd.id
+                       FROM docs.doc dd
+                         INNER JOIN libs.library l ON l.id = dd.doc_type_id
+                       WHERE dd.id IN (SELECT *
+                                       FROM unnest(d.docs_ids))
+                             AND l.kood IN
                                  ('VMK', 'VORDER')) -- только те выплаты, на которые не созданы платежные документы
 
   LOOP
@@ -104,30 +105,39 @@ BEGIN
     WHERE pk.lepingid = v_po.lepingid AND pk.libid = v_po.libid AND pk.status < 3;
 
     -- создаем документ
+
     IF NOT v_po.is_kassa
     THEN
       -- MK
       SELECT
-        'VMK'                                                AS doc_type_id,
-        docs.get_new_number('VMK', v_po.rekvid, year(l_kpv)) AS number,
-        0 :: INTEGER                                         AS id,
-        l_kpv                                                AS kpv,
-        'PALK'                                               AS muud,
-        'Palk'                                               AS selg,
-        v_po.summa                                           AS summa
+        coalesce(l_dok_id, 0)                                     AS id,
+        'VMK'                                                     AS doc_type_id,
+        docs.sp_get_number(v_po.rekvid, 'VMK', year(l_kpv), NULL) AS number,
+        0 :: INTEGER                                              AS id,
+        MK_TYYP                                                   AS opt,
+        l_kpv                                                     AS kpv,
+        'PALK'                                                    AS muud,
+        'Palk'                                                    AS selg,
+        (SELECT id
+         FROM ou.aa
+         WHERE parentid = v_po.rekvid AND aa.kassa = 1
+         ORDER BY default_ DESC
+         LIMIT 1) as aaid,
+        v_po.summa                                                AS summa
       INTO v_mk;
 
+      RAISE NOTICE 'v_mk %', v_mk;
       --MK1
       SELECT
-        v_po.isikid AS asutusid,
+        v_po.isikid              AS asutusid,
         (SELECT id
          FROM libs.nomenklatuur n
          WHERE dok = 'MK'
                AND n.rekvid = v_po.rekvid
                AND n.status < 3
          ORDER BY id DESC
-         LIMIT 1)   AS nomid,
-        v_po.aa     AS aa,
+         LIMIT 1)                AS nomid,
+        v_po.asutus_aa as aa,
         v_po.tunnus,
         v_po.proj,
         v_po.konto,
@@ -137,7 +147,7 @@ BEGIN
         v_po.kood4,
         v_po.kood5,
         v_po.tp,
-        v_po.summa  AS summa
+        v_po.summa               AS summa
       INTO v_mk1;
 
       l_grid_params = l_grid_params || to_jsonb(v_mk1);
@@ -145,22 +155,20 @@ BEGIN
       SELECT json_object_agg('data', qry.data || qry."gridData")
       INTO l_params
       FROM (SELECT
-              to_jsonb(v_mk)                                AS data,
+              to_jsonb(v_mk)                              AS data,
               jsonb_object_agg('gridData', l_grid_params) AS "gridData") qry;
 
-      /*
-    l_params = (
-      '{"data":' || trim(TRAILING FROM l_params :: TEXT, '}') :: TEXT || ',"gridData":' || l_grid_params :: TEXT ||
-      '}}');
-*/
       -- save results
       l_dok_id = docs.sp_salvesta_mk(
           l_params :: JSON,
           user_id,
           v_po.rekvid);
+
+      RAISE NOTICE 'saved  l_dok_id %', l_dok_id;
     ELSE
       -- VORDER
       SELECT
+        coalesce(l_dok_id, 0)                                   AS id,
         2                                                       AS tyyp,
         docs.get_new_number('VORDER', v_po.rekvid, year(l_kpv)) AS number,
         0 :: INTEGER                                            AS id,
@@ -200,7 +208,7 @@ BEGIN
       SELECT json_object_agg('data', qry.data || qry."gridData")
       INTO l_params
       FROM (SELECT
-              to_jsonb(v_mk)                                AS data,
+              to_jsonb(v_mk)                              AS data,
               jsonb_object_agg('gridData', l_grid_params) AS "gridData") qry;
 
       -- save results

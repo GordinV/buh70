@@ -43,11 +43,8 @@ BEGIN
     LEFT OUTER JOIN libs.asutus asutus ON asutus.id = k.asutusid
   WHERE d.id = tnId;
 
-  GET DIAGNOSTICS rows_fetched = ROW_COUNT;
-
-  IF rows_fetched = 0
+  IF v_sorder.parentid is null
   THEN
-    RAISE NOTICE 'rows_fetched = 0, v_sorder %, tnId %', v_sorder.id, tnId;
     error_code = 4; -- No documents found
     error_message = 'No documents found';
     result = 0;
@@ -56,7 +53,6 @@ BEGIN
 
   IF v_sorder.doklausid = 0
   THEN
-    RAISE NOTICE 'v_sorder.doklausid = 0';
     error_code = 1; -- Konteerimine pole vajalik
     error_message = 'Konteerimine pole vajalik';
     result = 0;
@@ -65,7 +61,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = v_sorder.rekvId AND u.id = userId;
 
   IF userName IS NULL
@@ -136,8 +132,6 @@ BEGIN
 
   l_json = row_to_json(v_journal);
 
-  RAISE NOTICE 'l_json 1 %', l_json;
-
   --		l_json_details = '[]';
   FOR v_sorder1 IN
   SELECT
@@ -181,25 +175,7 @@ BEGIN
       coalesce(v_sorder1.kood4, '')          AS kood4,
       coalesce(v_sorder1.kood5, '')          AS kood5
     INTO v_journal;
-    /*
-    l_json_row = '{' ||
-                 '"id":0' ||
-                 ',"summa":' || coalesce(v_sorder1.summa, 0) ||
-                 ',"valuuta":"' || coalesce(v_sorder1.valuuta, 'EUR') || '"' ||
-                 ',"kuurs":' || coalesce(v_sorder1.kuurs, 1) ||
-                 ',"deebet":"' || lcDbKonto || '"' ||
-                 ',"lisa_d":"' || coalesce(v_sorder.asutus_tp, '800599') || '"' ||
-                 ',"kreedit":"' || lcKrKonto || '"' ||
-                 ',"lisa_k":"' || coalesce(v_sorder.asutus_tp, '800599') || '"' ||
-                 ',"tunnus":"' || coalesce(v_sorder1.tunnus, '') || '"' ||
-                 ',"proj":"' || coalesce(v_sorder1.proj, '') || '"' ||
-                 ',"kood1":"' || coalesce(v_sorder1.kood1, '') || '"' ||
-                 ',"kood2":"' || coalesce(v_sorder1.kood2, '') || '"' ||
-                 ',"kood3":"' || coalesce(v_sorder1.kood3, '') || '"' ||
-                 ',"kood4":"' || coalesce(v_sorder1.kood4, '') || '"' ||
-                 ',"kood5":"' || coalesce(v_sorder1.kood5, '') || '"' ||
-                 '}';
-*/
+
     l_json_row = row_to_json(v_journal);
 
     IF l_row_count > 0

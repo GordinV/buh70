@@ -14,6 +14,7 @@ DECLARE
   l_kpv        DATE = coalesce((params ->> 'kpv') :: DATE, current_date); -- дата расчета
   l_nomid      INTEGER = params ->> 'nomid'; -- ссылка на ид номенклатуры (операции)
   l_doklausid  INTEGER = params ->> 'doklausid'; -- ссылка на dokprop
+  RAHA_VOOG    TEXT = '11'; -- kulum
   v_pv_kaards  RECORD;
   v_tulemus    RECORD;
   v_nom        RECORD;
@@ -22,6 +23,7 @@ DECLARE
   l_rekvid     INTEGER = (SELECT rekvid
                           FROM ou.userid
                           WHERE id = user_id);
+  l_journal_id integer;
 
 BEGIN
 
@@ -73,7 +75,7 @@ BEGIN
               v_nom.proj                AS proj,
               v_nom.tegev               AS kood1,
               v_nom.allikas             AS kood2,
-              v_nom.rahavoog            AS kood3,
+              RAHA_VOOG                 AS kood3,
               v_nom.artikkel            AS kood5,
               'AUTOMATSELT ARVESTUS'    AS muud,
               v_pv_kaards.id :: INTEGER AS pv_kaart_id) row;
@@ -89,13 +91,11 @@ BEGIN
       IF l_pv_oper_id > 0 AND coalesce(l_doklausid, 0) > 0
       THEN
         -- контировка
-        PERFORM docs.gen_lausend_pv_oper(user_id, l_pv_oper_id);
+        perform docs.gen_lausend_pv_oper(l_pv_oper_id, user_id);
       END IF;
 
-      RAISE NOTICE ' pv_kaart id %, l_pv_oper_id %, v_tulemus.summa %', v_pv_kaards.value, l_pv_oper_id, v_tulemus.summa;
-      --    RAISE NOTICE ' pv_kaart id %, v_pv_kaards.id %', v_pv_kaards.value, v_pv_kaards.id::integer;
     END IF;
-    result = coalesce(result,0) + 1;
+    result = coalesce(result, 0) + 1;
   END LOOP;
 
   result = 1;
