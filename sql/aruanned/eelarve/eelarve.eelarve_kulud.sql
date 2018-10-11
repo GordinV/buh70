@@ -18,7 +18,7 @@ SELECT
   sum(eelarve) AS eelarve,
   sum(tegelik) AS tegelik,
   sum(kassa)   AS kassa,
-  sum(eelarve) filter (where allikas = 'LE-LA')  as laen,
+  coalesce(sum(eelarve) filter (where allikas = 'LE-LA'),0)::numeric  as laen,
   tegev,
   allikas,
   artikkel,

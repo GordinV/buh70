@@ -15,11 +15,11 @@ $BODY$
 SELECT
   rekvid,
   sum(eelarve) AS eelarve,
-  sum(tegelik) AS tegelik,
   sum(kassa)   AS kassa,
-  tegev,
-  allikas,
+  sum(tegelik) AS tegelik,
   artikkel,
+  allikas,
+  tegev,
   tunnus
 FROM (
        SELECT

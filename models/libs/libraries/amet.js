@@ -1,6 +1,6 @@
 module.exports = {
     selectAsLibs: `select * from com_ametid l
-        where  (l.rekvId = $1 or l.rekvid is null)`,
+        where  l.rekvId = $1`,
     select: [{
         sql: `select l.id, l.rekvid, 
                 l.kood::varchar(20) as kood, 

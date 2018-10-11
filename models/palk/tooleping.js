@@ -57,7 +57,7 @@ module.exports = {
         data: []
     }],
     selectAsLibs: `select * from palk.com_toolepingud a 
-        where (rekvid = $1 or rekvid is null)`, //$1 - rekvId
+        where rekvid = $1 `, //$1 - rekvId
     returnData: {
         row: {}
     },
