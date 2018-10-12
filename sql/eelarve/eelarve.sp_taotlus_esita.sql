@@ -11,7 +11,6 @@ DECLARE
   new_history JSON;
 BEGIN
 
-  RAISE NOTICE 'eelarve.sp_taotlus_esita';
   IF doc_id IS NULL
   THEN
 
@@ -25,16 +24,17 @@ BEGIN
 
   SELECT t.*
   INTO tmpTaotlus
-  FROM eelarve.taotlus t
+  FROM eelarve.taotlus t, ou.userid u
   WHERE t.parentid = doc_id
-        AND docs.usersRigths(t.parentid, 'Eelesitaja', user_id);
+        and u.id = user_id
+        and coalesce((u.roles->>'is_eel_esitaja')::boolean,false)::BOOLEAN;
+  --        AND docs.usersRigths(t.parentid, 'Eelesitaja', user_id);
 
   IF tmpTaotlus IS NULL
   THEN
     error_code = 6;
     error_message = 'Document not exists or not enough rights , docId: ' || coalesce(doc_id, 0) :: TEXT;
     result = 0;
-    RAISE NOTICE 'viga, %', error_message;
 
     RETURN;
   END IF;
@@ -74,7 +74,6 @@ BEGIN
     RAISE NOTICE 'viga, %', error_message;
 
   END IF;
-  RAISE NOTICE 'tulemus error_code %, result %, error_message %', error_code, result, error_message;
   RETURN;
 
 END;

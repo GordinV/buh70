@@ -11,8 +11,8 @@ DECLARE
   tcMuud     TEXT = params ->> 'muud';
 
   c_oigus    TEXT = CASE WHEN tcLiik = 'ALLKIRI'
-    THEN 'EelAllkirjastaja'
-                    ELSE 'Eelesitaja' END;
+    THEN 'is_eel_allkirjastaja'
+                    ELSE 'is_eel_allkirjastaja' END;
   tmpTaotlus RECORD;
 
 BEGIN
@@ -25,13 +25,14 @@ BEGIN
     RETURN;
   END IF;
 
-
-  raise notice ' c_oigus -> %', c_oigus;
   SELECT t.*
   INTO tmpTaotlus
-  FROM eelarve.taotlus t
+  FROM eelarve.taotlus t, ou.userid u
   WHERE t.parentid = doc_id
-        AND docs.usersRigths(t.parentid, c_oigus, user_id);
+        and u.id = user_id
+        AND coalesce((u.roles ->> c_oigus) :: BOOLEAN, FALSE) :: BOOLEAN;
+  --        AND docs.usersRigths(t.parentid, c_oigus, user_id);
+
 
   IF tmpTaotlus IS NULL
   THEN
@@ -50,33 +51,21 @@ BEGIN
 
   END IF;
 
-  /*
-    SELECT
-      taotlus.*,
-      taotlus1.eelprojId
-    INTO tmpTaotlus
-    FROM taotlus
-      INNER JOIN taotlus1 ON taotlus.id = taotlus1.parentid
-    WHERE taotlus.id = doc_id;
-  */
-
   IF tcLiik = 'ALLKIRI'
   THEN
 
     IF NOT empty(tmptaotlus.allkiri)
     THEN
       UPDATE eelarve.taotlus
-      SET status  = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'allkirjastatud'),
+      SET status   = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'allkirjastatud'),
         allkiri    = 0,
         KoostajaID = user_id,
         muud       = muud || chr(13) || current_user :: TEXT || ':' + tcMuud
       WHERE parentid = doc_id;
 
-      RAISE NOTICE 'allkiri on tuhistatud';
       result = 1;
 
     ELSE
-      RAISE NOTICE 'ei saa tuhistatda allkiri, allkiri = 0';
       result = 0;
       error_message = 'Ei saa tuhistatda allkiri, allkiri = 0 , docId: ' || coalesce(doc_id, 0) :: TEXT;
       RETURN;
@@ -90,17 +79,15 @@ BEGIN
               WHERE id IN (SELECT eelprojId
                            FROM eelarve.taotlus1 t1
                            WHERE parentid = tmptaotlus.id)
-                    AND status = array_position((enum_range(NULL :: DOK_STATUS)), 'active')
+                    AND status = array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
                     AND NOT empty(kinnitaja))
     THEN
-      RAISE NOTICE 'ei saa tuhistada esitamine, eelarve projekt on kinnitatud';
       result = 0;
       error_message = 'Ei saa tuhistada esitamine, eelarve projekt on kinnitatud, docId: ' ||
                       coalesce(doc_id, 0) :: TEXT;
       RETURN;
     END IF;
 
-    RAISE NOTICE 'Esitamine tuhistamine ..';
     IF tmptaotlus.status = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'esitatud')
     THEN
       UPDATE eelarve.taotlus
@@ -110,10 +97,8 @@ BEGIN
         muud      = muud || chr(13) || current_user :: TEXT || ':' || tcMuud
       WHERE parentid = doc_id;
 
-      RAISE NOTICE 'esitamine on tuhistatud';
       result = 1;
     ELSE
-      RAISE NOTICE 'ei saa tuhistada esitamine, staatus = 1';
       error_message = 'ei saa tuhistada esitamine, staatus = allkirjastatud, docId: ' || coalesce(doc_id, 0) :: TEXT;
       result = 0;
     END IF;

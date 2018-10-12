@@ -28,11 +28,15 @@ BEGIN
 
   SELECT t.*
   INTO tmpTaotlus
-  FROM eelarve.taotlus t
+  FROM eelarve.taotlus t, ou.userid u
   WHERE t.parentid = doc_id
-        AND docs.usersRigths(t.parentid, 'EelAllkirjastaja', user_id);
+  and u.id = user_id
+  and coalesce((u.roles->>'is_eel_allkirjastaja')::boolean,false)::BOOLEAN;
+--        AND docs.usersRigths(t.parentid, 'EelAllkirjastaja', user_id);
 
-  IF tmpTaotlus IS NULL
+ -- @todo довести права до ума
+
+  IF tmpTaotlus.id IS NULL
   THEN
     error_code = 6;
     error_message = 'Document not exists or not enough rights , docId: ' || coalesce(doc_id, 0) :: TEXT;

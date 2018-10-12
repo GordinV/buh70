@@ -8,8 +8,8 @@ module.exports = {
                   d.bpm,
                   trim(l.nimetus)                                     AS doc,
                   trim(l.kood)                                        AS doc_type_id,
-                  trim(s.nimetus)                                     AS status,
-                  d.status                                            AS doc_status,
+                  d.status                                            AS status,
+                  t.status                                            AS taotlus_status,
                   t.rekvid,
                   t.koostajaId,
                   t.ametnikId,
@@ -50,12 +50,13 @@ module.exports = {
                       NULL                                                        AS bpm,
                       trim(l.nimetus)                                             AS doc,
                       trim(l.kood)                                                AS doc_type_id,
-                      trim(s.nimetus)                                             AS status,
-                      0                                                           AS doc_status,
+                      0::integer                                                           AS status,
+                      0                                                           AS taotlus_status,
                       0 as taotlus_status,
-                      docs.sp_get_number(u.rekvId, 'TAOTLUS', year(date()), NULL) AS number,
+                      docs.sp_get_number(u.rekvId, 'TAOTLUS', year(date()), NULL)::varchar(20) AS number,
                       NULL :: INTEGER                                             AS rekvId,
-                      $2 :: INTEGER                                             AS koostajaId,
+                      $2 :: INTEGER                                               AS koostajaId,
+                      u.ametnik :: VARCHAR(120)                                   AS koostaja,
                       NULL :: INTEGER                                             AS ametnikId,
                       NULL :: INTEGER                                             AS aktseptid,
                       now() :: DATE                                               AS kpv,
@@ -64,7 +65,6 @@ module.exports = {
                       NULL :: INTEGER                                             AS allkiri,
                       NULL :: TEXT                                                AS muud,
                       NULL :: INTEGER                                             AS tunnus,
-                      NULL :: VARCHAR(120)                                        AS koostaja,
                       NULL :: VARCHAR(120)                                        AS esitaja,
                       null::varchar(120) as aktseptja,
                       0::numeric(12,2) as summa
@@ -117,8 +117,8 @@ module.exports = {
     deleteDoc: `select error_code, result, error_message from eelarve.sp_delete_taotlus($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     executeCommand: {
         command: `select error_code, result, error_message from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task
-        type:'sql',
-        alias:'executeTask'
+        type: 'sql',
+        alias: 'executeTask'
     },
     grid: {
         gridConfiguration: [

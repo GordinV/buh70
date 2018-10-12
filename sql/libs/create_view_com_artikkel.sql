@@ -7,13 +7,15 @@ CREATE OR REPLACE VIEW com_artikkel AS
           0                 AS id,
           '':: VARCHAR(20) AS kood,
           '':: VARCHAR(20) AS nimetus,
-          NULL :: INTEGER   AS rekvId
+          NULL :: INTEGER   AS rekvId,
+        true as is_kulud
         UNION
         SELECT
           l.id,
           l.kood,
           l.nimetus,
-          l.rekvId
+          l.rekvId,
+          (case when l.tun5 = 1 then false else true end) as is_kulud
         FROM libs.library l
         WHERE l.library = 'TULUDEALLIKAD'
               AND l.status <> 3

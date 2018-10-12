@@ -22,9 +22,12 @@ BEGIN
 
   SELECT t.*
   INTO tmpTaotlus
-  FROM eelarve.taotlus t
+  FROM eelarve.taotlus t, ou.userid u
   WHERE t.parentid = doc_id
-        AND docs.usersRigths(t.parentid, 'EelAktsepterja', user_id);
+        and u.id = user_id
+        AND coalesce((u.roles ->> 'is_eel_aktsepterja') :: BOOLEAN, FALSE) :: BOOLEAN;
+
+ --       AND docs.usersRigths(t.parentid, 'EelAktsepterja', user_id);
 
   IF tmpTaotlus IS NULL
   THEN

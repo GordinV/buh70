@@ -15,6 +15,7 @@ DECLARE
   doc_kasutaja TEXT = doc_data ->> 'kasutaja';
   doc_ametnik  TEXT = doc_data ->> 'ametnik';
   doc_muud     TEXT = doc_data ->> 'muud';
+
   new_history  JSON;
   props_json   JSONB = (SELECT to_jsonb(row)
                         FROM (SELECT (doc_data ->> 'email') :: TEXT AS email) row);
@@ -40,6 +41,8 @@ DECLARE
 
   is_import    BOOLEAN = data ->> 'import';
 BEGIN
+
+  raise notice 'roles_json %', roles_json;
 
   SELECT kasutaja
   INTO userName

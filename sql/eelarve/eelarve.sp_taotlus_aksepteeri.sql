@@ -33,9 +33,11 @@ BEGIN
 
   SELECT t.*
   INTO tmpTaotlus
-  FROM eelarve.taotlus t
+  FROM eelarve.taotlus t, ou.userid u
   WHERE t.parentid = doc_id
-        AND docs.usersRigths(t.parentid, 'EelAktsepterja', user_id);
+        and u.id = user_id
+        AND coalesce((u.roles ->> 'is_eel_aktsepterja') :: BOOLEAN, FALSE) :: BOOLEAN;
+--        AND docs.usersRigths(t.parentid, 'EelAktsepterja', user_id);
 
   IF tmpTaotlus IS NULL
   THEN
@@ -50,6 +52,7 @@ BEGIN
     UPDATE eelarve.taotlus
     SET status  = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'aktsepteeritud'),
       aktseptid = user_id,
+      muud = ttMuud,
       timestamp = now()
     WHERE parentid = doc_id;
 
@@ -69,7 +72,8 @@ BEGIN
     UPDATE docs.doc
     SET
       lastupdate = now(),
-      history    = coalesce(history, '[]') :: JSONB || new_history :: JSONB
+      history    = coalesce(history, '[]') :: JSONB || new_history :: JSONB,
+      status = array_position((enum_range(NULL :: dok_status)), 'closed')
     WHERE id = doc_id;
 
     result = 1;
@@ -87,3 +91,5 @@ BEGIN
 
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION eelarve.sp_taotlus_tagastada(INTEGER, JSON) TO eelaktsepterja;

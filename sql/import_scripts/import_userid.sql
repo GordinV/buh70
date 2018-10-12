@@ -35,16 +35,26 @@ BEGIN
 
     -- преобразование и получение параметров
 
-      -- сохранение
+    -- сохранение
     SELECT
-      coalesce(user_id, 0) AS id,
-      v_user.kasutaja      AS kasutaja,
-      v_user.ametnik       AS ametnik,
-      v_user.kasutaja_     AS kasutaja_,
-      v_user.peakasutaja_  AS peakasutaja_,
-      v_user.admin         AS admin,
-      v_user.muud          AS muud
+      coalesce(user_id, 0)           AS id,
+      v_user.kasutaja                AS kasutaja,
+      v_user.ametnik                 AS ametnik,
+      v_user.kasutaja_               AS kasutaja_,
+      v_user.peakasutaja_            AS peakasutaja_,
+      v_user.admin                   AS admin,
+      v_user.muud                    AS muud,
+      NOT empty(v_user.kasutaja_)    AS is_kasutaja,
+      NOT empty(v_user.peakasutaja_) AS is_peakasutaja,
+      NOT empty(v_user.admin)        AS is_admin,
+      position(upper('EelKoostaja') in upper(v_user.muud)) > 0 as is_eel_koostaja,
+      position(upper('EelAllkirjastaja') in upper(v_user.muud)) > 0 as is_eel_allkirjastaja,
+      position(upper('Eelesitaja') in upper(v_user.muud)) > 0 as is_eel_esitaja,
+      position(upper('EelAktsepterja') in upper(v_user.muud)) > 0 as is_eel_aktsepterja
+
     INTO v_params;
+
+    raise notice 'v_params %',v_params.is_kasutaja;
 
     SELECT row_to_json(row)
     INTO json_object
@@ -88,18 +98,6 @@ BEGIN
     END IF;
 
     -- check user account
-/*
-    if not exists (select 1 from FROM pg_user
-                   where usename = v_user.kasutaja) THEN
-
-
-      CREATE ROLE "galina.rojak" LOGIN
-      ENCRYPTED PASSWORD 'md51dd790e1a086df9ab7863d24d3fea69a'
-      NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE;
-      GRANT dbkasutaja TO "galina.rojak";
-
-    END IF;
-*/
     l_count = l_count + 1;
   END LOOP;
 
