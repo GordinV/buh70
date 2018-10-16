@@ -67,3 +67,19 @@ GRANT USAGE ON SCHEMA rekl TO dbvaatleja;
 --GRANT USAGE ON SCHEMA eelarve TO soametnik;
 --GRANT USAGE ON SCHEMA eelarve TO ladukasutaja;
 --GRANT USAGE ON SCHEMA palk TO taabel;
+
+
+
+GRANT ALL ON SCHEMA ou TO dbadmin;
+GRANT USAGE ON SCHEMA ou TO dbkasutaja;
+GRANT USAGE ON SCHEMA ou TO dbpeakasutaja;
+GRANT USAGE ON SCHEMA ou TO dbvaatleja;
+GRANT USAGE ON SCHEMA ou TO eelaktsepterja;
+GRANT USAGE ON SCHEMA ou TO eelallkirjastaja;
+GRANT USAGE ON SCHEMA ou TO eelesitaja;
+GRANT USAGE ON SCHEMA ou TO eelkoostaja;
+GRANT USAGE ON SCHEMA ou TO saldoandmikkoostaja;
+GRANT USAGE ON SCHEMA ou TO hkametnik;
+GRANT USAGE ON SCHEMA ou TO soametnik;
+GRANT USAGE ON SCHEMA ou TO ladukasutaja;
+GRANT USAGE ON SCHEMA ou TO taabel;
