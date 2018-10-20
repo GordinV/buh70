@@ -18,11 +18,11 @@ module.exports = {
                         r.nimetus::varchar(254) AS asutus,
                         coalesce(p.regkood,'')::varchar(20) AS parregkood,
                         coalesce(p.nimetus,'')::varchar(254) AS parasutus
-                    FROM eelarve.eelarve_kulud($1::integer, $2::date, $3::boolean, $4::integer) qryReport
+                    FROM eelarve.eelarve_kulud($1::integer,$2::date, $3::date, $4::boolean, $5::integer, $6::integer) qryReport
                     LEFT OUTER JOIN com_artikkel a ON ltrim(rtrim(a.kood)) = ltrim(rtrim(qryReport.artikkel))
                     LEFT OUTER JOIN com_tegev t ON ltrim(rtrim(t.kood)) = ltrim(rtrim(qryReport.tegev))
                     INNER JOIN ou.rekv r ON r.id = qryReport.rekv_id
-                    LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id                    `,     // $1 - aasta $2 - kpv, $3 - parandus, $4 - rekvid (svod)
+                    LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id                    `,     // $1 - aasta $2 - kpv1, $3 - kpv2, $4 - parandus, $5 - rekvid (svod), $6::integer  1 - kond, 0 - only asutus
         params: '',
         alias: 'kulud_report'
     }

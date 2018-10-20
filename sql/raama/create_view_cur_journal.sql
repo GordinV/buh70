@@ -28,7 +28,7 @@ CREATE OR REPLACE VIEW cur_journal AS
     'EUR' :: VARCHAR(20)                                                                   AS valuuta,
     1 :: NUMERIC(12, 6)                                                                    AS kuurs,
     coalesce(j1.kood1, '') :: VARCHAR(20)                                                  AS kood1,
-    coalesce(j1.kood2, '') :: VARCHAR(2)                                                   AS kood2,
+    coalesce(j1.kood2, '') :: VARCHAR(20)                                                   AS kood2,
     coalesce(j1.kood3, '') :: VARCHAR(20)                                                  AS kood3,
     coalesce(j1.kood4, '') :: VARCHAR(20)                                                  AS kood4,
     coalesce(j1.kood5, '') :: VARCHAR(20)                                                  AS kood5,

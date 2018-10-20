@@ -20,8 +20,7 @@ BEGIN
   INTO v_doc
   FROM eelarve.eelarve l
     LEFT OUTER JOIN ou.userid u ON u.id = userid
-  WHERE l.id = doc_id
-  and l.is_kulud = isKulud;
+  WHERE l.id = doc_id;
 
   IF v_doc IS NULL
   THEN
@@ -49,8 +48,7 @@ BEGIN
 
   UPDATE eelarve.eelarve
   SET status = 3
-  WHERE id = doc_id
-        AND is_kulud = isKulud;
+  WHERE id = doc_id;
 
   result = 1;
   RETURN;

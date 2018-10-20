@@ -47,7 +47,8 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    },{
+    },
+        {
         sql: `SELECT aa.* , 
                 kassa as kassapank 
                 FROM ou.Aa aa
@@ -56,7 +57,18 @@ module.exports = {
         multiple: false,
         alias: 'details',
         data: []
-    }],
+    },
+        {
+            sql: `SELECT * 
+                FROM ou.config 
+                WHERE rekvid = $1`,
+            query: null,
+            multiple: false,
+            alias: 'config',
+            data: []
+        },
+
+    ],
     returnData: {
         row: {},
         details:[]

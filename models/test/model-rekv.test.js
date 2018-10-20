@@ -97,5 +97,12 @@ describe('dok. type Rekv tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
+    it('should succefully execute sql request config', async()=> {
+        let sql = _.find(doc.select,{alias:'config'}).sql;
+        let returnValue = await db.queryDb(sql, [1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
 });
 

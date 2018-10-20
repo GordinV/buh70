@@ -17,7 +17,7 @@ module.exports = {
                         r.nimetus::varchar(254) AS asutus,
                         coalesce(p.regkood,'')::varchar(20) AS parregkood,
                         coalesce(p.nimetus,'')::varchar(254) AS parasutus
-                    FROM eelarve.eelarve_tulud($1::integer, $2::date, $3::boolean, $4::integer) qryReport
+                    FROM eelarve.eelarve_tulud($1::integer,$2::date, $3::date, $4::boolean, $5::integer, $6::integer) qryReport
                     INNER JOIN ou.rekv r ON r.id = qryReport.rekv_id
                     LEFT OUTER JOIN com_artikkel a ON a.kood::text = qryReport.artikkel::text
                     LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id                    `,     // $1 - aasta $2 - kpv, $3 - parandus, $4 - rekvid (svod)

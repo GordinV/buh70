@@ -67,7 +67,7 @@ describe('dok. type tulud_allikad aruanne tests', function () {
 
     it('should select data from grid query', async()=> {
         let sql = doc.grid.sqlString;
-        let returnValue = await db.queryDb(sql, [2018,'2018-08-31', true, 1]);
+        let returnValue = await db.queryDb(sql, [2018,'2018-01-01', '2018-08-31', true, 1, 0]);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         let err = returnValue.error_code;

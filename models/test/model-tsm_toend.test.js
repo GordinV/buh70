@@ -1,4 +1,5 @@
 'use strict';
+
 const moduleLocator = require('../../libs/moduleLocator.js')();
 const modelCreator = require('./../../libs/createXMLmodel');
 const fs = require('fs');
@@ -7,12 +8,12 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-describe('dok. type Kulud_taitmine aruanne tests', function () {
+describe('dok. type tsm_toend tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../aruanned/eelarve/kulud_allikad'),
-        docTypeId = 'KULUD_ALLIKAD'.toLowerCase(),
-        modelForExport = 'aruanned/eelarve/kulud_allikad';
+    const doc = require('../aruanned/palk/tsm_toend'),
+        docTypeId = 'TSM_TOEND'.toLowerCase(),
+        modelForExport = 'aruanned/palk/tsm_toend';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -56,8 +57,17 @@ describe('dok. type Kulud_taitmine aruanne tests', function () {
         });
     });
 
-    it('doc type library should contain KULUD_ALLIKAD doc.type', async () => {
-        let sql = `select id from libs.library where kood = 'KULUD_ALLIKAD' and  library = 'DOK' limit 1`;
+    it('doc type library should contain TSM_TOEND doc.type', async () => {
+        let sql = `select id from libs.library where kood = 'TSM_TOEND' and  library = 'DOK' limit 1`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists proc palk.tsm_toend', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'tsm_toend'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -67,14 +77,13 @@ describe('dok. type Kulud_taitmine aruanne tests', function () {
 
     it('should select data from grid query', async()=> {
         let sql = doc.grid.sqlString;
-        let returnValue = await db.queryDb(sql, [2018,'2018-01-31', '2018-08-31', true, 1, 0]);
+        let returnValue = await db.queryDb(sql, ['2018-01-01','2018-01-31', 1]);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         let err = returnValue.error_code;
-        expect(result).toBeGreaterThan(0);
+        expect(err).toBe(0);
 
     });
-
 
 });
 

@@ -4,15 +4,17 @@ CREATE OR REPLACE FUNCTION import_eelarve(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
 DECLARE
-  eelarve_id  INTEGER;
-  log_id      INTEGER;
-  v_eelarve   RECORD;
-  json_object JSONB;
-  hist_object JSONB;
-  v_params    RECORD;
-  l_count     INTEGER = 0;
-  l_proj_id   INTEGER;
-  l_tunnus    TEXT;
+  eelarve_id        INTEGER;
+  l_log_id          INTEGER;
+  v_eelarve         RECORD;
+  json_object       JSONB;
+  hist_object       JSONB;
+  v_params          RECORD;
+  l_count           INTEGER = 0;
+  l_proj_id         INTEGER;
+  l_tunnus          TEXT;
+  is_kulud          INTEGER = 1;
+  vigane_eelarve_id INTEGER;
 BEGIN
   -- выборка из "старого меню"
 
@@ -27,13 +29,13 @@ BEGIN
     SELECT
       new_id,
       id
-    INTO eelarve_id, log_id
+    INTO eelarve_id, l_log_id
     FROM import_log
     WHERE old_id = v_eelarve.id
           AND upper(ltrim(rtrim(lib_name :: TEXT))) = 'EELARVE';
 
 
-    RAISE NOTICE 'check for lib.. v_EELARVE.id -> %, found -> % log_id -> %', v_eelarve.id, eelarve_id, log_id;
+    RAISE NOTICE 'check for lib.. v_EELARVE.id -> %, found -> % log_id -> %', v_eelarve.id, eelarve_id, l_log_id;
 
     -- преобразование и получение параметров
 
@@ -53,35 +55,42 @@ BEGIN
 
     RAISE NOTICE 'v_eelarve.variantid %, l_proj_id %', v_eelarve.variantid, l_proj_id;
 
-    IF NOT empty(v_eelarve.tunnusid)
+    IF v_eelarve.tunnusid IS NOT NULL AND NOT empty(v_eelarve.tunnusid)
     THEN
       l_tunnus = (SELECT kood
                   FROM library
-                  WHERE id = v_eelarve.tunnusid);
+                  WHERE id = v_eelarve.tunnusid AND library = 'TUNNUS');
+    ELSE
+      l_tunnus = '';
     END IF;
-    /*
-      doc_aasta       INTEGER = doc_data ->> 'aasta';
-      doc_summa       NUMERIC(12, 2) = doc_data ->> 'summa';
-      doc_tunnus      TEXT = doc_data ->> 'tunnus';
-      doc_kood1       TEXT = doc_data ->> 'kood1';
-      doc_kood2       TEXT = doc_data ->> 'kood2';
-      doc_kood3       TEXT = doc_data ->> 'kood3';
-      doc_kood4       TEXT = doc_data ->> 'kood4';
-      doc_kood5       TEXT = doc_data ->> 'kood5';
-      doc_is_kulud    INTEGER = doc_data ->> 'is_kulud';
-      doc_is_parandus INTEGER = coalesce((doc_data ->> 'is_parandus')::integer,0);
-      doc_variantid   INTEGER = doc_data ->> 'variantid';
-      doc_kpv         DATE = doc_data ->> 'kpv';
-      doc_muud        TEXT = doc_data ->> 'muud';
 
-     */
+    is_kulud = (SELECT CASE WHEN tun5 = 1
+      THEN 0
+                       ELSE 1 END
+                FROM libs.library
+                WHERE library = 'TULUDEALLIKAD' AND kood = v_eelarve.kood5);
+
+    -- проверка на соответствие признака дохода и расхода
+    IF is_kulud <> (SELECT e.is_kulud
+                    FROM eelarve.eelarve e
+                    WHERE e.id = eelarve_id)
+    THEN
+      -- удаление бюджетной записи
+      DELETE FROM eelarve.eelarve
+      WHERE id = eelarve_id;
+      -- создание новой
+      vigane_eelarve_id = eelarve_id;
+      eelarve_id = 0;
+      -- правка истории импорта
+    END IF;
+
     -- сохранение
     SELECT
       coalesce(eelarve_id, 0) AS id,
       v_eelarve.rekvid        AS rekvid,
       v_eelarve.aasta         AS aasta,
       v_eelarve.summa         AS summa,
-      v_eelarve.tunnus        AS is_kulud,
+      is_kulud                AS is_kulud,
       CASE WHEN empty(v_eelarve.kpv)
         THEN 0
       ELSE 1 END              AS is_parandus,
@@ -105,7 +114,24 @@ BEGIN
 
     SELECT eelarve.sp_salvesta_eelarve(json_object :: JSON, 1, v_eelarve.rekvid)
     INTO eelarve_id;
+
     RAISE NOTICE 'import eelarve eelarve_id %, l_count %', eelarve_id, l_count;
+
+    -- проверим на правку бюджета
+    IF vigane_eelarve_id IS NOT NULL
+    THEN
+      -- правка
+      RAISE NOTICE 'parandus vigane_eelarve_id %', vigane_eelarve_id;
+      -- меняем запись в логе
+      UPDATE import_log
+      SET new_id = eelarve_id
+      WHERE id = l_log_id AND new_id = vigane_eelarve_id;
+      --меняем ссылки
+      UPDATE eelarve.taotlus1
+      SET eelarveid = eelarve_id
+      WHERE eelarveid = vigane_eelarve_id;
+    END IF;
+
 
     IF empty(eelarve_id)
     THEN
@@ -117,22 +143,22 @@ BEGIN
     INTO hist_object
     FROM (SELECT now() AS timestamp) row;
 
-    IF log_id IS NULL OR empty(log_id)
+    IF l_log_id IS NULL OR empty(l_log_id)
     THEN
       INSERT INTO import_log (new_id, old_id, lib_name, params, history)
       VALUES (eelarve_id, v_eelarve.id, 'EELARVE', json_object :: JSON, hist_object :: JSON)
       RETURNING id
-        INTO log_id;
+        INTO l_log_id;
 
     ELSE
       UPDATE import_log
       SET
         params  = json_object :: JSON,
         history = (history :: JSONB || hist_object :: JSONB) :: JSON
-      WHERE id = log_id;
+      WHERE id = l_log_id;
     END IF;
 
-    IF empty(log_id)
+    IF empty(l_log_id)
     THEN
       RAISE EXCEPTION 'log save failed';
     END IF;
@@ -153,7 +179,9 @@ COST 100;
 
 
 /*
-SELECT import_eelarve(61105)
+update eelarve
+
+SELECT import_eelarve(102876)
 SELECT import_eelarve(e.id)
 from eelarve e inner join rekv r on e.rekvid = r.id and r.parentid < 999
 and e.variantid > 0

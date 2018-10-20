@@ -39,13 +39,14 @@ CREATE VIEW palk.cur_palkoper AS
                                              THEN 2
                                            WHEN 6
                                              THEN 2
-                                           ELSE 3 END]) :: TEXT                                      AS liik,
+                                           ELSE 3 END]) :: VARCHAR(20)                               AS liik,
     ((enum_range(NULL :: PALK_LIIK)) [(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT      AS palk_liik,
     ((enum_range(NULL :: PALK_TUND_LIIK)) [(lib.properties :: JSONB ->> 'tund') :: INTEGER]) :: TEXT AS tund,
     (lib.properties :: JSONB ->> 'asutusest') :: BOOLEAN                                             AS is_asutusest,
     (lib.properties :: JSONB ->> 'maks') :: BOOLEAN                                                  AS is_maksustatav,
     (lib.properties :: JSONB ->> 'sost') :: BOOLEAN                                                  AS is_sotsmaks,
-    (lib.properties :: JSONB ->> 'tululiik') :: TEXT                                                 AS tululiik
+    (lib.properties :: JSONB ->> 'tululiik') :: TEXT                                                 AS tululiik,
+    p.konto
   FROM docs.doc d
     INNER JOIN libs.library s ON (s.kood :: TEXT = d.status :: TEXT AND s.library = 'STATUS')
     INNER JOIN libs.library dok ON d.doc_type_id = dok.id AND dok.library = 'DOK'
@@ -58,3 +59,8 @@ CREATE VIEW palk.cur_palkoper AS
     LEFT OUTER JOIN docs.journal j ON j.parentid = dd.id
     LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
   WHERE dok.kood = 'PALK_OPER';
+
+GRANT SELECT ON TABLE palk.cur_palkoper TO dbkasutaja;
+GRANT SELECT ON TABLE palk.cur_palkoper TO dbvaatleja;
+GRANT SELECT ON TABLE palk.cur_palkoper TO dbpeakasutaja;
+

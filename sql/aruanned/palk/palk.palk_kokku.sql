@@ -9,19 +9,21 @@ CREATE OR REPLACE FUNCTION palk.palk_kokku(l_kpv1 DATE, l_kpv2 DATE, l_rekvid IN
     rekv_id   INTEGER,
     isik_id   INTEGER,
     isikukood VARCHAR(20),
-    isik      VARCHAR(254)
+    isik      VARCHAR(254),
+    konto varchar(20)
   ) AS
 $BODY$
 
 SELECT
-  po.nimetus::varchar(254),
-  sum(po.summa)::numeric(14,2) AS summa,
-  po.liik::CHAR(1),
-  po.libId::integer,
-  po.rekvid::INTEGER,
-  po.isikid::integer,
-  po.isikukood::varchar(20),
-  po.isik::varchar(254)
+  po.nimetus :: VARCHAR(254),
+  sum(po.summa) :: NUMERIC(14, 2) AS summa,
+  po.liik :: CHAR(1),
+  po.libId :: INTEGER,
+  po.rekvid :: INTEGER,
+  po.isikid :: INTEGER,
+  po.isikukood :: VARCHAR(20),
+  po.isik :: VARCHAR(254),
+  po.konto :: VARCHAR(20)
 FROM palk.cur_palkoper po
 WHERE
   po.kpv >= l_kpv1 AND po.kpv <= l_kpv2
@@ -30,7 +32,7 @@ WHERE
                    ELSE po.rekvid END)
   AND po.rekvid IN (SELECT rekv_id
                     FROM get_asutuse_struktuur(l_rekvid))
-GROUP BY po.rekvid, po.nimetus, po.liik, po.libId, po.isikid, po.isikukood, po.isik
+GROUP BY po.rekvid, po.nimetus, po.liik, po.libId, po.isikid, po.isikukood, po.isik, po.konto
 
 $BODY$
 LANGUAGE SQL VOLATILE
