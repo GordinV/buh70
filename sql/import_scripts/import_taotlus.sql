@@ -4,23 +4,19 @@ CREATE OR REPLACE FUNCTION import_taotlus(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
 DECLARE
-  taotlus_id      INTEGER;
-  log_id          INTEGER;
-  v_taotlus       RECORD;
-  json_object     JSONB;
-  hist_object     JSONB;
-  v_params        RECORD;
-  l_count         INTEGER = 0;
-  l_tulemus       INTEGER = 0;
-  json_taotlus1   JSONB;
-  l_control_summa NUMERIC;
-  l_control_count INTEGER;
-  l_j_summa       NUMERIC;
-  l_j_count       INTEGER;
-  l_koostaja_id   INTEGER;
-  l_ametnik_id    INTEGER;
-  l_aktsept_id    INTEGER;
-  l_status        INTEGER;
+  taotlus_id    INTEGER;
+  log_id        INTEGER;
+  v_taotlus     RECORD;
+  v_taotlus1     RECORD;
+  json_object   JSONB;
+  hist_object   JSONB;
+  v_params      RECORD;
+  l_count       INTEGER = 0;
+  json_taotlus1 JSONB;
+  l_koostaja_id INTEGER;
+  l_ametnik_id  INTEGER;
+  l_aktsept_id  INTEGER;
+  l_eelarve_id  INTEGER;
 BEGIN
   -- выборка из "старого меню"
 
@@ -48,6 +44,30 @@ BEGIN
 
     -- преобразование и получение параметров
 
+
+    IF v_taotlus.staatus = 3
+    THEN
+      -- проверяем правильность данных
+      IF exists(SELECT id
+                FROM taotlus1
+                WHERE parentid = v_taotlus.id AND eelarveid = 0)
+      THEN
+        raise notice 'leindsin vigased kirjad, parandame';
+        -- правим ссылку
+        FOR v_taotlus1 IN
+        SELECT
+          t1.id,
+          t1.eelarveid
+        FROM remote_taotlus1 t1
+        WHERE parentid = v_taotlus.id
+        LOOP
+          raise notice 'v_taotlus1.eelarveid %, v_taotlus1.id %', v_taotlus1.eelarveid, v_taotlus1.id;
+          UPDATE taotlus1
+          SET eelarveid = v_taotlus1.eelarveid
+          WHERE id = v_taotlus1.id;
+        END LOOP;
+      END IF;
+    END IF;
     json_taotlus1 = array_to_json((SELECT array_agg(row_to_json(t1.*))
                                    FROM (SELECT
                                            0                                                      AS id,
@@ -177,8 +197,12 @@ COST 100;
 
 
 /*
-SELECT import_taotlus(10401)
+SELECT import_taotlus(11305)
+-- import_taotlus(id)
+SELECT count(id) from taotlus where year(kpv) = 2018
+and staatus = 3
+and id in (select parentid from taotlus1 where eelarveid = 0)
 
-SELECT import_taotlus(id) from taotlus where year(kpv) = 2018 order by kpv limit all
+order by kpv limit all
 
 */

@@ -77,7 +77,9 @@ module.exports = {
         alias: 'row',
         data: []
     }, {
-        sql: `select $2::integer as userid, 
+        sql: `SELECT
+                  $2 :: INTEGER                                    AS userid,
+                  a.is_kulud,
                   t1.id,
                   t1.parentid,
                   t1.eelprojid,
@@ -94,9 +96,10 @@ module.exports = {
                   t1.status,
                   t1.markused,
                   t1.muud,
-                  coalesce(left(t1.selg,254),'')::varchar(254) as selgrea
+                  coalesce(left(t1.selg, 254), '') :: VARCHAR(254) AS selgrea
                 FROM eelarve.taotlus1 t1
-                inner join eelarve.taotlus t on t.id = t1.parentid
+                  INNER JOIN eelarve.taotlus t ON t.id = t1.parentid
+                  LEFT OUTER JOIN com_artikkel a ON a.kood = t1.kood5
                 WHERE t.parentid = $1
                 ORDER BY kood1, kood2, kood5`,
         query: null,

@@ -28,7 +28,7 @@ DECLARE
   ) ROW;
 BEGIN
   -- find eelprojekt if eelproj_id is null
-  IF ((eelproj_id IS NULL or eelproj_id = 0) AND taotlus_id IS NOT NULL)
+  IF ((eelproj_id IS NULL OR eelproj_id = 0) AND taotlus_id IS NOT NULL)
   THEN
     SELECT eelprojid
     INTO eelproj_id
@@ -38,8 +38,6 @@ BEGIN
     WHERE d.id = taotlus_id
     LIMIT 1;
   END IF;
-
-  raise notice 'eelproj_id %',eelproj_id;
 
   IF eelproj_id IS NULL
   THEN
@@ -85,7 +83,8 @@ BEGIN
     INNER JOIN eelarve.taotlus t ON t.parentid = d.id
     INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
   WHERE t1.eelprojid = eelproj_id
-        AND (d.id = taotlus_id OR taotlus_id IS NULL) -- kui meil on taotlus_id parameter siis, kasutame
+        AND (d.id = taotlus_id OR taotlus_id IS NULL OR empty(taotlus_id))
+        -- kui meil on taotlus_id parameter siis, kasutame
         AND t.status = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'aktsepteeritud')
         AND empty(t1.eelarveid)
 
@@ -101,7 +100,6 @@ BEGIN
     END IF;
 
     -- Salvestame eelarve
-
     SELECT
       v_taotlus.aasta,
       v_taotlus.summa,
@@ -134,10 +132,7 @@ BEGIN
             0 :: INTEGER AS id,
             v_eelarve    AS data) ROW;
 
-    raise notice 'salvestan eelarve eelarve_json %', eelarve_json;
     eelarve_id = eelarve.sp_salvesta_eelarve(eelarve_json, user_id, v_taotlus.rekvid);
-    raise notice 'salvestan eelarve eelarve_id %', eelarve_id;
-
 
     IF empty(eelarve_id)
     THEN
@@ -153,11 +148,9 @@ BEGIN
     WHERE id = v_taotlus.taotlus1id;
 
     result = 1;
-    new_history = new_history::jsonb || row_to_json(row)::jsonb  FROM ( SELECT eelarve_id AS eelarveId) ROW;
+    new_history = new_history :: JSONB || row_to_json(row) :: JSONB  FROM ( SELECT eelarve_id AS eelarveId) ROW;
 
   END LOOP;
-
-  raise notice 'result %, error_code %, error_message %',result, error_code, error_message;
   RETURN;
 
 END;
