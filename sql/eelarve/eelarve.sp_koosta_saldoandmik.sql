@@ -59,7 +59,7 @@ BEGIN
           l_oma_tp,
           0
         FROM eelarve.saldoandmik_aruanne(l_kpv1, l_kpv2, l_rekvid) qry
-          LEFT OUTER JOIN com_kontoplaan l ON l.kood = qry.konto
+          LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(l.kood)) = ltrim(rtrim(qry.konto))
         WHERE qry.rekv_id = l_rekvid;
 
       -- kassakulud

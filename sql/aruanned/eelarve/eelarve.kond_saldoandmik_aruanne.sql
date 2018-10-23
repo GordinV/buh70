@@ -5,6 +5,7 @@ CREATE OR REPLACE FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid
   RETURNS TABLE(
     rekv_id  INTEGER,
     konto    VARCHAR(20),
+    nimetus  VARCHAR(254),
     tp       VARCHAR(20),
     tegev    VARCHAR(20),
     allikas  VARCHAR(20),
@@ -14,25 +15,37 @@ CREATE OR REPLACE FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid
     tyyp     INTEGER
   ) AS
 $BODY$
+
+-- rekvid  = 999 (kond)
+
 SELECT
-  rekvid,
-  konto,
-  tp,
-  tegev,
-  allikas,
-  rahavoo,
-  db as deebet,
-  kr as kreedit,
-  tyyp
+  s.rekvid,
+  s.konto,
+  coalesce(k.nimetus, '') :: VARCHAR(254) AS nimetus,
+  s.tp,
+  s.tegev,
+  s.allikas,
+  s.rahavoo,
+  s.db                                    AS deebet,
+  s.kr                                    AS kreedit,
+  s.tyyp
 FROM eelarve.saldoandmik s
+  LEFT OUTER JOIN com_kontoplaan k ON k.kood = s.konto
 WHERE aasta = year(l_kpv) AND kuu = month(l_kpv)
-      AND (l_rekvid  = 999 or  s.rekvid IN (SELECT rekv_id
-                        FROM get_asutuse_struktuur(l_rekvid))
-);
+      AND (l_rekvid = 999 OR s.rekvid IN (SELECT rekv_id
+                                          FROM get_asutuse_struktuur(l_rekvid))
+      );
 
 $BODY$
 LANGUAGE SQL VOLATILE
 COST 100;
 
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER) TO dbvaatleja;
+/*
+
 SELECT *
 FROM eelarve.kond_saldoandmik_aruanne('2018-01-31' :: DATE, 999 :: INTEGER)
+*/
