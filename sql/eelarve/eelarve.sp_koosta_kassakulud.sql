@@ -58,15 +58,15 @@ BEGIN
   WHERE aasta = year(l_kpv) AND kuu = month(l_kpv) AND rekvid = l_rekv_id AND left(artikkel, 1) <> '3'
   LOOP
     SELECT
-      0             AS id,
-      v_kulud.summa AS summa,
-      'EUR'         AS valuuta,
-      1             AS kuurs,
+      0                AS id,
+      v_kulud.summa    AS summa,
+      'EUR'            AS valuuta,
+      1                AS kuurs,
       v_kulud.tegev,
-      v_kulud.kood2 AS allikas,
-      v_kulud.kood  AS artikkel,
-      l_kpv         AS kpv,
-      l_rekv_id     AS rekvid
+      v_kulud.allikas  AS allikas,
+      v_kulud.artikkel AS artikkel,
+      l_kpv            AS kpv,
+      l_rekv_id        AS rekvid
     INTO v_data;
 
     l_params = row_to_json(row) FROM ( SELECT 0 AS id, v_data AS DATA ) ROW;

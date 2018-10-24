@@ -10,39 +10,62 @@ CREATE OR REPLACE FUNCTION eelarve.sp_koosta_saldoandmik(
 $BODY$
 
 DECLARE
-  l_rekvid INTEGER = coalesce((params ->> 'rekvid') :: INTEGER, (SELECT rekvid
-                                                                 FROM ou.userid
-                                                                 WHERE id = user_id));
-  l_kpv    DATE = params ->> 'kpv';
-  l_kpv1   DATE = date(year(l_kpv), month(l_kpv), 1);
-  l_kpv2   DATE = gomonth(l_kpv1, 1) - 1;
-  l_tyyp   INTEGER = coalesce((params ->> 'tyyp') :: INTEGER, 1);
-  v_rekv   RECORD;
-  l_oma_tp TEXT = fnc_getomatp(L_rekvid, year(l_kpv));
-  l_params JSON;
-
+  l_rekvid    INTEGER = coalesce((params ->> 'rekvid') :: INTEGER, (SELECT rekvid
+                                                                    FROM ou.userid
+                                                                    WHERE id = user_id));
+  l_kpv       DATE = params ->> 'kpv';
+  l_kpv1      DATE = date(year(l_kpv), month(l_kpv), 1);
+  l_kpv2      DATE = gomonth(l_kpv1, 1) - 1;
+  kas_delete  INTEGER = coalesce((params ->> 'tyyp') :: INTEGER, 1);
+  l_kond      INTEGER = coalesce((params ->> 'kond') :: INTEGER, 1); -- koosta kond aruanne
+  v_rekv      RECORD;
+  l_oma_tp    TEXT = fnc_getomatp(L_rekvid, year(l_kpv));
+  l_params    JSON;
+  l_tulemus   INTEGER;
 BEGIN
-  IF NOT empty(l_tyyp)
+  IF NOT empty(kas_delete)
   THEN
+
     -- re-arvesta saldoandmik
     DELETE FROM eelarve.saldoandmik
-    WHERE aasta = year(l_kpv) AND kuu = month(l_kpv);
+    WHERE aasta = year(l_kpv) AND kuu = month(l_kpv)
+          AND rekvid IN (SELECT rekv_id
+                         FROM get_asutuse_struktuur(l_rekvid));
+
+    IF NOT empty(l_kond) AND l_rekvid = 63
+    THEN
+
+      DELETE FROM eelarve.saldoandmik
+      WHERE aasta = year(l_kpv) AND kuu = month(l_kpv)
+            AND rekvid = 999;
+
+    END IF;
   END IF;
 
   -- Kontrolin kas arvestame saldoandmik uuesti
 
   IF NOT exists(SELECT id
                 FROM eelarve.saldoandmik
-                WHERE aasta = year(l_kpv) AND kuu = month(l_kpv))
+                WHERE aasta = year(l_kpv) AND kuu = month(l_kpv)
+                      AND (rekvid IN (SELECT rekv_id
+                                      FROM get_asutuse_struktuur(l_rekvid)
+                )
+                      )
+  )
+
   THEN
 
     FOR v_rekv IN
     SELECT id
     FROM ou.rekv
     WHERE parentid <> 9999 AND id NOT IN (123, 116, 122)
+          AND  id IN (SELECT rekv_id
+                     FROM get_asutuse_struktuur(l_rekvid))
     LOOP
-      l_oma_tp = fnc_getomatp(L_rekvid, year(l_kpv));
-      INSERT INTO eelarve.saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, kuu, rekvid, omatp, tyyp)
+      raise notice 'rekvid -> %, l_kpv %', v_rekv.id, l_kpv;
+      INSERT INTO
+        eelarve.saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, kuu, rekvid, omatp,
+                             tyyp)
         SELECT
           l.nimetus,
           qry.deebet,
@@ -58,22 +81,24 @@ BEGIN
           v_rekv.id,
           l_oma_tp,
           0
-        FROM eelarve.saldoandmik_aruanne(l_kpv1, l_kpv2, l_rekvid) qry
+        FROM eelarve.saldoandmik_aruanne(l_kpv1, l_kpv2, v_rekv.id) qry
           LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(l.kood)) = ltrim(rtrim(qry.konto))
-        WHERE qry.rekv_id = l_rekvid;
+        WHERE qry.rekv_id = v_rekv.id;
 
       -- kassakulud
       l_params = row_to_json(row) FROM ( SELECT l_kpv AS kpv,
-      l_rekvid AS rekvid ) ROW;
+      v_rekv.id AS rekvid ) ROW;
 
-      PERFORM eelarve.sp_koosta_kassakulud(v_rekv.id, l_params :: JSON);
+      l_tulemus = (SELECT qry.result
+                   FROM eelarve.sp_koosta_kassakulud(user_id, l_params :: JSON) AS qry);
+
     END LOOP;
+  END IF;
 
-
-  ELSE
-    result = 0;
-    error_message = 'Andmed on olemas, vajalik kustuta ära';
-    RETURN;
+  IF NOT empty(l_kond) AND l_rekvid = 63 -- only for Rahandusamet
+  THEN
+    -- koostame kond saldoandmik
+    PERFORM eelarve.koosta_kond_saldoandmik(user_id, l_kpv);
   END IF;
 
   result = 1;
@@ -93,5 +118,7 @@ GRANT EXECUTE ON FUNCTION eelarve.sp_koosta_saldoandmik(INTEGER, JSON) TO dbkasu
 GRANT EXECUTE ON FUNCTION eelarve.sp_koosta_saldoandmik(INTEGER, JSON) TO dbpeakasutaja;
 
 /*
-select error_code, result, error_message from eelarve.sp_koosta_saldoandmik(1,'{"kpv":"2018-01-31"}'::json)
+select error_code, result, error_message from eelarve.sp_koosta_saldoandmik(70,'{"kpv":"2018-09-30","tyyp":0,"kond":1, "rekvid":63}'::json)
+
+select * from eelarve.saldoandmik where rekvid = 63 and kuu = 9 and aasta = 2018
 */

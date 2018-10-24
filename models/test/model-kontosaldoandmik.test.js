@@ -85,6 +85,5 @@ describe('dok. type kontoasutusandmik tests', function () {
 
     });
 
-
 });
 

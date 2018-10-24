@@ -22,21 +22,10 @@ DECLARE
   doc_kuu      INTEGER = coalesce((doc_data ->> 'kuu') :: INTEGER, date_part('month', doc_kpv));
   doc_rekvid   INTEGER = doc_data ->> 'rekvid';
 
-  lnId         INT;
-  lrCurRec     RECORD;
   l_oma_tp     CHARACTER VARYING;
-  userName     TEXT = (SELECT kasutaja
-                       FROM ou.userid u
-                       WHERE u.rekvid = user_rekvid
-                             AND u.id = userId);
 
 BEGIN
 
-  IF userName IS NULL
-  THEN
-    RAISE NOTICE 'User not found %', user;
-    RETURN 0;
-  END IF;
 
   IF (l_id IS NULL)
   THEN

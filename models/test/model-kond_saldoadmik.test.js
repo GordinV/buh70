@@ -105,6 +105,51 @@ describe('dok. type Kond Saldoandmik aruanne tests', function () {
 
     });
 
+    it('should exists proc eelarve.saldoandmik_aruanne', async()=> {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'saldoandmik_aruanne'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists proc eelarve.kond_saldoandmik_aruanne', async()=> {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'kond_saldoandmik_aruanne'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists proc eelarve.koosta_kond_saldoandmik', async()=> {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'koosta_kond_saldoandmik'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists proc eelarve.sp_koosta_kassakulud', async()=> {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_koosta_kassakulud'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists proc eelarve.sp_salvesta_aastakassakulud', async()=> {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_aastakassakulud'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
 
 });
 

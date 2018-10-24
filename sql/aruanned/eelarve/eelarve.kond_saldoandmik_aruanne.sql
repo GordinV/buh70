@@ -3,7 +3,6 @@ DROP FUNCTION IF EXISTS eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid IN
 
 CREATE OR REPLACE FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER)
   RETURNS TABLE(
-    rekv_id  INTEGER,
     konto    VARCHAR(20),
     nimetus  VARCHAR(254),
     tp       VARCHAR(20),
@@ -19,22 +18,22 @@ $BODY$
 -- rekvid  = 999 (kond)
 
 SELECT
-  s.rekvid,
   s.konto,
   coalesce(k.nimetus, '') :: VARCHAR(254) AS nimetus,
   s.tp,
   s.tegev,
   s.allikas,
   s.rahavoo,
-  s.db                                    AS deebet,
-  s.kr                                    AS kreedit,
+  sum(s.db)                               AS deebet,
+  sum(s.kr)                               AS kreedit,
   s.tyyp
 FROM eelarve.saldoandmik s
   LEFT OUTER JOIN com_kontoplaan k ON k.kood = s.konto
-WHERE aasta = year(l_kpv) AND kuu = month(l_kpv)
-      AND (l_rekvid = 999 OR s.rekvid IN (SELECT rekv_id
-                                          FROM get_asutuse_struktuur(l_rekvid))
-      );
+WHERE s.aasta = year(l_kpv)
+      AND s.kuu = month(l_kpv)
+      AND s.rekvid = l_rekvid
+
+GROUP BY s.konto, k.nimetus, s.tp, s.tegev, s.allikas, s.rahavoo, s.tyyp;
 
 $BODY$
 LANGUAGE SQL VOLATILE
@@ -47,5 +46,5 @@ GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid 
 /*
 
 SELECT *
-FROM eelarve.kond_saldoandmik_aruanne('2018-01-31' :: DATE, 999 :: INTEGER)
+FROM eelarve.kond_saldoandmik_aruanne('2018-09-30' :: DATE, 999 :: INTEGER)
 */
