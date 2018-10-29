@@ -110,6 +110,7 @@ describe('dok. type leping tests', function () {
         let sql = doc.select[0].sqlAsNew;
         let returnValue = await db.queryDb(sql, [0,1]);
         expect(returnValue).toBeDefined();
+        console.log(sql, returnValue);
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
     });

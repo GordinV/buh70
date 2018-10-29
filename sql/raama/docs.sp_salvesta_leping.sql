@@ -72,8 +72,8 @@ BEGIN
             ARRAY [userId] AS "delete") row;
 
 
-    INSERT INTO docs.doc (doc_type_id, history, rigths, rekvId)
-    VALUES (doc_type_id, '[]' :: JSONB || new_history, new_rights, user_rekvid)
+    INSERT INTO docs.doc (doc_type_id, history, rigths, rekvId,status)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, new_rights, user_rekvid, 1)
     RETURNING id
       INTO doc_id;
 
