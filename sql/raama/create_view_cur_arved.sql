@@ -3,6 +3,7 @@ DROP VIEW IF EXISTS cur_arved;
 CREATE OR REPLACE VIEW cur_arved AS
   SELECT
     d.id                                      AS id,
+    d.docs_ids,
     a.id                                      AS arv_id,
     trim(a.number)                            AS number,
     a.rekvid,

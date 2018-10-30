@@ -62,12 +62,12 @@ FROM (
          nimetus,
          liik,
          osakondid,
-         tbl.ohtu,
-         tbl.paev,
-         tbl.puhapaev,
-         tbl.oo,
-         tbl.tahtpaev,
-         tbl.uleajatoo,
+         coalesce(tbl.ohtu,0) as ohtu,
+         coalesce(tbl.paev,0) as paev,
+         coalesce(tbl.puhapaev,0) as puhapaev,
+         coalesce(tbl.oo,0) as oo,
+         coalesce(tbl.tahtpaev,0) as tahtpaev,
+         coalesce(tbl.uleajatoo,0) as uleajatoo,
          palk.get_work_hours(to_jsonb((SELECT po.lepingid AS lepingid))) AS tootunnid
 
        FROM palk.cur_palkoper po

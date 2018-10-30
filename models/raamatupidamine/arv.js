@@ -249,7 +249,8 @@ const Arv = {
                      objektid,
                      objekt::varchar(254),
                      markused,
-                     lausnr
+                     lausnr,
+                     docs_ids
                     from cur_arved a 
                      where a.rekvId = $1 
                      and docs.usersRigths(a.id, 'select', $2)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя

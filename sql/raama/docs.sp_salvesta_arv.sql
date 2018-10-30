@@ -33,15 +33,13 @@ DECLARE
   doc_muud      TEXT = doc_data ->> 'muud';
   doc_objektid  INTEGER = doc_data ->> 'objektid';
   doc_objekt    TEXT = doc_data ->> 'objekt';
-  tcValuuta     TEXT = coalesce(doc_data ->> 'valuuta', 'EUR');
-  tnKuurs       NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
   tnDokLausId   INTEGER = coalesce((doc_data ->> 'doklausid') :: INTEGER, 1);
+  doc_lepingId  INTEGER = doc_data ->> 'leping_id';
   json_object   JSON;
   json_record   RECORD;
   new_history   JSONB;
   new_rights    JSONB;
   ids           INTEGER [];
-  a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
   is_import     BOOLEAN = data ->> 'import';
 BEGIN
 
@@ -85,11 +83,18 @@ BEGIN
             ARRAY [userId] AS "update",
             ARRAY [userId] AS "delete") row;
 
+    IF doc_lepingId IS NOT NULL
+    THEN
+      -- will add reference to leping
+      ids = array_append(ids, doc_lepingId);
+    END IF;
 
-    INSERT INTO docs.doc (doc_type_id, history, rigths, rekvId)
-    VALUES (doc_type_id, '[]' :: JSONB || new_history, new_rights, user_rekvid)
+    INSERT INTO docs.doc (doc_type_id, history, rigths, rekvId, docs_ids)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, new_rights, user_rekvid, ids)
     RETURNING id
       INTO doc_id;
+
+    ids = NULL;
 
     INSERT INTO docs.arv (parentid, rekvid, userid, liik, operid, number, kpv, asutusid, lisa, tahtaeg, kbmta, kbm, summa, muud, objektid, objekt, doklausid)
     VALUES (doc_id, user_rekvid, userId, doc_liik, doc_operid, doc_number, doc_kpv, doc_asutusid, doc_lisa, doc_tahtaeg,
@@ -113,6 +118,14 @@ BEGIN
       rekvid       = user_rekvid
     WHERE id = doc_id;
 
+    IF doc_lepingId IS NOT NULL
+    THEN
+      -- will add reference to leping
+      UPDATE docs.doc
+      SET docs_ids = array_append(docs_ids, doc_lepingId)
+      WHERE id = doc_id;
+    END IF;
+
     UPDATE docs.arv
     SET
       liik      = doc_liik,
@@ -132,9 +145,6 @@ BEGIN
     WHERE parentid = doc_id
     RETURNING id
       INTO arv_id;
-
-    -- arv jaak
-
 
   END IF;
   -- вставка в таблицы документа
@@ -164,9 +174,9 @@ BEGIN
                       coalesce(json_record.kood3, ''),
                       coalesce(json_record.kood4, ''),
                       coalesce(json_record.kood5, ''),
-                      coalesce(json_record.konto, ''),
-                      coalesce(json_record.tunnus, ''),
-                      coalesce(json_record.tp, '')
+              coalesce(json_record.konto, ''),
+              coalesce(json_record.tunnus, ''),
+              coalesce(json_record.tp, '')
       )
       RETURNING id
         INTO arv1_id;
@@ -221,6 +231,14 @@ BEGIN
   WHERE parentid = doc_id;
 
   PERFORM docs.sp_update_arv_jaak(doc_id);
+
+  IF doc_lepingId IS NOT NULL
+  THEN
+    -- will add ref.id to leping
+    UPDATE docs.doc
+    SET docs_ids = array_append(docs_ids, doc_id)
+    WHERE id = doc_lepingId;
+  END IF;
 
   RETURN doc_id;
 END;$BODY$

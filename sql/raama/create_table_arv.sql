@@ -46,6 +46,8 @@ CREATE INDEX idx_arv_rekvid
 CREATE INDEX idx_arv_asutusid
   ON docs.arv USING BTREE (asutusid);
 
+
+ALTER TABLE docs.arv ADD properties JSONB NULL;
 /*
 insert into docs.arv
 	select * from arv

@@ -1,7 +1,7 @@
 ﻿DROP FUNCTION IF EXISTS docs.sp_delete_arv( INTEGER, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_delete_arv(
-  IN  userid        INTEGER,
+  IN  user_id       INTEGER,
   IN  doc_id        INTEGER,
   OUT error_code    INTEGER,
   OUT result        INTEGER,
@@ -26,14 +26,14 @@ BEGIN
     u.ametnik AS user_name
   INTO v_doc
   FROM docs.doc d
-    LEFT OUTER JOIN ou.userid u ON u.id = userid
+    LEFT OUTER JOIN ou.userid u ON u.id = user_id
   WHERE d.id = doc_id;
 
   -- проверка на пользователя и его соответствие учреждению
 
   IF NOT exists(SELECT id
                 FROM ou.userid u
-                WHERE id = userid
+                WHERE id = user_id
                       AND u.rekvid = v_doc.rekvid
   )
   THEN
@@ -49,7 +49,7 @@ BEGIN
 
 
   --	ids =  v_doc.rigths->'delete';
-  IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(userid)
+  IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
   THEN
     RAISE NOTICE 'У пользователя нет прав на удаление';
     error_code = 4;
@@ -106,16 +106,6 @@ BEGIN
           arv1_history    AS arv1,
           arvtasu_history AS arvtasu) row;
 
-  -- Удаление данных из связанных таблиц (удаляем проводки)
-
-  IF (v_doc.docs_ids IS NOT NULL)
-  THEN
-    PERFORM docs.sp_delete_journal(userid, id)
-    FROM docs.journal
-    WHERE id IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
-
-  END IF;
-
   -- удаление связей
   UPDATE docs.doc
   SET docs_ids = array_remove(docs_ids, v_doc.id)
@@ -142,6 +132,27 @@ BEGIN
     rekvid       = v_doc.rekvid,
     status       = DOC_STATUS
   WHERE id = doc_id;
+
+  -- Удаление данных из связанных таблиц (удаляем проводки)
+
+  IF (v_doc.docs_ids IS NOT NULL)
+  THEN
+    PERFORM docs.sp_delete_journal(user_id, parentid)
+    FROM docs.journal
+    WHERE parentid IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
+
+  END IF;
+
+  -- удаляем ссылки на договор
+  IF exists(SELECT id
+            FROM docs.leping1
+            WHERE parentid IN (SELECT unnest(v_doc.docs_ids)))
+  THEN
+    UPDATE docs.doc
+    SET docs_ids = array_remove(docs_ids, doc_id)
+    WHERE id IN (SELECT unnest(v_doc.docs_ids));
+  END IF;
+
 
   result = 1;
   RETURN;

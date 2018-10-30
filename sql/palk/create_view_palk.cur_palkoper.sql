@@ -28,16 +28,20 @@ CREATE VIEW palk.cur_palkoper AS
     o.kood                                                                                           AS osakond,
     lib.kood,
     lib.nimetus,
-    ((enum_range(NULL :: PALK_OPER_LIIK)) [CASE (lib.properties :: JSONB ->> 'liik') :: INTEGER
-                                           WHEN 1
+    ((enum_range(NULL :: PALK_OPER_LIIK)) [CASE ((lib.properties :: JSONB ->> 'liik') || (lib.properties :: JSONB ->> 'asutusest')) :: TEXT
+                                           WHEN '10'
                                              THEN 1
-                                           WHEN 2
+                                           WHEN '20'
                                              THEN 2
-                                           WHEN 4
+                                           WHEN '40'
                                              THEN 2
-                                           WHEN 8
+                                           WHEN '70'
                                              THEN 2
-                                           WHEN 6
+                                           WHEN '71'
+                                             THEN 3
+                                           WHEN '80'
+                                             THEN 2
+                                           WHEN '60'
                                              THEN 2
                                            ELSE 3 END]) :: VARCHAR(20)                               AS liik,
     ((enum_range(NULL :: PALK_LIIK)) [(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT      AS palk_liik,
