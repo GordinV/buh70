@@ -89,7 +89,7 @@ BEGIN
             l_kuu      AS kuu,
             l_aasta    AS aasta,
             l_lepingid AS lepingid,
-            'MUUD'     AS pohjus) row;
+            'MUU'     AS pohjus) row;
 
     -- arv muud paevad
     l_muud := palk.get_puudumine(params :: JSONB);
@@ -120,7 +120,9 @@ BEGIN
 
     l_toopaevad = (select result from sp_workdays(params::json));
 
-    l_hours = (l_toopaevad - (ifnull(l_puhkus, 0) + ifnull(l_haigus, 0) + l_muud)) * v_Tooleping.toopaev - l_tunnid;
+    l_hours = (l_toopaevad - (coalesce(l_puhkus, 0) + coalesce(l_haigus, 0) + l_muud)) * v_Tooleping.toopaev - l_tunnid;
+
+    raise notice 'cal taabel l_toopaevad %, l_puhkus %, l_haigus %,  l_muud %, l_tunnid %', l_toopaevad, l_puhkus, l_haigus,  l_muud, l_tunnid;
 
     -- tähtpäeva parandus (lühipäev)
     l_tahtpaeva_tunnid = (SELECT count(id)

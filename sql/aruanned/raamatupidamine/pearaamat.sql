@@ -13,9 +13,9 @@ CREATE OR REPLACE FUNCTION docs.pearaamat(l_konto  TEXT, l_kpv1 DATE, l_kpv2 DAT
 $BODY$
 WITH algsaldo AS (
     SELECT
-      sum(deebet) - sum(kreedit) AS alg_saldo,
+      coalesce(sum(deebet), 0) - coalesce(sum(kreedit), 0) :: NUMERIC(12, 2) AS alg_saldo,
       konto,
-      rekv_id                    AS rekv_id
+      rekv_id                                                                AS rekv_id
     FROM (
            SELECT
              D.rekvid            AS rekv_id,

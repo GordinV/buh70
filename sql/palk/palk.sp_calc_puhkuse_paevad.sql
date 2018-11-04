@@ -55,14 +55,14 @@ BEGIN
                          WHERE id = leping_id)) row;
 
 
-      SELECT result
+      SELECT qry.result
       INTO l_aasta
-      FROM palk.fnc_get_sunnipaev(1, l_params);
+      FROM palk.fnc_get_sunnipaev(1, l_params) qry;
 
       -- is aasta < 18
       IF l_aasta < 18 OR exists((SELECT 1
                                  FROM palk.tooleping t
-                                 WHERE id = leping_id AND t.ametnik))
+                                 WHERE id = leping_id AND NOT empty(t.ametnik :: INTEGER)))
       -- is ametnik ?
 
       THEN

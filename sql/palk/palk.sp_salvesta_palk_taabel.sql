@@ -11,15 +11,15 @@ DECLARE
   doc_data      JSON = data ->> 'data';
   doc_kuu       INTEGER = doc_data ->> 'kuu';
   doc_aasta     INTEGER = doc_data ->> 'aasta';
-  doc_kokku     NUMERIC(12, 4) = doc_data ->> 'kokku';
-  doc_too       NUMERIC(12, 4) = (doc_data ->> 'too');
-  doc_paev      NUMERIC(12, 4) = doc_data ->> 'paev';
+  doc_kokku     NUMERIC(12, 4) = coalesce((doc_data ->> 'kokku')::numeric(14,4),0);
+  doc_too       NUMERIC(12, 4) = coalesce((doc_data ->> 'too')::numeric(14,4),0);
+  doc_paev      NUMERIC(12, 4) = coalesce((doc_data ->> 'paev')::numeric(14,4),0);
   doc_lepingid  INTEGER = doc_data ->> 'lepingid';
-  doc_ohtu      NUMERIC(12, 4) = doc_data ->> 'ohtu';
-  doc_oo        NUMERIC(12, 4) = doc_data ->> 'oo';
-  doc_tahtpaev  NUMERIC(12, 4) = doc_data ->> 'tahtpaev';
-  doc_puhapaev  NUMERIC(12, 4) = doc_data ->> 'puhapaev';
-  doc_uleajatoo NUMERIC(12, 4) = doc_data ->> 'uleajatoo';
+  doc_ohtu      NUMERIC(12, 4) = coalesce((doc_data ->> 'ohtu')::numeric(14,4),0);
+  doc_oo        NUMERIC(12, 4) = coalesce((doc_data ->> 'oo')::numeric(14,4),0);
+  doc_tahtpaev  NUMERIC(12, 4) = coalesce((doc_data ->> 'tahtpaev')::numeric(14,4),0);
+  doc_puhapaev  NUMERIC(12, 4) = coalesce((doc_data ->> 'puhapaev')::numeric(14,4),0);
+  doc_uleajatoo NUMERIC(12, 4) = coalesce((doc_data ->> 'uleajatoo')::numeric(14,4),0);
   doc_muud      TEXT = doc_data ->> 'muud';
 
   new_history   JSONB;

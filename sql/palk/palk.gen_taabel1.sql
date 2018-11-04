@@ -11,9 +11,6 @@ CREATE FUNCTION palk.gen_taabel1(IN  user_id       INTEGER,
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  l_lepingid  INTEGER; -- = params->>'lepingid';
-  l_kuu       INTEGER; -- ALIAS FOR $2;
-  l_aasta     INTEGER; --ALIAS FOR $3;
   l_hours     NUMERIC(12, 4) = 0;
   json_object JSON;
   v_params    RECORD;
@@ -74,7 +71,17 @@ BEGIN
             json_record.kuu      AS kuu,
             json_record.aasta    AS aasta) row;
 
+    -- проверка на действительность договора
+    IF NOT exists(SELECT id
+                  FROM palk.tooleping t
+                  WHERE t.id = json_record.lepingid AND
+                        (t.lopp IS NULL OR (year(t.lopp) >= json_record.aasta AND month(t.lopp) >= json_record.kuu)))
+    THEN
+      RAISE NOTICE 'Tööleping ei ole kehtiv %', json_record.kuu :: TEXT || '-' || json_record.aasta :: TEXT;
+      CONTINUE;
+    END IF;
     l_hours = palk.sp_calc_taabel1(l_params :: JSONB); -- -> 145 ?
+
 
     IF coalesce(l_hours, 0) > 0
     THEN
@@ -100,9 +107,10 @@ BEGIN
       IF coalesce(l_id, 0) > 0
       THEN
         -- delete previous table version
-        PERFORM palk.sp_delete_palk_kaart(user_id, l_id);
+        PERFORM palk.sp_delete_palk_taabel(user_id, l_id);
       END IF;
     END IF;
+
     result = coalesce(result, 0) + 1;
   END LOOP;
   IF coalesce(result, 0) = 0

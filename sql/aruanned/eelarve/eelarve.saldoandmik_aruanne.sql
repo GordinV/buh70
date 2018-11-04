@@ -26,7 +26,9 @@ WITH qrySaldoAndmik AS (
       THEN ''
     ELSE j1.kood1 END :: VARCHAR(20)  AS tegev,
     j1.kood2 :: VARCHAR(20)           AS allikas,
-    j1.kood3 :: VARCHAR(20)           AS rahavoog,
+    CASE WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
+      THEN '00'
+    ELSE j1.kood3 :: VARCHAR(20) END  AS rahavoog,
     j1.kood5 :: VARCHAR(20)           AS artikkel,
     j1.summa                          AS deebet,
     0 :: NUMERIC                      AS kreedit,
@@ -52,7 +54,9 @@ WITH qrySaldoAndmik AS (
       THEN ''
     ELSE j1.kood1 END :: VARCHAR(20)  AS tegev,
     j1.kood2 :: VARCHAR(20)           AS allikas,
-    j1.kood3 :: VARCHAR(20)           AS rahavoog,
+    CASE WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
+      THEN '00'
+    ELSE j1.kood3 :: VARCHAR(20) END  AS rahavoog,
     j1.kood5 :: VARCHAR(20)           AS artikkel,
     0 :: NUMERIC                      AS deebet,
     j1.summa                          AS kreedit,
@@ -95,7 +99,7 @@ FROM (
            THEN allikas
           ELSE '' END)                AS allikas,
          (CASE WHEN is_rahavoog
-           THEN '00'
+           THEN rahavoog
           ELSE '' END) :: VARCHAR(20) AS rahavoog,
          (CASE WHEN is_tegev
            THEN artikkel
@@ -108,12 +112,12 @@ FROM (
          ELSE 0 END                   AS kreedit,
          tyyp
        FROM qrySaldoAndmik qry
-       WHERE qry.kpv < l_kpv1
+       WHERE qry.kpv <= l_kpv2
              AND konto NOT IN ('999999', '000000', '888888')
        UNION ALL
        SELECT
-         rekvid         AS rekv_id,
-         left(konto, 6) AS konto,
+         rekvid                       AS rekv_id,
+         left(konto, 6)               AS konto,
          (CASE WHEN is_tp
            THEN tp
           ELSE '' END)                AS tp,
@@ -124,21 +128,20 @@ FROM (
            THEN allikas
           ELSE '' END)                AS allikas,
          (CASE WHEN is_rahavoog
-           THEN '00'
+           THEN rahavoog
           ELSE '' END) :: VARCHAR(20) AS rahavoog,
          (CASE WHEN is_tegev
            THEN artikkel
           ELSE '' END) :: VARCHAR(20) AS artikkel,
          CASE WHEN tyyp IS NULL OR tyyp IN (0, 1, 3)
            THEN (deebet) - (kreedit)
-         ELSE 0 END     AS deebet,
+         ELSE 0 END                   AS deebet,
          CASE WHEN tyyp IS NOT NULL AND tyyp IN (2, 4)
            THEN (kreedit) - (deebet)
-         ELSE 0 END     AS kreedit,
+         ELSE 0 END                   AS kreedit,
          tyyp
        FROM qrySaldoAndmik qry
-       WHERE qry.kpv >= l_kpv1
-             AND qry.kpv <= l_kpv2
+       WHERE qry.kpv <= l_kpv2
              AND konto NOT IN ('999999', '000000', '888888')
      ) qry
 GROUP BY rekv_id, konto, tp, tegev, allikas, artikkel, rahavoog, tyyp

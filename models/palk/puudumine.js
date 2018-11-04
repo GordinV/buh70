@@ -56,7 +56,10 @@ module.exports = {
         {name: 'tyyp', type: 'I'},
         {name: 'lepingid', type: 'I'},
         {name: 'kpv1', type: 'D'},
-        {name: 'kpv2', type: 'D'}
+        {name: 'kpv2', type: 'D'},
+        {name: 'paev', type: 'I'},
+        {name: 'summa', type: 'N'}
+
     ],
     saveDoc: `select palk.sp_salvesta_puudumine($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `select error_code, result, error_message from palk.sp_delete_puudumine($1, $2)`, // $1 - userId, $2 - docId

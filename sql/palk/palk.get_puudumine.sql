@@ -1,7 +1,7 @@
 DROP FUNCTION IF EXISTS check_puhkus( INTEGER, INTEGER, INTEGER );
 DROP FUNCTION IF EXISTS palk.check_puhkus( JSONB );
 DROP FUNCTION IF EXISTS palk.check_puudumine( JSONB );
-DROP FUNCTION IF EXISTS palk.get_puudumine(params JSONB);
+DROP FUNCTION IF EXISTS palk.get_puudumine(params JSONB );
 
 CREATE FUNCTION palk.get_puudumine(params JSONB)
   RETURNS NUMERIC
@@ -11,7 +11,7 @@ DECLARE
   l_lepingid       INTEGER = params ->> 'lepingid';
   l_kuu            INTEGER = params ->> 'kuu';
   l_aasta          INTEGER = params ->> 'aasta';
-  l_pohjus         TEXT = coalesce((params ->> 'pohjus'), 'PUHKUS');
+  l_pohjus         TEXT = (params ->> 'pohjus');
 
   l_start_paev     INTEGER;
   l_lopp_paev      INTEGER;
@@ -32,7 +32,7 @@ BEGIN
   WHERE p.lepingid = l_lepingid
         AND (month(p.kpv1) = l_kuu AND year(p.kpv1) = l_aasta
              OR (month(kpv2) = l_kuu AND year(kpv2) = l_aasta))
-        AND p.pohjus = l_pohjus
+        AND (l_pohjus IS NULL OR p.pohjus = l_pohjus)
   LOOP
     -- arvestame alg. päev
     IF month(qryPuhkused.kpv1) = l_kuu AND year(qryPuhkused.kpv1) = l_aasta
@@ -57,14 +57,14 @@ BEGIN
     WHERE lepingid = l_lepingid
           AND ((month(kpv1) = l_kuu AND year(kpv1) = l_aasta)
                OR (month(kpv2) = l_kuu AND year(kpv2) = l_aasta))
-          AND p.pohjus = l_pohjus;
+          AND (l_pohjus IS NULL OR p.pohjus = l_pohjus);
 
     IF coalesce(l_puhkuse_tunnid, 0) > 0
     THEN
       --		lnTunnid = lnTunnid / 10 ^ (position('.' in lnTunnid::text) - 1);
       l_result = l_result + (l_puhkuse_tunnid / qryPuhkused.toopaev);
     ELSE
-
+-- считаем часы по кол-ву раб. дней
       SELECT row_to_json(row)
       INTO params
       FROM (SELECT
@@ -73,7 +73,7 @@ BEGIN
               l_lepingid   AS lepingid,
               l_start_paev AS paev,
               l_lopp_paev  AS lopp) row;
-      l_result = l_result + sp_workdays(params);
+      l_result = l_result + (select result from sp_workdays(params::json));
     END IF;
   END LOOP;
   RETURN l_result;

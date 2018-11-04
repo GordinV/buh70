@@ -37,7 +37,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
   IF is_import IS NULL AND userName IS NULL
   THEN
