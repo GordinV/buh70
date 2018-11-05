@@ -11,8 +11,6 @@ DECLARE
   l_start_paev INTEGER = coalesce((params ->> 'paev') :: INTEGER, 1);
   l_lopp_paev  INTEGER = coalesce((params ->> 'lopp') :: INTEGER, day(get_last_day(l_kpv)));
   l_toopaev    NUMERIC = params ->> 'toopaev';
-  l_puudumised NUMERIC = 0; -- puudumised tunnid
-  v_taabel     RECORD;
   l_params     JSON;
 BEGIN
 
@@ -52,14 +50,12 @@ BEGIN
             l_start_paev AS paev,
             l_lopp_paev  AS lopp) row;
 
-    l_tund = (select result from sp_workdays(l_params :: JSON)) * coalesce(l_toopaev, 8);
+    l_tund = (SELECT result
+              FROM sp_workdays(l_params :: JSON)) * coalesce(l_toopaev, 8);
 
   END IF;
 
-  RAISE NOTICE 'l_tund %, l_toopaev %', l_tund, l_toopaev;
-  l_puudumised = palk.get_puudumine(l_params :: JSONB);
-
-  RETURN coalesce(l_tund, 0) - coalesce(l_puudumised, 0);
+  RETURN coalesce(l_tund, 0);
 
 END;
 $$;

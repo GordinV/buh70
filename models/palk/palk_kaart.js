@@ -66,8 +66,7 @@ module.exports = {
     },
     requiredFields: [
         {name: 'libid', type: 'I'},
-        {name: 'lepingid', type: 'I'},
-        {name: 'summa', type: 'N'}
+        {name: 'lepingid', type: 'I'}
     ],
     saveDoc: `select palk.sp_salvesta_palk_kaart($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `select error_code, result, error_message from palk.sp_delete_palk_kaart($1, $2)`, // $1 - userId, $2 - docId

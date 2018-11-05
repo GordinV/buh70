@@ -170,6 +170,7 @@ BEGIN
       THEN
         l_rate := l_palk_summa / l_hours * 0.01 * l_koormus;
 
+        selg = coalesce(selg,'') + 'Palk kokku:' + ltrim(rtrim(round(l_palk_summa, 2) :: VARCHAR)) + ltEnter;
         selg = coalesce(selg,'') + 'Tunni hind:' + ltrim(rtrim(round(l_rate, 2) :: VARCHAR)) + ltEnter;
 
         summa = f_round(l_rate * l_pk_summa * 0.01 * l_tunnid_kokku, l_round);

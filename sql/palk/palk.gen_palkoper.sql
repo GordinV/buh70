@@ -59,7 +59,7 @@ BEGIN
   END IF;
 
   -- выбираем договора для подготовки расчет
-  raise notice 'l_leping_ids %, l_isik_ids %, l_osakond_ids %', l_leping_ids, l_isik_ids, l_osakond_ids;
+  RAISE NOTICE 'l_leping_ids %, l_isik_ids %, l_osakond_ids %', l_leping_ids, l_isik_ids, l_osakond_ids;
 
   FOR v_tooleping IN
   SELECT
@@ -180,7 +180,8 @@ BEGIN
           coalesce((l_tulemus_json ->> 'pm') :: NUMERIC, 0) :: NUMERIC  AS pensmaks,
           coalesce((l_tulemus_json ->> 'mvt') :: NUMERIC, 0) :: NUMERIC AS tulubaas,
           v_lib.tululiik                                                AS tululiik,
-          true as kas_lausend
+          l_tulemus_json ->> 'selg' :: TEXT                             AS muud,
+          TRUE                                                          AS kas_lausend
         INTO v_palk_oper
         FROM palk.com_palk_lib AS l
         WHERE l.id = V_lib.id;

@@ -42,6 +42,23 @@ BEGIN
     RETURN 0;
   END IF;
 
+  -- проверка на уникальность
+  kaart_id = (SELECT id
+              FROM palk.palk_kaart
+              WHERE lepingid = doc_lepingid AND libid = doc_libid AND (doc_id = 0 OR id <> doc_id));
+
+  IF kaart_id IS NOT NULL
+  THEN
+    -- если создание записи, то отдадим номер уже существующей и обновим ее иначе вернем ошибку
+    IF doc_id = 0
+    THEN
+      doc_id = kaart_id;
+    ELSE
+      RAISE EXCEPTION 'Kiri sele parametridega juba olemas';
+      RETURN 0;
+    END IF;
+  END IF;
+
   IF (doc_id IS NULL)
   THEN
     doc_id = doc_data ->> 'id';
@@ -109,7 +126,9 @@ BEGIN
   END IF;
 
   RETURN kaart_id;
-
+  EXCEPTION WHEN OTHERS
+  THEN
+    RETURN 0;
 END;
 $BODY$;
 
