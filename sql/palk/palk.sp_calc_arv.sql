@@ -28,7 +28,7 @@ DECLARE
     THEN 100
                                                                       ELSE l_palk_summa END);
   is_alimentid    BOOLEAN = coalesce((params ->> 'alimentid') :: BOOLEAN, FALSE); -- начисление алиментов
-  l_tund          integer = params ->> 'tund'; -- tunni liik
+  l_tund          INTEGER = params ->> 'tund'; -- tunni liik
   l_tunnid_kokku  NUMERIC = params ->> 'tunnid_kokku'; -- tunnid taabeli jargi
 
   l_tululiik      TEXT = coalesce((params ->> 'tululiik') :: TEXT, '10');
@@ -61,6 +61,8 @@ DECLARE
   l_toopaev       NUMERIC = 8;
   l_rekvid        INTEGER;
   l_isik_id       INTEGER;
+
+  l_tulud_kokku   NUMERIC; -- temp
 
 BEGIN
 
@@ -164,17 +166,17 @@ BEGIN
 
       l_hours = palk.get_work_hours(l_params :: JSONB);
 
-      selg = coalesce(selg,'') + 'Kokku tunnid kuues,:' + ltrim(rtrim(round(l_hours, 2) :: VARCHAR)) + ltEnter;
+      selg = coalesce(selg, '') + 'Kokku tunnid kuues,:' + ltrim(rtrim(round(l_hours, 2) :: VARCHAR)) + ltEnter;
 
       IF l_tasuliik = array_position((enum_range(NULL :: PALK_TASU_LIIK)), 'ASTMEPALK')
       THEN
         l_rate := l_palk_summa / l_hours * 0.01 * l_koormus;
 
-        selg = coalesce(selg,'') + 'Palk kokku:' + ltrim(rtrim(round(l_palk_summa, 2) :: VARCHAR)) + ltEnter;
-        selg = coalesce(selg,'') + 'Tunni hind:' + ltrim(rtrim(round(l_rate, 2) :: VARCHAR)) + ltEnter;
+        selg = coalesce(selg, '') + 'Palk kokku:' + ltrim(rtrim(round(l_palk_summa, 2) :: VARCHAR)) + ltEnter;
+        selg = coalesce(selg, '') + 'Tunni hind:' + ltrim(rtrim(round(l_rate, 2) :: VARCHAR)) + ltEnter;
 
         summa = f_round(l_rate * l_pk_summa * 0.01 * l_tunnid_kokku, l_round);
-        selg = coalesce(selg,'') + 'parandamine:' + ltrim(rtrim(round(l_rate, 2) :: VARCHAR)) + '*' +
+        selg = coalesce(selg, '') + 'parandamine:' + ltrim(rtrim(round(l_rate, 2) :: VARCHAR)) + '*' +
                ltrim(rtrim(round(l_pk_summa, 2) :: VARCHAR)) + ' * 0.01 * ' +
                ltrim(rtrim(round(l_tunnid_kokku, 3) :: VARCHAR)) + ltEnter;
 
@@ -184,7 +186,7 @@ BEGIN
         --tunni alusel
         summa = f_round((l_palk_summa) * l_tunnid_kokku, l_round);
         l_rate = l_palk_summa;
-        selg = coalesce(selg,'') + 'arvestus:' + ltrim(rtrim(l_palk_summa :: TEXT)) + '*' +
+        selg = coalesce(selg, '') + 'arvestus:' + ltrim(rtrim(l_palk_summa :: TEXT)) + '*' +
                ltrim(rtrim(round(l_tunnid_kokku, 3) :: TEXT)) + ltEnter;
 
       END IF;
@@ -192,23 +194,24 @@ BEGIN
     ELSE
       -- not percent
       summa = f_round(l_pk_summa, l_round);
-      selg = coalesce(selg,'') + ltrim(rtrim(l_pk_summa :: VARCHAR)) + '/' + ltEnter;
+      selg = coalesce(selg, '') + ltrim(rtrim(l_pk_summa :: VARCHAR)) + '/' + ltEnter;
     END IF;
   ELSE
-    selg = coalesce(selg,'') + ' Käsi arvestus või ümardamine ' + ltEnter;
+    selg = coalesce(selg, '') + ' Käsi arvestus või ümardamine ' + ltEnter;
     summa = l_alus_summa;
   END IF;
 
   --TKI arvestus
-    SELECT row_to_json(row)
+  SELECT row_to_json(row)
   INTO l_params
   FROM (SELECT
           summa      AS alus_summa,
           l_TKI_maar AS summa,
           7          AS liik) row;
 
-  tki = f_round((select qry.summa from palk.sp_calc_kinni(user_id, l_params :: JSON) as qry), l_round);
-  selg = coalesce(selg,'') + 'TKI arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_TKI_maar) :: TEXT + '*' +
+  tki = f_round((SELECT qry.summa
+                 FROM palk.sp_calc_kinni(user_id, l_params :: JSON) AS qry), l_round);
+  selg = coalesce(selg, '') + 'TKI arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_TKI_maar) :: TEXT + '*' +
          l_TKI_maar :: TEXT + ltEnter;
 
   -- PM arvestus
@@ -218,10 +221,12 @@ BEGIN
           summa     AS alus_summa,
           l_PM_maar AS summa,
           8         AS liik) row;
-  pm = f_round(coalesce((select qry_pm.summa from palk.sp_calc_kinni(user_id, l_params :: JSON) as qry_pm),0), l_round) * coalesce(l_PM_maksustav,0);
+  pm = f_round(coalesce((SELECT qry_pm.summa
+                         FROM palk.sp_calc_kinni(user_id, l_params :: JSON) AS qry_pm), 0), l_round) *
+       coalesce(l_PM_maksustav, 0);
 
-  selg = coalesce(selg,'') + 'PM arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_PM_maar) :: TEXT + '*' +
-         coalesce(l_PM_maksustav,0) :: TEXT + ltEnter;
+  selg = coalesce(selg, '') + 'PM arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_PM_maar) :: TEXT + '*' +
+         coalesce(l_PM_maksustav, 0) :: TEXT + ltEnter;
 
   --SM arvestus
   SELECT row_to_json(row)
@@ -231,12 +236,14 @@ BEGIN
           l_SM_maar  AS summa,
           l_min_sots AS minsots) row;
 
-  sm = f_round(coalesce((select qry.summa from palk.sp_calc_sots(user_id, l_params :: JSON) as qry),0), l_round) * coalesce(l_SM_maksustav,0);
+  sm = f_round(coalesce((SELECT qry.summa
+                         FROM palk.sp_calc_sots(user_id, l_params :: JSON) AS qry), 0), l_round) *
+       coalesce(l_SM_maksustav, 0);
 
-  selg = coalesce(selg,'') + 'SM arvestus: ' + (CASE WHEN summa < l_min_palk * l_min_sots
+  selg = coalesce(selg, '') + 'SM arvestus: ' + (CASE WHEN summa < l_min_palk * l_min_sots
     THEN l_min_palk
-                                   ELSE round(summa, 2) END) :: TEXT +
-         '*' + (0.01 * l_SM_maar) :: TEXT + '*' + coalesce(l_SM_maksustav,0) :: TEXT + ltEnter;
+                                                 ELSE round(summa, 2) END) :: TEXT +
+         '*' + (0.01 * l_SM_maar) :: TEXT + '*' + coalesce(l_SM_maksustav, 0) :: TEXT + ltEnter;
 
   -- TKA arvestus
   SELECT row_to_json(row)
@@ -247,8 +254,9 @@ BEGIN
           0          AS asutusest,
           l_TKA_maar AS summa) row;
 
-  tka = f_round(coalesce((select qry.summa from palk.sp_calc_muuda(user_id,l_params :: JSON) as qry),0), l_round);
-  selg = coalesce(selg,'') + 'TKA arvestus:' + round(summa, 2) :: TEXT +
+  tka = f_round(coalesce((SELECT qry.summa
+                          FROM palk.sp_calc_muuda(user_id, l_params :: JSON) AS qry), 0), l_round);
+  selg = coalesce(selg, '') + 'TKA arvestus:' + round(summa, 2) :: TEXT +
          '*' + (0.01 * l_TKA_maar) :: TEXT + ltEnter;
 
   IF l_lepingid IS NOT NULL AND l_libid IS NOT NULL
@@ -265,8 +273,9 @@ BEGIN
     SELECT
       sum(po.tulubaas)                                          AS isiku_tulubaas,
       sum(po.tulubaas)
-        FILTER (WHERE po.tululiik :: TEXT = l_tululiik :: TEXT) AS kasutatud_mvt
-    INTO l_isiku_mvt, l_kasutatud_mvt
+        FILTER (WHERE po.tululiik :: TEXT = l_tululiik :: TEXT) AS kasutatud_mvt,
+      sum(po.summa)                                             AS tulud_kokku
+    INTO l_isiku_mvt, l_kasutatud_mvt, l_tulud_kokku
     FROM palk.cur_palkoper po
       INNER JOIN palk.com_toolepingud t ON t.id = po.lepingId
     WHERE t.parentid = l_isik_id
@@ -285,6 +294,8 @@ BEGIN
 
   END IF;
 
+  RAISE NOTICE 'sp_calc_arv l_tulud_kokku %, l_mvt_kokku %, l_isiku_mvt %, l_kasutatud_mvt %, l_alus_summa %', l_tulud_kokku, l_mvt_kokku, l_isiku_mvt, l_kasutatud_mvt, l_alus_summa;
+
   IF is_umardamine AND l_mvt_kokku > 0
   THEN
     -- не будем считать MVT, а используем уже примененный
@@ -294,23 +305,31 @@ BEGIN
     SELECT row_to_json(row)
     INTO l_params
     FROM (SELECT
-            summa                    AS summa,
-            coalesce(l_mvt_kokku, 0) AS mvt_kokku,
+            summa                      AS summa,
+            coalesce(l_mvt_kokku, 0)   AS mvt_kokku,
             -- should select from taotlused
-            coalesce(l_isiku_mvt, 0) AS kokku_kasutatud_mvt,
+            coalesce(l_isiku_mvt, 0)   AS kokku_kasutatud_mvt,
+            coalesce(l_tulud_kokku, 0) AS tulud_kokku,
+            -- enne arvestatud isiku tulud
             -- should select from palk.palk_oper
-            coalesce(tki,0)                      AS tki,
-            coalesce(pm,0)                       AS pm) row;
+            coalesce(tki, 0)           AS tki,
+            coalesce(pm, 0)            AS pm) row;
 
     mvt = palk.fnc_calc_mvt(l_params :: JSONB);
+
+    IF mvt > summa
+    THEN
+      -- обработаем возможную ошибку
+      mvt = summa;
+    END IF;
 
   END IF;
 
   -- TM arvestus
   tm = palk.fnc_calc_tm(summa, mvt, tki, pm, l_tululiik);
 
-  selg = coalesce(selg,'') + 'TM arvestus:' + round(tm, 2) :: TEXT + ltEnter;
-  IF summa is not null
+  selg = coalesce(selg, '') + 'TM arvestus:' + round(tm, 2) :: TEXT + ltEnter;
+  IF summa IS NOT NULL
   THEN
     result = 1;
   ELSE
@@ -328,10 +347,14 @@ BEGIN
 
 END;
 $$;
-
-SELECT * FROM palk.sp_calc_arv(1,'{"lepingid":4,"libid":384,"kpv":20180501}'::json)
-
 /*
+SELECT *
+FROM palk.sp_calc_arv(1, '{
+  "lepingid": 4,
+  "libid": 384,
+  "kpv": 20180501
+}' :: JSON)
+
 select * from palk.sp_calc_arv(1,'{"lepingid":4, "libid":386, "kpv":"2018-04-09"}'::JSON)
 SELECT * FROM palk.sp_calc_arv(1,'{ "alus_summa": 100,"kpv": "2018-04-09"}' :: JSON)
 SELECT * FROM palk.sp_calc_arv(1,'{ "alus_summa": 100,"tululiik":"13","kpv": "2018-04-09"}' :: JSON)

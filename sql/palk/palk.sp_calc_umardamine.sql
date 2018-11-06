@@ -175,7 +175,8 @@ BEGIN
          v_arv.sm - round(v_fakt_arv.sm, 2) <> 0 OR
          v_arv.tki - round(v_fakt_arv.tki, 2) <> 0 OR
          v_arv.tka - round(v_fakt_arv.tka, 2) <> 0 OR
-         v_arv.pm - round(v_fakt_arv.pm, 2) <> 0
+         v_arv.pm - round(v_fakt_arv.pm, 2) <> 0 OR
+         v_arv.mvt - round(v_fakt_arv.mvt, 2) <> 0
       THEN
         --saving diff
         -- will find last arvestus
@@ -213,7 +214,7 @@ BEGIN
           coalesce(v_arv.tki - round(v_fakt_arv.tki, 2), 0) :: NUMERIC AS tootumaks,
           coalesce(v_arv.tka - round(v_fakt_arv.tka, 2), 0) :: NUMERIC AS tka,
           coalesce(v_arv.pm - round(v_fakt_arv.pm, 2), 0) :: NUMERIC   AS pensmaks,
-          coalesce(v_arv.mvt, 0) :: NUMERIC                            AS tulubaas,
+          coalesce(v_arv.mvt - round(v_fakt_arv.mvt, 2), 0) :: NUMERIC AS tulubaas,
           v_tululiik.tululiik                                          AS tululiik,
           'Umardamine' :: TEXT || v_arv.selg                           AS selg
         INTO v_palk_oper;

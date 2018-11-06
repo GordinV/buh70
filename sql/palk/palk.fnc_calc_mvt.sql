@@ -6,34 +6,25 @@ $BODY$
 
 -- tnMVT_kokku personal taotluse summa
 DECLARE
-  l_alus_summa          NUMERIC = coalesce((params ->> 'summa') :: NUMERIC, 0); -- tulu
-  l_mvt_kokku           NUMERIC = coalesce((params ->> 'mvt_kokku') :: NUMERIC, 0); -- taotluse summa
-  l_kokku_kasutatud_mvt NUMERIC = coalesce((params ->> 'kokku_kasutatud_mvt') :: NUMERIC,
-                                           0); -- kokku kasutatud mvt kuues
-  l_tki                 NUMERIC = coalesce((params ->> 'tki') :: NUMERIC, 0);
-  l_pm                  NUMERIC = coalesce((params ->> 'pm') :: NUMERIC, 0);
+  l_alus_summa            NUMERIC = coalesce((params ->> 'summa') :: NUMERIC, 0); -- tulu
+  l_mvt_kokku             NUMERIC = coalesce((params ->> 'mvt_kokku') :: NUMERIC, 0); -- taotluse summa
+  l_kokku_kasutatud_mvt   NUMERIC = coalesce((params ->> 'kokku_kasutatud_mvt') :: NUMERIC,
+                                             0); -- kokku kasutatud mvt kuues
 
-  l_isiku_MVT           NUMERIC = palk.calc_mvt(l_alus_summa, l_mvt_kokku);
-  l_MVT                 NUMERIC = l_isiku_MVT;
+  l_enne_arvestatud_tulud NUMERIC = coalesce((params ->> 'tulud_kokku') :: NUMERIC, 0); -- enne arvesatud tulud
+
+  l_tki                   NUMERIC = coalesce((params ->> 'tki') :: NUMERIC, 0);
+  l_pm                    NUMERIC = coalesce((params ->> 'pm') :: NUMERIC, 0);
+
+  l_isiku_MVT             NUMERIC = palk.calc_mvt((l_alus_summa + l_enne_arvestatud_tulud), l_mvt_kokku); -- сумма, которую можно использовать как мвт
+  l_MVT                   NUMERIC = l_isiku_MVT - l_kokku_kasutatud_mvt;
 
 BEGIN
-  IF l_isiku_MVT > l_alus_summa
-  THEN
-    -- if tulu summa more then MVT
-    l_MVT = l_alus_summa;
-  END IF;
-
-  IF l_kokku_kasutatud_mvt > 0
-  THEN
-    l_MVT = l_isiku_MVT - l_kokku_kasutatud_mvt;
-  END IF;
-
 
   IF l_MVT > (l_alus_summa - l_tki - l_pm)
   THEN
     l_MVT = l_alus_summa - l_tki - l_pm;
   END IF;
-
 
   IF l_alus_summa < 0
   THEN
@@ -41,13 +32,14 @@ BEGIN
     l_MVT = 0;
   END IF;
 
-  IF l_isiku_MVT > l_kokku_kasutatud_mvt
+  IF l_isiku_MVT > 0 AND l_isiku_MVT > l_kokku_kasutatud_mvt
   THEN
     -- umardamine, miinus summa
     l_MVT = l_isiku_MVT - l_kokku_kasutatud_mvt;
   END IF;
 
   l_MVT = round(l_MVT, 2);
+
   RETURN l_MVT;
 
 

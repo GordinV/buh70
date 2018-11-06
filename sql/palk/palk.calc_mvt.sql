@@ -10,11 +10,12 @@ DECLARE
   l_tulu_max_piir     NUMERIC(14, 4) = 1200;
   l_tulu_min_piir     NUMERIC(14, 4) = 900;
   l_max_MVT            NUMERIC(14, 4) = l_max_lubatatud_MVT - l_max_lubatatud_MVT / l_tulu_min_piir *
-                                                             (tulu -
-                                                              l_tulu_max_piir); --500 - 500 / 900 × 	(tulu - 1200)
+                                                              (tulu -
+                                                               l_tulu_max_piir); --500 - 500 / 900 × 	(tulu - 1200)
   l_arvestatud_MVT     NUMERIC(14, 4) = l_max_MVT; -- расчетная льгота
 
 BEGIN
+
   IF l_max_MVT > mvt
   THEN
     --vottame nii palju kui lubatatud

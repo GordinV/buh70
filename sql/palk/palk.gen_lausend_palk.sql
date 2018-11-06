@@ -19,7 +19,6 @@ DECLARE
   new_history   JSONB;
   a_docs_ids    INTEGER [];
 BEGIN
-  RAISE NOTICE 'start gen lausend %', l_palkoper_id;
   SELECT
     kasutaja,
     rekvid
@@ -170,7 +169,6 @@ BEGIN
             (row_to_json(v_journal1)) || ']}}');
 
   /* salvestan lausend */
-  RAISE NOTICE 'l_json %', l_json;
   result = docs.sp_salvesta_journal(l_json :: JSON, user_id, v_palk_oper.rekvId);
 
   IF result IS NOT NULL AND result > 0
