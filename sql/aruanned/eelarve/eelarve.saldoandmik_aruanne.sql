@@ -42,6 +42,9 @@ WITH qrySaldoAndmik AS (
     INNER JOIN docs.journal j ON j.parentid = d.id
     INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
     INNER JOIN libs.library l ON l.library = 'KONTOD' AND ltrim(rtrim(l.kood)) = ltrim(rtrim(j1.deebet))
+  WHERE d.rekvid IN (SELECT rekv_id
+                     FROM get_asutuse_struktuur(l_rekvid))
+        AND j.kpv <= l_kpv2
   UNION ALL
   SELECT
     j.kpv,
@@ -112,37 +115,7 @@ FROM (
          ELSE 0 END                   AS kreedit,
          tyyp
        FROM qrySaldoAndmik qry
-       WHERE qry.kpv <= l_kpv2
-             AND konto NOT IN ('999999', '000000', '888888')
-       UNION ALL
-       SELECT
-         rekvid                       AS rekv_id,
-         left(konto, 6)               AS konto,
-         (CASE WHEN is_tp
-           THEN tp
-          ELSE '' END)                AS tp,
-         (CASE WHEN is_tegev
-           THEN tegev
-          ELSE '' END)                AS tegev,
-         (CASE WHEN is_allikas
-           THEN allikas
-          ELSE '' END)                AS allikas,
-         (CASE WHEN is_rahavoog
-           THEN rahavoog
-          ELSE '' END) :: VARCHAR(20) AS rahavoog,
-         (CASE WHEN is_tegev
-           THEN artikkel
-          ELSE '' END) :: VARCHAR(20) AS artikkel,
-         CASE WHEN tyyp IS NULL OR tyyp IN (0, 1, 3)
-           THEN (deebet) - (kreedit)
-         ELSE 0 END                   AS deebet,
-         CASE WHEN tyyp IS NOT NULL AND tyyp IN (2, 4)
-           THEN (kreedit) - (deebet)
-         ELSE 0 END                   AS kreedit,
-         tyyp
-       FROM qrySaldoAndmik qry
-       WHERE qry.kpv <= l_kpv2
-             AND konto NOT IN ('999999', '000000', '888888')
+       WHERE konto NOT IN ('999999', '000000', '888888')
      ) qry
 GROUP BY rekv_id, konto, tp, tegev, allikas, artikkel, rahavoog, tyyp
 

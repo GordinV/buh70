@@ -47,14 +47,14 @@ DECLARE
   docs          INTEGER [];
   l_params      JSON;
   l_result      INTEGER;
-  is_import BOOLEAN = data->>'import';
+  is_import     BOOLEAN = data ->> 'import';
 BEGIN
   SELECT kasutaja
   INTO userName
   FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
 
-  IF is_import is null and userName IS NULL
+  IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
@@ -68,6 +68,14 @@ BEGIN
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
   THEN
+
+    IF doc_summa = 0 AND doc_tulumaks = 0 AND doc_sotsmaks = 0 AND doc_tootumaks = 0 AND doc_pensmaks = 0 AND
+       doc_tulubaas = 0 AND doc_tka = 0
+    THEN
+      -- нулевая операция, нет смысла
+      RAISE NOTICE 'Kõik summad = 0';
+      RETURN 0;
+    END IF;
 
     SELECT row_to_json(row)
     INTO new_history

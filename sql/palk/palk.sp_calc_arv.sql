@@ -63,6 +63,7 @@ DECLARE
   l_isik_id       INTEGER;
 
   l_tulud_kokku   NUMERIC; -- temp
+  is_pm           NUMERIC = 1;
 
 BEGIN
 
@@ -126,6 +127,17 @@ BEGIN
           AND kuu = month(l_kpv)
           AND aasta = year(l_kpv);
 
+  END IF;
+
+  -- проверим на наличие в карте ПН
+  IF NOT exists(SELECT 1
+                FROM palk.palk_kaart pk
+                  INNER JOIN com_palklib l ON l.id = pk.libid
+                WHERE pk.lepingid = l_lepingid
+                      AND pk.status = 1
+                      AND l.liik = 8)
+  THEN
+    is_pm = 0;
   END IF;
 
   SELECT
@@ -221,7 +233,8 @@ BEGIN
           summa     AS alus_summa,
           l_PM_maar AS summa,
           8         AS liik) row;
-  pm = f_round(coalesce((SELECT qry_pm.summa
+
+  pm = is_pm * f_round(coalesce((SELECT qry_pm.summa
                          FROM palk.sp_calc_kinni(user_id, l_params :: JSON) AS qry_pm), 0), l_round) *
        coalesce(l_PM_maksustav, 0);
 

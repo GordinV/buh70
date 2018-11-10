@@ -20,10 +20,10 @@ DECLARE
   l_MVT                   NUMERIC = l_isiku_MVT - l_kokku_kasutatud_mvt;
 
 BEGIN
-
   IF l_MVT > (l_alus_summa - l_tki - l_pm)
   THEN
     l_MVT = l_alus_summa - l_tki - l_pm;
+    l_isiku_MVT = l_MVT; -- поправим мвт
   END IF;
 
   IF l_alus_summa < 0
@@ -51,10 +51,11 @@ COST 100;
 
 GRANT EXECUTE ON FUNCTION palk.fnc_calc_mvt(JSONB) TO dbkasutaja;
 
+select palk.fnc_calc_mvt('{"tulud_kokku":700, "kokku_kasutatud_mvt":500,"summa":200, "mvt_kokku":500, "tki":3.2, "pm":4}'::jsonb)
+
 /*
 select palk.fnc_calc_mvt('{"summa":1000}'::jsonb)
 select palk.fnc_calc_mvt('{"summa":1000, "mvt_kokku":500}'::jsonb)
 select palk.fnc_calc_mvt('{"summa":1000, "mvt_kokku":500, "kokku_kasutatud_mvt":300}'::jsonb)
-select palk.fnc_calc_mvt('{"summa":200, "mvt_kokku":500, "tki":3.2, "pm":4}'::jsonb)
 
 */

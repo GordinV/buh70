@@ -11,7 +11,7 @@ DECLARE
   l_TM      NUMERIC = 0;
   l_tm_maar NUMERIC(14, 2) = coalesce((SELECT tun1
                                        FROM libs.library
-                                       WHERE kood = l_tululiik :: VARCHAR(20) AND library = 'MAKSUKOOD'), l_tm_maar) :: NUMERIC
+                                       WHERE kood = l_tululiik :: VARCHAR(20) AND library = 'MAKSUKOOD' limit 1), l_tm_maar) :: NUMERIC
                              / 100;
 BEGIN
 
@@ -43,4 +43,8 @@ select palk.fnc_calc_tm(1000, 500, 16, 20, '10');
 select palk.fnc_calc_tm(200, 500, 3.2, 4, '10');
 select palk.fnc_calc_tm(200, 500, 3.2, 4, null, 20);
 
+
+SELECT tun1
+                                       FROM libs.library
+                                       WHERE kood = '10' :: VARCHAR(20) AND library = 'MAKSUKOOD'
 */

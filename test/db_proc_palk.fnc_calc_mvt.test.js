@@ -43,7 +43,8 @@ describe('palk.fnc_calc_mvt tests', () => {
             summa: 200,
             mvt_kokku: 500,
             tki: 3.2,
-            pm:4
+            pm: 4,
+            tulud_kokku: 200
         };
         let returnValue = await db.queryDb(sql, [params]);
         expect(returnValue).toBeDefined();
@@ -53,5 +54,21 @@ describe('palk.fnc_calc_mvt tests', () => {
         expect(summa).toBe(192.8);
     });
 
+    it(`Использован мвт 500, следующая сумма должна получить льготу = 0`, async () => {
+        let params = {
+            summa: 200,
+            mvt_kokku: 500,
+            tki: 3.2,
+            pm: 4,
+            tulud_kokku: 700,
+            kokku_kasutatud_mvt:500
+        };
+        let returnValue = await db.queryDb(sql, [params]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBe(1);
+        let summa = Number(returnValue.data[0].summa);
+        expect(summa).toBe(0);
+    });
 
 });

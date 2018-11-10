@@ -54,7 +54,7 @@ BEGIN
 
     l_vast_isik_id = (SELECT new_id
                       FROM import_log
-                      WHERE old_id = v_pv.vastisikid AND lib_name = 'USERID');
+                      WHERE old_id = v_pv.vastisikid AND lib_name = 'ASUTUS');
     -- сохранение
     SELECT
       coalesce(pv_id, 0) AS id,

@@ -171,12 +171,12 @@ BEGIN
             AND po.palk_liik = 'ARVESTUSED';
 
       -- check if we need to round taxes
-      IF v_arv.tm - round(v_fakt_arv.tm, 2) <> 0 OR
-         v_arv.sm - round(v_fakt_arv.sm, 2) <> 0 OR
-         v_arv.tki - round(v_fakt_arv.tki, 2) <> 0 OR
-         v_arv.tka - round(v_fakt_arv.tka, 2) <> 0 OR
-         v_arv.pm - round(v_fakt_arv.pm, 2) <> 0 OR
-         v_arv.mvt - round(v_fakt_arv.mvt, 2) <> 0
+      IF coalesce(v_arv.tm,0) - round(coalesce(v_fakt_arv.tm,0), 2) <> 0 OR
+         coalesce(v_arv.sm,0) - round(coalesce(v_fakt_arv.sm,0), 2) <> 0 OR
+         coalesce(v_arv.tki,0) - round(coalesce(v_fakt_arv.tki,0), 2) <> 0 OR
+         coalesce(v_arv.tka,0) - round(coalesce(v_fakt_arv.tka,0), 2) <> 0 OR
+         coalesce(v_arv.pm,0) - round(coalesce(v_fakt_arv.pm,0), 2) <> 0 OR
+         coalesce(v_arv.mvt,0) - round(coalesce(v_fakt_arv.mvt,0), 2) <> 0
       THEN
         --saving diff
         -- will find last arvestus

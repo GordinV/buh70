@@ -31,6 +31,8 @@ DECLARE
   l_tulemus_json      JSON;
   v_user              RECORD;
   l_alus              NUMERIC;
+
+  l_count             INTEGER;
 BEGIN
   SELECT
     kasutaja,
@@ -103,6 +105,7 @@ BEGIN
       pk.tululiik
     FROM palk.cur_palk_kaart pk
     WHERE lepingid = v_tooleping.id
+          AND status = 1
           AND pk.libid IN (SELECT value :: INTEGER
                            FROM json_array_elements_text(l_lib_ids))
     ORDER BY pk.liik, CASE WHEN empty(pk.tululiik)
