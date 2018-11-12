@@ -40,7 +40,6 @@ DECLARE
   new_history     JSONB;
   docs            INTEGER [];
   a_pv_opers      TEXT [] = enum_range(NULL :: PV_OPERATSIOONID);
-  a_dokvaluuta    TEXT [] = enum_range(NULL :: DOK_VALUUTA);
   is_import       BOOLEAN = data ->> 'import';
 BEGIN
 

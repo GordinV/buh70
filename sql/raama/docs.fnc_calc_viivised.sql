@@ -1,105 +1,110 @@
 DROP FUNCTION IF EXISTS docs.fnc_calc_viivised( INTEGER, params JSON );
+DROP FUNCTION IF EXISTS docs.fnc_calc_viivised( params JSON );
 
-CREATE FUNCTION docs.fnc_calc_viivised(IN  user_id       INTEGER, IN params JSON,
-                                       OUT selg          TEXT,
-  --                                 OUT tki           NUMERIC,
-                                       OUT error_code    INTEGER,
-                                       OUT result        INTEGER,
-                                       OUT error_message TEXT)
+CREATE FUNCTION docs.fnc_calc_viivised(IN  params JSON,
+                                       OUT selg   JSON,
+                                       OUT summa  NUMERIC)
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  l_asutus_id    INTEGER = params ->> 'asutus_id';
-  l_arve_id      INTEGER = params ->> 'arve_id';
-  l_leping_id    INTEGER = params ->> 'leping_id';
-  l_liik         INTEGER = params ->> 'liik'; -- 1 -  arve, 2 - leping, 3 - asutus
-  l_viivise_maar INTEGER = params ->> 'viivise_maar';
-  l_kpv          DATE = coalesce((params ->> 'kpv') :: DATE, current_date);
+  l_viivise_maar NUMERIC = COALESCE((params ->> 'viivise_maar') :: NUMERIC, 6); -- 6% в год
+  l_kpv          DATE = coalesce((params ->> 'kpv') :: DATE, current_date); -- расчет на дату
+  l_volg         NUMERIC = params ->> 'summa'; -- сумма долга
+  l_tahtaeg      DATE = params ->> 'tahtaeg'; -- срок оплаты
 
-  v_arved        RECORD;
-  l_viivis_kokku NUMERIC(12, 2) = 0;
-  l_ids          INTEGER [] = '{}' :: INTEGER [] || l_leping_id;
-  l_json         JSONB = '[]'::jsonb;
+  l_jaak         NUMERIC = l_volg;
+  l_paevad       INTEGER = l_kpv - l_tahtaeg;
+  l_viivis_kokku NUMERIC = 0; --l_jaak * l_paevad * l_viivise_maar * 0.01;
+  l_json         JSONB = '[]';
+  v_tasud        RECORD;
+  l_viivis       NUMERIC = 0;
 BEGIN
-  RAISE NOTICE ' l_ids %', l_ids;
-
-
-  DROP TABLE IF EXISTS temp_viivis;
-
-  CREATE TEMPORARY TABLE temp_viivis (
-    arve_id  INTEGER,
-    viivis numeric(14,2),
-    selgitus JSONB
-  );
-  -- otsime arved
-  FOR v_arved IN
-  SELECT
-    d.id,
-    a.summa,
-    a.kpv,
-    a.asutusid,
-    a.jaak,
-    a.tahtaeg,
-    a.tasud,
-    (l_kpv - a.tahtaeg) :: INTEGER AS paevad
-  FROM docs.arv a
-    INNER JOIN docs.doc d ON d.id = a.parentid
-  WHERE d.rekvid = (SELECT rekvid
-                    FROM ou.userid
-                    WHERE id = user_id)
-        AND coalesce(a.tahtaeg, current_date) < l_kpv
-        AND year(a.kpv) >= 2011
-        AND coalesce(a.jaak, 0) > 0
-        --        or coalesce(a.tahtaeg, current_date)   -- не оплаченные или оплаченные с опозданием
-        AND (l_ids IS NOT NULL AND d.docs_ids @> l_ids
-             OR l_arve_id IS NOT NULL AND d.id = l_arve_id
-             OR l_asutus_id IS NOT NULL AND a.asutusid = l_asutus_id)
-
-  LOOP
-    l_viivis_kokku = v_arved.jaak * v_arved.paevad * l_viivise_maar * 0.01;
-    RAISE NOTICE ' l_viivis_kokku %, v_arved.id %', l_viivis_kokku, v_arved;
-
-    l_json =   l_json || (select to_jsonb(row)
-    FROM (SELECT
-            l_viivis_kokku  AS viivis_kokku,
-            l_kpv           AS kpv,
-            l_viivise_maar  AS maar,
-            v_arved.summa   AS arve_summa,
-            v_arved.tahtaeg AS tahtaeg,
-            v_arved.tasud   AS viimane_tasu_kpv,
-            v_arved.jaak    AS volg,
-            v_arved.paevad) row);
-
-    INSERT INTO temp_viivis (arve_id, viivis, selgitus)
-    VALUES (v_arved.id, l_viivis_kokku, l_json);
--- @todo arvesta juba salvestatud intressid
-  END LOOP;
-  result = 1;
-  RETURN;
-  EXCEPTION WHEN OTHERS
+  IF l_tahtaeg > l_kpv
   THEN
-    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-    selg = selg || SQLERRM;
+    -- срок оплаты не наступил, долг = 0
+    summa = 0;
     RETURN;
+  END IF;
 
+  IF (params :: JSON ->> 'tasud') IS NOT NULL
+  THEN
+
+    -- если оплаты
+    FOR v_tasud IN
+    SELECT *
+    FROM
+          json_to_recordset(params :: JSON -> 'tasud')
+        AS x(summa NUMERIC, kpv DATE)
+    LOOP
+      -- проверяем дату оплаты и считаем дни
+      IF v_tasud.kpv < l_tahtaeg
+      THEN
+        -- оплата произведена в срок, считаем сальдо
+        l_jaak = l_jaak - v_tasud.summa;
+        CONTINUE;
+      END IF;
+      l_paevad = v_tasud.kpv - l_tahtaeg;
+
+      IF l_jaak > 0
+      THEN
+        l_viivis = l_jaak * l_paevad * l_viivise_maar * 0.01;
+        l_json = (l_json || (SELECT to_jsonb(row)
+                             FROM (SELECT
+                                     l_viivis AS viivis,
+                                     l_kpv    AS kpv,
+                                     l_jaak   AS volg,
+                                     l_paevad AS paevad) row)) :: JSON;
+        summa = round(coalesce(summa, 0) + l_viivis, 2);
+      END IF;
+      -- считаем остаток на день оплаты
+      l_jaak = l_jaak - v_tasud.summa;
+    END LOOP;
+  END IF;
+
+  IF l_jaak > 0
+  THEN
+    -- оплат нет, считаем интрес с полной суммы
+    l_paevad = l_kpv - l_tahtaeg;
+
+    l_viivis = l_jaak * l_paevad * l_viivise_maar * 0.01;
+    l_json = (l_json || (SELECT to_jsonb(row)
+                         FROM (SELECT
+                                 l_viivis AS viivis,
+                                 l_kpv    AS kpv,
+                                 l_jaak   AS volg,
+                                 l_paevad AS paevad) row)) :: JSON;
+
+    -- возврат результатов
+    summa = round(coalesce(summa, 0) + l_viivis, 2);
+    selg = l_json;
+  END IF;
+
+  RETURN;
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION docs.fnc_calc_viivised( INTEGER, params JSON ) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION docs.fnc_calc_viivised( INTEGER, params JSON ) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.fnc_calc_viivised( INTEGER, params JSON ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.fnc_calc_viivised(params JSON) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.fnc_calc_viivised(params JSON) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.fnc_calc_viivised(params JSON) TO dbpeakasutaja;
 
 
-
+SELECT docs.fnc_calc_viivised('{
+  "summa": 69.31,
+  "viivise_maar": 0.10,
+  "tahtaeg": "2018-09-30",
+  "kpv": "20181101",
+  "tasud": null}');
 
 /*
 
 
-SELECT docs.fnc_calc_viivised(70, '{
-  "asutus_id": 30224,
-  "leping_id": 1438054,
-  "viivise_maar": 6
-}');
+SELECT docs.fnc_calc_viivised('{
+            "summa": 69.31,
+            "viivise_maar": 0.10,
+            "tahtaeg": "2018-09-30",
+            "kpv": "2018-11-01",
+            "tasud": [{"kpv": "20180912","summa":56.95}, {"kpv": "20181015","summa":12.36}]
+        }');
 
 
 select * from temp_viivis

@@ -168,8 +168,11 @@ BEGIN
 
         SELECT
           0                                   AS id,
-          CASE WHEN v_arv1.kbmta = 0
+          CASE
+            WHEN v_arv1.kbmta = 0 and v_arv1.hind <> 0
             THEN v_arv1.hind * v_arv1.kogus
+          WHEN v_arv1.kbmta = 0 and v_arv1.hind = 0
+            THEN v_arv1.summa - v_arv1.kbm
           ELSE v_arv1.kbmta END               AS summa,
           coalesce(v_arv1.valuuta, 'EUR')     AS valuuta,
           coalesce(v_arv1.kuurs, 1)           AS kuurs,
@@ -226,8 +229,11 @@ BEGIN
         END IF;
         SELECT
           0                                   AS id,
-          CASE WHEN v_arv1.kbmta = 0
+          CASE
+          WHEN v_arv1.kbmta = 0 and v_arv1.hind <> 0
             THEN v_arv1.hind * v_arv1.kogus
+          WHEN v_arv1.kbmta = 0 and v_arv1.hind = 0
+            THEN v_arv1.summa - v_arv1.kbm
           ELSE v_arv1.kbmta END               AS summa,
           coalesce(v_arv1.valuuta, 'EUR')     AS valuuta,
           coalesce(v_arv1.kuurs, 1)           AS kuurs,

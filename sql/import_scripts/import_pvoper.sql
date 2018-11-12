@@ -21,7 +21,7 @@ BEGIN
 
   FOR v_pv_oper IN
   SELECT p.*, l.rekvid, coalesce(v.kuurs,1) as kuurs
-  FROM pv_oper p
+  FROM remote_pv_oper p
     INNER JOIN library l ON l.id = p.parentid
     INNER JOIN rekv ON rekv.id = l.rekvid AND rekv.parentid < 999
     left outer join remote_dokvaluuta1 v on v.dokid = p.id and v.dokliik = 13

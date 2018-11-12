@@ -125,6 +125,8 @@ BEGIN
     END LOOP;
   END IF;
 
+  -- перерасчет сальдо
+  PERFORM docs.sp_recalc_pv_jaak(doc_pv_kaart_id);
 
   result = 1;
   RETURN;

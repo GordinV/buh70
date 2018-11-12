@@ -12,24 +12,22 @@ DECLARE
   v_soetmaks        RECORD;
   umberHindamiseKpv DATE;
   a_pv_opers        TEXT [] = enum_range(NULL :: PV_OPERATSIOONID);
-  a_dokvaluuta        TEXT [] = enum_range(NULL :: DOK_VALUUTA);
 BEGIN
   -- load the card
   SELECT
     coalesce((l.properties :: JSONB ->> 'soetkpv') :: DATE, now() :: DATE)                 AS soetkpv,
     coalesce((l.properties :: JSONB ->> 'parhind') :: NUMERIC(12, 2), 0) :: NUMERIC(12, 2) AS parhind,
     coalesce((l.properties :: JSONB ->> 'jaak') :: NUMERIC(12, 2), 0) :: NUMERIC(12, 2)    AS jaak,
-    coalesce(v.kuurs, 1)                                                                   AS kuurs,
+    1                                                                                      AS kuurs,
     l.rekvid,
     l.properties
   INTO v_pv_kaart
   FROM libs.library l
-    LEFT OUTER JOIN docs.dokvaluuta1 v ON (v.dokid = l.id AND dokliik = array_position(a_dokvaluuta, 'pv_kaart'))
   WHERE l.id = tnId;
 
   -- calculate PV cost
 
-  IF exists (SELECT id
+  IF exists(SELECT id
             FROM docs.pv_oper po
             WHERE liik = array_position(a_pv_opers, 'umberhindamine') --5
                   AND po.pv_kaart_id = tnId)
@@ -46,20 +44,20 @@ BEGIN
   END IF;
 
   SELECT
-    sum(po.summa)
-      FILTER (WHERE liik = array_position(a_pv_opers, 'paigutus'))       AS soetmaks,
-    sum(po.summa)
-      FILTER (WHERE liik = array_position(a_pv_opers, 'parandus'))       AS parandus,
-    sum(po.summa)
-      FILTER (WHERE liik = array_position(a_pv_opers, 'umberhindamine')) AS umberhind
+    coalesce(sum(po.summa)
+      FILTER (WHERE liik = array_position(a_pv_opers, 'paigutus')),0)       AS soetmaks,
+    coalesce(sum(po.summa)
+      FILTER (WHERE liik = array_position(a_pv_opers, 'parandus')),0)       AS parandus,
+    coalesce(sum(po.summa)
+      FILTER (WHERE liik = array_position(a_pv_opers, 'umberhindamine')),0) AS umberhind
   INTO v_pv_oper
   FROM docs.pv_oper po
   WHERE po.pv_kaart_id = tnId
-        AND po.kpv >= v_pv_kaart.soetkpv;
+        AND po.kpv >= date(year(v_pv_kaart.soetkpv),month(v_pv_kaart.soetkpv),1);
 
   v_pv_kaart.parhind = (CASE WHEN coalesce(v_pv_oper.umberhind, 0) > 0
     THEN v_pv_oper.umberhind
-                        ELSE coalesce(v_pv_oper.soetmaks,0) END) + coalesce(v_pv_oper.parandus,0);
+                        ELSE coalesce(v_pv_oper.soetmaks, 0) END) + coalesce(v_pv_oper.parandus, 0);
 
   -- change soetmaks in the card
   SELECT v_pv_kaart.parhind AS parhind

@@ -178,6 +178,12 @@ const Arv = {
     ],
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
     endProcess: {command: "update docs.doc set status = 2 where id = $1", type: "sql"},
+    executeCommand: {
+        command: `select result, error_code, error_message, data from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task
+        type:'sql',
+        alias:'executeTask'
+    },
+
     executeTask: function (task, docId, userId) {
         console.log('executeTask', task, docId, userId);
         // выполнит задачу, переданную в параметре

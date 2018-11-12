@@ -64,6 +64,7 @@ DECLARE
 
   l_tulud_kokku   NUMERIC; -- temp
   is_pm           NUMERIC = 1;
+  is_tki           NUMERIC = 1;
 
 BEGIN
 
@@ -138,6 +139,17 @@ BEGIN
                       AND l.liik = 8)
   THEN
     is_pm = 0;
+  END IF;
+
+  -- проверим на наличие в карте TKI
+  IF NOT exists(SELECT 1
+                FROM palk.palk_kaart pk
+                  INNER JOIN com_palklib l ON l.id = pk.libid
+                WHERE pk.lepingid = l_lepingid
+                      AND pk.status = 1
+                      AND l.liik = 7 and (l.asutusest is null or empty(l.asutusest) or l.asutusest::text = '0') )
+  THEN
+    is_tki = 0;
   END IF;
 
   SELECT
@@ -221,10 +233,10 @@ BEGIN
           l_TKI_maar AS summa,
           7          AS liik) row;
 
-  tki = f_round((SELECT qry.summa
+  tki = is_tki * f_round((SELECT qry.summa
                  FROM palk.sp_calc_kinni(user_id, l_params :: JSON) AS qry), l_round);
   selg = coalesce(selg, '') + 'TKI arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_TKI_maar) :: TEXT + '*' +
-         l_TKI_maar :: TEXT + ltEnter;
+         l_TKI_maar :: TEXT + '*' + is_tki::text + ltEnter;
 
   -- PM arvestus
   SELECT row_to_json(row)
@@ -239,7 +251,7 @@ BEGIN
        coalesce(l_PM_maksustav, 0);
 
   selg = coalesce(selg, '') + 'PM arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_PM_maar) :: TEXT + '*' +
-         coalesce(l_PM_maksustav, 0) :: TEXT + ltEnter;
+         coalesce(l_PM_maksustav, 0) :: TEXT + '*' + is_pm:: text + ltEnter;
 
   --SM arvestus
   SELECT row_to_json(row)

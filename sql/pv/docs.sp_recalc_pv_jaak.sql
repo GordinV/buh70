@@ -1,5 +1,5 @@
 DROP FUNCTION IF EXISTS docs.sp_recalc_pv_jaak( INTEGER, DATE );
-DROP FUNCTION IF EXISTS docs.sp_recalc_pv_jaak( INTEGER);
+DROP FUNCTION IF EXISTS docs.sp_recalc_pv_jaak( INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.sp_recalc_pv_jaak(
   pv_id INTEGER)
@@ -22,7 +22,6 @@ BEGIN
   FROM libs.library l
   WHERE l.id = pv_id;
 
-
   -- select summ
   SELECT
     sum(summa)
@@ -35,8 +34,8 @@ BEGIN
       FILTER (WHERE liik = 5) AS umberhind
   INTO v_pv_oper
   FROM docs.pv_oper po
-  WHERE pv_kaart_id = pv_id;
-
+  WHERE pv_kaart_id = pv_id
+        AND po.kpv >= date(year(v_pv_kaart.soetkpv),month(v_pv_kaart.soetkpv),1);
 
   -- calculation
 
@@ -45,12 +44,17 @@ BEGIN
             ELSE coalesce(v_pv_oper.soetmaks, 0) END)
            + coalesce(v_pv_oper.parandus, 0) - v_pv_kaart.algkulum - coalesce(v_pv_oper.kulum, 0);
 
-
-  raise notice 'v_pv_oper.soetmaks %, v_pv_oper.parandus %, v_pv_kaart.algkulum %, v_pv_oper.kulum %',v_pv_oper.soetmaks, v_pv_oper.parandus, v_pv_kaart.algkulum, v_pv_oper.kulum;
-
   SELECT row_to_json(row)
   INTO json_jaak
-  FROM (SELECT l_jaak AS jaak) row;
+  FROM (SELECT
+          l_jaak                                                                       AS jaak,
+          (CASE WHEN coalesce(v_pv_oper.umberhind, 0) > 0
+            THEN v_pv_oper.umberhind
+           ELSE coalesce(v_pv_oper.soetmaks, 0) END) + coalesce(v_pv_oper.parandus, 0) AS parhind,
+          (CASE WHEN coalesce(v_pv_oper.umberhind, 0) > 0
+            THEN v_pv_oper.umberhind
+           ELSE coalesce(v_pv_oper.soetmaks, 0) END)                                   AS soetmaks
+       ) row;
 
   json_props = v_pv_kaart.properties :: JSONB || json_jaak :: JSONB;
 
