@@ -26,6 +26,8 @@ BEGIN
     RETURN;
   END IF;
 
+  raise notice 'fnc l_jaak %, params %', l_jaak, params;
+
   IF (params :: JSON ->> 'tasud') IS NOT NULL
   THEN
 
@@ -60,6 +62,9 @@ BEGIN
       l_jaak = l_jaak - v_tasud.summa;
     END LOOP;
   END IF;
+
+  raise notice 'fnc l_jaak %', l_jaak;
+
 
   IF l_jaak > 0
   THEN

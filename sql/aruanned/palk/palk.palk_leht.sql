@@ -19,7 +19,8 @@ CREATE OR REPLACE FUNCTION palk.palk_leht(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INT
     puhapaev  NUMERIC(12, 4),
     tahtpaev  NUMERIC(12, 4),
     uleajatoo NUMERIC(12, 4),
-    tootunnid INTEGER
+    kokku     NUMERIC(12, 4),
+    tootunnid NUMERIC(12, 4)
   ) AS
 $BODY$
 SELECT
@@ -40,7 +41,8 @@ SELECT
   sum(puhapaev) :: NUMERIC(12, 4)  AS puhapaev,
   sum(tahtpaev) :: NUMERIC(12, 4)  AS tahtpaev,
   sum(uleajatoo) :: NUMERIC(12, 4) AS uleajatoo,
-  sum(tootunnid) :: INTEGER        AS tootunnid
+  sum(kokku) :: NUMERIC(12, 4)     AS kokku,
+  sum(tootunnid) :: NUMERIC(12, 4) AS tootunnid
 FROM (
        SELECT
          po.isikid,
@@ -62,13 +64,14 @@ FROM (
          nimetus,
          liik,
          osakondid,
-         coalesce(tbl.ohtu,0) as ohtu,
-         coalesce(tbl.paev,0) as paev,
-         coalesce(tbl.puhapaev,0) as puhapaev,
-         coalesce(tbl.oo,0) as oo,
-         coalesce(tbl.tahtpaev,0) as tahtpaev,
-         coalesce(tbl.uleajatoo,0) as uleajatoo,
-         palk.get_work_hours(to_jsonb((SELECT po.lepingid AS lepingid))) AS tootunnid
+         coalesce(tbl.ohtu, 0)                                           AS ohtu,
+         coalesce(tbl.paev, 0)                                           AS paev,
+         coalesce(tbl.puhapaev, 0)                                       AS puhapaev,
+         coalesce(tbl.oo, 0)                                             AS oo,
+         coalesce(tbl.tahtpaev, 0)                                       AS tahtpaev,
+         coalesce(tbl.uleajatoo, 0)                                      AS uleajatoo,
+         coalesce(tbl.kokku, 0)                                          AS kokku,
+         palk.get_work_hours((select to_jsonb(qry) from (SELECT po.lepingid AS lepingid, l_kpv2 as kpv) qry)) AS tootunnid
 
        FROM palk.cur_palkoper po
          LEFT OUTER JOIN palk.palk_jaak j

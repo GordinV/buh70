@@ -1,12 +1,10 @@
-﻿DROP FUNCTION IF EXISTS docs.sp_get_number( INTEGER, TEXT, INTEGER, INTEGER );
+﻿DROP FUNCTION IF EXISTS sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyear INTEGER, tndokpropid INTEGER );
+DROP FUNCTION IF EXISTS docs.sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyear INTEGER, tndokpropid INTEGER );
 
-CREATE OR REPLACE FUNCTION docs.sp_get_number(
-  tnrekvid    INTEGER,
-  tcdok       TEXT,
-  tnyear      INTEGER,
-  tndokpropid INTEGER)
-  RETURNS TEXT AS
-$BODY$
+CREATE FUNCTION docs.sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyear INTEGER, tndokpropid INTEGER)
+  RETURNS TEXT
+LANGUAGE plpgsql
+AS $$
 DECLARE
   v_number          RECORD;
   lcPref            TEXT = '%';
@@ -15,6 +13,7 @@ DECLARE
   lcAdditionalWhere TEXT = '';
   lcSqlString       TEXT;
 BEGIN
+
   IF tnDokPropId IS NOT NULL
   THEN
     SELECT ltrim(rtrim(proc_))
@@ -25,31 +24,35 @@ BEGIN
 
   lcPref = coalesce(lcPref, '');
 
-  CASE tcDok
-    WHEN 'ARV'
+  CASE
+    WHEN tcDok = 'ARV'
     THEN
       lcTableName = 'docs.arv';
 
-    WHEN 'SORDER'
+    WHEN tcDok = 'SORDER'
     THEN
       lcTableName = 'docs.korder1';
       lcAdditionalWhere = ' and tyyp = 1 ';
-    WHEN 'VORDER'
+    WHEN tcDok = 'VORDER'
     THEN
       lcTableName = 'docs.korder1';
       lcAdditionalWhere = ' and tyyp = 2 ';
-    WHEN 'MK'  or 'SMK'
+    WHEN tcDok = 'MK'
     THEN
       lcTableName = 'docs.mk';
-      lcAdditionalWhere = ' OPT = 1 ';
-    WHEN 'VMK'
+      lcAdditionalWhere = ' and OPT = 1 ';
+    WHEN tcDok = 'SMK'
     THEN
       lcTableName = 'docs.mk';
-      lcAdditionalWhere = ' OPT = 2 ';
-    WHEN 'LEPING'
+      lcAdditionalWhere = ' and OPT = 1 ';
+    WHEN tcDok = 'VMK'
+    THEN
+      lcTableName = 'docs.mk';
+      lcAdditionalWhere = ' and OPT = 2 ';
+    WHEN tcDok = 'LEPING'
     THEN
       lcTableName = 'docs.leping1';
-    WHEN 'TAOTLUS'
+    WHEN tcDok = 'TAOTLUS'
     THEN
       lcTableName = 'eelarve.taotlus';
   END CASE;
@@ -68,8 +71,8 @@ BEGIN
 
   -- will plus pref and encrement
 
-  RAISE NOTICE 'lcSqlString %', lcSqlString;
-  if lcPref = '%' THEN
+  IF lcPref = '%'
+  THEN
     lcPref = '';
   END IF;
 
@@ -77,13 +80,4 @@ BEGIN
 
   RETURN lcNumber;
 END;
-$BODY$
-LANGUAGE plpgsql VOLATILE
-COST 100;
-
-GRANT EXECUTE ON FUNCTION docs.sp_get_number(INTEGER, TEXT, INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_get_number(INTEGER, TEXT, INTEGER, INTEGER) TO dbkasutaja;
-
-/*
-select docs.sp_get_number(1, 'ARV', 2018, NULL)
- */
+$$;

@@ -6,7 +6,7 @@ const start = require('./../BP/start'),
 
 const DOC_TYPE_ID = 'LEPING';
 
-const Arv = {
+const Leping = {
     select: [
         {
             sql: `select d.id, $2::integer as userid, to_char(created, 'DD.MM.YYYY HH:MM:SS')::text as created, 
@@ -179,9 +179,9 @@ const Arv = {
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
     endProcess: {command: "update docs.doc set status = 2 where id = $1", type: "sql"},
     executeCommand: {
-        command: `select result, error_code, error_message, data from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task
+        command: `select * from docs.sp_calc_viivised($1::integer, $2::JSON)`, //$1- userId, $2 - params
         type:'sql',
-        alias:'executeTask'
+        alias:'calcViivised'
     },
 
     executeTask: function (task, docId, userId) {
@@ -215,5 +215,5 @@ const Arv = {
     ],
 };
 
-module.exports = Arv;
+module.exports = Leping;
 
