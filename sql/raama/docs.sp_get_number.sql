@@ -22,13 +22,13 @@ BEGIN
     WHERE id = tnDokPropId;
   END IF;
 
-  lcPref = coalesce(lcPref, '');
+  lcPref = coalesce(lcPref, '%');
 
   CASE
     WHEN tcDok = 'ARV'
     THEN
       lcTableName = 'docs.arv';
-
+      lcAdditionalWhere = ' and liik = 0 ';
     WHEN tcDok = 'SORDER'
     THEN
       lcTableName = 'docs.korder1';
@@ -58,13 +58,13 @@ BEGIN
   END CASE;
 
   -- building sql query with regexp for only numbers
-  lcSqlString = 'select (max(SUBSTRING(''0'' || coalesce(number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
-                ')::bigint) ::bigint) + 1 as number from '
-                || lcTableName
-                || ' where rekvId = $1::integer and year(kpv) = $2::integer and number ilike $3::text';
+  lcSqlString = 'select (max(SUBSTRING(''0'' || coalesce(tbl.number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
+                ')::bigint) ::bigint) + 1 as number from docs.doc d inner join '
+                || lcTableName || ' tbl on d.id = tbl.parentid and d.status <> 3 '
+                || ' where tbl.rekvId = $1::integer and year(tbl.kpv) = $2::integer and tbl.number ilike $3::text';
 
   lcSqlString = lcSqlString || lcAdditionalWhere;
-
+raise notice '%',lcSqlString;
   EXECUTE lcSqlString
   INTO v_number
   USING tnRekvId, tnYear, lcPref;

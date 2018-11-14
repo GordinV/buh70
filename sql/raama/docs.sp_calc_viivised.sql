@@ -1,103 +1,103 @@
-DROP FUNCTION IF EXISTS docs.sp_calc_viivised( INTEGER, params JSON );
+DROP FUNCTION IF EXISTS docs.sp_calc_viivised(INTEGER, params JSON);
 
 CREATE FUNCTION docs.sp_calc_viivised(IN user_id INTEGER, IN params JSON)
   RETURNS TABLE(
-    number VARCHAR(20), kpv DATE, tahtaeg DATE, jaak NUMERIC(14, 2), summa NUMERIC, tasud NUMERIC, viivis NUMERIC, selg TEXT, konto VARCHAR(20), asutus VARCHAR(254)
+    arve_id INTEGER, number VARCHAR(20), kpv DATE, tahtaeg DATE, jaak NUMERIC(14, 2), summa NUMERIC, tasud NUMERIC, viivis NUMERIC, selg TEXT, konto VARCHAR(20), asutus VARCHAR(254)
   )
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  l_asutus_id      INTEGER = params ->> 'asutus_id';
-  l_arve_id        INTEGER = params ->> 'arve_id';
-  l_leping_id      INTEGER = params ->> 'leping_id';
-  l_viivise_maar   NUMERIC = coalesce((params ->> 'viivise_maar') :: NUMERIC, 0.10);
-  l_kpv            DATE = coalesce((params ->> 'kpv') :: DATE, current_date);
+  l_asutus_id    INTEGER = params ->> 'asutus_id';
+  l_arve_id      INTEGER = params ->> 'arve_id';
+  l_leping_id    INTEGER = params ->> 'leping_id';
+  l_viivise_maar NUMERIC = coalesce((params ->> 'viivise_maar') :: NUMERIC, 0.10);
+  l_kpv          DATE = coalesce((params ->> 'kpv') :: DATE, current_date);
 
-  v_arved          RECORD;
-  l_viivis_kokku   NUMERIC(12, 2) = 0;
-  l_ids            INTEGER [] = '{}' :: INTEGER [] || l_leping_id;
-  l_json           JSONB;
-  l_selg           TEXT;
+  v_arved        RECORD;
+  l_viivis_kokku NUMERIC(12, 2) = 0;
+  l_ids          INTEGER [] = '{}' :: INTEGER [] || l_leping_id;
+  l_json         JSONB;
+  l_selg         TEXT;
   l_arve_lisa_info JSON;
   v_viivis         RECORD;
+  l_viimane_kpv    DATE;
 BEGIN
 
 
   summa = 0;
   -- otsime arved
   FOR v_arved IN
-  SELECT
-    d.id,
-    a.summa,
-    a.kpv,
-    a.asutusid,
-    a.jaak,
-    a.tahtaeg,
-    a.number,
-    (SELECT to_json(array_agg(at))
-     FROM docs.arvtasu at
-     WHERE at.doc_arv_id = d.id)                AS tasud,
-    coalesce((SELECT sum(tasu.summa)
-              FROM docs.arvtasu tasu
-              WHERE tasu.doc_arv_id = d.id), 0) AS tasud_kokku,
-    l.details ->> 'konto'                       AS konto,
-    asutus.nimetus :: VARCHAR(254)              AS asutus
+  SELECT d.id,
+         a.summa,
+         a.kpv,
+         a.asutusid,
+         a.jaak,
+         a.tahtaeg,
+         a.number,
+         (SELECT to_json(array_agg(at)) FROM docs.arvtasu at WHERE at.doc_arv_id = d.id)           AS tasud,
+         coalesce((SELECT sum(tasu.summa) FROM docs.arvtasu tasu WHERE tasu.doc_arv_id = d.id), 0) AS tasud_kokku,
+         l.details ->> 'konto'                                                                     AS konto,
+         asutus.nimetus :: VARCHAR(254)                                                            AS asutus
   FROM docs.arv a
-    INNER JOIN docs.doc d ON d.id = a.parentid
-    LEFT OUTER JOIN libs.dokprop l ON a.doklausid = l.id
-    INNER JOIN libs.asutus asutus ON a.asutusid = asutus.id
-  WHERE d.rekvid = (SELECT rekvid
-                    FROM ou.userid
-                    WHERE id = user_id)
-        AND coalesce(a.tahtaeg, current_date) < l_kpv
-        AND year(a.kpv) >= 2011
-        AND coalesce(a.jaak, 0) > 0
-        --        or coalesce(a.tahtaeg, current_date)   -- не оплаченные или оплаченные с опозданием
-        AND (l_ids IS NOT NULL AND d.docs_ids @> l_ids
-             OR l_arve_id IS NOT NULL AND d.id = l_arve_id
-             OR l_asutus_id IS NOT NULL AND a.asutusid = l_asutus_id)
+         INNER JOIN docs.doc d ON d.id = a.parentid
+         LEFT OUTER JOIN libs.dokprop l ON a.doklausid = l.id
+         INNER JOIN libs.asutus asutus ON a.asutusid = asutus.id
+  WHERE d.rekvid = (SELECT rekvid FROM ou.userid WHERE id = user_id)
+    AND coalesce(a.tahtaeg, current_date) < l_kpv
+    AND year(a.kpv) >= 2011
+    AND coalesce(a.jaak, 0) > 0
+      --        or coalesce(a.tahtaeg, current_date)   -- не оплаченные или оплаченные с опозданием
+    AND (l_ids IS NOT NULL AND d.docs_ids @> l_ids
+           OR l_arve_id IS NOT NULL AND d.id = l_arve_id
+           OR l_asutus_id IS NOT NULL AND a.asutusid = l_asutus_id)
 
   LOOP
 
-    -- расчет интресса
-    SELECT
-      qry.summa,
-      qry.selg
-    INTO l_viivis_kokku, l_json
-    FROM docs.fnc_calc_viivised(
-             (SELECT to_jsonb(row)
-              FROM (SELECT
-                      l_kpv           AS kpv,
-                      l_viivise_maar  AS viivise_maar,
-                      v_arved.summa   AS summa,
-                      v_arved.tahtaeg AS tahtaeg,
-                      v_arved.tasud   AS tasud) row) :: JSON) qry;
+    -- ищем счета, которые уже считали интресс
 
-    -- @todo arvesta juba salvestatud intressid
+    l_viimane_kpv = (SELECT max(a.kpv)
+                     FROM docs.arv1 a1
+                            INNER JOIN docs.arv a ON a.id = a1.parentid
+                     WHERE (a1.properties ->'arve_id') @> to_jsonb(v_arved.id));
+
+    -- расчет интресса
+    SELECT qry.summa, qry.selg
+        INTO l_viivis_kokku, l_json
+    FROM docs.fnc_calc_viivised(
+           (SELECT to_jsonb(row)
+            FROM (SELECT l_kpv                      AS kpv,
+                         l_viivise_maar             AS viivise_maar,
+                         v_arved.summa              AS summa,
+                         CASE
+                           WHEN l_viimane_kpv IS NOT NULL THEN l_viimane_kpv
+                           ELSE v_arved.tahtaeg END AS tahtaeg,
+                         v_arved.tasud              AS tasud) row) :: JSON) qry;
+
     summa = summa + coalesce(l_viivis_kokku, 0);
 
     l_selg = '';
 
     FOR v_viivis IN
     SELECT *
-    FROM
-          jsonb_to_recordset(l_json) AS x(kpv DATE, volg NUMERIC(14, 2), paevad INTEGER, viivis NUMERIC(14, 2))
+    FROM jsonb_to_recordset(l_json) AS x (kpv DATE, volg NUMERIC(14, 2), paevad INTEGER, viivis NUMERIC(14, 2))
     LOOP
       l_selg = 'Kuupäev:' || v_viivis.kpv :: TEXT || ', võlg:' || v_viivis.volg :: TEXT || ', päevad:' ||
                v_viivis.paevad :: TEXT || ', intress:' || l_viivise_maar :: TEXT || ', viivis:' || v_viivis.viivis ||
                chr(13);
     END LOOP;
-    RETURN QUERY SELECT
-                   v_arved.number :: VARCHAR(20),
-                   v_arved.kpv                  AS kpv,
-                   v_arved.tahtaeg              AS tahtaeg,
-                   v_arved.jaak                 AS jaak,
-                   v_arved.summa                AS summa,
-                   v_arved.tasud_kokku          AS tasud,
-                   l_viivis_kokku               AS viivis,
-                   l_selg                       AS selg,
-                   v_arved.konto :: VARCHAR(20) AS konto,
-                   v_arved.asutus;
+    RETURN QUERY SELECT v_arved.id                   AS arve_id,
+                        v_arved.number :: VARCHAR(20),
+                        v_arved.kpv                  AS kpv,
+                        CASE
+                          WHEN l_viimane_kpv IS NOT NULL THEN l_viimane_kpv
+                          ELSE v_arved.tahtaeg END   AS tahtaeg,
+                        v_arved.jaak                 AS jaak,
+                        v_arved.summa                AS summa,
+                        v_arved.tasud_kokku          AS tasud,
+                        l_viivis_kokku               AS viivis,
+                        l_selg                       AS selg,
+                        v_arved.konto :: VARCHAR(20) AS konto,
+                        v_arved.asutus;
 
   END LOOP;
   RETURN;
@@ -116,7 +116,8 @@ GRANT EXECUTE ON FUNCTION docs.sp_calc_viivised(INTEGER, params JSON) TO dbpeaka
 SELECT docs.sp_calc_viivised(70, '{
   "asutus_id": 30224,
   "leping_id": 1438054,
-  "viivise_maar": 6
+  "viivise_maar": 6,
+  "kpv":"20181130"
 }');
 
 

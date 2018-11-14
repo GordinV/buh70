@@ -1,5 +1,5 @@
-DROP FUNCTION IF EXISTS docs.fnc_calc_viivised( INTEGER, params JSON );
-DROP FUNCTION IF EXISTS docs.fnc_calc_viivised( params JSON );
+DROP FUNCTION IF EXISTS docs.fnc_calc_viivised(INTEGER, params JSON);
+DROP FUNCTION IF EXISTS docs.fnc_calc_viivised(params JSON);
 
 CREATE FUNCTION docs.fnc_calc_viivised(IN  params JSON,
                                        OUT selg   JSON,
@@ -26,17 +26,15 @@ BEGIN
     RETURN;
   END IF;
 
-  raise notice 'fnc l_jaak %, params %', l_jaak, params;
+  RAISE NOTICE 'fnc l_jaak %, params %', l_jaak, params;
 
   IF (params :: JSON ->> 'tasud') IS NOT NULL
   THEN
 
     -- если оплаты
     FOR v_tasud IN
-    SELECT *
-    FROM
-          json_to_recordset(params :: JSON -> 'tasud')
-        AS x(summa NUMERIC, kpv DATE)
+    SELECT * FROM json_to_recordset(params :: JSON -> 'tasud')
+                      AS x (summa NUMERIC, kpv DATE)
     LOOP
       -- проверяем дату оплаты и считаем дни
       IF v_tasud.kpv < l_tahtaeg
@@ -51,20 +49,16 @@ BEGIN
       THEN
         l_viivis = l_jaak * l_paevad * l_viivise_maar * 0.01;
         l_json = (l_json || (SELECT to_jsonb(row)
-                             FROM (SELECT
-                                     l_viivis AS viivis,
-                                     l_kpv    AS kpv,
-                                     l_jaak   AS volg,
-                                     l_paevad AS paevad) row)) :: JSON;
+                             FROM (SELECT l_viivis AS viivis,
+                                          l_kpv    AS kpv,
+                                          l_jaak   AS volg,
+                                          l_paevad AS paevad) row)) :: JSON;
         summa = round(coalesce(summa, 0) + l_viivis, 2);
       END IF;
       -- считаем остаток на день оплаты
       l_jaak = l_jaak - v_tasud.summa;
     END LOOP;
   END IF;
-
-  raise notice 'fnc l_jaak %', l_jaak;
-
 
   IF l_jaak > 0
   THEN
@@ -73,11 +67,11 @@ BEGIN
 
     l_viivis = l_jaak * l_paevad * l_viivise_maar * 0.01;
     l_json = (l_json || (SELECT to_jsonb(row)
-                         FROM (SELECT
-                                 l_viivis AS viivis,
-                                 l_kpv    AS kpv,
-                                 l_jaak   AS volg,
-                                 l_paevad AS paevad) row)) :: JSON;
+                         FROM (SELECT l_viivis  AS viivis,
+                                      l_kpv     AS kpv,
+                                      l_jaak    AS volg,
+                                      l_tahtaeg AS tahtaeg,
+                                      l_paevad  AS paevad) row)) :: JSON;
 
     -- возврат результатов
     summa = round(coalesce(summa, 0) + l_viivis, 2);
@@ -98,7 +92,8 @@ SELECT docs.fnc_calc_viivised('{
   "viivise_maar": 0.10,
   "tahtaeg": "2018-09-30",
   "kpv": "20181101",
-  "tasud": null}');
+  "tasud": null
+}');
 
 /*
 

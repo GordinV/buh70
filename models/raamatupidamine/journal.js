@@ -9,58 +9,77 @@ const start = require('./../BP/start'),
 const Journal = {
     select: [
         {
-            sql: `select d.id, $2::integer as userid, d.docs_ids, (to_char(created,'DD.MM.YYYY HH:MM:SS'))::text as created, 
-                (to_char(lastupdate,'DD.MM.YYYY HH:MM:SS'))::text as lastupdate, d.bpm, 
-                 trim(l.nimetus) as doc, trim(l.kood) as doc_type_id, 
-                 trim(s.nimetus) as status, d.status as doc_status,
-                 jid.number as number, 
-                 j.rekvId, j.kpv as kpv, j.asutusid,  trim(j.dok)::varchar(120) as dok, j.selg, j.muud, j.objekt,
-                 (select sum(j1.summa) as summa from docs.journal1 as j1 where parentid = j.id) as summa, 
-                 asutus.regkood, trim(asutus.nimetus) as asutus,
-                 u.ametnik as kasutaja
-                 from docs.doc d 
-                 inner join libs.library l on l.id = d.doc_type_id 
-                 inner join docs.journal j on j.parentId = d.id 
-                 inner join ou.userid u on u.id = $2::integer 
-                 left outer join docs.journalid jid on j.Id = jid.journalid 
-                 left outer join libs.library s on s.library = 'STATUS' and s.kood = d.status::text
-                 left outer join libs.asutus as asutus on asutus.id = j.asutusId 
-                 where d.id = $1`,
-            sqlAsNew: `select $1::integer as id, 
-                    to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as created, 
-                    to_char(now(), 'DD.MM.YYYY HH:MM:SS')::text as lastupdate,            
-                    null::text[] as bpm,
-                    trim(l.nimetus) as doc, trim(l.kood) as doc_type_id,
-                    trim(s.nimetus) as status, 0 as doc_status, 
-                    null::integer as number,  
-                    null::integer as rekvId,  
-                    now()::date as kpv, 
-                    null::integer as asutusid, 
-                    null::varchar(120) as dok, 
-                    null::text as selg, 
-                    null::text as muud, 
-                    null::varchar(20) as objekt,
-                    0::numeric as summa,  
-                    null::varchar(20) as regkood, 
-                    null::varchar(254) as asutus ,
-                    null::varchar(120) as kasutaja
-                    from libs.library l,   libs.library s, ou.userid u
-                    where l.library = 'DOK' and l.kood = 'JOURNAL'
-                    and u.id = $2::integer 
-                    and s.library = 'STATUS' and s.kood = '0'`,
+            sql: `SELECT d.id,
+                         $2 :: INTEGER                                                                  AS userid,
+                         d.docs_ids,
+                         (to_char(created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                              AS created,
+                         (to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                           AS lastupdate,
+                         d.bpm,
+                         trim(l.nimetus)                                                                AS doc,
+                         trim(l.kood)                                                                   AS doc_type_id,
+                         trim(s.nimetus)                                                                AS status,
+                         d.status                                                                       AS doc_status,
+                         jid.number                                                                     AS number,
+                         j.rekvId,
+                         j.kpv                                                                          AS kpv,
+                         j.asutusid,
+                         trim(j.dok) :: VARCHAR(120)                                                    AS dok,
+                         j.selg,
+                         j.muud,
+                         j.objekt :: VARCHAR(254),
+                         (SELECT sum(j1.summa) AS summa FROM docs.journal1 AS j1 WHERE parentid = j.id) AS summa,
+                         asutus.regkood,
+                         trim(asutus.nimetus)                                                           AS asutus,
+                         u.ametnik                                                                      AS kasutaja,
+                         (d.history->0->>'user')::varchar(120)                                                          AS koostaja
+                  FROM docs.doc d
+                         INNER JOIN libs.library l ON l.id = d.doc_type_id
+                         INNER JOIN docs.journal j ON j.parentId = d.id
+                         INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                         LEFT OUTER JOIN docs.journalid jid ON j.Id = jid.journalid
+                         LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
+                         LEFT OUTER JOIN libs.asutus AS asutus ON asutus.id = j.asutusId
+                  WHERE d.id = $1`,
+            sqlAsNew: `SELECT $1 :: INTEGER                                 AS id,
+                              to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT AS created,
+                              to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT AS lastupdate,
+                              NULL :: TEXT []                               AS bpm,
+                              trim(l.nimetus)                               AS doc,
+                              trim(l.kood)                                  AS doc_type_id,
+                              trim(s.nimetus)                               AS status,
+                              0                                             AS doc_status,
+                              NULL :: INTEGER                               AS number,
+                              NULL :: INTEGER                               AS rekvId,
+                              now() :: DATE                                 AS kpv,
+                              NULL :: INTEGER                               AS asutusid,
+                              NULL :: VARCHAR(120)                          AS dok,
+                              NULL :: TEXT                                  AS selg,
+                              NULL :: TEXT                                  AS muud,
+                              NULL :: VARCHAR(254)                           AS objekt,
+                              0 :: NUMERIC                                  AS summa,
+                              NULL :: VARCHAR(20)                           AS regkood,
+                              NULL :: VARCHAR(254)                          AS asutus,
+                              NULL :: VARCHAR(120)                          AS kasutaja,
+                              NULL :: VARCHAR(120)                          AS koostaja
+                       FROM libs.library l,
+                            libs.library s,
+                            ou.userid u
+                       WHERE l.library = 'DOK'
+                         AND l.kood = 'JOURNAL'
+                         AND u.id = $2 :: INTEGER
+                         AND s.library = 'STATUS'
+                         AND s.kood = '0'`,
             query: null,
             multiple: false,
             alias: 'row',
             data: []
         },
         {
-            sql: `select j1.*, $2::integer as userid ,
-                    1::numeric as kuurs, 
-                    'EUR'::varchar(20) as valuuta
-                    from docs.journal1 as j1 
-                    inner join docs.journal j on j.id = j1.parentId 
-                    inner join ou.userid u on u.id = $2::integer 
-                    where j.parentid = $1`,
+            sql: `SELECT j1.*, $2 :: INTEGER AS userid, 1 :: NUMERIC AS kuurs, 'EUR' :: VARCHAR(20) AS valuuta
+                  FROM docs.journal1 AS j1
+                         INNER JOIN docs.journal j ON j.id = j1.parentId
+                         INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                  WHERE j.parentid = $1`,
             query: null,
             multiple: true,
             alias: 'details',
@@ -68,22 +87,26 @@ const Journal = {
         },
         {
             sql: "select rd.id, $2::integer as userid, trim(l.kood) as doc_type, trim(l.nimetus) as name " +
-            " from docs.doc d " +
-            " left outer join docs.doc rd on rd.id in (select unnest(d.docs_ids)) " +
-            " left outer join libs.library l on rd.doc_type_id = l.id " +
-            " inner join ou.userid u on u.id = $2::integer " +
-            " where d.id = $1",
+                " from docs.doc d " +
+                " left outer join docs.doc rd on rd.id in (select unnest(d.docs_ids)) " +
+                " left outer join libs.library l on rd.doc_type_id = l.id " +
+                " inner join ou.userid u on u.id = $2::integer " +
+                " where d.id = $1",
             query: null,
             multiple: true,
             alias: 'relations',
             data: []
         },
         {
-            sql:`select * from libs.asutus where regkood = $1 order by staatus limit `,
+            sql: `SELECT *
+                  FROM libs.asutus
+                  WHERE regkood = $1
+                  ORDER BY staatus
+                  LIMIT 1`,
             query: null,
             multiple: false,
             alias: 'validate_asutus',
-            data:[]
+            data: []
         }
 
     ],
@@ -101,20 +124,22 @@ const Journal = {
             {id: "lastupdate", name: "Viimane parandus", width: "150px", "type": "date"},
             {id: "status", name: "Status", width: "100px", "type": "string"}
         ],
-        sqlString: `select j.* 
-            from cur_journal j
-            where  j.rekvId in (select rekv_id from get_asutuse_struktuur($1))
-            and coalesce(docs.usersRigths(j.id, 'select', $2),true)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT j.*
+                    FROM cur_journal j
+                    WHERE j.rekvId IN (SELECT rekv_id FROM get_asutuse_struktuur($1))
+                      AND coalesce(docs.usersRigths(j.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curJournal'
     },
     register: {
-        command: `update docs.doc set status = 1 where id = $1`,
+        command: `UPDATE docs.doc
+                  SET status = 1
+                  WHERE id = $1`,
         type: "sql",
         alias: 'registrateDoc'
     },
     endProcess: {
-        command: "update docs.doc set status = 2 where id = $1",
+        command: "UPDATE docs.doc SET status = 2 WHERE id = $1",
         type: "sql",
         alias: "end"
     },
@@ -165,7 +190,15 @@ const Journal = {
         }
     ],
     saveDoc: "select docs.sp_salvesta_journal($1, $2, $3) as id",
-    deleteDoc: `select error_code, result, error_message from docs.sp_delete_journal($1, $2)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM docs.sp_delete_journal($1, $2)`, // $1 - userId, $2 - docId
+    executeCommand: {
+        command: `SELECT result, error_code, error_message, data
+                  FROM sp_execute_task($1 :: INTEGER, $2 :: JSON, $3 :: TEXT)`, //$1- userId, $2 - params, $3 - task
+        type: 'sql',
+        alias: 'executeTask'
+    },
+
     executeTask: function (task, docId, userId) {
         // выполнит задачу, переданную в параметре
 

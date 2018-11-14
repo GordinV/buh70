@@ -40,7 +40,9 @@ DECLARE
   new_history   JSONB;
   new_rights    JSONB;
   ids           INTEGER [];
+  l_json_arve_id JSONB;
   is_import     BOOLEAN = data ->> 'import';
+  l_doc_ids  INTEGER[];
 BEGIN
 
   IF (doc_id IS NULL)
@@ -147,9 +149,8 @@ BEGIN
       INTO arv_id;
 
   END IF;
+
   -- вставка в таблицы документа
-
-
   FOR json_object IN
   SELECT *
   FROM json_array_elements(doc_details)
@@ -159,17 +160,18 @@ BEGIN
     FROM json_to_record(
              json_object) AS x(id TEXT, nomId INTEGER, kogus NUMERIC(14, 4), hind NUMERIC(14, 4), kbm NUMERIC(14, 4), kbmta NUMERIC(14, 4),
          summa NUMERIC(14, 4), kood TEXT, nimetus TEXT, kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT,
-         valuuta TEXT, kuurs NUMERIC(14, 4), konto TEXT, tunnus TEXT, tp TEXT);
+         valuuta TEXT, kuurs NUMERIC(14, 4), konto TEXT, tunnus TEXT, tp TEXT, arve_id INTEGER, muud TEXT);
 
     IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
     THEN
-      INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, kbmta, summa, kood1, kood2, kood3, kood4, kood5, konto, tunnus, tp)
+
+      INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, kbmta, summa, kood1, kood2, kood3, kood4, kood5, konto, tunnus, tp, muud)
       VALUES (arv_id, json_record.nomid,
                       coalesce(json_record.kogus, 1),
                       coalesce(json_record.hind, 0),
                       coalesce(json_record.kbm, 0),
-                      coalesce(json_record.kbmta, kogus * hind),
-                      coalesce(json_record.summa, (kogus * hind) + kbm),
+                      coalesce(json_record.kbmta, coalesce(json_record.kogus, 1) * coalesce(json_record.hind, 0)),
+                      coalesce(json_record.summa, (coalesce(json_record.kogus, 1) * coalesce(json_record.hind, 0)) + coalesce(json_record.kbm, 0)),
                       coalesce(json_record.kood1, ''),
                       coalesce(json_record.kood2, ''),
                       coalesce(json_record.kood3, ''),
@@ -177,7 +179,8 @@ BEGIN
               coalesce(json_record.kood5, ''),
               coalesce(json_record.konto, ''),
               coalesce(json_record.tunnus, ''),
-              coalesce(json_record.tp, '')
+              coalesce(json_record.tp, ''),
+              coalesce(json_record.muud, '')
       )
       RETURNING id
         INTO arv1_id;
@@ -200,7 +203,8 @@ BEGIN
         kood3    = coalesce(json_record.kood3, ''),
         kood4    = coalesce(json_record.kood4, ''),
         kood5    = coalesce(json_record.kood5, ''),
-        konto    = coalesce(json_record.konto, '')
+        konto    = coalesce(json_record.konto, ''),
+        muud =   json_record.muud
       WHERE id = json_record.id :: INTEGER
       RETURNING id
         INTO arv1_id;
@@ -210,13 +214,42 @@ BEGIN
 
     END IF;
 
+    IF (arv1_id IS NOT NULL AND NOT empty(arv1_id) AND json_record.arve_id IS NOT NULL) THEN
+      -- в параметрах есть ссылки на другие счета
+      l_json_arve_id = (SELECT row_to_json(row) FROM (SELECT json_record.arve_id AS arve_id) row)::JSONB;
+      UPDATE docs.arv1 SET properties = coalesce(properties::JSONB,'{}'::JSONB)::JSONB || l_json_arve_id WHERE id = arv1_id;
+
+      -- установим связь со счетом , на который выписан интрес
+      UPDATE docs.doc
+      SET docs_ids = array_append(docs_ids, doc_id)
+      WHERE id = json_record.arve_id;
+
+    END IF;
+
   END LOOP;
 
   -- delete record which not in json
+  IF array_length(ids,1) > 0 THEN
+    -- проверить на наличие ссылок на другие счета и снять ссылку
+    IF exists (
+        SELECT d.id FROM docs.doc d WHERE d.id IN (
+                                                SELECT (properties->> 'arve_id')::INTEGER
+                                                  FROM docs.arv1 a1
+                                                  WHERE a1.parentid = arv_id AND a1.id NOT IN (SELECT unnest(ids)) ) ) THEN
+      -- есть ссылка, надо снять
+      UPDATE docs.doc
+      SET docs_ids = array_remove(docs_ids, doc_id)
+      WHERE id IN (
+        SELECT (a1.properties->> 'arve_id')::INTEGER
+          FROM docs.arv1 a1
+                 INNER JOIN docs.arv a ON a.id = a1.parentid
+        WHERE  a.parentid = doc_id
+        AND a1.id NOT IN (SELECT unnest(ids)));
+    END IF;
 
-  DELETE FROM docs.arv1
-  WHERE parentid = arv_id AND id NOT IN (SELECT unnest(ids));
-
+    DELETE FROM docs.arv1
+    WHERE parentid = arv_id AND id NOT IN (SELECT unnest(ids));
+  END IF;
   -- update arv summad
   SELECT
     sum(summa) AS summa,

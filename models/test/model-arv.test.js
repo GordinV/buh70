@@ -115,5 +115,12 @@ describe('dok. type Arv tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
+    it('should exists procedure docs.create_new_arve', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'create_new_arve'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
 });
 
