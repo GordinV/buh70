@@ -45,6 +45,7 @@ BEGIN
   WHERE d.rekvid = (SELECT rekvid FROM ou.userid WHERE id = user_id)
     AND coalesce(a.tahtaeg, current_date) < l_kpv
     AND year(a.kpv) >= 2011
+    AND empty(coalesce(a.objektid, 0))
     AND coalesce(a.jaak, 0) > 0
       --        or coalesce(a.tahtaeg, current_date)   -- не оплаченные или оплаченные с опозданием
     AND (l_ids IS NOT NULL AND d.docs_ids @> l_ids

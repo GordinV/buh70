@@ -61,6 +61,7 @@ BEGIN
       FROM docs.doc d
              INNER JOIN libs.library l ON l.id = d.doc_type_id
       WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
+        AND d.status <> 3
         AND l.kood IN ('ARV', 'MK', 'SORDER', 'KORDER'))
   THEN
 
@@ -106,7 +107,9 @@ BEGIN
   WHERE id IN (SELECT unnest(docs_ids) FROM docs.doc WHERE id = v_doc.id)
     AND status < DOC_STATUS;
 
-  IF (SELECT (properties->> 'arve_id') as arve_id FROM docs.arv1 a1  where a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id)) IS NOT NULL
+  IF (SELECT (properties->> 'arve_id') AS arve_id
+      FROM docs.arv1 a1
+      WHERE a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id)) IS NOT NULL
   THEN
     -- есть ссылка, надо снять
     UPDATE docs.doc

@@ -1,7 +1,7 @@
-DROP FUNCTION IF EXISTS docs.sp_delete_pv_oper( INTEGER, INTEGER );
+DROP FUNCTION IF EXISTS docs.sp_delete_pv_oper(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.sp_delete_pv_oper(
-  IN  user_id        INTEGER,
+  IN  user_id       INTEGER,
   IN  doc_id        INTEGER,
   OUT error_code    INTEGER,
   OUT result        INTEGER,
@@ -11,18 +11,18 @@ $BODY$
 
 DECLARE
   v_doc           RECORD;
-  v_seotud_docs     RECORD;
+  v_seotud_docs   RECORD;
   pv_oper_history JSONB;
   new_history     JSONB;
   DOC_STATUS      INTEGER = 3; -- документ удален
 BEGIN
 
-  SELECT
-    d.*,
-    u.ametnik AS user_name
-  INTO v_doc
+  SELECT d.*, u.ametnik AS user_name,
+         po.liik, po.pv_kaart_id
+      INTO v_doc
   FROM docs.doc d
-    LEFT OUTER JOIN ou.userid u ON u.id = user_id
+         INNER JOIN docs.pv_oper po ON po.parentid = d.id
+         LEFT OUTER JOIN ou.userid u ON u.id = user_id
   WHERE d.id = doc_id;
 
   -- проверка на пользователя и его соответствие учреждению
@@ -36,10 +36,8 @@ BEGIN
 
   END IF;
 
-  IF NOT exists(SELECT id
-                FROM ou.userid u
-                WHERE id = user_id
-                      AND u.rekvid = v_doc.rekvid
+  IF NOT exists(SELECT id FROM ou.userid u WHERE id = user_id
+                                             AND u.rekvid = v_doc.rekvid
   )
   THEN
 
@@ -70,9 +68,9 @@ BEGIN
   IF exists(
       SELECT d.id
       FROM docs.doc d
-        INNER JOIN libs.library l ON l.id = d.doc_type_id
+             INNER JOIN libs.library l ON l.id = d.doc_type_id
       WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
-            AND l.kood IN ('ARV', 'MK', 'SORDER', 'KORDER'))
+        AND l.kood IN ('ARV', 'MK', 'SORDER', 'KORDER'))
   THEN
 
     error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
@@ -84,36 +82,40 @@ BEGIN
   -- Логгирование удаленного документа
   -- docs.arv
 
-  pv_oper_history = row_to_json(row.*) FROM ( SELECT a.*
+  pv_oper_history = row_to_json(row.*) FROM (SELECT a.*
   FROM docs.pv_oper a WHERE a.parentid = doc_id) ROW;
 
   SELECT row_to_json(row)
-  INTO new_history
-  FROM (SELECT
-          now()           AS deleted,
-          v_doc.user_name AS user,
-          pv_oper_history AS pv_oper) row;
+      INTO new_history
+  FROM (SELECT now() AS deleted, v_doc.user_name AS user, pv_oper_history AS pv_oper) row;
 
 
-  DELETE FROM docs.pv_oper
-  WHERE parentid = v_doc.id; --@todo констрейн на удаление
+  DELETE FROM docs.pv_oper WHERE parentid = v_doc.id; --@todo констрейн на удаление
 
+  IF v_doc.liik = 4
+  THEN
+    -- если это операция списание, то меняем статус на активный
+    UPDATE libs.library
+    SET timestamp  = now(),
+        properties = properties :: JSONB || '{"mahakantud":null}'::JSONB,
+        status = 1
+    WHERE id = v_doc.pv_kaart_id;
+
+  END IF;
 
   -- удаление связей
   UPDATE docs.doc
   SET docs_ids = array_remove(docs_ids, doc_id)
-  WHERE id IN (
-    SELECT unnest(v_doc.docs_ids)
-  )
-        AND status < array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
+  WHERE id IN (SELECT unnest(v_doc.docs_ids))
+    AND status < array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
 
   -- Установка статуса ("Удален")  и сохранение истории
 
   UPDATE docs.doc
   SET lastupdate = now(),
-    history      = coalesce(history, '[]') :: JSONB || new_history,
-    rekvid       = v_doc.rekvid,
-    status       = DOC_STATUS
+      history    = coalesce(history, '[]') :: JSONB || new_history,
+      rekvid     = v_doc.rekvid,
+      status     = DOC_STATUS
   WHERE id = doc_id;
 
   IF (v_doc.docs_ids IS NOT NULL)
@@ -126,15 +128,16 @@ BEGIN
   END IF;
 
   -- перерасчет сальдо
-  PERFORM docs.sp_recalc_pv_jaak(doc_pv_kaart_id);
+  PERFORM docs.sp_recalc_pv_jaak(v_doc.pv_kaart_id);
 
   result = 1;
   RETURN;
 END;$BODY$
-LANGUAGE plpgsql VOLATILE
+LANGUAGE plpgsql
+VOLATILE
 COST 100;
-ALTER FUNCTION docs.sp_delete_pv_oper( INTEGER, INTEGER )
-OWNER TO postgres;
+ALTER FUNCTION docs.sp_delete_pv_oper(INTEGER, INTEGER)
+  OWNER TO postgres;
 
 GRANT EXECUTE ON FUNCTION docs.sp_delete_pv_oper(INTEGER, INTEGER) TO postgres;
 GRANT EXECUTE ON FUNCTION docs.sp_delete_pv_oper(INTEGER, INTEGER) TO dbkasutaja;

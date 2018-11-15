@@ -78,8 +78,15 @@ BEGIN
     INSERT INTO docs.pv_oper (parentid, kpv, pv_kaart_id, nomid, liik, summa, muud, kood1, kood2, kood3, kood4, kood5,
                               konto, tp, asutusid, tunnus, proj, doklausid)
     VALUES
-      (doc_id, doc_kpv, doc_pv_kaart_id, doc_nomid, doc_liik, doc_summa, doc_muud, doc_kood1, doc_kood2, doc_kood3,
-               doc_kood4, doc_kood5, doc_konto, doc_tp, doc_asutusid, doc_tunnus, doc_proj, doc_doklausid)
+      (doc_id, doc_kpv, doc_pv_kaart_id, doc_nomid, doc_liik, doc_summa, doc_muud, 
+       CASE WHEN doc_kood1 IS NOT NULL AND lower(doc_kood1) = 'null' THEN NULL ELSE doc_kood1 END,
+       CASE WHEN doc_kood2 IS NOT NULL AND lower(doc_kood2) = 'null' THEN NULL ELSE doc_kood2 END,
+       CASE WHEN doc_kood3 IS NOT NULL AND lower(doc_kood3) = 'null' THEN NULL ELSE doc_kood3 END,
+       CASE WHEN doc_kood4 IS NOT NULL AND lower(doc_kood4) = 'null' THEN NULL ELSE doc_kood4 END,
+      CASE WHEN doc_kood5 IS NOT NULL AND lower(doc_kood5) = 'null' THEN NULL ELSE doc_kood5 END, 
+       doc_konto,
+       CASE WHEN doc_tp IS NOT NULL AND lower(doc_tp) = 'null' THEN NULL ELSE doc_tp END, 
+       doc_asutusid, doc_tunnus, doc_proj, doc_doklausid)
     RETURNING id
       INTO pv_oper_id;
 

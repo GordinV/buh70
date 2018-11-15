@@ -57,7 +57,7 @@ FROM (
                    WHERE pv_kaart_id = p.id AND liik = 3 AND kpv >= l_kpv1 AND kpv <= l_kpv2), 0) AS parandus,
          coalesce((SELECT sum(summa)
                    FROM docs.pv_oper po
-                   WHERE pv_kaart_id = p.id AND liik = 4 AND kpv <= l_kpv1),
+                   WHERE pv_kaart_id = p.id AND liik = 4 AND kpv <= l_kpv2),
                   0)                                                                           AS mahakantud,
          coalesce((SELECT sum(summa)
                    FROM docs.pv_oper po

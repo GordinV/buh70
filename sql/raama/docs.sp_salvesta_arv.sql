@@ -31,7 +31,7 @@ DECLARE
   doc_kbmta     NUMERIC(14, 4) = coalesce((doc_data ->> 'kbmta') :: NUMERIC, 0);
   doc_kbm       NUMERIC(14, 4) = coalesce((doc_data ->> 'kbm') :: NUMERIC, 0);
   doc_muud      TEXT = doc_data ->> 'muud';
-  doc_objektid  INTEGER = doc_data ->> 'objektid';
+  doc_objektid  INTEGER = doc_data ->> 'objektid'; -- считать или не считать (если не пусто) интресс
   doc_objekt    TEXT = doc_data ->> 'objekt';
   tnDokLausId   INTEGER = coalesce((doc_data ->> 'doklausid') :: INTEGER, 1);
   doc_lepingId  INTEGER = doc_data ->> 'leping_id';
