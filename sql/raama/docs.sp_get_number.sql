@@ -55,6 +55,9 @@ BEGIN
     WHEN tcDok = 'TAOTLUS'
     THEN
       lcTableName = 'eelarve.taotlus';
+    WHEN tcDok = 'LUBA'
+    THEN
+      lcTableName = '(select left(l.number,2)::text as number, l.parentid, l.rekvid, l.algkpv as kpv from rekl.luba l)';
   END CASE;
 
   -- building sql query with regexp for only numbers
@@ -81,3 +84,8 @@ raise notice '%',lcSqlString;
   RETURN lcNumber;
 END;
 $$;
+
+
+/*
+select docs.sp_get_number(28, 'LUBA', 2018, null)
+ */

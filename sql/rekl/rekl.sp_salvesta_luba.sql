@@ -36,6 +36,7 @@ DECLARE
   ids           INTEGER [];
   docs          INTEGER [];
   is_import     BOOLEAN = data ->> 'import';
+  is_new BOOLEAN = FALSE;
 BEGIN
 
   SELECT kasutaja
@@ -54,11 +55,10 @@ BEGIN
     doc_id = doc_data ->> 'id';
   END IF;
 
-  RAISE NOTICE 'doc_id %', doc_id;
-
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
   THEN
+    is_new = TRUE;
 
     SELECT row_to_json(row)
     INTO new_history
@@ -71,17 +71,14 @@ BEGIN
     RETURNING id
       INTO doc_id;
 
-    RAISE NOTICE 'after doc_id %', doc_id;
-
     INSERT INTO rekl.luba (parentid, asutusid, rekvid, algkpv, loppkpv, number, alus, muud, kord, summa, staatus)
     VALUES
       (doc_id, doc_asutusid, user_rekvid, doc_algkpv, doc_loppkpv, doc_number, doc_alus, doc_muud, doc_kord, doc_summa,
                CASE WHEN is_import IS NOT NULL
                  THEN doc_staatus
-               ELSE 0 END)
+               ELSE 1 END)
     RETURNING id
       INTO luba_id;
-    RAISE NOTICE 'after luba_id %', luba_id;
 
   ELSE
     SELECT row_to_json(row)
@@ -104,7 +101,7 @@ BEGIN
       docs_ids   = docs,
       lastupdate = now(),
       history    = coalesce(history, '[]') :: JSONB || new_history,
-      status = case when is_import is not null THEN 1 else status END
+      status = CASE WHEN is_import IS NOT NULL THEN 1 ELSE status END
     WHERE id = doc_id;
 
     UPDATE rekl.luba
@@ -123,17 +120,14 @@ BEGIN
       volg     = CASE WHEN is_import IS NOT NULL
         THEN doc_volg
                  ELSE volg END,
-      staatus = case when is_import is not null then doc_staatus else staatus END
+      staatus = CASE WHEN is_import IS NOT NULL THEN doc_staatus ELSE staatus END
     WHERE parentid = doc_id
     RETURNING id
       INTO luba_id;
 
   END IF;
 
-  RAISE NOTICE 'luba_id %', luba_id;
-
   -- вставка в таблицы документа
-
 
   FOR json_object IN
   SELECT *

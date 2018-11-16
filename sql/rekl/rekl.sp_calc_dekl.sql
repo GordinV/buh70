@@ -1,5 +1,5 @@
-DROP FUNCTION IF EXISTS rekl.sp_calc_dekl( INTEGER );
-DROP FUNCTION IF EXISTS rekl.sp_calc_dekl( INTEGER, INTEGER );
+DROP FUNCTION IF EXISTS rekl.sp_calc_dekl(INTEGER);
+DROP FUNCTION IF EXISTS rekl.sp_calc_dekl(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION rekl.sp_calc_dekl(l_luba_doc_id INTEGER, l_user_id INTEGER)
   RETURNS SMALLINT AS
@@ -18,37 +18,46 @@ DECLARE
   l_dokprop_id  INT;
   l_toiming_id  INT;
   l_dekl_number INT;
-  l_summa       NUMERIC;
-  v_toiming     RECORD;
-  json_params   JSON;
+  l_summa     NUMERIC;
+  v_toiming   RECORD;
+  json_params JSON;
 BEGIN
   SELECT l.*
-  INTO v_luba
+      INTO v_luba
   FROM rekl.luba l
-    INNER JOIN docs.doc d ON d.id = l.parentid
+         INNER JOIN docs.doc d ON d.id = l.parentid
   WHERE l.parentid = l_luba_doc_id;
+
+  IF v_luba IS NULL
+  THEN
+    RAISE EXCEPTION 'Luba ei leidnud';
+  END IF;
 
   l_dekl_period = 0;
   -- dok liik
   l_dokprop_id = (SELECT d.id
                   FROM libs.library l
-                    INNER JOIN libs.dokprop d ON l.id = d.parentid
+                         INNER JOIN libs.dokprop d ON l.id = d.parentid
                   WHERE l.kood = 'DEKL'
-                        AND l.library = 'DOK'
-                        AND d.rekvid = v_luba.rekvid
+                    AND l.library = 'DOK'
+                    AND d.rekvid = v_luba.rekvid
                   ORDER BY id DESC
                   LIMIT 1);
-
-  IF v_luba.staatus IS NULL OR v_luba.staatus = 0
-  THEN
-    RAISE EXCEPTION 'Luba anulleritud';
-    RETURN 0;
-  END IF;
-
+  /*
+    IF v_luba.staatus IS NULL OR v_luba.staatus = 0
+    THEN
+      RAISE EXCEPTION 'Luba anulleritud';
+      RETURN 0;
+    END IF;
+  */
   -- kustatme vana dekl
 
-  DELETE FROM rekl.toiming
-  WHERE lubaid = v_luba.id AND empty(saadetud) AND staatus = 'active' AND tyyp = 'DEKL';
+  DELETE
+  FROM rekl.toiming
+  WHERE lubaid = v_luba.id
+    AND empty(saadetud)
+    AND staatus = 'active'
+    AND tyyp = 'DEKL';
 
   l_alg_kpv = date(year(v_luba.algkpv), 1, 1);
   l_lopp_kpv = date(year(v_luba.algkpv), 12, 31);
@@ -133,26 +142,22 @@ BEGIN
 
     -- parameters
 
-    SELECT
-      0               AS id,
-      0               AS number,
-      v_luba.asutusid,
-      v_luba.parentid AS lubaid,
-      l_kpv           AS kpv,
-      l_summa         AS summa,
-      NULL :: TEXT    AS alus,
-      NULL :: TEXT    AS ettekirjutus,
-      l_tahtaeg       AS tahtaeg,
-      l_dokprop_id    AS dokpropid,
-      'DEKL'          AS tyyp,
-      l_dekl_number   AS number
-    INTO v_toiming;
+    SELECT 0               AS id,
+           0               AS number,
+           v_luba.asutusid,
+           v_luba.parentid AS lubaid,
+           l_kpv           AS kpv,
+           l_summa         AS summa,
+           NULL :: TEXT    AS alus,
+           NULL :: TEXT    AS ettekirjutus,
+           l_tahtaeg       AS tahtaeg,
+           l_dokprop_id    AS dokpropid,
+           'DEKL'          AS tyyp,
+           l_dekl_number   AS number
+        INTO v_toiming;
 
     SELECT row_to_json(row)
-    INTO json_params
-    FROM (SELECT
-            0                      AS id,
-            row_to_json(v_toiming) AS data) row;
+        INTO json_params FROM (SELECT 0 AS id, row_to_json(v_toiming) AS data) row;
 
     l_toiming_id = rekl.sp_salvesta_toiming(json_params, l_user_id, v_luba.rekvid);
 
@@ -242,23 +247,24 @@ BEGIN
   END LOOP;
 
   -- delete dekl where kpv > luba.loppkpv
-  DELETE FROM rekl.toiming
+  DELETE
+  FROM rekl.toiming
   WHERE lubaid = v_luba.parentid
-        AND kpv > v_luba.loppkpv
-        AND staatus = 'active'
-        AND tyyp = 'DEKL';
+    AND kpv > v_luba.loppkpv
+    AND staatus = 'active'
+    AND tyyp = 'DEKL';
   RETURN 1;
 
 END;
 
 $BODY$
-LANGUAGE 'plpgsql' VOLATILE STRICT
+LANGUAGE 'plpgsql'
+VOLATILE
+STRICT
 COST 100;
 
-GRANT EXECUTE ON FUNCTION rekl.sp_calc_dekl(INTEGER,INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION rekl.sp_calc_dekl(INTEGER,INTEGER) TO dbpeakasutaja;
-
-
+GRANT EXECUTE ON FUNCTION rekl.sp_calc_dekl(INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION rekl.sp_calc_dekl(INTEGER, INTEGER) TO dbpeakasutaja;
 
 
 /*

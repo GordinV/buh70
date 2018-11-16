@@ -112,6 +112,7 @@ describe('dok. type Luba tests', function () {
         let sql = doc.select[0].sqlAsNew;
         let returnValue = await db.queryDb(sql, [0, 1]);
         expect(returnValue).toBeDefined();
+        console.log('returnValue',returnValue);
         let result = returnValue.result;
         expect(returnValue.error_code).toBe(0);
 
