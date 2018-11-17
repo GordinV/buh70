@@ -87,7 +87,6 @@ module.exports = {
     requiredFields: [
         {name: 'kood', type: 'C'},
         {name: 'nimetus', type: 'C'},
-        {name: 'library', type: 'C'},
         {name: 'gruppid', type: 'I'}
     ],
     saveDoc: `select libs.sp_salvesta_pv_kaart($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid

@@ -30,3 +30,5 @@ CREATE VIEW cur_luba AS
   FROM docs.doc d
     INNER JOIN rekl.luba luba ON d.id = luba.parentid
     INNER JOIN libs.asutus a ON a.id = luba.asutusid;
+
+GRANT SELECT ON TABLE cur_luba TO dbvaatleja;

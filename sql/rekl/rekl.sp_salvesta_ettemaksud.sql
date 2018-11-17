@@ -18,14 +18,14 @@ DECLARE
   doc_dokid     INTEGER = doc_data ->> 'dokid';
   doc_doktyyp   REKL_ETTEMAKS_LIIK = coalesce((doc_data ->> 'doktyyp') :: REKL_ETTEMAKS_LIIK, 'DEEBET');
   doc_selg      TEXT = doc_data ->> 'selg';
-  doc_journalid INTEGER = doc_data ->> 'journalid';
+  doc_journalid INTEGER = doc_data ->> 'journalid'; -- ссылка на строку проводки
   doc_muud      TEXT = doc_data ->> 'muud';
   is_import     BOOLEAN = data ->> 'import';
 BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
 
   IF (is_import IS NULL or not is_import) AND userName IS NULL

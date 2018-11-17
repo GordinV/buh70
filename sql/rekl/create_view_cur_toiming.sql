@@ -39,3 +39,5 @@ CREATE VIEW cur_toiming
       LEFT OUTER JOIN docs.journal j ON j.parentid = dd.id
       LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
     WHERE coalesce(t.staatus :: TEXT, '') <> 'deleted';
+
+GRANT SELECT ON TABLE cur_toiming TO dbvaatleja;

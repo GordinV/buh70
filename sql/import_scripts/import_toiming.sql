@@ -1,3 +1,27 @@
+drop FOREIGN TABLE if exists remote_toiming;
+
+CREATE FOREIGN TABLE remote_toiming (
+  id           SERIAL ,
+  parentid     INTEGER                       NOT NULL,
+  lubaid       INTEGER DEFAULT 0             NOT NULL,
+  journalid    INTEGER DEFAULT 0             NOT NULL,
+  kpv          DATE DEFAULT date()           NOT NULL,
+  userid       INTEGER DEFAULT 0             NOT NULL,
+  alus         VARCHAR(254) DEFAULT space(1) NOT NULL,
+  ettekirjutus VARCHAR(254) DEFAULT space(1) NOT NULL,
+  tahtaeg      DATE DEFAULT date()           NOT NULL,
+  summa        NUMERIC(12, 2) DEFAULT 0      NOT NULL,
+  staatus      INTEGER DEFAULT 1             NOT NULL,
+  tyyp         VARCHAR(20) DEFAULT 0         NOT NULL,
+  muud         TEXT,
+  failid       INTEGER DEFAULT 0             NOT NULL,
+  dokpropid    INTEGER DEFAULT 0             NOT NULL,
+  saadetud     DATE,
+  number       INTEGER DEFAULT 0,
+  deklid       INTEGER)
+SERVER db_narva_ee
+OPTIONS (schema_name 'public', table_name 'toiming');
+
 DROP FUNCTION IF EXISTS import_toiming( INTEGER );
 
 CREATE OR REPLACE FUNCTION import_toiming(in_old_id INTEGER)
@@ -20,7 +44,7 @@ BEGIN
 
   FOR v_toiming IN
   SELECT t.*
-  FROM toiming t
+  FROM remote_toiming t
   WHERE (t.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP
@@ -148,7 +172,7 @@ COST 100;
 
 
 /*
-SELECT import_TOIMING(25836)
+SELECT import_TOIMING(25079)
 
 select * from luba order by id desc limit 10
 

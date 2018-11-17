@@ -1,3 +1,40 @@
+drop FOREIGN TABLE if exists remote_luba;
+drop FOREIGN TABLE if exists remote_luba1;
+
+CREATE FOREIGN TABLE remote_luba (
+  id       SERIAL,
+  parentid INTEGER                                            NOT NULL,
+  rekvid   INTEGER                                            NOT NULL,
+  algkpv   DATE DEFAULT date()                                NOT NULL,
+  loppkpv  DATE,
+  number   VARCHAR(20)                                        NOT NULL,
+  summa    NUMERIC(12, 2) DEFAULT 0                           NOT NULL,
+  jaak     NUMERIC(12, 2) DEFAULT 0                           NOT NULL,
+  volg     NUMERIC(12, 2) DEFAULT 0                           NOT NULL,
+  alus     VARCHAR(254) DEFAULT space(1)                      NOT NULL,
+  staatus  INTEGER DEFAULT 1                                  NOT NULL,
+  muud     TEXT,
+  kord     VARCHAR(20) DEFAULT 'KVARTAL' :: CHARACTER VARYING NOT NULL,
+  intress  NUMERIC(12, 2) DEFAULT 0                           NOT NULL)
+SERVER db_narva_ee
+OPTIONS (schema_name 'public', table_name 'luba');
+
+
+CREATE FOREIGN TABLE remote_luba1 (
+  id          SERIAL ,
+  parentid    INTEGER                  NOT NULL,
+  nomid       INTEGER                  NOT NULL,
+  kogus       NUMERIC(12, 2) DEFAULT 0 NOT NULL,
+  maksumaar   NUMERIC(12, 2) DEFAULT 0 NOT NULL,
+  soodus_tyyp SMALLINT DEFAULT 0       NOT NULL,
+  soodus      NUMERIC(12, 2) DEFAULT 0 NOT NULL,
+  summa       NUMERIC(12, 2) DEFAULT 0 NOT NULL,
+  staatus     INTEGER DEFAULT 1        NOT NULL,
+  muud        TEXT)
+SERVER db_narva_ee
+OPTIONS (schema_name 'public', table_name 'luba1');
+
+
 DROP FUNCTION IF EXISTS import_luba( INTEGER );
 
 CREATE OR REPLACE FUNCTION import_luba(in_old_id INTEGER)
@@ -18,7 +55,7 @@ BEGIN
 
   FOR v_luba IN
   SELECT l.*
-  FROM luba l
+  FROM remote_luba l
     INNER JOIN rekv ON rekv.id = l.rekvid AND rekv.parentid < 999
   WHERE (l.id = in_old_id OR in_old_id IS NULL)
         and l.parentid not in (0, 30656)
@@ -58,7 +95,7 @@ BEGIN
                                         soodus,
                                         staatus,
                                         muud
-                                      FROM luba1 l1
+                                      FROM remote_luba1 l1
                                       WHERE l1.parentid = v_luba.id) AS l1
                                ));
 

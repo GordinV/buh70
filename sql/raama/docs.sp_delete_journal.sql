@@ -1,7 +1,7 @@
-﻿DROP FUNCTION IF EXISTS docs.sp_delete_journal( INTEGER, INTEGER );
+﻿DROP FUNCTION IF EXISTS docs.sp_delete_journal(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.sp_delete_journal(
-  IN  user_id        INTEGER,
+  IN  user_id       INTEGER,
   IN  doc_id        INTEGER,
   OUT error_code    INTEGER,
   OUT result        INTEGER,
@@ -17,13 +17,11 @@ DECLARE
   DOC_STATUS       INTEGER = 3; -- документ удален
 BEGIN
 
-  SELECT
-    d.*,
-    u.ametnik AS user_name
-  INTO v_doc
+  SELECT d.*, u.ametnik AS user_name
+      INTO v_doc
   FROM docs.doc d
-    INNER JOIN docs.journal j ON j.parentid = d.id
-    LEFT OUTER JOIN ou.userid u ON u.id = user_id
+         INNER JOIN docs.journal j ON j.parentid = d.id
+         LEFT OUTER JOIN ou.userid u ON u.id = user_id
   WHERE d.id = doc_id;
 
   -- проверка на пользователя и его соответствие учреждению
@@ -37,10 +35,8 @@ BEGIN
 
   END IF;
 
-  IF NOT exists(SELECT id
-                FROM ou.userid u
-                WHERE id = user_id
-                      AND u.rekvid = v_doc.rekvid
+  IF NOT exists(SELECT id FROM ou.userid u WHERE id = user_id
+                                             AND u.rekvid = v_doc.rekvid
   )
   THEN
 
@@ -71,14 +67,12 @@ BEGIN
   IF exists(
       SELECT d.id
       FROM docs.doc d
-        INNER JOIN libs.library l ON l.id = d.doc_type_id
+             INNER JOIN libs.library l ON l.id = d.doc_type_id
       WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
-            AND l.kood IN (
-        SELECT kood
-        FROM libs.library
-        WHERE library = 'DOK'
-              AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')
-      ))
+        AND l.kood IN (SELECT kood
+                       FROM libs.library
+                       WHERE library = 'DOK'
+                         AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')))
   THEN
 
     RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
@@ -91,7 +85,7 @@ BEGIN
   -- Логгирование удаленного документа
   -- docs.journal
 
-  journal_history = row_to_json(row.*) FROM ( SELECT a.*
+  journal_history = row_to_json(row.*) FROM (SELECT a.*
   FROM docs.journal a WHERE a.parentid = doc_id) ROW;
 
   -- docs.journal1
@@ -99,53 +93,49 @@ BEGIN
   journal1_history = jsonb_build_array(array(SELECT row_to_json(row.*)
                                              FROM (SELECT k1.*
                                                    FROM docs.journal1 k1
-                                                     INNER JOIN docs.journal k ON k.id = k1.parentid
+                                                          INNER JOIN docs.journal k ON k.id = k1.parentid
                                                    WHERE k.parentid = doc_id) row));
 
   SELECT row_to_json(row)
-  INTO new_history
-  FROM (SELECT
-          now()            AS deleted,
-          v_doc.user_name  AS user,
-          journal_history  AS journal,
-          journal1_history AS journal1) row;
+      INTO new_history
+  FROM (SELECT now() AS deleted, v_doc.user_name AS user, journal_history AS journal, journal1_history AS journal1) row;
 
+  -- удалим (если есть связанные с проводкой предоплаты рекламного налога
 
-  DELETE FROM docs.journal1
-  WHERE parentid IN (SELECT id
-                     FROM docs.journal
-                     WHERE parentid = v_doc.id);
-  DELETE FROM docs.journal
-  WHERE parentid = v_doc.id; --@todo констрейн на удаление
+  DELETE
+  FROM rekl.ettemaksud e
+  WHERE e.journalid IN
+        (SELECT id FROM docs.journal1 WHERE parentid IN (SELECT id FROM docs.journal WHERE parentid = v_doc.id));
+
+  DELETE FROM docs.journal1 WHERE parentid IN (SELECT id FROM docs.journal WHERE parentid = v_doc.id);
+
+  DELETE FROM docs.journal WHERE parentid = v_doc.id; --@todo констрейн на удаление
 
 
   -- удаление связей
   UPDATE docs.doc
   SET docs_ids = array_remove(docs_ids, doc_id)
-  WHERE id IN (
-    SELECT unnest(docs_ids)
-    FROM docs.doc
-    WHERE id = doc_id
-  )
-        AND status < DOC_STATUS;
+  WHERE id IN (SELECT unnest(docs_ids) FROM docs.doc WHERE id = doc_id)
+    AND status < DOC_STATUS;
 
   -- Установка статуса ("Удален")  и сохранение истории
 
   UPDATE docs.doc
   SET lastupdate = now(),
-    history      = coalesce(history, '[]') :: JSONB || new_history,
-    rekvid       = v_doc.rekvid,
-    status       = DOC_STATUS
+      history    = coalesce(history, '[]') :: JSONB || new_history,
+      rekvid     = v_doc.rekvid,
+      status     = DOC_STATUS
   WHERE id = doc_id;
 
   result = 1;
   RETURN;
 END;$BODY$
-LANGUAGE plpgsql VOLATILE
+LANGUAGE plpgsql
+VOLATILE
 COST 100;
 
-ALTER FUNCTION docs.sp_delete_journal( INTEGER, INTEGER )
-OWNER TO postgres;
+ALTER FUNCTION docs.sp_delete_journal(INTEGER, INTEGER)
+  OWNER TO postgres;
 
 GRANT EXECUTE ON FUNCTION docs.sp_delete_journal(INTEGER, INTEGER) TO postgres;
 GRANT EXECUTE ON FUNCTION docs.sp_delete_journal(INTEGER, INTEGER) TO dbkasutaja;

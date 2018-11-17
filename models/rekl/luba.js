@@ -8,6 +8,10 @@ const start = require('./../BP/start'),
 
 
 const Luba = {
+    selectAsLibs: `SELECT *
+                   FROM rekl.com_asutus_rekl
+                   WHERE rekvid = $1
+                   ORDER BY nimetus`,
     select: [
         {
             sql: `SELECT d.id,

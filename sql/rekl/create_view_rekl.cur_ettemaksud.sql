@@ -21,3 +21,6 @@ CREATE VIEW cur_ettemaksud AS
   FROM rekl.ettemaksud e
     INNER JOIN libs.asutus a ON e.asutusid = a.id
   WHERE e.staatus <> 'deleted';
+
+
+GRANT SELECT ON TABLE cur_ettemaksud TO dbvaatleja;

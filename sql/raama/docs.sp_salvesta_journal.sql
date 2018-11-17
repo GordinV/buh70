@@ -184,6 +184,7 @@ BEGIN
 
       PERFORM docs.get_avans_jaak(lnId);
     END IF;
+
     IF (json_record.kreedit = '200060' OR json_record.kreedit = '200095') AND doc_selg <> 'Alg.saldo kreedit'
     THEN
       is_rekl_ettemaks = TRUE;
