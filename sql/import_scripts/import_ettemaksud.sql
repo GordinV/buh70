@@ -1,3 +1,22 @@
+drop FOREIGN TABLE if exists remote_ettemaksud;
+
+CREATE FOREIGN TABLE remote_ettemaksud (
+  id        SERIAL                   NOT NULL,
+  rekvid    INTEGER                  NOT NULL,
+  kpv       DATE                     NOT NULL,
+  summa     NUMERIC(18, 6) DEFAULT 0 NOT NULL,
+  number    INTEGER DEFAULT 0        NOT NULL,
+  asutusid  INTEGER                  NOT NULL,
+  dokid     INTEGER                  NOT NULL,
+  doktyyp   INTEGER DEFAULT 1        NOT NULL,
+  selg      TEXT,
+  muud      TEXT,
+  staatus   INTEGER DEFAULT 1        NOT NULL,
+  journalid INTEGER DEFAULT 0        NOT NULL)
+  SERVER db_narva_ee
+OPTIONS (schema_name 'public', table_name 'ettemaksud');
+
+
 DROP FUNCTION IF EXISTS import_ettemaksud( INTEGER );
 
 CREATE OR REPLACE FUNCTION import_ettemaksud(in_old_id INTEGER)
@@ -21,7 +40,7 @@ BEGIN
 
   FOR v_ettemaksud IN
   SELECT e.*
-  FROM ettemaksud e
+  FROM remote_ettemaksud e
   WHERE (e.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP
@@ -90,7 +109,7 @@ BEGIN
             TRUE                     AS import,
             v_params                 AS data) row;
 
-    SELECT rekl.sp_salvesta_ettemaksud(json_object :: JSON, 1, 1)
+    SELECT rekl.sp_salvesta_ettemaksud(json_object :: JSON, 64, v_ettemaksud.rekvid)
     INTO ettemaks_id;
 
     RAISE NOTICE 'leping_id %, l_count %', ettemaks_id, l_count;

@@ -188,6 +188,7 @@ BEGIN
     PERFORM rekl.sp_calc_dekl(doc_id, userid);
   END IF;
   RETURN doc_id;
+
   EXCEPTION WHEN OTHERS
   THEN
     RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;

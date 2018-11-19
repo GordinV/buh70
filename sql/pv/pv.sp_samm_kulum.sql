@@ -55,7 +55,7 @@ BEGIN
       -- salvesta pv oper
       l_pv_oper_id = (SELECT id
                       FROM cur_pv_oper po
-                      WHERE pv_kaart_id = v_pv_kaards.id :: INTEGER AND kpv = l_kpv);
+                      WHERE pv_kaart_id = v_pv_kaards.id :: INTEGER AND month(kpv) = month(l_kpv) and year(kpv) = year(l_kpv) order by id desc limit 1);
 
       SELECT *
       INTO v_nom

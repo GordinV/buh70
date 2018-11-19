@@ -22,11 +22,14 @@ BEGIN
   WHERE l.id = pv_id;
 
   -- select summ
-  SELECT sum(summa)
-               FILTER (WHERE liik = 1) AS soetmaks, sum(summa)
-               FILTER (WHERE liik = 2) AS kulum, sum(summa)
-               FILTER (WHERE liik = 3) AS parandus, sum(summa)
-               FILTER (WHERE liik = 5) AS umberhind
+  SELECT coalesce(sum(summa)
+               FILTER (WHERE liik = 1),1) AS soetmaks,
+         coalesce(sum(summa)
+               FILTER (WHERE liik = 2),0) AS kulum,
+         coalesce(sum(summa)
+               FILTER (WHERE liik = 3),0) AS parandus,
+         coalesce(sum(summa)
+               FILTER (WHERE liik = 5),0) AS umberhind
       INTO v_pv_oper
   FROM docs.pv_oper po
   WHERE pv_kaart_id = pv_id
@@ -68,6 +71,7 @@ GRANT EXECUTE ON FUNCTION docs.sp_recalc_pv_jaak(INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_recalc_pv_jaak(INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.sp_recalc_pv_jaak(446);
+SELECT docs.sp_recalc_pv_jaak(213051);
 
+select * from libs.library order by id desc limit 1
 */

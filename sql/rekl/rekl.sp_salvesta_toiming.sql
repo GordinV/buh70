@@ -69,8 +69,8 @@ BEGIN
     a_docs_ids = array(SELECT DISTINCT unnest(array_append(a_docs_ids, doc_lubaid)));
 
 
-    INSERT INTO docs.doc (doc_type_id, history, rekvid, docs_ids)
-    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, a_docs_ids)
+    INSERT INTO docs.doc (doc_type_id, history, rekvid, docs_ids, status)
+    VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, a_docs_ids, 1)
     RETURNING id
       INTO doc_id;
 
