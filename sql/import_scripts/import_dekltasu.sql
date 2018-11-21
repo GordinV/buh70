@@ -1,5 +1,27 @@
 DROP FUNCTION IF EXISTS import_dekltasu( INTEGER );
 
+
+drop FOREIGN TABLE if exists remote_dekltasu;
+
+CREATE FOREIGN TABLE remote_dekltasu (
+  id       SERIAL            NOT NULL,
+  deklid   INTEGER           NOT NULL,
+  tasuid   INTEGER           NOT NULL,
+  tasukpv  DATE              NOT NULL,
+  volgkpv  INTEGER           NOT NULL,
+  summa    NUMERIC(18, 6)    NOT NULL,
+  parentid INTEGER DEFAULT 0 NOT NULL)
+SERVER db_narva_ee
+OPTIONS (schema_name 'public', table_name 'dekltasu');
+
+SELECT rekl.sp_koosta_rekl_uhendus(64,(select row_to_json(row) from (select (select new_id from import_log where lib_name = 'TOIMING' and old_id = d.deklid) as dekl_id,
+                                                                            (select new_id from import_log where lib_name = 'TOIMING' and old_id = d.tasuid) as tasu_id
+                                                                    ) row)::json) as imp
+from remote_dekltasu d
+where deklid in (select old_id from import_log where lib_name = 'TOIMING');
+
+
+/*
 CREATE OR REPLACE FUNCTION import_dekltasu(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -162,7 +184,7 @@ BEGIN
 END;$BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-
+*/
 
 /*
 SELECT import_dekltasu(10997)

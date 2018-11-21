@@ -127,3 +127,4 @@ $$;
 
 GRANT EXECUTE ON FUNCTION rekl.sp_recalc_rekl_jaak(INTEGER, JSON) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION rekl.sp_recalc_rekl_jaak(INTEGER, JSON) TO dbpeakasutaja;
+

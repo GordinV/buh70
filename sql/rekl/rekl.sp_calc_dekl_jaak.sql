@@ -1,8 +1,7 @@
-DROP FUNCTION IF EXISTS rekl.sp_tasu_dekl( IN user_id INTEGER, IN params JSON );
+DROP FUNCTION IF EXISTS rekl.sp_calc_dekl_jaak( IN user_id INTEGER, IN params JSON );
 
-CREATE FUNCTION rekl.sp_tasu_dekl(IN  user_id    INTEGER, IN params JSON, OUT result INTEGER,
-                                  OUT error_code INTEGER, OUT error_message TEXT)
-  RETURNS RECORD
+CREATE FUNCTION rekl.sp_calc_dekl_jaak(dekl_id integer)
+  RETURN numeric
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -25,20 +24,20 @@ BEGIN
   -- otsime luba
 
   SELECT
-    l.*,
-    t.number AS t_number,
-    t.id     AS deklid
-  INTO v_luba
+         l.*,
+         t.number AS t_number,
+         t.id     AS deklid
+      INTO v_luba
   FROM rekl.luba l
-    INNER JOIN rekl.toiming t ON l.parentid = t.lubaid
+         INNER JOIN rekl.toiming t ON l.parentid = t.lubaid
   WHERE t.parentid = l_dekl_Id;
 
   -- kontrollime ettemaks
   SELECT sum(summa)
-  INTO l_ettemaksu_summa
+      INTO l_ettemaksu_summa
   FROM rekl.ettemaksud e
   WHERE asutusid = v_luba.asutusid
-        AND staatus <> 'deleted';
+    AND staatus <> 'deleted';
 
   IF (l_ettemaksu_summa - l_summa) < 0
   THEN
@@ -52,23 +51,23 @@ BEGIN
   l_ettemaksu_summa = l_summa;
 
   SELECT
-    0                 AS id,
-    0                 AS number,
-    v_luba.asutusid,
-    v_luba.parentid   AS lubaid,
-    l_kpv             AS kpv,
-    l_ettemaksu_summa AS summa,
-    l_alus :: TEXT    AS alus,
-    NULL :: TEXT      AS ettekirjutus,
-    l_kpv             AS tahtaeg,
-    'TASU'            AS tyyp
-  INTO v_toiming;
+         0                 AS id,
+         0                 AS number,
+         v_luba.asutusid,
+         v_luba.parentid   AS lubaid,
+         l_kpv             AS kpv,
+         l_ettemaksu_summa AS summa,
+         l_alus :: TEXT    AS alus,
+         NULL :: TEXT      AS ettekirjutus,
+         l_kpv             AS tahtaeg,
+         'TASU'            AS tyyp
+      INTO v_toiming;
 
   SELECT row_to_json(row)
-  INTO json_params
+      INTO json_params
   FROM (SELECT
-          0                      AS id,
-          row_to_json(v_toiming) AS data) row;
+               0                      AS id,
+               row_to_json(v_toiming) AS data) row;
 
   l_tasu_id = rekl.sp_salvesta_toiming(json_params :: JSON, user_id, v_luba.rekvid);
   -- konteerimine
@@ -76,12 +75,12 @@ BEGIN
   IF l_tasu_id IS NOT NULL AND l_tasu_id > 0
   THEN
     SELECT row_to_json(row)
-    INTO json_params
+        INTO json_params
     FROM (SELECT l_tasu_id AS id) row;
 
     SELECT qry.result
     FROM rekl.gen_lausend_rekltasu(user_id, json_params :: JSON) qry
-    INTO l_journal_id;
+        INTO l_journal_id;
   ELSE
     l_journal_id = 0;
   END IF;
@@ -91,24 +90,24 @@ BEGIN
     -- ettemaks nullime
 
     SELECT
-      0                      AS id,
-      0                      AS number,
-      v_luba.asutusid,
-      l_kpv                  AS kpv,
-      -1 * l_ettemaksu_summa AS summa,
-      l_alus :: TEXT         AS selg,
-      'KREEDIT'              AS doktyyp,
-      l_tasu_id              AS dokid,
-      CASE WHEN l_journal_id IS NOT NULL AND l_journal_id = 1
-        THEN NULL
-      ELSE l_journal_id END  AS journalid
-    INTO v_ettemaks;
+           0                      AS id,
+           0                      AS number,
+           v_luba.asutusid,
+           l_kpv                  AS kpv,
+           -1 * l_ettemaksu_summa AS summa,
+           l_alus :: TEXT         AS selg,
+           'KREEDIT'              AS doktyyp,
+           l_tasu_id              AS dokid,
+           CASE WHEN l_journal_id IS NOT NULL AND l_journal_id = 1
+                     THEN NULL
+                ELSE l_journal_id END  AS journalid
+        INTO v_ettemaks;
 
     SELECT row_to_json(row)
-    INTO json_params
+        INTO json_params
     FROM (SELECT
-            0                       AS id,
-            row_to_json(v_ettemaks) AS data) row;
+                 0                       AS id,
+                 row_to_json(v_ettemaks) AS data) row;
     l_ettemaks_id = rekl.sp_salvesta_ettemaksud(json_params :: JSON, user_id, v_luba.rekvid);
 
   END IF;
@@ -116,12 +115,12 @@ BEGIN
   -- salvestame tasu info
 
   SELECT
-    id,
-    parentid,
-    lubaid,
-    coalesce((lisa ->> 'dekltasu') :: JSONB, '[]' :: JSONB) AS dekltasu,
-    tahtaeg
-  INTO v_dekl
+         id,
+         parentid,
+         lubaid,
+         coalesce((lisa ->> 'dekltasu') :: JSONB, '[]' :: JSONB) AS dekltasu,
+         tahtaeg
+      INTO v_dekl
   FROM rekl.toiming
   WHERE parentid = l_dekl_Id;
 
@@ -133,31 +132,30 @@ BEGIN
 
   -- tasu summa, dekltasu array
   SELECT row_to_json(row)
-  INTO json_params
+      INTO json_params
   FROM (SELECT
-          l_tasu_id         AS tasuid,
-          l_kpv             AS tasukpv,
-          l_volg_kpv        AS volgkpv,
-          l_ettemaksu_summa AS summa) row;
+               l_tasu_id         AS tasuid,
+               l_kpv             AS tasukpv,
+               l_volg_kpv        AS volgkpv,
+               l_ettemaksu_summa AS summa) row;
 
   v_dekl.dekltasu = v_dekl.dekltasu || json_params;
 
   -- lisa
   SELECT row_to_json(row)
-  INTO json_params
+      INTO json_params
   FROM (SELECT v_dekl.dekltasu AS dekltasu) row;
 
   UPDATE rekl.toiming
   SET lisa  = coalesce(lisa, '{}' :: JSONB) || json_params,
-    staatus = 'closed'
+      staatus = 'closed'
   WHERE parentid = l_dekl_Id;
 
   -- luba jaak
   SELECT row_to_json(row)
-  INTO json_params
-  FROM (SELECT v_dekl.lubaid AS id, l_dekl_Id AS dekl_id, l_tasu_id AS tasu_id) row;
+      INTO json_params
+  FROM (SELECT v_dekl.lubaid AS id) row;
 
-  PERFORM rekl.sp_koosta_rekl_uhendus(user_id, json_params :: JSON);
   PERFORM rekl.sp_recalc_rekl_jaak(user_id, json_params :: JSON);
   PERFORM rekl.sp_set_ettemaks_staatus(v_luba.asutusid);
   result = 1;

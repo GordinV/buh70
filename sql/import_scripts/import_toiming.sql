@@ -24,6 +24,11 @@ OPTIONS (schema_name 'public', table_name 'toiming');
 
 DROP FUNCTION IF EXISTS import_toiming( INTEGER );
 
+
+
+DROP FUNCTION IF EXISTS import_toiming( INTEGER );
+
+
 CREATE OR REPLACE FUNCTION import_toiming(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
