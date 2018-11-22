@@ -64,18 +64,18 @@ BEGIN
 
   -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
 
-  IF exists(
+  IF v_doc.docs_ids IS NOT NULL AND exists(
       SELECT d.id
       FROM docs.doc d
              INNER JOIN libs.library l ON l.id = d.doc_type_id
       WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
+        AND d.status <> 3 -- not deleted
         AND l.kood IN (SELECT kood
                        FROM libs.library
                        WHERE library = 'DOK'
                          AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')))
   THEN
 
-    RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
     error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
     error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
     result = 0;

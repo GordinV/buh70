@@ -2,42 +2,59 @@ DROP VIEW IF EXISTS cur_toiming;
 
 CREATE VIEW cur_toiming
   AS
-    SELECT
-      d.id,
-      d.rekvid,
-      to_char(d.created, 'DD.MM.YYYY HH:MM' :: TEXT)                                AS created,
-      to_char(d.lastupdate, 'DD.MM.YYYY HH:MM' :: TEXT)                             AS lastupdate,
-      LTRIM(RTRIM(l.number)) + '-' + ltrim(rtrim(t.number :: VARCHAR)) :: VARCHAR   AS number,
-      t.asutusid,
-      t.lubaid,
-      t.kpv,
-      t.tahtaeg,
-      t.summa,
-      t.tyyp,
-      t.journalid,
-      coalesce(jid.number, 0)                                                       AS lausend,
-      coalesce(t.staatus :: TEXT, '')                                               AS status,
-      t.saadetud,
-      t.failid,
-      coalesce(rekl.fnc_dekl_jaak(d.ID), 0)                                         AS jaak,
-      t.deklId,
-      coalesce('Dekl.nr:' + (SELECT tt.number
-                             FROM rekl.toiming tt
-                             WHERE tt.id = t.deklid) :: VARCHAR, '') :: VARCHAR(20) AS parandus,
-
-      CASE WHEN t.tyyp = 'DEKL' AND t.staatus IS NOT NULL AND t.saadetud IS NOT NULL
-        THEN 'green'
-      WHEN t.tyyp = 'DEKL' AND t.staatus IS NOT NULL AND t.saadetud IS NULL AND t.tahtaeg > current_date :: DATE
-        THEN 'red'
-      ELSE 'white' END :: VARCHAR(20)                                               AS color,
-      ((t.lisa->>'failid')::jsonb ->>'fail')::varchar(254) as fail,
-      ((t.lisa->>'failid')::jsonb ->>'tyyp')::varchar(20) as storage_type
-    FROM docs.doc d
-      INNER JOIN rekl.toiming t ON t.parentid = d.id
-      INNER JOIN rekl.luba l ON t.lubaid = l.parentid
-      LEFT OUTER JOIN docs.doc dd ON t.journalid = dd.id
-      LEFT OUTER JOIN docs.journal j ON j.parentid = dd.id
-      LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
-    WHERE coalesce(t.staatus :: TEXT, '') <> 'deleted';
+    SELECT *, CASE
+                WHEN qry.tyyp = 'DEKL' AND qry.staatus IS NOT NULL AND qry.saadetud IS NOT NULL AND qry.jaak <= 0
+                        THEN 'green' -- отправлена и нет долга
+                WHEN qry.tyyp = 'DEKL' AND qry.staatus IS NOT NULL
+                       AND qry.saadetud IS NOT NULL AND
+                     COALESCE(qry.tahtaeg, CURRENT_DATE) >
+                     CURRENT_DATE :: DATE AND qry.jaak > 0
+                        THEN 'yellow' -- отправлена но не оплачена
+                  -- декларация не отправленна а срок подачи прошел
+                WHEN qry.tyyp = 'DEKL' AND qry.staatus IS NOT NULL
+                       AND qry.saadetud IS NOT NULL AND
+                     COALESCE(qry.tahtaeg, CURRENT_DATE) <
+                     CURRENT_DATE :: DATE AND qry.jaak > 0
+                        THEN 'red' -- декларация отправленна , но не оплаченна
+                ELSE 'white' END :: VARCHAR(20) AS color
+    FROM (SELECT D.id,
+                 D.rekvid,
+                 to_char(D.created, 'DD.MM.YYYY HH:MM' :: TEXT)                              AS created,
+                 to_char(D.lastupdate, 'DD.MM.YYYY HH:MM' ::
+                     TEXT)                                                                   AS lastupdate,
+                 LTRIM(RTRIM(l.number)) + '-' + ltrim(rtrim(t.number :: VARCHAR)) :: VARCHAR AS number,
+                 t.asutusid,
+                 t.lubaid,
+                 t.kpv,
+                 t.tahtaeg,
+                 t.summa,
+                 t.tyyp,
+                 t.journalid,
+                 COALESCE(jid.number, 0)                                                     AS lausend,
+                 COALESCE(t.staatus :: TEXT, '')                                             AS status,
+                 t.saadetud,
+                 t.failid,
+                 COALESCE(rekl.fnc_dekl_jaak(D.ID), 0)                                       AS jaak,
+                 t.deklId,
+                 COALESCE('Dekl.nr:' + (SELECT tt.number FROM rekl.toiming tt WHERE tt.id = t.deklid) ::
+                     VARCHAR,
+                          '') :: VARCHAR(20)                                                 AS parandus,
+                 ((t.lisa ->> 'failid') :: JSONB ->> 'fail') ::
+                     VARCHAR(254)                                                            AS fail,
+                 ((t.lisa ->> 'failid') :: JSONB ->> 'tyyp') ::
+                     VARCHAR(20)                                                             AS storage_type,
+                 t.staatus
+          FROM docs.doc D
+                 INNER JOIN rekl.toiming t ON t.parentid = D.id
+                 INNER JOIN rekl.luba l ON t.lubaid = l.
+                  parentid
+                 LEFT OUTER JOIN docs.doc dd ON t.journalid = dd
+                  .id
+                 LEFT OUTER JOIN docs.journal j ON j.parentid =
+                                                   dd.id
+                 LEFT OUTER JOIN docs.journalid jid ON jid.
+                                                           journalid = j.id
+          WHERE COALESCE(t.staatus :: TEXT, '') <>
+                'deleted') qry;
 
 GRANT SELECT ON TABLE cur_toiming TO dbvaatleja;
