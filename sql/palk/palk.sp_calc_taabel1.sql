@@ -12,18 +12,14 @@ l_aasta INTEGER = params ->> 'aasta';
 l_toograf INTEGER = params ->> 'toograf';
 
 l_hours NUMERIC(18, 4) = 0;
-l_return INTEGER = 0;
-l_holiday INTEGER = 0;
 v_tooleping RECORD;
 l_puhkus NUMERIC(16, 8) = 0;
 l_haigus NUMERIC(16, 8) = 0;
 l_muud NUMERIC(16, 8) = 0;
-lnPaevad INT = 0;
 l_tunnid NUMERIC = 0;
 l_toopaevad INT = 0;
 l_alg_paev INTEGER = 1;
 l_lopp_paev INTEGER = 31;
-l_str TEXT = '';
 params JSONB;
 l_tahtpaeva_tunnid numeric(12, 4) = 0;
 
@@ -106,9 +102,11 @@ BEGIN
     END IF;
   END IF;
 
-  IF coalesce(l_hours, 0) = 0
-  THEN
+  raise notice '1 l_hours %', l_hours;
 
+  IF l_hours is null
+  THEN
+  -- график не установлен, считаем по календарным дням
     SELECT row_to_json(row)
     INTO params
     FROM (SELECT
@@ -133,6 +131,7 @@ BEGIN
 
     l_hours := l_hours - l_tahtpaeva_tunnid;
   END IF;
+  raise notice 'l_tunnid %, l_muud %, l_haigus %, l_puhkus %', l_tunnid, l_muud, l_haigus, l_puhkus;
 
   RETURN coalesce(l_hours, 0);
 END;

@@ -7,9 +7,9 @@ CREATE VIEW cur_volgnik
       qryVolgnik.rekvid,
       qryVolgnik.regkood,
       qryVolgnik.nimetus,
-      (qryVolgnik.volg)    AS volg,
-      (qryVolgnik.jaak)    AS jaak,
-      (qryVolgnik.intress) AS intress
+      qryVolgnik.volg    AS volg,
+      qryVolgnik.jaak    AS jaak,
+      qryVolgnik.intress AS intress
     FROM (
            SELECT
              a.id,
@@ -25,8 +25,10 @@ CREATE VIEW cur_volgnik
                  AND l.staatus <> 3
            GROUP BY a.id, a.regkood, a.nimetus, l.rekvid
          ) qryVolgnik
-    WHERE qryVolgnik.jaak <> 0
+    WHERE qryVolgnik.volg <> 0
 
+
+GRANT SELECT ON TABLE cur_volgnik TO dbvaatleja;
 
   /*
   select * from cur_volgnik
