@@ -1,28 +1,29 @@
 module.exports = {
-    selectAsLibs: `select * from ou.cur_userid where rekvid = $1`, //$1 - asutuse id
+    selectAsLibs: `SELECT *
+                   FROM ou.cur_userid
+                   WHERE rekvid = $1`, //$1 - asutuse id
     select: [{
-        sql: `SELECT
-                  'USERID'                                                            AS doc_type_id,
-                  $2 :: INTEGER                                                        AS userid,
-                  u.id,
-                  u.rekvid,
-                  u.kasutaja,
-                  u.ametnik,
-                  u.muud,
-                  coalesce((u.roles ->> 'is_kasutaja') :: BOOLEAN, FALSE)::integer           AS is_kasutaja,
-                  coalesce((u.roles ->> 'is_peakasutaja') :: BOOLEAN, FALSE)::integer        AS is_peakasutaja,
-                  coalesce((u.roles ->> 'is_admin') :: BOOLEAN, FALSE)::integer              AS is_admin,
-                  coalesce((u.roles ->> 'is_vaatleja') :: BOOLEAN, FALSE)::integer              AS is_vaatleja,
-                  coalesce((u.roles ->> 'is_eel_koostaja') :: BOOLEAN, FALSE)::integer        AS is_eel_koostaja,
-                  coalesce((u.roles ->> 'is_eel_allkirjastaja') :: BOOLEAN, FALSE)::integer   AS is_eel_allkirjastaja,
-                  coalesce((u.roles ->> 'is_eel_esitaja') :: BOOLEAN, FALSE)::integer         AS is_eel_esitaja,
-                  coalesce((u.roles ->> 'is_eel_aktsepterja') :: BOOLEAN, FALSE)::integer     AS is_eel_aktsepterja,
-                  coalesce((u.roles ->> 'is_asutuste_korraldaja') :: BOOLEAN, FALSE)::integer AS is_asutuste_korraldaja,
-                  coalesce((u.roles ->> 'is_rekl_administraator') :: BOOLEAN, FALSE)::integer AS is_rekl_administraator,
-                  coalesce((u.roles ->> 'is_rekl_maksuhaldur') :: BOOLEAN, FALSE)::integer    AS is_rekl_maksuhaldur,
-                  (u.properties ->> 'email') :: VARCHAR(254)                          AS email
-                FROM ou.userid u
-                where id = $1`,
+        sql: `SELECT 'USERID'                                                                      AS doc_type_id,
+                     $2 :: INTEGER                                                                 AS userid,
+                     u.id,
+                     u.rekvid,
+                     u.kasutaja,
+                     u.ametnik,
+                     u.muud,
+                     coalesce((u.roles ->> 'is_kasutaja') :: BOOLEAN, FALSE) :: INTEGER            AS is_kasutaja,
+                     coalesce((u.roles ->> 'is_peakasutaja') :: BOOLEAN, FALSE) :: INTEGER         AS is_peakasutaja,
+                     coalesce((u.roles ->> 'is_admin') :: BOOLEAN, FALSE) :: INTEGER               AS is_admin,
+                     coalesce((u.roles ->> 'is_vaatleja') :: BOOLEAN, FALSE) :: INTEGER            AS is_vaatleja,
+                     coalesce((u.roles ->> 'is_eel_koostaja') :: BOOLEAN, FALSE) :: INTEGER        AS is_eel_koostaja,
+                     coalesce((u.roles ->> 'is_eel_allkirjastaja') :: BOOLEAN, FALSE) :: INTEGER   AS is_eel_allkirjastaja,
+                     coalesce((u.roles ->> 'is_eel_esitaja') :: BOOLEAN, FALSE) :: INTEGER         AS is_eel_esitaja,
+                     coalesce((u.roles ->> 'is_eel_aktsepterja') :: BOOLEAN, FALSE) :: INTEGER     AS is_eel_aktsepterja,
+                     coalesce((u.roles ->> 'is_asutuste_korraldaja') :: BOOLEAN, FALSE) :: INTEGER AS is_asutuste_korraldaja,
+                     coalesce((u.roles ->> 'is_rekl_administraator') :: BOOLEAN, FALSE) :: INTEGER AS is_rekl_administraator,
+                     coalesce((u.roles ->> 'is_rekl_maksuhaldur') :: BOOLEAN, FALSE) :: INTEGER    AS is_rekl_maksuhaldur,
+                     (u.properties ->> 'email') :: VARCHAR(254)                                    AS email
+              FROM ou.userid u
+              WHERE id = $1`,
         sqlAsNew: `SELECT
                       $1 :: INTEGER         AS id,
                       $2 :: INTEGER         AS userid,
@@ -48,23 +49,28 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    },{
-        sql: `select distinct rekvid from ou.userid where kasutaja = $1`,
+    }, {
+        sql: `SELECT r.id, r.regkood, r.nimetus:: VARCHAR(254), r.parentid, u.id AS user_id
+              FROM ou.userid u
+                     INNER JOIN ou.rekv r ON r.id = u.rekvid
+              WHERE kasutaja = $1
+                AND r.status <> 3`,
         query: null,
         multiple: true,
-        alias:'com_user_rekv',
-        data:[]
+        alias: 'com_user_rekv',
+        data: []
     }],
     returnData: {
         row: {},
-        details:[]
+        details: []
     },
     requiredFields: [
         {name: 'regkood', type: 'C'},
         {name: 'nimetus', type: 'C'}
     ],
     saveDoc: `select ou.sp_salvesta_userid($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from ou.sp_delete_userid($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM ou.sp_delete_userid($1 :: INTEGER, $2 :: INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
@@ -72,12 +78,9 @@ module.exports = {
             {id: "ametnik", name: "Ametnik", width: "35%"},
             {id: "email", name: "Email", width: "35%"}
         ],
-        sqlString: `SELECT
-                      $2 AS user_id,
-                      u.*
+        sqlString: `SELECT $2 AS user_id, u.*
                     FROM ou.cur_userid u
-                    WHERE u.id IN (SELECT rekv_id
-                                       FROM get_asutuse_struktuur($1))`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                    WHERE u.id IN (SELECT rekv_id FROM get_asutuse_struktuur($1))`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curUserid'
     },
