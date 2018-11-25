@@ -74,10 +74,10 @@ BEGIN
     RETURNING id
       INTO doc_id;
 
-    INSERT INTO rekl.toiming (parentid, asutusid, kpv, number, alus, muud, lubaid, userid, ettekirjutus, tahtaeg, summa, deklid, tyyp, staatus)
+    INSERT INTO rekl.toiming (parentid, asutusid, kpv, number, alus, muud, lubaid, userid, ettekirjutus, tahtaeg, summa, deklid, tyyp, staatus, dokpropid)
     VALUES
       (doc_id, doc_asutusid, doc_kpv, doc_number, doc_alus, doc_muud, doc_lubaid, userid, doc_ettekirjutus, doc_tahtaeg,
-               doc_summa, doc_deklid, doc_tyyp, doc_staatus)
+               doc_summa, doc_deklid, doc_tyyp, doc_staatus, doc_dokpropid)
     RETURNING id
       INTO dekl_id;
 

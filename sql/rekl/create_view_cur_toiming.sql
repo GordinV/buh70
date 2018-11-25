@@ -16,6 +16,17 @@ CREATE VIEW cur_toiming
                      COALESCE(qry.tahtaeg, CURRENT_DATE) <
                      CURRENT_DATE :: DATE AND qry.jaak > 0
                         THEN 'red' -- декларация отправленна , но не оплаченна
+                WHEN qry.tyyp = 'INTRESS' AND qry.staatus IS NULL
+                        THEN 'white' -- декларация отправленна , но не оплаченна
+
+                WHEN qry.tyyp = 'INTRESS' AND qry.staatus IS NOT NULL
+                     and COALESCE(qry.tahtaeg, CURRENT_DATE) <
+                     CURRENT_DATE :: DATE AND qry.jaak > 0
+                        THEN 'red' -- декларация отправленна , но не оплаченна
+                WHEN qry.tyyp = 'INTRESS' AND qry.staatus IS NOT NULL
+                       and COALESCE(qry.tahtaeg, CURRENT_DATE) >
+                           CURRENT_DATE :: DATE or qry.jaak <= 0
+                        THEN 'green' -- декларация отправленна , но не оплаченна
                 ELSE 'white' END :: VARCHAR(20) AS color
     FROM (SELECT D.id,
                  D.rekvid,

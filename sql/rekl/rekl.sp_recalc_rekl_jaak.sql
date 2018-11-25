@@ -6,26 +6,20 @@ CREATE FUNCTION rekl.sp_recalc_rekl_jaak(IN  user_id    INTEGER, IN params JSON,
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  l_id       INTEGER = params ->> 'id';
-  l_tasud    NUMERIC = 0;
-  lnAlgsaldo NUMERIC = 0;
-  lnKr1      NUMERIC = 0;
-  lnKr2      NUMERIC = 0;
-  lnDb       NUMERIC = 0;
+  l_luba_id       INTEGER = params ->> 'id';
   l_intress  NUMERIC = 0;
   l_volg     NUMERIC = 0;
   l_jaak     NUMERIC = 0;
   v_luba     RECORD;
-  v_user RECORD;
 BEGIN
 
   SELECT id, jaak, volg, intress, staatus
-      INTO v_luba FROM rekl.luba WHERE luba.parentid = l_id;
+      INTO v_luba FROM rekl.luba WHERE luba.parentid = l_luba_id;
 
   IF v_luba.id IS NULL
   THEN
     error_code = 5;
-    error_message = 'Dokument ei leidnud ' || l_id :: TEXT;
+    error_message = 'Dokument ei leidnud ' || l_luba_id :: TEXT;
     result = 0;
     RETURN;
   END IF;
@@ -43,11 +37,9 @@ BEGIN
     FROM (SELECT COALESCE(rekl.fnc_dekl_jaak(D.ID), 0) AS jaak, t.tyyp, t.tahtaeg
           FROM rekl.toiming t
                  INNER JOIN docs.doc d ON d.id = t.parentid
-          WHERE t.lubaId = l_id
+          WHERE t.lubaId = l_luba_id
             AND d.status <> 3
             AND staatus <> 'deleted') qry;
-
-    RAISE NOTICE ' l_jaak %, lnVolg %, lnIntress %', l_jaak, l_volg, l_intress;
 
     IF coalesce(v_luba.Jaak, 0) <> l_jaak OR coalesce(v_luba.volg, 0) <> l_volg OR
        coalesce(v_luba.intress, 0) <> l_intress
@@ -56,7 +48,7 @@ BEGIN
       SET jaak    = l_jaak,
           volg    = l_volg,
           intress = l_intress
-      WHERE parentid = l_id;
+      WHERE parentid = l_luba_id;
     END IF;
 
   ELSE
@@ -66,7 +58,7 @@ BEGIN
     SET jaak    = 0,
         volg    = 0,
         intress = 0
-    WHERE parentid = l_id;
+    WHERE parentid = l_luba_id;
   END IF;
   result = 1;
 

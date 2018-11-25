@@ -25,8 +25,8 @@ DECLARE
 
   l_dokProp         INTEGER = (SELECT d.id
                                FROM libs.dokprop d INNER JOIN libs.library l
-                                   ON l.id = d.parentid AND upper(l.kood) = upper('REKL intress')
-                                      AND l.rekvid IN (SELECT rekvid
+                                   ON l.id = d.parentid AND upper(l.kood) = upper('INTRESS')
+                                      AND d.rekvid IN (SELECT rekvid
                                                        FROM docs.doc
                                                        WHERE id = l_lubaid));
   l_jaak            NUMERIC(12, 2);

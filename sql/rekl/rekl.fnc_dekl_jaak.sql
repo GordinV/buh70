@@ -14,7 +14,7 @@ FROM (SELECT t.summa AS dekl, coalesce((SELECT sum(summa)
              INNER JOIN rekl.toiming t ON d.id = t.parentid
       WHERE d.id = l_dekl_id
         AND t.tyyp IN ('DEKL', 'INTRESS', 'PARANDUS')
-        AND t.saadetud IS NOT NULL
+        AND (case when tyyp = 'DEKL' then t.saadetud IS NOT NULL else true end)
         AND t.staatus <> 'deleted') qry
 
 /*

@@ -15,7 +15,7 @@ DECLARE
   l_json      JSON;
 
 BEGIN
-  SELECT journalid, staatus, u.kasutaja
+  SELECT journalid, staatus, u.kasutaja, lubaid
       INTO v_toiming
   FROM rekl.toiming t,
        ou.userid u
@@ -31,7 +31,6 @@ BEGIN
   ELSE
     IF v_toiming.journalid IS NOT NULL AND v_toiming.journalid > 0
     THEN
-      RAISE NOTICE 'deleting lausend %', v_toiming.journalid;
 
       -- убрать ссылку на проводку
       UPDATE docs.doc SET docs_ids = array_remove(docs_ids, v_toiming.journalid) WHERE id = l_dekl_id;
@@ -55,7 +54,7 @@ BEGIN
 
     -- ajalugu ja status
 
-    l_json = (SELECT row_to_json(row) FROM (SELECT v_toiming.kasutaja, now() AS updated) row);
+    l_json = (SELECT row_to_json(row) FROM (SELECT v_toiming.kasutaja, now() AS updated, 'tühistamine' as action) row);
 
     UPDATE docs.doc
     SET status     = 1,
@@ -64,7 +63,7 @@ BEGIN
     WHERE id = l_dekl_id;
 
     SELECT row_to_json(row)
-        INTO json_params FROM (SELECT v_toiming.journalid AS id) row;
+        INTO json_params FROM (SELECT v_toiming.lubaid AS id) row;
 
     result = (SELECT qry.result FROM rekl.sp_recalc_rekl_jaak(user_id, json_params) AS qry);
 
