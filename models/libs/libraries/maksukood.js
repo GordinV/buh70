@@ -47,8 +47,7 @@ module.exports = {
             l.tun1, l.tun2, l.tun3, l.tun4, l.tun5
             from libs.library l
             where l.library = 'MAKSUKOOD'
-            and l.status <> 3
-            and (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+            and l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curMaksukood'
     },

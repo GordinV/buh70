@@ -38,8 +38,7 @@ module.exports = {
         sqlString: `select id, kood, nimetus,  $2::integer as userId, muud
             from libs.library l
             where l.library = 'ALLIKAD'
-            and l.status <> 3
-            and (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+            and l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curAllikad'
     },
