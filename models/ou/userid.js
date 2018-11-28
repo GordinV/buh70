@@ -21,6 +21,7 @@ module.exports = {
                      coalesce((u.roles ->> 'is_asutuste_korraldaja') :: BOOLEAN, FALSE) :: INTEGER AS is_asutuste_korraldaja,
                      coalesce((u.roles ->> 'is_rekl_administraator') :: BOOLEAN, FALSE) :: INTEGER AS is_rekl_administraator,
                      coalesce((u.roles ->> 'is_rekl_maksuhaldur') :: BOOLEAN, FALSE) :: INTEGER    AS is_rekl_maksuhaldur,
+                     coalesce((u.roles ->> 'is_ladu_kasutaja') :: BOOLEAN, FALSE) :: INTEGER    AS is_ladu_kasutaja,
                      (u.properties ->> 'email') :: VARCHAR(254)                                    AS email
               FROM ou.userid u
               WHERE id = $1`,
@@ -43,6 +44,7 @@ module.exports = {
                       0 :: INTEGER     AS is_asutuste_korraldaja,
                       0 :: INTEGER     AS is_rekl_administrator,
                       0 :: INTEGER     AS is_rekl_maksuhaldur,
+                      0 :: INTEGER     AS is_ladu_kasutaja,
                       0 :: INTEGER     AS is_kasutaja,
                       NULL :: VARCHAR(254) AS email`,
         query: null,

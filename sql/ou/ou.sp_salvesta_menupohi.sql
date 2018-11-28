@@ -1,9 +1,8 @@
-DROP FUNCTION IF EXISTS ou.sp_salvesta_menupohi( JSON, INTEGER, INTEGER );
+DROP FUNCTION IF EXISTS ou.sp_salvesta_menupohi(JSON, INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION ou.sp_salvesta_menupohi(
-  data        JSON,
-  userid      INTEGER,
-  user_rekvid INTEGER)
+CREATE OR REPLACE FUNCTION ou.sp_salvesta_menupohi(data JSON,
+                                                   userid INTEGER,
+                                                   user_rekvid INTEGER)
   RETURNS INTEGER AS
 $BODY$
 
@@ -11,17 +10,17 @@ DECLARE
   menu_id                    INTEGER;
   userName                   TEXT;
   doc_id                     INTEGER = data ->> 'id';
-  doc_data                   JSON = data ->> 'data';
-  doc_pad                    TEXT = doc_data ->> 'pad';
-  doc_bar                    TEXT = doc_data ->> 'bar';
+  doc_data                   JSON    = data ->> 'data';
+  doc_pad                    TEXT    = doc_data ->> 'pad';
+  doc_bar                    TEXT    = doc_data ->> 'bar';
   doc_idx                    INTEGER = doc_data ->> 'idx';
-  doc_name                   TEXT = doc_data ->> 'name';
-  doc_eesti                  TEXT = doc_data ->> 'eesti';
-  doc_vene                   TEXT = doc_data ->> 'vene';
-  doc_proc                   TEXT = doc_data ->> 'proc';
-  doc_groups                 JSONB = '[]';
-  doc_users                  JSONB = '[]';
-  doc_modules                JSONB = '[]';
+  doc_name                   TEXT    = doc_data ->> 'name';
+  doc_eesti                  TEXT    = doc_data ->> 'eesti';
+  doc_vene                   TEXT    = doc_data ->> 'vene';
+  doc_proc                   TEXT    = doc_data ->> 'proc';
+  doc_groups                 JSONB   = '[]';
+  doc_users                  JSONB   = '[]';
+  doc_modules                JSONB   = '[]';
   doc_level                  INTEGER = doc_data ->> 'level';
   doc_is_admin               INTEGER = doc_data ->> 'is_admin';
   doc_is_eelarve             INTEGER = doc_data ->> 'is_eelarve';
@@ -39,7 +38,8 @@ DECLARE
   doc_is_eel_aktsepterja     INTEGER = doc_data ->> 'is_eel_aktsepterja';
   doc_is_rekl_maksuhaldur    INTEGER = doc_data ->> 'is_rekl_maksuhaldur';
   doc_is_rekl_administraator INTEGER = doc_data ->> 'is_rekl_administraator';
-  doc_keyshortcut            TEXT = doc_data ->> 'keyshortcut';
+  doc_is_ladu_kasutaja       INTEGER = doc_data ->> 'is_ladu_kasutaja';
+  doc_keyshortcut            TEXT    = doc_data ->> 'keyshortcut';
   json_object                JSONB;
 BEGIN
   IF (doc_id IS NULL)
@@ -48,9 +48,10 @@ BEGIN
   END IF;
 
   SELECT kasutaja
-  INTO userName
+         INTO userName
   FROM ou.userid u
-  WHERE u.rekvid = user_rekvid AND u.id = userId;
+  WHERE u.rekvid = user_rekvid
+    AND u.id = userId;
 
   IF userName IS NULL
   THEN
@@ -61,6 +62,11 @@ BEGIN
   IF doc_is_rekl_administraator
   THEN
     doc_groups = doc_groups || to_jsonb('REKL_ADMINISTRAATOR' :: TEXT);
+  END IF;
+
+  IF doc_is_ladu_kasutaja
+  THEN
+    doc_groups = doc_groups || to_jsonb('LADU_KASUTAJA' :: TEXT);
   END IF;
 
   IF doc_is_rekl_maksuhaldur
@@ -139,7 +145,7 @@ BEGIN
   END IF;
 
   SELECT row_to_json(row)
-  INTO json_object
+         INTO json_object
   FROM (SELECT
           now()           AS created,
           userName        AS user,
@@ -159,8 +165,8 @@ BEGIN
 
     INSERT INTO ou.menupohi (pad, bar, idx, properties, status)
     VALUES (doc_pad, doc_bar, doc_idx, json_object, 'active')
-    RETURNING id
-      INTO menu_id;
+           RETURNING id
+             INTO menu_id;
   ELSE
 
     UPDATE ou.menupohi
@@ -170,22 +176,25 @@ BEGIN
       idx        = doc_idx,
       properties = json_object
     WHERE id = doc_id
-    RETURNING id
-      INTO menu_id;
+      RETURNING id
+        INTO menu_id;
 
   END IF;
 
   RETURN menu_id;
 
-  EXCEPTION WHEN OTHERS
-  THEN
-    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-    RETURN 0;
+  EXCEPTION
+  WHEN OTHERS
+    THEN
+      RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+      RETURN 0;
 
 
-END;$BODY$
-LANGUAGE plpgsql VOLATILE
-COST 100;
+END;
+$BODY$
+  LANGUAGE plpgsql
+  VOLATILE
+  COST 100;
 
 GRANT EXECUTE ON FUNCTION ou.sp_salvesta_menupohi(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 GRANT EXECUTE ON FUNCTION ou.sp_salvesta_menupohi(JSON, INTEGER, INTEGER) TO dbadmin;

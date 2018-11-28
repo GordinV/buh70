@@ -36,7 +36,9 @@ DECLARE
                                 coalesce((doc_data ->> 'is_rekl_administraator') :: BOOLEAN,
                                          FALSE)                                              AS is_rekl_administraator,
                                 coalesce((doc_data ->> 'is_rekl_maksuhaldur') :: BOOLEAN,
-                                         FALSE)                                              AS is_rekl_maksuhaldur
+                                         FALSE)                                              AS is_rekl_maksuhaldur,
+                                coalesce((doc_data ->> 'is_ladu_kasutaja') :: BOOLEAN,
+                                         FALSE)                                              AS is_ladu_kasutaja
                              ) row);
 
   is_import    BOOLEAN = data ->> 'import';

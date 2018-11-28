@@ -10,7 +10,7 @@ const path = require('path');
 describe('dok. type Vara Grupp tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../libs/libraries/vara_grupp'),
+    const doc = require('../ladu/ladu'),
         docTypeId = 'VARAGRUPP'.toLowerCase(),
         modelForExport = 'libs/libraries/vara_grupp';
 

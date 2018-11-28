@@ -1,10 +1,13 @@
 module.exports = {
     select: [{
-        sql: `select *, $2::integer as userid, 'ASUTUSED' as doc_type_id,
-                (properties->>'pank')::text as pank,
-                (properties->>'kmkr')::text as kmkr,
-                (properties->>'kehtivus')::date as kehtivus                
-                from libs.asutus where id = $1`,
+        sql: `SELECT *,
+                     $2::INTEGER                      AS userid,
+                     'ASUTUSED'                        AS doc_type_id,
+                     (properties ->> 'pank')::TEXT     AS pank,
+                     (properties ->> 'kmkr')::TEXT     AS kmkr,
+                     (properties ->> 'kehtivus')::DATE AS kehtivus
+              FROM libs.asutus
+              WHERE id = $1`,
         sqlAsNew: `select $1::integer as id , $2::integer as userid, 'ASUTUSED' as doc_type_id,
             null::text as  regkood,
             null::text as nimetus,
@@ -26,42 +29,44 @@ module.exports = {
         data: []
     },
         {
-            sql: `SELECT (e.element ->> 'aa') :: varchar(20) AS aa,
-                $2 :: INTEGER            AS userid
-                FROM libs.asutus a,
-                      json_array_elements((a.properties -> 'asutus_aa') :: JSON) AS e(element)
-                WHERE a.id = $1`, //$1 - doc_id, $2 0 userId
+            sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa,
+                         $2 :: INTEGER                      AS userid
+                  FROM libs.asutus a,
+                       json_array_elements((a.properties -> 'asutus_aa') :: JSON) AS e (element)
+                  WHERE a.id = $1`, //$1 - doc_id, $2 0 userId
             query: null,
             multiple: true,
             alias: 'asutus_aa',
             data: []
 
-        },{
-            sql: `SELECT Asutus.id 
-                    FROM libs.asutus Asutus 
-                    WHERE (rtrim(ltrim(Asutus.regkood)) = $1 or empty($1))
-                    or (rtrim(ltrim(Asutus.nimetus)) = $2 or empty($2))`, //$1 regkood, $2 nimetus
-            query : null,
+        }, {
+            sql: `SELECT Asutus.id
+                  FROM libs.asutus Asutus
+                  WHERE (rtrim(ltrim(Asutus.regkood)) = $ 1 OR empty($ 1))
+                     OR (rtrim(ltrim(Asutus.nimetus)) = $ 2 OR empty($ 2))`, //$1 regkood, $2 nimetus
+            query: null,
             multiple: false,
             alias: 'validate_asutus',
             data: []
 
         }
     ],
-    selectAsLibs: `select * from com_asutused a 
-        where libs.check_asutus(a.id, $1) 
-        and (kehtivus is null or kehtivus >= date())
-        order by nimetus`, //$1 - rekvId
+    selectAsLibs: `SELECT *
+                   FROM com_asutused a
+                   WHERE libs.check_asutus(a.id::integer, $1::INTEGER)
+                     AND (kehtivus IS NULL OR kehtivus >= date())
+                   ORDER BY nimetus`, //$1 - rekvId
     returnData: {
         row: {}
     },
     requiredFields: [
-        {name: 'regkood',type: 'C'},
-        {name: 'nimetus',type: 'C'},
-        {name: 'omvorm',type: 'C'}
+        {name: 'regkood', type: 'C'},
+        {name: 'nimetus', type: 'C'},
+        {name: 'omvorm', type: 'C'}
     ],
     saveDoc: `select libs.sp_salvesta_asutus($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from libs.sp_delete_asutus($1, $2)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM libs.sp_delete_asutus($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
@@ -70,9 +75,9 @@ module.exports = {
             {id: "omvorm", name: "Om.vorm", width: "20%"},
             {id: "aadress", name: "Aadress", width: "25%"}
         ],
-        sqlString: `select a.*, $2::integer as userId
-            from cur_asutused a
-            where libs.check_asutus(a.id, $1)`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT a.*, $2::INTEGER AS userId
+                    FROM cur_asutused a
+                    WHERE libs.check_asutus(a.id::INTEGER, $1::INTEGER)`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curAsutused'
     },

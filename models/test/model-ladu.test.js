@@ -10,9 +10,9 @@ const path = require('path');
 describe('dok. type Ladu tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../libs/libraries/ladu'),
+    const doc = require('../ladu/ladu'),
         docTypeId = 'LADU'.toLowerCase(),
-        modelForExport = 'libs/libraries/ladu';
+        modelForExport = 'ladu/ladu';
 
     moduleLocator.register(docTypeId, doc);
 

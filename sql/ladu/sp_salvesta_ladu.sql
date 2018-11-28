@@ -1,7 +1,8 @@
 DROP FUNCTION IF EXISTS docs.sp_salvesta_vara_grupp( JSON, INTEGER, INTEGER );
 DROP FUNCTION IF EXISTS libs.sp_salvesta_vara_grupp( JSON, INTEGER, INTEGER );
+DROP FUNCTION IF EXISTS libs.sp_salvesta_ladu( JSON, INTEGER, INTEGER );
 
-CREATE OR REPLACE FUNCTION libs.sp_salvesta_vara_grupp(
+CREATE OR REPLACE FUNCTION libs.sp_salvesta_ladu(
   data        JSON,
   userid      INTEGER,
   user_rekvid INTEGER)
@@ -15,7 +16,7 @@ DECLARE
   doc_data    JSON = data ->> 'data';
   doc_kood    TEXT = doc_data ->> 'kood';
   doc_nimetus TEXT = doc_data ->> 'nimetus';
-  doc_library TEXT = 'VARAGRUPP';
+  doc_library TEXT = 'LADU';
   doc_konto varchar(20) = doc_data ->> 'konto';
   doc_muud text = doc_data ->> 'muud';
   json_object JSONB;
@@ -29,7 +30,7 @@ BEGIN
 
   SELECT kasutaja
   INTO userName
-  FROM userid u
+  FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
   IF userName IS NULL
   THEN
@@ -50,7 +51,6 @@ BEGIN
     RETURNING id
       INTO lib_id;
 
-
   ELSE
 
     UPDATE libs.library
@@ -63,11 +63,6 @@ BEGIN
     WHERE id = doc_id
     RETURNING id
       INTO lib_id;
-
-
--- uuenda pv_kaart konto
-
---	UPDATE docs.pv_kaart SET konto = doc_konto WHERE gruppid = lib_id;
 
   END IF;
 
@@ -83,8 +78,7 @@ END;$BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
 
-GRANT EXECUTE ON FUNCTION libs.sp_salvesta_vara_grupp(JSON, INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION libs.sp_salvesta_vara_grupp(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION libs.sp_salvesta_ladu(JSON, INTEGER, INTEGER) TO ladukasutaja;
 
 
 /*

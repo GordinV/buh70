@@ -1,6 +1,7 @@
 DROP VIEW IF EXISTS com_vara_gruppid;
+DROP VIEW IF EXISTS com_ladu;
 
-CREATE OR REPLACE VIEW com_vara_gruppid AS
+CREATE OR REPLACE VIEW com_ladu AS
 
   SELECT *
   FROM (SELECT
@@ -15,12 +16,13 @@ CREATE OR REPLACE VIEW com_vara_gruppid AS
           l.nimetus,
           l.rekvId
         FROM libs.library l
-        WHERE l.library = 'VARAGRUPP'
+        WHERE l.library = 'LADU'
               AND l.status <> 3
        ) qry
   ORDER BY kood;
 
-GRANT SELECT ON TABLE com_vara_gruppid TO dbkasutaja;
-GRANT SELECT ON TABLE com_vara_gruppid TO dbvaatleja;
-GRANT SELECT ON TABLE com_vara_gruppid TO dbpeakasutaja;
+GRANT SELECT ON TABLE com_ladu TO dbkasutaja;
+GRANT SELECT ON TABLE com_ladu TO dbvaatleja;
+GRANT SELECT ON TABLE com_ladu TO dbpeakasutaja;
+GRANT SELECT ON TABLE com_ladu TO ladukasutaja;
 
