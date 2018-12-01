@@ -64,10 +64,9 @@ BEGIN
   lcSqlString = 'select (max(SUBSTRING(''0'' || coalesce(tbl.number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
                 ')::bigint) ::bigint) + 1 as number from docs.doc d inner join '
                 || lcTableName || ' tbl on d.id = tbl.parentid and d.status <> 3 '
-                || ' where tbl.rekvId = $1::integer and year(tbl.kpv) = $2::integer and tbl.number ilike $3::text';
+                || ' where tbl.rekvId = $1::integer and year(tbl.kpv) = $2::integer and encode(tbl.number::bytea, ''escape'')::text  ilike $3::text';
 
   lcSqlString = lcSqlString || lcAdditionalWhere;
-raise notice '%',lcSqlString;
   EXECUTE lcSqlString
   INTO v_number
   USING tnRekvId, tnYear, lcPref;
@@ -87,5 +86,5 @@ $$;
 
 
 /*
-select docs.sp_get_number(28, 'LUBA', 2018, null)
+select docs.sp_get_number(130, 'ARV', 2018, null)
  */

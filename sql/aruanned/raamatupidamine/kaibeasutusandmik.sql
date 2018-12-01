@@ -1,4 +1,5 @@
 DROP FUNCTION IF EXISTS docs.kaibeasutusandmik( TEXT, INTEGER, INTEGER, DATE, DATE, INTEGER );
+DROP FUNCTION IF EXISTS docs.kaibeasutusandmik( TEXT, INTEGER,  DATE, DATE, INTEGER );
 
 CREATE OR REPLACE FUNCTION docs.kaibeasutusandmik(l_konto TEXT, l_asutus INTEGER, l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER)
   RETURNS TABLE(alg_saldo NUMERIC(14, 2),
@@ -104,6 +105,12 @@ GROUP BY konto, rekv_id, asutus_id;
 $BODY$
 LANGUAGE SQL VOLATILE
 COST 100;
+
+
+GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER,  DATE, DATE, INTEGER ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER,  DATE, DATE, INTEGER ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER,  DATE, DATE, INTEGER ) TO dbkasutaja;
+
 
 /*
 SELECT *

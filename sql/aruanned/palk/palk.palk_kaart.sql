@@ -992,9 +992,10 @@ $BODY$
 LANGUAGE SQL VOLATILE
 COST 100;
 
+GRANT EXECUTE ON FUNCTION palk.palk_kaart( DATE, DATE, INTEGER, INTEGER ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION palk.palk_kaart( DATE, DATE, INTEGER, INTEGER ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION palk.palk_kaart( DATE, DATE, INTEGER, INTEGER ) TO dbkasutaja;
 
-SELECT *
-FROM palk.palk_kaart('2018-01-01', '2018-12-31', 63, 1 :: INTEGER);
 
 /*
 

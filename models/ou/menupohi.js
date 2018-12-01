@@ -94,7 +94,8 @@ module.exports = {
                            message::VARCHAR(120),
                            keyshortcut::VARCHAR(120),
                            $1 AS rekvid
-                    FROM ou.cur_menu m`,
+                    FROM ou.cur_menu m
+                    ORDER BY m.idx`,
         alias: 'curMenu'
     },
     returnData: null,

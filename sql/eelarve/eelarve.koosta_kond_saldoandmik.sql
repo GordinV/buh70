@@ -280,6 +280,9 @@ LANGUAGE plpgsql VOLATILE
 COST 100;
 
 GRANT EXECUTE ON FUNCTION eelarve.koosta_kond_saldoandmik(INTEGER, DATE) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.koosta_kond_saldoandmik(INTEGER, DATE) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION eelarve.koosta_kond_saldoandmik(INTEGER, DATE) TO dbkasutaja;
+
 
 /*
 select error_code, result, error_message from eelarve.koosta_kond_saldoandmik(70,'2018-09-30')

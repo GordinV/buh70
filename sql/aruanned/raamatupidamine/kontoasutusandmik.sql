@@ -153,6 +153,12 @@ $BODY$
 LANGUAGE SQL VOLATILE
 COST 100;
 
+
+GRANT EXECUTE ON FUNCTION docs.kontoasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kontoasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kontoasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER ) TO dbkasutaja;
+
+
 /*
   SELECT
     sum(deebet)

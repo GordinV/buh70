@@ -80,9 +80,10 @@ module.exports = {
             {id: "ametnik", name: "Ametnik", width: "35%"},
             {id: "email", name: "Email", width: "35%"}
         ],
-        sqlString: `SELECT $2 AS user_id, u.*
+        sqlString: `SELECT $2 AS user_id, u.id, u.asutus::varchar(254), u.kasutaja::varchar(254), u.ametnik::varchar(254),
+                    u.is_admin::integer, u.is_kasutaja::integer, u.is_peakasutaja::INTEGER
                     FROM ou.cur_userid u
-                    WHERE u.id IN (SELECT rekv_id FROM get_asutuse_struktuur($1))`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                    WHERE u.rekvid IN (SELECT rekv_id FROM get_asutuse_struktuur($1::integer))`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curUserid'
     },

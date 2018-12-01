@@ -52,6 +52,11 @@ $BODY$
 LANGUAGE SQL VOLATILE
 COST 100;
 
+GRANT EXECUTE ON FUNCTION docs.kontosaldoandmik( TEXT, INTEGER, DATE, INTEGER ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kontosaldoandmik( TEXT, INTEGER, DATE, INTEGER ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kontosaldoandmik( TEXT, INTEGER, DATE, INTEGER ) TO dbkasutaja;
+
+
 /*
 SELECT *
 FROM docs.kontosaldoandmik(null::text, 1,current_date :: DATE, 1)

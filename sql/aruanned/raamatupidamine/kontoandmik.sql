@@ -63,6 +63,10 @@ $BODY$
 LANGUAGE SQL VOLATILE
 COST 100;
 
+GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER ) TO dbkasutaja;
+
 /*
 SELECT *
 FROM docs.kontoandmik('113', '2018-01-01', current_date :: DATE, 1)

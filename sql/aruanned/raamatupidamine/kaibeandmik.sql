@@ -89,6 +89,11 @@ $BODY$
 LANGUAGE SQL VOLATILE
 COST 100;
 
+GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER ) TO dbkasutaja;
+
+
 /*
 SELECT *
 FROM docs.kaibeandmik('2018-01-01', current_date :: DATE, 1)

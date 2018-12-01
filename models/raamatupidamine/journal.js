@@ -126,8 +126,8 @@ const Journal = {
         ],
         sqlString: `SELECT j.*
                     FROM cur_journal j
-                    WHERE j.rekvId IN (SELECT rekv_id FROM get_asutuse_struktuur($1))
-                      AND coalesce(docs.usersRigths(j.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                    WHERE j.rekvId IN (SELECT rekv_id FROM get_asutuse_struktuur($1::integer))
+                      AND coalesce(docs.usersRigths(j.id, 'select', $2::integer), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curJournal'
     },
