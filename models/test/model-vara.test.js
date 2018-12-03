@@ -10,9 +10,9 @@ const path = require('path');
 describe('dok. type VARA tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../libs/libraries/vara'),
+    const doc = require('../ladu/vara'),
         docTypeId = 'VARA'.toLowerCase(),
-        modelForExport = 'libs/libraries/vara';
+        modelForExport = 'ladu/vara';
 
     moduleLocator.register(docTypeId, doc);
 

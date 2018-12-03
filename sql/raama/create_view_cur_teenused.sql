@@ -5,7 +5,7 @@ CREATE OR REPLACE VIEW cur_teenused AS
     d.id                                 AS id,
     d.lastupdate,
     a.id                                 AS arv_id,
-    trim(a.number)                       AS number,
+    trim(a.number)::varchar(20)                       AS number,
     a.rekvid,
     a.kpv                                AS kpv,
     a.userid,
@@ -13,6 +13,7 @@ CREATE OR REPLACE VIEW cur_teenused AS
     a.journalid,
     a.liik,
     a.operid,
+    ladu.kood as ladu,     
     trim(asutus.nimetus) :: VARCHAR(254) AS asutus,
     asutus.regkood,
     n.kood,
@@ -32,6 +33,7 @@ CREATE OR REPLACE VIEW cur_teenused AS
     INNER JOIN docs.arv1 a1 ON a1.parentId = a.id
     INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
     LEFT OUTER JOIN libs.library o ON o.id = a.objektid
+    LEFT OUTER JOIN libs.library ladu ON ladu.id = a.operid
     LEFT OUTER JOIN libs.asutus asutus ON a.asutusid = asutus.id
     LEFT OUTER JOIN ou.userid u ON u.id = a.userid
   ORDER BY d.lastupdate DESC;

@@ -34,7 +34,7 @@ DECLARE
   doc_sahharid  NUMERIC = doc_data ->> 'sahharid';
   doc_rasv      TEXT = doc_data ->> 'rasv';
   doc_vailkaine NUMERIC = doc_data ->> 'vailkaine';
-  doc_gruppid   INTEGER = doc_data ->> 'gruppid';
+  doc_grupp   TEXT = doc_data ->> 'grupp';
   json_object   JSONB;
   new_history   JSONB;
   new_rights    JSONB;
@@ -76,7 +76,7 @@ BEGIN
        doc_sahharid                   AS sahharid,
        doc_rasv                       AS rasv,
        doc_vailkaine                  AS vailkaine,
-       doc_gruppid                    AS gruppid
+       doc_grupp                    AS grupp
     ) row;
 
   IF doc_id IS NULL OR doc_id = 0

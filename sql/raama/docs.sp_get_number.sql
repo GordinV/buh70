@@ -29,6 +29,10 @@ BEGIN
     THEN
       lcTableName = 'docs.arv';
       lcAdditionalWhere = ' and liik = 0 ';
+    WHEN tcDok = 'SARV'
+      THEN
+        lcTableName = 'docs.arv';
+        lcAdditionalWhere = ' and liik = 1 and operid is not null and not empty(operid)';
     WHEN tcDok = 'SORDER'
     THEN
       lcTableName = 'docs.korder1';

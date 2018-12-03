@@ -20,7 +20,7 @@ describe('dok. type Vara Grupp tests', function () {
     let xml;
     let sourceFile;
 
-    it (`${docTypeId} create XML model`, (done)=> {
+    it.skip (`${docTypeId} create XML model`, (done)=> {
         //create model
         modelCreator(modelForExport,(err, xmlFile) => {
             sourceFile = xmlFile;
@@ -32,7 +32,7 @@ describe('dok. type Vara Grupp tests', function () {
         })
     });
 
-    it (`${docTypeId} must have fields in js model`, ()=> {
+    it.skip (`${docTypeId} must have fields in js model`, ()=> {
         expect(doc.select).toBeDefined();
         expect(doc.selectAsLibs).toBeDefined();
         expect(doc.returnData).toBeDefined();
@@ -42,7 +42,7 @@ describe('dok. type Vara Grupp tests', function () {
         expect(doc.grid).toBeDefined();
     });
 
-    it (`${docTypeId} must have fields in xml model`,() => {
+    it.skip (`${docTypeId} must have fields in xml model`,() => {
         let xmlModel = convertXml.xml2js(xml, {ignoreComment: true, alwaysChildren: true});
         expect(xmlModel).toBeDefined();
         let modelElements = xmlModel.elements[0];
@@ -57,7 +57,7 @@ describe('dok. type Vara Grupp tests', function () {
         expect(_.find(gridAlias.elements,{text:'curGruppid'})).toBeDefined();
     });
 
-    it('should have copy in buh62 folder', (done) => {
+    it.skip('should have copy in buh62 folder', (done) => {
         let targetFile =  path.join('C:\\avpsoft\\buh62\\models\\', modelForExport + '.xml');
         let copyFile =  path.join('C:\\avpsoft\\buh70\\models\\', modelForExport + '_copy.xml');
         expect(fs.existsSync(sourceFile)).toBeTruthy();

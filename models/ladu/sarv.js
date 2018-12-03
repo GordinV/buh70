@@ -5,11 +5,7 @@ const start = require('./../BP/start'),
     generateJournal = require('./../BP/generateJournal'),
     endProcess = require('./../BP/endProcess');
 
-const Arv = {
-    selectAsLibs: `SELECT *
-                   FROM com_arved a
-                   WHERE (a.rekvId = $1::integer)
-                     AND docs.usersRigths(a.id, 'select', $2::integer)`, //$1 - rekvid, $2 userid
+const Sarv = {
     select: [
         {
             sql: `SELECT d.id,
@@ -66,11 +62,11 @@ const Arv = {
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                          AS created,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                          AS lastupdate,
                               NULL                                                                   AS bpm,
-                              trim(l.nimetus)                                                        AS doc,
-                              trim(l.kood)                                                           AS doc_type_id,
-                              trim(s.nimetus)                                                        AS status,
+                              null::text                                                         AS doc,
+                              null::text                                                            AS doc_type_id,
+                              null::text                                                        AS status,
                               0                                                                      AS doc_status,
-                              docs.sp_get_number(u.rekvId, 'ARV', year(date()), NULL) :: VARCHAR(20) AS number,
+                              docs.sp_get_number(u.rekvId, 'SARV', year(date()), NULL) :: VARCHAR(20) AS number,
                               0.00                                                                   AS summa,
                               NULL :: INTEGER                                                        AS rekvId,
                               0                                                                      AS liik,
@@ -100,14 +96,8 @@ const Arv = {
                               NULL :: INTEGER                                                        AS journalid,
                               NULL :: INTEGER                                                        AS laus_nr,
                               NULL :: VARCHAR(120)                                                   AS koostaja
-                       FROM libs.library l,
-                            libs.library s,
-                            ou.userid u
-                       WHERE l.library = 'DOK'
-                         AND l.kood = 'ARV'
-                         AND u.id = $2 :: INTEGER
-                         AND s.library = 'STATUS'
-                         AND s.kood = '0'`,
+                       FROM ou.userid u
+                       WHERE u.id = $2 :: INTEGER`,
             query: null,
             multiple: false,
             alias: 'row',
@@ -135,9 +125,6 @@ const Arv = {
                          a1.konto,
                          a1.tp,
                          NULL :: TEXT                                                    AS vastisik,
-                         NULL :: TEXT                                                    AS formula,
-                         'EUR' :: VARCHAR(20)                                            AS valuuta,
-                         1 :: NUMERIC                                                    AS kuurs,
                          coalesce((n.properties :: JSONB ->> 'vat'), '-') :: VARCHAR(20) AS km,
                          n.uhik,
                          a1.muud
@@ -277,32 +264,12 @@ const Arv = {
             {id: "lastupdate", name: "Viimane parandus", width: "150px"},
             {id: "status", name: "Staatus", width: "100px"},
         ],
-        sqlString: `SELECT id,
-                           arv_id,
-                           number :: VARCHAR(20),
-                           rekvid,
-                           kpv,
-                           summa,
-                           tahtaeg,
-                           jaak,
-                           tasud,
-                           tasudok,
-                           userid,
-                           asutus :: VARCHAR(254),
-                           asutusid,
-                           journalid,
-                           liik,
-                           ametnik,
-                           objektid,
-                           objekt :: VARCHAR(254),
-                           markused,
-                           lausnr,
-                           docs_ids
-                    FROM cur_arved a
-                    WHERE a.rekvId = $1::integer
-                      AND docs.usersRigths(a.id, 'select', $2::integer)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `select * from cur_teenused a
+                    where a.rekvId = $1
+                      and docs.usersRigths(a.id, 'select', $2::INTEGER)
+                    order by a.lastupdate desc`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
-        alias: 'curArved'
+        alias: 'curLaduArved'
     },
     returnData: {
         row: {},
@@ -330,7 +297,7 @@ const Arv = {
     },
     saveDoc: `select docs.sp_salvesta_arv($1::json, $2::integer, $3::integer) as id`,
     deleteDoc: `SELECT error_code, result, error_message
-                FROM docs.sp_delete_arv($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+                FROM docs.sp_delete_arv($1, $2)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',
@@ -345,10 +312,11 @@ const Arv = {
             max: now.setFullYear(now.getFullYear() + 1)
         },
         {name: 'asutusid', type: 'N', min: null, max: null},
-        {name: 'summa', type: 'N', min: -9999999, max: 999999}
+        {name: 'summa', type: 'N', min: -9999999, max: 999999},
+        {name: 'operid', type: 'N', min: 1, max: 9999999}
     ],
     executeCommand: {
-        command: `select docs.sp_kooperi_arv($1::integer, $2::integer) as result`,
+        command: `select docs.sp_kooperi_arv(?1::integer, ?2::integer) as result`,
         type: 'sql',
         alias: 'kooperiArv'
     },
@@ -412,5 +380,5 @@ const Arv = {
     }
 };
 
-module.exports = Arv;
+module.exports = Sarv;
 
