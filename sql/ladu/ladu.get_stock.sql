@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS ladu.get_stock(DATE, INTEGER, INTEGER, INTEGER);
+--DROP FUNCTION IF EXISTS ladu.get_stock(DATE, INTEGER, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION ladu.get_stock(l_kpv DATE, l_rekvid INTEGER, l_vara_id INTEGER,
                                           l_ladu_id INTEGER)
@@ -49,7 +49,7 @@ FROM qrySisse s
     FROM docs.arv a
            INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
     WHERE a.liik = 0 -- приход
-      AND a.rekvid = l_rekvid
+      AND (l_rekvid is null or a.rekvid = l_rekvid)
       AND a.kpv <= l_kpv
       AND (l_vara_id IS NULL OR a1.nomid = l_vara_id)
       AND (l_ladu_id IS NULL OR a.operid = l_ladu_id)
@@ -78,7 +78,6 @@ CREATE INDEX idx_nom_vara ON libs.nomenklatuur
 
 /*
 
-explain
 SELECT *
 FROM ladu.get_stock(current_date, 1, null, null)
 

@@ -46,7 +46,8 @@ const Sarv = {
                          coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20)    AS konto,
                          coalesce((dp.details :: JSONB ->> 'kbmkonto'), '') :: VARCHAR(20) AS kbmkonto,
                          dp.selg :: VARCHAR(120)                                           AS dokprop,
-                         (d.history->0->>'user') :: VARCHAR(120)                           AS koostaja
+                         (d.history->0->>'user') :: VARCHAR(120)                           AS koostaja,
+                         ladu.nimetus as ladu
                   FROM docs.doc d
                          INNER JOIN libs.library l ON l.id = d.doc_type_id
                          INNER JOIN docs.arv a ON a.parentId = d.id
@@ -56,6 +57,8 @@ const Sarv = {
                          LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
                          LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
                          LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
+                         LEFT OUTER JOIN libs.library ladu ON ladu.id = a.operid
+    
                   WHERE d.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                                          AS id,
                               $2 :: INTEGER                                                          AS userid,
@@ -69,7 +72,7 @@ const Sarv = {
                               docs.sp_get_number(u.rekvId, 'SARV', year(date()), NULL) :: VARCHAR(20) AS number,
                               0.00                                                                   AS summa,
                               NULL :: INTEGER                                                        AS rekvId,
-                              0                                                                      AS liik,
+                              1                                                                      AS liik,
                               NULL :: INTEGER                                                        AS operid,
                               now() :: DATE                                                          AS kpv,
                               NULL :: INTEGER                                                        AS asutusid,
@@ -95,7 +98,8 @@ const Sarv = {
                               NULL :: TEXT                                                           AS kbmkonto,
                               NULL :: INTEGER                                                        AS journalid,
                               NULL :: INTEGER                                                        AS laus_nr,
-                              NULL :: VARCHAR(120)                                                   AS koostaja
+                              NULL :: VARCHAR(120)                                                   AS koostaja,
+                              NULL::TEXT as ladu
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER`,
             query: null,
@@ -297,7 +301,7 @@ const Sarv = {
     },
     saveDoc: `select docs.sp_salvesta_arv($1::json, $2::integer, $3::integer) as id`,
     deleteDoc: `SELECT error_code, result, error_message
-                FROM docs.sp_delete_arv($1, $2)`, // $1 - userId, $2 - docId
+                FROM docs.sp_delete_arv($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',
@@ -361,7 +365,7 @@ const Sarv = {
                   WHERE id = $1`, type: "sql"
     },
     generateJournal: {
-        command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($2, $1)", //$1 - docs.doc.id, $2 - userId
+        command: "SELECT error_code, result, error_message FROM ladu.gen_lausend_sarv($2::integer, $1::integer)", //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generateJournal'
     },

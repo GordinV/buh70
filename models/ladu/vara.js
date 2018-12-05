@@ -57,9 +57,8 @@ module.exports = {
         data: []
     }],
     selectAsLibs: `SELECT *
-                   FROM com_varad
+                   FROM ladu.com_varad
                    WHERE (rekvid = $1 OR rekvid IS NULL)
-                     AND status <> 3
                    ORDER BY kood`,
     returnData: {
         row: {}

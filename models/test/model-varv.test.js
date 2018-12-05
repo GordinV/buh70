@@ -8,12 +8,12 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-describe('dok. type S-Arv tests', function () {
+describe('dok. type V-Arv tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../ladu/sarv'),
-        docTypeId = 'SARV'.toLowerCase(),
-        modelForExport = 'ladu/sarv';
+    const doc = require('../ladu/varv'),
+        docTypeId = 'VARV'.toLowerCase(),
+        modelForExport = 'ladu/varv';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -91,8 +91,8 @@ describe('dok. type S-Arv tests', function () {
         });
     });
 
-    it('doc type library should contain SARV doc.type', async()=> {
-        let sql = `select id from libs.library where kood = 'SARV' and  library = 'DOK' limit 1`;
+    it('doc type library should contain VARV doc.type', async()=> {
+        let sql = `select id from libs.library where kood = 'VARV' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -112,14 +112,6 @@ describe('dok. type S-Arv tests', function () {
     it('should successfully execute view cur_teenused', async() => {
         let sql = doc.grid.sqlString;
         let returnValue = await db.queryDb(sql, [1,1]);
-        expect(returnValue).toBeDefined();
-        let result = returnValue.result;
-        expect(result).toBeGreaterThan(0);
-    });
-
-    it('should exists procedure ladu.gen_lausend_sarv', async () => {
-        let sql = `select 1 FROM pg_proc WHERE proname = 'gen_lausend_sarv'`;
-        let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);

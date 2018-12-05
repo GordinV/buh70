@@ -1,14 +1,14 @@
-<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
-<VFPData>
-  <grid>
-    <sql>select * from cur_teenused a
-                    where a.rekvId = $1
-                      and docs.usersRigths(a.id, 'select', $2::INTEGER)
-                    order by a.lastupdate desc</sql>
-    <alias>curLaduArved</alias>
-  </grid>
-  <select>
-    <sql>SELECT d.id,
+'use strict';
+//var co = require('co');
+let now = new Date();
+const start = require('./../BP/start'),
+    generateJournal = require('./../BP/generateJournal'),
+    endProcess = require('./../BP/endProcess');
+
+const Varv = {
+    select: [
+        {
+            sql: `SELECT d.id,
                          $2 :: INTEGER                                                     AS userid,
                          to_char(created, 'DD.MM.YYYY HH:MM:SS') :: TEXT                   AS created,
                          to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT                AS lastupdate,
@@ -39,14 +39,14 @@
                          asutus.regkood,
                          trim(asutus.nimetus)                                              AS asutus,
                          asutus.aadress,
-                         (asutus.properties-&gt;&gt;'kmkr') :: VARCHAR(20)                       AS kmkr,
+                         (asutus.properties->>'kmkr') :: VARCHAR(20)                       AS kmkr,
                          a.doklausid,
                          a.journalid,
                          coalesce(jid.number, 0) :: INTEGER                                AS laus_nr,
-                         coalesce((dp.details :: JSONB -&gt;&gt; 'konto'), '') :: VARCHAR(20)    AS konto,
-                         coalesce((dp.details :: JSONB -&gt;&gt; 'kbmkonto'), '') :: VARCHAR(20) AS kbmkonto,
+                         coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20)    AS konto,
+                         coalesce((dp.details :: JSONB ->> 'kbmkonto'), '') :: VARCHAR(20) AS kbmkonto,
                          dp.selg :: VARCHAR(120)                                           AS dokprop,
-                         (d.history-&gt;0-&gt;&gt;'user') :: VARCHAR(120)                           AS koostaja,
+                         (d.history->0->>'user') :: VARCHAR(120)                           AS koostaja,
                          ladu.nimetus as ladu
                   FROM docs.doc d
                          INNER JOIN libs.library l ON l.id = d.doc_type_id
@@ -59,8 +59,8 @@
                          LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
                          LEFT OUTER JOIN libs.library ladu ON ladu.id = a.operid
     
-                  WHERE d.id = $1</sql>
-    <sqlAsNew>SELECT $1 :: INTEGER                                                          AS id,
+                  WHERE d.id = $1`,
+            sqlAsNew: `SELECT $1 :: INTEGER                                                          AS id,
                               $2 :: INTEGER                                                          AS userid,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                          AS created,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                          AS lastupdate,
@@ -72,7 +72,7 @@
                               docs.sp_get_number(u.rekvId, 'SARV', year(date()), NULL) :: VARCHAR(20) AS number,
                               0.00                                                                   AS summa,
                               NULL :: INTEGER                                                        AS rekvId,
-                              1                                                                      AS liik,
+                              0                                                                      AS liik,
                               NULL :: INTEGER                                                        AS operid,
                               now() :: DATE                                                          AS kpv,
                               NULL :: INTEGER                                                        AS asutusid,
@@ -101,13 +101,14 @@
                               NULL :: VARCHAR(120)                                                   AS koostaja,
                               NULL::TEXT as ladu
                        FROM ou.userid u
-                       WHERE u.id = $2 :: INTEGER</sqlAsNew>
-    <query />
-    <multiple>false</multiple>
-    <alias>row</alias>
-  </select>
-  <select>
-    <sql>SELECT a1.id,
+                       WHERE u.id = $2 :: INTEGER`,
+            query: null,
+            multiple: false,
+            alias: 'row',
+            data: []
+        },
+        {
+            sql: `SELECT a1.id,
                          $2 :: INTEGER                                                   AS userid,
                          a1.nomid,
                          a1.kogus,
@@ -128,31 +129,33 @@
                          a1.konto,
                          a1.tp,
                          NULL :: TEXT                                                    AS vastisik,
-                         coalesce((n.properties :: JSONB -&gt;&gt; 'vat'), '-') :: VARCHAR(20) AS km,
+                         coalesce((n.properties :: JSONB ->> 'vat'), '-') :: VARCHAR(20) AS km,
                          n.uhik,
                          a1.muud
                   FROM docs.arv1 AS a1
                          INNER JOIN docs.arv a ON a.id = a1.parentId
                          INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
                          INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                  WHERE a.parentid = $1 :: INTEGER</sql>
-    <query />
-    <multiple>true</multiple>
-    <alias>details</alias>
-  </select>
-  <select>
-    <sql>SELECT rd.id, $2 :: INTEGER AS userid, trim(l.kood) AS doc_type, trim(l.nimetus) AS name
+                  WHERE a.parentid = $1 :: INTEGER`,
+            query: null,
+            multiple: true,
+            alias: 'details',
+            data: []
+        },
+        {
+            sql: `SELECT rd.id, $2 :: INTEGER AS userid, trim(l.kood) AS doc_type, trim(l.nimetus) AS name
                   FROM docs.doc d
                          LEFT OUTER JOIN docs.doc rd ON rd.id IN (SELECT unnest(d.docs_ids))
                          LEFT OUTER JOIN libs.library l ON rd.doc_type_id = l.id
                          INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                  WHERE d.id = $1 :: INTEGER</sql>
-    <query />
-    <multiple>true</multiple>
-    <alias>relations</alias>
-  </select>
-  <select>
-    <sql>SELECT Arvtasu.id,
+                  WHERE d.id = $1 :: INTEGER`,
+            query: null,
+            multiple: true,
+            alias: 'relations',
+            data: []
+        },
+        {
+            sql: `SELECT Arvtasu.id,
                          arvtasu.kpv,
                          arvtasu.summa,
                          'MK' :: VARCHAR(20)           AS dok,
@@ -168,8 +171,8 @@
                          INNER JOIN docs.mk1 mk1 ON (mk.id = mk1.parentid)
                          LEFT OUTER JOIN docs.journalid journalid ON mk1.journalId = journalId.journalId
                   WHERE Arvtasu.doc_arv_id = $1
-                    AND arvtasu.summa &lt;&gt; 0
-                    AND arvtasu.status &lt;&gt; 3
+                    AND arvtasu.summa <> 0
+                    AND arvtasu.status <> 3
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
@@ -187,8 +190,8 @@
                            ON (arvtasu.doc_tasu_id = korder1.parentid AND arvtasu.pankkassa = 2)
                          LEFT OUTER JOIN docs.journalid journalid ON korder1.journalId = journalId.journalId
                   WHERE Arvtasu.doc_arv_id = $1
-                    AND arvtasu.summa &lt;&gt; 0
-                    AND arvtasu.status &lt;&gt; 3
+                    AND arvtasu.summa <> 0
+                    AND arvtasu.status <> 3
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
@@ -206,8 +209,8 @@
                            ON (arvtasu.doc_tasu_id = journal.parentId AND arvtasu.pankkassa = 3)
                          LEFT OUTER JOIN docs.journalid journalid ON (journal.id = journalId.journalId)
                   WHERE Arvtasu.doc_arv_id = $1
-                    AND arvtasu.summa &lt;&gt; 0
-                    AND arvtasu.status &lt;&gt; 3
+                    AND arvtasu.summa <> 0
+                    AND arvtasu.status <> 3
                     AND arvtasu.pankkassa = 3
                   UNION ALL
                   SELECT Arvtasu.id,
@@ -223,66 +226,163 @@
                          1 :: NUMERIC      AS kuurs
                   FROM docs.arvtasu arvtasu
                   WHERE Arvtasu.doc_arv_id = $1
-                    AND arvtasu.summa &lt;&gt; 0
-                    AND arvtasu.status &lt;&gt; 3
+                    AND arvtasu.summa <> 0
+                    AND arvtasu.status <> 3
                     AND arvtasu.pankkassa IN (0, 4)
 
-            </sql>
-    <query />
-    <multiple>true</multiple>
-    <alias>queryArvTasu</alias>
-  </select>
-  <select>
-    <sql>SELECT result, error_code, error_message
-                  FROM docs.create_new_mk($1, $2)</sql>
-    <query />
-    <multuple>false</multuple>
-    <alias>create_new_mk</alias>
-  </select>
-  <select>
-    <sql>SELECT result, error_code, error_message
-                  FROM docs.create_new_order($1, $2)</sql>
-    <query />
-    <multuple>false</multuple>
-    <alias>create_new_order</alias>
-  </select>
-  <selectAsLibs>
-    <sql></sql>
-    <alias>selectAsLibs</alias>
-  </selectAsLibs>
-  <saveDoc>
-    <sql>select docs.sp_salvesta_arv($1::json, $2::integer, $3::integer) as id</sql>
-    <alias>saveDoc</alias>
-  </saveDoc>
-  <deleteDoc>
-    <sql>SELECT error_code, result, error_message
-                FROM docs.sp_delete_arv($1::integer, $2::integer)</sql>
-    <alias>deleteDoc</alias>
-  </deleteDoc>
-  <requiredFields>
-    <validate>kpv,tahtaeg,asutusid,summa,operid</validate>
-  </requiredFields>
-  <executeSql>
-    <sql></sql>
-    <alias></alias>
-  </executeSql>
-  <executeCommand>
-    <sql>select docs.sp_kooperi_arv(?1::integer, ?2::integer) as result</sql>
-    <alias>kooperiArv</alias>
-  </executeCommand>
-  <register>
-    <sql>UPDATE docs.doc
+            `,
+            query: null,
+            multiple: true,
+            alias: 'queryArvTasu',
+            data: []
+        },
+        {
+            sql: `SELECT result, error_code, error_message
+                  FROM docs.create_new_mk($1, $2)`, //$1 - userId, $2 - params -> {"arv_id": ?, "dok":"SMK" }
+            query: null,
+            multuple: false,
+            alias: 'create_new_mk',
+            data: []
+        },
+        {
+            sql: `SELECT result, error_code, error_message
+                  FROM docs.create_new_order($1, $2)`, //$1 - userId, $2 - params -> {"arv_id": ?, "dok":"SORDER" }
+            query: null,
+            multuple: false,
+            alias: 'create_new_order',
+            data: []
+        }
+
+    ],
+    grid: {
+        gridConfiguration: [
+            {id: "id", name: "id", width: "25px", show: false},
+            {id: "number", name: "Number", width: "100px"},
+            {id: "kpv", name: "Kuupaev", width: "100px"},
+            {id: "summa", name: "Summa", width: "75px"},
+            {id: "tahtaeg", name: "Tähtaeg", width: "100px"},
+            {id: "jaak", name: "Jääk", width: "100px"},
+            {id: "tasud", name: "Tasud", width: "100px"},
+            {id: "asutus", name: "Asutus", width: "200px"},
+            {id: "created", name: "Lisatud", width: "150px"},
+            {id: "lastupdate", name: "Viimane parandus", width: "150px"},
+            {id: "status", name: "Staatus", width: "100px"},
+        ],
+        sqlString: `select * from cur_teenused a
+                    where a.rekvId = $1
+                      and docs.usersRigths(a.id, 'select', $2::INTEGER)
+                    order by a.lastupdate desc`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        params: '',
+        alias: 'curLaduArved'
+    },
+    returnData: {
+        row: {},
+        details: [],
+        relations: [],
+        gridConfig: [
+            {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
+            {id: 'nomid', name: 'nomId', width: '0px', show: false, type: 'text', readOnly: false},
+            {
+                id: 'kood',
+                name: 'Kood',
+                width: '100px',
+                show: true,
+                type: 'select',
+                readOnly: false,
+                dataSet: 'nomenclature',
+                valueFieldName: 'nomid'
+            },
+            {id: 'nimetus', name: 'Nimetus', width: '300px', show: true, readOnly: true},
+            {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'number', readOnly: false},
+            {id: 'kogus', name: 'kogus', width: '100px', show: true, type: 'number', readOnly: false},
+            {id: 'kbm', name: 'Käibemaks', width: '100px', show: true, type: 'number', readOnly: false},
+            {id: 'summa', name: 'Summa', width: '100px', show: true, type: 'number', readOnly: false}
+        ]
+    },
+    saveDoc: `select docs.sp_salvesta_arv($1::json, $2::integer, $3::integer) as id`,
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM docs.sp_delete_arv($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+    requiredFields: [
+        {
+            name: 'kpv',
+            type: 'D',
+            min: now.setFullYear(now.getFullYear() - 1),
+            max: now.setFullYear(now.getFullYear() + 1)
+        },
+        {
+            name: 'tahtaeg',
+            type: 'D',
+            min: now.setFullYear(now.getFullYear() - 1),
+            max: now.setFullYear(now.getFullYear() + 1)
+        },
+        {name: 'asutusid', type: 'N', min: null, max: null},
+        {name: 'summa', type: 'N', min: -9999999, max: 999999},
+        {name: 'operid', type: 'N', min: 1, max: 9999999}
+    ],
+    executeCommand: {
+        command: `select docs.sp_kooperi_arv(?1::integer, ?2::integer) as result`,
+        type: 'sql',
+        alias: 'kooperiArv'
+    },
+    bpm: [
+        {
+            step: 0,
+            name: 'Регистация документа',
+            action: 'start',
+            nextStep: 1,
+            task: 'human',
+            data: [],
+            actors: [],
+            status: null,
+            actualStep: false
+        },
+        {
+            step: 1,
+            name: 'Контировка',
+            action: 'generateJournal',
+            nextStep: 2,
+            task: 'automat',
+            data: [],
+            status: null,
+            actualStep: false
+        },
+//        {step:2, name:'Оплата', action: 'tasumine', nextStep:3, task:'human', data:[], status:null, actualStep:false},
+        {
+            step: 2,
+            name: 'Конец',
+            action: 'endProcess',
+            nextStep: null,
+            task: 'automat',
+            data: [],
+            actors: [],
+            status: null,
+            actualStep: false
+        }
+    ],
+    register: {
+        command: `UPDATE docs.doc
                   SET status = 1
-                  WHERE id = $1</sql>
-    <alias />
-  </register>
-  <endProcess>
-    <sql>UPDATE docs.doc SET status = 2 WHERE id = $1</sql>
-    <alias />
-  </endProcess>
-  <generateJournal>
-    <sql>SELECT error_code, result, error_message FROM ladu.gen_lausend_sarv($2::integer, $1::integer)</sql>
-    <alias>generateJournal</alias>
-  </generateJournal>
-  <print></print>
-</VFPData>
+                  WHERE id = $1`, type: "sql"
+    },
+    generateJournal: {
+        command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($2, $1)", //$1 - docs.doc.id, $2 - userId
+        type: "sql",
+        alias: 'generateJournal'
+    },
+    endProcess: {command: "UPDATE docs.doc SET status = 2 WHERE id = $1", type: "sql"},
+    executeTask: function (task, docId, userId) {
+        console.log('executeTask', task, docId, userId);
+        // выполнит задачу, переданную в параметре
+
+        let executeTask = task;
+        if (executeTask.length == 0) {
+            executeTask = ['start'];
+        }
+
+        let taskFunction = eval(executeTask[0]);
+        return taskFunction(docId, userId, this);
+    }
+};
+
+module.exports = Varv;
+

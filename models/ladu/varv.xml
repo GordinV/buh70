@@ -72,7 +72,7 @@
                               docs.sp_get_number(u.rekvId, 'SARV', year(date()), NULL) :: VARCHAR(20) AS number,
                               0.00                                                                   AS summa,
                               NULL :: INTEGER                                                        AS rekvId,
-                              1                                                                      AS liik,
+                              0                                                                      AS liik,
                               NULL :: INTEGER                                                        AS operid,
                               now() :: DATE                                                          AS kpv,
                               NULL :: INTEGER                                                        AS asutusid,
@@ -281,7 +281,7 @@
     <alias />
   </endProcess>
   <generateJournal>
-    <sql>SELECT error_code, result, error_message FROM ladu.gen_lausend_sarv($2::integer, $1::integer)</sql>
+    <sql>SELECT error_code, result, error_message FROM docs.gen_lausend_arv($2, $1)</sql>
     <alias>generateJournal</alias>
   </generateJournal>
   <print></print>

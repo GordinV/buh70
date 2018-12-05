@@ -61,8 +61,8 @@ module.exports = {
             type: 'C'
         }
     ],
-    saveDoc: `select libs.sp_salvesta_dokprop($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from libs.sp_delete_dokprop($1, $2)`, // $1 - userId, $2 - docId
+    saveDoc: `select libs.sp_salvesta_dokprop($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    deleteDoc: `select error_code, result, error_message from libs.sp_delete_dokprop($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     selectAsLibs: `SELECT id, nimetus::varchar(254), dok::varchar(20), kood, kbmkonto, kood1, kood2, kood3, kood5, asutusid, rekvid
                         FROM com_dokprop l
                         WHERE (l.rekvId = $1 OR l.rekvid IS NULL)`,
