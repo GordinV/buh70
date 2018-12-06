@@ -77,7 +77,7 @@ module.exports = {
         {name: 'regkood', type: 'C'},
         {name: 'nimetus', type: 'C'}
     ],
-    saveDoc: `select ou.sp_salvesta_rekv($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    saveDoc: `select ou.sp_salvesta_rekv($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `select error_code, result, error_message from ou.sp_delete_rekv($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
@@ -91,7 +91,7 @@ module.exports = {
                     FROM cur_rekv r
                     WHERE r.status <> 3
                           AND r.id IN (SELECT rekv_id
-                                       FROM get_asutuse_struktuur($1))`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                                       FROM get_asutuse_struktuur($1::integer))`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curRekv'
     },

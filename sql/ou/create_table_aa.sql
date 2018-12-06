@@ -21,7 +21,7 @@ WITH (
 );
 
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE ou.aa TO dbpeakasutaja;
-GRANT SELECT, UPDATE, INSERT ON TABLE ou.aa TO dbkasutaja;
+GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE ou.aa TO dbkasutaja;
 GRANT all ON TABLE ou.aa TO dbadmin;
 GRANT SELECT ON TABLE ou.aa TO dbvaatleja;
 

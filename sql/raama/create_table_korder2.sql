@@ -41,3 +41,6 @@ CREATE INDEX korder2_nomid_idx
   USING btree
   (nomid);
 
+
+ALTER TABLE korder2 ADD COLUMN muud text;
+

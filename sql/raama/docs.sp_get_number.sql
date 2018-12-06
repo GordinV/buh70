@@ -66,7 +66,7 @@ BEGIN
 
   -- building sql query with regexp for only numbers
   lcSqlString = 'select (max(SUBSTRING(''0'' || coalesce(tbl.number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
-                ')::bigint) ::bigint) + 1 as number from docs.doc d inner join '
+                ')::bigint) ::bigint) as number from docs.doc d inner join '
                 || lcTableName || ' tbl on d.id = tbl.parentid and d.status <> 3 '
                 || ' where tbl.rekvId = $1::integer and year(tbl.kpv) = $2::integer and encode(tbl.number::bytea, ''escape'')::text  ilike $3::text';
 

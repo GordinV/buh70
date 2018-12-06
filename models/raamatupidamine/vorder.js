@@ -160,7 +160,7 @@ const Vorder = {
         sqlString: `SELECT *
                     FROM cur_korder k
                     WHERE k.rekvId = $1
-                          AND coalesce(docs.usersRigths(k.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                          AND coalesce(docs.usersRigths(k.id, 'select', $2::integer), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curKorder'
     },
@@ -177,8 +177,8 @@ const Vorder = {
             {id: 'proj', name: 'Projekt', width: '100px', show: true, type: 'text', readOnly: false}
         ]
     },
-    saveDoc: `select docs.sp_salvesta_korder($1, $2, $3) as id`,
-    deleteDoc: `select error_code, result, error_message from docs.sp_delete_korder($1, $2)`, // $1 - userId, $2 - docId
+    saveDoc: `select docs.sp_salvesta_korder($1::json, $2::integer, $3::integer) as id`,
+    deleteDoc: `select error_code, result, error_message from docs.sp_delete_korder($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',
@@ -237,7 +237,7 @@ const Vorder = {
     },
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
     generateJournal: {
-        command: `select error_code, result, error_message from docs.gen_lausend_vorder($2, $1)`, // $1 - userId, $2 - docId
+        command: `select error_code, result, error_message from docs.gen_lausend_vorder($2::integer, $1::integer)`, // $1 - userId, $2 - docId
         type: "sql",
         alias: 'generateJournal'
     },

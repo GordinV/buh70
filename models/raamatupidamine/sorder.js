@@ -161,7 +161,7 @@ const Sorder = {
         sqlString: `SELECT *
                     FROM cur_korder k
                     WHERE k.rekvId = $1
-                          AND coalesce(docs.usersRigths(k.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                          AND coalesce(docs.usersRigths(k.id, 'select', $2::integer), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curKorder'
     },
@@ -178,8 +178,8 @@ const Sorder = {
             {id: 'proj', name: 'Projekt', width: '100px', show: true, type: 'text', readOnly: false}
         ]
     },
-    saveDoc: `select docs.sp_salvesta_korder($1, $2, $3) as id`,
-    deleteDoc: `select error_code, result, error_message from docs.sp_delete_korder($1, $2)`, // $1 - userId, $2 - docId
+    saveDoc: `select docs.sp_salvesta_korder($1::json, $2::integer, $3::integer) as id`,
+    deleteDoc: `select error_code, result, error_message from docs.sp_delete_korder($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',
@@ -238,7 +238,7 @@ const Sorder = {
     },
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
     generateJournal: {
-        command: `select error_code, result, error_message from docs.gen_lausend_sorder($2, $1)`, // $1 - userId, $2 - docId
+        command: `select error_code, result, error_message from docs.gen_lausend_sorder($2::INTEGER, $1::INTEGER)`, // $1 - userId, $2 - docId
         type: "sql",
         alias: 'generateJournal'
     },
@@ -248,102 +248,3 @@ const Sorder = {
 };
 
 module.exports = Sorder;
-
-/*
-const setBpmStatuses = (actualStepIndex, userId)=>  {
-// собираем данные на на статус документа, правим данные БП документа
-    // 1. установить на actualStep = false
-    // 2. задать статус документу
-    // 3. выставить стутус задаче (пока только finished)
-    // 4. если есть следующий шаг, то выставить там actualStep = true, статус задачи opened
-
-
-    try {
-        var bpm =  Sorder.bpm, // нельзя использовать let из - за использования try {}
-            nextStep = bpm[actualStepIndex].nextStep,
-            executors = bpm[actualStepIndex].actors || [];
-
-        if (!executors || executors.length == 0) {
-            // если исполнители не заданы, то добавляем автора
-            executors.push({
-                id: userId,
-                name: 'AUTHOR',
-                role: 'AUTHOR'
-            })
-        }
-
-        bpm[actualStepIndex].data = [{execution: Date.now(), executor: userId, vars: null}];
-        bpm[actualStepIndex].status = 'finished';  // 3. выставить стутус задаче (пока только finished)
-        bpm[actualStepIndex].actualStatus = false;  // 1. установить на actualStep = false
-        bpm[actualStepIndex].actors = executors;  // установить список акторов
-
-        // выставим флаг на следующий щаг
-        bpm = bpm.map(stepData => {
-            if (stepData.step === nextStep) {
-                // 4. если есть следующий шаг, то выставить там actualStep = true, статус задачи opened
-                stepData.actualStep = true;
-                stepData.status = 'opened';
-            }
-            return stepData;
-        });
-
-    } catch (e) {
-        console.error('try error', e);
-    }
-    return bpm;
-
-};
-
-const start =(docId, userId)=> {
-    // реализует старт БП документа
-    const DOC_STATUS = 1, // устанавливаем активный статус для документа
-        DocDataObject = require('./documents'),
-        SQL_UPDATE = 'update docs.doc set status = $1, bpm = $2, history = $4 where id = $3',
-        SQL_SELECT_DOC = Sorder.select[0].sql;
-
-    let  bpm = setBpmStatuses(0, userId), // выставим актуальный статус для следующего процесса
-        history = {user: userId, updated: Date.now()};
-
-    // выполнить запрос и вернуть промис
-    return DocDataObject.executeSqlQueryPromise(SQL_UPDATE, [DOC_STATUS, JSON.stringify(bpm), docId, JSON.stringify(history)]);
-
-};
-*/
-
-/*
-// generateJournal
-const generateJournal = (docId, userId)=> {
-    // реализует контировка
-
-    const ACTUAL_STEP_STATUS = 1, // актуальный шаг БП
-        SQL_GENERATE_LAUSEND = 'select docs.gen_lausend_sorder((select id from docs.korder1 where parentid = $1), $2) as journal_id',
-        SQL_UPDATE_DOCUMENT_BPM = 'update docs.doc set bpm = $2, history = $3  where id = $1',
-        DocDataObject = require('./documents');
-
-    let   bpm = setBpmStatuses(ACTUAL_STEP_STATUS, userId),
-        tasks = [],
-        history = {user: userId, updated: Date.now()};
-
-    // выполнить запрос и вернуть промис
-    return Promise.all([
-        DocDataObject.executeSqlQueryPromise(SQL_GENERATE_LAUSEND, [docId, userId]),
-        DocDataObject.executeSqlQueryPromise(SQL_UPDATE_DOCUMENT_BPM, [docId, JSON.stringify(bpm), JSON.stringify(history)])
-    ]);
-};
-
-const endProcess = (docId, userId)=> {
-    // реализует завершение БП документа
-
-    const   ACTUAL_TASK_STEP = 2, // устанавливаем активный статус для документа
-        DOC_STATUS = 2, // закрыт
-        SQL = 'update docs.doc set bpm = $2, history = $3, status = $4 where id = $1',
-        DocDataObject = require('./documents');
-
-    let bpm = setBpmStatuses(ACTUAL_TASK_STEP, userId), // выставим актуальный статус для следующего процесса
-        history = {user: userId, updated: Date.now()},
-        params = [docId, JSON.stringify(bpm), JSON.stringify(history), DOC_STATUS];
-
-    return DocDataObject.executeSqlQueryPromise(SQL, params);
-};
-*/
-

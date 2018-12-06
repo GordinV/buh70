@@ -1,9 +1,8 @@
-DROP FUNCTION IF EXISTS ou.sp_salvesta_rekv( JSON, INTEGER, INTEGER );
+DROP FUNCTION IF EXISTS ou.sp_salvesta_rekv(JSON, INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION ou.sp_salvesta_rekv(
-  data        JSON,
-  user_id     INTEGER,
-  user_rekvid INTEGER)
+CREATE OR REPLACE FUNCTION ou.sp_salvesta_rekv(data JSON,
+                                               user_id INTEGER,
+                                               user_rekvid INTEGER)
   RETURNS INTEGER AS
 $BODY$
 
@@ -11,25 +10,25 @@ DECLARE
   rekv_id      INTEGER;
   userName     TEXT;
   doc_id       INTEGER = data ->> 'id';
-  doc_data     JSON = data ->> 'data';
+  doc_data     JSON    = data ->> 'data';
   doc_parentid INTEGER = doc_data ->> 'parentid';
-  doc_regkood  TEXT = doc_data ->> 'regkood';
-  doc_nimetus  TEXT = doc_data ->> 'nimetus';
-  doc_kbmkood  TEXT = doc_data ->> 'kbmkood';
-  doc_aadress  TEXT = doc_data ->> 'aadress';
-  doc_haldus   TEXT = doc_data ->> 'haldus';
-  doc_tel      TEXT = doc_data ->> 'tel';
-  doc_faks     TEXT = doc_data ->> 'faks';
-  doc_email    TEXT = doc_data ->> 'email';
-  doc_juht     TEXT = doc_data ->> 'juht';
-  doc_raama    TEXT = doc_data ->> 'raama';
-  doc_muud     TEXT = doc_data ->> 'muud';
-  doc_ftp      TEXT = doc_data ->> 'ftp';
-  doc_login    TEXT = doc_data ->> 'login';
-  doc_parool   TEXT = doc_data ->> 'parool';
+  doc_regkood  TEXT    = doc_data ->> 'regkood';
+  doc_nimetus  TEXT    = doc_data ->> 'nimetus';
+  doc_kbmkood  TEXT    = doc_data ->> 'kbmkood';
+  doc_aadress  TEXT    = doc_data ->> 'aadress';
+  doc_haldus   TEXT    = doc_data ->> 'haldus';
+  doc_tel      TEXT    = doc_data ->> 'tel';
+  doc_faks     TEXT    = doc_data ->> 'faks';
+  doc_email    TEXT    = doc_data ->> 'email';
+  doc_juht     TEXT    = doc_data ->> 'juht';
+  doc_raama    TEXT    = doc_data ->> 'raama';
+  doc_muud     TEXT    = doc_data ->> 'muud';
+  doc_ftp      TEXT    = doc_data ->> 'ftp';
+  doc_login    TEXT    = doc_data ->> 'login';
+  doc_parool   TEXT    = doc_data ->> 'parool';
   doc_tahtpaev INTEGER = doc_data ->> 'tahtpaev';
 
-  doc_details  JSON = doc_data ->> 'gridData';
+  doc_details  JSON    = doc_data ->> 'gridData';
   detail_id    INTEGER;
   json_object  JSONB;
   json_arved   JSONB;
@@ -44,13 +43,14 @@ DECLARE
 BEGIN
 
   SELECT kasutaja
-  INTO userName
+         INTO userName
   FROM ou.userid u
-  WHERE u.rekvid = user_rekvid AND u.id = user_id;
+  WHERE u.rekvid = user_rekvid
+    AND u.id = user_id;
 
   IF userName IS NULL
   THEN
-    RAISE NOTICE 'User not found %', user;
+    RAISE EXCEPTION 'User not found %', user;
     RETURN 0;
   END IF;
 
@@ -65,16 +65,17 @@ BEGIN
 
 
     SELECT row_to_json(row)
-    INTO new_history
+           INTO new_history
     FROM (SELECT
             now()    AS created,
             userName AS user) row;
 
-    INSERT INTO ou.rekv (parentid, regkood, nimetus, kbmkood, aadress, haldus, tel, faks, email, juht, raama, muud, ajalugu, status)
+    INSERT INTO ou.rekv (parentid, regkood, nimetus, kbmkood, aadress, haldus, tel, faks, email, juht, raama, muud,
+                         ajalugu, status)
     VALUES
-      (doc_parentid, doc_regkood, doc_nimetus, doc_kbmkood, doc_aadress, doc_haldus, doc_tel, doc_faks, doc_email,
-                     doc_juht, doc_raama, doc_muud, new_history,
-       array_position((enum_range(NULL :: DOK_STATUS)), 'active'))
+    (doc_parentid, doc_regkood, doc_nimetus, doc_kbmkood, doc_aadress, doc_haldus, doc_tel, doc_faks, doc_email,
+     doc_juht, doc_raama, doc_muud, new_history,
+     array_position((enum_range(NULL :: DOK_STATUS)), 'active'))
     RETURNING id
       INTO rekv_id;
 
@@ -89,12 +90,12 @@ BEGIN
       peakasutaja_,
       admin,
       muud
-    INTO v_user
+      INTO v_user
     FROM ou.userid
     WHERE id = user_id;
 
     SELECT row_to_json(row)
-    INTO user_json
+           INTO user_json
     FROM (SELECT
             0      AS id,
             v_user AS data) row;
@@ -108,9 +109,8 @@ BEGIN
 
   ELSE
 
-
     SELECT row_to_json(row)
-    INTO new_history
+           INTO new_history
     FROM (SELECT
             now()    AS updated,
             userName AS user,
@@ -121,7 +121,7 @@ BEGIN
     -- save aa old state
 
     SELECT array_to_json(array_agg(row_to_json(row_data)))
-    INTO aa_history
+           INTO aa_history
     FROM (SELECT aa.*
           FROM ou.aa aa
           WHERE aa.parentid = doc_id) row_data;
@@ -152,6 +152,7 @@ BEGIN
     SET
       parentid   = doc_parentid,
       regkood    = doc_regkood,
+      kbmkood    = doc_kbmkood,
       nimetus    = doc_nimetus,
       aadress    = doc_aadress,
       haldus     = doc_haldus,
@@ -164,69 +165,75 @@ BEGIN
       ajalugu    = new_history,
       properties = coalesce(properties :: JSONB, '{}' :: JSONB) || json_object :: JSONB
     WHERE id = doc_id
-    RETURNING id
-      INTO rekv_id;
+      RETURNING id
+        INTO rekv_id;
   END IF;
 
   FOR json_object IN
-  SELECT *
-  FROM json_array_elements(doc_details)
-  LOOP
     SELECT *
-    INTO json_record
-    FROM jsonb_to_record(
-             json_object) AS x(id TEXT, parentid INTEGER, arve TEXT, nimetus TEXT, default_ INTEGER, kassa INTEGER, pank INTEGER,
-         konto TEXT, tp TEXT, muud TEXT, kassapank INTEGER);
+    FROM json_array_elements(doc_details)
+    LOOP
+      SELECT *
+             INTO json_record
+      FROM jsonb_to_record(
+               json_object) AS x (id TEXT, parentid INTEGER, arve TEXT, nimetus TEXT, default_ INTEGER, kassa INTEGER,
+                                  pank INTEGER,
+                                  konto TEXT, tp TEXT, muud TEXT, kassapank INTEGER);
 
-    RAISE NOTICE ' aa %', json_record.nimetus;
+      RAISE NOTICE ' aa %', json_record.nimetus;
 
 
-    IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
-    THEN
+      IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
+      THEN
 
 
-      INSERT INTO ou.aa (parentid, arve, nimetus, default_, kassa, pank, konto, tp, muud)
-      VALUES (rekv_id, json_record.arve, json_record.nimetus, json_record.default_,
-              json_record.kassapank, json_record.pank, json_record.konto, json_record.tp, json_record.muud)
-      RETURNING id
-        INTO detail_id;
+        INSERT INTO ou.aa (parentid, arve, nimetus, default_, kassa, pank, konto, tp, muud)
+        VALUES (rekv_id, json_record.arve, json_record.nimetus, json_record.default_,
+                json_record.kassapank, json_record.pank, json_record.konto, json_record.tp, json_record.muud)
+               RETURNING id
+                 INTO detail_id;
 
-    ELSE
-      UPDATE ou.aa
-      SET
-        arve     = json_record.arve,
-        nimetus  = json_record.nimetus,
-        default_ = json_record.default_,
-        kassa    = json_record.kassapank,
-        pank     = json_record.pank,
-        konto    = json_record.konto,
-        tp       = json_record.tp,
-        muud     = json_record.muud
-      WHERE id = json_record.id :: INTEGER
-      RETURNING id
-        INTO detail_id;
-    END IF;
+      ELSE
+        UPDATE ou.aa
+        SET
+          arve     = json_record.arve,
+          nimetus  = json_record.nimetus,
+          default_ = json_record.default_,
+          kassa    = json_record.kassapank,
+          pank     = json_record.pank,
+          konto    = json_record.konto,
+          tp       = json_record.tp,
+          muud     = json_record.muud
+        WHERE id = json_record.id :: INTEGER
+          RETURNING id
+            INTO detail_id;
+      END IF;
 
-    -- add new id into array of ids
-    ids = array_append(ids, detail_id);
-  END LOOP;
+      -- add new id into array of ids
+      ids = array_append(ids, detail_id);
+    END LOOP;
 
   -- delete record which not in json
 
-  DELETE FROM ou.aa
-  WHERE parentid = doc_id AND id NOT IN (SELECT unnest(ids));
+  DELETE
+  FROM ou.aa
+  WHERE parentid = doc_id
+    AND id NOT IN (SELECT unnest(ids));
 
   RAISE NOTICE 'return %', rekv_id;
 
   RETURN rekv_id;
-  EXCEPTION WHEN OTHERS
-  THEN
-    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-    RETURN 0;
+  EXCEPTION
+  WHEN OTHERS
+    THEN
+      RAISE EXCEPTION 'error % %', SQLERRM, SQLSTATE;
+      RETURN 0;
 
-END;$BODY$
-LANGUAGE plpgsql VOLATILE
-COST 100;
+END;
+$BODY$
+  LANGUAGE plpgsql
+  VOLATILE
+  COST 100;
 
 
 GRANT EXECUTE ON FUNCTION ou.sp_salvesta_rekv(JSON, INTEGER, INTEGER) TO dbkasutaja;
