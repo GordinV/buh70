@@ -112,7 +112,7 @@ module.exports = {
 
         },
         {
-            sql: `select * from palk.get_taotlus_mvt_data($1, (select rekvid from ou.userid where id = $2)::integer)`, //$1 asutus_id, $2 - userid
+            sql: `select * from palk.get_taotlus_mvt_data($1::INTEGER, (select rekvid from ou.userid where id = $2)::integer)`, //$1 asutus_id, $2 - userid
             query: null,
             multiple: true,
             alias: 'taotlus_mvt',
@@ -159,8 +159,8 @@ module.exports = {
         {name: 'regkood', type: 'C'},
         {name: 'nimetus', type: 'C'}
     ],
-    saveDoc: `select libs.sp_salvesta_asutus($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from libs.sp_delete_asutus($1, $2)`, // $1 - userId, $2 - docId
+    saveDoc: `select libs.sp_salvesta_asutus($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    deleteDoc: `select error_code, result, error_message from libs.sp_delete_asutus($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},

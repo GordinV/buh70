@@ -42,7 +42,8 @@ const Vorder = {
                    dp.selg::varchar(120)                                                                              as dokprop,
                   (SELECT sum(summa)
                    FROM docs.korder2 k2
-                   WHERE parentid = k.id) :: NUMERIC(12, 2) AS kokku
+                   WHERE parentid = k.id) :: NUMERIC(12, 2) AS kokku,
+                  (d.history->0->>'user')::varchar(120)                                          AS koostaja
 
                 FROM docs.doc d
                   INNER JOIN libs.library l ON l.id = d.doc_type_id

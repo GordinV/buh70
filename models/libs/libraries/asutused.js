@@ -32,7 +32,7 @@ module.exports = {
             sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa,
                          $2 :: INTEGER                      AS userid
                   FROM libs.asutus a,
-                       json_array_elements((a.properties -> 'asutus_aa') :: JSON) AS e (element)
+                       json_array_elements(case when (a.properties ->> 'asutus_aa') is null then '[]'::json else (a.properties -> 'asutus_aa') :: JSON end) AS e (element)
                   WHERE a.id = $1`, //$1 - doc_id, $2 0 userId
             query: null,
             multiple: true,
@@ -42,8 +42,8 @@ module.exports = {
         }, {
             sql: `SELECT Asutus.id
                   FROM libs.asutus Asutus
-                  WHERE (rtrim(ltrim(Asutus.regkood)) = $ 1 OR empty($ 1))
-                     OR (rtrim(ltrim(Asutus.nimetus)) = $ 2 OR empty($ 2))`, //$1 regkood, $2 nimetus
+                  WHERE (rtrim(ltrim(Asutus.regkood)) = $1 OR empty($1))
+                     OR (rtrim(ltrim(Asutus.nimetus)) = $2 OR empty($2))`, //$1 regkood, $2 nimetus
             query: null,
             multiple: false,
             alias: 'validate_asutus',

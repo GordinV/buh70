@@ -31,7 +31,7 @@ const Journal = {
                          asutus.regkood,
                          trim(asutus.nimetus)                                                           AS asutus,
                          u.ametnik                                                                      AS kasutaja,
-                         (d.history->0->>'user')::varchar(120)                                                          AS koostaja
+                         (d.history->0->>'user')::varchar(120)                                          AS koostaja
                   FROM docs.doc d
                          INNER JOIN libs.library l ON l.id = d.doc_type_id
                          INNER JOIN docs.journal j ON j.parentId = d.id

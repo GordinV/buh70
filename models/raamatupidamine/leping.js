@@ -22,7 +22,8 @@ const Leping = {
                  a.dok, 
                  a.pakettid,
                  a.objektid,
-                 a.muud
+                 a.muud,
+                 (d.history->0->>'user')::varchar(120)                                          AS koostaja
                  from docs.doc d 
                  inner join libs.library l on l.id = d.doc_type_id 
                  inner join docs.leping1 a on a.parentId = d.id 

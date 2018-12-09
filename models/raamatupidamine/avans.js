@@ -35,7 +35,8 @@ const Avans = {
                       dp.selg :: VARCHAR(120)                                        AS dokprop,
                       d1.dokpropid,
                       coalesce(jid.number, 0) :: INTEGER                             AS lausend,
-                      (select sum(summa) from docs.avans2 where parentid = d1.id)::numeric(14,2) as summa
+                      (select sum(summa) from docs.avans2 where parentid = d1.id)::numeric(14,2) as summa,
+                      (d.history->0->>'user')::varchar(120)                          AS koostaja
                     FROM docs.doc d
                       INNER JOIN docs.avans1 d1 ON d1.parentId = d.id
                       INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
@@ -159,7 +160,7 @@ const Avans = {
                           d.*
                         FROM cur_avans d
                         WHERE d.rekvId = $1
-                              AND coalesce(docs.usersRigths(d.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                              AND coalesce(docs.usersRigths(d.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curAvans'
     },
@@ -178,8 +179,8 @@ const Avans = {
             {id: 'proj', name: 'Projekt', width: '100px', show: true, type: 'text', readOnly: false}
         ]
     },
-    saveDoc: `select docs.sp_salvesta_avans($1, $2, $3) as id`,
-    deleteDoc: `select error_code, result, error_message from docs.sp_delete_avans($1, $2)`, // $1 - userId, $2 - docId
+    saveDoc: `select docs.sp_salvesta_avans($1::json, $2::integer, $3::integer) as id`,
+    deleteDoc: `select error_code, result, error_message from docs.sp_delete_avans($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',
@@ -245,13 +246,13 @@ const Avans = {
     },
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
     generateJournal: {
-        command: `select error_code, result, error_message from docs.gen_lausend_avans($2, $1)`, // $1 - userId, $2 - docId
+        command: `select error_code, result, error_message from docs.gen_lausend_avans($2::integer, $1::integer)`, // $1 - userId, $2 - docId
         type: "sql",
         alias: 'generateJournal'
     },
     endProcess: {command: `update docs.doc set status = 2 where id = $1`, type: "sql"},
     executeCommand: {
-        command: `select result, error_message from docs.fnc_avansijaak(?tnId)`,
+        command: `select result, error_message from docs.fnc_avansijaak(?tnId::integer)`,
         type:'sql',
         alias:'fncAvansiJaak'
     },

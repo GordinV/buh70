@@ -32,7 +32,8 @@ const Smk = {
                    WHERE parentid = k.id)                                                                             AS summa,
                    coalesce((dp.details :: JSONB ->> 'konto'),'') :: VARCHAR(20)                                      AS konto,
                    dp.selg::varchar(120)                                                                              as dokprop,
-                   k.doklausid
+                   k.doklausid,
+                  (d.history->0->>'user')::varchar(120)                                          AS koostaja
 
                 FROM docs.doc d
                   INNER JOIN docs.mk k ON k.parentId = d.id
@@ -59,8 +60,8 @@ const Smk = {
                        select rekvid from ou.userid where id = $2)
                        ) :: INTEGER + 1                         AS number,
                       now() :: DATE                                 AS maksepaev,
-                      aa.id                                         AS aaid,
-                      trim(aa.name)                                 AS pank,
+                      0                                         AS aaid,
+                      trim('')::varchar(20)                                AS pank,
                       NULL::integer                                 AS rekvId,
                       now() :: DATE                                 AS kpv,
                       NULL::varchar(120)                            AS viitenr,
@@ -151,7 +152,7 @@ const Smk = {
         ],
         sqlString: `select d.*, 0 as valitud from cur_mk d
                 where d.rekvId = $1
-                and coalesce(docs.usersRigths(d.id, 'select', $2),true)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                and coalesce(docs.usersRigths(d.id, 'select', $2::integer),true)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias:  'curMk'
     },
@@ -169,8 +170,8 @@ const Smk = {
             {id: 'proj', name: 'Projekt', width: '100px', show: true, type: 'text', readOnly: false}
         ]
     },
-    saveDoc: `select docs.sp_salvesta_mk($1, $2, $3) as id`,
-    deleteDoc: `select error_code, result, error_message from docs.sp_delete_mk($1, $2)`, // $1 - userId, $2 - docId
+    saveDoc: `select docs.sp_salvesta_mk($1::json, $2::integer, $3::integer) as id`,
+    deleteDoc: `select error_code, result, error_message from docs.sp_delete_mk($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',
@@ -227,7 +228,7 @@ const Smk = {
     },
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
     generateJournal: {
-        command: `select error_code, result, error_message from docs.gen_lausend_smk($2, $1)`, // $1 - userId, $2 - docId
+        command: `select error_code, result, error_message from docs.gen_lausend_smk($2::integer, $1::integer)`, // $1 - userId, $2 - docId
         type: "sql",
         alias: 'generateJournal'
     },
@@ -296,27 +297,3 @@ const setBpmStatuses = (actualStepIndex, userId)=>  {
     return bpm;
 
 };
-
-
-/*
-
-// generateJournal
-const generateJournal = (docId, userId)=> {
-    // реализует контировка
-
-    const ACTUAL_STEP_STATUS = 1, // актуальный шаг БП
-        SQL_GENERATE_LAUSEND = 'select docs.gen_lausend_arv((select id from docs.arv where parentid = $1), $2) as journal_id',
-        SQL_UPDATE_DOCUMENT_BPM = 'update docs.doc set bpm = $2, history = $3  where id = $1',
-        DocDataObject = require('./documents');
-
-    let   bpm = setBpmStatuses(ACTUAL_STEP_STATUS, userId),
-        tasks = [],
-        history = {user: userId, updated: Date.now()};
-
-    // выполнить запрос и вернуть промис
-    return Promise.all([
-        DocDataObject.executeSqlQueryPromise(SQL_GENERATE_LAUSEND, [docId, userId]),
-        DocDataObject.executeSqlQueryPromise(SQL_UPDATE_DOCUMENT_BPM, [docId, JSON.stringify(bpm), JSON.stringify(history)])
-    ]);
-};
-*/

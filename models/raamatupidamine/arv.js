@@ -50,6 +50,7 @@ const Arv = {
                          coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20)    AS konto,
                          coalesce((dp.details :: JSONB ->> 'kbmkonto'), '') :: VARCHAR(20) AS kbmkonto,
                          dp.selg :: VARCHAR(120)                                           AS dokprop,
+                         dp.vaatalaus as is_show_journal,
                          (d.history->0->>'user') :: VARCHAR(120)                           AS koostaja
                   FROM docs.doc d
                          INNER JOIN libs.library l ON l.id = d.doc_type_id
@@ -99,7 +100,8 @@ const Arv = {
                               NULL :: TEXT                                                           AS kbmkonto,
                               NULL :: INTEGER                                                        AS journalid,
                               NULL :: INTEGER                                                        AS laus_nr,
-                              NULL :: VARCHAR(120)                                                   AS koostaja
+                              NULL :: VARCHAR(120)                                                   AS koostaja,
+                              0 ::integer as is_show_journal
                        FROM libs.library l,
                             libs.library s,
                             ou.userid u
@@ -393,7 +395,7 @@ const Arv = {
                   WHERE id = $1`, type: "sql"
     },
     generateJournal: {
-        command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($2, $1)", //$1 - docs.doc.id, $2 - userId
+        command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($2::integer, $1::integer)", //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generateJournal'
     },

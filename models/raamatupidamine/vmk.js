@@ -38,7 +38,8 @@ const Vmk = {
                    WHERE parentid = k.id)                                                                             AS summa,
                    coalesce((dp.details :: JSONB ->> 'konto'),'') :: VARCHAR(20)                                      AS konto,
                    dp.selg::varchar(120)                                                                              as dokprop,
-                   k.doklausid
+                   k.doklausid,
+                  (d.history->0->>'user')::varchar(120)                                          AS koostaja
                 FROM docs.doc d
                   INNER JOIN docs.mk k ON k.parentId = d.id
                   INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
@@ -64,9 +65,9 @@ const Vmk = {
                        select rekvid from ou.userid where id = $2)
                        ),0) :: INTEGER + 1                          AS number,
                       now() :: DATE                                 AS maksepaev,
-                      aa.id                                         AS aaid,
-                      aa.pank                                       AS pank,
-                      trim(aa.arve)::varchar(20)                    as omaarve,
+                      0                                         AS aaid,
+                      1                                       AS pank,
+                      trim('')::varchar(20)                    as omaarve,
                       NULL::integer                                 AS rekvId,
                       now() :: DATE                                 AS kpv,
                       NULL::varchar(120)                            AS viitenr,
@@ -165,7 +166,7 @@ const Vmk = {
                           0 AS valitud
                         FROM cur_mk d
                         WHERE d.rekvId = $1
-                              AND coalesce(docs.usersRigths(d.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                              AND coalesce(docs.usersRigths(d.id, 'select', $2::integer), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias:'curMk'
     },
@@ -184,8 +185,8 @@ const Vmk = {
             {id: 'proj', name: 'Projekt', width: '100px', show: true, type: 'text', readOnly: false}
         ]
     },
-    saveDoc: `select docs.sp_salvesta_mk($1, $2, $3) as id`,
-    deleteDoc: `select error_code, result, error_message from docs.sp_delete_mk($1, $2)`, // $1 - userId, $2 - docId
+    saveDoc: `select docs.sp_salvesta_mk($1::json, $2::integer, $3::integer) as id`,
+    deleteDoc: `select error_code, result, error_message from docs.sp_delete_mk($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',
@@ -242,7 +243,7 @@ const Vmk = {
     },
     register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
     generateJournal: {
-        command: `select error_code, result, error_message from docs.gen_lausend_vmk($2, $1)`, // $1 - userId, $2 - docId
+        command: `select error_code, result, error_message from docs.gen_lausend_vmk($2::integer, $1::integer)`, // $1 - userId, $2 - docId
         type: "sql",
         alias: 'generateJournal'
     },

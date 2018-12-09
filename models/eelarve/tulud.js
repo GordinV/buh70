@@ -30,9 +30,9 @@ const Tulud = {
             sqlAsNew: `SELECT
                       $1 :: INTEGER                                 AS id,
                       $2 :: INTEGER                                 AS userid,
-                      null::integer as rekvid,
+                      0::integer as rekvid,
                       extract(year from current_date)::integer as aasta,
-                      null::integer as kuu,
+                      0::integer as kuu,
                       0::numeric(12,2) as summa,
                       null::text as muud,
                       null::varchar(20) as kood1,
@@ -73,8 +73,8 @@ const Tulud = {
                           d.*,
                           'TULUD'::varchar(20) as liik
                         FROM cur_tulud d
-                        WHERE d.rekvId in (select rekv_id from get_asutuse_struktuur($1)) 
-                              AND coalesce(docs.usersRigths(d.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                        WHERE d.rekvId in (select rekv_id from get_asutuse_struktuur($1::integer)) 
+                              AND coalesce(docs.usersRigths(d.id, 'select', $2::integer), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curEelarve'
     },
@@ -93,8 +93,8 @@ const Tulud = {
             {id: 'proj', name: 'Projekt', width: '100px', show: true, type: 'text', readOnly: false}
         ]
     },
-    saveDoc: `select docs.sp_salvesta_eelarve($1, $2, $3) as id`,
-    deleteDoc: `select error_code, result, error_message from eelarve.sp_delete_eelarve($1, $2, 0)`, // $1 - userId, $2 - docId
+    saveDoc: `select docs.sp_salvesta_eelarve($1::json, $2::integer, $3::integer) as id`,
+    deleteDoc: `select error_code, result, error_message from eelarve.sp_delete_eelarve($1::integer, $2::integer, 0)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'summa',

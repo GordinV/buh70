@@ -46,7 +46,8 @@ const PalkOper = {
                       coalesce(jid.number, 0) :: INTEGER                     AS lausend,
                       t.parentid,
                       (pl.properties::jsonb->>'liik')::integer as liik,
-                      (pl.properties::jsonb->>'asutusest')::integer as asutusest                                             
+                      (pl.properties::jsonb->>'asutusest')::integer as asutusest,
+                      (d.history->0->>'user')::varchar(120)                                          AS koostaja
                     FROM docs.doc d
                       INNER JOIN palk.palk_oper p ON p.parentId = d.id
                       INNER JOIN palk.tooleping t ON t.id = p.lepingid
@@ -141,7 +142,7 @@ const PalkOper = {
                           d.*
                         FROM palk.cur_palkoper d
                         WHERE d.rekvId = $1
-                              AND coalesce(docs.usersRigths(d.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                              AND coalesce(docs.usersRigths(d.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curPalkOper'
     },
@@ -149,8 +150,8 @@ const PalkOper = {
         row: {},
         relations: []
     },
-    saveDoc: `select palk.sp_salvesta_palk_oper($1, $2, $3) as id`,
-    deleteDoc: `select error_code, result, error_message from palk.sp_delete_palk_oper($1, $2)`, // $1 - userId, $2 - docId
+    saveDoc: `select palk.sp_salvesta_palk_oper($1::json, $2::INTEGER, $3::INTEGER) as id`,
+    deleteDoc: `select error_code, result, error_message from palk.sp_delete_palk_oper($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',
@@ -173,7 +174,7 @@ const PalkOper = {
 
     ],
     generateJournal: {
-        command: `select error_code, result, error_message from docs.gen_lausend_avans($2, $1)`, // $1 - userId, $2 - docId
+        command: `select error_code, result, error_message from docs.gen_lausend_avans($2::INTEGER, $1::INTEGER)`, // $1 - userId, $2 - docId
         type: "sql",
         alias: 'generateJournal'
     },
@@ -181,73 +182,7 @@ const PalkOper = {
         command: `select result, error_code, error_message, data from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task
         type:'sql',
         alias:'executeTask'
-    },
-
-
-    /*
-    bpm: [
-        {
-            step: 0,
-            name: 'Регистация документа',
-            action: 'start',
-            nextStep: 1,
-            task: 'human',
-            data: [],
-            actors: [],
-            status: null,
-            actualStep: false
-        },
-        {
-            step: 1,
-            name: 'Контировка',
-            action: 'generateJournal',
-            nextStep: 2,
-            task: 'automat',
-            data: [],
-            status: null,
-            actualStep: false
-        },
-//        {step:2, name:'Оплата', action: 'tasumine', nextStep:3, task:'human', data:[], status:null, actualStep:false},
-        {
-            step: 2,
-            name: 'Конец',
-            action: 'endProcess',
-            nextStep: null,
-            task: 'automat',
-            data: [],
-            actors: [],
-            status: null,
-            actualStep: false
-        }
-    ],
-*/
-/*
-    executeTask: (task, docId, userId) => {
-        // выполнит задачу, переданную в параметре
-
-        let executeTask = task;
-        if (executeTask.length == 0) {
-            executeTask = ['start'];
-        }
-
-        let taskFunction = eval(executeTask[0]);
-        return taskFunction(docId, userId, PalkOper);
-    },
-    register: {command: `update docs.doc set status = 1 where id = $1`, type: "sql"},
-    generateJournal: {
-        command: `select error_code, result, error_message from docs.gen_lausend_avans($2, $1)`, // $1 - userId, $2 - docId
-        type: "sql",
-        alias: 'generateJournal'
-    },
-    endProcess: {command: `update docs.doc set status = 2 where id = $1`, type: "sql"},
-    executeCommand: {
-        command: `select result, error_message from docs.fnc_avansijaak(?tnId)`,
-        type:'sql',
-        alias:'fncAvansiJaak'
-    },
-*/
-
-
+    }
 };
 
 module.exports = PalkOper;
