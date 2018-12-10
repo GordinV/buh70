@@ -160,7 +160,8 @@ const Journal = {
             name: 'kpv',
             type: 'D',
             min: now.setFullYear(now.getFullYear() - 1),
-            max: now.setFullYear(now.getFullYear() + 1)
+            max: now.setFullYear(now.getFullYear() + 1),
+            period: true
         },
         {name: 'selg', type: 'C'},
         {name: 'summa', type: 'N'}
@@ -189,9 +190,9 @@ const Journal = {
             actualStep: false
         }
     ],
-    saveDoc: "select docs.sp_salvesta_journal($1, $2, $3) as id",
+    saveDoc: "select docs.sp_salvesta_journal($1::json, $2::integer, $3::integer) as id",
     deleteDoc: `SELECT error_code, result, error_message
-                FROM docs.sp_delete_journal($1, $2)`, // $1 - userId, $2 - docId
+                FROM docs.sp_delete_journal($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     executeCommand: {
         command: `SELECT result, error_code, error_message, data
                   FROM sp_execute_task($1 :: INTEGER, $2 :: JSON, $3 :: TEXT)`, //$1- userId, $2 - params, $3 - task

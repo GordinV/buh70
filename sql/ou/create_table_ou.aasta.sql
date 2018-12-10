@@ -15,3 +15,14 @@ CREATE TABLE ou.aasta
 
 CREATE INDEX aasta_rekvid
   ON ou.aasta (rekvid);
+
+
+
+GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE ou.aasta TO dbpeakasutaja;
+GRANT SELECT, INSERT ON TABLE ou.aasta TO dbkasutaja;
+GRANT all ON TABLE ou.aasta TO dbadmin;
+GRANT SELECT ON TABLE ou.aasta TO dbvaatleja;
+GRANT SELECT ON TABLE ou.aasta TO PUBLIC ;
+
+
+

@@ -22,15 +22,15 @@ DECLARE
                          WHERE id = user_id);
   new_history JSON;
 BEGIN
-  SELECT *
+  SELECT *, (roles ->>'is_peakasutaja')::boolean as is_peakasutaja
   INTO v_user
   FROM ou.userid
   WHERE id = user_id;
 
-  IF v_user IS NULL
+  IF v_user IS NULL or not v_user.is_peakasutaja
   THEN
     error_code = 5;
-    error_message = 'Kasutaja ei leitud, aasta.id: ' || coalesce(l_aasta_id, 0) :: TEXT || ', userId:' ||
+    error_message = 'Kasutaja ei leitud või puudub õigused, aasta.id: ' || coalesce(l_aasta_id, 0) :: TEXT || ', userId:' ||
                     coalesce(user_id, 0) :: TEXT;
     result = 0;
     RETURN;

@@ -8,12 +8,12 @@ const start = require('./../BP/start'),
 const Arv = {
     selectAsLibs: `SELECT *
                    FROM com_arved a
-                   WHERE (a.rekvId = $1::integer)
-                     AND docs.usersRigths(a.id, 'select', $2::integer)`, //$1 - rekvid, $2 userid
+                   WHERE (a.rekvId = $1::INTEGER)
+                     AND docs.usersRigths(a.id, 'select', $2::INTEGER)`, //$1 - rekvid, $2 userid
     select: [
         {
             sql: `SELECT d.id,
-                         $2 :: INTEGER                                                     AS userid,
+                         $2 :: INTEGER                                                    AS userid,
                          to_char(created, 'DD.MM.YYYY HH:MM:SS') :: TEXT                   AS created,
                          to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT                AS lastupdate,
                          d.bpm,
@@ -29,7 +29,7 @@ const Arv = {
                          a.kpv                                                             AS kpv,
                          a.asutusid,
                          a.arvId,
-                         trim(coalesce(a.lisa,'')) :: VARCHAR(120)                         AS lisa,
+                         trim(coalesce(a.lisa, '')) :: VARCHAR(120)                        AS lisa,
                          a.tahtaeg                                                         AS tahtaeg,
                          a.kbmta,
                          a.kbm,
@@ -43,15 +43,16 @@ const Arv = {
                          asutus.regkood,
                          trim(asutus.nimetus)                                              AS asutus,
                          asutus.aadress,
-                         (asutus.properties->>'kmkr') :: VARCHAR(20)                       AS kmkr,
+                         (asutus.properties ->> 'kmkr') :: VARCHAR(20)                     AS kmkr,
                          a.doklausid,
                          a.journalid,
                          coalesce(jid.number, 0) :: INTEGER                                AS laus_nr,
                          coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20)    AS konto,
                          coalesce((dp.details :: JSONB ->> 'kbmkonto'), '') :: VARCHAR(20) AS kbmkonto,
                          dp.selg :: VARCHAR(120)                                           AS dokprop,
-                         dp.vaatalaus as is_show_journal,
-                         (d.history->0->>'user') :: VARCHAR(120)                           AS koostaja
+                         dp.vaatalaus                                                      AS is_show_journal,
+                         (d.history -> 0 ->> 'user') :: VARCHAR(120)                       AS koostaja,
+                         coalesce((a.properties ->> 'aa')::text,qry_aa.arve)::varchar(20)  AS aa
                   FROM docs.doc d
                          INNER JOIN libs.library l ON l.id = d.doc_type_id
                          INNER JOIN docs.arv a ON a.parentId = d.id
@@ -60,10 +61,17 @@ const Arv = {
                          LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
                          LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
                          LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
-                         LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
+                         LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id,
+                         (SELECT arve
+                                          FROM ou.aa aa
+                                          inner join ou.userid u on u.id = $2 :: INTEGER
+                                          WHERE aa.parentid = u.rekvid
+                                            AND NOT empty(default_::INTEGER)
+                                            AND NOT empty(kassa::INTEGER)
+                                          LIMIT 1) qry_aa
                   WHERE d.id = $1`,
-            sqlAsNew: `SELECT $1 :: INTEGER                                                          AS id,
-                              $2 :: INTEGER                                                          AS userid,
+            sqlAsNew: `SELECT $1 :: INTEGER                                                         AS id,
+                              $2 :: INTEGER                                                         AS userid,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                          AS created,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                          AS lastupdate,
                               NULL                                                                   AS bpm,
@@ -71,6 +79,13 @@ const Arv = {
                               trim(l.kood)                                                           AS doc_type_id,
                               trim(s.nimetus)                                                        AS status,
                               0                                                                      AS doc_status,
+                              (SELECT arve
+                               FROM ou.aa aa
+                               WHERE aa.parentid = u.rekvid
+                                 AND NOT empty(default_::INTEGER)
+                                 AND NOT empty(kassa::INTEGER)
+                               LIMIT 1)::VARCHAR(20)                                                 AS aa,
+
                               docs.sp_get_number(u.rekvId, 'ARV', year(date()), NULL) :: VARCHAR(20) AS number,
                               0.00                                                                   AS summa,
                               NULL :: INTEGER                                                        AS rekvId,
@@ -101,7 +116,7 @@ const Arv = {
                               NULL :: INTEGER                                                        AS journalid,
                               NULL :: INTEGER                                                        AS laus_nr,
                               NULL :: VARCHAR(120)                                                   AS koostaja,
-                              0 ::integer as is_show_journal
+                              0 ::INTEGER                                                            AS is_show_journal
                        FROM libs.library l,
                             libs.library s,
                             ou.userid u
@@ -117,7 +132,7 @@ const Arv = {
         },
         {
             sql: `SELECT a1.id,
-                         $2 :: INTEGER                                                   AS userid,
+                         $2 :: INTEGER                                                  AS userid,
                          a1.nomid,
                          a1.kogus,
                          a1.hind,
@@ -198,7 +213,7 @@ const Arv = {
                          1 :: NUMERIC                  AS kuurs
                   FROM docs.arvtasu arvtasu
                          INNER JOIN docs.korder1 korder1
-                           ON (arvtasu.doc_tasu_id = korder1.parentid AND arvtasu.pankkassa = 2)
+                                    ON (arvtasu.doc_tasu_id = korder1.parentid AND arvtasu.pankkassa = 2)
                          LEFT OUTER JOIN docs.journalid journalid ON korder1.journalId = journalId.journalId
                   WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
@@ -217,7 +232,7 @@ const Arv = {
                          1 :: NUMERIC                  AS kuurs
                   FROM docs.arvtasu arvtasu
                          LEFT OUTER JOIN docs.journal journal
-                           ON (arvtasu.doc_tasu_id = journal.parentId AND arvtasu.pankkassa = 3)
+                                         ON (arvtasu.doc_tasu_id = journal.parentId AND arvtasu.pankkassa = 3)
                          LEFT OUTER JOIN docs.journalid journalid ON (journal.id = journalId.journalId)
                   WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
@@ -249,7 +264,7 @@ const Arv = {
         },
         {
             sql: `SELECT result, error_code, error_message
-                  FROM docs.create_new_mk($1, $2)`, //$1 - userId, $2 - params -> {"arv_id": ?, "dok":"SMK" }
+                  FROM docs.create_new_mk($1::integer, $2::jsonb)`, //$1 - userId, $2 - params -> {"arv_id": ?, "dok":"SMK" }
             query: null,
             multuple: false,
             alias: 'create_new_mk',
@@ -257,7 +272,7 @@ const Arv = {
         },
         {
             sql: `SELECT result, error_code, error_message
-                  FROM docs.create_new_order($1, $2)`, //$1 - userId, $2 - params -> {"arv_id": ?, "dok":"SORDER" }
+                  FROM docs.create_new_order($1::integer, $2::jsonb)`, //$1 - userId, $2 - params -> {"arv_id": ?, "dok":"SORDER" }
             query: null,
             multuple: false,
             alias: 'create_new_order',
@@ -301,8 +316,8 @@ const Arv = {
                            lausnr,
                            docs_ids
                     FROM cur_arved a
-                    WHERE a.rekvId = $1::integer
-                      AND docs.usersRigths(a.id, 'select', $2::integer)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                    WHERE a.rekvId = $1::INTEGER
+                      AND docs.usersRigths(a.id, 'select', $2::INTEGER)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curArved'
     },
@@ -332,7 +347,7 @@ const Arv = {
     },
     saveDoc: `select docs.sp_salvesta_arv($1::json, $2::integer, $3::integer) as id`,
     deleteDoc: `SELECT error_code, result, error_message
-                FROM docs.sp_delete_arv($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+                FROM docs.sp_delete_arv($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',
@@ -395,7 +410,7 @@ const Arv = {
                   WHERE id = $1`, type: "sql"
     },
     generateJournal: {
-        command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($2::integer, $1::integer)", //$1 - docs.doc.id, $2 - userId
+        command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($2::INTEGER, $1::INTEGER)", //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generateJournal'
     },

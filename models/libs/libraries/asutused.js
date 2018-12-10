@@ -64,7 +64,7 @@ module.exports = {
         {name: 'nimetus', type: 'C'},
         {name: 'omvorm', type: 'C'}
     ],
-    saveDoc: `select libs.sp_salvesta_asutus($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    saveDoc: `select libs.sp_salvesta_asutus($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `SELECT error_code, result, error_message
                 FROM libs.sp_delete_asutus($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {

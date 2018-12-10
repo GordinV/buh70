@@ -35,6 +35,9 @@ DECLARE
   doc_objekt     TEXT           = doc_data ->> 'objekt';
   tnDokLausId    INTEGER        = coalesce((doc_data ->> 'doklausid') :: INTEGER, 1);
   doc_lepingId   INTEGER        = doc_data ->> 'leping_id';
+  doc_aa         TEXT           = doc_data ->> 'aa'; -- eri arve
+  dok_props      JSONB          = (SELECT row_to_json(row)
+                                   FROM (SELECT doc_aa AS aa) row);
   json_object    JSON;
   json_record    RECORD;
   new_history    JSONB;
@@ -100,10 +103,10 @@ BEGIN
     ids = NULL;
 
     INSERT INTO docs.arv (parentid, rekvid, userid, liik, operid, number, kpv, asutusid, lisa, tahtaeg, kbmta, kbm,
-                          summa, muud, objektid, objekt, doklausid)
+                          summa, muud, objektid, objekt, doklausid, properties)
     VALUES (doc_id, user_rekvid, userId, doc_liik, doc_operid, doc_number, doc_kpv, doc_asutusid, doc_lisa, doc_tahtaeg,
             doc_kbmta, doc_kbm, doc_summa,
-            doc_muud, doc_objektid, doc_objekt, tnDokLausId)
+            doc_muud, doc_objektid, doc_objekt, tnDokLausId, dok_props)
            RETURNING id
              INTO arv_id;
 
@@ -132,20 +135,21 @@ BEGIN
 
     UPDATE docs.arv
     SET
-      liik      = doc_liik,
-      operid    = doc_operid,
-      number    = doc_number,
-      kpv       = doc_kpv,
-      asutusid  = doc_asutusid,
-      lisa      = doc_lisa,
-      tahtaeg   = doc_tahtaeg,
-      kbmta     = coalesce(doc_kbmta, 0),
-      kbm       = coalesce(doc_kbm, 0),
-      summa     = coalesce(doc_summa, 0),
-      muud      = doc_muud,
-      objektid  = doc_objektid,
-      objekt    = doc_objekt,
-      doklausid = tnDokLausId
+      liik       = doc_liik,
+      operid     = doc_operid,
+      number     = doc_number,
+      kpv        = doc_kpv,
+      asutusid   = doc_asutusid,
+      lisa       = doc_lisa,
+      tahtaeg    = doc_tahtaeg,
+      kbmta      = coalesce(doc_kbmta, 0),
+      kbm        = coalesce(doc_kbm, 0),
+      summa      = coalesce(doc_summa, 0),
+      muud       = doc_muud,
+      objektid   = doc_objektid,
+      objekt     = doc_objekt,
+      doklausid  = tnDokLausId,
+      properties = dok_props
     WHERE parentid = doc_id
       RETURNING id
         INTO arv_id;

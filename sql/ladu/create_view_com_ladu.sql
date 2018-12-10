@@ -8,12 +8,14 @@ CREATE OR REPLACE VIEW com_ladu AS
           0                 AS id,
           '':: VARCHAR(20) AS kood,
           '':: VARCHAR(20) AS nimetus,
+          '':: VARCHAR(20) AS konto,
           NULL :: INTEGER   AS rekvId
             UNION
         SELECT
           l.id,
           l.kood,
           l.nimetus,
+          (l.properties::json->>'konto')::varchar(20) as konto,
           l.rekvId
         FROM libs.library l
         WHERE l.library = 'LADU'

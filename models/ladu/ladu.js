@@ -40,7 +40,7 @@ module.exports = {
             {id: "nimetus", name: "Nimetus", width: "35%"},
             {id: "konto", name: "Konto", width: "25%"}
         ],
-        sqlString: `select l.id, l.kood, l.nimetus, l.muud,
+        sqlString: `select l.id, l.kood, l.nimetus, l.muud, (l.properties::json->>'konto')::varchar(20) as konto,
             $2::integer as userId
             from libs.library l
             where l.library = 'LADU'

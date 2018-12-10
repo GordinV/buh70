@@ -53,8 +53,8 @@ module.exports = {
         {name: 'kuu', type: 'I'},
         {name: 'aasta', type: 'I'}
     ],
-    saveDoc: `select palk.sp_salvesta_palk_taabel($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from palk.sp_delete_palk_taabel($1, $2)`, // $1 - userId, $2 - docId
+    saveDoc: `select palk.sp_salvesta_palk_taabel($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    deleteDoc: `select error_code, result, error_message from palk.sp_delete_palk_taabel($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "1%", show: false},
@@ -74,7 +74,7 @@ module.exports = {
         alias: 'curTaabel1'
     },
     executeCommand: {
-        command: `select error_code, result, error_message from palk.gen_taabel1($1, $2::json)`, //$1 - user_id, $2 - params
+        command: `select error_code, result, error_message from palk.gen_taabel1($1::integer, $2::json)`, //$1 - user_id, $2 - params
         type: 'sql',
         alias: 'genTaabel'
     },

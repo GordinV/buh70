@@ -46,6 +46,7 @@ const Varv = {
                          coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20)    AS konto,
                          coalesce((dp.details :: JSONB ->> 'kbmkonto'), '') :: VARCHAR(20) AS kbmkonto,
                          dp.selg :: VARCHAR(120)                                           AS dokprop,
+                         dp.vaatalaus as is_show_journal,       
                          (d.history->0->>'user') :: VARCHAR(120)                           AS koostaja,
                          ladu.nimetus as ladu
                   FROM docs.doc d
@@ -99,7 +100,8 @@ const Varv = {
                               NULL :: INTEGER                                                        AS journalid,
                               NULL :: INTEGER                                                        AS laus_nr,
                               NULL :: VARCHAR(120)                                                   AS koostaja,
-                              NULL::TEXT as ladu
+                              NULL::TEXT as ladu,
+                              0 ::integer as is_show_journal
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER`,
             query: null,
@@ -365,7 +367,7 @@ const Varv = {
                   WHERE id = $1`, type: "sql"
     },
     generateJournal: {
-        command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($2, $1)", //$1 - docs.doc.id, $2 - userId
+        command: "SELECT error_code, result, error_message FROM ladu.gen_lausend_varv($2::integer, $1::integer)", //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generateJournal'
     },

@@ -17,7 +17,7 @@ DECLARE
   DOC_STATUS       INTEGER = 3; -- документ удален
 BEGIN
 
-  SELECT d.*, u.ametnik AS user_name
+  SELECT d.*, u.ametnik AS user_name, j.kpv
       INTO v_doc
   FROM docs.doc d
          INNER JOIN docs.journal j ON j.parentid = d.id
@@ -61,6 +61,15 @@ BEGIN
     RETURN;
 
   END IF;
+
+  IF NOT ou.fnc_aasta_kontrol(v_doc.rekvid, v_doc.kpv)
+  THEN
+    RAISE NOTICE 'Period on kinni';
+    error_code = 4;
+    error_message = 'Ei saa kustuta dokument. Period on kinni';
+    result = 0;
+  END IF;
+  
 
   -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
 

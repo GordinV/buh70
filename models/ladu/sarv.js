@@ -46,6 +46,7 @@ const Sarv = {
                          coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20)    AS konto,
                          coalesce((dp.details :: JSONB ->> 'kbmkonto'), '') :: VARCHAR(20) AS kbmkonto,
                          dp.selg :: VARCHAR(120)                                           AS dokprop,
+                         dp.vaatalaus as is_show_journal,
                          (d.history->0->>'user') :: VARCHAR(120)                           AS koostaja,
                          ladu.nimetus as ladu
                   FROM docs.doc d
@@ -99,7 +100,8 @@ const Sarv = {
                               NULL :: INTEGER                                                        AS journalid,
                               NULL :: INTEGER                                                        AS laus_nr,
                               NULL :: VARCHAR(120)                                                   AS koostaja,
-                              NULL::TEXT as ladu
+                              NULL::TEXT as ladu,
+                              0 ::integer as is_show_journal
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER`,
             query: null,
