@@ -36,8 +36,9 @@ DECLARE
   tnDokLausId    INTEGER        = coalesce((doc_data ->> 'doklausid') :: INTEGER, 1);
   doc_lepingId   INTEGER        = doc_data ->> 'leping_id';
   doc_aa         TEXT           = doc_data ->> 'aa'; -- eri arve
+  doc_viitenr    TEXT           = doc_data ->> 'viitenr'; -- viite number
   dok_props      JSONB          = (SELECT row_to_json(row)
-                                   FROM (SELECT doc_aa AS aa) row);
+                                   FROM (SELECT doc_aa AS aa, doc_viitenr as viitenr) row);
   json_object    JSON;
   json_record    RECORD;
   new_history    JSONB;

@@ -52,7 +52,8 @@ const Arv = {
                          dp.selg :: VARCHAR(120)                                           AS dokprop,
                          dp.vaatalaus                                                      AS is_show_journal,
                          (d.history -> 0 ->> 'user') :: VARCHAR(120)                       AS koostaja,
-                         coalesce((a.properties ->> 'aa')::text,qry_aa.arve)::varchar(20)  AS aa
+                         coalesce((a.properties ->> 'aa')::text,qry_aa.arve)::varchar(20)  AS aa,
+                         coalesce((a.properties ->> 'viitenr')::text,'')::varchar(120)     AS viitenr
                   FROM docs.doc d
                          INNER JOIN libs.library l ON l.id = d.doc_type_id
                          INNER JOIN docs.arv a ON a.parentId = d.id
@@ -116,7 +117,8 @@ const Arv = {
                               NULL :: INTEGER                                                        AS journalid,
                               NULL :: INTEGER                                                        AS laus_nr,
                               NULL :: VARCHAR(120)                                                   AS koostaja,
-                              0 ::INTEGER                                                            AS is_show_journal
+                              0 ::INTEGER                                                            AS is_show_journal,
+                              ''::varchar(120) as viitenr
                        FROM libs.library l,
                             libs.library s,
                             ou.userid u
@@ -302,10 +304,15 @@ const Arv = {
                            summa,
                            tahtaeg,
                            jaak,
+                           lisa,
                            tasud,
                            tasudok,
                            userid,
                            asutus :: VARCHAR(254),
+                           regkood::varchar(20),
+                           omvorm::varchar(20),
+                           aadress::text, 
+                           email::VARCHAR(254),
                            asutusid,
                            journalid,
                            liik,
@@ -314,8 +321,16 @@ const Arv = {
                            objekt :: VARCHAR(254),
                            markused,
                            lausnr,
-                           docs_ids
-                    FROM cur_arved a
+                           docs_ids,
+                           coalesce(a.arve,qry_aa.arve)::varchar(20)  AS aa,
+                           a.viitenr::varchar(120)
+                    FROM cur_arved a,
+                         (SELECT arve
+                          FROM ou.aa aa
+                          WHERE aa.parentid = $1
+                            AND NOT empty(default_::INTEGER)
+                            AND NOT empty(kassa::INTEGER)
+                          LIMIT 1) qry_aa
                     WHERE a.rekvId = $1::INTEGER
                       AND docs.usersRigths(a.id, 'select', $2::INTEGER)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
