@@ -1,5 +1,6 @@
 module.exports = {
-    selectAsLibs: `SELECT menu.*
+    selectAsLibs: `SELECT menu.id,
+       pad::varchar(120), bar::varchar(120), idx, name::varchar(120), eesti::varchar(120), vene::varchar(120),proc, groups, modules, level, message::varchar(254), keyshortcut::varchar(254)
                    FROM get_menu($1 :: TEXT [], $2 :: TEXT []) menu
                    ORDER BY idx`, // $1 - modules array, like '{"EELARVE","RAAMA"}', $2 array, like '{"KASUTAJA","ADMIN"}'
     select: [{

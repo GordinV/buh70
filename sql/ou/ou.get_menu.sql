@@ -1,7 +1,7 @@
 DROP FUNCTION IF EXISTS get_menu(in_modules TEXT [], in_groups TEXT [] );
 
 CREATE FUNCTION get_menu(in_modules TEXT [], in_groups TEXT [])
-  RETURNS TABLE(id INTEGER, pad TEXT, bar TEXT, idx INTEGER, name TEXT, eesti TEXT, vene TEXT, proc TEXT, groups TEXT, modules TEXT, level TEXT, message TEXT, keyshortcut TEXT)
+  RETURNS TABLE(id INTEGER, pad varchar(120), bar varchar(120), idx INTEGER, name varchar(254), eesti varchar(254), vene varchar(254), proc TEXT, groups TEXT, modules TEXT, level TEXT, message varchar(254), keyshortcut TEXT)
 LANGUAGE SQL
 AS $$
 SELECT id , pad , bar , idx , name, eesti, vene, proc , groups, modules, level, message, keyshortcut

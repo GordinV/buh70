@@ -59,9 +59,10 @@ module.exports = {
         data: []
     },
         {
-            sql: `SELECT * 
-                FROM ou.config 
-                WHERE rekvid = $1`,
+            sql: `SELECT c.id, c.number, c.rekvid, c.toolbar1, c.toolbar2, c.toolbar3,c.tahtpaev,
+                coalesce((u.properties->>'keel')::integer,2)::integer as keel
+                FROM ou.config c, ou.userid u
+                WHERE c.rekvid = $1 and u.id = $2`,
             query: null,
             multiple: false,
             alias: 'config',

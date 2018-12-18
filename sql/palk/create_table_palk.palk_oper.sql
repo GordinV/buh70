@@ -48,3 +48,10 @@ CREATE INDEX ix_palk_oper_kpv
   ON palk.palk_oper (kpv);
 CREATE INDEX palk_oper_journalid
   ON palk.palk_oper (journalid);
+
+GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE palk.palk_oper TO dbpeakasutaja;
+GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE palk.palk_oper TO dbkasutaja;
+GRANT all ON TABLE palk.palk_oper TO dbadmin;
+GRANT SELECT ON TABLE palk.palk_oper TO dbvaatleja;
+
+
