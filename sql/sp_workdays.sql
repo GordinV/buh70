@@ -2,6 +2,7 @@ DROP FUNCTION IF EXISTS sp_workdays( INTEGER, INTEGER, INTEGER, INTEGER, INTEGER
 DROP FUNCTION IF EXISTS sp_workdays( JSONB );
 DROP FUNCTION IF EXISTS sp_workdays( INTEGER, JSONB );
 DROP FUNCTION IF EXISTS sp_workdays( INTEGER, JSON );
+DROP FUNCTION IF EXISTS sp_workdays( JSON );
 
 CREATE FUNCTION sp_workdays(IN params JSON,
                             OUT error_code INTEGER, OUT result INTEGER, OUT error_message TEXT,
@@ -23,8 +24,8 @@ DECLARE
   l_rekvId       INTEGER;
   qrytoograf     RECORD;
   lnDow          INT;
+  l_result integer = 0;
 BEGIN
-
   IF l_lepingid IS NOT NULL
   THEN
     IF exists(SELECT 1
@@ -85,21 +86,27 @@ BEGIN
 
   --  result
   data = to_jsonb(row.*) FROM ( SELECT COALESCE ((l_maxdays - l_holidays - l_esimine_paev + 1), 0) AS DAYS ) ROW;
-  result = COALESCE((l_maxdays - l_holidays - l_esimine_paev + 1), 0) :: INTEGER;
+  l_result = COALESCE((l_maxdays - l_holidays - l_esimine_paev + 1), 0) :: INTEGER;
+  result = l_result;
   RETURN;
 
 END;
 $$;
 
+GRANT EXECUTE ON FUNCTION sp_workdays( JSON ) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION sp_workdays( JSON ) TO dbpeakasutaja;
+
+
+
 /*
-SELECT sp_workdays(1, NULL :: JSONB);
+SELECT sp_workdays(1, NULL :: JSON);
 
-SELECT sp_workdays('{"kuu":1,"aasta":2018}' :: JSONB);
+SELECT sp_workdays('{"kuu":1,"aasta":2018}' :: JSON);
 
-SELECT sp_workdays('{"kuu":1,"aasta":2018,"lepingid":2}' :: JSONB);
+SELECT sp_workdays('{"kuu":1,"aasta":2018,"lepingid":2}' :: JSON);
 
-SELECT sp_workdays('{"kuu":1,"aasta":2018,"lepingid":2}' :: JSONB);
+SELECT sp_workdays('{"kuu":1,"aasta":2018,"lepingid":2}' :: JSON);
 
-SELECT sp_workdays('{"kuu":1,"aasta":2018,"lepingid":2, "paev":4, "lopp":20}' :: JSONB);
+SELECT sp_workdays('{"kuu":1,"aasta":2018,"lepingid":2, "paev":4, "lopp":20}' :: JSON);
 
 */

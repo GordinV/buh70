@@ -25,6 +25,7 @@ l_tahtpaeva_tunnid numeric(12, 4) = 0;
 
 BEGIN
 
+
   SELECT t.*
   INTO v_tooleping
   FROM palk.tooleping t
@@ -50,6 +51,7 @@ BEGIN
       and status <> 'deleted'
         AND t.kuu = l_kuu
         AND t.aasta = l_aasta;
+
 
   IF coalesce(l_toograf, 0) = 0 AND coalesce(l_hours, 0) = 0
   THEN
@@ -102,8 +104,6 @@ BEGIN
     END IF;
   END IF;
 
-  raise notice '1 l_hours %', l_hours;
-
   IF l_hours is null
   THEN
   -- график не установлен, считаем по календарным дням
@@ -116,11 +116,9 @@ BEGIN
             l_alg_paev  AS paev,
             l_lopp_paev AS lopp) row;
 
-    l_toopaevad = (select result from sp_workdays(params::json));
+    l_toopaevad = (select palk.get_work_days(params::json));
 
     l_hours = (l_toopaevad - (coalesce(l_puhkus, 0) + coalesce(l_haigus, 0) + l_muud)) * v_Tooleping.toopaev - l_tunnid;
-
-    raise notice 'cal taabel l_toopaevad %, l_puhkus %, l_haigus %,  l_muud %, l_tunnid %', l_toopaevad, l_puhkus, l_haigus,  l_muud, l_tunnid;
 
     -- tähtpäeva parandus (lühipäev)
     l_tahtpaeva_tunnid = (SELECT count(id)
@@ -131,13 +129,20 @@ BEGIN
 
     l_hours := l_hours - l_tahtpaeva_tunnid;
   END IF;
-  raise notice 'l_tunnid %, l_muud %, l_haigus %, l_puhkus %', l_tunnid, l_muud, l_haigus, l_puhkus;
 
   RETURN coalesce(l_hours, 0);
 END;
 $$;
 
 
+
+GRANT EXECUTE ON FUNCTION palk.sp_calc_taabel1(JSONB) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION palk.sp_calc_taabel1(JSONB) TO dbpeakasutaja;
+
+
+/*
 select palk.sp_calc_taabel1(null::JSONB); -- -> 0
 
-select palk.sp_calc_taabel1('{"lepingid":4, "kuu":4, "aasta":2018}'::JSONB); -- -> 145 ?
+select palk.sp_calc_taabel1('{"aasta":2018,"kuu":12,"lepingid":22301}'::JSONB); -- -> 145 ?
+
+*/

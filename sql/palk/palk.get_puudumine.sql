@@ -25,10 +25,9 @@ BEGIN
 
   --selecting data
   FOR qryPuhkused IN
-  SELECT p.*, toopaev, (SELECT qry.result
-                        FROM sp_workdays((SELECT row_to_json(row)
+  SELECT p.*, toopaev, (SELECT palk.get_work_days((SELECT row_to_json(row)
                                           FROM (SELECT day(p.kpv1) AS paev,
-                                                       day(p.kpv2) AS lopp) row) :: JSON) qry) AS too_kpv
+                                                       day(p.kpv2) AS lopp) row) :: JSON))  AS too_kpv
   FROM palk.cur_puudumine p
          INNER JOIN palk.tooleping t ON t.id = p.lepingid
   WHERE p.lepingid = l_lepingid
@@ -63,7 +62,7 @@ BEGIN
 
 
     -- arvestame tunnid
-    SELECT sum(p.summa), (SELECT result FROM sp_workdays(params :: JSON)) as paevad
+    SELECT sum(p.summa), (SELECT  palk.get_work_days(params :: JSON)) as paevad
         INTO l_puhkuse_tunnid, l_paevad
     FROM palk.cur_puudumine p
     WHERE lepingid = l_lepingid
@@ -82,6 +81,12 @@ BEGIN
 
 END;
 $$;
+
+
+
+GRANT EXECUTE ON FUNCTION palk.get_puudumine(JSONB) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION palk.get_puudumine(JSONB) TO dbpeakasutaja;
+
 
 /*
 select palk.get_puudumine('{"lepingid":27377, "kuu":11, "aasta":2018}'::jsonb)  -- -> 0
