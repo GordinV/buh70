@@ -17,7 +17,7 @@ const PalkJaak = {
                           p.*,
                           $2 as user_id
                         FROM palk.cur_palk_jaak p
-                        WHERE p.rekvId in (select rekv_id from get_asutuse_struktuur($1))`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                        WHERE p.rekvId in (select rekv_id from get_asutuse_struktuur($1::integer))`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curPalkJaak'
     },
@@ -31,7 +31,7 @@ const PalkJaak = {
                           p.*,
                           $2 as user_id
                         FROM palk.print_palk_jaak p
-                        WHERE p.rekvId in (select rekv_id from get_asutuse_struktuur($1))`,     // $1 всегда ид учреждения $2 - всегда ид пользователя,
+                        WHERE p.rekvId in (select rekv_id from get_asutuse_struktuur($1::integer))`,     // $1 всегда ид учреждения $2 - всегда ид пользователя,
             alias: 'printPalkJaak'
 
         }

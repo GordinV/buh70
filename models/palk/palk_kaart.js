@@ -26,15 +26,13 @@ module.exports = {
                   (l.properties :: JSONB ->> 'maks') :: INTEGER         AS maks,
                   (l.properties :: JSONB ->> 'asutusest') :: INTEGER    AS asutusest,
                   (l.properties :: JSONB ->> 'tululiik') :: VARCHAR(20) AS tululiik,
-                  coalesce(v.valuuta, 'EUR') :: VARCHAR                 AS valuuta,
-                  coalesce(v.kuurs, 1) :: NUMERIC                       AS kuurs
+                  'EUR' :: VARCHAR                                      AS valuuta,
+                  1 :: NUMERIC                                          AS kuurs
                 FROM libs.library l
                   INNER JOIN palk.palk_kaart pk ON pk.libId = l.id
                   INNER JOIN palk.tooleping t ON pk.lepingId = t.id
                   INNER JOIN libs.library amet ON amet.id = t.ametid
                   INNER JOIN libs.library osakond ON osakond.id = t.osakondid
-                  LEFT OUTER JOIN docs.dokvaluuta1 v
-                    ON pk.id = v.dokid AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'palk_kaart')
                 WHERE pk.id = $1`,
         sqlAsNew: `SELECT
                       $1 :: INTEGER        AS id,
@@ -68,8 +66,8 @@ module.exports = {
         {name: 'libid', type: 'I'},
         {name: 'lepingid', type: 'I'}
     ],
-    saveDoc: `select palk.sp_salvesta_palk_kaart($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from palk.sp_delete_palk_kaart($1, $2)`, // $1 - userId, $2 - docId
+    saveDoc: `select palk.sp_salvesta_palk_kaart($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    deleteDoc: `select error_code, result, error_message from palk.sp_delete_palk_kaart($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
@@ -87,7 +85,7 @@ module.exports = {
         alias: 'curPalkKaart'
     },
     executeCommand: {
-        command: `select error_code, result, error_message from palk.change_kaart_status($1, $2)`, //$1 - palk_kaart.id, $2 - user_id
+        command: `select error_code, result, error_message from palk.change_kaart_status($1::integer, $2::integer)`, //$1 - palk_kaart.id, $2 - user_id
         type:'sql',
         alias:'changeStatus'
     },

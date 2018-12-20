@@ -50,8 +50,7 @@ BEGIN
             l_start_paev AS paev,
             l_lopp_paev  AS lopp) row;
 
-    l_tund = (SELECT result
-              FROM sp_workdays(l_params :: JSON)) * coalesce(l_toopaev, 8);
+    l_tund = (SELECT  palk.get_work_days(l_params :: JSON) * coalesce(l_toopaev, 8));
 
   END IF;
 
