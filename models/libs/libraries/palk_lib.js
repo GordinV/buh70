@@ -64,7 +64,7 @@ module.exports = {
         {name: 'nimetus', type: 'C'},
         {name: 'library', type: 'C'}
     ],
-    saveDoc: `select libs.sp_salvesta_palk_lib($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    saveDoc: `select libs.sp_salvesta_palk_lib($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `select error_code, result, error_message from libs.sp_delete_library($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
