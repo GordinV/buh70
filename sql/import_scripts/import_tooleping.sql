@@ -1,5 +1,35 @@
 DROP FUNCTION IF EXISTS import_tooleping( INTEGER );
 
+
+DROP FOREIGN TABLE IF EXISTS remote_tooleping;
+
+CREATE FOREIGN TABLE remote_tooleping (
+  id          SERIAL                                    NOT NULL,
+  parentid    INTEGER                                   NOT NULL,
+  osakondid   INTEGER       DEFAULT 0                   NOT NULL,
+  ametid      INTEGER       DEFAULT 0                   NOT NULL,
+  algab       DATE          DEFAULT ('now'::TEXT)::DATE NOT NULL,
+  lopp        DATE,
+  palk        NUMERIC(12,4) DEFAULT 0                   NOT NULL,
+  palgamaar   SMALLINT      DEFAULT 0                   NOT NULL,
+  pohikoht    SMALLINT      DEFAULT 1                   NOT NULL,
+  ametnik     SMALLINT      DEFAULT 0                   NOT NULL,
+  tasuliik    SMALLINT      DEFAULT 1                   NOT NULL,
+  pank        SMALLINT      DEFAULT 0                   NOT NULL,
+  aa          VARCHAR(16)   DEFAULT space(1)            NOT NULL,
+  muud        TEXT,
+  rekvid      INTEGER       DEFAULT 0                   NOT NULL,
+  resident    INTEGER       DEFAULT 1                   NOT NULL,
+  riik        VARCHAR(3)    DEFAULT space(1)            NOT NULL,
+  toend       DATE,
+  vanaid      INTEGER,
+  vanakoormus NUMERIC(12,4),
+  koormus     NUMERIC(12,4),
+  vanatoopaev INTEGER,
+  toopaev     NUMERIC(12,4) DEFAULT 0                   NOT NULL)
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'tooleping');
+
 CREATE OR REPLACE FUNCTION import_tooleping(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$

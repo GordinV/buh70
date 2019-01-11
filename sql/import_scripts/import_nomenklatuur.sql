@@ -1,5 +1,44 @@
 DROP FUNCTION IF EXISTS import_nomenklatuur( );
 DROP FUNCTION IF EXISTS import_nomenklatuur( integer);
+DROP FOREIGN TABLE IF EXISTS remote_nomenklatuur;
+DROP FOREIGN TABLE IF EXISTS remote_klassiflib;
+
+CREATE FOREIGN TABLE remote_nomenklatuur (
+  id        SERIAL                         NOT NULL,
+  rekvid    INTEGER                        NOT NULL,
+  doklausid INTEGER       DEFAULT 0        NOT NULL,
+  dok       CHAR(20)      DEFAULT space(1) NOT NULL,
+  kood      CHAR(20)      DEFAULT space(1) NOT NULL,
+  nimetus   CHAR(254)     DEFAULT space(1) NOT NULL,
+  uhik      CHAR(20)      DEFAULT space(1) NOT NULL,
+  hind      NUMERIC(12,4) DEFAULT 0        NOT NULL,
+  muud      TEXT,
+  ulehind   NUMERIC(12,4) DEFAULT 0        NOT NULL,
+  kogus     NUMERIC(12,3) DEFAULT 0        NOT NULL,
+  formula   TEXT          DEFAULT space(1) NOT NULL,
+  vanaid    INTEGER
+  )
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'nomenklatuur');
+
+CREATE FOREIGN TABLE remote_klassiflib (
+  id        SERIAL                        NOT NULL,
+  nomid     INTEGER     DEFAULT 0         NOT NULL,
+  palklibid INTEGER     DEFAULT 0         NOT NULL,
+  libid     INTEGER     DEFAULT 0         NOT NULL,
+  tyyp      INTEGER     DEFAULT 1         NOT NULL,
+  tunnusid  INTEGER     DEFAULT 0         NOT NULL,
+  kood1     VARCHAR(20) DEFAULT space(20) NOT NULL,
+  kood2     VARCHAR(20) DEFAULT space(20) NOT NULL,
+  kood3     VARCHAR(20) DEFAULT space(20) NOT NULL,
+  kood4     VARCHAR(20) DEFAULT space(20) NOT NULL,
+  kood5     VARCHAR(20) DEFAULT space(20) NOT NULL,
+  konto     VARCHAR(20) DEFAULT space(20) NOT NULL,
+  vanaid    INTEGER,
+  proj      VARCHAR(20) DEFAULT space(20) NOT NULL
+  )
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'klassiflib');
 
 CREATE OR REPLACE FUNCTION import_nomenklatuur(in_old_id integer)
   RETURNS INTEGER AS
@@ -20,8 +59,9 @@ BEGIN
 
   FOR v_nom IN
   SELECT *
-  FROM nomenklatuur n
+  FROM remote_nomenklatuur n
     INNER JOIN rekv ON rekv.id = n.rekvid AND rekv.parentid < 999
+  WHERE (n.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP
 
@@ -39,8 +79,8 @@ BEGIN
       k.*,
       l.kood AS tunnus
     INTO v_libs
-    FROM klassiflib k
-      LEFT OUTER JOIN library l ON l.id = k.tunnusid
+    FROM remote_klassiflib k
+      LEFT OUTER JOIN remote_library l ON l.id = k.tunnusid
     WHERE nomid = v_nom.id
     ORDER BY konto DESC, tyyp
     LIMIT 1;
@@ -143,5 +183,7 @@ COST 100;
 
 /*
 SELECT import_nomenklatuur()
+
+select * from remote_library limit 10
 
 */

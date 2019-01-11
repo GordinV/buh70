@@ -1,6 +1,27 @@
 DROP FUNCTION IF EXISTS import_asutus( );
 DROP FUNCTION IF EXISTS import_asutus(integer);
 
+DROP FOREIGN TABLE IF EXISTS remote_asutus;
+
+CREATE FOREIGN TABLE remote_asutus (
+  id      SERIAL                       NOT NULL,
+  rekvid  INTEGER                      NOT NULL,
+  regkood CHAR(20)    DEFAULT space(1) NOT NULL,
+  nimetus CHAR(254)   DEFAULT space(1) NOT NULL,
+  omvorm  CHAR(20)    DEFAULT space(1) NOT NULL,
+  aadress TEXT        DEFAULT space(1),
+  kontakt TEXT        DEFAULT space(1),
+  tel     CHAR(60)    DEFAULT space(1),
+  faks    CHAR(60)    DEFAULT space(1),
+  email   CHAR(60)    DEFAULT space(1),
+  muud    TEXT        DEFAULT space(1),
+  tp      VARCHAR(20) DEFAULT space(20),
+  staatus INTEGER     DEFAULT 1,
+  mark    TEXT  )
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'asutus');
+
+
 CREATE OR REPLACE FUNCTION import_asutus(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -25,7 +46,7 @@ BEGIN
     CASE WHEN a.rekvid > 999
       THEN a.rekvid
     ELSE NULL END AS kehtivus
-  FROM asutus a
+  FROM remote_asutus a
   WHERE (a.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP
@@ -46,13 +67,13 @@ BEGIN
                                      FROM (SELECT
                                              aa,
                                              pank
-                                           FROM asutusaa
+                                           FROM remote_asutusaa asutusaa
                                            WHERE parentid = v_asutus.id) AS aa
                       ))  ;
 
     -- проверка на работника
     IF exists(SELECT 1
-              FROM tooleping
+              FROM remote_tooleping
               WHERE parentid = v_asutus.id)
     THEN
       is_tootaja = TRUE;

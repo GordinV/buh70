@@ -1,6 +1,66 @@
 DROP FUNCTION IF EXISTS import_arv();
 DROP FUNCTION IF EXISTS import_arv(INTEGER);
 
+DROP FOREIGN TABLE IF EXISTS remote_arv;
+DROP FOREIGN TABLE IF EXISTS remote_arv1;
+
+CREATE FOREIGN TABLE remote_arv (
+  id        SERIAL                                    NOT NULL,
+  rekvid    INTEGER                                   NOT NULL,
+  userid    INTEGER                                   NOT NULL,
+  journalid INTEGER       DEFAULT 0                   NOT NULL,
+  doklausid INTEGER       DEFAULT 0                   NOT NULL,
+  liik      SMALLINT      DEFAULT 0                   NOT NULL,
+  operid    INTEGER       DEFAULT 0                   NOT NULL,
+  number    CHAR(20)      DEFAULT space(1)            NOT NULL,
+  kpv       DATE          DEFAULT ('now'::TEXT)::DATE NOT NULL,
+  asutusid  INTEGER       DEFAULT 0                   NOT NULL,
+  arvid     INTEGER       DEFAULT 0                   NOT NULL,
+  lisa      CHAR(120)     DEFAULT space(1),
+  tahtaeg   DATE,
+  kbmta     NUMERIC(12,4) DEFAULT 0                   NOT NULL,
+  kbm       NUMERIC(12,4) DEFAULT 0                   NOT NULL,
+  summa     NUMERIC(12,4) DEFAULT 0                   NOT NULL,
+  tasud     DATE,
+  tasudok   CHAR(254),
+  muud      TEXT,
+  jaak      NUMERIC(12,4) DEFAULT 0                   NOT NULL,
+  objektid  INTEGER       DEFAULT 0                   NOT NULL,
+  objekt    VARCHAR(20),
+  vanaid    INTEGER
+  )
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'arv');
+
+CREATE FOREIGN TABLE remote_arv1 (
+  id       SERIAL                          NOT NULL,
+  parentid INTEGER                         NOT NULL,
+  nomid    INTEGER                         NOT NULL,
+  kogus    NUMERIC(18,3) DEFAULT 0         NOT NULL,
+  hind     NUMERIC(12,4) DEFAULT 0         NOT NULL,
+  soodus   SMALLINT      DEFAULT 0         NOT NULL,
+  kbm      NUMERIC(12,4) DEFAULT 0         NOT NULL,
+  maha     SMALLINT      DEFAULT 0         NOT NULL,
+  summa    NUMERIC(12,4) DEFAULT 0         NOT NULL,
+  muud     TEXT,
+  kood1    VARCHAR(20)   DEFAULT space(20) NOT NULL,
+  kood2    VARCHAR(20)   DEFAULT space(20) NOT NULL,
+  kood3    VARCHAR(20)   DEFAULT space(20) NOT NULL,
+  kood4    VARCHAR(20)   DEFAULT space(20) NOT NULL,
+  kood5    VARCHAR(20)   DEFAULT space(20) NOT NULL,
+  konto    VARCHAR(20)   DEFAULT space(20) NOT NULL,
+  tp       VARCHAR(20)   DEFAULT space(20) NOT NULL,
+  kbmta    NUMERIC(12,4) DEFAULT 0         NOT NULL,
+  isikid   INTEGER       DEFAULT 0         NOT NULL,
+  tunnus   VARCHAR(20)   DEFAULT space(20) NOT NULL,
+  proj     VARCHAR(20)   DEFAULT space(20),
+  tahtaeg  DATE,
+  vanaid   INTEGER
+  )
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'arv1');
+
+
 CREATE OR REPLACE FUNCTION import_arv(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -28,7 +88,7 @@ BEGIN
 
   FOR v_arv IN
   SELECT a.*
-  FROM arv a
+  FROM remote_arv a
          INNER JOIN rekv ON a.rekvid = rekv.id AND rekv.parentid < 999
   WHERE (a.id = in_old_id OR in_old_id IS NULL)
   ORDER BY a.kpv
@@ -72,11 +132,11 @@ BEGIN
                                              WHERE lib_name = 'ARV'
                                                AND old_id IN
                                                    (SELECT id
-                                                    FROM arv
+                                                    FROM remote_arv arv
                                                     WHERE ltrim(rtrim(arv.number)) :: TEXT = ltrim(rtrim(substr(a1.muud, 10, 20)))
                                                       AND arv.rekvid = v_arv.rekvid)
                                              LIMIT 1) AS arve_id
-                                     FROM arv1 a1
+                                     FROM remote_arv1 a1
                                      WHERE a1.parentid = v_arv.id) AS a1));
 
     RAISE NOTICE 'json_arv1 %', json_arv1;
@@ -176,7 +236,8 @@ BEGIN
   END LOOP;
 
   -- control
-  l_tulemus = (SELECT count(id) FROM docs.journal);
+    /*
+  l_tulemus = (SELECT count(id) FROM docs.arv);
   IF (l_tulemus + 100)
      >= l_count
   THEN
@@ -185,7 +246,8 @@ BEGIN
     RAISE EXCEPTION 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
   --    RAISE notice 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
   END IF;
-
+*/
+    
   IF l_count = 0
   THEN
     RAISE EXCEPTION 'arve not imported %', in_old_id;
