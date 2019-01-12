@@ -7,6 +7,11 @@ module.exports = {
                 c.rekvid,
                 c.number::VARCHAR(20),
                 coalesce((u.properties->>'keel')::integer,2)::integer as keel,
+                coalesce((u.properties->>'port')::varchar(100))::varchar(254) as port,
+                coalesce((u.properties->>'smtp')::varchar(100))::varchar(254) as smtp,
+                coalesce((u.properties->>'user')::varchar(100))::varchar(254) as user,
+                coalesce((u.properties->>'pass')::varchar(100))::varchar(254) as pass,
+                coalesce((u.properties->>'email')::varchar(100))::varchar(254) as email,
                 c.tahtpaev
               FROM ou.config c, ou.userid u
               WHERE c.rekvid = $1 and u.id = $2`,
@@ -17,6 +22,11 @@ module.exports = {
                       0 :: INTEGER          AS rekvid,
                       NULL :: VARCHAR(20)   AS number,
                       1 :: integer          AS keel,
+                      ''::varchar(254) as port,
+                      ''::varchar(254) as smtp,
+                      ''::varchar(254) as user,
+                      ''::varchar(254) as pass,
+                      ''::varchar(254) as email,
                       5::integer as tahtpaev`,
         query: null,
         multiple: false,

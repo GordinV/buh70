@@ -13,9 +13,19 @@ DECLARE
   doc_data     JSON    = data ->> 'data';
   doc_number   TEXT    = doc_data ->> 'number';
   doc_keel     INTEGER = doc_data ->> 'keel';
+  doc_port     TEXT    = doc_data ->> 'port';
+  doc_smtp     TEXT    = doc_data ->> 'smtp';
+  doc_user     TEXT    = doc_data ->> 'user';
+  doc_pass     TEXT    = doc_data ->> 'pass';
+  doc_email    TEXT    = doc_data ->> 'email';
   doc_tahtpaev INTEGER = doc_data ->> 'tahtpaev';
   doc_json     JSON    = ((SELECT row_to_json(row)
-                           FROM (select doc_keel AS keel) ROW));
+                           FROM (SELECT doc_keel  AS keel,
+                                        doc_port  AS port,
+                                        doc_smtp  AS smtp,
+                                        doc_user  AS user,
+                                        doc_pass  AS pass,
+                                        doc_email AS email) ROW));
 
 BEGIN
 
@@ -58,7 +68,7 @@ BEGIN
         INTO config_id;
   END IF;
 
-  UPDATE ou.userid SET properties = properties::jsonb || doc_json::jsonb WHERE id = user_id;
+  UPDATE ou.userid SET properties = properties::JSONB || doc_json::JSONB WHERE id = user_id;
 
   RETURN config_id;
   EXCEPTION
