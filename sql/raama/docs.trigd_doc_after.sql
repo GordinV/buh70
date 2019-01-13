@@ -16,7 +16,6 @@ begin
 		select * from docs.doc d
 			where d.docs_ids @> array[old.id]
 	loop
-		raise notice 'ids: %', v_docs.id;
 		update docs.doc 
 			set docs_ids = array_remove(v_docs.docs_ids, old.id)
 			where id = v_docs.id;
