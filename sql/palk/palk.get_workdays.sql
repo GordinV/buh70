@@ -1,23 +1,24 @@
-DROP FUNCTION IF EXISTS palk.get_work_days( JSON );
+DROP FUNCTION IF EXISTS palk.get_work_days(JSON);
 
 CREATE FUNCTION palk.get_work_days(IN params JSON)
   RETURNS INTEGER
   LANGUAGE plpgsql
-AS $$
+AS
+$$
 DECLARE
   l_lepingid     INTEGER = params ->> 'lepingid';
   l_kuu          INTEGER = coalesce((params ->> 'kuu') :: INTEGER, month(current_date));
   l_aasta        INTEGER = coalesce((params ->> 'aasta') :: INTEGER, year(current_date));
   l_esimine_paev INTEGER = coalesce((params ->> 'paev') :: INTEGER, 1);
   l_lopp_paev    INTEGER = coalesce((params ->> 'lopp') :: INTEGER, 31);
+  l_rekvid       INTEGER = params ->> 'rekvid';
 
   l_maxdays      INTEGER = DAY(GOMONTH(DATE(l_aasta, l_kuu, 1), 1) - 1);
   l_holidays     INTEGER = 0;
-  l_date         DATE = DATE(l_aasta, l_kuu, l_esimine_paev); -- arv. kuupaev
-  l_rekvId       INTEGER;
+  l_date         DATE    = DATE(l_aasta, l_kuu, l_esimine_paev); -- arv. kuupaev
   qrytoograf     RECORD;
   lnDow          INT;
-  l_result integer = 0;
+  l_result       INTEGER = 0;
 BEGIN
 
   IF l_lepingid IS NOT NULL
@@ -43,10 +44,13 @@ BEGIN
 
     END IF;
 
-    SELECT rekvid
-           INTO l_rekvId
-    FROM palk.tooleping
-    WHERE id = l_lepingid;
+    IF l_rekvid IS NULL
+    THEN
+      SELECT rekvid
+             INTO l_rekvId
+      FROM palk.tooleping
+      WHERE id = l_lepingid;
+    END IF;
   END IF;
 
   IF l_maxdays > l_lopp_paev
@@ -56,16 +60,17 @@ BEGIN
 
   FOR i IN l_esimine_paev..l_maxdays
     LOOP
-      lnDow:=DOW(l_date);
+      lnDow := DOW(l_date);
+
       IF lnDOW = 6 OR lnDOW = 7 OR lnDow = 0
       THEN
         l_holidays := l_holidays + 1;
       ELSE
         IF exists(SELECT 1
                   FROM cur_tahtpaevad l
-                  WHERE (l_rekvId IS NULL OR l.rekvid = l_rekvId)
+                  WHERE (l.rekvId IS NULL OR l.rekvid = l_rekvId)
                     AND
-                      l.paEv = DAY(l_date)
+                    l.paEv = DAY(l_date)
                     AND kuu = MONTH(l_date)
                     AND (aasta IS NULL OR aasta = year(l_date)))
         THEN
@@ -83,7 +88,6 @@ $$;
 
 GRANT EXECUTE ON FUNCTION palk.get_work_days( JSON ) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION palk.get_work_days( JSON ) TO dbpeakasutaja;
-
 
 
 /*

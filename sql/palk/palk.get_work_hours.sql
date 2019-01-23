@@ -1,17 +1,19 @@
-DROP FUNCTION IF EXISTS palk.get_work_hours(params JSONB );
+DROP FUNCTION IF EXISTS palk.get_work_hours(params JSONB);
 
 CREATE FUNCTION palk.get_work_hours(params JSONB)
   RETURNS NUMERIC
-LANGUAGE plpgsql
-AS $$
+  LANGUAGE plpgsql
+AS
+$$
 DECLARE
   l_lepingid   INTEGER = params ->> 'lepingid';
-  l_kpv        DATE = coalesce((params ->> 'kpv') :: DATE, current_date);
+  l_kpv        DATE    = coalesce((params ->> 'kpv') :: DATE, current_date);
   l_tund       INTEGER = params ->> 'tund';
   l_start_paev INTEGER = coalesce((params ->> 'paev') :: INTEGER, 1);
   l_lopp_paev  INTEGER = coalesce((params ->> 'lopp') :: INTEGER, day(get_last_day(l_kpv)));
   l_toopaev    NUMERIC = params ->> 'toopaev';
   l_params     JSON;
+  l_rekvid     INTEGER;
 BEGIN
 
   IF l_tund IS NULL AND l_lepingid IS NOT NULL
@@ -19,11 +21,11 @@ BEGIN
     -- parameter tund puudub, võttame taabelist
 
     SELECT t.tund
-    INTO l_tund
+           INTO l_tund
     FROM palk.cur_toografik t
     WHERE lepingid = l_lepingid
-          AND kuu = month(l_kpv)
-          AND aasta = year(l_kpv);
+      AND kuu = month(l_kpv)
+      AND aasta = year(l_kpv);
 
   END IF;
 
@@ -31,8 +33,9 @@ BEGIN
   IF l_toopaev IS NULL AND l_lepingid IS NOT NULL
   THEN
     --otsime tööpäev
-    SELECT toopaev
-    INTO l_toopaev
+    SELECT toopaev,
+           rekvid
+           INTO l_toopaev, l_rekvid
     FROM palk.com_toolepingud t
     WHERE id = l_lepingid;
 
@@ -42,15 +45,16 @@ BEGIN
   THEN
     -- parameter või tööajagraafik puudub, arvestame
     SELECT row_to_json(row)
-    INTO l_params
+           INTO l_params
     FROM (SELECT
             month(l_kpv) AS kuu,
             year(l_kpv)  AS aasta,
             l_lepingid   AS lepingid,
+            l_rekvid     AS rekvid,
             l_start_paev AS paev,
             l_lopp_paev  AS lopp) row;
 
-    l_tund = (SELECT  palk.get_work_days(l_params :: JSON) * coalesce(l_toopaev, 8));
+    l_tund = (SELECT palk.get_work_days(l_params :: JSON) * coalesce(l_toopaev, 8));
 
   END IF;
 
