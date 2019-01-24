@@ -64,7 +64,7 @@ BEGIN
 
 	SELECT kasutaja
 	INTO userName
-	FROM userid u
+	FROM ou.userid u
 	WHERE u.rekvid = v_vorder.rekvId AND u.id = userId;
 
 	IF userName IS NULL
@@ -103,7 +103,7 @@ BEGIN
 
 	lcDbKonto = '100000';
 	-- koostame selg rea
-	lcSelg = trim(v_dokprop.selg);
+	lcSelg = trim(v_dokprop.selg) || ' ' || trim(v_vorder.alus);
 	IF (SELECT count(id)
 			FROM rekv
 			WHERE parentid = 119 OR id = 119) > 0
