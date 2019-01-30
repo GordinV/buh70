@@ -82,7 +82,9 @@ module.exports = {
                       INNER JOIN libs.dokprop d ON l.id = d.parentId
                     WHERE l.library = 'DOK'
                           AND d.status <> 3
-                          AND d.rekvId = $1 `,  //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                          AND d.rekvId = $1
+                    ORDER by trim(selg)
+        `,  //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curDokprop'
     },

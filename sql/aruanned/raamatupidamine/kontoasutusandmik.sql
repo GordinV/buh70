@@ -1,69 +1,69 @@
-DROP FUNCTION IF EXISTS docs.kontoasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER );
+DROP FUNCTION IF EXISTS docs.kontoasutusandmik(TEXT, INTEGER, DATE, DATE, INTEGER);
 
-CREATE OR REPLACE FUNCTION docs.kontoasutusandmik(l_konto  TEXT, l_asutus INTEGER, l_kpv1 DATE, l_kpv2 DATE,
+CREATE OR REPLACE FUNCTION docs.kontoasutusandmik(l_konto TEXT, l_asutus INTEGER, l_kpv1 DATE, l_kpv2 DATE,
                                                   l_rekvid INTEGER)
   RETURNS TABLE(
-    rekv_id    INTEGER,
-    asutus_id  INTEGER,
-    kpv        DATE,
-    deebet     NUMERIC(14, 2),
-    kreedit    NUMERIC(14, 2),
-    konto      VARCHAR(20),
+    rekv_id INTEGER,
+    asutus_id INTEGER,
+    kpv DATE,
+    deebet NUMERIC(14, 2),
+    kreedit NUMERIC(14, 2),
+    konto VARCHAR(20),
     korr_konto VARCHAR(20),
-    dok        VARCHAR(120),
-    number     INTEGER,
-    kood1      VARCHAR(20),
-    kood2      VARCHAR(20),
-    kood3      VARCHAR(20),
-    kood4      VARCHAR(20),
-    kood5      VARCHAR(20),
-    proj       VARCHAR(20),
-    tunnus     VARCHAR(20)
-  ) AS
+    dok VARCHAR(120),
+    number INTEGER,
+    kood1 VARCHAR(20),
+    kood2 VARCHAR(20),
+    kood3 VARCHAR(20),
+    kood4 VARCHAR(20),
+    kood5 VARCHAR(20),
+    proj VARCHAR(20),
+    tunnus VARCHAR(20)
+    ) AS
 $BODY$
 WITH algsaldo AS (
-    SELECT
-      rekv_id,
-      sum(deebet) - sum(kreedit) AS alg_saldo,
-      asutus_id,
-      konto
-    FROM (
-           SELECT
-             d.rekvid            AS rekv_id,
-             asutusid            AS asutus_id,
-             deebet              AS konto,
-             summa               AS deebet,
-             0 :: NUMERIC(14, 2) AS kreedit
-           FROM docs.doc d
-             INNER JOIN docs.journal j ON j.parentid = d.id
-             INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-           WHERE j.asutusid IS NOT NULL
-                 AND (empty(l_asutus)  OR j.asutusid = l_asutus)
-                 AND j.kpv < l_kpv1
-                 AND j.rekvid IN (SELECT rekv_id
-                                  FROM get_asutuse_struktuur(l_rekvid))
-           UNION ALL
-           SELECT
-             d.rekvid            AS rekv_id,
-             asutusid            AS asutus_id,
-             kreedit             AS konto,
-             0 :: NUMERIC(14, 2) AS deebet,
-             summa               AS kreedit
-           FROM docs.doc d
-             INNER JOIN docs.journal j ON j.parentid = d.id
-             INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-           WHERE j.asutusid IS NOT NULL
-                 AND (empty(l_asutus) OR j.asutusid = l_asutus)
-                 AND j.kpv < l_kpv1
-                 AND j.rekvid IN (SELECT rekv_id
-                                  FROM get_asutuse_struktuur(l_rekvid))
-         ) qry
-    WHERE (empty(l_konto) OR qry.konto LIKE ltrim(rtrim(l_konto)) || '%')
-    GROUP BY rekv_id, asutus_id, konto)
+  SELECT
+    rekv_id,
+    sum(deebet) - sum(kreedit) AS alg_saldo,
+    asutus_id,
+    konto
+  FROM (
+         SELECT
+           d.rekvid                  AS rekv_id,
+           asutusid                  AS asutus_id,
+           trim(deebet)::VARCHAR(20) AS konto,
+           summa                     AS deebet,
+           0 :: NUMERIC(14, 2)       AS kreedit
+         FROM docs.doc d
+                INNER JOIN docs.journal j ON j.parentid = d.id
+                INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+         WHERE j.asutusid IS NOT NULL
+           AND (empty(l_asutus) OR j.asutusid = l_asutus)
+           AND j.kpv < l_kpv1
+           AND j.rekvid IN (SELECT rekv_id
+                            FROM get_asutuse_struktuur(l_rekvid))
+         UNION ALL
+         SELECT
+           d.rekvid                   AS rekv_id,
+           asutusid                   AS asutus_id,
+           trim(kreedit)::VARCHAR(20) AS konto,
+           0 :: NUMERIC(14, 2)        AS deebet,
+           summa                      AS kreedit
+         FROM docs.doc d
+                INNER JOIN docs.journal j ON j.parentid = d.id
+                INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+         WHERE j.asutusid IS NOT NULL
+           AND (empty(l_asutus) OR j.asutusid = l_asutus)
+           AND j.kpv < l_kpv1
+           AND j.rekvid IN (SELECT rekv_id
+                            FROM get_asutuse_struktuur(l_rekvid))
+       ) qry
+  WHERE (empty(l_konto) OR qry.konto LIKE ltrim(rtrim(l_konto)) || '%')
+  GROUP BY rekv_id, asutus_id, konto)
 SELECT
   a.rekv_id,
   a.asutus_id,
-  null::date           AS kpv,
+  NULL::DATE           AS kpv,
   a.alg_saldo          AS deebet,
   0 :: NUMERIC(14, 2)  AS kreedit,
   a.konto,
@@ -83,10 +83,10 @@ SELECT
   qry.rekv_id,
   qry.asutus_id,
   qry.kpv,
-  qry.deebet  AS deebet,
-  qry.kreedit AS kreedit,
-  qry.konto,
-  qry.korr_konto,
+  qry.deebet                        AS deebet,
+  qry.kreedit                       AS kreedit,
+  trim(qry.konto)::VARCHAR(20)      AS konto,
+  trim(qry.korr_konto)::VARCHAR(20) AS korr_konto,
   qry.dok,
   qry.number,
   qry.kood1,
@@ -116,11 +116,11 @@ FROM (
          j.tunnus
        FROM cur_journal j
        WHERE j.asutusid IS NOT NULL
-             AND (empty(l_asutus) OR j.asutusid = l_asutus)
-             AND j.kpv >= l_kpv1
-             AND j.kpv <= l_kpv2
-             AND j.rekvid IN (SELECT rekv_id
-                              FROM get_asutuse_struktuur(l_rekvid))
+         AND (empty(l_asutus) OR j.asutusid = l_asutus)
+         AND j.kpv >= l_kpv1
+         AND j.kpv <= l_kpv2
+         AND j.rekvid IN (SELECT rekv_id
+                          FROM get_asutuse_struktuur(l_rekvid))
        UNION ALL
        SELECT
          j.rekvid     AS rekv_id,
@@ -141,17 +141,18 @@ FROM (
          j.tunnus
        FROM cur_journal j
        WHERE j.asutusid IS NOT NULL
-             AND (empty(l_asutus) OR j.asutusid = l_asutus)
-             AND j.kpv >= l_kpv1
-             AND j.kpv <= l_kpv2
-             AND j.rekvid IN (SELECT rekv_id
-                              FROM get_asutuse_struktuur(l_rekvid))
+         AND (empty(l_asutus) OR j.asutusid = l_asutus)
+         AND j.kpv >= l_kpv1
+         AND j.kpv <= l_kpv2
+         AND j.rekvid IN (SELECT rekv_id
+                          FROM get_asutuse_struktuur(l_rekvid))
      ) qry
 WHERE (empty(l_konto) OR qry.konto LIKE ltrim(rtrim(l_konto)) || '%');
 
 $BODY$
-LANGUAGE SQL VOLATILE
-COST 100;
+  LANGUAGE SQL
+  VOLATILE
+  COST 100;
 
 
 GRANT EXECUTE ON FUNCTION docs.kontoasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER ) TO dbpeakasutaja;

@@ -19,10 +19,10 @@ WITH algsaldo AS (
       rekv_id                                                                AS rekv_id
   FROM (
          SELECT
-           D.rekvid            AS rekv_id,
-           (j1.summa)          AS deebet,
-           0 :: NUMERIC(14, 2) AS kreedit,
-           j1.deebet           AS konto
+           D.rekvid                     AS rekv_id,
+           (j1.summa)                   AS deebet,
+           0 :: NUMERIC(14, 2)          AS kreedit,
+           trim(j1.deebet)::VARCHAR(20) AS konto
          FROM docs.doc d
                 INNER JOIN docs.journal j ON j.parentid = d.id
                 INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -31,10 +31,10 @@ WITH algsaldo AS (
                             FROM get_asutuse_struktuur(l_rekvid))
          UNION ALL
          SELECT
-           D.rekvid     AS rekv_id,
-           0 :: NUMERIC AS deebet,
-           (j1.summa)   AS kreedit,
-           j1.kreedit   AS konto
+           D.rekvid                      AS rekv_id,
+           0 :: NUMERIC                  AS deebet,
+           (j1.summa)                    AS kreedit,
+           trim(j1.kreedit)::VARCHAR(20) AS konto
          FROM docs.doc D
                 INNER JOIN docs.journal j ON j.parentid = D.id
                 INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -61,11 +61,11 @@ FROM (
        FROM algsaldo a
        UNION ALL
        SELECT
-         d.rekvid   AS rekv_id,
-         j1.deebet  AS konto,
-         j1.kreedit AS korr_konto,
-         (j1.summa) AS deebet,
-         0          AS kreedit
+         d.rekvid                      AS rekv_id,
+         trim(j1.deebet)::VARCHAR(20)  AS konto,
+         trim(j1.kreedit)::VARCHAR(20) AS korr_konto,
+         (j1.summa)                    AS deebet,
+         0                             AS kreedit
        FROM docs.doc d
               INNER JOIN docs.journal j ON j.parentid = d.id
               INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -76,11 +76,11 @@ FROM (
 
        UNION ALL
        SELECT
-         d.rekvid   AS rekv_id,
-         j1.kreedit AS konto,
-         j1.deebet  AS korr_konto,
-         0          AS deebet,
-         (j1.summa) AS kreedit
+         d.rekvid                      AS rekv_id,
+         trim(j1.kreedit)::VARCHAR(20) AS konto,
+         trim(j1.deebet)::VARCHAR(20)  AS korr_konto,
+         0                             AS deebet,
+         (j1.summa)                    AS kreedit
        FROM docs.doc d
               INNER JOIN docs.journal j ON j.parentid = d.id
               INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
