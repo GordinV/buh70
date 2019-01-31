@@ -43,7 +43,8 @@ module.exports = {
                       inner join libs.asutus a on a.id = qryReport.asutus_id
                       inner join com_kontoplaan l on l.kood = qryReport.konto
                       inner join com_rekv r on r.id = qryReport.rekv_id
-                      where qryReport.konto is not null and qryReport.asutus_id is not null`,     // $1- konto, $2 - asutus_id, $3 - kpv1, $4 - kpv2, $5 - rekvid (svod)
+                      where qryReport.konto is not null and qryReport.asutus_id is not null
+                      order by qryReport.rekv_id, qryReport.konto, a.nimetus, qryReport.kpv`,     // $1- konto, $2 - asutus_id, $3 - kpv1, $4 - kpv2, $5 - rekvid (svod)
         params: '',
         alias: 'kontoasutusandmik_report'
     }

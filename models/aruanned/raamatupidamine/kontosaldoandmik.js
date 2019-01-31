@@ -23,7 +23,8 @@ module.exports = {
                     FROM docs.kontosaldoandmik($1::text, $2::integer, $3::date, $4::integer) qry
                       INNER JOIN libs.asutus a on a.id = qry.asutus_id  
                       INNER JOIN com_kontoplaan l ON l.kood = qry.konto
-                      WHERE qry.saldo <> 0`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- rekvid (svod)
+                      WHERE qry.saldo <> 0
+                      ORDER BY qry.konto, a.nimetus`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- rekvid (svod)
         params: '',
         alias: 'kontosaldoandmik_report'
     }

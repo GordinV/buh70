@@ -24,7 +24,8 @@ module.exports = {
                     FROM docs.kaibeasutusandmik($1::text, $2::integer, $3::date, $4::date, $5::integer) qry
                       INNER JOIN com_asutused a on a.id = qry.asutus_id  
                       INNER JOIN com_kontoplaan l ON l.kood = qry.konto
-                      WHERE (qry.alg_saldo <> 0 or qry.deebet <> 0 or qry.kreedit <> 0)`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- kpv2, $5 rekvid (svod)
+                      WHERE (qry.alg_saldo <> 0 or qry.deebet <> 0 or qry.kreedit <> 0)
+                      ORDER BY a.nimetus, qry.konto`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- kpv2, $5 rekvid (svod)
         params: '',
         alias: 'kaibeasutusandmik_report'
     }
