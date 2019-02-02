@@ -246,6 +246,6 @@ $BODY$
 
 
 /*
-SELECT import_journal(null)
+SELECT import_journal(8366010)
 
 */
