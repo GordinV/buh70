@@ -122,5 +122,14 @@ describe('dok. type Arv tests', function () {
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
     });
+
+    it('should exists procedure docs.check_arv_number)', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'check_arv_number'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
 });
 

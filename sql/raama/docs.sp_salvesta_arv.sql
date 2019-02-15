@@ -38,7 +38,7 @@ DECLARE
   doc_aa         TEXT           = doc_data ->> 'aa'; -- eri arve
   doc_viitenr    TEXT           = doc_data ->> 'viitenr'; -- viite number
   dok_props      JSONB          = (SELECT row_to_json(row)
-                                   FROM (SELECT doc_aa AS aa, doc_viitenr as viitenr) row);
+                                   FROM (SELECT doc_aa AS aa, doc_viitenr AS viitenr) row);
   json_object    JSON;
   json_record    RECORD;
   new_history    JSONB;
@@ -73,6 +73,22 @@ BEGIN
     RAISE NOTICE 'User not found %', user;
     RETURN 0;
   END IF;
+
+  -- проверка на номер
+/*
+  SELECT row_to_json(row)
+         INTO json_object
+  FROM (SELECT
+          doc_liik      AS tyyp,
+          doc_number    AS number,
+          year(doc_kpv) AS aasta,
+          doc_asutusid  AS asutus) row;
+  IF NOT docs.check_arv_number(user_rekvid::INTEGER, json_object::JSON)::BOOLEAN
+  THEN
+    RAISE NOTICE 'Number not valid';
+    RETURN 0;
+  END IF;
+*/
 
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0

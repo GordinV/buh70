@@ -38,7 +38,7 @@ const Arv = {
                          trim(a.tasudok)                                                   AS tasudok,
                          a.muud,
                          a.jaak,
-                         a.objektId,
+                         coalesce(a.objektId,0)::integer as objektId,
                          trim(a.objekt)                                                    AS objekt,
                          asutus.regkood,
                          trim(asutus.nimetus)                                              AS asutus,
@@ -104,7 +104,7 @@ const Arv = {
                               NULL :: VARCHAR(20)                                                    AS tasudok,
                               NULL :: TEXT                                                           AS muud,
                               0.00                                                                   AS jaak,
-                              NULL :: INTEGER                                                        AS objektId,
+                              0 :: INTEGER                                                        AS objektId,
                               NULL :: VARCHAR(20)                                                    AS objekt,
                               NULL :: VARCHAR(20)                                                    AS regkood,
                               NULL :: VARCHAR(120)                                                   AS asutus,
@@ -279,6 +279,14 @@ const Arv = {
             multuple: false,
             alias: 'create_new_order',
             data: []
+        },
+        {
+            sql:`SELECT docs.check_arv_number($1::integer, $2::JSON)::integer as tulemus`, //$1 - rekvId, $2 - params ->'{"tyyp":1, "number":"10", "aasta": 2017, "asutus": 5155}'
+            query: null,
+            multuple: false,
+            alias: 'validate_arve_number',
+            data: []
+
         }
 
     ],
