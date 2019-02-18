@@ -141,6 +141,14 @@ BEGIN
       END IF;
     END IF;
 
+    -- правим автора
+    UPDATE docs.doc
+    SET history = jsonb_set(doc.history, '{0,"user"}'::TEXT[],
+      to_jsonb((SELECT trim(ametnik)
+      FROM userid
+      WHERE id = v_avans1.userid)))
+      WHERE id = avans_id;
+
     -- salvestame log info
     SELECT row_to_json(row)
     INTO hist_object

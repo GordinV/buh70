@@ -1,16 +1,15 @@
-DROP FUNCTION IF EXISTS docs.create_new_order( INTEGER, JSONB );
+DROP FUNCTION IF EXISTS docs.create_new_order(INTEGER, JSONB);
 
-CREATE OR REPLACE FUNCTION docs.create_new_order(
-  IN  user_id       INTEGER,
-  IN  params        JSONB,
-  OUT error_code    INTEGER,
-  OUT result        INTEGER,
-  OUT error_message TEXT)
+CREATE OR REPLACE FUNCTION docs.create_new_order(IN user_id INTEGER,
+                                                 IN params JSONB,
+                                                 OUT error_code INTEGER,
+                                                 OUT result INTEGER,
+                                                 OUT error_message TEXT)
   RETURNS RECORD AS
 $BODY$
 DECLARE
   l_arv_id     INTEGER = params ->> 'arv_id';
-  l_dok        TEXT = coalesce((params ->> 'dok') :: TEXT, 'SORDER');
+  l_dok        TEXT    = coalesce((params ->> 'dok') :: TEXT, 'SORDER');
   korder_id    INTEGER;
   v_arv        RECORD;
   json_object  JSONB;
@@ -24,10 +23,10 @@ BEGIN
     a.*,
     isik.nimetus AS nimi,
     isik.aadress
-  INTO v_arv
+    INTO v_arv
   FROM docs.doc d
-    INNER JOIN docs.arv a ON a.parentid = d.id
-    INNER JOIN libs.asutus isik ON isik.id = a.asutusid
+         INNER JOIN docs.arv a ON a.parentid = d.id
+         INNER JOIN libs.asutus isik ON isik.id = a.asutusid
   WHERE d.id = l_arv_id;
 
   IF l_arv_id IS NULL OR v_arv.id IS NULL OR empty(l_arv_id)
@@ -51,7 +50,7 @@ BEGIN
   l_kassa_id = (SELECT id
                 FROM ou.aa
                 WHERE kassa = 0
-                      AND parentid = v_arv.rekvid
+                  AND parentid = v_arv.rekvid
                 ORDER BY default_
                 LIMIT 1);
 
@@ -60,7 +59,8 @@ BEGIN
                                         0          AS id,
                                         (SELECT id
                                          FROM libs.nomenklatuur n
-                                         WHERE rekvid = v_arv.rekvid AND dok IN (l_dok)
+                                         WHERE rekvid = v_arv.rekvid
+                                           AND dok IN (l_dok)
                                          ORDER BY id DESC
                                          LIMIT 1)  AS nomid,
                                         a1.kood1,
@@ -78,7 +78,7 @@ BEGIN
                                       ORDER BY kood5, kood2 DESC, kood1 DESC
                                       LIMIT 1
                                      ) AS m1
-                               ));
+  ));
 
   SELECT
     0                                                                 AS id,
@@ -88,25 +88,26 @@ BEGIN
     v_arv.aadress,
     l_kassa_id                                                        AS kassaid,
     v_arv.parentid                                                    AS arvid,
-    CASE WHEN v_arv.liik = 0
-      THEN 1
-    ELSE 2 END                                                        AS TYYP,
+    CASE
+      WHEN v_arv.liik = 0
+        THEN 1
+      ELSE 2 END                                                      AS TYYP,
     v_arv.jaak                                                        AS summa,
     date()                                                            AS kpv,
-    docs.get_new_number(l_dok, 1, year(now() :: DATE)) :: VARCHAR(20) AS number,
+    docs.get_new_number(l_dok, v_arv.rekvid, year(now() :: DATE)) :: VARCHAR(20) AS number,
     NULL                                                              AS selg,
     NULL                                                              AS muud,
     json_korder1                                                      AS "gridData"
-  INTO v_params;
+    INTO v_params;
 
   SELECT row_to_json(row)
-  INTO json_object
+         INTO json_object
   FROM (SELECT
           0        AS id,
           v_params AS data) row;
 
   SELECT docs.sp_salvesta_korder(json_object :: JSON, user_id, v_arv.rekvid)
-  INTO korder_id;
+         INTO korder_id;
 
   IF korder_id IS NOT NULL AND korder_id > 0
   THEN
@@ -117,17 +118,21 @@ BEGIN
     error_message = 'Dokumendi koostamise viga';
     error_code = 1;
   END IF;
+
   RETURN;
-  EXCEPTION WHEN OTHERS
-  THEN
-    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-    error_code = 1;
-    error_message = SQLERRM;
-    result = 0;
-    RETURN;
-END;$BODY$
-LANGUAGE plpgsql VOLATILE
-COST 100;
+  EXCEPTION
+  WHEN OTHERS
+    THEN
+      RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+      error_code = 1;
+      error_message = SQLERRM;
+      result = 0;
+      RETURN;
+END;
+$BODY$
+  LANGUAGE plpgsql
+  VOLATILE
+  COST 100;
 
 GRANT EXECUTE ON FUNCTION docs.create_new_order(INTEGER, JSONB) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.create_new_order(INTEGER, JSONB) TO dbpeakasutaja;

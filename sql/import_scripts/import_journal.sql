@@ -168,6 +168,16 @@ BEGIN
                           FROM docs.journal
                           WHERE parentid = journal_id);
 
+      -- правим историю, автора
+      UPDATE docs.doc
+      SET history = jsonb_set(doc.history, '{0,"user"}'::TEXT[],
+                              to_jsonb((SELECT trim(ametnik)
+                                        FROM userid
+                                        WHERE id = v_journal.userid)))
+      WHERE id = journal_id;
+
+
+
       -- salvestame log info
       SELECT row_to_json(row)
              INTO hist_object

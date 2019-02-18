@@ -22,9 +22,11 @@ BEGIN
 
   SELECT
     d.*,
+    k.arvid,
     u.ametnik AS user_name
   INTO v_doc
   FROM docs.doc d
+    INNER JOIN docs.korder1 k on k.parentid = d.id
     LEFT OUTER JOIN ou.userid u ON u.id = user_id
   WHERE d.id = doc_id;
 
@@ -79,7 +81,7 @@ BEGIN
         SELECT kood
         FROM libs.library
         WHERE library = 'DOK'
-              AND kood NOT IN ('JOURNAL')
+              AND kood NOT IN ('JOURNAL','ARV')
               AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')
       ))
   THEN
@@ -133,6 +135,9 @@ BEGIN
   PERFORM docs.sp_delete_arvtasu(user_id, id)
   FROM docs.arvtasu a
   WHERE a.doc_tasu_id = doc_id;
+
+  -- перерасчет сальдо связанного счета
+  PERFORM docs.sp_update_arv_jaak(v_doc.arvid);
 
   -- удаление связей
   UPDATE docs.doc

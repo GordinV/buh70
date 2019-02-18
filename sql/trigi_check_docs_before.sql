@@ -3,42 +3,46 @@
 -- DROP FUNCTION docs.trigi_check_docs_before();
 
 CREATE OR REPLACE FUNCTION docs.trigi_check_docs_before()
-  RETURNS trigger AS
+  RETURNS TRIGGER AS
 $BODY$
-declare 
-	doc_type_id integer;
-begin
-	if (select id from docs.doc d where id = new.parentId) is null then
-		-- will find id in library according to code (doktype)	
+DECLARE
+  doc_type_id INTEGER;
+BEGIN
+  IF (SELECT id FROM docs.doc d WHERE id = new.parentId) IS NULL
+  THEN
+    -- will find id in library according to code (doktype)
 
-		-- find table name (TG_RELID)
-		raise notice ' called from %', TG_RELID;
+    -- find table name (TG_RELID)
+    RAISE NOTICE ' called from %', TG_RELID;
 
-		case
-			when (select relname::text  from pg_class where oid = TG_RELID order by oid limit 1) = 'palk_oper' then	 
-				select id into doc_type_id from libs.library where library = 'DOK' and kood	= 'PALK';	
-				raise notice ' palk_oper: %',doc_type_id;
-			when (select relname::text  from pg_class where oid = TG_RELID order by oid limit 1) = 'palk_taabel1' then	 
-				select id into doc_type_id from libs.library where library = 'DOK' and kood	= 'TAABEL';	
-				raise notice ' palk_taabel: %',doc_type_id;
-			when (select relname::text  from pg_class where oid = TG_RELID order by oid limit 1) = 'pv_kaart' then	 
-				select id into doc_type_id from libs.library where library = 'DOK' and kood	= 'PVKAART';	
-				raise notice ' pv_kaart: %',doc_type_id;
-			when (select relname::text  from pg_class where oid = TG_RELID order by oid limit 1) = 'pv_oper' then	 
-				select id into doc_type_id from libs.library where library = 'DOK' and kood	= 'PVOPER';	
-				raise notice ' pv_oper: %',doc_type_id;
-		end case;
-		
-		if doc_type_id is not null then
-			insert into docs.doc ( doc_type_id)	
-				values (doc_type_id) returning id into new.parentId;
-		end if;	
-	end if;
-	
-	return new;
-end; 
+    CASE
+      WHEN (SELECT relname::TEXT FROM pg_class WHERE oid = TG_RELID ORDER BY oid LIMIT 1) = 'palk_oper' THEN
+        SELECT id INTO doc_type_id FROM libs.library WHERE library = 'DOK' AND kood = 'PALK';
+        RAISE NOTICE ' palk_oper: %',doc_type_id;
+      WHEN (SELECT relname::TEXT FROM pg_class WHERE oid = TG_RELID ORDER BY oid LIMIT 1) = 'palk_taabel1' THEN
+        SELECT id INTO doc_type_id FROM libs.library WHERE library = 'DOK' AND kood = 'TAABEL';
+        RAISE NOTICE ' palk_taabel: %',doc_type_id;
+      WHEN (SELECT relname::TEXT FROM pg_class WHERE oid = TG_RELID ORDER BY oid LIMIT 1) = 'pv_kaart' THEN
+        SELECT id INTO doc_type_id FROM libs.library WHERE library = 'DOK' AND kood = 'PVKAART';
+        RAISE NOTICE ' pv_kaart: %',doc_type_id;
+      WHEN (SELECT relname::TEXT FROM pg_class WHERE oid = TG_RELID ORDER BY oid LIMIT 1) = 'pv_oper' THEN
+        SELECT id INTO doc_type_id FROM libs.library WHERE library = 'DOK' AND kood = 'PVOPER';
+        RAISE NOTICE ' pv_oper: %',doc_type_id;
+      END CASE;
+
+    IF doc_type_id IS NOT NULL
+    THEN
+      INSERT INTO docs.doc (doc_type_id)
+      VALUES (doc_type_id)
+             RETURNING id INTO new.parentId;
+    END IF;
+  END IF;
+
+  RETURN new;
+END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
+  LANGUAGE plpgsql
+  VOLATILE
   COST 100;
 ALTER FUNCTION docs.trigi_check_docs_before()
   OWNER TO postgres;
