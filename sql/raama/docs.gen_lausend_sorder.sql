@@ -1,12 +1,11 @@
-﻿DROP FUNCTION IF EXISTS docs.gen_lausend_sorder( INTEGER, INTEGER );
+﻿DROP FUNCTION IF EXISTS docs.gen_lausend_sorder(INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION docs.gen_lausend_sorder(
-  IN  tnid          INTEGER,
-  IN  userid        INTEGER,
-  OUT error_code    INTEGER,
-  OUT result        INTEGER,
-  OUT error_message TEXT)
-  as
+CREATE OR REPLACE FUNCTION docs.gen_lausend_sorder(IN tnid INTEGER,
+                                                   IN userid INTEGER,
+                                                   OUT error_code INTEGER,
+                                                   OUT result INTEGER,
+                                                   OUT error_message TEXT)
+AS
 $BODY$
 DECLARE
   lcDbKonto         VARCHAR(20);
@@ -30,20 +29,20 @@ DECLARE
   userName          TEXT;
   a_docs_ids        INTEGER [];
   rows_fetched      INTEGER = 0;
-
+  l_arve_number     TEXT    = '';
 BEGIN
 
   SELECT
     d.docs_ids,
     k.*,
     asutus.tp AS asutus_tp
-  INTO v_sorder
+    INTO v_sorder
   FROM docs.korder1 k
-    INNER JOIN docs.doc d ON d.id = k.parentId
-    LEFT OUTER JOIN libs.asutus asutus ON asutus.id = k.asutusid
+         INNER JOIN docs.doc d ON d.id = k.parentId
+         LEFT OUTER JOIN libs.asutus asutus ON asutus.id = k.asutusid
   WHERE d.id = tnId;
 
-  IF v_sorder.parentid is null
+  IF v_sorder.parentid IS NULL
   THEN
     error_code = 4; -- No documents found
     error_message = 'No documents found';
@@ -60,9 +59,10 @@ BEGIN
   END IF;
 
   SELECT kasutaja
-  INTO userName
+         INTO userName
   FROM ou.userid u
-  WHERE u.rekvid = v_sorder.rekvId AND u.id = userId;
+  WHERE u.rekvid = v_sorder.rekvId
+    AND u.id = userId;
 
   IF userName IS NULL
   THEN
@@ -81,11 +81,11 @@ BEGIN
     library.kood,
     dokprop.*,
     details.*
-  INTO v_dokprop
+    INTO v_dokprop
   FROM libs.dokprop dokprop
-    INNER JOIN libs.library library ON library.id = dokprop.parentid
-    ,
-        jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
+         INNER JOIN libs.library library ON library.id = dokprop.parentid
+      ,
+       jsonb_to_record(dokprop.details) AS details (konto TEXT, kbmkonto TEXT)
   WHERE dokprop.id = v_sorder.doklausid
   LIMIT 1;
 
@@ -103,16 +103,17 @@ BEGIN
   lcSelg = trim(v_dokprop.selg) || ' ' || trim(v_sorder.alus);
   IF (SELECT count(id)
       FROM rekv
-      WHERE parentid = 119 OR id = 119) > 0
+      WHERE parentid = 119
+         OR id = 119) > 0
   THEN -- Narva LV kultuuriosakond. @todo need flexible solution
     FOR v_selg IN
-    SELECT DISTINCT nom.nimetus
-    FROM docs.korder2 k1
-      INNER JOIN libs.nomenklatuur nom ON k1.nomid = nom.id
-    WHERE k1.parentid = v_sorder.id
-    LOOP
-      lcSelg = lcSelg || ', ' || trim(v_selg.nimetus);
-    END LOOP;
+      SELECT DISTINCT nom.nimetus
+      FROM docs.korder2 k1
+             INNER JOIN libs.nomenklatuur nom ON k1.nomid = nom.id
+      WHERE k1.parentid = v_sorder.id
+      LOOP
+        lcSelg = lcSelg || ', ' || trim(v_selg.nimetus);
+      END LOOP;
   ELSE
     lcSelg = trim(v_dokprop.selg);
   END IF;
@@ -120,74 +121,80 @@ BEGIN
   v_sorder.asutus_tp = coalesce(v_sorder.asutus_tp, '800599');
   lcKrTp = coalesce(v_sorder.asutus_tp, '800599');
 
+  IF v_sorder.arvid IS NOT NULL
+  THEN
+    l_arve_number = 'Arve Nr. ' ||
+                    ltrim(rtrim(coalesce((SELECT number FROM docs.arv WHERE parentid = v_sorder.arvid LIMIT 1), '')));
+  END IF;
+
   SELECT
-    coalesce(v_sorder.journalid, 0) AS id,
-    'JOURNAL'                       AS doc_type_id,
-    v_sorder.kpv                    AS kpv,
-    lcSelg                          AS selg,
-    v_sorder.muud                   AS muud,
-    v_sorder.Asutusid               AS asutusid,
-    'Arve nr. ' || v_sorder.number  AS dok
-  INTO v_journal;
+    coalesce(v_sorder.journalid, 0)                       AS id,
+    'JOURNAL'                                             AS doc_type_id,
+    v_sorder.kpv                                          AS kpv,
+    lcSelg                                                AS selg,
+    v_sorder.muud                                         AS muud,
+    v_sorder.Asutusid                                     AS asutusid,
+    'Kassaorder nr. ' || v_sorder.number || l_arve_number AS dok
+    INTO v_journal;
 
   l_json = row_to_json(v_journal);
 
   --		l_json_details = '[]';
   FOR v_sorder1 IN
-  SELECT
-    k1.*,
-    coalesce(dokvaluuta1.valuuta, 'EUR') :: VARCHAR AS valuuta,
-    coalesce(dokvaluuta1.kuurs, 1) :: NUMERIC       AS kuurs
-  FROM docs.korder2 k1
-    LEFT OUTER JOIN docs.dokvaluuta1 dokvaluuta1 ON (k1.id = dokvaluuta1.dokid AND dokvaluuta1.dokliik = 10)
-  WHERE k1.parentid = v_sorder.Id
-  LOOP
-    IF NOT empty(v_sorder1.tp)
-    THEN
-      v_sorder.asutus_tp:= v_sorder1.tp;
-    END IF;
-
-    IF NOT empty(v_sorder1.kood2)
-    THEN
-      lcAllikas = v_sorder1.kood2;
-    END IF;
-
-    lcKood5 = v_sorder1.kood5;
-
-    /* sisse kassa order*/
-    lcDbKonto = v_dokprop.konto;
-    lcKrKonto = coalesce(v_sorder1.konto, 'puudub');
-
     SELECT
-      0                                      AS id,
-      coalesce(v_sorder1.summa, 0)           AS summa,
-      coalesce(v_sorder1.valuuta, 'EUR')     AS valuuta,
-      coalesce(v_sorder1.kuurs, 1)           AS kuurs,
-      lcDbKonto                              AS deebet,
-      coalesce(v_sorder.asutus_tp, '800599') AS lisa_d,
-      lcKrKonto                              AS kreedit,
-      coalesce(v_sorder.asutus_tp, '800599') AS lisa_k,
-      coalesce(v_sorder1.tunnus, '')         AS tunnus,
-      coalesce(v_sorder1.proj, '')           AS proj,
-      coalesce(v_sorder1.kood1, '')          AS kood1,
-      coalesce(v_sorder1.kood2, '')          AS kood2,
-      coalesce(v_sorder1.kood3, '')          AS kood3,
-      coalesce(v_sorder1.kood4, '')          AS kood4,
-      coalesce(v_sorder1.kood5, '')          AS kood5
-    INTO v_journal;
+      k1.*,
+      coalesce(dokvaluuta1.valuuta, 'EUR') :: VARCHAR AS valuuta,
+      coalesce(dokvaluuta1.kuurs, 1) :: NUMERIC       AS kuurs
+    FROM docs.korder2 k1
+           LEFT OUTER JOIN docs.dokvaluuta1 dokvaluuta1 ON (k1.id = dokvaluuta1.dokid AND dokvaluuta1.dokliik = 10)
+    WHERE k1.parentid = v_sorder.Id
+    LOOP
+      IF NOT empty(v_sorder1.tp)
+      THEN
+        v_sorder.asutus_tp := v_sorder1.tp;
+      END IF;
 
-    l_json_row = row_to_json(v_journal);
+      IF NOT empty(v_sorder1.kood2)
+      THEN
+        lcAllikas = v_sorder1.kood2;
+      END IF;
 
-    IF l_row_count > 0
-    THEN
-      l_json_details = l_json_details || ',' || l_json_row;
-    ELSE
-      l_json_details = l_json_row;
-    END IF;
+      lcKood5 = v_sorder1.kood5;
 
-    l_row_count = l_row_count + 1;
+      /* sisse kassa order*/
+      lcDbKonto = v_dokprop.konto;
+      lcKrKonto = coalesce(v_sorder1.konto, 'puudub');
 
-  END LOOP;
+      SELECT
+        0                                      AS id,
+        coalesce(v_sorder1.summa, 0)           AS summa,
+        coalesce(v_sorder1.valuuta, 'EUR')     AS valuuta,
+        coalesce(v_sorder1.kuurs, 1)           AS kuurs,
+        lcDbKonto                              AS deebet,
+        coalesce(v_sorder.asutus_tp, '800599') AS lisa_d,
+        lcKrKonto                              AS kreedit,
+        coalesce(v_sorder.asutus_tp, '800599') AS lisa_k,
+        coalesce(v_sorder1.tunnus, '')         AS tunnus,
+        coalesce(v_sorder1.proj, '')           AS proj,
+        coalesce(v_sorder1.kood1, '')          AS kood1,
+        coalesce(v_sorder1.kood2, '')          AS kood2,
+        coalesce(v_sorder1.kood3, '')          AS kood3,
+        coalesce(v_sorder1.kood4, '')          AS kood4,
+        coalesce(v_sorder1.kood5, '')          AS kood5
+        INTO v_journal;
+
+      l_json_row = row_to_json(v_journal);
+
+      IF l_row_count > 0
+      THEN
+        l_json_details = l_json_details || ',' || l_json_row;
+      ELSE
+        l_json_details = l_json_row;
+      END IF;
+
+      l_row_count = l_row_count + 1;
+
+    END LOOP;
   IF l_json_details IS NULL
   THEN
     l_json_details = '';
@@ -206,7 +213,7 @@ BEGIN
     */
 
     SELECT row_to_json(row)
-    INTO new_history
+           INTO new_history
     FROM (SELECT
             now()    AS updated,
             userName AS user) row;
@@ -215,14 +222,14 @@ BEGIN
     -- arve
 
     UPDATE docs.doc
-    SET docs_ids = array(SELECT DISTINCT unnest(array_append(v_sorder.docs_ids, result))),
-      lastupdate = now(),
-      history    = coalesce(history, '[]') :: JSONB || new_history
+    SET docs_ids   = array(SELECT DISTINCT unnest(array_append(v_sorder.docs_ids, result))),
+        lastupdate = now(),
+        history    = coalesce(history, '[]') :: JSONB || new_history
     WHERE id = v_sorder.parentId;
 
     -- lausend
     SELECT docs_ids
-    INTO a_docs_ids
+           INTO a_docs_ids
     FROM docs.doc
     WHERE id = result;
 
@@ -246,16 +253,18 @@ BEGIN
   RETURN;
 END;
 $BODY$
-LANGUAGE plpgsql VOLATILE
-COST 100;
+  LANGUAGE plpgsql
+  VOLATILE
+  COST 100;
 
 ALTER FUNCTION docs.gen_lausend_sorder( INTEGER, INTEGER )
-OWNER TO postgres;
+  OWNER TO postgres;
 
 GRANT EXECUTE ON FUNCTION docs.gen_lausend_sorder(INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.gen_lausend_sorder(INTEGER, INTEGER) TO dbpeakasutaja;
 
-select error_code, result, error_message from docs.gen_lausend_sorder(99999,998);
+SELECT error_code, result, error_message
+FROM docs.gen_lausend_sorder(99999, 998);
 
 /*
 
