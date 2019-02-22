@@ -1,35 +1,36 @@
-DROP FUNCTION IF EXISTS libs.sp_salvesta_pv_kaart( JSON, INTEGER, INTEGER );
+DROP FUNCTION IF EXISTS libs.sp_salvesta_pv_kaart(JSON, INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION libs.sp_salvesta_pv_kaart(
-  data        JSON,
-  userid      INTEGER,
-  user_rekvid INTEGER)
+CREATE OR REPLACE FUNCTION libs.sp_salvesta_pv_kaart(data JSON,
+                                                     userid INTEGER,
+                                                     user_rekvid INTEGER)
   RETURNS INTEGER AS
 $BODY$
 
 DECLARE
   lib_id         INTEGER;
   userName       TEXT;
-  doc_id         INTEGER = data ->> 'id';
-  doc_data       JSON = data ->> 'data';
-  doc_kood       TEXT = doc_data ->> 'kood';
-  doc_nimetus    TEXT = doc_data ->> 'nimetus';
-  doc_library    TEXT = 'POHIVARA';
-  doc_gruppid    INTEGER = doc_data ->> 'gruppid';
-  doc_konto      TEXT = doc_data ->> 'konto';
-  doc_soetkpv    DATE = (CASE WHEN empty((doc_data ->> 'soetkpv') :: TEXT)
-    THEN NULL
-                         ELSE (doc_data ->> 'soetkpv') END) :: DATE;
+  doc_id         INTEGER        = data ->> 'id';
+  doc_data       JSON           = data ->> 'data';
+  doc_kood       TEXT           = doc_data ->> 'kood';
+  doc_nimetus    TEXT           = doc_data ->> 'nimetus';
+  doc_library    TEXT           = 'POHIVARA';
+  doc_parent_id  INTEGER        = doc_data ->> 'parent_id';
+  doc_gruppid    INTEGER        = doc_data ->> 'gruppid';
+  doc_konto      TEXT           = doc_data ->> 'konto';
+  doc_soetkpv    DATE           = (CASE
+                                     WHEN empty((doc_data ->> 'soetkpv') :: TEXT)
+                                       THEN NULL
+                                     ELSE (doc_data ->> 'soetkpv') END) :: DATE;
   doc_kulum      NUMERIC(12, 4) = doc_data ->> 'kulum';
   doc_algkulum   NUMERIC(12, 2) = doc_data ->> 'algkulum';
   doc_soetmaks   NUMERIC(12, 2) = doc_data ->> 'soetmaks';
-  doc_selg       TEXT = doc_data ->> 'selg';
-  doc_vastisikid INTEGER = doc_data ->> 'vastisikid';
-  doc_rentnik    TEXT = doc_data ->> 'rentnik';
-  doc_liik       TEXT = doc_data ->> 'liik';
-  doc_muud       TEXT = doc_data ->> 'muud';
+  doc_selg       TEXT           = doc_data ->> 'selg';
+  doc_vastisikid INTEGER        = doc_data ->> 'vastisikid';
+  doc_rentnik    TEXT           = doc_data ->> 'rentnik';
+  doc_liik       TEXT           = doc_data ->> 'liik';
+  doc_muud       TEXT           = doc_data ->> 'muud';
   json_object    JSONB;
-  is_import      BOOLEAN = data ->> 'import';
+  is_import      BOOLEAN        = data ->> 'import';
 BEGIN
 
   IF (doc_id IS NULL)
@@ -38,9 +39,10 @@ BEGIN
   END IF;
 
   SELECT kasutaja
-  INTO userName
+         INTO userName
   FROM ou.userid u
-  WHERE u.rekvid = user_rekvid AND u.id = userId;
+  WHERE u.rekvid = user_rekvid
+    AND u.id = userId;
   IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
@@ -48,9 +50,10 @@ BEGIN
   END IF;
 
   SELECT row_to_json(row)
-  INTO json_object
+         INTO json_object
   FROM (SELECT
           doc_gruppid                    AS gruppid,
+          doc_parent_id                  AS parent_id,
           doc_konto                      AS konto,
           doc_soetkpv                    AS soetkpv,
           doc_kulum                      AS kulum,
@@ -68,8 +71,8 @@ BEGIN
     INSERT INTO libs.library (rekvid, kood, nimetus, library, muud, properties)
     VALUES (user_rekvid, doc_kood, doc_nimetus, doc_library, doc_muud,
             json_object)
-    RETURNING id
-      INTO lib_id;
+           RETURNING id
+             INTO lib_id;
 
   ELSE
 
@@ -81,22 +84,25 @@ BEGIN
       properties = json_object,
       muud       = doc_muud
     WHERE id = doc_id
-    RETURNING id
-      INTO lib_id;
+      RETURNING id
+        INTO lib_id;
   END IF;
 
-  PERFORM docs.sp_recalc_pv_jaak(doc_id );
+  PERFORM docs.sp_recalc_pv_jaak(doc_id);
 
   RETURN lib_id;
 
-  EXCEPTION WHEN OTHERS
-  THEN
-    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-    RETURN 0;
+  EXCEPTION
+  WHEN OTHERS
+    THEN
+      RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+      RETURN 0;
 
-END;$BODY$
-LANGUAGE plpgsql VOLATILE
-COST 100;
+END;
+$BODY$
+  LANGUAGE plpgsql
+  VOLATILE
+  COST 100;
 
 GRANT EXECUTE ON FUNCTION libs.sp_salvesta_pv_kaart(JSON, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION libs.sp_salvesta_pv_kaart(JSON, INTEGER, INTEGER) TO dbpeakasutaja;

@@ -7,6 +7,8 @@ const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
+const myTestTimeout = 1 * 60 * 1000; //explicitly set for readabilty
+
 
 describe('dok. type PV_KAART tests', function () {
     let globalDocId = 0; // для сохранения ид документа
@@ -134,13 +136,13 @@ describe('dok. type PV_KAART tests', function () {
     });
 
     it('should succesfully execute grid query', async()=>{
-       let sql = doc.grid.sqlString + ' limit 100';
+       let sql = doc.grid.sqlString + ' and id in (414,444)';
         let returnValue = await db.queryDb(sql, [1]);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
 
-    });
+    },myTestTimeout);
 
     it ('should successfully call docs.sp_samm_kulum', async()=>{
         let sql = `SELECT * FROM docs.sp_samm_kulum($1, $2)`;

@@ -5,6 +5,11 @@ module.exports = {
     select: [{
         sql: `SELECT l.id,
                      l.rekvid,
+                     (l.properties :: JSONB ->> 'parent_id') :: INTEGER                                         AS parent_id,
+                     (SELECT kood FROM libs.library WHERE id = (l.properties :: JSONB ->> 'parent_id') :: INTEGER)::VARCHAR(20)    AS parent_kood,
+                     (SELECT nimetus
+                      FROM libs.library
+                      WHERE id = (l.properties :: JSONB ->> 'parent_id') :: INTEGER)::VARCHAR(254)                                  AS parent_nimetus,
                      l.kood,
                      l.nimetus,
                      l.muud,
@@ -42,6 +47,9 @@ module.exports = {
         sqlAsNew: `SELECT
                       $1 :: INTEGER               AS id,
                       $2 :: INTEGER               AS userid,
+                      NULL::INTEGER               as parent_id,
+                      NULL::VARCHAR(20)           as parent_kood,
+                      NULL::VARCHAR(254)         as parent_nimetus,
                       'POHIVARA'                 AS doc_type_id,
                       NULL :: TEXT               AS kood,
                       NULL :: INTEGER            AS rekvid,
@@ -62,6 +70,7 @@ module.exports = {
                       NULL :: TEXT               AS selg,
                       'põhivara' :: VARCHAR(100) AS liik,
                       NULL :: DATE               AS mahakantud,
+                      NULL::INTEGER              AS parent_id,
                       'EUR' :: VARCHAR(20)       AS valuuta,
                       1 :: NUMERIC(12, 2)        AS kuurs,
                       NULL :: TEXT               AS grupp,
@@ -79,7 +88,16 @@ module.exports = {
         multiple: true,
         alias: 'details',
         data: []
-    }],
+    },
+        {
+            sql:`select $2::integer as user_id, $1 as pv_id, po.* 
+                from cur_pohivara po
+                where parent_id is not null and parent_id = $1`, //$1 - карта ОС, $2 - kasutaja id,
+            multiple: true,
+            alias: 'seotatud_kaardid',
+            data: []
+        }
+    ],
     returnData: {
         row: {},
         details: [],
@@ -89,7 +107,7 @@ module.exports = {
         {name: 'nimetus', type: 'C'},
         {name: 'gruppid', type: 'I'}
     ],
-    saveDoc: `select libs.sp_salvesta_pv_kaart($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    saveDoc: `select libs.sp_salvesta_pv_kaart($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `SELECT error_code, result, error_message
                 FROM libs.sp_delete_library($1 :: INTEGER, $2 :: INTEGER)`, // $1 - userId, $2 - docId
     grid: {
