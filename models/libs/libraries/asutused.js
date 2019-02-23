@@ -9,20 +9,20 @@ module.exports = {
               FROM libs.asutus
               WHERE id = $1`,
         sqlAsNew: `select $1::integer as id , $2::integer as userid, 'ASUTUSED' as doc_type_id,
-            null::text as  regkood,
-            null::text as nimetus,
-            null::text as omvorm,
-            null::text as aadress,
-            null::text as kontakt,
-            null::text as tel,
-            null::text as faks,
-            null::text as email,
+            ''::text as  regkood,
+            ''::text as nimetus,
+            ''::text as omvorm,
+            ''::text as aadress,
+            ''::text as kontakt,
+            ''::text as tel,
+            ''::text as faks,
+            ''::text as email,
             null::text as muud,
-            null::text as tp,
+            ''::text as tp,
             0::integer as staatus,
-            null::text as pank,
-            null::text as kmkr,
-            null::text as mark`,
+            ''::text as pank,
+            ''::text as kmkr,
+            ''::text as mark`,
         query: null,
         multiple: false,
         alias: 'row',
@@ -42,8 +42,8 @@ module.exports = {
         }, {
             sql: `SELECT Asutus.id
                   FROM libs.asutus Asutus
-                  WHERE (rtrim(ltrim(Asutus.regkood)) = $1 OR empty($1))
-                     OR (rtrim(ltrim(Asutus.nimetus)) = $2 OR empty($2))`, //$1 regkood, $2 nimetus
+                  WHERE (upper(rtrim(ltrim(Asutus.regkood))) = upper($1) OR empty($1))
+                     AND (upper(rtrim(ltrim(Asutus.nimetus))) = upper($2) OR empty($2))`, //$1 regkood, $2 nimetus
             query: null,
             multiple: false,
             alias: 'validate_asutus',

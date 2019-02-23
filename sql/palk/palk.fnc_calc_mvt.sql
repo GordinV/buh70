@@ -1,10 +1,10 @@
-DROP FUNCTION IF EXISTS palk.fnc_calc_mvt( JSONB );
+DROP FUNCTION IF EXISTS palk.fnc_calc_mvt(JSONB);
 
 CREATE OR REPLACE FUNCTION palk.fnc_calc_mvt(params JSONB)
   RETURNS NUMERIC AS
 $BODY$
 
--- tnMVT_kokku personal taotluse summa
+  -- tnMVT_kokku personal taotluse summa
 DECLARE
   l_alus_summa            NUMERIC = coalesce((params ->> 'summa') :: NUMERIC, 0); -- tulu
   l_mvt_kokku             NUMERIC = coalesce((params ->> 'mvt_kokku') :: NUMERIC, 0); -- taotluse summa
@@ -39,6 +39,12 @@ BEGIN
   END IF;
 
   l_MVT = round(l_MVT, 2);
+  
+  -- MVT kokku kontrol
+  IF l_MVT > l_mvt_kokku
+  THEN
+    l_MVT = l_mvt_kokku;
+  END IF;
 
   RETURN l_MVT;
 
@@ -46,12 +52,14 @@ BEGIN
 END;
 
 $BODY$
-LANGUAGE 'plpgsql' VOLATILE
-COST 100;
+  LANGUAGE 'plpgsql'
+  VOLATILE
+  COST 100;
 
 GRANT EXECUTE ON FUNCTION palk.fnc_calc_mvt(JSONB) TO dbkasutaja;
 
-select palk.fnc_calc_mvt('{"tulud_kokku":700, "kokku_kasutatud_mvt":500,"summa":200, "mvt_kokku":500, "tki":3.2, "pm":4}'::jsonb)
+SELECT palk.fnc_calc_mvt(
+           '{"tulud_kokku":700, "kokku_kasutatud_mvt":500,"summa":200, "mvt_kokku":500, "tki":3.2, "pm":4}'::JSONB)
 
 /*
 select palk.fnc_calc_mvt('{"summa":1000}'::jsonb)

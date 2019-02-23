@@ -295,6 +295,7 @@ BEGIN
                             FROM palk.taotlus_mvt mvt
                                    INNER JOIN palk.com_toolepingud t ON t.id = mvt.lepingId
                             WHERE t.parentId = l_isik_id
+                              and mvt.status <> 'deleted'
                               AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
                               AND alg_kpv <= l_kpv
                               AND lopp_kpv >= l_kpv), 0);
