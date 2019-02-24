@@ -134,7 +134,7 @@ BEGIN
     lcSelg                                                AS selg,
     v_sorder.muud                                         AS muud,
     v_sorder.Asutusid                                     AS asutusid,
-    'Kassaorder nr. ' || v_sorder.number || l_arve_number AS dok
+    l_arve_number AS dok
     INTO v_journal;
 
   l_json = row_to_json(v_journal);

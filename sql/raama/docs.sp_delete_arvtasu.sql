@@ -52,6 +52,10 @@ BEGIN
   RETURNING ID
     INTO l_doc_id;
 
+-- уберем связи
+  UPDATE docs.doc SET docs_ids = array_remove(docs_ids, v_doc.doc_tasu_id) WHERE id = v_doc.doc_arv_id;
+  UPDATE docs.doc SET docs_ids = array_remove(docs_ids, v_doc.doc_arv_id) WHERE id = v_doc.doc_tasu_id;
+
   -- update arv jaak
   PERFORM docs.sp_update_arv_jaak(v_doc.doc_arv_id);
 

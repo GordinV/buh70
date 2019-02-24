@@ -3,7 +3,9 @@ module.exports = {
               id,
               trim(arve)::varchar(20)    AS kood,
               trim(nimetus)::varchar(120) AS nimetus,
-              aa.default_
+              aa.default_,
+              aa.konto,
+              aa.tp
             FROM ou.aa aa
             WHERE parentid = $1
                   AND kassa = 1

@@ -13,12 +13,13 @@ DECLARE
   doc_id           INTEGER = data ->> 'id';
   doc_type_kood    TEXT    = 'JOURNAL'/*data->>'doc_type_id'*/;
   doc_type_id      INTEGER = (SELECT id
-                                     FROM
-                                     libs.library
-                                     WHERE
-                                     kood = doc_type_kood AND library = 'DOK'
-                                     LIMIT
-                                     1);
+                              FROM
+                                libs.library
+                              WHERE
+                                kood = doc_type_kood
+                                AND library = 'DOK'
+                              LIMIT
+                                1);
   doc_data         JSON    = data ->> 'data';
   doc_details      JSON    = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
   doc_asutusid     INTEGER = doc_data ->> 'asutusid';
@@ -27,11 +28,12 @@ DECLARE
   doc_selg         TEXT    = doc_data ->> 'selg';
   doc_muud         TEXT    = doc_data ->> 'muud';
   l_number         INTEGER = coalesce((SELECT max(number) + 1
-                                              FROM
-                                              docs.journalid
-                                              WHERE
-                                              rekvId = user_rekvid AND
-                                              aasta = (date_part('year' :: TEXT, doc_kpv) :: INTEGER)), 1);
+                                       FROM
+                                         docs.journalid
+                                       WHERE
+                                         rekvId = user_rekvid
+                                         AND
+                                         aasta = (date_part('year' :: TEXT, doc_kpv) :: INTEGER)), 1);
   json_object      JSON;
   json_params      JSON;
   json_record      RECORD;
@@ -41,15 +43,17 @@ DECLARE
   is_import        BOOLEAN = data ->> 'import';
   is_rekl_ettemaks BOOLEAN = FALSE;
   l_prev_kpv       DATE;
+  l_arv_id         INTEGER; --ид счета, если проводка является оплатой
 BEGIN
 
   SELECT kasutaja,
          rekvid
          INTO userName
-         FROM
-         ou.userid u
-         WHERE
-         u.rekvid = user_rekvid AND u.id = userId;
+  FROM
+    ou.userid u
+  WHERE
+    u.rekvid = user_rekvid
+    AND u.id = userId;
   IF is_import IS NULL AND userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
@@ -69,18 +73,18 @@ BEGIN
 
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0 OR NOT exists(SELECT id
-                                                       FROM
-                                                       cur_journal
-                                                       WHERE
-                                                       id = doc_id)
+                                                FROM
+                                                  cur_journal
+                                                WHERE
+                                                  id = doc_id)
   THEN
 
     SELECT row_to_json(row)
            INTO new_history
-           FROM
-           (SELECT
-              now()    AS created,
-              userName AS user) row;
+    FROM
+      (SELECT
+         now()    AS created,
+         userName AS user) row;
 
 
     INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
@@ -109,10 +113,10 @@ BEGIN
 
     SELECT row_to_json(row)
            INTO new_history
-           FROM
-           (SELECT
-              now()    AS updated,
-              userName AS user) row;
+    FROM
+      (SELECT
+         now()    AS updated,
+         userName AS user) row;
 
     UPDATE docs.doc
     SET lastupdate = now(),
@@ -135,24 +139,24 @@ BEGIN
 
   FOR json_object IN
     SELECT *
-           FROM
-           json_array_elements(doc_details)
+    FROM
+      json_array_elements(doc_details)
     LOOP
       SELECT *
              INTO json_record
-             FROM
-             json_to_record(
-                 json_object) AS x(id TEXT, summa NUMERIC(14, 4), deebet TEXT, kreedit TEXT,
-               tunnus TEXT, proj TEXT,
-               kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, lisa_d TEXT, lisa_k TEXT,
-               valuuta TEXT, kuurs NUMERIC(14, 8));
+      FROM
+        json_to_record(
+            json_object) AS x (id TEXT, summa NUMERIC(14, 4), deebet TEXT, kreedit TEXT,
+                               tunnus TEXT, proj TEXT,
+                               kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, lisa_d TEXT, lisa_k TEXT,
+                               valuuta TEXT, kuurs NUMERIC(14, 8));
 
       IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
          NOT exists(SELECT id
-                           FROM
-                           docs.journal1
-                           WHERE
-                           id = json_record.id :: INTEGER)
+                    FROM
+                      docs.journal1
+                    WHERE
+                      id = json_record.id :: INTEGER)
       THEN
         INSERT INTO docs.journal1 (parentid, deebet, kreedit, summa, tunnus, proj, kood1, kood2, kood3, kood4, kood5,
                                    lisa_d, lisa_k, valuuta, kuurs, valsumma)
@@ -199,21 +203,20 @@ BEGIN
       -- avans
       SELECT a1.parentid
              INTO lnId
-             FROM
-             docs.avans1 a1
-               INNER JOIN libs.dokprop d ON d.id = a1.dokpropid
-             WHERE
-             ltrim(rtrim(a1.number)) = ltrim(rtrim(doc_dok))
-               AND a1.rekvid = user_rekvid
-               AND a1.asutusId = doc_asutusid
-               AND (ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.deebet)) OR
-                    ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.kreedit)))
-             ORDER
-             BY
-             a1.kpv
-             DESC
-             LIMIT
-             1;
+      FROM
+        docs.avans1 a1
+          INNER JOIN libs.dokprop d ON d.id = a1.dokpropid
+      WHERE
+        ltrim(rtrim(a1.number)) = ltrim(rtrim(doc_dok))
+        AND a1.rekvid = user_rekvid
+        AND a1.asutusId = doc_asutusid
+        AND (ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.deebet)) OR
+             ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.kreedit)))
+      ORDER BY
+        a1.kpv
+        DESC
+      LIMIT
+        1;
 
       IF lnId IS NOT NULL
       THEN
@@ -240,13 +243,33 @@ BEGIN
   THEN
     SELECT row_to_json(row)
            INTO json_params
-           FROM
-           (SELECT
-              doc_id AS id,
-              1      AS liik) row;
+    FROM
+      (SELECT
+         doc_id AS id,
+         1      AS liik) row;
 
     PERFORM rekl.sp_koosta_ettemaks(userid, json_params);
   END IF;
+
+  -- arve tasumine
+
+  l_arv_id = (SELECT d.id
+              FROM docs.arv a
+                     INNER JOIN docs.doc d ON a.parentid = d.id
+              WHERE a.asutusid = doc_asutusid
+                AND number = doc_dok
+                AND a.rekvid = user_rekvid
+              ORDER BY a.jaak DESC, a.kpv
+              LIMIT 1
+  );
+
+  IF l_arv_id IS NOT NULL
+  THEN
+    PERFORM
+    docs.sp_tasu_arv(
+        doc_id, l_arv_id, userid);
+  END IF;
+
 
   RETURN doc_id;
 

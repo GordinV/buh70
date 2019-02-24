@@ -1,11 +1,10 @@
 ﻿DROP FUNCTION IF EXISTS docs.sp_delete_journal(INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION docs.sp_delete_journal(
-  IN  user_id       INTEGER,
-  IN  doc_id        INTEGER,
-  OUT error_code    INTEGER,
-  OUT result        INTEGER,
-  OUT error_message TEXT)
+CREATE OR REPLACE FUNCTION docs.sp_delete_journal(IN user_id INTEGER,
+                                                  IN doc_id INTEGER,
+                                                  OUT error_code INTEGER,
+                                                  OUT result INTEGER,
+                                                  OUT error_message TEXT)
   RETURNS RECORD AS
 $BODY$
 
@@ -15,10 +14,13 @@ DECLARE
   journal1_history JSONB;
   new_history      JSONB;
   DOC_STATUS       INTEGER = 3; -- документ удален
+  l_arvtasu_id     INTEGER; -- связанный счет (оплата)
 BEGIN
 
-  SELECT d.*, u.ametnik AS user_name, j.kpv
-      INTO v_doc
+  SELECT d.*,
+         u.ametnik AS user_name,
+         j.kpv
+         INTO v_doc
   FROM docs.doc d
          INNER JOIN docs.journal j ON j.parentid = d.id
          LEFT OUTER JOIN ou.userid u ON u.id = user_id
@@ -35,9 +37,11 @@ BEGIN
 
   END IF;
 
-  IF NOT exists(SELECT id FROM ou.userid u WHERE id = user_id
-                                             AND u.rekvid = v_doc.rekvid
-  )
+  IF NOT exists(SELECT id
+                FROM ou.userid u
+                WHERE id = user_id
+                  AND u.rekvid = v_doc.rekvid
+    )
   THEN
 
     error_code = 5;
@@ -69,20 +73,22 @@ BEGIN
     error_message = 'Ei saa kustuta dokument. Period on kinni';
     result = 0;
   END IF;
-  
+
 
   -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
 
-  IF v_doc.docs_ids IS NOT NULL AND exists(
-      SELECT d.id
-      FROM docs.doc d
-             INNER JOIN libs.library l ON l.id = d.doc_type_id
-      WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
-        AND d.status <> 3 -- not deleted
-        AND l.kood IN (SELECT kood
-                       FROM libs.library
-                       WHERE library = 'DOK'
-                         AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')))
+  IF v_doc.docs_ids IS NOT NULL
+    AND NOT exists(SELECT 1 FROM docs.arvtasu WHERE doc_tasu_id = v_doc.id)
+    AND exists(
+         SELECT d.id
+         FROM docs.doc d
+                INNER JOIN libs.library l ON l.id = d.doc_type_id
+         WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
+           AND d.status <> 3 -- not deleted
+           AND l.kood IN (SELECT kood
+                          FROM libs.library
+                          WHERE library = 'DOK'
+                            AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')))
   THEN
 
     error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
@@ -95,7 +101,7 @@ BEGIN
   -- docs.journal
 
   journal_history = row_to_json(row.*) FROM (SELECT a.*
-  FROM docs.journal a WHERE a.parentid = doc_id) ROW;
+    FROM docs.journal a WHERE a.parentid = doc_id) ROW;
 
   -- docs.journal1
 
@@ -106,7 +112,7 @@ BEGIN
                                                    WHERE k.parentid = doc_id) row));
 
   SELECT row_to_json(row)
-      INTO new_history
+         INTO new_history
   FROM (SELECT now() AS deleted, v_doc.user_name AS user, journal_history AS journal, journal1_history AS journal1) row;
 
   -- удалим (если есть связанные с проводкой предоплаты рекламного налога
@@ -120,6 +126,21 @@ BEGIN
 
   DELETE FROM docs.journal WHERE parentid = v_doc.id; --@todo констрейн на удаление
 
+
+  -- удаление оплат счетов
+  l_arvtasu_id = (SELECT id
+                  FROM docs.arvtasu a
+                  WHERE rekvid = v_doc.rekvid
+                    AND doc_tasu_id = v_doc.id
+                    AND a.status <> 3
+  );
+
+  IF l_arvtasu_id IS NOT NULL
+  THEN
+
+    -- удаление оплаты
+    PERFORM docs.sp_delete_arvtasu(user_id, l_arvtasu_id);
+  END IF;
 
   -- удаление связей
   UPDATE docs.doc
@@ -138,10 +159,11 @@ BEGIN
 
   result = 1;
   RETURN;
-END;$BODY$
-LANGUAGE plpgsql
-VOLATILE
-COST 100;
+END;
+$BODY$
+  LANGUAGE plpgsql
+  VOLATILE
+  COST 100;
 
 ALTER FUNCTION docs.sp_delete_journal(INTEGER, INTEGER)
   OWNER TO postgres;
