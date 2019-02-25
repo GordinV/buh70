@@ -155,7 +155,7 @@ BEGIN
                   AND (l.asutusest IS NULL OR empty(l.asutusest) OR l.asutusest::TEXT = '0'))
   THEN
     is_tki = 0;
-    l_TKA_maar = 0;
+--    l_TKA_maar = 0;
   END IF;
 
   SELECT
