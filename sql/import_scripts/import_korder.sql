@@ -85,7 +85,7 @@ BEGIN
     WHERE parentid = v_korder.rekvid
           AND arve = (SELECT arve
                       FROM aa
-                      WHERE id = v_korder.kassaid);
+                      WHERE id = v_korder.kassaid );
 
     IF NOT empty(v_korder.kassaid) AND l_kassa_id IS NULL
     THEN

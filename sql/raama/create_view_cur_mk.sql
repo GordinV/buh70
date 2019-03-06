@@ -9,7 +9,7 @@ CREATE OR REPLACE VIEW cur_mk AS
     Mk.number,
     Mk.selg,
     MK.OPT,
-    CASE WHEN mk.opt = 0
+    CASE WHEN mk.opt = 2
       THEN Mk1.summa
     ELSE 0 :: NUMERIC(14, 2) END          AS kreedit,
     CASE WHEN mk.opt = 1
