@@ -22,16 +22,19 @@ module.exports = {
                      coalesce((l.properties :: JSONB ->> 'soetkpv') :: DATE, now() :: DATE)                     AS soetkpv,
                      (l.properties :: JSONB ->> 'kulum') :: NUMERIC(12, 4)                                      AS kulum,
                      (l.properties :: JSONB ->> 'algkulum') :: NUMERIC(12, 4)                                   AS algkulum,
-                     coalesce((l.properties :: JSONB ->> 'kulum_kokku') :: NUMERIC(12, 4),
-                              0 :: NUMERIC(12, 4))                                                              AS kulum_kokku,
+                     coalesce(jaak.kulum,0) :: NUMERIC(12, 4)                                                   AS kulum_kokku,
                      (l.properties :: JSONB ->> 'soetmaks') :: NUMERIC(12, 2)                                   AS soetmaks,
-                     (l.properties :: JSONB ->> 'parhind') :: NUMERIC(12, 2)                                    AS parhind,
-                     (l.properties :: JSONB ->> 'jaak') :: NUMERIC(12, 2)                                       AS jaak,
+                     (jaak.soetmaks) :: NUMERIC(12, 2)                                                          AS parhind,
+                     (jaak.jaak) :: NUMERIC(12, 2)                                                              AS jaak,
                      (l.properties :: JSONB ->> 'vastisikid') :: INTEGER                                        AS vastIsikId,
                      (l.properties :: JSONB ->> 'selg') :: TEXT                                                 AS selg,
                      (l.properties :: JSONB ->> 'rentnik') :: TEXT                                              AS rentnik,
                      (l.properties :: JSONB ->> 'liik') :: TEXT                                                 AS liik,
                      (l.properties :: JSONB ->> 'mahakantud') :: DATE                                           AS mahakantud,
+                     coalesce((l.properties :: JSONB ->> 'pindala') :: NUMERIC(12, 4),0):: NUMERIC(12, 4)       AS pindala,
+                     (l.properties :: JSONB ->> 'kinnitus_osa') ::VARCHAR(254)                                  AS kinnitus_osa,
+                     jaak.turu_vaartsus:: NUMERIC(12, 4)                                                        AS turu_vaartsus,
+                     jaak.eluiga :: NUMERIC(12, 2)                                                              AS eluiga,
                      'EUR' :: VARCHAR(20)                                                                       AS valuuta,
                      1 :: NUMERIC(12, 2)                                                                        AS kuurs,
                      g.kood                                                                                     AS grupp,
@@ -41,6 +44,7 @@ module.exports = {
                       WHERE po.pv_kaart_id = l.id
                         AND liik = 2)                                                                           AS arv_kulum
               FROM libs.library l
+                    INNER JOIN libs.get_pv_kaart_jaak(l.id) jaak on jaak.id = l.id
                      LEFT OUTER JOIN libs.library g ON g.id = (l.properties :: JSONB ->> 'gruppid') :: INTEGER
                      LEFT OUTER JOIN libs.asutus a ON a.id = (l.properties :: JSONB ->> 'vastisikid') :: INTEGER
               WHERE l.id = $1`,
@@ -71,6 +75,10 @@ module.exports = {
                       'põhivara' :: VARCHAR(100) AS liik,
                       NULL :: DATE               AS mahakantud,
                       NULL::INTEGER              AS parent_id,
+                      0:: NUMERIC(12, 2)         AS pindala,
+                      0:: NUMERIC(12, 2)         AS turu_vaartsus,
+                      0:: NUMERIC(12, 2)         AS eluiga,
+                      ''::VARCHAR(254)           AS kinnitus_osa,
                       'EUR' :: VARCHAR(20)       AS valuuta,
                       1 :: NUMERIC(12, 2)        AS kuurs,
                       NULL :: TEXT               AS grupp,

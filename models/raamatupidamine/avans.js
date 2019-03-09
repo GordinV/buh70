@@ -22,7 +22,7 @@ const Avans = {
                       d1.number                                                      AS number,
                       d1.kpv                                                         AS kpv,
                       d1.rekvid,
-                      d1.selg                                                        AS selg,
+                      coalesce(d1.selg,'')                                           AS selg,
                       d1.asutusid,
                       d1.journalid,
                       d1.dokpropid,

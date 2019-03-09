@@ -104,12 +104,12 @@ module.exports = {
         {name: 'summa', type: 'N'}
     ],
     executeCommand: {
-        command: `SELECT result, selgitus, summa from docs.sp_calc_kulum(?tnId)`,
+        command: `SELECT result, selgitus, summa from docs.sp_calc_kulum(?tnId::INTEGER)`,
         type:'sql',
         alias:'arvestaKulum'
     },
 
-    saveDoc: `select docs.sp_salvesta_pv_oper($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    saveDoc: `select docs.sp_salvesta_pv_oper($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `select error_code, result, error_message from docs.sp_delete_pv_oper($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
@@ -125,7 +125,7 @@ module.exports = {
         alias: 'curPVoper'
     },
     generateJournal: {
-        command: "select error_code, result, error_message from docs.gen_lausend_pv_oper($2, $1)", //$1 - docs.doc.id, $2 - userId
+        command: "select error_code, result, error_message from docs.gen_lausend_pv_oper($2::INTEGER, $1::INTEGER)", //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generateJournal'
     },

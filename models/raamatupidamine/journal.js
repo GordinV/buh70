@@ -99,6 +99,13 @@ const Journal = {
             multiple: false,
             alias: 'validate_asutus',
             data: []
+        },
+        {
+            sql: `select docs.sp_kooperi_journal($1::integer, $2::integer) as result`,
+            query: null,
+            multiple: false,
+            alias: 'kooperi_journal',
+            data: []
         }
 
     ],
@@ -191,7 +198,6 @@ const Journal = {
         type: 'sql',
         alias: 'executeTask'
     },
-
     executeTask: function (task, docId, userId) {
         // выполнит задачу, переданную в параметре
 
