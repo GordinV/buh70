@@ -25,7 +25,7 @@ SELECT id,
        tapsestatud_hind                                                                AS soetmaks,
        kulum,
        (tapsestatud_hind - kulum)::NUMERIC(14, 2)                                      AS jaak,
-       ((tapsestatud_hind - kulum) / (tapsestatud_hind * 12.5 * 0.01))::NUMERIC(14, 4) AS eluiga,
+       (case when empty(kulum_maar) or empty(tapsestatud_hind) then 0 else ((tapsestatud_hind - kulum) / (tapsestatud_hind * kulum_maar * 0.01)) end)::NUMERIC(14, 4) AS eluiga,
        turu_vaartsus
 FROM (
        SELECT
@@ -34,6 +34,7 @@ FROM (
          soetmaks,
          umberhindamine,
          kulum               AS kulum,
+         kulum_maar,
          CASE
            WHEN umberhindamine > 0
              THEN umberhindamine

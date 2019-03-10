@@ -7,33 +7,37 @@ CREATE OR REPLACE FUNCTION libs.sp_salvesta_pv_kaart(data JSON,
 $BODY$
 
 DECLARE
-  lib_id            INTEGER;
-  userName          TEXT;
-  doc_id            INTEGER        = data ->> 'id';
-  doc_data          JSON           = data ->> 'data';
-  doc_kood          TEXT           = doc_data ->> 'kood';
-  doc_nimetus       TEXT           = doc_data ->> 'nimetus';
-  doc_library       TEXT           = 'POHIVARA';
-  doc_parent_id     INTEGER        = doc_data ->> 'parent_id';
-  doc_gruppid       INTEGER        = doc_data ->> 'gruppid';
-  doc_konto         TEXT           = doc_data ->> 'konto';
-  doc_soetkpv       DATE           = (CASE
-                                        WHEN empty((doc_data ->> 'soetkpv') :: TEXT)
-                                          THEN NULL
-                                        ELSE (doc_data ->> 'soetkpv') END) :: DATE;
-  doc_kulum         NUMERIC(12, 4) = doc_data ->> 'kulum';
-  doc_algkulum      NUMERIC(12, 2) = doc_data ->> 'algkulum';
-  doc_soetmaks      NUMERIC(12, 2) = doc_data ->> 'soetmaks';
-  doc_selg          TEXT           = doc_data ->> 'selg';
-  doc_vastisikid    INTEGER        = doc_data ->> 'vastisikid';
-  doc_rentnik       TEXT           = doc_data ->> 'rentnik';
-  doc_liik          TEXT           = doc_data ->> 'liik';
-  doc_muud          TEXT           = doc_data ->> 'muud';
-  doc_pindala       NUMERIC(12, 4) = doc_data ->> 'pindala';
-  doc_turu_vaartsus NUMERIC(12, 2) = doc_data ->> 'turu_vaartsus';
-  doc_kinnitus_osa  TEXT           = doc_data ->> 'kinnitus_osa';
-  json_object       JSONB;
-  is_import         BOOLEAN        = data ->> 'import';
+  lib_id             INTEGER;
+  userName           TEXT;
+  doc_id             INTEGER        = data ->> 'id';
+  doc_data           JSON           = data ->> 'data';
+  doc_kood           TEXT           = doc_data ->> 'kood';
+  doc_nimetus        TEXT           = doc_data ->> 'nimetus';
+  doc_library        TEXT           = 'POHIVARA';
+  doc_parent_id      INTEGER        = doc_data ->> 'parent_id';
+  doc_gruppid        INTEGER        = doc_data ->> 'gruppid';
+  doc_konto          TEXT           = doc_data ->> 'konto';
+  doc_soetkpv        DATE           = (CASE
+                                         WHEN empty((doc_data ->> 'soetkpv') :: TEXT)
+                                           THEN NULL
+                                         ELSE (doc_data ->> 'soetkpv') END) :: DATE;
+  doc_kulum          NUMERIC(12, 4) = doc_data ->> 'kulum';
+  doc_algkulum       NUMERIC(12, 2) = doc_data ->> 'algkulum';
+  doc_soetmaks       NUMERIC(12, 2) = doc_data ->> 'soetmaks';
+  doc_selg           TEXT           = doc_data ->> 'selg';
+  doc_vastisikid     INTEGER        = doc_data ->> 'vastisikid';
+  doc_rentnik        TEXT           = doc_data ->> 'rentnik';
+  doc_liik           TEXT           = doc_data ->> 'liik';
+  doc_muud           TEXT           = doc_data ->> 'muud';
+  doc_pindala        NUMERIC(12, 4) = doc_data ->> 'pindala';
+  doc_turu_vaartsus  NUMERIC(12, 2) = doc_data ->> 'turu_vaartsus';
+  doc_kinnitus_osa   NUMERIC(12, 4) = doc_data ->> 'kinnitus_osa';
+  doc_aadress        TEXT           = doc_data ->> 'aadress';
+  doc_kadastri_uksus TEXT           = doc_data ->> 'kadastri_uksus';
+  doc_motteline_osa  TEXT           = doc_data ->> 'motteline_osa';
+  doc_ehituse_objekt TEXT           = doc_data ->> 'ehituse_objekt';
+  json_object        JSONB;
+  is_import          BOOLEAN        = data ->> 'import';
 BEGIN
 
   IF (doc_id IS NULL)
@@ -68,6 +72,10 @@ BEGIN
           doc_pindala                    AS pindala,
           doc_turu_vaartsus              AS turu_vaartsus,
           doc_kinnitus_osa               AS kinnitus_osa,
+          doc_aadress                    AS aadress,
+          doc_motteline_osa              AS motteline_osa,
+          doc_kadastri_uksus             AS kadastri_uksus,
+          doc_ehituse_objekt             AS ehituse_objekt,
           coalesce(doc_liik, 'põhivara') AS liik) row;
 
   -- вставка или апдейт docs.doc
