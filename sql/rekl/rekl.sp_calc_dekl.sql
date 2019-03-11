@@ -16,14 +16,14 @@ DECLARE
   l_lopp_kpv    DATE;
   l_tahtaeg     DATE;
   l_dokprop_id  INT;
-  l_toiming_id  INT;
+  l_toiming_id  INT = 0;
   l_dekl_number INT;
-  l_summa     NUMERIC;
-  v_toiming   RECORD;
-  json_params JSON;
+  l_summa       NUMERIC;
+  v_toiming     RECORD;
+  json_params   JSON;
 BEGIN
   SELECT l.*
-      INTO v_luba
+         INTO v_luba
   FROM rekl.luba l
          INNER JOIN docs.doc d ON d.id = l.parentid
   WHERE l.parentid = l_luba_doc_id;
@@ -50,14 +50,6 @@ BEGIN
       RETURN 0;
     END IF;
   */
-  -- kustatme vana dekl
-
-  DELETE
-  FROM rekl.toiming
-  WHERE lubaid = v_luba.id
-    AND empty(saadetud)
-    AND staatus = 'active'
-    AND tyyp = 'DEKL';
 
   l_alg_kpv = date(year(v_luba.algkpv), 1, 1);
   l_lopp_kpv = date(year(v_luba.algkpv), 12, 31);
@@ -68,28 +60,28 @@ BEGIN
     lnPeriod = l_lopp_kpv - l_alg_kpv;
     l_dekl_period = 1;
   ELSEIF v_luba.kord = 'NADAL'
-    THEN
-      lnPeriod = ceil((l_lopp_kpv - l_alg_kpv) / 7);
-      l_dekl_period = ceil((v_luba.algkpv - l_alg_kpv) / 7);
+  THEN
+    lnPeriod = ceil((l_lopp_kpv - l_alg_kpv) / 7);
+    l_dekl_period = ceil((v_luba.algkpv - l_alg_kpv) / 7);
   ELSEIF v_luba.kord = 'KUU'
-    THEN
-      lnPeriod = ceil(month(l_lopp_kpv) - month(l_alg_kpv) + 1);
-      l_dekl_period = month(v_luba.algkpv) - month(l_alg_kpv);
+  THEN
+    lnPeriod = ceil(month(l_lopp_kpv) - month(l_alg_kpv) + 1);
+    l_dekl_period = month(v_luba.algkpv) - month(l_alg_kpv);
   ELSEIF v_luba.kord = 'KVARTAL'
-    THEN
-      lnPeriod = floor((month(l_lopp_kpv) - month(l_alg_kpv) + 1) / 3);
-      l_dekl_period = ceil((v_luba.algkpv - l_alg_kpv) / 90);
+  THEN
+    lnPeriod = floor((month(l_lopp_kpv) - month(l_alg_kpv) + 1) / 3);
+    l_dekl_period = ceil((v_luba.algkpv - l_alg_kpv) / 90);
   ELSEIF v_luba.kord = 'AASTA'
+  THEN
+    lnPeriod = 1;
+    l_dekl_period = 1;
+    IF v_luba.loppkpv > l_lopp_kpv
     THEN
-      lnPeriod = 1;
-      l_dekl_period = 1;
-      IF v_luba.loppkpv > l_lopp_kpv
-      THEN
-        -- teine aasta
-        lnPeriod = year(v_luba.loppkpv) - year(v_luba.algkpv) + 1;
-        l_dekl_period = 0;
-        l_lopp_kpv = v_luba.loppkpv;
-      END IF;
+      -- teine aasta
+      lnPeriod = year(v_luba.loppkpv) - year(v_luba.algkpv) + 1;
+      l_dekl_period = 0;
+      l_lopp_kpv = v_luba.loppkpv;
+    END IF;
 
   ELSE
     lnPeriod = floor((month(l_lopp_kpv) - month(l_alg_kpv) + 1) / 3);
@@ -142,6 +134,9 @@ BEGIN
 
     -- parameters
 
+    -- ищем имеющиес\ декларации
+    l_toiming_id = (SELECT parentid FROM rekl.toiming WHERE lubaid = v_luba.parentid AND kpv = l_kpv LIMIT 1);
+
     SELECT 0               AS id,
            0               AS number,
            v_luba.asutusid,
@@ -154,10 +149,11 @@ BEGIN
            l_dokprop_id    AS dokpropid,
            'DEKL'          AS tyyp,
            l_dekl_number   AS number
-        INTO v_toiming;
+           INTO v_toiming;
 
     SELECT row_to_json(row)
-        INTO json_params FROM (SELECT 0 AS id, row_to_json(v_toiming) AS data) row;
+           INTO json_params
+    FROM (SELECT coalesce(l_toiming_id, 0) AS id, row_to_json(v_toiming) AS data) row;
 
     l_toiming_id = rekl.sp_salvesta_toiming(json_params, l_user_id, v_luba.rekvid);
 
@@ -181,33 +177,33 @@ BEGIN
         RAISE NOTICE 'PAEV';
         l_kpv = l_kpv + 1;
       WHEN v_luba.kord = 'NADAL'
-      THEN
-        RAISE NOTICE 'NADAL';
-        l_kpv = l_kpv + 7;
-      WHEN v_luba.kord = 'KUU'
-      THEN
-        RAISE NOTICE 'KUU';
-        l_kpv = gomonth(l_kpv, 1);
-      WHEN v_luba.kord = 'KVARTAL'
-      THEN
-        RAISE NOTICE 'KVARTAL';
-        IF month(l_kpv) < 4
         THEN
-          -- 1 kvartal
-          l_kpv = date(year(l_kpv), 04, 01);
-        ELSEIF month(l_kpv) > 3 AND month(l_kpv) < 7
+          RAISE NOTICE 'NADAL';
+          l_kpv = l_kpv + 7;
+      WHEN v_luba.kord = 'KUU'
+        THEN
+          RAISE NOTICE 'KUU';
+          l_kpv = gomonth(l_kpv, 1);
+      WHEN v_luba.kord = 'KVARTAL'
+        THEN
+          RAISE NOTICE 'KVARTAL';
+          IF month(l_kpv) < 4
+          THEN
+            -- 1 kvartal
+            l_kpv = date(year(l_kpv), 04, 01);
+          ELSEIF month(l_kpv) > 3 AND month(l_kpv) < 7
           THEN
             -- 2 kvartal
             l_kpv = date(year(l_kpv), 07, 01);
-        ELSEIF month(l_kpv) > 6 AND month(l_kpv) < 10
+          ELSEIF month(l_kpv) > 6 AND month(l_kpv) < 10
           THEN
             -- 3 kvartal
             l_kpv = date(year(l_kpv), 10, 01);
-        ELSE
-          -- 4 kvartal
-          l_kpv = date(year(l_kpv) + 1, 01, 01);
-        END IF;
-    END CASE;
+          ELSE
+            -- 4 kvartal
+            l_kpv = date(year(l_kpv) + 1, 01, 01);
+          END IF;
+      END CASE;
 
     -- toopaevi kontrol
     l_dekl_number = 0;
@@ -258,10 +254,10 @@ BEGIN
 END;
 
 $BODY$
-LANGUAGE 'plpgsql'
-VOLATILE
-STRICT
-COST 100;
+  LANGUAGE 'plpgsql'
+  VOLATILE
+  STRICT
+  COST 100;
 
 GRANT EXECUTE ON FUNCTION rekl.sp_calc_dekl(INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION rekl.sp_calc_dekl(INTEGER, INTEGER) TO dbpeakasutaja;
