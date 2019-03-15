@@ -29,6 +29,7 @@ SELECT
   grupp.nimetus                                                                         AS grupp,
   coalesce(p.kood, '')                                                                  AS parent_kood,
   coalesce(p.nimetus, '')                                                               AS parent_nimetus,
+  coalesce((l.properties :: JSONB ->> 'aadress'), ''):: VARCHAR(254)                    AS aadress,
   l.status
 FROM libs.library l
        JOIN libs.library grupp ON (l.properties :: JSONB -> 'gruppid') = to_jsonb(grupp.id)

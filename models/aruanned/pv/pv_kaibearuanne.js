@@ -12,7 +12,8 @@ module.exports = {
         ],
         sqlString: `SELECT
                       *
-                    FROM docs.pv_kaibe_aruanne($1::date, $2::date, $3::integer) qry`,     // $1 - kpv1, $2 - kpv2, $3- rekvid
+                    FROM docs.pv_kaibe_aruanne($1::date, $2::date, $3::integer) qry
+                    ORDER by konto, kood`,     // $1 - kpv1, $2 - kpv2, $3- rekvid
         params: '',
         alias: 'pv_kaibe_aruanne_report'
     }
