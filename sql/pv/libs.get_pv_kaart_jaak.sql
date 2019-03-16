@@ -7,7 +7,9 @@ CREATE OR REPLACE FUNCTION libs.get_pv_kaart_jaak(l_id INTEGER, l_kpv DATE DEFAU
     kulum NUMERIC(14, 2),
     jaak NUMERIC(14, 2),
     eluiga NUMERIC(14, 4),
-    turu_vaartsus NUMERIC(14, 4)
+    turu_vaartsus NUMERIC(14, 4),
+    kuu_kulum NUMERIC(14, 2),
+    kulum_maar NUMERIC(14, 4)
     ) AS
 $BODY$
 
@@ -22,11 +24,15 @@ WITH pv_kaart AS (
   WHERE l.id = l_id
 )
 SELECT id,
-       tapsestatud_hind                                                                AS soetmaks,
+       tapsestatud_hind                                                                                   AS soetmaks,
        kulum,
-       (tapsestatud_hind - kulum)::NUMERIC(14, 2)                                      AS jaak,
-       (case when empty(kulum_maar) or empty(tapsestatud_hind) then 0 else ((tapsestatud_hind - kulum) / (tapsestatud_hind * kulum_maar * 0.01)) end)::NUMERIC(14, 4) AS eluiga,
-       turu_vaartsus
+       (tapsestatud_hind - kulum)::NUMERIC(14, 2)                                                         AS jaak,
+       (CASE
+          WHEN empty(kulum_maar) OR empty(tapsestatud_hind) THEN 0
+          ELSE ((tapsestatud_hind - kulum) / (tapsestatud_hind * kulum_maar * 0.01)) END)::NUMERIC(14, 4) AS eluiga,
+       turu_vaartsus,
+       (tapsestatud_hind * 0.01 * kulum_maar / 12)::NUMERIC(14, 2) AS kuu_kulum,
+       kulum_maar
 FROM (
        SELECT
          id                  AS id,
@@ -38,7 +44,7 @@ FROM (
          CASE
            WHEN umberhindamine > 0
              THEN umberhindamine
-           ELSE soetmaks END AS tapsestatud_hind
+           ELSE soetmaks END + parandus AS tapsestatud_hind
 
        FROM (
               SELECT

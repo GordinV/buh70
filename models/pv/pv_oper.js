@@ -92,7 +92,15 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    }],
+    },
+        {
+            sql: ` select * from docs.sp_pv_kulum_umber_arvestamine($1::INTEGER, $2::INTEGER)`, // $1 - pvOperId, $2 - userId
+            query: null,
+            multiple: false,
+            alias: 'kulum_umber_arvestamine',
+            data: []
+        }
+    ],
     returnData: {
         row: {}
     },
@@ -104,7 +112,7 @@ module.exports = {
         {name: 'summa', type: 'N'}
     ],
     executeCommand: {
-        command: `SELECT result, selgitus, summa from docs.sp_calc_kulum(?tnId::INTEGER)`,
+        command: `SELECT result, selgitus, summa from docs.sp_calc_kulum(?tnId::INTEGER, current_date::date)`,
         type:'sql',
         alias:'arvestaKulum'
     },

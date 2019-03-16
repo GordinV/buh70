@@ -112,6 +112,13 @@ module.exports = {
             multiple: true,
             alias: 'seotatud_kaardid',
             data: []
+        },
+        {
+            sql: `SELECT $2 :: INTEGER AS userid, po.*
+              FROM libs.get_pv_kaart_jaak($1::integer) po`, //$1 doc_id, $2 userId
+            multiple: false,
+            alias: 'pv_jaak',
+            data: []
         }
     ],
     returnData: {
