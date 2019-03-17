@@ -30,7 +30,8 @@ CREATE OR REPLACE FUNCTION docs.pv_kaibe_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rek
     motteline_osa VARCHAR(254),
     ehituse_objekt VARCHAR(254),
     rentnik VARCHAR(254),
-    tegevus_alla VARCHAR(20)
+    tegevus_alla VARCHAR(20),
+    turu_vaartsus NUMERIC(12,2)
     ) AS
 $BODY$
 
@@ -56,51 +57,51 @@ WITH qryKaibed AS (
            AND ((l.properties :: JSONB ->> 'mahakantud')::DATE IS NULL OR
                 (l.properties :: JSONB ->> 'mahakantud')::DATE > l_kpv1)
            AND (l.properties :: JSONB ->> 'soetkpv') :: DATE < l_kpv2
-           UNION ALL
+         UNION ALL
            -- обороты в периоде
-           SELECT po.pv_kaart_id AS pv_kaart_id
+         SELECT po.pv_kaart_id                                AS pv_kaart_id
              ,
-           0::NUMERIC(12,2) AS alg_soetmaks
+                0::NUMERIC(12,2)                              AS alg_soetmaks
              ,
-           0::NUMERIC(12,2) AS alg_kulum
+                0::NUMERIC(12,2)                              AS alg_kulum
              ,
-           sum(summa) FILTER ( WHERE po.liik IN (1, 3) ) AS db_soetmaks
+                sum(summa) FILTER ( WHERE po.liik IN (1, 3) ) AS db_soetmaks
              ,
-             (sum(summa) FILTER ( WHERE po.liik = 2)) +
-             sum(CASE
-                   WHEN (l.properties :: JSONB ->> 'soetkpv') :: DATE >= l_kpv1 AND
-                        (l.properties :: JSONB ->> 'soetkpv') :: DATE <= l_kpv2
-                     THEN coalesce((l.properties :: JSONB ->> 'algkulum') :: NUMERIC(12, 4), 0)
-                   ELSE 0 END) AS db_kulum
+                (sum(summa) FILTER ( WHERE po.liik = 2)) +
+                sum(CASE
+                      WHEN (l.properties :: JSONB ->> 'soetkpv') :: DATE >= l_kpv1 AND
+                           (l.properties :: JSONB ->> 'soetkpv') :: DATE <= l_kpv2
+                        THEN coalesce((l.properties :: JSONB ->> 'algkulum') :: NUMERIC(12, 4), 0)
+                      ELSE 0 END)                             AS db_kulum
              ,
-           0::NUMERIC(12,2) AS kr_soetmaks
+                0::NUMERIC(12,2)                              AS kr_soetmaks
              ,
-           0::NUMERIC(12,2) AS kr_kulum
-           FROM docs.doc d
-           INNER JOIN docs.pv_oper po ON po.parentid = d.id
-           INNER JOIN libs.library l ON l.id = po.pv_kaart_id
-           WHERE d.rekvid = l_rekvid
+                0::NUMERIC(12,2)                              AS kr_kulum
+         FROM docs.doc d
+                INNER JOIN docs.pv_oper po ON po.parentid = d.id
+                INNER JOIN libs.library l ON l.id = po.pv_kaart_id
+         WHERE d.rekvid = l_rekvid
            AND po.kpv >= l_kpv1
            AND po.kpv <= l_kpv2
            AND ((l.properties :: JSONB ->> 'mahakantud')::DATE IS NULL
            OR (l.properties :: JSONB ->> 'mahakantud')::DATE > l_kpv2)
-           GROUP BY po.pv_kaart_id
-           UNION ALL
-           SELECT l.id AS pv_kaart_id
+         GROUP BY po.pv_kaart_id
+         UNION ALL
+         SELECT l.id                                                        AS pv_kaart_id
              ,
-           0::NUMERIC(12,2) AS alg_soetmaks
+                0::NUMERIC(12,2)                                            AS alg_soetmaks
              ,
-           0::NUMERIC(12,2) AS alg_kulum
+                0::NUMERIC(12,2)                                            AS alg_kulum
              ,
-           0::NUMERIC(12,2) AS db_soetmaks
+                0::NUMERIC(12,2)                                            AS db_soetmaks
              ,
-           0::NUMERIC(12,2) AS db_kulum
+                0::NUMERIC(12,2)                                            AS db_kulum
              ,
-             (SELECT soetmaks FROM libs.get_pv_kaart_jaak(l.id, l_kpv2)) AS kr_soetmaks
+                (SELECT soetmaks FROM libs.get_pv_kaart_jaak(l.id, l_kpv2)) AS kr_soetmaks
              ,
-             (SELECT kulum FROM libs.get_pv_kaart_jaak(l.id, l_kpv2)) AS kr_kulum
-           FROM libs.library l
-           WHERE l.library = 'POHIVARA'
+                (SELECT kulum FROM libs.get_pv_kaart_jaak(l.id, l_kpv2))    AS kr_kulum
+         FROM libs.library l
+         WHERE l.library = 'POHIVARA'
            AND l.rekvid = l_rekvid
            AND (l.properties :: JSONB ->> 'mahakantud')::DATE IS NOT NULL
            AND (l.properties :: JSONB ->> 'mahakantud')::DATE >= l_kpv1
@@ -131,7 +132,9 @@ SELECT l.kood::VARCHAR(20),
        (SELECT konto
         FROM docs.pv_oper po
         WHERE po.pv_kaart_id = l.id
-          AND liik = 2 ORDER BY kpv DESC LIMIT 1)::VARCHAR(20 )                                AS kulu_konto,
+          AND liik = 2
+        ORDER BY kpv DESC
+        LIMIT 1)::VARCHAR(20 )                                                                 AS kulu_konto,
        grupp.nimetus::VARCHAR(254)                                                             AS grupp,
        (l.properties::JSONB ->> 'aadress')::VARCHAR(254)                                       AS aadress,
        a.nimetus:: VARCHAR(254)                                                                AS vastisik,
@@ -139,7 +142,9 @@ SELECT l.kood::VARCHAR(20),
        (l.properties::JSONB ->> 'motteline_osa')::VARCHAR(254)                                 AS motteline_osa,
        (l.properties::JSONB ->> 'ehituse_objekt')::VARCHAR(254)                                AS ehituse_objekt,
        (l.properties :: JSONB ->> 'rentnik')::VARCHAR(254)                                     AS rentnik,
-       '04900'::VARCHAR(20)                                                                    AS tegevus_alla
+       '04900'::VARCHAR(20)                                                                    AS tegevus_alla,
+       (SELECT turu_vaartsus FROM libs.get_pv_kaart_jaak(l.id, l_kpv1))::NUMERIC(12,4)         AS turu_vaartsus
+
 FROM libs.library l
        INNER JOIN qryKaibed ON qryKaibed.pv_kaart_id = l.id
        JOIN libs.library grupp ON (l.properties :: JSONB -> 'gruppid') = to_jsonb(grupp.id)
