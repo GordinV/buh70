@@ -11,21 +11,22 @@ module.exports = {
             {id: "lopp_kr", name: "Lõpp kreedit", width: "200px"}
         ],
         sqlString: `SELECT
-                      qryReport.rekv_id,  
-                      qryReport.artikkel,
+                      qryReport.rekv_id,
+                      qryReport.tunnus,
                       qryReport.tegev,
                       qryReport.allikas,
-                      sum(eelarve_2)  AS eelarve_2,
-                      sum(taitmine_2) AS taitmine_2,
-                      sum(eelarve_1)  AS eelarve_1,
-                      sum(taitmine_1) AS taitmine_1,
-                      sum(eelarve_0)  AS eelarve_0,
-                      sum(taitmine_0) AS taitmine_0,
-                      a.nimetus :: VARCHAR(254),
+                      qryReport.artikkel,
+                      qryReport.eelarve_kinnitatud,
+                      qryReport.eelarve_tapsustatud,
+                      qryReport.taitmine_kassa,
+                      qryReport.taitmine_tekke,
+                      a.nimetus :: VARCHAR(254) as nimetus,
+                      r.nimetus:: VARCHAR(254) as asutus,
                       coalesce(a.is_kulud,false)::boolean as is_kulud
-                    FROM eelarve.eelarve_taitmine($1::integer, $2::integer, $3::integer) qryReport
+                    FROM  eelarve.eelarve_kassa_tekkepohine_taitmine($1::date, $2::integer, $3::integer) qryReport
                       LEFT OUTER JOIN com_artikkel a ON a.kood :: TEXT = qryReport.artikkel :: TEXT
-                    GROUP BY qryReport.rekv_id, qryReport.artikkel, qryReport.tegev, qryReport.allikas, a.nimetus, a.is_kulud`,     // $1 - aasta $2 - rekvid, $3 - kond
+                      INNER JOIN ou.rekv r on r.id = qryReport.rekv_id
+                    ORDER BY qryReport.is_kulud, r.parentid, r.nimetus, qryReport.allikas, qryReport.tegev, qryReport.artikkel`,     // $1 - kpv $2 - rekvid, $3 - kond
         params: '',
         alias: 'eelarve_taitmine_report'
     }
