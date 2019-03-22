@@ -28,7 +28,7 @@ CREATE OR REPLACE VIEW cur_tulud AS
     l.nimetus
   FROM eelarve.tulud e
     JOIN ou.rekv r ON e.rekvid = r.id
-    LEFT OUTER JOIN libs.library l ON l.kood = e.kood5 AND l.library = 'TULUDEALLIKAD'
+    LEFT OUTER JOIN libs.library l ON l.kood = e.kood5 AND l.library = 'TULUDEALLIKAD' AND l.tun5 = 1
     LEFT OUTER JOIN ou.rekv parent ON parent.id = r.parentid
   WHERE e.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
 

@@ -168,6 +168,9 @@ COST 100;
 
 
 /*
-SELECT import_asutus()
-
+SELECT import_asutus(id) from (
+select id from remote_asutus
+except
+select old_id from import_log where lib_name = 'ASUTUS'
+) qry
 */

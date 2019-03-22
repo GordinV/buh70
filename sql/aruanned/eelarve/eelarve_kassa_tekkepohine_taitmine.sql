@@ -21,10 +21,10 @@ WITH qryEelarve AS (
     sum(taitmine_kassa)      AS taitmine_kassa,
     sum(taitmine_tekke)      AS taitmine_tekke,
     rekvid,
-    tegev,
-    allikas,
-    artikkel,
-    tunnus,
+    (tegev)                  AS tegev,
+    (allikas)                AS allikas,
+    (artikkel)               AS artikkel,
+    (tunnus)                 AS tunnus,
     is_kulud
   FROM (
          SELECT
@@ -33,10 +33,10 @@ WITH qryEelarve AS (
            e.summa                                                AS eelarve_tapsustatud,
            0 :: NUMERIC                                           AS taitmine_kassa,
            0 :: NUMERIC                                           AS taitmine_tekke,
-           e.kood1                                                AS tegev,
-           e.kood2                                                AS allikas,
-           e.kood5                                                AS artikkel,
-           e.tunnus,
+           trim(e.kood1)                                          AS tegev,
+           trim(e.kood2)                                          AS allikas,
+           trim(e.kood5)                                          AS artikkel,
+           trim(e.tunnus)                                         AS tunnus,
            e.is_kulud
          FROM eelarve.eelarve e
          WHERE aasta = year(l_kpv)
@@ -51,15 +51,15 @@ WITH qryEelarve AS (
            -- kassa tulud
          SELECT
            t.rekvid,
-           0 :: NUMERIC AS eelarve_kinnitatud,
-           0 :: NUMERIC AS eelarve_tapsustatud,
-           t.summa      AS taitmine_kassa,
-           0 :: NUMERIC AS taitmine_tekke,
-           t.tegev      AS tegev,
-           t.allikas    AS allikas,
-           t.artikkel   AS artikkel,
-           t.tunnus,
-           0            AS is_kulud
+           0 :: NUMERIC     AS eelarve_kinnitatud,
+           0 :: NUMERIC     AS eelarve_tapsustatud,
+           t.summa          AS taitmine_kassa,
+           0 :: NUMERIC     AS taitmine_tekke,
+           trim(t.tegev)    AS tegev,
+           trim(t.allikas)  AS allikas,
+           trim(t.artikkel) AS artikkel,
+           trim(t.tunnus)   AS tunnus,
+           0                AS is_kulud
          FROM cur_tulude_kassa_taitmine t
          WHERE t.aasta = year(l_kpv)
            AND kuu <= month(l_kpv)
@@ -73,15 +73,15 @@ WITH qryEelarve AS (
            -- kassa kulud
          SELECT
            t.rekvid,
-           0 :: NUMERIC AS eelarve_kinnitatud,
-           0 :: NUMERIC AS eelarve_tapsustatud,
-           t.summa      AS taitmine_kassa,
-           0 :: NUMERIC AS taitmine_tekke,
-           t.tegev      AS tegev,
-           t.allikas    AS allikas,
-           t.artikkel   AS artikkel,
-           t.tunnus,
-           1            AS is_kulud
+           0 :: NUMERIC     AS eelarve_kinnitatud,
+           0 :: NUMERIC     AS eelarve_tapsustatud,
+           t.summa          AS taitmine_kassa,
+           0 :: NUMERIC     AS taitmine_tekke,
+           trim(t.tegev)    AS tegev,
+           trim(t.allikas)  AS allikas,
+           trim(t.artikkel) AS artikkel,
+           trim(t.tunnus)   AS tunnus,
+           1                AS is_kulud
          FROM cur_kulude_kassa_taitmine t
          WHERE t.aasta = year(l_kpv)
            AND kuu <= month(l_kpv)
@@ -95,15 +95,15 @@ WITH qryEelarve AS (
            -- tekke tulud
          SELECT
            t.rekvid,
-           0 :: NUMERIC AS eelarve_kinnitatud,
-           0 :: NUMERIC AS eelarve_tapsustatud,
-           0 :: NUMERIC AS taitmine_kassa,
-           t.summa      AS taitmine_tekke,
-           t.tegev      AS tegev,
-           t.allikas    AS allikas,
-           t.artikkel   AS artikkel,
-           t.tunnus,
-           0            AS is_kulud
+           0 :: NUMERIC     AS eelarve_kinnitatud,
+           0 :: NUMERIC     AS eelarve_tapsustatud,
+           0 :: NUMERIC     AS taitmine_kassa,
+           t.summa          AS taitmine_tekke,
+           trim(t.tegev)    AS tegev,
+           trim(t.allikas)  AS allikas,
+           trim(t.artikkel) AS artikkel,
+           trim(t.tunnus)   AS tunnus,
+           0                AS is_kulud
          FROM cur_tulude_taitmine t
          WHERE t.aasta = year(l_kpv)
            AND kuu <= month(l_kpv)
@@ -117,15 +117,15 @@ WITH qryEelarve AS (
            -- tekke kulud
          SELECT
            t.rekvid,
-           0 :: NUMERIC AS eelarve_kinnitatud,
-           0 :: NUMERIC AS eelarve_tapsustatud,
-           0 :: NUMERIC AS taitmine_kassa,
-           t.summa      AS taitmine_tekke,
-           t.tegev      AS tegev,
-           t.allikas    AS allikas,
-           t.artikkel   AS artikkel,
-           t.tunnus,
-           1            AS is_kulud
+           0 :: NUMERIC     AS eelarve_kinnitatud,
+           0 :: NUMERIC     AS eelarve_tapsustatud,
+           0 :: NUMERIC     AS taitmine_kassa,
+           t.summa          AS taitmine_tekke,
+           trim(t.tegev)    AS tegev,
+           trim(t.allikas)  AS allikas,
+           trim(t.artikkel) AS artikkel,
+           trim(t.tunnus)   AS tunnus,
+           1                AS is_kulud
          FROM cur_kulude_taitmine t
          WHERE t.aasta = year(l_kpv)
            AND kuu <= month(l_kpv)

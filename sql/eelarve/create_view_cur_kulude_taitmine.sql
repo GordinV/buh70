@@ -19,7 +19,7 @@ CREATE VIEW cur_kulude_taitmine AS
     INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
     INNER JOIN ou.rekv rekv ON j.rekvid = rekv.id
     JOIN FAKT_kulud ON ltrim(rtrim(j1.deebet)) ~~ ltrim(rtrim(fakt_kulud.kood))
-    LEFT OUTER JOIN libs.library l ON l.kood = j1.kood5 AND l.library = 'TULUDEALLIKAD'
+    LEFT OUTER JOIN libs.library l ON l.kood = j1.kood5 AND l.library = 'TULUDEALLIKAD' AND l.tun5 = 2
   GROUP BY (YEAR(j.kpv)), (MONTH(j.kpv)), j.rekvid, rekv.parentid, rekv.nimetus,
     j1.kood1, j1.kood5, j1.kood2, j1.tunnus, l.nimetus;
 

@@ -10,7 +10,7 @@ CREATE FOREIGN TABLE remote_journalid (
   number INTEGER DEFAULT 0 NOT NULL,
   aasta INTEGER DEFAULT year() NOT NULL
   )
-  SERVER db_narva_ee
+  SERVER dbarch_narva_ee
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'journalid');
 
 CREATE FOREIGN TABLE remote_journal (
@@ -25,7 +25,7 @@ CREATE FOREIGN TABLE remote_journal (
   dokid INTEGER DEFAULT 0 NOT NULL,
   objekt VARCHAR(20) DEFAULT space(20)
   )
-  SERVER db_narva_ee
+  SERVER dbarch_narva_ee
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'journal');
 
 CREATE FOREIGN TABLE remote_journal1 (
@@ -49,7 +49,7 @@ CREATE FOREIGN TABLE remote_journal1 (
   tunnus VARCHAR(20) DEFAULT space(20) NOT NULL,
   proj VARCHAR(20) DEFAULT space(1)
   )
-  SERVER db_narva_ee
+  SERVER dbarch_narva_ee
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'journal1');
 
 DROP FUNCTION IF EXISTS import_journal();

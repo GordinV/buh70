@@ -18,11 +18,19 @@ CREATE VIEW cur_tulude_taitmine AS
     INNER JOIN docs.journal j ON j.parentid = d.id
     INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
     INNER JOIN ou.rekv rekv ON j.rekvid = rekv.id
-    LEFT OUTER JOIN libs.library l ON l.kood = j1.kood5 AND l.library = 'TULUDEALLIKAD'
+    LEFT OUTER JOIN libs.library l ON l.kood = j1.kood5 AND l.library = 'TULUDEALLIKAD' AND l.tun5 = 1
     JOIN eelarve.fakt_tulud fakttulud
       ON ((ltrim(rtrim((j1.kreedit) :: TEXT)) ~~ ltrim(rtrim((fakttulud.kood) :: TEXT))))
   GROUP BY (year(j.kpv)), (month(j.kpv)), j.rekvid, rekv.parentid, rekv.nimetus,
-    j1.kood1, j1.kood5, j1.kood2, j1.tunnus, l.nimetus
+    j1.kood1, j1.kood5, j1.kood2, j1.tunnus, l.nimetus;
+
+GRANT SELECT ON TABLE cur_tulude_taitmine TO dbpeakasutaja;
+GRANT SELECT ON TABLE cur_tulude_taitmine TO dbkasutaja;
+GRANT ALL ON TABLE cur_tulude_taitmine TO dbadmin;
+GRANT SELECT ON TABLE cur_tulude_taitmine TO dbvaatleja;
+
+
+
 
 /*
 select * from eelarve.fakt_tulud

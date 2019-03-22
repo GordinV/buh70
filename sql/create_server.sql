@@ -6,6 +6,11 @@ CREATE USER MAPPING FOR vlad
 SERVER db_narva_ee
 OPTIONS (user 'vlad', password 'Vlad490710');
 
+CREATE USER MAPPING FOR vlad
+  SERVER dbarch_narva_ee
+  OPTIONS (user 'vlad', password 'Vlad490710');
+
+
 /*
 CREATE FOREIGN TABLE remote_objekt (
   id serial NOT NULL,
