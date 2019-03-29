@@ -19,8 +19,8 @@ DECLARE
                             WHERE ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood))) AND library = 'DOK'
                             LIMIT 1);
   doc_details    JSON = doc_data ->> 'gridData';
-  doc_number     TEXT = coalesce(doc_data ->> 'number', '1');
   doc_kpv        DATE = doc_data ->> 'kpv';
+  doc_number     TEXT = coalesce(doc_data ->> 'number',(select docs.sp_get_number(user_rekvid::Integer, 'TAOTLUS'::text, year(doc_kpv )::integer, null)));
   doc_koostajaid INTEGER = doc_data ->> 'koostajaid';
   doc_ametnikid  INTEGER = doc_data ->> 'ametnikid';
   doc_aktseptid  INTEGER = doc_data ->> 'aktseptid';

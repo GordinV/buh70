@@ -106,7 +106,16 @@ module.exports = {
         multiple: true,
         alias: 'details',
         data: []
-    }],
+    },
+        {
+            sql:`select eelarve.sp_kooperi_taotlus($1::integer, $2::INTEGER) as id`, //$1 - user_id, $2 doc_id
+            query: null,
+            multiple: true,
+            alias: 'kooperi_taotlus',
+            data: []
+
+        }
+    ],
     returnData: {
         row: {}
     },

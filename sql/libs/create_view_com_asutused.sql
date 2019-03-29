@@ -12,14 +12,14 @@ CREATE OR REPLACE VIEW public.com_asutused AS
                 ''::character varying(254) AS nimetus,
                 ''::varchar(20) as tp,
                 ''::varchar(254) as email,
-                date() AS kehtivus
+                date() + interval '100 year' AS kehtivus
          UNION
          SELECT asutus.id,
            btrim(asutus.regkood::text) AS regkood,
            btrim(asutus.nimetus::text)::character varying(254) AS nimetus,
            asutus.tp,
            asutus.email,
-           coalesce((asutus.properties ->> 'kehtivus'::text)::date, date()) AS kehtivus
+           coalesce((asutus.properties ->> 'kehtivus'::text)::date, date() + interval '10 year' ) AS kehtivus
          FROM libs.asutus asutus
          WHERE asutus.staatus <> 3) qry
   ORDER BY qry.nimetus;
