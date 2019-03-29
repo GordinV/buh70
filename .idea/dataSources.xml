@@ -37,5 +37,11 @@
         <property name="ApplicationName" value="DataGrip" />
       </driver-properties>
     </data-source>
+    <data-source source="LOCAL" name="db.narva.ee" uuid="4b1d2e09-aff7-454b-ad87-d6a27ad77753">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://db.narva.ee:5432/narvalv</jdbc-url>
+    </data-source>
   </component>
 </project>

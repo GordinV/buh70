@@ -29,17 +29,6 @@ DECLARE
   is_import       BOOLEAN = data ->> 'import';
 BEGIN
 
-  SELECT kasutaja
-  INTO userName
-  FROM ou.userid u
-  WHERE u.rekvid = user_rekvid AND u.id = userId;
-
-  IF is_import IS NULL AND userName IS NULL
-  THEN
-    RAISE NOTICE 'User not found %', user;
-    RETURN 0;
-  END IF;
-
   IF (doc_id IS NULL)
   THEN
     doc_id = doc_data ->> 'id';

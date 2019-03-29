@@ -74,6 +74,7 @@ BEGIN
 
   IF tcLiik = 'ESITA'
   THEN
+    /*
     IF exists(SELECT id
               FROM eelarve.eelproj
               WHERE id IN (SELECT eelprojId
@@ -87,7 +88,7 @@ BEGIN
                       coalesce(doc_id, 0) :: TEXT;
       RETURN;
     END IF;
-
+*/
     IF tmptaotlus.status = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'esitatud')
     THEN
       UPDATE eelarve.taotlus

@@ -21,7 +21,7 @@ module.exports = {
                   t.status as taotlus_status,
                   t.allkiri,
                   t.muud,
-                  t.tunnus,
+                  coalesce(t.tunnus,0)::integer as tunnus,
                   coalesce(koostaja.ametnik, '') :: VARCHAR(120)      AS koostaja,
                   coalesce(esitaja.ametnik, '') :: VARCHAR(120)       AS esitaja,
                   coalesce(aktsepteerija.ametnik, '') :: VARCHAR(120) AS aktseptja,
@@ -64,7 +64,7 @@ module.exports = {
                       0 :: INTEGER                                                AS kuu,
                       NULL :: INTEGER                                             AS allkiri,
                       NULL :: TEXT                                                AS muud,
-                      NULL :: INTEGER                                             AS tunnus,
+                      0 :: INTEGER                                             AS tunnus,
                       NULL :: VARCHAR(120)                                        AS esitaja,
                       null::varchar(120) as aktseptja,
                       0::numeric(12,2) as summa

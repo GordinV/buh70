@@ -73,8 +73,7 @@ const Tulud = {
                           d.*,
                           'TULUD'::varchar(20) as liik
                         FROM cur_tulud d
-                        WHERE d.rekvId in (select rekv_id from get_asutuse_struktuur($1::integer)) 
-                              AND coalesce(docs.usersRigths(d.id, 'select', $2::integer), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                        WHERE d.rekvId in (select rekv_id from get_asutuse_struktuur($1::integer))`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curEelarve'
     },

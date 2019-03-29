@@ -147,8 +147,7 @@ const Eelarve = {
         sqlString: `SELECT
                           d.*
                         FROM cur_eelarve d
-                        WHERE d.rekvId = $1
-                              AND coalesce(docs.usersRigths(d.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                        WHERE d.rekvId = $1)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curEelarve'
     },

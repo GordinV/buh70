@@ -138,8 +138,9 @@ BEGIN
     THEN
       -- error
       result = 0;
-      error_code = 0;
+      error_code = 1;
       error_message = 'Eelarve rida salvestamine ebaõnnestus';
+      raise notice 'viga eelarve_json %', eelarve_json;
       RETURN;
     END IF;
 
