@@ -55,15 +55,9 @@ const Vmk = {
                       to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT AS created,
                       to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT AS lastupdate,
                       NULL                                         AS bpm,
-                      trim(l.nimetus)                               AS doc,
-                      trim(l.kood)                                  AS doc_type_id,
-                      trim(s.nimetus)                               AS status,
-                      (coalesce((SELECT max(val(array_to_string(regexp_match(number, '\\d+'),'')))
-                       FROM docs.mk
-                       WHERE opt = 0 
-                       and rekvid in (
-                       select rekvid from ou.userid where id = $2)
-                       ),0) :: INTEGER + 1)::varchar(20)                          AS number,
+                      'VMK'                                  AS doc_type_id,
+                      docs.sp_get_number(u.rekvid::INTEGER, 'VMK'::TEXT, date_part('year', current_date)::INTEGER,
+                                         NULL::INTEGER)::VARCHAR(20)                          AS number,
                       now() :: DATE                                 AS maksepaev,
                       0                                         AS aaid,
                       1                                       AS pank,
@@ -73,7 +67,7 @@ const Vmk = {
                       NULL::varchar(120)                            AS viitenr,
                       NULL::TEXT                                    AS selg,
                       NULL::TEXT                                    AS muud,
-                      0                                             AS opt,
+                      1                                             AS opt,
                       NULL::varchar(20)                             AS regkood,
                       NULL::varchar(254)                            AS asutus,
                       NULL::integer                                 AS arvid,
@@ -82,21 +76,11 @@ const Vmk = {
                      null::varchar(120) as  dokprop,
                      null::varchar(20) as konto,
                      0 as doklausid
-                    FROM libs.library l,
-                      libs.library s,
-                      (SELECT
-                         id,
-                         trim(nimetus) AS name
-                       FROM ou.aa
-                       WHERE pank = 1
-                       ORDER BY default_
-                       LIMIT 1) AS aa,
+                    FROM 
                       (SELECT *
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER) AS u
-                    WHERE l.library = 'DOK' AND l.kood = 'VMK'
-                          AND u.id = $2 :: INTEGER
-                          AND s.library = 'STATUS' AND s.kood = '0'`,
+                    WHERE  u.id = $2 :: INTEGER`,
             query: null,
             multiple: false,
             alias: 'row',
@@ -164,7 +148,7 @@ const Vmk = {
         sqlString: `SELECT
                           d.*,
                           0 AS valitud
-                        FROM cur_mk d
+                        FROM cur_pank d
                         WHERE d.rekvId = $1
                               AND coalesce(docs.usersRigths(d.id, 'select', $2::integer), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',

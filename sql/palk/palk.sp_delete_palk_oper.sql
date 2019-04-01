@@ -76,12 +76,12 @@ BEGIN
         SELECT kood
         FROM libs.library
         WHERE library = 'DOK'
-              AND kood NOT IN ('JOURNAL')
+              AND kood NOT IN ('JOURNAL', 'VORDER', 'VMK')
               AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')
       ))
   THEN
 
-    RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
+    RAISE NOTICE 'Есть связанные доку менты. удалять нельзя %', v_doc.docs_ids;
     error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
     error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
     result = 0;

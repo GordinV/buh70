@@ -1,6 +1,7 @@
 DROP VIEW IF EXISTS cur_mk;
+DROP VIEW IF EXISTS cur_pank;
 
-CREATE OR REPLACE VIEW cur_mk AS
+CREATE OR REPLACE VIEW cur_pank AS
   SELECT
     d.id,
     Mk.rekvid,
@@ -11,10 +12,10 @@ CREATE OR REPLACE VIEW cur_mk AS
     MK.OPT,
     CASE WHEN mk.opt = 2
       THEN Mk1.summa
-    ELSE 0 :: NUMERIC(14, 2) END          AS kreedit,
-    CASE WHEN mk.opt = 1
-      THEN Mk1.summa
     ELSE 0 :: NUMERIC(14, 2) END          AS deebet,
+    CASE WHEN mk.opt = 1 or coalesce(mk.opt,0) = 0
+           THEN Mk1.summa
+         ELSE 0 :: NUMERIC(14, 2) END          AS kreedit,
     coalesce(A.regkood,'')::varchar(20) as regkood,
     coalesce(A.nimetus,'')::VARCHAR(254) as nimetus,
     coalesce(N.kood,'')::varchar(20) as kood,
@@ -30,6 +31,6 @@ CREATE OR REPLACE VIEW cur_mk AS
     LEFT OUTER JOIN ou.Aa aa ON Mk.aaid = Aa.id
     LEFT OUTER JOIN docs.Journalid jid ON Mk1.journalid = Jid.journalid;
 
-GRANT SELECT ON TABLE cur_mk TO dbkasutaja;
-GRANT SELECT ON TABLE cur_mk TO dbvaatleja;
-GRANT SELECT ON TABLE cur_mk TO dbpeakasutaja;
+GRANT SELECT ON TABLE cur_pank TO dbkasutaja;
+GRANT SELECT ON TABLE cur_pank TO dbvaatleja;
+GRANT SELECT ON TABLE cur_pank TO dbpeakasutaja;
