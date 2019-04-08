@@ -125,7 +125,7 @@ module.exports = {
         {name: 'aasta', type: 'I'},
         {name: 'kpv', type: 'D'}
     ],
-    saveDoc: `select eelarve.sp_salvesta_taotlus($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    saveDoc: `select eelarve.sp_salvesta_taotlus($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `select error_code, result, error_message from eelarve.sp_delete_taotlus($1::integer, $2::integer)`, // $1 - userId, $2 - docId
     executeCommand: {
         command: `select error_code, result, error_message from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task
@@ -170,8 +170,8 @@ module.exports = {
                       ametnik::varchar(254)
                         FROM cur_taotlused t
                         WHERE t.rekvId IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur($1))
-                            and docs.usersRigths(t.id, 'select', $2)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                            FROM get_asutuse_struktuur($1::integer))
+                            and docs.usersRigths(t.id::integer, 'select', $2::integer)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curTaotlus'
     },
