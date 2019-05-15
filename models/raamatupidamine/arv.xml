@@ -28,7 +28,8 @@
                            lausnr,
                            docs_ids,
                            coalesce(a.arve,qry_aa.arve)::varchar(20)  AS aa,
-                           a.viitenr::varchar(120)
+                           a.viitenr::varchar(120),
+                           a.arve
                     FROM cur_arved a,
                          (SELECT arve
                           FROM ou.aa aa

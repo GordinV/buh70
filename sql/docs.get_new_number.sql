@@ -78,6 +78,9 @@ BEGIN
                 ' where tbl.rekvId = $1::integer and date_part(''year'',tbl.kpv) = $2::integer and encode(tbl.number::bytea, ''escape'')::text  ilike $3::text';
 
   lcSqlString = lcSqlString || lcAdditionalWhere;
+
+  raise NOTICE 'lcSqlString, %', lcSqlString;
+
   EXECUTE lcSqlString
     INTO v_number
     USING tnRekvId, tnYear, lcPref;
