@@ -3,8 +3,8 @@ module.exports = {
         sql: `SELECT *,
                      $2::INTEGER                      AS userid,
                      'ASUTUSED'                        AS doc_type_id,
-                     (properties ->> 'pank')::TEXT     AS pank,
-                     (properties ->> 'kmkr')::TEXT     AS kmkr,
+                     (properties ->> 'pank')::varchar(20)     AS pank,
+                     (properties ->> 'kmkr')::varchar(20)     AS kmkr,
                      (properties ->> 'kehtivus')::DATE AS kehtivus
               FROM libs.asutus
               WHERE id = $1`,
@@ -20,8 +20,8 @@ module.exports = {
             null::text as muud,
             ''::text as tp,
             0::integer as staatus,
-            ''::text as pank,
-            ''::text as kmkr,
+            ''::varchar(20) as pank,
+            ''::varchar(20) as kmkr,
             ''::text as mark`,
         query: null,
         multiple: false,
