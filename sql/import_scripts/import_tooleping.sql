@@ -49,11 +49,11 @@ BEGIN
 
   FOR v_leping IN
   SELECT t.*
-  FROM tooleping t
+  FROM REMOTE_tooleping t
     INNER JOIN rekv ON rekv.id = t.rekvid AND rekv.parentid < 999 and rekvid not in (15)
   WHERE (t.id = in_old_id OR in_old_id IS NULL)
-    and t.osakondid in (select id from library where library = 'OSAKOND')
-    and t.ametid in (select id from library where library = 'AMET')
+    and t.osakondid in (select id from remote_library where library = 'OSAKOND')
+    and t.ametid in (select id from remote_library where library = 'AMET')
 
   LIMIT ALL
   LOOP
@@ -167,6 +167,17 @@ select * from tooleping where rekvid = 63 and lopp is null or year(lopp) >= 2017
 SELECT import_tooleping(id) from tooleping where
 lopp is null or year(lopp) >= 2017
 INSERT INTO library (id, rekvid, kood, nimetus, library, muud, tun1, tun2, tun3, tun4, tun5, vanaid) VALUES (287565, 112, '0922013             ', 'Narva Soldino G𭮡asium 0922013                                                                                                                                                                                                                              ', 'OSAKOND             ', NULL, 0, 0, 0, 0, 0, NULL);
+
+SELECT import_tooleping(id) from (
+select id from remote_tooleping where parentid <> 0 and rekvid in (select id from rekv where id = 119 or parentid = 119)
+except
+select old_id from import_log where lib_name = 'TOOLEPING'
+) qry
+
+
+select * from remote_tooleping where id = 144767
+
+select * from library where id = 715237
 
 */
 

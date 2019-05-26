@@ -69,6 +69,7 @@ const Arv = {
                                           WHERE aa.parentid = u.rekvid
                                             AND NOT empty(default_::INTEGER)
                                             AND NOT empty(kassa::INTEGER)
+                                            and kassa = 1
                                           LIMIT 1) qry_aa
                   WHERE d.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                                         AS id,
@@ -85,6 +86,7 @@ const Arv = {
                                WHERE aa.parentid = u.rekvid
                                  AND NOT empty(default_::INTEGER)
                                  AND NOT empty(kassa::INTEGER)
+                                 and kassa = 1
                                LIMIT 1)::VARCHAR(20)                                                 AS aa,
 
                               docs.sp_get_number(u.rekvId, 'ARV', year(date()), NULL) :: VARCHAR(20) AS number,
@@ -331,13 +333,14 @@ const Arv = {
                            lausnr,
                            docs_ids,
                            coalesce(a.arve,qry_aa.arve)::varchar(20)  AS aa,
-                           a.viitenr::varchar(120)
+                           a.viitenr::varchar(120) as viitenr
                     FROM cur_arved a,
                          (SELECT arve
                           FROM ou.aa aa
                           WHERE aa.parentid = $1
                             AND NOT empty(default_::INTEGER)
                             AND NOT empty(kassa::INTEGER)
+                            and kassa = 1
                           LIMIT 1) qry_aa
                     WHERE a.rekvId = $1::INTEGER
                       AND docs.usersRigths(a.id, 'select', $2::INTEGER)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя

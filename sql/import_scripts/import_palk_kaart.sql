@@ -1,5 +1,27 @@
 DROP FUNCTION IF EXISTS import_palk_kaart( INTEGER );
 
+
+DROP FOREIGN TABLE IF EXISTS remote_palk_kaart;
+
+CREATE FOREIGN TABLE remote_palk_kaart (
+  id        INTEGER                    NOT NULL,
+  parentid  INTEGER                   NOT NULL,
+  lepingid  INTEGER        DEFAULT 0  NOT NULL,
+  libid     INTEGER        DEFAULT 0  NOT NULL,
+  summa     NUMERIC(12, 4) DEFAULT 0  NOT NULL,
+  percent_  SMALLINT       DEFAULT 1  NOT NULL,
+  tulumaks  SMALLINT       DEFAULT 1  NOT NULL,
+  tulumaar  SMALLINT       DEFAULT 26 NOT NULL,
+  status    SMALLINT       DEFAULT 1  NOT NULL,
+  muud      TEXT,
+  alimentid INTEGER        DEFAULT 0  NOT NULL,
+  tunnusid  BIGINT         DEFAULT 0  NOT NULL,
+  vanaid    INTEGER,
+  minsots   INTEGER
+  )  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'palk_kaart');
+
+
 CREATE OR REPLACE FUNCTION import_palk_kaart(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -22,8 +44,8 @@ BEGIN
     pk.*,
     t.rekvid,
     il.new_id AS new_leping_id
-  FROM palk_kaart pk
-    INNER JOIN tooleping t ON t.id = pk.lepingid
+  FROM remote_palk_kaart pk
+    INNER JOIN remote_tooleping t ON t.id = pk.lepingid
     INNER JOIN rekv ON rekv.id = t.rekvid AND rekv.parentid < 999
     INNER JOIN import_log il ON il.old_id = t.id AND il.lib_name = 'TOOLEPING'
   WHERE (pk.id = in_old_id OR in_old_id IS NULL)
@@ -134,5 +156,14 @@ COST 100;
 SELECT import_palk_kaart(836675)
 SELECT import_palk_kaart(id) from palk_kaart where
 lepingid in (select old_id from import_log where lib_name = 'TOOLEPING')
+
+
+SELECT import_palk_kaart(id) from (
+select id from remote_palk_kaart
+where
+lepingid in (select old_id from import_log where lib_name = 'TOOLEPING')
+except
+select old_id from import_log where lib_name = 'PALK_KAART'
+) qry
 
 */

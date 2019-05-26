@@ -131,7 +131,7 @@ BEGIN
     THEN
       l_kr_tp := '800699';
   ELSE
-    l_kr_tp := '800699';
+--    l_kr_tp := '800699';
   END CASE;
 
   IF l_db_konto = '103560'

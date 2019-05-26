@@ -197,6 +197,6 @@ COST 100;
 
 
 /*
-SELECT import_palk(625237)
-
+SELECT 'select import_palk(' || id::text || ');' from library where library = 'PALK' and rekvid in (select id from rekv where parentid = 119 or id = 119)
+--
 */

@@ -1,6 +1,25 @@
 DROP FUNCTION IF EXISTS import_amet( );
 DROP FUNCTION IF EXISTS import_amet( integer);
 
+
+
+DROP FOREIGN TABLE IF EXISTS remote_palk_asutus;
+
+CREATE FOREIGN TABLE remote_palk_asutus (
+    id        integer                   NOT NULL,
+    rekvid    INTEGER                  NOT NULL,
+    osakondid INTEGER        DEFAULT 0 NOT NULL,
+    ametid    INTEGER        DEFAULT 0 NOT NULL,
+    kogus     NUMERIC(18, 2) DEFAULT 0 NOT NULL,
+    vaba      NUMERIC(18, 2) DEFAULT 0 NOT NULL,
+    palgamaar INTEGER        DEFAULT 0 NOT NULL,
+    muud      TEXT,
+    tunnusid  BIGINT         DEFAULT 0 NOT NULL,
+    vanaid    INTEGER
+    )  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'palk_asutus');
+
+
 CREATE OR REPLACE FUNCTION import_amet(in_id integer)
   RETURNS INTEGER AS
 $BODY$
@@ -35,7 +54,7 @@ BEGIN
       THEN NULL
      ELSE pa.tunnusid END) :: INTEGER  AS tunnusid
   FROM library l
-    INNER JOIN palk_asutus pa ON pa.ametid = l.id
+    INNER JOIN remote_palk_asutus pa ON pa.ametid = l.id
     INNER JOIN rekv ON rekv.id = pa.rekvid AND (rekv.parentid < 999 or in_id is not null)
     INNER JOIN library o ON o.id = pa.osakondid
   WHERE l.library = 'AMET'
@@ -105,10 +124,16 @@ BEGIN
     INTO json_object
     FROM (SELECT
             coalesce(lib_id, 0) AS id,
+            TRUE                   AS import,
             v_params            AS data) row;
 
     SELECT libs.sp_salvesta_amet(json_object :: JSON, 1, 1)
     INTO lib_id;
+    if lib_id is not null and not empty(lib_id) then
+
+        l_count = l_count + 1;
+    END IF;
+
     RAISE NOTICE 'lib_id %, l_count %', lib_id, l_count;
 
     -- salvestame log info
@@ -135,20 +160,9 @@ BEGIN
     THEN
       RAISE EXCEPTION 'log save failed';
     END IF;
-    l_count = l_count + 1;
   END LOOP;
 
-  -- control
-  IF (SELECT count(id)
-      FROM libs.library
-      WHERE LIBRARY = 'AMET')
-     >= l_count
-  THEN
-    RAISE NOTICE 'Import ->ok';
-  ELSE
-    RAISE EXCEPTION 'Import failed, new_count < old_count %', l_count;
-  END IF;
-
+  RAISE NOTICE 'Import ->ok';
 
   RETURN l_count;
 
@@ -169,6 +183,16 @@ and (id in (select osakondid from tooleping where rekvid in (select id from rekv
 or  id in (select ametid from tooleping where rekvid in (select id from rekv where parentid < 999)))
 
 
+SELECT import_AMET(id) from (
+select id from remote_library where library = 'AMET' and rekvid  in (select id from rekv where id = 119 or parentid = 119)
+except
+select old_id from import_log where lib_name = 'AMET'
+) qry
 
 
+select import_AMET(715237)
+
+select сщгтеid from remote_library where library = 'AMET'
+
+select * from remote_palk_asutus
 */

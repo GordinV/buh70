@@ -1,18 +1,18 @@
 'use strict';
-
 const moduleLocator = require('../../libs/moduleLocator.js')();
 const modelCreator = require('./../../libs/createXMLmodel');
 const fs = require('fs');
 const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
+const db = require('./../../libs/db');
 
-describe('dok. type Arvtasu tests', function () {
+describe('dok. type paring aruanne tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../raamatupidamine/arvtasu'),
-        docTypeId = 'ARVTASU'.toLowerCase(),
-        modelForExport = 'raamatupidamine/arvtasu';
+    const doc = require('../aruanned/eelarve/paring'),
+        docTypeId = 'PARING'.toLowerCase(),
+        modelForExport = 'aruanned/eelarve/paring';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -32,11 +32,6 @@ describe('dok. type Arvtasu tests', function () {
     });
 
     it (`${docTypeId} must have fields in js model`, ()=> {
-        expect(doc.select).toBeDefined();
-        expect(doc.returnData).toBeDefined();
-        expect(doc.requiredFields).toBeDefined();
-        expect(doc.saveDoc).toBeDefined();
-        expect(doc.deleteDoc).toBeDefined();
         expect(doc.grid).toBeDefined();
     });
 
@@ -44,15 +39,7 @@ describe('dok. type Arvtasu tests', function () {
         let xmlModel = convertXml.xml2js(xml, {ignoreComment: true, alwaysChildren: true});
         expect(xmlModel).toBeDefined();
         let modelElements = xmlModel.elements[0];
-        expect(_.find(modelElements.elements, {name:'select'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'saveDoc'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'deleteDoc'})).toBeDefined();
         expect(_.find(modelElements.elements, {name:'grid'})).toBeDefined();
-        let grid = _.find(modelElements.elements, {name:'grid'});
-        expect(grid).toBeDefined();
-        expect(_.find(grid.elements,{name:'alias'})).toBeDefined();
-        let gridAlias = _.find(grid.elements,{name:'alias'});
-        expect(_.find(gridAlias.elements,{text:'curArvTasud'})).toBeDefined();
     });
 
     it('should have copy in buh62 folder', (done) => {
@@ -67,7 +54,27 @@ describe('dok. type Arvtasu tests', function () {
             expect(fs.existsSync(targetFile)).toBeTruthy();
             done();
         });
-    })
+    });
+
+    it('doc type library should contain PARING doc.type', async () => {
+        let sql = `select id from libs.library where kood = 'PARING' and  library = 'DOK' limit 1`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should select data from grid query', async()=> {
+        let sql = doc.grid.sqlString;
+        let returnValue = await db.queryDb(sql, [63, 2019,1,0]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        let err = returnValue.error_code;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
 
 });
 

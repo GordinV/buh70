@@ -117,4 +117,11 @@ from library
 where library = 'OSAKOND'
 INSERT INTO library (id, rekvid, kood, nimetus, library, muud, tun1, tun2, tun3, tun4, tun5, vanaid) VALUES (287561, 108, '0922054             ', 'Narva Kreenholmi G𭮡asium 0922054                                                                                                                                                                                                                           ', 'OSAKOND             ', NULL, 0, 0, 0, 0, 0, NULL);
 
+SELECT import_osakonnad(id) from (
+select id from remote_library where library = 'OSAKOND'
+except
+select old_id from import_log where lib_name = 'OSAKOND'
+) qry
+
+
 */
