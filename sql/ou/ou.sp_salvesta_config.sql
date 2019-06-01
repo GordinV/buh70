@@ -19,6 +19,7 @@ DECLARE
   doc_pass     TEXT    = doc_data ->> 'pass';
   doc_email    TEXT    = doc_data ->> 'email';
   doc_tahtpaev INTEGER = doc_data ->> 'tahtpaev';
+  doc_earved    TEXT    = doc_data ->> 'earved';
   doc_json     JSON    = ((SELECT row_to_json(row)
                            FROM (SELECT doc_keel  AS keel,
                                         doc_port  AS port,
@@ -26,6 +27,9 @@ DECLARE
                                         doc_user  AS user,
                                         doc_pass  AS pass,
                                         doc_email AS email) ROW));
+
+  doc_config_json jsonb =   ((SELECT row_to_json(row)
+                              FROM (SELECT doc_earved AS earved) ROW));
 
 BEGIN
 
@@ -49,9 +53,9 @@ BEGIN
   -- вставка или апдейт docs.doc
   IF doc_id IS NULL OR doc_id = 0
   THEN
-    INSERT INTO ou.config (rekvid, number, tahtpaev, keel)
+    INSERT INTO ou.config (rekvid, number, tahtpaev, keel, properties)
     VALUES
-      (user_rekvid, doc_number, doc_tahtpaev, doc_keel)
+      (user_rekvid, doc_number, doc_tahtpaev, doc_keel, doc_config_json)
       RETURNING id
         INTO config_id;
 
@@ -62,7 +66,8 @@ BEGIN
     SET
       number   = doc_number,
       tahtpaev = doc_tahtpaev,
-      keel     = doc_keel
+      keel     = doc_keel,
+      properties = properties || doc_config_json
     WHERE id = doc_id
       RETURNING id
         INTO config_id;

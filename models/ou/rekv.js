@@ -21,7 +21,8 @@ module.exports = {
                 ((r.properties ->> 'arved')::JSONB ->> 'tahtpaev')::INTEGER      AS tahtpaev,
                 ((r.properties ->> 'reklftp')::JSONB ->> 'ftp')::VARCHAR(120)    AS ftp,
                 ((r.properties ->> 'reklftp')::JSONB ->> 'login')::VARCHAR(120)  AS login,
-                ((r.properties ->> 'reklftp')::JSONB ->> 'parool')::VARCHAR(120) AS parool
+                ((r.properties ->> 'reklftp')::JSONB ->> 'parool')::VARCHAR(120) AS parool,
+                (r.properties ->> 'earved') ::VARCHAR(254) AS earved
               FROM ou.rekv r
               WHERE id = $1`,
         sqlAsNew: `SELECT
@@ -43,6 +44,7 @@ module.exports = {
                       null::integer as tahtpaev,
                      NULL :: VARCHAR(120) AS ftp,
                      NULL :: VARCHAR(120) AS login,
+                     NULL :: VARCHAR(254) AS earved,
                      NULL :: VARCHAR(120) AS parool`,
         query: null,
         multiple: false,
@@ -72,7 +74,8 @@ module.exports = {
                          coalesce((u.properties ->> 'smtp')::VARCHAR(100))::VARCHAR(254)  AS smtp,
                          coalesce((u.properties ->> 'user')::VARCHAR(100))::VARCHAR(254)  AS user,
                          coalesce((u.properties ->> 'pass')::VARCHAR(100))::VARCHAR(254)  AS pass,
-                         coalesce((u.properties ->> 'email')::VARCHAR(100))::VARCHAR(254) AS email
+                         coalesce((u.properties ->> 'email')::VARCHAR(100))::VARCHAR(254) AS email,
+                         coalesce((c.properties->>'earved')::varchar(254))::varchar(254) as earved
                   FROM ou.config c,
                        ou.userid u
                   WHERE c.rekvid = $1

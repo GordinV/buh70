@@ -1,0 +1,181 @@
+  <Invoice accountNumber="" invoiceId="15520816" regNumber="75008427">
+    <InvoiceParties>
+      <SellerParty>
+        <Name>Saku Läte OÜ</Name>
+        <RegNumber>10223818</RegNumber>
+        <VATRegNumber>EE100448122</VATRegNumber>
+        <ContactData>
+          <PhoneNumber>6140808</PhoneNumber>
+          <E-mailAddress>sakulate@sakulate.ee</E-mailAddress>
+          <LegalAddress>
+            <PostalAddress1>Saale, Saku Vald</PostalAddress1>
+            <City>Harjumaa</City>
+            <PostalCode>75501</PostalCode>
+          </LegalAddress>
+        </ContactData>
+        <AccountInfo>
+          <AccountNumber>EE142200221010213705</AccountNumber>
+          <IBAN>EE142200221010213705</IBAN>
+          <BankName>Swedbank AS</BankName>
+        </AccountInfo>
+        <Extension extensionId="eakInvPartyCountry">
+          <InformationContent>EE</InformationContent>
+        </Extension>
+      </SellerParty>
+      <BuyerParty>
+        <Name>NARVA LINNAVALITSUSE RAHANDUSAMET</Name>
+        <RegNumber>75008427</RegNumber>
+        <ContactData>
+          <E-mailAddress>rahandus@narva.ee</E-mailAddress>
+          <LegalAddress>
+            <PostalAddress1>PEETRI PLATS 5</PostalAddress1>
+            <City>NARVA</City>
+          </LegalAddress>
+          <MailAddress>
+            <PostalAddress1>PEETRI PLATS 5</PostalAddress1>
+            <City>NARVA</City>
+          </MailAddress>
+        </ContactData>
+        <Extension extensionId="eakInvPartyCountry">
+          <InformationContent>EE</InformationContent>
+        </Extension>
+      </BuyerParty>
+    </InvoiceParties>
+    <InvoiceInformation>
+      <Type type="DEB"/>
+      <DocumentName>Arve</DocumentName>
+      <InvoiceNumber>U13103103</InvoiceNumber>
+      <PaymentReferenceNumber>1385131031031</PaymentReferenceNumber>
+      <InvoiceDate>2019-03-31</InvoiceDate>
+      <DueDate>2019-04-10</DueDate>
+      <Extension extensionId="eakTransactionDate">
+        <InformationContent>2019-03-31</InformationContent>
+      </Extension>
+      <Extension extensionId="eakConfirmationCreator">
+        <InformationContent>48612183747|Anastassia Moldon</InformationContent>
+      </Extension>
+      <Extension extensionId="eakConfirmCreator">
+        <InformationContent>48612183747|Anastassia Moldon</InformationContent>
+      </Extension>
+      <Extension extensionId="eakConfirmation">
+        <InformationName>2019-04-02 08:39:48</InformationName>
+        <InformationContent>47608105226|Jelena Golubeva|VERIFIED|</InformationContent>
+      </Extension>
+      <Extension extensionId="eakConfirmation">
+        <InformationName>2019-04-03 09:11:38</InformationName>
+        <InformationContent>46610172217|Jelena Tðekanina|VERIFIED|</InformationContent>
+      </Extension>
+      <Extension extensionId="eakInvoiceURL">
+        <InformationContent>https://finance.omniva.eu/finance/main?araTransactionId=override&amp;araTopServiceId=application&amp;araThreadServiceId=mainThread&amp;araPleaseClone=true&amp;araWidgetEventPath=m.f0.root&amp;araWidgetEventHandler=externalLink&amp;araWidgetEventParameter=viewFullBuyInv:15520816:2061d8ce-f006-4194-a34a-46fb8b586d91</InformationContent>
+      </Extension>
+    </InvoiceInformation>
+    <InvoiceSumGroup>
+      <Balance/>
+      <InvoiceSum>38.11</InvoiceSum>
+      <Rounding>0</Rounding>
+      <VAT>
+        <SumBeforeVAT>38.11</SumBeforeVAT>
+        <VATRate>20</VATRate>
+        <VATSum>7.62</VATSum>
+      </VAT>
+      <TotalSum>45.73</TotalSum>
+      <Currency>EUR</Currency>
+      <Extension extensionId="TotalVATSum">
+        <InformationContent>7.62</InformationContent>
+      </Extension>
+    </InvoiceSumGroup>
+    <InvoiceItem>
+      <InvoiceItemGroup groupId="">
+        <ItemEntry>
+          <Code>VE19</Code>
+          <Accounting>
+            <JournalEntry>
+              <GeneralLedger>550099</GeneralLedger>
+              <CostObjective>01112</CostObjective>
+              <Sum>33</Sum>
+            </JournalEntry>
+            <JournalEntry>
+              <GeneralLedger>550099</GeneralLedger>
+              <CostObjective>5500</CostObjective>
+              <Sum>33</Sum>
+            </JournalEntry>
+            <JournalEntry>
+              <GeneralLedger>550099</GeneralLedger>
+              <CostObjective>LE-P</CostObjective>
+              <Sum>33</Sum>
+            </JournalEntry>
+          </Accounting>
+          <CustomerRef>9212</CustomerRef>
+          <Description>Vesi-19</Description>
+          <ItemReserve extensionId="eakInvoiceItemId">
+            <InformationContent>90705558</InformationContent>
+          </ItemReserve>
+          <ItemReserve extensionId="eakSellerProductId">
+            <InformationContent>VE19</InformationContent>
+          </ItemReserve>
+          <ItemReserve extensionId="eakVatCode">
+            <InformationContent>20</InformationContent>
+          </ItemReserve>
+          <ItemSum>33</ItemSum>
+          <VAT>
+            <SumBeforeVAT>33</SumBeforeVAT>
+            <VATRate>20</VATRate>
+            <VATSum>6.6</VATSum>
+          </VAT>
+          <ItemTotal>39.6</ItemTotal>
+        </ItemEntry>
+        <ItemEntry>
+          <Code>RENT-EXTRA</Code>
+          <Accounting>
+            <JournalEntry>
+              <GeneralLedger>551580</GeneralLedger>
+              <CostObjective>01112</CostObjective>
+              <Sum>5.11</Sum>
+            </JournalEntry>
+            <JournalEntry>
+              <GeneralLedger>551580</GeneralLedger>
+              <CostObjective>5515</CostObjective>
+              <Sum>5.11</Sum>
+            </JournalEntry>
+            <JournalEntry>
+              <GeneralLedger>551580</GeneralLedger>
+              <CostObjective>LE-P</CostObjective>
+              <Sum>5.11</Sum>
+            </JournalEntry>
+          </Accounting>
+          <CustomerRef>9212</CustomerRef>
+          <Description>Rent Extra 01.03.19 .. 31.03.19</Description>
+          <ItemReserve extensionId="eakInvoiceItemId">
+            <InformationContent>90705559</InformationContent>
+          </ItemReserve>
+          <ItemReserve extensionId="eakSellerProductId">
+            <InformationContent>RENT-EXTRA</InformationContent>
+          </ItemReserve>
+          <ItemReserve extensionId="eakVatCode">
+            <InformationContent>20</InformationContent>
+          </ItemReserve>
+          <ItemUnit>KUU</ItemUnit>
+          <ItemAmount>1</ItemAmount>
+          <ItemSum>5.11</ItemSum>
+          <VAT>
+            <SumBeforeVAT>5.11</SumBeforeVAT>
+            <VATRate>20</VATRate>
+            <VATSum>1.02</VATSum>
+          </VAT>
+          <ItemTotal>6.13</ItemTotal>
+        </ItemEntry>
+      </InvoiceItemGroup>
+    </InvoiceItem>
+    <PaymentInfo>
+      <Currency>EUR</Currency>
+      <PaymentRefId>1385131031031</PaymentRefId>
+      <PaymentDescription>Arve nr. U13103103 tasumine</PaymentDescription>
+      <Payable>YES</Payable>
+      <PayDueDate>2019-04-10</PayDueDate>
+      <PaymentTotalSum>45.73</PaymentTotalSum>
+      <PayerName>NARVA LINNAVALITSUSE RAHANDUSAMET</PayerName>
+      <PaymentId>15520816</PaymentId>
+      <PayToAccount>EE142200221010213705</PayToAccount>
+      <PayToName>Saku Läte OÜ</PayToName>
+    </PaymentInfo>
+  </Invoice>

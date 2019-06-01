@@ -99,6 +99,7 @@ BEGIN
     FROM (SELECT
             now()    AS created,
             userName AS user) row;
+
     SELECT row_to_json(row)
            INTO new_rights
     FROM (SELECT

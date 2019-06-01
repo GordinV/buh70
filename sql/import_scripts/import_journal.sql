@@ -235,7 +235,7 @@ BEGIN
   THEN
     RAISE NOTICE 'Import ->ok';
   ELSE
-    RAISE EXCEPTION 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
+    RAISE NOTICE 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
     --    RAISE notice 'Import failed, new_count < old_count %, new_count %', l_count, l_tulemus;
   END IF;
 

@@ -289,6 +289,24 @@ const Arv = {
             alias: 'validate_arve_number',
             data: []
 
+        },
+        {
+            sql:`SELECT docs.sp_update_doc_bpm_data($1::integer, $2::integer, $3::JSONB)::integer as tulemus`, //$1 - docId, $2 - userId, $3 - params ->'{"omniva":[{"isik":"koostaja", "kpv":"2019-05-31","rolli":"creator"},{"isik":"koostaja", "kpv":"2019-05-31","rolli":"kinnitaja"}]}')
+            query: null,
+            multuple: false,
+            alias: 'update_bpm',
+            data: []
+
+        },
+        {
+            sql:`SELECT *
+                 FROM json_to_recordset((SELECT (bpm ->> 'omniva')::JSON
+                                         FROM docs.doc
+                                         WHERE id = $1)) AS x(kpv VARCHAR(40), isik VARCHAR(254), rolli VARCHAR(20))`, //$1 - docId
+            query: null,
+            multuple: false,
+            alias: 'get_omniva_bpm',
+            data: []
         }
 
     ],
