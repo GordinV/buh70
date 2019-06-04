@@ -22,7 +22,6 @@ const Arv = {
                          trim(s.nimetus)                                                   AS status,
                          d.status                                                          AS doc_status,
                          trim(a.number) :: VARCHAR(20)                                     AS number,
-                         a.summa,
                          a.rekvId,
                          a.liik,
                          a.operid,

@@ -23,3 +23,10 @@ CREATE TABLE eelarve.eelarve
   status integer default 1
 );
 
+
+GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE eelarve.eelarve TO dbpeakasutaja;
+GRANT SELECT, INSERT, UPDATE  ON TABLE eelarve.eelarve TO dbkasutaja;
+GRANT ALL ON TABLE eelarve.eelarve TO dbadmin;
+GRANT SELECT ON TABLE eelarve.eelarve TO dbvaatleja;
+
+
