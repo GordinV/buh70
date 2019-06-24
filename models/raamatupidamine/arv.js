@@ -158,7 +158,7 @@ const Arv = {
                          NULL :: TEXT                                                    AS formula,
                          'EUR' :: VARCHAR(20)                                            AS valuuta,
                          1 :: NUMERIC                                                    AS kuurs,
-                         coalesce((n.properties :: JSONB ->> 'vat'), '-') :: VARCHAR(20) AS km,
+                         (case when a1.kbm_maar is null then coalesce((n.properties :: JSONB ->> 'vat'), '-') :: VARCHAR(20) else a1.kbm_maar end)::varchar(20) AS km,
                          n.uhik,
                          a1.muud
                   FROM docs.arv1 AS a1

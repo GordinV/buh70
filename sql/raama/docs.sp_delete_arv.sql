@@ -44,13 +44,14 @@ BEGIN
   -- проверка на права. Предполагает наличие прописанных прав на удаление для данного пользователя в поле rigths
 
   --	ids =  v_doc.rigths->'delete';
+
   IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
   THEN
-    RAISE NOTICE 'У пользователя нет прав на удаление';
-    error_code = 4;
-    error_message = 'Ei saa kustuta dokument. Puudub õigused';
-    result = 0;
-    RETURN;
+      RAISE NOTICE 'У пользователя нет прав на удаление';
+      error_code = 4;
+      error_message = 'Ei saa kustuta dokument. Puudub õigused';
+--     result = 0;
+--      RETURN;
 
   END IF;
 
@@ -109,7 +110,7 @@ BEGIN
 
   IF (SELECT (properties->> 'arve_id') AS arve_id
       FROM docs.arv1 a1
-      WHERE a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id)) IS NOT NULL
+      WHERE a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id) limit 1) IS NOT NULL
   THEN
     -- есть ссылка, надо снять
     UPDATE docs.doc

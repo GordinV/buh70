@@ -77,7 +77,9 @@ module.exports = {
                       d.selg::varchar(254)    AS SELG,
                       d.parentid,
                       l.nimetus::varchar(254) AS nimetus, 
-                      l.kood AS dok
+                      l.kood AS dok,
+                      coalesce((d.details ->> 'konto')::VARCHAR(20), '')::VARCHAR(20)    AS konto,
+                      coalesce((d.details ->> 'kbmkonto')::VARCHAR(20), '')::VARCHAR(20) AS kbmkonto
                     FROM libs.library l
                       INNER JOIN libs.dokprop d ON l.id = d.parentId
                     WHERE l.library = 'DOK'
