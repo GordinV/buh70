@@ -177,7 +177,7 @@ BEGIN
                                             summa NUMERIC(14, 4), kood TEXT, nimetus TEXT, kood1 TEXT, kood2 TEXT,
                                             kood3 TEXT,
                                             kood4 TEXT, kood5 TEXT,
-                                            konto TEXT, tunnus TEXT, tp TEXT, arve_id INTEGER, muud TEXT,
+                                            konto TEXT, tunnus TEXT, tp TEXT, proj text, arve_id INTEGER, muud TEXT,
                                             km TEXT);
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
@@ -185,7 +185,7 @@ BEGIN
 
                 INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, kbmta, summa, kood1, kood2, kood3, kood4,
                                        kood5,
-                                       konto, tunnus, tp, muud, kbm_maar)
+                                       konto, tunnus, tp, proj, muud, kbm_maar)
                 VALUES (arv_id, json_record.nomid,
                         coalesce(json_record.kogus, 1),
                         coalesce(json_record.hind, 0),
@@ -201,6 +201,7 @@ BEGIN
                         coalesce(json_record.konto, ''),
                         coalesce(json_record.tunnus, ''),
                         coalesce(json_record.tp, ''),
+                        coalesce(json_record.proj, ''),
                         coalesce(json_record.muud, ''),
                         coalesce(json_record.km, '')) RETURNING id
                            INTO arv1_id;

@@ -20,7 +20,7 @@ CREATE VIEW palk.com_palk_kaart AS
     (l.properties::jsonb->>'tunnus') as tunnus,
     (l.properties::jsonb->>'liik')::integer as liik,
     (l.properties::jsonb->>'tund')::integer as tund,
-    (l.properties::jsonb->>'percent_')::integer as percent_,
+    coalesce((l.properties::jsonb->>'percent_')::integer,pk.percent_)::INTEGER as percent_,
     (l.properties::jsonb->>'maks')::integer as tulumaks,
     (l.properties::jsonb->>'asutusest')::integer as asutusest,
     (l.properties::jsonb->>'round')::numeric as round,

@@ -33,13 +33,15 @@ BEGIN
 
   IF l_alus_summa IS NULL
   THEN
+
+      raise notice 'l_alus_summa IS NULL';
     selg = coalesce(selg, '') || 'sql' || l_enter;
     SELECT
       p.summa,
       p.asutusest,
       p.liik,
       l.round,
-      empty(p.percent_ :: INTEGER)
+      not empty(p.percent_ :: INTEGER)
     INTO l_pk_summa, l_asutusest, l_liik, l_round, is_percent
     FROM palk.com_palk_kaart p
       INNER JOIN palk.com_palk_lib l ON p.libid = l.id
@@ -54,7 +56,9 @@ BEGIN
       selg = coalesce(selg, '') || 'arvestatakse muud ' || summa :: TEXT || l_enter;
 
     ELSE
+
       SELECT
+        sum(po.summa)  AS summa,
         sum(tootumaks) AS tki,
         sum(tulumaks)  AS tm,
         sum(pensmaks)  AS pm
@@ -63,6 +67,9 @@ BEGIN
       WHERE po.lepingid = l_lepingid
             AND liik = '+'
             AND kpv = l_kpv;
+
+        l_alus_summa =  v_tulemus.summa;
+      raise notice 'arvestan alus l_alus_summa %, v_tulemus.summa %',l_alus_summa, v_tulemus.summa ;
 
       CASE
         WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'TÖÖTUSKINDLUSTUSMAKS')
@@ -76,6 +83,19 @@ BEGIN
         WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'PENSIONIMAKS')
         THEN
           summa = f_round(v_tulemus.pm, l_round);
+        WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'KINNIPIDAMISED')
+          AND NOT is_percent
+          THEN
+              raise notice 'Kinni, not percent';
+            summa = l_pk_summa;
+        WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'KINNIPIDAMISED')
+          AND is_percent
+          THEN
+            raise notice 'Kinni, not percent';
+            summa = f_round(l_alus_summa * l_pk_summa * 0.01, l_round);
+            selg = coalesce(selg, '') || 'arvestus ' || l_alus_summa :: TEXT || ' * ' || l_pk_summa :: TEXT || ' * 0.01 ' ||
+                   l_enter;
+
       ELSE
         summa = 0;
       END CASE;
@@ -103,8 +123,11 @@ BEGIN
       END IF;
     END IF;
   ELSE
+    raise notice 'Enne';
     IF is_percent
     THEN
+
+        raise notice 'is_percent %', is_percent;
       -- summa in pk is in percent
       summa = f_round(l_alus_summa * l_pk_summa * 0.01, l_round);
       selg = coalesce(selg, '') || 'arvestus ' || l_alus_summa :: TEXT || ' * ' || l_pk_summa :: TEXT || ' * 0.01 ' ||

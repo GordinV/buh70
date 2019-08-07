@@ -14,7 +14,7 @@ module.exports = {
                   pk.status,
                   pk.muud,
                   pk.alimentid,
-                  pk.tunnus                                             AS tunnus,
+                  pk.tunnus::varchar(20)                                AS tunnus,
                   pk.minsots,
                   osakond.kood                                          AS osakond,
                   osakond.id                                            AS osakondId,
