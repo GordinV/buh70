@@ -21,7 +21,7 @@ DECLARE
   l_libid         INTEGER         = params ->> 'libid';
   l_kpv           DATE            = coalesce((params ->> 'kpv') :: DATE, current_date);
   l_alus_summa    NUMERIC         = params ->> 'alus_summa'; -- для расчета налогов
-  is_umardamine   BOOLEAN         = params ->> 'umardamine'; -- если истина, то это округление
+  is_umardamine   BOOLEAN         = coalesce((params ->> 'umardamine')::BOOLEAN, false); -- если истина, то это округление
   is_percent      BOOLEAN         = coalesce((params ->> 'is_percent') :: BOOLEAN,
                                              TRUE); -- kas pk summa percentis (100%)
   l_palk_summa    NUMERIC         = coalesce((params ->> 'palk') :: NUMERIC, 0);
@@ -392,3 +392,4 @@ SELECT * FROM palk.sp_calc_arv(1,'{"kpv": "2018-04-09", "palk": 1200, "is_percen
 SELECT * FROM palk.sp_calc_arv(1,'{"lepingid":4,"libid":526,"kpv":20180630}'::json)
         {"kpv":"2018-06-30","lepingid":4,"lib":526}
 */
+

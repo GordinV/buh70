@@ -47,6 +47,7 @@ BEGIN
     error_code = 5;
     error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
                     coalesce(user_id, 0) :: TEXT;
+
     result = 0;
     RETURN;
 
@@ -60,6 +61,7 @@ BEGIN
     RAISE NOTICE 'У пользователя нет прав на удаление';
     error_code = 4;
     error_message = 'Ei saa kustuta dokument. Puudub õigused';
+
     result = 0;
     RETURN;
 
@@ -100,7 +102,6 @@ BEGIN
           now()             AS deleted,
           v_doc.user_name   AS user,
           palk_oper_history AS palk_oper) row;
-
 
   DELETE FROM palk.palk_oper
   WHERE parentid = doc_id; --@todo констрейн на удаление

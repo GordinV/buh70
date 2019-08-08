@@ -58,12 +58,16 @@ $BODY$
 
 GRANT EXECUTE ON FUNCTION palk.fnc_calc_mvt(JSONB) TO dbkasutaja;
 
+
+
+select palk.fnc_calc_mvt('{"summa":120, "mvt_kokku":500, "kokku_kasutatud_mvt":500, "tulud_kokku": 540}'::jsonb)
+
+/*
 SELECT palk.fnc_calc_mvt(
            '{"tulud_kokku":700, "kokku_kasutatud_mvt":500,"summa":200, "mvt_kokku":500, "tki":3.2, "pm":4}'::JSONB)
 
-/*
 select palk.fnc_calc_mvt('{"summa":1000}'::jsonb)
 select palk.fnc_calc_mvt('{"summa":1000, "mvt_kokku":500}'::jsonb)
-select palk.fnc_calc_mvt('{"summa":1000, "mvt_kokku":500, "kokku_kasutatud_mvt":300}'::jsonb)
+select palk.fnc_calc_mvt('{"summa":120, "mvt_kokku":540, "kokku_kasutatud_mvt":500}'::jsonb)
 
 */

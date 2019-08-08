@@ -26,12 +26,10 @@ BEGIN
                  FROM json_array_elements_text(isik_ids))
         AND t.rekvid = l_rekvid
   LOOP
-    raise notice 'lepingid %', v_tooleping.id;
     WHILE l_kpv2 >= l_kpv1
     LOOP
       l_result =  palk.sp_update_palk_jaak(l_kpv1, v_tooleping.id);
       l_kpv1 = l_kpv1 + INTERVAL ' 1 month ';
-      raise notice 'l_result %, l_kpv1 %', l_result, l_kpv1;
     END LOOP;
 
     -- вернем стартовое значение даты

@@ -28,3 +28,9 @@ CREATE VIEW palk.com_palk_kaart AS
   FROM libs.library l
     INNER JOIN palk.palk_kaart pk ON pk.libId = l.id
   WHERE pk.status <> 3;
+
+
+GRANT SELECT ON TABLE palk.com_palk_kaart TO dbkasutaja;
+GRANT SELECT ON TABLE palk.com_palk_kaart TO dbpeakasutaja;
+GRANT SELECT ON TABLE palk.com_palk_kaart TO dbvaatleja;
+GRANT ALL ON TABLE palk.com_palk_kaart TO dbadmin;

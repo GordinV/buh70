@@ -62,7 +62,8 @@ CREATE VIEW palk.cur_palkoper AS
     LEFT OUTER JOIN docs.doc dd ON p.journalid = dd.id
     LEFT OUTER JOIN docs.journal j ON j.parentid = dd.id
     LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
-  WHERE dok.kood = 'PALK_OPER';
+  WHERE dok.kood = 'PALK_OPER'
+AND d.status <> 3;
 
 GRANT SELECT ON TABLE palk.cur_palkoper TO dbkasutaja;
 GRANT SELECT ON TABLE palk.cur_palkoper TO dbvaatleja;

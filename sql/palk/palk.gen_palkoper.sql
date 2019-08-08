@@ -61,7 +61,35 @@ BEGIN
   END IF;
 
   -- выбираем договора для подготовки расчет
-  RAISE NOTICE 'l_leping_ids %, l_isik_ids %, l_osakond_ids %', l_leping_ids, l_isik_ids, l_osakond_ids;
+
+  -- проверка на удаление прежнего расчета
+  IF is_delete_prev_oper IS NOT NULL AND is_delete_prev_oper
+  THEN
+
+    -- delete
+    PERFORM palk.sp_delete_palk_oper(user_id, id)
+    FROM palk.cur_palkoper
+    WHERE kpv = l_kpv
+      AND lepingid  in (
+      SELECT
+        t.id
+      FROM palk.tooleping t
+      WHERE (t.id IN (SELECT value :: INTEGER
+                      FROM json_array_elements_text(l_leping_ids))
+        OR (t.parentid IN (SELECT value :: INTEGER
+                           FROM json_array_elements_text(l_isik_ids))
+          AND osakondid IN (SELECT value :: INTEGER
+                            FROM json_array_elements_text(l_osakond_ids))
+               ))
+        AND t.algab <= l_kpv
+        AND (t.lopp IS NULL OR t.lopp >= l_kpv)
+        AND t.rekvid IN (SELECT rekvid
+                         FROM ou.userid u
+                         WHERE u.id = user_id)
+        AND t.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
+      );
+
+  END IF;
 
   FOR v_tooleping IN
   SELECT
@@ -85,17 +113,6 @@ BEGIN
   ORDER BY t.pohikoht DESC
   LOOP
 
-    -- проверка на удаление прежнего расчета
-    IF is_delete_prev_oper IS NOT NULL AND is_delete_prev_oper
-    THEN
-      -- delete
-      SELECT palk.sp_delete_palk_oper(user_id, id)
-      INTO tulemus
-      FROM palk.cur_palkoper
-      WHERE kpv = l_kpv
-            AND lepingid = v_tooleping.id;
-
-    END IF;
 
     FOR V_lib IN
     SELECT
@@ -264,7 +281,6 @@ BEGIN
             l_sotsmaks_min_id = palk.sp_salvesta_palk_oper(('{"data":' || l_save_params || '}') :: JSON, user_id,
                                                            v_tooleping.rekvid);
 
-            RAISE NOTICE 'l_sotsmaks_min_id %', l_sotsmaks_min_id;
           ELSE
             IF coalesce(l_sotsmaks_min_id, 0) > 0
             THEN
