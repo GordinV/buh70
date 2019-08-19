@@ -72,7 +72,7 @@ BEGIN
            coalesce(l_kasutatud_mvt_summa, 0) :: TEXT || '(r)' ||
            'TM enne arvestatud:' || coalesce(summa, 0) :: TEXT || '(r)' ||
            'Tulud: ' || coalesce(l_alus_summa, 0) :: TEXT || '(r)';
-
+/*
     IF coalesce(summa, 0) = 0
     THEN
       -- puudub tm arvestus,
@@ -112,10 +112,11 @@ BEGIN
       mvt = l_kasutatud_mvt_summa;
 
     END IF;
-
+*/
   END IF;
 
   -- arvestame
+      /*
   IF coalesce(summa, 0) = 0
   THEN
     IF NOT is_percent
@@ -151,6 +152,8 @@ BEGIN
     END IF;
 
   END IF;
+  */
+
   result = 1;
   summa = coalesce(summa, 0);
   RETURN;

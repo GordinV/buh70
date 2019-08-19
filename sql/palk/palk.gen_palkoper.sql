@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION palk.gen_palkoper(IN  user_id    INTEGER, IN params J
   RETURNS RECORD AS
 $BODY$
 DECLARE
-  l_sotsmaks_min_palk NUMERIC [];
+  l_sotsmaks_min_palk NUMERIC;
   v_lib               RECORD;
   l_sotsmaks_min_id   INTEGER = 0;
   l_lepingId_min_sots INTEGER;
@@ -167,7 +167,7 @@ BEGIN
 
       l_tulemus_json = row_to_json(tulemus);
 
-      IF tulemus.summa IS NOT NULL
+      IF tulemus.summa IS NOT NULL and tulemus.summa <> 0
       THEN
         -- поиск аналогичной операции
         SELECT parentid
@@ -211,6 +211,7 @@ BEGIN
         -- save results
         l_dok_id = palk.sp_salvesta_palk_oper(('{"lausend":true,"data":' || l_save_params || '}') :: JSON, user_id,
                                               v_tooleping.rekvid);
+/*
 
         -- мин. соц. налог
         --if calculation of sots.maks, will check sor min.sotsmaks
@@ -223,6 +224,7 @@ BEGIN
                             AND pk.liik = 5
                             AND coalesce(pk.minsots, 0) = 1)
         THEN
+
           -- Ищем старый расчет
           SELECT
             po.id,
@@ -242,17 +244,17 @@ BEGIN
 
           -- arvestame sotsmaks minpalgast
           SELECT
-            summa,
-            alus
+            summa::numeric,
+            alus::text
           INTO l_sotsmaks_min_palk, l_alus
           FROM palk.sp_calc_min_sots(user_id, l_params);
 
-          -- if min.sotsmaks, then save
+            -- if min.sotsmaks, then save
           IF l_sotsmaks_min_palk IS NOT NULL
           THEN
             -- save min.sots parametrid
             SELECT
-              l_sotsmaks_min_id :: INTEGER                      AS id,
+              coalesce(l_sotsmaks_min_id,0) :: INTEGER                      AS id,
               l_kpv                                             AS kpv,
               v_tooleping.id                                    AS lepingid,
               V_lib.id                                          AS libid,
@@ -277,9 +279,9 @@ BEGIN
 
             l_save_params = row_to_json(v_palk_oper);
 
+
             -- save results
-            l_sotsmaks_min_id = palk.sp_salvesta_palk_oper(('{"data":' || l_save_params || '}') :: JSON, user_id,
-                                                           v_tooleping.rekvid);
+            --l_sotsmaks_min_id = palk.sp_salvesta_palk_oper(('{"data":' || l_save_params || '}') :: JSON, user_id, v_tooleping.rekvid);
 
           ELSE
             IF coalesce(l_sotsmaks_min_id, 0) > 0
@@ -289,9 +291,9 @@ BEGIN
             END IF;
 
           END IF;
-
           --lopp mon sots
         END IF;
+*/
 
       END IF;
 

@@ -4,6 +4,7 @@ DROP FUNCTION IF EXISTS palk.sp_calc_sots(user_id INTEGER, params JSON );
 
 CREATE FUNCTION palk.sp_calc_sots(user_id       INTEGER, params JSON,
   OUT                             summa         NUMERIC,
+  OUT                             sm            NUMERIC,
   OUT                             selg          TEXT,
   OUT                             error_code    INTEGER,
   OUT                             result        INTEGER,
@@ -35,7 +36,6 @@ DECLARE
 
 BEGIN
 
-  RAISE NOTICE 'sm arv params %, l_alus_summa %', params, l_alus_summa;
   IF l_alus_summa IS NULL
   THEN
     -- meil ei ole alus summa, vaja arvestada alus
@@ -169,12 +169,14 @@ BEGIN
     THEN
       -- ainult , kui olid tulud
       l_sotsmaks_min_palgast = (l_sotsmaks_min_palgast - summa);
+      sm = l_min_palk - l_alus_summa;
 
     END IF;
 
+    selg = coalesce(summa, 0) :: TEXT || ' + (SM min.palgast) ' || l_sotsmaks_min_palgast :: TEXT || ' + (umardamine) ' || ln_umardamine :: TEXT;
+
     summa = f_round(coalesce(summa, 0) + l_sotsmaks_min_palgast + ln_umardamine, l_round);
 
-    selg = coalesce(summa, 0) :: TEXT || ' + ' || l_sotsmaks_min_palgast :: TEXT || ' + ' || ln_umardamine :: TEXT;
   ELSE
     -- arvestus
     summa = l_alus_summa * l_pk_summa * 0.01;

@@ -132,8 +132,6 @@ BEGIN
 
   l_min_sots = v_arvestus.minsots / 30 * l_paevad;
 
-  RAISE NOTICE ' l_min_sots % l_paevad % v_arvestus.paevad %', l_min_sots, l_paevad, v_arvestus.paevad;
-
   l_korr_sm = v_arvestus.sm - (v_arvestus.sm_puhkused + v_arvestus.sm_haigused);
   l_korr_summa = v_arvestus.summa - (v_arvestus.puhkused + v_arvestus.haigused);
 
@@ -143,6 +141,7 @@ BEGIN
     summa = round(l_min_sots - l_korr_sm, 2);
     alus = round(v_arvestus.minpalk / 30 * l_paevad - l_korr_summa, 2);
   END IF;
+
   result = 1;
   RETURN;
 

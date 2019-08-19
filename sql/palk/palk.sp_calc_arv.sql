@@ -288,6 +288,7 @@ BEGIN
   selg = coalesce(selg, '') + 'TKA arvestus:' + round(summa, 2) :: TEXT +
          '*' + (0.01 * l_TKA_maar) :: TEXT + ltEnter;
 
+
   IF l_lepingid IS NOT NULL AND l_libid IS NOT NULL
   THEN
     -- get taotluse_summa
@@ -354,6 +355,7 @@ BEGIN
 
   END IF;
 
+
   -- TM arvestus
   tm = palk.fnc_calc_tm(summa, mvt, tki, pm, l_tululiik);
 
@@ -366,6 +368,7 @@ BEGIN
   END IF;
 
   summa = coalesce(summa, 0);
+
   RETURN;
   EXCEPTION
   WHEN OTHERS

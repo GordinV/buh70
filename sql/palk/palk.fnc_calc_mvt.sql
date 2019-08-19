@@ -32,15 +32,19 @@ BEGIN
     l_MVT = 0;
   END IF;
 
+/*
   IF l_isiku_MVT > 0 AND l_isiku_MVT > l_kokku_kasutatud_mvt
   THEN
+      raise notice 'l_isiku_MVT > 0 AND l_isiku_MVT > l_kokku_kasutatud_mvt, l_isiku_MVT %, l_kokku_kasutatud_mvt % ', l_isiku_MVT, l_kokku_kasutatud_mvt;
     -- umardamine, miinus summa
     l_MVT = l_isiku_MVT - l_kokku_kasutatud_mvt;
   END IF;
+*/
 
   l_MVT = round(l_MVT, 2);
   
   -- MVT kokku kontrol
+
   IF l_MVT > l_mvt_kokku
   THEN
     l_MVT = l_mvt_kokku;
@@ -60,7 +64,7 @@ GRANT EXECUTE ON FUNCTION palk.fnc_calc_mvt(JSONB) TO dbkasutaja;
 
 
 
-select palk.fnc_calc_mvt('{"summa":120, "mvt_kokku":500, "kokku_kasutatud_mvt":500, "tulud_kokku": 540}'::jsonb)
+select palk.fnc_calc_mvt('{"summa":239.3200,"mvt_kokku":500.0000,"kokku_kasutatud_mvt":177.4600,"tulud_kokku":184.0900,"tki":3.8300,"pm":4.7900}'::jsonb)
 
 /*
 SELECT palk.fnc_calc_mvt(
