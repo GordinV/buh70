@@ -82,7 +82,7 @@ module.exports = {
                     AND u.id = $2`,
             query: null,
             multiple: false,
-            alias: 'config',
+            alias: 'default.json',
             data: []
         },
 

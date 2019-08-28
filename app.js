@@ -12,11 +12,9 @@ var app = express(),
     routes = require('./routes/index'),
     errorHandle = require('errorhandler'),
     config = require('config'),
-    log = require('libs/log')(module),
     cookieParser = require('cookie-parser'),
     bodyParser = require('body-parser'),
     logger = require('morgan'),
-    HttpError = require('error').HttpError,
     pg = require('pg'),
     session = require('express-session'),
     pgSession = require('connect-pg-simple')(session),
@@ -25,6 +23,10 @@ var app = express(),
     cors = require('cors'),
     csrf = require('csurf');
 
+
+const log = require('./libs/log')(module); //@not found
+const HttpError = require('./error').HttpError;
+const port = config.get('port');
 
 const limiter = new RateLimit({
         windowMs: 5 * 60 * 1000, // 15 minutes
@@ -42,7 +44,10 @@ global.__base = __dirname + '/';
 require('babel-polyfill');
 
 require('node-jsx').install({extension: '.jsx'});
-app.set('port', config.get('port'));
+
+
+
+app.set('port', port);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -58,8 +63,9 @@ app.set('view engine', 'jade');
  dailyCleanup.unref();
  */
 
-http.createServer(app).listen(config.get('port'), function () {
-    log.info('Express server listening on port ' + config.get('port'));
+
+http.createServer(app).listen(port, function () {
+    log.info('Express server listening on port ' + port);
 });
 
 /*
@@ -95,7 +101,7 @@ app.use(compression());
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
-app.use(cookieParser(config.get('session:secret')));
+app.use(cookieParser(config.get('session.secret')));
 app.use(require('./middleware/sendHttpError'));
 
 app.use(cors()); //Enable All CORS Requests
@@ -103,18 +109,18 @@ app.use(cors()); //Enable All CORS Requests
 app.use(session({
     store: new pgSession({
         pg: pg,                                  // Use global pg-module
-        conString: config.get('pg:connection'), // Connect using something else than default DATABASE_URL env variable
+        conString: config.get('pg.connection'), // Connect using something else than default DATABASE_URL env variable
         tableName: 'session'               // Use another table-name than the default "session" one
     }),
-    secret: config.get('session:secret'),
-    cookie: {maxAge: config.get('session:cookie:maxAge')}
+    secret: config.get('session.secret'),
+    cookie: {maxAge: config.get('session.cookie.maxAge')}
 }));
 
 /*
 app.use(csrf());
 */
 
-require('routes')(app);
+require('./routes')(app);
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(function (err, req, res, next) {

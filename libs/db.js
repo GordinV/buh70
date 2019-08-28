@@ -1,5 +1,5 @@
 const {Client} = require('pg'),
-    config = require('../config/config');
+    config = require('../config/default');
 
 const db = {
     queryDb: async (sqlString, params, sortBy, sqlWhere) => {

@@ -12,7 +12,7 @@ module.exports = {
     asutusName: '',
     connectDb: function () {
         const pg = require('pg'),
-            config = require('../config/config'),
+            config = require('../config/default'),
             db = new pg.Client(config.pg.connection);
         return db;
     },

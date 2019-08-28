@@ -18,7 +18,7 @@ module.exports = {
     ],
     connectDb: function() {
         const pg = require('pg'),
-            config = require('../config/config');
+            config = require('../config/default');
         return new pg.Client(config.pg.connection);
     }
 
