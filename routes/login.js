@@ -22,7 +22,9 @@ exports.post = function (req, res, next) {
     async.waterfall([
             function (callback) {
                 //Loooking for acccount and loading login data
-                userid.getUserId(username, 1, function (err, kasutaja) {
+                let rekvId = global.rekvId ? global.rekvId : null;
+
+                userid.getUserId(username, rekvId, function (err, kasutaja) {
                     if (err) return callback(err, null);
 
                     if (!kasutaja) {

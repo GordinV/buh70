@@ -22,11 +22,12 @@ CREATE OR REPLACE VIEW public.view_get_users_data AS
            FROM ou.rekv
              JOIN ou.userid u_1 ON u_1.rekvid = rekv.id
           GROUP BY u_1.kasutaja) rs ON rs.kasutaja = u.kasutaja
-     JOIN ( SELECT l.rekvid,
+     JOIN ( SELECT
             array_agg(((((('{"id":'::text || l.id::text) || ',"nimetus":"'::text) || ltrim(rtrim(l.nimetus::text))) || '","lib":"'::text) || ltrim(rtrim(l.library::text))) || '"}'::text) AS libs
            FROM libs.library l
           WHERE l.library = 'DOK'::bpchar
-          GROUP BY l.rekvid) libs ON libs.rekvid = u.id;
+--          GROUP BY l.rekvid
+         ) libs ON  libs is not null;
 
 ALTER TABLE public.view_get_users_data
   OWNER TO postgres;
