@@ -42,7 +42,6 @@ exports.get = async (req, res) => {
         let storeInitialData = JSON.stringify(prepairedData);
         let userData = JSON.stringify(user);
 
-
         res.render(documentType, {
             "user": user,
             "userData": userData,

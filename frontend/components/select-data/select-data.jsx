@@ -28,7 +28,7 @@ class SelectData extends React.PureComponent {
 //        this.onChange = this.onChange.bind(this);
         this.handleInputChange = this.handleInputChange.bind(this);
         this.handleGridClick = this.handleGridClick.bind(this);
-        this. modalPageClick = this. modalPageClick.bind(this);
+        this.modalPageClick = this. modalPageClick.bind(this);
         this.testConfiguration = this.testConfiguration.bind(this);
     }
 

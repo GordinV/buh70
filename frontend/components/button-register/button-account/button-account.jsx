@@ -29,11 +29,11 @@ class ButtonAccount extends React.PureComponent {
 
     render() {
         let value = this.state.value;
-
+        let buttonStyle = Object.assign({},styles.button,styles.buttonAccount);
         return <Button
             value={value}
             ref="btnAccount"
-            style={styles.button}
+            style={buttonStyle}
             show={this.props.show}
             disabled={this.props.disabled}
             onClick={(e) => this.handleClick(e)}>

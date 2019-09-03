@@ -41,7 +41,8 @@ exports.post = function (req, res, next) {
                         userAsutusId: kasutaja.rekvid,
                         userLastLogin: kasutaja.last_login,
                         userAccessList: kasutaja.allowed_access,
-                        userLibraryList: kasutaja.allowed_libs
+                        userLibraryList: kasutaja.allowed_libs,
+                        userAllowedAsutused: []
                     };
                     global.userId = kasutaja.id;
                     global.rekvId = kasutaja.rekvid;
@@ -78,6 +79,21 @@ exports.post = function (req, res, next) {
                     });
                 }
             },
+            //load allowed asutused
+            function (kasutaja, callback) {
+                userid.loadPermitedAsutused(username, function (err, result) {
+                    if (err) {
+                        console.error(err);
+                        callback(err, null);
+                    }
+
+                    //will set the list of allowed asutused to session object
+                    req.session.user.userAllowedAsutused = result;
+
+                    callback(err, result);
+                });
+
+            }
 
         ],
 

@@ -1,7 +1,6 @@
 'use strict';
 
 const React = require('react');
-;
 const PropTypes = require('prop-types');
 
 const styles = require('../button-register-styles'),
@@ -30,11 +29,12 @@ class ButtonLogin extends React.PureComponent {
 
     render() {
         let value = this.state.value;
+        let buttonStyle = Object.assign({},styles.button,styles.buttonLogin);
 
         return <Button
             value={value}
             ref="btnLogin"
-            style={styles.button}
+            style={buttonStyle}
             show={this.props.show}
             disabled={this.props.disabled}
             onClick={(e) => this.handleClick(e)}>
@@ -42,13 +42,11 @@ class ButtonLogin extends React.PureComponent {
         </Button>
     }
 }
-;
-
 
 ButtonLogin.propTypes = {
     onClick: PropTypes.func.isRequired,
     value: PropTypes.string
-}
+};
 
 
 ButtonLogin.defaultProps = {

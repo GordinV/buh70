@@ -2,6 +2,8 @@
 // будет искать пользователя, добавлять пользователя, править его данные и создавать (сохранять) в шифрованном виде пароль
 'use strict';
 
+const _ = require('underscore');
+
 module.exports = {
     userId: 0,
     loginName: '',
@@ -14,6 +16,7 @@ module.exports = {
         const pg = require('pg'),
             config = require('../config/default'),
             db = new pg.Client(config.pg.connection);
+
         return db;
     },
 // возвращает строку пользователя по логину и ид учреждения
@@ -26,21 +29,21 @@ module.exports = {
                 return console.error('could not connect to postgres', err);
             }
 
-            db.query(`select * from view_get_users_data v 
-                 where (v.rekvid = $2 or $2 is null) 
-                 and upper(ltrim(rtrim(v.kasutaja))) = upper($1) 
-                 order by v.last_login desc limit 1 `,
+            db.query(`SELECT *
+                      FROM view_get_users_data v
+                      WHERE (v.rekvid = $2 OR $2 IS NULL)
+                        AND upper(ltrim(rtrim(v.kasutaja))) = upper(ltrim(rtrim($1)))
+                      ORDER BY v.last_login DESC
+                      LIMIT 1 `,
                 [nimi, rekvId], function (err, result) {
                     db.end();
 
                     if (err) {
                         return callback(err, null);
-//                        return console.error('error in query');
                     }
 
                     if (result.rows.length == 0) {
                         return callback(null, null);
-//                        return console.error('No account for users in this department');
                     }
 
                     this.userId = result.rows[0].id;
@@ -50,7 +53,6 @@ module.exports = {
                     this.encriptedPassword = result.rows[0].parool;
 
                     db.end();
-                    console.log('finish /' + result.rows[0]);
                     callback(null, result.rows[0]);
 
                 });
@@ -59,54 +61,82 @@ module.exports = {
 
     //сохраняет шифрованный пароль в таблице, если там его нет
     updateUserPassword: function (userLogin, userPassword, savedPassword, callback) {
-        var encryptedPassword = this.createEncryptPassword(userPassword, userLogin.length + '');
+
+        let encryptedPassword = this.createEncryptPassword(userPassword, userLogin.length + '');
 
         this.loginName = userLogin; // сохраним имя пользователя
         // temparally, only for testing
         if (savedPassword) {
             this.login = encryptedPassword === savedPassword; // проверка пароля
             callback(null, this.login);
-        }
+        } else {
 
-        // иначе сохраняем его в таблице
-        var db = this.connectDb();
+            //first should connect to pg, using connection, username and password. If success, then get hash and update userInformation
+            const pg = require('pg');
+            const local_config = require('../config/default');
 
-        db.connect(function (err) {
-            if (err) {
-                return console.error('could not connect to postgres', err);
-            }
-            db.query("update userid set parool = $2 where upper(kasutaja) = upper($1); ",
-                [userLogin, encryptedPassword], function (err, result) {
+            const local_db = new pg.Client({
+                host: local_config.pg.host,
+                port: local_config.pg.port,
+                database: local_config.pg.database,
+                user: userLogin,
+                password: userPassword
+            });
+
+
+            local_db.connect((err, result) => {
+
+                if (err) {
+                    callback(err, null);
+                }
+
+                // иначе сохраняем его в таблице
+                const db = this.connectDb();
+
+                db.connect(function (err) {
                     if (err) {
-                        callback(err, null);
-                        return console.error('error in query');
+                        return console.error('could not connect to postgres', err);
                     }
-                    db.end();
-                    callback(null, true);
-                });
-        });
+                    db.query("UPDATE ou.userid SET parool = $2 WHERE upper(kasutaja) = upper($1); ",
+                        [userLogin, encryptedPassword], function (err, result) {
+                            if (err) {
+                                callback(err, null);
+                                return console.error('error in query');
+                            }
+                            db.end();
+                            callback(null, true);
+                        });
 
+                callback(err, true);
+
+                });
+
+                // close connection
+                local_db.end();
+
+            });
+
+        }
 
     },
 
     // when succesfully logged in, will update last_login field
     updateUseridLastLogin: function (userId, callback) {
         // иначе сохраняем его в таблице
-        console.log('last_login' + userId);
-        var db = this.connectDb();
+        const db = this.connectDb();
 
         db.connect(function (err) {
             if (err) {
                 return console.error('could not connect to postgres', err);
             }
-            db.query("update userid set last_login =now()  where id = $1; ",
+            db.query("UPDATE ou.userid SET last_login =now()  WHERE id = $1; ",
                 [userId], function (err, result) {
                     if (err) {
-                        console.log('error in query' + err);
+                        console.error('error in query', err);
                         next(err);
                     }
+
                     db.end();
-                    console.log('last_login db end');
                     callback(null, true);
                 });
         });
@@ -122,8 +152,8 @@ module.exports = {
                 return console.error('could not connect to postgres', err);
             }
             db.query("select r.nimetus as asutus, u.* " +
-                "           from userid u " +
-                "               inner join rekv r on r.id = u.rekvid " +
+                "           from ou.userid u " +
+                "               inner join ou.rekv r on r.id = u.rekvid " +
                 "               where $1 = 0 or u.id = $1 " +
                 "               order by u.last_login desc, u.id desc;", [userId], function (err, result) {
                 if (err) {
@@ -139,14 +169,38 @@ module.exports = {
 
 // создает криптованный пароль
     createEncryptPassword: function (password, salt, callback) {
-        var crypto = require('crypto'),
+        const crypto = require('crypto'),
             hashParool = crypto.createHmac('sha1', salt).update(password).digest('hex');
-        console.log(hashParool);
         if (callback) {
 //            this.encriptedPassword = hashParool;
             callback(null, hashParool);
         }
         return hashParool;
     },
+
+    //грузим доступные учреждения
+    loadPermitedAsutused: function (kasutajaNimi, callback) {
+        //model
+        const useridModel = require('./ou/userid');
+        const sql = _.findWhere(useridModel.select, {alias: 'com_user_rekv'}).sql;
+
+        const db = this.connectDb();
+
+        db.connect(function (err) {
+            if (err) {
+                return console.error('could not connect to postgres', err);
+            }
+            db.query(sql, [kasutajaNimi], function (err, result) {
+                if (err) {
+                    console.error(err);
+                    callback(err, null);
+                }
+                db.end();
+                callback(err, result.rows);
+            });
+        });
+
+
+    }
 
 };

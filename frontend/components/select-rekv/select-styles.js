@@ -5,20 +5,12 @@ module.exports = {
         width: '95%'
 
     },
-    input: {
-        width: '70%',
-        marginLeft: '5px',
-        borderRadius:'5px'
-
-
-    },
     hide: {
         display: 'none'
     },
     select: {
         width: '70%',
-        heigth: '100%',
-        marginLeft: '5px',
+        margin: '5px',
         borderRadius:'5px',
         ':focus': {
             backgroundColor: 'lightpink'

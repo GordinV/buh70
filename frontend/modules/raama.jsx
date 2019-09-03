@@ -50,6 +50,9 @@ class App extends React.Component {
         this.prepareParamsForToolbar = this.prepareParamsForToolbar.bind(this);
         this.componets = {};
         this.prepareComponents(this.componets);
+        this.state = {
+            userData: this.props.userData
+        };
 
     }
 
@@ -57,10 +60,11 @@ class App extends React.Component {
         const context = {};
         let activeStyle = {backgroundColor: 'lightblue'};
         let btnParams = this.prepareParamsForToolbar();
+        console.log('called render', this.state.userData);
         return (
             <StyleRoot>
                 <Route  path="/raama"
-                        render={() => <Menu params = {btnParams} userData={this.props.userData}/>}/>
+                        render={() => <Menu params = {btnParams} userData={this.state.userData}/>}/>
                 <Route exact path="/raama"
                        render={(props) => <Docs history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
                 <Route exact path="/raama/docs"
@@ -118,10 +122,6 @@ class App extends React.Component {
             btnAccount: {
                 show: true,
                 disabled: false
-            },
-            btnRekv: {
-                show: true,
-                disabled: false
             }
 
         };
@@ -132,6 +132,7 @@ class App extends React.Component {
             const TunnusDocument = require('./../docs/tunnus/document/index.jsx');
             return <TunnusDocument {...props}/>};
     }
+
 
 }
 

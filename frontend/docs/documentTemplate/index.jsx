@@ -118,7 +118,6 @@ class DocumentTemplate extends React.PureComponent {
             })
         }
 
-        console.log('called focus',this.props.focusElement );
         if (this.props.focusElement && this.refs[this.props.focusElement]) {
             this.refs[this.props.focusElement].focus();
         }
@@ -153,7 +152,6 @@ class DocumentTemplate extends React.PureComponent {
      */
     btnSaveClick() {
         this.fetchData('Put').then(() => {
-            console.log('saved -> ', this.docData.id);
             if (this.props.docId === 0 && !this.docData.id) {
                 return this.setState({warning: 'Ошибка при сохранении'});
             } else {

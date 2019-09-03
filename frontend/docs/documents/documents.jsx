@@ -14,7 +14,6 @@ const {Route, Link, NavLink, IndexRoute} = require('react-router-dom');
 //    MenuToolBar = require('./../../mixin/menuToolBar.jsx'),
 const
     DataGrid = require('./../../components/data-grid/data-grid.jsx'),
-    MenuToolBar = require('./../../components/menu-toolbar/menu-toolbar.jsx'),
     StartMenu = require('./../../components/start-menu/start-menu.jsx'),
     BtnAdd = require('./../../components/button-register/button-register-add/button-register-add.jsx'),
     BtnEdit = require('./../../components/button-register/button-register-edit/button-register-edit.jsx'),
@@ -85,6 +84,7 @@ class Documents extends React.PureComponent {
 
     render() {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
+
         return (
             <div style={_style.doc}>
                 {/*
@@ -314,6 +314,8 @@ class Documents extends React.PureComponent {
         );
     }
 
+
+
     /**
      * Откроет стартовое меню
      * @returns {*}
@@ -358,10 +360,6 @@ class Documents extends React.PureComponent {
                 disabled: false
             },
             btnAccount: {
-                show: true,
-                disabled: false
-            },
-            btnRekv: {
                 show: true,
                 disabled: false
             }
