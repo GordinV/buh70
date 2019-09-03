@@ -1,0 +1,15 @@
+extends layout
+//extends header
+block content
+    h1= title
+    p Welcome to #{title}
+    link(rel='stylesheet', href='/stylesheets/documents.css')
+    script(type="text/babel" src="/javascripts/common.js")
+    script(type="text/babel" src="/javascripts/lapsed.js")
+
+    if store
+        script(type='text/javascript').
+            var userData = !{JSON.stringify(userData)}
+            var initData = !{JSON.stringify(store)}
+    div
+        div#doc!=react

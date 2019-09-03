@@ -60,7 +60,7 @@ class App extends React.Component {
         const context = {};
         let activeStyle = {backgroundColor: 'lightblue'};
         let btnParams = this.prepareParamsForToolbar();
-        console.log('called render', this.state.userData);
+
         return (
             <StyleRoot>
                 <Route  path="/raama"

@@ -16,7 +16,8 @@ const NODE_ENV = 'development';
 module.exports = {
 //    context: __dirname + '/frontend',
     entry: {
-        raama: './frontend/raama.js'
+        raama: './frontend/raama.js',
+        lapsed: './frontend/lapsed.js'
     },
     output: {
         path: __dirname + '/public/javascripts',
@@ -46,7 +47,7 @@ module.exports = {
         new webpack.DefinePlugin({NODE_ENV: JSON.stringify(NODE_ENV)}),
         new webpack.optimize.CommonsChunkPlugin({
             name: "common",
-            chunks: ['raama'], // список модулей для выявления общих модулей
+            chunks: ['raama','lapsed'], // список модулей для выявления общих модулей
             minChunks: 2
         })
     ],

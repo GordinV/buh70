@@ -5,13 +5,6 @@ const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
 const URL = '/newApi';
 
-/*
-const JournalDocument = require('./../journal/journal.jsx');
-const {Route, Link, NavLink, IndexRoute} = require('react-router-dom');
-*/
-
-
-//    MenuToolBar = require('./../../mixin/menuToolBar.jsx'),
 const
     DataGrid = require('./../../components/data-grid/data-grid.jsx'),
     StartMenu = require('./../../components/start-menu/start-menu.jsx'),
