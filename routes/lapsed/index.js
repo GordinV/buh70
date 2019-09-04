@@ -16,6 +16,8 @@ exports.get = async (req, res) => {
         documentType = req.params.documentType;
     }
 
+    // will set module
+    global.module = 'Lapsed';
 
     if (!documentType || documentType.toUpperCase() === 'DOCS') {
         //вернет регистр документов

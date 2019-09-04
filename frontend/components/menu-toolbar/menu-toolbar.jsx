@@ -30,12 +30,13 @@ class MenuToolBar extends React.PureComponent {
             isOpenRekvPage: false
         };
 
+        this.module = props.module;
+        this.moduleAddress = this.module === 'Lapsed' ? 'lapsed' : 'raama';
+
         this.btnStartClick = this.btnStartClick.bind(this);
         this.btnLoginClick = this.btnLoginClick.bind(this);
         this.renderStartMenu = this.renderStartMenu.bind(this);
         this.startMenuClickHandler = this.startMenuClickHandler.bind(this);
-
-        console.log('menu props', props);
 
     }
 
@@ -53,10 +54,6 @@ class MenuToolBar extends React.PureComponent {
                 btnAccount: {
                     show: this.state.logedIn || false,
                     disabled: false
-                },
-                btnRekv: {
-                    show: this.state.logedIn || false,
-                    disabled: !this.state.rekvIds
                 }
             };
 
@@ -72,6 +69,7 @@ class MenuToolBar extends React.PureComponent {
         });
 
         const rekvId = this.props.userData.asutusId;
+        const module = this.module;
 
         return (
             <div style={style['container']}>
@@ -81,7 +79,8 @@ class MenuToolBar extends React.PureComponent {
                     <BtnStart ref='btnStart'
                               onClick={this.btnStartClick}
                               show={toolbarParams['btnStart'].show}
-                              disabled={toolbarParams['btnStart'].disabled}/>
+                              disabled={toolbarParams['btnStart'].disabled}
+                    />
 
                     <SelectRekv name='rekvId'
                                 libs="rekv"
@@ -113,9 +112,12 @@ class MenuToolBar extends React.PureComponent {
 
     renderStartMenu() {
         let component;
+        let module = this.module;
         if (this.state.showStartMenu) {
             component = <StartMenu ref='startMenu'
+                                   module = {module}
                                    value={this.state.startMenuValue}
+
                                    clickHandler={this.startMenuClickHandler}/>
         }
         return component
@@ -142,7 +144,7 @@ class MenuToolBar extends React.PureComponent {
     startMenuClickHandler(value) {
         this.setState({showStartMenu: false});
         if (this.props.history) {
-            return this.props.history.push(`/raama/${value}`)
+            return this.props.history.push(`/${this.moduleAddress}/${value}`)
         }
 
 //        document.location.href = `/documents/${value}`;
@@ -168,7 +170,7 @@ class MenuToolBar extends React.PureComponent {
     }
 
     handleChange(inputName, inputValue) {
-        let rekvId  = inputValue; // choose asutusId
+        let rekvId = inputValue; // choose asutusId
 
         // отправить пост запрос
         try {
@@ -176,7 +178,7 @@ class MenuToolBar extends React.PureComponent {
 
             fetchData.fetchDataPost(localUrl).then(response => {
                 // will reload page
-                document.location.href = '/raama';
+                document.location.reload();
             });
 
         } catch (e) {
@@ -185,7 +187,6 @@ class MenuToolBar extends React.PureComponent {
         // получить и сохрать данные пользователя
         // обновить регистр документов - перейти на главную страницу
     }
-
 
 
 }

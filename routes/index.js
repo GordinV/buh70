@@ -23,7 +23,7 @@ module.exports = function (app) {
     app.get('/lapsed/:documentType/:id', checkAuth, require('./lapsed/document').get); // module lapsed
 
 
-    app.post('/newApi/startMenu',require('./startMenu').post); //checkAuth,
+    app.post('/newApi/startMenu/:module',require('./startMenu').post); //checkAuth,
     app.post('/newApi/document/:documentType/:id',require('./documentRegister').post); //апи для обмена даты по протоколу POST с моделью документа
     app.put('/newApi/document/:documentType/:id',require('./documentRegister').put); //апи для обмена даты по протоколу POST с моделью документа
     app.post('/newApi/loadLibs/:documentType', require('./loadLibs').post); //checkAuth,

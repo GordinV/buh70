@@ -49,5 +49,11 @@
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://213.184.47.198:5436/test</jdbc-url>
     </data-source>
+    <data-source source="LOCAL" name="db@localhost" uuid="68df3870-fbde-49fb-b08f-9de8aa5469b9">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/db</jdbc-url>
+    </data-source>
   </component>
 </project>

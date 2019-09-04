@@ -8,6 +8,7 @@ const Docs = require('./../docs/dok/index.jsx');
 
 const {Route, withRouter} = require('react-router-dom');
 const {StyleRoot} = require('radium');
+const MODULE = 'Lapsed';
 
 class App extends React.Component {
     constructor(props) {
@@ -26,7 +27,7 @@ class App extends React.Component {
         return (
             <StyleRoot>
                 <Route  path="/lapsed"
-                        render={() => <Menu params = {btnParams} userData={this.state.userData}/>}/>
+                        render={() => <Menu params = {btnParams} userData={this.state.userData} module={MODULE}/>}/>
                 <Route exact path="/lapsed"
                        render={(props) => <Docs history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
                 <Route exact path="/lapsed/docs"

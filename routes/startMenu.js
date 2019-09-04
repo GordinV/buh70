@@ -2,28 +2,23 @@
 
 exports.post = async (req, res) => {
     let user = require('../middleware/userData')(req); // данные пользователя
-        const db = require('./../libs/db');
-        const menuModel = require('./../models/start-menu');
+    const db = require('./../libs/db');
+    const menuModel = require('./../models/ou/start-menu');
+    let module = req.params.module;
 
-        const sqlString = menuModel.sqlString,
-            params = [1];
-
-        if (!user) {
-            //only for test @todo убрать по окончании
-            user = {
-                userId: 1,
-                asutusId: 1
-            }
-        }
+    const sqlString = menuModel.sqlString,
+        params = [module];
 
     try {
 
-        let data =  await db.queryDb(sqlString,params);
+        let data = await db.queryDb(sqlString, params);
+
+        console.log('start menu api, data', sqlString, params, data);
         // вернуть данные
         res.send(data);
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок
-        res.send({result:'Error'});
+        res.send({result: 'Error'});
 
     }
 };

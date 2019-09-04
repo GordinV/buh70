@@ -20,6 +20,7 @@ class StartMenu extends React.PureComponent {
 
         this.treeData = props.data;
         this.clickHandler = this.clickHandler.bind(this);
+        this.fetchData = this.fetchData.bind(this);
     }
 
     /**
@@ -28,7 +29,7 @@ class StartMenu extends React.PureComponent {
     componentDidMount() {
         if (!this.treeData.length) {
             //делаем запрос на получение данных
-            this.fetchData();
+            this.fetchData(this.props);
         }
     }
 
@@ -54,9 +55,10 @@ class StartMenu extends React.PureComponent {
     /**
      * Выполнит запросы
      */
-    fetchData() {
+    fetchData(props) {
+        let params = URL + `/${props.module}`;
         try {
-            fetchData.fetchDataPost(URL)
+            fetchData.fetchDataPost(params)
                 .then(response => {
                     if (response) {
                         this.treeData = response.data.data;

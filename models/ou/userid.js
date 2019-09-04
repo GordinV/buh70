@@ -2,30 +2,31 @@ module.exports = {
     selectAsLibs: `SELECT *
                    FROM ou.cur_userid
                    WHERE rekvid = $1`, //$1 - asutuse id
-    select: [{
-        sql: `SELECT 'USERID'                                                                      AS doc_type_id,
-                     $2 :: INTEGER                                                                 AS userid,
-                     u.id,
-                     u.rekvid,
-                     u.kasutaja,
-                     u.ametnik,
-                     u.muud,
-                     coalesce((u.roles ->> 'is_kasutaja') :: BOOLEAN, FALSE) :: INTEGER            AS is_kasutaja,
-                     coalesce((u.roles ->> 'is_peakasutaja') :: BOOLEAN, FALSE) :: INTEGER         AS is_peakasutaja,
-                     coalesce((u.roles ->> 'is_admin') :: BOOLEAN, FALSE) :: INTEGER               AS is_admin,
-                     coalesce((u.roles ->> 'is_vaatleja') :: BOOLEAN, FALSE) :: INTEGER            AS is_vaatleja,
-                     coalesce((u.roles ->> 'is_eel_koostaja') :: BOOLEAN, FALSE) :: INTEGER        AS is_eel_koostaja,
-                     coalesce((u.roles ->> 'is_eel_allkirjastaja') :: BOOLEAN, FALSE) :: INTEGER   AS is_eel_allkirjastaja,
-                     coalesce((u.roles ->> 'is_eel_esitaja') :: BOOLEAN, FALSE) :: INTEGER         AS is_eel_esitaja,
-                     coalesce((u.roles ->> 'is_eel_aktsepterja') :: BOOLEAN, FALSE) :: INTEGER     AS is_eel_aktsepterja,
-                     coalesce((u.roles ->> 'is_asutuste_korraldaja') :: BOOLEAN, FALSE) :: INTEGER AS is_asutuste_korraldaja,
-                     coalesce((u.roles ->> 'is_rekl_administraator') :: BOOLEAN, FALSE) :: INTEGER AS is_rekl_administraator,
-                     coalesce((u.roles ->> 'is_rekl_maksuhaldur') :: BOOLEAN, FALSE) :: INTEGER    AS is_rekl_maksuhaldur,
-                     coalesce((u.roles ->> 'is_ladu_kasutaja') :: BOOLEAN, FALSE) :: INTEGER    AS is_ladu_kasutaja,
-                     (u.properties ->> 'email') :: VARCHAR(254)                                    AS email
-              FROM ou.userid u
-              WHERE id = $1`,
-        sqlAsNew: `SELECT
+    select: [
+        {
+            sql: `SELECT 'USERID'                                                                      AS doc_type_id,
+                         $2 :: INTEGER                                                                 AS userid,
+                         u.id,
+                         u.rekvid,
+                         u.kasutaja,
+                         u.ametnik,
+                         u.muud,
+                         coalesce((u.roles ->> 'is_kasutaja') :: BOOLEAN, FALSE) :: INTEGER            AS is_kasutaja,
+                         coalesce((u.roles ->> 'is_peakasutaja') :: BOOLEAN, FALSE) :: INTEGER         AS is_peakasutaja,
+                         coalesce((u.roles ->> 'is_admin') :: BOOLEAN, FALSE) :: INTEGER               AS is_admin,
+                         coalesce((u.roles ->> 'is_vaatleja') :: BOOLEAN, FALSE) :: INTEGER            AS is_vaatleja,
+                         coalesce((u.roles ->> 'is_eel_koostaja') :: BOOLEAN, FALSE) :: INTEGER        AS is_eel_koostaja,
+                         coalesce((u.roles ->> 'is_eel_allkirjastaja') :: BOOLEAN, FALSE) :: INTEGER   AS is_eel_allkirjastaja,
+                         coalesce((u.roles ->> 'is_eel_esitaja') :: BOOLEAN, FALSE) :: INTEGER         AS is_eel_esitaja,
+                         coalesce((u.roles ->> 'is_eel_aktsepterja') :: BOOLEAN, FALSE) :: INTEGER     AS is_eel_aktsepterja,
+                         coalesce((u.roles ->> 'is_asutuste_korraldaja') :: BOOLEAN, FALSE) :: INTEGER AS is_asutuste_korraldaja,
+                         coalesce((u.roles ->> 'is_rekl_administraator') :: BOOLEAN, FALSE) :: INTEGER AS is_rekl_administraator,
+                         coalesce((u.roles ->> 'is_rekl_maksuhaldur') :: BOOLEAN, FALSE) :: INTEGER    AS is_rekl_maksuhaldur,
+                         coalesce((u.roles ->> 'is_ladu_kasutaja') :: BOOLEAN, FALSE) :: INTEGER       AS is_ladu_kasutaja,
+                         (u.properties ->> 'email') :: VARCHAR(254)                                    AS email
+                  FROM ou.userid u
+                  WHERE id = $1`,
+            sqlAsNew: `SELECT
                       $1 :: INTEGER         AS id,
                       $2 :: INTEGER         AS userid,
                       'USERID'             AS doc_type_id,
@@ -47,21 +48,44 @@ module.exports = {
                       0 :: INTEGER     AS is_ladu_kasutaja,
                       0 :: INTEGER     AS is_kasutaja,
                       NULL :: VARCHAR(254) AS email`,
-        query: null,
-        multiple: false,
-        alias: 'row',
-        data: []
-    }, {
-        sql: `SELECT r.id, r.regkood, r.nimetus:: VARCHAR(254), r.parentid, u.id AS user_id
-              FROM ou.userid u
-                     INNER JOIN ou.rekv r ON r.id = u.rekvid
-              WHERE kasutaja = $1
-                AND r.status <> 3`,
-        query: null,
-        multiple: true,
-        alias: 'com_user_rekv',
-        data: []
-    }],
+            query: null,
+            multiple: false,
+            alias: 'row',
+            data: []
+        },
+        {
+            sql: `SELECT r.id, r.regkood, r.nimetus:: VARCHAR(254), r.parentid, u.id AS user_id
+                  FROM ou.userid u
+                           INNER JOIN ou.rekv r ON r.id = u.rekvid
+                  WHERE kasutaja = $1
+                    AND r.status <> 3`,
+            query: null,
+            multiple: true,
+            alias: 'com_user_rekv',
+            data: []
+        },
+        {
+            sql: `SELECT r.nimetus AS asutus, u.*
+                  FROM ou.userid u
+                           INNER JOIN ou.rekv r ON r.id = u.rekvid
+                  WHERE ($1 = 0
+                      OR u.id = $1)
+                    AND r.status <> 3
+                  ORDER BY u.last_login DESC, u.id DESC;`,
+            query: null,
+            multiple: true,
+            alias: 'get_all_users',
+            data: []
+        },
+        {
+            sql: `SELECT *
+                  FROM ou.get_user_data($1::TEXT, $2::INTEGER, null::TEXT)`, //$1 - login, $2 - rekv or null, $3 - module or null
+            query: null,
+            multiple: true,
+            alias: 'get_last_login',
+            data: []
+        },
+    ],
     returnData: {
         row: {},
         details: []
@@ -80,12 +104,35 @@ module.exports = {
             {id: "ametnik", name: "Ametnik", width: "35%"},
             {id: "email", name: "Email", width: "35%"}
         ],
-        sqlString: `SELECT $2 AS user_id, u.id, u.asutus::varchar(254), u.kasutaja::varchar(254), u.ametnik::varchar(254),
-                    u.is_admin::integer, u.is_kasutaja::integer, u.is_peakasutaja::INTEGER
+        sqlString: `SELECT $2 AS user_id,
+                           u.id,
+                           u.asutus::VARCHAR(254),
+                           u.kasutaja::VARCHAR(254),
+                           u.ametnik::VARCHAR(254),
+                           u.is_admin::INTEGER,
+                           u.is_kasutaja::INTEGER,
+                           u.is_peakasutaja::INTEGER
                     FROM ou.cur_userid u
-                    WHERE u.rekvid IN (SELECT rekv_id FROM get_asutuse_struktuur($1::integer))`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                    WHERE u.rekvid IN (SELECT rekv_id FROM get_asutuse_struktuur($1::INTEGER))`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curUserid'
     },
+    executeSql: [
+        {
+            sql: `UPDATE ou.userid
+                  SET parool = $2
+                  WHERE upper(kasutaja) = upper($1);`, //$1- login, $2 - password hash
+            type: 'sql',
+            alias: 'update_hash'
+        },
+        {
+            sql: `UPDATE ou.userid
+                  SET last_login =now()
+                  WHERE id = $1;`, //$1- userId
+            type: 'sql',
+            alias: 'update_last_login'
+        },
+
+    ],
 
 };
