@@ -10,15 +10,9 @@ const {StaticRouter} = require('react-router');
 const App = require('./../../frontend/modules/lapsed.jsx');
 
 exports.get = async (req, res) => {
-    let documentType = 'docs',
-        returnedDocType = documentType; //вернем обратно тип документа
-    if (req.params.documentType) {
-        documentType = req.params.documentType;
-    }
+    let documentType = req.params.documentType ? req.params.documentType : 'docs';
 
     // will set module
-    global.module = 'Lapsed';
-
     if (!documentType || documentType.toUpperCase() === 'DOCS') {
         //вернет регистр документов
         documentType = 'DOK';
@@ -32,13 +26,14 @@ exports.get = async (req, res) => {
     // делаем запрос , получаем первоначальные данные
     let gridConfig = Document.config.grid.gridConfiguration;
     // вызвать метод
-    let data = {
-        docTypeId: returnedDocType,
+
+    const sqlData = {
+        docTypeId: documentType,
         result: await Document.selectDocs(),
         gridConfig: gridConfig
     };
 
-    let storeInitialData = JSON.stringify(data);
+    let storeInitialData = JSON.stringify(sqlData);
     let userData = JSON.stringify(user);
     let context = {};
 
@@ -46,7 +41,7 @@ exports.get = async (req, res) => {
         StaticRouter,
         {context: context, location: req.url}, React.createElement(
             App,
-            {initData: data, userData: user}));
+            {initData: sqlData, userData: user}));
 
     try {
         let html = ReactServer.renderToString(Component);

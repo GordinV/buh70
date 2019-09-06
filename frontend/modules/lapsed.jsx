@@ -32,6 +32,8 @@ class App extends React.Component {
                        render={(props) => <Docs history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
                 <Route exact path="/lapsed/docs"
                        render={(props) => <Docs history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
+                <Route exact path="/lapsed/laps"
+                       render={(props) => <Docs history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
             </StyleRoot>)
     }
 

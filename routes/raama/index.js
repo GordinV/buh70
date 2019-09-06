@@ -16,9 +16,6 @@ exports.get = async (req, res) => {
         documentType = req.params.documentType;
     }
 
-    // will set module
-    global.module = "Raamatupidamine";
-
     if (!documentType || documentType.toUpperCase() === 'DOCS') {
         //вернет регистр документов
         documentType = 'DOK';

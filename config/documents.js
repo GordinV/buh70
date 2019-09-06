@@ -17,5 +17,6 @@ module.exports = {
     tunnus: '/libs/libraries/tunnus',
     project: '/libs/libraries/project',
     kassa: '/libs/libraries/kassa',
-    kontoandmik: '/aruanned/raamatupidamine/kontoandmik'
-}
+    kontoandmik: '/aruanned/raamatupidamine/kontoandmik',
+    laps:'/lapsed/laps'
+};

@@ -20,6 +20,7 @@ const db = {
         await client.connect();
         try {
             const res = await client.query(prepairedSqlString, params);
+
             if (res.rowCount && res.rowCount === 1 && 'error_code' in res.rows[0]) {
                 // executed procedure
                 result = Object.assign(result, res.rows[0]);
@@ -28,11 +29,13 @@ const db = {
                 result.data = res.rows;
                 result.result = res.rowCount;
             }
+
         } catch (e) {
             console.error('tekkis viga', e);
             result.error_code = 9;
             result.error_message = e.message;
         }
+
         await client.end();
         return result;
     },

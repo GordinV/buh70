@@ -11,10 +11,6 @@ console.log('sql',sql);
 //curl -X; GET; "https://graph.facebook.com/<PSID>?fields='Nina','Martonenko'";
 */
 
-const _ = require('underscore');
+let a = Math.floor(Math.random() * 100000000);
 
-const useridModel = require('../models/ou/userid');
-const sql = _.findWhere(useridModel.select, {alias: 'com_user_rekv'});
-
-let paring = sql.sql;
-console.log(paring,sql);
+console.log(a);

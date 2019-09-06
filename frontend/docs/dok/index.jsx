@@ -3,7 +3,6 @@
 const React = require('react');
 const Documents = require('./../documents/documents.jsx');
 const styles = require('./docs-register-styles');
-const DOC_TYPE_ID = 'document';
 
 /**
  * Класс реализует справочник документов пользователя.
@@ -15,18 +14,20 @@ class Docs extends React.PureComponent {
     }
 
     render() {
+        const docTypeId = this.props.initData.docTypeId;
+
         return <Documents initData={this.props.initData}
                           userData={this.props.userData}
-                          history = {this.props.history ? this.props.history: null}
+                          history={this.props.history ? this.props.history : null}
 
-                          docTypeId='DOCUMENT'
-                          ref = 'register'
+                          docTypeId={docTypeId}
+                          ref='register'
                           style={styles}
                           render={this.renderer}/>;
     }
 
     renderer() {
-        return <div>Docs types register special render</div>
+        return <div> register special render</div>
     }
 
 }

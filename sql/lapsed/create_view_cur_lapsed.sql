@@ -1,0 +1,29 @@
+DROP VIEW IF EXISTS lapsed.cur_lapsed;
+
+CREATE OR REPLACE VIEW lapsed.cur_lapsed AS
+
+SELECT l.id,
+       l.isikukood,
+       l.nimi,
+       l.properties,
+       btrim(lk.yksused::TEXT, '[]')::TEXT AS yksused,
+       lk.rekv_ids
+FROM lapsed.laps l
+         JOIN (SELECT parentid,
+                      json_agg((k.properties -> 'yksus')) AS yksused,
+                      array_agg(rekvid)                   AS rekv_ids
+               FROM lapsed.lapse_kaart k
+               GROUP BY parentid
+) lk ON lk.parentid = l.id
+WHERE l.staatus <> 3
+ORDER BY nimi;
+
+GRANT SELECT ON TABLE lapsed.cur_lapsed TO arvestaja;
+GRANT SELECT ON TABLE lapsed.cur_lapsed TO dbvaatleja;
+GRANT SELECT ON TABLE lapsed.cur_lapsed TO dbpeakasutaja;
+
+/*
+
+select * from lapsed.cur_lapsed
+select * from lapsed.laps
+ */
