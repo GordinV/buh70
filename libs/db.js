@@ -40,9 +40,11 @@ const db = {
         return result;
     },
     executeQueries: async (sqls, params, returnData) => {
+
         const client = new Client(config.pg.connection);
         await client.connect();
         let result = [];
+
         try {
             await Promise.all(sqls.map(async sql => {
                 let sqlString = typeof sql === 'string' ? sql : sql.sql;

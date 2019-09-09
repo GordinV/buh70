@@ -2,14 +2,13 @@
 
 const React = require('react');
 const ReactServer = require('react-dom/server');
-const {StaticRouter }= require('react-router');
+const {StaticRouter} = require('react-router');
 
 exports.get = async (req, res) => {
     // рендер грида на сервере при первой загрузке странице
     // берем тип документа из параметра в адресе
     let documentType = req.params.documentType.toLowerCase(),
         docId = Number(req.params.id);
-
 
     const DocumentView = require(`./../../../frontend/docs/${documentType}/document/index.jsx`);
     let user = require('./../../../middleware/userData')(req);  // check for userid in session
@@ -24,19 +23,22 @@ exports.get = async (req, res) => {
         context = {};
 
     if (docId) {
-        data =  await Document.select();
+        data = await Document.select();
     } else {
-        data =  await Document.createNew();
+        data = await Document.createNew();
     }
 
     const prepairedData = Object.assign({}, data.row[0],
-        {gridData: data.details},
+        {gridData: data.vanemad},
         {relations: data.relations},
-        {gridConfig: data.gridConfig});
+        {gridConfig: data.gridConfig},
+        {gridTeenusteData: data.teenused},
+        {gridTeenusteConfig: data.gridTeenusteConfig}
+    );
 
     const Component = React.createElement(
         StaticRouter,
-        {context:context, location: req.url}, React.createElement(
+        {context: context, location: req.url}, React.createElement(
             DocumentView,
             {id: 'doc', initData: prepairedData, userData: user, docId: docId}));
 
@@ -52,27 +54,14 @@ exports.get = async (req, res) => {
             });
             res.end()
         } else {
-            res.render('index', {
-                "title":'Module lapsed',
+            res.render('lapsed', {
+                "title": 'Module lapsed',
                 "user": user,
                 "userData": userData,
                 "store": storeInitialData
                 , react: html
             });
         }
-/*
-
-
-
-        res.render(documentType, {
-            "user": user,
-            "userData": userData,
-            "initData": storeInitialData,
-            "docId": docId
-            , react: html
-        });
-*/
-
     } catch (e) {
         console.error('error:', e);
         res.statusCode = 500;

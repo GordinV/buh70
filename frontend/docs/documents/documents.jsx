@@ -154,7 +154,7 @@ class Documents extends React.PureComponent {
             // кастомный обработчик события
             this.props.btnAddClick(this.state.value);
         } else {
-            return this.props.history.push(`/raama/${this.docTypeId}/0`);
+            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/0`);
         }
     }
 
@@ -166,7 +166,7 @@ class Documents extends React.PureComponent {
             // кастомный обработчик события
             this.props.btnEditClick(this.state.value);
         } else {
-            return this.props.history.push(`/raama/${this.docTypeId}/${this.state.value}`);
+            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/${this.state.value}`);
         }
     }
 

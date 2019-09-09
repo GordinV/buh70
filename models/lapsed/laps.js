@@ -6,24 +6,84 @@ module.exports = {
                      l.nimi,
                      l.properties ->> 'viitenumber' AS viitenumber,
                      l.muud,
-                     $2                             AS userid
+                     $2::INTEGER                    AS userid,
+                     0::NUMERIC(14, 2)              AS jaak
               FROM lapsed.laps l
-              WHERE l.id = $1`,
+              WHERE l.id = $1::INTEGER`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,
                   null::text as isikukood,
                   null::text as nimi,
                   null::text as viitenumber,
-                  null::text as muud`,
+                  null::text as muud,
+                  0::number(14,2) as jaak`,
         query: null,
         multiple: false,
         alias: 'row',
         data: []
-    }],
-    returnData: {
-        row: {}
     },
+        {
+            sql: `SELECT v.id,
+                         v.parentid,
+                         v.asutusid,
+                         a.nimetus,
+                         a.tel,
+                         a.email,
+                         v.properties ->> 'arved'     AS arved,
+                         v.properties ->> 'suhtumine' AS suhtumine,
+                         $2                           AS userid
+                  FROM lapsed.vanemad v
+                           INNER JOIN libs.asutus a ON a.id = v.asutusid
+                  WHERE v.parentid = $1
+                    AND v.staatus < 3`,
+            query: null,
+            multiple: true,
+            alias: 'vanemad',
+            data: []
+        },
+        {
+            sql: `SELECT k.id,
+                         k.parentid,
+                         k.nomid,
+                         n.kood,
+                         n.nimetus,
+                         k.hind,
+                         k.properties ->> 'yksus' AS yksus
+                  FROM lapsed.lapse_kaart k
+                           INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
+                  WHERE k.parentid = $1
+                    AND k.rekvid IN (SELECT rekvid FROM ou.userid WHERE id = $2)`,
+            query: null,
+            multiple: true,
+            alias: 'teenused',
+            data: []
+        }
+
+    ],
+    returnData: {
+        row: {},
+        details: [],
+        teenused: [],
+        vanemad: [],
+        gridConfig: [
+            {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
+            {id: 'parentid', name: 'parentid', width: '0px', show: false, type: 'text', readOnly: true},
+            {id: 'asutusid', name: 'asutusid', width: '0px', show: false, type: 'text', readOnly: true},
+            {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
+            {id: 'tel', name: 'Tel. nr', width: '100px', show: true, type: 'text', readOnly: false},
+            {id: 'email', name: 'E-mail', width: '100px', show: true, type: 'text', readOnly: false},
+        ],
+        gridTeenusteConfig: [
+            {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
+            {id: 'kood', name: 'Kood', width: '100px', show: true, type: 'text', readOnly: false},
+            {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
+            {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'text', readOnly: false},
+            {id: 'yksus', name: 'Üksus', width: '100px', show: true, type: 'text', readOnly: false}
+        ]
+    },
+
+
     requiredFields: [
         {name: 'isikukood', type: 'C'},
         {name: 'nimi', type: 'T'}
@@ -62,4 +122,3 @@ module.exports = {
 
 };
 
-//WHERE rekv_ids @> ARRAY [$1]::INTEGER[]

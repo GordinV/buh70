@@ -68,9 +68,14 @@ class Document {
         }
 
         let sql = this.config.saveDoc;
+
         let data = await db.queryDb(sql, [params.data, params.userId, params.asutusId]);
-        this.documentId = data.data[0].id;
-        data = await this.select();
+
+        if (data.data[0].id) {
+            this.documentId = data.data[0].id;
+            data = await this.select();
+        }
+
         return data;
     }
 

@@ -9,8 +9,8 @@ $BODY$
 
 DECLARE
     userName      TEXT;
-    doc_id        INTEGER = data ->> 'id';
     doc_data      JSON    = data ->> 'data';
+    doc_id        INTEGER = doc_data ->> 'id';
     doc_isikukood TEXT    = doc_data ->> 'isikukood';
     doc_nimi      TEXT    = doc_data ->> 'nimi';
     doc_viitenr   TEXT    = doc_data ->> 'viitenumber';
@@ -64,7 +64,7 @@ BEGIN
                              WHERE id = doc_id
                             ) row;
 
-        UPDATE libs.library
+        UPDATE lapsed.laps
         SET isikukood  = doc_isikukood,
             nimi       = doc_nimi,
             properties = properties ||  json_props,
@@ -95,8 +95,6 @@ GRANT EXECUTE ON FUNCTION lapsed.sp_salvesta_laps(JSONB, INTEGER, INTEGER) TO ar
 
 /*
 
-select * from ou.userid where rekvid = 63
-SELECT lapsed.sp_salvesta_laps('{"id":0,"data":{"isikukood":"37303023721","id":0,"nimi":"Vlad","viitenumber":"123456789", "muud":"test"}}'::jsonb,70, 63)
+select lapsed.sp_salvesta_laps('{"data":{"id":1,"isikukood":"37303023721","nimi":"Vladislav Gordin","viitenumber":"123456789","muud":"test","userid":70}}'::jsonb, 70::integer, 63::integer) as id
 
-select * from lapsed.laps
 */

@@ -109,9 +109,8 @@ class DocumentTemplate extends React.PureComponent {
         //бекап данных
         this.makeBackup();
 
-
         if (this.props.history) {
-            this.props.history.push(`/raama/${this.props.docTypeId}/0}`);
+            this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/0}`);
         } else {
             this.setState({docId: 0, edited: true}, () => {
                 this.fetchData();
@@ -453,6 +452,10 @@ class DocumentTemplate extends React.PureComponent {
     handlePageClick(page) {
         if (page.docId) {
             document.location.href = `/document/${page.docTypeId}/${page.docId}`;//@todo Обновить
+        }
+
+        if (page.handlePageClick) {
+            page.handlePageClick(page.docTypeId);
         }
     }
 

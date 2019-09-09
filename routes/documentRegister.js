@@ -96,7 +96,11 @@ exports.post = async (req, res) => {
         data = {result: await Document.createNew()};
     }
 
-    const preparedData = Object.assign({}, data.result.row[0],
+    console.log('data result ->', data.result);
+
+    const preparedData = Object.assign({},
+        data.result.row[0],
+        data.result,
         {gridData: data.result.details},
         {relations: data.result.relations},
         {gridConfig: data.result.gridConfig});
@@ -123,20 +127,11 @@ exports.put = async (req, res) => {
     const docId = Number(req.params.id); //ид документа
     let data = req.body;
 
-    /*
-        if (!user) {
-            raise.error('No user', user);
-            const err = new HttpError(err);
-            if (err instanceof HttpError) {
-                return res.send({"message": 'No user'});
-            }
-        }
-    */
-
     if (!user) {
-        user = {
-            userId: 1,
-            asutusId: 1
+        raise.error('No user', user);
+        const err = new HttpError(err);
+        if (err instanceof HttpError) {
+            return res.send({"message": 'No user'});
         }
     }
 
@@ -149,17 +144,15 @@ exports.put = async (req, res) => {
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, docId, user.userId, user.asutusId);
 
-    console.log('saving:', params);
-    let savedData = await Document.save(params);
+    const savedData = await Document.save(params);
 
     const prepairedData = Object.assign({}, savedData.row[0],
-        {bpm: savedData.bpm ? savedData.bpm: []},
-        {gridData: savedData.details ? savedData.details: []},
-        {relations: savedData.relations ? savedData.relations: []},
-        {gridConfig: savedData.gridConfig ? savedData.gridConfig: []});
+        {bpm: savedData.bpm ? savedData.bpm : []},
+        {gridData: savedData.details ? savedData.details : []},
+        {relations: savedData.relations ? savedData.relations : []},
+        {gridConfig: savedData.gridConfig ? savedData.gridConfig : []});
 
 
-    console.log('prepairedData',savedData, prepairedData );
     res.send({result: {error_code: 0, error_message: null, docId: prepairedData.id}, data: [prepairedData]}); //пока нет новых данных
 
     /*
