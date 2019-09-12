@@ -100,13 +100,21 @@ class Document {
     /**
      * грузит гриды
      */
-    selectLibs(sqlWhere) {
+    async selectLibs(sqlWhere, sqlLimit) {
         let sql = this.config.selectAsLibs,
-            params = [this.rekvId];
+            params = [this.rekvId],
+            libGridConfig = this.config.libGridConfig ? this.config.libGridConfig.grid: [],
+            libSearchFields = this.config.libGridConfig ? this.config.libGridConfig.searchFields: [];
 
-        let sqlLimit = 10;
+        console.log('libGridConfig',libGridConfig, this.config);
 
-        return db.queryDb(sql, params, '', sqlWhere, sqlLimit);
+        const dbResult = Object.assign({},
+            await db.queryDb(sql, params, '', sqlWhere, sqlLimit),
+            {gridConfig: libGridConfig, searchFields: libSearchFields}
+        );
+        console.log('got dbResult', dbResult);
+
+        return dbResult;
 
     }
 }

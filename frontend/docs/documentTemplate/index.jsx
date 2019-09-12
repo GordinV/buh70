@@ -275,7 +275,7 @@ class DocumentTemplate extends React.PureComponent {
         let toolbarParams = this.prepareParamsForToolbar(); //параметры для кнопок управления, взависимости от активной строки
 
         return (
-            <div ref='doc-toolbar'>
+            <div ref='doc-toolbar' >
                 {/*
                 <MenuToolBar params={toolbarParams}
                              userData={this.props.userData}
@@ -284,7 +284,6 @@ class DocumentTemplate extends React.PureComponent {
                 {this.renderStartMenu()}
 */}
                 <ToolbarContainer ref='toolbarContainer'>
-                    <div>
                         <DocToolBar ref='doc-toolbar'
                                     docId={this.state.docId}
                                     edited={this.state.edited}
@@ -294,7 +293,6 @@ class DocumentTemplate extends React.PureComponent {
                                     btnCancelClick={this.btnCancelClick}
                                     btnPrintClick={this.btnPrintClick}
                                     btnSaveClick={this.btnSaveClick}/>
-                    </div>
                 </ToolbarContainer>
             </div>
         );

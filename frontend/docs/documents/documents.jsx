@@ -291,7 +291,6 @@ class Documents extends React.PureComponent {
             <div>
                 {this.renderFilterToolbar()}
                 <ToolbarContainer ref='toolbarContainer'>
-                    <div>
                         <BtnAdd onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
                                 disable={toolbarParams['btnAdd'].disabled}/>
                         <BtnEdit onClick={this.btnEditClick} show={toolbarParams['btnEdit'].show}
@@ -301,7 +300,6 @@ class Documents extends React.PureComponent {
                         <BtnPrint onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
                                   disable={toolbarParams['btnPrint'].disabled}/>
                         <BtnFilter onClick={this.btnFilterClick}/>
-                    </div>
                 </ToolbarContainer>
             </div>
         );

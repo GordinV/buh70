@@ -28,6 +28,9 @@ module.exports = {
     },
     button: {
         width: '10%'
+    },
+    limitInput: {
+        width:'10%'
     }
 
-}
+};

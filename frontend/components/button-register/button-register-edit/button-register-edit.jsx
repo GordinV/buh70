@@ -28,7 +28,6 @@ class ButtonRegisterEdit extends React.PureComponent{
     }
 
     render() {
-        console.log('btnEditRender, style', styles);
         return <Button
             value = 'Edit'
             ref="btnEdit"

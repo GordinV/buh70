@@ -1,5 +1,10 @@
 module.exports = {
     selectAsLibs: ``,
+    libGridConfig:[
+        {id: "id", name: "id", width: "50px", show: false},
+        {id: "regkood", name: "Isikukood", width: "100px"},
+        {id: "nimetus", name: "Nimi", width: "100px"}
+    ],
     select: [{
         sql: `SELECT v.id,
                      v.parentid,

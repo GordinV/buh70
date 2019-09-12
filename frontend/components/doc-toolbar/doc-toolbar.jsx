@@ -59,7 +59,6 @@ class DocToolBar extends React.PureComponent {
             };
 
         return <ToolbarContainer ref='toolbarContainer'>
-            <div>
                 <BtnAdd ref='btnAdd' onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
                         disabled={toolbarParams['btnAdd'].disabled}/>
                 <BtnEdit ref='btnEdit' onClick={this.btnEditClick} show={toolbarParams['btnEdit'].show}
@@ -75,8 +74,6 @@ class DocToolBar extends React.PureComponent {
                                                      handleSelectTask={this.handleSelectTask}
                                                      handleButtonTask={this.handleButtonTask}
                 /> : null}
-
-            </div>
         </ToolbarContainer>
     }
 

@@ -23,7 +23,8 @@ class SelectData extends React.PureComponent {
             gridData: [],
             gridConfig: props.config,
             gridActiveRow: 0,
-            show: this.props.show
+            show: this.props.show,
+            limit: '10'
         };
 //        this.onChange = this.onChange.bind(this);
         this.handleInputChange = this.handleInputChange.bind(this);
@@ -33,33 +34,43 @@ class SelectData extends React.PureComponent {
     }
 
     componentWillReceiveProps(nextProps) {
-
         this.setState({
             value: nextProps.value,
             fieldValue: nextProps.defaultValue,
             readOnly: nextProps.readOnly,
             show: nextProps.show,
         });
+
+        if (!this.state.gridData.length) {
+            // first load
+            this.loadLibs(nextProps.defaultValue)
+        }
+
     }
 
     render() {
         let isEditeMode = !this.state.readOnly,
             btnStyle = Object.assign({}, styles.button, {display: isEditeMode ? 'inline' : 'none'});
 
+        let inputStyle = Object.assign({}, styles.input,
+            this.props.width ? {width: this.props.width} : {},
+            this.state.readOnly ? styles.readOnly : {}
+        );
+
         return (
-            <div style={styles.wrapper}>
+            <div style={{display: 'flex'}}>
                 <InputText ref="input"
                            title={this.props.title}
                            name={this.props.name}
                            value={this.state.fieldValue}
                            readOnly={!isEditeMode}
                            onChange={this.handleInputChange}/>
+
                 <Button value='v'
                         ref="btnShow"
                         style={btnStyle}
                         onClick={(e) => this.handleClick(e)}>
                 </Button>
-
                 {
                     this.state.show ? this.modalPage() : null
                 }
@@ -75,6 +86,7 @@ class SelectData extends React.PureComponent {
 
     modalPage() {
         let modalObjects = ['btnOk', 'btnCancel'];
+        let limitInputStyle = styles.limitInput;
 
         return (
             <div>
@@ -86,7 +98,7 @@ class SelectData extends React.PureComponent {
                     modalPageName='Vali rea'>
                     <div ref="grid-row-container">
                         <InputText ref="input-filter"
-                                   title='Otsingu parametrid'
+                                   title='Otsingu parametrid:'
                                    name='gridFilter'
                                    value={this.state.fieldValue}
                                    readOnly={false}
@@ -95,6 +107,13 @@ class SelectData extends React.PureComponent {
                                   gridColumns={this.state.gridConfig}
                                   onClick={this.handleGridClick}
                                   ref="data-grid"/>
+                        <InputText ref="input-limit"
+                                   title='Limiit:'
+                                   width={limitInputStyle}
+                                   name='limit'
+                                   value={this.state.limit}
+                                   readOnly={false}
+                                   onChange={this.handleInputChange}/>
                     </div>
                 </ModalPage>
             </div>);
@@ -102,8 +121,15 @@ class SelectData extends React.PureComponent {
 
     // обработчик события измения значения в текстовом (поисковом) поле
     handleInputChange(name, value) {
-        this.setState({fieldValue: value, show: true});
-        this.loadLibs();
+        if (name == 'gridFilter') {
+            // обновим стейт
+            this.setState({fieldValue: value, show: true});
+
+            //выполним запрос
+            this.loadLibs(value);
+        } else {
+            this.setState({limit: value});
+        }
     }
 
     modalPageClick(event) {
@@ -137,8 +163,9 @@ class SelectData extends React.PureComponent {
                     this.props.onChange(this.props.collName, fieldValue);
                 }
             }
-
-
+        } else {
+            // востанавливаем старые значения из пропсов, заврывыаем окно
+            this.setState({value: this.props.value, fieldValue: this.props.defaultValue, show: false});
         }
     }
 
@@ -146,30 +173,35 @@ class SelectData extends React.PureComponent {
         this.setState({gridActiveRow: activeRow});
     }
 
-    loadLibs() {
+    loadLibs(fieldValue) {
         const postUrl = '/newApi/loadLibs';
         let lib = this.props.libName;
         let sqlWhere = '';
-        if (this.props.sqlFields.length && this.state.fieldValue) {
+        let limit = this.state.limit;
+
+        if (this.props.sqlFields.length) {
             this.props.sqlFields.forEach((field) => {
                 let isOr = sqlWhere.length > 0 ? ' or ' : '';
-                sqlWhere = sqlWhere.concat(` ${isOr} encode(${field}::bytea, 'escape') ilike '%${this.state.fieldValue.trim()}%'`);
+                sqlWhere = sqlWhere.concat(` ${isOr} encode(${field}::bytea, 'escape') ilike '%${fieldValue.trim()}%'`);
             });
-            sqlWhere = 'where ' + sqlWhere;
+            sqlWhere = `where ${sqlWhere}`;
+
+            let libParams = sqlWhere.length ? {sql: sqlWhere, limit: limit} : {};
+
+            fetchData.fetchDataPost(`${postUrl}/${lib}`, libParams).then(response => {
+                if (response && 'data' in response) {
+                    let gridData = response.data.result.result.data,
+                        gridConfig = response.data.result.result.gridConfig;
+
+                    this.setState({gridData: gridData, gridConfig: gridConfig});
+                }
+
+            }).catch(error => {
+                console.error('loadLibs error', error);
+                rejected();
+            });
         }
 
-        let libParams = sqlWhere.length ? {sql: sqlWhere} : {};
-
-        fetchData.fetchDataPost(`${postUrl}/${lib}`, libParams).then(response => {
-            if (response && 'data' in response) {
-                let gridData = response.data.result.result.data;
-                this.setState({gridData: gridData});
-            }
-
-        }).catch(error => {
-            console.error('loadLibs error', error);
-            rejected();
-        });
     }
 
 

@@ -1,11 +1,11 @@
 module.exports = {
     select: [{
         sql: `SELECT *,
-                     $2::INTEGER                      AS userid,
-                     'ASUTUSED'                        AS doc_type_id,
-                     (properties ->> 'pank')::varchar(20)     AS pank,
-                     (properties ->> 'kmkr')::varchar(20)     AS kmkr,
-                     (properties ->> 'kehtivus')::DATE AS kehtivus
+                     $2::INTEGER                          AS userid,
+                     'ASUTUSED'                           AS doc_type_id,
+                     (properties ->> 'pank')::VARCHAR(20) AS pank,
+                     (properties ->> 'kmkr')::VARCHAR(20) AS kmkr,
+                     (properties ->> 'kehtivus')::DATE    AS kehtivus
               FROM libs.asutus
               WHERE id = $1`,
         sqlAsNew: `select $1::integer as id , $2::integer as userid, 'ASUTUSED' as doc_type_id,
@@ -30,9 +30,11 @@ module.exports = {
     },
         {
             sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa,
-                         $2 :: INTEGER                      AS userid
+                         $2 :: INTEGER                       AS userid
                   FROM libs.asutus a,
-                       json_array_elements(case when (a.properties ->> 'asutus_aa') is null then '[]'::json else (a.properties -> 'asutus_aa') :: JSON end) AS e (element)
+                       json_array_elements(CASE
+                                               WHEN (a.properties ->> 'asutus_aa') IS NULL THEN '[]'::JSON
+                                               ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (element)
                   WHERE a.id = $1`, //$1 - doc_id, $2 0 userId
             query: null,
             multiple: true,
@@ -43,7 +45,7 @@ module.exports = {
             sql: `SELECT Asutus.id
                   FROM libs.asutus Asutus
                   WHERE (upper(rtrim(ltrim(Asutus.regkood))) = upper($1) OR empty($1))
-                     AND (upper(rtrim(ltrim(Asutus.nimetus))) = upper($2) OR empty($2))`, //$1 regkood, $2 nimetus
+                    AND (upper(rtrim(ltrim(Asutus.nimetus))) = upper($2) OR empty($2))`, //$1 regkood, $2 nimetus
             query: null,
             multiple: false,
             alias: 'validate_asutus',
@@ -53,9 +55,17 @@ module.exports = {
     ],
     selectAsLibs: `SELECT *
                    FROM com_asutused a
-                   WHERE libs.check_asutus(a.id::integer, $1::INTEGER)
+                   WHERE libs.check_asutus(a.id::INTEGER, $1::INTEGER)
                      AND (kehtivus IS NULL OR kehtivus >= date())
                    ORDER BY nimetus`, //$1 - rekvId
+
+    libGridConfig: {
+        grid: [
+            {id: "id", name: "id", width: "50px", show: false},
+            {id: "regkood", name: "Isikukood", width: "25%"},
+            {id: "nimetus", name: "Nimi", width: "75%"}
+        ]
+    },
     returnData: {
         row: {}
     },
