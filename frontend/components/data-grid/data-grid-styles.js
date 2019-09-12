@@ -14,7 +14,7 @@ module.exports = {
     th: {
         borderBottom: '1px solid black',
         backgroundColor: 'grey',
-        height:'50px',
+        height:'30px',
         border:'1px solid lightgray',
         display: 'table-cell'
     },

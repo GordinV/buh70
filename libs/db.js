@@ -2,7 +2,7 @@ const {Client} = require('pg'),
     config = require('../config/default');
 
 const db = {
-    queryDb: async (sqlString, params, sortBy, sqlWhere) => {
+    queryDb: async (sqlString, params, sortBy, sqlWhere, sqlLimit) => {
 
         let result = {
             error_code: 0,
@@ -13,21 +13,23 @@ const db = {
 
         let prepairedSqlString = sqlString;
         if (sortBy || sqlWhere) {
-            prepairedSqlString = createSqlString(prepairedSqlString, sortBy, sqlWhere)
+            prepairedSqlString = createSqlString(prepairedSqlString, sortBy, sqlWhere, sqlLimit)
         }
 
         const client = new Client(config.pg.connection);
         await client.connect();
+
         try {
             const res = await client.query(prepairedSqlString, params);
-
             if (res.rowCount && res.rowCount === 1 && 'error_code' in res.rows[0]) {
+                console.log('proc', res.rows);
                 // executed procedure
                 result = Object.assign(result, res.rows[0]);
             } else {
                 // usual query
-                result.data = res.rows;
-                result.result = res.rowCount;
+//                result.data = res.rows;
+                result = Object.assign(result,{data: res.rows}, {result: res.rowCount});
+//                result.result = res.rowCount;
             }
 
         } catch (e) {
@@ -72,9 +74,10 @@ const db = {
  * @param sqlWhere
  * @returns {string}
  */
-function createSqlString(sql, sortBy, sqlWhere) {
+function createSqlString(sql, sortBy, sqlWhere, sqlLimit) {
     let sortByColumn = '',
-        sortByDirection = '';
+        sortByDirection = '',
+        rowsLimit = '';
 
     if (sortBy.length) {
         // есть параметр для сортировки
@@ -82,8 +85,14 @@ function createSqlString(sql, sortBy, sqlWhere) {
         sortByDirection = sortBy[0].direction;
     }
 
+    if (sqlLimit) {
+        rowsLimit = ` LIMIT ${sqlLimit}`;
+    }
+
+
+
     return `select * from (${sql}) qry 
-    ${sqlWhere}   ${sortByColumn}  ${sortByDirection} `;
+    ${sqlWhere}   ${sortByColumn}  ${sortByDirection} ${rowsLimit}`;
 }
 
 

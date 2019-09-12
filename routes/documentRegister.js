@@ -96,8 +96,6 @@ exports.post = async (req, res) => {
         data = {result: await Document.createNew()};
     }
 
-    console.log('data result ->', data.result);
-
     const preparedData = Object.assign({},
         data.result.row[0],
         data.result,
@@ -147,6 +145,7 @@ exports.put = async (req, res) => {
     const savedData = await Document.save(params);
 
     const prepairedData = Object.assign({}, savedData.row[0],
+        savedData,
         {bpm: savedData.bpm ? savedData.bpm : []},
         {gridData: savedData.details ? savedData.details : []},
         {relations: savedData.relations ? savedData.relations : []},
@@ -155,16 +154,5 @@ exports.put = async (req, res) => {
 
     res.send({result: {error_code: 0, error_message: null, docId: prepairedData.id}, data: [prepairedData]}); //пока нет новых данных
 
-    /*
-        try {
 
-            let data =  await db.queryDb(sqlString,params);
-            // вернуть данные
-            res.send(data);
-        } catch (error) {
-            console.error('error:', error); // @todo Обработка ошибок
-            res.send({result:'Error'});
-
-        }
-    */
 };

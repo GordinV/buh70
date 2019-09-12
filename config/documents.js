@@ -18,5 +18,6 @@ module.exports = {
     project: '/libs/libraries/project',
     kassa: '/libs/libraries/kassa',
     kontoandmik: '/aruanned/raamatupidamine/kontoandmik',
-    laps:'/lapsed/laps'
+    laps:'/lapsed/laps',
+    vanem:'/lapsed/vanem'
 };

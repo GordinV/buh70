@@ -5,15 +5,21 @@ const React = require('react');
 const Menu = require('./../components/menu-toolbar/menu-toolbar.jsx');
 
 const Docs = require('./../docs/dok/index.jsx');
-const LapseDokument = require('./../docs/laps/document/index.jsx');
 
+const LapseDokument = require('./../docs/laps/document/index.jsx');
 const LasteRegister = require('./../docs/laps/index.jsx');
+
+const VanemDokument = require('./../docs/vanem/document/index.jsx');
+const VanemateRegister = require('./../docs/vanem/index.jsx');
 
 const ArvedeRegister = require('./../docs/arv/index.jsx');
 
 const SmkRegister = require('./../docs/smk/index.jsx');
 
 const SorderideRegister = require('./../docs/sorder/index.jsx');
+
+const AsutusRegister = require('./../docs/asutused/index.jsx'),
+    AsutusDocument = require('./../docs/asutused/document/index.jsx');
 
 const {Route, withRouter} = require('react-router-dom');
 const {StyleRoot} = require('radium');
@@ -45,12 +51,19 @@ class App extends React.Component {
                 <Route exact path="/lapsed/laps"
                        render={(props) => <LasteRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
                 <Route exact path="/lapsed/laps/:docId" component = {LapseDokument} />
+                <Route exact path="/lapsed/vanem"
+                       render={(props) => <VanemateRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/vanem/:docId" component = {VanemDokument} />
+
                 <Route exact path="/lapsed/arv"
                        render={(props) => <ArvedeRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/raama/smk"
+                <Route exact path="/lapsed/smk"
                        render={(props) => <SmkRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/raama/sorder"
+                <Route exact path="/lapsed/sorder"
                        render={(props) => <SorderideRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/asutused/:docId" component = {AsutusDocument} module={MODULE}/>
+                <Route exact path="/lapsed/asutused"
+                       render={(props) => <AsutusRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>} />
 
             </StyleRoot>)
     }

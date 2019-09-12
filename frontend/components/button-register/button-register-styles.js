@@ -11,6 +11,9 @@ module.exports = {
     buttonLogin: {
         width: '50%'
     },
+    buttonEdit: {
+        display: 'flex'
+    },
     icons: {
         add: '/images/icons/add.png',
         edit: '/images/icons/edit.png',

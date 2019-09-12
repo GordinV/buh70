@@ -27,10 +27,7 @@ class Laps extends React.PureComponent {
             docId: props.docId ? props.docId : Number(props.match.params.docId)
         };
 
-        this.createGridRow = this.createGridRow.bind(this);
-
         this.renderer = this.renderer.bind(this);
-        this.gridValidateFields = this.gridValidateFields.bind(this);
         this.handlePageClick = this.handlePageClick.bind(this);
         this.handleTeenusteGridBtnClick = this.handleTeenusteGridBtnClick.bind(this);
         this.handleVanemadGridBtnClick = this.handleVanemadGridBtnClick.bind(this);
@@ -80,8 +77,6 @@ class Laps extends React.PureComponent {
             gridVanemadColumns = self.docData.gridConfig,
             gridTeenusteData = self.docData.teenused,
             gridTeenusteColumns = self.docData.gridTeenusteConfig;
-
-        console.log('rendered', self.docData);
 
         // формируем зависимости
         if (self.docData.relations) {
@@ -170,136 +165,6 @@ class Laps extends React.PureComponent {
         );
     }
 
-//style={styles.label}
-
-
-    /**
-     * Создаст компонет строки грида
-     * @returns {XML}
-     */
-    createGridRow(self) {
-        let row = self.gridRowData ? self.gridRowData : {},
-            validateMessage = '', // self.state.warning
-            buttonOkReadOnly = validateMessage.length > 0 || !self.state.checked,
-            modalObjects = ['btnOk', 'btnCancel'];
-
-        if (buttonOkReadOnly) {
-            // уберем кнопку Ок
-            modalObjects.splice(0, 1);
-        }
-
-
-        if (!row) return <div/>;
-
-
-        let nomData = [];
-
-        nomData = self.libs['nomenclature'].filter(lib => {
-            if (!lib.dok || lib.dok === LIBDOK) return lib;
-        });
-
-        return (<div className='.modalPage'>
-            <ModalPage
-                modalObjects={modalObjects}
-                ref="modalpage-grid-row"
-                show={true}
-                modalPageBtnClick={self.modalPageClick}
-                modalPageName='Rea lisamine / parandamine'>
-                <div ref="grid-row-container">
-                    {self.state.gridWarning.length ? (
-                        <div style={styles.docRow}>
-                            <span>{self.state.gridWarning}</span>
-                        </div>
-                    ) : null}
-
-                    <div style={styles.docRow}>
-                        <Select title="Teenus"
-                                name='nomid'
-                                libs="nomenclature"
-                                data={nomData}
-                                readOnly={false}
-                                value={row.nomid}
-                                collId='id'
-                                ref='nomid'
-                                placeholder='Teenuse kood'
-                                onChange={self.handleGridRowChange}/>
-                    </div>
-                    <div style={styles.docRow}>
-                        <InputNumber title='Kogus '
-                                     name='kogus'
-                                     value={Number(row.kogus)}
-                                     readOnly={false}
-                                     disabled={false}
-                                     bindData={false}
-                                     ref='kogus'
-                                     onChange={self.handleGridRowInput}/>
-                    </div>
-                    <div style={styles.docRow}>
-                        <InputNumber title='Hind '
-                                     name='hind'
-                                     value={Number(row.hind)}
-                                     readOnly={false}
-                                     disabled={false}
-                                     bindData={false}
-                                     ref='hind'
-                                     onChange={self.handleGridRowInput}/>
-                    </div>
-                    <div style={styles.docRow}>
-                        <InputNumber title='Kbm-ta: '
-                                     name='kbmta'
-                                     value={Number(row.kbmta)}
-                                     disabled={true}
-                                     bindData={false}
-                                     ref='kbmta'
-                                     onChange={self.handleGridRowChange}/>
-                    </div>
-                    <div style={styles.docRow}>
-                        <InputNumber title='Kbm: '
-                                     name='kbm'
-                                     value={Number(row.kbm)}
-                                     disabled={true}
-                                     bindData={false}
-                                     ref='kbm'
-                                     onBlur={self.handleGridRowInput}/>
-                    </div>
-                    <div style={styles.docRow}>
-                        <InputNumber title='Summa: '
-                                     name='Summa'
-                                     value={Number(row.summa)}
-                                     disabled={true}
-                                     bindData={false}
-                                     ref='summa'
-                                     onChange={self.handleGridRowInput}/>
-                    </div>
-                </div>
-                <div><span>{validateMessage}</span></div>
-            </ModalPage>
-        </div>);
-    }
-
-
-    /**
-     * валидатор для строки грида
-     * @param gridRowData строка грида
-     * @returns {string}
-     */
-    gridValidateFields() {
-        let warning = '';
-        let doc = this.refs['document'];
-        if (doc && doc.gridRowData) {
-
-            // только после проверки формы на валидность
-            if (doc.gridRowData && !doc.gridRowData['nomid']) warning = warning + ' Код операции';
-            if (!doc.gridRowData['kogus']) warning = warning + ' Количество';
-            if (!doc.gridRowData['summa']) warning = warning + ' Сумма';
-
-            this.recalcRowSumm();
-            this.recalcDocSumma('summa');
-
-        }
-        return warning;
-
-    }
 
     handlePageClick(pageDocTypeId) {
 //        document.location.href = `/lapsed/${pageDocTypeId}/`;//@todo Обновить

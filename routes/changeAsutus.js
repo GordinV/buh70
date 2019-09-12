@@ -10,14 +10,10 @@ exports.post = async (req, res) => {
         rekvId = req.params.rekvId;
     }
 
-    console.log('Got rekvid', rekvId, req.params.rekvId);
-
     // load new User data
     const userName = req.session.user.login;
 
     userid.getUserId(userName, rekvId, function (err, userData) {
-
-        console.log('Got user data', userData);
 
         if (!userData) {
             const err = new HttpError(403, 'No user');

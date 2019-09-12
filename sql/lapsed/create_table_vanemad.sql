@@ -29,3 +29,7 @@ DROP INDEX IF EXISTS vanemad_asutudid_idx;
 
 CREATE INDEX IF NOT EXISTS vanemad_asutusid_idx ON lapsed.vanemad (asutusid);
 
+DROP INDEX IF EXISTS vanemad_asutudid_idx;
+
+ALTER TABLE lapsed.vanemad
+    ADD UNIQUE (asutusid, parentid);

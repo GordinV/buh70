@@ -65,9 +65,9 @@ class DataGrid extends React.PureComponent {
                     <ToolbarContainer
                         ref='grid-toolbar-container'
                         position={'left'}>
-                        <GridButtonAdd onClick={this.handleGridBtnClick.bind('add')} ref="grid-button-add"/>
-                        <GridButtonEdit onClick={this.handleGridBtnClick.bind('edit')} ref="grid-button-edit"/>
-                        <GridButtonDelete onClick={this.handleGridBtnClick.bind('delete')} ref="grid-button-delete"/>
+                        <GridButtonAdd onClick={this.handleGridBtnClick} ref="grid-button-add"/>
+                        <GridButtonEdit onClick={this.handleGridBtnClick} ref="grid-button-edit"/>
+                        <GridButtonDelete onClick={this.handleGridBtnClick} ref="grid-button-delete"/>
                     </ToolbarContainer> : null}
 
                 <div style={styles.header}>
@@ -97,8 +97,10 @@ class DataGrid extends React.PureComponent {
 
 
     handleGridBtnClick(btnName) {
+        console.log('grid handleGridBtnClick', btnName, this.state.activeRow);
+        let activeRow = this.state.activeRow;
         if (this.props.handleGridBtnClick) {
-            this.props.handleGridBtnClick(btnName);
+            this.props.handleGridBtnClick(btnName, activeRow);
         }
     }
 
@@ -188,7 +190,6 @@ class DataGrid extends React.PureComponent {
      * @param e
      */
     handleKeyDown(e) {
-        console.log('handleKeyDown',e);
         // реакция на клавиатуру
         let rowIndex = this.state.activeRow;
         switch (e.which) {

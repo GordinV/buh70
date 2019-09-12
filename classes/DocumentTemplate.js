@@ -100,11 +100,13 @@ class Document {
     /**
      * грузит гриды
      */
-    selectLibs() {
+    selectLibs(sqlWhere) {
         let sql = this.config.selectAsLibs,
-            params = [];
+            params = [this.rekvId];
 
-        return db.queryDb(sql, params);
+        let sqlLimit = 10;
+
+        return db.queryDb(sql, params, '', sqlWhere, sqlLimit);
 
     }
 }

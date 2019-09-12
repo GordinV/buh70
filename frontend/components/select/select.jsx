@@ -161,7 +161,6 @@ class Select extends React.PureComponent {
         let options ;
         let data = this.props.data.length ? this.props.data: [];
 
-//        data.unshift({id:0, kood:'', name:''});
         if (data.length) {
 
             options = data.map((item, index) => {

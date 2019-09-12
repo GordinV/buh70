@@ -1,11 +1,11 @@
 'use strict';
 
 const PropTypes = require('prop-types');
-
+const _ = require('lodash');
 const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
 
-const URL = '/newApi/document';
+const URL = 'newApi/document';
 
 const
     Form = require('../../components/form/form.jsx'),
@@ -32,7 +32,8 @@ class DocumentTemplate extends React.PureComponent {
             warning: '',
             gridWarning: '',
             checked: true,
-            loadedLibs: false
+            loadedLibs: false,
+            libParams: {}
         };
 
         this.docData = Object.keys(props.initData).length ? props.initData : {id: this.props.docId};
@@ -400,11 +401,14 @@ class DocumentTemplate extends React.PureComponent {
      * Обеспечит загрузку данных для библиотек
      */
     loadLibs() {
-        const url = '/newApi/loadLibs/';
         let libs = this.props.libs.length;
+        let postUrl = '/newApi/loadLibs';
 
         this.props.libs.forEach(lib => {
-            fetchData.fetchDataPost(`/newApi/loadLibs/${lib}`, {}).then(response => {
+            let params = _.has(this.state.libParams, lib) ? {sql: this.state.libParams[lib]} : {};
+
+            console.log('params:', lib, params);
+            fetchData.fetchDataPost(`${postUrl}/${lib}`, params).then(response => {
                 if (response && 'data' in response) {
                     this.libs[lib] = response.data.result.result.data;
                     libs--;
@@ -461,19 +465,26 @@ class DocumentTemplate extends React.PureComponent {
 
     /**
      * обработчик событий для панели инструментов грида
-     * @param btnName
+     * @param btnName, activeRow
      */
-    handleGridBtnClick(btnName) {
-        switch (btnName) {
-            case 'add':
-                this.addRow();
-                break;
-            case 'edit':
-                this.editRow();
-                break;
-            case 'delete':
-                this.deleteRow();
-                break;
+    handleGridBtnClick(btnName, activeRow) {
+        console.log('templ handleGridBtnClick',btnName,activeRow, this.docData);
+        if (this.props.handleGridBtnClick) {
+            // если есть обработчик, то отдаем туда, иначе вызываем метод на редактирование строки
+            let id = this.docData.lapsed[activeRow].id;
+            this.props.handleGridBtnClick(btnName, id)
+        } else {
+            switch (btnName) {
+                case 'add':
+                    this.addRow();
+                    break;
+                case 'edit':
+                    this.editRow();
+                    break;
+                case 'delete':
+                    this.deleteRow();
+                    break;
+            }
         }
     }
 
@@ -515,6 +526,7 @@ class DocumentTemplate extends React.PureComponent {
      * откроет активную строку для редактирования
      */
     editRow() {
+        console.log('editRow');
         this.gridRowData = this.docData.gridData[this.refs['data-grid'].state.activeRow];
         // откроем модальное окно для редактирования
         this.setState({gridRowEdit: true, gridRowEvent: 'edit'});
@@ -575,7 +587,6 @@ class DocumentTemplate extends React.PureComponent {
 
     }
 
-
     /**
      * will check values on the form and return string with warning
      */
@@ -605,8 +616,8 @@ class DocumentTemplate extends React.PureComponent {
 
             // ищем по ид строку в данных грида, если нет, то добавим строку
             if (!this.docData.gridData.some(row => {
-                    if (row.id === this.gridRowData.id) return true;
-                })) {
+                if (row.id === this.gridRowData.id) return true;
+            })) {
                 // вставка новой строки
                 this.docData.gridData.splice(0, 0, this.gridRowData);
             } else {
