@@ -1,10 +1,18 @@
 module.exports = {
-    selectAsLibs: ``,
-    libGridConfig:[
-        {id: "id", name: "id", width: "50px", show: false},
-        {id: "regkood", name: "Isikukood", width: "100px"},
-        {id: "nimetus", name: "Nimi", width: "100px"}
-    ],
+    selectAsLibs: `SELECT DISTINCT a.id,
+                                   a.nimetus   AS nimi,
+                                   a.regkood   AS isikukood,
+                                   $1::INTEGER AS rekvid
+                   FROM lapsed.vanemad v
+                            INNER JOIN libs.asutus a ON a.id = v.asutusId
+                   WHERE v.staatus <> 3`,
+    libGridConfig: {
+        grid: [
+            {id: "id", name: "id", width: "50px", show: false},
+            {id: "isikukood", name: "Isikukood", width: "100px"},
+            {id: "nimi", name: "Nimi", width: "100px"}
+        ]
+    },
     select: [{
         sql: `SELECT v.id,
                      v.parentid,
@@ -40,7 +48,7 @@ module.exports = {
                   FROM lapsed.laps l
                            INNER JOIN lapsed.vanemad v ON l.id = v.parentid
                   WHERE l.staatus < 3
-                    AND v.id = $1`,
+                    AND v.asutusid IN (SELECT asutusid FROM lapsed.vanemad WHERE id = $1)`,
             query: null,
             multiple: true,
             alias: 'lapsed',

@@ -24,17 +24,17 @@ class Laps extends React.PureComponent {
         super(props);
         this.state = {
             loadedData: false,
-            docId: props.docId ? props.docId : Number(props.match.params.docId)
+            docId: props.docId ? props.docId : Number(props.match.params.docId),
+            vanemId: props.vanemId ? props.vanemId : Number(props.match.params.vanemId)
         };
 
         this.renderer = this.renderer.bind(this);
         this.handlePageClick = this.handlePageClick.bind(this);
-        this.handleTeenusteGridBtnClick = this.handleTeenusteGridBtnClick.bind(this);
-        this.handleVanemadGridBtnClick = this.handleVanemadGridBtnClick.bind(this);
+        this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
 
 
         this.pages = [
-            {pageName: 'Lapse kaart', docTypeId:'LAPS'},
+            {pageName:'Lapse kaart', docTypeId:'LAPS'},
             {pageName:'Arved', handlePageClick: this.handlePageClick, docTypeId:'ARV'},
             {pageName:'Maksekoraldused', handlePageClick: this.handlePageClick, docTypeId:'SMK'},
             {pageName:'Kassaorderid', handlePageClick: this.handlePageClick, docTypeId:'SORDER'}
@@ -48,6 +48,7 @@ class Laps extends React.PureComponent {
         ];
     }
 
+
     render() {
         let initData = this.props.initData ? this.props.initData : {};
 
@@ -60,8 +61,7 @@ class Laps extends React.PureComponent {
                                  libs={LIBRARIES}
                                  pages={this.pages}
                                  renderer={this.renderer}
-                                 createGridRow={this.createGridRow}
-                                 gridValidator={this.gridValidateFields}
+                                 handleGridBtnClick={this.handleGridBtnClick}
                                  focusElement={'input-isikukood'}
         />
     }
@@ -78,16 +78,16 @@ class Laps extends React.PureComponent {
             gridTeenusteData = self.docData.teenused,
             gridTeenusteColumns = self.docData.gridTeenusteConfig;
 
-        // формируем зависимости
-        if (self.docData.relations) {
-            relatedDocuments(self);
+
+        if (self.docData.id == 0) {
+            //neew record
+            self.docData.vanemid = this.state.vanemId;
         }
 
         let doc = this.refs['document'];
         let libs = doc ? doc.libs : {};
 
         return (
-            <div>
                 <div style={styles.doc}>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
@@ -138,9 +138,10 @@ class Laps extends React.PureComponent {
                                   gridData={gridVanemadData}
                                   gridColumns={gridVanemadColumns}
                                   showToolBar={!isEditMode}
-                                  handleGridBtnClick={this.handleVanemadGridBtnClick}
+                                  handleGridBtnClick={self.handleGridBtnClick}
                                   readOnly={!isEditMode}
                                   style={styles.grid.headerTable}
+                                  docTypeId={'vanem'}
                                   ref="vanemad-data-grid"/>
                     </div>
 
@@ -155,32 +156,39 @@ class Laps extends React.PureComponent {
                                   gridData={gridTeenusteData}
                                   gridColumns={gridTeenusteColumns}
                                   showToolBar={!isEditMode}
-                                  handleGridBtnClick={this.handleTeenusteGridBtnClick}
+                                  handleGridBtnClick={self.handleGridBtnClick}
+                                  docTypeId={'lapse_kaart'}
                                   readOnly={!isEditMode}
                                   style={styles.grid.headerTable}
                                   ref="teenuste-data-grid"/>
                     </div>
                 </div>
-            </div>
         );
     }
 
 
     handlePageClick(pageDocTypeId) {
-//        document.location.href = `/lapsed/${pageDocTypeId}/`;//@todo Обновить
         this.props.history.push(`/lapsed/${pageDocTypeId}`)
     }
 
-    handleTeenusteGridBtnClick(btnName) {
-        console.log('teenuste handleGridBtnClick', btnName);
-        this.props.history.push(`/lapsed/teenused/${id}`);
 
-    }
+    // обработчик события клик на гриде родителей
+    handleGridBtnClick(btnName, activeRow, id, docTypeId) {
 
-    handleVanemadGridBtnClick(btnName) {
-        console.log('vanemad handleGridBtnClick', btnName);
-        let id = 0;
-        this.props.history.push(`/lapsed/vanemad/${id}`);
+        switch (btnName) {
+            case "edit":
+                this.props.history.push(`/lapsed/${docTypeId}/${id}/${this.state.docId}`);
+                break;
+            case "add":
+                this.props.history.push(`/lapsed/${docTypeId}/0/${this.state.docId}`);
+                break;
+            case "delete":
+                console.log('btnDelete clicked');
+                break;
+            default:
+                console.log('Vigane click');
+        }
+
     }
 
 }

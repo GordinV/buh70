@@ -95,13 +95,13 @@ class Select extends React.PureComponent {
 
     render() {
         let inputReadOnly = this.state.readOnly || false,
-            inputDefaultValue = this.props.defaultValue? this.props.defaultValue: this.props.value || ''; // Дадим дефолтное значение для виджета, чтоб покать его сразу, до подгрузки библиотеки
+            inputDefaultValue = this.props.defaultValue ? this.props.defaultValue : this.props.value || ''; // Дадим дефолтное значение для виджета, чтоб покать его сразу, до подгрузки библиотеки
 
         if (!this.state.value) {
             // добавим пустую строку в массив
 
             // проверим наличие пустой строки в массиве
-            let emptyObj =this.props.data.filter((obj) => {
+            let emptyObj = this.props.data.filter((obj) => {
                 if (obj.id === 0) {
                     return obj;
                 }
@@ -116,35 +116,38 @@ class Select extends React.PureComponent {
         }, this);
 
         let inputStyle = Object.assign({}, styles.input, inputReadOnly ? {} : styles.hide,
-            inputReadOnly ? styles.readOnly: {}),
-            selectStyle = Object.assign({}, styles.select, inputReadOnly ? styles.hide : {}, inputReadOnly ? styles.readOnly: {}),
-            buttonStyle = Object.assign({}, styles.button, this.props.btnDelete ? {} : styles.hide);
+            inputReadOnly ? styles.readOnly : {}),
+            selectStyle = Object.assign({}, styles.select, inputReadOnly ? styles.hide : {}, inputReadOnly ? styles.readOnly : {}),
+            buttonStyle = Object.assign({}, styles.button, this.props.btnDelete ? {} : styles.hide),
+            aStyle = Object.assign({}, inputStyle, styles.a);
+
 
         return (
             <div style={styles.wrapper} ref="wrapper">
-            <label ref="label" style={styles.label}
-                   htmlFor={this.props.name}>{this.props.title}
-            </label>
+                <label ref="label" style={styles.label}
+                       htmlFor={this.props.name}>{this.props.title}
+                </label>
 
-            <input type="text"
-                   id={this.props.name}
-                   style={inputStyle}
-                   ref="input"
-                   value={inputDefaultValue}
-                   readOnly={true}/>
+                <input type="text"
+                       id={this.props.name}
+                       style={inputStyle}
+                       ref="input"
+                       value={inputDefaultValue}
+                       readOnly={true}/>
 
-            <select ref="select"
-                    style={selectStyle}
-                    value={this.state.value}
-                    id={this.props.name}
-                    onChange={this.onChange}>{this.prepaireDataOptions()}
-            </select>
-            <button ref="button"
-                    style={buttonStyle}
-                    onClick={this.btnDelClick}>
-                X
-            </button>
-        </div>)
+
+                <select ref="select"
+                        style={selectStyle}
+                        value={this.state.value}
+                        id={this.props.name}
+                        onChange={this.onChange}>{this.prepaireDataOptions()}
+                </select>
+                <button ref="button"
+                        style={buttonStyle}
+                        onClick={this.btnDelClick}>
+                    X
+                </button>
+            </div>)
     }
 
     btnDelClick(event) {
@@ -153,21 +156,23 @@ class Select extends React.PureComponent {
         this.onChange(event);
     }
 
+
     /**
      * Подготовит датасет для селекта
      * @returns {*}
      */
     prepaireDataOptions() {
-        let options ;
-        let data = this.props.data.length ? this.props.data: [];
+        let options;
+        let data = this.props.data.length ? this.props.data : [];
 
         if (data.length) {
 
             options = data.map((item, index) => {
                 let key = 'option-' + index;
                 let separator = ' ';
-                let rowValue = `${item.kood ? item.kood : ''} ${separator} ${item.name}`;
-                return <option value={this.props.data.length ? item[this.props.collId]: 0} key={key} ref={key}> {rowValue} </option>
+                let rowValue = `${item.kood ? item.kood : ''} ${separator} ${item.name ? item.name : item.nimetus}`;
+                return <option value={this.props.data.length ? item[this.props.collId] : 0} key={key}
+                               ref={key}> {rowValue} </option>
             }, this);
         } else {
             options = <option value={0} key={Math.random()}></option>;
@@ -185,7 +190,7 @@ class Select extends React.PureComponent {
 }
 
 Select.propTypes = {
-    data: PropTypes.arrayOf (PropTypes.shape({
+    data: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.number,
         kood: PropTypes.string,
         nimetus: PropTypes.string
@@ -208,7 +213,7 @@ Select.defaultProps = {
     collId: 'id',
     title: '',
     defaultValue: '',
-    data: [{id:0, kood:'',nimetus:''}]
+    data: [{id: 0, kood: '', nimetus: ''}]
 };
 
 module.exports = radium(Select);

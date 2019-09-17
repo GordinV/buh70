@@ -80,10 +80,6 @@ class Documents extends React.PureComponent {
 
         return (
             <div style={_style.doc}>
-                {/*
-                <Route path="/raama/journal/:docId"
-                       render={() => <JournalDocument docId ={this.state.value} userData={this.userData} initData={{}}/>}/>
-*/}
                 <div style={_style.docRow}>
                     {/*рендерим частные компоненты */}
                     {this.props.render()}
@@ -166,7 +162,7 @@ class Documents extends React.PureComponent {
             // кастомный обработчик события
             this.props.btnEditClick(this.state.value);
         } else {
-            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/${this.state.value}`);
+            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/${this.state.value}/0`);
         }
     }
 

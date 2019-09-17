@@ -2,22 +2,24 @@ DROP FUNCTION IF EXISTS lapsed.sp_salvesta_lapsed(JSONB, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS lapsed.sp_salvesta_laps(JSONB, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION lapsed.sp_salvesta_laps(data JSONB,
-                                                     userid INTEGER,
-                                                     user_rekvid INTEGER)
+                                                   userid INTEGER,
+                                                   user_rekvid INTEGER)
     RETURNS INTEGER AS
 $BODY$
 
 DECLARE
-    userName      TEXT;
-    doc_data      JSON    = data ->> 'data';
-    doc_id        INTEGER = doc_data ->> 'id';
-    doc_isikukood TEXT    = doc_data ->> 'isikukood';
-    doc_nimi      TEXT    = doc_data ->> 'nimi';
-    doc_viitenr   TEXT    = doc_data ->> 'viitenumber';
-    doc_vanemad   JSON    = doc_data ->> 'vanemad';
-    doc_muud      TEXT    = doc_data ->> 'muud';
-    json_props    JSONB;
-    json_ajalugu  JSONB;
+    userName         TEXT;
+    doc_data         JSON    = data ->> 'data';
+    doc_id           INTEGER = doc_data ->> 'id';
+    doc_isikukood    TEXT    = doc_data ->> 'isikukood';
+    doc_nimi         TEXT    = doc_data ->> 'nimi';
+    doc_viitenr      TEXT    = doc_data ->> 'viitenumber';
+    doc_vanemId      INTEGER = doc_data ->> 'vanemid';
+    doc_muud         TEXT    = doc_data ->> 'muud';
+    v_vanem          RECORD;
+    json_props       JSONB;
+    json_props_vanem JSONB;
+    json_ajalugu     JSONB;
 BEGIN
 
     IF (doc_id IS NULL)
@@ -52,6 +54,28 @@ BEGIN
         VALUES (doc_isikukood, doc_nimi, doc_muud, json_props, '[]' :: JSONB || json_ajalugu) RETURNING id
             INTO doc_id;
 
+
+        IF doc_id > 0 AND doc_vanemId IS NOT NULL
+        THEN
+            -- will save parents
+
+            SELECT 0                          AS id,
+                   doc_id                     AS parentid,
+                   asutusId,
+                   properties ->> 'arved'     AS arved,
+                   properties ->> 'suhtumine' AS suhtumine
+                   INTO v_vanem
+            FROM lapsed.vanemad v
+            WHERE id = doc_vanemId;
+
+            json_props_vanem = to_jsonb(row)
+                               FROM (SELECT v_vanem AS data) row;
+
+            PERFORM lapsed.sp_salvesta_vanem(json_props_vanem::JSONB, userid::INTEGER, user_rekvid::INTEGER) AS id;
+
+
+        END IF;
+
     ELSE
 
         -- логгирование
@@ -67,13 +91,14 @@ BEGIN
         UPDATE lapsed.laps
         SET isikukood  = doc_isikukood,
             nimi       = doc_nimi,
-            properties = properties ||  json_props,
+            properties = properties || json_props,
             muud       = doc_muud,
             ajalugu    = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu
         WHERE id = doc_id RETURNING id
             INTO doc_id;
 
     END IF;
+
 
     RETURN doc_id;
 
@@ -95,6 +120,6 @@ GRANT EXECUTE ON FUNCTION lapsed.sp_salvesta_laps(JSONB, INTEGER, INTEGER) TO ar
 
 /*
 
-select lapsed.sp_salvesta_laps('{"data":{"id":1,"isikukood":"37303023721","nimi":"Vladislav Gordin","viitenumber":"123456789","muud":"test","userid":70}}'::jsonb, 70::integer, 63::integer) as id
+select lapsed.sp_salvesta_laps('{"data":{"id":0,"isikukood":"37303023755","nimi":"test Vladislav Gordin","viitenumber":"123456789","muud":"test","userid":70, "vanemid":2}}'::jsonb, 70::integer, 63::integer) as id
 
 */

@@ -155,7 +155,13 @@ class DocumentTemplate extends React.PureComponent {
             if (this.props.docId === 0 && !this.docData.id) {
                 return this.setState({warning: 'Ошибка при сохранении'});
             } else {
+
                 this.setState({edited: false, docId: this.docData.id});
+
+                if (this.props.history) {
+                    this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
+                }
+
             }
         });
     }
@@ -218,7 +224,7 @@ class DocumentTemplate extends React.PureComponent {
 
         if (!this.state.edited) return '';
 
-        let warning = this.state.warning,
+        let warning = '',
             notRequiredFields = [], // пишем в массив поля с отсутствующими данными
             notMinMaxRule = [];
 
@@ -264,6 +270,7 @@ class DocumentTemplate extends React.PureComponent {
         if (notMinMaxRule.length > 0) {
             warning = warning ? warning : '' + ' min/max on vale(' + notMinMaxRule.join(', ') + ') ';
         }
+
         return warning; // вернем извещение об итогах валидации
     }
 
@@ -275,26 +282,17 @@ class DocumentTemplate extends React.PureComponent {
         let toolbarParams = this.prepareParamsForToolbar(); //параметры для кнопок управления, взависимости от активной строки
 
         return (
-            <div ref='doc-toolbar' >
-                {/*
-                <MenuToolBar params={toolbarParams}
-                             userData={this.props.userData}
-                             ref='menu-toolbar'
-                             btnStartClick={this.btnStartClickHanler}/>
-                {this.renderStartMenu()}
-*/}
                 <ToolbarContainer ref='toolbarContainer'>
-                        <DocToolBar ref='doc-toolbar'
-                                    docId={this.state.docId}
-                                    edited={this.state.edited}
-                                    validator={this.validation}
-                                    btnAddClick={this.btnAddClick}
-                                    btnEditClick={this.btnEditClick}
-                                    btnCancelClick={this.btnCancelClick}
-                                    btnPrintClick={this.btnPrintClick}
-                                    btnSaveClick={this.btnSaveClick}/>
+                    <DocToolBar ref='doc-toolbar'
+                                docId={this.state.docId}
+                                edited={this.state.edited}
+                                validator={this.validation}
+                                btnAddClick={this.btnAddClick}
+                                btnEditClick={this.btnEditClick}
+                                btnCancelClick={this.btnCancelClick}
+                                btnPrintClick={this.btnPrintClick}
+                                btnSaveClick={this.btnSaveClick}/>
                 </ToolbarContainer>
-            </div>
         );
     }
 
@@ -405,7 +403,6 @@ class DocumentTemplate extends React.PureComponent {
         this.props.libs.forEach(lib => {
             let params = _.has(this.state.libParams, lib) ? {sql: this.state.libParams[lib]} : {};
 
-            console.log('params:', lib, params);
             fetchData.fetchDataPost(`${postUrl}/${lib}`, params).then(response => {
                 if (response && 'data' in response) {
                     this.libs[lib] = response.data.result.result.data;
@@ -465,12 +462,10 @@ class DocumentTemplate extends React.PureComponent {
      * обработчик событий для панели инструментов грида
      * @param btnName, activeRow
      */
-    handleGridBtnClick(btnName, activeRow) {
-        console.log('templ handleGridBtnClick',btnName,activeRow, this.docData);
+    handleGridBtnClick(btnName, activeRow, id, docTypeId) {
         if (this.props.handleGridBtnClick) {
             // если есть обработчик, то отдаем туда, иначе вызываем метод на редактирование строки
-            let id = this.docData.lapsed[activeRow].id;
-            this.props.handleGridBtnClick(btnName, id)
+            this.props.handleGridBtnClick(btnName, activeRow, id, docTypeId);
         } else {
             switch (btnName) {
                 case 'add':
@@ -524,7 +519,6 @@ class DocumentTemplate extends React.PureComponent {
      * откроет активную строку для редактирования
      */
     editRow() {
-        console.log('editRow');
         this.gridRowData = this.docData.gridData[this.refs['data-grid'].state.activeRow];
         // откроем модальное окно для редактирования
         this.setState({gridRowEdit: true, gridRowEvent: 'edit'});

@@ -12,6 +12,13 @@ module.exports = {
 
 
     },
+
+    a: {
+        width: '70%',
+        marginLeft: '5px',
+        borderRadius:'5px'
+    },
+
     hide: {
         display: 'none'
     },

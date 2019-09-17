@@ -6,6 +6,11 @@ exports.post = async (req, res) => {
         sortBy = req.body.sortBy, //порядок сортировки
         sqlWhere = req.body.sqlWhere; //динамический фильтр
 
+
+    if (!user.userId) {
+        res.redirec('/login');
+    }
+
     try {
         // создать объект
         const Doc = require('./../classes/DocumentTemplate');

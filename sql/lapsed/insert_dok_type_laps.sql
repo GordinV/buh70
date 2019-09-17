@@ -13,3 +13,11 @@ SELECT 1::INTEGER,
        'DOK'                                     AS library,
        '{"type":"library", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'VANEM');
+
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
+       'LAPSE_KAART'                                    AS kood,
+       'Teenused lastele'                                  AS nimetus,
+       'DOK'                                     AS library,
+       '{"type":"library", "module":["Lapsed"]}' AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'LAPSE_KAART');

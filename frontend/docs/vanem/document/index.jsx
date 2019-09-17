@@ -24,7 +24,8 @@ class Vanem extends React.PureComponent {
         super(props);
         this.state = {
             loadedData: false,
-            docId: props.docId ? props.docId : Number(props.match.params.docId)
+            docId: props.docId ? props.docId : Number(props.match.params.docId),
+            lapsId: props.lapsId ? props.lapsId : Number(props.match.params.lapsId)
         };
 
         this.renderer = this.renderer.bind(this);
@@ -73,10 +74,11 @@ class Vanem extends React.PureComponent {
             gridLasteData = self.docData.lapsed,
             gridLasteColumns = self.docData.gridConfig;
 
-        // формируем зависимости
-        if (self.docData.relations) {
-            relatedDocuments(self);
+        if (this.state.lapsId) {
+            self.docData.parentid = this.state.lapsId;
         }
+
+        console.log('vanem render self.docData->',self.docData);
 
         return (
             <div style={styles.doc}>
@@ -147,6 +149,7 @@ class Vanem extends React.PureComponent {
                               handleGridBtnClick={self.handleGridBtnClick}
                               readOnly={!isEditMode}
                               style={styles.grid.headerTable}
+                              docTypeId={'laps'}
                               ref="laspsed-data-grid"/>
                 </div>
 
@@ -159,15 +162,15 @@ class Vanem extends React.PureComponent {
         this.props.history.push(`/lapsed/${pageDocTypeId}`)
     }
 
-    handleLasteGridBtnClick(btnName, id) {
+    handleLasteGridBtnClick(btnName, activeRow, id, docTypeId) {
 
         switch (btnName) {
             case "edit":
-                this.props.history.push(`/lapsed/laps/${id}`);
+                this.props.history.push(`/lapsed/${docTypeId}/${id}/0`);
 
                 break;
             case "add":
-                this.props.history.push(`/lapsed/laps/0`);
+                this.props.history.push(`/lapsed/${docTypeId}/0/${this.state.docId}`);
                 break;
             case "delete":
                 console.log('btnDelete clicked');

@@ -9,6 +9,10 @@ const Docs = require('./../docs/dok/index.jsx');
 const LapseDokument = require('./../docs/laps/document/index.jsx');
 const LasteRegister = require('./../docs/laps/index.jsx');
 
+const LasteTeenustRegister = require('./../docs/lapse_kaart/index.jsx');
+const LapseKaartDokument = require('./../docs/lapse_kaart/document/index.jsx');
+
+
 const VanemDokument = require('./../docs/vanem/document/index.jsx');
 const VanemateRegister = require('./../docs/vanem/index.jsx');
 
@@ -21,7 +25,11 @@ const SorderideRegister = require('./../docs/sorder/index.jsx');
 const AsutusRegister = require('./../docs/asutused/index.jsx'),
     AsutusDocument = require('./../docs/asutused/document/index.jsx');
 
-const {Route, withRouter} = require('react-router-dom');
+const NomRegister = require('./../docs/nomenclature/index.jsx'),
+    NomDocument = require('./../docs/nomenclature/document/index.jsx');
+
+
+const {Route, withRouter, Redirect} = require('react-router-dom');
 const {StyleRoot} = require('radium');
 const MODULE = 'Lapsed';
 
@@ -50,10 +58,14 @@ class App extends React.Component {
                        render={(props) => <Docs history = {props.history} userData={this.props.userData} initData={this.props.initData}  module={MODULE}/>}/>
                 <Route exact path="/lapsed/laps"
                        render={(props) => <LasteRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/laps/:docId" component = {LapseDokument} />
+                <Route exact path="/lapsed/laps/:docId/:vanemId" component = {LapseDokument} />
                 <Route exact path="/lapsed/vanem"
                        render={(props) => <VanemateRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/vanem/:docId" component = {VanemDokument} />
+                <Route exact path="/lapsed/vanem/:docId/:lapsId" component = {VanemDokument} />
+
+                <Route exact path="/lapsed/lapse_kaart"
+                       render={(props) => <LasteTeenustRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/lapse_kaart/:docId/:lapsId" component = {LapseKaartDokument} />
 
                 <Route exact path="/lapsed/arv"
                        render={(props) => <ArvedeRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
@@ -64,6 +76,10 @@ class App extends React.Component {
                 <Route exact path="/lapsed/asutused/:docId" component = {AsutusDocument} module={MODULE}/>
                 <Route exact path="/lapsed/asutused"
                        render={(props) => <AsutusRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>} />
+
+                <Route exact path="/lapsed/nomenclature"
+                       render={(props) => <NomRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/nomenclature/:docId" component = {NomDocument} />
 
             </StyleRoot>)
     }

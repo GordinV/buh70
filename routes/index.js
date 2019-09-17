@@ -21,7 +21,7 @@ module.exports = function (app) {
     app.get('/lapsed', checkAuth, require('./lapsed').get); // module raamatupidamine
     app.get('/lapsed/:documentType', checkAuth, require('./lapsed').get); // module raamatupidamine
     app.get('/lapsed/:documentType/:id', checkAuth, require('./lapsed/document').get); // module lapsed
-
+    app.get('/lapsed/:documentType/:id/:paramId', checkAuth, require('./lapsed/document').get); // module lapsed
 
     app.post('/newApi/startMenu/:module',require('./startMenu').post); //checkAuth,
     app.post('/newApi/document/:documentType/:id',require('./documentRegister').post); //апи для обмена даты по протоколу POST с моделью документа

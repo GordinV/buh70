@@ -19,5 +19,6 @@ module.exports = {
     kassa: '/libs/libraries/kassa',
     kontoandmik: '/aruanned/raamatupidamine/kontoandmik',
     laps:'/lapsed/laps',
-    vanem:'/lapsed/vanem'
+    vanem:'/lapsed/vanem',
+    lapse_kaart:'/lapsed/lapse_kaart'
 };

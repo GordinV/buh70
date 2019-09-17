@@ -19,6 +19,7 @@ exports.post = async (req, res) => {
     const Document = new Doc(documentType, null, user.userId, user.asutusId);
 
     let data = await Document.selectLibs(sqlWhere, sqlLimit);
+
     let local_result = Object.assign({},{result: data});
 
     res.send({result: local_result}); //пока нет новых данных

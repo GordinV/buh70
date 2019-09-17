@@ -13,6 +13,7 @@ FROM lapsed.laps l
                       json_agg((k.properties -> 'yksus')) AS yksused,
                       array_agg(rekvid)                   AS rekv_ids
                FROM lapsed.lapse_kaart k
+               WHERE k.staatus <> 3
                GROUP BY parentid
 ) lk ON lk.parentid = l.id
 WHERE l.staatus <> 3

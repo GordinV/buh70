@@ -3,6 +3,7 @@
 const PropTypes = require('prop-types');
 const getDataByFilter = require('../../../libs/getDataByFilter');
 const fetchData = require('./../../../libs/fetchData');
+const _ = require('lodash');
 
 const React = require('react'),
     styles = require('./select-data-styles'),
@@ -26,26 +27,26 @@ class SelectData extends React.PureComponent {
             show: this.props.show,
             limit: '10'
         };
-//        this.onChange = this.onChange.bind(this);
         this.handleInputChange = this.handleInputChange.bind(this);
         this.handleGridClick = this.handleGridClick.bind(this);
         this.modalPageClick = this.modalPageClick.bind(this);
         this.loadLibs = this.loadLibs.bind(this);
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.setState({
-            value: nextProps.value,
-            fieldValue: nextProps.defaultValue,
-            readOnly: nextProps.readOnly,
-            show: nextProps.show,
-        });
-
-        if (!this.state.gridData.length) {
-            // first load
-            this.loadLibs(nextProps.defaultValue)
+    componentDidMount() {
+        if (this.state.value) {
+            this.loadLibs('');
         }
+    }
 
+    componentWillReceiveProps(nextProps, nextContext) {
+        if (!this.state.fieldValue && !this.state.value) {
+            this.setState({
+                value: nextProps.value,
+                fieldValue: nextProps.defaultValue
+            })
+
+        }
     }
 
     render() {
@@ -62,7 +63,7 @@ class SelectData extends React.PureComponent {
                 <InputText ref="input"
                            title={this.props.title}
                            name={this.props.name}
-                           value={this.state.fieldValue}
+                           value={this.state.fieldValue || ''}
                            readOnly={!isEditeMode}
                            onChange={this.handleInputChange}/>
 
@@ -121,12 +122,17 @@ class SelectData extends React.PureComponent {
 
     // обработчик события измения значения в текстовом (поисковом) поле
     handleInputChange(name, value) {
+        this.setState({value: 0, fieldValue: value, show: true});
+
         if (name == 'gridFilter') {
             // обновим стейт
-            this.setState({fieldValue: value, show: true});
 
-            //выполним запрос
-            this.loadLibs(value);
+            if (value.length) {
+                //выполним запрос
+                setTimeout(() => {
+                    this.loadLibs(this.state.fieldValue);
+                }, 1000);
+            }
         } else {
             this.setState({limit: value});
         }
@@ -165,7 +171,10 @@ class SelectData extends React.PureComponent {
             }
         } else {
             // востанавливаем старые значения из пропсов, заврывыаем окно
-            this.setState({value: this.props.value, fieldValue: this.props.defaultValue, show: false});
+            this.setState({
+                value: this.props.value,
+                fieldValue: this.props.defaultValue, show: false
+            });
         }
     }
 
@@ -178,22 +187,48 @@ class SelectData extends React.PureComponent {
         let lib = this.props.libName;
         let sqlWhere = '';
         let limit = this.state.limit;
+        let isSeachById = (this.state.value && !fieldValue);
 
-        if (this.props.sqlFields.length) {
+        if (this.props.sqlFields.length && fieldValue.length > 0) {
             this.props.sqlFields.forEach((field) => {
                 let isOr = sqlWhere.length > 0 ? ' or ' : '';
                 sqlWhere = sqlWhere.concat(` ${isOr} encode(${field}::bytea, 'escape') ilike '%${fieldValue.trim()}%'`);
             });
-            sqlWhere = `where ${sqlWhere}`;
+        }
 
-            let libParams = sqlWhere.length ? {sql: sqlWhere, limit: limit} : {};
+        if (isSeachById) {
+            // will seach by id
+            sqlWhere = `id = ${this.state.value}`
+        }
 
+        sqlWhere = `where ${sqlWhere}`;
+
+
+        let libParams = sqlWhere.length ? {sql: sqlWhere, limit: limit} : {};
+
+        if (sqlWhere.length > 0) {
             fetchData.fetchDataPost(`${postUrl}/${lib}`, libParams).then(response => {
-                if (response && 'data' in response) {
-                    let gridData = response.data.result.result.data,
-                        gridConfig = response.data.result.result.gridConfig;
+                let gridData = [],
+                    gridConfig = [];
 
-                    this.setState({gridData: gridData, gridConfig: gridConfig});
+                if (response && 'data' in response) {
+                    gridData = response.data.result.result.data;
+                    gridConfig = response.data.result.result.gridConfig;
+                }
+
+                if (_.size(gridData) > 0) {
+                    if (isSeachById) {
+
+                        // только одна запись. Грид не нужен
+                        this.setState({
+                            value: gridData[0]['id'],
+                            gridData: gridData,
+                            fieldValue: gridData[0][this.props.boundToGrid],
+                            gridConfig: gridConfig
+                        });
+                    } else {
+                        this.setState({gridData: gridData, gridConfig: gridConfig});
+                    }
                 }
 
             }).catch(error => {
@@ -201,7 +236,6 @@ class SelectData extends React.PureComponent {
                 rejected();
             });
         }
-
     }
 
 

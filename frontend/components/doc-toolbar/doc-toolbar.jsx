@@ -129,6 +129,8 @@ class DocToolBar extends React.PureComponent {
             } else {
                 console.error('method save not exists in props')
             }
+        } else {
+            console.log('Document is not valid', isValid);
         }
     }
 

@@ -1,5 +1,21 @@
 module.exports = {
-    selectAsLibs: ``,
+    selectAsLibs: `SELECT *
+                   FROM lapsed.laps l
+                   WHERE exists(
+                                 SELECT id
+                                 FROM lapsed.lapse_kaart lk
+                                 WHERE lk.rekvid = $1
+                                   AND lk.parentid = l.id
+                             )
+                   ORDER BY nimi`,
+    libGridConfig: {
+        grid: [
+            {id: "id", name: "id", width: "50px", show: false},
+            {id: "isikukood", name: "Isikukood", width: "100px"},
+            {id: "nimi", name: "Nimi", width: "100px"}
+        ]
+    },
+
     select: [{
         sql: `SELECT l.id,
                      l.isikukood,
@@ -13,6 +29,7 @@ module.exports = {
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,
+                  0::integer as vanemid,
                   null::text as isikukood,
                   null::text as nimi,
                   null::text as viitenumber,
@@ -53,6 +70,7 @@ module.exports = {
                   FROM lapsed.lapse_kaart k
                            INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
                   WHERE k.parentid = $1
+                    AND k.staatus <> 3
                     AND k.rekvid IN (SELECT rekvid FROM ou.userid WHERE id = $2)`,
             query: null,
             multiple: true,
@@ -61,27 +79,34 @@ module.exports = {
         }
 
     ],
-    returnData: {
-        row: {},
-        details: [],
-        teenused: [],
-        vanemad: [],
-        gridConfig: [
-            {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
-            {id: 'parentid', name: 'parentid', width: '0px', show: false, type: 'text', readOnly: true},
-            {id: 'asutusid', name: 'asutusid', width: '0px', show: false, type: 'text', readOnly: true},
-            {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
-            {id: 'tel', name: 'Tel. nr', width: '100px', show: true, type: 'text', readOnly: false},
-            {id: 'email', name: 'E-mail', width: '100px', show: true, type: 'text', readOnly: false},
-        ],
-        gridTeenusteConfig: [
-            {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
-            {id: 'kood', name: 'Kood', width: '100px', show: true, type: 'text', readOnly: false},
-            {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
-            {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'text', readOnly: false},
-            {id: 'yksus', name: 'Üksus', width: '100px', show: true, type: 'text', readOnly: false}
-        ]
-    },
+    returnData:
+        {
+            row: {}
+            ,
+            details: [],
+            teenused:
+                [],
+            vanemad:
+                [],
+            gridConfig:
+                [
+                    {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
+                    {id: 'parentid', name: 'parentid', width: '0px', show: false, type: 'text', readOnly: true},
+                    {id: 'asutusid', name: 'asutusid', width: '0px', show: false, type: 'text', readOnly: true},
+                    {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'tel', name: 'Tel. nr', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'email', name: 'E-mail', width: '100px', show: true, type: 'text', readOnly: false},
+                ],
+            gridTeenusteConfig:
+                [
+                    {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
+                    {id: 'kood', name: 'Kood', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'yksus', name: 'Üksus', width: '100px', show: true, type: 'text', readOnly: false}
+                ]
+        }
+    ,
 
 
     requiredFields: [
@@ -96,29 +121,36 @@ module.exports = {
         alias: 'arvestaKulum'
     },
 */
-    saveDoc: `select lapsed.sp_salvesta_laps($1::jsonb, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `SELECT error_code, result, error_message
-                FROM lapsed.sp_delete_laps($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
-    grid: {
-        gridConfiguration: [
-            {id: "id", name: "id", width: "10%", show: false},
-            {id: "isikukood", name: "Isikukood", width: "30%"},
-            {id: "nimi", name: "Nimi", width: "40%"},
-            {id: "yksused", name: "Üksused", width: "30%"}
-        ],
-        sqlString: `SELECT id,
-                           isikukood,
-                           nimi,
-                           yksused,
-                           $1::INTEGER AS rekvid,
-                           $2::INTEGER AS user_id
-                    FROM lapsed.cur_lapsed l
-                    WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
-        `,     //  $1 всегда ид учреждения, $2 - userId
-        params: '',
-        alias: 'curLapsed'
-    }
+    saveDoc:
+        `select lapsed.sp_salvesta_laps($1::jsonb, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
+    deleteDoc:
+            `SELECT error_code, result, error_message
+             FROM lapsed.sp_delete_laps($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
+    grid:
+        {
+            gridConfiguration: [
+                {id: "id", name: "id", width: "10%", show: false},
+                {id: "isikukood", name: "Isikukood", width: "30%"},
+                {id: "nimi", name: "Nimi", width: "40%"},
+                {id: "yksused", name: "Üksused", width: "30%"}
+            ],
+            sqlString:
+                    `SELECT id,
+                            isikukood,
+                            nimi,
+                            yksused,
+                            $1::INTEGER AS rekvid,
+                            $2::INTEGER AS user_id
+                     FROM lapsed.cur_lapsed l
+                     WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
+            `,     //  $1 всегда ид учреждения, $2 - userId
+            params:
+                '',
+            alias:
+                'curLapsed'
+        }
 
 
-};
+}
+;
 
