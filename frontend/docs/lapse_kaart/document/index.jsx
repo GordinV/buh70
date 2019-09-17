@@ -65,6 +65,7 @@ class Laps extends React.PureComponent {
                                  pages={this.pages}
                                  renderer={this.renderer}
                                  handleGridBtnClick={this.handleGridBtnClick}
+                                 history={this.props.history}
                                  focusElement={'input-kood'}
         />
     }
@@ -78,7 +79,7 @@ class Laps extends React.PureComponent {
             isEditMode = self.state.edited;
 
 
-        if (self.docData.id == 0 || !self.docData.parentid) {
+        if ((self.docData.id == 0 || !self.docData.parentid) && this.state.lapsId) {
             //new record
             self.docData.parentid = this.state.lapsId;
         }
@@ -105,6 +106,7 @@ class Laps extends React.PureComponent {
                                 btnDelete={false}
                                 onChange={self.handleInputChange}
                                 readOnly={!isEditMode}/>
+
 
                 </div>
                 <div style={styles.docRow}>

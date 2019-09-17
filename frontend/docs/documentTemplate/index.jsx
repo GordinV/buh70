@@ -159,7 +159,7 @@ class DocumentTemplate extends React.PureComponent {
                 this.setState({edited: false, docId: this.docData.id});
 
                 if (this.props.history) {
-                    this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
+                    this.props.history.push(`/lapsed/${this.props.docTypeId}/${this.docData.id}/${this.docData.parentid}`);
                 }
 
             }

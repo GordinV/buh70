@@ -150,7 +150,7 @@ class Documents extends React.PureComponent {
             // кастомный обработчик события
             this.props.btnAddClick(this.state.value);
         } else {
-            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/0`);
+            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/0/0`);
         }
     }
 
@@ -215,6 +215,9 @@ class Documents extends React.PureComponent {
                 }
                 return row;
             }, this);
+        } else {
+            filterString = '';
+            this.filterData = this.filterData.map((row) => row.value = '');
         }
 
         this.setState({getFilter: false, sqlWhere: filterString}, () => this.fetchData());
@@ -287,20 +290,19 @@ class Documents extends React.PureComponent {
             <div>
                 {this.renderFilterToolbar()}
                 <ToolbarContainer ref='toolbarContainer'>
-                        <BtnAdd onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
-                                disable={toolbarParams['btnAdd'].disabled}/>
-                        <BtnEdit onClick={this.btnEditClick} show={toolbarParams['btnEdit'].show}
-                                 disable={toolbarParams['btnEdit'].disabled}/>
-                        <BtnDelete onClick={this.btnDeleteClick} show={toolbarParams['btnDelete'].show}
-                                   disable={toolbarParams['btnDelete'].disabled}/>
-                        <BtnPrint onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
-                                  disable={toolbarParams['btnPrint'].disabled}/>
-                        <BtnFilter onClick={this.btnFilterClick}/>
+                    <BtnAdd onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
+                            disable={toolbarParams['btnAdd'].disabled}/>
+                    <BtnEdit onClick={this.btnEditClick} show={toolbarParams['btnEdit'].show}
+                             disable={toolbarParams['btnEdit'].disabled}/>
+                    <BtnDelete onClick={this.btnDeleteClick} show={toolbarParams['btnDelete'].show}
+                               disable={toolbarParams['btnDelete'].disabled}/>
+                    <BtnPrint onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
+                              disable={toolbarParams['btnPrint'].disabled}/>
+                    <BtnFilter onClick={this.btnFilterClick}/>
                 </ToolbarContainer>
             </div>
         );
     }
-
 
 
     /**
