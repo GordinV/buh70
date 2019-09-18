@@ -1,5 +1,13 @@
 module.exports = {
-    selectAsLibs: ``,
+    selectAsLibs: `SELECT lk.nomid    AS id,
+                          n.kood,
+                          n.nimetus,
+                          lk.parentid AS lapsid,
+                          lk.rekvid   AS rekvid
+                   FROM lapsed.lapse_kaart lk
+                            INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
+                   WHERE lk.staatus <> 3
+                     AND lk.rekvid = $1`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},
@@ -16,6 +24,7 @@ module.exports = {
                      lk.hind,
                      lk.tunnus,
                      lk.properties ->> 'yksus'                                             AS yksus,
+                     lk.muud,
                      coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)::NUMERIC           AS soodus,
                      coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN AS kas_protsent,
                      to_char((lk.properties ->> 'sooduse_alg')::DATE, 'YYYY-MM-DD')        AS sooduse_alg,

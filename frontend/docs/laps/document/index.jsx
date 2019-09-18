@@ -35,6 +35,7 @@ class Laps extends React.PureComponent {
 
         this.pages = [
             {pageName:'Lapse kaart', docTypeId:'LAPS'},
+            {pageName:'Taabel', handlePageClick: this.handlePageClick, docTypeId:'LAPSE_TAABEL'},
             {pageName:'Arved', handlePageClick: this.handlePageClick, docTypeId:'ARV'},
             {pageName:'Maksekoraldused', handlePageClick: this.handlePageClick, docTypeId:'SMK'},
             {pageName:'Kassaorderid', handlePageClick: this.handlePageClick, docTypeId:'SORDER'}

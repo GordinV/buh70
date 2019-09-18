@@ -3,6 +3,7 @@
 const PropTypes = require('prop-types');
 const React = require('react');
 
+
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
@@ -16,8 +17,8 @@ const
     ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     styles = require('./styles');
 
-const LIBDOK = 'LAPSE_KAART',
-    LIBRARIES = ['tunnus', 'nomenclature'];
+const LIBDOK = 'LAPSE_TAABEL',
+    LIBRARIES = ['lapse_kaart'];
 
 const now = new Date();
 
@@ -27,7 +28,7 @@ class Laps extends React.PureComponent {
         this.state = {
             loadedData: false,
             docId: props.docId ? props.docId : Number(props.match.params.docId),
-            lapsId: props.lapsId ? props.lapsId : props.match.params.lapsId ? Number(props.match.params.lapsId) : 0
+            lapsId: props.lapsId ? props.lapsId : props.match.params.paramId ? Number(props.match.params.paramId) : 0
         };
 
         this.renderer = this.renderer.bind(this);
@@ -37,7 +38,7 @@ class Laps extends React.PureComponent {
 
 
         this.pages = [
-            {pageName: 'Teenus', docTypeId: 'LAPSE_KAART'}
+            {pageName: 'Lapse taabel', docTypeId: 'LAPSE_TAABEL'}
         ];
 
         this.requiredFields = [
@@ -53,11 +54,15 @@ class Laps extends React.PureComponent {
 
 
     render() {
+
         let initData = this.props.initData ? this.props.initData : {};
+
+
+        console.log('taabel render, state', this.state);
 
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
-                                 docTypeId='LAPSE_KAART'
+                                 docTypeId='LAPSE_TAABEL'
                                  requiredFields={this.requiredFields}
                                  userData={this.props.userData}
                                  initData={initData}
@@ -84,13 +89,18 @@ class Laps extends React.PureComponent {
             self.docData.parentid = this.state.lapsId;
         }
 
-        let doc = this.refs['document'];
-        let libs = doc ? doc.libs : {};
-        const nomData = self.libs['nomenclature'].filter(lib => {
-            if (!lib.dok || lib.dok === LIBDOK) return lib;
-        });
+        /*
+                const nomData = self.libs['nomenclature'].filter(lib => {
+                    if (!lib.dok || lib.dok === LIBDOK) return lib;
+                });
+
+        */
+        let kpv = new Date(),
+            kuu = kpv.getMonth(),
+            aasta = kpv.getFullYear();
 
         let buttonEditNom = styles.btnEditNom;
+        console.log('self.docData', self.docData);
 
         return (
             <div style={styles.doc}>
@@ -102,96 +112,67 @@ class Laps extends React.PureComponent {
                                     sqlFields={['nimi', 'isikukood']}
                                     data={[]}
                                     value={self.docData.parentid || 0}
-                                    defaultValue={self.docData.lapse_nimi}
+                                    defaultValue={self.docData.nimi}
                                     boundToGrid='nimi'
-                                    boundToData='lapse_nimi'
+                                    boundToData='nimi'
                                     ref="select-parentid"
                                     btnDelete={false}
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditMode}/>
-
                     </div>
                 </div>
-                <div style={styles.docRow}>
-                        <div style={styles.docColumn}>
-                            <Select title="Kood:"
-                                    name='nomid'
-                                    libs="nomenclature"
-                                    data={self.libs['nomenclature']}
-                                    value={self.docData.nomid || 0}
-                                    defaultValue={self.docData.kood}
-                                    ref="select-nomid"
-                                    collId={'id'}
-                                    btnDelete={isEditMode}
-                                    onChange={self.handleInputChange}
-                                    readOnly={!isEditMode}/>
-                        </div>
-                        <div style={styles.docColumn}>
-                            <ButtonEdit
-                                ref='btnEdit'
-                                onClick={this.btnEditNomClick}
-                                show={!isEditMode}
-                                disabled={false}
-                                style={buttonEditNom}
-                            />
-                        </div>
-                </div>
-                <div style={styles.docRow}>
 
+                <div style={styles.docRow}>
                     <div style={styles.docColumn}>
-
-                        <InputNumber ref="input-hind"
-                                     title='Hind:'
-                                     name='hind'
-                                     value={Number(self.docData.hind) || 0}
-                                     readOnly={!isEditMode}
-                                     onChange={self.handleInputChange}/>
-
-                        <InputText title='Üksus:'
-                                   name='yksus'
-                                   value={self.docData.yksus || ''}
-                                   ref='input-yksus'
-                                   readOnly={!isEditMode}
-                                   onChange={self.handleInputChange}/>
-
-
-                        <Select title="Tunnus:"
-                                name='tunnus'
-                                libs="tunnus"
-                                data={self.libs['tunnus']}
-                                value={self.docData.tunnus}
-                                defaultValue={self.docData.tunnus}
-                                ref="select-tunnus"
-                                collId={'kood'}
+                        <Select title="Kood:"
+                                name='nomid'
+                                libs="lapse_kaart"
+                                data={self.libs['lapse_kaart']}
+                                value={self.docData.nomid || 0}
+                                defaultValue={self.docData.kood}
+                                ref="select-nomid"
                                 btnDelete={isEditMode}
                                 onChange={self.handleInputChange}
                                 readOnly={!isEditMode}/>
-
                     </div>
+
                     <div style={styles.docColumn}>
-                        <InputNumber ref="input-soodus"
-                                     title='Soodustus:'
-                                     name='soodus'
-                                     value={Number(self.docData.soodus) || 0}
+                        <ButtonEdit
+                            ref='btnEdit'
+                            onClick={this.btnEditNomClick}
+                            show={!isEditMode}
+                            style={buttonEditNom}
+                            disabled={false}
+                        />
+                    </div>
+                </div>
+
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
+                        <InputNumber ref="input-kogus"
+                                     title='Kogus:'
+                                     name='kogus'
+                                     value={Number(self.docData.kogus) || Number(null)}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
 
-                        <InputDate title='Kehtib alates:'
-                                   name='sooduse_alg'
-                                   value={self.docData.sooduse_alg}
-                                   ref='input-soodus_alg'
-                                   readOnly={!isEditMode}
-                                   onChange={self.handleInputChange}/>
 
-                        <InputDate title='Kehtib kuni:'
-                                   name='sooduse_lopp'
-                                   value={self.docData.sooduse_lopp}
-                                   ref='input-soodus_lopp'
-                                   readOnly={!isEditMode}
-                                   onChange={self.handleInputChange}/>
+                        <InputNumber ref="input-kuu"
+                                     title='Kuu:'
+                                     name='kuu'
+                                     value={Number(self.docData.kuu) || Number(kuu)}
+                                     readOnly={!isEditMode}
+                                     onChange={self.handleInputChange}/>
 
+                        <InputNumber ref="input-aasta"
+                                     title='Aasta:'
+                                     name='aasta'
+                                     value={Number(self.docData.aasta) || Number(aasta)}
+                                     readOnly={!isEditMode}
+                                     onChange={self.handleInputChange}/>
                     </div>
                 </div>
+
                 <div style={styles.docRow}>
                     <TextArea title="Märkused"
                               name='muud'

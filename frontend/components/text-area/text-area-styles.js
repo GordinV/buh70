@@ -2,6 +2,8 @@ module.exports = {
     input: {
         width: '100%',
         borderRadius:'3px',
+        overflow: 'scroll',
+        height: 'fit-content',
         ':focus': {
             backgroundColor: 'lightpink'
         },

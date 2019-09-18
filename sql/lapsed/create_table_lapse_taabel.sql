@@ -42,4 +42,8 @@ ALTER TABLE lapsed.lapse_taabel
     ADD CONSTRAINT check_kuu CHECK ((kuu >= 1 AND kuu < 13) OR kuu = 0);
 
 ALTER TABLE lapsed.lapse_taabel
-    ADD CONSTRAINT check_aasta CHECK (aasta >= date_part('year', now()) + 1 );
+    drop CONSTRAINT if exists check_aasta;
+
+
+ALTER TABLE lapsed.lapse_taabel
+    ADD CONSTRAINT check_aasta CHECK (aasta >= date_part('year', now()) - 1 );

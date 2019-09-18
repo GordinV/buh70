@@ -27,7 +27,7 @@ module.exports = {
             width: '100%'
         },
         headerTable: {
-            width:'100%',
+            width: '100%',
         },
 
         gridContainer: {
@@ -48,12 +48,9 @@ module.exports = {
         top: '100px'
     },
 
-    btnEditNom : {
+    btnEditNom: {
         width: 'min-content'
-    },
-
-    selectNom: {
-        marginLeft:'10px'
     }
+
 
 };

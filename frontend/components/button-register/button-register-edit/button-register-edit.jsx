@@ -8,7 +8,7 @@ const React = require('react'),
     ICON = 'edit';
 
 
-class ButtonRegisterEdit extends React.PureComponent{
+class ButtonRegisterEdit extends React.PureComponent {
 // кнопка создания документа в регистрах
     constructor(props) {
         super(props);
@@ -28,10 +28,13 @@ class ButtonRegisterEdit extends React.PureComponent{
     }
 
     render() {
+
+        let btnStyle = Object.assign({}, styles.buttonEdit, this.props.style ? this.props.style : {});
+
         return <Button
-            value = 'Edit'
+            value='Edit'
             ref="btnEdit"
-            style={styles.buttonEdit}
+            style={btnStyle}
             show={this.props.show}
             disabled={this.state.disabled}
             onClick={(e) => this.handleClick(e)}>

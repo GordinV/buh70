@@ -20,5 +20,6 @@ module.exports = {
     kontoandmik: '/aruanned/raamatupidamine/kontoandmik',
     laps:'/lapsed/laps',
     vanem:'/lapsed/vanem',
-    lapse_kaart:'/lapsed/lapse_kaart'
+    lapse_kaart:'/lapsed/lapse_kaart',
+    lapse_taabel:'/lapsed/lapse_taabel'
 };

@@ -1,5 +1,6 @@
 'use strict';
 const _ = require('lodash');
+const moment = require('moment');
 /*
 const finder = require('../libs/getDataByFilter');
 let data = [
@@ -59,7 +60,12 @@ const found = data.filter((row) => (row.kood.indexOf(seachFor) > 0 || row.Nimetu
 
 //let found = finder(data,'89');
 
-let params = {asutused:'where'};
-let key = 'asutused';
-let exists = _.has(params, 'asutused');
-console.log(params[key], exists);
+//let now = new Date(2019,9,1, 0, 0 , 0);
+let tana = new Date();
+let kuu = tana.getMonth();
+let year = tana.getFullYear();
+
+let kpv = moment.now();
+let _kuu = moment().month();
+
+console.log(tana, kuu, year, kpv, _kuu);
