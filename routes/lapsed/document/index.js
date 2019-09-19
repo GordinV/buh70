@@ -3,6 +3,7 @@
 const React = require('react');
 const ReactServer = require('react-dom/server');
 const {StaticRouter} = require('react-router');
+const MODULE = 'lapsed';
 
 exports.get = async (req, res) => {
     // рендер грида на сервере при первой загрузке странице
@@ -15,7 +16,7 @@ exports.get = async (req, res) => {
 
 
     const Doc = require('./../../../classes/DocumentTemplate');
-    const Document = new Doc(documentType, docId, user.userId, user.asutusId);
+    const Document = new Doc(documentType, docId, user.userId, user.asutusId, MODULE);
 
     // делаем запрос , получаем первоначальные данные
     // вызвать метод

@@ -65,6 +65,7 @@ class Documents extends React.PureComponent {
      */
     componentDidMount() {
         let reload = false; // if reload === true then it will call to reload
+
         if (this.props.initData.docTypeId && this.props.initData.docTypeId.toUpperCase() !== this.docTypeId.toUpperCase()) {
             reload = true;
         }
@@ -73,6 +74,8 @@ class Documents extends React.PureComponent {
             this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
             reload = true;
         }
+
+
 
         if (reload || !this.props.initData || !this.gridData.length) {
 
@@ -176,7 +179,11 @@ class Documents extends React.PureComponent {
             // кастомный обработчик события
             this.props.btnAddClick(this.state.value);
         } else {
-            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/0`);
+            return this.props.history.push({
+                pathname: `/${this.props.module}/${this.docTypeId}/0`,
+                state: {module: this.props.module}
+            });
+
         }
     }
 
@@ -188,7 +195,11 @@ class Documents extends React.PureComponent {
             // кастомный обработчик события
             this.props.btnEditClick(this.state.value);
         } else {
-            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/${this.state.value}`);
+            return this.props.history.push({
+                pathname: `/${this.props.module}/${this.docTypeId}/${this.state.value}`,
+                state: {module: this.props.module}
+            });
+
         }
     }
 
@@ -216,32 +227,6 @@ class Documents extends React.PureComponent {
 
         if (btnEvent === 'Ok') {
             // собираем данные
-            /*
-                        this.filterData = this.filterData.map((row) => {
-                            if (row.value) {
-                                filterString = filterString + (filterString.length > 0 ? " and " : " where ");
-                                switch (row.type) {
-
-                                    case 'text':
-                                        filterString = filterString + row.name + " ilike '%" + row.value + "%'";
-                                        break;
-                                    case 'string':
-                                        filterString = filterString + row.name + " ilike '" + row.value + "%'";
-                                        break;
-                                    case 'date':
-                                        filterString = filterString + row.name + " = '" + row.value + "'";
-                                        break;
-                                    case 'number':
-                                        filterString = filterString + row.name + " = " + row.value;
-                                        break;
-                                    case 'integer':
-                                        filterString = filterString + row.name + " = " + row.value;
-                                        break;
-                                }
-                            }
-                            return row;
-                        }, this);
-                        */
 
             filterString = this.prepareSqlWhereFromFilter();
         } else {
@@ -425,11 +410,13 @@ class Documents extends React.PureComponent {
             parameter: this.docTypeId, // параметры
             sortBy: this.state.sortBy, // сортировка
             sqlWhere: this.state.sqlWhere, // динамический фильтр грида
-            lastDocId: null
+            lastDocId: null,
+            module: this.props.module
         };
         try {
             fetchData.fetchDataPost(URL, params).then(response => {
                 this.gridData = response.data.result.data;
+
                 if (response.data.gridConfig.length) {
                     this.gridConfig = response.data.gridConfig;
                 }

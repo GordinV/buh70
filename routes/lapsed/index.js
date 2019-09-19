@@ -22,7 +22,7 @@ exports.get = async (req, res) => {
     let user = require('./../../middleware/userData')(req);  // check for userid in session
 
     const Doc = require('./../../classes/DocumentTemplate');
-    const Document = new Doc(documentType, null, user.userId, user.asutusId);
+    const Document = new Doc(documentType, null, user.userId, user.asutusId, 'lapsed');
     // делаем запрос , получаем первоначальные данные
     let gridConfig = Document.config.grid.gridConfiguration;
     // вызвать метод

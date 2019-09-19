@@ -1,6 +1,6 @@
 'use strict';
 const _ = require('lodash');
-
+/*
 const filter = [
     {
         name: 'kood',

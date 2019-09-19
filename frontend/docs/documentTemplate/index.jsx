@@ -282,17 +282,17 @@ class DocumentTemplate extends React.PureComponent {
         let toolbarParams = this.prepareParamsForToolbar(); //параметры для кнопок управления, взависимости от активной строки
 
         return (
-                <ToolbarContainer ref='toolbarContainer'>
-                    <DocToolBar ref='doc-toolbar'
-                                docId={this.state.docId}
-                                edited={this.state.edited}
-                                validator={this.validation}
-                                btnAddClick={this.btnAddClick}
-                                btnEditClick={this.btnEditClick}
-                                btnCancelClick={this.btnCancelClick}
-                                btnPrintClick={this.btnPrintClick}
-                                btnSaveClick={this.btnSaveClick}/>
-                </ToolbarContainer>
+            <ToolbarContainer ref='toolbarContainer'>
+                <DocToolBar ref='doc-toolbar'
+                            docId={this.state.docId}
+                            edited={this.state.edited}
+                            validator={this.validation}
+                            btnAddClick={this.btnAddClick}
+                            btnEditClick={this.btnEditClick}
+                            btnCancelClick={this.btnCancelClick}
+                            btnPrintClick={this.btnPrintClick}
+                            btnSaveClick={this.btnSaveClick}/>
+            </ToolbarContainer>
         );
     }
 
@@ -347,11 +347,11 @@ class DocumentTemplate extends React.PureComponent {
     fetchData(protocol) {
         let url = `${URL}/${this.props.docTypeId}/${this.state.docId}`;
         let method = 'fetchDataPost';
-        let params = {};
+        let params = {module:this.props.module};
         if (protocol) {
             //request call not default
             method = 'fetchData' + protocol;
-            params = this.docData;
+            params = Object.assign(params, this.docData, );
         }
 
         return new Promise((resolved, rejected) => {
@@ -401,7 +401,10 @@ class DocumentTemplate extends React.PureComponent {
         let postUrl = '/newApi/loadLibs';
 
         this.props.libs.forEach(lib => {
-            let params = _.has(this.state.libParams, lib) ? {sql: this.state.libParams[lib]} : {};
+            let params = _.has(this.state.libParams, lib) ? {
+                sql: this.state.libParams[lib],
+                module: this.props.module
+            } : {module: this.props.module};
 
             fetchData.fetchDataPost(`${postUrl}/${lib}`, params).then(response => {
                 if (response && 'data' in response) {

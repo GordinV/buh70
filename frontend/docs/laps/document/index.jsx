@@ -26,7 +26,8 @@ class Laps extends React.PureComponent {
         this.state = {
             loadedData: false,
             docId: props.docId ? props.docId : Number(props.match.params.docId),
-            vanemId: props.vanemId ? props.vanemId : Number(props.match.params.vanemId)
+            vanemId: null,
+            module: 'lapsed'
         };
 
         this.renderer = this.renderer.bind(this);
@@ -50,6 +51,14 @@ class Laps extends React.PureComponent {
         ];
     }
 
+    componentDidMount() {
+        if (this.props.history && this.props.history.location.state) {
+            let vanemId = this.props.history.location.state.vanemId;
+            let module = this.props.history.location.state.module ? this.props.history.location.state.module : 'lapsed';
+            this.setState({vanemId: vanemId, module: module});
+        }
+
+    }
 
     render() {
         let initData = this.props.initData ? this.props.initData : {};
@@ -57,6 +66,7 @@ class Laps extends React.PureComponent {
         return (
             <DocumentTemplate docId={this.state.docId}
                               ref='document'
+                              module={this.state.module}
                               docTypeId='LAPS'
                               requiredFields={this.requiredFields}
                               userData={this.props.userData}
@@ -176,9 +186,10 @@ class Laps extends React.PureComponent {
         let isikukood = this.refs['document'].docData.isikukood;
 
         this.props.history.push({
-            pathname:`/lapsed/${pageDocTypeId}`,
-            state: { isikukood: isikukood, type: 'text'}
+            pathname: `/lapsed/${pageDocTypeId}`,
+            state: {isikukood: isikukood, type: 'text'}
         });
+
     }
 
 
@@ -190,13 +201,13 @@ class Laps extends React.PureComponent {
 
                 this.props.history.push({
                     pathname: `/lapsed/${docTypeId}/${id}`,
-                    state: {lapsId: this.state.docId}
+                    state: {lapsId: this.state.docId, module: this.state.module}
                 });
                 break;
             case "add":
                 this.props.history.push({
                     pathname: `/lapsed/${docTypeId}/0`,
-                    state: {lapsId: this.state.docId}
+                    state: {lapsId: this.state.docId, module: this.state.module}
                 });
                 break;
             case "delete":

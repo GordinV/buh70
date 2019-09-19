@@ -60,6 +60,7 @@ exports.post = async (req, res) => {
     let user = require('../middleware/userData')(req); // данные пользователя
     const documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
     const docId = Number(req.params.id); //ид документа
+    const module = req.params.module || 'lapsed'; // используемый модуль
 
     /*
         if (!user) {
@@ -71,12 +72,6 @@ exports.post = async (req, res) => {
         }
     */
 
-    if (!user) {
-        user = {
-            userId: 1,
-            asutusId: 1
-        }
-    }
 
     const params = {
         documentType: documentType,
@@ -85,7 +80,7 @@ exports.post = async (req, res) => {
     };
 
     const Doc = require('./../classes/DocumentTemplate');
-    const Document = new Doc(documentType, docId, user.userId, user.asutusId);
+    const Document = new Doc(documentType, docId, user.userId, user.asutusId, module);
 
     let data;
 
@@ -97,32 +92,24 @@ exports.post = async (req, res) => {
     }
 
     const preparedData = Object.assign({},
-        data.result.row[0],
+        data.result ? data.result.row[0] : {},
         data.result,
-        {gridData: data.result.details},
-        {relations: data.result.relations},
-        {gridConfig: data.result.gridConfig});
+        {gridData: data.result ? data.result.details : []},
+        {relations: data.result ? data.result.relations : []},
+        {gridConfig: data.result ? data.result.gridConfig : []});
+
+    console.log('data', preparedData);
 
     res.send({data: [preparedData], userData: user});
 
-    /*
-        try {
-
-            let data =  await db.queryDb(sqlString,params);
-            // вернуть данные
-            res.send(data);
-        } catch (error) {
-            console.error('error:', error); // @todo Обработка ошибок
-            res.send({result:'Error'});
-
-        }
-    */
 };
 
 exports.put = async (req, res) => {
     let user = require('../middleware/userData')(req); // данные пользователя
     let documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
+
     const docId = Number(req.params.id); //ид документа
+    const module = req.params.module || 'lapsed';
     let data = req.body;
 
     if (!user) {
@@ -140,7 +127,7 @@ exports.put = async (req, res) => {
     };
 
     const Doc = require('./../classes/DocumentTemplate');
-    const Document = new Doc(documentType, docId, user.userId, user.asutusId);
+    const Document = new Doc(documentType, docId, user.userId, user.asutusId, module);
 
     const savedData = await Document.save(params);
 

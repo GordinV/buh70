@@ -5,13 +5,14 @@ const async = require('async');
 
 //class
 class Document {
-    constructor(docType, docId, userId, rekvId) {
+    constructor(docType, docId, userId, rekvId, module) {
         this.docTypeId = docType;
-        this.config = this.setConfig(docType);
+        this.config = this.setConfig(docType, module);
         this.documentId = docId;
         this.userId = userId;
         this.rekvId = rekvId;
         this.test = null;
+
     }
 
     /**
@@ -19,11 +20,11 @@ class Document {
      * @param docTypeId тип локумента
      * @returns {*}
      */
-    setConfig(docTypeId) {
+    setConfig(docTypeId, module) {
         let config;
         // check if exists model for this type
         try {
-            config = getModule(docTypeId, null, path);
+            config = getModule(docTypeId, null, path, module ? module: 'documents');
         } catch (e) {
             console.error(e);
             return null;

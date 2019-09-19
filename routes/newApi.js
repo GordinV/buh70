@@ -3,6 +3,7 @@
 exports.post = async (req, res) => {
     const user = require('../middleware/userData')(req), // данные пользователя
         parameter = req.body.parameter || '',// параметры если переданы
+        module = req.body.module || 'documents',
         sortBy = req.body.sortBy, //порядок сортировки
         sqlWhere = req.body.sqlWhere; //динамический фильтр
 
@@ -14,7 +15,7 @@ exports.post = async (req, res) => {
     try {
         // создать объект
         const Doc = require('./../classes/DocumentTemplate');
-        const doc = new Doc(parameter, null, user.userId, user.asutusId);
+        const doc = new Doc(parameter, null, user.userId, user.asutusId, module);
         let gridConfig = doc.config.grid.gridConfiguration;
 
         // вызвать метод

@@ -87,7 +87,6 @@ class SelectData extends React.PureComponent {
         let limitInputStyle = styles.limitInput;
 
         return (
-            <div>
                 <ModalPage
                     modalObjects={modalObjects}
                     ref="modalpage-grid"
@@ -113,8 +112,7 @@ class SelectData extends React.PureComponent {
                                    readOnly={false}
                                    onChange={this.handleInputChange}/>
                     </div>
-                </ModalPage>
-            </div>);
+                </ModalPage>);
     }
 
     // обработчик события измения значения в текстовом (поисковом) поле

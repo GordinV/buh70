@@ -1,11 +1,10 @@
 module.exports = {
     dok:'dok',
-    journal:'/raamatupidamine/journal',
-    arv:'/raamatupidamine/arv',
-    smk:'/raamatupidamine/smk',
-    vmk:'/raamatupidamine/vmk',
-    sorder:'/raamatupidamine/sorder',
-    vorder:'/raamatupidamine/vorder',
+    arv:'/lapsed/arv',
+    smk:'/lapsed/smk',
+    vmk:'/lapsed/vmk',
+    sorder:'/lapsed/sorder',
+    vorder:'/lapsed/vorder',
     asutused:'/libs/libraries/asutused',
     kontod:'/libs/libraries/kontod',
     dokprops: '/libs/libraries/dokprops',
@@ -13,9 +12,10 @@ module.exports = {
     nomenclature: '/libs/libraries/nomenclature',
     document: '/libs/libraries/document',
     aa: '/libs/libraries/aa',
-    arvedsisse: '/libs/libraries/arvedsisse',
     tunnus: '/libs/libraries/tunnus',
     project: '/libs/libraries/project',
-    kassa: '/libs/libraries/kassa',
-    kontoandmik: '/aruanned/raamatupidamine/kontoandmik'
+    laps:'/lapsed/laps',
+    vanem:'/lapsed/vanem',
+    lapse_kaart:'/lapsed/lapse_kaart',
+    lapse_taabel:'/lapsed/lapse_taabel'
 };

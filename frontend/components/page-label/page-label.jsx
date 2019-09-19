@@ -10,14 +10,17 @@ class PageLabel extends React.PureComponent {
         super(props);
         this.state = {
             disabled: props.disabled
-        }
+        };
 
         this.handleClick = this.handleClick.bind(this);
 
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.setState({disabled: nextProps.disabled});
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.disabled !== prevState.disabled) {
+            return {disabled: nextProps.disabled};
+        } else return null;
     }
 
 
@@ -38,7 +41,7 @@ class PageLabel extends React.PureComponent {
 
     render() {
         let page = this.props.page,
-            style = Object.assign({},styles.pageLabel, this.props.active  ? {backgroundColor:'white'}: {})
+            style = Object.assign({},styles.pageLabel, this.props.active  ? {backgroundColor:'white'}: {});
 
         return <label style={style}
                       disabled={this.state.disabled}
@@ -61,7 +64,7 @@ PageLabel.propTypes = {
 PageLabel.defaultProps = {
     disabled: false,
     active: true
-}
+};
 
 
 module.exports = PageLabel;

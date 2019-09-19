@@ -5,6 +5,7 @@ const PropTypes = require('prop-types');
 const React = require('react'),
     styles = require('./grid-filter-styles');
 
+const _ = require('lodash');
 
 class GridFilter extends React.PureComponent {
     constructor(props) {
@@ -65,11 +66,11 @@ class GridFilter extends React.PureComponent {
         </div>
     }
 
-    prepareFilterFields () {
+    prepareFilterFields() {
         return this.props.gridConfig.map((row) => {
             let componentType = row.type ? row.type : 'text';
-            const obj = this.data[_.findIndex(this.data, {name:row.id})];
-            let value = _.has(obj,'value') ? obj.value : '';
+            const obj = this.data[_.findIndex(this.data, {name: row.id})];
+            let value = _.has(obj, 'value') ? obj.value : '';
 
             return <div style={styles.formWidget} key={'fieldSet-' + row.id}>
                 <div style={styles.formWidgetLabel}>

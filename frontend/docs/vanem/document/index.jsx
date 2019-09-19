@@ -25,7 +25,8 @@ class Vanem extends React.PureComponent {
         this.state = {
             loadedData: false,
             docId: props.docId ? props.docId : Number(props.match.params.docId),
-            lapsId: null
+            lapsId: null,
+            module:'lapsed'
         };
 
         this.renderer = this.renderer.bind(this);
@@ -52,7 +53,8 @@ class Vanem extends React.PureComponent {
     componentDidMount() {
         if (this.props.history && this.props.history.location.state) {
             let lapsId = this.props.history.location.state.lapsId;
-            this.setState({lapsId: lapsId});
+            let module = this.props.history.location.state.module;
+            this.setState({lapsId: lapsId, module: module});
         }
 
     }
@@ -63,6 +65,7 @@ class Vanem extends React.PureComponent {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='VANEM'
+                                 module={this.state.module}
                                  requiredFields={this.requiredFields}
                                  userData={this.props.userData}
                                  initData={initData}
@@ -165,19 +168,30 @@ class Vanem extends React.PureComponent {
     }
 
     handlePageClick(pageDocTypeId) {
-//        document.location.href = `/lapsed/${pageDocTypeId}/`;//@todo Обновить
-        this.props.history.push(`/lapsed/${pageDocTypeId}`)
+        let nimi = this.refs['document'].docData.vanem_nimi;
+
+        this.props.history.push({
+            pathname: `/lapsed/${pageDocTypeId}`,
+            state: {asutus: nimi, type: 'text'}
+        });
+
     }
 
     handleLasteGridBtnClick(btnName, activeRow, id, docTypeId) {
 
         switch (btnName) {
             case "edit":
-                this.props.history.push(`/lapsed/${docTypeId}/${id}/0`);
+                this.props.history.push({
+                    pathname: `/lapsed/${docTypeId}/${id}`,
+                    state: {vanemId: this.state.docId, module: this.state.module}
+                });
 
                 break;
             case "add":
-                this.props.history.push(`/lapsed/${docTypeId}/0/${this.state.docId}`);
+                this.props.history.push({
+                    pathname: `/lapsed/${docTypeId}/0`,
+                    state: {vanemId: this.state.docId, module: this.state.module}
+                });
                 break;
             case "delete":
                 console.log('btnDelete clicked');

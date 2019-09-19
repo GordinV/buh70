@@ -27,7 +27,8 @@ class Laps extends React.PureComponent {
         super(props);
         this.state = {
             loadedData: false,
-            docId: props.docId ? props.docId : Number(props.match.params.docId)
+            docId: props.docId ? props.docId : Number(props.match.params.docId),
+            module: 'lapsed'
         };
 //        lapsId: props.lapsId ? props.lapsId : props.match.params.lapsId ? Number(props.match.params.lapsId) : 0
 
@@ -66,6 +67,7 @@ class Laps extends React.PureComponent {
 
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
+                                 module={this.state.module}
                                  docTypeId='LAPSE_KAART'
                                  requiredFields={this.requiredFields}
                                  userData={this.props.userData}
@@ -233,7 +235,7 @@ class Laps extends React.PureComponent {
 
 
     handlePageClick(pageDocTypeId) {
-//        document.location.href = `/lapsed/${pageDocTypeId}/`;//@todo Обновить
+        //        document.location.href = `/lapsed/${pageDocTypeId}/`;//@todo Обновить
         this.props.history.push(`/lapsed/${pageDocTypeId}`)
     }
 
@@ -270,7 +272,11 @@ class Laps extends React.PureComponent {
         let docLapsId = this.refs['document'].docData.parentid;
 
         // осуществит переход на карточку контр-агента
-        this.props.history.push(`/lapsed/laps/${docLapsId}`);
+        this.props.history.push({
+            pathname: `/lapsed/${docTypeId}/${docLapsId}`,
+            state: {teenusId: this.state.docId, module: this.state.module}
+        });
+
 
     }
 
