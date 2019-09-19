@@ -21,7 +21,7 @@ class ButtonRegisterSave extends React.PureComponent{
         return this.props.onClick();
     }
 
-    componentWillReceiveProps(nextProps) {
+    componentDidUpdate(nextProps) {
         this.setState({disabled: nextProps.disabled})
     }
 
@@ -35,12 +35,12 @@ class ButtonRegisterSave extends React.PureComponent{
             <img ref='image' src={styles.icons[ICON]}/>
         </Button>
     }
-};
+}
 
 ButtonRegisterSave.propTypes = {
     onClick: PropTypes.func.isRequired,
     disabled: PropTypes.bool
-}
+};
 
 
 ButtonRegisterSave.defaultProps = {

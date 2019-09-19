@@ -17,6 +17,7 @@ DECLARE
     doc_yksus        TEXT    = doc_data ->> 'yksus';
     doc_soodus       NUMERIC = doc_data ->> 'soodus';
     doc_kas_protsent BOOLEAN = doc_data ->> 'kas_protsent';
+    doc_kas_eraldi   BOOLEAN = doc_data ->> 'kas_eraldi';
     doc_sooduse_alg  DATE    = doc_data ->> 'sooduse_alg';
     doc_sooduse_lopp DATE    = doc_data ->> 'sooduse_lopp';
     doc_muud         TEXT    = doc_data ->> 'muud';
@@ -42,12 +43,13 @@ BEGIN
     END IF;
 
     json_props = to_jsonb(row)
-                 FROM (SELECT doc_yksus AS yksus,
-                              doc_soodus as soodus,
-                              doc_kas_protsent as kas_protsent,
-                              doc_sooduse_alg as sooduse_alg,
-                              doc_sooduse_lopp as sooduse_lopp
-                              ) row;
+                 FROM (SELECT doc_yksus        AS yksus,
+                              doc_soodus       AS soodus,
+                              doc_kas_protsent AS kas_protsent,
+                              doc_sooduse_alg  AS sooduse_alg,
+                              doc_sooduse_lopp AS sooduse_lopp,
+                              doc_kas_eraldi   AS kas_eraldi
+                      ) row;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0

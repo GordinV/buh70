@@ -59,7 +59,7 @@ class Select extends React.PureComponent {
         return fieldValue;
     }
 
-    componentWillReceiveProps(nextProps) {
+    componentDidUpdate(nextProps) {
         this.setState({
             value: nextProps.value,
             readOnly: nextProps.readOnly

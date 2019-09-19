@@ -29,6 +29,7 @@ module.exports = {
                      coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN AS kas_protsent,
                      to_char((lk.properties ->> 'sooduse_alg')::DATE, 'YYYY-MM-DD')        AS sooduse_alg,
                      to_char((lk.properties ->> 'sooduse_lopp')::DATE, 'YYYY-MM-DD')       AS sooduse_lopp,
+                     coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE)::BOOLEAN   AS kas_eraldi,
                      n.kood,
                      n.nimetus,
                      $2                                                                    AS userid,
@@ -51,6 +52,7 @@ module.exports = {
                   0::numeric as hind,
                   0::numeric as soodus,
                   false as kas_protsent,
+                  false as kas_eraldi,
                   null::date as sooduse_alg,
                   null::date as sooduse_lopp,
                   null::text as muud`,
@@ -100,8 +102,8 @@ module.exports = {
         {
             gridConfiguration: [
                 {id: "id", name: "id", width: "1%", show: false},
-                {id: "isikukood", name: "Isikukood", width: "20%", show: false},
-                {id: "nimi", name: "Nimi", width: "20%", show: false},
+                {id: "isikukood", name: "Isikukood", width: "20%", show: true},
+                {id: "nimi", name: "Nimi", width: "20%", show: true},
                 {id: "kood", name: "Kood", width: "20%"},
                 {id: "nimetus", name: "Nimetus", width: "40%"},
                 {id: "hind", name: "Hind", width: "20%"},

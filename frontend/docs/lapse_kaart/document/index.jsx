@@ -10,6 +10,7 @@ const
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     InputDate = require('../../../components/input-date/input-date.jsx'),
     Select = require('../../../components/select/select.jsx'),
+    CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     SelectData = require('../../../components/select-data/select-data.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
@@ -34,6 +35,7 @@ class Laps extends React.PureComponent {
         this.handlePageClick = this.handlePageClick.bind(this);
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
         this.btnEditNomClick = this.btnEditNomClick.bind(this);
+        this.btnEditLapsClick = this.btnEditLapsClick.bind(this);
 
 
         this.pages = [
@@ -109,32 +111,41 @@ class Laps extends React.PureComponent {
                                     btnDelete={false}
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditMode}/>
+                        <div style={styles.docColumn}>
+                            <ButtonEdit
+                                ref='btnEdit'
+                                onClick={this.btnEditLapsClick}
+                                show={!isEditMode}
+                                style={buttonEditNom}
+                                disabled={false}
+                            />
+                        </div>
 
                     </div>
                 </div>
                 <div style={styles.docRow}>
-                        <div style={styles.docColumn}>
-                            <Select title="Kood:"
-                                    name='nomid'
-                                    libs="nomenclature"
-                                    data={self.libs['nomenclature']}
-                                    value={self.docData.nomid || 0}
-                                    defaultValue={self.docData.kood}
-                                    ref="select-nomid"
-                                    collId={'id'}
-                                    btnDelete={isEditMode}
-                                    onChange={self.handleInputChange}
-                                    readOnly={!isEditMode}/>
-                        </div>
-                        <div style={styles.docColumn}>
-                            <ButtonEdit
-                                ref='btnEdit'
-                                onClick={this.btnEditNomClick}
-                                show={!isEditMode}
-                                disabled={false}
-                                style={buttonEditNom}
-                            />
-                        </div>
+                    <div style={styles.docColumn}>
+                        <Select title="Kood:"
+                                name='nomid'
+                                libs="nomenclature"
+                                data={self.libs['nomenclature']}
+                                value={self.docData.nomid || 0}
+                                defaultValue={self.docData.kood}
+                                ref="select-nomid"
+                                collId={'id'}
+                                btnDelete={isEditMode}
+                                onChange={self.handleInputChange}
+                                readOnly={!isEditMode}/>
+                    </div>
+                    <div style={styles.docColumn}>
+                        <ButtonEdit
+                            ref='btnEdit'
+                            onClick={this.btnEditNomClick}
+                            show={!isEditMode}
+                            disabled={false}
+                            style={buttonEditNom}
+                        />
+                    </div>
                 </div>
                 <div style={styles.docRow}>
 
@@ -165,7 +176,16 @@ class Laps extends React.PureComponent {
                                 collId={'kood'}
                                 btnDelete={isEditMode}
                                 onChange={self.handleInputChange}
-                                readOnly={!isEditMode}/>
+                                readOnly={!isEditMode}
+                        />
+
+                        <CheckBox title="Kas arvesta eraldi?"
+                                  name='kas_eraldi'
+                                  value={Boolean(self.docData.kas_eraldi)}
+                                  ref={'checkbox_kas_eraldi'}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditMode}
+                        />
 
                     </div>
                     <div style={styles.docColumn}>
@@ -215,7 +235,7 @@ class Laps extends React.PureComponent {
     handleGridBtnClick(btnName, activeRow, id, docTypeId) {
         switch (btnName) {
             case "edit":
-                this.props.history.push(`/lapsed/${docTypeId}/${id}/0`);
+                this.props.history.push(`/lapsed/${docTypeId}/${id}`);
                 break;
             case "add":
                 this.props.history.push(`/lapsed/${docTypeId}/0/${this.state.docId}`);
@@ -237,6 +257,16 @@ class Laps extends React.PureComponent {
         this.props.history.push(`/lapsed/nomenclature/${docNomId}`);
 
     }
+
+    //обработчик события по клику кнопки Редактирование ребенка
+    btnEditLapsClick() {
+        let docLapsId = this.refs['document'].docData.parentid;
+
+        // осуществит переход на карточку контр-агента
+        this.props.history.push(`/lapsed/laps/${docLapsId}`);
+
+    }
+
 
 }
 

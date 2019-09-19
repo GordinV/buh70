@@ -55,7 +55,7 @@ class Documents extends React.PureComponent {
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
             'headerClickHandler', 'btnFilterClick', 'modalPageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
-            'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData');
+            'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData', 'prepareSqlWhereFromFilter');
 
 
     }
@@ -69,10 +69,36 @@ class Documents extends React.PureComponent {
             reload = true;
         }
 
-        if (reload || !this.props.initData || !this.gridData.length) {
-            //делаем запрос на получение данных
-            this.fetchData();
+        if (this.props.history && this.props.history.location.state) {
+            this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
+            reload = true;
         }
+
+        if (reload || !this.props.initData || !this.gridData.length) {
+
+            // проверим на фильтр
+            let sqlWhere = this.prepareSqlWhereFromFilter();
+
+            //делаем запрос на получение данных
+            this.setState({sqlWhere: sqlWhere}, () => {
+                this.fetchData()
+            });
+
+        }
+    }
+
+    // присвоит фильтру значения переданные в параметре
+    mergeParametersWithFilter(filter, parameters) {
+        let keys = _.keys(parameters);
+        _.forEach(keys, (key) => {
+            // find row in filter array
+            let filterRowIndex = _.findIndex(filter, {name: key});
+            if (filterRowIndex >= 0) {
+                filter[filterRowIndex].value = parameters[key];
+            }
+        });
+
+        return filter;
     }
 
     render() {
@@ -150,7 +176,7 @@ class Documents extends React.PureComponent {
             // кастомный обработчик события
             this.props.btnAddClick(this.state.value);
         } else {
-            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/0/0`);
+            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/0`);
         }
     }
 
@@ -162,7 +188,7 @@ class Documents extends React.PureComponent {
             // кастомный обработчик события
             this.props.btnEditClick(this.state.value);
         } else {
-            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/${this.state.value}/0`);
+            return this.props.history.push(`/${this.props.module}/${this.docTypeId}/${this.state.value}`);
         }
     }
 
@@ -190,37 +216,72 @@ class Documents extends React.PureComponent {
 
         if (btnEvent === 'Ok') {
             // собираем данные
+            /*
+                        this.filterData = this.filterData.map((row) => {
+                            if (row.value) {
+                                filterString = filterString + (filterString.length > 0 ? " and " : " where ");
+                                switch (row.type) {
 
-            this.filterData = this.filterData.map((row) => {
-                if (row.value) {
-                    filterString = filterString + (filterString.length > 0 ? " and " : " where ");
-                    switch (row.type) {
+                                    case 'text':
+                                        filterString = filterString + row.name + " ilike '%" + row.value + "%'";
+                                        break;
+                                    case 'string':
+                                        filterString = filterString + row.name + " ilike '" + row.value + "%'";
+                                        break;
+                                    case 'date':
+                                        filterString = filterString + row.name + " = '" + row.value + "'";
+                                        break;
+                                    case 'number':
+                                        filterString = filterString + row.name + " = " + row.value;
+                                        break;
+                                    case 'integer':
+                                        filterString = filterString + row.name + " = " + row.value;
+                                        break;
+                                }
+                            }
+                            return row;
+                        }, this);
+                        */
 
-                        case 'text':
-                            filterString = filterString + row.name + " ilike '%" + row.value + "%'";
-                            break;
-                        case 'string':
-                            filterString = filterString + row.name + " ilike '" + row.value + "%'";
-                            break;
-                        case 'date':
-                            filterString = filterString + row.name + " = '" + row.value + "'";
-                            break;
-                        case 'number':
-                            filterString = filterString + row.name + " = " + row.value;
-                            break;
-                        case 'integer':
-                            filterString = filterString + row.name + " = " + row.value;
-                            break;
-                    }
-                }
-                return row;
-            }, this);
+            filterString = this.prepareSqlWhereFromFilter();
         } else {
+            //          this.filterData = this.filterData.map((row) => row.value = null);
             filterString = '';
-            this.filterData = this.filterData.map((row) => row.value = '');
         }
 
         this.setState({getFilter: false, sqlWhere: filterString}, () => this.fetchData());
+    }
+
+
+    prepareSqlWhereFromFilter() {
+        let filterString = ''; // строка фильтра
+
+        this.filterData = this.filterData.map((row) => {
+            if (row.value) {
+                filterString = filterString + (filterString.length > 0 ? " and " : " where ");
+                switch (row.type) {
+
+                    case 'text':
+                        filterString = filterString + row.name + " ilike '%" + row.value + "%'";
+                        break;
+                    case 'string':
+                        filterString = filterString + row.name + " ilike '" + row.value + "%'";
+                        break;
+                    case 'date':
+                        filterString = filterString + row.name + " = '" + row.value + "'";
+                        break;
+                    case 'number':
+                        filterString = filterString + row.name + " = " + row.value;
+                        break;
+                    case 'integer':
+                        filterString = filterString + row.name + " = " + row.value;
+                        break;
+                }
+            }
+            return row;
+        }, this);
+
+        return filterString;
     }
 
     /**
@@ -367,8 +428,6 @@ class Documents extends React.PureComponent {
             lastDocId: null
         };
         try {
-//            fetchData.fetchDataPost(URL, params);
-
             fetchData.fetchDataPost(URL, params).then(response => {
                 this.gridData = response.data.result.data;
                 if (response.data.gridConfig.length) {

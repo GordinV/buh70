@@ -50,9 +50,6 @@ class DataGrid extends React.PureComponent {
         }
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.forceUpdate();
-    }
 
     render() {
         /*

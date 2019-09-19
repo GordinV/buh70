@@ -11,12 +11,13 @@ class GridFilter extends React.PureComponent {
         super(props);
 
         this.state = {
-            gridConfig: this.props.gridConfig, // grid config
-            data: this.props.data // filter data
+            gridConfig: this.props.gridConfig // grid config
         };
 
         this.data = this.props.data;
-        this.handleChange = this.handleChange.bind(this)    }
+        this.handleChange = this.handleChange.bind(this);
+        this.prepareFilterFields = this.prepareFilterFields.bind(this);
+    }
 
     /**
      * Обработчик на изменения инпутов
@@ -28,7 +29,7 @@ class GridFilter extends React.PureComponent {
             index;
 
         // надо найти элемент массива с данными для этого компонента
-        for(let i = 0; i < this.data.length; i++ ) {
+        for (let i = 0; i < this.data.length; i++) {
             if (this.data[i].name === id) {
                 index = i;
                 break;
@@ -43,47 +44,52 @@ class GridFilter extends React.PureComponent {
         if (this.props.handler) {
             this.props.handler(this.data);
         }
+        this.forceUpdate();
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.data = nextProps.data;
-        this.setState({gridConfig: nextProps.gridConfig});
+    componentDidMount() {
+        this.props.gridConfig.map((row) => {
+            let componentType = row.type ? row.type : 'text';
+
+            // props.data пустое, создаем
+            this.data.push({value: null, name: row.id, type: componentType});
+        })
+
     }
 
     render() {
-        let isInitData =  !this.data.length;
+        // создаст из полей грида компоненты для формирования условий фильтрации
 
-            // создаст из полей грида компоненты для формирования условий фильтрации
         return <div style={styles.fieldset}>
-            {
-                this.props.gridConfig.map((row) => {
-                    let componentType = row.type? row.type: 'text';
-
-                    if (isInitData) {
-                        // props.data пустое, создаем
-                        this.data.push({value:null, name: row.id, type: componentType});
-                    }
-
-                    return <div style={styles.formWidget} key={'fieldSet-' + row.id}>
-                        <div style={styles.formWidgetLabel}>
-                            <span>{row.name}</span>
-                        </div>
-                        <div style={styles.formWidgetInput}>
-                            <input style={styles.input}
-                                   type={componentType}
-                                   title={row.name}
-                                   name={row.id}
-                                   placeholder={row.name}
-                                   ref={row.id}
-                                   value = {this.props.data[row.id]}
-                                   onChange={this.handleChange}
-                                   defaultValue={this.props.data[row.id]}
-                            />
-                        </div>
-                    </div>
-                })
-            }
+            {this.prepareFilterFields()}
         </div>
+    }
+
+    prepareFilterFields () {
+        return this.props.gridConfig.map((row) => {
+            let componentType = row.type ? row.type : 'text';
+            const obj = this.data[_.findIndex(this.data, {name:row.id})];
+            let value = _.has(obj,'value') ? obj.value : '';
+
+            return <div style={styles.formWidget} key={'fieldSet-' + row.id}>
+                <div style={styles.formWidgetLabel}>
+                    <span>{row.name}</span>
+                </div>
+                <div style={styles.formWidgetInput}>
+                    <input style={styles.input}
+                           type={componentType}
+                           title={row.name}
+                           name={row.id}
+                           placeholder={row.name}
+                           ref={row.id}
+                           value={value}
+                           onChange={this.handleChange}
+                           defaultValue={this.props.data[row.id]}
+                    />
+                </div>
+            </div>
+        });
+
     }
 }
 

@@ -10,7 +10,7 @@ userData = JSON.parse(userData);
 
 ReactDOM.hydrate(
     <BrowserRouter>
-        <Doc initData={initData}  userData={userData}/>
+        <Doc initData={initData} userData={userData}/>
     </BrowserRouter>
     , document.getElementById('doc')
 );

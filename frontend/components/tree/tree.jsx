@@ -18,7 +18,7 @@ class Tree extends React.PureComponent {
         this.toggleHover = this.toggleHover.bind(this);
     }
 
-    componentWillReceiveProps(nextProps) {
+    componentDidUpdate(nextProps) {
         this.getIndex(nextProps.value);
         this.setState({index: this.getIndex(nextProps.value), value: nextProps.value});
     }

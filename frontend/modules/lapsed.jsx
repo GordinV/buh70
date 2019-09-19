@@ -35,6 +35,7 @@ const {Route, withRouter, Redirect} = require('react-router-dom');
 const {StyleRoot} = require('radium');
 const MODULE = 'Lapsed';
 
+
 class App extends React.Component {
     constructor(props) {
         super(props);
@@ -52,42 +53,57 @@ class App extends React.Component {
 
         return (
             <StyleRoot>
-                <Route  path="/lapsed"
-                        render={() => <Menu params = {btnParams} userData={this.state.userData} module={MODULE}/>}/>
+                <Route path="/lapsed"
+                       render={() => <Menu params={btnParams} userData={this.state.userData} module={MODULE}/>}/>
                 <Route exact path="/lapsed"
-                       render={(props) => <Docs history = {props.history} userData={this.props.userData} initData={this.props.initData}  module={MODULE}/>}/>
+                       render={(props) => <Docs history={props.history} userData={this.props.userData}
+                                                initData={this.props.initData} module={MODULE}/>}/>
                 <Route exact path="/lapsed/docs"
-                       render={(props) => <Docs history = {props.history} userData={this.props.userData} initData={this.props.initData}  module={MODULE}/>}/>
+                       render={(props) => <Docs history={props.history} userData={this.props.userData}
+                                                initData={this.props.initData} module={MODULE}/>}/>
                 <Route exact path="/lapsed/laps"
-                       render={(props) => <LasteRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/laps/:docId/:vanemId" component = {LapseDokument} />
+                       render={(props) => <LasteRegister history={props.history} userData={this.props.userData}
+                                                         initData={this.props.initData} module={MODULE}/>}/>
+
+                <Route exact path="/lapsed/laps/:docId/:vanemId?" component={LapseDokument}/>
                 <Route exact path="/lapsed/vanem"
-                       render={(props) => <VanemateRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/vanem/:docId/:lapsId" component = {VanemDokument} />
+                       render={(props) => <VanemateRegister history={props.history} userData={this.props.userData}
+                                                            initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/vanem/:docId/:lapsId?" component={VanemDokument}/>
 
                 <Route exact path="/lapsed/lapse_kaart"
-                       render={(props) => <LasteTeenustRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/lapse_kaart/:docId/:lapsId" component = {LapseKaartDokument} />
+                       render={(props) => <LasteTeenustRegister history={props.history}
+                                                                userData={this.props.userData}
+                                                                initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/lapse_kaart/:docId/:lapsId?" component={LapseKaartDokument}/>
 
                 <Route exact path="/lapsed/lapse_taabel"
-                       render={(props) => <LasteTaabelRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/lapse_taabel/:docId/:paramId" component = {LapseTaabelDokument} />
+                       render={(props) => <LasteTaabelRegister history={props.history}
+                                                               userData={this.props.userData}
+                                                               initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/lapse_taabel/:docId/:paramId?" component={LapseTaabelDokument}/>
 
                 <Route exact path="/lapsed/arv"
-                       render={(props) => <ArvedeRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
+                       render={(props) => <ArvedeRegister history={props.history} userData={this.props.userData}
+                                                          initData={this.props.initData} module={MODULE}/>}/>
                 <Route exact path="/lapsed/smk"
-                       render={(props) => <SmkRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
+                       render={(props) => <SmkRegister history={props.history} userData={this.props.userData}
+                                                       initData={this.props.initData} module={MODULE}/>}/>
                 <Route exact path="/lapsed/sorder"
-                       render={(props) => <SorderideRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/asutused/:docId" component = {AsutusDocument} module={MODULE}/>
+                       render={(props) => <SorderideRegister history={props.history} userData={this.props.userData}
+                                                             initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/asutused/:docId" component={AsutusDocument} module={MODULE}/>
                 <Route exact path="/lapsed/asutused"
-                       render={(props) => <AsutusRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>} />
+                       render={(props) => <AsutusRegister history={props.history} userData={this.props.userData}
+                                                          initData={this.props.initData} module={MODULE}/>}/>
 
                 <Route exact path="/lapsed/nomenclature"
-                       render={(props) => <NomRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/nomenclature/:docId" component = {NomDocument} />
+                       render={(props) => <NomRegister history={props.history} userData={this.props.userData}
+                                                       initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/nomenclature/:docId" component={NomDocument}/>
 
-            </StyleRoot>)
+            </StyleRoot>
+        )
     }
 
     prepareParamsForToolbar() {
@@ -110,7 +126,8 @@ class App extends React.Component {
     prepareComponents(components) {
         return components['LapseDocument'] = (props) => {
             const LapseDocument = require('./../docs/laps/document/index.jsx');
-            return <LapseDocument {...props}/>};
+            return <LapseDocument {...props}/>
+        };
     }
 
 

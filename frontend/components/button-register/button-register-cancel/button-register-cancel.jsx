@@ -21,7 +21,7 @@ class ButtonRegisterCancel extends React.PureComponent{
         return this.props.onClick();
     }
 
-    componentWillReceiveProps(nextProps) {
+    componentDidUpdate(nextProps) {
         this.setState({disabled: nextProps.disabled})
     }
 
@@ -35,12 +35,12 @@ class ButtonRegisterCancel extends React.PureComponent{
             <img ref='image' src={styles.icons[ICON]}/>
         </Button>
     }
-};
+}
 
 ButtonRegisterCancel.propTypes = {
     onClick: PropTypes.func.isRequired,
     disabled: PropTypes.bool
-}
+};
 
 
 ButtonRegisterCancel.defaultProps = {

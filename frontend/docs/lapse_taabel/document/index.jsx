@@ -35,6 +35,7 @@ class Laps extends React.PureComponent {
         this.handlePageClick = this.handlePageClick.bind(this);
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
         this.btnEditNomClick = this.btnEditNomClick.bind(this);
+        this.btnEditLapsClick = this.btnEditLapsClick.bind(this);
 
 
         this.pages = [
@@ -56,9 +57,6 @@ class Laps extends React.PureComponent {
     render() {
 
         let initData = this.props.initData ? this.props.initData : {};
-
-
-        console.log('taabel render, state', this.state);
 
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
@@ -100,7 +98,6 @@ class Laps extends React.PureComponent {
             aasta = kpv.getFullYear();
 
         let buttonEditNom = styles.btnEditNom;
-        console.log('self.docData', self.docData);
 
         return (
             <div style={styles.doc}>
@@ -120,6 +117,16 @@ class Laps extends React.PureComponent {
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditMode}/>
                     </div>
+                    <div style={styles.docColumn}>
+                        <ButtonEdit
+                            ref='btnEdit'
+                            onClick={this.btnEditLapsClick}
+                            show={!isEditMode}
+                            style={buttonEditNom}
+                            disabled={false}
+                        />
+                    </div>
+
                 </div>
 
                 <div style={styles.docRow}>
@@ -219,6 +226,14 @@ class Laps extends React.PureComponent {
 
     }
 
+    //обработчик события по клику кнопки Редактирование ребенка
+    btnEditLapsClick() {
+        let docLapsId = this.refs['document'].docData.parentid;
+
+        // осуществит переход на карточку контр-агента
+        this.props.history.push(`/lapsed/laps/${docLapsId}`);
+
+    }
 }
 
 Laps.propTypes = {

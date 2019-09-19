@@ -1,71 +1,38 @@
 'use strict';
 const _ = require('lodash');
-const moment = require('moment');
-/*
-const finder = require('../libs/getDataByFilter');
-let data = [
-    {id: 1,
-        kood:'12345',
-        Nimetus: 'test 12'
+
+const filter = [
+    {
+        name: 'kood',
+        type: 'text',
+        value: null
     },
-    {id: 2,
-        kood:'7890',
-        Nimetus: 'test 654'
+    {
+        name: 'nimetus',
+        type: 'text',
+        value: null
     },
-]
-
-const soap = require('libs/callSoapService');
-
-// _.find(doc.select, {alias: 'details'}).sql;
-debugger;
-//let Obj = {select: [{sql: `select 1`, alias:'test'}]};
-//let sql = _.find(Obj.select,{alias:'test'}).sql;
-console.log('sql',sql);
-
-//curl -X; GET; "https://graph.facebook.com/<PSID>?fields='Nina','Martonenko'";
-
-var sites = {
-    links: [
-        {href: 'https://www.example.com/v1/contact-us/ca'},
-        {href: 'https://www.example.com/v1/contact-us/au'},
-        {href: 'https://www.example.com/v1/contact-us/us'},
-        {href: 'https://www.example.com/v1/dontcontact-us/us'}
-    ]
-};
-
-const regex = new RegExp('/contact\\b', 'g');
-const matchedSites = sites.links.filter(({href}) => href.match(regex));
-console.log(matchedSites);
+];
 
 
+const searchObj = {kood: '9999', Nimetus: 'test lodash', obj: 'Not valid'};
 
+let mergedData = mergeParametersWithFilter(filter, searchObj);
 
-let data = [
-    {id: 1,
-        kood:'12345',
-        Nimetus: 'test 12'
-    },
-    {id: 2,
-        kood:'7890',
-        Nimetus: 'test 654'
-    },
-]
+console.log('mergedData', mergedData);
 
-let seachFor = '34';
-const found = data.filter((row) => (row.kood.indexOf(seachFor) > 0 || row.Nimetus.indexOf(seachFor)) > 0 );
+function mergeParametersWithFilter(filter, parameters) {
+    console.log(filter,parameters);
+    let keys = _.keys(parameters);
+    _.forEach(keys, (key) => {
+        // find row in filter array
+        let filterRowIndex = _.findIndex(filter, {name:key});
+        console.log('foreach', key, filterRowIndex);
+        if (filterRowIndex >= 0) {
+            filter[filterRowIndex].value = parameters[key];
+            console.log('found', filter[filterRowIndex], parameters[key]);
+        }
+    });
 
-
-//let found = _.filter(data,  _.matches({ kood: '12' }));
-*/
-
-//let found = finder(data,'89');
-
-//let now = new Date(2019,9,1, 0, 0 , 0);
-let tana = new Date();
-let kuu = tana.getMonth();
-let year = tana.getFullYear();
-
-let kpv = moment.now();
-let _kuu = moment().month();
-
-console.log(tana, kuu, year, kpv, _kuu);
+    return filter;
+}

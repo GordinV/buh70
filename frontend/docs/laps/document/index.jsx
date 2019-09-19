@@ -19,6 +19,7 @@ const LIBDOK = 'LAPS',
 
 const now = new Date();
 
+
 class Laps extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -34,12 +35,12 @@ class Laps extends React.PureComponent {
 
 
         this.pages = [
-            {pageName:'Lapse kaart', docTypeId:'LAPS'},
-            {pageName:'Taabel', handlePageClick: this.handlePageClick, docTypeId:'LAPSE_TAABEL'},
-            {pageName:'Arved', handlePageClick: this.handlePageClick, docTypeId:'ARV'},
-            {pageName:'Maksekoraldused', handlePageClick: this.handlePageClick, docTypeId:'SMK'},
-            {pageName:'Kassaorderid', handlePageClick: this.handlePageClick, docTypeId:'SORDER'}
-            ];
+            {pageName: 'Lapse kaart', docTypeId: 'LAPS'},
+            {pageName: 'Taabel', handlePageClick: this.handlePageClick, docTypeId: 'LAPSE_TAABEL'},
+            {pageName: 'Arved', handlePageClick: this.handlePageClick, docTypeId: 'ARV'},
+            {pageName: 'Maksekoraldused', handlePageClick: this.handlePageClick, docTypeId: 'SMK'},
+            {pageName: 'Kassaorderid', handlePageClick: this.handlePageClick, docTypeId: 'SORDER'}
+        ];
         this.requiredFields = [
             {
                 name: 'isikukood',
@@ -53,18 +54,20 @@ class Laps extends React.PureComponent {
     render() {
         let initData = this.props.initData ? this.props.initData : {};
 
-        return <DocumentTemplate docId={this.state.docId}
-                                 ref='document'
-                                 docTypeId='LAPS'
-                                 requiredFields={this.requiredFields}
-                                 userData={this.props.userData}
-                                 initData={initData}
-                                 libs={LIBRARIES}
-                                 pages={this.pages}
-                                 renderer={this.renderer}
-                                 handleGridBtnClick={this.handleGridBtnClick}
-                                 focusElement={'input-isikukood'}
-        />
+        return (
+            <DocumentTemplate docId={this.state.docId}
+                              ref='document'
+                              docTypeId='LAPS'
+                              requiredFields={this.requiredFields}
+                              userData={this.props.userData}
+                              initData={initData}
+                              libs={LIBRARIES}
+                              pages={this.pages}
+                              renderer={this.renderer}
+                              handleGridBtnClick={this.handleGridBtnClick}
+                              focusElement={'input-isikukood'}
+            />
+        )
     }
 
     /**
@@ -89,87 +92,93 @@ class Laps extends React.PureComponent {
         let libs = doc ? doc.libs : {};
 
         return (
-                <div style={styles.doc}>
-                    <div style={styles.docRow}>
-                        <div style={styles.docColumn}>
-                            <InputText ref="input-isikukood"
-                                       title='Isikukood:'
-                                       name='isikukood'
-                                       value={self.docData.isikukood || ''}
-                                       readOnly={!isEditMode}
-                                       onChange={self.handleInputChange}/>
-                            <InputText title='Nimi:'
-                                       name='nimi'
-                                       value={self.docData.nimi || ''}
-                                       ref='input-nimi'
-                                       readOnly={!isEditMode}
-                                       onChange={self.handleInputChange}/>
-                            <InputText title='Viitenumber:'
-                                       name='viitenumber'
-                                       value={self.docData.viitenumber || ''}
-                                       ref='input-viitenumber'
-                                       readOnly={!isEditMode}
-                                       onChange={self.handleInputChange}/>
-                        </div>
-                        <div style={styles.docColumn}>
-                            <InputText ref="input-jaak"
-                                       title='Jääk:'
-                                       name='jaak'
-                                       value={self.docData.jaak || ''}
-                                       readOnly={true}
-                                       />
-                        </div>
+            <div style={styles.doc}>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
+                        <InputText ref="input-isikukood"
+                                   title='Isikukood:'
+                                   name='isikukood'
+                                   value={self.docData.isikukood || ''}
+                                   readOnly={!isEditMode}
+                                   onChange={self.handleInputChange}/>
+                        <InputText title='Nimi:'
+                                   name='nimi'
+                                   value={self.docData.nimi || ''}
+                                   ref='input-nimi'
+                                   readOnly={!isEditMode}
+                                   onChange={self.handleInputChange}/>
+                        <InputText title='Viitenumber:'
+                                   name='viitenumber'
+                                   value={self.docData.viitenumber || ''}
+                                   ref='input-viitenumber'
+                                   readOnly={!isEditMode}
+                                   onChange={self.handleInputChange}/>
                     </div>
-                    <div style={styles.docRow}>
-                        <TextArea title="Märkused"
-                                  name='muud'
-                                  ref="textarea-muud"
-                                  onChange={self.handleInputChange}
-                                  value={self.docData.muud || ''}
-                                  readOnly={!isEditMode}/>
-                    </div>
-                    <div style={styles.docRow}>
-                        <label   ref="label">
-                            {'Vanemad'}
-                        </label>
-                    </div>
-                    <div style={styles.docRow}>
-
-                        <DataGrid source='vanemad'
-                                  gridData={gridVanemadData}
-                                  gridColumns={gridVanemadColumns}
-                                  showToolBar={!isEditMode}
-                                  handleGridBtnClick={self.handleGridBtnClick}
-                                  readOnly={!isEditMode}
-                                  style={styles.grid.headerTable}
-                                  docTypeId={'vanem'}
-                                  ref="vanemad-data-grid"/>
-                    </div>
-
-                    <div style={styles.docRow}>
-                        <label   ref="label">
-                            {'Teenused'}
-                        </label>
-                    </div>
-                    <div style={styles.docRow}>
-
-                        <DataGrid source='teenused'
-                                  gridData={gridTeenusteData}
-                                  gridColumns={gridTeenusteColumns}
-                                  showToolBar={!isEditMode}
-                                  handleGridBtnClick={self.handleGridBtnClick}
-                                  docTypeId={'lapse_kaart'}
-                                  readOnly={!isEditMode}
-                                  style={styles.grid.headerTable}
-                                  ref="teenuste-data-grid"/>
+                    <div style={styles.docColumn}>
+                        <InputText ref="input-jaak"
+                                   title='Jääk:'
+                                   name='jaak'
+                                   value={self.docData.jaak || ''}
+                                   readOnly={true}
+                        />
                     </div>
                 </div>
+                <div style={styles.docRow}>
+                    <TextArea title="Märkused"
+                              name='muud'
+                              ref="textarea-muud"
+                              onChange={self.handleInputChange}
+                              value={self.docData.muud || ''}
+                              readOnly={!isEditMode}/>
+                </div>
+                <div style={styles.docRow}>
+                    <label ref="label">
+                        {'Vanemad'}
+                    </label>
+                </div>
+                <div style={styles.docRow}>
+
+                    <DataGrid source='vanemad'
+                              gridData={gridVanemadData}
+                              gridColumns={gridVanemadColumns}
+                              showToolBar={!isEditMode}
+                              handleGridBtnClick={self.handleGridBtnClick}
+                              readOnly={!isEditMode}
+                              style={styles.grid.headerTable}
+                              docTypeId={'vanem'}
+                              ref="vanemad-data-grid"/>
+                </div>
+
+                <div style={styles.docRow}>
+                    <label ref="label">
+                        {'Teenused'}
+                    </label>
+                </div>
+                <div style={styles.docRow}>
+
+                    <DataGrid source='teenused'
+                              gridData={gridTeenusteData}
+                              gridColumns={gridTeenusteColumns}
+                              showToolBar={!isEditMode}
+                              handleGridBtnClick={self.handleGridBtnClick}
+                              docTypeId={'lapse_kaart'}
+                              readOnly={!isEditMode}
+                              style={styles.grid.headerTable}
+                              ref="teenuste-data-grid"/>
+                </div>
+            </div>
         );
     }
 
 
     handlePageClick(pageDocTypeId) {
-        this.props.history.push(`/lapsed/${pageDocTypeId}`)
+        // данные для фильтра
+        let isikukood = this.refs['document'].docData.isikukood;
+
+        this.props.history.push({
+            pathname:`/lapsed/${pageDocTypeId}`,
+            state: { isikukood: isikukood, type: 'text'}
+        });
     }
 
 

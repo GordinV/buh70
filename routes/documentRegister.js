@@ -142,8 +142,6 @@ exports.put = async (req, res) => {
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, docId, user.userId, user.asutusId);
 
-console.log('saving, params', params);
-
     const savedData = await Document.save(params);
 
     const prepairedData = Object.assign({}, savedData.row[0],
