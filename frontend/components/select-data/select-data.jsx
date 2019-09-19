@@ -39,14 +39,11 @@ class SelectData extends React.PureComponent {
         }
     }
 
-    componentWillReceiveProps(nextProps, nextContext) {
-        if (!this.state.fieldValue && !this.state.value) {
-            this.setState({
-                value: nextProps.value,
-                fieldValue: nextProps.defaultValue
-            })
-
-        }
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.value !== prevState.value && nextProps.defaultValue !== prevState.fieldValue) {
+            return {value: nextProps.value, fieldValue: nextProps.defaultValue};
+        } else return null;
     }
 
     render() {
@@ -101,7 +98,7 @@ class SelectData extends React.PureComponent {
                         <InputText ref="input-filter"
                                    title='Otsingu parametrid:'
                                    name='gridFilter'
-                                   value={this.state.fieldValue}
+                                   value={this.state.fieldValue || ''}
                                    readOnly={false}
                                    onChange={this.handleInputChange}/>
                         <DataGrid gridData={this.state.gridData}
@@ -112,7 +109,7 @@ class SelectData extends React.PureComponent {
                                    title='Limiit:'
                                    width={limitInputStyle}
                                    name='limit'
-                                   value={this.state.limit}
+                                   value={this.state.limit || 10}
                                    readOnly={false}
                                    onChange={this.handleInputChange}/>
                     </div>

@@ -27,9 +27,9 @@ class Laps extends React.PureComponent {
         super(props);
         this.state = {
             loadedData: false,
-            docId: props.docId ? props.docId : Number(props.match.params.docId),
-            lapsId: props.lapsId ? props.lapsId : props.match.params.lapsId ? Number(props.match.params.lapsId) : 0
+            docId: props.docId ? props.docId : Number(props.match.params.docId)
         };
+//        lapsId: props.lapsId ? props.lapsId : props.match.params.lapsId ? Number(props.match.params.lapsId) : 0
 
         this.renderer = this.renderer.bind(this);
         this.handlePageClick = this.handlePageClick.bind(this);
@@ -53,6 +53,13 @@ class Laps extends React.PureComponent {
         ];
     }
 
+    componentDidMount() {
+        if (this.props.history && this.props.history.location.state) {
+            let lapsId = this.props.history.location.state.lapsId;
+            this.setState({lapsId: lapsId});
+        }
+
+    }
 
     render() {
         let initData = this.props.initData ? this.props.initData : {};
@@ -170,8 +177,8 @@ class Laps extends React.PureComponent {
                                 name='tunnus'
                                 libs="tunnus"
                                 data={self.libs['tunnus']}
-                                value={self.docData.tunnus}
-                                defaultValue={self.docData.tunnus}
+                                value={self.docData.tunnus || ''}
+                                defaultValue={self.docData.tunnus || ''}
                                 ref="select-tunnus"
                                 collId={'kood'}
                                 btnDelete={isEditMode}
@@ -198,14 +205,14 @@ class Laps extends React.PureComponent {
 
                         <InputDate title='Kehtib alates:'
                                    name='sooduse_alg'
-                                   value={self.docData.sooduse_alg}
+                                   value={self.docData.sooduse_alg || ''}
                                    ref='input-soodus_alg'
                                    readOnly={!isEditMode}
                                    onChange={self.handleInputChange}/>
 
                         <InputDate title='Kehtib kuni:'
                                    name='sooduse_lopp'
-                                   value={self.docData.sooduse_lopp}
+                                   value={self.docData.sooduse_lopp || ''}
                                    ref='input-soodus_lopp'
                                    readOnly={!isEditMode}
                                    onChange={self.handleInputChange}/>

@@ -27,9 +27,13 @@ class Input extends React.PureComponent {
         }
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.setState({value: nextProps.value})
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.value !== prevState.value || nextProps.readOnly !== prevState.readOnly) {
+            return {value: nextProps.value, readOnly: nextProps.readOnly};
+        } else return null;
     }
+
 
     render() {
         const inputPlaceHolder = this.props.placeholder || this.props.title,

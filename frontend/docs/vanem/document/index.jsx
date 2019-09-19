@@ -25,7 +25,7 @@ class Vanem extends React.PureComponent {
         this.state = {
             loadedData: false,
             docId: props.docId ? props.docId : Number(props.match.params.docId),
-            lapsId: props.lapsId ? props.lapsId : Number(props.match.params.lapsId)
+            lapsId: null
         };
 
         this.renderer = this.renderer.bind(this);
@@ -46,6 +46,15 @@ class Vanem extends React.PureComponent {
             },
             {name: 'parentid', type: 'I'}
         ];
+    }
+
+
+    componentDidMount() {
+        if (this.props.history && this.props.history.location.state) {
+            let lapsId = this.props.history.location.state.lapsId;
+            this.setState({lapsId: lapsId});
+        }
+
     }
 
     render() {
@@ -77,8 +86,6 @@ class Vanem extends React.PureComponent {
         if (this.state.lapsId) {
             self.docData.parentid = this.state.lapsId;
         }
-
-        console.log('vanem render self.docData->',self.docData);
 
         return (
             <div style={styles.doc}>

@@ -26,9 +26,19 @@ class InputDate extends React.PureComponent {
         this.refs['input'].focus();
     }
 
+    /*
     componentWillReceiveProps(nextProps) {
         this.setState({value: nextProps.value, readOnly: nextProps.readOnly});
     }
+     */
+
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.value !== prevState.value || nextProps.readOnly !== prevState.readOnly) {
+            return {value: nextProps.value, readOnly: nextProps.readOnly};
+        } else return null;
+    }
+
 
     onChange(e) {
         let fieldValue = e.target.value,
@@ -67,7 +77,7 @@ class InputDate extends React.PureComponent {
                        style={inputStyle}
                        name={this.props.name}
                        ref="input"
-                       value={this.state.value}
+                       value={this.state.value || ''}
                        readOnly={this.state.readOnly}
                        title={this.props.title}
                        pattern={this.props.pattern}

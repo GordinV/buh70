@@ -59,11 +59,11 @@ class Select extends React.PureComponent {
         return fieldValue;
     }
 
-    componentDidUpdate(nextProps) {
-        this.setState({
-            value: nextProps.value,
-            readOnly: nextProps.readOnly
-        });
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.value !== prevState.value || nextProps.readOnly !== prevState.readOnly) {
+            return {value: nextProps.value, readOnly: nextProps.readOnly};
+        } else return null;
     }
 
     componentDidMount() {

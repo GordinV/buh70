@@ -15,10 +15,17 @@ class Input extends React.PureComponent {
         this.onChange = this.onChange.bind(this);
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.setState({value: nextProps.value, readOnly: nextProps.readOnly});
-        this.refs['checkbox'].checked = nextProps.value;
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.value !== prevState.value || nextProps.readOnly !== prevState.readOnly) {
+            return {value: nextProps.value, readOnly: nextProps.readOnly};
+        } else return null;
     }
+
+    componentDidMount() {
+        this.refs['checkbox'].checked = this.state.value;
+    }
+
 
     onChange(e) {
         let value = e.target.checked;

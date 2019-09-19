@@ -19,8 +19,12 @@ class ButtonAccount extends React.PureComponent {
 
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.setState({value: nextProps.value});
+
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.value !== prevState.value) {
+            return {value: nextProps.value};
+        } else return null;
     }
 
     handleClick() {

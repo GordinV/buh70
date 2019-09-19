@@ -22,9 +22,13 @@ class ModalPage extends React.PureComponent {
         this.setState({show:!visibility});
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.setState({show: nextProps.show});
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.show !== prevState.show ) {
+            return {show: nextProps.show};
+        } else return null;
     }
+
 
     handleBtnClick(btnEvent) {
         // закрываем окно и если передан обработчик, отдаем туда данные

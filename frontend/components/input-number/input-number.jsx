@@ -16,9 +16,13 @@ class Input extends React.PureComponent {
         this.onChange = this.onChange.bind(this);
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.setState({value: nextProps.value, readOnly:nextProps.readOnly})
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.value !== prevState.value || nextProps.readOnly !== prevState.readOnly) {
+            return {value: nextProps.value, readOnly: nextProps.readOnly};
+        } else return null;
     }
+
 
     onChange(e) {
         let fieldValue = e.target.value;

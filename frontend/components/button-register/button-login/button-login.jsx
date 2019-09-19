@@ -19,9 +19,13 @@ class ButtonLogin extends React.PureComponent {
 
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.setState({value: nextProps.value});
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.value !== prevState.value) {
+            return {value: nextProps.value};
+        } else return null;
     }
+
 
     handleClick(e) {
         return this.props.onClick('login');
@@ -29,7 +33,7 @@ class ButtonLogin extends React.PureComponent {
 
     render() {
         let value = this.state.value;
-        let buttonStyle = Object.assign({},styles.button,styles.buttonLogin);
+        let buttonStyle = Object.assign({}, styles.button, styles.buttonLogin);
 
         return <Button
             value={value}

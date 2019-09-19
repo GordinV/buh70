@@ -187,10 +187,17 @@ class Laps extends React.PureComponent {
 
         switch (btnName) {
             case "edit":
-                this.props.history.push(`/lapsed/${docTypeId}/${id}/${this.state.docId}`);
+
+                this.props.history.push({
+                    pathname: `/lapsed/${docTypeId}/${id}`,
+                    state: {lapsId: this.state.docId}
+                });
                 break;
             case "add":
-                this.props.history.push(`/lapsed/${docTypeId}/0/${this.state.docId}`);
+                this.props.history.push({
+                    pathname: `/lapsed/${docTypeId}/0`,
+                    state: {lapsId: this.state.docId}
+                });
                 break;
             case "delete":
                 console.log('btnDelete clicked');
