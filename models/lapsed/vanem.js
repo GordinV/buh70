@@ -20,8 +20,8 @@ module.exports = {
                      v.properties ->> 'arved'     AS arved,
                      v.properties ->> 'suhtumine' AS suhtumine,
                      v.muud,
-                     a.nimetus                    AS vanem_nimi,
-                     a.regkood                    AS vanem_isikukood,
+                     a.nimetus::TEXT              AS vanem_nimi,
+                     a.regkood::TEXT              AS vanem_isikukood,
                      $2::INTEGER                  AS userid
               FROM lapsed.vanemad v
                        INNER JOIN libs.asutus a ON a.id = v.asutusId

@@ -26,7 +26,7 @@ class Vanem extends React.PureComponent {
             loadedData: false,
             docId: props.docId ? props.docId : Number(props.match.params.docId),
             lapsId: null,
-            module:'lapsed'
+            module: 'lapsed'
         };
 
         this.renderer = this.renderer.bind(this);
@@ -94,30 +94,33 @@ class Vanem extends React.PureComponent {
             <div style={styles.doc}>
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
-                        <div style={styles.docRow}>
-                            <SelectData title="Vanem:"
-                                        name='asutusid'
-                                        libName="asutused"
-                                        sqlFields={['nimetus', 'regkood']}
-                                        data={[]}
-                                        value={self.docData.asutusid || 0}
-                                        defaultValue={self.docData.vanem_nimi}
-                                        boundToGrid='nimetus'
-                                        boundToData='vanem_nimi'
-                                        ref="select-asutusid"
-                                        btnDelete={false}
-                                        onChange={self.handleInputChange}
-                                        readOnly={!isEditMode}/>
-                            <ButtonEdit
-                                ref='btnEdit'
-                                onClick={this.btnEditAsutusClick}
-                                show={!isEditMode}
-                                disabled={false}
-                            />
-                        </div>
+                        <SelectData title="Vanem:"
+                                    name='asutusid'
+                                    libName="asutused"
+                                    sqlFields={['nimetus', 'regkood']}
+                                    data={[]}
+                                    value={self.docData.asutusid || 0}
+                                    defaultValue={self.docData.vanem_nimi}
+                                    boundToGrid='nimetus'
+                                    boundToData='vanem_nimi'
+                                    ref="select-asutusid"
+                                    btnDelete={false}
+                                    onChange={self.handleInputChange}
+                                    readOnly={!isEditMode}/>
                     </div>
                     <div style={styles.docColumn}>
+                        <ButtonEdit
+                            ref='btnEdit'
+                            onClick={this.btnEditAsutusClick}
+                            show={!isEditMode}
+                            style={styles.btnEdit}
+                            disabled={false}
+                        />
+                    </div>
+                </div>
 
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <InputText title='Sugulus:'
                                    name='suhtumine'
                                    value={self.docData.suhtumine || ''}

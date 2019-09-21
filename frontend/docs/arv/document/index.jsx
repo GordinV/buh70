@@ -10,16 +10,18 @@ const
     InputNumber = require('../../../components/input-number/input-number.jsx'),
     DocCommon = require('../../../components/doc-common/doc-common.jsx'),
     Select = require('../../../components/select/select.jsx'),
+    SelectData = require('../../../components/select-data/select-data.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
     DokProp = require('../../../components/docprop/docprop.jsx'),
     relatedDocuments = require('../../../mixin/relatedDocuments.jsx'),
     ModalPage = require('../../../components/modalpage/modalPage.jsx'),
+    ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     styles = require('./arve.styles');
 
 const LIBDOK = 'ARV',
-    LIBRARIES = ['asutused', 'kontod', 'dokProps', 'users', 'aa', 'tunnus', 'project', 'nomenclature'];
-
+    LIBRARIES = ['kontod', 'dokProps', 'users', 'tunnus', 'project', 'nomenclature'];
+// 'aa',
 
 const now = new Date();
 
@@ -28,7 +30,9 @@ class Arve extends React.PureComponent {
         super(props);
         this.state = {
             loadedData: false,
-            docId: props.docId ? props.docId: Number(props.match.params.docId)
+            module: 'lapsed',
+            lapsId: null,
+            docId: props.docId ? props.docId : Number(props.match.params.docId)
         };
 
         this.createGridRow = this.createGridRow.bind(this);
@@ -36,8 +40,8 @@ class Arve extends React.PureComponent {
 
         this.renderer = this.renderer.bind(this);
         this.gridValidateFields = this.gridValidateFields.bind(this);
-
-        this.pages = [{pageName: 'Arve'}];
+        this.btnEditAsutusClick = this.btnEditAsutusClick.bind(this);
+        this.pages = [{pageName: 'Arve', docTypeId: 'ARV'}];
         this.requiredFields = [
             {
                 name: 'kpv',
@@ -57,12 +61,23 @@ class Arve extends React.PureComponent {
 
     }
 
+    componentDidMount() {
+        if (this.props.history && this.props.history.location.state) {
+            let lapsId = this.props.history.location.state.lapsId;
+            let module = this.props.history.location.state.module ? this.props.history.location.state.module : 'lapsed';
+            this.setState({lapsId: lapsId, module: module});
+        }
+
+    }
+
+
     render() {
-        let initData = this.props.initData ? this.props.initData: {};
+        let initData = this.props.initData ? this.props.initData : {};
 
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='ARV'
+                                 module={this.state.module}
                                  requiredFields={this.requiredFields}
                                  userData={this.props.userData}
                                  initData={initData}
@@ -98,12 +113,6 @@ class Arve extends React.PureComponent {
             <div>
                 <div style={styles.doc}>
                     <div style={styles.docRow}>
-                        <DocCommon
-                            ref='doc-common'
-                            data={self.docData}
-                            readOnly={!isEditMode}/>
-                    </div>
-                    <div style={styles.docRow}>
                         <div style={styles.docColumn}>
                             <InputText ref="input-number"
                                        title='Number'
@@ -122,33 +131,9 @@ class Arve extends React.PureComponent {
                                        ref="input-tahtaeg"
                                        readOnly={!isEditMode}
                                        onChange={self.handleInputChange}/>
-                            <Select title="Asutus"
-                                    name='asutusid'
-                                    libs="asutused"
-                                    data={self.libs['asutused']}
-                                    value={self.docData.asutusid || 0}
-                                    defaultValue={self.docData.asutus}
-                                    ref="select-asutusid"
-                                    btnDelete={isEditMode}
-                                    onChange={self.handleInputChange}
-                                    readOnly={!isEditMode}/>
-                            {/*
-                                 <SelectData title="Asutus widget"
-                                 name='asutusid'
-                                 value={this.docData.asutusid}
-                                 defaultValue={this.docData.asutus}
-                                 collName="asutus"
-                                 ref="selectData-asutusid"
-                                 onChange={this.handleInputChange}
-                                 readOnly={!isEditeMode}/>
-                                 */}
-                            <InputText title='Lisa '
-                                       name='lisa'
-                                       value={self.docData.lisa || ''}
-                                       ref='input-lisa'
-                                       readOnly={!isEditMode}
-                                       onChange={self.handleInputChange}/>
+
                         </div>
+
                         <div style={styles.docColumn}>
                             <DokProp title="Konteerimine: "
                                      name='doklausid'
@@ -157,6 +142,45 @@ class Arve extends React.PureComponent {
                                      defaultValue={self.docData.dokprop}
                                      ref="dokprop-doklausid"
                                      readOnly={!isEditMode}/>
+                        </div>
+
+
+                    </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <SelectData title="Maksja:"
+                                        name='asutusid'
+                                        libName="asutused"
+                                        sqlFields={['nimetus', 'regkood']}
+                                        data={[]}
+                                        value={self.docData.asutusid || 0}
+                                        defaultValue={self.docData.asutus}
+                                        boundToGrid='nimetus'
+                                        boundToData='asutus'
+                                        ref="select-asutusid"
+                                        btnDelete={false}
+                                        onChange={self.handleInputChange}
+                                        readOnly={!isEditMode}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <ButtonEdit
+                                ref='btnEdit'
+                                onClick={this.btnEditAsutusClick}
+                                show={!isEditMode}
+                                style={styles.btnEdit}
+                                disabled={false}
+                            />
+                        </div>
+                    </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+
+                            <InputText title='Lisa '
+                                       name='lisa'
+                                       value={self.docData.lisa || ''}
+                                       ref='input-lisa'
+                                       readOnly={!isEditMode}
+                                       onChange={self.handleInputChange}/>
                         </div>
                     </div>
                     <div style={styles.docRow}>
@@ -375,6 +399,16 @@ class Arve extends React.PureComponent {
         });
     }
 
+
+    // обработчик события клиска на кнопке редактирования контр-агента
+    btnEditAsutusClick() {
+        let docAsutusId = this.refs['document'].docData.asutusid;
+
+        // осуществит переход на карточку контр-агента
+        this.props.history.push(`/${this.state.module}/asutused/${docAsutusId}`);
+    }
+
+
 }
 
 Arve.propTypes = {
@@ -385,8 +419,8 @@ Arve.propTypes = {
 
 Arve.defaultProps = {
     params: {docId: 0},
-    initData:{},
-    userData:{}
+    initData: {},
+    userData: {}
 };
 
 

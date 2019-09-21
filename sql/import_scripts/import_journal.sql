@@ -80,7 +80,7 @@ BEGIN
     SELECT
       j.*,
       jid.number
-    FROM journal j
+    FROM remote_journal j
            INNER JOIN rekv ON j.rekvid = rekv.id AND rekv.parentid < 999
            INNER JOIN (SELECT
                          max(number) AS number,

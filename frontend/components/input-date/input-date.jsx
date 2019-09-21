@@ -26,11 +26,6 @@ class InputDate extends React.PureComponent {
         this.refs['input'].focus();
     }
 
-    /*
-    componentWillReceiveProps(nextProps) {
-        this.setState({value: nextProps.value, readOnly: nextProps.readOnly});
-    }
-     */
 
     // will update state if props changed
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -80,7 +75,6 @@ class InputDate extends React.PureComponent {
                        value={this.state.value || ''}
                        readOnly={this.state.readOnly}
                        title={this.props.title}
-                       pattern={this.props.pattern}
                        placeholder={inputPlaceHolder}
                        min={this.props.min}
                        max={this.props.max}

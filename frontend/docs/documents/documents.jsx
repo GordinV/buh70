@@ -75,8 +75,6 @@ class Documents extends React.PureComponent {
             reload = true;
         }
 
-
-
         if (reload || !this.props.initData || !this.gridData.length) {
 
             // проверим на фильтр

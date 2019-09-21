@@ -1,38 +1,31 @@
 'use strict';
 const _ = require('lodash');
-/*
-const filter = [
-    {
-        name: 'kood',
-        type: 'text',
-        value: null
-    },
-    {
-        name: 'nimetus',
-        type: 'text',
-        value: null
-    },
-];
+const arv_data = {
+    id: 0,
+    data: {
+        id: 0,
+        kpv: new Date(),
+        asutusid: 4113,
+        lapsid: 1,
+        aa: 'AA',
+        viitenr: 'viitenumber',
+        muud: 'test muud',
+        liik: 0,
+        gridData: [
+            {
+                id: 0,
+                nomid: 9,
+                kogus: 1,
+                hind: 100,
+                kbm: 0,
+                summa: 100,
+                kbm_maar: 0
 
+            }
+        ]
+    }
+};
 
-const searchObj = {kood: '9999', Nimetus: 'test lodash', obj: 'Not valid'};
+let json = JSON.stringify(arv_data);
+console.log(json);
 
-let mergedData = mergeParametersWithFilter(filter, searchObj);
-
-console.log('mergedData', mergedData);
-
-function mergeParametersWithFilter(filter, parameters) {
-    console.log(filter,parameters);
-    let keys = _.keys(parameters);
-    _.forEach(keys, (key) => {
-        // find row in filter array
-        let filterRowIndex = _.findIndex(filter, {name:key});
-        console.log('foreach', key, filterRowIndex);
-        if (filterRowIndex >= 0) {
-            filter[filterRowIndex].value = parameters[key];
-            console.log('found', filter[filterRowIndex], parameters[key]);
-        }
-    });
-
-    return filter;
-}

@@ -46,10 +46,17 @@ class DocCommon extends React.PureComponent {
         );
     }
 
-
+/*
     componentWillReceiveProps(nextProps) {
         this.forceUpdate();
     }
+
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+            return {nextProps};
+    }
+*/
+
 
 
 }
