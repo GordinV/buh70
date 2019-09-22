@@ -18,8 +18,8 @@ module.exports = function (app) {
     app.get('/raama/:documentType', require('./raama').get); // module raamatupidamine
     app.get('/raama/:documentType/:id', checkAuth, require('./raama/document').get); // module raamatupidamine
 
-    app.get('/lapsed', checkAuth, require('./lapsed').get); // module raamatupidamine
-    app.get('/lapsed/:documentType', checkAuth, require('./lapsed').get); // module raamatupidamine
+    app.get('/lapsed', checkAuth, require('./lapsed').get); // module lapsed
+    app.get('/lapsed/:documentType', checkAuth, require('./lapsed').get); // module lapsed
     app.get('/lapsed/:documentType/:id', checkAuth, require('./lapsed/document').get); // module lapsed
     app.get('/lapsed/:documentType/:id/:paramId', checkAuth, require('./lapsed/document').get); // module lapsed
 

@@ -108,8 +108,7 @@ exports.post = function (req, res, next) {
                 res.redirect('/login');
             } else {
                 // open main page
-//                res.redirect('/raama/docs'); //@todo переделать
-                res.redirect('/lapsed/docs'); //@todo переделать
+                res.redirect('/lapsed'); //@todo переделать
             }
         });
 };

@@ -196,6 +196,13 @@ class Laps extends React.PureComponent {
                                   readOnly={!isEditMode}
                         />
 
+                        <CheckBox title="Kas ettemaks?"
+                                  name='kas_ettemaks'
+                                  value={Boolean(self.docData.kas_ettemaks)}
+                                  ref={'checkbox_kas_ettemaks'}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditMode}
+                        />
                     </div>
                     <div style={styles.docColumn}>
                         <InputNumber ref="input-soodus"

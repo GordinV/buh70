@@ -56,17 +56,15 @@ class App extends React.Component {
             <StyleRoot>
                 <Route path="/lapsed"
                        render={() => <Menu params={btnParams} userData={this.state.userData} module={MODULE}/>}/>
+
                 <Route exact path="/lapsed"
-                       render={(props) => <Docs history={props.history} userData={this.props.userData}
-                                                initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/docs"
-                       render={(props) => <Docs history={props.history} userData={this.props.userData}
-                                                initData={this.props.initData} module={MODULE}/>}/>
+                       render={(props) => <LasteRegister history={props.history} userData={this.props.userData}
+                                                         initData={this.props.initData} module={MODULE}/>}/>
                 <Route exact path="/lapsed/laps"
                        render={(props) => <LasteRegister history={props.history} userData={this.props.userData}
                                                          initData={this.props.initData} module={MODULE}/>}/>
 
-                <Route exact path="/lapsed/laps/:docId?" component={LapseDokument}/>
+                <Route exact path="/lapsed/laps/:docId" component={LapseDokument}/>
                 <Route exact path="/lapsed/vanem"
                        render={(props) => <VanemateRegister history={props.history} userData={this.props.userData}
                                                             initData={this.props.initData} module={MODULE}/>}/>

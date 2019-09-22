@@ -23,9 +23,11 @@ module.exports = {
                      l.properties ->> 'viitenumber' AS viitenumber,
                      l.muud,
                      $2::INTEGER                    AS userid,
-                     0::NUMERIC(14, 2)              AS jaak
+                     coalesce(ll.jaak, 0)::NUMERIC  AS jaak
               FROM lapsed.laps l
-              WHERE l.id = $1::INTEGER`,
+                       LEFT OUTER JOIN lapsed.lapse_saldod() ll ON ll.laps_id = l.id
+              WHERE l.id = $1::INTEGER
+                AND ll.rekv_id IN (SELECT rekvid FROM ou.userid u WHERE u.id = $2)`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,
@@ -34,7 +36,7 @@ module.exports = {
                   null::text as nimi,
                   null::text as viitenumber,
                   null::text as muud,
-                  0::number(14,2) as jaak`,
+                  0::numeric(14,2) as jaak`,
         query: null,
         multiple: false,
         alias: 'row',

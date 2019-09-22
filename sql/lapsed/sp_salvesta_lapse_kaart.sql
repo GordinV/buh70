@@ -18,6 +18,7 @@ DECLARE
     doc_soodus       NUMERIC = doc_data ->> 'soodus';
     doc_kas_protsent BOOLEAN = doc_data ->> 'kas_protsent';
     doc_kas_eraldi   BOOLEAN = doc_data ->> 'kas_eraldi';
+    doc_kas_ettemaks BOOLEAN = doc_data ->> 'kas_ettemaks';
     doc_sooduse_alg  DATE    = doc_data ->> 'sooduse_alg';
     doc_sooduse_lopp DATE    = doc_data ->> 'sooduse_lopp';
     doc_muud         TEXT    = doc_data ->> 'muud';
@@ -48,7 +49,8 @@ BEGIN
                               doc_kas_protsent AS kas_protsent,
                               doc_sooduse_alg  AS sooduse_alg,
                               doc_sooduse_lopp AS sooduse_lopp,
-                              doc_kas_eraldi   AS kas_eraldi
+                              doc_kas_eraldi   AS kas_eraldi,
+                              doc_kas_ettemaks AS kas_ettemaks
                       ) row;
 
     -- вставка или апдейт docs.doc
@@ -113,6 +115,8 @@ GRANT EXECUTE ON FUNCTION lapsed.sp_salvesta_lapse_kaart(JSONB, INTEGER, INTEGER
 
 select * from libs.nomenklatuur where rekvid = 63
 
-select lapsed.sp_salvesta_lapse_kaart('{"data":{"id":0,"parentid":7,"nomid":16468,"tunnus":"test","muud":"test","userid":70}}'::jsonb, 70::integer, 63::integer) as id
+select lapsed.sp_salvesta_lapse_kaart('{"data":{"id":0,"parentid":7,"nomid":16468,"tunnus":"test","muud":"test","userid":70,"kas_ettemaks":true}}'::jsonb, 70::integer, 63::integer) as id
 
+
+select * from lapsed.lapse_kaart
 */

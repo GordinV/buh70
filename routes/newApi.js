@@ -18,8 +18,6 @@ exports.post = async (req, res) => {
         const doc = new Doc(parameter, null, user.userId, user.asutusId, module);
         let gridConfig = doc.config.grid.gridConfiguration;
 
-
-        console.log('sqlWhere', sqlWhere);
         // вызвать метод
         let data = {
             docTypeId: parameter,

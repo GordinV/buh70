@@ -10,14 +10,7 @@ const {StaticRouter} = require('react-router');
 const App = require('./../../frontend/modules/lapsed.jsx');
 
 exports.get = async (req, res) => {
-    let documentType = req.params.documentType ? req.params.documentType : 'docs';
-
-    // will set module
-    if (!documentType || documentType.toUpperCase() === 'DOCS') {
-        //вернет регистр документов
-        documentType = 'DOK';
-    }
-
+    let documentType = req.params.documentType ? req.params.documentType : 'laps';
 
     let user = require('./../../middleware/userData')(req);  // check for userid in session
 

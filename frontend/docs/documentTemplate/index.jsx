@@ -159,7 +159,7 @@ class DocumentTemplate extends React.PureComponent {
                 this.setState({edited: false, docId: this.docData.id});
 
                 if (this.props.history) {
-                    this.props.history.push(`/lapsed/${this.props.docTypeId}/${this.docData.id}/${this.docData.parentid}`);
+                    this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
                 }
 
             }
@@ -356,6 +356,7 @@ class DocumentTemplate extends React.PureComponent {
 
         return new Promise((resolved, rejected) => {
             fetchData[method](url, params).then(response => {
+
                 if (response.data) {
                     let result = response.data.result;
 
@@ -365,6 +366,8 @@ class DocumentTemplate extends React.PureComponent {
                         let errorMessage = result.result.error_message;
 
                         if (!!errorMessage) {
+
+                            console.error ('Fetch viga ', params, errorMessage, result);
                             this.setState({warning: errorMessage});
                             return rejected();
                         }
@@ -381,7 +384,9 @@ class DocumentTemplate extends React.PureComponent {
                         this.setState({reloadData: false, warning: ''});
                         resolved(response.data.data[0]);
                     } else {
-                        this.setState({warning: 'Ошибка при сохранении'});
+                        console.error ('Fetch viga params->', params, result, response);
+
+                        this.setState({warning: `Päringu viga `});
                         return rejected();
                     }
 

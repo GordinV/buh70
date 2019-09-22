@@ -130,6 +130,23 @@ describe('lapsed tests', function () {
 
     });
 
+    it('should exists proc lapsed.lapse_saldod', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'lapse_saldod'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should successfully call lapsed.lapse_saldod', async()=> {
+        let sql = `select jaak from lapsed.lapse_saldod(${globalDocId})`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        let err = returnValue.error_code;
+    });
+
 
 });
 

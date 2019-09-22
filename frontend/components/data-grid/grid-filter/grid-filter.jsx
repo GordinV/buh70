@@ -83,7 +83,7 @@ class GridFilter extends React.PureComponent {
                            name={row.id}
                            placeholder={row.name}
                            ref={row.id}
-                           value={value || ''}
+                           value={value}
                            onChange={this.handleChange}
                            defaultValue={this.props.data[row.id]}
                     />

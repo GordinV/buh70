@@ -1,7 +1,6 @@
 {
   "port": 3000,
   "pg": {
-    "back_connection": "postgres://vlad:Vlad490710@213.184.47.198:5436/narvalv",
     "host": "213.184.47.198",
     "port": "5436",
     "database":"narvalv",
