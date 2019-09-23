@@ -13,7 +13,6 @@ exports.post = async (req, res) => {
 
         let data = await db.queryDb(sqlString, params);
 
-        console.log('start menu api, data', sqlString, params, data);
         // вернуть данные
         res.send(data);
     } catch (error) {

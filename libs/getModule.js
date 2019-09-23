@@ -2,7 +2,7 @@ const moduleLocator = require('./../libs/moduleLocator.js')();
 const path = require('path');
 
 module.exports = (docTypeId, params, modelPath, module) => {
-    const config = require(`../config/${module}`); //файл конфигурации, для каждого модуля отдельно
+    const config = require(`../config/${module.toLowerCase()}`); //файл конфигурации, для каждого модуля отдельно
 
     let moduleInstance;
 

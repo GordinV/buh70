@@ -80,7 +80,7 @@ exports.post = async (req, res) => {
     };
 
     const Doc = require('./../classes/DocumentTemplate');
-    const Document = new Doc(documentType, docId, user.userId, user.asutusId, module);
+    const Document = new Doc(documentType, docId, user.userId, user.asutusId, module.toLowerCase());
 
     let data;
 
@@ -97,8 +97,6 @@ exports.post = async (req, res) => {
         {gridData: data.result ? data.result.details : []},
         {relations: data.result ? data.result.relations : []},
         {gridConfig: data.result ? data.result.gridConfig : []});
-
-    console.log('data', preparedData);
 
     res.send({data: [preparedData], userData: user});
 
