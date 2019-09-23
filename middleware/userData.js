@@ -20,15 +20,11 @@ var userData = function(req) {
         user.userLibraryList = req.session.user.userLibraryList;
         user.login= req.session.user.login;
 
-        global.rekvId = user.asutusId;
-        global.userId = user.userId;
-
     } else {
         user = null;
-        global.rekvId = null;
-        global.userId = null;
     }
+
     return user;
-}
+};
 
 module.exports = userData;

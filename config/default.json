@@ -1,11 +1,12 @@
 {
   "port": 3000,
+  "https": 443,
   "pg": {
     "host": "213.184.47.198",
     "port": "5436",
     "database":"narvalv",
-    "back_connection": "postgres://vlad@localhost:5432/db",
-    "connection": "postgres://vlad:Vlad490710@213.184.47.198:5436/narvalv"
+    "connection": "postgres://vlad@localhost:5432/db",
+    "back_connection": "postgres://vlad:Vlad490710@213.184.47.198:5436/narvalv"
   },
   "session": {
     "secret": "SecretsOfÕuna",

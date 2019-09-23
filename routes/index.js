@@ -28,7 +28,7 @@ module.exports = function (app) {
     app.put('/newApi/document/:documentType/:id',require('./documentRegister').put); //апи для обмена даты по протоколу POST с моделью документа
     app.post('/newApi/loadLibs/:documentType', require('./loadLibs').post); //checkAuth,
     app.post('/newApi/changeAsutus/:rekvId', checkAuth, require('./changeAsutus').post); //checkAuth,
-    app.post('/newApi', require('./newApi').post); //checkAuth, //checkAuth,
+    app.post('/newApi', checkAuth, require('./newApi').post); //checkAuth, //checkAuth,
 /*
 
     app.delete('/api/doc/:id', checkAuth, require('./api_doc').delete);

@@ -38,6 +38,7 @@ class DocumentTemplate extends React.PureComponent {
 
         this.docData = Object.keys(props.initData).length ? props.initData : {id: this.props.docId};
         this.userData = Object.keys(props.userData).length ? props.userData : {};
+        this.port_app = props.userData.port;
         this.backup = {};
         this.requiredFields = props.requiredFields;
         this.pages = this.props.pages || null;
@@ -347,11 +348,11 @@ class DocumentTemplate extends React.PureComponent {
     fetchData(protocol) {
         let url = `${URL}/${this.props.docTypeId}/${this.state.docId}`;
         let method = 'fetchDataPost';
-        let params = {module:this.props.module};
+        let params = {module: this.props.module};
         if (protocol) {
             //request call not default
             method = 'fetchData' + protocol;
-            params = Object.assign(params, this.docData, );
+            params = Object.assign(params, this.docData,);
         }
 
         return new Promise((resolved, rejected) => {
@@ -367,7 +368,7 @@ class DocumentTemplate extends React.PureComponent {
 
                         if (!!errorMessage) {
 
-                            console.error ('Fetch viga ', params, errorMessage, result);
+                            console.error('Fetch viga ', params, errorMessage, result);
                             this.setState({warning: errorMessage});
                             return rejected();
                         }
@@ -384,7 +385,7 @@ class DocumentTemplate extends React.PureComponent {
                         this.setState({reloadData: false, warning: ''});
                         resolved(response.data.data[0]);
                     } else {
-                        console.error ('Fetch viga params->', params, result, response);
+                        console.error('Fetch viga params->', params, result, response);
 
                         this.setState({warning: `Päringu viga `});
                         return rejected();

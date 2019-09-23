@@ -44,6 +44,7 @@ exports.post = function (req, res, next) {
                         userLibraryList: kasutaja.allowed_libs,
                         userAllowedAsutused: []
                     };
+
                     global.userId = kasutaja.id;
                     global.rekvId = kasutaja.rekvid;
 

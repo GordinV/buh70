@@ -16,6 +16,7 @@ module.exports = {
     userName: '',
     lastLogin: null,
     asutusName: '',
+    app_port: 3000,
     connectDb: function () {
         const pg = require('pg'),
             config = require('../config/default'),
@@ -23,9 +24,16 @@ module.exports = {
 
         return db;
     },
+// вернет порт, который слушает приложение
+    getAppPort: function() {
+        const config = require('../config/default'),
+            port = config.port;
+        return port;
+    },
 // возвращает строку пользователя по логину и ид учреждения
     getUserId: function (nimi, rekvId, callback) {
         const db = this.connectDb();
+        const port = this.getAppPort();
 
         db.connect(function (err) {
             if (err) {
@@ -53,8 +61,11 @@ module.exports = {
                 this.lastLogin = result.rows[0].last_login;
                 this.encriptedPassword = result.rows[0].parool;
 
+
+                const userData = Object.assign({port: port},result.rows[0] );
+
                 db.end();
-                callback(null, result.rows[0]);
+                callback(null, userData);
 
             });
         });

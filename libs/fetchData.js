@@ -1,6 +1,7 @@
 'use strict';
 const axios = require('axios');
-axios.defaults.baseURL = 'http://localhost:3000';
+//axios.defaults.baseURL = 'http://localhost:3000';
+axios.defaults.baseURL = '/';
 
 module.exports =  {
     fetchDataGet(url) {

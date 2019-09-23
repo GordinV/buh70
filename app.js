@@ -8,6 +8,7 @@ const express = require('express');
 var app = express(),
     compression = require('compression'),
     http = require('http'),
+    https = require('https'),
     path = require('path'),
     routes = require('./routes/index'),
     errorHandle = require('errorhandler'),
@@ -46,7 +47,6 @@ require('babel-polyfill');
 require('node-jsx').install({extension: '.jsx'});
 
 
-
 app.set('port', port);
 
 // view engine setup
@@ -64,9 +64,23 @@ app.set('view engine', 'jade');
  */
 
 
-http.createServer(app).listen(port, function () {
+http.createServer(app).listen(config.get('port'), function () {
     log.info('Express server listening on port ' + port);
 });
+
+/*
+const options = {
+    key: '',
+    cert: '',
+    ca: ''
+};
+
+
+https.createServer(options, app).listen(config.get('https'), ()=>{
+    console.log('Express server listening on port ' + config.get('https'));
+});
+
+*/
 
 /*
 const allowCrossDomain = function(req, res, next) {

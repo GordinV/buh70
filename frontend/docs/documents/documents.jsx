@@ -3,7 +3,6 @@
 const PropTypes = require('prop-types');
 const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
-const URL = '/newApi';
 
 const
     DataGrid = require('./../../components/data-grid/data-grid.jsx'),
@@ -404,6 +403,8 @@ class Documents extends React.PureComponent {
      * Выполнит запросы
      */
     fetchData() {
+        const URL = `/newApi`;
+
         const params = {
             parameter: this.docTypeId, // параметры
             sortBy: this.state.sortBy, // сортировка
