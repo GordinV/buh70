@@ -23,6 +23,7 @@ class Document {
     setConfig(docTypeId, module) {
         let config;
         // check if exists model for this type
+
         try {
             config = getModule(docTypeId, null, path, module ? module: 'documents');
         } catch (e) {

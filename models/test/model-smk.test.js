@@ -6,13 +6,18 @@ const fs = require('fs');
 const convertXml = require('xml-js');
 const _ = require('lodash');
 const path = require('path');
+const db = require('./../../libs/db');
+const MODULE = 'lapsed';
+const USER_ID = 70;
+const REKV_ID = 63;
+
 
 describe('dok. type SMK tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../raamatupidamine/smk'),
+    const doc = require('../lapsed/smk'),
         docTypeId = 'SMK'.toLowerCase(),
-        modelForExport = 'raamatupidamine/smk';
+        modelForExport = 'lapsed/smk';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -20,7 +25,7 @@ describe('dok. type SMK tests', function () {
     let xml;
     let sourceFile;
 
-    it (`${docTypeId} create XML model`, (done)=> {
+    it.skip (`${docTypeId} create XML model`, (done)=> {
         //create model
         modelCreator(modelForExport,(err, xmlFile) => {
             sourceFile = xmlFile;
@@ -32,7 +37,7 @@ describe('dok. type SMK tests', function () {
         })
     });
 
-    it (`${docTypeId} must have fields in js model`, ()=> {
+    it.skip (`${docTypeId} must have fields in js model`, ()=> {
         expect(doc.select).toBeDefined();
         expect(doc.returnData).toBeDefined();
         expect(doc.requiredFields).toBeDefined();
@@ -43,7 +48,7 @@ describe('dok. type SMK tests', function () {
         expect(doc.grid).toBeDefined();
     });
 
-    it (`${docTypeId} must have fields in xml model`,() => {
+    it.skip (`${docTypeId} must have fields in xml model`,() => {
         let xmlModel = convertXml.xml2js(xml, {ignoreComment: true, alwaysChildren: true});
         expect(xmlModel).toBeDefined();
         let modelElements = xmlModel.elements[0];
@@ -67,7 +72,7 @@ describe('dok. type SMK tests', function () {
 
     });
 
-    it('should have copy in buh62 folder', (done) => {
+    it.skip('should have copy in buh62 folder', (done) => {
         let targetFile =  path.join('C:\\avpsoft\\buh62\\models\\', modelForExport + '.xml');
         let copyFile =  path.join('C:\\avpsoft\\buh70\\models\\', modelForExport + '_copy.xml');
         expect(fs.existsSync(sourceFile)).toBeTruthy();
@@ -79,7 +84,46 @@ describe('dok. type SMK tests', function () {
             expect(fs.existsSync(targetFile)).toBeTruthy();
             done();
         });
-    })
+    });
+
+    it(`should exists procedure docs.sp_salvesta_mk`, async () => {
+        let sql = `SELECT 1
+                   FROM pg_proc
+                   WHERE proname = 'sp_salvesta_mk'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it(`should exists procedure docs.sp_delete_mk`, async () => {
+        let sql = `SELECT 1
+                   FROM pg_proc
+                   WHERE proname = 'sp_delete_mk'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+    });
+
+    it('doc type library should contain MENU doc.type', async () => {
+        let sql = `select id from libs.library where kood = 'SMK' and  library = 'DOK' limit 1`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
+    it('should exists view cur_lapsed_mk', async () => {
+        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_lapsed_mk'`;
+        let returnValue = await db.queryDb(sql, []);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        expect(result).toBeGreaterThan(0);
+
+    });
+
 
 });
 

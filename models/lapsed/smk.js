@@ -122,7 +122,7 @@ const Smk = {
     ],
     grid: {
         gridConfiguration: [
-            {id: "id", name: "id", width: "25px"},
+            {id: "id", name: "id", width: "25px", show: false},
             {id: "kpv", name: "Kuupäev", width: "100px"},
             {id: "number", name: "Number", width: "100px"},
             {id: "asutus", name: "Maksja", width: "200px"},
@@ -131,15 +131,15 @@ const Smk = {
             {id: "aa", name: "Arveldus arve", width: "100px"},
             {id: "viitenr", name: "Viite number", width: "100px"},
             {id: "maksepaev", name: "Maksepäev", width: "100px"},
-            {id: "created", name: "Lisatud", width: "150px"},
-            {id: "lastupdate", name: "Viimane parandus", width: "150px"},
-            {id: "status", name: "Status", width: "100px"}
+            {id: "nimi", name: "Nimi", width: "100px"},
+            {id: "isikukood", name: "Isikukood", width: "100px"},
+
         ],
         sqlString: `SELECT  
                       mk.id, 
                       mk.kpv,
                       mk.selg, 
-                      mk.nimetus, 
+                      mk.asutus, 
                       mk.kood, 
                       mk.rekvid, 
                       mk.deebet, 
@@ -149,13 +149,16 @@ const Smk = {
                       mk.aa, 
                       mk.journalnr, 
                       mk.opt, 
-                      mk.regkood , 
-                      0 AS valitud
-                    FROM cur_pank mk
+                      mk.vanem_isikukood , 
+                      0 AS valitud,
+                      mk.isikukood,
+                      mk.nimi
+
+                    FROM lapsed.cur_lapsed_mk mk
                     WHERE mk.rekvId = $1
                       AND coalesce(docs.usersRigths(mk.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
-        alias: 'curMk'
+        alias: 'curLasteMk'
     },
 
     returnData: {
@@ -183,41 +186,6 @@ const Smk = {
             max: now.setFullYear(now.getFullYear() + 1)
         }
     ],
-    bpm: [
-        {
-            step: 0,
-            name: 'Регистация документа',
-            action: 'start',
-            nextStep: 1,
-            task: 'human',
-            data: [],
-            actors: [],
-            status: null,
-            actualStep: false
-        },
-        {
-            step: 1,
-            name: 'Контировка',
-            action: 'generateJournal',
-            nextStep: 2,
-            task: 'automat',
-            data: [],
-            status: null,
-            actualStep: false
-        },
-//        {step:2, name:'Оплата', action: 'tasumine', nextStep:3, task:'human', data:[], status:null, actualStep:false},
-        {
-            step: 2,
-            name: 'Конец',
-            action: 'endProcess',
-            nextStep: null,
-            task: 'automat',
-            data: [],
-            actors: [],
-            status: null,
-            actualStep: false
-        }
-    ],
     executeTask: (task, docId, userId) => {
         // выполнит задачу, переданную в параметре
 
@@ -239,73 +207,8 @@ const Smk = {
                   FROM docs.gen_lausend_smk($2::INTEGER, $1::INTEGER)`, // $1 - userId, $2 - docId
         type: "sql",
         alias: 'generateJournal'
-    },
-    endProcess: {
-        command: `UPDATE docs.doc
-                  SET status = 2
-                  WHERE id = $1`, type: "sql"
-    },
-
-
+    }
 };
 
 module.exports = Smk;
 
-const start = (docId, userId) => {
-    // реализует старт БП документа
-    const DOC_STATUS = 1, // устанавливаем активный статус для документа
-        DocDataObject = require('./../documents'),
-        SQL_UPDATE = 'UPDATE docs.doc SET status = $1, bpm = $2, history = $4 WHERE id = $3',
-        SQL_SELECT_DOC = Smk.select[0].sql;
-
-    let bpm = setBpmStatuses(0, userId), // выставим актуальный статус для следующего процесса
-        history = {user: userId, updated: Date.now()};
-
-    // выполнить запрос и вернуть промис
-    return DocDataObject.executeSqlQueryPromise(SQL_UPDATE, [DOC_STATUS, JSON.stringify(bpm), docId, JSON.stringify(history)]);
-
-};
-
-const setBpmStatuses = (actualStepIndex, userId) => {
-// собираем данные на на статус документа, правим данные БП документа
-    // 1. установить на actualStep = false
-    // 2. задать статус документу
-    // 3. выставить стутус задаче (пока только finished)
-    // 4. если есть следующий шаг, то выставить там actualStep = true, статус задачи opened
-
-
-    try {
-        var bpm = Smk.bpm, // нельзя использовать let из - за использования try {}
-            nextStep = bpm[actualStepIndex].nextStep,
-            executors = bpm[actualStepIndex].actors || [];
-
-        if (!executors || executors.length == 0) {
-            // если исполнители не заданы, то добавляем автора
-            executors.push({
-                id: userId,
-                name: 'AUTHOR',
-                role: 'AUTHOR'
-            })
-        }
-
-        bpm[actualStepIndex].data = [{execution: Date.now(), executor: userId, vars: null}];
-        bpm[actualStepIndex].status = 'finished';  // 3. выставить стутус задаче (пока только finished)
-        bpm[actualStepIndex].actualStatus = false;  // 1. установить на actualStep = false
-        bpm[actualStepIndex].actors = executors;  // установить список акторов
-
-        // выставим флаг на следующий щаг
-        bpm = bpm.map(stepData => {
-            if (stepData.step === nextStep) {
-                // 4. если есть следующий шаг, то выставить там actualStep = true, статус задачи opened
-                stepData.actualStep = true;
-                stepData.status = 'opened';
-            }
-            return stepData;
-        });
-
-    } catch (e) {
-        console.error('try error', e);
-    }
-    return bpm;
-
-};

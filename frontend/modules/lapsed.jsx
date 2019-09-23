@@ -4,8 +4,6 @@ const React = require('react');
 
 const Menu = require('./../components/menu-toolbar/menu-toolbar.jsx');
 
-const Docs = require('./../docs/dok/index.jsx');
-
 const LapseDokument = require('./../docs/laps/document/index.jsx');
 const LasteRegister = require('./../docs/laps/index.jsx');
 

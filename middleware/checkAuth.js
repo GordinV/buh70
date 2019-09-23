@@ -1,7 +1,7 @@
 
 module.exports = function(req, res, next) {
     if (!req.session.user) {
-        console.error('checAuth. ', 401, 'Autoriseeerimise viga');
+        console.error('checAuth. ', 401, 'Autoriseeerimise viga', req.session);
 //        res.render('error', {"message": 'Autoriseeerimise viga'});
 //        res.redirect('./login');
 //        new Error(401,'Autoriseeerimise viga');
