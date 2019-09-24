@@ -6,9 +6,10 @@ const _ = require('lodash'),
 exports.post = async (req, res) => {
     let user = require('../middleware/userData')(req); // данные пользователя
     let documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
-    const module = req.params.module || 'documents';
+    const module = req.body.module || 'lapsed';
     let sqlWhere = _.has(req.body,'sql') ? req.body.sql: null;
     let sqlLimit = _.has(req.body,'limit') ? req.body.limit: null;
+
 
     if (!user) {
         const err = new HttpError(403, 'No user');

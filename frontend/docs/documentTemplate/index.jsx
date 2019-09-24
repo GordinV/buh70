@@ -51,10 +51,11 @@ class DocumentTemplate extends React.PureComponent {
 
         this.libs = this.createLibs(); //создаст объект для хранения справочников
 
+        /*
         if (this.props.libs.length) {
             this.loadLibs();
         }
-
+*/
         this.gridRowData = {}; //будем хранить строку грида
     }
 

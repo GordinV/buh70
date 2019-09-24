@@ -25,7 +25,7 @@ class Document {
         // check if exists model for this type
 
         try {
-            config = getModule(docTypeId, null, path, module ? module: 'documents');
+            config = getModule(docTypeId, null, path, module ? module: 'lapsed');
         } catch (e) {
             console.error(e);
             return null;

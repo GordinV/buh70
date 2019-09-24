@@ -20,6 +20,7 @@ const db = {
         await client.connect();
 
         try {
+
             const res = await client.query(prepairedSqlString, params);
             if (res.rowCount && res.rowCount === 1 && 'error_code' in res.rows[0]) {
                 // executed procedure

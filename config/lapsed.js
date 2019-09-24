@@ -11,7 +11,7 @@ module.exports = {
     users: '/libs/libraries/users',
     nomenclature: '/libs/libraries/nomenclature',
     document: '/libs/libraries/document',
-    aa: '/libs/libraries/aa',
+    aa: '/ou/aa',
     tunnus: '/libs/libraries/tunnus',
     project: '/libs/libraries/project',
     laps:'/lapsed/laps',

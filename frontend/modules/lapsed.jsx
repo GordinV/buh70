@@ -20,6 +20,7 @@ const ArvedeRegister = require('./../docs/arv/index.jsx');
 const ArveDocument = require('./../docs/arv/document/index.jsx');
 
 const SmkRegister = require('./../docs/smk/index.jsx');
+const SmkDocument = require('./../docs/smk/document/index.jsx');
 
 const SorderideRegister = require('./../docs/sorder/index.jsx');
 
@@ -88,6 +89,8 @@ class App extends React.Component {
                 <Route exact path="/lapsed/smk"
                        render={(props) => <SmkRegister history={props.history} userData={this.props.userData}
                                                        initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/smk/:docId" component={SmkDocument}/>
+
                 <Route exact path="/lapsed/sorder"
                        render={(props) => <SorderideRegister history={props.history} userData={this.props.userData}
                                                              initData={this.props.initData} module={MODULE}/>}/>

@@ -93,7 +93,7 @@ class Documents extends React.PureComponent {
         _.forEach(keys, (key) => {
             // find row in filter array
             let filterRowIndex = _.findIndex(filter, {name: key});
-            if (filterRowIndex >= 0) {
+            if (filterRowIndex >= 0 && parameters[key]) {
                 filter[filterRowIndex].value = parameters[key];
             }
         });
@@ -418,7 +418,20 @@ class Documents extends React.PureComponent {
 
                 if (response.data.gridConfig.length) {
                     this.gridConfig = response.data.gridConfig;
+
+                    //refresh filterdata
+                    this.filterData = this.gridConfig.map((row) => {
+                        // props.data пустое, создаем
+
+                        return {value: null, name: row.id, type: row.type ? row.type : 'text'};
+                    });
+
+                    //apply filter
+                    if (this.props.history && this.props.history.location.state) {
+                        this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
+                    }
                 }
+
                 this.forceUpdate();
             });
 

@@ -8,7 +8,6 @@ const
     InputText = require('../../../components/input-text/input-text.jsx'),
     InputDate = require('../../../components/input-date/input-date.jsx'),
     InputNumber = require('../../../components/input-number/input-number.jsx'),
-    DocCommon = require('../../../components/doc-common/doc-common.jsx'),
     Select = require('../../../components/select/select.jsx'),
     SelectData = require('../../../components/select-data/select-data.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
@@ -105,9 +104,6 @@ class Arve extends React.PureComponent {
         if (self.docData.relations) {
             relatedDocuments(self);
         }
-
-        let doc = this.refs['document'];
-        let libs = doc ? doc.libs : {};
 
         return (
             <div>

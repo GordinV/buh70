@@ -6,7 +6,6 @@ const DocumentTemplate = require('../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
     InputDate = require('../../../components/input-date/input-date.jsx'),
     InputNumber = require('../../../components/input-number/input-number.jsx'),
-    DocCommon = require('../../../components/doc-common/doc-common.jsx'),
     Select = require('../../../components/select/select.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
@@ -26,7 +25,9 @@ class Smk extends React.PureComponent {
 
         this.state = {
             docId: props.docId ? props.docId: Number(props.match.params.docId),
-            loadedData: false
+            loadedData: false,
+            lapsId: null,
+            module: 'lapsed'
         };
 
         this.createGridRow = this.createGridRow.bind(this);
@@ -36,7 +37,7 @@ class Smk extends React.PureComponent {
         this.renderer = this.renderer.bind(this);
         this.gridValidateFields = this.gridValidateFields.bind(this);
 
-        this.pages = [{pageName: 'Sissemakse korraldus'}];
+        this.pages = [{pageName: 'Sissemakse korraldus', docTypeId: 'SMK'}];
         this.requiredFields = [
             {
                 name: 'kpv',
@@ -50,10 +51,21 @@ class Smk extends React.PureComponent {
         ];
     }
 
+    componentDidMount() {
+        if (this.props.history && this.props.history.location.state) {
+            let lapsId = this.props.history.location.state.lapsId;
+            let module = this.props.history.location.state.module ? this.props.history.location.state.module : 'lapsed';
+            this.setState({lapsId: lapsId, module: module});
+        }
+
+    }
+
+
     render() {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='SMK'
+                                 module={this.state.module}
                                  requiredFields={this.requiredFields}
                                  userData={this.props.userData}
                                  initData={this.props.initData}
@@ -80,18 +92,9 @@ class Smk extends React.PureComponent {
             relatedDocuments(self);
         }
 
-        let doc = this.refs['document'];
-        let libs = doc ? doc.libs : {};
-
         return (
             <div>
                 <div className='div-doc'>
-                    <div style={styles.docRow}>
-                        <DocCommon
-                            ref='doc-common'
-                            data={self.docData}
-                            readOnly={!isEditeMode}/>
-                    </div>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
                             <InputText title='Number'

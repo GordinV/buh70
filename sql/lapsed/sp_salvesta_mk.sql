@@ -237,12 +237,13 @@ $BODY$
 
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_mk(JSON, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_mk(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_salvesta_mk(JSON, INTEGER, INTEGER) TO arvestaja;
+
 /*
 SELECT docs.sp_salvesta_mk('{
   "id": 928,
   "data": {
     "aaid": 2,
-    "aa_id": 0,
     "arvid": 5,
     "arvnr": null,
     "bpm": null,
