@@ -60,7 +60,7 @@ const Sorder = {
                               aa.id                                                             AS kassa_id,
                               trim(aa.name)                                                     AS kassa,
                               NULL::INTEGER                                                     AS rekvId,
-                              now()::DATE                                                       AS kpv,
+                              to_char(now()::DATE, 'YYYY-MM-DD')::TEXT                          AS kpv,
                               NULL::INTEGER                                                     AS asutusid,
                               NULL::VARCHAR(120)                                                AS dokument,
                               NULL::TEXT                                                        AS alus,
