@@ -22,7 +22,7 @@ exports.post = function (req, res, next) {
     async.waterfall([
             function (callback) {
                 //Loooking for acccount and loading login data
-                let rekvId = global.rekvId ? global.rekvId : null;
+                let rekvId = null;
 
                 userid.getUserId(username, rekvId, function (err, kasutaja) {
                     if (err) return callback(err, null);
@@ -45,9 +45,6 @@ exports.post = function (req, res, next) {
                         userAllowedAsutused: []
                     };
 
-                    global.userId = kasutaja.id;
-                    global.rekvId = kasutaja.rekvid;
-
                     callback(null, kasutaja);
                 });
             },
@@ -60,8 +57,6 @@ exports.post = function (req, res, next) {
                     if (!result) {
                         error = new HttpError(403, 'Ошибка в пароле');
                         req.session.user = null;
-                        global.userId = null;
-                        global.rekvId = null;
                         errorMessage = 'Ошибка в пароле';
                         statusCode = 403;
                         console.error('Ошибка в пароле');

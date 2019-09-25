@@ -24,16 +24,10 @@ module.exports = {
 
         return db;
     },
-// вернет порт, который слушает приложение
-    getAppPort: function() {
-        const config = require('../config/default'),
-            port = config.port;
-        return port;
-    },
 // возвращает строку пользователя по логину и ид учреждения
     getUserId: function (nimi, rekvId, callback) {
+
         const db = this.connectDb();
-        const port = this.getAppPort();
 
         db.connect(function (err) {
             if (err) {
@@ -61,8 +55,7 @@ module.exports = {
                 this.lastLogin = result.rows[0].last_login;
                 this.encriptedPassword = result.rows[0].parool;
 
-
-                const userData = Object.assign({port: port},result.rows[0] );
+                const userData = Object.assign({},result.rows[0] );
 
                 db.end();
                 callback(null, userData);

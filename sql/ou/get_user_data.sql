@@ -58,7 +58,7 @@ FROM ou.userid u
          ) lib
 ) allowed_modules ON allowed_modules.libs IS NOT NULL
 WHERE (r.id = l_rekvid OR l_rekvid IS NULL)
-ORDER BY u.last_login
+ORDER BY u.last_login desc
 LIMIT 1;
 
 $BODY$
@@ -69,6 +69,6 @@ $BODY$
 /*
 
 SELECT *
-FROM ou.get_user_data('vlad', null, '["Rekl"]')
+FROM ou.get_user_data('temp', null, null)
 
 */

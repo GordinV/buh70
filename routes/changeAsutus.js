@@ -29,30 +29,13 @@ exports.post = async (req, res) => {
                 userAccessList: userData.allowed_access,
                 userLibraryList: userData.allowed_libs,
             };
-            global.userId = userData.id;
-            global.rekvId = userData.rekvid;
+
+            // will save last login
+            userid.updateUseridLastLogin(userData.id, (err, result)=>{
+                console.log('success');
+            });
 
             res.send({result: 'Ok'}); //пока нет новых данных
         }
-
-
-        /*
-            let user = require('../middleware/userData')(req); // данные пользователя
-            let documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
-
-            if (!user) {
-                user = {
-                    userId: 1,
-                    asutusId: 1
-                }
-            }
-
-            const Doc = require('./../classes/DocumentTemplate');
-            const Document = new Doc(documentType, null, user.userId, user.asutusId);
-
-            let result = {result: await Document.selectLibs()};
-        */
-
-
     })
 };
