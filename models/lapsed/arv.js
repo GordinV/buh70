@@ -101,7 +101,8 @@ const Arv = {
                               NULL :: INTEGER                                                        AS laus_nr,
                               NULL :: VARCHAR(120)                                                   AS koostaja,
                               0 ::INTEGER                                                            AS is_show_journal,
-                              ''::VARCHAR(120)                                                       AS viitenr
+                              ''::VARCHAR(120)                                                       AS viitenr,
+                              NULL::INTEGER                                                          AS lapsId
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER`,
             query: null,

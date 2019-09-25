@@ -23,6 +23,7 @@ const SmkRegister = require('./../docs/smk/index.jsx');
 const SmkDocument = require('./../docs/smk/document/index.jsx');
 
 const SorderideRegister = require('./../docs/sorder/index.jsx');
+const SorderDocument = require('./../docs/sorder/document/index.jsx');
 
 const AsutusRegister = require('./../docs/asutused/index.jsx'),
     AsutusDocument = require('./../docs/asutused/document/index.jsx');
@@ -94,6 +95,8 @@ class App extends React.Component {
                 <Route exact path="/lapsed/sorder"
                        render={(props) => <SorderideRegister history={props.history} userData={this.props.userData}
                                                              initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/sorder/:docId" component={SorderDocument}/>
+
                 <Route exact path="/lapsed/asutused/:docId" component={AsutusDocument} module={MODULE}/>
                 <Route exact path="/lapsed/asutused"
                        render={(props) => <AsutusRegister history={props.history} userData={this.props.userData}

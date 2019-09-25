@@ -17,6 +17,7 @@ class Documents extends React.PureComponent {
         return <DocumentRegister initData={this.props.initData}
                                  userData={this.props.userData}
                                  history = {this.props.history ? this.props.history: null}
+                                 module = {this.props.module}
                                  ref = 'register'
                                  docTypeId={DOC_TYPE_ID}
                                  style={styles}

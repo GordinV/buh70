@@ -8,8 +8,9 @@ const
     InputText = require('../../../components/input-text/input-text.jsx'),
     InputDate = require('../../../components/input-date/input-date.jsx'),
     InputNumber = require('../../../components/input-number/input-number.jsx'),
-    DocCommon = require('../../../components/doc-common/doc-common.jsx'),
     Select = require('../../../components/select/select.jsx'),
+    SelectData = require('../../../components/select-data/select-data.jsx'),
+    ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
     DokProp = require('../../../components/docprop/docprop.jsx'),
@@ -18,7 +19,7 @@ const
     styles = require('./sorder-style');
 
 const LIBDOK = 'SORDER',
-    LIBRARIES = ['asutused', 'kontod', 'dokProps', 'tunnus', 'project', 'nomenclature', 'kassa'];
+    LIBRARIES = ['kontod', 'dokProps', 'tunnus', 'project', 'nomenclature', 'kassa'];
 
 const now = new Date();
 
@@ -27,7 +28,10 @@ class Sorder extends React.PureComponent {
         super(props);
         this.state = {
             loadedData: false,
-            docId: props.docId ? props.docId: Number(props.match.params.docId)
+            docId: props.docId ? props.docId : Number(props.match.params.docId),
+            lapsId: null,
+            module: 'lapsed'
+
         };
         this.createGridRow = this.createGridRow.bind(this);
         this.recalcDocSumma = this.recalcDocSumma.bind(this);
@@ -36,7 +40,7 @@ class Sorder extends React.PureComponent {
         this.renderer = this.renderer.bind(this);
         this.gridValidateFields = this.gridValidateFields.bind(this);
 
-        this.pages = [{pageName: 'Sissetuliku kassaorder'}];
+        this.pages = [{pageName: 'Sissetuliku kassaorder', docTypeId: 'SORDER'}];
         this.requiredFields = [
             {
                 name: 'kpv',
@@ -50,6 +54,16 @@ class Sorder extends React.PureComponent {
         ];
 
     }
+
+    componentDidMount() {
+        if (this.props.history && this.props.history.location.state) {
+            let lapsId = this.props.history.location.state.lapsId;
+            let module = this.props.history.location.state.module ? this.props.history.location.state.module : 'lapsed';
+            this.setState({lapsId: lapsId, module: module});
+        }
+
+    }
+
 
     render() {
         return <DocumentTemplate docId={this.state.docId}
@@ -89,99 +103,116 @@ class Sorder extends React.PureComponent {
             <div>
                 <div style={styles.doc}>
                     <div style={styles.docRow}>
-                        <DocCommon
-                            ref='doc-common'
-                            data={self.docData}
-                            readOnly={!isEditeMode}/>
-                    </div>
-                    <div style={styles.docRow}>
                         <div style={styles.docColumn}>
-                            <InputText title='Number'
+                            <InputText title='Number:'
                                        name='number'
                                        value={String(self.docData.number) || ''}
                                        ref="input-number"
                                        onChange={self.handleInputChange}
                                        readOnly={!isEditeMode}/>
-                            <InputDate title='Kuupäev '
+                            <InputDate title='Kuupäev:'
                                        name='kpv'
                                        value={self.docData.kpv}
                                        ref='input-kpv'
                                        onChange={self.handleInputChange}
                                        readOnly={!isEditeMode}/>
-                            <Select title="Kassa"
+                            <Select title="Kassa:"
                                     name='kassa_id'
                                     libs="kassa"
                                     value={self.docData.kassa_id}
                                     data={self.libs['kassa']}
-                                    defaultValue={self.docData.kassa || ''}
+                                    defaultValue={String(self.docData.kassa) || ''}
                                     ref="select-kassaId"
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditeMode}/>
-                            <Select title="Partner"
-                                    name='asutusid'
-                                    data={self.libs['asutused']}
-                                    libs="asutused"
-                                    value={self.docData.asutusid}
-                                    defaultValue={self.docData.asutus || ''}
-                                    ref="select-asutusId"
-                                    onChange={self.handleInputChange}
-                                    readOnly={!isEditeMode}/>
-                            <InputText title="Arve nr."
+                        </div>
+                    </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <SelectData title="Raha saaja:"
+                                        name='asutusid'
+                                        libName="asutused"
+                                        sqlFields={['nimetus', 'regkood']}
+                                        data={[]}
+                                        value={self.docData.asutusid || 0}
+                                        defaultValue={self.docData.asutus}
+                                        boundToGrid='nimetus'
+                                        boundToData='asutus'
+                                        ref="select-asutusid"
+                                        btnDelete={false}
+                                        onChange={self.handleInputChange}
+                                        readOnly={!isEditeMode}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <ButtonEdit
+                                ref='btnEdit'
+                                onClick={this.btnEditAsutusClick}
+                                show={!isEditeMode}
+                                style={styles.btnEdit}
+                                disabled={false}
+                            />
+                        </div>
+                    </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+
+
+                            <InputText title="Arve nr.:"
                                        name='arvnr'
                                        value={self.docData.arvnr || ''}
                                        ref="input-arvnr"
                                        onChange={self.handleInputChange}
                                        readOnly={true}/>
-                            <InputText title='Dokument '
+                            <InputText title='Dokument:'
                                        name='dokument'
                                        value={self.docData.dokument || ''}
                                        ref='input-dokument'
                                        onChange={self.handleInputChange}
                                        readOnly={!isEditeMode}/>
                         </div>
-                        <div style={styles.docColumn}>
-                            <DokProp title="Konteerimine: "
-                                     name='doklausid'
-                                     libs="dokProps"
-                                     value={self.docData.doklausid}
-                                     defaultValue={self.docData.dokprop || ''}
-                                     ref="dokprop"
-                                     onChange={self.handleInputChange}
-                                     readOnly={!isEditeMode}/>
-                        </div>
+                    </div>
+                    <div style={styles.docColumn}>
+                        <DokProp title="Konteerimine: "
+                                 name='doklausid'
+                                 libs="dokProps"
+                                 value={self.docData.doklausid}
+                                 defaultValue={self.docData.dokprop || ''}
+                                 ref="dokprop"
+                                 onChange={self.handleInputChange}
+                                 readOnly={!isEditeMode}/>
                     </div>
                     <div style={styles.docRow}>
-                            <TextArea title="Nimi"
-                                      name='nimi'
-                                      ref="textarea-nimi"
-                                      value={self.docData.nimi || ''}
-                                      onChange={self.handleInputChange}
-                                      readOnly={!isEditeMode}/>
+                        <TextArea title="Nimi"
+                                  name='nimi'
+                                  ref="textarea-nimi"
+                                  value={self.docData.nimi || ''}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditeMode}/>
                     </div>
                     <div style={styles.docRow}>
-                            <TextArea title="Aadress"
-                                      name='aadress'
-                                      ref="textarea-aadress"
-                                      value={self.docData.aadress || ''}
-                                      onChange={self.handleInputChange}
-                                      readOnly={!isEditeMode}/>
+                        <TextArea title="Aadress:"
+                                  name='aadress'
+                                  ref="textarea-aadress"
+                                  value={self.docData.aadress || ''}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditeMode}/>
                     </div>
                     <div style={styles.docRow}>
-                            <TextArea title="Alus"
-                                      name='alus'
-                                      ref="textarea-alus"
-                                      value={self.docData.alus || ''}
-                                      onChange={self.handleInputChange}
-                                      readOnly={!isEditeMode}/>
+                        <TextArea title="Alus:"
+                                  name='alus'
+                                  ref="textarea-alus"
+                                  value={self.docData.alus || ''}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditeMode}/>
                     </div>
 
                     <div style={styles.docRow}>
                         <DataGrid source='details'
                                   gridData={self.docData.gridData}
                                   gridColumns={self.docData.gridConfig}
-                                  showToolBar = {isEditeMode}
+                                  showToolBar={isEditeMode}
                                   handleGridRow={self.handleGridRow}
-                                  handleGridBtnClick = {self.handleGridBtnClick}
+                                  handleGridBtnClick={self.handleGridBtnClick}
                                   readOnly={!isEditeMode}
                                   style={styles.grid.headerTable}
                                   ref="data-grid"/>
@@ -196,12 +227,12 @@ class Sorder extends React.PureComponent {
                         />
                     </div>
                     <div style={styles.docRow}>
-                            <TextArea title="Märkused"
-                                      name='muud'
-                                      ref="textarea-muud"
-                                      value={self.docData.muud || ''}
-                                      onChange={self.handleInputChange}
-                                      readOnly={!isEditeMode}/>
+                        <TextArea title="Märkused:"
+                                  name='muud'
+                                  ref="textarea-muud"
+                                  value={self.docData.muud || ''}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditeMode}/>
                     </div>
 
                     {self.state.gridRowEdit ?
@@ -377,8 +408,8 @@ Sorder.propTypes = {
 };
 
 Sorder.defaultProps = {
-    initData:{},
-    userData:{}
+    initData: {},
+    userData: {}
 };
 
 module.exports = (Sorder);

@@ -7,7 +7,7 @@ module.exports = {
               aa.konto
             FROM ou.aa aa
             WHERE (parentid = $1 OR aa.parentid IS NULL)
-                  AND kassa = 1
+                  AND kassa = 0
             ORDER BY default_ DESC`,
     select: [{
         sql:null,

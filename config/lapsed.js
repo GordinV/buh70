@@ -12,6 +12,7 @@ module.exports = {
     nomenclature: '/libs/libraries/nomenclature',
     document: '/libs/libraries/document',
     aa: '/ou/aa',
+    kassa: '/ou/kassa',
     tunnus: '/libs/libraries/tunnus',
     project: '/libs/libraries/project',
     laps:'/lapsed/laps',

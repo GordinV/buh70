@@ -9,10 +9,6 @@ const Smk = {
                          d.docs_ids,
                          (to_char(created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT              AS created,
                          (to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT           AS lastupdate,
-                         d.bpm,
-                         trim(l.nimetus)                                                AS doc,
-                         trim(l.kood)                                                   AS doc_type_id,
-                         trim(s.nimetus)                                                AS status,
                          k.number                                                       AS number,
                          to_char(k.maksepaev, 'YYYY-MM-DD')::TEXT                       AS maksepaev,
                          k.viitenr,
@@ -39,8 +35,6 @@ const Smk = {
                   FROM docs.doc d
                            INNER JOIN docs.mk k ON k.parentId = d.id
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                           LEFT OUTER JOIN libs.library l ON l.id = d.doc_type_id
-                           LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
                            LEFT OUTER JOIN ou.aa AS aa ON k.aaid = aa.Id
                            LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.Id
                            LEFT OUTER JOIN libs.dokprop dp ON dp.id = k.doklausid
@@ -49,8 +43,6 @@ const Smk = {
                               $2 :: INTEGER                                  AS userid,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT  AS created,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT  AS lastupdate,
-                              NULL                                           AS bpm,
-                              'SMK'                                          AS doc_type_id,
                               docs.sp_get_number(u.rekvid::INTEGER, 'SMK'::TEXT,
                                                  date_part('year', current_date)::INTEGER,
                                                  NULL::INTEGER)::VARCHAR(20) AS number,
@@ -70,10 +62,10 @@ const Smk = {
                               0::NUMERIC(12, 2)                              AS summa,
                               NULL::VARCHAR(120)                             AS dokprop,
                               NULL::VARCHAR(20)                              AS konto,
-                              0                                              AS doklausid
+                              0                                              AS doklausid,
+                              NULL::INTEGER                                  AS lapsId
                        FROM ou.userid u
-                       WHERE u.id = $2 :: INTEGER
-            `,
+                       WHERE u.id = $2 :: INTEGER`,
             query: null,
             multiple: false,
             alias: 'row',
@@ -134,7 +126,7 @@ const Smk = {
 
         ],
         sqlString: `SELECT mk.id,
-                           to_char(mk.kpv,'DD.MM.YYYY')::text as kpv,
+                           to_char(mk.kpv, 'DD.MM.YYYY')::TEXT AS kpv,
                            mk.selg,
                            mk.asutus,
                            mk.kood,
@@ -147,10 +139,10 @@ const Smk = {
                            mk.journalnr,
                            mk.opt,
                            mk.vanem_isikukood,
-                           0  AS valitud,
+                           0                                   AS valitud,
                            mk.isikukood,
                            mk.nimi,
-                           $2 AS userid
+                           $2                                  AS userid
 
                     FROM lapsed.cur_lapsed_mk mk
                     WHERE mk.rekvId = $1`,

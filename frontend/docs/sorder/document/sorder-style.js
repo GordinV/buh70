@@ -47,6 +47,9 @@ module.exports = {
             width: '100%'
         }
 
+    },
+    btnEdit: {
+        width: 'min-content'
     }
 
 
