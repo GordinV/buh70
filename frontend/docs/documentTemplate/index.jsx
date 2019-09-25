@@ -51,11 +51,6 @@ class DocumentTemplate extends React.PureComponent {
 
         this.libs = this.createLibs(); //создаст объект для хранения справочников
 
-        /*
-        if (this.props.libs.length) {
-            this.loadLibs();
-        }
-*/
         this.gridRowData = {}; //будем хранить строку грида
     }
 
@@ -359,7 +354,13 @@ class DocumentTemplate extends React.PureComponent {
         return new Promise((resolved, rejected) => {
             fetchData[method](url, params).then(response => {
 
+                if (response.status && response.status == 401) {
+                    console.log('Error 401, redirect');
+                    document.location= `/login`;
+                }
+
                 if (response.data) {
+
                     let result = response.data.result;
 
 
@@ -389,12 +390,19 @@ class DocumentTemplate extends React.PureComponent {
                         console.error('Fetch viga params->', params, result, response);
 
                         this.setState({warning: `Päringu viga `});
+
                         return rejected();
                     }
 
+                } else {
+                    console.log('fetch response->', response);
                 }
             }, error => {
-                console.error('Error:', error);
+                console.error('doc template Error:', error);
+                // possibly auth error, so re-login
+                if (this.props.history) {
+                    this.props.history.push(`/login`);
+                }
                 return rejected();
             });
         })
@@ -426,7 +434,12 @@ class DocumentTemplate extends React.PureComponent {
 
             }).catch(error => {
                 console.error('loadLibs error', error);
-                rejected();
+                // possibly auth error, so re-login
+                if (this.props.history) {
+                    console.error('loadLibs error, re-login', error);
+
+                    this.props.history.push(`/login`);
+                }
             });
         });
     }

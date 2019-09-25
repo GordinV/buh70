@@ -14,6 +14,10 @@ exports.get = async (req, res) => {
     const DocumentView = require(`./../../../frontend/docs/${documentType}/document/index.jsx`);
     let user = require('./../../../middleware/userData')(req);  // check for userid in session
 
+    if (!user) {
+        //error 401, no user
+        return res.redirect('/login');
+    }
 
     const Doc = require('./../../../classes/DocumentTemplate');
     const Document = new Doc(documentType, docId, user.userId, user.asutusId, MODULE);

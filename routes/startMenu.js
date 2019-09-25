@@ -10,6 +10,10 @@ exports.post = async (req, res) => {
         params = [module];
 
     try {
+        if (!user) {
+            console.error('No user, set status to 401');
+            return res.status(401).send('Error');
+        }
 
         let data = await db.queryDb(sqlString, params);
 

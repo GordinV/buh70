@@ -12,8 +12,8 @@ exports.post = async (req, res) => {
 
 
     if (!user) {
-        const err = new HttpError(403, 'No user');
-        res.send({result: 'error'});
+        const err = new HttpError(401, 'No user');
+        return res.status(401).send('Error');
     }
 
     const Doc = require('./../classes/DocumentTemplate');

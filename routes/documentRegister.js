@@ -19,6 +19,11 @@ exports.get = async (req, res) => {
     const DocumentRegister = require(`../frontend/docs/${documentType}/index.jsx`);
     let user = require('../middleware/userData')(req);  // check for userid in session
 
+    if (!user) {
+        //error 401, no user
+        return res.status(401).redirect('/login');
+    }
+
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, null, user.userId, user.asutusId);
 
@@ -62,16 +67,9 @@ exports.post = async (req, res) => {
     const docId = Number(req.params.id); //ид документа
     const module = req.params.module || 'lapsed'; // используемый модуль
 
-    /*
-        if (!user) {
-            raise.error('No user', user);
-            const err = new HttpError(err);
-            if (err instanceof HttpError) {
-                return res.send({"message": 'No user'});
-            }
-        }
-    */
-
+    if (!user) {
+        return res.status(401).end();
+    }
 
     const params = {
         documentType: documentType,

@@ -15,7 +15,7 @@ module.exports = function (app) {
     app.get('/logout', require('./logout').get);
 
     app.get('/raama', require('./raama').get); // module raamatupidamine
-    app.get('/raama/:documentType', require('./raama').get); // module raamatupidamine
+    app.get('/raama/:documentType', checkAuth, require('./raama').get); // module raamatupidamine
     app.get('/raama/:documentType/:id', checkAuth, require('./raama/document').get); // module raamatupidamine
 
     app.get('/lapsed', checkAuth, require('./lapsed').get); // module lapsed
@@ -24,9 +24,9 @@ module.exports = function (app) {
     app.get('/lapsed/:documentType/:id/:paramId', checkAuth, require('./lapsed/document').get); // module lapsed
 
     app.post('/newApi/startMenu/:module',require('./startMenu').post); //checkAuth,
-    app.post('/newApi/document/:documentType/:id',require('./documentRegister').post); //апи для обмена даты по протоколу POST с моделью документа
-    app.put('/newApi/document/:documentType/:id',require('./documentRegister').put); //апи для обмена даты по протоколу POST с моделью документа
-    app.post('/newApi/loadLibs/:documentType', require('./loadLibs').post); //checkAuth,
+    app.post('/newApi/document/:documentType/:id',checkAuth, require('./documentRegister').post); //апи для обмена даты по протоколу POST с моделью документа
+    app.put('/newApi/document/:documentType/:id',checkAuth, require('./documentRegister').put); //апи для обмена даты по протоколу POST с моделью документа
+    app.post('/newApi/loadLibs/:documentType',checkAuth, require('./loadLibs').post); //checkAuth,
     app.post('/newApi/changeAsutus/:rekvId', checkAuth, require('./changeAsutus').post); //checkAuth,
     app.post('/newApi', checkAuth, require('./newApi').post); //checkAuth, //checkAuth,
 /*

@@ -25,9 +25,8 @@ module.exports = {
                      $2::INTEGER                    AS userid,
                      coalesce(ll.jaak, 0)::NUMERIC  AS jaak
               FROM lapsed.laps l
-                       LEFT OUTER JOIN lapsed.lapse_saldod() ll ON ll.laps_id = l.id
-              WHERE l.id = $1::INTEGER
-                AND ll.rekv_id IN (SELECT rekvid FROM ou.userid u WHERE u.id = $2)`,
+                       LEFT OUTER JOIN lapsed.lapse_saldod() ll ON ll.laps_id = l.id AND ll.rekv_id IN (SELECT rekvid FROM ou.userid u WHERE u.id = $2)
+              WHERE l.id = $1::INTEGER`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,

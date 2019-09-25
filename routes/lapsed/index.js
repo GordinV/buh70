@@ -14,6 +14,11 @@ exports.get = async (req, res) => {
 
     let user = require('./../../middleware/userData')(req);  // check for userid in session
 
+    if (!user) {
+        //error 401, no user
+        return res.status(401).redirect('/login');
+    }
+
     const Doc = require('./../../classes/DocumentTemplate');
     const Document = new Doc(documentType, null, user.userId, user.asutusId, 'lapsed');
     // делаем запрос , получаем первоначальные данные

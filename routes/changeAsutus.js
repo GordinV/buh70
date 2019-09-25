@@ -31,9 +31,7 @@ exports.post = async (req, res) => {
             };
 
             // will save last login
-            userid.updateUseridLastLogin(userData.id, (err, result)=>{
-                console.log('success');
-            });
+            userid.updateUseridLastLogin(userData.id, (err, result)=>{});
 
             res.send({result: 'Ok'}); //пока нет новых данных
         }

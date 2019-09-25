@@ -60,12 +60,19 @@ class StartMenu extends React.PureComponent {
         try {
             fetchData.fetchDataPost(params)
                 .then(response => {
+                    if (response.status && response.status == 401) {
+                        console.log('Error 401, redirect');
+                        document.location = `/login`;
+                    }
+
                     if (response) {
                         this.treeData = response.data.data;
                         this.forceUpdate();
                     }
                 })
-                .catch(error => console.error('received error-> ', error));
+                .catch(error => {
+                    console.error('received error-> ', error)
+                });
 
         } catch (e) {
             console.error(e);
