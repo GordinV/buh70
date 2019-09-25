@@ -286,7 +286,10 @@ class Documents extends React.PureComponent {
      */
     startMenuClickHandler(value) {
         this.setState({hasStartMenuVisible: false});
-        document.location.href = `/documents/${value}`;
+        return this.props.history.push({
+            pathname: `/${this.props.module}/${value}`,
+            state: {module: this.props.module}
+        });
 
     }
 
@@ -437,6 +440,7 @@ class Documents extends React.PureComponent {
 
         } catch (e) {
             console.error(e);
+
         }
     }
 

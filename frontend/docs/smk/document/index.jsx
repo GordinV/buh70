@@ -105,7 +105,7 @@ class Smk extends React.PureComponent {
                                        readOnly={!isEditeMode}/>
                             <InputDate title='Kuupäev '
                                        name='kpv'
-                                       value={self.docData.kpv}
+                                       value={self.docData.kpv || ''}
                                        ref='input-kpv'
                                        onChange = {self.handleInputChange}
                                        readOnly={!isEditeMode}/>
@@ -114,7 +114,7 @@ class Smk extends React.PureComponent {
                                     libs="aa"
                                     value={self.docData.aa_id}
                                     data={self.libs['aa']}
-                                    defaultValue={self.docData.pank || ''}
+                                    defaultValue={String(self.docData.pank) || ''}
                                     onChange = {self.handleInputChange}
                                     ref="select-aaId"
                                     readOnly={!isEditeMode}/>
@@ -126,7 +126,7 @@ class Smk extends React.PureComponent {
                                        readOnly={true}/>
                             <InputDate title='Maksepäev '
                                        name='maksepaev'
-                                       value={self.docData.maksepaev}
+                                       value={self.docData.maksepaev || ''}
                                        ref='input-maksepaev'
                                        onChange = {self.handleInputChange}
                                        readOnly={!isEditeMode}/>
@@ -172,7 +172,7 @@ class Smk extends React.PureComponent {
                         <InputText title="Kokku: "
                                    name='summa'
                                    ref="input-summa"
-                                   value={String(self.docData.summa)}
+                                   value={String(self.docData.summa) || '0.00'}
                                    width='auto'
                                    disabled={true}/>
                     </div>
