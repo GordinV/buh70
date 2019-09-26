@@ -7,6 +7,7 @@ exports.post = async (req, res) => {
         sortBy = req.body.sortBy, //порядок сортировки
         sqlWhere = req.body.sqlWhere; //динамический фильтр
 
+
     if (!user) {
         console.error('error 401 newAPI');
         return res.status(401).end();
@@ -31,7 +32,7 @@ exports.post = async (req, res) => {
         res.status(200).send(data);
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок
-        res.send({result:'Error'});
+        res.send({status: 500,result:'Error'});
 
     }
 };

@@ -1,6 +1,7 @@
 'use strict';
 
 exports.post = async (req, res) => {
+
     let user = require('../middleware/userData')(req); // данные пользователя
     const db = require('./../libs/db');
     const menuModel = require('./../models/ou/start-menu');
@@ -18,10 +19,10 @@ exports.post = async (req, res) => {
         let data = await db.queryDb(sqlString, params);
 
         // вернуть данные
-        res.send(data);
+        res.status(200).send(data);
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок
-        res.send({result: 'Error'});
+        res.send({status: 500, result: 'Error'});
 
     }
 };

@@ -202,7 +202,10 @@ module.exports = {
                     callback(err, null);
                 }
                 db.end();
-                callback(err, result.rows);
+                let data = result.rows.map((row)=>{
+                    return JSON.stringify(row);
+                });
+                callback(err, data);
             });
         });
 

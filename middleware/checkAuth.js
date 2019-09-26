@@ -1,8 +1,21 @@
+const _ = require('lodash');
 
 module.exports = function(req, res, next) {
-    if (!req.session.user) {
-        const error = new Error(401,'Autoriseeerimise viga');
-        res.status(401);
+    const userId = req.body.userId;
+    let result = 0;
+
+    if (!userId && req.session.users.length > 0) {
+        // get
+        return next();
+    }
+
+    if (userId && req.session.users) {
+        let users = req.session.users;
+        result = _.findIndex(users,{id:userId});
+        if (!result || !req.session.users.length ) {
+            res.status(401);
+        }
     }
     next();
+
 };

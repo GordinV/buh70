@@ -4,7 +4,7 @@ const userid = require('../models/userid'),
     async = require('async'),
     HttpError = require('./../error').HttpError,
     errorMessage = '';
-
+const _ = require('lodash');
 
 exports.get = function (req, res) {
     res.render('login', {"title": 'login', "errorMessage": errorMessage});
@@ -33,19 +33,17 @@ exports.post = function (req, res, next) {
                     }
 
                     errorMessage = null;
-                    req.session.user = {
-                        id: kasutaja.id,
-                        login: kasutaja.kasutaja,
-                        userName: kasutaja.ametnik,
-                        userAsutus: kasutaja.asutus,
-                        userAsutusId: kasutaja.rekvid,
-                        userLastLogin: kasutaja.last_login,
-                        userAccessList: kasutaja.allowed_access,
-                        userLibraryList: kasutaja.allowed_libs,
-                        userAllowedAsutused: []
-                    };
 
-                    callback(null, kasutaja);
+                    if (!req.session.users) {
+                        req.session.users = [];
+                    }
+
+                    let userIndex =  _.findIndex(req.session.users,{id:kasutaja.id});
+                    if (userIndex < 0 ) {
+                        // user not loged In before
+                        req.session.users.push(kasutaja);
+                    }
+                    return callback(null, kasutaja);
                 });
             },
             // checking for password
@@ -56,7 +54,6 @@ exports.post = function (req, res, next) {
 
                     if (!result) {
                         error = new HttpError(403, 'Ошибка в пароле');
-                        req.session.user = null;
                         errorMessage = 'Ошибка в пароле';
                         statusCode = 403;
                         console.error('Ошибка в пароле');
@@ -71,20 +68,22 @@ exports.post = function (req, res, next) {
             function (result, kasutaja, callback) {
                 if (result) {
                     userid.updateUseridLastLogin(kasutaja.id, function (err, result) {
-                        callback(err, result);
+                       return callback(err, kasutaja, result);
                     });
                 }
             },
             //load allowed asutused
-            function (kasutaja, callback) {
+            function (kasutaja, result, callback) {
                 userid.loadPermitedAsutused(username, function (err, result) {
                     if (err) {
                         console.error(err);
-                        callback(err, null);
+                        return callback(err, null);
                     }
 
+                    let userIndex =  _.findIndex(req.session.users,{id:kasutaja.id});
+
                     //will set the list of allowed asutused to session object
-                    req.session.user.userAllowedAsutused = result;
+                    req.session.users[userIndex].userAllowedAsutused = result;
 
                     callback(err, result);
                 });

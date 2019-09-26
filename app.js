@@ -5,7 +5,7 @@
 
 const express = require('express');
 
-var app = express(),
+const app = express(),
     compression = require('compression'),
     http = require('http'),
     https = require('https'),
@@ -23,7 +23,6 @@ var app = express(),
     helmet = require('helmet'),
     cors = require('cors'),
     csrf = require('csurf');
-
 
 const log = require('./libs/log')(module); //@not found
 const HttpError = require('./error').HttpError;
@@ -97,7 +96,6 @@ app.configure(function() {
 */
 
 
-
 // middleware
 
 /*
@@ -136,6 +134,11 @@ app.use(csrf());
 
 require('./routes')(app);
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(function(req, res) {
+    console.log('reading header', req.header.authorization);
+    next();
+});
 
 app.use(function (err, req, res, next) {
     if (typeof err == 'number') { // next(404);

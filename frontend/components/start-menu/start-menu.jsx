@@ -37,6 +37,7 @@ class StartMenu extends React.PureComponent {
         return (
             <div style={styles.container}>
                 <TreeList ref='treeList'
+                          userData={this.props.userData}
                           data={this.treeData}
                           bindDataField="kood"
                           value={this.state.value}
@@ -56,9 +57,11 @@ class StartMenu extends React.PureComponent {
      * Выполнит запросы
      */
     fetchData(props) {
-        let params = URL + `/${props.module}`;
+        let url = URL + `/${props.module}`;
+        let params = {userId: props.userData.userId};
+
         try {
-            fetchData.fetchDataPost(params)
+            fetchData.fetchDataPost(url, params)
                 .then(response => {
                     if (response.status && response.status == 401) {
                         console.log('Error 401, redirect');

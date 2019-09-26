@@ -12,7 +12,8 @@
     "key": "vlad",
     "cookie": {
       "paxˇxth": "/",
-      "httpOnly": false,
+      "httpOnly": true,
+      "secure": true,
       "maxAge":  3600000
     }
   }

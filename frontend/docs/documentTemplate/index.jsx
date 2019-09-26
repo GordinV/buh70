@@ -43,7 +43,7 @@ class DocumentTemplate extends React.PureComponent {
         this.requiredFields = props.requiredFields;
         this.pages = this.props.pages || null;
 
-        this._bind('btnAddClick', 'btnEditClick', 'validation',
+        this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick',
             'btnSaveClick', 'btnCancelClick', 'fetchData', 'createLibs', 'loadLibs',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
@@ -341,10 +341,10 @@ class DocumentTemplate extends React.PureComponent {
     /**
      * Выполнит запросы
      */
-    fetchData(protocol) {
-        let url = `${URL}/${this.props.docTypeId}/${this.state.docId}`;
+    fetchData(protocol, api) {
+        let url = api ? api : `${URL}/${this.props.docTypeId}/${this.state.docId}`;
         let method = 'fetchDataPost';
-        let params = {module: this.props.module};
+        let params = {module: this.props.module, userId: this.props.userData.userId};
         if (protocol) {
             //request call not default
             method = 'fetchData' + protocol;
@@ -355,8 +355,7 @@ class DocumentTemplate extends React.PureComponent {
             fetchData[method](url, params).then(response => {
 
                 if (response.status && response.status == 401) {
-                    console.log('Error 401, redirect');
-                    document.location= `/login`;
+                    document.location = `/login`;
                 }
 
                 if (response.data) {
@@ -416,10 +415,12 @@ class DocumentTemplate extends React.PureComponent {
         let postUrl = '/newApi/loadLibs';
 
         this.props.libs.forEach(lib => {
-            let params = _.has(this.state.libParams, lib) ? {
-                sql: this.state.libParams[lib],
-                module: this.props.module
-            } : {module: this.props.module};
+            let params = Object.assign({
+                module: this.props.module,
+                userId: this.props.userData.userId
+            }, _.has(this.state.libParams, lib) ? {
+                sql: this.state.libParams[lib]
+            } : {});
 
             fetchData.fetchDataPost(`${postUrl}/${lib}`, params).then(response => {
                 if (response && 'data' in response) {

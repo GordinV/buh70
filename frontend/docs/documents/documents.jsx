@@ -29,7 +29,8 @@ class Documents extends React.PureComponent {
             userLibraryList: props.userData.userLibraryList,
             userAccessList: props.userData.userAccessList,
             asutus: props.userData.asutus,
-            userName: props.userData.userName
+            userName: props.userData.userName,
+            id: props.userData.id
         };
 
         this.gridData = [];
@@ -359,6 +360,7 @@ class Documents extends React.PureComponent {
         let component;
         if (this.state.hasStartMenuVisible) {
             component = <StartMenu ref='startMenu'
+                                   userData={this.props.userData}
                                    value={this.state.startMenuValue}
                                    clickHandler={this.startMenuClickHandler}/>
         }
@@ -413,7 +415,8 @@ class Documents extends React.PureComponent {
             sortBy: this.state.sortBy, // сортировка
             sqlWhere: this.state.sqlWhere, // динамический фильтр грида
             lastDocId: null,
-            module: this.props.module
+            module: this.props.module,
+            userId: this.props.userData.userId
         };
         try {
             fetchData.fetchDataPost(URL, params).then(response => {
@@ -474,7 +477,8 @@ Documents.propTypes = {
         userLibraryList: PropTypes.array,
         userAccessList: PropTypes.array,
         asutus: PropTypes.string,
-        userName: PropTypes.string
+        userName: PropTypes.string,
+        id:PropTypes.number
     }).isRequired,
     initData: PropTypes.shape({
         result: PropTypes.object,

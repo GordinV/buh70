@@ -3,7 +3,8 @@
 const checkAuth = require('../middleware/checkAuth');
 
 module.exports = function (app) {
-// same as main
+
+    // same as main
     app.get('/', require('./login').get);
     app.post('/', require('./login').post);
 
@@ -13,6 +14,8 @@ module.exports = function (app) {
     app.post('/login', require('./login').post);
     // logout logic
     app.get('/logout', require('./logout').get);
+    // logout logic
+    app.post('/logout', require('./logout').post);
 
     app.get('/raama', require('./raama').get); // module raamatupidamine
     app.get('/raama/:documentType', checkAuth, require('./raama').get); // module raamatupidamine

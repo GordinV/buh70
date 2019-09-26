@@ -1,3 +1,5 @@
+const _ = require('lodash');
+
 exports.get = function(req, res) {
     req.session.destroy();
     res.redirect('/login');
@@ -5,6 +7,17 @@ exports.get = function(req, res) {
 };
 
 exports.post = function(req, res) {
-    req.session.destroy();
-    res.redirect('/login');
+    const userId = req.body.userId;
+
+    if (userId && req.session.users.length) {
+        req.session.users = _.reject(req.session.users, (user) => {
+            return user.id !== userId;
+        });
+    }
+
+    if (!userId || !req.session.users || req.session.users.length < 1) {
+        console.log('session destoried');
+        req.session.destroy();
+    }
+
 };

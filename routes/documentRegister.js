@@ -19,6 +19,9 @@ exports.get = async (req, res) => {
     const DocumentRegister = require(`../frontend/docs/${documentType}/index.jsx`);
     let user = require('../middleware/userData')(req);  // check for userid in session
 
+    console.log(' DocumentRegister get, user->', user);
+
+
     if (!user) {
         //error 401, no user
         return res.status(401).redirect('/login');
@@ -66,6 +69,7 @@ exports.post = async (req, res) => {
     const documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
     const docId = Number(req.params.id); //ид документа
     const module = req.params.module || 'lapsed'; // используемый модуль
+
 
     if (!user) {
         return res.status(401).end();

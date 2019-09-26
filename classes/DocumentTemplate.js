@@ -57,8 +57,6 @@ class Document {
         const objectTemplate = Object.assign({}, this.config.returnData);
         let data = await db.executeQueries(this.config.select, [this.documentId, this.userId], objectTemplate);
 
-        console.log('dbResult data', data, this.documentId, this.userId);
-
         return data;
     }
 

@@ -13,9 +13,6 @@ const React = require('react'),
     SelectRekv = require('./../select-rekv/index.jsx'),
     BtnAccount = require('./../button-register/button-account/button-account.jsx');
 
-const URL = '/newApi/changeAsutus';
-
-
 const style = require('./menu-toolbar.styles');
 
 class MenuToolBar extends React.PureComponent {
@@ -37,6 +34,7 @@ class MenuToolBar extends React.PureComponent {
         this.btnLoginClick = this.btnLoginClick.bind(this);
         this.renderStartMenu = this.renderStartMenu.bind(this);
         this.startMenuClickHandler = this.startMenuClickHandler.bind(this);
+        this.handleChange = this.handleChange.bind(this);
 
     }
 
@@ -115,9 +113,9 @@ class MenuToolBar extends React.PureComponent {
         let module = this.module;
         if (this.state.showStartMenu) {
             component = <StartMenu ref='startMenu'
-                                   module = {module}
+                                   module={module}
                                    value={this.state.startMenuValue}
-
+                                   userData={this.props.userData}
                                    clickHandler={this.startMenuClickHandler}/>
         }
         return component
@@ -125,17 +123,9 @@ class MenuToolBar extends React.PureComponent {
 
     btnStartClick() {
         // обработчик для кнопки Start
+
         this.setState({showStartMenu: !this.state.showStartMenu});
 
-        /*
-                if (this.props.btnStartClick) {
-                    return this.props.btnStartClick();
-                }
-
-                if (document) {
-                    document.location.href = '/documents';
-                }
-        */
     }
 
     /**
@@ -144,22 +134,34 @@ class MenuToolBar extends React.PureComponent {
     startMenuClickHandler(value) {
         this.setState({showStartMenu: false});
         if (this.props.history) {
-            return this.props.history.push(`/${this.moduleAddress}/${value}`)
+            return this.props.history.push({
+                pathname: `/${this.moduleAddress}/${value}`,
+                state: {module: this.moduleAddress}
+
+            });
+        } else {
+            document.location.href = `/${this.moduleAddress}/${value}`
         }
-
-//        document.location.href = `/documents/${value}`;
-
     }
 
-
     btnLoginClick() {
-
+        const URL = '/logout';
         if (this.state.logedIn) {
             this.setState({logedIn: false});
-            document.location.href = '/logout';
+
+            try {
+                let userId = this.props.userData.userId;
+                const params = {userId: userId, module: this.module};
+
+                fetchData.fetchDataPost(URL, params).then(() => {
+                        document.location.href = '/login';
+                    }
+                );
+            } catch (e) {
+                console.error(e);
+            }
         } else {
             document.location.href = '/login';
-
         }
     }
 
@@ -170,15 +172,17 @@ class MenuToolBar extends React.PureComponent {
     }
 
     handleChange(inputName, inputValue) {
+        const URL = '/newApi/changeAsutus';
         let rekvId = inputValue; // choose asutusId
 
         // отправить пост запрос
         try {
             let localUrl = `${URL}/${rekvId}`;
+            let userId = this.props.userData.userId;
+            const params = {userId: userId, module: this.module};
 
-            fetchData.fetchDataPost(localUrl).then(response => {
-                // will reload page
-                document.location.reload();
+            fetchData.fetchDataPost(localUrl, params).then(response => {
+                    document.location.reload();
             });
 
         } catch (e) {

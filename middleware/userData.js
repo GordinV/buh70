@@ -1,28 +1,28 @@
-var userData = function(req) {
-    var user = {
-            userId:null,
-            userName: '',
-            asutus: '',
-            asutusId:null,
-            lastLogin:null,
-            userAccessList:null,
-            userLibraryList:null,
-            login:''
-        };
+const _ = require('lodash');
 
-    if (req.session.user) {
-        user.userId = req.session.user.id;
-        user.userName = req.session.user.userName;
-        user.asutus = req.session.user.userAsutus;
-        user.asutusId = req.session.user.userAsutusId;
-        user.lastLogin = req.session.user.userLastLogin;
-        user.userAccessList = req.session.user.userAccessList;
-        user.userLibraryList = req.session.user.userLibraryList;
-        user.login= req.session.user.login;
+const userData = function (req) {
+    let userId = req.body.userId;
 
-    } else {
-        user = null;
+    if (!req.session.users) {
+        return null;
     }
+    let userIndex = _.findIndex(req.session.users, {id: userId});
+
+    if (!userId && req.session.users) {
+        // for get
+        userIndex = 0;
+    }
+
+    const user = Object.assign({
+        userId: userIndex > -1 ? req.session.users[userIndex].id: null,
+        userName: userIndex > -1 ? req.session.users[userIndex].ametnik: null,
+        asutus: userIndex > -1 ? req.session.users[userIndex].asutus: null,
+        asutusId: userIndex > -1 ? req.session.users[userIndex].rekvid: null,
+        lastLogin: userIndex > -1 ? req.session.users[userIndex].last_login: null,
+        userAccessList: userIndex > -1 ? req.session.users[userIndex].userAllowedAsutused: [],
+        userLibraryList: [],
+        login: userIndex > -1 ? req.session.users[userIndex].kasutaja: null
+    }, userIndex > -1 ? req.session.users[userIndex] : {});
 
     return user;
 };
