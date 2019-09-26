@@ -3,6 +3,7 @@
 const userid = require('../models/userid'),
     async = require('async'),
     HttpError = require('./../error').HttpError,
+    uuid = require('uuid/v1'),
     errorMessage = '';
 const _ = require('lodash');
 
@@ -18,6 +19,7 @@ exports.post = function (req, res, next) {
         errorMessage,
         statusCode = 200;
 
+    let user = {};
 
     async.waterfall([
             function (callback) {
@@ -38,12 +40,21 @@ exports.post = function (req, res, next) {
                         req.session.users = [];
                     }
 
-                    let userIndex =  _.findIndex(req.session.users,{id:kasutaja.id});
-                    if (userIndex < 0 ) {
-                        // user not loged In before
-                        req.session.users.push(kasutaja);
-                    }
-                    return callback(null, kasutaja);
+                    // user not loged In before
+                    const newUser = Object.assign({
+                        uuid: uuid(),
+                        userId: kasutaja.id,
+                        userName: kasutaja.ametnik,
+                        asutusId: kasutaja.rekvid,
+                        lastLogin: kasutaja.last_login,
+                        userAccessList: kasutaja.allowed_access,
+                        login: kasutaja.kasutaja
+                    }, kasutaja);
+
+
+                    req.session.users.push(newUser);
+                    user = newUser;
+                    return callback(null, newUser);
                 });
             },
             // checking for password
@@ -68,7 +79,7 @@ exports.post = function (req, res, next) {
             function (result, kasutaja, callback) {
                 if (result) {
                     userid.updateUseridLastLogin(kasutaja.id, function (err, result) {
-                       return callback(err, kasutaja, result);
+                        return callback(err, kasutaja, result);
                     });
                 }
             },
@@ -80,7 +91,7 @@ exports.post = function (req, res, next) {
                         return callback(err, null);
                     }
 
-                    let userIndex =  _.findIndex(req.session.users,{id:kasutaja.id});
+                    let userIndex = _.findIndex(req.session.users, {id: kasutaja.id});
 
                     //will set the list of allowed asutused to session object
                     req.session.users[userIndex].userAllowedAsutused = result;
@@ -103,6 +114,7 @@ exports.post = function (req, res, next) {
                 res.redirect('/login');
             } else {
                 // open main page
+                req.app.locals.user = user;
                 res.redirect('/lapsed'); //@todo переделать
             }
         });

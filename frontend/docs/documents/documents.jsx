@@ -25,13 +25,7 @@ class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
 
-        this.userData = {
-            userLibraryList: props.userData.userLibraryList,
-            userAccessList: props.userData.userAccessList,
-            asutus: props.userData.asutus,
-            userName: props.userData.userName,
-            id: props.userData.id
-        };
+        this.userData = props.userData;
 
         this.gridData = [];
         this.gridConfig = [];
@@ -416,7 +410,8 @@ class Documents extends React.PureComponent {
             sqlWhere: this.state.sqlWhere, // динамический фильтр грида
             lastDocId: null,
             module: this.props.module,
-            userId: this.props.userData.userId
+            userId: this.props.userData.userId,
+            uuid: this.props.userData.uuid
         };
         try {
             fetchData.fetchDataPost(URL, params).then(response => {

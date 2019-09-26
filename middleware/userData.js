@@ -1,14 +1,16 @@
 const _ = require('lodash');
 
 const userData = function (req) {
-    let userId = req.body.userId;
+    let userId = req.body.userId,
+        uuid = req.body.uuid;
 
     if (!req.session.users) {
         return null;
     }
-    let userIndex = _.findIndex(req.session.users, {id: userId});
+//    let userIndex = _.findIndex(req.session.users, {id: userId});
+    let userIndex = _.findIndex(req.session.users, {uuid: uuid});
 
-    if (!userId && req.session.users) {
+    if (!uuid && req.session.users) {
         // for get
         userIndex = 0;
     }

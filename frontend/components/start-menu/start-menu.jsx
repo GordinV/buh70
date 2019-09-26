@@ -58,7 +58,7 @@ class StartMenu extends React.PureComponent {
      */
     fetchData(props) {
         let url = URL + `/${props.module}`;
-        let params = {userId: props.userData.userId};
+        let params = {userId: props.userData.userId, uuid: props.userData.uuid};
 
         try {
             fetchData.fetchDataPost(url, params)

@@ -12,7 +12,8 @@ const App = require('./../../frontend/modules/lapsed.jsx');
 exports.get = async (req, res) => {
     let documentType = req.params.documentType ? req.params.documentType : 'laps';
 
-    let user = require('./../../middleware/userData')(req);  // check for userid in session
+    let user = req.app.locals.user;
+    req.app.locals.user = null;
 
     if (!user) {
         //error 401, no user
@@ -67,7 +68,7 @@ exports.get = async (req, res) => {
 };
 
 exports.post = async (req, res) => {
-    let user = require('../middleware/userData')(req); // данные пользователя
+    let user = require('./../../middleware/userData')(req); // данные пользователя
     const documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
     const docId = Number(req.params.id); //ид документа
 

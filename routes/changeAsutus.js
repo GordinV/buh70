@@ -10,6 +10,7 @@ exports.post = (req, res) => {
     if (req.params.rekvId) {
         rekvId = req.params.rekvId;
     }
+    let userUuid = req.body.uuid;
 
     let user = require('./../middleware/userData')(req);  // check for userid in session
 
@@ -23,11 +24,14 @@ exports.post = (req, res) => {
             res.send({status: 403, result: 'error'});
         } else {
             let users  = req.session.users;
+
+            // меняем данные пользователя. все кроме индентификатора
             req.session.users = users.map((userRow) => {
-                if (user.id !== userRow.id) {
-                    return user;
+                if (userUuid !== userRow.uuid) {
+                    return userRow;
                 } else {
                     return {
+                        uuid: userRow.uuid,
                         id: userData.id,
                         userId: userData.id,
                         login: userData.kasutaja,
@@ -42,11 +46,23 @@ exports.post = (req, res) => {
                     }
                 }
 
+
+
             });
 
             // will save last login
             userid.updateUseridLastLogin(userData.id, (err, result) => {
             });
+
+
+
+            //will load new userdata
+            let newUser = require('../middleware/userData')(req); // данные пользователя
+
+            //save in locals
+            req.app.locals.user = newUser;
+
+            //send result and wait for reload
             res.send({result: 'Ok'}); //пока нет новых данных
         }
     })

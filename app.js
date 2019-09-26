@@ -24,6 +24,7 @@ const app = express(),
     cors = require('cors'),
     csrf = require('csurf');
 
+
 const log = require('./libs/log')(module); //@not found
 const HttpError = require('./error').HttpError;
 const port = config.get('port');
@@ -135,7 +136,7 @@ app.use(csrf());
 require('./routes')(app);
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(function(req, res) {
+app.use(function (req, res) {
     console.log('reading header', req.header.authorization);
     next();
 });

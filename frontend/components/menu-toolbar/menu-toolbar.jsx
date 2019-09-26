@@ -151,7 +151,7 @@ class MenuToolBar extends React.PureComponent {
 
             try {
                 let userId = this.props.userData.userId;
-                const params = {userId: userId, module: this.module};
+                const params = {userId: userId, module: this.module, uuid: this.props.userData.uuid};
 
                 fetchData.fetchDataPost(URL, params).then(() => {
                         document.location.href = '/login';

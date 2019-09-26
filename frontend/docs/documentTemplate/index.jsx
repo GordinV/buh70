@@ -344,7 +344,11 @@ class DocumentTemplate extends React.PureComponent {
     fetchData(protocol, api) {
         let url = api ? api : `${URL}/${this.props.docTypeId}/${this.state.docId}`;
         let method = 'fetchDataPost';
-        let params = {module: this.props.module, userId: this.props.userData.userId};
+        let params = {
+            module: this.props.module,
+            userId: this.props.userData.userId,
+            uuid: this.props.userData.uuid
+        };
         if (protocol) {
             //request call not default
             method = 'fetchData' + protocol;
@@ -393,8 +397,6 @@ class DocumentTemplate extends React.PureComponent {
                         return rejected();
                     }
 
-                } else {
-                    console.log('fetch response->', response);
                 }
             }, error => {
                 console.error('doc template Error:', error);
@@ -417,7 +419,8 @@ class DocumentTemplate extends React.PureComponent {
         this.props.libs.forEach(lib => {
             let params = Object.assign({
                 module: this.props.module,
-                userId: this.props.userData.userId
+                userId: this.props.userData.userId,
+                uuid: this.props.userData.uuid,
             }, _.has(this.state.libParams, lib) ? {
                 sql: this.state.libParams[lib]
             } : {});
