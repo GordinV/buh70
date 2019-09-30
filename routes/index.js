@@ -26,16 +26,21 @@ module.exports = function (app) {
     app.get('/lapsed/:documentType/:id', checkAuth, require('./lapsed/document').get); // module lapsed
     app.get('/lapsed/:documentType/:id/:paramId', checkAuth, require('./lapsed/document').get); // module lapsed
 
-    app.post('/newApi/startMenu/:module',require('./startMenu').post); //checkAuth,
-    app.post('/newApi/document/:documentType/:id',checkAuth, require('./documentRegister').post); //апи для обмена даты по протоколу POST с моделью документа
-    app.put('/newApi/document/:documentType/:id',checkAuth, require('./documentRegister').put); //апи для обмена даты по протоколу POST с моделью документа
-    app.post('/newApi/loadLibs/:documentType',checkAuth, require('./loadLibs').post); //checkAuth,
+    app.post('/newApi/startMenu/:module', require('./startMenu').post); //checkAuth,
+    app.post('/newApi/document/:documentType/:id', checkAuth, require('./documentRegister').post); //апи для обмена даты по протоколу POST с моделью документа
+    app.put('/newApi/document/:documentType/:id', checkAuth, require('./documentRegister').put); //апи для обмена даты по протоколу PUT с моделью документа
+    app.post('/newApi/loadLibs/:documentType', checkAuth, require('./loadLibs').post); //checkAuth,
     app.post('/newApi/changeAsutus/:rekvId', checkAuth, require('./changeAsutus').post); //checkAuth,
+    app.post('/newApi/delete', checkAuth, require('./documentRegister').delete); //checkAuth, //checkAuth,
     app.post('/newApi', checkAuth, require('./newApi').post); //checkAuth, //checkAuth,
-/*
 
-    app.delete('/api/doc/:id', checkAuth, require('./api_doc').delete);
 
-*/
+    app.delete('/newApi/:documentType/:id', checkAuth, require('./documentRegister').delete); //апи для обмена даты по протоколу delete с моделью документа
+
+    /*
+
+        app.delete('/api/doc/:id', checkAuth, require('./api_doc').delete);
+
+    */
 
 };

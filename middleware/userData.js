@@ -4,7 +4,7 @@ const userData = function (req) {
     let userId = req.body.userId,
         uuid = req.body.uuid;
 
-    console.log('userData -> req.body',req.body);
+    console.log('userData -> req.body',req.body, userId, uuid);
 
     if (!req.session.users) {
         return null;
@@ -28,6 +28,7 @@ const userData = function (req) {
         login: userIndex > -1 ? req.session.users[userIndex].kasutaja: null
     }, userIndex > -1 ? req.session.users[userIndex] : {});
 
+    console.log('userData, return', user.userId);
     return user;
 };
 

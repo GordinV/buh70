@@ -113,8 +113,6 @@ class Document {
             return [];
         }
 
-        console.log('selectLibs params', sql, params);
-
         const dbResult = Object.assign({},
             await db.queryDb(sql, params, '', sqlWhere, sqlLimit),
             {gridConfig: libGridConfig, searchFields: libSearchFields}
@@ -123,6 +121,26 @@ class Document {
         return dbResult;
 
     }
+
+    /**
+     * грузит гриды
+     */
+    async delete() {
+        let sql = this.config.deleteDoc,
+            params = [this.userId, this.documentId];
+
+        if (!sql) {
+            return [];
+        }
+
+        console.log('delete, params', sql, params);
+
+        const dbResult = await db.queryDb(sql, params );
+        console.log('delete, vastus', dbResult);
+        return dbResult;
+
+    }
+
 }
 
 module.exports = Document;

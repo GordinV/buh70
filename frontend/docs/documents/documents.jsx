@@ -15,6 +15,7 @@ const
     ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx'),
     GridFilter = require('./../../components/data-grid/grid-filter/grid-filter.jsx'),
     ModalPage = require('./../../components/modalpage/modalPage.jsx'),
+    ModalPageDelete = require('./../../components/modalpage/modalpage-delete/modalPage-delete.jsx'),
     styles = require('./documents-styles');
 
 
@@ -43,12 +44,13 @@ class Documents extends React.PureComponent {
             sortBy: {},
             sqlWhere: '',
             getFilter: false,
+            isDelete: false,
             hasStartMenuVisible: false, // will show start menu
             startMenuValue: 'parentid'
         };
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
-            'headerClickHandler', 'btnFilterClick', 'modalPageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
+            'headerClickHandler', 'btnFilterClick', 'modalPageBtnClick', 'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData', 'prepareSqlWhereFromFilter');
 
 
@@ -76,7 +78,7 @@ class Documents extends React.PureComponent {
 
             //делаем запрос на получение данных
             this.setState({sqlWhere: sqlWhere}, () => {
-                this.fetchData()
+                this.fetchData('selectDocs')
             });
 
         }
@@ -124,6 +126,10 @@ class Documents extends React.PureComponent {
                                     gridConfig={this.gridConfig}
                                     data={this.filterData}/>
                     </ModalPage>
+                    <ModalPageDelete
+                        show={this.state.isDelete}
+                        modalPageBtnClick={this.modalDeletePageBtnClick.bind(this)}>
+                    </ModalPageDelete>
                 </div>
             </div>
         );
@@ -134,7 +140,7 @@ class Documents extends React.PureComponent {
      * @param sortBy
      */
     headerClickHandler(sortBy) {
-        this.setState({sortBy: sortBy}, () => this.fetchData());
+        this.setState({sortBy: sortBy}, () => this.fetchData('selectDocs'));
     }
 
     /**
@@ -200,7 +206,7 @@ class Documents extends React.PureComponent {
      * Обработчик для кнопки Delete
      */
     btnDeleteClick() {
-        console.log('btnDeleteClick');
+        this.setState({isDelete: true});
     }
 
     /**
@@ -226,9 +232,25 @@ class Documents extends React.PureComponent {
             filterString = '';
         }
 
-        this.setState({getFilter: false, sqlWhere: filterString}, () => this.fetchData());
+        this.setState({getFilter: false, sqlWhere: filterString}, () => this.fetchData('selectDocs'));
     }
 
+    /**
+     * обработчик для кнопки фильтрации
+     * @param btnEvent
+     */
+    modalDeletePageBtnClick(btnEvent) {
+        this.setState({isDelete: false});
+
+        if (btnEvent === 'Ok') {
+            // delete document
+            this.fetchData('delete')
+                .then((responce) => {
+                        this.fetchData('selectDocs')
+                    }
+                );
+        }
+    }
 
     prepareSqlWhereFromFilter() {
         let filterString = ''; // строка фильтра
@@ -335,7 +357,7 @@ class Documents extends React.PureComponent {
                             disable={toolbarParams['btnAdd'].disabled}/>
                     <BtnEdit onClick={this.btnEditClick} show={toolbarParams['btnEdit'].show}
                              disable={toolbarParams['btnEdit'].disabled}/>
-                    <BtnDelete onClick={this.btnDeleteClick} show={toolbarParams['btnDelete'].show}
+                    <BtnDelete onClick={this.btnDeleteClick.bind(this)} show={toolbarParams['btnDelete'].show}
                                disable={toolbarParams['btnDelete'].disabled}/>
                     <BtnPrint onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
                               disable={toolbarParams['btnPrint'].disabled}/>
@@ -401,12 +423,14 @@ class Documents extends React.PureComponent {
     /**
      * Выполнит запросы
      */
-    fetchData() {
-        const URL = `/newApi`;
+    fetchData(method) {
+        const URL = method === 'delete' ? `/newApi/delete` : `/newApi`;
 
         const params = {
             parameter: this.docTypeId, // параметры
             sortBy: this.state.sortBy, // сортировка
+            docId: this.state.value,
+            method: method,
             sqlWhere: this.state.sqlWhere, // динамический фильтр грида
             lastDocId: null,
             module: this.props.module,
@@ -414,45 +438,38 @@ class Documents extends React.PureComponent {
             uuid: this.props.userData.uuid
         };
         try {
-            fetchData.fetchDataPost(URL, params).then(response => {
+            return fetchData['fetchDataPost'](URL, params).then(response => {
 
                 if (response.status && response.status == 401) {
-                    document.location= `/login`;
+                    document.location = `/login`;
                 }
 
-                this.gridData = response.data.result.data;
+                if (method === 'selectDocs') {
 
-                if (response.data.gridConfig.length) {
-                    this.gridConfig = response.data.gridConfig;
+                    this.gridData = response.data.result.data;
 
-                    //refresh filterdata
-                    this.filterData = this.gridConfig.map((row) => {
-                        // props.data пустое, создаем
+                    if (response.data.gridConfig.length) {
+                        this.gridConfig = response.data.gridConfig;
 
-                        return {value: null, name: row.id, type: row.type ? row.type : 'text'};
-                    });
+                        //refresh filterdata
+                        this.filterData = this.gridConfig.map((row) => {
+                            // props.data пустое, создаем
 
-                    //apply filter
-                    if (this.props.history && this.props.history.location.state) {
-                        this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
+                            return {value: null, name: row.id, type: row.type ? row.type : 'text'};
+                        });
+
+                        //apply filter
+                        if (this.props.history && this.props.history.location.state) {
+                            this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
+                        }
                     }
-                }
 
+                }
                 this.forceUpdate();
-            }).catch(function (error) {
-                if (error.response) {
-                    // Request made and server responded
-                    console.log(error.response.data);
-                    console.log(error.response.status);
-                    console.log(error.response.headers);
-                } else if (error.request) {
-                    // The request was made but no response was received
-                    console.log(error.request);
-                } else {
-                    // Something happened in setting up the request that triggered an Error
-                    console.log('Error', error.message);
-                }
 
+            }).catch(function (error) {
+                // Something happened in setting up the request that triggered an Error
+                console.error('Error', error);
             });
 
         } catch (e) {
@@ -473,7 +490,7 @@ Documents.propTypes = {
         userAccessList: PropTypes.array,
         asutus: PropTypes.string,
         userName: PropTypes.string,
-        id:PropTypes.number
+        id: PropTypes.number
     }).isRequired,
     initData: PropTypes.shape({
         result: PropTypes.object,

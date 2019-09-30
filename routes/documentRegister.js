@@ -5,7 +5,6 @@ const React = require('react');
 const ReactServer = require('react-dom/server');
 const getModule = require('./../libs/getModule');
 
-
 exports.get = async (req, res) => {
     // рендер грида на сервере при первой загрузке странице
     // берем тип документа из параметра в адресе
@@ -18,9 +17,6 @@ exports.get = async (req, res) => {
 
     const DocumentRegister = require(`../frontend/docs/${documentType}/index.jsx`);
     let user = require('../middleware/userData')(req);  // check for userid in session
-
-    console.log(' DocumentRegister get, user->', user);
-
 
     if (!user) {
         //error 401, no user
@@ -141,5 +137,39 @@ exports.put = async (req, res) => {
 
     res.send({result: {error_code: 0, error_message: null, docId: prepairedData.id}, data: [prepairedData]}); //пока нет новых данных
 
+
+};
+
+exports.delete = async (req, res) => {
+    const documentType = req.body.parameter.toUpperCase(); // получим из параметра тип документа
+    const docId = Number(req.body.docId); //ид документа
+    const module = req.body.module || 'lapsed'; // используемый модуль
+    const userId = req.body.userId;
+
+
+    const Doc = require('./../classes/DocumentTemplate');
+
+    // вызвать метод. Есди ИД = 0, то вызывается запрос на создание нового документа
+
+    let user = require('../middleware/userData')(req); // данные пользователя
+
+    if (!userId) {
+        console.log('no userId', userId, req.body, user.userId);
+        return res.status(401).end();
+    }
+    const params = {
+        documentType: documentType,
+        docId: docId,
+        user: user
+    };
+
+
+    const Document = new Doc(documentType, docId, userId, user.asutusId, module.toLowerCase());
+    let data;
+
+    console.log('documentRegister, calling delete', req.body);
+
+    data = {result: await Document.delete()};
+    res.send({data: data});
 
 };
