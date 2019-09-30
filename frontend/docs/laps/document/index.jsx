@@ -15,7 +15,7 @@ const
     styles = require('./laps.styles');
 
 const LIBDOK = 'LAPS',
-    LIBRARIES = ['asutused'];
+    LIBRARIES = [];
 
 const now = new Date();
 

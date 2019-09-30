@@ -18,7 +18,7 @@ const
     styles = require('./styles');
 
 const LIBDOK = 'LAPSE_KAART',
-    LIBRARIES = ['tunnus', 'nomenclature'];
+    LIBRARIES = [{id:'tunnus', filter:''}, {id:'nomenclature', filter:`where id in (select nomid from lapsed.lapse_kaart)`}];
 
 const now = new Date();
 
@@ -94,12 +94,6 @@ class Laps extends React.PureComponent {
             //new record
             self.docData.parentid = this.state.lapsId;
         }
-
-        let doc = this.refs['document'];
-        let libs = doc ? doc.libs : {};
-        const nomData = self.libs['nomenclature'].filter(lib => {
-            if (!lib.dok || lib.dok === LIBDOK) return lib;
-        });
 
         let buttonEditNom = styles.btnEditNom;
 

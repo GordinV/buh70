@@ -15,7 +15,16 @@ const DocumentTemplate = require('../../documentTemplate/index.jsx'),
     styles = require('./smk-style');
 
 const LIBDOK = 'SMK',
-    LIBRARIES = ['asutused', 'kontod', 'dokProps', 'tunnus', 'project', 'nomenclature', 'aa'];
+    LIBRARIES = [
+        {id:'kontod',filter:''},
+        {id:'dokProps',filter:''},
+        {id:'users',filter:''},
+        {id:'tunnus',filter:''},
+        {id:'project',filter:''},
+        {id:'nomenclature',filter:`where dok = 'MK'`},
+        {id:'asutused',filter:`where id in (select asutusid from lapsed.vanemad)`},
+        {id:'aa',filter:''}
+    ];
 
 let now = new Date();
 
@@ -211,10 +220,6 @@ class Smk extends React.PureComponent {
 
         if (!row) return <div/>;
 
-        let nomData = self.libs['nomenclature'].filter(lib => {
-            if (!lib.dok || lib.dok === LIBDOK) return lib;
-        });
-
         return (<div className='.modalPage'>
                 <ModalPage
                     modalObjects={modalObjects}
@@ -226,7 +231,7 @@ class Smk extends React.PureComponent {
                         <div style={styles.docRow}>
                             <Select title="Operatsioon"
                                     name='nomid'
-                                    data={nomData}
+                                    data={self.libs['nomenclature']}
                                     value={row.nomid || 0}
                                     collId = 'id'
                                     defaultValue={row.kood || ''}

@@ -49,7 +49,6 @@ class DocumentTemplate extends React.PureComponent {
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
             'modalPageClick', 'handleGridRowChange');
 
-        this.libs = this.createLibs(); //создаст объект для хранения справочников
 
         this.gridRowData = {}; //будем хранить строку грида
     }
@@ -63,7 +62,9 @@ class DocumentTemplate extends React.PureComponent {
             this.fetchData();
         }
 
-        if (this.props.libs.length && !this.state.loadedLibs) {
+        this.libs = this.createLibs(); //создаст объект для хранения справочников
+
+        if (this.props.libs.length && !this.state.loadedLibs && _.has(this.userData, 'uuid')) {
             this.loadLibs();
         }
 
@@ -74,9 +75,14 @@ class DocumentTemplate extends React.PureComponent {
 
     }
 
+
     render() {
         let isInEditMode = this.state.edited,
             validationMessage = this.state.warning + isInEditMode ? this.validation() : '';
+
+        if (this.props.libs.length && !this.state.loadedLibs && _.has(this.userData, 'uuid')) {
+            this.loadLibs();
+        }
 
         return (
             <div>
@@ -416,11 +422,11 @@ class DocumentTemplate extends React.PureComponent {
         let libs = this.props.libs.length;
         let postUrl = '/newApi/loadLibs';
 
-        this.props.libs.forEach(lib => {
+        Object.keys(this.libs).forEach ((lib) => {
             let params = Object.assign({
                 module: this.props.module,
-                userId: this.props.userData.userId,
-                uuid: this.props.userData.uuid,
+                userId: this.userData.id,
+                uuid: this.userData.uuid,
             }, _.has(this.state.libParams, lib) ? {
                 sql: this.state.libParams[lib]
             } : {});
@@ -439,11 +445,13 @@ class DocumentTemplate extends React.PureComponent {
             }).catch(error => {
                 console.error('loadLibs error', error);
                 // possibly auth error, so re-login
+                /*
                 if (this.props.history) {
                     console.error('loadLibs error, re-login', error);
 
                     this.props.history.push(`/login`);
                 }
+                */
             });
         });
     }
@@ -454,8 +462,18 @@ class DocumentTemplate extends React.PureComponent {
      */
     createLibs() {
         let libs = {};
+        let libParams = {};
         this.props.libs.forEach((lib) => {
-            libs[lib] = [];
+            if ( typeof lib == 'object') {
+                //object
+                libs[lib.id] = [];
+                libParams[lib.id] =  lib.filter;
+                libParams = Object.assign(this.state.libParams, {libParams});
+
+                this.setState({libParams: libParams});
+            } else {
+                libs[lib] = [];
+            }
         });
         return libs;
     }
@@ -659,7 +677,11 @@ class DocumentTemplate extends React.PureComponent {
     }
 
     _bind(...methods) {
-        methods.forEach((method) => this[method] = this[method].bind(this));
+        methods.forEach((method) => {
+            if (this[method]) {
+                this[method] = this[method].bind(this)
+            }
+        });
     }
 
 }

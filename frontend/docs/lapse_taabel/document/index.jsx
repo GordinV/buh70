@@ -18,7 +18,7 @@ const
     styles = require('./styles');
 
 const LIBDOK = 'LAPSE_TAABEL',
-    LIBRARIES = ['lapse_kaart'];
+    LIBRARIES = [{id: 'lapse_kaart', filter: ''}];
 
 const now = new Date();
 

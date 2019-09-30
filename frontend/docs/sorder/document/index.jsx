@@ -19,7 +19,15 @@ const
     styles = require('./sorder-style');
 
 const LIBDOK = 'SORDER',
-    LIBRARIES = ['kontod', 'dokProps', 'tunnus', 'project', 'nomenclature', 'kassa'];
+    LIBRARIES = [
+        {id:'kontod',filter:''},
+        {id:'dokProps',filter:''},
+        {id:'tunnus',filter:''},
+        {id:'project',filter:''},
+        {id:'nomenclature',filter:`where dok = 'SORDER'`},
+        {id:'kassa',filter:''}
+    ];
+
 
 const now = new Date();
 
@@ -318,13 +326,6 @@ class Sorder extends React.PureComponent {
 
         if (!row) return <div/>;
 
-
-        let nomData = [];
-
-        nomData = self.libs['nomenclature'].filter(lib => {
-            if (!lib.dok || lib.dok === LIBDOK) return lib;
-        });
-
         return (<div className='.modalPage'>
                 <ModalPage
                     modalObjects={modalObjects}
@@ -343,7 +344,7 @@ class Sorder extends React.PureComponent {
                             <Select title="Teenus"
                                     name='nomid'
                                     libs="nomenclature"
-                                    data={nomData}
+                                    data={self.libs['nomenclature']}
                                     value={row.nomid || 0}
                                     defaultValue={row.kood || ''}
                                     ref='nomid'

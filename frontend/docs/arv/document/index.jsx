@@ -19,8 +19,16 @@ const
     styles = require('./arve.styles');
 
 const LIBDOK = 'ARV',
-    LIBRARIES = ['kontod', 'dokProps', 'users', 'tunnus', 'project', 'nomenclature'];
+    LIB_OBJS = [
+        {id:'kontod',filter:''},
+        {id:'dokProps',filter:''},
+        {id:'users',filter:''},
+        {id:'tunnus',filter:''},
+        {id:'project',filter:''},
+        {id:'nomenclature',filter:`where dok = 'ARV'`}
+        ];
 // 'aa',
+//"where dok = 'ARV'"
 
 const now = new Date();
 
@@ -80,7 +88,7 @@ class Arve extends React.PureComponent {
                                  requiredFields={this.requiredFields}
                                  userData={this.props.userData}
                                  initData={initData}
-                                 libs={LIBRARIES}
+                                 libs={LIB_OBJS}
                                  pages={this.pages}
                                  renderer={this.renderer}
                                  createGridRow={this.createGridRow}

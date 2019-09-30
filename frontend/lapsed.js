@@ -8,8 +8,6 @@ const Doc = require('../frontend/modules/lapsed.jsx');
 initData = JSON.parse(initData);
 userData = JSON.parse(userData);
 
-console.log('init data', userData);
-
 ReactDOM.hydrate(
     <BrowserRouter>
         <Doc initData={initData} userData={userData}/>

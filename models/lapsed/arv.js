@@ -323,10 +323,10 @@ const Arv = {
                            a.arve::TEXT                         AS aa,
                            a.viitenr::TEXT                      AS viitenr,
                            a.isikukood,
-                           a.nimi
+                           a.nimi,
+                           $2::INTEGER                          AS userId
                     FROM lapsed.cur_laste_arved a
-                    WHERE a.rekvId = $1::INTEGER
-                      AND docs.usersRigths(a.id, 'select', $2::INTEGER)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                    WHERE a.rekvId = $1::INTEGER`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curLasteArved'
     },

@@ -113,6 +113,8 @@ class Document {
             return [];
         }
 
+        console.log('selectLibs params', sql, params);
+
         const dbResult = Object.assign({},
             await db.queryDb(sql, params, '', sqlWhere, sqlLimit),
             {gridConfig: libGridConfig, searchFields: libSearchFields}

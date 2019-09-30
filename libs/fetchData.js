@@ -18,6 +18,7 @@ module.exports =  {
                 return res;
             })
             .catch(error => {
+                console.error('fetch error', error);
                 return ({result: 'error', status: 401});
             })
     },

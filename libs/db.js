@@ -31,7 +31,7 @@ const db = {
             }
 
         } catch (e) {
-            console.error('tekkis viga', e);
+            console.error('tekkis viga', e, prepairedSqlString);
             result.error_code = 9;
             result.error_message = e.message;
         }
