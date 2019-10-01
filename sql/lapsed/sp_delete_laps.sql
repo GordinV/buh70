@@ -108,7 +108,11 @@ GRANT EXECUTE ON FUNCTION lapsed.sp_delete_laps(INTEGER, INTEGER) TO dbpeakasuta
 
 
 /*
-select lapsed.sp_delete_laps(70,1)
+select lapsed.sp_delete_laps(4450,37)
 
 select * from lapsed.laps
+
+select * from ou.userid where id = 4450 or id = 70
+
+update ou.userid set roles = roles || '{"is_arvestaja": true}' where id = 4450
  */

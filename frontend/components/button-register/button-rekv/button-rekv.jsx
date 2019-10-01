@@ -24,7 +24,6 @@ class ButtonRekv extends React.PureComponent {
     }
 
     handleClick(e) {
-        console.log('cliked');
         return this.props.onClick('rekv');
     }
 

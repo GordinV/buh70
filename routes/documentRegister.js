@@ -127,6 +127,11 @@ exports.put = async (req, res) => {
 
     const savedData = await Document.save(params);
 
+    if (!savedData.row || savedData.row.length < 1) {
+        return res.status(500).send({result: {error_code: 1, error_message: 'Error in save', docId: 0}});
+    }
+
+
     const prepairedData = Object.assign({}, savedData.row[0],
         savedData,
         {bpm: savedData.bpm ? savedData.bpm : []},
@@ -154,7 +159,7 @@ exports.delete = async (req, res) => {
     let user = require('../middleware/userData')(req); // данные пользователя
 
     if (!userId) {
-        console.log('no userId', userId, req.body, user.userId);
+        console.error('no userId', userId, req.body, user.userId);
         return res.status(401).end();
     }
     const params = {
@@ -166,8 +171,6 @@ exports.delete = async (req, res) => {
 
     const Document = new Doc(documentType, docId, userId, user.asutusId, module.toLowerCase());
     let data;
-
-    console.log('documentRegister, calling delete', req.body);
 
     data = {result: await Document.delete()};
     res.send({data: data});

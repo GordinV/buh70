@@ -18,7 +18,10 @@ const
     styles = require('./styles');
 
 const LIBDOK = 'LAPSE_KAART',
-    LIBRARIES = [{id:'tunnus', filter:''}, {id:'nomenclature', filter:`where id in (select nomid from lapsed.lapse_kaart)`}];
+    LIBRARIES = [{id: 'tunnus', filter: ''}, {
+        id: 'nomenclature',
+        filter: `where dok = 'ARV'`
+    }];
 
 const now = new Date();
 
@@ -55,8 +58,9 @@ class Laps extends React.PureComponent {
     }
 
     componentDidMount() {
+        let lapsId;
         if (this.props.history && this.props.history.location.state) {
-            let lapsId = this.props.history.location.state.lapsId;
+            lapsId = this.props.history.location.state.lapsId;
             this.setState({lapsId: lapsId});
         }
 
@@ -103,6 +107,7 @@ class Laps extends React.PureComponent {
                     <div style={styles.docColumn}>
                         <SelectData title="Lapse nimi:"
                                     name='parentid'
+                                    userData = {self.userData}
                                     libName="laps"
                                     sqlFields={['nimi', 'isikukood']}
                                     data={[]}

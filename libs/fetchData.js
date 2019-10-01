@@ -21,9 +21,6 @@ module.exports = {
     },
     fetchDataPut(url, params) {
         return axios.put(url, params)
-            .then(res => {
-                return res;
-            })
             .catch(error => console.error('fetchData error', error))
     },
 

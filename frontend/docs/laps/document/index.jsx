@@ -34,6 +34,8 @@ class Laps extends React.PureComponent {
         this.handlePageClick = this.handlePageClick.bind(this);
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
 
+        this.docId = props.docId ? props.docId : Number(props.match.params.docId);
+
 
         this.pages = [
             {pageName: 'Lapse kaart', docTypeId: 'LAPS'},
@@ -101,6 +103,10 @@ class Laps extends React.PureComponent {
         let doc = this.refs['document'];
         let libs = doc ? doc.libs : {};
 
+        if (!this.docId && self.docData.id) {
+            this.docId = self.docData.id;
+        }
+
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>
@@ -110,6 +116,7 @@ class Laps extends React.PureComponent {
                                    name='isikukood'
                                    value={self.docData.isikukood || ''}
                                    readOnly={!isEditMode}
+                                   maxlength="11"
                                    onChange={self.handleInputChange}/>
                         <InputText title='Nimi:'
                                    name='nimi'
@@ -195,19 +202,18 @@ class Laps extends React.PureComponent {
 
     // обработчик события клик на гриде родителей
     handleGridBtnClick(btnName, activeRow, id, docTypeId) {
-
         switch (btnName) {
             case "edit":
 
                 this.props.history.push({
                     pathname: `/lapsed/${docTypeId}/${id}`,
-                    state: {lapsId: this.state.docId, module: this.state.module}
+                    state: {lapsId: this.docId, module: this.state.module}
                 });
                 break;
             case "add":
                 this.props.history.push({
                     pathname: `/lapsed/${docTypeId}/0`,
-                    state: {lapsId: this.state.docId, module: this.state.module}
+                    state: {lapsId: this.docId, module: this.state.module}
                 });
                 break;
             case "delete":

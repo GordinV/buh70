@@ -120,6 +120,6 @@ GRANT EXECUTE ON FUNCTION lapsed.sp_salvesta_laps(JSONB, INTEGER, INTEGER) TO ar
 
 /*
 
-select lapsed.sp_salvesta_laps('{"data":{"id":0,"isikukood":"37303023755","nimi":"test Vladislav Gordin","viitenumber":"123456789","muud":"test","userid":70, "vanemid":2}}'::jsonb, 70::integer, 63::integer) as id
+select lapsed.sp_salvesta_laps('{"data":{"id":0,"isikukood":"1178901234456","nimi":"Lasp 17","viitenumber":null,"muud":"test 17","userid":70}}'::jsonb, 70::integer, 63::integer) as id
 
 */

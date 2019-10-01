@@ -160,12 +160,11 @@ class DocumentTemplate extends React.PureComponent {
             } else {
 
                 this.setState({edited: false, docId: this.docData.id});
-
                 if (this.props.history) {
                     this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
                 }
-
             }
+
         });
     }
 
@@ -422,7 +421,7 @@ class DocumentTemplate extends React.PureComponent {
         let libs = this.props.libs.length;
         let postUrl = '/newApi/loadLibs';
 
-        Object.keys(this.libs).forEach ((lib) => {
+        Object.keys(this.libs).forEach((lib) => {
             let params = Object.assign({
                 module: this.props.module,
                 userId: this.userData.id,
@@ -464,10 +463,10 @@ class DocumentTemplate extends React.PureComponent {
         let libs = {};
         let libParams = {};
         this.props.libs.forEach((lib) => {
-            if ( typeof lib == 'object') {
+            if (typeof lib == 'object') {
                 //object
                 libs[lib.id] = [];
-                libParams[lib.id] =  lib.filter;
+                libParams[lib.id] = lib.filter;
                 libParams = Object.assign(this.state.libParams, {libParams});
 
                 this.setState({libParams: libParams});

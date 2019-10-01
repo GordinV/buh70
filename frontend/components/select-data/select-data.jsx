@@ -55,6 +55,10 @@ class SelectData extends React.PureComponent {
             this.state.readOnly ? styles.readOnly : {}
         );
 
+        if (this.state.value && !this.state.fieldValue) {
+            this.loadLibs()
+        }
+
         return (
             <div style={{display: 'flex'}}>
                 <InputText ref="input"
@@ -184,7 +188,7 @@ class SelectData extends React.PureComponent {
         let limit = this.state.limit;
         let isSeachById = (this.state.value && !fieldValue);
 
-        if (this.props.sqlFields.length && fieldValue.length > 0) {
+        if (this.props.sqlFields && this.props.sqlFields.length && fieldValue && fieldValue.length > 0) {
             this.props.sqlFields.forEach((field) => {
                 let isOr = sqlWhere.length > 0 ? ' or ' : '';
                 sqlWhere = sqlWhere.concat(` ${isOr} encode(${field}::bytea, 'escape') ilike '%${fieldValue.trim()}%'`);
@@ -199,7 +203,7 @@ class SelectData extends React.PureComponent {
         sqlWhere = `where ${sqlWhere}`;
 
 
-        let libParams = sqlWhere.length ? {sql: sqlWhere, limit: limit} : {};
+        let libParams = Object.assign({uuid: this.props.userData.uuid}, sqlWhere.length ? {sql: sqlWhere, limit: limit} : {});
 
         if (sqlWhere.length > 0) {
             fetchData.fetchDataPost(`${postUrl}/${lib}`, libParams).then(response => {

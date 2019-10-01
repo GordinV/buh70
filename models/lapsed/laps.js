@@ -1,12 +1,12 @@
 module.exports = {
-    selectAsLibs: `SELECT *
+    selectAsLibs: `SELECT l.*,
+                          exists(
+                                  SELECT id
+                                  FROM lapsed.lapse_kaart lk
+                                  WHERE lk.rekvid = $1
+                                    AND lk.parentid = l.id
+                              ) AS is_exists
                    FROM lapsed.laps l
-                   WHERE exists(
-                                 SELECT id
-                                 FROM lapsed.lapse_kaart lk
-                                 WHERE lk.rekvid = $1
-                                   AND lk.parentid = l.id
-                             )
                    ORDER BY nimi`,
     libGridConfig: {
         grid: [
@@ -25,7 +25,8 @@ module.exports = {
                      $2::INTEGER                    AS userid,
                      coalesce(ll.jaak, 0)::NUMERIC  AS jaak
               FROM lapsed.laps l
-                       LEFT OUTER JOIN lapsed.lapse_saldod() ll ON ll.laps_id = l.id AND ll.rekv_id IN (SELECT rekvid FROM ou.userid u WHERE u.id = $2)
+                       LEFT OUTER JOIN lapsed.lapse_saldod() ll ON ll.laps_id = l.id AND
+                                                                   ll.rekv_id IN (SELECT rekvid FROM ou.userid u WHERE u.id = $2)
               WHERE l.id = $1::INTEGER`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,

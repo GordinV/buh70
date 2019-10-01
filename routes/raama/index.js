@@ -163,7 +163,6 @@ exports.put = async (req, res) => {
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, docId, user.userId, user.asutusId);
 
-    console.log('saving:', params);
     let savedData = await Document.save(params);
 
     const prepairedData = Object.assign({}, savedData.row[0],
@@ -172,8 +171,6 @@ exports.put = async (req, res) => {
         {relations: savedData.relations ? savedData.relations : []},
         {gridConfig: savedData.gridConfig ? savedData.gridConfig : []});
 
-
-    console.log('prepairedData', savedData, prepairedData);
     res.send({result: {error_code: 0, error_message: null, docId: prepairedData.id}, data: [prepairedData]}); //пока нет новых данных
 
     /*
