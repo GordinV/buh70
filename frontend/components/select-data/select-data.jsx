@@ -60,7 +60,7 @@ class SelectData extends React.PureComponent {
         }
 
         return (
-            <div style={{display: 'flex'}}>
+            <div style={styles.wrapper}>
                 <InputText ref="input"
                            title={this.props.title}
                            name={this.props.name}

@@ -107,7 +107,7 @@ class Laps extends React.PureComponent {
                     <div style={styles.docColumn}>
                         <SelectData title="Lapse nimi:"
                                     name='parentid'
-                                    userData = {self.userData}
+                                    userData={self.userData}
                                     libName="laps"
                                     sqlFields={['nimi', 'isikukood']}
                                     data={[]}
@@ -119,17 +119,17 @@ class Laps extends React.PureComponent {
                                     btnDelete={false}
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditMode}/>
-                        <div style={styles.docColumn}>
-                            <ButtonEdit
-                                ref='btnEdit'
-                                onClick={this.btnEditLapsClick}
-                                show={!isEditMode}
-                                style={buttonEditNom}
-                                disabled={false}
-                            />
-                        </div>
-
                     </div>
+                    <div style={styles.docColumn}>
+                        <ButtonEdit
+                            ref='btnEdit'
+                            onClick={this.btnEditLapsClick}
+                            show={!isEditMode}
+                            style={buttonEditNom}
+                            disabled={false}
+                        />
+                    </div>
+
                 </div>
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
@@ -279,7 +279,7 @@ class Laps extends React.PureComponent {
 
         // осуществит переход на карточку контр-агента
         this.props.history.push({
-            pathname: `/lapsed/${docTypeId}/${docLapsId}`,
+            pathname: `/lapsed/laps/${docLapsId}`,
             state: {teenusId: this.state.docId, module: this.state.module}
         });
 
