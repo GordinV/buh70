@@ -71,6 +71,7 @@ class Select extends React.PureComponent {
             // ищем ИД по значению поля
             this.findFieldValue(this.props.data, this.props.collId, this.props.value);
         }
+
     }
 
     onChange(e) {
@@ -97,18 +98,6 @@ class Select extends React.PureComponent {
         let inputReadOnly = this.state.readOnly || false,
             inputDefaultValue = this.props.defaultValue ? this.props.defaultValue : this.props.value || ''; // Дадим дефолтное значение для виджета, чтоб покать его сразу, до подгрузки библиотеки
 
-        if (!this.state.value) {
-            // добавим пустую строку в массив
-
-            // проверим наличие пустой строки в массиве
-            let emptyObj = this.props.data.filter((obj) => {
-                if (obj.id === 0) {
-                    return obj;
-                }
-            });
-
-        }
-
         let dataValue = this.props.data.filter((item) => {
             if (item[this.props.collId] === this.state.value) {
                 return item;
@@ -127,21 +116,14 @@ class Select extends React.PureComponent {
                 <label ref="label" style={styles.label}
                        htmlFor={this.props.name}>{this.props.title}
                 </label>
-                {/*
-                <input type="text"
-                       id={this.props.name}
-                       style={inputStyle}
-                       ref="input"
-                       value={inputDefaultValue}
-                       readOnly={true}/>
 
-*/}
                 <select ref="select"
                         style={selectStyle}
-                        value={this.state.value}
+                        value={this.state.value || 0}
                         id={this.props.name}
                         disabled={this.state.readOnly}
-                        onChange={this.onChange}>{this.prepaireDataOptions()}
+                        onChange={this.onChange}>
+                    {this.prepaireDataOptions()}
                 </select>
                 {/*
                 <button ref="button"
@@ -168,7 +150,12 @@ class Select extends React.PureComponent {
         let options;
         let data = this.props.data.length ? this.props.data : [];
 
+
         if (data.length) {
+            if (!this.state.value) {
+                // will add empty row
+                data.unshift({id: 0, kood: '', nimetus: ''});
+            }
 
             options = data.map((item, index) => {
                 let key = 'option-' + index;
@@ -177,6 +164,8 @@ class Select extends React.PureComponent {
                 return <option value={this.props.data.length ? item[this.props.collId] : 0} key={key}
                                ref={key}> {rowValue} </option>
             }, this);
+
+
         } else {
             options = <option value={0} key={Math.random()}></option>;
         }
