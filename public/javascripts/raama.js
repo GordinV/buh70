@@ -242,7 +242,7 @@ webpackJsonp_name_([1],{
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	var React = __webpack_require__(6);
-	var DocumentRegister = __webpack_require__(276);
+	var DocumentRegister = __webpack_require__(278);
 	var styles = __webpack_require__(326);
 
 	/**
@@ -334,8 +334,8 @@ webpackJsonp_name_([1],{
 	    Select = __webpack_require__(199),
 	    TextArea = __webpack_require__(201),
 	    DataGrid = __webpack_require__(203),
-	    relatedDocuments = __webpack_require__(271),
-	    ModalPage = __webpack_require__(272),
+	    relatedDocuments = __webpack_require__(275),
+	    ModalPage = __webpack_require__(207),
 	    styles = __webpack_require__(331);
 
 	var LIBRARIES = ['asutused', 'kontod', 'tunnus', 'project'];
@@ -1018,7 +1018,7 @@ webpackJsonp_name_([1],{
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	var React = __webpack_require__(6);
-	var DocumentRegister = __webpack_require__(276);
+	var DocumentRegister = __webpack_require__(278);
 	var styles = __webpack_require__(333);
 	var DOC_TYPE_ID = 'vorder';
 
@@ -1112,8 +1112,8 @@ webpackJsonp_name_([1],{
 	    TextArea = __webpack_require__(201),
 	    DataGrid = __webpack_require__(203),
 	    DokProp = __webpack_require__(306),
-	    relatedDocuments = __webpack_require__(271),
-	    ModalPage = __webpack_require__(272),
+	    relatedDocuments = __webpack_require__(275),
+	    ModalPage = __webpack_require__(207),
 	    styles = __webpack_require__(335);
 
 	var LIBDOK = 'VORDER',
@@ -1612,8 +1612,8 @@ webpackJsonp_name_([1],{
 	    TextArea = __webpack_require__(201),
 	    DataGrid = __webpack_require__(203),
 	    DokProp = __webpack_require__(306),
-	    relatedDocuments = __webpack_require__(271),
-	    ModalPage = __webpack_require__(272),
+	    relatedDocuments = __webpack_require__(275),
+	    ModalPage = __webpack_require__(207),
 	    styles = __webpack_require__(337);
 
 	var LIBDOK = 'VMK',
@@ -2097,7 +2097,7 @@ webpackJsonp_name_([1],{
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	var React = __webpack_require__(6);
-	var DocumentRegister = __webpack_require__(276);
+	var DocumentRegister = __webpack_require__(278);
 	var styles = __webpack_require__(339);
 	var DOC_TYPE_ID = 'vmk';
 
@@ -2180,7 +2180,7 @@ webpackJsonp_name_([1],{
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	var React = __webpack_require__(6);
-	var Documents = __webpack_require__(276);
+	var Documents = __webpack_require__(278);
 	var styles = __webpack_require__(341);
 	var DOC_TYPE_ID = 'kontod';
 
@@ -2440,7 +2440,7 @@ webpackJsonp_name_([1],{
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	var React = __webpack_require__(6);
-	var Documents = __webpack_require__(276);
+	var Documents = __webpack_require__(278);
 	var styles = __webpack_require__(345);
 	var DOC_TYPE_ID = 'project';
 	/**
@@ -2675,7 +2675,7 @@ webpackJsonp_name_([1],{
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	var React = __webpack_require__(6);
-	var Documents = __webpack_require__(276);
+	var Documents = __webpack_require__(278);
 	var styles = __webpack_require__(349);
 	var DOC_TYPE_ID = 'tunnus';
 
@@ -2921,7 +2921,7 @@ webpackJsonp_name_([1],{
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	var React = __webpack_require__(6);
-	var Documents = __webpack_require__(276);
+	var Documents = __webpack_require__(278);
 	var styles = __webpack_require__(353);
 
 	/**

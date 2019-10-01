@@ -56,7 +56,7 @@ class Input extends React.PureComponent {
                            pattern={this.props.pattern}
                            placeholder={inputPlaceHolder}
                            onChange={this.onChange}
-                           maxlength={this.props.maxlength}
+                           maxLength={this.props.maxLength}
                            disabled={this.props.disabled}
                     />
 

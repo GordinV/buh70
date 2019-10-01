@@ -16,13 +16,13 @@ DECLARE
     DOC_STATUS   INTEGER = 3; -- документ удален
 BEGIN
 
-    SELECT v.*,
+    SELECT lk.*,
            u.ametnik::TEXT                      AS kasutaja,
            (u.roles -> 'is_arvestaja')::BOOLEAN AS is_arvestaja
            INTO v_doc
-    FROM lapsed.vanemad v
+    FROM lapsed.lapse_kaart lk
              JOIN ou.userid u ON u.id = user_id
-    WHERE v.id = doc_id;
+    WHERE lk.id = doc_id;
 
     -- проверка на пользователя и его соответствие учреждению
 

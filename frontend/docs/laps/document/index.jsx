@@ -33,8 +33,10 @@ class Laps extends React.PureComponent {
         this.renderer = this.renderer.bind(this);
         this.handlePageClick = this.handlePageClick.bind(this);
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
+        this.fetchData = this.fetchData.bind(this);
 
         this.docId = props.docId ? props.docId : Number(props.match.params.docId);
+        this.userData = this.props.userData;
 
 
         this.pages = [
@@ -107,6 +109,8 @@ class Laps extends React.PureComponent {
             this.docId = self.docData.id;
         }
 
+        this.userData = self.userData;
+
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>
@@ -116,7 +120,7 @@ class Laps extends React.PureComponent {
                                    name='isikukood'
                                    value={self.docData.isikukood || ''}
                                    readOnly={!isEditMode}
-                                   maxlength="11"
+                                   maxLength="11"
                                    onChange={self.handleInputChange}/>
                         <InputText title='Nimi:'
                                    name='nimi'
@@ -202,6 +206,7 @@ class Laps extends React.PureComponent {
 
     // обработчик события клик на гриде родителей
     handleGridBtnClick(btnName, activeRow, id, docTypeId) {
+
         switch (btnName) {
             case "edit":
 
@@ -217,7 +222,16 @@ class Laps extends React.PureComponent {
                 });
                 break;
             case "delete":
-                console.log('btnDelete clicked');
+                //send post to delete row
+                this.fetchData(docTypeId, id).then((response) => {
+
+                    const current = this.props.location.pathname;
+                    this.props.history.replace(`/reload`);
+                    setTimeout(() => {
+                        this.props.history.replace(current);
+                    });
+
+                });
                 break;
             default:
                 console.log('Vigane click');
@@ -225,6 +239,23 @@ class Laps extends React.PureComponent {
 
     }
 
+    // отправит запрос на удаление с параметром тип документа и ид
+
+    fetchData(docTypeId, id) {
+        const fetchData = require('./../../../../libs/fetchData');
+
+        const url = `/newApi/delete`;
+
+        const params = {
+            parameter: docTypeId,
+            module: 'lapsed',
+            userId: this.userData.userId,
+            uuid: this.userData.uuid,
+            docId: id
+        };
+
+        return fetchData['fetchDataPost'](url, params)
+    }
 }
 
 Laps.propTypes = {

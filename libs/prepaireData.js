@@ -34,10 +34,6 @@ class PrepaireData {
             docBpm = this.config.bpm;
         }
 
-        sqls.forEach(sql => {
-            console.log('sql:', sql);
-        });
-
 
         return {};
     }

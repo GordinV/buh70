@@ -8,6 +8,7 @@ const React = require('react'),
     GridButtonAdd = require('./../button-register/button-register-add/button-register-add.jsx'),
     GridButtonEdit = require('./../button-register/button-register-edit/button-register-edit.jsx'),
     GridButtonDelete = require('./../button-register/button-register-delete/button-register-delete.jsx'),
+    ModalPageDelete = require('./../../components/modalpage/modalpage-delete/modalPage-delete.jsx'),
 
     keydown = require('react-keydown');
 
@@ -30,6 +31,7 @@ class DataGrid extends React.PureComponent {
         this.state = {
             activeRow: 0,
             activeColumn: '',
+            isDelete: false,
             sort: {
                 name: null,
                 direction: null
@@ -79,7 +81,8 @@ class DataGrid extends React.PureComponent {
                     </table>
                 </div>
                 <div style={styles.wrapper}>
-                    <table style={tableStyle} tabIndex = "1" onKeyDown={this.handleKeyDown} onKeyPress={this.handleKeyDown}>
+                    <table style={tableStyle} tabIndex="1" onKeyDown={this.handleKeyDown}
+                           onKeyPress={this.handleKeyDown}>
                         <tbody>
                         <tr style={{visibility: 'collapse'}}>
                             {this.prepareTableHeader(true)}
@@ -88,6 +91,11 @@ class DataGrid extends React.PureComponent {
                         </tbody>
                     </table>
                 </div>
+                <ModalPageDelete
+                    show={this.state.isDelete}
+                    modalPageBtnClick={this.modalDeletePageBtnClick.bind(this)}>
+                </ModalPageDelete>
+
             </div>
         )
             ;
@@ -95,12 +103,29 @@ class DataGrid extends React.PureComponent {
     } // render
 
 
+    modalDeletePageBtnClick(btnEvent) {
+        //close modalpage
+        this.setState({isDelete: false});
+
+        if (btnEvent === 'Ok' && this.props.handleGridBtnClick) {
+            this.props.handleGridBtnClick('delete',
+                this.state.activeRow,
+                _.size(this.props.gridData) ? this.props.gridData[this.state.activeRow].id : 0,
+                this.props.docTypeId ? this.props.docTypeId : '');
+        }
+    }
+
     handleGridBtnClick(btnName) {
         let activeRow = this.state.activeRow;
 
         let id = _.size(this.props.gridData) ? this.props.gridData[activeRow].id : 0;
 
-        let docTypeId = this.props.docTypeId ? this.props.docTypeId: '';
+        let docTypeId = this.props.docTypeId ? this.props.docTypeId : '';
+
+        if (btnName === 'delete' && !this.state.isDelete) {
+            // should open modal page and ask confirmation
+            return this.setState({isDelete: true});
+        }
 
         if (this.props.handleGridBtnClick) {
             this.props.handleGridBtnClick(btnName, activeRow, id, docTypeId);
@@ -271,8 +296,8 @@ class DataGrid extends React.PureComponent {
                 style = Object.assign({}, styles[headerStyle], !display ? {display: 'none'} : {}, {width: width}),
                 activeColumn = this.state.activeColumn,
                 iconType = this.state.sort.direction,
-                imageStyleAsc = Object.assign({}, styles.image, (activeColumn == column.id && iconType == 'asc' ) ? {} : {display: 'none'}),
-                imageStyleDesc = Object.assign({}, styles.image, (activeColumn == column.id && iconType == 'desc' ) ? {} : {display: 'none'});
+                imageStyleAsc = Object.assign({}, styles.image, (activeColumn == column.id && iconType == 'asc') ? {} : {display: 'none'}),
+                imageStyleDesc = Object.assign({}, styles.image, (activeColumn == column.id && iconType == 'desc') ? {} : {display: 'none'});
 
             // установить видимость
             return (<th
@@ -295,7 +320,7 @@ DataGrid.propTypes = {
             name: PropTypes.string.isRequired,
             width: PropTypes.string,
             show: PropTypes.bool,
-            type: PropTypes.oneOf(['text', 'number', 'integer', 'date', 'string','select'])
+            type: PropTypes.oneOf(['text', 'number', 'integer', 'date', 'string', 'select'])
         })).isRequired,
     gridData: PropTypes.array.isRequired,
     onChangeAction: PropTypes.string,

@@ -28,7 +28,6 @@ const userData = function (req) {
         login: userIndex > -1 ? req.session.users[userIndex].kasutaja: null
     }, userIndex > -1 ? req.session.users[userIndex] : {});
 
-    console.log('userData, return', user.userId);
     return user;
 };
 

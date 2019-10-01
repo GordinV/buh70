@@ -347,18 +347,22 @@ class DocumentTemplate extends React.PureComponent {
      * Выполнит запросы
      */
     fetchData(protocol, api) {
+
         let url = api ? api : `${URL}/${this.props.docTypeId}/${this.state.docId}`;
         let method = 'fetchDataPost';
         let params = {
+            docTypeId: '',
             module: this.props.module,
             userId: this.props.userData.userId,
-            uuid: this.props.userData.uuid
+            uuid: this.props.userData.uuid,
+            docId: this.state.docId
         };
         if (protocol) {
             //request call not default
             method = 'fetchData' + protocol;
             params = Object.assign(params, this.docData,);
         }
+
 
         return new Promise((resolved, rejected) => {
             fetchData[method](url, params).then(response => {
@@ -510,6 +514,7 @@ class DocumentTemplate extends React.PureComponent {
         if (this.props.handleGridBtnClick) {
             // если есть обработчик, то отдаем туда, иначе вызываем метод на редактирование строки
             this.props.handleGridBtnClick(btnName, activeRow, id, docTypeId);
+
         } else {
             switch (btnName) {
                 case 'add':
