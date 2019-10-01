@@ -12,12 +12,16 @@ exports.post = (req, res) => {
     }
     let userUuid = req.body.uuid;
 
+
     let user = require('./../middleware/userData')(req);  // check for userid in session
+
+    console.log('changeAsutus', rekvId, req.body, user.asutusId,  userUuid );
 
     // load new User data
     const userName = user.login;
 
     userid.getUserId(userName, rekvId, function (err, userData) {
+        console.log('change start', userName, rekvId);
 
         if (!userData) {
             const err = new HttpError(403, 'No user');
@@ -28,8 +32,10 @@ exports.post = (req, res) => {
             // меняем данные пользователя. все кроме индентификатора
             req.session.users = users.map((userRow) => {
                 if (userUuid !== userRow.uuid) {
+                    console.log('userUuid !== userRow.uuid', userUuid,userRow.uuid);
                     return userRow;
                 } else {
+                    console.log('changing user',userRow.id,  userRow.asutusId, userData.id, userData.asutusId);
                     return {
                         uuid: userRow.uuid,
                         id: userData.id,

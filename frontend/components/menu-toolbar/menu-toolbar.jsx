@@ -179,7 +179,9 @@ class MenuToolBar extends React.PureComponent {
         try {
             let localUrl = `${URL}/${rekvId}`;
             let userId = this.props.userData.userId;
-            const params = {userId: userId, module: this.module};
+            let uuid = this.props.userData.uuid;
+
+            const params = {userId: userId, module: this.module, uuid: uuid};
 
             fetchData.fetchDataPost(localUrl, params).then(response => {
                     document.location.reload();
