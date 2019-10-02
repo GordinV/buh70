@@ -2,6 +2,8 @@
 
 const PropTypes = require('prop-types');
 const React = require('react');
+const fetchData = require('./../../../../libs/fetchData');
+
 
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
@@ -242,7 +244,6 @@ class Laps extends React.PureComponent {
     // отправит запрос на удаление с параметром тип документа и ид
 
     fetchData(docTypeId, id) {
-        const fetchData = require('./../../../../libs/fetchData');
 
         const url = `/newApi/delete`;
 

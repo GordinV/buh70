@@ -26,6 +26,7 @@ class Laps extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
+            module: 'lapsed',
             loadedData: false,
             docId: props.docId ? props.docId : Number(props.match.params.docId),
             lapsId: props.lapsId ? props.lapsId : props.match.params.paramId ? Number(props.match.params.paramId) : 0
@@ -61,6 +62,7 @@ class Laps extends React.PureComponent {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='LAPSE_TAABEL'
+                                 module={this.state.module}
                                  requiredFields={this.requiredFields}
                                  userData={this.props.userData}
                                  initData={initData}
@@ -87,12 +89,6 @@ class Laps extends React.PureComponent {
             self.docData.parentid = this.state.lapsId;
         }
 
-        /*
-                const nomData = self.libs['nomenclature'].filter(lib => {
-                    if (!lib.dok || lib.dok === LIBDOK) return lib;
-                });
-
-        */
         let kpv = new Date(),
             kuu = kpv.getMonth(),
             aasta = kpv.getFullYear();
@@ -114,6 +110,7 @@ class Laps extends React.PureComponent {
                                     boundToData='nimi'
                                     ref="select-parentid"
                                     btnDelete={false}
+                                    userData={self.userData}
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditMode}/>
                     </div>
@@ -208,14 +205,12 @@ class Laps extends React.PureComponent {
             case "add":
                 this.props.history.push(`/lapsed/${docTypeId}/0/${this.state.docId}`);
                 break;
-            case "delete":
-                console.log('btnDelete clicked');
-                break;
             default:
                 console.log('Vigane click');
         }
 
     }
+
 
     //обработчик события по клику кнопки Редактирование сноменклатуры
     btnEditNomClick() {

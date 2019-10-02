@@ -61,9 +61,9 @@ module.exports = {
         {
             gridConfiguration: [
                 {id: "id", name: "id", width: "10%", show: false},
-                {id: "isikukood", name: "Isikukood", width: "10%"},
+                {id: "isikukood", name: "Isikukood", width: "20%"},
                 {id: "nimi", name: "Nimi", width: "30%"},
-                {id: "kood", name: "Kood", width: "30%"},
+                {id: "kood", name: "Kood", width: "10%"},
                 {id: "teenus", name: "Teenus", width: "30%"},
                 {id: "kuu", name: "Kuu", width: "10%"},
                 {id: "aasta", name: "Aasta", width: "10%"},
