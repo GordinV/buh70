@@ -54,21 +54,47 @@ class DataGrid extends React.PureComponent {
 
 
     render() {
-        /*
-         self = this;
-         onKeyDown: this.handleKeyPress('Down'),
-         onDoubleClick: this.handleCellDblClick(),
-         */
         let tableStyle = Object.assign({}, styles.headerTable, this.props.style);
+
+        let toolbarParams = Object.assign({
+
+                btnAdd: {
+                    show: true,
+                    disabled: false
+                },
+                btnEdit: {
+                    show: true,
+                    disabled: false
+                },
+                btnDelete: {
+                    show: true,
+                    disabled: false
+                },
+                btnPrint: {
+                    show: true,
+                    disabled: false
+                }
+            }, (this.props.toolbarParams ? this.props.toolbarParams : {})
+        );
+
         return (
             <div style={styles.main}>
                 {this.props.showToolBar ?
                     <ToolbarContainer
                         ref='grid-toolbar-container'
                         position={'left'}>
-                        <GridButtonAdd onClick={this.handleGridBtnClick} ref="grid-button-add"/>
-                        <GridButtonEdit onClick={this.handleGridBtnClick} ref="grid-button-edit"/>
-                        <GridButtonDelete onClick={this.handleGridBtnClick} ref="grid-button-delete"/>
+                        <GridButtonAdd
+                            show={toolbarParams.btnAdd.show}
+                            onClick={this.handleGridBtnClick}
+                            ref="grid-button-add"/>
+                        <GridButtonEdit
+                            show={toolbarParams.btnEdit.show}
+                            onClick={this.handleGridBtnClick}
+                            ref="grid-button-edit"/>
+                        <GridButtonDelete
+                            show={toolbarParams.btnDelete.show}
+                            onClick={this.handleGridBtnClick}
+                            ref="grid-button-delete"/>
                     </ToolbarContainer> : null}
 
                 <div style={styles.header}>

@@ -3,7 +3,24 @@
 const PropTypes = require('prop-types');
 const React = require('react');
 const fetchData = require('./../../../../libs/fetchData');
-
+const toolbarParams = {
+    btnAdd: {
+        show: true,
+        disabled: false
+    },
+    btnEdit: {
+        show: true,
+        disabled: false
+    },
+    btnDelete: {
+        show: false,
+        disabled: false
+    },
+    btnPrint: {
+        show: true,
+        disabled: false
+    }
+};
 
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
@@ -165,6 +182,7 @@ class Laps extends React.PureComponent {
                               gridData={gridVanemadData}
                               gridColumns={gridVanemadColumns}
                               showToolBar={!isEditMode}
+                              toolbarParams = {toolbarParams}
                               handleGridBtnClick={self.handleGridBtnClick}
                               readOnly={!isEditMode}
                               style={styles.grid.headerTable}
