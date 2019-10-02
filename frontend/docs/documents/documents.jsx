@@ -388,7 +388,7 @@ class Documents extends React.PureComponent {
      * @returns {{btnAdd: {show: boolean, disabled: boolean}, btnEdit: {show: boolean, disabled: boolean}, btnDelete: {show: boolean, disabled: boolean}, btnPrint: {show: boolean, disabled: boolean}}}
      */
     prepareParamsForToolbar() {
-        return {
+        let params = Object.assign({
             btnAdd: {
                 show: this.docTypeId !== 'DOK', //todo сделать поумнее
                 disabled: false
@@ -416,8 +416,9 @@ class Documents extends React.PureComponent {
                 show: true,
                 disabled: false
             }
+        }, (this.props.toolbarParams ? this.props.toolbarParams : {}),);
 
-        };
+        return params
     }
 
     /**
