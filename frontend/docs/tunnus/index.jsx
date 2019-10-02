@@ -16,8 +16,9 @@ class Tunnused extends React.PureComponent {
     render() {
         return <Documents initData={this.props.initData}
                           userData={this.props.userData}
-                          history = {this.props.history ? this.props.history: null}
-                          ref = 'register'
+                          history={this.props.history ? this.props.history : null}
+                          module={this.props.module}
+                          ref='register'
                           docTypeId={DOC_TYPE_ID}
                           style={styles}
                           render={this.renderer}/>;

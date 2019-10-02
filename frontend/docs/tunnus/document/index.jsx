@@ -36,6 +36,7 @@ class Tunnus extends React.PureComponent {
         return <DocumentTemplate docId = {this.state.docId }
                                  ref = 'document'
                                  docTypeId='TUNNUS'
+                                 module={this.props.module}
                                  requiredFields = {this.requiredFields}
                                  userData = {this.props.userData}
                                  initData = {this.props.initData}

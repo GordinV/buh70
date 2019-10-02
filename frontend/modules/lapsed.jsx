@@ -31,6 +31,9 @@ const AsutusRegister = require('./../docs/asutused/index.jsx'),
 const NomRegister = require('./../docs/nomenclature/index.jsx'),
     NomDocument = require('./../docs/nomenclature/document/index.jsx');
 
+const TunnusRegister = require('./../docs/tunnus/index.jsx'),
+    TunnusDocument = require('./../docs/tunnus/document/index.jsx');
+
 
 const {Route, withRouter, Redirect} = require('react-router-dom');
 const {StyleRoot} = require('radium');
@@ -106,6 +109,14 @@ class App extends React.Component {
                        render={(props) => <NomRegister history={props.history} userData={this.props.userData}
                                                        initData={this.props.initData} module={MODULE}/>}/>
                 <Route exact path="/lapsed/nomenclature/:docId" component={NomDocument}/>
+
+                <Route exact path="/lapsed/tunnus/:docId" component={TunnusDocument}/>
+                <Route exact path="/lapsed/tunnus"
+                       render={(props) => <TunnusRegister
+                           module={MODULE}
+                           history={props.history}
+                           userData={this.props.userData}
+                           initData={this.props.initData}/>}/>
 
             </StyleRoot>
         )
