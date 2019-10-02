@@ -133,10 +133,7 @@ class Document {
             return [];
         }
 
-        console.log('delete, params', sql, params);
-
         const dbResult = await db.queryDb(sql, params );
-        console.log('delete, vastus', dbResult);
         return dbResult;
 
     }

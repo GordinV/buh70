@@ -37,6 +37,14 @@ BEGIN
     json_props = to_jsonb(row)
                  FROM (SELECT doc_arved AS arved, doc_suhtumine AS suhtumine) row;
 
+
+    -- ищем ранее удаленные записи
+    IF doc_id IS NULL OR doc_id = 0
+    THEN
+        SELECT id INTO doc_id FROM lapsed.vanemad WHERE parentid = doc_parentid AND asutusid = doc_asutusid;
+    END IF;
+
+
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
@@ -65,9 +73,10 @@ BEGIN
 
         UPDATE lapsed.vanemad
         SET asutusid   = doc_asutusid,
-            properties = coalesce(properties,'{}'::jsonb)::jsonb || json_props,
+            properties = coalesce(properties, '{}'::JSONB)::JSONB || json_props,
             muud       = doc_muud,
-            ajalugu    = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu
+            ajalugu    = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu,
+            staatus    = CASE WHEN staatus = 3 THEN 1 ELSE staatus END
         WHERE id = doc_id RETURNING id
             INTO doc_id;
 

@@ -19,7 +19,7 @@ FROM lapsed.vanemad v
 ) l ON l.id = v.parentid
          INNER JOIN (SELECT DISTINCT lk.parentid, lk.rekvid FROM lapsed.lapse_kaart lk WHERE lk.staatus <> 3) lk
                     ON lk.parentid = v.parentid
-
+WHERE v.staatus <> 3
 GROUP BY a.id, v.id, a.regkood, a.nimetus
 ORDER BY a.nimetus;
 

@@ -105,6 +105,7 @@ class Vanem extends React.PureComponent {
                                     boundToData='vanem_nimi'
                                     ref="select-asutusid"
                                     btnDelete={false}
+                                    userData={self.userData}
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditMode}/>
                     </div>

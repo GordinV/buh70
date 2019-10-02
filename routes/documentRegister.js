@@ -128,6 +128,7 @@ exports.put = async (req, res) => {
     const savedData = await Document.save(params);
 
     if (!savedData.row || savedData.row.length < 1) {
+        console.error('error in save', params, savedData);
         return res.status(500).send({result: {error_code: 1, error_message: 'Error in save', docId: 0}});
     }
 

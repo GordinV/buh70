@@ -18,7 +18,7 @@ BEGIN
 
     SELECT v.*,
            u.ametnik::TEXT                      AS kasutaja,
-           (u.roles -> 'is_arvestaja')::BOOLEAN AS is_arvestaja
+           (u.roles ->> 'is_arvestaja')::BOOLEAN AS is_arvestaja
            INTO v_doc
     FROM lapsed.vanemad v
              JOIN ou.userid u ON u.id = user_id
