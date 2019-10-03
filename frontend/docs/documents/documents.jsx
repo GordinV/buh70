@@ -260,10 +260,10 @@ class Documents extends React.PureComponent {
                 switch (row.type) {
 
                     case 'text':
-                        filterString = filterString + row.name + " ilike '%" + row.value.trim() + "%'";
+                        filterString = `${filterString}  encode(${row.name}::bytea, 'escape')  ilike '%${row.value.trim()}%'`;
                         break;
                     case 'string':
-                        filterString = filterString + row.name + " ilike '" + row.value.trim() + "%'";
+                        filterString = `${filterString}  encode(${row.name}::bytea, 'escape')  ilike '%${row.value.trim()}%'`;
                         break;
                     case 'date':
                         filterString = filterString + row.name + " = '" + row.value + "'";
