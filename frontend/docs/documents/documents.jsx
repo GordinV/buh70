@@ -100,7 +100,6 @@ class Documents extends React.PureComponent {
 
     render() {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
-
         return (
             <div style={_style.doc}>
                 <div style={_style.docRow}>
@@ -261,10 +260,10 @@ class Documents extends React.PureComponent {
                 switch (row.type) {
 
                     case 'text':
-                        filterString = filterString + row.name + " ilike '%" + row.value + "%'";
+                        filterString = filterString + row.name + " ilike '%" + row.value.trim() + "%'";
                         break;
                     case 'string':
-                        filterString = filterString + row.name + " ilike '" + row.value + "%'";
+                        filterString = filterString + row.name + " ilike '" + row.value.trim() + "%'";
                         break;
                     case 'date':
                         filterString = filterString + row.name + " = '" + row.value + "'";
@@ -450,14 +449,19 @@ class Documents extends React.PureComponent {
                     this.gridData = response.data.result.data;
 
                     if (response.data.gridConfig.length) {
-                        this.gridConfig = response.data.gridConfig;
 
-                        //refresh filterdata
-                        this.filterData = this.gridConfig.map((row) => {
-                            // props.data пустое, создаем
+                        //если конфиг отличается, формируем новый фильтр грида
+                        if (!this.gridConfig.length || JSON.stringify(this.gridConfig) !== JSON.stringify(response.data.gridConfig)) {
+                            this.gridConfig = response.data.gridConfig;
 
-                            return {value: null, name: row.id, type: row.type ? row.type : 'text'};
-                        });
+                            //refresh filterdata
+                            this.filterData = this.gridConfig.map((row) => {
+                                // props.data пустое, создаем
+
+                                return {value: null, name: row.id, type: row.type ? row.type : 'text'};
+                            });
+
+                        }
 
                         //apply filter
                         if (this.props.history && this.props.history.location.state) {

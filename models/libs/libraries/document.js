@@ -1,5 +1,5 @@
 module.exports = {
-    selectAsLibs: "select id, trim(kood) as kood, trim(nimetus) as name from libs.library where library = 'DOK' order by kood",
+    selectAsLibs: "select id, trim(kood) as kood, trim(nimetus) as name, $1 as rekvid from libs.library where library = 'DOK' order by kood",
     select: [{
         sql: `select l.*, $2::integer as userid, 'DOCUMENT' as doc_type_id,
                 (l.properties::jsonb ->>'type')::text as type,

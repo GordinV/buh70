@@ -12,10 +12,10 @@ class GridFilter extends React.PureComponent {
         super(props);
 
         this.state = {
-            gridConfig: this.props.gridConfig // grid config
+            gridConfig: props.gridConfig, // grid config
+            data: props.data
         };
 
-        this.data = this.props.data;
         this.handleChange = this.handleChange.bind(this);
         this.prepareFilterFields = this.prepareFilterFields.bind(this);
     }
@@ -25,52 +25,69 @@ class GridFilter extends React.PureComponent {
      * @param e
      */
     handleChange(e) {
+        let data = this.state.data;
         let value = e.target.value,
             id = e.target.name,
             index;
 
         // надо найти элемент массива с данными для этого компонента
-        for (let i = 0; i < this.data.length; i++) {
-            if (this.data[i].name === id) {
+        for (let i = 0; i < this.state.data.length; i++) {
+            if (this.state.data[i].name === id) {
                 index = i;
                 break;
             }
         }
 
         if (index) {
-            this.data[index].value = value;
+            data[index].value = value;
         }
 
+        this.setState({data: data});
 
         if (this.props.handler) {
-            this.props.handler(this.data);
+            this.props.handler(data);
         }
         this.forceUpdate();
+
     }
 
     componentDidMount() {
+        let data = this.state.data;
         this.props.gridConfig.map((row) => {
             let componentType = row.type ? row.type : 'text';
 
             // props.data пустое, создаем
-            this.data.push({value: null, name: row.id, type: componentType});
-        })
+            data.push({value: null, name: row.id, type: componentType});
+
+        });
+        this.setState({data: data});
+
+    }
+
+
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+
+        if (JSON.stringify(nextProps.gridConfig) !== JSON.stringify(prevState.gridConfig) ||
+            JSON.stringify(nextProps.data) !== JSON.stringify(prevState.data)) {
+            return {gridConfig: nextProps.gridConfig, data: nextProps.data};
+        } else return null;
 
     }
 
     render() {
         // создаст из полей грида компоненты для формирования условий фильтрации
-
         return <div style={styles.fieldset}>
             {this.prepareFilterFields()}
         </div>
     }
 
     prepareFilterFields() {
-        return this.props.gridConfig.map((row) => {
+    let data = this.state.data;
+        return this.state.gridConfig.map((row) => {
             let componentType = row.type ? row.type : 'text';
-            const obj = this.data[_.findIndex(this.data, {name: row.id})];
-            let value = _.has(obj, 'value') ? obj.value : '';
+            const obj = data[_.findIndex(data, {name: row.id})];
+           let value = _.has(obj, 'value') ? obj.value : '';
 
             return <div style={styles.formWidget} key={'fieldSet-' + row.id}>
                 <div style={styles.formWidgetLabel}>
@@ -83,7 +100,7 @@ class GridFilter extends React.PureComponent {
                            name={row.id}
                            placeholder={row.name}
                            ref={row.id}
-                           value={value}
+                           value={value || ''}
                            onChange={this.handleChange}
                            defaultValue={this.props.data[row.id]}
                     />
