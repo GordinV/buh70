@@ -10,10 +10,10 @@ class Index extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            value: props.value/* здесь по значению ИД */,
+            value: props.value ? props.value: 0 /* здесь по значению ИД */,
             readOnly: props.readOnly,
             disabled: props.disabled,
-            fieldValue: props.value /*здесь по значени поля collId */,
+            fieldValue: props.defaultValue ? props.defaultValue: '' /*здесь по значени поля collId */,
             btnDelete: props.btnDelete /* если истину, то рисуем рядом кнопку для очистки значения*/
         };
 
@@ -60,8 +60,8 @@ class Index extends React.PureComponent {
 
     // will update state if props changed
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.value !== prevState.value || nextProps.readOnly !== prevState.readOnly) {
-            return {value: nextProps.value, readOnly: nextProps.readOnly};
+        if (nextProps.value !== prevState.value ) {
+            return {value: nextProps.value};
         } else return null;
     }
 
@@ -95,13 +95,13 @@ class Index extends React.PureComponent {
 
     render() {
         let inputReadOnly = this.state.readOnly || false,
-            inputDefaultValue = this.props.defaultValue? this.props.defaultValue: this.props.value || ''; // Дадим дефолтное значение для виджета, чтоб покать его сразу, до подгрузки библиотеки
+            inputDefaultValue = this.props.defaultValue ? this.props.defaultValue : this.props.value || ''; // Дадим дефолтное значение для виджета, чтоб покать его сразу, до подгрузки библиотеки
 
         if (!this.state.value) {
             // добавим пустую строку в массив
 
             // проверим наличие пустой строки в массиве
-            let emptyObj =this.props.data.filter((obj) => {
+            let emptyObj = this.props.data.filter((obj) => {
                 if (obj.id === 0) {
                     return obj;
                 }
@@ -109,18 +109,12 @@ class Index extends React.PureComponent {
 
         }
 
-        let dataValue = this.props.data.filter((item) => {
-            if (item[this.props.collId] === this.state.value) {
-                return item;
-            }
-        }, this);
-
-        let             selectStyle = Object.assign({}, styles.select, inputReadOnly ? styles.hide : {}, inputReadOnly ? styles.readOnly: {});
+        let selectStyle = Object.assign({}, styles.select, inputReadOnly ? styles.hide : {}, inputReadOnly ? styles.readOnly : {});
 
         return (
             <select ref="select"
                     style={selectStyle}
-                    value={this.state.value}
+                    value={this.state.value || 0}
                     id={this.props.name}
                     onChange={this.onChange}>{this.prepaireDataOptions()}
             </select>);
@@ -132,8 +126,8 @@ class Index extends React.PureComponent {
      * @returns {*}
      */
     prepaireDataOptions() {
-        let options ;
-        let data = this.props.data.length ? this.props.data: [];
+        let options;
+        let data = this.props.data.length ? this.props.data : [];
 
 //        data.unshift({id:0, kood:'', name:''});
         if (data.length) {
@@ -142,7 +136,11 @@ class Index extends React.PureComponent {
                 let key = 'option-' + index;
                 let separator = ' ';
                 let rowValue = `${item.kood ? item.kood : ''} ${separator} ${item.name}`;
-                return <option value={this.props.data.length ? item[this.props.collId]: 0} key={key} ref={key}> {rowValue} </option>
+                return (<option
+                    value={this.props.data.length ? item[this.props.collId] : 0}
+                    key={key}
+                    ref={key}> {rowValue}
+                </option>)
             }, this);
         } else {
             options = <option value={0} key={Math.random()}></option>;
@@ -160,7 +158,7 @@ class Index extends React.PureComponent {
 }
 
 Index.propTypes = {
-    data: PropTypes.arrayOf (PropTypes.shape({
+    data: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.number,
         kood: PropTypes.string,
         nimetus: PropTypes.string
@@ -183,7 +181,7 @@ Index.defaultProps = {
     collId: 'id',
     title: '',
     defaultValue: '',
-    data: [{id:0, kood:'',nimetus:''}]
+    data: [{id: 0, kood: '', nimetus: ''}]
 };
 
 module.exports = radium(Index);

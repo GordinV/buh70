@@ -26,7 +26,8 @@ class MenuToolBar extends React.PureComponent {
             logedIn: true,
             startMenuValue: 'parentid',
             showStartMenu: false,
-            isOpenRekvPage: false
+            isOpenRekvPage: false,
+            rekvId: props.rekvId ? props.rekvId : 0
         };
 
 
@@ -37,6 +38,14 @@ class MenuToolBar extends React.PureComponent {
         this.handleChange = this.handleChange.bind(this);
 
     }
+
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.rekvId !== prevState.rekvId) {
+            return {rekvId: nextProps.rekvId};
+        } else return null;
+    }
+
 
     render() {
         let isEditMode = this.props.edited,
@@ -63,19 +72,16 @@ class MenuToolBar extends React.PureComponent {
 
         let userAccessList = [];
 
-        console.log('DocContext.userData',DocContext.userData);
         if (_.has(DocContext.userData, 'userAccessList')) {
-             userAccessList = DocContext.userData.userAccessList.map((row) => {
+            userAccessList = DocContext.userData.userAccessList.map((row) => {
                 let rowObject = JSON.parse(row);
                 return {id: rowObject.id, kood: '', name: rowObject.nimetus};
             });
         }
 
 
-        let rekvId = 0 ;
-        if (this.state.logedIn && _.has(DocContext.userData,'asutusId')) {
-            rekvId =  DocContext.userData.asutusId;
-        }
+        let rekvId = DocContext.userData ? DocContext.userData.rekvid: 0,
+            asutus = DocContext.userData ? DocContext.userData.asutus : '';
 
         return (
             <div style={style['container']}>
@@ -93,8 +99,8 @@ class MenuToolBar extends React.PureComponent {
                                 style={selectStyle}
                                 data={userAccessList}
                                 readOnly={false}
-                                defaultValue={''}
                                 value={rekvId}
+                                defaultValue={asutus}
                                 collId='id'
                                 ref='rekvId'
                                 onChange={this.handleChange}/>

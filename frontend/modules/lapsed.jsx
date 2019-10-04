@@ -38,6 +38,8 @@ const TunnusRegister = require('./../docs/tunnus/index.jsx'),
 const {Route, withRouter, Redirect} = require('react-router-dom');
 const {StyleRoot} = require('radium');
 const MODULE = 'Lapsed';
+const DocContext = require('./../doc-context.js');
+
 
 
 class App extends React.Component {
@@ -51,11 +53,13 @@ class App extends React.Component {
     render() {
         const context = {};
         let btnParams = this.prepareParamsForToolbar();
-
         return (
             <StyleRoot>
                 <Route path="/lapsed"
-                       render={() => <Menu params={btnParams}  module={MODULE}/>}/>
+                       render={() => <Menu params={btnParams}
+                                           rekvId={DocContext.userData ? DocContext.userData.rekvid: 0}
+                                           module={MODULE}/>}
+                />
 
                 <Route exact path="/lapsed"
                        render={(props) =>

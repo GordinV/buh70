@@ -8,14 +8,17 @@ const React = require('react'),
 
 class ModalPageDelete extends React.PureComponent {
     constructor(props) {
-        super(props)
+        super(props);
         this.state = {
             show: this.props.show
         }
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.setState({show: nextProps.show});
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.show !== prevState.show ) {
+            return {show: nextProps.show};
+        } else return null;
     }
 
     render() {

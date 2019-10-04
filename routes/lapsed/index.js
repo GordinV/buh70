@@ -3,11 +3,12 @@
 const React = require('react');
 const ReactServer = require('react-dom/server');
 const getModule = require('./../../libs/getModule');
-//const {StaticRouter, Route, Router} = require('react-router-dom');
-
 
 const {StaticRouter} = require('react-router');
 const App = require('./../../frontend/modules/lapsed.jsx');
+const DocContext = require('./../../frontend/doc-context');
+
+
 
 exports.get = async (req, res) => {
     let documentType = req.params.documentType ? req.params.documentType : 'laps';
@@ -35,6 +36,10 @@ exports.get = async (req, res) => {
     let storeInitialData = JSON.stringify(sqlData);
     let userData = JSON.stringify(user);
     let context = {};
+
+    DocContext.initData = sqlData;
+    DocContext.userData = user;
+    DocContext.module = 'lapsed';
 
     const Component = React.createElement(
         StaticRouter,
