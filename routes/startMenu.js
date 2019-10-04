@@ -17,7 +17,7 @@ exports.post = async (req, res) => {
         }
 
         let data = await db.queryDb(sqlString, params);
-
+console.log('data', sqlString, params);
         // вернуть данные
         res.status(200).send(data);
     } catch (error) {

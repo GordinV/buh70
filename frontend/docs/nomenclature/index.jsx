@@ -15,7 +15,6 @@ class Nomenclatures extends React.PureComponent {
 
     render() {
         return <Documents initData={this.props.initData}
-                          userData={this.props.userData}
                           history = {this.props.history ? this.props.history: null}
                           ref = 'register'
                           module={this.props.module}

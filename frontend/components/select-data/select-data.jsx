@@ -1,5 +1,7 @@
 'use strict';
 
+const DocContext = require('../../doc-context');
+
 const PropTypes = require('prop-types');
 const getDataByFilter = require('../../../libs/getDataByFilter');
 const fetchData = require('./../../../libs/fetchData');
@@ -203,7 +205,7 @@ class SelectData extends React.PureComponent {
         sqlWhere = `where ${sqlWhere}`;
 
 
-        let libParams = Object.assign({uuid: this.props.userData.uuid}, sqlWhere.length ? {sql: sqlWhere, limit: limit} : {});
+        let libParams = Object.assign({uuid: DocContext.userData.uuid}, sqlWhere.length ? {sql: sqlWhere, limit: limit} : {});
 
         if (sqlWhere.length > 0) {
             fetchData.fetchDataPost(`${postUrl}/${lib}`, libParams).then(response => {

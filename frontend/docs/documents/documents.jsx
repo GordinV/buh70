@@ -3,6 +3,7 @@
 const PropTypes = require('prop-types');
 const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
+const DocContext = require('./../../doc-context.js');
 
 const
     DataGrid = require('./../../components/data-grid/data-grid.jsx'),
@@ -25,8 +26,6 @@ const
 class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
-
-        this.userData = props.userData;
 
         this.gridData = [];
         this.gridConfig = [];
@@ -375,7 +374,6 @@ class Documents extends React.PureComponent {
         let component;
         if (this.state.hasStartMenuVisible) {
             component = <StartMenu ref='startMenu'
-                                   userData={this.props.userData}
                                    value={this.state.startMenuValue}
                                    clickHandler={this.startMenuClickHandler}/>
         }
@@ -434,8 +432,8 @@ class Documents extends React.PureComponent {
             sqlWhere: this.state.sqlWhere, // динамический фильтр грида
             lastDocId: null,
             module: this.props.module,
-            userId: this.props.userData.userId,
-            uuid: this.props.userData.uuid
+            userId: DocContext.userData.userId,
+            uuid: DocContext.userData.uuid
         };
         try {
             return fetchData['fetchDataPost'](URL, params).then(response => {
@@ -490,13 +488,6 @@ class Documents extends React.PureComponent {
 
 
 Documents.propTypes = {
-    userData: PropTypes.shape({
-        userLibraryList: PropTypes.array,
-        userAccessList: PropTypes.array,
-        asutus: PropTypes.string,
-        userName: PropTypes.string,
-        id: PropTypes.number
-    }).isRequired,
     initData: PropTypes.shape({
         result: PropTypes.object,
         gridConfig: PropTypes.array

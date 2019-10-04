@@ -36,7 +36,7 @@ class Smk extends React.PureComponent {
             docId: props.docId ? props.docId: Number(props.match.params.docId),
             loadedData: false,
             lapsId: null,
-            module: 'lapsed'
+            module: this.props.module
         };
 
         this.createGridRow = this.createGridRow.bind(this);
@@ -76,7 +76,6 @@ class Smk extends React.PureComponent {
                                  docTypeId='SMK'
                                  module={this.state.module}
                                  requiredFields={this.requiredFields}
-                                 userData={this.props.userData}
                                  initData={this.props.initData}
                                  libs={LIBRARIES}
                                  pages={this.pages}

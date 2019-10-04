@@ -35,14 +35,7 @@ const Docs = require('./../docs/dok/index.jsx');
 const {Route, withRouter} = require('react-router-dom');
 const {StyleRoot} = require('radium');
 
-/*
 
-const HOC = (comp) => (<comp/>);
-
-module.exports =  withRouter(HOC);
-
-
-*/
 
 class App extends React.Component {
     constructor(props) {
@@ -50,63 +43,58 @@ class App extends React.Component {
         this.prepareParamsForToolbar = this.prepareParamsForToolbar.bind(this);
         this.componets = {};
         this.prepareComponents(this.componets);
-        this.state = {
-            userData: this.props.userData
-        };
-
     }
 
     render() {
-        const context = {};
         let activeStyle = {backgroundColor: 'lightblue'};
         let btnParams = this.prepareParamsForToolbar();
 
         return (
             <StyleRoot>
                 <Route  path="/raama"
-                        render={() => <Menu params = {btnParams} userData={this.state.userData}/>}/>
+                        render={() => <Menu params = {btnParams} />}/>
                 <Route exact path="/raama"
-                       render={(props) => <Docs history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
+                       render={(props) => <Docs history = {props.history} initData={this.props.initData}/>}/>
                 <Route exact path="/raama/docs"
-                       render={(props) => <Docs history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
+                       render={(props) => <Docs history = {props.history}  initData={this.props.initData}/>}/>
                 <Route exact path="/raama/dok"
-                       render={(props) => <Docs history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
+                       render={(props) => <Docs history = {props.history}  initData={this.props.initData}/>}/>
                 <Route exact path="/raama/arv/:docId" component = {ArveDocument} />
                 <Route exact path="/raama/arv"
-                       render={(props) => <ArvedeRegister history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
+                       render={(props) => <ArvedeRegister history = {props.history}  initData={this.props.initData}/>}/>
                 <Route exact path="/raama/asutused/:docId" component = {AsutusDocument} />
                 <Route exact path="/raama/asutused"
-                       render={(props) => <AsutusRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} />}/>
+                       render={(props) => <AsutusRegister history = {props.history}  initData={this.props.initData} />}/>
                 <Route exact path="/raama/sorder/:docId" component = {SorderDocument} />
                 <Route exact path="/raama/sorder"
-                       render={(props) => <SorderideRegister history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
+                       render={(props) => <SorderideRegister history = {props.history}  initData={this.props.initData}/>}/>
                 <Route exact path="/raama/vorder/:docId" component = {VorderDocument} />
                 <Route exact path="/raama/vorder"
-                       render={(props) => <VorderideRegister history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
+                       render={(props) => <VorderideRegister history = {props.history} initData={this.props.initData}/>}/>
                 <Route exact path="/raama/smk/:docId" component = {SmkDocument} />
                 <Route exact path="/raama/smk"
-                       render={(props) => <SmkRegister history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
+                       render={(props) => <SmkRegister history = {props.history} initData={this.props.initData}/>}/>
                 <Route exact path="/raama/vmk/:docId" component = {VmkDocument} />
                 <Route exact path="/raama/vmk"
-                       render={(props) => <VmkRegister history = {props.history} userData={this.props.userData} initData={this.props.initData}/>}/>
+                       render={(props) => <VmkRegister history = {props.history} initData={this.props.initData}/>}/>
                 <Route exact path="/raama/journal/:docId" component = {JournalDocument} />
                 <Route exact path="/raama/journal"
-                       render={(props) => <JournalRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} />}/>
+                       render={(props) => <JournalRegister history = {props.history} initData={this.props.initData} />}/>
                 <Route exact path="/raama/kontod/:docId" component = {KontoDocument} />
                 <Route exact path="/raama/kontod"
-                       render={(props) => <KontoRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} />}/>
+                       render={(props) => <KontoRegister history = {props.history} initData={this.props.initData} />}/>
                 <Route exact path="/raama/nomenclature/:docId" component = {NomDocument} />
                 <Route exact path="/raama/nomenclature"
-                       render={(props) => <NomRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} />}/>
+                       render={(props) => <NomRegister history = {props.history}  initData={this.props.initData} />}/>
                 <Route exact path="/raama/project/:docId" component = {ProjectDocument} />
                 <Route exact path="/raama/project"
-                       render={(props) => <ProjectRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} />}/>
+                       render={(props) => <ProjectRegister history = {props.history}  initData={this.props.initData} />}/>
                 <Route exact path="/raama/tunnus/:docId" component = {TunnusDocument}/>
                 <Route exact path="/raama/tunnus"
-                       render={(props) => <TunnusRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} />}/>
+                       render={(props) => <TunnusRegister history = {props.history}  initData={this.props.initData} />}/>
                 <Route exact path="/raama/document/:docId" component = {DocumentLibDocument} />
                 <Route exact path="/raama/document"
-                       render={(props) => <DocumentLibRegister history = {props.history} userData={this.props.userData} initData={this.props.initData} />}/>
+                       render={(props) => <DocumentLibRegister history = {props.history}  initData={this.props.initData} />}/>
             </StyleRoot>)
     }
 

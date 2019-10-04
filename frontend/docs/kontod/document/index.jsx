@@ -45,7 +45,6 @@ class Kontod extends React.PureComponent {
                                  ref = 'document'
                                  docTypeId='KONTOD'
                                  requiredFields = {this.requiredFields}
-                                 userData = {this.props.userData}
                                  initData = {this.props.initData}
                                  renderer={this.renderer}/>
     }

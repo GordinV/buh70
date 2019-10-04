@@ -49,7 +49,6 @@ class Journal extends React.PureComponent {
                                  ref='document'
                                  docTypeId='JOURNAL'
                                  requiredFields={this.requiredFields}
-                                 userData={this.props.userData}
                                  initData={initData}
                                  libs={LIBRARIES}
                                  pages={this.pages}

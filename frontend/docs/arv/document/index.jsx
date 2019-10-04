@@ -27,17 +27,16 @@ const LIBDOK = 'ARV',
         {id:'project',filter:''},
         {id:'nomenclature',filter:`where dok = 'ARV'`}
         ];
-// 'aa',
-//"where dok = 'ARV'"
 
 const now = new Date();
+
 
 class Arve extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
             loadedData: false,
-            module: 'lapsed',
+            module: props.module,
             lapsId: null,
             docId: props.docId ? props.docId : Number(props.match.params.docId)
         };
@@ -86,7 +85,6 @@ class Arve extends React.PureComponent {
                                  docTypeId='ARV'
                                  module={this.state.module}
                                  requiredFields={this.requiredFields}
-                                 userData={this.props.userData}
                                  initData={initData}
                                  libs={LIB_OBJS}
                                  pages={this.pages}

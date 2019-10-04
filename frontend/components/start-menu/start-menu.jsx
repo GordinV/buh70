@@ -8,6 +8,9 @@ const styles = require('./start-menu.styles'),
     fetchData = require('./../../../libs/fetchData'),
     TreeList = require('./../tree/tree.jsx');
 
+const DocContext = require('./../../doc-context.js');
+
+
 const URL = '/newApi/startMenu';
 
 class StartMenu extends React.PureComponent {
@@ -37,7 +40,6 @@ class StartMenu extends React.PureComponent {
         return (
             <div style={styles.container}>
                 <TreeList ref='treeList'
-                          userData={this.props.userData}
                           data={this.treeData}
                           bindDataField="kood"
                           value={this.state.value}
@@ -57,8 +59,8 @@ class StartMenu extends React.PureComponent {
      * Выполнит запросы
      */
     fetchData(props) {
-        let url = URL + `/${props.module}`;
-        let params = {userId: props.userData.userId, uuid: props.userData.uuid};
+        let url = URL + `/${DocContext.module}`;
+        let params = {userId: DocContext.userData.userId, uuid: DocContext.userData.uuid};
 
         try {
             fetchData.fetchDataPost(url, params)
@@ -67,8 +69,8 @@ class StartMenu extends React.PureComponent {
                         console.error('Error 401, redirect');
                         document.location = `/login`;
                     }
-
                     if (response) {
+
                         this.treeData = response.data.data;
                         this.forceUpdate();
                     }

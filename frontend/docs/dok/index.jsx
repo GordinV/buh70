@@ -17,7 +17,6 @@ class Docs extends React.PureComponent {
         const docTypeId = this.props.initData.docTypeId;
 
         return <Documents initData={this.props.initData}
-                          userData={this.props.userData}
                           history={this.props.history ? this.props.history : null}
                           module={this.props.module}
                           docTypeId={docTypeId}

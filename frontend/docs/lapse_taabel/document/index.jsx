@@ -64,7 +64,6 @@ class Laps extends React.PureComponent {
                                  docTypeId='LAPSE_TAABEL'
                                  module={this.state.module}
                                  requiredFields={this.requiredFields}
-                                 userData={this.props.userData}
                                  initData={initData}
                                  libs={LIBRARIES}
                                  pages={this.pages}

@@ -5,6 +5,7 @@ const Documents = require('./../documents/documents.jsx');
 const styles = require('./asutus-register-styles');
 const DOC_TYPE_ID = 'ASUTUSED';
 
+
 /**
  * Класс реализует документ справочника признаков.
  */
@@ -15,7 +16,6 @@ class Asutused extends React.PureComponent {
 
     render() {
         return <Documents initData={this.props.initData}
-                          userData={this.props.userData}
                           history = {this.props.history ? this.props.history: null}
                           ref = 'register'
                           docTypeId={DOC_TYPE_ID}

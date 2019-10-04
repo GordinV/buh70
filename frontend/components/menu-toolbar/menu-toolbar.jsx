@@ -1,8 +1,11 @@
 'use strict';
 
+const DocContext = require('../../doc-context');
+
 const PropTypes = require('prop-types');
 const {withRouter} = require('react-router-dom');
 const fetchData = require('./../../../libs/fetchData');
+const _ = require('lodash');
 
 
 const React = require('react'),
@@ -20,15 +23,12 @@ class MenuToolBar extends React.PureComponent {
         super(props);
 
         this.state = {
-            logedIn: !!props.userData,
-            rekvIds: props.userData ? props.userData.userAccessList : null,
+            logedIn: true,
             startMenuValue: 'parentid',
             showStartMenu: false,
             isOpenRekvPage: false
         };
 
-        this.module = props.module;
-        this.moduleAddress = this.module === 'Lapsed' ? 'lapsed' : 'raama';
 
         this.btnStartClick = this.btnStartClick.bind(this);
         this.btnLoginClick = this.btnLoginClick.bind(this);
@@ -61,13 +61,21 @@ class MenuToolBar extends React.PureComponent {
             width: '95%'
         };
 
-        const userAccessList = this.props.userData.userAccessList.map((row) => {
-            let rowObject = JSON.parse(row);
-            return {id: rowObject.id, kood: '', name: rowObject.nimetus};
-        });
+        let userAccessList = [];
 
-        const rekvId = this.props.userData.asutusId;
-        const module = this.module;
+        console.log('DocContext.userData',DocContext.userData);
+        if (_.has(DocContext.userData, 'userAccessList')) {
+             userAccessList = DocContext.userData.userAccessList.map((row) => {
+                let rowObject = JSON.parse(row);
+                return {id: rowObject.id, kood: '', name: rowObject.nimetus};
+            });
+        }
+
+
+        let rekvId = 0 ;
+        if (this.state.logedIn && _.has(DocContext.userData,'asutusId')) {
+            rekvId =  DocContext.userData.asutusId;
+        }
 
         return (
             <div style={style['container']}>
@@ -85,14 +93,14 @@ class MenuToolBar extends React.PureComponent {
                                 style={selectStyle}
                                 data={userAccessList}
                                 readOnly={false}
-                                defaultValue={'SAA T'}
+                                defaultValue={''}
                                 value={rekvId}
                                 collId='id'
                                 ref='rekvId'
                                 onChange={this.handleChange}/>
 
                     <BtnAccount ref='btnAccount'
-                                value={this.props.userData ? this.props.userData.userName : ''}
+                                value={DocContext.userData ? DocContext.userData.userName : ''}
                                 onClick={this.btnAccountClick}
                                 show={toolbarParams['btnAccount'].show}
                                 disabled={toolbarParams['btnAccount'].disabled}/>
@@ -110,12 +118,11 @@ class MenuToolBar extends React.PureComponent {
 
     renderStartMenu() {
         let component;
-        let module = this.module;
         if (this.state.showStartMenu) {
             component = <StartMenu ref='startMenu'
-                                   module={module}
+                                   module={DocContext.module}
                                    value={this.state.startMenuValue}
-                                   userData={this.props.userData}
+                                   userData={DocContext.userData}
                                    clickHandler={this.startMenuClickHandler}/>
         }
         return component
@@ -135,34 +142,34 @@ class MenuToolBar extends React.PureComponent {
         this.setState({showStartMenu: false});
         if (this.props.history) {
             return this.props.history.push({
-                pathname: `/${this.moduleAddress}/${value}`,
-                state: {module: this.moduleAddress}
+                pathname: `/${DocContext.module}/${value}`,
+                state: {module: DocContext.module}
 
             });
         } else {
-            document.location.href = `/${this.moduleAddress}/${value}`
+            document.location.href = `/${DocContext.module}/${value}`
         }
     }
 
     btnLoginClick() {
         const URL = '/logout';
-        if (this.state.logedIn) {
-            this.setState({logedIn: false});
+        this.setState({logedIn: false});
 
-            try {
-                let userId = this.props.userData.userId;
-                const params = {userId: userId, module: this.module, uuid: this.props.userData.uuid};
+        try {
+            let userId = DocContext.userData.userId;
+            const params = {
+                userId: userId, module: DocContext.module,
+                uuid: this.state.logedIn ? DocContext.userData.uuid : null
+            };
 
-                fetchData.fetchDataPost(URL, params).then(() => {
-                        document.location.href = '/login';
-                    }
-                );
-            } catch (e) {
-                console.error(e);
-            }
-        } else {
-            document.location.href = '/login';
+            fetchData.fetchDataPost(URL, params).then(() => {
+                    DocContext.userData = null;
+                }
+            );
+        } catch (e) {
+            console.error(e);
         }
+        document.location.href = '/login';
     }
 
 
@@ -175,16 +182,21 @@ class MenuToolBar extends React.PureComponent {
         const URL = '/newApi/changeAsutus';
         let rekvId = inputValue; // choose asutusId
 
+        if (!this.state.logedIn) {
+            return;
+        }
+
         // отправить пост запрос
         try {
             let localUrl = `${URL}/${rekvId}`;
-            let userId = this.props.userData.userId;
-            let uuid = this.props.userData.uuid;
+            let userId = this.state.logedIn ? DocContext.userData.userId : null;
+            let uuid = this.state.logedIn ? DocContext.userData.uuid : null;
 
-            const params = {userId: userId, module: this.module, uuid: uuid};
+            const params = {userId: userId, module: DocContext.module, uuid: uuid};
 
             fetchData.fetchDataPost(localUrl, params).then(response => {
-                    document.location.reload();
+                DocContext.userData = Object.assign(DocContext.userData, response.config.data);
+                document.location.reload();
             });
 
         } catch (e) {

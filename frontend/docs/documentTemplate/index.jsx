@@ -4,6 +4,7 @@ const PropTypes = require('prop-types');
 const _ = require('lodash');
 const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
+const DocContext = require('./../../doc-context.js');
 
 const URL = 'newApi/document';
 
@@ -37,8 +38,6 @@ class DocumentTemplate extends React.PureComponent {
         };
 
         this.docData = Object.keys(props.initData).length ? props.initData : {id: this.props.docId};
-        this.userData = Object.keys(props.userData).length ? props.userData : {};
-        this.port_app = props.userData.port;
         this.backup = {};
         this.requiredFields = props.requiredFields;
         this.pages = this.props.pages || null;
@@ -51,6 +50,7 @@ class DocumentTemplate extends React.PureComponent {
 
 
         this.gridRowData = {}; //будем хранить строку грида
+
     }
 
     /**
@@ -64,7 +64,7 @@ class DocumentTemplate extends React.PureComponent {
 
         this.libs = this.createLibs(); //создаст объект для хранения справочников
 
-        if (this.props.libs.length && !this.state.loadedLibs && _.has(this.userData, 'uuid')) {
+        if (this.props.libs.length && !this.state.loadedLibs && _.has(DocContext.userData, 'uuid')) {
             this.loadLibs();
         }
 
@@ -87,7 +87,6 @@ class DocumentTemplate extends React.PureComponent {
         return (
             <div>
                 {this.renderDocToolBar()}
-
                 <Form pages={this.pages}
                       ref="form"
                       handlePageClick={this.handlePageClick}
@@ -102,6 +101,7 @@ class DocumentTemplate extends React.PureComponent {
                         {this.props.renderer ? this.props.renderer(this) : null}
                     </div>
                 </Form>
+
             </div>
         );
     }
@@ -353,8 +353,8 @@ class DocumentTemplate extends React.PureComponent {
         let params = {
             docTypeId: '',
             module: this.props.module,
-            userId: this.props.userData.userId,
-            uuid: this.props.userData.uuid,
+            userId: DocContext.userData.userId,
+            uuid: DocContext.userData.uuid,
             docId: this.state.docId
         };
         if (protocol) {
@@ -387,12 +387,12 @@ class DocumentTemplate extends React.PureComponent {
                             return rejected();
                         }
                     }
-
+/*
                     if (response.data.userData) {
                         //refresh userData (for auth purpose)
                         this.userData = response.data.userData;
                     }
-
+*/
                     if (response.data.data.length && Object.keys(response.data.data[0]).indexOf('id') !== -1) {
                         this.docData = response.data.data[0];
                         //should return data and called for reload
@@ -428,8 +428,8 @@ class DocumentTemplate extends React.PureComponent {
         Object.keys(this.libs).forEach((lib) => {
             let params = Object.assign({
                 module: this.props.module,
-                userId: this.userData.id,
-                uuid: this.userData.uuid,
+                userId: DocContext.userData.id,
+                uuid: DocContext.userData.uuid,
             }, _.has(this.state.libParams, lib) ? {
                 sql: this.state.libParams[lib]
             } : {});
@@ -694,7 +694,6 @@ DocumentTemplate.propTypes = {
     initData: PropTypes.object, //Содержание документа
     requiredFields: PropTypes.array, // обязательные поля
     edited: PropTypes.bool, //режим редактирования
-    userData: PropTypes.object.isRequired,//пользователь
     docTypeId: PropTypes.string.isRequired, //тип документа
     docId: PropTypes.number.isRequired, //id документа
     libs: PropTypes.array, //список библиотек

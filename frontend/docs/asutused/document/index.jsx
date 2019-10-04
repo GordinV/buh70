@@ -36,7 +36,6 @@ class Asutused extends React.PureComponent {
                                  ref='document'
                                  docTypeId='ASUTUSED'
                                  requiredFields={this.requiredFields}
-                                 userData={this.props.userData}
                                  initData={this.props.initData}
                                  renderer={this.renderer}/>
     }

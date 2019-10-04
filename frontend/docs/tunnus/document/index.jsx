@@ -8,6 +8,8 @@ const DocumentTemplate = require('./../../documentTemplate/index.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     styles = require('./tunnus-styles');
 
+const DocContext = require('./../../../doc-context.js');
+
 /**
  * Класс реализует документ справочника признаков.
  */
@@ -16,7 +18,7 @@ class Tunnus extends React.PureComponent {
         super(props);
 
         this.state = {
-            docId: props.docId ? props.docId: Number(props.match.params.docId),
+            docId: props.docId ? props.docId : Number(props.match.params.docId),
             loadedData: false
         };
 
@@ -29,18 +31,21 @@ class Tunnus extends React.PureComponent {
         ];
 
         this.renderer = this.renderer.bind(this);
+        DocContext.test = 10;
 
     }
 
     render() {
-        return <DocumentTemplate docId = {this.state.docId }
-                                 ref = 'document'
-                                 docTypeId='TUNNUS'
-                                 module={this.props.module}
-                                 requiredFields = {this.requiredFields}
-                                 userData = {this.props.userData}
-                                 initData = {this.props.initData}
-                                 renderer={this.renderer}/>
+        return (
+            <DocumentTemplate docId={this.state.docId}
+                              ref='document'
+                              docTypeId='TUNNUS'
+                              module={this.props.module}
+                              requiredFields={this.requiredFields}
+                              initData={this.props.initData}
+                              renderer={this.renderer}
+            />
+        )
     }
 
     /**
@@ -58,7 +63,7 @@ class Tunnus extends React.PureComponent {
                     <InputText title="Kood "
                                name='kood'
                                ref="input-kood"
-                               readOnly = {!self.state.edited}
+                               readOnly={!self.state.edited}
                                value={self.docData.kood || ''}
                                onChange={self.handleInputChange}/>
                 </div>
@@ -66,18 +71,18 @@ class Tunnus extends React.PureComponent {
                     <InputText title="Nimetus "
                                name='nimetus'
                                ref="input-nimetus"
-                               readOnly = {!self.state.edited}
+                               readOnly={!self.state.edited}
                                value={self.docData.nimetus || ''}
                                onChange={self.handleInputChange}/>
                 </div>
 
                 <div style={styles.docRow}>
-                                <TextArea title="Muud"
-                                          name='muud'
-                                          ref="textarea-muud"
-                                          onChange={self.handleInputChange}
-                                          value={self.docData.muud || ''}
-                                          readOnly={!self.state.edited}/>
+                    <TextArea title="Muud"
+                              name='muud'
+                              ref="textarea-muud"
+                              onChange={self.handleInputChange}
+                              value={self.docData.muud || ''}
+                              readOnly={!self.state.edited}/>
                 </div>
             </div>
         );
@@ -87,13 +92,11 @@ class Tunnus extends React.PureComponent {
 
 Tunnus.propTypes = {
     docId: PropTypes.number,
-    initData: PropTypes.object,
-    userData: PropTypes.object
+    initData: PropTypes.object
 };
 
 Tunnus.defaultProps = {
-    initData:{},
-    userData:{}
+    initData: {},
 };
 
 

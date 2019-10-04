@@ -40,7 +40,6 @@ class Document extends React.PureComponent {
                                  ref = 'document'
                                  docTypeId='DOK'
                                  requiredFields = {this.requiredFields}
-                                 userData = {this.props.userData}
                                  initData = {this.props.initData}
                                  renderer={this.renderer}/>
     }

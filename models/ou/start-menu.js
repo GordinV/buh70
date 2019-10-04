@@ -26,7 +26,7 @@ module.exports = {
                          ) modules ON (properties::JSONB -> 'module')::JSONB @> modules.module
                          WHERE l.library = 'DOK'
                            AND l.status < 3) qry
-                WHERE (id = $1 OR parentid = $1)
+                WHERE (upper(id) = upper($1) OR upper(parentid) = upper($1))
     `,
     params: ['rekvId', 'module']
 };

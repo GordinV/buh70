@@ -1,5 +1,7 @@
 'use strict';
 
+const DocContext = require('../../../doc-context');
+
 const PropTypes = require('prop-types');
 const React = require('react');
 const fetchData = require('./../../../../libs/fetchData');
@@ -55,8 +57,6 @@ class Laps extends React.PureComponent {
         this.fetchData = this.fetchData.bind(this);
 
         this.docId = props.docId ? props.docId : Number(props.match.params.docId);
-        this.userData = this.props.userData;
-
 
         this.pages = [
             {pageName: 'Lapse kaart', docTypeId: 'LAPS'},
@@ -92,7 +92,6 @@ class Laps extends React.PureComponent {
                               module={this.state.module}
                               docTypeId='LAPS'
                               requiredFields={this.requiredFields}
-                              userData={this.props.userData}
                               initData={initData}
                               libs={LIBRARIES}
                               pages={this.pages}
@@ -128,7 +127,6 @@ class Laps extends React.PureComponent {
             this.docId = self.docData.id;
         }
 
-        this.userData = self.userData;
 
         return (
             <div style={styles.doc}>
@@ -268,8 +266,8 @@ class Laps extends React.PureComponent {
         const params = {
             parameter: docTypeId,
             module: 'lapsed',
-            userId: this.userData.userId,
-            uuid: this.userData.uuid,
+            userId: DocContext.userData.userId,
+            uuid: DocContext.userData.uuid,
             docId: id
         };
 

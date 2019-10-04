@@ -17,7 +17,6 @@ class Docs extends React.PureComponent {
 
     render() {
         return <Documents initData={this.props.initData}
-                          userData={this.props.userData}
                           docTypeId='DOKS'
                           ref = 'docs'
                           style={styles}
