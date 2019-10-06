@@ -9,21 +9,17 @@ const
     TextArea = require('../../../components/text-area/text-area.jsx'),
     InputNumber = require('../../../components/input-number/input-number.jsx'),
     styles = require('./nomenclature-styles'),
-    LIBRARIES = ['kontod', 'tunnus', 'project', 'document'];
+    LIBRARIES = ['kontod', 'tunnus', 'project', 'document', 'artikkel', 'allikas', 'tegev'];
 
 
-const DOKUMENTS = [
-        {id: 1, kood: 'ARV', name: 'Arved'}
-    ],
-    CURRENCIES = [{id: 1, kood: 'EUR', name: 'EUR'}],
-    TAXIES = [
-        {id: 1, kood: null, name: '-%'},
-        {id: 2, kood: '0', name: '0%'},
-        {id: 3, kood: '5', name: '5%'},
-        {id: 4, kood: '10', name: '10%'},
-        {id: 5, kood: '18', name: '18%'},
-        {id: 6, kood: '20', name: '20%'}
-    ];
+const TAXIES = [
+    {id: 1, kood: null, name: '-%'},
+    {id: 2, kood: '0', name: '0%'},
+    {id: 3, kood: '5', name: '5%'},
+    {id: 4, kood: '10', name: '10%'},
+    {id: 5, kood: '18', name: '18%'},
+    {id: 6, kood: '20', name: '20%'}
+];
 
 class Nomenclature extends React.PureComponent {
     constructor(props) {
@@ -116,31 +112,39 @@ class Nomenclature extends React.PureComponent {
                     </div>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
-                            <Select title="Konto (Meie teenused)"
-                                    name='konto_db'
+                            <Select title="Korr.konto:"
+                                    name='konto'
                                     libs="kontod"
                                     data={self.libs['kontod']}
                                     readOnly={!isEditeMode}
-                                    value={self.docData['konto_db'] || ''}
-                                    ref='select_konto_db'
+                                    value={self.docData['konto'] || ''}
+                                    ref='select_konto'
                                     collId="kood"
                                     onChange={self.handleInputChange}/>
                         </div>
                         <div style={styles.docColumn}>
-                            <Select title="Konto (Ostetud teenused)"
-                                    name='konto_kr'
-                                    libs="kontod"
-                                    data={self.libs['kontod']}
+                            <Select title="Tunnus:"
+                                    name='tunnus'
+                                    libs="tunnus"
+                                    data={self.libs['tunnus']}
                                     readOnly={!isEditeMode}
-                                    value={self.docData.konto_kr || ''}
-                                    ref='select_konto_kr'
+                                    value={self.docData['tunnus'] || ''}
+                                    ref='select_tunnus'
                                     collId="kood"
                                     onChange={self.handleInputChange}/>
                         </div>
                     </div>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
-
+                            <Select title="Tegevus:"
+                                    name='tegev'
+                                    data={self.libs['tegev']}
+                                    value={self.docData['tegev'] || ''}
+                                    ref='tegev'
+                                    collId="kood"
+                                    onChange={self.handleInputChange}/>
+                        </div>
+                        <div style={styles.docColumn}>
                             <Select title="Projekt:"
                                     name='projekt'
                                     libs="project"
@@ -154,13 +158,22 @@ class Nomenclature extends React.PureComponent {
                     </div>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
-                            <Select title="Tunnus:"
-                                    name='tunnus'
-                                    libs="tunnus"
-                                    data={self.libs['tunnus']}
-                                    readOnly={!isEditeMode}
-                                    value={self.docData['tunnus'] || ''}
-                                    ref='select_tunnus'
+                            <Select title="Allikas:"
+                                    name='allikas'
+                                    data={self.libs['allikas']}
+                                    value={self.docData['allikas'] || ''}
+                                    ref='allikas'
+                                    collId="kood"
+                                    onChange={self.handleInputChange}/>
+                        </div>
+                    </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <Select title="Artikkel:"
+                                    name='artikkel'
+                                    data={self.libs['artikkel']}
+                                    value={self.docData['artikkel'] || ''}
+                                    ref='artikkel'
                                     collId="kood"
                                     onChange={self.handleInputChange}/>
                         </div>
