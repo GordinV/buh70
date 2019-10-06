@@ -39,7 +39,7 @@ class DocumentTemplate extends React.PureComponent {
 
         this.docData = Object.keys(props.initData).length ? props.initData : {id: this.props.docId};
         this.backup = {};
-        this.requiredFields = props.requiredFields;
+        this.requiredFields = [];
         this.pages = this.props.pages || null;
 
         this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
@@ -83,7 +83,6 @@ class DocumentTemplate extends React.PureComponent {
         if (this.props.libs.length && !this.state.loadedLibs && _.has(this.userData, 'uuid')) {
             this.loadLibs();
         }
-
         return (
             <div>
                 {this.renderDocToolBar()}
@@ -351,7 +350,7 @@ class DocumentTemplate extends React.PureComponent {
         let url = api ? api : `${URL}/${this.props.docTypeId}/${this.state.docId}`;
         let method = 'fetchDataPost';
         let params = {
-            docTypeId: '',
+            docTypeId: this.props.docTypeId,
             module: this.props.module,
             userId: DocContext.userData.userId,
             uuid: DocContext.userData.uuid,
@@ -387,14 +386,9 @@ class DocumentTemplate extends React.PureComponent {
                             return rejected();
                         }
                     }
-/*
-                    if (response.data.userData) {
-                        //refresh userData (for auth purpose)
-                        this.userData = response.data.userData;
-                    }
-*/
                     if (response.data.data.length && Object.keys(response.data.data[0]).indexOf('id') !== -1) {
                         this.docData = response.data.data[0];
+                        this.requiredFields = response.data.data[0].requiredFields;
                         //should return data and called for reload
                         this.setState({reloadData: false, warning: ''});
                         resolved(response.data.data[0]);
@@ -612,7 +606,7 @@ class DocumentTemplate extends React.PureComponent {
             default:
                 this.gridRowData[name] = (value);
         }
-
+        this.forceUpdate();
         this.validateGridRow();
     }
 

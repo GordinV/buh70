@@ -18,15 +18,16 @@ const
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     styles = require('./arve.styles');
 
+const DocContext = require('./../../../doc-context');
 const LIBDOK = 'ARV',
     LIB_OBJS = [
-        {id:'kontod',filter:''},
-        {id:'dokProps',filter:''},
-        {id:'users',filter:''},
-        {id:'tunnus',filter:''},
-        {id:'project',filter:''},
-        {id:'nomenclature',filter:`where dok = 'ARV'`}
-        ];
+        {id: 'kontod', filter: ''},
+        {id: 'dokProps', filter: ''},
+        {id: 'users', filter: ''},
+        {id: 'tunnus', filter: ''},
+        {id: 'project', filter: ''},
+        {id: 'nomenclature', filter: `where dok = 'ARV'`}
+    ];
 
 const now = new Date();
 
@@ -36,7 +37,7 @@ class Arve extends React.PureComponent {
         super(props);
         this.state = {
             loadedData: false,
-            module: props.module,
+            module: props.module ? props.module : DocContext.module,
             lapsId: null,
             docId: props.docId ? props.docId : Number(props.match.params.docId)
         };
@@ -48,22 +49,7 @@ class Arve extends React.PureComponent {
         this.gridValidateFields = this.gridValidateFields.bind(this);
         this.btnEditAsutusClick = this.btnEditAsutusClick.bind(this);
         this.pages = [{pageName: 'Arve', docTypeId: 'ARV'}];
-        this.requiredFields = [
-            {
-                name: 'kpv',
-                type: 'D',
-                min: now.setFullYear(now.getFullYear() - 1),
-                max: now.setFullYear(now.getFullYear() + 1)
-            },
-            {
-                name: 'tahtaeg',
-                type: 'D',
-                min: now.setFullYear(now.getFullYear() - 1),
-                max: now.setFullYear(now.getFullYear() + 1)
-            },
-            {name: 'asutusid', type: 'N', min: null, max: null},
-            {name: 'summa', type: 'N', min: -9999999, max: 999999}
-        ];
+        this.requiredFields = DocContext.initData.requiredFields;
 
     }
 
@@ -75,7 +61,6 @@ class Arve extends React.PureComponent {
         }
 
     }
-
 
     render() {
         let initData = this.props.initData ? this.props.initData : {};
@@ -99,7 +84,6 @@ class Arve extends React.PureComponent {
     /**
      *Вернет кастомные компоненты документа
      */
-
     renderer(self) {
         let bpm = self.docData && self.docData.bpm ? self.docData.bpm : [],
             isEditMode = self.state.edited,
@@ -109,6 +93,11 @@ class Arve extends React.PureComponent {
         // формируем зависимости
         if (self.docData.relations) {
             relatedDocuments(self);
+        }
+
+        // если задан параметр lapsid то сохраним его в документе
+        if (this.state.lapsId && !self.docData.lapsid)  {
+            self.docData.lapsid = this.state.lapsId;
         }
 
         return (
@@ -123,7 +112,8 @@ class Arve extends React.PureComponent {
                                        readOnly={!isEditMode}
                                        onChange={self.handleInputChange}/>
                             <InputDate title='Kuupäev '
-                                       name='kpv' value={self.docData.kpv}
+                                       name='kpv'
+                                       value={self.docData.kpv}
                                        ref='input-kpv'
                                        readOnly={!isEditMode}
                                        onChange={self.handleInputChange}/>
@@ -174,6 +164,34 @@ class Arve extends React.PureComponent {
                             />
                         </div>
                     </div>
+                <div style = {styles.docRow}>
+                    <div style={styles.docColumn}>
+                        <SelectData title="Lapse nimi:"
+                                    name='lapsid'
+                                    libName="laps"
+                                    sqlFields={['nimi', 'isikukood']}
+                                    data={[]}
+                                    value={self.docData.lapsid || 0}
+                                    defaultValue={self.docData.lapse_nimi}
+                                    boundToGrid='nimi'
+                                    boundToData='nimi'
+                                    ref="select-lapsid"
+                                    btnDelete={false}
+                                    userData={self.userData}
+                                    onChange={self.handleInputChange}
+                                    readOnly={!isEditMode}/>
+                    </div>
+                    <div style={styles.docColumn}>
+                        <ButtonEdit
+                            ref='btnEdit'
+                            onClick={this.btnEditLapsClick}
+                            show={!isEditMode}
+                            style={styles.btnEdit}
+                            disabled={false}
+                        />
+                    </div>
+
+                </div>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
 
@@ -236,6 +254,7 @@ class Arve extends React.PureComponent {
      * @returns {XML}
      */
     createGridRow(self) {
+
         let row = self.gridRowData ? self.gridRowData : {},
             validateMessage = '', // self.state.warning
             buttonOkReadOnly = validateMessage.length > 0 || !self.state.checked,
@@ -285,48 +304,53 @@ class Arve extends React.PureComponent {
                     <div style={styles.docRow}>
                         <InputNumber title='Kogus '
                                      name='kogus'
-                                     value={Number(row.kogus)}
+                                     value={Number(row.kogus ? row.kogus : 0)}
                                      readOnly={false}
                                      disabled={false}
                                      bindData={false}
                                      ref='kogus'
+                                     pattern="[0-9]{10}"
                                      onChange={self.handleGridRowInput}/>
                     </div>
                     <div style={styles.docRow}>
                         <InputNumber title='Hind '
                                      name='hind'
-                                     value={Number(row.hind)}
+                                     value={Number(row.hind ? row.hind : 0)}
                                      readOnly={false}
                                      disabled={false}
                                      bindData={false}
                                      ref='hind'
+                                     pattern="[0-9]{10}"
                                      onChange={self.handleGridRowInput}/>
                     </div>
                     <div style={styles.docRow}>
                         <InputNumber title='Kbm-ta: '
                                      name='kbmta'
-                                     value={Number(row.kbmta)}
+                                     value={Number(row.summa ? row.summa - row.kbm : 0)}
                                      disabled={true}
                                      bindData={false}
                                      ref='kbmta'
+                                     pattern="[0-9]{10}"
                                      onChange={self.handleGridRowChange}/>
                     </div>
                     <div style={styles.docRow}>
                         <InputNumber title='Kbm: '
                                      name='kbm'
-                                     value={Number(row.kbm)}
+                                     value={Number(row.kbm ? row.kbm : 0)}
                                      disabled={true}
                                      bindData={false}
                                      ref='kbm'
+                                     pattern="[0-9]{10}"
                                      onBlur={self.handleGridRowInput}/>
                     </div>
                     <div style={styles.docRow}>
                         <InputNumber title='Summa: '
                                      name='Summa'
-                                     value={Number(row.summa)}
+                                     value={Number(row.summa ? row.summa : 0)}
                                      disabled={true}
                                      bindData={false}
                                      ref='summa'
+                                     pattern="[0-9]{10}"
                                      onChange={self.handleGridRowInput}/>
                     </div>
                 </div>
@@ -382,9 +406,9 @@ class Arve extends React.PureComponent {
 
         doc.gridRowData['kogus'] = Number(doc.gridRowData.kogus);
         doc.gridRowData['hind'] = Number(doc.gridRowData.hind);
-        doc.gridRowData['kbmta'] = Number(doc.gridRowData['kogus']) * Number(doc.gridRowData['hind']);
-        doc.gridRowData['kbm'] = Number(doc.gridRowData['kbmta']) * vat;
-        doc.gridRowData['summa'] = Number(doc.gridRowData['kbmta']) + Number(doc.gridRowData['kbm']);
+        doc.gridRowData['kbmta'] = (Number(doc.gridRowData['kogus']) * Number(doc.gridRowData['hind'])).toFixed(2);
+        doc.gridRowData['kbm'] = (Number(doc.gridRowData['kbmta']) * vat).toFixed(2);
+        doc.gridRowData['summa'] = (Number(doc.gridRowData['kbmta']) + Number(doc.gridRowData['kbm'])).toFixed(2);
     }
 
     /**
@@ -396,8 +420,8 @@ class Arve extends React.PureComponent {
         doc.docData['summa'] = 0;
         doc.docData['kbm'] = 0;
         doc.docData.gridData.forEach(row => {
-            doc.docData['summa'] += Number(row['summa']);
-            doc.docData['kbm'] += Number(row['kbm']);
+            doc.docData['summa'] += Number(row['summa']).toFixed(2);
+            doc.docData['kbm'] += Number(row['kbm']).toFixed(2);
         });
     }
 
@@ -408,6 +432,16 @@ class Arve extends React.PureComponent {
 
         // осуществит переход на карточку контр-агента
         this.props.history.push(`/${this.state.module}/asutused/${docAsutusId}`);
+    }
+
+
+    //обработчик события по клику кнопки Редактирование ребенка
+    btnEditLapsClick() {
+        let docLapsId = this.refs['document'].docData.lapsid;
+
+        // осуществит переход на карточку контр-агента
+        this.props.history.push(`/lapsed/laps/${docLapsId}`);
+
     }
 
 

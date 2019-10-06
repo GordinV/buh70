@@ -25,7 +25,7 @@ class Document {
         // check if exists model for this type
 
         try {
-            config = getModule(docTypeId, null, path, module ? module: 'lapsed');
+            config = getModule(docTypeId, null, path, module ? module : 'lapsed');
         } catch (e) {
             console.error(e);
             return null;
@@ -42,7 +42,9 @@ class Document {
             return null;
         }
         let sqls = [{alias: 'row', sql: this.config.select[0].sqlAsNew}];
-        let data = await db.executeQueries(sqls, [0, this.userId], Object.assign({}, this.config.returnData));
+        let data = await db.executeQueries(sqls, [0, this.userId],
+            Object.assign({},
+                this.config.returnData));
         return data;
     }
 
@@ -106,8 +108,8 @@ class Document {
     async selectLibs(sqlWhere, sqlLimit) {
         let sql = this.config.selectAsLibs,
             params = [this.rekvId],
-            libGridConfig = this.config.libGridConfig ? this.config.libGridConfig.grid: [],
-            libSearchFields = this.config.libGridConfig ? this.config.libGridConfig.searchFields: [];
+            libGridConfig = this.config.libGridConfig ? this.config.libGridConfig.grid : [],
+            libSearchFields = this.config.libGridConfig ? this.config.libGridConfig.searchFields : [];
 
         if (!sql) {
             return [];
@@ -133,7 +135,7 @@ class Document {
             return [];
         }
 
-        const dbResult = await db.queryDb(sql, params );
+        const dbResult = await db.queryDb(sql, params);
         return dbResult;
 
     }

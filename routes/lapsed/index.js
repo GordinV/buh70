@@ -30,7 +30,8 @@ exports.get = async (req, res) => {
     const sqlData = {
         docTypeId: documentType,
         result: await Document.selectDocs(),
-        gridConfig: gridConfig
+        gridConfig: gridConfig,
+        requiredFields: Document.requiredFields ? Document.requiredFields: []
     };
 
     let storeInitialData = JSON.stringify(sqlData);
@@ -73,6 +74,7 @@ exports.get = async (req, res) => {
 };
 
 exports.post = async (req, res) => {
+
     let user = require('./../../middleware/userData')(req); // данные пользователя
     const documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
     const docId = Number(req.params.id); //ид документа

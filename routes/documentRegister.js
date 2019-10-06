@@ -29,10 +29,13 @@ exports.get = async (req, res) => {
     // делаем запрос , получаем первоначальные данные
     let gridConfig = Document.config.grid.gridConfiguration;
     // вызвать метод
+
     let data = {
         result: await Document.selectDocs(),
         gridConfig: gridConfig,
-        docTypeId: documentType
+        docTypeId: documentType,
+        requiredFields: Document.config.requiredFields ? Document.config.requiredFields : []
+
     };
 
     const Component = React.createElement(
@@ -61,6 +64,7 @@ exports.get = async (req, res) => {
 };
 
 exports.post = async (req, res) => {
+
     let user = require('../middleware/userData')(req); // данные пользователя
     const documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
     const docId = Number(req.params.id); //ид документа
@@ -94,7 +98,9 @@ exports.post = async (req, res) => {
         data.result,
         {gridData: data.result ? data.result.details : []},
         {relations: data.result ? data.result.relations : []},
-        {gridConfig: data.result ? data.result.gridConfig : []});
+        {gridConfig: data.result ? data.result.gridConfig : []},
+        {requiredFields: Document.config.requiredFields ? Document.config.requiredFields : []}
+    );
 
     res.send({data: [preparedData], userData: user});
 

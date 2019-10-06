@@ -6,6 +6,7 @@ const {StaticRouter} = require('react-router');
 const MODULE = 'lapsed';
 
 exports.get = async (req, res) => {
+
     // рендер грида на сервере при первой загрузке странице
     // берем тип документа из параметра в адресе
     let documentType = req.params.documentType.toLowerCase(),

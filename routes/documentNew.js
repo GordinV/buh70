@@ -19,15 +19,19 @@ exports.get = async (req, res) => {
     // вызвать метод
     let data = {};
     if (docId) {
-        data =  await Document.select();
+        data = await Document.select();
     } else {
-        data =  await Document.createNew();
+        data = await Document.createNew();
     }
+
+    const requiredFields = Document.requiredFields ? Document.requiredFields : [];
 
     const prepairedData = Object.assign({}, data.row[0],
         {gridData: data.details},
         {relations: data.relations},
-        {gridConfig: data.gridConfig});
+        {gridConfig: data.gridConfig},
+        {requiredFields: requiredFields}
+    );
 
 
     const Component = React.createElement(

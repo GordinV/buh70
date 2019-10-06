@@ -35,7 +35,8 @@ class DataGrid extends React.PureComponent {
             sort: {
                 name: null,
                 direction: null
-            }
+            },
+            gridData: props.gridData
         };
         this.handleCellDblClick = this.handleGridHeaderClick.bind(this);
         this.handleCellDblClick = this.handleCellDblClick.bind(this);
@@ -52,6 +53,12 @@ class DataGrid extends React.PureComponent {
         }
     }
 
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (JSON.stringify(nextProps.gridData) !== JSON.stringify(prevState.gridData)) {
+            return {gridData: nextProps.gridData};
+        } else return null;
+    }
 
     render() {
         let tableStyle = Object.assign({}, styles.headerTable, this.props.style);
@@ -136,7 +143,7 @@ class DataGrid extends React.PureComponent {
         if (btnEvent === 'Ok' && this.props.handleGridBtnClick) {
             this.props.handleGridBtnClick('delete',
                 this.state.activeRow,
-                _.size(this.props.gridData) ? this.props.gridData[this.state.activeRow].id : 0,
+                _.size(this.state.gridData) ? this.state.gridData[this.state.activeRow].id : 0,
                 this.props.docTypeId ? this.props.docTypeId : '');
         }
     }
@@ -144,7 +151,7 @@ class DataGrid extends React.PureComponent {
     handleGridBtnClick(btnName) {
         let activeRow = this.state.activeRow;
 
-        let id = _.size(this.props.gridData) ? this.props.gridData[activeRow].id : 0;
+        let id = _.size(this.state.gridData) ? this.state.gridData[activeRow].id : 0;
 
         let docTypeId = this.props.docTypeId ? this.props.docTypeId : '';
 
@@ -165,7 +172,7 @@ class DataGrid extends React.PureComponent {
      */
     getGridRowIndexById(docId) {
         let index = 0,
-            data = this.props.gridData;
+            data = this.state.gridData;
 
         if (docId) {
             for (let i = 0; i < data.length; i++) {
@@ -190,8 +197,8 @@ class DataGrid extends React.PureComponent {
 
         let action = this.props.onChangeAction || null;
 
-        if (this.props.gridData.length > 0) {
-            let docId = this.props.gridData[idx].id;
+        if (this.state.gridData.length > 0) {
+            let docId = this.state.gridData[idx].id;
 
             if (this.props.onClick) {
                 this.props.onClick(action, docId, idx);
@@ -251,7 +258,7 @@ class DataGrid extends React.PureComponent {
                 // вниз, увеличим активную строку на + 1
                 rowIndex++;
 
-                if (this.props.gridData.length < rowIndex) {
+                if (this.state.gridData.length < rowIndex) {
                     // вернем прежнее значение
                     rowIndex = this.state.activeRow
                 }
@@ -271,7 +278,7 @@ class DataGrid extends React.PureComponent {
      * Готовит строку для грида
      */
     prepareTableRow() {
-        return this.props.gridData.map((row, rowIndex) => {
+        return this.state.gridData.map((row, rowIndex) => {
             let objectIndex = 'tr-' + rowIndex,
                 activeRow = this.state.activeRow;
 

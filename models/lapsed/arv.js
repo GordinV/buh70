@@ -47,7 +47,10 @@ const Arv = {
                          dp.vaatalaus                                       AS is_show_journal,
                          d.history -> 0 ->> 'user'                          AS koostaja,
                          a.properties ->> 'aa'                              AS aa,
-                         a.properties ->> 'viitenr'                         AS viitenr
+                         a.properties ->> 'viitenr'                         AS viitenr,
+                         l.id                                               AS lapsId,
+                         l.isikukood::TEXT,
+                         l.nimi::TEXT                                       AS lapse_nimi
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
@@ -55,11 +58,14 @@ const Arv = {
                            LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
                            LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
                            LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
-                  WHERE d.id = $1`,
+                           LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
+                           LEFT OUTER JOIN lapsed.laps l
+                  ON l.id = ll.parentid
+                  WHERE D.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                                          AS id,
                               $2 :: INTEGER                                                          AS userid,
-                              to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                          AS created,
-                              to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                          AS lastupdate,
+                              to_char(now(), 'YYYY-MM-DD HH:MM:SS') :: TEXT                          AS created,
+                              to_char(now(), 'YYYY-MM-DD HH:MM:SS') :: TEXT                          AS lastupdate,
                               NULL                                                                   AS bpm,
                               0                                                                      AS doc_status,
                               (SELECT arve
@@ -75,11 +81,11 @@ const Arv = {
                               NULL :: INTEGER                                                        AS rekvId,
                               0                                                                      AS liik,
                               NULL :: INTEGER                                                        AS operid,
-                              now() :: DATE                                                          AS kpv,
+                              to_char(now() :: DATE, 'YYYY-MM-DD')::TEXT                             AS kpv,
                               NULL :: INTEGER                                                        AS asutusid,
                               NULL :: INTEGER                                                        AS arvId,
                               '' :: VARCHAR(120)                                                     AS lisa,
-                              (now() + INTERVAL '14 days') :: DATE                                   AS tahtaeg,
+                              to_char((now() + INTERVAL '14 days') :: DATE, 'YYYY-MM-DD')::TEXT      AS tahtaeg,
                               0 :: NUMERIC                                                           AS kbmta,
                               0.00 :: NUMERIC                                                        AS kbm,
                               0 :: NUMERIC(14, 2)                                                    AS summa,
@@ -371,6 +377,7 @@ const Arv = {
             max: now.setFullYear(now.getFullYear() + 1)
         },
         {name: 'asutusid', type: 'N', min: null, max: null},
+        {name: 'lapsid', type: 'N', min: null, max: null},
         {name: 'summa', type: 'N', min: -9999999, max: 999999}
     ],
     executeCommand: {
