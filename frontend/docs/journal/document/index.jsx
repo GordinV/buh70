@@ -33,14 +33,6 @@ class Journal extends React.PureComponent {
         this.renderer = this.renderer.bind(this);
         this.gridValidateFields = this.gridValidateFields.bind(this);
 
-        this.requiredFields = [
-            {
-                name: 'kpv',
-                type: 'D',
-            },
-            {name: 'summa', type: 'N', min: null, max: null}
-        ];
-
     }
 
     render() {
@@ -48,7 +40,6 @@ class Journal extends React.PureComponent {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='JOURNAL'
-                                 requiredFields={this.requiredFields}
                                  initData={initData}
                                  libs={LIBRARIES}
                                  pages={this.pages}

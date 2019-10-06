@@ -42,16 +42,6 @@ class Laps extends React.PureComponent {
         this.pages = [
             {pageName: 'Lapse taabel', docTypeId: 'LAPSE_TAABEL'}
         ];
-
-        this.requiredFields = [
-            {
-                name: 'parentid',
-                type: 'I',
-            },
-            {name: 'nomid', type: 'I'},
-            {name: 'hind', type: 'N'},
-
-        ];
     }
 
 
@@ -63,7 +53,6 @@ class Laps extends React.PureComponent {
                                  ref='document'
                                  docTypeId='LAPSE_TAABEL'
                                  module={this.state.module}
-                                 requiredFields={this.requiredFields}
                                  initData={initData}
                                  libs={LIBRARIES}
                                  pages={this.pages}

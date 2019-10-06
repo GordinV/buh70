@@ -65,13 +65,6 @@ class Laps extends React.PureComponent {
             {pageName: 'Maksekoraldused', handlePageClick: this.handlePageClick, docTypeId: 'SMK'},
             {pageName: 'Kassaorderid', handlePageClick: this.handlePageClick, docTypeId: 'SORDER'}
         ];
-        this.requiredFields = [
-            {
-                name: 'isikukood',
-                type: 'C',
-            },
-            {name: 'nimi', type: 'C'}
-        ];
     }
 
     componentDidMount() {
@@ -91,7 +84,6 @@ class Laps extends React.PureComponent {
                               ref='document'
                               module={this.state.module}
                               docTypeId='LAPS'
-                              requiredFields={this.requiredFields}
                               initData={initData}
                               libs={LIBRARIES}
                               pages={this.pages}

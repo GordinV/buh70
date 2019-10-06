@@ -26,17 +26,6 @@ class Kontod extends React.PureComponent {
             loadedData: false
         };
 
-        this.requiredFields = [
-            {
-                name: 'kood',
-                type: 'C',
-                min: null,
-                max: null
-            },
-            {name: 'nimetus', type: 'C', min: null, max: null},
-            {name: 'regkood', type: 'C', min: null, max: null}
-        ];
-
         this.renderer = this.renderer.bind(this);
     }
 
@@ -44,7 +33,6 @@ class Kontod extends React.PureComponent {
         return <DocumentTemplate docId = {this.state.docId }
                                  ref = 'document'
                                  docTypeId='KONTOD'
-                                 requiredFields = {this.requiredFields}
                                  initData = {this.props.initData}
                                  renderer={this.renderer}/>
     }

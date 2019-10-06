@@ -45,16 +45,6 @@ class Laps extends React.PureComponent {
         this.pages = [
             {pageName: 'Teenus', docTypeId: 'LAPSE_KAART'}
         ];
-
-        this.requiredFields = [
-            {
-                name: 'parentid',
-                type: 'I',
-            },
-            {name: 'nomid', type: 'I'},
-            {name: 'hind', type: 'N'},
-
-        ];
     }
 
     componentDidMount() {
@@ -73,7 +63,6 @@ class Laps extends React.PureComponent {
                                  ref='document'
                                  module={this.state.module}
                                  docTypeId='LAPSE_KAART'
-                                 requiredFields={this.requiredFields}
                                  userData={this.props.userData}
                                  initData={initData}
                                  libs={LIBRARIES}

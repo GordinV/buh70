@@ -49,7 +49,6 @@ class Arve extends React.PureComponent {
         this.gridValidateFields = this.gridValidateFields.bind(this);
         this.btnEditAsutusClick = this.btnEditAsutusClick.bind(this);
         this.pages = [{pageName: 'Arve', docTypeId: 'ARV'}];
-        this.requiredFields = DocContext.initData.requiredFields;
 
     }
 
@@ -69,7 +68,6 @@ class Arve extends React.PureComponent {
                                  ref='document'
                                  docTypeId='ARV'
                                  module={this.state.module}
-                                 requiredFields={this.requiredFields}
                                  initData={initData}
                                  libs={LIB_OBJS}
                                  pages={this.pages}

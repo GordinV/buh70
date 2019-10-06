@@ -40,13 +40,6 @@ class Vanem extends React.PureComponent {
             {pageName: 'Maksekoraldused', handlePageClick: this.handlePageClick, docTypeId: 'SMK'},
             {pageName: 'Kassaorderid', handlePageClick: this.handlePageClick, docTypeId: 'SORDER'}
         ];
-        this.requiredFields = [
-            {
-                name: 'asutusid',
-                type: 'I',
-            },
-            {name: 'parentid', type: 'I'}
-        ];
     }
 
 
@@ -66,7 +59,6 @@ class Vanem extends React.PureComponent {
                                  ref='document'
                                  docTypeId='VANEM'
                                  module={this.state.module}
-                                 requiredFields={this.requiredFields}
                                  userData={this.props.userData}
                                  initData={initData}
                                  libs={LIBRARIES}

@@ -18,20 +18,12 @@ class Project extends React.PureComponent {
         };
         this.renderer = this.renderer.bind(this);
 
-        this.requiredFields = [
-            {
-                name: 'kood',
-                type: 'C'
-            },
-            {name: 'nimetus', type: 'C'}
-        ];
     }
 
     render() {
         return <DocumentTemplate docId = {this.state.docId }
                                  ref = 'document'
                                  docTypeId='PROJECT'
-                                 requiredFields = {this.requiredFields}
                                  initData = {this.props.initData}
                                  renderer={this.renderer}/>
     }

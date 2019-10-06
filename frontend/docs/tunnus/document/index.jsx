@@ -8,8 +8,6 @@ const DocumentTemplate = require('./../../documentTemplate/index.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     styles = require('./tunnus-styles');
 
-const DocContext = require('./../../../doc-context.js');
-
 /**
  * Класс реализует документ справочника признаков.
  */
@@ -21,18 +19,7 @@ class Tunnus extends React.PureComponent {
             docId: props.docId ? props.docId : Number(props.match.params.docId),
             loadedData: false
         };
-
-        this.requiredFields = [
-            {
-                name: 'kood',
-                type: 'C',
-            },
-            {name: 'nimetus', type: 'C', min: null, max: null}
-        ];
-
         this.renderer = this.renderer.bind(this);
-        DocContext.test = 10;
-
     }
 
     render() {
@@ -41,7 +28,6 @@ class Tunnus extends React.PureComponent {
                               ref='document'
                               docTypeId='TUNNUS'
                               module={this.props.module}
-                              requiredFields={this.requiredFields}
                               initData={this.props.initData}
                               renderer={this.renderer}
             />

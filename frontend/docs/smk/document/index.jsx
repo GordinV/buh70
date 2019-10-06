@@ -47,17 +47,6 @@ class Smk extends React.PureComponent {
         this.gridValidateFields = this.gridValidateFields.bind(this);
 
         this.pages = [{pageName: 'Sissemakse korraldus', docTypeId: 'SMK'}];
-        this.requiredFields = [
-            {
-                name: 'kpv',
-                type: 'D',
-                min: now.setFullYear(now.getFullYear() - 1),
-                max: now.setFullYear(now.getFullYear() + 1)
-            },
-            {name: 'asutusid', type: 'I'},
-            {name: 'nimi', type: 'C'},
-            {name: 'summa', type: 'N'}
-        ];
     }
 
     componentDidMount() {
@@ -75,7 +64,6 @@ class Smk extends React.PureComponent {
                                  ref='document'
                                  docTypeId='SMK'
                                  module={this.state.module}
-                                 requiredFields={this.requiredFields}
                                  initData={this.props.initData}
                                  libs={LIBRARIES}
                                  pages={this.pages}

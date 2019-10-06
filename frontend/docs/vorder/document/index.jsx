@@ -37,25 +37,12 @@ class Vorder extends React.PureComponent {
         this.gridValidateFields = this.gridValidateFields.bind(this);
 
         this.pages = [{pageName: 'Väljamakse kassaorder'}];
-        this.requiredFields = [
-            {
-                name: 'kpv',
-                type: 'D',
-                min: now.setFullYear(now.getFullYear() - 1),
-                max: now.setFullYear(now.getFullYear() + 1)
-            },
-            {name: 'asutusid', type: 'I'},
-            {name: 'nimi', type: 'C'},
-            {name: 'summa', type: 'N'}
-        ];
-
     }
 
     render() {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='SORDER'
-                                 requiredFields={this.requiredFields}
                                  initData={this.props.initData}
                                  libs={LIBRARIES}
                                  pages={this.pages}

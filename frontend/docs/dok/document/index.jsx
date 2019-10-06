@@ -23,23 +23,12 @@ class Document extends React.PureComponent {
             loadedData: false
         };
         this.renderer = this.renderer.bind(this);
-        this.requiredFields = [
-            {
-                name: 'kood',
-                type: 'C',
-                min: null,
-                max: null
-            },
-            {name: 'nimetus', type: 'C', min: null, max: null},
-            {name: 'regkood', type: 'C', min: null, max: null}
-        ];
     }
 
     render() {
         return <DocumentTemplate docId = {this.state.docId }
                                  ref = 'document'
                                  docTypeId='DOK'
-                                 requiredFields = {this.requiredFields}
                                  initData = {this.props.initData}
                                  renderer={this.renderer}/>
     }
