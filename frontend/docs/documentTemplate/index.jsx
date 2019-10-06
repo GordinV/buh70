@@ -229,47 +229,50 @@ class DocumentTemplate extends React.PureComponent {
             notRequiredFields = [], // пишем в массив поля с отсутствующими данными
             notMinMaxRule = [];
 
-        this.requiredFields.forEach((field) => {
-            if (field.name in this.docData) {
+        if (this.requiredFields) {
 
-                let value = this.docData[field.name];
+            this.requiredFields.forEach((field) => {
+                if (field.name in this.docData) {
 
-                if (!value) {
-                    notRequiredFields.push(field.name);
+                    let value = this.docData[field.name];
+
+                    if (!value) {
+                        notRequiredFields.push(field.name);
+                    }
+                    // проверка на мин . макс значения
+
+                    // || value && value > props.max
+                    let checkValue = false;
+
+                    switch (field.type) {
+                        case 'D':
+                            let controlledValueD = Date.parse(value);
+                            if ((field.min && controlledValueD < field.min) && (field.max && controlledValueD > field.max)) {
+                                checkValue = true;
+                            }
+                            break;
+                        case 'N':
+                            let controlledValueN = Number(value);
+
+                            if (field.min && controlledValueN === 0 ||
+                                ((field.min && controlledValueN < field.min) && (field.max && controlledValueN > field.max))) {
+                                checkValue = true;
+                            }
+                            break;
+                    }
+                    if (checkValue) {
+                        notMinMaxRule.push(field.name);
+                    }
                 }
-                // проверка на мин . макс значения
+            });
 
-                // || value && value > props.max
-                let checkValue = false;
-
-                switch (field.type) {
-                    case 'D':
-                        let controlledValueD = Date.parse(value);
-                        if ((field.min && controlledValueD < field.min) && (field.max && controlledValueD > field.max)) {
-                            checkValue = true;
-                        }
-                        break;
-                    case 'N':
-                        let controlledValueN = Number(value);
-
-                        if (field.min && controlledValueN === 0 ||
-                            ((field.min && controlledValueN < field.min) && (field.max && controlledValueN > field.max))) {
-                            checkValue = true;
-                        }
-                        break;
-                }
-                if (checkValue) {
-                    notMinMaxRule.push(field.name);
-                }
+            if (notRequiredFields.length > 0) {
+                warning = 'puudub vajalikud andmed (' + notRequiredFields.join(', ') + ') ';
             }
-        });
 
-        if (notRequiredFields.length > 0) {
-            warning = 'puudub vajalikud andmed (' + notRequiredFields.join(', ') + ') ';
-        }
-
-        if (notMinMaxRule.length > 0) {
-            warning = warning ? warning : '' + ' min/max on vale(' + notMinMaxRule.join(', ') + ') ';
+            if (notMinMaxRule.length > 0) {
+                warning = warning ? warning : '' + ' min/max on vale(' + notMinMaxRule.join(', ') + ') ';
+            }
         }
 
         return warning; // вернем извещение об итогах валидации
@@ -362,7 +365,6 @@ class DocumentTemplate extends React.PureComponent {
             params = Object.assign(params, this.docData,);
         }
 
-
         return new Promise((resolved, rejected) => {
             fetchData[method](url, params).then(response => {
 
@@ -388,7 +390,11 @@ class DocumentTemplate extends React.PureComponent {
                     }
                     if (response.data.data.length && Object.keys(response.data.data[0]).indexOf('id') !== -1) {
                         this.docData = response.data.data[0];
-                        this.requiredFields = response.data.data[0].requiredFields;
+
+                        if (response.data.data[0].requiredFields) {
+                            this.requiredFields = response.data.data[0].requiredFields;
+                        }
+
                         //should return data and called for reload
                         this.setState({reloadData: false, warning: ''});
                         resolved(response.data.data[0]);

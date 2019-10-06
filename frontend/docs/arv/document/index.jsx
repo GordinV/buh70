@@ -26,6 +26,9 @@ const LIBDOK = 'ARV',
         {id: 'users', filter: ''},
         {id: 'tunnus', filter: ''},
         {id: 'project', filter: ''},
+        {id: 'artikkel', filter: ''},
+        {id: 'allikas', filter: ''},
+        {id: 'tegev', filter: ''},
         {id: 'nomenclature', filter: `where dok = 'ARV'`}
     ];
 
@@ -94,7 +97,7 @@ class Arve extends React.PureComponent {
         }
 
         // если задан параметр lapsid то сохраним его в документе
-        if (this.state.lapsId && !self.docData.lapsid)  {
+        if (this.state.lapsId && !self.docData.lapsid) {
             self.docData.lapsid = this.state.lapsId;
         }
 
@@ -162,34 +165,34 @@ class Arve extends React.PureComponent {
                             />
                         </div>
                     </div>
-                <div style = {styles.docRow}>
-                    <div style={styles.docColumn}>
-                        <SelectData title="Lapse nimi:"
-                                    name='lapsid'
-                                    libName="laps"
-                                    sqlFields={['nimi', 'isikukood']}
-                                    data={[]}
-                                    value={self.docData.lapsid || 0}
-                                    defaultValue={self.docData.lapse_nimi}
-                                    boundToGrid='nimi'
-                                    boundToData='nimi'
-                                    ref="select-lapsid"
-                                    btnDelete={false}
-                                    userData={self.userData}
-                                    onChange={self.handleInputChange}
-                                    readOnly={!isEditMode}/>
-                    </div>
-                    <div style={styles.docColumn}>
-                        <ButtonEdit
-                            ref='btnEdit'
-                            onClick={this.btnEditLapsClick}
-                            show={!isEditMode}
-                            style={styles.btnEdit}
-                            disabled={false}
-                        />
-                    </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <SelectData title="Lapse nimi:"
+                                        name='lapsid'
+                                        libName="laps"
+                                        sqlFields={['nimi', 'isikukood']}
+                                        data={[]}
+                                        value={self.docData.lapsid || 0}
+                                        defaultValue={self.docData.lapse_nimi}
+                                        boundToGrid='nimi'
+                                        boundToData='nimi'
+                                        ref="select-lapsid"
+                                        btnDelete={false}
+                                        userData={self.userData}
+                                        onChange={self.handleInputChange}
+                                        readOnly={!isEditMode}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <ButtonEdit
+                                ref='btnEdit'
+                                onClick={this.btnEditLapsClick}
+                                show={!isEditMode}
+                                style={styles.btnEdit}
+                                disabled={false}
+                            />
+                        </div>
 
-                </div>
+                    </div>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
 
@@ -288,69 +291,147 @@ class Arve extends React.PureComponent {
                     ) : null}
 
                     <div style={styles.docRow}>
-                        <Select title="Teenus"
-                                name='nomid'
-                                libs="nomenclature"
-                                data={nomData}
-                                readOnly={false}
-                                value={row.nomid}
-                                collId='id'
-                                ref='nomid'
-                                placeholder='Teenuse kood'
-                                onChange={self.handleGridRowChange}/>
+                        <div style={styles.docColumn}>
+                            <Select title="Teenus"
+                                    name='nomid'
+                                    libs="nomenclature"
+                                    data={nomData}
+                                    readOnly={false}
+                                    value={row.nomid}
+                                    collId='id'
+                                    ref='nomid'
+                                    placeholder='Teenuse kood'
+                                    onChange={self.handleGridRowChange}/>
+                        </div>
                     </div>
                     <div style={styles.docRow}>
-                        <InputNumber title='Kogus '
-                                     name='kogus'
-                                     value={Number(row.kogus ? row.kogus : 0)}
-                                     readOnly={false}
-                                     disabled={false}
-                                     bindData={false}
-                                     ref='kogus'
-                                     pattern="[0-9]{10}"
-                                     onChange={self.handleGridRowInput}/>
+                        <div style={styles.docColumn}>
+                            <InputNumber title='Kogus '
+                                         name='kogus'
+                                         value={Number(row.kogus ? row.kogus : 0)}
+                                         readOnly={false}
+                                         disabled={false}
+                                         bindData={false}
+                                         ref='kogus'
+                                         pattern="[0-9]{10}"
+                                         onChange={self.handleGridRowInput}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <InputNumber title='Hind '
+                                         name='hind'
+                                         value={Number(row.hind ? row.hind : 0)}
+                                         readOnly={false}
+                                         disabled={false}
+                                         bindData={false}
+                                         ref='hind'
+                                         pattern="[0-9]{10}"
+                                         onChange={self.handleGridRowInput}/>
+                        </div>
                     </div>
                     <div style={styles.docRow}>
-                        <InputNumber title='Hind '
-                                     name='hind'
-                                     value={Number(row.hind ? row.hind : 0)}
-                                     readOnly={false}
-                                     disabled={false}
-                                     bindData={false}
-                                     ref='hind'
-                                     pattern="[0-9]{10}"
-                                     onChange={self.handleGridRowInput}/>
+                        <div style={styles.docColumn}>
+
+                            <InputNumber title='Kbm-ta: '
+                                         name='kbmta'
+                                         value={Number(row.summa ? row.summa - row.kbm : 0)}
+                                         disabled={true}
+                                         bindData={false}
+                                         ref='kbmta'
+                                         pattern="[0-9]{10}"
+                                         onChange={self.handleGridRowChange}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <InputNumber title='Kbm: '
+                                         name='kbm'
+                                         value={Number(row.kbm ? row.kbm : 0)}
+                                         disabled={true}
+                                         bindData={false}
+                                         ref='kbm'
+                                         pattern="[0-9]{10}"
+                                         onBlur={self.handleGridRowInput}/>
+                        </div>
                     </div>
                     <div style={styles.docRow}>
-                        <InputNumber title='Kbm-ta: '
-                                     name='kbmta'
-                                     value={Number(row.summa ? row.summa - row.kbm : 0)}
-                                     disabled={true}
-                                     bindData={false}
-                                     ref='kbmta'
-                                     pattern="[0-9]{10}"
-                                     onChange={self.handleGridRowChange}/>
+                        <div style={styles.docColumn}>
+
+                            <InputNumber title='Summa: '
+                                         name='Summa'
+                                         value={Number(row.summa ? row.summa : 0)}
+                                         disabled={true}
+                                         bindData={false}
+                                         ref='summa'
+                                         pattern="[0-9]{10}"
+                                         onChange={self.handleGridRowInput}/>
+                        </div>
                     </div>
                     <div style={styles.docRow}>
-                        <InputNumber title='Kbm: '
-                                     name='kbm'
-                                     value={Number(row.kbm ? row.kbm : 0)}
-                                     disabled={true}
-                                     bindData={false}
-                                     ref='kbm'
-                                     pattern="[0-9]{10}"
-                                     onBlur={self.handleGridRowInput}/>
+                        <div style={styles.docColumn}>
+                            <Select title="Korr. konto"
+                                    name='konto'
+                                    data={self.libs['kontod']}
+                                    value={row.konto || ''}
+                                    ref='konto'
+                                    collId="kood"
+                                    onChange={self.handleGridRowChange}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <Select title="Tunnus:"
+                                    name='tunnus'
+                                    data={self.libs['tunnus']}
+                                    value={row.tunnus || ''}
+                                    ref='tunnus'
+                                    collId="kood"
+                                    onChange={self.handleGridRowChange}/>
+
+
+                        </div>
                     </div>
                     <div style={styles.docRow}>
-                        <InputNumber title='Summa: '
-                                     name='Summa'
-                                     value={Number(row.summa ? row.summa : 0)}
-                                     disabled={true}
-                                     bindData={false}
-                                     ref='summa'
-                                     pattern="[0-9]{10}"
-                                     onChange={self.handleGridRowInput}/>
+                        <div style={styles.docColumn}>
+                            <Select title="Tegevus:"
+                                    name='kood1'
+                                    data={self.libs['tegev']}
+                                    value={row.kood1 || ''}
+                                    ref='kood1'
+                                    collId="kood"
+                                    onChange={self.handleGridRowChange}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <Select title="Project:"
+                                    name='proj'
+                                    data={self.libs['project']}
+                                    value={row.proj || ''}
+                                    ref='project'
+                                    collId="kood"
+                                    onChange={self.handleGridRowChange}/>
+                        </div>
+
                     </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+
+                            <Select title="Allikas"
+                                    name='kood2'
+                                    data={self.libs['allikas']}
+                                    value={row.kood2 || ''}
+                                    ref='kood2'
+                                    collId="kood"
+                                    onChange={self.handleGridRowChange}/>
+                        </div>
+                    </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+
+                            <Select title="Eelarve"
+                                    name='kood5'
+                                    data={self.libs['artikkel']}
+                                    value={row.kood5 || ''}
+                                    ref='kood5'
+                                    collId="kood"
+                                    onChange={self.handleGridRowChange}/>
+                        </div>
+                    </div>
+
                 </div>
                 <div><span>{validateMessage}</span></div>
             </ModalPage>
@@ -392,15 +473,18 @@ class Arve extends React.PureComponent {
         }
         //подставим наименование услогу
 
-        let nomDataName = doc.libs['nomenclature'].filter(lib => {
-            if (lib.id === doc.gridRowData['nomid']) return lib;
-        });
-
-        let vat = nomDataName[0].vat ? Number(nomDataName[0].vat) / 100 : 0;
+        let vat = 0;
         if (doc.gridRowData['nomid']) {
-            doc.gridRowData['kood'] = nomDataName[0].kood;
-            doc.gridRowData['nimetus'] = nomDataName[0].name;
+            let nomDataName = doc.libs['nomenclature'].find(lib => lib.id == doc.gridRowData['nomid']);
+
+
+            if (nomDataName) {
+                vat = nomDataName.vat ? Number(nomDataName.vat) / 100 : 0;
+                doc.gridRowData['kood'] = nomDataName.kood ? nomDataName.kood : null;
+                doc.gridRowData['nimetus'] = nomDataName.name ? nomDataName.name : null;
+            }
         }
+
 
         doc.gridRowData['kogus'] = Number(doc.gridRowData.kogus);
         doc.gridRowData['hind'] = Number(doc.gridRowData.hind);

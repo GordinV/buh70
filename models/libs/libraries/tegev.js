@@ -1,5 +1,5 @@
 module.exports = {
-    selectAsLibs: `select * from com_tegev l`,
+    selectAsLibs: `select *, $1 as rekv_id from com_tegev l`,
     select: [{
         sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, 
                 $2::integer as userid, 'TEGEV' as doc_type_id
