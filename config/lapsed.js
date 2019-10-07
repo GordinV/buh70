@@ -3,6 +3,7 @@ module.exports = {
     arv:'/lapsed/arv',
     smk:'/lapsed/smk',
     vmk:'/lapsed/vmk',
+    journal:'/lapsed/journal',
     sorder:'/lapsed/sorder',
     vorder:'/lapsed/vorder',
     asutused:'/libs/libraries/asutused',

@@ -175,5 +175,13 @@ SELECT import_kontoplaan(id) from (
                                   ) qry
 
 
+                                    SELECT count(id)
+                                    FROM remote_library
+                                    WHERE library = 'KONTOD'
+                                      EXCEPT
+                                    SELECT count(old_id)
+                                    FROM import_log
+                                    WHERE lib_name = 'KONTOD'
+
 */
 

@@ -39,6 +39,7 @@ class Journal extends React.PureComponent {
         let initData = this.props.initData ? this.props.initData: {};
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
+                                 history = {this.props.history ? this.props.history: null}
                                  docTypeId='JOURNAL'
                                  initData={initData}
                                  libs={LIBRARIES}
@@ -68,11 +69,6 @@ class Journal extends React.PureComponent {
         return (
             <div>
                 <div style={styles.doc}>
-                    <div style={styles.docRow}>
-                        <DocCommon ref='doc-common'
-                                   data={self.docData}
-                                   readOnly={!isEditeMode}/>
-                    </div>
                     <div style={styles.docColumn}>
                         <InputText
                             title='Number'

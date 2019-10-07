@@ -115,7 +115,7 @@ exports.put = async (req, res) => {
     let data = req.body;
 
     if (!user) {
-        raise.error('No user', user);
+        console.error('No user', user);
         const err = new HttpError(err);
         if (err instanceof HttpError) {
             return res.send({"message": 'No user'});
@@ -132,6 +132,34 @@ exports.put = async (req, res) => {
     const Document = new Doc(documentType, docId, user.userId, user.asutusId, module);
 
     const savedData = await Document.save(params);
+
+    if (Document.config.bpm) {
+        // bpm proccess
+        console.log('start bpm');
+        Document.config.bpm.forEach(async (process) => {
+            console.log('bpm process', process);
+            const bpmResult = await Document.executeTask(process.action);
+            console.log('bpm result', process, bpmResult);
+        })
+
+        /*
+        const getData = async () => {
+            console.log('getData start');
+            const dbQueries = Document.config.bpm.map(async (process) => {
+                console.log('called', process.action);
+                return process.action;
+//                const bpmIteration = await Document.executeTask(process.action);
+ //               return bpmIteration;
+            });
+            console.log('getData dbQueries', dbQueries);
+            const result = await Promise.all(dbQueries);
+            console.log('getData result', result);
+            return result;
+        }
+
+         */
+
+    }
 
     if (!savedData.row || savedData.row.length < 1) {
         console.error('error in save', params, savedData);

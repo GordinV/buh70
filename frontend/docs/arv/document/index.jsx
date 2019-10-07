@@ -21,8 +21,8 @@ const
 const DocContext = require('./../../../doc-context');
 const LIBDOK = 'ARV',
     LIB_OBJS = [
-        {id: 'kontod', filter: ''},
-        {id: 'dokProps', filter: ''},
+        {id: 'kontod', filter: ``},
+        {id: 'dokProps', filter: `where kood = 'ARV'`},
         {id: 'users', filter: ''},
         {id: 'tunnus', filter: ''},
         {id: 'project', filter: ''},
@@ -66,9 +66,9 @@ class Arve extends React.PureComponent {
 
     render() {
         let initData = this.props.initData ? this.props.initData : {};
-
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
+                                 history={this.props.history}
                                  docTypeId='ARV'
                                  module={this.state.module}
                                  initData={initData}
@@ -101,6 +101,7 @@ class Arve extends React.PureComponent {
             self.docData.lapsid = this.state.lapsId;
         }
 
+
         return (
             <div>
                 <div style={styles.doc}>
@@ -128,13 +129,16 @@ class Arve extends React.PureComponent {
                         </div>
 
                         <div style={styles.docColumn}>
-                            <DokProp title="Konteerimine: "
-                                     name='doklausid'
-                                     libs="dokProps"
-                                     value={self.docData.doklausid}
-                                     defaultValue={self.docData.dokprop}
-                                     ref="dokprop-doklausid"
-                                     readOnly={!isEditMode}/>
+                            <Select title="Konteerimine:"
+                                    name='doklausid'
+                                    libs="dokProps"
+                                    data={self.libs['dokProps']}
+                                    readOnly={!isEditMode}
+                                    value={self.docData.doklausid}
+                                    collId='id'
+                                    ref='dokprop-doklausid'
+                                    placeholder='Konteerimine'
+                                    onChange={self.handleInputChange}/>
                         </div>
 
 

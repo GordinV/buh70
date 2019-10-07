@@ -46,7 +46,7 @@ class DocumentTemplate extends React.PureComponent {
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick',
             'btnSaveClick', 'btnCancelClick', 'fetchData', 'createLibs', 'loadLibs',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
-            'modalPageClick', 'handleGridRowChange');
+            'modalPageClick', 'handleGridRowChange','handlePageClick');
 
 
         this.gridRowData = {}; //будем хранить строку грида
@@ -498,7 +498,7 @@ class DocumentTemplate extends React.PureComponent {
      */
     handlePageClick(page) {
         if (page.docId) {
-            document.location.href = `/document/${page.docTypeId}/${page.docId}`;//@todo Обновить
+            this.props.history.push(`/${DocContext.module}/${page.docTypeId}/${page.docId}`)
         }
 
         if (page.handlePageClick) {

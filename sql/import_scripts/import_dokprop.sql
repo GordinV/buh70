@@ -2,6 +2,28 @@ DROP FUNCTION IF EXISTS import_dokprop( );
 DROP FUNCTION IF EXISTS import_dokprop( INTEGER );
 DROP FUNCTION IF EXISTS import_dokprop( INTEGER, TEXT );
 
+drop FOREIGN TABLE if EXISTS remote_dokprop;
+
+CREATE FOREIGN TABLE remote_dokprop (
+  id        INTEGER                         NOT NULL,
+  parentid  INTEGER                        NOT NULL,
+  proc_     VARCHAR(120) DEFAULT space(1)  NOT NULL,
+  registr   SMALLINT     DEFAULT 1         NOT NULL,
+  vaatalaus SMALLINT     DEFAULT 0         NOT NULL,
+  selg      TEXT         DEFAULT space(1)  NOT NULL,
+  muud      TEXT,
+  asutusid  INTEGER      DEFAULT 0         NOT NULL,
+  konto     VARCHAR(20)  DEFAULT space(20) NOT NULL,
+  kood1     VARCHAR(20)  DEFAULT space(20) NOT NULL,
+  kood2     VARCHAR(20)  DEFAULT space(20) NOT NULL,
+  kood3     VARCHAR(20)  DEFAULT space(20) NOT NULL,
+  kood4     VARCHAR(20)  DEFAULT space(20) NOT NULL,
+  kood5     VARCHAR(20)  DEFAULT space(20) NOT NULL,
+  kbmkonto  VARCHAR(20)  DEFAULT space(20) NOT NULL,
+  tyyp      INTEGER      DEFAULT 1         NOT NULL  )
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'dokprop');
+
 CREATE OR REPLACE FUNCTION import_dokprop(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -24,8 +46,8 @@ BEGIN
     d.*,
     l.kood AS dok,
     l.rekvid
-  FROM dokprop d
-    INNER JOIN library l ON l.id = d.parentid
+  FROM remote_dokprop d
+    INNER JOIN remote_library l ON l.id = d.parentid
   WHERE (d.id = in_old_id OR in_old_id IS NULL)
         AND l.kood IN
             ('ARV', 'AVANS','AVANSS', 'DEKL', 'KULUM', 'PALK', 'MAHAKANDMINE', 'PAIGUTUS', 'UMBERHINDAMINE', 'VORDER', 'SORDER', 'PARANDUS', 'MK')
@@ -167,6 +189,14 @@ COST 100;
 
 
 /*
-SELECT import_dokprop(1876)
+SELECT import_dokprop(rd.id) from remote_dokprop rd inner join remote_library l on rd.parentid= l.id
+where rd.rekvid= 63
 
+select d.*
+from libs.dokprop d
+left outer join libs.library l on d.parentid = l.id
+where d.rekvid = 64
+
+
+select * from libs.library where id = 53
 */

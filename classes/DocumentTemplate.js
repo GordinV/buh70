@@ -87,8 +87,18 @@ class Document {
     /**
      * выполнит задачу
      */
-    executeTask() {
+    async executeTask(task) {
+        console.log('executeTask', task);
+        let sql = this.config[task].command,
+            params = [ this.userId, this.documentId];
 
+        console.log('executeTask, sql', task, sql, params);
+
+
+        const dbResult = await db.queryDb(sql, params);
+        console.log('executeTask, done', task, dbResult);
+
+        return dbResult;
     }
 
     /**

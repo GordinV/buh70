@@ -4,8 +4,6 @@ const userData = function (req) {
     let userId = req.body.userId,
         uuid = req.body.uuid;
 
-    console.log('userData -> req.body',req.body, userId, uuid);
-
     if (!req.session.users) {
         return null;
     }

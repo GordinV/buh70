@@ -387,17 +387,6 @@ const Arv = {
     },
     bpm: [
         {
-            step: 0,
-            name: 'Регистация документа',
-            action: 'start',
-            nextStep: 1,
-            task: 'human',
-            data: [],
-            actors: [],
-            status: null,
-            actualStep: false
-        },
-        {
             step: 1,
             name: 'Контировка',
             action: 'generateJournal',
@@ -406,31 +395,13 @@ const Arv = {
             data: [],
             status: null,
             actualStep: false
-        },
-//        {step:2, name:'Оплата', action: 'tasumine', nextStep:3, task:'human', data:[], status:null, actualStep:false},
-        {
-            step: 2,
-            name: 'Конец',
-            action: 'endProcess',
-            nextStep: null,
-            task: 'automat',
-            data: [],
-            actors: [],
-            status: null,
-            actualStep: false
         }
     ],
-    register: {
-        command: `UPDATE docs.doc
-                  SET status = 1
-                  WHERE id = $1`, type: "sql"
-    },
     generateJournal: {
         command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($2::INTEGER, $1::INTEGER)", //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generateJournal'
     },
-    endProcess: {command: "UPDATE docs.doc SET status = 2 WHERE id = $1", type: "sql"},
     executeTask: function (task, docId, userId) {
         console.log('executeTask', task, docId, userId);
         // выполнит задачу, переданную в параметре

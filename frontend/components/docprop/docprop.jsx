@@ -59,6 +59,7 @@ class SelectTextWidget extends React.PureComponent {
                         title={this.props.title}
                         name={this.props.name}
                         libs={this.props.libs}
+                        data={this.props.data}
                         value={this.props.value || ''}
                         defaultValue={this.props.defaultValue || ''}
                         placeholder={this.props.placeholder || this.props.title}

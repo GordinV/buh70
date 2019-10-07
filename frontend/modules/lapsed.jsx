@@ -3,6 +3,8 @@
 const React = require('react');
 
 const Menu = require('./../components/menu-toolbar/menu-toolbar.jsx');
+const JournalDocument = require('../docs/journal/document/index.jsx');
+
 
 const LapseDokument = require('./../docs/laps/document/index.jsx');
 const LasteRegister = require('./../docs/laps/index.jsx');
@@ -41,7 +43,6 @@ const MODULE = 'Lapsed';
 const DocContext = require('./../doc-context.js');
 
 
-
 class App extends React.Component {
     constructor(props) {
         super(props);
@@ -57,7 +58,7 @@ class App extends React.Component {
             <StyleRoot>
                 <Route path="/lapsed"
                        render={() => <Menu params={btnParams}
-                                           rekvId={DocContext.userData ? DocContext.userData.rekvid: 0}
+                                           rekvId={DocContext.userData ? DocContext.userData.rekvid : 0}
                                            module={MODULE}/>}
                 />
 
@@ -91,7 +92,13 @@ class App extends React.Component {
                 <Route exact path="/lapsed/arv"
                        render={(props) => <ArvedeRegister history={props.history}
                                                           initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/arv/:docId" component={ArveDocument}/>
+                <Route exact path="/lapsed/arv/:docId"
+                       render={(props) => <ArveDocument {...props} history={props.history}/>}/>
+
+                <Route exact path="/lapsed/journal/:docId"
+                       render={(props) => <JournalDocument {...props} history={props.history}/>}
+                />
+
 
                 <Route exact path="/lapsed/smk"
                        render={(props) => <SmkRegister history={props.history}
