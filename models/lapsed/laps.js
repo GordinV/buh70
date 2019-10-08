@@ -157,6 +157,12 @@ module.exports = {
         type: 'sql',
         alias: 'koostaArve'
     },
+    koostaEttemaksuArve: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM lapsed.koosta_ettemaksu_arve($1::integer, $2::integer)`,
+        type: 'sql',
+        alias: 'koostaEttemaksuArve'
+    },
 
 
 }

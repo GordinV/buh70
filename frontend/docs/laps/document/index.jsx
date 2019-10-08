@@ -27,12 +27,8 @@ const toolbarParams = {
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
-    InputNumber = require('../../../components/input-number/input-number.jsx'),
-    Select = require('../../../components/select/select.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
-    relatedDocuments = require('../../../mixin/relatedDocuments.jsx'),
-    ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     styles = require('./laps.styles');
 
 const LIBDOK = 'LAPS',
@@ -79,8 +75,13 @@ class Laps extends React.PureComponent {
     render() {
         const bpm = [
             {
-                name: 'Koosta arve',
+                name: 'Koosta arve taabeli alusel',
                 task: 'koostaArve'
+            },
+            {
+                name: 'Koosta ettemaksuarve',
+                task: 'koostaEttemaksuArve'
+
             }
         ];
 

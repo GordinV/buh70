@@ -106,32 +106,27 @@ class Select extends React.PureComponent {
 
         let inputStyle = Object.assign({}, styles.input, inputReadOnly ? {} : styles.hide,
             inputReadOnly ? styles.readOnly : {}),
-            selectStyle = Object.assign({}, styles.select, inputReadOnly ? styles.hide : {}, inputReadOnly ? styles.readOnly : {}),
+            selectStyle = Object.assign({}, styles.select,
+                this.props.style ? this.props.style : {}),
             buttonStyle = Object.assign({}, styles.button, this.props.btnDelete ? {} : styles.hide);
-
-        selectStyle = styles.select;
 
         return (
             <div style={styles.wrapper} ref="wrapper">
-                <label ref="label" style={styles.label}
-                       htmlFor={this.props.name}>{this.props.title}
-                </label>
+                {this.props.title ?
+                    <label ref="label" style={styles.label}
+                           htmlFor={this.props.name}>{this.props.title}
+                    </label>
+                    : null}
 
                 <select ref="select"
                         style={selectStyle}
                         value={this.state.value || 0}
                         id={this.props.name}
                         disabled={this.state.readOnly}
+                        size={this.props.size ? this.props.size : 0}
                         onChange={this.onChange}>
                     {this.prepaireDataOptions()}
                 </select>
-                {/*
-                <button ref="button"
-                        style={buttonStyle}
-                        onClick={this.btnDelClick}>
-                    X
-                </button>
-    */}
             </div>)
     }
 

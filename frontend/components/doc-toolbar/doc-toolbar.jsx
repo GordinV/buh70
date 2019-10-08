@@ -58,7 +58,6 @@ class DocToolBar extends React.PureComponent {
                 }
             };
 
-        console.log('this.props.bpm.length', this.props.bpm);
         return <ToolbarContainer ref='toolbarContainer'>
             <BtnAdd ref='btnAdd' onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
                     disabled={toolbarParams['btnAdd'].disabled}/>
@@ -146,14 +145,19 @@ class DocToolBar extends React.PureComponent {
         }
     }
 
-    handleButtonTask() {
-        // метод вызывается при выборе задачи
-        if (this.props.btnTaskClick) {
-            return this.props.btnTaskClick(this.props.bpm[0].name);
+    handleButtonTask(taskName) {
+        // ишем таску
+        const task = this.props.bpm.find(row => row.name === taskName);
+
+        if (task) {
+            // метод вызывается при выборе задачи
+            if (this.props.btnTaskClick) {
+                return this.props.btnTaskClick(task.name);
+            }
+
         }
 
     }
-
 
     handleSelectTask(e) {
         // метод вызывается при выборе задачи

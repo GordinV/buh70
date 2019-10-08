@@ -4,53 +4,73 @@ const PropTypes = require('prop-types');
 
 const React = require('react'),
     Button = require('../button-register/button-register-execute/button-register-execute.jsx'),
+    ButtonOpen = require('../button-register/button-register.jsx'),
+    Select = require('../../components/select/select.jsx'),
+
     styles = require('./task-widget-styles');
 
 class TaskWidget extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            taskList: props.taskList || []
+            taskList: props.taskList || [],
+            actualTask: props.taskList[0].name,
+            showList: false
         };
         this.handleSelectTask = this.handleSelectTask.bind(this);
         this.handleButtonTask = this.handleButtonTask.bind(this);
+        this.handleButtonOpenClick = this.handleButtonOpenClick.bind(this);
     }
 
     render() {
-
+        console.log('render', this.state);
         if (!this.state.taskList) return <div></div>;
 
+        const tasks = this.state.taskList.map((task, index) => {
+            return {id: index++, name: task.name}
+        });
         return (<div style={styles.wrapper}>
-                {this.state.taskList.length > 1 ?
-                    <select
-                        onChange={this.handleSelectTask}
-                        show={true}
-                        ref='selectTask'>
-                        {
-                            this.state.taskList.map((taskName, index) => {
-                                let key = 'option-' + index;
-                                <option value={0} key={key} ref={key}> {taskName.name} </option>
-                            })
-                        }
-                    </select> : <Button
-                        ref='buttonTask'
-                        onClick={this.handleButtonTask}
-                        show={this.state.taskList.length == 1 ? true : false}
-                        value={this.state.taskList.length == 1 ? this.state.taskList[0].name : ''}
-                    />
-                }
+                <div>
+                    <div style={styles.wrapper}>
+                        <Button
+                            ref='buttonTask'
+                            onClick={this.handleButtonTask}
+                            value={this.state.actualTask}
+                        />
+                        <ButtonOpen
+                            ref='buttonOpenList'
+                            onClick={this.handleButtonOpenClick}
+                            value='v'/>
+                    </div>
+                    {this.state.showList ?
+                        <Select name='name'
+                                style={styles.select}
+                                data={tasks}
+                                readOnly={false}
+                                value={this.state.actualTask}
+                                collId='name'
+                                ref='task_widjet'
+                                size={this.state.taskList.length}
+                                onChange={this.handleSelectTask}/>
+                        : null}
+                </div>
             </div>
 
         )
     }
 
-    handleSelectTask(e) {
-        let taskName = e.target.value;
-        this.props.handleSelectTask(taskName);
+    handleButtonOpenClick() {
+        let isShow = !this.state.showList;
+        this.setState({showList: isShow});
+    }
+
+    handleSelectTask(name, value) {
+        let isShow = !this.state.showList;
+        this.setState({showList: isShow, actualTask: value});
     }
 
     handleButtonTask() {
-        this.props.handleButtonTask();
+        this.props.handleButtonTask(this.state.actualTask);
     }
 
 

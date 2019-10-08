@@ -12,7 +12,6 @@ const
     SelectData = require('../../../components/select-data/select-data.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
-    DokProp = require('../../../components/docprop/docprop.jsx'),
     relatedDocuments = require('../../../mixin/relatedDocuments.jsx'),
     ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
@@ -31,9 +30,6 @@ const LIBDOK = 'ARV',
         {id: 'tegev', filter: ''},
         {id: 'nomenclature', filter: `where dok = 'ARV'`}
     ];
-
-const now = new Date();
-
 
 class Arve extends React.PureComponent {
     constructor(props) {
@@ -272,13 +268,6 @@ class Arve extends React.PureComponent {
 
         if (!row) return <div/>;
 
-
-        let nomData = [];
-
-        nomData = self.libs['nomenclature'].filter(lib => {
-            if (!lib.dok || lib.dok === LIBDOK) return lib;
-        });
-
         return (<div className='.modalPage'>
             <ModalPage
                 modalObjects={modalObjects}
@@ -298,7 +287,7 @@ class Arve extends React.PureComponent {
                             <Select title="Teenus"
                                     name='nomid'
                                     libs="nomenclature"
-                                    data={nomData}
+                                    data={self.libs['nomenclature']}
                                     readOnly={false}
                                     value={row.nomid}
                                     collId='id'

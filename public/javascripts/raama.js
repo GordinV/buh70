@@ -48,8 +48,8 @@ webpackJsonp_name_([1],{
 	var SorderDocument = __webpack_require__(256);
 	var VorderideRegister = __webpack_require__(273);
 	var VorderDocument = __webpack_require__(275);
-	var SmkRegister = __webpack_require__(250);
-	var SmkDocument = __webpack_require__(252);
+	var SmkRegister = __webpack_require__(249);
+	var SmkDocument = __webpack_require__(251);
 	var VmkDocument = __webpack_require__(277);
 	var VmkRegister = __webpack_require__(279);
 	var Menu = __webpack_require__(49);
@@ -394,14 +394,14 @@ webpackJsonp_name_([1],{
 	var PropTypes = __webpack_require__(32);
 
 	var DocumentTemplate = __webpack_require__(168),
-	    InputText = __webpack_require__(183),
-	    InputDate = __webpack_require__(185),
-	    InputNumber = __webpack_require__(187),
-	    DocCommon = __webpack_require__(189),
-	    Select = __webpack_require__(192),
+	    InputText = __webpack_require__(185),
+	    InputDate = __webpack_require__(187),
+	    InputNumber = __webpack_require__(189),
+	    DocCommon = __webpack_require__(191),
+	    Select = __webpack_require__(181),
 	    TextArea = __webpack_require__(194),
 	    DataGrid = __webpack_require__(196),
-	    DokProp = __webpack_require__(248),
+	    DokProp = __webpack_require__(252),
 	    relatedDocuments = __webpack_require__(217),
 	    ModalPage = __webpack_require__(200),
 	    styles = __webpack_require__(276);
@@ -885,14 +885,14 @@ webpackJsonp_name_([1],{
 	var PropTypes = __webpack_require__(32);
 
 	var DocumentTemplate = __webpack_require__(168),
-	    InputText = __webpack_require__(183),
-	    InputDate = __webpack_require__(185),
-	    InputNumber = __webpack_require__(187),
-	    DocCommon = __webpack_require__(189),
-	    Select = __webpack_require__(192),
+	    InputText = __webpack_require__(185),
+	    InputDate = __webpack_require__(187),
+	    InputNumber = __webpack_require__(189),
+	    DocCommon = __webpack_require__(191),
+	    Select = __webpack_require__(181),
 	    TextArea = __webpack_require__(194),
 	    DataGrid = __webpack_require__(196),
-	    DokProp = __webpack_require__(248),
+	    DokProp = __webpack_require__(252),
 	    relatedDocuments = __webpack_require__(217),
 	    ModalPage = __webpack_require__(200),
 	    styles = __webpack_require__(278);
@@ -1536,9 +1536,9 @@ webpackJsonp_name_([1],{
 	var PropTypes = __webpack_require__(32);
 
 	var DocumentTemplate = __webpack_require__(168),
-	    InputText = __webpack_require__(183),
-	    InputDate = __webpack_require__(185),
-	    Select = __webpack_require__(192),
+	    InputText = __webpack_require__(185),
+	    InputDate = __webpack_require__(187),
+	    Select = __webpack_require__(181),
 	    TextArea = __webpack_require__(194),
 	    styles = __webpack_require__(284);
 
@@ -1787,7 +1787,7 @@ webpackJsonp_name_([1],{
 	var PropTypes = __webpack_require__(32);
 
 	var DocumentTemplate = __webpack_require__(168),
-	    InputText = __webpack_require__(183),
+	    InputText = __webpack_require__(185),
 	    TextArea = __webpack_require__(194),
 	    styles = __webpack_require__(288);
 
@@ -2020,8 +2020,8 @@ webpackJsonp_name_([1],{
 	var React = __webpack_require__(9);
 
 	var DocumentTemplate = __webpack_require__(168),
-	    InputText = __webpack_require__(183),
-	    Select = __webpack_require__(192),
+	    InputText = __webpack_require__(185),
+	    Select = __webpack_require__(181),
 	    TextArea = __webpack_require__(194),
 	    styles = __webpack_require__(292),
 	    DOCUMENT_TYPES = [{ id: 1, kood: 'document', name: 'document' }, { id: 2, kood: 'library', name: 'library' }];

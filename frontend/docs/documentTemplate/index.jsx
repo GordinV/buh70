@@ -11,8 +11,6 @@ const URL = 'newApi/document';
 const
     Form = require('../../components/form/form.jsx'),
     ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx'),
-    MenuToolBar = require('./../../components/menu-toolbar/menu-toolbar.jsx'),
-    StartMenu = require('./../../components/start-menu/start-menu.jsx'),
     DocToolBar = require('./../../components/doc-toolbar/doc-toolbar.jsx'),
     styles = require('./document-styles');
 
@@ -376,9 +374,9 @@ class DocumentTemplate extends React.PureComponent {
                     }
 
                     if (response.data) {
-
+                        // executing task
                         if (response.data.action && response.data.action === 'task') {
-                            // task
+
                             const dataRow = response.data.result;
                             let docId = dataRow.docId;
                             let docTypeId = dataRow.docTypeId ? dataRow.docTypeId : null;
@@ -387,9 +385,9 @@ class DocumentTemplate extends React.PureComponent {
                                 // koostatud uus dok,
                                 return this.props.history.push(`/${this.props.module}/${docTypeId}/${docId}`);
                             }
-
                         }
 
+                        //execute select calls
                         if (response.data.action && response.data.action === 'select') {
                             this.docData = response.data.data[0];
 
@@ -401,6 +399,8 @@ class DocumentTemplate extends React.PureComponent {
                             this.setState({reloadData: false, warning: ''});
                             resolved(response.data.data[0]);
                         }
+
+                        //call to save
                         if (response.data.action && response.data.action === 'save') {
                             this.docData = response.data.data[0];
                             this.setState({reloadData: false, warning: '', edited: false, docId: this.docData.id});
