@@ -150,7 +150,13 @@ module.exports = {
                 '',
             alias:
                 'curLapsed'
-        }
+        },
+    koostaArve: {
+        command: `SELECT error_code, result, error_message, doc_type_id 
+                  FROM lapsed.koosta_arve_taabeli_alusel($1::integer, $2::integer)`,
+        type: 'sql',
+        alias: 'koostaArve'
+    },
 
 
 }

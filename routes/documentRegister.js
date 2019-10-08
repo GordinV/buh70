@@ -102,7 +102,7 @@ exports.post = async (req, res) => {
         {requiredFields: Document.config.requiredFields ? Document.config.requiredFields : []}
     );
 
-    res.send({data: [preparedData], userData: user});
+    res.send({action: 'select', result: 'ok', data: [preparedData], userData: user});
 
 };
 
@@ -135,35 +135,18 @@ exports.put = async (req, res) => {
 
     if (Document.config.bpm) {
         // bpm proccess
-        console.log('start bpm');
         Document.config.bpm.forEach(async (process) => {
-            console.log('bpm process', process);
             const bpmResult = await Document.executeTask(process.action);
-            console.log('bpm result', process, bpmResult);
         })
-
-        /*
-        const getData = async () => {
-            console.log('getData start');
-            const dbQueries = Document.config.bpm.map(async (process) => {
-                console.log('called', process.action);
-                return process.action;
-//                const bpmIteration = await Document.executeTask(process.action);
- //               return bpmIteration;
-            });
-            console.log('getData dbQueries', dbQueries);
-            const result = await Promise.all(dbQueries);
-            console.log('getData result', result);
-            return result;
-        }
-
-         */
 
     }
 
     if (!savedData.row || savedData.row.length < 1) {
         console.error('error in save', params, savedData);
-        return res.status(500).send({result: {error_code: 1, error_message: 'Error in save', docId: 0}});
+        return res.status(500).send({
+            action: 'save',
+            result: {error_code: 1, error_message: 'Error in save', docId: 0}
+        });
     }
 
 
@@ -175,7 +158,11 @@ exports.put = async (req, res) => {
         {gridConfig: savedData.gridConfig ? savedData.gridConfig : []});
 
 
-    res.send({result: {error_code: 0, error_message: null, docId: prepairedData.id}, data: [prepairedData]}); //пока нет новых данных
+    res.send({
+        action: 'save',
+        result: {error_code: 0, error_message: null, docId: prepairedData.id},
+        data: [prepairedData]
+    }); //пока нет новых данных
 
 
 };
@@ -208,6 +195,29 @@ exports.delete = async (req, res) => {
     let data;
 
     data = {result: await Document.delete()};
-    res.send({data: data});
+    res.send({action: 'delete', data: data});
 
+};
+
+exports.executeTask = async (req, res) => {
+    const user = require('../middleware/userData')(req); // данные пользователя
+    const taskName = req.params.taskName; // получим из параметра task
+    const Doc = require('./../classes/DocumentTemplate');
+    const params = req.body;
+    const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, params.module.toLowerCase());
+
+    const data = await Document.executeTask(taskName);
+
+    const prepairedData = Object.assign({}, data);
+    res.send({
+        action: 'task',
+        result: {
+            error_code: 0,
+            error_message: null,
+            docId: prepairedData.result,
+            docTypeId: prepairedData.doc_type_id,
+            module: params.module
+        },
+        data: prepairedData
+    });
 };

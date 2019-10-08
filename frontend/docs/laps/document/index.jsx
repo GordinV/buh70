@@ -77,14 +77,21 @@ class Laps extends React.PureComponent {
     }
 
     render() {
-        let initData = this.props.initData ? this.props.initData : {};
+        const bpm = [
+            {
+                name: 'Koosta arve',
+                task: 'koostaArve'
+            }
+        ];
 
         return (
             <DocumentTemplate docId={this.state.docId}
                               ref='document'
+                              history={this.props.history}
+                              bpm={bpm}
                               module={this.state.module}
                               docTypeId='LAPS'
-                              initData={initData}
+                              initData={this.props.initData ? this.props.initData : {}}
                               libs={LIBRARIES}
                               pages={this.pages}
                               renderer={this.renderer}
@@ -172,7 +179,7 @@ class Laps extends React.PureComponent {
                               gridData={gridVanemadData}
                               gridColumns={gridVanemadColumns}
                               showToolBar={!isEditMode}
-                              toolbarParams = {toolbarParams}
+                              toolbarParams={toolbarParams}
                               handleGridBtnClick={self.handleGridBtnClick}
                               readOnly={!isEditMode}
                               style={styles.grid.headerTable}

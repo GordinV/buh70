@@ -32,6 +32,8 @@ module.exports = function (app) {
     app.post('/newApi/loadLibs/:documentType', checkAuth, require('./loadLibs').post); //checkAuth,
     app.post('/newApi/changeAsutus/:rekvId', checkAuth, require('./changeAsutus').post); //checkAuth,
     app.post('/newApi/delete', checkAuth, require('./documentRegister').delete); //checkAuth, //checkAuth,
+    app.post('/newApi/task/:taskName', checkAuth, require('./documentRegister').executeTask);
+
     app.post('/newApi', checkAuth, require('./newApi').post); //checkAuth, //checkAuth,
 
 

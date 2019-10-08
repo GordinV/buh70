@@ -22,7 +22,7 @@ class Journal extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            docId: props.docId ? props.docId: Number(props.match.params.docId),
+            docId: props.docId ? props.docId : Number(props.match.params.docId),
             loadedData: false
         };
 
@@ -101,12 +101,12 @@ class Journal extends React.PureComponent {
                             readOnly={!isEditeMode}/>
                     </div>
                     <div style={styles.docRow}>
-                            <TextArea title="Selgitus"
-                                      name='selg'
-                                      ref="textarea-selg"
-                                      value={self.docData.selg || ''}
-                                      onChange={self.handleInputChange}
-                                      readOnly={!isEditeMode}/>
+                        <TextArea title="Selgitus"
+                                  name='selg'
+                                  ref="textarea-selg"
+                                  value={self.docData.selg || ''}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditeMode}/>
                     </div>
                     <div style={styles.docRow}>
                         <div style={styles.gridContainer}>
@@ -115,8 +115,8 @@ class Journal extends React.PureComponent {
                                       gridColumns={gridColumns}
                                       handleGridRow={this.handleGridRow}
                                       readOnly={!isEditeMode}
-                                      showToolBar = {isEditeMode}
-                                      handleGridBtnClick = {self.handleGridBtnClick}
+                                      showToolBar={isEditeMode}
+                                      handleGridBtnClick={self.handleGridBtnClick}
                                       style={styles.grid.headerTable}
                                       ref="data-grid"/>
                         </div>
@@ -288,8 +288,8 @@ Journal.propTypes = {
 };
 
 Journal.defaultProps = {
-    initData:{},
-    userData:{}
+    initData: {},
+    userData: {}
 };
 
 module.exports = (Journal);

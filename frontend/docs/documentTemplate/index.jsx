@@ -44,9 +44,9 @@ class DocumentTemplate extends React.PureComponent {
 
         this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick',
-            'btnSaveClick', 'btnCancelClick', 'fetchData', 'createLibs', 'loadLibs',
+            'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
-            'modalPageClick', 'handleGridRowChange','handlePageClick');
+            'modalPageClick', 'handleGridRowChange', 'handlePageClick');
 
 
         this.gridRowData = {}; //будем хранить строку грида
@@ -154,16 +154,9 @@ class DocumentTemplate extends React.PureComponent {
      */
     btnSaveClick() {
         this.fetchData('Put').then(() => {
-            if (this.props.docId === 0 && !this.docData.id) {
-                return this.setState({warning: 'Ошибка при сохранении'});
-            } else {
-
-                this.setState({edited: false, docId: this.docData.id});
-                if (this.props.history) {
-                    this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
-                }
+            if (this.props.history) {
+                this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
             }
-
         });
     }
 
@@ -178,8 +171,16 @@ class DocumentTemplate extends React.PureComponent {
     /**
      *
      */
-    handleButtonTask() {
-        console.log('handleButtonTask');
+    btnTaskClick(taskName) {
+
+        const task = this.props.bpm.find(task => task.name === taskName);
+
+        this.fetchData('Post', `/newApi/task/${task.task}`).then((result) => {
+            if (this.props.history) {
+                this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
+            }
+        });
+
     }
 
 
@@ -288,6 +289,7 @@ class DocumentTemplate extends React.PureComponent {
         return (
             <ToolbarContainer ref='toolbarContainer'>
                 <DocToolBar ref='doc-toolbar'
+                            bpm={this.props.bpm ? this.props.bpm : []}
                             docId={this.state.docId}
                             edited={this.state.edited}
                             validator={this.validation}
@@ -295,7 +297,8 @@ class DocumentTemplate extends React.PureComponent {
                             btnEditClick={this.btnEditClick}
                             btnCancelClick={this.btnCancelClick}
                             btnPrintClick={this.btnPrintClick}
-                            btnSaveClick={this.btnSaveClick}/>
+                            btnSaveClick={this.btnSaveClick}
+                            btnTaskClick={this.btnTaskClick}/>
             </ToolbarContainer>
         );
     }
@@ -368,54 +371,56 @@ class DocumentTemplate extends React.PureComponent {
         return new Promise((resolved, rejected) => {
             fetchData[method](url, params).then(response => {
 
-                if (response.status && response.status == 401) {
-                    document.location = `/login`;
-                }
-
-                if (response.data) {
-
-                    let result = response.data.result;
-
-
-                    if (result && result.error_code > 0) {
-                        //есть результат запроса
-                        let errorMessage = result.result.error_message;
-
-                        if (!!errorMessage) {
-
-                            console.error('Fetch viga ', params, errorMessage, result);
-                            this.setState({warning: errorMessage});
-                            return rejected();
-                        }
+                    if (response.status && response.status == 401) {
+                        document.location = `/login`;
                     }
-                    if (response.data.data.length && Object.keys(response.data.data[0]).indexOf('id') !== -1) {
-                        this.docData = response.data.data[0];
 
-                        if (response.data.data[0].requiredFields) {
-                            this.requiredFields = response.data.data[0].requiredFields;
+                    if (response.data) {
+
+                        if (response.data.action && response.data.action === 'task') {
+                            // task
+                            const dataRow = response.data.result;
+                            let docId = dataRow.docId;
+                            let docTypeId = dataRow.docTypeId ? dataRow.docTypeId : null;
+
+                            if (docId && docTypeId) {
+                                // koostatud uus dok,
+                                return this.props.history.push(`/${this.props.module}/${docTypeId}/${docId}`);
+                            }
+
                         }
 
-                        //should return data and called for reload
-                        this.setState({reloadData: false, warning: ''});
-                        resolved(response.data.data[0]);
+                        if (response.data.action && response.data.action === 'select') {
+                            this.docData = response.data.data[0];
+
+                            if (response.data.data[0].requiredFields) {
+                                this.requiredFields = response.data.data[0].requiredFields;
+                            }
+
+                            //should return data and called for reload
+                            this.setState({reloadData: false, warning: ''});
+                            resolved(response.data.data[0]);
+                        }
+                        if (response.data.action && response.data.action === 'save') {
+                            this.docData = response.data.data[0];
+                            this.setState({reloadData: false, warning: '', edited: false, docId: this.docData.id});
+
+                        }
                     } else {
-                        console.error('Fetch viga params->', params, result, response);
-
-                        this.setState({warning: `Päringu viga `});
-
+                        console.error('Fetch viga ', params);
+                        this.setState({warning: 'fetch error'});
                         return rejected();
                     }
-
                 }
-            }, error => {
-                console.error('doc template Error:', error);
-                // possibly auth error, so re-login
-                if (this.props.history) {
-                    this.props.history.push(`/login`);
-                }
-                return rejected();
-            });
-        })
+            )
+        }, error => {
+            console.error('doc template Error:', error);
+            // possibly auth error, so re-login
+            if (this.props.history) {
+                this.props.history.push(`/login`);
+            }
+            return rejected();
+        });
     }
 
     /**

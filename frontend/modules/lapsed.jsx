@@ -73,7 +73,10 @@ class App extends React.Component {
                        render={(props) => <LasteRegister history={props.history}
                                                          initData={this.props.initData} module={MODULE}/>}/>
 
-                <Route exact path="/lapsed/laps/:docId" component={LapseDokument}/>
+                <Route exact path="/lapsed/laps/:docId"
+                    render={(props) => <LapseDokument {...props} history={props.history}/>}/>
+
+
                 <Route exact path="/lapsed/vanem"
                        render={(props) => <VanemateRegister history={props.history}
                                                             initData={this.props.initData} module={MODULE}/>}/>

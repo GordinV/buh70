@@ -8,7 +8,7 @@ const React = require('react'),
     ICON = 'execute';
 
 
-class ButtonRegisterExecute extends React.PureComponent{
+class ButtonRegisterExecute extends React.PureComponent {
 // кнопка создания документа в регистрах
     constructor(props) {
         super(props);
@@ -16,7 +16,9 @@ class ButtonRegisterExecute extends React.PureComponent{
     }
 
     handleClick() {
-        this.props.onClick();
+        if (this.props.onClick) {
+            this.props.onClick();
+        }
     }
 
     render() {
@@ -29,12 +31,12 @@ class ButtonRegisterExecute extends React.PureComponent{
             <img ref='image' src={styles.icons[ICON]}/>
         </Button>
     }
-};
+}
 
 ButtonRegisterExecute.propTypes = {
     onClick: PropTypes.func.isRequired,
     value: PropTypes.string.isRequired
-}
+};
 
 
 ButtonRegisterExecute.defaultProps = {

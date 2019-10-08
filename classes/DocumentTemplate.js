@@ -88,16 +88,14 @@ class Document {
      * выполнит задачу
      */
     async executeTask(task) {
-        console.log('executeTask', task);
         let sql = this.config[task].command,
             params = [ this.userId, this.documentId];
 
-        console.log('executeTask, sql', task, sql, params);
-
+        if (!sql) {
+            return {error: 'No task found'}
+        }
 
         const dbResult = await db.queryDb(sql, params);
-        console.log('executeTask, done', task, dbResult);
-
         return dbResult;
     }
 

@@ -58,22 +58,23 @@ class DocToolBar extends React.PureComponent {
                 }
             };
 
+        console.log('this.props.bpm.length', this.props.bpm);
         return <ToolbarContainer ref='toolbarContainer'>
-                <BtnAdd ref='btnAdd' onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
-                        disabled={toolbarParams['btnAdd'].disabled}/>
-                <BtnEdit ref='btnEdit' onClick={this.btnEditClick} show={toolbarParams['btnEdit'].show}
-                         disabled={toolbarParams['btnEdit'].disabled}/>
-                <BtnSave ref='btnSave' onClick={this.btnSaveClick} show={toolbarParams['btnSave'].show}
-                         disabled={toolbarParams['btnSave'].disabled}/>
-                <BtnCancel ref='btnCancel' onClick={this.btnCancelClick} show={toolbarParams['btnCancel'].show}
-                           disabled={toolbarParams['btnCancel'].disabled}/>
-                <BtnPrint ref='btnPrint' onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
-                          disabled={toolbarParams['btnPrint'].disabled}/>
-                {this.props.bpm.length ? <TaskWidget ref='taskWidget'
-                                                     taskList={this.props.bpm}
-                                                     handleSelectTask={this.handleSelectTask}
-                                                     handleButtonTask={this.handleButtonTask}
-                /> : null}
+            <BtnAdd ref='btnAdd' onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
+                    disabled={toolbarParams['btnAdd'].disabled}/>
+            <BtnEdit ref='btnEdit' onClick={this.btnEditClick} show={toolbarParams['btnEdit'].show}
+                     disabled={toolbarParams['btnEdit'].disabled}/>
+            <BtnSave ref='btnSave' onClick={this.btnSaveClick} show={toolbarParams['btnSave'].show}
+                     disabled={toolbarParams['btnSave'].disabled}/>
+            <BtnCancel ref='btnCancel' onClick={this.btnCancelClick} show={toolbarParams['btnCancel'].show}
+                       disabled={toolbarParams['btnCancel'].disabled}/>
+            <BtnPrint ref='btnPrint' onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
+                      disabled={toolbarParams['btnPrint'].disabled}/>
+            {this.props.bpm.length ? <TaskWidget ref='taskWidget'
+                                                 taskList={this.props.bpm}
+                                                 handleSelectTask={this.handleSelectTask}
+                                                 handleButtonTask={this.handleButtonTask}
+            /> : null}
         </ToolbarContainer>
     }
 
@@ -145,17 +146,22 @@ class DocToolBar extends React.PureComponent {
         }
     }
 
-    handleButtonTask(task) {
+    handleButtonTask() {
         // метод вызывается при выборе задачи
-        //@todo Закончить
+        if (this.props.btnTaskClick) {
+            return this.props.btnTaskClick(this.props.bpm[0].name);
+        }
 
     }
 
 
     handleSelectTask(e) {
         // метод вызывается при выборе задачи
-        //@todo Закончить
         const taskValue = e.target.value;
+        if (this.props.btnTaskClick) {
+            return this.props.btnTaskClick(taskValue)
+        }
+
     }
 
 }
