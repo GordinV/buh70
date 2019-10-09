@@ -61,11 +61,6 @@ class DocumentTemplate extends React.PureComponent {
         }
 
         this.libs = this.createLibs(); //создаст объект для хранения справочников
-
-        if (this.props.libs.length && !this.state.loadedLibs && _.has(DocContext.userData, 'uuid')) {
-            this.loadLibs();
-        }
-
         if (this.props.docId === 0) {
             //@todo реализовать
 //            this.focusElement()
@@ -426,11 +421,14 @@ class DocumentTemplate extends React.PureComponent {
     /**
      * Обеспечит загрузку данных для библиотек
      */
-    loadLibs() {
-        let libs = this.props.libs.length;
+    loadLibs(libName) {
+        let libsCount = this.props.libs.length;
+
         let postUrl = '/newApi/loadLibs';
 
-        Object.keys(this.libs).forEach((lib) => {
+        let libsToLoad = libName ? [libName]: Object.keys(this.libs);
+
+        libsToLoad.forEach((lib) => {
             let params = Object.assign({
                 module: this.props.module,
                 userId: DocContext.userData.id,
@@ -442,24 +440,20 @@ class DocumentTemplate extends React.PureComponent {
             fetchData.fetchDataPost(`${postUrl}/${lib}`, params).then(response => {
                 if (response && 'data' in response) {
                     this.libs[lib] = response.data.result.result.data;
-                    libs--;
+                    libsCount--;
                 }
 
-                if (libs === 0) {
+                if (libsCount === 0) {
                     //all libs loaded;
-                    this.setState({loadedLibs: true});
+                    if (this.state.loadedLibs) {
+                        this.forceUpdate();
+                    } else {
+                        this.setState({loadedLibs: true});
+                    }
                 }
 
             }).catch(error => {
                 console.error('loadLibs error', error);
-                // possibly auth error, so re-login
-                /*
-                if (this.props.history) {
-                    console.error('loadLibs error, re-login', error);
-
-                    this.props.history.push(`/login`);
-                }
-                */
             });
         });
     }
@@ -476,13 +470,11 @@ class DocumentTemplate extends React.PureComponent {
                 //object
                 libs[lib.id] = [];
                 libParams[lib.id] = lib.filter;
-                libParams = Object.assign(this.state.libParams, {libParams});
-
-                this.setState({libParams: libParams});
             } else {
                 libs[lib] = [];
             }
         });
+        this.setState({libParams: libParams}, ()=> this.loadLibs());
         return libs;
     }
 

@@ -17,8 +17,7 @@ const
     ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     styles = require('./styles');
 
-const LIBDOK = 'LAPSE_TAABEL',
-    LIBRARIES = [{id: 'lapse_kaart', filter: ''}];
+const LIBDOK = 'LAPSE_TAABEL';
 
 const now = new Date();
 
@@ -44,8 +43,15 @@ class Laps extends React.PureComponent {
         ];
     }
 
+    componentDidUpdate(prevProps, prevState) {
+        if (this.state.lapsId !== prevState.lapsId) {
+            const doc = this.refs['document'];
+            doc.createLibs();
+        }
+    }
 
     render() {
+        const LIBRARIES = [{id: 'lapse_kaart', filter: `where lapsid = ${this.state.lapsId}`}];
 
         let initData = this.props.initData ? this.props.initData : {};
 
@@ -75,6 +81,11 @@ class Laps extends React.PureComponent {
         if ((self.docData.id == 0 || !self.docData.parentid) && this.state.lapsId) {
             //new record
             self.docData.parentid = this.state.lapsId;
+        }
+
+        if (!this.state.lapsId && self.docData.parentid) {
+            const doc = self;
+            this.setState({lapsId: self.docData.parentid})
         }
 
         let kpv = new Date(),
