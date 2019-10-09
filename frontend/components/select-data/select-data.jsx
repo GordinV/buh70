@@ -3,7 +3,6 @@
 const DocContext = require('../../doc-context');
 
 const PropTypes = require('prop-types');
-const getDataByFilter = require('../../../libs/getDataByFilter');
 const fetchData = require('./../../../libs/fetchData');
 const _ = require('lodash');
 
@@ -33,6 +32,7 @@ class SelectData extends React.PureComponent {
         this.handleGridClick = this.handleGridClick.bind(this);
         this.modalPageClick = this.modalPageClick.bind(this);
         this.loadLibs = this.loadLibs.bind(this);
+        this.handleClick = this.handleClick.bind(this);
     }
 
     componentDidMount() {
@@ -52,11 +52,6 @@ class SelectData extends React.PureComponent {
         let isEditeMode = !this.state.readOnly,
             btnStyle = Object.assign({}, styles.button, {display: isEditeMode ? 'inline' : 'none'});
 
-        let inputStyle = Object.assign({}, styles.input,
-            this.props.width ? {width: this.props.width} : {},
-            this.state.readOnly ? styles.readOnly : {}
-        );
-
         if (this.state.value && !this.state.fieldValue) {
             this.loadLibs()
         }
@@ -73,7 +68,7 @@ class SelectData extends React.PureComponent {
                 <Button value='v'
                         ref="btnShow"
                         style={btnStyle}
-                        onClick={(e) => this.handleClick(e)}>
+                        onClick={this.handleClick}>
                 </Button>
                 {
                     this.state.show ? this.modalPage() : null
@@ -82,7 +77,7 @@ class SelectData extends React.PureComponent {
         )
     }
 
-    handleClick(e) {
+    handleClick() {
         this.setState({
             show: true
         });
@@ -123,9 +118,9 @@ class SelectData extends React.PureComponent {
 
     // обработчик события измения значения в текстовом (поисковом) поле
     handleInputChange(name, value) {
-        this.setState({value: 0, fieldValue: value, show: true});
 
-        if (name == 'gridFilter') {
+        if (name === 'gridFilter') {
+            this.setState({value: 0, fieldValue: value, show: true});
             // обновим стейт
 
             if (value.length) {

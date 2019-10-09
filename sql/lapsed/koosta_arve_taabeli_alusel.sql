@@ -19,16 +19,12 @@ DECLARE
                                  AND v.staatus <> 3
                                ORDER BY (coalesce(properties ->> 'arved', 'ei')) DESC
                                LIMIT 1);
-    l_nom_id        INTEGER;
     l_doklausend_id INTEGER;
-    l_details       JSON;
     l_liik          INTEGER = 0;
     v_taabel        RECORD;
-    v_arv_details   RECORD;
     json_object     JSONB;
     l_json_arve     JSON;
     json_arvread    JSONB   = '[]';
-    v_nom           RECORD;
 
     l_tp            TEXT    = '800699'; -- (SELECT tp FROM libs.asutus a WHERE id = l_asutus_id);
 
@@ -43,8 +39,8 @@ BEGIN
     FOR v_taabel IN
         SELECT lt.nomid,
                coalesce(lt.kogus, 0)                                   AS kogus,
-               coalesce(n.hind, 0)                                     AS hind,
-               coalesce(lt.kogus, 0) * coalesce(n.hind, 0)             AS kbmta,
+               coalesce(lk.hind, 0)                                    AS hind,
+               coalesce(lt.kogus, 0) * coalesce(lk.hind, 0)            AS kbmta,
 
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC AS vat,
                (n.properties::JSONB ->> 'konto')::VARCHAR(20)          AS konto,
@@ -57,7 +53,11 @@ BEGIN
 
         FROM lapsed.lapse_taabel lt
                  INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
-        WHERE parentid = l_laps_id
+                 INNER JOIN lapsed.lapse_kaart lk ON lt.parentid = lk.parentid AND lk.nomid = lt.nomid
+
+        WHERE lt.parentid = l_laps_id
+          AND lt.staatus <> 3
+          AND lk.staatus <> 3
           AND lt.kuu = month(l_kpv)
           AND lt.aasta = year(l_kpv)
         LOOP
@@ -131,10 +131,13 @@ GRANT EXECUTE ON FUNCTION lapsed.koosta_arve_taabeli_alusel(INTEGER, INTEGER, DA
 
 /*
 select lapsed.koosta_arve_taabeli_alusel(70, 16)
+select * from lapsed.cur_laste_arved where id  = 1616205
 
 select * from lapsed.laps where staatus = 1
 
 select * from lapsed.lapse_taabel
 
 update lapsed.lapse_taabel set staatus = 1 where id = 5
+
  */
+
