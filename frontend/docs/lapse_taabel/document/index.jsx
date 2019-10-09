@@ -17,6 +17,8 @@ const
     ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     styles = require('./styles');
 
+const DocContext = require('../../../doc-context');
+
 const LIBDOK = 'LAPSE_TAABEL';
 
 const now = new Date();
@@ -43,7 +45,15 @@ class Laps extends React.PureComponent {
         ];
     }
 
+    componentDidMount() {
+        if (!this.state.lapsId && DocContext['laps']) {
+            //есть значение ид ребенка
+            this.setState({lapsId:DocContext['laps'] });
+        }
+    }
+
     componentDidUpdate(prevProps, prevState) {
+        // обновим справочники ребенка
         if (this.state.lapsId !== prevState.lapsId) {
             const doc = this.refs['document'];
             doc.createLibs();

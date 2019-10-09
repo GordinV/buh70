@@ -70,6 +70,11 @@ class Laps extends React.PureComponent {
             this.setState({vanemId: vanemId, module: module});
         }
 
+        //сохраним последний docId
+        if (this.state.docId) {
+            DocContext.lapsId = this.state.docId;
+        }
+
     }
 
     render() {

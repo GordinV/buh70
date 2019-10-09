@@ -51,6 +51,13 @@ class DocumentTemplate extends React.PureComponent {
 
     }
 
+    componentDidUpdate(prevProps, prevState) {
+        // сохраним последнее значение дока этого типа
+        if (this.state.docId) {
+            DocContext[(this.props.docTypeId).toLowerCase()] = this.state.docId;
+        }
+    }
+
     /**
      * пишем исходные данные в хранилище, регистрируем обработчики событий
      */
@@ -76,6 +83,7 @@ class DocumentTemplate extends React.PureComponent {
         if (this.props.libs.length && !this.state.loadedLibs && _.has(this.userData, 'uuid')) {
             this.loadLibs();
         }
+
         return (
             <div>
                 {this.renderDocToolBar()}
