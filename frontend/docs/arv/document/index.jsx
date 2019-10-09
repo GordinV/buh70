@@ -47,6 +47,7 @@ class Arve extends React.PureComponent {
         this.renderer = this.renderer.bind(this);
         this.gridValidateFields = this.gridValidateFields.bind(this);
         this.btnEditAsutusClick = this.btnEditAsutusClick.bind(this);
+        this.btnEditLapsClick = this.btnEditLapsClick.bind(this);
         this.pages = [{pageName: 'Arve', docTypeId: 'ARV'}];
 
     }
@@ -516,9 +517,10 @@ class Arve extends React.PureComponent {
     //обработчик события по клику кнопки Редактирование ребенка
     btnEditLapsClick() {
         let docLapsId = this.refs['document'].docData.lapsid;
-
-        // осуществит переход на карточку контр-агента
-        this.props.history.push(`/lapsed/laps/${docLapsId}`);
+        if (docLapsId) {
+            // осуществит переход на карточку контр-агента
+            this.props.history.push(`/${this.state.module}/laps/${docLapsId}`);
+        }
 
     }
 

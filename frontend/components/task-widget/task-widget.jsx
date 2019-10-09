@@ -23,7 +23,6 @@ class TaskWidget extends React.PureComponent {
     }
 
     render() {
-        console.log('render', this.state);
         if (!this.state.taskList) return <div></div>;
 
         const tasks = this.state.taskList.map((task, index) => {

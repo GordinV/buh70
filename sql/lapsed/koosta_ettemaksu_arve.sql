@@ -43,8 +43,8 @@ BEGIN
     FOR v_kaart IN
         SELECT lk.nomid,
                1                                                       AS kogus,
-               coalesce(n.hind, 0)                                     AS hind,
-               1 * coalesce(n.hind, 0)                                 AS kbmta,
+               coalesce(lk.hind, 0)                                     AS hind,
+               1 * coalesce(lk.hind, 0)                                 AS kbmta,
 
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC AS vat,
                (n.properties::JSONB ->> 'konto')::VARCHAR(20)          AS konto,
