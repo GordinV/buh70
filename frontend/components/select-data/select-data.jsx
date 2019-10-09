@@ -33,6 +33,7 @@ class SelectData extends React.PureComponent {
         this.modalPageClick = this.modalPageClick.bind(this);
         this.loadLibs = this.loadLibs.bind(this);
         this.handleClick = this.handleClick.bind(this);
+        this.filter = {};
     }
 
     componentDidMount() {
@@ -41,10 +42,16 @@ class SelectData extends React.PureComponent {
         }
     }
 
+    componentDidUpdate(prevProps, prevState) {
+        if (this.state.value && prevState.value !== this.state.value && !this.state.fieldValue) {
+            this.loadLibs()
+        }
+    }
+
     // will update state if props changed
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.value !== prevState.value && nextProps.defaultValue !== prevState.fieldValue) {
-            return {value: nextProps.value, fieldValue: nextProps.defaultValue};
+        if (nextProps.value !== prevState.value) {
+            return {value: nextProps.value};
         } else return null;
     }
 
@@ -52,13 +59,9 @@ class SelectData extends React.PureComponent {
         let isEditeMode = !this.state.readOnly,
             btnStyle = Object.assign({}, styles.button, {display: isEditeMode ? 'inline' : 'none'});
 
-        if (this.state.value && !this.state.fieldValue) {
-            this.loadLibs()
-        }
-
         return (
             <div style={styles.wrapper}>
-                <InputText ref="input"
+                <InputText ref="inputName"
                            title={this.props.title}
                            name={this.props.name}
                            value={this.state.fieldValue || ''}
@@ -88,48 +91,50 @@ class SelectData extends React.PureComponent {
         let limitInputStyle = styles.limitInput;
 
         return (
-                <ModalPage
-                    modalObjects={modalObjects}
-                    ref="modalpage-grid"
-                    show={true}
-                    modalPageBtnClick={this.modalPageClick}
-                    modalPageName='Vali rea'>
-                    <div ref="grid-row-container">
-                        <InputText ref="input-filter"
-                                   title='Otsingu parametrid:'
-                                   name='gridFilter'
-                                   value={this.state.fieldValue || ''}
-                                   readOnly={false}
-                                   onChange={this.handleInputChange}/>
-                        <DataGrid gridData={this.state.gridData}
-                                  gridColumns={this.state.gridConfig}
-                                  onClick={this.handleGridClick}
-                                  ref="data-grid"/>
-                        <InputText ref="input-limit"
-                                   title='Limiit:'
-                                   width={limitInputStyle}
-                                   name='limit'
-                                   value={this.state.limit || 10}
-                                   readOnly={false}
-                                   onChange={this.handleInputChange}/>
-                    </div>
-                </ModalPage>);
+            <ModalPage
+                modalObjects={modalObjects}
+                ref="modalpage-grid"
+                show={true}
+                modalPageBtnClick={this.modalPageClick}
+                modalPageName='Vali rea'>
+                <div ref="grid-row-container">
+                    <InputText ref="input-filter"
+                               title='Otsingu parametrid:'
+                               name='gridFilter'
+                               value={this.state.fieldValue || ''}
+                               readOnly={false}
+                               onChange={this.handleInputChange}/>
+                    <DataGrid gridData={this.state.gridData}
+                              gridColumns={this.state.gridConfig}
+                              onClick={this.handleGridClick}
+                              ref="data-grid"/>
+                    <InputText ref="input-limit"
+                               title='Limiit:'
+                               width={limitInputStyle}
+                               name='limit'
+                               value={this.state.limit || '10'}
+                               readOnly={false}
+                               onChange={this.handleInputChange}/>
+                </div>
+            </ModalPage>);
     }
 
     // обработчик события измения значения в текстовом (поисковом) поле
     handleInputChange(name, value) {
-
         if (name === 'gridFilter') {
-            this.setState({value: 0, fieldValue: value, show: true});
             // обновим стейт
+            this.setState({value: 0, fieldValue: value, show: true}, () => {
+                if (value.length) {
+                    //выполним запрос
+                    setTimeout(() => {
+                        this.loadLibs(value);
+                    }, 1000);
+                }
 
-            if (value.length) {
-                //выполним запрос
-                setTimeout(() => {
-                    this.loadLibs(this.state.fieldValue);
-                }, 1000);
-            }
-        } else {
+            });
+        }
+
+        if (name === 'limit') {
             this.setState({limit: value});
         }
     }
@@ -179,10 +184,11 @@ class SelectData extends React.PureComponent {
     }
 
     loadLibs(fieldValue) {
+
         const postUrl = '/newApi/loadLibs';
         let lib = this.props.libName;
         let sqlWhere = '';
-        let limit = this.state.limit;
+        let limit = this.state.limit ? this.state.limit : 100;
         let isSeachById = (this.state.value && !fieldValue);
 
         if (this.props.sqlFields && this.props.sqlFields.length && fieldValue && fieldValue.length > 0) {
@@ -200,7 +206,10 @@ class SelectData extends React.PureComponent {
         sqlWhere = `where ${sqlWhere}`;
 
 
-        let libParams = Object.assign({uuid: DocContext.userData.uuid}, sqlWhere.length ? {sql: sqlWhere, limit: limit} : {});
+        let libParams = Object.assign({uuid: DocContext.userData.uuid}, sqlWhere.length ? {
+            sql: sqlWhere,
+            limit: limit
+        } : {});
 
         if (sqlWhere.length > 0) {
             fetchData.fetchDataPost(`${postUrl}/${lib}`, libParams).then(response => {
@@ -213,13 +222,13 @@ class SelectData extends React.PureComponent {
                 }
 
                 if (_.size(gridData) > 0) {
-                    if (isSeachById) {
+                    if (isSeachById && !this.state.show) {
 
                         // только одна запись. Грид не нужен
                         this.setState({
+                            fieldValue: gridData[0][this.props.boundToGrid],
                             value: gridData[0]['id'],
                             gridData: gridData,
-                            fieldValue: gridData[0][this.props.boundToGrid],
                             gridConfig: gridConfig
                         });
                     } else {
@@ -229,7 +238,6 @@ class SelectData extends React.PureComponent {
 
             }).catch(error => {
                 console.error('loadLibs error', error);
-                rejected();
             });
         }
     }

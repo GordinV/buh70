@@ -19,16 +19,12 @@ DECLARE
                                  AND v.staatus <> 3
                                ORDER BY (coalesce(properties ->> 'arved', 'ei')) DESC
                                LIMIT 1);
-    l_nom_id        INTEGER;
     l_doklausend_id INTEGER;
-    l_details       JSON;
     l_liik          INTEGER = 0;
     v_kaart         RECORD;
-    v_arv_details   RECORD;
     json_object     JSONB;
     l_json_arve     JSON;
     json_arvread    JSONB   = '[]';
-    v_nom           RECORD;
 
     l_tp            TEXT    = '800699'; -- (SELECT tp FROM libs.asutus a WHERE id = l_asutus_id);
 
@@ -36,15 +32,54 @@ DECLARE
                                FROM ou.userid u
                                WHERE id = user_id
                                LIMIT 1);
-    l_arv_id        INTEGER;
+    l_arv_id        INTEGER = 0;
+    l_status        INTEGER;
+    l_number        TEXT;
 BEGIN
+    doc_type_id = 'ARV';
+    -- will return docTypeid of new doc
+
+    -- ищем аналогичный счет в периоде
+    -- критерий
+    -- 1. получатель
+    -- 2. ребенок
+    -- 3. период
+    -- 4. услуги из списка предоплатных
+
+    SELECT d.id,
+           d.status,
+           a.number
+           INTO l_arv_id, l_status, l_number
+    FROM docs.doc d
+             INNER JOIN docs.arv a ON a.parentid = d.id
+             INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+             INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.parentid
+             INNER JOIN docs.arv1 a1 ON a.id = a1.parentid AND a1.nomid = lk.nomid
+    WHERE l.parentid = l_laps_id
+      AND a.asutusid = l_asutus_id
+      AND date_part('year', a.kpv) = date_part('year', l_kpv)
+      AND date_part('month', a.kpv) = date_part('month', l_kpv)
+      AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
+      AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
+    ORDER BY D.ID DESC
+    LIMIT 1;
+
+    IF l_arv_id IS NOT NULL AND l_status = 2
+    THEN
+        -- в этом периоде счет на предоплату уже авыписан
+        error_code = 3;
+        result = 0;
+        error_message = 'Sellect ajavahemikul ettemaksuarve juba olemas';
+        RETURN;
+    END IF;
+
 
     -- читаем табель и создаем детали счета
     FOR v_kaart IN
         SELECT lk.nomid,
                1                                                       AS kogus,
-               coalesce(lk.hind, 0)                                     AS hind,
-               1 * coalesce(lk.hind, 0)                                 AS kbmta,
+               coalesce(lk.hind, 0)                                    AS hind,
+               1 * coalesce(lk.hind, 0)                                AS kbmta,
 
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC AS vat,
                (n.properties::JSONB ->> 'konto')::VARCHAR(20)          AS konto,
@@ -58,8 +93,8 @@ BEGIN
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.parentid = l_laps_id
-        and lk.staatus <> 3
-        and (lk.properties ->>'kas_ettemaks')::boolean 
+          AND lk.staatus <> 3
+          AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
         LOOP
             -- формируем строку
             json_arvread = json_arvread || (SELECT row_to_json(row)
@@ -82,18 +117,21 @@ BEGIN
 
     -- создаем параметры
     l_json_arve = (SELECT to_json(row)
-                   FROM (SELECT 0               AS id,
-                                l_doklausend_id AS doklausid,
-                                l_liik          AS liik,
-                                l_kpv           AS kpv,
-                                l_kpv + 15      AS tahtaeg,
-                                l_asutus_id     AS asutusid,
-                                l_laps_id       AS lapsid,
-                                json_arvread    AS "gridData") row);
+                   FROM (SELECT coalesce(l_arv_id, 0)                                AS id,
+                                l_number                                             AS number,
+                                l_doklausend_id                                      AS doklausid,
+                                l_liik                                               AS liik,
+                                l_kpv                                                AS kpv,
+                                l_kpv + 15                                           AS tahtaeg,
+                                l_asutus_id                                          AS asutusid,
+                                l_laps_id                                            AS lapsid,
+                                'Ettemaksuarve ' || date_part('month', current_date)::TEXT || '/' ||
+                                date_part('year', current_date)::TEXT || ' kuu eest' AS muud,
+                                json_arvread                                         AS "gridData") row);
 
     -- подготавливаем параметры для создания счета
     SELECT row_to_json(row) INTO json_object
-    FROM (SELECT 0 AS id, l_json_arve AS data) row;
+    FROM (SELECT coalesce(l_arv_id, 0) AS id, l_json_arve AS data) row;
 
     SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
 
@@ -101,7 +139,6 @@ BEGIN
 
     IF l_arv_id IS NOT NULL AND l_arv_id > 0
     THEN
-        doc_type_id = 'ARV'; -- will return docTypeid of new doc
         result = l_arv_id;
     ELSE
         result = 0;

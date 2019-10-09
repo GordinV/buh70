@@ -12,6 +12,13 @@ DECLARE
     userName       TEXT;
     doc_id         INTEGER        = data ->> 'id';
     doc_data       JSON           = data ->> 'data';
+    doc_type_kood  TEXT           = 'ARV'/*data->>'doc_type_id'*/;
+    doc_type_id    INTEGER        = (SELECT id
+                                     FROM libs.library
+                                     WHERE kood = doc_type_kood
+                                       AND library = 'DOK'
+                                     LIMIT 1);
+
     doc_details    JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     doc_number     TEXT           = doc_data ->> 'number';
     doc_summa      NUMERIC(14, 4) = coalesce((doc_data ->> 'summa') :: NUMERIC, 0);

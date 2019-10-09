@@ -95,6 +95,7 @@ BEGIN
     SELECT row_to_json(row) INTO json_object
     FROM (SELECT 0 AS id, l_json_arve AS data) row;
 
+raise notice 'salvesta arv', json_object;
     SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
 
     -- проверка
