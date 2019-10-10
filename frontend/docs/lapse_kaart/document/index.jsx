@@ -191,6 +191,13 @@ class Laps extends React.PureComponent {
                                   onChange={self.handleInputChange}
                                   readOnly={!isEditMode}
                         />
+                        <CheckBox title="Kas INF3?"
+                                  name='kas_inf3'
+                                  value={Boolean(self.docData.kas_inf3)}
+                                  ref={'checkbox_kas_inf3'}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditMode}
+                        />
                     </div>
                     <div style={styles.docColumn}>
                         <InputNumber ref="input-soodus"
