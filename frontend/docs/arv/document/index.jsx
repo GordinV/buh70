@@ -18,17 +18,17 @@ const
     styles = require('./arve.styles');
 
 const DocContext = require('./../../../doc-context');
-const  LIB_OBJS = [
-        {id: 'kontod', filter: ``},
-        {id: 'dokProps', filter: `where kood = 'ARV'`},
-        {id: 'users', filter: ''},
-        {id: 'tunnus', filter: ''},
-        {id: 'project', filter: ''},
-        {id: 'artikkel', filter: ''},
-        {id: 'allikas', filter: ''},
-        {id: 'tegev', filter: ''},
-        {id: 'nomenclature', filter: `where dok = 'ARV'`}
-    ];
+const LIB_OBJS = [
+    {id: 'kontod', filter: ``},
+    {id: 'dokProps', filter: `where kood = 'ARV'`},
+    {id: 'users', filter: ''},
+    {id: 'tunnus', filter: ''},
+    {id: 'project', filter: ''},
+    {id: 'artikkel', filter: ''},
+    {id: 'allikas', filter: ''},
+    {id: 'tegev', filter: ''},
+    {id: 'nomenclature', filter: `where dok = 'ARV'`}
+];
 
 class Arve extends React.PureComponent {
     constructor(props) {
@@ -132,6 +132,15 @@ class Arve extends React.PureComponent {
                                     ref='dokprop-doklausid'
                                     placeholder='Konteerimine'
                                     onChange={self.handleInputChange}/>
+
+                            <InputText ref="input-lausend"
+                                       title='Lausend nr.:'
+                                       name='laus_nr'
+                                       value={String(self.docData.laus_nr) || ''}
+                                       disable={true}
+                                       readOnly={false}
+                            />
+
                         </div>
 
 
