@@ -1,7 +1,6 @@
 const db = require('./../libs/db');
 const getModule = require('./../libs/getModule');
 const path = './../models/'; // путь к каталогу с моделями
-const async = require('async');
 
 //class
 class Document {
@@ -18,6 +17,7 @@ class Document {
     /**
      * подгрузит модель
      * @param docTypeId тип локумента
+     * @param module модуль
      * @returns {*}
      */
     setConfig(docTypeId, module) {
@@ -42,10 +42,9 @@ class Document {
             return null;
         }
         let sqls = [{alias: 'row', sql: this.config.select[0].sqlAsNew}];
-        let data = await db.executeQueries(sqls, [0, this.userId],
+        return await db.executeQueries(sqls, [0, this.userId],
             Object.assign({},
                 this.config.returnData));
-        return data;
     }
 
     /**
@@ -57,9 +56,7 @@ class Document {
         }
 
         const objectTemplate = Object.assign({}, this.config.returnData);
-        let data = await db.executeQueries(this.config.select, [this.documentId, this.userId], objectTemplate);
-
-        return data;
+        return await db.executeQueries(this.config.select, [this.documentId, this.userId], objectTemplate);
     }
 
     /**
@@ -89,14 +86,13 @@ class Document {
      */
     async executeTask(task) {
         let sql = this.config[task].command,
-            params = [ this.userId, this.documentId];
+            params = [this.documentId, this.userId];
 
         if (!sql) {
             return {error: 'No task found'}
         }
 
-        const dbResult = await db.queryDb(sql, params);
-        return dbResult;
+        return await db.queryDb(sql, params);
     }
 
     /**
@@ -106,8 +102,7 @@ class Document {
         let sql = this.config.grid.sqlString,
             params = [this.rekvId, this.userId];
 
-        const dbResult = await db.queryDb(sql, params, sortBy, sqlWhere);
-        return dbResult;
+        return await db.queryDb(sql, params, sortBy, sqlWhere);
     }
 
     /**
@@ -123,13 +118,10 @@ class Document {
             return [];
         }
 
-        const dbResult = Object.assign({},
+        return Object.assign({},
             await db.queryDb(sql, params, '', sqlWhere, sqlLimit),
             {gridConfig: libGridConfig, searchFields: libSearchFields}
         );
-
-        return dbResult;
-
     }
 
     /**
@@ -143,9 +135,7 @@ class Document {
             return [];
         }
 
-        const dbResult = await db.queryDb(sql, params);
-        return dbResult;
-
+       return await db.queryDb(sql, params);
     }
 
 }

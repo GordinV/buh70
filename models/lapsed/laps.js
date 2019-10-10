@@ -115,14 +115,6 @@ module.exports = {
         {name: 'isikukood', type: 'C'},
         {name: 'nimi', type: 'T'}
     ],
-    /*
-    executeCommand: {
-        command: `SELECT result, selgitus, summa
-                  FROM docs.sp_calc_kulum(?tnId::INTEGER, current_date::DATE)`,
-        type: 'sql',
-        alias: 'arvestaKulum'
-    },
-*/
     saveDoc:
         `select lapsed.sp_salvesta_laps($1::jsonb, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc:
@@ -152,17 +144,31 @@ module.exports = {
                 'curLapsed'
         },
     koostaArve: {
-        command: `SELECT error_code, result, error_message, doc_type_id 
-                  FROM lapsed.koosta_arve_taabeli_alusel($1::integer, $2::integer)`,
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM lapsed.koosta_arve_taabeli_alusel($2::INTEGER, $1::INTEGER )`, //$1 docId, $2 - userId
         type: 'sql',
         alias: 'koostaArve'
     },
     koostaEttemaksuArve: {
         command: `SELECT error_code, result, error_message, doc_type_id
-                  FROM lapsed.koosta_ettemaksu_arve($1::integer, $2::integer)`,
+                  FROM lapsed.koosta_ettemaksu_arve($2::INTEGER, $1::INTEGER )`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'koostaEttemaksuArve'
     },
+    bpm: [
+        {
+            name: 'Koosta arve taabeli alusel',
+            task: 'koostaArve',
+            type: 'manual',
+            action: 'generateJournal',
+        },
+        {
+            name: 'Koosta ettemaksuarve',
+            task: 'koostaEttemaksuArve',
+            type: 'manual',
+            action: 'generateJournal',
+        }
+    ]
 
 
 }

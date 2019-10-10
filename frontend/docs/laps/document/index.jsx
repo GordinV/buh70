@@ -31,11 +31,7 @@ const
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
     styles = require('./laps.styles');
 
-const LIBDOK = 'LAPS',
-    LIBRARIES = [];
-
-const now = new Date();
-
+const LIBRARIES = [];
 
 class Laps extends React.PureComponent {
     constructor(props) {
@@ -78,23 +74,11 @@ class Laps extends React.PureComponent {
     }
 
     render() {
-        const bpm = [
-            {
-                name: 'Koosta arve taabeli alusel',
-                task: 'koostaArve'
-            },
-            {
-                name: 'Koosta ettemaksuarve',
-                task: 'koostaEttemaksuArve'
-
-            }
-        ];
 
         return (
             <DocumentTemplate docId={this.state.docId}
                               ref='document'
                               history={this.props.history}
-                              bpm={bpm}
                               module={this.state.module}
                               docTypeId='LAPS'
                               initData={this.props.initData ? this.props.initData : {}}
@@ -112,21 +96,19 @@ class Laps extends React.PureComponent {
      */
 
     renderer(self) {
-        let bpm = self.docData && self.docData.bpm ? self.docData.bpm : [],
-            isEditMode = self.state.edited,
+        let isEditMode = self.state.edited,
             gridVanemadData = self.docData.vanemad,
             gridVanemadColumns = self.docData.gridConfig,
             gridTeenusteData = self.docData.teenused,
             gridTeenusteColumns = self.docData.gridTeenusteConfig;
 
 
-        if (self.docData.id == 0) {
+        if (self.docData.id === 0) {
             //neew record
             self.docData.vanemid = this.state.vanemId;
         }
 
         let doc = this.refs['document'];
-        let libs = doc ? doc.libs : {};
 
         if (!this.docId && self.docData.id) {
             this.docId = self.docData.id;
@@ -246,7 +228,7 @@ class Laps extends React.PureComponent {
                 break;
             case "delete":
                 //send post to delete row
-                this.fetchData(docTypeId, id).then((response) => {
+                this.fetchData(docTypeId, id).then(() => {
 
                     const current = this.props.location.pathname;
                     this.props.history.replace(`/reload`);

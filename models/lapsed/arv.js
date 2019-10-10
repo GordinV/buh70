@@ -1,9 +1,6 @@
 'use strict';
 //var co = require('co');
 let now = new Date();
-const start = require('./../BP/start'),
-    generateJournal = require('./../BP/generateJournal'),
-    endProcess = require('./../BP/endProcess');
 
 const Arv = {
     selectAsLibs: `SELECT *
@@ -60,7 +57,7 @@ const Arv = {
                            LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
                            LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
                            LEFT OUTER JOIN lapsed.laps l
-                  ON l.id = ll.parentid
+                                           ON l.id = ll.parentid
                   WHERE D.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                                          AS id,
                               $2 :: INTEGER                                                          AS userid,
@@ -387,27 +384,36 @@ const Arv = {
     },
     bpm: [
         {
-            step: 1,
             name: 'Контировка',
             action: 'generateJournal',
-            nextStep: 2,
-            task: 'automat',
-            data: [],
-            status: null,
+            type: 'automat',
             actualStep: false
+        },
+        {
+            name: 'Koosta maksekorraldus',
+            task: 'generatePaymentOrder',
+            type: 'manual',
+            action: 'generatePaymentOrder',
         }
+
     ],
     generateJournal: {
         command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($2::INTEGER, $1::INTEGER)", //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generateJournal'
     },
+    generatePaymentOrder: {
+        command: `SELECT error_code, result, error_message
+                  FROM docs.create_new_mk($2::INTEGER, (SELECT to_jsonb(row.*) FROM (SELECT $1 AS arv_id) row))`, //$1 - docs.doc.id, $2 - userId
+        type: "sql",
+        alias: 'generatePaymentOrder'
+    },
     executeTask: function (task, docId, userId) {
         console.log('executeTask', task, docId, userId);
         // выполнит задачу, переданную в параметре
 
         let executeTask = task;
-        if (executeTask.length == 0) {
+        if (executeTask.length === 0) {
             executeTask = ['start'];
         }
 

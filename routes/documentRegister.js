@@ -3,7 +3,6 @@
 
 const React = require('react');
 const ReactServer = require('react-dom/server');
-const getModule = require('./../libs/getModule');
 
 exports.get = async (req, res) => {
     // рендер грида на сервере при первой загрузке странице
@@ -75,12 +74,6 @@ exports.post = async (req, res) => {
         return res.status(401).end();
     }
 
-    const params = {
-        documentType: documentType,
-        docId: docId,
-        user: user
-    };
-
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, docId, user.userId, user.asutusId, module.toLowerCase());
 
@@ -93,12 +86,15 @@ exports.post = async (req, res) => {
         data = {result: await Document.createNew()};
     }
 
+    const bpm = Document.config.bpm ? Document.config.bpm.filter(task => task.type === 'manual'): [];
+
     const preparedData = Object.assign({},
         data.result ? data.result.row[0] : {},
         data.result,
         {gridData: data.result ? data.result.details : []},
         {relations: data.result ? data.result.relations : []},
         {gridConfig: data.result ? data.result.gridConfig : []},
+        {bpm: bpm},
         {requiredFields: Document.config.requiredFields ? Document.config.requiredFields : []}
     );
 
@@ -135,7 +131,9 @@ exports.put = async (req, res) => {
 
     if (Document.config.bpm) {
         // bpm proccess
-        Document.config.bpm.forEach(async (process) => {
+        const automatTaks = Document.config.bpm.filter(task => task.type ==='automat');
+
+        automatTaks.forEach(async (process) => {
             const bpmResult = await Document.executeTask(process.action);
         })
 
@@ -184,12 +182,6 @@ exports.delete = async (req, res) => {
         console.error('no userId', userId, req.body, user.userId);
         return res.status(401).end();
     }
-    const params = {
-        documentType: documentType,
-        docId: docId,
-        user: user
-    };
-
 
     const Document = new Doc(documentType, docId, userId, user.asutusId, module.toLowerCase());
     let data;

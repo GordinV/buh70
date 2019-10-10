@@ -39,6 +39,8 @@ DECLARE
     l_arv_id        INTEGER = 0;
     l_status        INTEGER;
     l_number        TEXT;
+    l_arve_summa    NUMERIC = 0;
+
 BEGIN
     doc_type_id = 'ARV';
     -- will return docTypeid of new doc
@@ -83,7 +85,16 @@ BEGIN
         SELECT lk.nomid,
                1                                                       AS kogus,
                coalesce(lk.hind, 0)                                    AS hind,
-               1 * coalesce(lk.hind, 0)                                AS kbmta,
+               CASE
+                   WHEN coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN
+                       THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0) / 100 * lk.hind
+                   ELSE coalesce((lk.properties ->> 'soodus')::NUMERIC, 0) END *
+               CASE
+                   WHEN (lk.properties ->> 'sooduse_alg')::DATE <= l_kpv
+                       AND (lk.properties ->> 'sooduse_lopp')::DATE >= l_kpv
+                       THEN 1
+                   ELSE 0 END                                          AS real_soodus,
+
                lk.properties ->> 'yksus'                               AS muud,
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC AS vat,
                (n.properties::JSONB ->> 'konto')::VARCHAR(20)          AS konto,
@@ -102,23 +113,44 @@ BEGIN
         LOOP
             -- формируем строку
             json_arvread = json_arvread || (SELECT row_to_json(row)
-                                            FROM (SELECT v_kaart.nomid                                         AS nomid,
-                                                         v_kaart.kogus                                         AS kogus,
-                                                         v_kaart.hind                                          AS hind,
-                                                         v_kaart.kbmta                                         AS kbmta,
-                                                         (v_kaart.kbmta * (v_kaart.vat / 100))                 AS kbm,
-                                                         (v_kaart.kbmta * (v_kaart.vat / 100)) + v_kaart.kbmta AS summa,
-                                                         v_kaart.tegev                                         AS kood1,
-                                                         v_kaart.allikas                                       AS kood2,
-                                                         v_kaart.rahavoog                                      AS kood3,
-                                                         v_kaart.artikkel                                      AS kood5,
-                                                         v_kaart.konto                                         AS konto,
+                                            FROM (SELECT v_kaart.nomid                                        AS nomid,
+                                                         v_kaart.kogus                                        AS kogus,
+                                                         (v_kaart.hind - v_kaart.real_soodus)                 AS hind,
+                                                         (v_kaart.hind - v_kaart.real_soodus) * v_kaart.kogus AS kbmta,
+                                                         ((v_kaart.hind - v_kaart.real_soodus) * v_kaart.kogus *
+                                                          (v_kaart.vat / 100))                                AS kbm,
+                                                         ((v_kaart.hind - v_kaart.real_soodus) * v_kaart.kogus *
+                                                          (v_kaart.vat / 100)) +
+                                                         (v_kaart.hind - v_kaart.real_soodus) * v_kaart.kogus AS summa,
+                                                         v_kaart.tegev                                        AS kood1,
+                                                         v_kaart.allikas                                      AS kood2,
+                                                         v_kaart.rahavoog                                     AS kood3,
+                                                         v_kaart.artikkel                                     AS kood5,
+                                                         v_kaart.konto                                        AS konto,
                                                          v_kaart.tunnus,
                                                          v_kaart.projekt,
-                                                         v_kaart.muud,
-                                                         l_tp                                                  AS tp) row) :: JSONB;
+                                                         v_kaart.muud || CASE
+                                                                             WHEN v_kaart.real_soodus > 0
+                                                                                 THEN ' kasutatud soodustus summas ' || round(v_kaart.real_soodus, 2)::TEXT
+                                                                             ELSE '' END                      AS muud,
+                                                         l_tp                                                 AS tp) row) :: JSONB;
+
+            -- calc arve summa
+            l_arve_summa = l_arve_summa + (v_kaart.hind - v_kaart.real_soodus) * v_kaart.kogus;
 
         END LOOP;
+
+
+    -- check for arve summa
+
+    IF l_arve_summa <= 0
+    THEN
+        result = 0;
+        error_message = 'Dokumendi summa = 0';
+        error_code = 1;
+        RETURN;
+
+    END IF;
 
     -- создаем параметры
     l_json_arve = (SELECT to_json(row)

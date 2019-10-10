@@ -25,7 +25,7 @@ class DocumentTemplate extends React.PureComponent {
         this.state = {
             docId: this.props.docId, //если Id документа не передан, то создаем новый док
             edited: this.props.docId === 0,
-            reloadData: Object.keys(props.initData).length ? false : true,
+            reloadData: !Object.keys(props.initData).length,
             gridRowEdit: false,
             gridRowEvent: null,
             warning: '',
@@ -38,6 +38,7 @@ class DocumentTemplate extends React.PureComponent {
         this.docData = Object.keys(props.initData).length ? props.initData : {id: this.props.docId};
         this.backup = {};
         this.requiredFields = [];
+        this.bpm = [];
         this.pages = this.props.pages || null;
 
         this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
@@ -51,7 +52,7 @@ class DocumentTemplate extends React.PureComponent {
 
     }
 
-    componentDidUpdate(prevProps, prevState) {
+    componentDidUpdate() {
         // сохраним последнее значение дока этого типа
         if (this.state.docId) {
             DocContext[(this.props.docTypeId).toLowerCase()] = this.state.docId;
@@ -174,16 +175,14 @@ class DocumentTemplate extends React.PureComponent {
      */
     btnTaskClick(taskName) {
 
-        const task = this.props.bpm.find(task => task.name === taskName);
+        const task = this.bpm.find(task => task.name === taskName);
 
-        this.fetchData('Post', `/newApi/task/${task.task}`).then((result) => {
+        this.fetchData('Post', `/newApi/task/${task.task}`).then(() => {
             if (this.props.history) {
                 this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
             }
         });
-
     }
-
 
     /**
      * Сделает копию текущего состояния данных
@@ -285,12 +284,10 @@ class DocumentTemplate extends React.PureComponent {
      * @returns {XML}
      */
     renderDocToolBar() {
-        let toolbarParams = this.prepareParamsForToolbar(); //параметры для кнопок управления, взависимости от активной строки
-
         return (
             <ToolbarContainer ref='toolbarContainer'>
                 <DocToolBar ref='doc-toolbar'
-                            bpm={this.props.bpm ? this.props.bpm : []}
+                            bpm={this.bpm ? this.bpm : []}
                             docId={this.state.docId}
                             edited={this.state.edited}
                             validator={this.validation}
@@ -372,7 +369,7 @@ class DocumentTemplate extends React.PureComponent {
         return new Promise((resolved, rejected) => {
             fetchData[method](url, params).then(response => {
 
-                    if (response.status && response.status == 401) {
+                    if (response.status && response.status === 401) {
                         document.location = `/login`;
                     }
 
@@ -394,8 +391,14 @@ class DocumentTemplate extends React.PureComponent {
                         if (response.data.action && response.data.action === 'select') {
                             this.docData = response.data.data[0];
 
+                            // will store required fields info
                             if (response.data.data[0].requiredFields) {
                                 this.requiredFields = response.data.data[0].requiredFields;
+                            }
+
+                            // will store bpm info
+                            if (response.data.data[0].bpm) {
+                                this.bpm = response.data.data[0].bpm;
                             }
 
                             //should return data and called for reload
@@ -434,7 +437,7 @@ class DocumentTemplate extends React.PureComponent {
 
         let postUrl = '/newApi/loadLibs';
 
-        let libsToLoad = libName ? [libName]: Object.keys(this.libs);
+        let libsToLoad = libName ? [libName] : Object.keys(this.libs);
 
         libsToLoad.forEach((lib) => {
             let params = Object.assign({
@@ -482,7 +485,7 @@ class DocumentTemplate extends React.PureComponent {
                 libs[lib] = [];
             }
         });
-        this.setState({libParams: libParams}, ()=> this.loadLibs());
+        this.setState({libParams: libParams}, () => this.loadLibs());
         return libs;
     }
 
@@ -513,7 +516,6 @@ class DocumentTemplate extends React.PureComponent {
 
     /**
      * обработчик событий для панели инструментов грида
-     * @param btnName, activeRow
      */
     handleGridBtnClick(btnName, activeRow, id, docTypeId) {
         if (this.props.handleGridBtnClick) {
@@ -657,7 +659,7 @@ class DocumentTemplate extends React.PureComponent {
      * @param data
      */
     modalPageClick(btnEvent, data) {
-        if (btnEvent == 'Ok') {
+        if (btnEvent === 'Ok') {
 
 
             // ищем по ид строку в данных грида, если нет, то добавим строку
