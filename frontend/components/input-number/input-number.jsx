@@ -37,6 +37,7 @@ class Input extends React.PureComponent {
     render() {
         let inputPlaceHolder = this.props.placeholder || this.props.name,
             inputStyle = Object.assign({}, styles.input,
+                this.props.style ? this.props.style : {},
                 this.props.width ? {width: this.props.width} : {},
                 this.state.readOnly ? styles.readOnly : {}
             ),
@@ -49,7 +50,7 @@ class Input extends React.PureComponent {
                 <label style={styles.label} htmlFor={this.props.name} ref="label">
                     {this.props.title}
                 </label>
-                <input type='number'
+                <input type={this.props.type ? this.props.type : 'number'}
                        id={this.props.name}
                        ref="input"
                        style={inputStyle}

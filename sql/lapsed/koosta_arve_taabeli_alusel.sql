@@ -13,11 +13,18 @@ CREATE OR REPLACE FUNCTION lapsed.koosta_arve_taabeli_alusel(IN user_id INTEGER,
 $BODY$
 
 DECLARE
+    l_rekvid        INTEGER = (SELECT rekvid
+                               FROM ou.userid u
+                               WHERE id = user_id
+                               LIMIT 1);
+
     l_asutus_id     INTEGER = (SELECT asutusid
                                FROM lapsed.vanemad v
+                                        INNER JOIN libs.asutus a ON a.id = v.asutusid
                                WHERE v.parentid = l_laps_id
+                                 AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
                                  AND v.staatus <> 3
-                               ORDER BY (coalesce(properties ->> 'arved', 'ei')) DESC
+                               ORDER BY (coalesce(v.properties ->> 'arved', 'ei')) DESC, v.id desc
                                LIMIT 1);
     l_doklausend_id INTEGER;
     l_liik          INTEGER = 0;
@@ -28,12 +35,50 @@ DECLARE
 
     l_tp            TEXT    = '800699'; -- (SELECT tp FROM libs.asutus a WHERE id = l_asutus_id);
 
-    l_rekvid        INTEGER = (SELECT rekvid
-                               FROM ou.userid u
-                               WHERE id = user_id
-                               LIMIT 1);
-    l_arv_id        INTEGER;
+    l_arv_id        INTEGER = 0;
+    l_status        INTEGER;
+    l_number        TEXT;
+    l_arve_summa    NUMERIC = 0;
+
 BEGIN
+
+    -- will return docTypeid of new doc
+    doc_type_id = 'ARV';
+
+    -- ищем аналогичный счет в периоде
+    -- критерий
+    -- 1. получатель
+    -- 2. ребенок
+    -- 3. период
+    -- 4. услуги из списка табеля
+
+    SELECT d.id,
+           d.status,
+           a.number
+           INTO l_arv_id, l_status, l_number
+    FROM docs.doc d
+             INNER JOIN docs.arv a ON a.parentid = d.id
+             INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+             INNER JOIN lapsed.lapse_taabel lt ON lt.parentid = l.parentid
+             INNER JOIN docs.arv1 a1 ON a.id = a1.parentid AND a1.nomid = lt.nomid
+    WHERE l.parentid = l_laps_id
+      AND a.asutusid = l_asutus_id
+      AND date_part('year', a.kpv) = date_part('year', l_kpv)
+      AND date_part('month', a.kpv) = date_part('month', l_kpv)
+      AND lt.aasta = date_part('year', l_kpv)
+      AND lt.kuu = date_part('month', l_kpv)
+      AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
+    ORDER BY D.ID DESC
+    LIMIT 1;
+
+    IF l_arv_id IS NOT NULL AND l_status = 2
+    THEN
+        -- в этом периоде счет на предоплату уже авыписан
+        error_code = 3;
+        result = 0;
+        error_message = 'Sellect ajavahemikul ettemaksuarve juba olemas';
+        RETURN;
+    END IF;
 
     -- читаем табель и создаем детали счета
     FOR v_taabel IN
@@ -57,7 +102,6 @@ BEGIN
 
         WHERE lt.parentid = l_laps_id
           AND lt.staatus <> 3
-          AND lk.staatus <> 3
           AND lt.kuu = month(l_kpv)
           AND lt.aasta = year(l_kpv)
         LOOP
@@ -78,24 +122,41 @@ BEGIN
                                                          v_taabel.projekt,
                                                          l_tp                                                     AS tp) row) :: JSONB;
 
+            -- calc arve summa
+            l_arve_summa = l_arve_summa + v_taabel.kbmta;
+
         END LOOP;
 
     -- создаем параметры
     l_json_arve = (SELECT to_json(row)
-                   FROM (SELECT 0               AS id,
-                                l_doklausend_id AS doklausid,
-                                l_liik          AS liik,
-                                l_kpv           AS kpv,
-                                l_kpv + 15      AS tahtaeg,
-                                l_asutus_id     AS asutusid,
-                                l_laps_id       AS lapsid,
-                                json_arvread    AS "gridData") row);
+                   FROM (SELECT coalesce(l_arv_id, 0)                                AS id,
+                                l_number                                             AS number,
+                                l_doklausend_id                                      AS doklausid,
+                                l_liik                                               AS liik,
+                                l_kpv                                                AS kpv,
+                                l_kpv + 15                                           AS tahtaeg,
+                                l_asutus_id                                          AS asutusid,
+                                l_laps_id                                            AS lapsid,
+                                'Arve, taabeli alus ' || date_part('month', current_date)::TEXT || '/' ||
+                                date_part('year', current_date)::TEXT || ' kuu eest' AS muud,
+                                json_arvread                                         AS "gridData") row);
 
     -- подготавливаем параметры для создания счета
     SELECT row_to_json(row) INTO json_object
     FROM (SELECT 0 AS id, l_json_arve AS data) row;
 
-raise notice 'salvesta arv', json_object;
+
+    -- check for arve summa
+
+    IF l_arve_summa <= 0
+    THEN
+        result = 0;
+        error_message = 'Dokumendi summa = 0';
+        error_code = 1;
+        RETURN;
+
+    END IF;
+
     SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
 
     -- проверка

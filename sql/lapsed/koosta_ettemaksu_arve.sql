@@ -13,12 +13,20 @@ CREATE OR REPLACE FUNCTION lapsed.koosta_ettemaksu_arve(IN user_id INTEGER,
 $BODY$
 
 DECLARE
+    l_rekvid        INTEGER = (SELECT rekvid
+                               FROM ou.userid u
+                               WHERE id = user_id
+                               LIMIT 1);
+
     l_asutus_id     INTEGER = (SELECT asutusid
                                FROM lapsed.vanemad v
+                                        INNER JOIN libs.asutus a ON a.id = v.asutusid
                                WHERE v.parentid = l_laps_id
+                                 AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
                                  AND v.staatus <> 3
-                               ORDER BY (coalesce(properties ->> 'arved', 'ei')) DESC
+                               ORDER BY (coalesce(v.properties ->> 'arved', 'ei')) DESC, v.id DESC
                                LIMIT 1);
+
     l_doklausend_id INTEGER;
     l_liik          INTEGER = 0;
     v_kaart         RECORD;
@@ -28,10 +36,6 @@ DECLARE
 
     l_tp            TEXT    = '800699'; -- (SELECT tp FROM libs.asutus a WHERE id = l_asutus_id);
 
-    l_rekvid        INTEGER = (SELECT rekvid
-                               FROM ou.userid u
-                               WHERE id = user_id
-                               LIMIT 1);
     l_arv_id        INTEGER = 0;
     l_status        INTEGER;
     l_number        TEXT;

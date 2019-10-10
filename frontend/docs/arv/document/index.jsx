@@ -18,8 +18,7 @@ const
     styles = require('./arve.styles');
 
 const DocContext = require('./../../../doc-context');
-const LIBDOK = 'ARV',
-    LIB_OBJS = [
+const  LIB_OBJS = [
         {id: 'kontod', filter: ``},
         {id: 'dokProps', filter: `where kood = 'ARV'`},
         {id: 'users', filter: ''},
@@ -82,8 +81,7 @@ class Arve extends React.PureComponent {
      *Вернет кастомные компоненты документа
      */
     renderer(self) {
-        let bpm = self.docData && self.docData.bpm ? self.docData.bpm : [],
-            isEditMode = self.state.edited,
+        let isEditMode = self.state.edited,
             gridData = self.docData.gridData,
             gridColumns = self.docData.gridConfig;
 
@@ -96,7 +94,6 @@ class Arve extends React.PureComponent {
         if (this.state.lapsId && !self.docData.lapsid) {
             self.docData.lapsid = this.state.lapsId;
         }
-
 
         return (
             <div>
@@ -230,15 +227,22 @@ class Arve extends React.PureComponent {
                                      ref="input-summa"
                                      value={Number(self.docData.summa) || 0}
                                      disabled={true}
-                                     width={'auto'}
-                                     onChange={self.handleInputChange}/>
+                                     style={styles.summa}
+                        />
                         <InputNumber title="Käibemaks "
                                      name='kbm'
                                      ref="input-kbm"
                                      disabled={true}
-                                     width={'auto'}
+                                     style={styles.summa}
                                      value={Number(self.docData.kbm) || 0}
-                                     onChange={self.handleInputChange}
+                        />
+                        <InputNumber title="Jääk:"
+                                     type='currency'
+                                     name='jaak'
+                                     ref="input-jaak"
+                                     disabled={true}
+                                     style={styles.summa}
+                                     value={Number(self.docData.jaak) || 0}
                         />
                     </div>
                     {self.state.gridRowEdit ?
@@ -434,7 +438,6 @@ class Arve extends React.PureComponent {
 
     /**
      * валидатор для строки грида
-     * @param gridRowData строка грида
      * @returns {string}
      */
     gridValidateFields() {
@@ -468,7 +471,7 @@ class Arve extends React.PureComponent {
 
         let vat = 0;
         if (doc.gridRowData['nomid']) {
-            let nomDataName = doc.libs['nomenclature'].find(lib => lib.id == doc.gridRowData['nomid']);
+            let nomDataName = doc.libs['nomenclature'].find(lib => lib.id === doc.gridRowData['nomid']);
 
             if (nomDataName) {
                 vat = nomDataName.vat ? Number(nomDataName.vat) / 100 : 0;

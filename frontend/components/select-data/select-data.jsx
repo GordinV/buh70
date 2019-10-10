@@ -33,7 +33,6 @@ class SelectData extends React.PureComponent {
         this.modalPageClick = this.modalPageClick.bind(this);
         this.loadLibs = this.loadLibs.bind(this);
         this.handleClick = this.handleClick.bind(this);
-        this.filter = {};
     }
 
     componentDidMount() {
