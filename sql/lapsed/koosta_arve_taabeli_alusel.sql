@@ -24,7 +24,7 @@ DECLARE
                                WHERE v.parentid = l_laps_id
                                  AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
                                  AND v.staatus <> 3
-                               ORDER BY (coalesce(v.properties ->> 'arved', 'ei')) DESC, v.id desc
+                               ORDER BY (coalesce(v.properties ->> 'arved', 'ei')) DESC, v.id DESC
                                LIMIT 1);
     l_doklausend_id INTEGER;
     l_liik          INTEGER = 0;
@@ -86,7 +86,7 @@ BEGIN
                coalesce(lt.kogus, 0)                                   AS kogus,
                coalesce(lk.hind, 0)                                    AS hind,
                coalesce(lt.kogus, 0) * coalesce(lk.hind, 0)            AS kbmta,
-
+               lk.properties ->> 'yksus'                               AS muud,
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC AS vat,
                (n.properties::JSONB ->> 'konto')::VARCHAR(20)          AS konto,
                (n.properties::JSONB ->> 'projekt')::VARCHAR(20)        AS projekt,
@@ -120,6 +120,7 @@ BEGIN
                                                          v_taabel.konto                                           AS konto,
                                                          v_taabel.tunnus,
                                                          v_taabel.projekt,
+                                                         v_taabel.muud,
                                                          l_tp                                                     AS tp) row) :: JSONB;
 
             -- calc arve summa

@@ -84,7 +84,7 @@ BEGIN
                1                                                       AS kogus,
                coalesce(lk.hind, 0)                                    AS hind,
                1 * coalesce(lk.hind, 0)                                AS kbmta,
-
+               lk.properties ->> 'yksus'                               AS muud,
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC AS vat,
                (n.properties::JSONB ->> 'konto')::VARCHAR(20)          AS konto,
                (n.properties::JSONB ->> 'projekt')::VARCHAR(20)        AS projekt,
@@ -115,6 +115,7 @@ BEGIN
                                                          v_kaart.konto                                         AS konto,
                                                          v_kaart.tunnus,
                                                          v_kaart.projekt,
+                                                         v_kaart.muud,
                                                          l_tp                                                  AS tp) row) :: JSONB;
 
         END LOOP;

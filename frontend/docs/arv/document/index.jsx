@@ -437,6 +437,14 @@ class Arve extends React.PureComponent {
                                     onChange={self.handleGridRowChange}/>
                         </div>
                     </div>
+                    <div style={styles.docRow}>
+                        <TextArea title="Märkused"
+                                  name='muud'
+                                  ref="gridrow-textarea-muud"
+                                  onChange={self.handleGridRowChange}
+                                  value={row.muud || ''}                        />
+
+                    </div>
 
                 </div>
                 <div><span>{validateMessage}</span></div>
