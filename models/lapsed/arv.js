@@ -313,7 +313,7 @@ const Arv = {
                            to_char(tahtaeg, 'DD.MM.YYYY')::TEXT AS tahtaeg,
                            jaak,
                            lisa,
-                           tasud,
+                           to_char(tasud, 'DD.MM.YYYY')::TEXT   AS tasud,
                            tasudok,
                            userid,
                            asutus :: TEXT                       AS asutus,
@@ -394,6 +394,12 @@ const Arv = {
             task: 'generatePaymentOrder',
             type: 'manual',
             action: 'generatePaymentOrder',
+        },
+        {
+            name: 'Koosta kassaorder',
+            task: 'generateCashOrder',
+            type: 'manual',
+            action: 'generateCashOrder',
         }
 
     ],
@@ -403,11 +409,19 @@ const Arv = {
         alias: 'generateJournal'
     },
     generatePaymentOrder: {
-        command: `SELECT error_code, result, error_message
+        command: `SELECT error_code, result, error_message, doc_type_id
                   FROM docs.create_new_mk($2::INTEGER, (SELECT to_jsonb(row.*) FROM (SELECT $1 AS arv_id) row))`, //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generatePaymentOrder'
     },
+    generateCashOrder: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM docs.create_new_order($2::INTEGER, (SELECT to_jsonb(row.*) FROM (SELECT $1 AS arv_id) row))`, //$1 - docs.doc.id, $2 - userId
+        type: "sql",
+        alias: 'generateCashOrder'
+    },
+
+
     executeTask: function (task, docId, userId) {
         console.log('executeTask', task, docId, userId);
         // выполнит задачу, переданную в параметре

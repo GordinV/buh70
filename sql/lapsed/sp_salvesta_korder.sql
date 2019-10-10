@@ -23,7 +23,7 @@ DECLARE
                                    AND library = 'DOK'
                                  LIMIT 1);
     doc_details       JSON    = doc_data ->> 'gridData';
-    doc_number        TEXT    = coalesce(doc_data ->> 'number', '1');
+    doc_number        TEXT    = doc_data ->> 'number';
     doc_kpv           DATE    = doc_data ->> 'kpv';
     doc_asutusid      INTEGER = doc_data ->> 'asutusid';
     doc_kassa_id      INTEGER = doc_data ->> 'kassa_id';
@@ -35,6 +35,10 @@ DECLARE
     doc_arvid         INTEGER = doc_data ->> 'arvid';
     doc_muud          TEXT    = doc_data ->> 'muud';
     doc_summa         NUMERIC = doc_data ->> 'summa';
+    doc_lapsid        INTEGER = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
+
+    tnDokLausId       INTEGER = coalesce((doc_data ->> 'doklausid') :: INTEGER, 0);
+
     json_object       JSON;
     json_record       RECORD;
     new_history       JSONB;
@@ -44,7 +48,6 @@ DECLARE
     previous_arv_id   INTEGER;
     DOC_STATUS_ACTIVE INTEGER = 1; -- документ открыт для редактирования
     is_import         BOOLEAN = data ->> 'import';
-    doc_lapsid        INTEGER = doc_data ->> 'lapsid'; -- kui order salvestatud lapse modulis
 
 BEGIN
 
@@ -79,6 +82,13 @@ BEGIN
             --      RAISE NOTICE 'kassa: %', doc_kassa_id;
         END IF;
     END IF;
+
+    IF doc_number IS NULL OR doc_number = ''
+    THEN
+        -- присвоим новый номер
+        doc_number = docs.sp_get_number(user_rekvid, doc_type_kood, YEAR(doc_kpv), tnDokLausId);
+    END IF;
+
 
     IF doc_arvid IS NOT NULL
     THEN
