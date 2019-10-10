@@ -78,6 +78,8 @@ class DocumentTemplate extends React.PureComponent {
 
 
     render() {
+
+        console.log('render', this.docData.doc_status);
         let isInEditMode = this.state.edited,
             validationMessage = this.state.warning + isInEditMode ? this.validation() : '';
 
@@ -290,6 +292,7 @@ class DocumentTemplate extends React.PureComponent {
                             bpm={this.bpm ? this.bpm : []}
                             docId={this.state.docId}
                             edited={this.state.edited}
+                            docStatus={this.docData.doc_status}
                             validator={this.validation}
                             btnAddClick={this.btnAddClick}
                             btnEditClick={this.btnEditClick}
