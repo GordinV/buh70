@@ -28,6 +28,8 @@ BEGIN
              INNER JOIN docs.arv a ON a.parentid = d.id
     WHERE d.id = l_arv_id;
 
+    doc_type_id = CASE WHEN v_arv.liik = 0 THEN 'SMK' ELSE 'VMK' END;
+
 
     IF l_arv_id IS NULL OR v_arv.id IS NULL OR empty(l_arv_id)
     THEN
@@ -63,7 +65,7 @@ BEGIN
                                            (SELECT id
                                             FROM libs.nomenklatuur n
                                             WHERE rekvid = v_arv.rekvid
-                                              AND dok IN (l_dok, 'MK')
+                                              AND dok IN (l_dok, doc_type_id)
                                             ORDER BY id
                                                 DESC
                                             LIMIT
@@ -123,8 +125,6 @@ BEGIN
                  v_params AS data) row;
 
     SELECT docs.sp_salvesta_mk(json_object :: JSON, user_id, v_arv.rekvid) INTO mk_id;
-
-    doc_type_id = CASE WHEN v_arv.liik = 0 THEN 'SMK' ELSE 'VMK' END;
 
     IF mk_id IS NOT NULL AND mk_id > 0
     THEN

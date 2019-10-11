@@ -98,11 +98,11 @@ class Document {
     /**
      * грузит гриды
      */
-    async selectDocs(sortBy, sqlWhere) {
+    async selectDocs(sortBy, sqlWhere, limit) {
         let sql = this.config.grid.sqlString,
             params = [this.rekvId, this.userId];
 
-        return await db.queryDb(sql, params, sortBy, sqlWhere);
+        return await db.queryDb(sql, params, sortBy, sqlWhere, limit );
     }
 
     /**

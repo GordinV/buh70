@@ -37,6 +37,7 @@ class Input extends React.PureComponent {
         let inputPlaceHolder = this.props.placeholder || this.props.title,
             inputStyle = Object.assign({}, styles.input,
                 this.props.width ? {width: this.props.width} : {},
+                this.props.style ? this.props.style : {},
                 this.state.readOnly ? styles.readOnly : {}
             );
 
@@ -45,20 +46,20 @@ class Input extends React.PureComponent {
                 <label style={styles.label} htmlFor={this.props.name} ref="label">
                     {this.props.title}
                 </label>
-                    <input type='text'
-                           id={this.props.name}
-                           ref="input"
-                           style={inputStyle}
-                           name={this.props.name}
-                           value={this.state.value}
-                           readOnly={this.state.readOnly}
-                           title={this.props.title}
-                           pattern={this.props.pattern}
-                           placeholder={inputPlaceHolder}
-                           onChange={this.onChange}
-                           maxLength={this.props.maxLength}
-                           disabled={this.props.disabled}
-                    />
+                <input type='text'
+                       id={this.props.name}
+                       ref="input"
+                       style={inputStyle}
+                       name={this.props.name}
+                       value={this.state.value}
+                       readOnly={this.state.readOnly}
+                       title={this.props.title}
+                       pattern={this.props.pattern}
+                       placeholder={inputPlaceHolder}
+                       onChange={this.onChange}
+                       maxLength={this.props.maxLength}
+                       disabled={this.props.disabled}
+                />
 
             </div>)
     }

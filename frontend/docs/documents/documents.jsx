@@ -16,6 +16,7 @@ const
     ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx'),
     GridFilter = require('./../../components/data-grid/grid-filter/grid-filter.jsx'),
     ModalPage = require('./../../components/modalpage/modalPage.jsx'),
+    InputText = require('./../../components/input-text/input-text.jsx'),
     ModalPageDelete = require('./../../components/modalpage/modalpage-delete/modalPage-delete.jsx'),
     styles = require('./documents-styles');
 
@@ -45,13 +46,13 @@ class Documents extends React.PureComponent {
             getFilter: false,
             isDelete: false,
             hasStartMenuVisible: false, // will show start menu
-            startMenuValue: 'parentid'
+            startMenuValue: 'parentid',
+            limit: 100 // default limit for query
         };
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
             'headerClickHandler', 'btnFilterClick', 'modalPageBtnClick', 'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
-            'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData', 'prepareSqlWhereFromFilter');
-
+            'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData', 'prepareSqlWhereFromFilter', 'handleInputChange');
 
     }
 
@@ -106,6 +107,17 @@ class Documents extends React.PureComponent {
                     {this.props.render()}
                 </div>
                 {this.renderDocToolBar()}
+                <div style={_style.docRow}>
+                    <div style={_style.docColumn}>
+                        <InputText ref="input-limit"
+                                   title='Limiit:'
+                                   name='limit'
+                                   style={_style.limit}
+                                   value={this.state.limit || '100'}
+                                   readOnly={false}
+                                   onChange={this.handleInputChange}/>
+                    </div>
+                </div>
                 <div style={_style.gridContainer}>
                     <DataGrid ref='dataGrid'
                               style={_style.grid.mainTable}
@@ -132,6 +144,12 @@ class Documents extends React.PureComponent {
             </div>
         );
     }
+
+    // обработчик изменений в инпут (лимит)
+    handleInputChange(name, value) {
+        this.setState({limit: !value || value > 1000 ? 1000 : value});
+    }
+
 
     /**
      * вызовер подгрузку данных с параметром сортировки
@@ -427,6 +445,7 @@ class Documents extends React.PureComponent {
         const params = {
             parameter: this.docTypeId, // параметры
             sortBy: this.state.sortBy, // сортировка
+            limit: this.state.limit, // row limit in query
             docId: this.state.value,
             method: method,
             sqlWhere: this.state.sqlWhere, // динамический фильтр грида

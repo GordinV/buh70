@@ -36,6 +36,8 @@ module.exports = {
         headerTable: {
             tableLayout: 'fixed',
         },
-
+    },
+    limit: {
+        width: '20%'
     }
 };

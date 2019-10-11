@@ -5,6 +5,7 @@ exports.post = async (req, res) => {
         parameter = req.body.parameter || '',// параметры если переданы
         module = req.body.module || 'documents',
         sortBy = req.body.sortBy, //порядок сортировки
+        limit = req.body.limit ? req.body.limit: 100, //порядок сортировки
         method = req.body.method ? req.body.method: 'selectDocs', //порядок сортировки
         sqlWhere = req.body.sqlWhere; //динамический фильтр
 
@@ -24,7 +25,7 @@ exports.post = async (req, res) => {
         // вызвать метод
         let data = {
             docTypeId: parameter,
-            result: await doc[method](sortBy, sqlWhere),
+            result: await doc[method](sortBy, sqlWhere, limit ),
             gridConfig: gridConfig
         };
 

@@ -378,7 +378,7 @@ class DocumentTemplate extends React.PureComponent {
                     if (response.data) {
                         // executing task
                         if (response.data.action && response.data.action === 'task') {
-console.log('fetched, results',response.data );
+
                             const dataRow = response.data.result;
                             let docId = dataRow.docId;
                             let docTypeId = dataRow.docTypeId ? dataRow.docTypeId : null;
