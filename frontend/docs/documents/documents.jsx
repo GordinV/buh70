@@ -107,17 +107,6 @@ class Documents extends React.PureComponent {
                     {this.props.render()}
                 </div>
                 {this.renderDocToolBar()}
-                <div style={_style.docRow}>
-                    <div style={_style.docColumn}>
-                        <InputText ref="input-limit"
-                                   title='Limiit:'
-                                   name='limit'
-                                   style={_style.limit}
-                                   value={this.state.limit || '100'}
-                                   readOnly={false}
-                                   onChange={this.handleInputChange}/>
-                    </div>
-                </div>
                 <div style={_style.gridContainer}>
                     <DataGrid ref='dataGrid'
                               style={_style.grid.mainTable}
@@ -364,21 +353,30 @@ class Documents extends React.PureComponent {
      */
     renderDocToolBar() {
         let toolbarParams = this.prepareParamsForToolbar(); //параметры для кнопок управления, взависимости от активной строки
-
         return (
             <div>
                 {this.renderFilterToolbar()}
-                <ToolbarContainer ref='toolbarContainer'>
-                    <BtnAdd onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
-                            disable={toolbarParams['btnAdd'].disabled}/>
-                    <BtnEdit onClick={this.btnEditClick} show={toolbarParams['btnEdit'].show}
-                             disable={toolbarParams['btnEdit'].disabled}/>
-                    <BtnDelete onClick={this.btnDeleteClick.bind(this)} show={toolbarParams['btnDelete'].show}
-                               disable={toolbarParams['btnDelete'].disabled}/>
-                    <BtnPrint onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
-                              disable={toolbarParams['btnPrint'].disabled}/>
-                    <BtnFilter onClick={this.btnFilterClick}/>
-                </ToolbarContainer>
+                <div style={styles.docRow}>
+                    <InputText ref="input-limit"
+                               title='Limiit:'
+                               name='limit'
+                               style={styles.limit}
+                               value={this.state.limit || '100'}
+                               readOnly={false}
+                               onChange={this.handleInputChange}/>
+
+                    <ToolbarContainer ref='toolbarContainer'>
+                        <BtnAdd onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
+                                disable={toolbarParams['btnAdd'].disabled}/>
+                        <BtnEdit onClick={this.btnEditClick} show={toolbarParams['btnEdit'].show}
+                                 disable={toolbarParams['btnEdit'].disabled}/>
+                        <BtnDelete onClick={this.btnDeleteClick.bind(this)} show={toolbarParams['btnDelete'].show}
+                                   disable={toolbarParams['btnDelete'].disabled}/>
+                        <BtnPrint onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
+                                  disable={toolbarParams['btnPrint'].disabled}/>
+                        <BtnFilter onClick={this.btnFilterClick}/>
+                    </ToolbarContainer>
+                </div>
             </div>
         );
     }

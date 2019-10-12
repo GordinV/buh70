@@ -38,6 +38,7 @@ module.exports = {
         },
     },
     limit: {
-        width: '20%'
+        width: '20%',
+        margin: '5px 2px'
     }
 };

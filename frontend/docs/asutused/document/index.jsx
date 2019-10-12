@@ -2,6 +2,8 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 
+const DocContext = require('../../../doc-context');
+
 const
     DocumentTemplate = require('./../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
@@ -23,6 +25,8 @@ class Asutused extends React.PureComponent {
     render() {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
+                                 history={this.props.history}
+                                 module={this.props.module}
                                  docTypeId='ASUTUSED'
                                  initData={this.props.initData}
                                  renderer={this.renderer}/>

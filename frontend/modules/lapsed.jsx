@@ -27,14 +27,14 @@ const SmkDocument = require('./../docs/smk/document/index.jsx');
 const SorderideRegister = require('./../docs/sorder/index.jsx');
 const SorderDocument = require('./../docs/sorder/document/index.jsx');
 
-const AsutusRegister = require('./../docs/asutused/index.jsx'),
-    AsutusDocument = require('./../docs/asutused/document/index.jsx');
-
 const NomRegister = require('./../docs/nomenclature/index.jsx'),
     NomDocument = require('./../docs/nomenclature/document/index.jsx');
 
 const TunnusRegister = require('./../docs/tunnus/index.jsx'),
     TunnusDocument = require('./../docs/tunnus/document/index.jsx');
+
+const AsutusRegister = require('./../docs/asutused/index.jsx'),
+    AsutusDocument = require('./../docs/asutused/document/index.jsx');
 
 
 const {Route, withRouter, Redirect} = require('react-router-dom');
@@ -74,8 +74,18 @@ class App extends React.Component {
                                                          initData={this.props.initData} module={MODULE}/>}/>
 
                 <Route exact path="/lapsed/laps/:docId"
-                    render={(props) => <LapseDokument {...props} history={props.history}/>}/>
+                       render={(props) => <LapseDokument {...props} history={props.history}/>}/>
 
+                <Route exact path="/lapsed/asutused"
+                       render={(props) =>
+                           <AsutusRegister
+                               history={props.history}
+                               initData={this.props.initData}
+                               module={MODULE}/>}
+                />
+
+                <Route exact path="/lapsed/asutused/:docId"
+                       render={(props) => <AsutusDocument  {...props} history={props.history}/>}/>
 
                 <Route exact path="/lapsed/vanem"
                        render={(props) => <VanemateRegister history={props.history}
@@ -117,13 +127,6 @@ class App extends React.Component {
                                module={MODULE}/>}
                 />
                 <Route exact path="/lapsed/sorder/:docId" component={SorderDocument}/>
-
-                <Route exact path="/lapsed/asutused/:docId" component={AsutusDocument} module={MODULE}/>
-                <Route exact path="/lapsed/asutused"
-                       render={(props) =>
-                           <AsutusRegister history={props.history}
-                                           initData={this.props.initData}
-                                           module={MODULE}/>}/>
 
                 <Route exact path="/lapsed/nomenclature"
                        render={(props) => <NomRegister history={props.history}

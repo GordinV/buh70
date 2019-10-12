@@ -54,16 +54,16 @@ webpackJsonp_name_([1],{
 	var VmkRegister = __webpack_require__(278);
 	var Menu = __webpack_require__(49);
 	var StartMenu = __webpack_require__(85),
-	    AsutusRegister = __webpack_require__(257),
-	    AsutusDocument = __webpack_require__(259),
+	    AsutusRegister = __webpack_require__(265),
+	    AsutusDocument = __webpack_require__(267),
 	    KontoRegister = __webpack_require__(280),
 	    KontoDocument = __webpack_require__(282),
-	    NomRegister = __webpack_require__(261),
-	    NomDocument = __webpack_require__(263),
+	    NomRegister = __webpack_require__(257),
+	    NomDocument = __webpack_require__(259),
 	    ProjectRegister = __webpack_require__(284),
 	    ProjectDocument = __webpack_require__(286),
-	    TunnusRegister = __webpack_require__(265),
-	    TunnusDocument = __webpack_require__(267),
+	    TunnusRegister = __webpack_require__(261),
+	    TunnusDocument = __webpack_require__(263),
 	    DocumentLibRegister = __webpack_require__(288),
 	    DocumentLibDocument = __webpack_require__(290);
 
@@ -201,7 +201,7 @@ webpackJsonp_name_([1],{
 	              key: 'prepareComponents',
 	              value: function prepareComponents(components) {
 	                     return components['TunnusDocument'] = function (props) {
-	                            var TunnusDocument = __webpack_require__(267);
+	                            var TunnusDocument = __webpack_require__(263);
 	                            return React.createElement(TunnusDocument, props);
 	                     };
 	              }
