@@ -36,27 +36,21 @@ class DataGrid extends React.PureComponent {
                 name: null,
                 direction: null
             },
+            value: this.props.value ? this.props.value: 0,
             gridData: props.gridData
         };
-        this.handleCellDblClick = this.handleGridHeaderClick.bind(this);
+        this.handleGridHeaderClick = this.handleGridHeaderClick.bind(this);
         this.handleCellDblClick = this.handleCellDblClick.bind(this);
         this.handleKeyDown = this.handleKeyDown.bind(this);
         this.prepareTableRow = this.prepareTableRow.bind(this);
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
-    }
-
-    componentDidMount() {
-        // надем по по props.value индекс активной строки
-        if (this.props.value) {
-            let index = this.getGridRowIndexById(this.props.value);
-            this.setState({activeRow: index});
-        }
+        this.getGridRowIndexById = this.getGridRowIndexById.bind(this);
     }
 
     // will update state if props changed
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (JSON.stringify(nextProps.gridData) !== JSON.stringify(prevState.gridData)) {
-            return {gridData: nextProps.gridData};
+        if (JSON.stringify(nextProps.gridData) !== JSON.stringify(prevState.gridData) || nextProps.value !== prevState.value) {
+            return {gridData: nextProps.gridData, value: nextProps.value};
         } else return null;
     }
 
@@ -170,18 +164,12 @@ class DataGrid extends React.PureComponent {
      * @param docId
      * @returns {number}
      */
-    getGridRowIndexById(docId) {
-        let index = 0,
-            data = this.state.gridData;
+    getGridRowIndexById() {
+        let index = 0;
 
-        if (docId) {
-            for (let i = 0; i < data.length; i++) {
-                let row = data[i];
-                if (row && data[i]['id'] == docId) {
-                    index = i;
-                    break;
-                }
-            }
+        if (this.state.value) {
+            index = this.state.gridData.findIndex(row => row.id === this.state.value);
+            index = index > -1 ? index: 0;
         }
         return index;
     }
@@ -278,9 +266,9 @@ class DataGrid extends React.PureComponent {
      * Готовит строку для грида
      */
     prepareTableRow() {
+        let activeRow = this.getGridRowIndexById();
         return this.state.gridData.map((row, rowIndex) => {
-            let objectIndex = 'tr-' + rowIndex,
-                activeRow = this.state.activeRow;
+            let objectIndex = 'tr-' + rowIndex;
 
             return (<tr
                 ref={objectIndex}

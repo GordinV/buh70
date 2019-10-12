@@ -82,6 +82,13 @@ class Documents extends React.PureComponent {
             });
 
         }
+
+        // if lastDocId available, will point it as selected
+        if (DocContext[(this.props.docTypeId).toLowerCase()]) {
+            let docId = DocContext[(this.props.docTypeId).toLowerCase()];
+            console.log('didMount, docId', docId);
+            this.setState({value: docId});
+        }
     }
 
     // присвоит фильтру значения переданные в параметре
@@ -100,6 +107,7 @@ class Documents extends React.PureComponent {
 
     render() {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
+
         return (
             <div style={_style.doc}>
                 <div style={_style.docRow}>

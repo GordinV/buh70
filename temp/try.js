@@ -1,14 +1,6 @@
-/*
-let obj = [{name: "Koosta arve", task: "koosta_arve"}];
 
-let index = obj.find(row => row.id === 2);
+let obj = [{id: 1, name: "Koosta arve"}, {id: 2, name:'test asutus'}, {id:3, name:'nimi'}];
+
+let index = obj.findIndex(row => row.id === 1);
 console.log('indx', index);
 
-let newObj = {id: 0, name: ''};
-
-*/
-let n = 0;
-while (++n < 5) {
-    console.log(n);
-    setTimeout(() => console.log(n), 10 + n, n)
-}

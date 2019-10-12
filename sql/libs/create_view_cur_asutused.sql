@@ -13,7 +13,8 @@ SELECT
   coalesce((a.properties ->> 'kehtivus' :: TEXT)::date,current_date + INTERVAL '10 years') :: DATE AS kehtivus,
   a.staatus
 FROM libs.asutus a
-WHERE (a.staatus <> 3);
+WHERE (a.staatus <> 3)
+ORDER BY a.timestamp desc;
 
 
 GRANT SELECT on cur_asutused to dbpeakasutaja;
