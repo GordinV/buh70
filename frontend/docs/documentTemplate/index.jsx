@@ -214,6 +214,7 @@ class DocumentTemplate extends React.PureComponent {
             console.error('not in edite mode');
             return false;
         }
+console.log('handleInputChange', inputName, inputValue);
 
         this.docData[inputName] = inputValue;
         this.forceUpdate();
@@ -367,6 +368,7 @@ class DocumentTemplate extends React.PureComponent {
             method = 'fetchData' + protocol;
             params = Object.assign(params, this.docData,);
         }
+        console.log('fetch', protocol, params);
 
         return new Promise((resolved, rejected) => {
             fetchData[method](url, params).then(response => {

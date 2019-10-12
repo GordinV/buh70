@@ -22,5 +22,7 @@ module.exports = {
     laps:'/lapsed/laps',
     vanem:'/lapsed/vanem',
     lapse_kaart:'/lapsed/lapse_kaart',
-    lapse_taabel:'/lapsed/lapse_taabel'
+    lapse_taabel:'/lapsed/lapse_taabel',
+    lapse_grupp:'/lapsed/lapse_grupp'
+
 };

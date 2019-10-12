@@ -10,6 +10,7 @@ SELECT l.id as lapsid,
        lk.rekvid,
        lk.hind,
        lk.properties ->> 'yksus' AS yksus,
+       lk.properties ->> 'all_yksus' AS all_yksus,
        n.kood,
        n.nimetus
 FROM lapsed.laps l

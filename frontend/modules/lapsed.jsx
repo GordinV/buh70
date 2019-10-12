@@ -36,12 +36,13 @@ const TunnusRegister = require('./../docs/tunnus/index.jsx'),
 const AsutusRegister = require('./../docs/asutused/index.jsx'),
     AsutusDocument = require('./../docs/asutused/document/index.jsx');
 
+const LapseGruppRegister = require('./../docs/lapse_grupp/index.jsx'),
+    LapseGruppDocument = require('./../docs/lapse_grupp/document/index.jsx');
 
 const {Route, withRouter, Redirect} = require('react-router-dom');
 const {StyleRoot} = require('radium');
 const MODULE = 'Lapsed';
 const DocContext = require('./../doc-context.js');
-
 
 class App extends React.Component {
     constructor(props) {
@@ -86,6 +87,17 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/asutused/:docId"
                        render={(props) => <AsutusDocument  {...props} history={props.history}/>}/>
+
+                <Route exact path="/lapsed/lapse_grupp"
+                       render={(props) =>
+                           <LapseGruppRegister
+                               history={props.history}
+                               initData={this.props.initData}
+                               module={MODULE}/>}
+                />
+
+                <Route exact path="/lapsed/lapse_grupp/:docId"
+                       render={(props) => <LapseGruppDocument  {...props} history={props.history}/>}/>
 
                 <Route exact path="/lapsed/vanem"
                        render={(props) => <VanemateRegister history={props.history}

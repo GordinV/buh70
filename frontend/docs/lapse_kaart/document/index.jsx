@@ -18,12 +18,20 @@ const
     styles = require('./styles');
 
 const LIBDOK = 'LAPSE_KAART',
-    LIBRARIES = [{id: 'tunnus', filter: ''}, {
-        id: 'nomenclature',
-        filter: `where dok = 'ARV'`
-    }];
+    LIBRARIES = [
+        {
+            id: 'tunnus', filter: ''
+        },
+        {
+            id: 'nomenclature',
+            filter: `where dok = 'ARV'`
+        },
+        {
+            id: 'lapse_grupp',
+            filter: ``
+        }
 
-const now = new Date();
+    ];
 
 class Laps extends React.PureComponent {
     constructor(props) {
@@ -33,18 +41,20 @@ class Laps extends React.PureComponent {
             docId: props.docId ? props.docId : Number(props.match.params.docId),
             module: 'lapsed'
         };
-//        lapsId: props.lapsId ? props.lapsId : props.match.params.lapsId ? Number(props.match.params.lapsId) : 0
 
         this.renderer = this.renderer.bind(this);
         this.handlePageClick = this.handlePageClick.bind(this);
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
         this.btnEditNomClick = this.btnEditNomClick.bind(this);
         this.btnEditLapsClick = this.btnEditLapsClick.bind(this);
+        this.btnEditLapseGruppClick = this.btnEditLapseGruppClick.bind(this);
 
 
         this.pages = [
             {pageName: 'Teenus', docTypeId: 'LAPSE_KAART'}
         ];
+
+        this.libs = {}; // libs cache
     }
 
     componentDidMount() {
@@ -90,6 +100,14 @@ class Laps extends React.PureComponent {
 
         let buttonEditNom = styles.btnEditNom;
 
+        let yksus;
+        if (self.libs['lapse_grupp'] && self.docData.yksus) {
+            yksus = self.libs['lapse_grupp'].find(yksus => yksus.kood === self.docData.yksus);
+        }
+        const all_yksused = (yksus ? yksus.all_yksused : []).map((item, index) => {
+            return {id: index++, nimetus: item}
+        });
+
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>
@@ -118,7 +136,6 @@ class Laps extends React.PureComponent {
                             disabled={false}
                         />
                     </div>
-
                 </div>
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
@@ -145,24 +162,57 @@ class Laps extends React.PureComponent {
                     </div>
                 </div>
                 <div style={styles.docRow}>
-
                     <div style={styles.docColumn}>
-
+                        <Select title="Üksus:"
+                                name='yksus'
+                                libs="lapse_grupp"
+                                data={self.libs['lapse_grupp']}
+                                value={self.docData.yksus || ''}
+                                defaultValue={self.docData.yksys || ''}
+                                ref="select-lapse_grupp"
+                                collId={'kood'}
+                                btnDelete={isEditMode}
+                                onChange={self.handleInputChange}
+                                readOnly={!isEditMode}
+                        />
+                    </div>
+                    <div style={styles.docColumn}>
+                        <ButtonEdit
+                            ref='btnEdit'
+                            onClick={this.btnEditLapseGruppClick}
+                            show={!isEditMode}
+                            disabled={false}
+                            style={buttonEditNom}
+                        />
+                    </div>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
+                        <Select title="All üksus:"
+                                name='all_yksus'
+                                libs="lapse_all_yksus"
+                                data={all_yksused}
+                                value={self.docData.all_yksus || ''}
+                                defaultValue={self.docData.all_yksys || ''}
+                                ref="select-lapse_all_yksus"
+                                collId={'nimetus'}
+                                onChange={self.handleInputChange}
+                                readOnly={!isEditMode}
+                        />
+                    </div>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <InputNumber ref="input-hind"
                                      title='Hind:'
                                      name='hind'
                                      value={Number(self.docData.hind) || 0}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
-
-                        <InputText title='Üksus:'
-                                   name='yksus'
-                                   value={self.docData.yksus || ''}
-                                   ref='input-yksus'
-                                   readOnly={!isEditMode}
-                                   onChange={self.handleInputChange}/>
-
-
+                    </div>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <Select title="Tunnus:"
                                 name='tunnus'
                                 libs="tunnus"
@@ -175,7 +225,10 @@ class Laps extends React.PureComponent {
                                 onChange={self.handleInputChange}
                                 readOnly={!isEditMode}
                         />
-
+                    </div>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <CheckBox title="Kas arvesta eraldi?"
                                   name='kas_eraldi'
                                   value={Boolean(self.docData.kas_eraldi)}
@@ -199,13 +252,15 @@ class Laps extends React.PureComponent {
                                   readOnly={!isEditMode}
                         />
                     </div>
-                    <div style={styles.docColumn}>
-                        <InputNumber ref="input-soodus"
-                                     title='Soodustus:'
-                                     name='soodus'
-                                     value={Number(self.docData.soodus) || 0}
-                                     readOnly={!isEditMode}
-                                     onChange={self.handleInputChange}/>
+                    < div style={styles.docColumn}>
+                        < InputNumber
+                            ref="input-soodus"
+                            title='Soodustus:'
+                            name='soodus'
+                            value={Number(self.docData.soodus) || 0}
+                            readOnly={!isEditMode}
+                            onChange={self.handleInputChange}
+                        />
 
                         <InputDate title='Kehtib alates:'
                                    name='sooduse_alg'
@@ -214,12 +269,16 @@ class Laps extends React.PureComponent {
                                    readOnly={!isEditMode}
                                    onChange={self.handleInputChange}/>
 
-                        <InputDate title='Kehtib kuni:'
-                                   name='sooduse_lopp'
-                                   value={self.docData.sooduse_lopp || ''}
-                                   ref='input-soodus_lopp'
-                                   readOnly={!isEditMode}
-                                   onChange={self.handleInputChange}/>
+                        < InputDate
+                            title='Kehtib kuni:'
+                            name='sooduse_lopp'
+                            value={self.docData.sooduse_lopp || ''}
+                            ref='input-soodus_lopp'
+                            readOnly={
+                                !isEditMode
+                            }
+                            onChange={self.handleInputChange}
+                        />
 
                         <CheckBox title="Kas soodustus protsentides?"
                                   name='kas_protsent'
@@ -228,8 +287,8 @@ class Laps extends React.PureComponent {
                                   onChange={self.handleInputChange}
                                   readOnly={!isEditMode}
                         />
-
                     </div>
+
                 </div>
                 <div style={styles.docRow}>
                     <TextArea title="Märkused"
@@ -276,6 +335,20 @@ class Laps extends React.PureComponent {
         this.props.history.push(`/lapsed/nomenclature/${docNomId}`);
 
     }
+
+    btnEditLapseGruppClick() {
+        let docLapseGruppKood = this.refs['document'].docData.yksus;
+        // ищем ид
+
+        let lapseGruppId = this.refs['document'].libs['lapse_grupp'].find(row => row.kood === docLapseGruppKood).id;
+
+        if (lapseGruppId) {
+            // осуществит переход на карточку контр-агента
+            this.props.history.push(`/lapsed/lapse_grupp/${lapseGruppId}`);
+        }
+
+    }
+
 
     //обработчик события по клику кнопки Редактирование ребенка
     btnEditLapsClick() {

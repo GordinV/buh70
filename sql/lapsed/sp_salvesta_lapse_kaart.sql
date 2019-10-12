@@ -15,6 +15,7 @@ DECLARE
     doc_tunnus       TEXT    = doc_data ->> 'tunnus';
     doc_hind         NUMERIC = doc_data ->> 'hind';
     doc_yksus        TEXT    = doc_data ->> 'yksus';
+    doc_all_yksus    TEXT    = doc_data ->> 'all_yksus';
     doc_soodus       NUMERIC = doc_data ->> 'soodus';
     doc_kas_protsent BOOLEAN = doc_data ->> 'kas_protsent';
     doc_kas_eraldi   BOOLEAN = doc_data ->> 'kas_eraldi';
@@ -46,6 +47,7 @@ BEGIN
 
     json_props = to_jsonb(row)
                  FROM (SELECT doc_yksus        AS yksus,
+                              doc_all_yksus    AS all_yksus,
                               doc_soodus       AS soodus,
                               doc_kas_protsent AS kas_protsent,
                               doc_kas_inf3     AS kas_inf3,

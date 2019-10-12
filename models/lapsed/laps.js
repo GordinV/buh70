@@ -68,7 +68,8 @@ module.exports = {
                          n.kood,
                          n.nimetus,
                          k.hind,
-                         k.properties ->> 'yksus' AS yksus
+                         k.properties ->> 'yksus' AS yksus,
+                         k.properties ->> 'all_yksus' AS all_yksus
                   FROM lapsed.lapse_kaart k
                            INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
                   WHERE k.parentid = $1
@@ -105,7 +106,8 @@ module.exports = {
                     {id: 'kood', name: 'Kood', width: '100px', show: true, type: 'text', readOnly: false},
                     {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
                     {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'yksus', name: 'Üksus', width: '100px', show: true, type: 'text', readOnly: false}
+                    {id: 'yksus', name: 'Üksus', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'all_yksus', name: 'ALL üksus', width: '100px', show: true, type: 'text', readOnly: false}
                 ]
         }
     ,
@@ -145,13 +147,13 @@ module.exports = {
         },
     koostaArve: {
         command: `SELECT error_code, result, error_message, doc_type_id
-                  FROM lapsed.koosta_arve_taabeli_alusel($2::INTEGER, $1::INTEGER )`, //$1 docId, $2 - userId
+                  FROM lapsed.koosta_arve_taabeli_alusel($2::INTEGER, $1::INTEGER)`, //$1 docId, $2 - userId
         type: 'sql',
         alias: 'koostaArve'
     },
     koostaEttemaksuArve: {
         command: `SELECT error_code, result, error_message, doc_type_id
-                  FROM lapsed.koosta_ettemaksu_arve($2::INTEGER, $1::INTEGER )`,//$1 docId, $2 - userId
+                  FROM lapsed.koosta_ettemaksu_arve($2::INTEGER, $1::INTEGER)`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'koostaEttemaksuArve'
     },
