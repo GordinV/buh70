@@ -78,7 +78,6 @@ class DocumentTemplate extends React.PureComponent {
 
 
     render() {
-
         let isInEditMode = this.state.edited,
             validationMessage = this.state.warning + isInEditMode ? this.validation() : '';
 
@@ -116,12 +115,15 @@ class DocumentTemplate extends React.PureComponent {
         this.makeBackup();
 
         if (this.props.history) {
-            this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/0}`);
-        } else {
-            this.setState({docId: 0, edited: true}, () => {
-                this.fetchData();
-            })
+            this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/0`);
         }
+
+        this.setState({docId: 0, edited: true}, () => {
+            this.fetchData().then(() => {
+                    this.forceUpdate();
+                }
+            );
+        });
 
         if (this.props.focusElement && this.refs[this.props.focusElement]) {
             this.refs[this.props.focusElement].focus();
@@ -214,7 +216,6 @@ class DocumentTemplate extends React.PureComponent {
             console.error('not in edite mode');
             return false;
         }
-console.log('handleInputChange', inputName, inputValue);
 
         this.docData[inputName] = inputValue;
         this.forceUpdate();
@@ -368,11 +369,9 @@ console.log('handleInputChange', inputName, inputValue);
             method = 'fetchData' + protocol;
             params = Object.assign(params, this.docData,);
         }
-        console.log('fetch', protocol, params);
 
         return new Promise((resolved, rejected) => {
             fetchData[method](url, params).then(response => {
-
                     if (response.status && response.status === 401) {
                         document.location = `/login`;
                     }
@@ -701,7 +700,8 @@ console.log('handleInputChange', inputName, inputValue);
 
 }
 
-DocumentTemplate.propTypes = {
+DocumentTemplate
+    .propTypes = {
     initData: PropTypes.object, //Содержание документа
     requiredFields: PropTypes.array, // обязательные поля
     edited: PropTypes.bool, //режим редактирования
@@ -713,7 +713,8 @@ DocumentTemplate.propTypes = {
     focusElement: PropTypes.string //елемент на который будет отдан фокус при редактировании
 };
 
-DocumentTemplate.defaultProps = {
+DocumentTemplate
+    .defaultProps = {
     initData: [],
     docId: 0,
     edited: false,
@@ -722,6 +723,7 @@ DocumentTemplate.defaultProps = {
     libs: []
 };
 
-module.exports = DocumentTemplate;
+module
+    .exports = DocumentTemplate;
 
 

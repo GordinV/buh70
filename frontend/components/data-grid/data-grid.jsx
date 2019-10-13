@@ -331,8 +331,8 @@ class DataGrid extends React.PureComponent {
                 key={headerIndex}
                 onClick={this.handleGridHeaderClick.bind(this, column.id)}>
                 <span>{column.name}</span>
-                {isHidden ? <img ref="imageAsc" style={imageStyleAsc} src={styles.icons['asc']} alt={asc}/> : null}
-                {isHidden ? <img ref="imageDesc" style={imageStyleDesc} src={styles.icons['desc']} alt={desc}/> : null}
+                {isHidden ? <img ref="imageAsc" style={imageStyleAsc} src={styles.icons['asc']} alt={'asc'}/> : null}
+                {isHidden ? <img ref="imageDesc" style={imageStyleDesc} src={styles.icons['desc']} alt={'desc'}/> : null}
             </th>)
         }, this);
     }
