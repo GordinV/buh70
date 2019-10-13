@@ -36,7 +36,7 @@ class DataGrid extends React.PureComponent {
                 name: null,
                 direction: null
             },
-            value: this.props.value ? this.props.value: 0,
+            value: this.props.value ? this.props.value : 0,
             gridData: props.gridData
         };
         this.handleGridHeaderClick = this.handleGridHeaderClick.bind(this);
@@ -49,7 +49,7 @@ class DataGrid extends React.PureComponent {
 
     // will update state if props changed
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (JSON.stringify(nextProps.gridData) !== JSON.stringify(prevState.gridData) || nextProps.value !== prevState.value) {
+        if (JSON.stringify(nextProps.gridData) !== JSON.stringify(prevState.gridData) || (nextProps.value && nextProps.value !== prevState.value)) {
             return {gridData: nextProps.gridData, value: nextProps.value};
         } else return null;
     }
@@ -169,7 +169,7 @@ class DataGrid extends React.PureComponent {
 
         if (this.state.value) {
             index = this.state.gridData.findIndex(row => row.id === this.state.value);
-            index = index > -1 ? index: 0;
+            index = index > -1 ? index : 0;
         }
         return index;
     }
@@ -179,19 +179,23 @@ class DataGrid extends React.PureComponent {
      * @param idx
      */
     handleCellClick(idx) {
-        this.setState({
-            activeRow: idx
-        });
-
-        let action = this.props.onChangeAction || null;
 
         if (this.state.gridData.length > 0) {
+            let action = this.props.onChangeAction || null;
+
             let docId = this.state.gridData[idx].id;
+
+            this.setState({
+                activeRow: idx,
+                value: docId
+            });
+
 
             if (this.props.onClick) {
                 this.props.onClick(action, docId, idx);
             }
         }
+
     }
 
     /**
@@ -317,8 +321,8 @@ class DataGrid extends React.PureComponent {
                 style = Object.assign({}, styles[headerStyle], !display ? {display: 'none'} : {}, {width: width}),
                 activeColumn = this.state.activeColumn,
                 iconType = this.state.sort.direction,
-                imageStyleAsc = Object.assign({}, styles.image, (activeColumn == column.id && iconType == 'asc') ? {} : {display: 'none'}),
-                imageStyleDesc = Object.assign({}, styles.image, (activeColumn == column.id && iconType == 'desc') ? {} : {display: 'none'});
+                imageStyleAsc = Object.assign({}, styles.image, (activeColumn === column.id && iconType === 'asc') ? {} : {display: 'none'}),
+                imageStyleDesc = Object.assign({}, styles.image, (activeColumn === column.id && iconType === 'desc') ? {} : {display: 'none'});
 
             // установить видимость
             return (<th
@@ -327,8 +331,8 @@ class DataGrid extends React.PureComponent {
                 key={headerIndex}
                 onClick={this.handleGridHeaderClick.bind(this, column.id)}>
                 <span>{column.name}</span>
-                {isHidden ? <img ref="imageAsc" style={imageStyleAsc} src={styles.icons['asc']}/> : null}
-                {isHidden ? <img ref="imageDesc" style={imageStyleDesc} src={styles.icons['desc']}/> : null}
+                {isHidden ? <img ref="imageAsc" style={imageStyleAsc} src={styles.icons['asc']} alt={asc}/> : null}
+                {isHidden ? <img ref="imageDesc" style={imageStyleDesc} src={styles.icons['desc']} alt={desc}/> : null}
             </th>)
         }, this);
     }

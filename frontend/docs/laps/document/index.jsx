@@ -15,7 +15,7 @@ const toolbarParams = {
         disabled: false
     },
     btnDelete: {
-        show: false,
+        show: true,
         disabled: false
     },
     btnPrint: {
@@ -108,8 +108,6 @@ class Laps extends React.PureComponent {
             self.docData.vanemid = this.state.vanemId;
         }
 
-        let doc = this.refs['document'];
-
         if (!this.docId && self.docData.id) {
             this.docId = self.docData.id;
         }
@@ -167,9 +165,8 @@ class Laps extends React.PureComponent {
                               gridData={gridVanemadData}
                               gridColumns={gridVanemadColumns}
                               showToolBar={!isEditMode}
-                              toolbarParams={toolbarParams}
                               handleGridBtnClick={self.handleGridBtnClick}
-                              readOnly={!isEditMode}
+                              readOnly={isEditMode}
                               style={styles.grid.headerTable}
                               docTypeId={'vanem'}
                               ref="vanemad-data-grid"/>

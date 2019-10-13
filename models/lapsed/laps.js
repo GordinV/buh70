@@ -107,7 +107,7 @@ module.exports = {
                     {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
                     {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'text', readOnly: false},
                     {id: 'yksus', name: 'Üksus', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'all_yksus', name: 'ALL üksus', width: '100px', show: true, type: 'text', readOnly: false}
+                    {id: 'all_yksus', name: 'All üksus', width: '100px', show: true, type: 'text', readOnly: false}
                 ]
         }
     ,
