@@ -16,11 +16,11 @@ DECLARE
     doc_nimetus     TEXT    = doc_data ->> 'nimetus';
     doc_library     TEXT    = 'LAPSE_GRUPP';
     doc_muud        TEXT    = doc_data ->> 'muud';
-    doc_all_yksus_1 TEXT    = doc_data ->> 'all_yksus_1';
-    doc_all_yksus_2 TEXT    = doc_data ->> 'all_yksus_2';
-    doc_all_yksus_3 TEXT    = doc_data ->> 'all_yksus_3';
-    doc_all_yksus_4 TEXT    = doc_data ->> 'all_yksus_4';
-    doc_all_yksus_5 TEXT    = doc_data ->> 'all_yksus_5';
+    doc_all_yksus_1 TEXT    = coalesce((doc_data ->> 'all_yksus_1'),'');
+    doc_all_yksus_2 TEXT    = coalesce((doc_data ->> 'all_yksus_2'),'');
+    doc_all_yksus_3 TEXT    = coalesce((doc_data ->> 'all_yksus_3'),'');
+    doc_all_yksus_4 TEXT    = coalesce((doc_data ->> 'all_yksus_4'),'');
+    doc_all_yksus_5 TEXT    = coalesce((doc_data ->> 'all_yksus_5'),'');
     is_import       BOOLEAN = data ->> 'import';
     all_yksused     TEXT[]  = ARRAY [doc_all_yksus_1, doc_all_yksus_2, doc_all_yksus_3, doc_all_yksus_4, doc_all_yksus_5];
     json_object     JSONB;

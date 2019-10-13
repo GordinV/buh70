@@ -48,6 +48,8 @@ DECLARE
     l_json_arve_id JSONB;
     is_import      BOOLEAN        = data ->> 'import';
     l_doc_ids      INTEGER[];
+
+    arv1_rea_json  JSONB;
 BEGIN
 
     IF (doc_id IS NULL)
@@ -179,14 +181,18 @@ BEGIN
                                             kood3 TEXT,
                                             kood4 TEXT, kood5 TEXT,
                                             konto TEXT, tunnus TEXT, tp TEXT, proj TEXT, arve_id INTEGER, muud TEXT,
-                                            km TEXT);
+                                            km TEXT, yksus TEXT, all_yksus TEXT);
+
+
+            SELECT row_to_json(row) INTO arv1_rea_json
+            FROM (SELECT json_record.yksus, json_record.all_yksus) row;
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
             THEN
 
                 INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, kbmta, summa, kood1, kood2, kood3, kood4,
                                        kood5,
-                                       konto, tunnus, tp, proj, muud, kbm_maar)
+                                       konto, tunnus, tp, proj, muud, kbm_maar, properties)
                 VALUES (arv_id, json_record.nomid,
                         coalesce(json_record.kogus, 1),
                         coalesce(json_record.hind, 0),
@@ -204,7 +210,8 @@ BEGIN
                         coalesce(json_record.tp, ''),
                         coalesce(json_record.proj, ''),
                         coalesce(json_record.muud, ''),
-                        coalesce(json_record.km, '')) RETURNING id
+                        coalesce(json_record.km, ''),
+                        arv1_rea_json) RETURNING id
                            INTO arv1_id;
 
                 -- add new id into array of ids
@@ -212,23 +219,24 @@ BEGIN
 
             ELSE
                 UPDATE docs.arv1
-                SET parentid = arv_id,
-                    nomid    = json_record.nomid,
-                    kogus    = coalesce(json_record.kogus, 0),
-                    hind     = coalesce(json_record.hind, 0),
-                    kbm      = coalesce(json_record.kbm, 0),
-                    kbmta    = coalesce(json_record.kbmta, kogus * hind),
-                    summa    = coalesce(json_record.summa, (kogus * hind) + kbm),
-                    kood1    = coalesce(json_record.kood1, ''),
-                    kood2    = coalesce(json_record.kood2, ''),
-                    kood3    = coalesce(json_record.kood3, ''),
-                    kood4    = coalesce(json_record.kood4, ''),
-                    kood5    = coalesce(json_record.kood5, ''),
-                    konto    = coalesce(json_record.konto, ''),
-                    tunnus   = coalesce(json_record.tunnus, ''),
-                    tp       = coalesce(json_record.tp, ''),
-                    kbm_maar = coalesce(json_record.km, ''),
-                    muud     = json_record.muud
+                SET parentid   = arv_id,
+                    nomid      = json_record.nomid,
+                    kogus      = coalesce(json_record.kogus, 0),
+                    hind       = coalesce(json_record.hind, 0),
+                    kbm        = coalesce(json_record.kbm, 0),
+                    kbmta      = coalesce(json_record.kbmta, kogus * hind),
+                    summa      = coalesce(json_record.summa, (kogus * hind) + kbm),
+                    kood1      = coalesce(json_record.kood1, ''),
+                    kood2      = coalesce(json_record.kood2, ''),
+                    kood3      = coalesce(json_record.kood3, ''),
+                    kood4      = coalesce(json_record.kood4, ''),
+                    kood5      = coalesce(json_record.kood5, ''),
+                    konto      = coalesce(json_record.konto, ''),
+                    tunnus     = coalesce(json_record.tunnus, ''),
+                    tp         = coalesce(json_record.tp, ''),
+                    kbm_maar   = coalesce(json_record.km, ''),
+                    muud       = json_record.muud,
+                    properties = properties || arv1_rea_json
                 WHERE id = json_record.id :: INTEGER RETURNING id
                     INTO arv1_id;
 

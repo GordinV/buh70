@@ -6,7 +6,7 @@ SELECT lg.id    AS id,
        lg.kood,
        lg.nimetus,
        lg.rekvid,
-       ltrim(rtrim((properties::jsonb->>'all_yksused'),']'),'[') as all_yksused
+       rtrim(regexp_replace((properties::jsonb->>'all_yksused'),'[^a-zA-Z0-9,]', '', 'g'),',') as all_yksused
 FROM libs.library lg
 WHERE lg.library = 'LAPSE_GRUPP'
   and lg.status <> 3;

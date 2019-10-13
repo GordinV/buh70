@@ -98,7 +98,12 @@ BEGIN
                        AND (lk.properties ->> 'sooduse_lopp')::DATE >= l_kpv
                        THEN 1
                    ELSE 0 END                                                        AS real_soodus,
-               lk.properties ->> 'yksus'                                             AS muud,
+               (lk.properties ->> 'yksus')::TEXT || CASE
+                                                        WHEN (lk.properties ->> 'all_yksus')::TEXT IS NOT NULL
+                                                            THEN '(' || (lk.properties ->> 'all_yksus')::TEXT || ')'
+                                                        ELSE '' END                  AS muud,
+               lk.properties ->> 'yksus'                                             AS yksus,
+               lk.properties ->> 'all_yksus'                                         AS all_yksus,
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC               AS vat,
                (n.properties::JSONB ->> 'konto')::VARCHAR(20)                        AS konto,
                (n.properties::JSONB ->> 'projekt')::VARCHAR(20)                      AS projekt,
@@ -135,6 +140,8 @@ BEGIN
                                                          v_taabel.konto                                          AS konto,
                                                          v_taabel.tunnus,
                                                          v_taabel.projekt,
+                                                         v_taabel.yksus,
+                                                         v_taabel.all_yksus,
                                                          v_taabel.muud || CASE
                                                                               WHEN v_taabel.real_soodus > 0
                                                                                   THEN ' kasutatud soodustus summas ' ||
@@ -212,7 +219,7 @@ GRANT EXECUTE ON FUNCTION lapsed.koosta_arve_taabeli_alusel(INTEGER, INTEGER, DA
 
 
 /*
-select lapsed.koosta_arve_taabeli_alusel(70, 16)
+select lapsed.koosta_arve_taabeli_alusel(70, 40)
 select * from lapsed.cur_laste_arved where id  = 1616205
 
 select * from lapsed.laps where staatus = 1

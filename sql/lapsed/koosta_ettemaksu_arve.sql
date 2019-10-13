@@ -95,7 +95,12 @@ BEGIN
                        THEN 1
                    ELSE 0 END                                          AS real_soodus,
 
-               lk.properties ->> 'yksus'                               AS muud,
+               (lk.properties ->> 'yksus')::TEXT || CASE
+                                                        WHEN (lk.properties ->> 'all_yksus')::TEXT IS NOT NULL
+                                                            THEN '(' || (lk.properties ->> 'all_yksus')::TEXT || ')'
+                                                        ELSE '' END    AS muud,
+               lk.properties ->> 'yksus'                               AS yksus,
+               lk.properties ->> 'all_yksus'                           AS all_yksus,
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC AS vat,
                (n.properties::JSONB ->> 'konto')::VARCHAR(20)          AS konto,
                (n.properties::JSONB ->> 'projekt')::VARCHAR(20)        AS projekt,
@@ -129,6 +134,8 @@ BEGIN
                                                          v_kaart.konto                                        AS konto,
                                                          v_kaart.tunnus,
                                                          v_kaart.projekt,
+                                                         v_kaart.yksus,
+                                                         v_kaart.all_yksus,
                                                          v_kaart.muud || CASE
                                                                              WHEN v_kaart.real_soodus > 0
                                                                                  THEN ' kasutatud soodustus summas ' || round(v_kaart.real_soodus, 2)::TEXT
