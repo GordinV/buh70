@@ -68,7 +68,7 @@ module.exports = {
                          n.kood,
                          n.nimetus,
                          k.hind,
-                         k.properties ->> 'yksus' AS yksus,
+                         k.properties ->> 'yksus'     AS yksus,
                          k.properties ->> 'all_yksus' AS all_yksus
                   FROM lapsed.lapse_kaart k
                            INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
@@ -157,7 +157,20 @@ module.exports = {
         type: 'sql',
         alias: 'koostaEttemaksuArve'
     },
+    arvestaTaabel: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM lapsed.arvesta_taabel($2::INTEGER, $1::INTEGER)`,//$1 docId, $2 - userId
+        type: 'sql',
+        alias: 'arvestaTaabel'
+    },
+
     bpm: [
+        {
+            name: 'Arvesta taabel',
+            task: 'arvestaTaabel',
+            type: 'manual',
+            action: 'arvestaTaabel',
+        },
         {
             name: 'Koosta arve taabeli alusel',
             task: 'koostaArve',

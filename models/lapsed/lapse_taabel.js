@@ -100,20 +100,6 @@ module.exports = {
             alias:
                 'curLapseTaabel'
         },
-    bpm: [
-        {
-            name: 'Arvesta taabel',
-            task: 'arvestaTaabel',
-            type: 'manual',
-            action: 'arvestaTaabel',
-        }
-    ],
-    arvestaTaabel: {
-        command: `SELECT error_code, result, error_message, doc_type_id
-                  FROM lapsed.arvesta_taabel($2::INTEGER, $1::INTEGER)`,//$1 docId, $2 - userId
-        type: 'sql',
-        alias: 'arvestaTaabel'
-    },
 
 }
 ;

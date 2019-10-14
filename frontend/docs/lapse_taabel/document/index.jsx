@@ -19,10 +19,6 @@ const
 
 const DocContext = require('../../../doc-context');
 
-const LIBDOK = 'LAPSE_TAABEL';
-
-const now = new Date();
-
 class Laps extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -50,6 +46,7 @@ class Laps extends React.PureComponent {
             //есть значение ид ребенка
             this.setState({lapsId:DocContext['laps'] });
         }
+
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -103,7 +100,6 @@ class Laps extends React.PureComponent {
             aasta = kpv.getFullYear();
 
         let buttonEditNom = styles.btnEditNom;
-        console.log('renderer', self.docData.nomid);
 
         return (
             <div style={styles.doc}>

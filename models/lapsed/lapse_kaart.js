@@ -1,13 +1,13 @@
 module.exports = {
-    selectAsLibs: `SELECT lk.id           AS id,
-                          n.kood::TEXT       AS kood,
+    selectAsLibs: `SELECT lk.id                         AS id,
+                          n.kood::TEXT                  AS kood,
                           n.nimetus::TEXT ||
                           coalesce(' (' || (lk.properties ->> 'yksus') || '/' || (lk.properties ->> 'all_yksus') || ')',
-                                   '')::TEXT AS nimetus,
-                          lk.parentid        AS lapsid,
-                          lk.properties ->> 'yksus',
-                          lk.properties ->> 'all_yksus',
-                          lk.rekvid          AS rekvid
+                                   '')::TEXT            AS nimetus,
+                          lk.parentid                   AS lapsid,
+                          lk.properties ->> 'yksus'     AS yksus,
+                          lk.properties ->> 'all_yksus' AS all_yksus,
+                          lk.rekvid                     AS rekvid
                    FROM lapsed.lapse_kaart lk
                             INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                    WHERE lk.staatus <> 3

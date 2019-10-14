@@ -84,7 +84,6 @@ class DocumentTemplate extends React.PureComponent {
         if (this.props.libs.length && !this.state.loadedLibs && _.has(this.userData, 'uuid')) {
             this.loadLibs();
         }
-
         return (
             <div>
                 {this.renderDocToolBar()}
@@ -179,8 +178,9 @@ class DocumentTemplate extends React.PureComponent {
     btnTaskClick(taskName) {
 
         const task = this.bpm.find(task => task.name === taskName);
-
-        this.fetchData('Post', `/newApi/task/${task.task}`).then(() => {
+        let api = `/newApi/task/${task.task}`;
+        DocContext[api] = {test:'test_params'};
+        this.fetchData('Post', api).then(() => {
             if (this.props.history) {
                 this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
             }
@@ -362,8 +362,10 @@ class DocumentTemplate extends React.PureComponent {
             module: this.props.module,
             userId: DocContext.userData.userId,
             uuid: DocContext.userData.uuid,
-            docId: this.state.docId
-        };
+            docId: this.state.docId,
+            context: DocContext[api] ? DocContext[api] : null
+    };
+
         if (protocol) {
             //request call not default
             method = 'fetchData' + protocol;
