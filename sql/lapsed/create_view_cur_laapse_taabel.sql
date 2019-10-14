@@ -12,10 +12,14 @@ SELECT lt.id,
        l.isikukood,
        l.nimi,
        n.kood,
-       n.nimetus AS teenus
+       n.nimetus                     AS teenus,
+       lk.properties ->> 'yksus'     AS yksus,
+       lk.properties ->> 'all_yksus' AS all_yksus,
+       lt.lapse_kaart_id
 FROM lapsed.lapse_taabel lt
          INNER JOIN lapsed.laps l ON l.id = lt.parentid
          INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
+         LEFT OUTER JOIN lapsed.lapse_kaart lk ON lk.id = lt.lapse_kaart_id
 WHERE lt.staatus <> 3
 ORDER BY aasta, kuu, nimi, kood;
 

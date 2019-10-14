@@ -7,18 +7,21 @@ CREATE OR REPLACE FUNCTION lapsed.sp_salvesta_lapse_taabel(data JSONB,
 $BODY$
 
 DECLARE
-    userName     TEXT;
-    doc_data     JSON    = data ->> 'data';
-    doc_id       INTEGER = doc_data ->> 'id';
-    doc_parentid INTEGER = doc_data ->> 'parentid';
-    doc_nomid    INTEGER = doc_data ->> 'nomid';
-    doc_kogus    NUMERIC = doc_data ->> 'kogus';
-    doc_kuu      INTEGER = doc_data ->> 'kuu';
-    doc_aasta    INTEGER = doc_data ->> 'aasta';
-    doc_muud     TEXT    = doc_data ->> 'muud';
-    doc_staatus  INTEGER = 1;
-    json_props   JSONB;
-    json_ajalugu JSONB;
+    userName           TEXT;
+    doc_data           JSON    = data ->> 'data';
+    doc_id             INTEGER = doc_data ->> 'id';
+    doc_parentid       INTEGER = doc_data ->> 'parentid';
+    doc_lapse_kaart_id INTEGER = doc_data ->> 'lapse_kaart_id';
+    doc_nomid          INTEGER = (SELECT nomid
+                                  FROM lapsed.lapse_kaart
+                                  WHERE id = doc_lapse_kaart_id);
+    doc_kogus          NUMERIC = doc_data ->> 'kogus';
+    doc_kuu            INTEGER = doc_data ->> 'kuu';
+    doc_aasta          INTEGER = doc_data ->> 'aasta';
+    doc_muud           TEXT    = doc_data ->> 'muud';
+    doc_staatus        INTEGER = 1;
+    json_props         JSONB;
+    json_ajalugu       JSONB;
 BEGIN
 
     IF (doc_id IS NULL)
@@ -73,8 +76,8 @@ BEGIN
                        FROM (SELECT now()    AS created,
                                     userName AS user) row;
 
-        INSERT INTO lapsed.lapse_taabel (parentid, nomid, rekvid, kogus, kuu, aasta, muud, ajalugu)
-        VALUES (doc_parentid, doc_nomid, user_rekvid, doc_kogus, doc_kuu, doc_aasta, doc_muud,
+        INSERT INTO lapsed.lapse_taabel (parentid, lapse_kaart_id, nomid, rekvid, kogus, kuu, aasta, muud, ajalugu)
+        VALUES (doc_parentid, doc_lapse_kaart_id, doc_nomid, user_rekvid, doc_kogus, doc_kuu, doc_aasta, doc_muud,
                 '[]' :: JSONB || json_ajalugu) RETURNING id
                    INTO doc_id;
 
@@ -91,13 +94,14 @@ BEGIN
                             ) row;
 
         UPDATE lapsed.lapse_taabel
-        SET nomid   = doc_nomid,
-            kogus   = doc_kogus,
-            kuu     = doc_kuu,
-            aasta   = doc_aasta,
-            muud    = doc_muud,
-            ajalugu = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu,
-            staatus = doc_staatus
+        SET nomid          = doc_nomid,
+            lapse_kaart_id = doc_lapse_kaart_id,
+            kogus          = doc_kogus,
+            kuu            = doc_kuu,
+            aasta          = doc_aasta,
+            muud           = doc_muud,
+            ajalugu        = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu,
+            staatus        = doc_staatus
         WHERE id = doc_id RETURNING id
             INTO doc_id;
 

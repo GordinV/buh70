@@ -103,6 +103,7 @@ class Laps extends React.PureComponent {
             aasta = kpv.getFullYear();
 
         let buttonEditNom = styles.btnEditNom;
+        console.log('renderer', self.docData.nomid);
 
         return (
             <div style={styles.doc}>
@@ -138,12 +139,12 @@ class Laps extends React.PureComponent {
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
                         <Select title="Kood:"
-                                name='nomid'
+                                name='lapse_kaart_id'
                                 libs="lapse_kaart"
                                 data={self.libs['lapse_kaart']}
-                                value={self.docData.nomid || 0}
-                                defaultValue={self.docData.kood}
-                                ref="select-nomid"
+                                value={self.docData.lapse_kaart_id || 0}
+                                defaultValue={self.docData.nimetus}
+                                ref="select-lapse_kaart_id"
                                 btnDelete={isEditMode}
                                 onChange={self.handleInputChange}
                                 readOnly={!isEditMode}/>
@@ -160,7 +161,7 @@ class Laps extends React.PureComponent {
                     </div>
                 </div>
 
-                <div style={styles.docRow}>
+            <div style={styles.docRow}>
                     <div style={styles.docColumn}>
                         <InputNumber ref="input-kogus"
                                      title='Kogus:'
@@ -223,10 +224,10 @@ class Laps extends React.PureComponent {
 
     //обработчик события по клику кнопки Редактирование сноменклатуры
     btnEditNomClick() {
-        let docNomId = this.refs['document'].docData.nomid;
+        let docId = this.refs['document'].docData.lapse_kaart_id;
 
         // осуществит переход на карточку контр-агента
-        this.props.history.push(`/lapsed/nomenclature/${docNomId}`);
+        this.props.history.push(`/lapsed/lapse_kaart/${docId}`);
 
     }
 

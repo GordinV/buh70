@@ -104,6 +104,7 @@ BEGIN
                                                         ELSE '' END                  AS muud,
                lk.properties ->> 'yksus'                                             AS yksus,
                lk.properties ->> 'all_yksus'                                         AS all_yksus,
+               lt.id                                                                 AS lapse_taabel_id,
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC               AS vat,
                (n.properties::JSONB ->> 'konto')::VARCHAR(20)                        AS konto,
                (n.properties::JSONB ->> 'projekt')::VARCHAR(20)                      AS projekt,
@@ -142,6 +143,7 @@ BEGIN
                                                          v_taabel.projekt,
                                                          v_taabel.yksus,
                                                          v_taabel.all_yksus,
+                                                         v_taabel.lapse_taabel_id,
                                                          v_taabel.muud || CASE
                                                                               WHEN v_taabel.real_soodus > 0
                                                                                   THEN ' kasutatud soodustus summas ' ||

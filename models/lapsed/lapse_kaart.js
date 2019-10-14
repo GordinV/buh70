@@ -1,9 +1,13 @@
 module.exports = {
-    selectAsLibs: `SELECT lk.nomid    AS id,
-                          n.kood,
-                          n.nimetus,
-                          lk.parentid AS lapsid,
-                          lk.rekvid   AS rekvid
+    selectAsLibs: `SELECT lk.id           AS id,
+                          n.kood::TEXT       AS kood,
+                          n.nimetus::TEXT ||
+                          coalesce(' (' || (lk.properties ->> 'yksus') || '/' || (lk.properties ->> 'all_yksus') || ')',
+                                   '')::TEXT AS nimetus,
+                          lk.parentid        AS lapsid,
+                          lk.properties ->> 'yksus',
+                          lk.properties ->> 'all_yksus',
+                          lk.rekvid          AS rekvid
                    FROM lapsed.lapse_kaart lk
                             INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                    WHERE lk.staatus <> 3
@@ -122,10 +126,11 @@ module.exports = {
                             nimi,
                             kood,
                             nimetus,
-                            yksus::text || case when all_yksus is not null then '(' || all_yksus::text || ')' else '' end as yksus ,
+                            yksus::TEXT ||
+                            CASE WHEN all_yksus IS NOT NULL THEN '(' || all_yksus::TEXT || ')' ELSE '' END AS yksus,
                             hind,
-                            $1::INTEGER AS rekvid,
-                            $2::INTEGER AS user_id
+                            $1::INTEGER                                                                    AS rekvid,
+                            $2::INTEGER                                                                    AS user_id
                      FROM lapsed.cur_lapse_kaart v
                      WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
             params:

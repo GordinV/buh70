@@ -42,8 +42,13 @@ ALTER TABLE lapsed.lapse_taabel
     ADD CONSTRAINT check_kuu CHECK ((kuu >= 1 AND kuu < 13) OR kuu = 0);
 
 ALTER TABLE lapsed.lapse_taabel
-    drop CONSTRAINT if exists check_aasta;
+    DROP CONSTRAINT IF EXISTS check_aasta;
 
 
 ALTER TABLE lapsed.lapse_taabel
     ADD CONSTRAINT check_aasta CHECK (aasta >= date_part('year', now()) - 1 );
+
+ALTER TABLE lapsed.lapse_taabel
+    ADD COLUMN IF NOT EXISTS lapse_kaart_id INTEGER;
+
+CREATE INDEX IF NOT EXISTS lapse_taabel_lapse_kaart_id_idx ON lapsed.lapse_taabel (lapse_kaart_id);

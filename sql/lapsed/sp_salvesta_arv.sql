@@ -181,11 +181,11 @@ BEGIN
                                             kood3 TEXT,
                                             kood4 TEXT, kood5 TEXT,
                                             konto TEXT, tunnus TEXT, tp TEXT, proj TEXT, arve_id INTEGER, muud TEXT,
-                                            km TEXT, yksus TEXT, all_yksus TEXT);
+                                            km TEXT, yksus TEXT, all_yksus TEXT, lapse_taabel_id INTEGER);
 
 
             SELECT row_to_json(row) INTO arv1_rea_json
-            FROM (SELECT json_record.yksus, json_record.all_yksus) row;
+            FROM (SELECT json_record.yksus, json_record.all_yksus, json_record.lapse_taabel_id) row;
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
             THEN
@@ -259,6 +259,13 @@ BEGIN
                 WHERE id = json_record.arve_id;
 
             END IF;
+
+            -- есои задан параметр json_record.lapse_kaart_id то устанавливаем статус табеля = 2 (закрыт)
+            IF json_record.lapse_taabel_id IS NOT NULL
+            THEN
+                UPDATE lapsed.lapse_taabel SET staatus = 2 WHERE id = json_record.lapse_taabel_id;
+            END IF;
+
 
         END LOOP;
 
