@@ -41,7 +41,7 @@ class DocToolBar extends React.PureComponent {
                     disabled: isEditMode
                 },
                 btnEdit: {
-                    show: !isEditMode,
+                    show: !isEditMode && !isDocDisabled,
                     disabled: isDocDisabled
                 },
                 btnPrint: {
@@ -49,7 +49,7 @@ class DocToolBar extends React.PureComponent {
                     disabled: true
                 },
                 btnSave: {
-                    show: isEditMode,
+                    show: isEditMode && !isDocDisabled,
                     disabled: false
                 },
                 btnCancel: {
@@ -61,7 +61,9 @@ class DocToolBar extends React.PureComponent {
         return <ToolbarContainer ref='toolbarContainer'>
             <BtnAdd ref='btnAdd' onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
                     disabled={toolbarParams['btnAdd'].disabled}/>
-            <BtnEdit ref='btnEdit' onClick={this.btnEditClick} show={toolbarParams['btnEdit'].show}
+            <BtnEdit ref='btnEdit'
+                     onClick={this.btnEditClick}
+                     show={toolbarParams['btnEdit'].show}
                      disabled={toolbarParams['btnEdit'].disabled}/>
             <BtnSave ref='btnSave' onClick={this.btnSaveClick} show={toolbarParams['btnSave'].show}
                      disabled={toolbarParams['btnSave'].disabled}/>

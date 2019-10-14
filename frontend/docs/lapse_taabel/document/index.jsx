@@ -58,7 +58,9 @@ class Laps extends React.PureComponent {
     }
 
     render() {
-        const LIBRARIES = [{id: 'lapse_kaart', filter: `where lapsid = ${this.state.lapsId}`}];
+        let filter = this.state.lapsId ? `where lapsid = ${this.state.lapsId}`: '';
+
+        const LIBRARIES = [{id: 'lapse_kaart', filter: filter}];
 
         let initData = this.props.initData ? this.props.initData : {};
 
