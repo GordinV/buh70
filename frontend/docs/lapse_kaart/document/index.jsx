@@ -210,6 +210,14 @@ class Laps extends React.PureComponent {
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
                     </div>
+                    <div style={styles.docColumn}>
+                        <InputNumber ref="input-kogus"
+                                     title='Kogus:'
+                                     name='kogus'
+                                     value={Number(self.docData.kogus) || 0}
+                                     readOnly={!isEditMode}
+                                     onChange={self.handleInputChange}/>
+                    </div>
                 </div>
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
@@ -229,6 +237,29 @@ class Laps extends React.PureComponent {
                 </div>
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
+                        <CheckBox title="Kas ettemaks?"
+                                  name='kas_ettemaks'
+                                  value={Boolean(self.docData.kas_ettemaks)}
+                                  ref={'checkbox_kas_ettemaks'}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditMode}
+                        />
+                    </div>
+                    {self.docData.kas_ettemaks ?
+                        <div style={styles.docColumn}>
+                            < InputNumber
+                                ref="input-ettemaksu_period"
+                                title='Ettemaksu period:'
+                                name='ettemaksu_period'
+                                value={Number(self.docData.ettemaksu_period) || 0}
+                                readOnly={!isEditMode}
+                                onChange={self.handleInputChange}
+                            />
+                        </div> : null
+                    }
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <CheckBox title="Kas arvesta eraldi?"
                                   name='kas_eraldi'
                                   value={Boolean(self.docData.kas_eraldi)}
@@ -237,13 +268,6 @@ class Laps extends React.PureComponent {
                                   readOnly={!isEditMode}
                         />
 
-                        <CheckBox title="Kas ettemaks?"
-                                  name='kas_ettemaks'
-                                  value={Boolean(self.docData.kas_ettemaks)}
-                                  ref={'checkbox_kas_ettemaks'}
-                                  onChange={self.handleInputChange}
-                                  readOnly={!isEditMode}
-                        />
                         <CheckBox title="Kas INF3?"
                                   name='kas_inf3'
                                   value={Boolean(self.docData.kas_inf3)}

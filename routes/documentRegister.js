@@ -155,7 +155,6 @@ exports.put = async (req, res) => {
         {relations: savedData.relations ? savedData.relations : []},
         {gridConfig: savedData.gridConfig ? savedData.gridConfig : []});
 
-
     res.send({
         action: 'save',
         result: {error_code: 0, error_message: null, docId: prepairedData.id},

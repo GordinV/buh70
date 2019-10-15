@@ -39,6 +39,7 @@ BEGIN
                lk.parentid,
                n.uhik,
                CASE
+                   WHEN coalesce((lk.properties ->> 'kogus')::numeric, 0) > 0 THEN (lk.properties ->> 'kogus')::NUMERIC
                    WHEN upper(n.uhik) IN ('PAEV', 'PÄEV') THEN
                        (SELECT palk.get_work_days((SELECT to_jsonb(row)
                                                    FROM (SELECT date_part('month', l_kpv) AS kuu,
@@ -71,15 +72,6 @@ BEGIN
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN
                 -- продолжаем расчет
-/*
-    doc_parentid       INTEGER = doc_data ->> 'parentid';
-    doc_lapse_kaart_id INTEGER = doc_data ->> 'lapse_kaart_id';
-    doc_kogus          NUMERIC = doc_data ->> 'kogus';
-    doc_kuu            INTEGER = doc_data ->> 'kuu';
-    doc_aasta          INTEGER = doc_data ->> 'aasta';
-    doc_muud           TEXT    = doc_data ->> 'muud';
-
- */
 
                 -- подготавливаем параметры для сохранения
                 SELECT row_to_json(row) INTO json_object
