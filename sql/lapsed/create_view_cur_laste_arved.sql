@@ -1,28 +1,28 @@
 DROP VIEW IF EXISTS lapsed.cur_laste_arved;
 
 CREATE OR REPLACE VIEW lapsed.cur_laste_arved AS
-SELECT d.id                                         AS id,
+SELECT d.id                                                                                   AS id,
        d.docs_ids,
-       trim(a.number)                               AS number,
+       trim(a.number)                                                                         AS number,
        a.rekvid,
-       a.kpv                                        AS kpv,
+       a.kpv                                                                                  AS kpv,
        a.summa,
-       a.tahtaeg                                    AS tahtaeg,
+       a.tahtaeg                                                                              AS tahtaeg,
        a.jaak,
-       a.tasud :: DATE                              AS tasud,
+       a.tasud :: DATE                                                                        AS tasud,
        a.tasudok,
        a.userid,
        a.asutusid,
        a.journalid,
        a.lisa,
-       trim(asutus.nimetus)                         AS asutus,
-       trim(asutus.regkood)                         AS vanem_isikukood,
-       jid.number                                   AS lausnr,
-       a.muud                                       AS markused,
-       (a.properties ->> 'aa') :: VARCHAR(120)      AS arve,
-       (a.properties ->> 'viitenr') :: VARCHAR(120) AS viitenr,
-       l.isikukood                                  AS isikukood,
-       l.nimi                                       AS nimi
+       trim(asutus.nimetus)                                                                   AS asutus,
+       trim(asutus.regkood)                                                                   AS vanem_isikukood,
+       jid.number                                                                             AS lausnr,
+       a.muud                                                                                 AS markused,
+       (a.properties ->> 'aa') :: VARCHAR(120)                                                AS arve,
+       coalesce((a.properties ->> 'viitenr'), lapsed.get_viitenumber(d.rekvid, l.id)) :: TEXT AS viitenr,
+       l.isikukood                                                                            AS isikukood,
+       l.nimi                                                                                 AS nimi
 FROM docs.doc d
          INNER JOIN docs.arv a ON a.parentId = d.id
          INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id

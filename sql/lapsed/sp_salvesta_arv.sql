@@ -47,17 +47,20 @@ DECLARE
     ids            INTEGER[];
     l_json_arve_id JSONB;
     is_import      BOOLEAN        = data ->> 'import';
-    l_doc_ids      INTEGER[];
 
     arv1_rea_json  JSONB;
 BEGIN
+
+    -- если есть ссылка на ребенка, то присвоим viitenumber
+    IF doc_lapsid IS NOT NULL
+    THEN
+        doc_viitenr = lapsed.get_viitenumber(user_rekvid, doc_lapsid);
+    END IF;
 
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
     END IF;
-
-    RAISE NOTICE 'doc_id: %', doc_id;
 
     IF doc_number IS NULL OR doc_number = ''
     THEN

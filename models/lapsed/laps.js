@@ -20,10 +20,10 @@ module.exports = {
         sql: `SELECT l.id,
                      l.isikukood,
                      l.nimi,
-                     l.properties ->> 'viitenumber' AS viitenumber,
                      l.muud,
-                     $2::INTEGER                    AS userid,
-                     coalesce(ll.jaak, 0)::NUMERIC  AS jaak
+                     lapsed.get_viitenumber((SELECT rekvid FROM ou.userid WHERE id = $2), l.id) AS viitenumber,
+                     $2::INTEGER                                                                AS userid,
+                     coalesce(ll.jaak, 0)::NUMERIC                                              AS jaak
               FROM lapsed.laps l
                        LEFT OUTER JOIN lapsed.lapse_saldod() ll ON ll.laps_id = l.id AND
                                                                    ll.rekv_id IN (SELECT rekvid FROM ou.userid u WHERE u.id = $2)
@@ -128,6 +128,7 @@ module.exports = {
                 {id: "id", name: "id", width: "10%", show: false},
                 {id: "isikukood", name: "Isikukood", width: "30%"},
                 {id: "nimi", name: "Nimi", width: "40%"},
+                {id: "viitenumber", name: "Viitenumber", width: "20%"},
                 {id: "yksused", name: "Üksused", width: "30%"}
             ],
             sqlString:
@@ -135,6 +136,7 @@ module.exports = {
                             isikukood,
                             nimi,
                             yksused,
+                            lapsed.get_viitenumber($1, l.id) AS viitenumber,
                             $1::INTEGER AS rekvid,
                             $2::INTEGER AS user_id
                      FROM lapsed.cur_lapsed l

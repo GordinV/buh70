@@ -5,24 +5,6 @@ const DocContext = require('../../../doc-context');
 const PropTypes = require('prop-types');
 const React = require('react');
 const fetchData = require('./../../../../libs/fetchData');
-const toolbarParams = {
-    btnAdd: {
-        show: true,
-        disabled: false
-    },
-    btnEdit: {
-        show: true,
-        disabled: false
-    },
-    btnDelete: {
-        show: true,
-        disabled: false
-    },
-    btnPrint: {
-        show: true,
-        disabled: false
-    }
-};
 
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
@@ -134,7 +116,8 @@ class Laps extends React.PureComponent {
                                    name='viitenumber'
                                    value={self.docData.viitenumber || ''}
                                    ref='input-viitenumber'
-                                   readOnly={!isEditMode}
+                                   readOnly={true}
+                                   disabled={true}
                                    onChange={self.handleInputChange}/>
                     </div>
                     <div style={styles.docColumn}>

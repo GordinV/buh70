@@ -114,6 +114,7 @@ module.exports = {
                 {id: "id", name: "id", width: "1%", show: false},
                 {id: "isikukood", name: "Isikukood", width: "20%", show: true},
                 {id: "nimi", name: "Nimi", width: "20%", show: true},
+                {id: "viitenumber", name: "Viitenumber", width: "15%", show: true},
                 {id: "kood", name: "Kood", width: "20%"},
                 {id: "nimetus", name: "Nimetus", width: "40%"},
                 {id: "hind", name: "Hind", width: "20%"},
@@ -129,6 +130,7 @@ module.exports = {
                             yksus::TEXT ||
                             CASE WHEN all_yksus IS NOT NULL THEN '(' || all_yksus::TEXT || ')' ELSE '' END AS yksus,
                             hind,
+                            lapsed.get_viitenumber($1, lapsid)                                             AS viitenumber,
                             $1::INTEGER                                                                    AS rekvid,
                             $2::INTEGER                                                                    AS user_id
                      FROM lapsed.cur_lapse_kaart v

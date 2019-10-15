@@ -208,6 +208,14 @@ class Arve extends React.PureComponent {
                                        ref='input-lisa'
                                        readOnly={!isEditMode}
                                        onChange={self.handleInputChange}/>
+
+                            <InputText title='Viitenumber'
+                                       name='viitenr'
+                                       value={self.docData.viitenr || ''}
+                                       ref='input-viitenumber'
+                                       readOnly={true}
+                                       disable={true}
+                                       onChange={self.handleInputChange}/>
                         </div>
                     </div>
                     <div style={styles.docRow}>
@@ -442,7 +450,7 @@ class Arve extends React.PureComponent {
                                   name='muud'
                                   ref="gridrow-textarea-muud"
                                   onChange={self.handleGridRowChange}
-                                  value={row.muud || ''}                        />
+                                  value={row.muud || ''}/>
 
                     </div>
 

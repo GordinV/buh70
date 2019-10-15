@@ -44,10 +44,10 @@ const Arv = {
                          dp.vaatalaus                                       AS is_show_journal,
                          d.history -> 0 ->> 'user'                          AS koostaja,
                          a.properties ->> 'aa'                              AS aa,
-                         a.properties ->> 'viitenr'                         AS viitenr,
                          l.id                                               AS lapsId,
                          l.isikukood::TEXT,
-                         l.nimi::TEXT                                       AS lapse_nimi
+                         l.nimi::TEXT                                       AS lapse_nimi,
+                         lapsed.get_viitenumber(d.rekvid, l.id)             AS viitenr
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
@@ -304,6 +304,8 @@ const Arv = {
             {id: "tasud", name: "Tasud", width: "100px"},
             {id: "nimi", name: "Nimi", width: "100px"},
             {id: "isikukood", name: "Isikukood", width: "100px"},
+            {id: "viitenr", name: "Viitenumber", width: "100px"}
+
         ],
         sqlString: `SELECT id,
                            number :: VARCHAR(20),
@@ -324,7 +326,7 @@ const Arv = {
                            lausnr,
                            docs_ids,
                            a.arve::TEXT                         AS aa,
-                           a.viitenr::TEXT                      AS viitenr,
+                           a.viitenr ::TEXT                     AS viitenr,
                            a.isikukood,
                            a.nimi,
                            $2::INTEGER                          AS userId
