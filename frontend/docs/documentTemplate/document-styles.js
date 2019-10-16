@@ -21,4 +21,20 @@ module.exports = {
                 border: '1px solid brown'
         */
     },
+    ok: {
+        backgroundColor:'lightgreen',
+        width:'100%',
+        textAlign: 'right'
+    },
+    error: {
+        backgroundColor:'lightred',
+        width:'100%',
+        textAlign: 'right'
+    },
+    notValid: {
+        backgroundColor:'yellow',
+        width:'100%',
+        textAlign: 'right'
+
+    }
 };

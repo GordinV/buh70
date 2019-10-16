@@ -1,5 +1,27 @@
 DROP FUNCTION IF EXISTS import_eelarve( INTEGER );
 
+CREATE FOREIGN TABLE if not EXISTS  remote_eelarve (
+  id SERIAL NOT NULL,
+  rekvid    INTEGER                          NOT NULL,
+  allikasid INTEGER        DEFAULT 0         NOT NULL,
+  aasta     INTEGER        DEFAULT year()    NOT NULL,
+  summa     NUMERIC(14, 2) DEFAULT 0         NOT NULL,
+  muud      TEXT,
+  tunnus    INTEGER        DEFAULT 0         NOT NULL,
+  tunnusid  INTEGER        DEFAULT 0         NOT NULL,
+  kood1     VARCHAR(20)    DEFAULT space(20) NOT NULL,
+  kood2     VARCHAR(20)    DEFAULT space(20) NOT NULL,
+  kood3     VARCHAR(20)    DEFAULT space(20) NOT NULL,
+  kood4     VARCHAR(20)    DEFAULT space(20) NOT NULL,
+  kood5     VARCHAR(20)    DEFAULT space(20) NOT NULL,
+  kpv       DATE           DEFAULT date(2005, 1, 1),
+  kuu       SMALLINT       DEFAULT 0,
+  variantid INTEGER        DEFAULT 0
+  )
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'eelarve');
+
+
 CREATE OR REPLACE FUNCTION import_eelarve(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -20,7 +42,7 @@ BEGIN
 
   FOR v_eelarve IN
   SELECT e.*
-  FROM eelarve e
+  FROM remote_eelarve e
   WHERE (e.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP
@@ -58,7 +80,7 @@ BEGIN
     IF v_eelarve.tunnusid IS NOT NULL AND NOT empty(v_eelarve.tunnusid)
     THEN
       l_tunnus = (SELECT kood
-                  FROM library
+                  FROM remote_library
                   WHERE id = v_eelarve.tunnusid AND library = 'TUNNUS');
     ELSE
       l_tunnus = '';
@@ -181,8 +203,16 @@ COST 100;
 /*
 update eelarve
 
-SELECT import_eelarve(102876)
+--SELECT import_eelarve(102876)
+
 SELECT import_eelarve(e.id)
-from eelarve e inner join rekv r on e.rekvid = r.id and r.parentid < 999
-and e.variantid > 0
+from remote_eelarve e
+where rekvid in (130, 64)
+and aasta = 2019
+
+SELECT count(e.id)
+from remote_eelarve e
+where rekvid in (130, 64)
+and aasta = 2019
+
 */

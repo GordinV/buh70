@@ -29,6 +29,7 @@ class DocumentTemplate extends React.PureComponent {
             gridRowEdit: false,
             gridRowEvent: null,
             warning: '',
+            warningStyle: '',
             gridWarning: '',
             checked: true,
             loadedLibs: false,
@@ -78,12 +79,13 @@ class DocumentTemplate extends React.PureComponent {
 
 
     render() {
-        let isInEditMode = this.state.edited,
-            validationMessage = this.state.warning + isInEditMode ? this.validation() : '';
+        let isInEditMode = this.state.edited;
 
         if (this.props.libs.length && !this.state.loadedLibs && _.has(this.userData, 'uuid')) {
             this.loadLibs();
         }
+
+        const warningStyle = styles[this.state.warningType] ? styles[this.state.warningType]: null;
         return (
             <div>
                 {this.renderDocToolBar()}
@@ -92,8 +94,8 @@ class DocumentTemplate extends React.PureComponent {
                       handlePageClick={this.handlePageClick}
                       disabled={isInEditMode}>
                     <ToolbarContainer ref='toolbar-container'>
-                        <div className='doc-toolbar-warning'>
-                            {validationMessage ? <span>{validationMessage}</span> : null}
+                        <div className='doc-toolbar-warning' style={warningStyle}>
+                            {this.state.warning ? <span>{this.state.warning}</span> : null}
                         </div>
                     </ToolbarContainer>
                     <div style={styles.doc}>
@@ -200,7 +202,7 @@ class DocumentTemplate extends React.PureComponent {
     restoreFromBackup() {
         this.docData = Object.assign({}, this.backup);
         //режим редактирования
-        this.setState({edited: false, warning: ''});
+        this.setState({edited: false, warning: '', warningType:null});
     }
 
     /**
@@ -218,7 +220,8 @@ class DocumentTemplate extends React.PureComponent {
         }
 
         this.docData[inputName] = inputValue;
-        this.forceUpdate();
+        this.validation();
+//        this.forceUpdate();
     }
 
     /**
@@ -279,6 +282,7 @@ class DocumentTemplate extends React.PureComponent {
             }
         }
 
+        this.setState({warning: warning, warningType: warning.length ? 'notValid': null});
         return warning; // вернем извещение об итогах валидации
     }
 
@@ -387,8 +391,13 @@ class DocumentTemplate extends React.PureComponent {
                             let docTypeId = dataRow.docTypeId ? dataRow.docTypeId : null;
 
                             if (docId && docTypeId) {
-                                // koostatud uus dok,
-                                return this.props.history.push(`/${this.props.module}/${docTypeId}/${docId}`);
+                                this.setState({warning: `Edukalt, koostatud dokument (id:${docId}), suunatamine...`, warningType:'ok'}, () => {
+                                 setTimeout(()=> {
+                                     // koostatud uus dok,
+                                     this.props.history.push(`/${this.props.module}/${docTypeId}/${docId}`);
+
+                                },1000)
+                                })
                             }
                         }
 
@@ -407,19 +416,19 @@ class DocumentTemplate extends React.PureComponent {
                             }
 
                             //should return data and called for reload
-                            this.setState({reloadData: false, warning: ''});
+                            this.setState({reloadData: false, warning: '', warningType:null});
                             resolved(response.data.data[0]);
                         }
 
                         //call to save
                         if (response.data.action && response.data.action === 'save') {
                             this.docData = response.data.data[0];
-                            this.setState({reloadData: false, warning: '', edited: false, docId: this.docData.id});
+                            this.setState({reloadData: false, warning: 'Salvestatud edukalt', warningType:'ok', edited: false, docId: this.docData.id});
 
                         }
                     } else {
-                        console.error('Fetch viga ', params);
-                        this.setState({warning: 'fetch error'});
+                        console.error('Fetch viga ', response, params);
+                        this.setState({warning: `Tekkis viga ${response.data.error_message ? response.data.error_message: ''}`, warningType:'error'});
                         return rejected();
                     }
                 }

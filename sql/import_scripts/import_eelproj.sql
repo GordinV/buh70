@@ -1,5 +1,17 @@
 DROP FUNCTION IF EXISTS import_eelproj(INTEGER);
 
+CREATE FOREIGN TABLE remote_eelproj (
+  id SERIAL NOT NULL,
+  rekvid    INTEGER              NOT NULL,
+  aasta     INTEGER DEFAULT 2008 NOT NULL,
+  kuu       INTEGER DEFAULT 0    NOT NULL,
+  staatus   INTEGER DEFAULT 0    NOT NULL,
+  kinnitaja INTEGER DEFAULT 0    NOT NULL,
+  muud      TEXT
+  )
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'eelproj');
+
 CREATE OR REPLACE FUNCTION import_eelproj(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -18,7 +30,7 @@ BEGIN
   FOR v_proj IN
   SELECT
     e.*
-  FROM eelproj e
+  FROM remote_eelproj e
   WHERE (e.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP
@@ -112,6 +124,6 @@ COST 100;
 
 
 /*
-SELECT import_eelproj(e.id) from eelproj e inner join rekv r on e.rekvid = r.id and r.parentid < 999
+SELECT import_eelproj(e.id) from remote_eelproj e inner join rekv r on e.rekvid = r.id and r.parentid < 999
 
 */
