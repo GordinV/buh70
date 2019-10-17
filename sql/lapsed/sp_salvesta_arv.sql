@@ -7,48 +7,53 @@ CREATE OR REPLACE FUNCTION docs.sp_salvesta_arv(data JSON,
 $BODY$
 
 DECLARE
-    arv_id         INTEGER;
-    arv1_id        INTEGER;
-    userName       TEXT;
-    doc_id         INTEGER        = data ->> 'id';
-    doc_data       JSON           = data ->> 'data';
-    doc_type_kood  TEXT           = 'ARV'/*data->>'doc_type_id'*/;
-    doc_type_id    INTEGER        = (SELECT id
-                                     FROM libs.library
-                                     WHERE kood = doc_type_kood
-                                       AND library = 'DOK'
-                                     LIMIT 1);
+    arv_id           INTEGER;
+    arv1_id          INTEGER;
+    userName         TEXT;
+    doc_id           INTEGER        = data ->> 'id';
+    doc_data         JSON           = data ->> 'data';
+    doc_type_kood    TEXT           = 'ARV'/*data->>'doc_type_id'*/;
+    doc_type_id      INTEGER        = (SELECT id
+                                       FROM libs.library
+                                       WHERE kood = doc_type_kood
+                                         AND library = 'DOK'
+                                       LIMIT 1);
 
-    doc_details    JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
-    doc_number     TEXT           = doc_data ->> 'number';
-    doc_summa      NUMERIC(14, 4) = coalesce((doc_data ->> 'summa') :: NUMERIC, 0);
-    doc_liik       INTEGER        = doc_data ->> 'liik';
-    doc_operid     INTEGER        = doc_data ->> 'operid';
-    doc_asutusid   INTEGER        = doc_data ->> 'asutusid';
-    doc_lisa       TEXT           = doc_data ->> 'lisa';
-    doc_kpv        DATE           = doc_data ->> 'kpv';
-    doc_tahtaeg    DATE           = doc_data ->> 'tahtaeg';
-    doc_kbmta      NUMERIC(14, 4) = coalesce((doc_data ->> 'kbmta') :: NUMERIC, 0);
-    doc_kbm        NUMERIC(14, 4) = coalesce((doc_data ->> 'kbm') :: NUMERIC, 0);
-    doc_muud       TEXT           = doc_data ->> 'muud';
-    doc_objektid   INTEGER        = doc_data ->> 'objektid'; -- считать или не считать (если не пусто) интресс
-    doc_objekt     TEXT           = doc_data ->> 'objekt';
-    tnDokLausId    INTEGER        = coalesce((doc_data ->> 'doklausid') :: INTEGER, 1);
-    doc_lepingId   INTEGER        = doc_data ->> 'leping_id';
-    doc_aa         TEXT           = doc_data ->> 'aa'; -- eri arve
-    doc_viitenr    TEXT           = doc_data ->> 'viitenr'; -- viite number
-    doc_lapsid     INTEGER        = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
-    dok_props      JSONB          = (SELECT row_to_json(row)
-                                     FROM (SELECT doc_aa AS aa, doc_viitenr AS viitenr) row);
-    json_object    JSON;
-    json_record    RECORD;
-    new_history    JSONB;
-    new_rights     JSONB;
-    ids            INTEGER[];
-    l_json_arve_id JSONB;
-    is_import      BOOLEAN        = data ->> 'import';
+    doc_details      JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
+    doc_number       TEXT           = doc_data ->> 'number';
+    doc_summa        NUMERIC(14, 4) = coalesce((doc_data ->> 'summa') :: NUMERIC, 0);
+    doc_liik         INTEGER        = doc_data ->> 'liik';
+    doc_operid       INTEGER        = doc_data ->> 'operid';
+    doc_asutusid     INTEGER        = doc_data ->> 'asutusid';
+    doc_lisa         TEXT           = doc_data ->> 'lisa';
+    doc_kpv          DATE           = doc_data ->> 'kpv';
+    doc_tahtaeg_text TEXT           = CASE
+                                          WHEN (trim(doc_data ->> 'tahtaeg')::TEXT)::TEXT = '' THEN current_date::TEXT
+                                          ELSE ((doc_data ->> 'tahtaeg')::TEXT) END;
+    doc_tahtaeg      DATE           = doc_tahtaeg_text::DATE;
+    doc_kbmta        NUMERIC(14, 4) = coalesce((doc_data ->> 'kbmta') :: NUMERIC, 0);
+    doc_kbm          NUMERIC(14, 4) = coalesce((doc_data ->> 'kbm') :: NUMERIC, 0);
+    doc_muud         TEXT           = doc_data ->> 'muud';
+    doc_objektid     INTEGER        = doc_data ->> 'objektid'; -- считать или не считать (если не пусто) интресс
+    doc_objekt       TEXT           = doc_data ->> 'objekt';
+    tnDokLausId      INTEGER        = coalesce((doc_data ->> 'doklausid') :: INTEGER, 1);
+    doc_lepingId     INTEGER        = doc_data ->> 'leping_id';
+    doc_aa           TEXT           = doc_data ->> 'aa'; -- eri arve
+    doc_viitenr      TEXT           = doc_data ->> 'viitenr'; -- viite number
+    doc_lapsid       INTEGER        = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
+    doc_type         TEXT           = doc_data ->> 'tyyp'; -- ETTEMAKS - если счет на предоплату
+    dok_props        JSONB          = (SELECT row_to_json(row)
+                                       FROM (SELECT doc_aa AS aa, doc_viitenr AS viitenr, doc_type as tyyp) row);
 
-    arv1_rea_json  JSONB;
+    json_object      JSON;
+    json_record      RECORD;
+    new_history      JSONB;
+    new_rights       JSONB;
+    ids              INTEGER[];
+    l_json_arve_id   JSONB;
+    is_import        BOOLEAN        = data ->> 'import';
+
+    arv1_rea_json    JSONB;
 BEGIN
 
     -- если есть ссылка на ребенка, то присвоим viitenumber
@@ -348,11 +353,12 @@ GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbkasu
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
-select docs.sp_salvesta_arv('{"id":0,"data":{"id":0,"kpv":"2019-09-20T19:46:47.630Z","asutusid":4113,"lapsid":1,"aa":"AA","viitenr":"viitenumber","muud":"test muud","liik":0,"gridData":[{"id":0,"nomid":9,"kogus":1,"hind":100,"kbm":0,"summa":100,"kbm_maar":0}]}}'
-, 70, 63);
+select docs.sp_salvesta_arv('{"id":0,"data": {"aa":"EE122200221021743743","aadress":"","arvid":0,"asutus":"","asutusid":29004,"bpm":"","created":"","doc":"","doc_status":0,"doc_type_id":"","doklausid":2029,"dokprop":"","id":0,"is_show_journal":0,"jaak":0,"journalid":0,"kbm":24.7000,"kbmkonto":"","kbmta":123.5000,"kmkr":"","konto":"","koostaja":"","kpv":"20190926","lastupdate":"","laus_nr":0,"liik":1,"lisa":"","muud":"","number":"163\/9","objekt":"","objektid":0,"operid":0,"regkood":"","rekvid":64,"status":"","summa":148.2000,"tahtaeg":"        ","tasud":"        ","tasudok":"","userid":957,"viitenr":"","gridData":[{"formula":"","hind":0.3167,"id":0,"kbm":24.7000,"kbmta":123.5000,"km":"20","kogus":390,"konto":"552690","kood":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kuurs":0,"muud":"transporditeenused, Narva-Tartu-Narva, ?????????? ??????? , Hariduse 28-62, 25.09.2019","nimetus":"transporditeenused, Narva-Tartu-Narva, ?????????? ??????? , Hariduse 28-62, 25.09.2019","nomid":17751,"proj":"","soodus":0,"summa":148.2000,"tp":"800399","tunnus":"","uhik":"","userid":0,"valuuta":"","vastisik":""}]}}'::json,
+957::integer,
+64::integer) as id;
 
 
-select * from docs.arv where parentid = 900
+select * from docs.arv where parentid = 1770380
 select * from docs.arv1 where parentid = 331
 
 "gridData":[{"formula":"","hind":0,"id":0,"kbm":0,"kbmta":0,"km":"","kogus":0,"konto":"","kood":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kuurs":0,"nimetus":"","nomid":0,"proj":"","soodus":0,"summa":0,"tp":"","tunnus":"","userid":0,"valuuta":"","vastisik":""}]

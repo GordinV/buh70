@@ -21,6 +21,7 @@ SELECT d.id                                                                     
        a.muud                                                                                 AS markused,
        (a.properties ->> 'aa') :: VARCHAR(120)                                                AS arve,
        coalesce((a.properties ->> 'viitenr'), lapsed.get_viitenumber(d.rekvid, l.id)) :: TEXT AS viitenr,
+       coalesce((a.properties ->> 'tyyp'), '') :: TEXT                                        AS tyyp,
        l.isikukood                                                                            AS isikukood,
        l.nimi                                                                                 AS nimi
 FROM docs.doc d

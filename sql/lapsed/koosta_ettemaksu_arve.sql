@@ -169,6 +169,7 @@ BEGIN
                                 l_kpv + 15                                           AS tahtaeg,
                                 l_asutus_id                                          AS asutusid,
                                 l_laps_id                                            AS lapsid,
+                                'ETTEMAKS'                                           AS tyyp,
                                 'Ettemaksuarve ' || date_part('month', current_date)::TEXT || '/' ||
                                 date_part('year', current_date)::TEXT || ' kuu eest' AS muud,
                                 json_arvread                                         AS "gridData") row);
