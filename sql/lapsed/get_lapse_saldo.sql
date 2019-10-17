@@ -19,6 +19,7 @@ FROM docs.doc d
          INNER JOIN docs.arv a ON a.parentid = d.id
          INNER JOIN lapsed.liidestamine l ON l.docid = d.id
 WHERE a.kpv < l_kpv
+  AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
   AND a.jaak <> 0
   AND d.status <> 3
 
