@@ -63,6 +63,7 @@ class Smk extends React.PureComponent {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='SMK'
+                                 history={this.props.history}
                                  module={this.state.module}
                                  initData={this.props.initData}
                                  libs={LIBRARIES}

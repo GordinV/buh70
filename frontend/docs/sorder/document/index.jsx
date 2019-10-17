@@ -66,6 +66,7 @@ class Sorder extends React.PureComponent {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='SORDER'
+                                 history={this.props.history}
                                  initData={this.props.initData}
                                  libs={LIBRARIES}
                                  pages={this.pages}

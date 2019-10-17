@@ -129,7 +129,9 @@ class App extends React.Component {
                        render={(props) => <SmkRegister history={props.history}
                                                        initData={this.props.initData}
                                                        module={MODULE}/>}/>
-                <Route exact path="/lapsed/smk/:docId" component={SmkDocument}/>
+                <Route exact path="/lapsed/smk/:docId"
+                       render={(props) => <SmkDocument {...props} history={props.history}/>}/>
+
 
                 <Route exact path="/lapsed/sorder"
                        render={(props) =>
@@ -138,7 +140,9 @@ class App extends React.Component {
                                initData={this.props.initData}
                                module={MODULE}/>}
                 />
-                <Route exact path="/lapsed/sorder/:docId" component={SorderDocument}/>
+                <Route exact path="/lapsed/sorder/:docId"
+                       render={(props) => <SorderDocument {...props} history={props.history}/>}/>
+
 
                 <Route exact path="/lapsed/nomenclature"
                        render={(props) => <NomRegister history={props.history}
