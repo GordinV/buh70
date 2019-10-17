@@ -85,7 +85,7 @@ class DocumentTemplate extends React.PureComponent {
             this.loadLibs();
         }
 
-        const warningStyle = styles[this.state.warningType] ? styles[this.state.warningType]: null;
+        const warningStyle = styles[this.state.warningType] ? styles[this.state.warningType] : null;
         return (
             <div>
                 {this.renderDocToolBar()}
@@ -181,7 +181,7 @@ class DocumentTemplate extends React.PureComponent {
 
         const task = this.bpm.find(task => task.name === taskName);
         let api = `/newApi/task/${task.task}`;
-        DocContext[api] = {test:'test_params'};
+        DocContext[api] = {test: 'test_params'};
         this.fetchData('Post', api).then(() => {
             if (this.props.history) {
                 this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
@@ -202,7 +202,7 @@ class DocumentTemplate extends React.PureComponent {
     restoreFromBackup() {
         this.docData = Object.assign({}, this.backup);
         //режим редактирования
-        this.setState({edited: false, warning: '', warningType:null});
+        this.setState({edited: false, warning: '', warningType: null});
     }
 
     /**
@@ -282,7 +282,7 @@ class DocumentTemplate extends React.PureComponent {
             }
         }
 
-        this.setState({warning: warning, warningType: warning.length ? 'notValid': null});
+        this.setState({warning: warning, warningType: warning.length ? 'notValid' : null});
         return warning; // вернем извещение об итогах валидации
     }
 
@@ -368,7 +368,7 @@ class DocumentTemplate extends React.PureComponent {
             uuid: DocContext.userData.uuid,
             docId: this.state.docId,
             context: DocContext[api] ? DocContext[api] : null
-    };
+        };
 
         if (protocol) {
             //request call not default
@@ -391,12 +391,15 @@ class DocumentTemplate extends React.PureComponent {
                             let docTypeId = dataRow.docTypeId ? dataRow.docTypeId : null;
 
                             if (docId && docTypeId) {
-                                this.setState({warning: `Edukalt, koostatud dokument (id:${docId}), suunatamine...`, warningType:'ok'}, () => {
-                                 setTimeout(()=> {
-                                     // koostatud uus dok,
-                                     this.props.history.push(`/${this.props.module}/${docTypeId}/${docId}`);
+                                this.setState({
+                                    warning: `Edukalt, koostatud dokument (id:${docId}), suunatamine...`,
+                                    warningType: 'ok'
+                                }, () => {
+                                    setTimeout(() => {
+                                        // koostatud uus dok,
+                                        this.props.history.push(`/${this.props.module}/${docTypeId}/${docId}`);
 
-                                },1000)
+                                    }, 1000)
                                 })
                             }
                         }
@@ -416,19 +419,28 @@ class DocumentTemplate extends React.PureComponent {
                             }
 
                             //should return data and called for reload
-                            this.setState({reloadData: false, warning: '', warningType:null});
+                            this.setState({reloadData: false, warning: '', warningType: null});
                             resolved(response.data.data[0]);
                         }
 
                         //call to save
                         if (response.data.action && response.data.action === 'save') {
                             this.docData = response.data.data[0];
-                            this.setState({reloadData: false, warning: 'Salvestatud edukalt', warningType:'ok', edited: false, docId: this.docData.id});
+                            this.setState({
+                                reloadData: false,
+                                warning: 'Salvestatud edukalt',
+                                warningType: 'ok',
+                                edited: false,
+                                docId: this.docData.id
+                            });
 
                         }
                     } else {
                         console.error('Fetch viga ', response, params);
-                        this.setState({warning: `Tekkis viga ${response.data.error_message ? response.data.error_message: ''}`, warningType:'error'});
+                        this.setState({
+                            warning: `Tekkis viga ${response.data.error_message ? response.data.error_message : ''}`,
+                            warningType: 'error'
+                        });
                         return rejected();
                     }
                 }
@@ -674,12 +686,8 @@ class DocumentTemplate extends React.PureComponent {
      */
     modalPageClick(btnEvent, data) {
         if (btnEvent === 'Ok') {
-
-
             // ищем по ид строку в данных грида, если нет, то добавим строку
-            if (!this.docData.gridData.some(row => {
-                if (row.id === this.gridRowData.id) return true;
-            })) {
+            if (!this.docData.gridData.length || !this.docData.gridData.some(row => row.id === this.gridRowData.id)) {
                 // вставка новой строки
                 this.docData.gridData.splice(0, 0, this.gridRowData);
             } else {

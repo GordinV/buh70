@@ -21,6 +21,7 @@ DECLARE
     doc_all_yksus_3 TEXT    = coalesce((doc_data ->> 'all_yksus_3'),'');
     doc_all_yksus_4 TEXT    = coalesce((doc_data ->> 'all_yksus_4'),'');
     doc_all_yksus_5 TEXT    = coalesce((doc_data ->> 'all_yksus_5'),'');
+    doc_details     JSONB   = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     is_import       BOOLEAN = data ->> 'import';
     all_yksused     TEXT[]  = ARRAY [doc_all_yksus_1, doc_all_yksus_2, doc_all_yksus_3, doc_all_yksus_4, doc_all_yksus_5];
     json_object     JSONB;
@@ -40,13 +41,12 @@ BEGIN
     IF is_import IS NULL AND userName IS NULL
     THEN
         RAISE EXCEPTION 'User not found %', user;
-        RETURN 0;
     END IF;
 
 -- prepairing all yksused
 
     SELECT to_jsonb(row) INTO json_object
-    FROM (SELECT all_yksused AS all_yksused) row;
+    FROM (SELECT all_yksused AS all_yksused, doc_details as teenused) row;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0

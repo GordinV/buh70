@@ -161,8 +161,6 @@ class DataGrid extends React.PureComponent {
 
     /**
      * ищем индех в массиве данных
-     * @param docId
-     * @returns {number}
      */
     getGridRowIndexById() {
         let index = 0;
@@ -179,7 +177,6 @@ class DataGrid extends React.PureComponent {
      * @param idx
      */
     handleCellClick(idx) {
-
         if (this.state.gridData.length > 0) {
             let action = this.props.onChangeAction || null;
 

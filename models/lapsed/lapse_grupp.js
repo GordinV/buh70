@@ -1,9 +1,9 @@
 module.exports = {
     selectAsLibs: `SELECT *
                    FROM (
-                            SELECT 0         AS id,
-                                   ''::TEXT  AS kood,
-                                   ''::TEXT  AS nimetus,
+                            SELECT 0           AS id,
+                                   ''::TEXT    AS kood,
+                                   ''::TEXT    AS nimetus,
                                    '[]'::JSONB AS all_yksused
                             UNION
                             SELECT id,
@@ -42,18 +42,35 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    }
+    },
+        {
+            sql: `SELECT x.*,
+                         n.id as id,
+                         n.kood::TEXT,
+                         n.nimetus::TEXT,
+                         $2 AS userid
+                  FROM jsonb_to_recordset((SELECT properties::JSONB -> 'teenused'
+                                           FROM libs.library
+                                           WHERE id = $1)) AS x(hind NUMERIC, kogus NUMERIC, nomid INTEGER)
+                           INNER JOIN libs.nomenklatuur n ON n.id = x.nomid`,
+            query: null,
+            multiple: true,
+            alias: 'details',
+            data: []
+        }
     ],
     returnData:
         {
-            row: {}
-            ,
+            row: {},
+            details: [],
             teenused: [],
             gridConfig:
                 [
                     {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
                     {id: 'kood', name: 'Kood', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false}
+                    {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'kogus', name: 'Kogus', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'text', readOnly: false}
                 ],
         }
     ,

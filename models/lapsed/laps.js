@@ -84,13 +84,10 @@ module.exports = {
     ],
     returnData:
         {
-            row: {}
-            ,
+            row: {},
             details: [],
-            teenused:
-                [],
-            vanemad:
-                [],
+            teenused: [],
+            vanemad:  [],
             gridConfig:
                 [
                     {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
