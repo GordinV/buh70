@@ -4,12 +4,14 @@ module.exports = {
                             SELECT 0           AS id,
                                    ''::TEXT    AS kood,
                                    ''::TEXT    AS nimetus,
-                                   '[]'::JSONB AS all_yksused
+                                   '[]'::JSONB AS all_yksused,
+                                   '[]'::JSONB AS teenused
                             UNION
                             SELECT id,
                                    kood::TEXT,
                                    nimetus::TEXT,
-                                   all_yksused::JSONB
+                                   all_yksused::JSONB,
+                                   teenused::JSONB
                             FROM lapsed.com_lapse_grupp lg
                             WHERE lg.rekvid = $1
                         ) qry`,
@@ -45,10 +47,10 @@ module.exports = {
     },
         {
             sql: `SELECT x.*,
-                         n.id as id,
+                         n.id AS id,
                          n.kood::TEXT,
                          n.nimetus::TEXT,
-                         $2 AS userid
+                         $2   AS userid
                   FROM jsonb_to_recordset((SELECT properties::JSONB -> 'teenused'
                                            FROM libs.library
                                            WHERE id = $1)) AS x(hind NUMERIC, kogus NUMERIC, nomid INTEGER)

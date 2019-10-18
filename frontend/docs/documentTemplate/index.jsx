@@ -220,8 +220,11 @@ class DocumentTemplate extends React.PureComponent {
         }
 
         this.docData[inputName] = inputValue;
+        if (this.props.handleInputChange) {
+            this.props.handleInputChange(inputName, inputValue);
+        }
         this.validation();
-//        this.forceUpdate();
+        this.forceUpdate();
     }
 
     /**
@@ -280,9 +283,9 @@ class DocumentTemplate extends React.PureComponent {
             if (notMinMaxRule.length > 0) {
                 warning = warning ? warning : '' + ' min/max on vale(' + notMinMaxRule.join(', ') + ') ';
             }
+            this.setState({warning: warning, warningType: warning.length ? 'notValid' : null});
         }
 
-        this.setState({warning: warning, warningType: warning.length ? 'notValid' : null});
         return warning; // вернем извещение об итогах валидации
     }
 

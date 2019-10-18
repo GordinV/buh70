@@ -48,7 +48,7 @@ class Laps extends React.PureComponent {
         this.btnEditNomClick = this.btnEditNomClick.bind(this);
         this.btnEditLapsClick = this.btnEditLapsClick.bind(this);
         this.btnEditLapseGruppClick = this.btnEditLapseGruppClick.bind(this);
-
+        this.handleInputChange = this.handleInputChange.bind(this);
 
         this.pages = [
             {pageName: 'Teenus', docTypeId: 'LAPSE_KAART'}
@@ -79,6 +79,7 @@ class Laps extends React.PureComponent {
                                  pages={this.pages}
                                  renderer={this.renderer}
                                  handleGridBtnClick={this.handleGridBtnClick}
+                                 handleInputChange={this.handleInputChange}
                                  history={this.props.history}
                                  focusElement={'input-kood'}
         />
@@ -107,6 +108,12 @@ class Laps extends React.PureComponent {
         const all_yksused = (yksus ? yksus.all_yksused : []).map((item, index) => {
             return {id: index++, nimetus: item}
         });
+
+        // фильтр на номенклатуры
+        let nomData = [{id: 0, kood: '', nimetus: '', hind: 0, kogus: 0}];
+        if (yksus) {
+            nomData = nomData.concat(yksus.teenused ? yksus.teenused : []);
+        }
 
         return (
             <div style={styles.doc}>
@@ -142,7 +149,7 @@ class Laps extends React.PureComponent {
                         <Select title="Kood:"
                                 name='nomid'
                                 libs="nomenclature"
-                                data={self.libs['nomenclature']}
+                                data={nomData}
                                 value={self.docData.nomid || 0}
                                 defaultValue={self.docData.kood}
                                 ref="select-nomid"
@@ -332,6 +339,26 @@ class Laps extends React.PureComponent {
         this.props.history.push(`/lapsed/${pageDocTypeId}`)
     }
 
+    //handler for input for this document type
+    handleInputChange(inputName, inputValue) {
+        if (inputName === 'nomid') {
+            // надо задать цену и кол-во из того, что привязанно в группе
+            const Doc = this.refs['document'];
+
+            let yksus;
+            if (Doc.libs['lapse_grupp'] && Doc.docData.yksus) {
+                yksus = Doc.libs['lapse_grupp'].find(yksus => yksus.kood === Doc.docData.yksus);
+            }
+
+            if (yksus.teenused) {
+                let teenus = yksus.teenused.find(row => row.id === inputValue);
+                Doc.docData.kogus = teenus.kogus ? teenus.kogus : Doc.docData.kogus;
+                Doc.docData.hind = teenus.hind ? teenus.hind : Doc.docData.hind;
+            }
+
+        }
+
+    }
 
     // обработчик события клик на гриде родителей
     handleGridBtnClick(btnName, activeRow, id, docTypeId) {
