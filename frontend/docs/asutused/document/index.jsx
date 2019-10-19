@@ -15,7 +15,7 @@ class Asutused extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            docId: props.docId ? props.docId: Number(props.match.params.docId),
+            docId: props.docId ? props.docId : Number(props.match.params.docId),
             loadedData: false
         };
 
@@ -26,7 +26,7 @@ class Asutused extends React.PureComponent {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  history={this.props.history}
-                                 module={this.props.module}
+                                 module={DocContext.module}
                                  docTypeId='ASUTUSED'
                                  initData={this.props.initData}
                                  renderer={this.renderer}/>
@@ -39,44 +39,42 @@ class Asutused extends React.PureComponent {
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>
-                    <InputText title="Reg.kood "
-                               name='regkood'
-                               ref="input-regkood"
-                               readOnly={!isEditeMode}
-                               value={self.docData.regkood || ''}
-                               onChange={self.handleInputChange}/>
+                    <div style={styles.docColumn}>
+                        <InputText title="Reg.kood "
+                                   name='regkood'
+                                   ref="input-regkood"
+                                   readOnly={!isEditeMode}
+                                   value={self.docData.regkood || ''}
+                                   onChange={self.handleInputChange}/>
+                        <InputText title="Nimetus "
+                                   name='nimetus'
+                                   ref="input-nimetus"
+                                   readOnly={!isEditeMode}
+                                   value={self.docData.nimetus || ''}
+                                   onChange={self.handleInputChange}/>
+                        <InputText title="Om.vorm"
+                                   name='omvorm'
+                                   ref="input-omvorm"
+                                   readOnly={!isEditeMode}
+                                   value={self.docData.omvorm || ''}
+                                   onChange={self.handleInputChange}/>
+                    </div>
                 </div>
                 <div style={styles.docRow}>
-                    <InputText title="Nimetus "
-                               name='nimetus'
-                               ref="input-nimetus"
-                               readOnly={!isEditeMode}
-                               value={self.docData.nimetus || ''}
-                               onChange={self.handleInputChange}/>
+                    <TextArea title="Aadress"
+                              name='aadress'
+                              ref="textarea-aadress"
+                              onChange={self.handleInputChange}
+                              value={self.docData.aadress || ''}
+                              readOnly={!isEditeMode}/>
                 </div>
                 <div style={styles.docRow}>
-                    <InputText title="Om.vorm"
-                               name='omvorm'
-                               ref="input-omvorm"
-                               readOnly={!isEditeMode}
-                               value={self.docData.omvorm || ''}
-                               onChange={self.handleInputChange}/>
-                </div>
-                <div style={styles.docRow}>
-                                <TextArea title="Aadress"
-                                          name='aadress'
-                                          ref="textarea-aadress"
-                                          onChange={self.handleInputChange}
-                                          value={self.docData.aadress || ''}
-                                          readOnly={!isEditeMode}/>
-                </div>
-                <div style={styles.docRow}>
-                                <TextArea title="Kontakt"
-                                          name='kontakt'
-                                          ref="textarea-kontakt"
-                                          onChange={self.handleInputChange}
-                                          value={self.docData.kontakt || ''}
-                                          readOnly={!isEditeMode}/>
+                    <TextArea title="Kontakt"
+                              name='kontakt'
+                              ref="textarea-kontakt"
+                              onChange={self.handleInputChange}
+                              value={self.docData.kontakt || ''}
+                              readOnly={!isEditeMode}/>
                 </div>
                 <div style={styles.docRow}>
                     <InputText title="Telefon"
@@ -95,20 +93,20 @@ class Asutused extends React.PureComponent {
                                onChange={self.handleInputChange}/>
                 </div>
                 <div style={styles.docRow}>
-                                <TextArea title="Muud"
-                                          name='muud'
-                                          ref="textarea-muud"
-                                          onChange={self.handleInputChange}
-                                          value={self.docData.muud || ''}
-                                          readOnly={!isEditeMode}/>
+                    <TextArea title="Muud"
+                              name='muud'
+                              ref="textarea-muud"
+                              onChange={self.handleInputChange}
+                              value={self.docData.muud || ''}
+                              readOnly={!isEditeMode}/>
                 </div>
                 <div style={styles.docRow}>
-                                <TextArea title="Märkused"
-                                          name='mark'
-                                          ref="textarea-mark"
-                                          onChange={self.handleInputChange}
-                                          value={self.docData.mark || ''}
-                                          readOnly={!isEditeMode}/>
+                    <TextArea title="Märkused"
+                              name='mark'
+                              ref="textarea-mark"
+                              onChange={self.handleInputChange}
+                              value={self.docData.mark || ''}
+                              readOnly={!isEditeMode}/>
                 </div>
             </div>
         );
@@ -123,8 +121,8 @@ Asutused.propTypes = {
 };
 
 Asutused.defaultProps = {
-    initData:{},
-    userData:{}
+    initData: {},
+    userData: {}
 };
 
 module.exports = (Asutused);

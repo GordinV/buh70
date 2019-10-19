@@ -70,7 +70,7 @@ module.exports = {
         row: {}
     },
     requiredFields: [
-        {name: 'regkood', type: 'C'},
+        {name: 'regkood', type: 'C', serverValidation: 'validateIsikukood'},
         {name: 'nimetus', type: 'C'},
         {name: 'omvorm', type: 'C'}
     ],
@@ -91,4 +91,14 @@ module.exports = {
         params: '',
         alias: 'curAsutused'
     },
+    validateIsikukood: {
+        command: `SELECT id
+                  FROM libs.asutus
+                  WHERE regkood = $1::TEXT
+                  ORDER BY id DESC
+                  LIMIT 1`,
+        type: 'sql',
+        alias: 'validateIsikukood'
+    },
+
 };
