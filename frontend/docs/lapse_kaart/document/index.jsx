@@ -146,30 +146,6 @@ class Laps extends React.PureComponent {
                 </div>
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
-                        <Select title="Kood:"
-                                name='nomid'
-                                libs="nomenclature"
-                                data={nomData}
-                                value={self.docData.nomid || 0}
-                                defaultValue={self.docData.kood}
-                                ref="select-nomid"
-                                collId={'id'}
-                                btnDelete={isEditMode}
-                                onChange={self.handleInputChange}
-                                readOnly={!isEditMode}/>
-                    </div>
-                    <div style={styles.docColumn}>
-                        <ButtonEdit
-                            ref='btnEdit'
-                            onClick={this.btnEditNomClick}
-                            show={!isEditMode}
-                            disabled={false}
-                            style={buttonEditNom}
-                        />
-                    </div>
-                </div>
-                <div style={styles.docRow}>
-                    <div style={styles.docColumn}>
                         <Select title="Üksus:"
                                 name='yksus'
                                 libs="lapse_grupp"
@@ -205,6 +181,31 @@ class Laps extends React.PureComponent {
                                 collId={'nimetus'}
                                 onChange={self.handleInputChange}
                                 readOnly={!isEditMode}
+                        />
+                    </div>
+                </div>
+
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
+                        <Select title="Kood:"
+                                name='nomid'
+                                libs="nomenclature"
+                                data={nomData}
+                                value={self.docData.nomid || 0}
+                                defaultValue={self.docData.kood}
+                                ref="select-nomid"
+                                collId={'id'}
+                                btnDelete={isEditMode}
+                                onChange={self.handleInputChange}
+                                readOnly={!isEditMode}/>
+                    </div>
+                    <div style={styles.docColumn}>
+                        <ButtonEdit
+                            ref='btnEdit'
+                            onClick={this.btnEditNomClick}
+                            show={!isEditMode}
+                            disabled={false}
+                            style={buttonEditNom}
                         />
                     </div>
                 </div>

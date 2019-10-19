@@ -394,16 +394,16 @@ webpackJsonp_name_([1],{
 	var PropTypes = __webpack_require__(32);
 
 	var DocumentTemplate = __webpack_require__(168),
-	    InputText = __webpack_require__(185),
-	    InputDate = __webpack_require__(187),
-	    InputNumber = __webpack_require__(189),
-	    DocCommon = __webpack_require__(191),
+	    InputText = __webpack_require__(187),
+	    InputDate = __webpack_require__(189),
+	    InputNumber = __webpack_require__(191),
+	    DocCommon = __webpack_require__(193),
 	    Select = __webpack_require__(181),
-	    TextArea = __webpack_require__(194),
-	    DataGrid = __webpack_require__(196),
+	    TextArea = __webpack_require__(196),
+	    DataGrid = __webpack_require__(198),
 	    DokProp = __webpack_require__(251),
 	    relatedDocuments = __webpack_require__(217),
-	    ModalPage = __webpack_require__(200),
+	    ModalPage = __webpack_require__(184),
 	    styles = __webpack_require__(279);
 
 	var LIBDOK = 'VORDER',
@@ -885,16 +885,16 @@ webpackJsonp_name_([1],{
 	var PropTypes = __webpack_require__(32);
 
 	var DocumentTemplate = __webpack_require__(168),
-	    InputText = __webpack_require__(185),
-	    InputDate = __webpack_require__(187),
-	    InputNumber = __webpack_require__(189),
-	    DocCommon = __webpack_require__(191),
+	    InputText = __webpack_require__(187),
+	    InputDate = __webpack_require__(189),
+	    InputNumber = __webpack_require__(191),
+	    DocCommon = __webpack_require__(193),
 	    Select = __webpack_require__(181),
-	    TextArea = __webpack_require__(194),
-	    DataGrid = __webpack_require__(196),
+	    TextArea = __webpack_require__(196),
+	    DataGrid = __webpack_require__(198),
 	    DokProp = __webpack_require__(251),
 	    relatedDocuments = __webpack_require__(217),
-	    ModalPage = __webpack_require__(200),
+	    ModalPage = __webpack_require__(184),
 	    styles = __webpack_require__(281);
 
 	var LIBDOK = 'VMK',
@@ -1536,10 +1536,10 @@ webpackJsonp_name_([1],{
 	var PropTypes = __webpack_require__(32);
 
 	var DocumentTemplate = __webpack_require__(168),
-	    InputText = __webpack_require__(185),
-	    InputDate = __webpack_require__(187),
+	    InputText = __webpack_require__(187),
+	    InputDate = __webpack_require__(189),
 	    Select = __webpack_require__(181),
-	    TextArea = __webpack_require__(194),
+	    TextArea = __webpack_require__(196),
 	    styles = __webpack_require__(287);
 
 	var KONTO_TYYP = [{ id: 1, kood: "SD", name: "SD" }, { id: 2, kood: "SK", name: "SK" }, { id: 3, kood: "D", name: "D" }, { id: 4, kood: "K", name: "K" }];
@@ -1787,8 +1787,8 @@ webpackJsonp_name_([1],{
 	var PropTypes = __webpack_require__(32);
 
 	var DocumentTemplate = __webpack_require__(168),
-	    InputText = __webpack_require__(185),
-	    TextArea = __webpack_require__(194),
+	    InputText = __webpack_require__(187),
+	    TextArea = __webpack_require__(196),
 	    styles = __webpack_require__(291);
 
 	var Project = function (_React$PureComponent) {
@@ -2020,9 +2020,9 @@ webpackJsonp_name_([1],{
 	var React = __webpack_require__(9);
 
 	var DocumentTemplate = __webpack_require__(168),
-	    InputText = __webpack_require__(185),
+	    InputText = __webpack_require__(187),
 	    Select = __webpack_require__(181),
-	    TextArea = __webpack_require__(194),
+	    TextArea = __webpack_require__(196),
 	    styles = __webpack_require__(295),
 	    DOCUMENT_TYPES = [{ id: 1, kood: 'document', name: 'document' }, { id: 2, kood: 'library', name: 'library' }];
 
