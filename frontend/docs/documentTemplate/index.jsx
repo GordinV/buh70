@@ -12,6 +12,7 @@ const
     Form = require('../../components/form/form.jsx'),
     ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx'),
     DocToolBar = require('./../../components/doc-toolbar/doc-toolbar.jsx'),
+    ModalPage = require('./../../components/modalpage/modalPage.jsx'),
     styles = require('./document-styles');
 
 
@@ -39,6 +40,7 @@ class DocumentTemplate extends React.PureComponent {
         this.docData = Object.keys(props.initData).length ? props.initData : {id: this.props.docId};
         this.backup = {};
         this.requiredFields = [];
+        this.serverValidation = [];
         this.bpm = [];
         this.pages = this.props.pages || null;
 
@@ -46,7 +48,7 @@ class DocumentTemplate extends React.PureComponent {
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick',
             'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
-            'modalPageClick', 'handleGridRowChange', 'handlePageClick');
+            'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick');
 
 
         this.gridRowData = {}; //будем хранить строку грида
@@ -86,6 +88,8 @@ class DocumentTemplate extends React.PureComponent {
         }
 
         const warningStyle = styles[this.state.warningType] ? styles[this.state.warningType] : null;
+
+        let dialogString = this.serverValidation.length > 0 ? `Dokument ${this.serverValidation[0].name} = ${this.serverValidation[0].value} juba olemas. Kas jätka?`: '';
         return (
             <div>
                 {this.renderDocToolBar()}
@@ -103,7 +107,17 @@ class DocumentTemplate extends React.PureComponent {
                         {this.props.renderer ? this.props.renderer(this) : null}
                     </div>
                 </Form>
+                <ModalPage
+                    show={this.serverValidation.length > 0}
+                    modalPageName='Kontrol'
+                    modalObjects={['btnOk', 'btnCancel']}
+                    modalPageBtnClick={this.modalPageBtnClick.bind(this)}>
+                    <div ref="container">
+                        <img ref="image" src={styles.modalValidate.iconImage}/>
+                        <span> {dialogString} </span>
+                    </div>
 
+                </ModalPage>
             </div>
         );
     }
@@ -181,7 +195,7 @@ class DocumentTemplate extends React.PureComponent {
 
         const task = this.bpm.find(task => task.name === taskName);
         let api = `/newApi/task/${task.task}`;
-        DocContext[api] = {test: 'test_params'};
+//        DocContext[api] = {test: 'test_params'};
         this.fetchData('Post', api).then(() => {
             if (this.props.history) {
                 this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
@@ -248,6 +262,32 @@ class DocumentTemplate extends React.PureComponent {
 
                     if (!value) {
                         notRequiredFields.push(field.name);
+                    } else {
+                        if (field.serverValidation) {
+                            // send paring to server to validate
+
+                            this.fetchData('Post', `/newApi/validate/validateIsikukood/${value}`).then(response => {
+                                let docId = response.data.data[0].id;
+                                let _warning = this.state.warning;
+                                if (docId && docId !== this.state.docId) {
+                                    //переадресовка
+                                    this.serverValidation.push({
+                                        name: field.name,
+                                        value: value,
+                                        result: docId
+                                    });
+
+                                    _warning = _warning + `${value} (${field.name}) juba olemas`;
+
+                                    //svae in state
+                                    this.setState({
+                                        warning: _warning,
+                                        warningType: 'notValid'
+                                    });
+                                    this.forceUpdate();
+                                }
+                            })
+                        }
                     }
                     // проверка на мин . макс значения
 
@@ -277,13 +317,17 @@ class DocumentTemplate extends React.PureComponent {
             });
 
             if (notRequiredFields.length > 0) {
-                warning = 'puudub vajalikud andmed (' + notRequiredFields.join(', ') + ') ';
+                warning = warning + ' puudub vajalikud andmed (' + notRequiredFields.join(', ') + ') ';
             }
 
             if (notMinMaxRule.length > 0) {
                 warning = warning ? warning : '' + ' min/max on vale(' + notMinMaxRule.join(', ') + ') ';
             }
-            this.setState({warning: warning, warningType: warning.length ? 'notValid' : null});
+
+            this.setState({
+                warning: warning,
+                warningType: warning.length ? 'notValid' : null
+            });
         }
 
         return warning; // вернем извещение об итогах валидации
@@ -387,6 +431,7 @@ class DocumentTemplate extends React.PureComponent {
 
                     if (response.data) {
                         // executing task
+                        // will save in context result
                         if (response.data.action && response.data.action === 'task') {
 
                             const dataRow = response.data.result;
@@ -438,6 +483,7 @@ class DocumentTemplate extends React.PureComponent {
                             });
 
                         }
+                        return resolved(response.data);
                     } else {
                         console.error('Fetch viga ', response, params);
                         this.setState({
@@ -718,6 +764,32 @@ class DocumentTemplate extends React.PureComponent {
                 this[method] = this[method].bind(this)
             }
         });
+    }
+
+    /**
+     * обработчик для кнопки модального окна
+     * @param btnEvent
+     */
+    modalPageBtnClick(btnEvent) {
+        //получим значение
+        let docId = this.serverValidation[0].result;
+
+        // обнулим итог валидации
+        this.serverValidation = [];
+
+        if (btnEvent === 'Ok') {
+            // редайрект
+            // koostatud uus dok,
+            this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${docId}`);
+
+            const current = `/${this.props.module}/${this.props.docTypeId}/${docId}`;
+            this.props.history.replace(`/reload`);
+            setTimeout(() => {
+                this.props.history.replace(current);
+            });
+        } else {
+            this.forceUpdate();
+        }
     }
 
 }

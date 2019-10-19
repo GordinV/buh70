@@ -93,7 +93,8 @@ BEGIN
             nimi       = doc_nimi,
             properties = properties || json_props,
             muud       = doc_muud,
-            ajalugu    = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu
+            ajalugu    = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu,
+            staatus    = CASE WHEN staatus = 3 THEN 1 ELSE staatus END
         WHERE id = doc_id RETURNING id
             INTO doc_id;
 

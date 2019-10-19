@@ -31,8 +31,9 @@ module.exports = function (app) {
     app.put('/newApi/document/:documentType/:id', checkAuth, require('./documentRegister').put); //апи для обмена даты по протоколу PUT с моделью документа
     app.post('/newApi/loadLibs/:documentType', checkAuth, require('./loadLibs').post); //checkAuth,
     app.post('/newApi/changeAsutus/:rekvId', checkAuth, require('./changeAsutus').post); //checkAuth,
-    app.post('/newApi/delete', checkAuth, require('./documentRegister').delete); //checkAuth, //checkAuth,
+    app.post('/newApi/delete', checkAuth, require('./documentRegister').delete); //checkAuth
     app.post('/newApi/task/:taskName', checkAuth, require('./documentRegister').executeTask);
+    app.post('/newApi/validate/:method/:parameter', checkAuth, require('./documentRegister').validate); //проверка в моделе , метод по значению
 
     app.post('/newApi', checkAuth, require('./newApi').post); //checkAuth, //checkAuth,
 

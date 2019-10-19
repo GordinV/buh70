@@ -36,5 +36,8 @@ module.exports = {
         width:'100%',
         textAlign: 'right'
 
+    },
+    modalValidate: {
+        iconImage: '/images/icons/info.png'
     }
 };

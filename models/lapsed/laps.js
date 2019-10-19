@@ -111,7 +111,7 @@ module.exports = {
 
 
     requiredFields: [
-        {name: 'isikukood', type: 'C'},
+        {name: 'isikukood', type: 'C', serverValidation: 'validateIsikukood'},
         {name: 'nimi', type: 'T'}
     ],
     saveDoc:
@@ -161,6 +161,11 @@ module.exports = {
                   FROM lapsed.arvesta_taabel($2::INTEGER, $1::INTEGER)`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'arvestaTaabel'
+    },
+    validateIsikukood: {
+      command: `select id from lapsed.laps where isikukood = $1::text`,
+        type: 'sql',
+        alias: 'validateIsikukood'
     },
 
     bpm: [

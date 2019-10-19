@@ -15,9 +15,13 @@ class ModalPageInfo extends React.PureComponent {
 
     }
 
-    componentWillReceiveProps(nextProps) {
-        this.setState({show: nextProps.show});
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.show !== prevState.show ) {
+            return {show: nextProps.show};
+        } else return null;
     }
+
 
     render() {
 
@@ -27,7 +31,8 @@ class ModalPageInfo extends React.PureComponent {
         return <ModalPage ref = 'modalPage'
             modalPageBtnClick={this.props.modalPageBtnClick}
             modalPageName='Warning!'
-            modalObjects={modalObjects}>
+            modalObjects={modalObjects}
+        >
             <div ref="container">
                 <img ref="image" src={styles.icon}/>
                 <span> {systemMessage} </span>
@@ -39,6 +44,6 @@ class ModalPageInfo extends React.PureComponent {
 ModalPageInfo.propTypes = {
     systemMessage: PropTypes.string,
     modalPageBtnClick: PropTypes.func
-}
+};
 
 module.exports = ModalPageInfo;

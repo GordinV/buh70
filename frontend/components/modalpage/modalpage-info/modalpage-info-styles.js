@@ -1,3 +1,4 @@
 module.exports = {
-    icon:'images/icons/info.png'
-}
+    icon:'/images/icons/info.png'
+
+};

@@ -212,3 +212,27 @@ exports.executeTask = async (req, res) => {
         data: prepairedData
     });
 };
+
+exports.validate = async (req, res) => {
+    const user = require('../middleware/userData')(req); // данные пользователя
+    const method = req.params.method; // получим из параметра метод в моделе
+    const parameter = req.params.parameter; // получим из параметра искомое значение
+    const Doc = require('./../classes/DocumentTemplate');
+    const params = req.body;
+    const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, params.module.toLowerCase());
+
+    const data = await Document.executeTask(method, [parameter]);
+
+    const prepairedData = Object.assign({}, data);
+    res.send({
+        action: 'task',
+        result: {
+            error_code: 0,
+            error_message: null,
+            docId: prepairedData.result,
+            docTypeId: prepairedData.doc_type_id,
+            module: params.module
+        },
+        data: prepairedData
+    });
+};
