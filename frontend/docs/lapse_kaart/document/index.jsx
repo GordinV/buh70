@@ -132,6 +132,7 @@ class Laps extends React.PureComponent {
                                     ref="select-parentid"
                                     btnDelete={false}
                                     onChange={self.handleInputChange}
+                                    history={this.props.history}
                                     readOnly={!isEditMode}/>
                     </div>
                     <div style={styles.docColumn}>

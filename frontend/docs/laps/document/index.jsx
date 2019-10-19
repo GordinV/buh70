@@ -29,7 +29,6 @@ class Laps extends React.PureComponent {
         this.handlePageClick = this.handlePageClick.bind(this);
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
         this.fetchData = this.fetchData.bind(this);
-        this.handleInputChange = this.handleInputChange.bind(this);
 
         this.docId = props.docId ? props.docId : Number(props.match.params.docId);
 

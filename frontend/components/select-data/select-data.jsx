@@ -33,6 +33,7 @@ class SelectData extends React.PureComponent {
         this.modalPageClick = this.modalPageClick.bind(this);
         this.loadLibs = this.loadLibs.bind(this);
         this.handleClick = this.handleClick.bind(this);
+        this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
     }
 
     componentDidMount() {
@@ -89,6 +90,24 @@ class SelectData extends React.PureComponent {
         let modalObjects = ['btnOk', 'btnCancel'];
         let limitInputStyle = styles.limitInput;
 
+        const toolbarParams = {
+            btnAdd: {
+                show: true,
+                disabled: false
+            },
+            btnEdit: {
+                show: true,
+                disabled: false
+            },
+            btnDelete: {
+                show: false,
+                disabled: false
+            },
+            btnPrint: {
+                show: false,
+                disabled: false
+            }
+        };
         return (
             <ModalPage
                 modalObjects={modalObjects}
@@ -106,6 +125,9 @@ class SelectData extends React.PureComponent {
                     <DataGrid gridData={this.state.gridData}
                               gridColumns={this.state.gridConfig}
                               onClick={this.handleGridClick}
+                              handleGridBtnClick={this.handleGridBtnClick}
+                              showToolBar={true}
+                              toolbarParams={toolbarParams}
                               ref="data-grid"/>
                     <InputText ref="input-limit"
                                title='Limiit:'
@@ -179,7 +201,7 @@ class SelectData extends React.PureComponent {
     }
 
     handleGridClick(event, value, activeRow) {
-        this.setState({gridActiveRow: activeRow});
+        this.setState({gridActiveRow: activeRow, value: value});
     }
 
     loadLibs(fieldValue) {
@@ -238,6 +260,22 @@ class SelectData extends React.PureComponent {
             }).catch(error => {
                 console.error('loadLibs error', error);
             });
+        }
+    }
+
+    handleGridBtnClick(btnName, activeRow, id, docTypeId) {
+        // закрываем модальное окно поиска и переходим на новую запись справочника
+        this.setState({show: false});
+        switch (btnName) {
+            case "edit":
+                let docId = this.state.gridData[activeRow]['id'];
+                this.props.history.push(`/${DocContext.module}/${this.props.libName}/${docId}`);
+                break;
+            case "add":
+                this.props.history.push(`/${DocContext.module}/${this.props.libName}/0`);
+                break;
+            default:
+                console.log('Vigane click');
         }
     }
 

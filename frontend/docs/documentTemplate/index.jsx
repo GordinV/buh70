@@ -66,6 +66,9 @@ class DocumentTemplate extends React.PureComponent {
      * пишем исходные данные в хранилище, регистрируем обработчики событий
      */
     componentDidMount() {
+        // сохраним в контексте тип документа, с которым мы работает
+        DocContext.docTypeId = this.props.docTypeId;
+
         if (this.state.reloadData) {
             //делаем запрос на получение данных
             this.fetchData();
