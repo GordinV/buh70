@@ -42,8 +42,13 @@ DECLARE
     doc_viitenr      TEXT           = doc_data ->> 'viitenr'; -- viite number
     doc_lapsid       INTEGER        = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
     doc_type         TEXT           = doc_data ->> 'tyyp'; -- ETTEMAKS - если счет на предоплату
+    doc_print        JSONB          = coalesce((doc_data ->> 'print')::JSONB, '[]'::JSONB); -- '["paber","email","earve"]'
+
     dok_props        JSONB          = (SELECT row_to_json(row)
-                                       FROM (SELECT doc_aa AS aa, doc_viitenr AS viitenr, doc_type as tyyp) row);
+                                       FROM (SELECT doc_aa      AS aa,
+                                                    doc_viitenr AS viitenr,
+                                                    doc_type    AS tyyp,
+                                                    doc_print   AS print) row);
 
     json_object      JSON;
     json_record      RECORD;
@@ -353,12 +358,12 @@ GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbkasu
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
-select docs.sp_salvesta_arv('{"id":0,"data": {"aa":"EE122200221021743743","aadress":"","arvid":0,"asutus":"","asutusid":29004,"bpm":"","created":"","doc":"","doc_status":0,"doc_type_id":"","doklausid":2029,"dokprop":"","id":0,"is_show_journal":0,"jaak":0,"journalid":0,"kbm":24.7000,"kbmkonto":"","kbmta":123.5000,"kmkr":"","konto":"","koostaja":"","kpv":"20190926","lastupdate":"","laus_nr":0,"liik":1,"lisa":"","muud":"","number":"163\/9","objekt":"","objektid":0,"operid":0,"regkood":"","rekvid":64,"status":"","summa":148.2000,"tahtaeg":"        ","tasud":"        ","tasudok":"","userid":957,"viitenr":"","gridData":[{"formula":"","hind":0.3167,"id":0,"kbm":24.7000,"kbmta":123.5000,"km":"20","kogus":390,"konto":"552690","kood":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kuurs":0,"muud":"transporditeenused, Narva-Tartu-Narva, ?????????? ??????? , Hariduse 28-62, 25.09.2019","nimetus":"transporditeenused, Narva-Tartu-Narva, ?????????? ??????? , Hariduse 28-62, 25.09.2019","nomid":17751,"proj":"","soodus":0,"summa":148.2000,"tp":"800399","tunnus":"","uhik":"","userid":0,"valuuta":"","vastisik":""}]}}'::json,
+select docs.sp_salvesta_arv('{"id":0,"data": {"print":["paber","email"],"aa":"EE122200221021743743","aadress":"","arvid":0,"asutus":"","asutusid":29004,"bpm":"","created":"","doc":"","doc_status":0,"doc_type_id":"","doklausid":2029,"dokprop":"","id":0,"is_show_journal":0,"jaak":0,"journalid":0,"kbm":24.7000,"kbmkonto":"","kbmta":123.5000,"kmkr":"","konto":"","koostaja":"","kpv":"20190926","lastupdate":"","laus_nr":0,"liik":1,"lisa":"","muud":"","number":"163\/9","objekt":"","objektid":0,"operid":0,"regkood":"","rekvid":64,"status":"","summa":148.2000,"tahtaeg":"        ","tasud":"        ","tasudok":"","userid":957,"viitenr":"","gridData":[{"formula":"","hind":0.3167,"id":0,"kbm":24.7000,"kbmta":123.5000,"km":"20","kogus":390,"konto":"552690","kood":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kuurs":0,"muud":"transporditeenused, Narva-Tartu-Narva, ?????????? ??????? , Hariduse 28-62, 25.09.2019","nimetus":"transporditeenused, Narva-Tartu-Narva, ?????????? ??????? , Hariduse 28-62, 25.09.2019","nomid":17751,"proj":"","soodus":0,"summa":148.2000,"tp":"800399","tunnus":"","uhik":"","userid":0,"valuuta":"","vastisik":""}]}}'::json,
 957::integer,
 64::integer) as id;
 
 
-select * from docs.arv where parentid = 1770380
+select * from docs.arv where parentid = 1616296
 select * from docs.arv1 where parentid = 331
 
 "gridData":[{"formula":"","hind":0,"id":0,"kbm":0,"kbmta":0,"km":"","kogus":0,"konto":"","kood":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kuurs":0,"nimetus":"","nomid":0,"proj":"","soodus":0,"summa":0,"tp":"","tunnus":"","userid":0,"valuuta":"","vastisik":""}]

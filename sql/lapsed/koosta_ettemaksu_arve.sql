@@ -40,8 +40,32 @@ DECLARE
     l_status        INTEGER;
     l_number        TEXT;
     l_arve_summa    NUMERIC = 0;
+    v_maksja        RECORD;
+    jsonb_print     JSONB   = '[]';
 
 BEGIN
+    SELECT id,
+           coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN AS kas_paber,
+           coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN   AS kas_earve,
+           coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN   AS kas_email
+           INTO v_maksja
+    FROM lapsed.vanemad v
+    WHERE asutusid = l_asutus_id
+      AND v.parentid = l_laps_id;
+
+    jsonb_print = jsonb_print || coalesce(CASE
+                                              WHEN v_maksja.kas_paber THEN '[
+                                                "paber"
+                                              ]'::JSONB END, '[]'::JSONB) ::JSONB ||
+                  coalesce(CASE
+                               WHEN v_maksja.kas_email THEN '[
+                                 "email"
+                               ]'::JSONB END, '[]'::JSONB)::JSONB ||
+                  coalesce(CASE
+                               WHEN v_maksja.kas_earve THEN '[
+                                 "earve"
+                               ]'::JSONB END, '[]'::JSONB)::JSONB;
+
     doc_type_id = 'ARV';
     -- will return docTypeid of new doc
 
@@ -170,6 +194,7 @@ BEGIN
                                 l_asutus_id                                          AS asutusid,
                                 l_laps_id                                            AS lapsid,
                                 'ETTEMAKS'                                           AS tyyp,
+                                jsonb_print                                          AS print,
                                 'Ettemaksuarve ' || date_part('month', current_date)::TEXT || '/' ||
                                 date_part('year', current_date)::TEXT || ' kuu eest' AS muud,
                                 json_arvread                                         AS "gridData") row);
@@ -212,7 +237,7 @@ GRANT EXECUTE ON FUNCTION lapsed.koosta_ettemaksu_arve(INTEGER, INTEGER, DATE) T
 
 
 /*
-select lapsed.koosta_arve_taabeli_alusel(70, 16)
+select lapsed.koosta_ettemaksu_arve(70, 16)
 
 select * from lapsed.laps where staatus = 1
 

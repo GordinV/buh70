@@ -135,10 +135,10 @@ BEGIN
 
         UPDATE lapsed.lapse_taabel
         SET staatus = 1
-        WHERE id IN (SELECT (a1.properties -> 'lapse_taabel_id')::INTEGER
+        WHERE id IN (SELECT coalesce((a1.properties ->> 'lapse_taabel_id')::INTEGER,0)::integer
                      FROM docs.arv1 a1
                      WHERE a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id)
-                       AND (a1.properties -> 'lapse_taabel_id') IS NOT NULL)
+                       AND (a1.properties ->> 'lapse_taabel_id') IS NOT NULL)
           AND staatus <> 1;
     END IF;
 
@@ -189,10 +189,17 @@ SELECT
   error_code,
   result,
   error_message
-FROM docs.sp_delete_arv(1, 125);
+FROM docs.sp_delete_arv(70, 1616295);
 
 
 select docs.sp_salvesta_arv('{"id":0,"doc_type_id":"ARV","data":{"id":0,"created":"2016-05-05T21:39:57.050726","lastupdate":"2016-05-05T21:39:57.050726","bpm":null,"doc":"Arved","doc_type_id":"ARV","status":"Черновик","number":"321","summa":24,"rekvid":null,"liik":0,"operid":null,"kpv":"2016-05-05","asutusid":1,"arvid":null,"lisa":"lisa","tahtaeg":"2016-05-19","kbmta":null,"kbm":4,"tasud":null,"tasudok":null,"muud":"muud","jaak":"0.00","objektid":null,"objekt":null,"regkood":null,"asutus":null},
 "details":[{"id":"NEW0.6577064044198089","[object Object]":null,"nomid":"1","kogus":2,"hind":10,"kbm":4,"kbmta":20,"summa":24,"kood":"PAIGALDUS","nimetus":"PV paigaldamine"}]}',1, 1);
+
+
+
+select * from lapsed.lapse_taabel
+WHERE id IN (
+    select coalesce(('{"lapse_taabel_id": null}'::jsonb ->> 'lapse_taabel_id')::integer,0)
+    );
 
 */

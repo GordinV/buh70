@@ -42,8 +42,33 @@ DECLARE
     l_arve_summa    NUMERIC = 0;
     l_taabel_ids    INTEGER[];
     i               INTEGER = 1;
+    v_maksja        RECORD;
+    jsonb_print     JSONB   = '[]';
 
 BEGIN
+    SELECT id,
+           coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN AS kas_paber,
+           coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN   AS kas_earve,
+           coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN   AS kas_email
+           INTO v_maksja
+    FROM lapsed.vanemad v
+    WHERE asutusid = l_asutus_id
+      AND v.parentid = l_laps_id;
+
+    jsonb_print = jsonb_print || coalesce(CASE
+                                              WHEN v_maksja.kas_paber THEN '[
+                                                "paber"
+                                              ]'::JSONB END, '[]'::JSONB) ::JSONB ||
+                  coalesce(CASE
+                               WHEN v_maksja.kas_email THEN '[
+                                 "email"
+                               ]'::JSONB END, '[]'::JSONB)::JSONB ||
+                  coalesce(CASE
+                               WHEN v_maksja.kas_earve THEN '[
+                                 "earve"
+                               ]'::JSONB END, '[]'::JSONB)::JSONB;
+
+
 
     -- will return docTypeid of new doc
     doc_type_id = 'ARV';
@@ -231,6 +256,7 @@ BEGIN
                                 l_laps_id                                            AS lapsid,
                                 'Arve, taabeli alus ' || date_part('month', current_date)::TEXT || '/' ||
                                 date_part('year', current_date)::TEXT || ' kuu eest' AS muud,
+                                jsonb_print                                          AS print,
                                 json_arvread                                         AS "gridData") row);
 
     -- подготавливаем параметры для создания счета
@@ -239,7 +265,6 @@ BEGIN
 
 
     -- check for arve summa
-
     IF l_arve_summa <= 0
     THEN
         result = 0;
@@ -284,6 +309,6 @@ GRANT EXECUTE ON FUNCTION lapsed.koosta_arve_taabeli_alusel(INTEGER, INTEGER, DA
 
 
 /*
-select lapsed.koosta_arve_taabeli_alusel(70, 40)
+select lapsed.koosta_arve_taabeli_alusel(70, 16)
  */
 
