@@ -27,7 +27,7 @@ module.exports = {
         textAlign: 'right'
     },
     error: {
-        backgroundColor:'lightred',
+        backgroundColor:'lightcoral',
         width:'100%',
         textAlign: 'right'
     },

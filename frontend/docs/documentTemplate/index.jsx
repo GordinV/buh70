@@ -235,6 +235,8 @@ class DocumentTemplate extends React.PureComponent {
 
         this.fetchData('Post', api).then((response) => {
             const dataRow = response.result;
+            const dataMessage = response.data.error_message ? response.data.error_message: '';
+
             let docId = dataRow.docId;
             let docTypeId = dataRow.docTypeId ? dataRow.docTypeId : null;
 
@@ -249,6 +251,11 @@ class DocumentTemplate extends React.PureComponent {
 
                     }, 2000);
                 });
+            } else if (dataMessage) {
+                this.setState({
+                    warning: `Viga, ${dataMessage}`,
+                    warningType: 'error'
+                })
             }
         });
     }
