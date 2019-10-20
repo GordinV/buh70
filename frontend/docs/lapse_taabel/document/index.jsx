@@ -103,6 +103,8 @@ class Laps extends React.PureComponent {
 
         let buttonEditNom = styles.btnEditNom;
 
+
+        const nomData = self.libs['lapse_kaart'] ? self.libs['lapse_kaart'].filter(row => self.docData.parentid): [];
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>
@@ -139,7 +141,7 @@ class Laps extends React.PureComponent {
                         <Select title="Kood:"
                                 name='lapse_kaart_id'
                                 libs="lapse_kaart"
-                                data={self.libs['lapse_kaart']}
+                                data={nomData}
                                 value={self.docData.lapse_kaart_id || 0}
                                 defaultValue={self.docData.nimetus}
                                 ref="select-lapse_kaart_id"
