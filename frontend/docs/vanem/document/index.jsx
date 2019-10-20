@@ -11,7 +11,8 @@ const
     SelectData = require('../../../components/select-data/select-data.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
-    ModalPage = require('../../../components/modalpage/modalPage.jsx'),
+    CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
+
     styles = require('./styles');
 
 const LIBDOK = 'VANEM',
@@ -130,6 +131,34 @@ class Vanem extends React.PureComponent {
                                 btnDelete={false}
                                 onChange={self.handleInputChange}
                                 readOnly={!isEditMode}/>
+                        {self.docData.arved === 'Jah' ?
+                            <CheckBox title="Print paberil ?"
+                                      name='kas_paberil'
+                                      value={Boolean(self.docData.kas_paberil)}
+                                      ref={'checkbox_kas_paberil'}
+                                      onChange={self.handleInputChange}
+                                      readOnly={!isEditMode}
+                            /> : null
+                        }
+                        {self.docData.arved === 'Jah' ?
+                            <CheckBox title="E-arve ?"
+                                      name='kas_earve'
+                                      value={Boolean(self.docData.kas_earve)}
+                                      ref={'checkbox_kas_earve'}
+                                      onChange={self.handleInputChange}
+                                      readOnly={!isEditMode}
+                            /> : null
+                        }
+                        {self.docData.arved === 'Jah' ?
+                            <CheckBox title="Kas email ?"
+                                      name='kas_email'
+                                      value={Boolean(self.docData.kas_email)}
+                                      ref={'checkbox_kas_email'}
+                                      onChange={self.handleInputChange}
+                                      readOnly={!isEditMode}
+                            /> : null
+                        }
+
 
                     </div>
                 </div>

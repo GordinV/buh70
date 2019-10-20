@@ -17,12 +17,15 @@ module.exports = {
         sql: `SELECT v.id,
                      v.parentid,
                      v.asutusid,
-                     v.properties ->> 'arved'     AS arved,
-                     v.properties ->> 'suhtumine' AS suhtumine,
+                     v.properties ->> 'arved'                                            AS arved,
+                     v.properties ->> 'suhtumine'                                        AS suhtumine,
+                     coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN AS kas_paberil,
+                     coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN   AS kas_earve,
+                     coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN   AS kas_email,
                      v.muud,
-                     a.nimetus::TEXT              AS vanem_nimi,
-                     a.regkood::TEXT              AS vanem_isikukood,
-                     $2::INTEGER                  AS userid
+                     a.nimetus::TEXT                                                     AS vanem_nimi,
+                     a.regkood::TEXT                                                     AS vanem_isikukood,
+                     $2::INTEGER                                                         AS userid
               FROM lapsed.vanemad v
                        INNER JOIN libs.asutus a ON a.id = v.asutusId
               WHERE v.id = $1::INTEGER`,
@@ -34,6 +37,11 @@ module.exports = {
                   null::text as lapse_nimi,
                   null::text as  vanem_isikukood,
                   null::text as vanem_nimi,
+                  'Jah'::text as arved,
+                  null::text as suhtumine,
+                  false as kas_paberil,
+                  true as kas_email,
+                  true as kas_earve,
                   null::text as muud`,
         query: null,
         multiple: false,
