@@ -2,6 +2,7 @@
 
 const PropTypes = require('prop-types');
 const React = require('react');
+const DocContext = require('../../../doc-context');
 
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
@@ -59,10 +60,14 @@ class Laps extends React.PureComponent {
 
     componentDidMount() {
         let lapsId;
+
+        //если параметр на ребенка задан в стейте, то используем его. Иначе ищем его в контексте
         if (this.props.history && this.props.history.location.state) {
             lapsId = this.props.history.location.state.lapsId;
-            this.setState({lapsId: lapsId});
+        } else {
+            lapsId = DocContext['laps'] ? DocContext['laps']: null;
         }
+        this.setState({lapsId: lapsId});
 
     }
 

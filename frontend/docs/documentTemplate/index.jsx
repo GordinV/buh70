@@ -92,7 +92,7 @@ class DocumentTemplate extends React.PureComponent {
 
         const warningStyle = styles[this.state.warningType] ? styles[this.state.warningType] : null;
 
-        let dialogString = this.serverValidation.length > 0 ? `Dokument ${this.serverValidation[0].name} = ${this.serverValidation[0].value} juba olemas. Kas jätka?`: '';
+        let dialogString = this.serverValidation.length > 0 ? `Dokument ${this.serverValidation[0].name} = ${this.serverValidation[0].value} juba olemas. Kas jätka?` : '';
         return (
             <div>
                 {this.renderDocToolBar()}
@@ -176,10 +176,44 @@ class DocumentTemplate extends React.PureComponent {
      * Обработчик для кнопки сохранить
      */
     btnSaveClick() {
-        this.fetchData('Put').then(() => {
-            if (this.props.history) {
-                this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
-            }
+        this.fetchData('Put').then((response) => {
+            if (!response) return false;
+
+            //call to save
+            this.docData = response.data[0];
+            this.setState({
+                reloadData: false,
+                warning: 'Salvestatud edukalt',
+                warningType: 'ok',
+                edited: false,
+                docId: this.docData.id ? this.docData.id : 0
+            }, () => {
+                // сохраним в контексте последние изменения
+                DocContext[this.props.docTypeId] = this.docData.id;
+
+                //если было создание нового докмента и этот док был карта ребенка, то сделаем переадрессацию на добавление услуг
+                let docTypeId = this.props.docTypeId,
+                    docId = this.docData.id;
+
+                if (docTypeId.toUpperCase() === 'LAPS') {
+                    docTypeId = 'LAPSE_KAART';
+                    docId = 0;
+                }
+
+                if (this.props.docId=== 0 || docId === 0) {
+                    // reload / redirect
+                    setTimeout(() => {
+                        const current = `/${this.props.module}/${docTypeId}/${docId}`;
+                        this.props.history.replace(`/reload`);
+                        setTimeout(() => {
+                            this.props.history.replace(current);
+                        });
+
+                    }, 2000);
+                }
+
+            });
+
         });
     }
 
@@ -198,10 +232,23 @@ class DocumentTemplate extends React.PureComponent {
 
         const task = this.bpm.find(task => task.name === taskName);
         let api = `/newApi/task/${task.task}`;
-//        DocContext[api] = {test: 'test_params'};
-        this.fetchData('Post', api).then(() => {
-            if (this.props.history) {
-                this.props.history.push(`/${this.props.module}/${this.props.docTypeId}/${this.docData.id}`);
+
+        this.fetchData('Post', api).then((response) => {
+            const dataRow = response.result;
+            let docId = dataRow.docId;
+            let docTypeId = dataRow.docTypeId ? dataRow.docTypeId : null;
+
+            if (docId && docTypeId) {
+                this.setState({
+                    warning: `Edukalt, koostatud dokument (id:${docId}), suunatamine...`,
+                    warningType: 'ok'
+                }, () => {
+                    setTimeout(() => {
+                        // koostatud uus dok,
+                        this.props.history.push(`/${this.props.module}/${docTypeId}/${docId}`);
+
+                    }, 2000);
+                });
             }
         });
     }
@@ -270,26 +317,30 @@ class DocumentTemplate extends React.PureComponent {
                             // send paring to server to validate
 
                             this.fetchData('Post', `/newApi/validate/validateIsikukood/${value}`).then(response => {
-                                let docId = response.data.data[0].id;
-                                let _warning = this.state.warning;
-                                if (docId && docId !== this.state.docId) {
-                                    //переадресовка
-                                    this.serverValidation.push({
-                                        name: field.name,
-                                        value: value,
-                                        result: docId
-                                    });
+                                if (response.data.data.length) {
 
-                                    _warning = _warning + `${value} (${field.name}) juba olemas`;
+                                    let docId = response.data.data[0].id;
+                                    let _warning = this.state.warning;
+                                    if (docId && docId !== this.state.docId) {
+                                        //переадресовка
+                                        this.serverValidation.push({
+                                            name: field.name,
+                                            value: value,
+                                            result: docId
+                                        });
 
-                                    //svae in state
-                                    this.setState({
-                                        warning: _warning,
-                                        warningType: 'notValid'
-                                    });
-                                    this.forceUpdate();
+                                        _warning = _warning + `${value} (${field.name}) juba olemas`;
+
+                                        //svae in state
+                                        this.setState({
+                                            warning: _warning,
+                                            warningType: 'notValid'
+                                        });
+                                        this.forceUpdate();
+                                    }
                                 }
-                            })
+
+                            });
                         }
                     }
                     // проверка на мин . макс значения
@@ -433,27 +484,6 @@ class DocumentTemplate extends React.PureComponent {
                     }
 
                     if (response.data) {
-                        // executing task
-                        // will save in context result
-                        if (response.data.action && response.data.action === 'task') {
-
-                            const dataRow = response.data.result;
-                            let docId = dataRow.docId;
-                            let docTypeId = dataRow.docTypeId ? dataRow.docTypeId : null;
-
-                            if (docId && docTypeId) {
-                                this.setState({
-                                    warning: `Edukalt, koostatud dokument (id:${docId}), suunatamine...`,
-                                    warningType: 'ok'
-                                }, () => {
-                                    setTimeout(() => {
-                                        // koostatud uus dok,
-                                        this.props.history.push(`/${this.props.module}/${docTypeId}/${docId}`);
-
-                                    }, 1000)
-                                })
-                            }
-                        }
 
                         //execute select calls
                         if (response.data.action && response.data.action === 'select') {
@@ -474,18 +504,6 @@ class DocumentTemplate extends React.PureComponent {
                             resolved(response.data.data[0]);
                         }
 
-                        //call to save
-                        if (response.data.action && response.data.action === 'save') {
-                            this.docData = response.data.data[0];
-                            this.setState({
-                                reloadData: false,
-                                warning: 'Salvestatud edukalt',
-                                warningType: 'ok',
-                                edited: false,
-                                docId: this.docData.id
-                            });
-
-                        }
                         return resolved(response.data);
                     } else {
                         console.error('Fetch viga ', response, params);
