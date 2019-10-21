@@ -184,6 +184,16 @@ module.exports = {
             type: 'manual',
             action: 'generateJournal',
         }
+    ],
+    print: [
+        {
+            view: 'lapse_kaart',
+            params:'id'
+        },
+        {
+            view: 'laste_register',
+            params:'sqlWhere'
+        },
     ]
 
 

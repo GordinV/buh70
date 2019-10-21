@@ -3,7 +3,7 @@ html(lang="et")
 extends report_header
 
 block content
-    -var tunnuselength = tunnused ? tunnused.length: 0 ;
+    -var tunnuselength = data ? data.length: 0 ;
 
     if tunnuselength
         div(style="width:auto;")
@@ -16,7 +16,7 @@ block content
                         th Märkused
 
                 tbody
-                    each tunnus in tunnused
+                    each tunnus in data
                         tr
                             td=tunnus.kood
                             td=tunnus.nimetus

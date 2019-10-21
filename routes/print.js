@@ -20,17 +20,22 @@ exports.get = async (req, res) => {
         const doc = new Doc(docTypeId, (id ? id: null), user.userId, user.asutusId, 'lapsed');
 
         const printTemplates = doc.config.print;
+
         if (printTemplates) {
-            template = printTemplates.find(templ => templ.params === id ? 'id': 'sqlWhere').view;
+            template = printTemplates.find(templ => templ.params === (id ? 'id': 'sqlWhere')).view;
+
         }
 
         // вызвать метод
         const method = id ? 'select': 'selectDocs';
         let result = await doc[method]('', sqlWhere, limit);
 
-        const data = id? result.row: result.data;
+        const data = id ? Object.assign(result, {data: result.row}): result.data;
         // вернуть отчет
-        res.render(template, {title: 'Tunnused', tunnused: data, user: user });
+
+        console.log('result', data);
+
+        res.render(template, {title: 'Tunnused', data: data, user: user });
 
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок

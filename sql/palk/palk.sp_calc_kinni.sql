@@ -34,7 +34,6 @@ BEGIN
   IF l_alus_summa IS NULL
   THEN
 
-      raise notice 'l_alus_summa IS NULL';
     selg = coalesce(selg, '') || 'sql' || l_enter;
     SELECT
       p.summa,
@@ -69,7 +68,6 @@ BEGIN
             AND kpv = l_kpv;
 
         l_alus_summa =  v_tulemus.summa;
-      raise notice 'arvestan alus l_alus_summa %, v_tulemus.summa %',l_alus_summa, v_tulemus.summa ;
 
       CASE
         WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'TÖÖTUSKINDLUSTUSMAKS')
@@ -86,12 +84,10 @@ BEGIN
         WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'KINNIPIDAMISED')
           AND NOT is_percent
           THEN
-              raise notice 'Kinni, not percent';
             summa = l_pk_summa;
         WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'KINNIPIDAMISED')
           AND is_percent
           THEN
-            raise notice 'Kinni, not percent';
             summa = f_round(l_alus_summa * l_pk_summa * 0.01, l_round);
             selg = coalesce(selg, '') || 'arvestus ' || l_alus_summa :: TEXT || ' * ' || l_pk_summa :: TEXT || ' * 0.01 ' ||
                    l_enter;
