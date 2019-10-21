@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    -var lastelength = data ? data.length: 0 ;
+
+    if lastelength
+        div(style="width:auto;")
+            h1 Teenused saajale
+            table.table.table-hover(style="width:-webkit-fill-available;border: 1px solid lightgray;")
+                thead(style="background-color:lightgray;")
+                    tr
+                        th Isikukood
+                        th Nimi
+                        th Üksus
+                        th Kood
+                        th Nimetus
+                        th Hind
+
+                tbody
+                    each teenus in data
+                        tr
+                            td=teenus.isikukood
+                            td=teenus.nimi
+                            td=`${teenus.yksus} (${teenus.all_yksus})`
+                            td=teenus.kood
+                            td=teenus.nimetus
+                            td=teenus.hind

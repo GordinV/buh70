@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div(style="margin-left:5%;display: 'flex';flexDirection: 'column';")
+        h1 Teenused saajale
+
+        div.row_wrapper
+            p.label Isikukood:
+            p.input #{data.data[0].isikukood}
+        div.row_wrapper
+            p.label Nimi:
+            p.input #{data.data[0].lapse_nimi}
+
+        div.row_wrapper
+            p.label Kood:
+            p.input #{data.data[0].kood}
+
+        div.row_wrapper
+            p.label Nimetus:
+            p.input #{data.data[0].nimetus}
+
+        div.row_wrapper
+            p.label Hind:
+            p.input #{`${data.data[0].hind} Soodustus: ${data.data[0].soodus ? data.data[0].soodus: ''}  ${data.data[0].kas_protsent ? '%' : 'EUR'} kehtib ${data.data[0].sooduse_alg_print} - ${data.data[0].sooduse_lopp_print} `}
+
+        div.row_wrapper
+            p.label Kogus:
+            p.input #{data.data[0].kogus}
+
+        div.row_wrapper
+            p.label Üksus:
+            p.input #{data.data[0].yksus}
+        div.row_wrapper
+            p.label All üksus:
+            p.input #{data.data[0].all_üksus}
+        div.row_wrapper
+            p.label Tunnus:
+            p.input #{data.data[0].tunnus}
+        div.row_wrapper
+            p.label Arve kas eraldi?
+            p.input #{data.data[0].kas_eraldi ? 'Jah': 'Ei'}
+        div.row_wrapper
+            p.label Kas ettemaks?
+            p.input #{`${data.data[0].kas_ettemaks ? 'Jah, ettemaksu period: ' + data.data[0].ettemaksu_period + ' kuu(d)': 'Ei'}`}
+        div.row_wrapper
+            p.label Kas INF3?
+            p.input #{data.data[0].kas_inf3 ? 'Jah' : 'Ei'}

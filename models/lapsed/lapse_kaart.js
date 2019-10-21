@@ -36,12 +36,15 @@ module.exports = {
                      coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN AS kas_protsent,
                      to_char((lk.properties ->> 'sooduse_alg')::DATE, 'YYYY-MM-DD')        AS sooduse_alg,
                      to_char((lk.properties ->> 'sooduse_lopp')::DATE, 'YYYY-MM-DD')       AS sooduse_lopp,
+                     to_char((lk.properties ->> 'sooduse_alg')::DATE, 'DD.MM.YYYY')        AS sooduse_alg_print,
+                     to_char((lk.properties ->> 'sooduse_lopp')::DATE, 'DD.MM.YYYY')       AS sooduse_lopp_print,
                      coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE)::BOOLEAN   AS kas_eraldi,
                      coalesce((lk.properties ->> 'kas_ettemaks')::BOOLEAN, FALSE)::BOOLEAN AS kas_ettemaks,
                      coalesce((lk.properties ->> 'kas_inf3')::BOOLEAN, FALSE)::BOOLEAN     AS kas_inf3,
                      n.kood,
                      n.nimetus,
                      $2                                                                    AS userid,
+                     l.isikukood                                                           AS isikukood,
                      l.nimi                                                                AS lapse_nimi
               FROM lapsed.lapse_kaart lk
                        INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
@@ -51,6 +54,7 @@ module.exports = {
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,
+                  null::TEXT AS isikukood,
                   null::TEXT AS lapse_nimi,
                   null::integer as parentid,
                   null::INTEGER AS nomid,                  
@@ -143,9 +147,17 @@ module.exports = {
                 '',
             alias:
                 'curLapsed'
-        }
+        },
+    print: [
+        {
+            view: 'lapse_teenused_kaart',
+            params: 'id'
+        },
+        {
+            view: 'lapse_teenused_register',
+            params: 'sqlWhere'
+        },
+    ]
 
-
-}
-;
+};
 
