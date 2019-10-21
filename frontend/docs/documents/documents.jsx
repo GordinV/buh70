@@ -226,7 +226,11 @@ class Documents extends React.PureComponent {
      * Обработчик для кнопки Print
      */
     btnPrintClick() {
-        console.log('btnPrintClick');
+        let sqlWhere = this.state.sqlWhere;
+        let sortBy = JSON.stringify(this.state.sortBy);
+        let url = `/print/${this.props.docTypeId}/${DocContext.userData.uuid}/0`;
+        let params = encodeURIComponent(`${sqlWhere}`);
+        window.open(`${url}/${params}`);
     }
 
     /**
@@ -380,7 +384,7 @@ class Documents extends React.PureComponent {
                                  disable={toolbarParams['btnEdit'].disabled}/>
                         <BtnDelete onClick={this.btnDeleteClick.bind(this)} show={toolbarParams['btnDelete'].show}
                                    disable={toolbarParams['btnDelete'].disabled}/>
-                        <BtnPrint onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
+                        <BtnPrint onClick={this.btnPrintClick.bind(this)} show={toolbarParams['btnPrint'].show}
                                   disable={toolbarParams['btnPrint'].disabled}/>
                         <BtnFilter onClick={this.btnFilterClick}/>
                     </ToolbarContainer>
@@ -446,7 +450,18 @@ class Documents extends React.PureComponent {
      * Выполнит запросы
      */
     fetchData(method) {
-        const URL = method === 'delete' ? `/newApi/delete` : `/newApi`;
+        let URL = `/newApi`;
+        switch (method) {
+            case 'delete':
+                URL = `/newApi/delete`;
+                break;
+            case 'print':
+                URL = `/print/${this.docTypeId}`;
+                break;
+            default:
+                URL = `/newApi`;
+
+        }
 
         const params = {
             parameter: this.docTypeId, // параметры
@@ -461,6 +476,7 @@ class Documents extends React.PureComponent {
             uuid: DocContext.userData.uuid
         };
         try {
+
             return fetchData['fetchDataPost'](URL, params).then(response => {
 
                 if (response.status && response.status == 401) {

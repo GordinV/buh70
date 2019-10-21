@@ -37,6 +37,11 @@ module.exports = function (app) {
 
     app.post('/newApi', checkAuth, require('./newApi').post); //checkAuth, //checkAuth,
 
+    app.get('/print/:documentType/:uuid/:id/:params', require('./print').get); //checkAuth
+//    app.get('/print/:documentType/:uuid/:id/:sqlWhere/:sqlSort', require('./print').get); //checkAuth
+    app.get('/print/:documentType/:uuid/:id/', require('./print').get); //checkAuth
+    app.get('/print/:documentType/:uuid/', require('./print').get); //checkAuth
+
 
     app.delete('/newApi/:documentType/:id', checkAuth, require('./documentRegister').delete); //апи для обмена даты по протоколу delete с моделью документа
 

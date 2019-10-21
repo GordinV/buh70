@@ -46,7 +46,7 @@ class DocToolBar extends React.PureComponent {
                 },
                 btnPrint: {
                     show: true,
-                    disabled: true
+                    disabled: false
                 },
                 btnSave: {
                     show: isEditMode && !isDocDisabled,

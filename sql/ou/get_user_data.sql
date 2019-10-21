@@ -13,6 +13,10 @@ CREATE OR REPLACE FUNCTION ou.get_user_data(l_kasutaja TEXT, l_rekvid INTEGER, l
         muud           TEXT,
         last_login     TIMESTAMP,
         asutus         TEXT,
+        regkood        TEXT,
+        aadress        TEXT,
+        tel            TEXT,
+        email          TEXT,
         allowed_access TEXT[],
         allowed_libs   TEXT[]
     ) AS
@@ -29,6 +33,10 @@ SELECT u.id,
        u.muud,
        u.last_login,
        r.nimetus::TEXT              AS asutus,
+       r.regkood::TEXT              AS regkood,
+       r.aadress::TEXT              AS aadress,
+       r.tel::TEXT                  AS tel,
+       r.email::TEXT                AS email,
        rs.a::TEXT[]                 AS allowed_access,
        allowed_modules.libs::TEXT[] AS allowed_libs
 
@@ -58,7 +66,7 @@ FROM ou.userid u
          ) lib
 ) allowed_modules ON allowed_modules.libs IS NOT NULL
 WHERE (r.id = l_rekvid OR l_rekvid IS NULL)
-ORDER BY u.last_login desc
+ORDER BY u.last_login DESC
 LIMIT 1;
 
 $BODY$

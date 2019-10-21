@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    -var tunnuselength = tunnused ? tunnused.length: 0 ;
+
+    if tunnuselength
+        div(style="width:auto;")
+            h1 Tunnused
+            table.table.table-hover(style="width:-webkit-fill-available;border: 1px solid lightgray;")
+                thead(style="background-color:lightgray;")
+                    tr
+                        th Kood
+                        th Nimetus
+                        th Märkused
+
+                tbody
+                    each tunnus in tunnused
+                        tr
+                            td=tunnus.kood
+                            td=tunnus.nimetus
+                            td=tunnus.muud

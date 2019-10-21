@@ -169,7 +169,9 @@ class DocumentTemplate extends React.PureComponent {
     }
 
     btnPrintClick() {
-        console.log('btnPrintClick');
+        let url = `/print/${this.props.docTypeId}/${DocContext.userData.uuid}/${this.state.docId}`;
+        window.open(`${url}`);
+
     }
 
     /**
@@ -200,7 +202,7 @@ class DocumentTemplate extends React.PureComponent {
                     docId = 0;
                 }
 
-                if (this.props.docId=== 0 || docId === 0) {
+                if (this.props.docId === 0 || docId === 0) {
                     // reload / redirect
                     setTimeout(() => {
                         const current = `/${this.props.module}/${docTypeId}/${docId}`;
@@ -235,7 +237,7 @@ class DocumentTemplate extends React.PureComponent {
 
         this.fetchData('Post', api).then((response) => {
             const dataRow = response.result;
-            const dataMessage = response.data.error_message ? response.data.error_message: '';
+            const dataMessage = response.data.error_message ? response.data.error_message : '';
 
             let docId = dataRow.docId;
             let docTypeId = dataRow.docTypeId ? dataRow.docTypeId : null;

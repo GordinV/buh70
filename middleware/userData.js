@@ -1,8 +1,8 @@
 const _ = require('lodash');
 
-const userData = function (req) {
+const userData = function (req, _uuid) {
     let userId = req.body.userId,
-        uuid = req.body.uuid;
+        uuid = _uuid? _uuid: req.body.uuid;
 
     if (!req.session.users) {
         return null;

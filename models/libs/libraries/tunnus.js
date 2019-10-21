@@ -55,5 +55,15 @@ module.exports = {
         params: '',
         alias: 'curTunnus'
     },
+    print: [
+        {
+            view: 'tunnus',
+            params:'id'
+        },
+        {
+            view: 'tunnus',
+            params:'sqlWhere'
+        },
+    ]
 
 };
