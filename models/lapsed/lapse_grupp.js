@@ -21,12 +21,14 @@ module.exports = {
                      l.muud,
                      l.kood,
                      l.nimetus,
-                     ((l.properties::JSONB -> 'all_yksused') #>> '{0}')::TEXT AS all_yksus_1,
-                     ((l.properties::JSONB -> 'all_yksused') #>> '{1}')::TEXT AS all_yksus_2,
-                     ((l.properties::JSONB -> 'all_yksused') #>> '{2}')::TEXT AS all_yksus_3,
-                     ((l.properties::JSONB -> 'all_yksused') #>> '{3}')::TEXT AS all_yksus_4,
-                     ((l.properties::JSONB -> 'all_yksused') #>> '{4}')::TEXT AS all_yksus_5,
-                     $2                                                       AS userid
+                     ((l.properties::JSONB -> 'all_yksused') #>> '{0}')::TEXT                                    AS all_yksus_1,
+                     ((l.properties::JSONB -> 'all_yksused') #>> '{1}')::TEXT                                    AS all_yksus_2,
+                     ((l.properties::JSONB -> 'all_yksused') #>> '{2}')::TEXT                                    AS all_yksus_3,
+                     ((l.properties::JSONB -> 'all_yksused') #>> '{3}')::TEXT                                    AS all_yksus_4,
+                     ((l.properties::JSONB -> 'all_yksused') #>> '{4}')::TEXT                                    AS all_yksus_5,
+                     $2                                                                                          AS userid,
+                     rtrim(regexp_replace((properties::JSONB ->> 'all_yksused'), '[^a-zA-Z0-9,]', '', 'g'),
+                           ',')                                                                                  AS all_yksused
               FROM libs.library l
               WHERE l.id = $1::INTEGER`,
         sqlAsNew: `SELECT
@@ -109,7 +111,17 @@ module.exports = {
                 '',
             alias:
                 'curLapseGrupp'
-        }
-}
-;
+        },
+    print: [
+        {
+            view: 'lapse_grupp_register',
+            params: 'id'
+        },
+        {
+            view: 'lapse_grupp_register',
+            params: 'sqlWhere'
+        },
+    ]
+
+};
 
