@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 Arvete register
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Number
+                    th Kuupäev
+                    th Summa
+                    th Maksja
+                    th Tähtaeg
+                    th Jääk
+                    th Tasud
+                    th Teenuste saaja
+                    th Viitenumber
+
+            tbody
+                each arve in data
+                    tr
+                        td=arve.number
+                        td=arve.kpv
+                        td=arve.summa
+                        td=arve.asutus
+                        td=arve.tahtaeg
+                        td=arve.jaak
+                        td=arve.tasud
+                        td=arve.nimi
+                        td=arve.viitenr

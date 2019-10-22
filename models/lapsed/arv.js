@@ -437,7 +437,18 @@ const Arv = {
 
         let taskFunction = eval(executeTask[0]);
         return taskFunction(docId, userId, this);
-    }
+    },
+    print: [
+        {
+            view: 'arve_kaart',
+            params: 'id'
+        },
+        {
+            view: 'arve_register',
+            params: 'sqlWhere'
+        },
+    ]
+
 };
 
 module.exports = Arv;
