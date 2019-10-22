@@ -32,3 +32,15 @@ block content
                         td=arve.tasud
                         td=arve.nimi
                         td=arve.viitenr
+
+        - var total = 0
+        - var read = 0
+        - var volg = 0
+        each arve in data
+            - total += Number(arve.summa)
+            - read += 1
+            - volg += Number(arve.jaak)
+
+        div.row_wrapper
+            p.label_subtotal Kokku:
+            p.input #{`${Number(total).toFixed(2)}, Võlg kokku : ${Number(volg).toFixed(2)},  read kokku: ${read}`}

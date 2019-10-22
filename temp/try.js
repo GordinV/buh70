@@ -1,13 +1,8 @@
-/*
-let obj = [{id: 1, name: "Koosta arve"}, {id: 2, name:'test asutus'}, {id:3, name:'nimi'}];
-let dist = 1;
-//let index = obj.findIndex(row => row.id === 1);
-let objs = obj.slice();
-let removed = obj.shift();
-let pl1 =
+let obj = [{id: 1, summa: 10, name: "Koosta arve"}, {id: 2, summa: 20, name:'test asutus'}, {id:3, name:'nimi'}];
+let summa = obj.reduce((summaKokku, currentRow) => {
+    console.log(summaKokku, currentRow);
+    return (summaKokku + (currentRow.summa ? currentRow.summa: 0));
+},0);
 
- */
-
-let str = 'where id = 10';
-console.log('indx', hex_md5(str));
+console.log('indx', summa);
 

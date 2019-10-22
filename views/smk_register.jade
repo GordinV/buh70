@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    script.
+        var summaKokku = data.length ? data[0].reduce((summaKokku, row) => (summaKokku + row.summa), 0): 0;
+    div.body_wrapper
+        h1 Sissemakse korralduste register
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Number
+                    th Kuupäev
+                    th Maksja isikukood
+                    th Maksja
+                    th Summa
+                    th aa
+                    th Isikukood
+                    th Teenuste saaja nimi
+                    th Viitenumber
+
+            tbody
+                each mk in data
+                    tr
+                        td=mk.number
+                        td=mk.kpv
+                        td=mk.vanem_isikukood
+                        td=mk.asutus
+                        td=Number(mk.deebet).toFixed(2)
+                        td=mk.aa
+                        td=mk.isikukood
+                        td=mk.nimi
+                        td=mk.viitenr
+        - var total = 0
+        - var read = 0
+        each mk in data
+            - total += Number(mk.deebet)
+            - read += 1
+        div.row_wrapper
+            p.label_subtotal Kokku:
+            p.input #{`${Number(total).toFixed(2)}, read kokku: ${read}`}

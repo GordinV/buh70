@@ -232,6 +232,16 @@ const Vmk = {
         alias: 'generateJournal'
     },
     endProcess: {command: `update docs.doc set status = 2 where id = $1`, type: "sql"},
+    print: [
+        {
+            view: 'smk_kaart',
+            params: 'id'
+        },
+        {
+            view: 'smk_register',
+            params: 'sqlWhere'
+        },
+    ]
 
 
 };

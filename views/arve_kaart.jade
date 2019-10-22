@@ -15,7 +15,7 @@ block content
 
         div.row_wrapper
             p.label Kuupäev:
-            p.input #{data[0].kpv}
+            p.input #{data[0].kpv_print}
 
         div.row_wrapper
             p.label Viitenumber:
@@ -24,6 +24,11 @@ block content
         div.row_wrapper
             p.label Maksta arvele:
             p.input #{data[0].aa}
+
+        div.row_wrapper
+            p.label Tähtaeg:
+            p.input #{data[0].tahtaeg_print}
+
 
         div.row_wrapper
             p.label Maksja:

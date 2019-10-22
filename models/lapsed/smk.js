@@ -11,12 +11,14 @@ const Smk = {
                          (to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT           AS lastupdate,
                          k.number                                                       AS number,
                          to_char(k.maksepaev, 'YYYY-MM-DD')::TEXT                       AS maksepaev,
+                         to_char(k.maksepaev, 'DD.MM.YYYY')::TEXT                       AS maksepaev_print,
                          k.viitenr,
                          k.aaid                                                         AS aa_id,
                          aa.pank                                                        AS pank,
                          trim(aa.arve)::VARCHAR(20)                                     AS omaArve,
                          k.rekvId,
                          to_char(k.kpv, 'YYYY-MM-DD')::TEXT                             AS kpv,
+                         to_char(k.kpv, 'DD.MM.YYYY')::TEXT                             AS kpv_print,
                          k.selg,
                          k.muud,
                          k.opt,
@@ -116,6 +118,7 @@ const Smk = {
             {id: "kpv", name: "Kuupäev", width: "100px"},
             {id: "number", name: "Number", width: "100px"},
             {id: "asutus", name: "Maksja", width: "200px"},
+            {id: "deebet", name: "Summa", width: "100px"},
             {id: "asutusid", name: "asutusid", width: "200px", show: false},
             {id: "nomid", name: "nomid", width: "200px", show: false},
             {id: "aa", name: "Arveldus arve", width: "100px"},
@@ -142,8 +145,8 @@ const Smk = {
                            0                                   AS valitud,
                            mk.isikukood,
                            mk.nimi,
-                           $2                                  AS userid
-
+                           $2                                  AS userid,
+                           mk.viitenr::text  
                     FROM lapsed.cur_lapsed_mk mk
                     WHERE mk.rekvId = $1`,
 //                      AND coalesce(docs.usersRigths(mk.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
@@ -197,7 +200,18 @@ const Smk = {
                   FROM docs.gen_lausend_smk($2::INTEGER, $1::INTEGER)`, // $1 - userId, $2 - docId
         type: "sql",
         alias: 'generateJournal'
-    }
+    },
+    print: [
+        {
+            view: 'smk_kaart',
+            params: 'id'
+        },
+        {
+            view: 'smk_register',
+            params: 'sqlWhere'
+        },
+    ]
+
 };
 
 module.exports = Smk;

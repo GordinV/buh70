@@ -22,7 +22,8 @@ SELECT d.id,
        coalesce(Aa.arve, '') :: VARCHAR(20) AS aa,
        coalesce(jid.number, 0) :: INTEGER   AS journalnr,
        l.isikukood                          AS isikukood,
-       l.nimi                               AS nimi
+       l.nimi                               AS nimi,
+       mk.viitenr
 FROM docs.doc d
          INNER JOIN docs.Mk mk ON mk.parentid = d.id
          INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
