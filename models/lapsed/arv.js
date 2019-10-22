@@ -47,7 +47,8 @@ const Arv = {
                          l.id                                               AS lapsId,
                          l.isikukood::TEXT,
                          l.nimi::TEXT                                       AS lapse_nimi,
-                         lapsed.get_viitenumber(d.rekvid, l.id)             AS viitenr
+                         lapsed.get_viitenumber(d.rekvid, l.id)             AS viitenr,
+                         a.properties ->> 'tyyp'::TEXT                      AS tyyp
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
