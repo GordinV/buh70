@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 Sissetuleku kassa orderite register
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Number
+                    th Kuupäev
+                    th Maksja
+                    th Summa
+                    th kassa
+                    th Isikukood
+                    th Teenuste saaja nimi
+
+            tbody
+                each order in data
+                    tr
+                        td=order.number
+                        td=order.kpv
+                        td=order.asutus
+                        td=Number(order.summa).toFixed(2)
+                        td=order.kassa
+                        td=order.isikukood
+                        td=order.nimi
+        - var total = 0
+        - var read = 0
+        each order in data
+            - total += Number(order.summa)
+            - read += 1
+        div.row_wrapper
+            p.label_subtotal Kokku:
+            p.input #{`${Number(total).toFixed(2)}, read kokku: ${read}`}

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 Kassa sissetuleku order
+
+        div.row_wrapper
+            p.label Number:
+            p.input #{data[0].number}
+
+        div.row_wrapper
+            p.label Kuupäev:
+            p.input #{data[0].kpv_print}
+
+        div.row_wrapper
+            p.label Kassa:
+            p.input #{data[0].kassa}
+
+        div.row_wrapper
+            p.label Alus:
+            p.input #{data[0].alus}
+
+        div.row_wrapper
+            p.label Maksja:
+            p.input #{`${data[0].nimi}, ${data[0].aadress}`}
+
+        div.row_wrapper
+            p.label Makse selgetus:
+            p.input #{data[0].selg}
+
+        div.row_wrapper
+            p.label Summa:
+            p.input #{`${Number(data[0].summa).toFixed(2)}`}
+

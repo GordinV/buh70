@@ -16,6 +16,7 @@ const Sorder = {
                          trim(aa.nimetus)                                               AS kassa,
                          k.rekvId,
                          to_char(k.kpv, 'YYYY-MM-DD')::TEXT                             AS kpv,
+                         to_char(k.kpv, 'MM.DD.YYYY')::TEXT                             AS kpv_print,
                          k.asutusid,
                          trim(k.dokument)                                               AS dokument,
                          k.alus,
@@ -190,6 +191,17 @@ const Sorder = {
         type: "sql",
         alias: 'generateJournal'
     },
+    print: [
+        {
+            view: 'sorder_kaart',
+            params: 'id'
+        },
+        {
+            view: 'sorder_register',
+            params: 'sqlWhere'
+        },
+    ]
+
 };
 
 module.exports = Sorder;
