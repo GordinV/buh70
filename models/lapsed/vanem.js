@@ -25,7 +25,12 @@ module.exports = {
                      v.muud,
                      a.nimetus::TEXT                                                     AS vanem_nimi,
                      a.regkood::TEXT                                                     AS vanem_isikukood,
-                     $2::INTEGER                                                         AS userid
+                     $2::INTEGER                                                         AS userid,
+                     a.nimetus::TEXT                                                     AS nimi,
+                     a.regkood::TEXT                                                     AS isikukood,
+                     a.aadress::TEXT,
+                     a.email::TEXT,
+                     a.tel::TEXT
               FROM lapsed.vanemad v
                        INNER JOIN libs.asutus a ON a.id = v.asutusId
               WHERE v.id = $1::INTEGER`,
@@ -100,13 +105,26 @@ module.exports = {
                            isikukood,
                            nimi,
                            lapsed,
+                           aadress,
+                           email,
+                           tel,
                            $1::INTEGER AS rekvid,
                            $2::INTEGER AS user_id
                     FROM lapsed.cur_vanemad v
                     WHERE rekv_ids @> ARRAY [$1::INTEGER] `,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
         alias: 'curLapsed'
-    }
+    },
+    print: [
+        {
+            view: 'vanem_register',
+            params: 'id'
+        },
+        {
+            view: 'vanem_register',
+            params: 'sqlWhere'
+        },
+    ]
 
 
 };

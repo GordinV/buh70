@@ -4,8 +4,11 @@ CREATE OR REPLACE VIEW lapsed.cur_vanemad AS
 
 SELECT a.id                                      AS vanem_id,
        v.id                                      AS id,
-       a.regkood                                 AS isikukood,
-       a.nimetus                                 AS nimi,
+       a.regkood::TEXT                           AS isikukood,
+       a.nimetus::TEXT                           AS nimi,
+       a.aadress::TEXT,
+       a.email::TEXT,
+       a.tel::TEXT,
        btrim(json_agg(l.nimi)::TEXT, '[]')::TEXT AS lapsed,
        array_agg(lk.rekvid)                      AS rekv_ids
 FROM lapsed.vanemad v

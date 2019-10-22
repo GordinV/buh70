@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 Maksjate register
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Isikukood
+                    th Nimi
+                    th Lapsed
+                    th Aadress
+                    th E-mail
+                    th Tel.
+
+            tbody
+                each vanem in data
+                    tr
+                        td=vanem.isikukood
+                        td=vanem.nimi
+                        td=vanem.lapsed
+                        td=vanem.aadress
+                        td=vanem.email
+                        td=vanem.tel
