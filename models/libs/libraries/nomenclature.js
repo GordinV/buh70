@@ -1,22 +1,27 @@
 module.exports = {
     select: [{
-        sql: `select n.kood, 
-                n.id, n.nimetus, 
-                n.dok::varchar(20), 
-                n.muud, n.rekvid, $2::integer as userid, 'NOMENCLATURE' as doc_type_id,
-                'EUR' as valuuta, 1 as kuurs,
-                n.uhik as uhik,
-                n.hind as hind,
-                (n.properties::jsonb ->>'vat')::varchar(20) as vat,
-                (n.properties::jsonb ->>'konto')::varchar(20) as konto,
-                (n.properties::jsonb ->>'projekt')::varchar(20) as projekt,
-                (n.properties::jsonb ->>'tunnus')::varchar(20) as tunnus,
-                (n.properties::jsonb ->>'tegev')::varchar(20) as tegev,
-                (n.properties::jsonb ->>'allikas')::varchar(20) as allikas,
-                (n.properties::jsonb ->>'rahavoog')::varchar(20) as rahavoog,
-                (n.properties::jsonb ->>'artikkel')::varchar(20) as artikkel                
-                from libs.nomenklatuur n 
-                where n.id = $1`,
+        sql: `SELECT n.kood,
+                     n.id,
+                     n.nimetus,
+                     n.dok::VARCHAR(20),
+                     n.muud,
+                     n.rekvid,
+                     $2::INTEGER                                       AS userid,
+                     'NOMENCLATURE'                                    AS doc_type_id,
+                     'EUR'                                             AS valuuta,
+                     1                                                 AS kuurs,
+                     n.uhik                                            AS uhik,
+                     n.hind                                            AS hind,
+                     (n.properties::JSONB ->> 'vat')::VARCHAR(20)      AS vat,
+                     (n.properties::JSONB ->> 'konto')::VARCHAR(20)    AS konto,
+                     (n.properties::JSONB ->> 'projekt')::VARCHAR(20)  AS projekt,
+                     (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)   AS tunnus,
+                     (n.properties::JSONB ->> 'tegev')::VARCHAR(20)    AS tegev,
+                     (n.properties::JSONB ->> 'allikas')::VARCHAR(20)  AS allikas,
+                     (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20) AS rahavoog,
+                     (n.properties::JSONB ->> 'artikkel')::VARCHAR(20) AS artikkel
+              FROM libs.nomenklatuur n
+              WHERE n.id = $1`,
         sqlAsNew: `select  $1::integer as id , $2::integer as userid, 'NOMENCLATURE' as doc_type_id,
             ''::varchar(20) as  kood,
             0::integer as rekvid,
@@ -44,19 +49,21 @@ module.exports = {
         alias: 'row',
         data: []
     }],
-    selectAsLibs: `select * from com_nomenclature 
-            where (rekvid = $1 or rekvid is null)
-            order by kood`,
+    selectAsLibs: `SELECT *
+                   FROM com_nomenclature
+                   WHERE (rekvid = $1 OR rekvid IS NULL)
+                   ORDER BY kood`,
     returnData: {
         row: {}
     },
     requiredFields: [
-        {name: 'kood',type: 'C'},
-        {name: 'nimetus',type: 'C'},
-        {name: 'dok',type: 'C'}
+        {name: 'kood', type: 'C'},
+        {name: 'nimetus', type: 'C'},
+        {name: 'dok', type: 'C'}
     ],
     saveDoc: `select libs.sp_salvesta_nomenclature($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from libs.sp_delete_nomenclature($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM libs.sp_delete_nomenclature($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
@@ -64,11 +71,29 @@ module.exports = {
             {id: "nimetus", name: "Nimetus", width: "35%"},
             {id: "dok", name: "Dokument", width: "30%"}
         ],
-        sqlString: `select id, coalesce(kood,'')::varchar(20) as kood, coalesce(nimetus,'')::varchar(254) as nimetus,  $2::integer as userId, dok
-            from libs.nomenklatuur n
-            where (n.rekvId = $1 or n.rekvid is null) and n.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT id,
+                           coalesce(kood, '')::VARCHAR(20)     AS kood,
+                           coalesce(nimetus, '')::VARCHAR(254) AS nimetus,
+                           $2::INTEGER                         AS userId,
+                           n.dok,
+                           (n.properties ->> 'konto')::TEXT    AS konto,
+                           (n.properties ->> 'tunnus')::TEXT   AS tunnus,
+                           n.hind
+                    FROM libs.nomenklatuur n
+                    WHERE (n.rekvId = $1 OR n.rekvid IS NULL)
+                      AND n.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curNomenklatuur'
     },
+    print: [
+        {
+            view: 'noms_register',
+            params: 'id'
+        },
+        {
+            view: 'noms_register',
+            params: 'sqlWhere'
+        },
+    ]
 
 };

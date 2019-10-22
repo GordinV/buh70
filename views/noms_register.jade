@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 Operatsioonid
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Kood
+                    th Nimetus
+                    th Dokumendi tüüp
+                    th Konto
+                    th Tunnus
+                    th Hind
+
+            tbody
+                each nom in data
+                    tr
+                        td=nom.kood
+                        td=nom.nimetus
+                        td=nom.dok
+                        td=nom.konto
+                        td=nom.tunnus
+                        td=nom.hind
