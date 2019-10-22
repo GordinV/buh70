@@ -29,8 +29,7 @@ exports.get = async (req, res) => {
         // вызвать метод
         const method = id ? 'select': 'selectDocs';
         let result = await doc[method]('', sqlWhere, limit);
-
-        const data = id ? Object.assign(result, {data: result.row}): result.data;
+        const data = id ? {...result.row,...result}: result.data;
         // вернуть отчет
 
         console.log('result', data);

@@ -1,1 +1,18 @@
-<!DOCTYPE html><html><body><p>, reg.kood: </p><p></p><p></p><p></p></body></html>
+<!DOCTYPE html><html><body><p>, reg.kood: </p><p></p><p></p><p></p></body><link rel="stylesheet" href="/stylesheets/reports.css"><div class="body_wrapper"><h1>Teenused saajale</h1><table class="table table-hover">thead.grid_head
+    tr
+        th Isikukood
+        th Nimi
+        th Üksus
+        th Kood
+        th Nimetus
+        th Hind
+
+tbody
+    each teenus in data
+        tr
+            td=teenus.isikukood
+            td=teenus.nimi
+            td=`${teenus.yksus} (${teenus.all_yksus})`
+            td=teenus.kood
+            td=teenus.nimetus
+            td=teenus.hind</table></div></html>

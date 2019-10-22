@@ -12,3 +12,17 @@
     display:flex;
     flexDirection: row;
 }
+
+.body_wrapper {
+    margin-left:5%;
+    width:auto;
+}
+
+.grid_data {
+    width: -webkit-fill-available;
+    border: 1px solid lightgray;
+}
+
+.grid_head {
+    background-color:lightgray;
+}

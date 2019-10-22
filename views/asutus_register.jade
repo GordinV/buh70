@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 Organisatsioonide ja eraisikute register
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Reg./Isikukood
+                    th Nimetus/Nimi
+                    th Om.vorm
+                    th Aadress
+                    th E-mail
+
+            tbody
+                each asutus in data
+                    tr
+                        td=asutus.regkood
+                        td=asutus.nimetus
+                        td=asutus.omvorm
+                        td=asutus.aadress
+                        td=asutus.email

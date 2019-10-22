@@ -174,7 +174,9 @@ GRANT EXECUTE ON FUNCTION palk.tsd_lisa_1( DATE, DATE, INTEGER, INTEGER ) TO dbk
 
 /*
 
+select * from (
 SELECT *
-FROM palk.tsd_lisa_1('2018-10-01', '2018-10-31', 63, 1 :: INTEGER);
+FROM palk.tsd_lisa_1('2019-09-01', '2019-09-30', 125, 1 :: INTEGER)
+) qry where isikukood = '35908263723'
 
 */

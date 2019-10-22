@@ -3,21 +3,19 @@ html(lang="et")
 extends report_header
 
 block content
-    -var tunnuselength = data ? data.length: 0 ;
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 Tunnused
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Kood
+                    th Nimetus
+                    th Märkused
 
-    if tunnuselength
-        div(style="width:auto;")
-            h1 Tunnused
-            table.table.table-hover(style="width:-webkit-fill-available;border: 1px solid lightgray;")
-                thead(style="background-color:lightgray;")
+            tbody
+                each tunnus in data
                     tr
-                        th Kood
-                        th Nimetus
-                        th Märkused
-
-                tbody
-                    each tunnus in data
-                        tr
-                            td=tunnus.kood
-                            td=tunnus.nimetus
-                            td=tunnus.muud
+                        td=tunnus.kood
+                        td=tunnus.nimetus
+                        td=tunnus.muud

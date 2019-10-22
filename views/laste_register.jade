@@ -3,23 +3,22 @@ html(lang="et")
 extends report_header
 
 block content
-    -var lastelength = data ? data.length: 0 ;
+    link(rel='stylesheet', href='/stylesheets/reports.css')
 
-    if lastelength
-        div(style="width:auto;")
-            h1 Teenuste saajad
-            table.table.table-hover(style="width:-webkit-fill-available;border: 1px solid lightgray;")
-                thead(style="background-color:lightgray;")
+    div.body_wrapper
+        h1 Teenuste saajad
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Isikukood
+                    th Nimi
+                    th Üksused
+                    th Viitenumber
+
+            tbody
+                each laps in data
                     tr
-                        th Isikukood
-                        th Nimi
-                        th Üksused
-                        th Viitenumber
-
-                tbody
-                    each laps in data
-                        tr
-                            td=laps.isikukood
-                            td=laps.nimi
-                            td=laps.yksused
-                            td=laps.viitenumber
+                        td=laps.isikukood
+                        td=laps.nimi
+                        td=laps.yksused
+                        td=laps.viitenumber

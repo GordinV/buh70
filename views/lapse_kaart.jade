@@ -3,53 +3,65 @@ html(lang="et")
 extends report_header
 
 block content
-    div(style="width:auto;")
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
         h1 Teenuste saaja
 
-    p Isikukood: #{data.data[0].isikukood}
-    p Nimi: #{data.data[0].nimi}
-    p Viitenumber: #{data.data[0].viitenumber}
+        div.row_wrapper
+            p.label Isikukood:
+            p.input #{data[0].isikukood}
 
-    p Jääk: #{data.data[0].jaak}
+        div.row_wrapper
+            p.label Nimi:
+            p.input #{data[0].nimi}
+
+        div.row_wrapper
+            p.label Viitenumber:
+            p.input #{data[0].viitenumber}
+
+        div.row_wrapper
+            p.label Jääk:
+            p.input #{data[0].jaak}
 
 
-    div(style="font-weight: bold;")
-        p Maksjad
+        div(style="font-weight: bold;")
+            p Maksjad
 
-    table.table.table-hover(style="width:-webkit-fill-available;border: 1px solid lightgray;")
-                thead(style="background-color:lightgray;")
-                    tr
-                        th Nimi
-                        th Tel.
-                        th E-mail
-                        th Suhtumine
-                        th Vastav maksja
-
-                tbody
-                    each vanem in data.vanemad
+        table.table.table-hover.grid_data
+                    thead.grid_head
                         tr
-                            td=vanem.nimetus
-                            td=vanem.tel
-                            td=vanem.email
-                            td=vanem.suhtumine
-                            td=vanem.arved
+                            th Nimi
+                            th Tel.
+                            th E-mail
+                            th Suhtumine
+                            th Vastav maksja
+
+                    tbody
+                        each vanem in data.vanemad
+                            tr
+                                td=vanem.nimetus
+                                td=vanem.tel
+                                td=vanem.email
+                                td=vanem.suhtumine
+                                td=vanem.arved
 
 
-    div(style="font-weight: bold;")
-        p Teenused
+        div(style="font-weight: bold;")
+            p Teenused
 
-    table.table.table-hover(style="width:-webkit-fill-available;border: 1px solid lightgray;")
-        thead(style="background-color:lightgray;")
-            tr
-                th Kood
-                th Nimetus
-                th Grupp
-                th Hind
-
-        tbody
-            each teenus in data.teenused
+        table.table.table-hover.grid_data
+            thead.grid_head
                 tr
-                    td=teenus.kood
-                    td=teenus.nimetus
-                    td=(`${teenus.yksus}  ${teenus.all_yksus}`)
-                    td=teenus.hind
+                    th Kood
+                    th Nimetus
+                    th Grupp
+                    th Hind
+
+            tbody
+                each teenus in data.teenused
+                    tr
+                        td=teenus.kood
+                        td=teenus.nimetus
+                        td=(`${teenus.yksus}  ${teenus.all_yksus}`)
+                        td=teenus.hind

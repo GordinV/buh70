@@ -100,5 +100,15 @@ module.exports = {
         type: 'sql',
         alias: 'validateIsikukood'
     },
+    print: [
+        {
+            view: 'asutus_register',
+            params:'id'
+        },
+        {
+            view: 'asutus_register',
+            params:'sqlWhere'
+        },
+    ]
 
 };
