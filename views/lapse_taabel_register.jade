@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 Taabel
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Isikukood
+                    th Nimi
+                    th Üksus
+                    th Kuu
+                    th Aasta
+                    th Teenuse nimetus
+                    th Kogus
+
+            tbody
+                each taabel in data
+                    tr
+                        td=taabel.isikukood
+                        td=taabel.nimi
+                        td=taabel.yksus
+                        td=taabel.kuu
+                        td=taabel.aasta
+                        td=taabel.nimetus
+                        td=taabel.kogus

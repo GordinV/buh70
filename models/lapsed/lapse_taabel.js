@@ -100,7 +100,16 @@ module.exports = {
             alias:
                 'curLapseTaabel'
         },
+    print: [
+        {
+            view: 'lapse_taabel_register',
+            params: 'id'
+        },
+        {
+            view: 'lapse_taabel_register',
+            params: 'sqlWhere'
+        },
+    ]
 
-}
-;
+};
 
