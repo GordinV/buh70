@@ -23,6 +23,8 @@ DECLARE
     doc_kas_inf3         BOOLEAN = doc_data ->> 'kas_inf3';
     doc_sooduse_alg      DATE    = doc_data ->> 'sooduse_alg';
     doc_sooduse_lopp     DATE    = doc_data ->> 'sooduse_lopp';
+    doc_alg_kpv          DATE    = doc_data ->> 'alg_kpv';
+    doc_lopp_kpv         DATE    = doc_data ->> 'lopp_kpv';
     doc_muud             TEXT    = doc_data ->> 'muud';
     doc_kogus            NUMERIC = doc_data ->> 'kogus';
     doc_ettemaksu_period INTEGER = doc_data ->> 'ettemaksu_period';
@@ -57,6 +59,8 @@ BEGIN
                               doc_kas_inf3         AS kas_inf3,
                               doc_sooduse_alg      AS sooduse_alg,
                               doc_sooduse_lopp     AS sooduse_lopp,
+                              doc_alg_kpv          AS alg_kpv,
+                              doc_lopp_kpv         AS lopp_kpv,
                               doc_kas_eraldi       AS kas_eraldi,
                               doc_kas_ettemaks     AS kas_ettemaks
                       ) row;

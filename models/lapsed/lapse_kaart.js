@@ -41,11 +41,20 @@ module.exports = {
                      coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE)::BOOLEAN   AS kas_eraldi,
                      coalesce((lk.properties ->> 'kas_ettemaks')::BOOLEAN, FALSE)::BOOLEAN AS kas_ettemaks,
                      coalesce((lk.properties ->> 'kas_inf3')::BOOLEAN, FALSE)::BOOLEAN     AS kas_inf3,
+                     to_char(coalesce((lk.properties ->> 'alg_kpv')::DATE, date(year(), month(), 1)),
+                             'YYYY-MM-DD')                                                 AS alg_kpv,
+                     to_char(coalesce((lk.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)),
+                             'YYYY-MM-DD')                                                 AS lopp_kpv,
                      n.kood,
                      n.nimetus,
                      $2                                                                    AS userid,
                      l.isikukood                                                           AS isikukood,
-                     l.nimi                                                                AS lapse_nimi
+                     l.nimi                                                                AS lapse_nimi,
+                     to_char(coalesce((lk.properties ->> 'alg_kpv')::DATE, date(year(), month(), 1)),
+                             'DD-MM-YYYY') ||
+                     to_char(coalesce((lk.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)),
+                             'DD.MM.YYYY')                                                 AS kehtivus
+
               FROM lapsed.lapse_kaart lk
                        INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                        INNER JOIN lapsed.laps l ON l.id = lk.parentid
@@ -73,6 +82,8 @@ module.exports = {
                   true as kas_inf3,
                   null::date as sooduse_alg,
                   null::date as sooduse_lopp,
+                  to_char(coalesce((lk.properties ->> 'alg_kpv')::DATE, date(year(), 1, 1)),'YYYY-MM-DD')  AS alg_kpv, 
+                  to_char(coalesce((lk.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)),'YYYY-MM-DD')  AS lopp_kpv,
                   null::text as muud`,
         query: null,
         multiple: false,
@@ -126,7 +137,8 @@ module.exports = {
                 {id: "kood", name: "Kood", width: "20%"},
                 {id: "nimetus", name: "Nimetus", width: "40%"},
                 {id: "hind", name: "Hind", width: "20%"},
-                {id: "yksus", name: "Üksus", width: "20%"}
+                {id: "yksus", name: "Üksus", width: "20%"},
+                {id: "kehtivus", name: "Kehtib", width: "20%"},
             ],
             sqlString:
                     `SELECT id,
@@ -140,7 +152,8 @@ module.exports = {
                             hind,
                             lapsed.get_viitenumber($1, lapsid)                                             AS viitenumber,
                             $1::INTEGER                                                                    AS rekvid,
-                            $2::INTEGER                                                                    AS user_id
+                            $2::INTEGER                                                                    AS user_id,
+                            to_char(alg_kpv, 'DD.MM.YYYY') || ' - ' || to_char(lopp_kpv, 'DD.MM.YYYY')     AS kehtivus
                      FROM lapsed.cur_lapse_kaart v
                      WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
             params:

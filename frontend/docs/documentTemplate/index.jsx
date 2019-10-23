@@ -202,7 +202,7 @@ class DocumentTemplate extends React.PureComponent {
                     docId = 0;
                 }
 
-                if (this.props.docId === 0 || docId === 0) {
+                if (this.props.docId === 0 && docId === 0) {
                     // reload / redirect
                     setTimeout(() => {
                         const current = `/${this.props.module}/${docTypeId}/${docId}`;

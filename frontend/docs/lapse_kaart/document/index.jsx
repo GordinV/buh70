@@ -14,8 +14,6 @@ const
     CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     SelectData = require('../../../components/select-data/select-data.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
-    DataGrid = require('../../../components/data-grid/data-grid.jsx'),
-    ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     styles = require('./styles');
 
 const LIBDOK = 'LAPSE_KAART',
@@ -247,6 +245,26 @@ class Laps extends React.PureComponent {
                                 onChange={self.handleInputChange}
                                 readOnly={!isEditMode}
                         />
+                    </div>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
+                        <InputDate title='Kehtib alates:'
+                                   name='alg_kpv'
+                                   value={self.docData.alg_kpv || ''}
+                                   ref='input-alg_kpv'
+                                   readOnly={!isEditMode}
+                                   onChange={self.handleInputChange}/>
+
+                    </div>
+                    <div style={styles.docColumn}>
+                        <InputDate title='Kehtib kuni:'
+                                   name='lopp_kpv'
+                                   value={self.docData.lopp_kpv || ''}
+                                   ref='input-lopp_kpv'
+                                   readOnly={!isEditMode}
+                                   onChange={self.handleInputChange}/>
+
                     </div>
                 </div>
                 <div style={styles.docRow}>

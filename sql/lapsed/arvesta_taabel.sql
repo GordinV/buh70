@@ -39,7 +39,7 @@ BEGIN
                lk.parentid,
                n.uhik,
                CASE
-                   WHEN coalesce((lk.properties ->> 'kogus')::numeric, 0) > 0 THEN (lk.properties ->> 'kogus')::NUMERIC
+                   WHEN coalesce((lk.properties ->> 'kogus')::NUMERIC, 0) > 0 THEN (lk.properties ->> 'kogus')::NUMERIC
                    WHEN upper(n.uhik) IN ('PAEV', 'PÄEV') THEN
                        (SELECT palk.get_work_days((SELECT to_jsonb(row)
                                                    FROM (SELECT date_part('month', l_kpv) AS kuu,
@@ -52,6 +52,8 @@ BEGIN
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.parentid = l_laps_id
           AND lk.staatus = DOC_STATUS
+          AND (lk.properties ->> 'alg_kpv' IS NULL OR (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
+          AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
           AND NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN
         LOOP
             -- ищем аналогичный табель в периоде

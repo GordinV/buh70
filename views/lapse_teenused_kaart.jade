@@ -22,10 +22,13 @@ block content
         div.row_wrapper
             p.label Nimetus:
             p.input #{data[0].nimetus}
+        div.row_wrapper
+            p.label Kehtivus:
+            p.input #{`${data[0].alg_kpv} - ${data[0].lopp_kpv}`}
 
         div.row_wrapper
             p.label Hind:
-            p.input #{`${data[0].hind} Soodustus: ${data[0].soodus ? data[0].soodus: ''}  ${data[0].kas_protsent ? '%' : 'EUR'} kehtib ${data[0].sooduse_alg_print} - ${data[0].sooduse_lopp_print} `}
+            p.input #{`${data[0].hind} Soodustus: ${data[0].soodus ? data[0].soodus: ''}  ${data[0].kas_protsent ? '%' : 'EUR'} kehtib ${data[0].sooduse_alg_print ? data[0].sooduse_alg_print: ''} - ${data[0].sooduse_lopp_print ? data[0].sooduse_lopp_print: ''} `}
 
         div.row_wrapper
             p.label Kogus:

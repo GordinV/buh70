@@ -139,6 +139,10 @@ BEGIN
         WHERE lk.parentid = l_laps_id
           AND lk.staatus <> 3
           AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
+          AND (lk.properties ->> 'alg_kpv' IS NULL OR (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
+          AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
+
+
         LOOP
             -- формируем строку
             json_arvread = json_arvread || (SELECT row_to_json(row)

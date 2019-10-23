@@ -3,16 +3,19 @@ DROP VIEW IF EXISTS lapsed.cur_lapse_kaart;
 
 CREATE OR REPLACE VIEW lapsed.cur_lapse_kaart AS
 
-SELECT l.id as lapsid,
+SELECT l.id                                                                 AS lapsid,
        lk.id,
        l.isikukood,
        l.nimi,
        lk.rekvid,
        lk.hind,
-       lk.properties ->> 'yksus' AS yksus,
-       lk.properties ->> 'all_yksus' AS all_yksus,
+       lk.properties ->> 'yksus'                                            AS yksus,
+       lk.properties ->> 'all_yksus'                                        AS all_yksus,
        n.kood,
-       n.nimetus
+       n.nimetus,
+       coalesce((lk.properties ->> 'alg_kpv')::DATE, date(year(), 1, 1))    AS alg_kpv,
+       coalesce((lk.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)) AS lopp_kpv
+
 FROM lapsed.laps l
          INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.id
          INNER JOIN libs.nomenklatuur n ON lk.nomid = n.id
