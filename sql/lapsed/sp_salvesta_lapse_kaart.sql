@@ -33,7 +33,6 @@ DECLARE
     json_props_vanem     JSONB;
     json_ajalugu         JSONB;
 BEGIN
-
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';

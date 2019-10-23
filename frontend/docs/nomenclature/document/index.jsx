@@ -35,7 +35,10 @@ class Nomenclature extends React.PureComponent {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='NOMENCLATURE'
+                                 module={this.props.module}
                                  initData={this.props.initData}
+                                 history={this.props.history}
+                                 userData={this.props.userData}
                                  libs={LIBRARIES}
                                  renderer={this.renderer}/>
     }

@@ -4,6 +4,7 @@ const checkAuth = require('../middleware/checkAuth');
 
 module.exports = function (app) {
 
+
     // same as main
     app.get('/', require('./login').get);
     app.post('/', require('./login').post);

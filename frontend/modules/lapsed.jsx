@@ -147,7 +147,11 @@ class App extends React.Component {
                 <Route exact path="/lapsed/nomenclature"
                        render={(props) => <NomRegister history={props.history}
                                                        initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/nomenclature/:docId" component={NomDocument}/>
+                <Route exact path="/lapsed/nomenclature/:docId"
+                       render={(props) => <NomDocument {...props}
+                                                       module={MODULE}
+                                                       history={props.history}
+                       />}/>
 
                 <Route exact path="/lapsed/tunnus/:docId" component={TunnusDocument}/>
                 <Route exact path="/lapsed/tunnus"

@@ -69,7 +69,6 @@ exports.post = async (req, res) => {
     const docId = Number(req.params.id); //ид документа
     const module = req.params.module || 'lapsed'; // используемый модуль
 
-
     if (!user) {
         return res.status(401).end();
     }
