@@ -127,6 +127,7 @@ BEGIN
 
       --calculate full summa for this tululiik
       -- Готовим параметры для расчета
+
       SELECT row_to_json(row)
       INTO l_params
       FROM (SELECT
@@ -243,5 +244,5 @@ GRANT EXECUTE ON FUNCTION palk.sp_calc_umardamine(INTEGER, JSON) TO dbpeakasutaj
 
 
 /*
-SELECT * FROM palk.sp_calc_umardamine(1, '{"lepingid": 4,"libid": 384,"kpv": 20180407}')
+SELECT * FROM palk.sp_calc_umardamine(1, '{"lepingid": 33369,"libid": 148689,"kpv": "2019-10-31"}')
  */
