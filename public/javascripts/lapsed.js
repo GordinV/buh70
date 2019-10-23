@@ -1647,7 +1647,7 @@ webpackJsonp_name_([0],{
 	    SelectData = __webpack_require__(233),
 	    TextArea = __webpack_require__(196),
 	    DataGrid = __webpack_require__(198),
-	    ModalPage = __webpack_require__(184),
+	    ModalPage = __webpack_require__(183),
 	    styles = __webpack_require__(239);
 
 	var DocContext = __webpack_require__(1);
@@ -2531,7 +2531,7 @@ webpackJsonp_name_([0],{
 	    InputNumber = __webpack_require__(191),
 	    TextArea = __webpack_require__(196),
 	    DataGrid = __webpack_require__(198),
-	    ModalPage = __webpack_require__(184),
+	    ModalPage = __webpack_require__(183),
 	    styles = __webpack_require__(272);
 
 	var LIBRARIES = [{ id: 'nomenclature', filter: 'where dok = \'ARV\'' }];

@@ -403,7 +403,7 @@ webpackJsonp_name_([1],{
 	    DataGrid = __webpack_require__(198),
 	    DokProp = __webpack_require__(251),
 	    relatedDocuments = __webpack_require__(217),
-	    ModalPage = __webpack_require__(184),
+	    ModalPage = __webpack_require__(183),
 	    styles = __webpack_require__(279);
 
 	var LIBDOK = 'VORDER',
@@ -894,7 +894,7 @@ webpackJsonp_name_([1],{
 	    DataGrid = __webpack_require__(198),
 	    DokProp = __webpack_require__(251),
 	    relatedDocuments = __webpack_require__(217),
-	    ModalPage = __webpack_require__(184),
+	    ModalPage = __webpack_require__(183),
 	    styles = __webpack_require__(281);
 
 	var LIBDOK = 'VMK',

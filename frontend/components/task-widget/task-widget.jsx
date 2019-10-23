@@ -6,6 +6,7 @@ const React = require('react'),
     Button = require('../button-register/button-register-execute/button-register-execute.jsx'),
     ButtonOpen = require('../button-register/button-register.jsx'),
     Select = require('../../components/select/select.jsx'),
+    ModalPage = require('./../../components/modalpage/modalPage.jsx'),
 
     styles = require('./task-widget-styles');
 
@@ -15,11 +16,13 @@ class TaskWidget extends React.PureComponent {
         this.state = {
             taskList: props.taskList || [],
             actualTask: props.taskList[0].name,
-            showList: false
+            showList: false,
+            showModal: false
         };
         this.handleSelectTask = this.handleSelectTask.bind(this);
         this.handleButtonTask = this.handleButtonTask.bind(this);
         this.handleButtonOpenClick = this.handleButtonOpenClick.bind(this);
+        this. modalPageClick =  this.modalPageClick.bind(this);
     }
 
     render() {
@@ -52,10 +55,27 @@ class TaskWidget extends React.PureComponent {
                                 size={this.state.taskList.length}
                                 onChange={this.handleSelectTask}/>
                         : null}
+                    {this.state.showModal ?
+                        <ModalPage
+                            modalPageBtnClick={this.modalPageClick}
+                            modalPageName={`Tegevus`}
+                            show={true}
+                            modalObjects={['btnOk', 'btnCancel']}
+                        >
+                            {`Kas käivata ${this.state.actualTask} ?`}
+                        </ModalPage>: null
+                    }
                 </div>
             </div>
 
         )
+    }
+
+    modalPageClick(btnEvent) {
+        this.setState({showModal: false});
+        if (btnEvent === 'Ok') {
+            this.props.handleButtonTask(this.state.actualTask);
+        }
     }
 
     handleButtonOpenClick() {
@@ -69,7 +89,8 @@ class TaskWidget extends React.PureComponent {
     }
 
     handleButtonTask() {
-        this.props.handleButtonTask(this.state.actualTask);
+//        this.props.handleButtonTask(this.state.actualTask);
+        this.setState({showModal: true});
     }
 
 
