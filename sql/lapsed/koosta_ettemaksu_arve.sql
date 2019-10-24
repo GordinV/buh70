@@ -42,6 +42,10 @@ DECLARE
     l_arve_summa    NUMERIC = 0;
     v_maksja        RECORD;
     jsonb_print     JSONB   = '[]';
+    l_aa            TEXT    = (SELECT arve
+                               FROM ou.aa
+                               WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
+                                 AND kassa = 1);
 
 BEGIN
     SELECT id,
@@ -139,7 +143,8 @@ BEGIN
         WHERE lk.parentid = l_laps_id
           AND lk.staatus <> 3
           AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
-          AND (lk.properties ->> 'alg_kpv' IS NULL OR (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
+          AND (lk.properties ->> 'alg_kpv' IS NULL OR
+               (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
           AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
 
 
@@ -198,6 +203,7 @@ BEGIN
                                 l_asutus_id                                          AS asutusid,
                                 l_laps_id                                            AS lapsid,
                                 'ETTEMAKS'                                           AS tyyp,
+                                l_aa                                                 AS aa,
                                 jsonb_print                                          AS print,
                                 'Ettemaksuarve ' || date_part('month', current_date)::TEXT || '/' ||
                                 date_part('year', current_date)::TEXT || ' kuu eest' AS muud,

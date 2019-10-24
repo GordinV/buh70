@@ -44,8 +44,13 @@ DECLARE
     i               INTEGER = 1;
     v_maksja        RECORD;
     jsonb_print     JSONB   = '[]';
+    l_aa            TEXT    = (SELECT arve
+                               FROM ou.aa
+                               WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
+                                 AND kassa = 1);
 
 BEGIN
+
     SELECT id,
            coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN AS kas_paber,
            coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN   AS kas_earve,
@@ -67,7 +72,6 @@ BEGIN
                                WHEN v_maksja.kas_earve THEN '[
                                  "earve"
                                ]'::JSONB END, '[]'::JSONB)::JSONB;
-
 
 
     -- will return docTypeid of new doc
@@ -193,6 +197,7 @@ BEGIN
                                                 l_kpv                                                AS kpv,
                                                 l_kpv + 15                                           AS tahtaeg,
                                                 l_asutus_id                                          AS asutusid,
+                                                l_aa                                                 AS aa,
                                                 l_laps_id                                            AS lapsid,
                                                 'Arve, taabeli alus ' || date_part('month', current_date)::TEXT ||
                                                 '/' ||
@@ -254,6 +259,7 @@ BEGIN
                                 l_kpv + 15                                           AS tahtaeg,
                                 l_asutus_id                                          AS asutusid,
                                 l_laps_id                                            AS lapsid,
+                                l_aa                                                 AS aa,
                                 'Arve, taabeli alus ' || date_part('month', current_date)::TEXT || '/' ||
                                 date_part('year', current_date)::TEXT || ' kuu eest' AS muud,
                                 jsonb_print                                          AS print,

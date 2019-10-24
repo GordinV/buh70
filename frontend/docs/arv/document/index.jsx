@@ -27,6 +27,7 @@ const LIB_OBJS = [
     {id: 'artikkel', filter: ''},
     {id: 'allikas', filter: ''},
     {id: 'tegev', filter: ''},
+    {id: 'aa', filter: ''},
     {id: 'nomenclature', filter: `where dok = 'ARV'`}
 ];
 
@@ -216,6 +217,19 @@ class Arve extends React.PureComponent {
                                        readOnly={true}
                                        disable={true}
                                        onChange={self.handleInputChange}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <Select title="Arveldus arve "
+                                    name='aa_id'
+                                    libs="aa"
+                                    value={self.docData.aa}
+                                    data={self.libs['aa']}
+                                    defaultValue={String(self.docData.aa) || ''}
+                                    onChange={self.handleInputChange}
+                                    collId={'kood'}
+                                    ref="select-aa"
+                                    readOnly={!isEditMode}/>
+
                         </div>
                     </div>
                     <div style={styles.docRow}>
