@@ -13,39 +13,40 @@ CREATE OR REPLACE FUNCTION lapsed.koosta_ettemaksu_arve(IN user_id INTEGER,
 $BODY$
 
 DECLARE
-    l_rekvid        INTEGER = (SELECT rekvid
-                               FROM ou.userid u
-                               WHERE id = user_id
-                               LIMIT 1);
+    l_rekvid           INTEGER = (SELECT rekvid
+                                  FROM ou.userid u
+                                  WHERE id = user_id
+                                  LIMIT 1);
 
-    l_asutus_id     INTEGER = (SELECT asutusid
-                               FROM lapsed.vanemad v
-                                        INNER JOIN libs.asutus a ON a.id = v.asutusid
-                               WHERE v.parentid = l_laps_id
-                                 AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
-                                 AND v.staatus <> 3
-                               ORDER BY (coalesce(v.properties ->> 'arved', 'ei')) DESC, v.id DESC
-                               LIMIT 1);
+    l_asutus_id        INTEGER = (SELECT asutusid
+                                  FROM lapsed.vanemad v
+                                           INNER JOIN libs.asutus a ON a.id = v.asutusid
+                                  WHERE v.parentid = l_laps_id
+                                    AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
+                                    AND v.staatus <> 3
+                                  ORDER BY (coalesce(v.properties ->> 'arved', 'ei')) DESC, v.id DESC
+                                  LIMIT 1);
 
-    l_doklausend_id INTEGER;
-    l_liik          INTEGER = 0;
-    v_kaart         RECORD;
-    json_object     JSONB;
-    l_json_arve     JSON;
-    json_arvread    JSONB   = '[]';
+    l_doklausend_id    INTEGER;
+    l_liik             INTEGER = 0;
+    v_kaart            RECORD;
+    json_object        JSONB;
+    l_json_arve        JSON;
+    json_arvread       JSONB   = '[]';
 
-    l_tp            TEXT    = '800699'; -- (SELECT tp FROM libs.asutus a WHERE id = l_asutus_id);
+    l_tp               TEXT    = '800699'; -- (SELECT tp FROM libs.asutus a WHERE id = l_asutus_id);
 
-    l_arv_id        INTEGER = 0;
-    l_status        INTEGER;
-    l_number        TEXT;
-    l_arve_summa    NUMERIC = 0;
-    v_maksja        RECORD;
-    jsonb_print     JSONB   = '[]';
-    l_aa            TEXT    = (SELECT arve
-                               FROM ou.aa
-                               WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
-                                 AND kassa = 1);
+    l_arv_id           INTEGER = 0;
+    l_status           INTEGER;
+    l_number           TEXT;
+    l_arve_summa       NUMERIC = 0;
+    v_maksja           RECORD;
+    jsonb_print        JSONB   = '[]';
+    l_aa               TEXT    = (SELECT arve
+                                  FROM ou.aa
+                                  WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
+                                    AND kassa = 1);
+    l_ettemaksu_period INTEGER = 1;
 
 BEGIN
     SELECT id,
@@ -91,8 +92,9 @@ BEGIN
              INNER JOIN docs.arv1 a1 ON a.id = a1.parentid AND a1.nomid = lk.nomid
     WHERE l.parentid = l_laps_id
       AND a.asutusid = l_asutus_id
-      AND date_part('year', a.kpv) = date_part('year', l_kpv)
-      AND date_part('month', a.kpv) = date_part('month', l_kpv)
+      -- ищем счета в периоде
+      AND a.kpv BETWEEN date(year(a.kpv), month(a.kpv), 1) AND date(year(a.kpv), month(a.kpv), 1) + make_interval(
+            months => (lk.properties ->> 'ettemaksu_period')::INTEGER)
       AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
       AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
     ORDER BY D.ID DESC
@@ -108,11 +110,11 @@ BEGIN
     END IF;
 
 
-    -- читаем табель и создаем детали счета
+    -- читаем карту услуг и создаем детали счета
     FOR v_kaart IN
         SELECT lk.nomid,
-               1                                                       AS kogus,
-               coalesce(lk.hind, 0)                                    AS hind,
+               1                                                            AS kogus,
+               coalesce(lk.hind, 0)                                         AS hind,
                CASE
                    WHEN coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN
                        THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0) / 100 * lk.hind
@@ -121,22 +123,23 @@ BEGIN
                    WHEN (lk.properties ->> 'sooduse_alg')::DATE <= l_kpv
                        AND (lk.properties ->> 'sooduse_lopp')::DATE >= l_kpv
                        THEN 1
-                   ELSE 0 END                                          AS real_soodus,
+                   ELSE 0 END                                               AS real_soodus,
 
                (lk.properties ->> 'yksus')::TEXT || CASE
                                                         WHEN (lk.properties ->> 'all_yksus')::TEXT IS NOT NULL
                                                             THEN '(' || (lk.properties ->> 'all_yksus')::TEXT || ')'
-                                                        ELSE '' END    AS muud,
-               lk.properties ->> 'yksus'                               AS yksus,
-               lk.properties ->> 'all_yksus'                           AS all_yksus,
-               coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC AS vat,
-               (n.properties::JSONB ->> 'konto')::VARCHAR(20)          AS konto,
-               (n.properties::JSONB ->> 'projekt')::VARCHAR(20)        AS projekt,
-               (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)         AS tunnus,
-               (n.properties::JSONB ->> 'tegev')::VARCHAR(20)          AS tegev,
-               (n.properties::JSONB ->> 'allikas')::VARCHAR(20)        AS allikas,
-               (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)       AS rahavoog,
-               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)       AS artikkel
+                                                        ELSE '' END         AS muud,
+               lk.properties ->> 'yksus'                                    AS yksus,
+               lk.properties ->> 'all_yksus'                                AS all_yksus,
+               coalesce((lk.properties ->> 'ettemaksu_period')::INTEGER, 1) AS ettemaksu_period,
+               coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC      AS vat,
+               (n.properties::JSONB ->> 'konto')::VARCHAR(20)               AS konto,
+               (n.properties::JSONB ->> 'projekt')::VARCHAR(20)             AS projekt,
+               (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)              AS tunnus,
+               (n.properties::JSONB ->> 'tegev')::VARCHAR(20)               AS tegev,
+               (n.properties::JSONB ->> 'allikas')::VARCHAR(20)             AS allikas,
+               (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)            AS rahavoog,
+               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)            AS artikkel
 
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
@@ -149,6 +152,9 @@ BEGIN
 
 
         LOOP
+            l_ettemaksu_period = CASE
+                                     WHEN l_ettemaksu_period < v_kaart.ettemaksu_period THEN v_kaart.ettemaksu_period
+                                     ELSE l_ettemaksu_period END;
             -- формируем строку
             json_arvread = json_arvread || (SELECT row_to_json(row)
                                             FROM (SELECT v_kaart.nomid                                        AS nomid,
@@ -194,20 +200,23 @@ BEGIN
 
     -- создаем параметры
     l_json_arve = (SELECT to_json(row)
-                   FROM (SELECT coalesce(l_arv_id, 0)                                AS id,
-                                l_number                                             AS number,
-                                l_doklausend_id                                      AS doklausid,
-                                l_liik                                               AS liik,
-                                l_kpv                                                AS kpv,
-                                l_kpv + 15                                           AS tahtaeg,
-                                l_asutus_id                                          AS asutusid,
-                                l_laps_id                                            AS lapsid,
-                                'ETTEMAKS'                                           AS tyyp,
-                                l_aa                                                 AS aa,
-                                jsonb_print                                          AS print,
-                                'Ettemaksuarve ' || date_part('month', current_date)::TEXT || '/' ||
-                                date_part('year', current_date)::TEXT || ' kuu eest' AS muud,
-                                json_arvread                                         AS "gridData") row);
+                   FROM (SELECT coalesce(l_arv_id, 0) AS id,
+                                l_number              AS number,
+                                l_doklausend_id       AS doklausid,
+                                l_liik                AS liik,
+                                l_kpv                 AS kpv,
+                                l_kpv + 15            AS tahtaeg,
+                                l_asutus_id           AS asutusid,
+                                l_laps_id             AS lapsid,
+                                'ETTEMAKS'            AS tyyp,
+                                l_ettemaksu_period    AS ettemaksu_period,
+                                l_aa                  AS aa,
+                                jsonb_print           AS print,
+                                'Ettemaksuarve ' || to_char(l_kpv, 'MM.YYYY')::TEXT || ' - ' ||
+                                to_char(l_kpv + make_interval(months => l_ettemaksu_period), 'MM.YYYY') ||
+                                ' kuu eest'           AS muud,
+
+                                json_arvread          AS "gridData") row);
 
     -- подготавливаем параметры для создания счета
     SELECT row_to_json(row) INTO json_object
