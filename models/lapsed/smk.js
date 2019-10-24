@@ -38,7 +38,7 @@ const Smk = {
                            INNER JOIN docs.mk k ON k.parentId = d.id
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                            LEFT OUTER JOIN ou.aa AS aa ON k.aaid = aa.Id
-                           LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.Id
+                           LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.parentId
                            LEFT OUTER JOIN libs.dokprop dp ON dp.id = k.doklausid
                   WHERE d.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                  AS id,
