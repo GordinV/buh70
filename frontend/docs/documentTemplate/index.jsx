@@ -614,12 +614,14 @@ class DocumentTemplate extends React.PureComponent {
      * @param page
      */
     handlePageClick(page) {
-        if (page.docId) {
-            this.props.history.push(`/${DocContext.module}/${page.docTypeId}/${page.docId}`)
-        }
-
         if (page.handlePageClick) {
             page.handlePageClick(page.docTypeId);
+        } else if (page.docId) {
+            const current = `/${DocContext.module}/${page.docTypeId}/${page.docId}`;
+            this.props.history.replace(`/reload`);
+            setTimeout(() => {
+                this.props.history.replace(current);
+            });
         }
     }
 

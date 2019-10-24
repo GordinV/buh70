@@ -47,6 +47,7 @@ DECLARE
                                   WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
                                     AND kassa = 1);
     l_ettemaksu_period INTEGER = 1;
+    l_tulu_arved       INTEGER = 0; -- кол-во доходных счетов, должно быть = кол-ву периодов
 
 BEGIN
     SELECT id,
@@ -228,7 +229,17 @@ BEGIN
 
     IF l_arv_id IS NOT NULL AND l_arv_id > 0
     THEN
-        result = l_arv_id;
+        -- создаем дохожные счета
+        l_tulu_arved = (SELECT fnc.result FROM lapsed.koosta_arve_ettemaksuarve_alusel(user_id, l_arv_id) fnc);
+        IF l_tulu_arved IS NOT NULL OR l_tulu_arved = 0
+        THEN
+            result = l_tulu_arved + 1;
+
+        ELSE
+            result = 0;
+            error_message = 'Tulu arvete koostamise viga';
+            error_code = 1;
+        END IF;
     ELSE
         result = 0;
         error_message = 'Dokumendi koostamise viga';
@@ -263,4 +274,6 @@ select * from lapsed.laps where staatus = 1
 select * from lapsed.lapse_taabel
 
 update lapsed.lapse_taabel set staatus = 1 where id = 5
+
+select * from docs.
  */

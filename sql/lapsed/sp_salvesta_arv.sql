@@ -7,60 +7,61 @@ CREATE OR REPLACE FUNCTION docs.sp_salvesta_arv(data JSON,
 $BODY$
 
 DECLARE
-    arv_id               INTEGER;
-    arv1_id              INTEGER;
-    userName             TEXT;
-    doc_id               INTEGER        = data ->> 'id';
-    doc_data             JSON           = data ->> 'data';
-    doc_type_kood        TEXT           = 'ARV'/*data->>'doc_type_id'*/;
-    doc_type_id          INTEGER        = (SELECT id
-                                           FROM libs.library
-                                           WHERE kood = doc_type_kood
-                                             AND library = 'DOK'
-                                           LIMIT 1);
+    arv_id                INTEGER;
+    arv1_id               INTEGER;
+    userName              TEXT;
+    doc_id                INTEGER        = data ->> 'id';
+    doc_data              JSON           = data ->> 'data';
+    doc_type_kood         TEXT           = 'ARV'/*data->>'doc_type_id'*/;
+    doc_type_id           INTEGER        = (SELECT id
+                                            FROM libs.library
+                                            WHERE kood = doc_type_kood
+                                              AND library = 'DOK'
+                                            LIMIT 1);
 
-    doc_details          JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
-    doc_number           TEXT           = doc_data ->> 'number';
-    doc_summa            NUMERIC(14, 4) = coalesce((doc_data ->> 'summa') :: NUMERIC, 0);
-    doc_liik             INTEGER        = doc_data ->> 'liik';
-    doc_operid           INTEGER        = doc_data ->> 'operid';
-    doc_asutusid         INTEGER        = doc_data ->> 'asutusid';
-    doc_lisa             TEXT           = doc_data ->> 'lisa';
-    doc_kpv              DATE           = doc_data ->> 'kpv';
-    doc_tahtaeg_text     TEXT           = CASE
-                                              WHEN (trim(doc_data ->> 'tahtaeg')::TEXT)::TEXT = '' THEN current_date::TEXT
-                                              ELSE ((doc_data ->> 'tahtaeg')::TEXT) END;
-    doc_tahtaeg          DATE           = doc_tahtaeg_text::DATE;
-    doc_kbmta            NUMERIC(14, 4) = coalesce((doc_data ->> 'kbmta') :: NUMERIC, 0);
-    doc_kbm              NUMERIC(14, 4) = coalesce((doc_data ->> 'kbm') :: NUMERIC, 0);
-    doc_muud             TEXT           = doc_data ->> 'muud';
-    doc_objektid         INTEGER        = doc_data ->> 'objektid'; -- считать или не считать (если не пусто) интресс
-    doc_objekt           TEXT           = doc_data ->> 'objekt';
-    tnDokLausId          INTEGER        = coalesce((doc_data ->> 'doklausid') :: INTEGER, 1);
-    doc_lepingId         INTEGER        = doc_data ->> 'leping_id';
-    doc_aa               TEXT           = doc_data ->> 'aa'; -- eri arve
-    doc_viitenr          TEXT           = doc_data ->> 'viitenr'; -- viite number
-    doc_lapsid           INTEGER        = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
-    doc_type             TEXT           = doc_data ->> 'tyyp'; -- ETTEMAKS - если счет на предоплату
-    doc_print            JSONB          = coalesce((doc_data ->> 'print')::JSONB, '[]'::JSONB); -- '["paber","email","earve"]'
-    doc_ettemaksu_period INTEGER        = doc_data ->> 'ettemaksu_period'; -- период в месяцах для счета на предоплату
+    doc_details           JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
+    doc_number            TEXT           = doc_data ->> 'number';
+    doc_summa             NUMERIC(14, 4) = coalesce((doc_data ->> 'summa') :: NUMERIC, 0);
+    doc_liik              INTEGER        = doc_data ->> 'liik';
+    doc_operid            INTEGER        = doc_data ->> 'operid';
+    doc_asutusid          INTEGER        = doc_data ->> 'asutusid';
+    doc_lisa              TEXT           = doc_data ->> 'lisa';
+    doc_kpv               DATE           = doc_data ->> 'kpv';
+    doc_tahtaeg_text      TEXT           = CASE
+                                               WHEN (trim(doc_data ->> 'tahtaeg')::TEXT)::TEXT = '' THEN current_date::TEXT
+                                               ELSE ((doc_data ->> 'tahtaeg')::TEXT) END;
+    doc_tahtaeg           DATE           = doc_tahtaeg_text::DATE;
+    doc_kbmta             NUMERIC(14, 4) = coalesce((doc_data ->> 'kbmta') :: NUMERIC, 0);
+    doc_kbm               NUMERIC(14, 4) = coalesce((doc_data ->> 'kbm') :: NUMERIC, 0);
+    doc_muud              TEXT           = doc_data ->> 'muud';
+    doc_objektid          INTEGER        = doc_data ->> 'objektid'; -- считать или не считать (если не пусто) интресс
+    doc_objekt            TEXT           = doc_data ->> 'objekt';
+    tnDokLausId           INTEGER        = coalesce((doc_data ->> 'doklausid') :: INTEGER, 1);
+    doc_lepingId          INTEGER        = doc_data ->> 'leping_id';
+    doc_aa                TEXT           = doc_data ->> 'aa'; -- eri arve
+    doc_viitenr           TEXT           = doc_data ->> 'viitenr'; -- viite number
+    doc_lapsid            INTEGER        = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
+    doc_type              TEXT           = doc_data ->> 'tyyp'; -- ETTEMAKS - если счет на предоплату
+    doc_print             JSONB          = coalesce((doc_data ->> 'print')::JSONB, '[]'::JSONB); -- '["paber","email","earve"]'
+    doc_ettemaksu_period  INTEGER        = doc_data ->> 'ettemaksu_period'; -- период в месяцах для счета на предоплату или номер периода в доходных
+    doc_ettemaksu_arve_id INTEGER        = doc_data ->> 'ettemaksu_arve_id'; -- ссылка на счет предоплатв
 
-    dok_props            JSONB          = (SELECT row_to_json(row)
-                                           FROM (SELECT doc_aa               AS aa,
-                                                        doc_viitenr          AS viitenr,
-                                                        doc_type             AS tyyp,
-                                                        doc_ettemaksu_period AS ettemaksu_period,
-                                                        doc_print            AS print) row);
+    dok_props             JSONB          = (SELECT row_to_json(row)
+                                            FROM (SELECT doc_aa               AS aa,
+                                                         doc_viitenr          AS viitenr,
+                                                         doc_type             AS tyyp,
+                                                         doc_ettemaksu_period AS ettemaksu_period,
+                                                         doc_print            AS print) row);
 
-    json_object          JSON;
-    json_record          RECORD;
-    new_history          JSONB;
-    new_rights           JSONB;
-    ids                  INTEGER[];
-    l_json_arve_id       JSONB;
-    is_import            BOOLEAN        = data ->> 'import';
+    json_object           JSON;
+    json_record           RECORD;
+    new_history           JSONB;
+    new_rights            JSONB;
+    ids                   INTEGER[];
+    l_json_arve_id        JSONB;
+    is_import             BOOLEAN        = data ->> 'import';
 
-    arv1_rea_json        JSONB;
+    arv1_rea_json         JSONB;
 BEGIN
 
     -- если есть ссылка на ребенка, то присвоим viitenumber
@@ -120,14 +121,9 @@ BEGIN
                      ARRAY [userId] AS "update",
                      ARRAY [userId] AS "delete") row;
 
-        IF doc_lepingId IS NOT NULL
-        THEN
-            -- will add reference to leping
-            ids = array_append(ids, doc_lepingId);
-        END IF;
 
-        INSERT INTO docs.doc (doc_type_id, history, rigths, rekvId, docs_ids)
-        VALUES (doc_type_id, '[]' :: JSONB || new_history, new_rights, user_rekvid, ids) RETURNING id
+        INSERT INTO docs.doc (doc_type_id, history, rigths, rekvId)
+        VALUES (doc_type_id, '[]' :: JSONB || new_history, new_rights, user_rekvid) RETURNING id
             INTO doc_id;
 
         ids = NULL;
@@ -153,13 +149,6 @@ BEGIN
             rekvid     = user_rekvid
         WHERE id = doc_id;
 
-        IF doc_lepingId IS NOT NULL
-        THEN
-            -- will add reference to leping
-            UPDATE docs.doc
-            SET docs_ids = array_append(docs_ids, doc_lepingId)
-            WHERE id = doc_id;
-        END IF;
 
         UPDATE docs.arv
         SET liik       = doc_liik,
@@ -326,15 +315,39 @@ BEGIN
         summa = coalesce(doc_summa, 0)
     WHERE parentid = doc_id;
 
-    PERFORM docs.sp_update_arv_jaak(doc_id);
-
     IF doc_lepingId IS NOT NULL
     THEN
+        -- will add reference to leping
+        UPDATE docs.doc
+        SET docs_ids = array_append(docs_ids, doc_lepingId)
+        WHERE id = doc_id;
+
         -- will add ref.id to leping
         UPDATE docs.doc
         SET docs_ids = array_append(docs_ids, doc_id)
         WHERE id = doc_lepingId;
+
     END IF;
+
+    IF (doc_ettemaksu_arve_id IS NOT NULL)
+    THEN
+        -- will add reference to ettemaksu arve
+        UPDATE docs.doc
+        SET docs_ids = array_append(docs_ids, doc_ettemaksu_arve_id)
+        WHERE id = doc_id;
+
+        UPDATE docs.doc
+        SET docs_ids = array_append(docs_ids, doc_id)
+        WHERE id = doc_ettemaksu_arve_id;
+
+
+    END IF;
+
+
+
+    PERFORM docs.sp_update_arv_jaak(doc_id);
+
+
 
     -- lapse module
 
