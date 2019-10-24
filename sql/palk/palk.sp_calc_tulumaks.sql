@@ -72,87 +72,8 @@ BEGIN
            coalesce(l_kasutatud_mvt_summa, 0) :: TEXT || '(r)' ||
            'TM enne arvestatud:' || coalesce(summa, 0) :: TEXT || '(r)' ||
            'Tulud: ' || coalesce(l_alus_summa, 0) :: TEXT || '(r)';
-/*
-    IF coalesce(summa, 0) = 0
-    THEN
-      -- puudub tm arvestus,
-
-      l_mvt = coalesce((SELECT sum(mvt.summa)
-                        FROM palk.taotlus_mvt mvt
-                          INNER JOIN palk.tooleping t ON t.id = mvt.lepingId
-                        WHERE t.parentId = v_tooleping.parentId
-                              AND mvt.status = 'active'
-                              AND t.rekvid = v_tooleping.rekvid
-                              AND alg_kpv <= l_kpv
-                              AND lopp_kpv >= l_kpv), 0);
-
-      l_kasutatud_mvt_summa = (SELECT sum(coalesce(po.tulubaas, 0))
-                               FROM palk.cur_palkoper po
-                                 INNER JOIN palk.tooleping t ON t.id = po.lepingId
-                               WHERE t.parentid = v_tooleping.parentId
-                                     AND t.rekvid = v_tooleping.rekvid
-                                     AND po.period IS NULL
-                                     AND po.palk_liik = 'ARVESTUSED'
-                                     AND year(po.kpv) = year(l_kpv) AND month(po.kpv) = month(l_kpv));
-
-
-      l_tm_miinus_summa = (SELECT sum(coalesce(po.tootumaks, 0) + coalesce(po.pensmaks, 0))
-                           FROM palk.cur_palkoper po
-                             INNER JOIN palk.tooleping t ON t.id = po.lepingId
-                           WHERE t.parentid = v_tooleping.parentId
-                                 AND t.rekvid = v_tooleping.rekvid
-                                 AND po.period IS NULL
-                                 AND po.palk_liik = 'ARVESTUSED'
-                                 AND year(po.kpv) = year(l_kpv) AND month(po.kpv) = month(l_kpv));
-
-      selg = coalesce(selg, '') || 'puudub tm arvestus, arvestan TM. MVT: ' || l_mvt :: TEXT || '(r)' ||
-             'kasutatud mvt: ' || l_kasutatud_mvt_summa :: TEXT || '(r)' ||
-             'kulud: ' || l_tm_miinus_summa :: TEXT || '(r)';
-
-      mvt = l_kasutatud_mvt_summa;
-
-    END IF;
-*/
-  END IF;
-
-  -- arvestame
-      /*
-  IF coalesce(summa, 0) = 0
-  THEN
-    IF NOT is_percent
-    THEN
-      -- summa
-      summa = l_pk_summa;
-      selg = coalesce(selg, '') || 'kasutame pk summa: ' || coalesce(summa, 0) :: TEXT || '(r)';
-    ELSE
-      IF l_kasutatud_mvt_summa > l_mvt -- mvt kasutatud kokku
-      THEN
-        l_mvt = 0;
-        l_kasutatud_mvt_summa = 0;
-      ELSE
-        l_mvt = l_mvt - l_kasutatud_mvt_summa;
-      END IF;
-
-      summa = f_round(palk.fnc_calc_tm(l_alus_summa, l_mvt, l_tm_miinus_summa, 0,
-                                       NULL :: TEXT, l_pk_summa), l_round);
-
-      selg = coalesce(selg, '') || 'arvestatud TM:' || coalesce(summa, 0) :: TEXT || '(r)';
-
-      selg = coalesce(selg, '') || '( Tulud kokku ' || coalesce(l_alus_summa, 0) :: TEXT || ' - MVT ' ||
-             coalesce(l_mvt, 0) :: TEXT || ' - Kulud ' ||
-             coalesce(l_tm_miinus_summa, 0) :: TEXT || ' * ' ||
-             coalesce(l_pk_summa, 0) :: TEXT || '%)';
-
-      IF summa < 0
-      THEN
-        summa = 0;
-      END IF;
-      mvt = l_mvt;
-
-    END IF;
 
   END IF;
-  */
 
   result = 1;
   summa = coalesce(summa, 0);
@@ -162,6 +83,7 @@ $$;
 
 /*
 select palk.sp_calc_tulumaks(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09"}'::JSON)
+
 select palk.sp_calc_tulumaks(1, '{"alus_summa":100}'::JSON)
 select palk.sp_calc_tulumaks(1, '{"alus_summa":0, "is_percent":false, "summa":100}'::JSON)
 select palk.sp_calc_tulumaks(1, '{"alus_summa":1000, "is_percent":true, "summa":20, "mvt":500}'::JSON)

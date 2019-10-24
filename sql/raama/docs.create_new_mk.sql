@@ -109,8 +109,8 @@ BEGIN
            v_arv.parentid AS arvid,
            CASE
                WHEN v_arv.liik = 0
-                   THEN 1
-               ELSE 2 END AS opt,
+                   THEN 2 -- если счет доходный, то мк на поступление средств, иначе расзодное поручение
+               ELSE 1 END AS opt,
            date()         AS maksepaev,
            date()         AS kpv,
            NULL           AS number,

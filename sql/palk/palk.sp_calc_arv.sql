@@ -60,7 +60,7 @@ DECLARE
     l_kuu_lopp      DATE            = date(year(l_kpv), month(l_kpv), day(get_last_day(l_kpv)));
     l_round         NUMERIC         = 0.01;
     l_params        JSON;
-    l_min_palk      NUMERIC         = 470;
+    l_min_palk      NUMERIC         = 500;
     l_toopaev       NUMERIC         = 8;
     l_rekvid        INTEGER;
     l_isik_id       INTEGER;
@@ -300,7 +300,8 @@ BEGIN
           AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
           AND po.period IS NULL
           AND po.palk_liik = 'ARVESTUSED'
-          AND (l_alus_summa IS NULL OR is_umardamine OR po.tululiik :: TEXT = l_tululiik :: TEXT) -- если округления то считаем все виды дохода
+          AND (l_alus_summa IS NULL OR is_umardamine OR
+               po.tululiik :: TEXT = l_tululiik :: TEXT) -- если округления то считаем все виды дохода
           -- calculate only 1 tululiik
           AND year(po.kpv) = year(l_kpv)
           AND month(po.kpv) = month(l_kpv)
@@ -317,6 +318,12 @@ BEGIN
 
         -- не будем считать MVT, а используем уже примененный
         mvt = coalesce(l_isiku_mvt, 0);
+
+        -- но если доход менее 500 (минимального оклада)
+        IF (l_tulud_kokku < l_min_palk)
+        THEN
+            mvt = coalesce(l_tulud_kokku, 0) - coalesce(pm, 0) - coalesce(tki, 0);
+        END IF;
     ELSE
         -- MVT  arvestus
         SELECT row_to_json(row) INTO l_params

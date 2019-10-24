@@ -17,7 +17,7 @@ DECLARE
   doc_data      JSON = data ->> 'data';
   doc_details   JSON = doc_data ->> 'gridData';
   doc_opt       TEXT = coalesce((doc_data ->> 'opt'), '1'); -- 1 -> smk, 2 -> vmk
-  doc_type_kood TEXT = coalesce((doc_data ->> 'doc_type_id'), CASE WHEN doc_opt = '1'
+  doc_type_kood TEXT = coalesce((doc_data ->> 'doc_type_id'), CASE WHEN doc_opt = '2'
     THEN 'SMK'
                                                               ELSE 'VMK' END);
   doc_typeId    INTEGER = (SELECT id

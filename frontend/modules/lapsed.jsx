@@ -53,7 +53,6 @@ class App extends React.Component {
     }
 
     render() {
-        const context = {};
         let btnParams = this.prepareParamsForToolbar();
         return (
             <StyleRoot>

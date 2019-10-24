@@ -244,14 +244,16 @@ class DocumentTemplate extends React.PureComponent {
 
             if (docId && docTypeId) {
                 this.setState({
-                    warning: `Edukalt, koostatud dokument (id:${docId}), suunatamine...`,
+                    warning: `Edukalt`,
                     warningType: 'ok'
                 }, () => {
+/*
                     setTimeout(() => {
                         // koostatud uus dok,
                         this.props.history.push(`/${this.props.module}/${docTypeId}/${docId}`);
 
                     }, 2000);
+*/
                 });
             } else if (dataMessage) {
                 this.setState({
