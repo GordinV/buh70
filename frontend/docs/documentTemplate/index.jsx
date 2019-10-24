@@ -247,13 +247,15 @@ class DocumentTemplate extends React.PureComponent {
                     warning: `Edukalt`,
                     warningType: 'ok'
                 }, () => {
-/*
-                    setTimeout(() => {
-                        // koostatud uus dok,
-                        this.props.history.push(`/${this.props.module}/${docTypeId}/${docId}`);
 
+                    setTimeout(() => {
+                        // koostatud uus dok, teeme reload
+                        const current = `/${this.props.module}/${this.props.docTypeId}/${this.state.docId}`;
+                        this.props.history.replace(`/reload`);
+                        setTimeout(() => {
+                            this.props.history.replace(current);
+                        });
                     }, 2000);
-*/
                 });
             } else if (dataMessage) {
                 this.setState({

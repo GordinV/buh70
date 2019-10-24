@@ -15,9 +15,9 @@ DECLARE
     doc_id        INTEGER = data ->> 'id';
     doc_data      JSON    = data ->> 'data';
     doc_details   JSON    = doc_data ->> 'gridData';
-    doc_opt       TEXT    = coalesce((doc_data ->> 'opt'), '1'); -- 1 -> smk, 2 -> vmk
+    doc_opt       TEXT    = coalesce((doc_data ->> 'opt'), '1'); -- 2 -> smk, 1 -> vmk
     doc_type_kood TEXT    = coalesce((doc_data ->> 'doc_type_id'), CASE
-                                                                       WHEN doc_opt = '1'
+                                                                       WHEN doc_opt = '2'
                                                                            THEN 'SMK'
                                                                        ELSE 'VMK' END);
     doc_typeId    INTEGER = (SELECT id
@@ -92,7 +92,6 @@ BEGIN
         INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
         VALUES (doc_typeId, '[]' :: JSONB || new_history, user_rekvid, 1) RETURNING id
             INTO doc_id;
-
 
         INSERT INTO docs.mk (parentid, rekvid, kpv, opt, aaId, number, muud, arvid, doklausid, maksepaev, selg, viitenr)
         VALUES (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, doc_number, doc_muud,
@@ -206,8 +205,6 @@ BEGIN
 
         END LOOP;
 
-    RAISE NOTICE 'arvid %, doc_id %, userid %', doc_arvid, doc_id, userid;
-
     IF doc_arvid IS NOT NULL
     THEN
         -- произведем оплату счета
@@ -216,7 +213,6 @@ BEGIN
     END IF;
 
     -- lapse module
-
     IF doc_lapsid IS NOT NULL
     THEN
         IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
