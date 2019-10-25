@@ -18,12 +18,16 @@ DECLARE
     arvtasu_history JSONB;
     new_history     JSONB;
     DOC_STATUS      INTEGER = 3; -- документ удален
+    v_arved         RECORD;
 BEGIN
 
     SELECT d.*,
-           u.ametnik AS user_name
+           u.ametnik                            AS user_name,
+           a.properties ->> 'tyyp'              AS tyyp,
+           a.properties ->> 'ettemaksu_arve_id' AS ettemaksu_arve_id
            INTO v_doc
     FROM docs.doc d
+             INNER JOIN docs.arv a ON a.parentid = d.id
              LEFT OUTER JOIN ou.userid u ON u.id = user_id
     WHERE d.id = doc_id;
 
@@ -53,7 +57,42 @@ BEGIN
         error_code = 4;
         error_message = 'Ei saa kustuta dokument. Puudub õigused';
         --     result = 0;
---      RETURN;
+        RETURN;
+
+    END IF;
+
+    IF v_doc.status > 1
+    THEN
+        RAISE NOTICE 'Документ закрыт для удаления %', v_doc.status;
+        error_code = 4;
+        error_message = 'Ei saa kustuta dokument. Dokumendi staatus on kinni. Võib olla dokument oli tasud';
+        --     result = 0;
+        RETURN;
+
+    END IF;
+
+    IF v_doc.tyyp IS NOT NULL AND v_doc.tyyp = 'ETTEMAKS'
+    THEN
+        -- счет на предоплату. Надо удаоить связанные доходные счета
+        FOR v_arved IN
+            SELECT d.id
+            FROM docs.doc d
+                     INNER JOIN docs.arv a ON a.parentid = d.id
+            WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
+              AND d.status <> 3
+
+            LOOP
+                -- убираем зависимости
+                UPDATE docs.doc
+                SET docs_ids = array_remove(docs_ids, v_doc.id)
+                WHERE id = v_arved.id;
+
+
+                v_doc.docs_ids = array_remove(v_doc.docs_ids, v_arved.id);
+                -- удаляем счет
+
+                PERFORM docs.sp_delete_arv(user_id, v_arved.id);
+            END LOOP;
 
     END IF;
 
@@ -68,7 +107,7 @@ BEGIN
               AND l.kood IN ('ARV', 'MK', 'SORDER', 'KORDER'))
     THEN
 
-        RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
+        RAISE NOTICE 'Есть связанные доку менты. удалять нельзя %', v_doc.docs_ids;
         error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
         error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
         result = 0;
@@ -135,7 +174,7 @@ BEGIN
 
         UPDATE lapsed.lapse_taabel
         SET staatus = 1
-        WHERE id IN (SELECT coalesce((a1.properties ->> 'lapse_taabel_id')::INTEGER,0)::integer
+        WHERE id IN (SELECT coalesce((a1.properties ->> 'lapse_taabel_id')::INTEGER, 0)::INTEGER
                      FROM docs.arv1 a1
                      WHERE a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id)
                        AND (a1.properties ->> 'lapse_taabel_id') IS NOT NULL)

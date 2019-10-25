@@ -73,55 +73,6 @@ div#gridTable {
     background-color:blue;
 }
 
-/*
-table {
-    border:1px solid black;
-    background-color:white;
-    border-collapse: collapse;
-    width:auto;
-    padding:10px;
-    margin:10px;
-}
-
-th {
-    border-bottom:1px solid black;
-    background-color:grey;
-}
-
-td, th {
-    border:1px solid blue;
-}
-
-
-table {
-    border:1px solid black;
-    background-color:white;
-    border-collapse: collapse;
-    width:95%;
-    padding:10px;
-    margin:10px;
-}
-
-th {
-    border-bottom:1px solid black;
-    background-color:grey;
-    height:50px;
-}
-
-td, th {
-    border:1px solid lightgray;
-}
-
-
-td.hide, th.hide {
-    display:none;
-}
-
-td.show, th.show {
-    display:table-cell;
-}
-*/
-
 #modalPage {
     position:absolute;
     border: 1px solid black;

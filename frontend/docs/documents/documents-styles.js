@@ -40,5 +40,22 @@ module.exports = {
     limit: {
         width: '20%',
         margin: '5px 2px'
-    }
+    },
+    ok: {
+        backgroundColor:'lightgreen',
+        width:'100%',
+        textAlign: 'right'
+    },
+    error: {
+        backgroundColor:'lightcoral',
+        width:'100%',
+        textAlign: 'right'
+    },
+    notValid: {
+        backgroundColor:'yellow',
+        width:'100%',
+        textAlign: 'right'
+
+    },
+
 };

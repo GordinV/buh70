@@ -47,6 +47,8 @@ class Documents extends React.PureComponent {
             isDelete: false,
             hasStartMenuVisible: false, // will show start menu
             startMenuValue: 'parentid',
+            warning: '', // строка извещений
+            warningType: '',
             limit: 100 // default limit for query
         };
 
@@ -107,6 +109,7 @@ class Documents extends React.PureComponent {
 
     render() {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
+        const warningStyle = this.state.warningType && styles[this.state.warningType] ? styles[this.state.warningType] : null;
 
         return (
             <div style={_style.doc}>
@@ -115,6 +118,14 @@ class Documents extends React.PureComponent {
                     {this.props.render()}
                 </div>
                 {this.renderDocToolBar()}
+                {this.state.warning ?
+                    <ToolbarContainer ref='toolbar-container'>
+                        <div style={warningStyle}>
+                            <span>{this.state.warning}</span>
+                        </div>
+                    </ToolbarContainer>
+                    : null}
+
                 <div style={_style.gridContainer}>
                     <DataGrid ref='dataGrid'
                               style={_style.grid.mainTable}
@@ -263,7 +274,9 @@ class Documents extends React.PureComponent {
             // delete document
             this.fetchData('delete')
                 .then((responce) => {
-                        this.fetchData('selectDocs')
+                        this.setState({warning: 'Edukalt', warningType: 'ok'}, () => {
+                            this.fetchData('selectDocs')
+                        });
                     }
                 );
         }
@@ -513,11 +526,20 @@ class Documents extends React.PureComponent {
 
             }).catch(function (error) {
                 // Something happened in setting up the request that triggered an Error
+                this.setState({
+                    warning: `Tekkis viga ${error}`,
+                    warningType: 'error'
+                });
+
                 console.error('Error', error);
             });
 
         } catch (e) {
             console.error(e);
+            this.setState({
+                warning: `Tekkis viga ${e}`,
+                warningType: 'error'
+            });
 
         }
     }
