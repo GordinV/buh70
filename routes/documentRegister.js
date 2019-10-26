@@ -235,3 +235,26 @@ exports.validate = async (req, res) => {
         data: prepairedData
     });
 };
+
+exports.getLogs = async (req, res) => {
+    const user = require('../middleware/userData')(req); // данные пользователя
+    const Doc = require('./../classes/DocumentTemplate');
+    const params = req.body;
+    const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, params.module.toLowerCase());
+
+    const data = await Document.executeTask('getLog');
+
+    const prepairedData = Object.assign({}, data);
+    console.log('getLogs, prepairedData ', prepairedData);
+    res.send({
+        action: 'getLog',
+        result: {
+            error_code: 0,
+            error_message: null,
+            data: prepairedData.result,
+            module: params.module
+        },
+        data: prepairedData
+    });
+
+};

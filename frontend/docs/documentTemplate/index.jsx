@@ -34,7 +34,8 @@ class DocumentTemplate extends React.PureComponent {
             gridWarning: '',
             checked: true,
             loadedLibs: false,
-            libParams: {}
+            libParams: {},
+            logs:[]
         };
 
         this.docData = Object.keys(props.initData).length ? props.initData : {id: this.props.docId};
@@ -48,7 +49,7 @@ class DocumentTemplate extends React.PureComponent {
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick',
             'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
-            'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick');
+            'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick','btnLogsClick');
 
 
         this.gridRowData = {}; //будем хранить строку грида
@@ -267,6 +268,19 @@ class DocumentTemplate extends React.PureComponent {
     }
 
     /**
+     * Выполнит запрос и покажет логи
+     */
+    btnLogsClick() {
+        let api = `/newApi/logs/`;
+
+        this.fetchData('Post', api).then((response) => {
+            const dataRows = response.data;
+            this.setState({showLogs: true, logs: dataRows});
+        });
+
+    }
+
+    /**
      * Сделает копию текущего состояния данных
      */
     makeBackup() {
@@ -409,6 +423,7 @@ class DocumentTemplate extends React.PureComponent {
             <ToolbarContainer ref='toolbarContainer'>
                 <DocToolBar ref='doc-toolbar'
                             bpm={this.bpm ? this.bpm : []}
+                            logs={this.state.logs}
                             docId={this.state.docId}
                             edited={this.state.edited}
                             docStatus={this.docData.doc_status}
@@ -418,6 +433,7 @@ class DocumentTemplate extends React.PureComponent {
                             btnCancelClick={this.btnCancelClick}
                             btnPrintClick={this.btnPrintClick}
                             btnSaveClick={this.btnSaveClick}
+                            btnLogsClick={this.btnLogsClick}
                             btnTaskClick={this.btnTaskClick}/>
             </ToolbarContainer>
         );

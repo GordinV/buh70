@@ -34,6 +34,7 @@ module.exports = function (app) {
     app.post('/newApi/changeAsutus/:rekvId', checkAuth, require('./changeAsutus').post); //checkAuth,
     app.post('/newApi/delete', checkAuth, require('./documentRegister').delete); //checkAuth
     app.post('/newApi/task/:taskName', checkAuth, require('./documentRegister').executeTask);
+    app.post('/newApi/logs', checkAuth, require('./documentRegister').getLogs);
     app.post('/newApi/validate/:method/:parameter', checkAuth, require('./documentRegister').validate); //проверка в моделе , метод по значению
 
     app.post('/newApi', checkAuth, require('./newApi').post); //checkAuth, //checkAuth,

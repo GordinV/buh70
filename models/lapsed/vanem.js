@@ -124,7 +124,26 @@ module.exports = {
             view: 'vanem_register',
             params: 'sqlWhere'
         },
-    ]
+    ],
+    getLog: {
+        command: `SELECT ROW_NUMBER() OVER ()                                               AS id,
+                         (ajalugu ->> 'user')::TEXT                                         AS kasutaja,
+                         to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS koostatud,
+                         to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS muudatud,
+                         to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS')   AS prinditud,
+                         to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS')   AS prinditud,
+                         to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS kustutatud
+
+                  FROM (
+                           SELECT jsonb_array_elements(d.ajalugu) AS ajalugu
+                           FROM lapsed.vanemad d,
+                                ou.userid u
+                           WHERE d.id = $1
+                             AND u.id = $2
+                       ) qry`,
+        type: "sql",
+        alias: "getLogs"
+    },
 
 
 };

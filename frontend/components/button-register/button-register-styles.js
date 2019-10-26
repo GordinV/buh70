@@ -28,6 +28,7 @@ module.exports = {
         login: '/images/icons/login.png',
         account: '/images/icons/account.png',
         rekv: '/images/icons/rekv.png',
+        info: '/images/icons/info.png',
     }
 
 

@@ -10,6 +10,7 @@ const React = require('react'),
     BtnSave = require('./../button-register/button-register-save/button-register-save.jsx'),
     BtnCancel = require('./../button-register/button-register-cancel/button-register-cancel.jsx'),
     BtnPrint = require('./../button-register/button-register-print/button-register-print.jsx'),
+    BtnLogs = require('./../show-logs/index.jsx'),
     TaskWidget = require('./../task-widget/task-widget.jsx');
 
 class DocToolBar extends React.PureComponent {
@@ -21,6 +22,7 @@ class DocToolBar extends React.PureComponent {
         this.btnSaveClick = this.btnSaveClick.bind(this);
         this.btnCancelClick = this.btnCancelClick.bind(this);
         this.btnPrintClick = this.btnPrintClick.bind(this);
+        this.btnLogsClick = this.btnLogsClick.bind(this);
         this.handleButtonTask = this.handleButtonTask.bind(this);
         this.handleSelectTask = this.handleSelectTask.bind(this);
 
@@ -71,10 +73,14 @@ class DocToolBar extends React.PureComponent {
                        disabled={toolbarParams['btnCancel'].disabled}/>
             <BtnPrint ref='btnPrint' onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
                       disabled={toolbarParams['btnPrint'].disabled}/>
+            <BtnLogs ref='btnLogs'
+                     data={this.props.logs}
+                     onClick={this.btnLogsClick}
+                     show={true}/>
             {(this.props.bpm.length && !isDocDisabled) ? <TaskWidget ref='taskWidget'
-                                                 taskList={this.props.bpm}
-                                                 handleSelectTask={this.handleSelectTask}
-                                                 handleButtonTask={this.handleButtonTask}
+                                                                     taskList={this.props.bpm}
+                                                                     handleSelectTask={this.handleSelectTask}
+                                                                     handleButtonTask={this.handleButtonTask}
             /> : null}
         </ToolbarContainer>
     }
@@ -144,6 +150,12 @@ class DocToolBar extends React.PureComponent {
             this.props.btnCancelClick()
         } else {
             console.error('method cancel not exists in props')
+        }
+    }
+
+    btnLogsClick() {
+        if (this.props.btnLogsClick) {
+            this.props.btnLogsClick();
         }
     }
 
