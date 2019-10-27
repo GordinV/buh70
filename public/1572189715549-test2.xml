@@ -1,0 +1,15 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:erp="http://e-arvetekeskus.eu/erp">
+<soapenv:Header/>
+<soapenv:Body>
+<erp:DimensionRegistryRequest format="AXAPTA" replace="NO" parseConnections="YES" authPhrase="106549:elbevswsackajyafdoupavfwewuiafbeeiqatgvyqcqdqxairz"
+<Dimensioonid>
+<Tunnusid>
+<Tunnus>
+<Num>EEL</Num>
+<Description>Kohalik eelarve</Description>
+</Tunnus>
+</Tunnusid>
+</Dimensioonid>
+</erp:DimensionRegistryRequest>
+</soapenv:Body>
+</soapenv:Envelope>
