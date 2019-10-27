@@ -1,12 +1,13 @@
 'use strict';
+const db = require('./../libs/db');
 
 exports.get = async (req, res) => {
     const id = Number(req.params.id || 0); // параметр id документа
-    const sqlWhere = req.params.params  || '';// параметр sqlWhere документа
+    const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const docTypeId = req.params.documentType || ''; // параметр тип документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user = require('../middleware/userData')(req, uuid); // данные пользователя
-    let template =  docTypeId; // jade template
+    let template = docTypeId; // jade template
     const limit = 1000;
 
     if (!user) {
@@ -17,24 +18,32 @@ exports.get = async (req, res) => {
     try {
         // создать объект
         const Doc = require('./../classes/DocumentTemplate');
-        const doc = new Doc(docTypeId, (id ? id: null), user.userId, user.asutusId, 'lapsed');
+        const doc = new Doc(docTypeId, (id ? id : null), user.userId, user.asutusId, 'lapsed');
 
         const printTemplates = doc.config.print;
 
         if (printTemplates) {
-            template = printTemplates.find(templ => templ.params === (id ? 'id': 'sqlWhere')).view;
+            const templateObject = printTemplates.find(templ => templ.params === (id ? 'id' : 'sqlWhere'));
+            template = templateObject.view;
 
+            if (id && templateObject.register) {
+                // если есть метод регистрации, отметим печать
+                let sql = templateObject.register,
+                    params = [id, user.userId];
+
+                if (sql) {
+                    db.queryDb(sql, params);
+                }
+            }
         }
 
         // вызвать метод
-        const method = id ? 'select': 'selectDocs';
+        const method = id ? 'select' : 'selectDocs';
         let result = await doc[method]('', sqlWhere, limit);
-        const data = id ? {...result.row,...result}: result.data;
+        const data = id ? {...result.row, ...result} : result.data;
         // вернуть отчет
 
-        console.log('result', data);
-
-        res.render(template, {title: 'Tunnused', data: data, user: user });
+        res.render(template, {title: 'Tunnused', data: data, user: user});
 
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок

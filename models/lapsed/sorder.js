@@ -194,7 +194,13 @@ const Sorder = {
     print: [
         {
             view: 'sorder_kaart',
-            params: 'id'
+            params: 'id',
+            register: `UPDATE docs.doc
+                       SET history = history ||
+                                     (SELECT row_to_json(row)
+                                      FROM (SELECT now()                                                AS print,
+                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                       WHERE id = $1`
         },
         {
             view: 'sorder_register',

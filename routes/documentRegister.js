@@ -245,7 +245,6 @@ exports.getLogs = async (req, res) => {
     const data = await Document.executeTask('getLog');
 
     const prepairedData = Object.assign({}, data);
-    console.log('getLogs, prepairedData ', prepairedData);
     res.send({
         action: 'getLog',
         result: {
