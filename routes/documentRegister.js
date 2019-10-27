@@ -257,3 +257,32 @@ exports.getLogs = async (req, res) => {
     });
 
 };
+
+
+exports.upload = async (req, res) => {
+    const user = require('../middleware/userData')(req); // данные пользователя
+    const Doc = require('./../classes/DocumentTemplate');
+    const params = req.body;
+    const multer = require('multer');
+
+    const storage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            cb(null, 'public')
+        },
+        filename: function (req, file, cb) {
+            cb(null, Date.now() + '-' +file.originalname )
+        }
+    });
+
+    const upload = multer({ storage: storage }).single('file');
+
+    upload(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+            return res.status(500).json(err);
+        } else if (err) {
+            return res.status(500).json(err);
+        }
+        return res.status(200).send(req.file);
+
+    });
+};

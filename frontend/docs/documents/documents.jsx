@@ -547,6 +547,8 @@ class Documents extends React.PureComponent {
     _bind(...methods) {
         methods.forEach((method) => this[method] = this[method].bind(this));
     }
+
+
 }
 
 

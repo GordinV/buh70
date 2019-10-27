@@ -4,6 +4,7 @@ const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const styles = require('./smk-register-styles');
 const DOC_TYPE_ID = 'smk';
+const ButtonUpload  = require('./../../components/upload_button/index.jsx');
 
 /**
  * Класс реализует документ приходного платежного ордера.
@@ -24,7 +25,19 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
-        return <div>SMK register special render</div>
+        return <div>
+            <ButtonUpload
+                ref='btnUpload'
+                docTypeId={DOC_TYPE_ID}
+                show={true}
+                onClick={this.handleImport}
+            />
+        </div>
+    }
+
+    handleImport(status) {
+        if (status) {
+        }
     }
 
 }
