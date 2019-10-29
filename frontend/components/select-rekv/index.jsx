@@ -60,9 +60,11 @@ class Index extends React.PureComponent {
 
     // will update state if props changed
     static getDerivedStateFromProps(nextProps, prevState) {
+
         if (nextProps.value !== prevState.value ) {
             return {value: nextProps.value};
         } else return null;
+
     }
 
 
@@ -116,7 +118,8 @@ class Index extends React.PureComponent {
                     style={selectStyle}
                     value={this.state.value || 0}
                     id={this.props.name}
-                    onChange={this.onChange}>{this.prepaireDataOptions()}
+                    onChange={this.onChange}>
+                {this.prepaireDataOptions()}
             </select>);
     }
 

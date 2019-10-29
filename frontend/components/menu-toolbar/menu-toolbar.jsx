@@ -80,7 +80,7 @@ class MenuToolBar extends React.PureComponent {
         }
 
 
-        let rekvId = DocContext.userData ? DocContext.userData.rekvid: 0,
+        let rekvId = DocContext.userData ? DocContext.userData.asutusId: 0,
             asutus = DocContext.userData ? DocContext.userData.asutus : '';
 
         return (

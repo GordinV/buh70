@@ -85,7 +85,7 @@ exports.post = async (req, res) => {
         data = {result: await Document.createNew()};
     }
 
-    const bpm = Document.config.bpm ? Document.config.bpm.filter(task => task.type === 'manual'): [];
+    const bpm = Document.config.bpm ? Document.config.bpm.filter(task => task.type === 'manual') : [];
 
     const preparedData = Object.assign({},
         data.result ? data.result.row[0] : {},
@@ -130,7 +130,7 @@ exports.put = async (req, res) => {
 
     if (Document.config.bpm) {
         // bpm proccess
-        const automatTaks = Document.config.bpm.filter(task => task.type ==='automat');
+        const automatTaks = Document.config.bpm.filter(task => task.type === 'automat');
 
         automatTaks.forEach(async (process) => {
             const bpmResult = await Document.executeTask(process.action);
@@ -260,29 +260,45 @@ exports.getLogs = async (req, res) => {
 
 
 exports.upload = async (req, res) => {
-    const user = require('../middleware/userData')(req); // данные пользователя
-    const Doc = require('./../classes/DocumentTemplate');
-    const params = req.body;
     const multer = require('multer');
+    const storage = multer.memoryStorage();
+    const upload = multer({
+        storage: storage
+    }).single('file');
 
-    const storage = multer.diskStorage({
-        destination: function (req, file, cb) {
-            cb(null, 'public')
-        },
-        filename: function (req, file, cb) {
-            cb(null, Date.now() + '-' +file.originalname )
-        }
-    });
-
-    const upload = multer({ storage: storage }).single('file');
-
+    // читаем из буфера файл в память
     upload(req, res, function (err) {
         if (err instanceof multer.MulterError) {
             return res.status(500).json(err);
         } else if (err) {
             return res.status(500).json(err);
         }
-        return res.status(200).send(req.file);
+        const content = req.file.buffer.toString();
+
+        // доп параметры
+        let params = JSON.parse(JSON.stringify(req.body));
+        const user = require('../middleware/userData')(req, params.uuid); // данные пользователя
+
+        if (!user) {
+            return res.status(401);
+        }
+
+        // вызываем разбор файла
+        try {
+            const readFile = require(`./import/${params.docTypeId}`);
+            readFile(content, req.file.mimetype, user).then((result) => {
+                    // ответ
+                    console.log('success', result);
+                    return res.status(200).send(result);
+                }
+            );
+
+
+        } catch (e) {
+            return res.status(500);
+
+        }
 
     });
+
 };

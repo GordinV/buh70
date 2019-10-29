@@ -88,7 +88,6 @@ class Documents extends React.PureComponent {
         // if lastDocId available, will point it as selected
         if (DocContext[(this.props.docTypeId).toLowerCase()]) {
             let docId = DocContext[(this.props.docTypeId).toLowerCase()];
-            console.log('didMount, docId', docId);
             this.setState({value: docId});
         }
     }

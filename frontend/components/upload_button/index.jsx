@@ -14,7 +14,9 @@ class UploadButton extends React.PureComponent {
         super(props);
         this.state = {
             show: false, //модальное окно закрыто
-            selectedFile: null
+            selectedFile: null,
+            response: null,
+            loading: false
         };
 
         this.modalPageClick = this.modalPageClick.bind(this);
@@ -44,7 +46,7 @@ class UploadButton extends React.PureComponent {
     }
 
     modalPage() {
-        let modalObjects = ['btnOk', 'btnCancel'];
+        let modalObjects = this.state.loading ? ['btnCancel']: ['btnOk', 'btnCancel'];
 
         return (
             <ModalPage
@@ -56,19 +58,35 @@ class UploadButton extends React.PureComponent {
                 <div style={styles.docRow}>
                     <input type="file" name="file" onChange={this.onChangeHandler}/>
                 </div>
+                <div>
+                    {this.state.response ? <span>{this.state.response}</span>: null}
+                </div>
             </ModalPage>);
     }
 
     modalPageClick(event) {
         if (event === 'Ok') {
             // показать новое значение
-            this.setState({show: false});
 
             //upload
             if (this.state.selectedFile) {
-                this.fecthData()
+                this.setState({loading: true});
+                // fetch
+                this.fecthData().then((response)=>{
+                    // show response
+                    this.setState({response: response.data},()=>{
+                        // close modal
+                        setTimeout(()=>{
+                            this.setState({response: null, show: false, loading: false});
+                        },1000);
+                    });
+                })
+            } else {
+                this.setState({response: null, show: false, loading: false});
             }
 
+        } else {
+            this.setState({response: null, show: false, loading: false});
         }
     }
 
@@ -82,12 +100,11 @@ class UploadButton extends React.PureComponent {
             uuid: DocContext.userData.uuid
         };
         const data = new FormData();
-        data.append('file', this.state.selectedFile);
-        data.append('params', params);
+        data.append('file',this.state.selectedFile);
+        data.append('uuid',DocContext.userData.uuid);
+        data.append('docTypeId',this.props.docTypeId);
 
-        return fetchData.fetchDataPost(`/newApi/upload`, data).then(response => {
-            console.log('response', response);
-        });
+        return fetchData.fetchDataPost(`/newApi/upload/`, data);
     }
 }
 

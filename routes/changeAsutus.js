@@ -12,27 +12,23 @@ exports.post = (req, res) => {
     }
     let userUuid = req.body.uuid;
 
-
-    let user = require('./../middleware/userData')(req);  // check for userid in session
+    let user = require('./../middleware/userData')(req, userUuid);  // check for userid in session
 
 
     // load new User data
     const userName = user.login;
 
     userid.getUserId(userName, rekvId, function (err, userData) {
-
         if (!userData) {
             const err = new HttpError(403, 'No user');
             res.send({status: 403, result: 'error'});
         } else {
             let users  = req.session.users;
-
             // меняем данные пользователя. все кроме индентификатора
             req.session.users = users.map((userRow) => {
                 if (userUuid !== userRow.uuid) {
                     return userRow;
                 } else {
-
                     return {
                         uuid: userRow.uuid,
                         id: userData.id,
@@ -50,7 +46,6 @@ exports.post = (req, res) => {
                 }
 
 
-
             });
 
             // will save last login
@@ -60,7 +55,7 @@ exports.post = (req, res) => {
 
 
             //will load new userdata
-            let newUser = require('../middleware/userData')(req); // данные пользователя
+            let newUser = require('../middleware/userData')(req, userUuid); // данные пользователя
 
             //save in locals
             req.app.locals.user = newUser;

@@ -58,7 +58,7 @@ class App extends React.Component {
             <StyleRoot>
                 <Route path="/lapsed"
                        render={() => <Menu params={btnParams}
-                                           rekvId={DocContext.userData ? DocContext.userData.rekvid : 0}
+                                           rekvId={DocContext.userData ? DocContext.userData.asutusId : 0}
                                            module={MODULE}/>}
                 />
 
