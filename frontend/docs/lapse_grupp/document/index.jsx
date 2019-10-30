@@ -233,6 +233,7 @@ class LapseGrupp extends React.PureComponent {
             if (doc.gridRowData['nomid']) {
                 doc.gridRowData['kood'] = nomDataName[0].kood;
                 doc.gridRowData['nimetus'] = nomDataName[0].nimetus;
+                doc.gridRowData['hind'] = nomDataName[0].hind;
             }
 
         }

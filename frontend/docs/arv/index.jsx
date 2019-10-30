@@ -14,6 +14,7 @@ class Documents extends React.PureComponent {
     }
 
     render() {
+        console.log('render arv');
         return <DocumentRegister initData={this.props.initData}
                                  history = {this.props.history ? this.props.history: null}
                                  module = {this.props.module}
