@@ -184,6 +184,7 @@ class DocumentTemplate extends React.PureComponent {
 
             //call to save
             this.docData = response.data[0];
+
             this.setState({
                 reloadData: false,
                 warning: 'Salvestatud edukalt',
@@ -203,7 +204,7 @@ class DocumentTemplate extends React.PureComponent {
                     docId = 0;
                 }
 
-                if (this.props.docId === 0 && docId === 0) {
+                if (!this.props.docId || docId !== this.props.docId)  {
                     // reload / redirect
                     setTimeout(() => {
                         const current = `/${this.props.module}/${docTypeId}/${docId}`;
@@ -786,6 +787,7 @@ class DocumentTemplate extends React.PureComponent {
      * @param data
      */
     modalPageClick(btnEvent, data) {
+        let showModal = false;
         if (btnEvent === 'Ok') {
             // ищем по ид строку в данных грида, если нет, то добавим строку
             if (!this.docData.gridData.length || !this.docData.gridData.some(row => row.id === this.gridRowData.id)) {
@@ -802,12 +804,14 @@ class DocumentTemplate extends React.PureComponent {
                 });
             }
 
+            showModal = !!this.state.warning;
+
         }
 
         if (this.props.recalcDoc) {
             this.props.recalcDoc();
         }
-        this.setState({gridRowEdit: !!this.state.warning});
+        this.setState({gridRowEdit: showModal});
     }
 
     _bind(...methods) {
