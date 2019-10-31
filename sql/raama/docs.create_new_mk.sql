@@ -9,17 +9,18 @@ CREATE OR REPLACE FUNCTION docs.create_new_mk(IN user_id INTEGER,
     RETURNS RECORD AS
 $BODY$
 DECLARE
-    l_arv_id    INTEGER = params ->> 'arv_id';
-    l_dok       TEXT    = coalesce((params ->> 'dok') :: TEXT, 'MK');
+    l_arv_id    INTEGER        = params ->> 'arv_id';
+    l_dok       TEXT           = coalesce((params ->> 'dok') :: TEXT, 'MK');
+    l_summa     NUMERIC(12, 2) = params ->> 'summa';
     mk_id       INTEGER;
     v_arv       RECORD;
     json_object JSONB;
     v_params    RECORD;
     json_mk1    JSONB;
     l_pank_id   INTEGER;
-    l_laps_id   INTEGER = (SELECT parentid
-                           FROM lapsed.liidestamine
-                           WHERE docid = l_arv_id);
+    l_laps_id   INTEGER        = (SELECT parentid
+                                  FROM lapsed.liidestamine
+                                  WHERE docid = l_arv_id);
 
 BEGIN
     -- выборка из "документа"
@@ -61,7 +62,7 @@ BEGIN
 
 
     json_mk1 = array_to_json((SELECT array_agg(row_to_json(m1.*))
-                              FROM (SELECT 0                       AS id,
+                              FROM (SELECT 0                                                          AS id,
                                            (SELECT id
                                             FROM libs.nomenklatuur n
                                             WHERE rekvid = v_arv.rekvid
@@ -69,9 +70,9 @@ BEGIN
                                             ORDER BY id
                                                 DESC
                                             LIMIT
-                                                1)                 AS nomid,
-                                           v_arv.asutusid          AS asutusid,
-                                           v_arv.jaak              AS summa,
+                                                1)                                                    AS nomid,
+                                           v_arv.asutusid                                             AS asutusid,
+                                           CASE WHEN l_summa IS NULL THEN v_arv.jaak ELSE l_summa END AS summa,
                                            coalesce((
                                                         SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa
                                                         FROM libs.asutus a,
@@ -82,7 +83,7 @@ BEGIN
                                                         WHERE a.id = v_arv.asutusid
                                                         LIMIT
                                                             1
-                                                    ), '') :: TEXT AS aa,
+                                                    ), '') :: TEXT                                    AS aa,
                                            a1.kood1,
                                            a1.kood2,
                                            a1.kood3,

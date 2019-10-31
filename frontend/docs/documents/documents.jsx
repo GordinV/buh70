@@ -114,7 +114,7 @@ class Documents extends React.PureComponent {
             <div style={_style.doc}>
                 <div style={_style.docRow}>
                     {/*рендерим частные компоненты */}
-                    {this.props.render()}
+                    {this.props.render(this)}
                 </div>
                 {this.renderDocToolBar()}
                 {this.state.warning ?

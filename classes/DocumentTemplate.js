@@ -63,7 +63,7 @@ class Document {
      * Метод сохранения документа
      * @params = {data: {}, userId: // user, asutusId: rekvId}
      */
-    async save(params) {
+    async save(params, isNotSelect) {
         // {data, user.userId, user.asutusId}
         if (!params.data || !params.userId || !params.asutusId) {
             throw new Error('Wrong params structure');
@@ -72,8 +72,8 @@ class Document {
         let sql = this.config.saveDoc;
 
         let data = await db.queryDb(sql, [params.data, params.userId, params.asutusId]);
-
-        if (data.data[0].id) {
+        console.log('data', data);
+        if (data.data[0].id && !isNotSelect ) {
             this.documentId = data.data[0].id;
             data = await this.select();
         }

@@ -46,7 +46,7 @@ class UploadButton extends React.PureComponent {
     }
 
     modalPage() {
-        let modalObjects = this.state.loading ? ['btnCancel']: ['btnOk', 'btnCancel'];
+        let modalObjects = this.state.loading ? ['btnCancel'] : ['btnOk', 'btnCancel'];
 
         return (
             <ModalPage
@@ -59,7 +59,7 @@ class UploadButton extends React.PureComponent {
                     <input type="file" name="file" onChange={this.onChangeHandler}/>
                 </div>
                 <div>
-                    {this.state.response ? <span>{this.state.response}</span>: null}
+                    {this.state.response ? <span>{this.state.response}</span> : null}
                 </div>
             </ModalPage>);
     }
@@ -72,18 +72,20 @@ class UploadButton extends React.PureComponent {
             if (this.state.selectedFile) {
                 this.setState({loading: true});
                 // fetch
-                this.fecthData().then((response)=>{
+                this.fecthData().then((response) => {
                     // show response
-                    this.setState({response: response.data},()=>{
+                    this.setState({response: response.data}, () => {
                         // close modal
-                        setTimeout(()=>{
+                        setTimeout(() => {
                             this.setState({response: null, show: false, loading: false});
-                        },1000);
+                        }, 1000);
                     });
                 })
             } else {
                 this.setState({response: null, show: false, loading: false});
             }
+
+//            @todo redirect to import log or reload page
 
         } else {
             this.setState({response: null, show: false, loading: false});
@@ -100,9 +102,9 @@ class UploadButton extends React.PureComponent {
             uuid: DocContext.userData.uuid
         };
         const data = new FormData();
-        data.append('file',this.state.selectedFile);
-        data.append('uuid',DocContext.userData.uuid);
-        data.append('docTypeId',this.props.docTypeId);
+        data.append('file', this.state.selectedFile);
+        data.append('uuid', DocContext.userData.uuid);
+        data.append('docTypeId', this.props.docTypeId);
 
         return fetchData.fetchDataPost(`/newApi/upload/`, data);
     }

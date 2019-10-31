@@ -5,8 +5,8 @@ DROP TYPE IF EXISTS EELARVE_ANDMIK_TYPE;
 CREATE TYPE EELARVE_ANDMIK_TYPE AS (idx VARCHAR(20), is_e INTEGER, rekvid INTEGER, tegev VARCHAR(20), allikas VARCHAR(20), artikkel VARCHAR(20), nimetus VARCHAR(254), eelarve NUMERIC(14,2), tegelik NUMERIC(14,2), kassa NUMERIC(14,2), saldoandmik NUMERIC(14,2));
 */
 CREATE OR REPLACE FUNCTION eelarve.eelarve_andmik_lisa_1_5_query(IN l_kpv DATE,
-                                                IN l_rekvid INTEGER,
-                                                IN l_kond INTEGER)
+                                                                 IN l_rekvid INTEGER,
+                                                                 IN l_kond INTEGER)
     RETURNS BOOLEAN
 AS
 $$
@@ -65,20 +65,20 @@ BEGIN
            qry.allikas::VARCHAR(20)                        AS allikas,
            qry.artikkel::VARCHAR(20)                       AS artikkel,
            l.nimetus::VARCHAR(254),
-           sum(eelarve)::NUMERIC(14, 2)                    AS eelarve,
-           sum(tegelik)::NUMERIC(14, 2)                    AS tegelik,
-           sum(kassa)::NUMERIC(14, 2)                      AS kassa,
+           sum(qry.eelarve)::NUMERIC(14, 2)                AS eelarve,
+           sum(qry.tegelik)::NUMERIC(14, 2)                AS tegelik,
+           sum(qry.kassa)::NUMERIC(14, 2)                  AS kassa,
            year(l_kpv)                                     AS aasta,
            month(l_kpv),
            CASE WHEN l.tun5 = 1 THEN 0 ELSE 1 END::INTEGER AS is_kulud
     FROM (
-             SELECT rekvid,
-                    summa        AS eelarve,
+             SELECT e.rekvid,
+                    e.summa        AS eelarve,
                     0 :: NUMERIC AS tegelik,
                     0 :: NUMERIC AS kassa,
-                    kood1        AS tegev,
-                    kood2        AS allikas,
-                    kood5        AS artikkel
+                    e.kood1        AS tegev,
+                    e.kood2        AS allikas,
+                    e.kood5        AS artikkel
              FROM eelarve.eelarve e
              WHERE rekvid = (CASE
                                  WHEN $3 = 1
@@ -215,7 +215,7 @@ BEGIN
                                                 THEN j.rekvid
                                             ELSE $2 END)
                         AND j.rekvid IN (SELECT rekv_id
-                                               FROM get_asutuse_struktuur($2))
+                                         FROM get_asutuse_struktuur($2))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.kood5 IN
@@ -239,8 +239,8 @@ BEGIN
                              j1.kood2      AS allikas,
                              j1.kood5      AS artikkel
                       FROM docs.doc d
-                           inner join docs.journal j on j.parentid = d.id
-                               inner JOIN docs.journal1 j1 ON j1.parentid = j.id
+                               INNER JOIN docs.journal j ON j.parentid = d.id
+                               INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                                JOIN eelarve.kassa_tulud kassatulud
                                     ON j1.kreedit::TEXT ~~ kassatulud.kood::TEXT
                                JOIN eelarve.kassa_kontod kassakontod
@@ -248,11 +248,11 @@ BEGIN
                       WHERE j.kpv <= $1
                         AND YEAR(j.kpv) = YEAR($1)
                         AND j.rekvid = (CASE
-                                                  WHEN $3 = 1
-                                                      THEN j.rekvid
-                                                  ELSE $2 END)
+                                            WHEN $3 = 1
+                                                THEN j.rekvid
+                                            ELSE $2 END)
                         AND j.rekvid IN (SELECT rekv_id
-                                               FROM get_asutuse_struktuur($2))
+                                         FROM get_asutuse_struktuur($2))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.kood5 IN
@@ -261,7 +261,7 @@ BEGIN
                   ) kassatulu
          ) qry
              LEFT OUTER JOIN libs.library l ON l.
-                                              kood = qry.artikkel AND l.library = 'TULUDEALLIKAD'
+                                                   kood = qry.artikkel AND l.library = 'TULUDEALLIKAD'
     GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, l.nimetus, l.tun5;
 
     INSERT INTO tmp_andmik (idx, tyyp, rekvid, tegev, artikkel, rahavoog, nimetus, saldoandmik, db, kr, aasta, kuu)

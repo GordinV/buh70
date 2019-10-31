@@ -4,7 +4,7 @@ const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const styles = require('./smk-register-styles');
 const DOC_TYPE_ID = 'smk';
-const ButtonUpload  = require('./../../components/upload_button/index.jsx');
+const ButtonUpload = require('./../../components/upload_button/index.jsx');
 
 /**
  * Класс реализует документ приходного платежного ордера.
@@ -16,9 +16,9 @@ class Documents extends React.PureComponent {
 
     render() {
         return <DocumentRegister initData={this.props.initData}
-                                 history = {this.props.history ? this.props.history: null}
-                                 module = {this.props.module}
-                                 ref = 'register'
+                                 history={this.props.history ? this.props.history : null}
+                                 module={this.props.module}
+                                 ref='register'
                                  docTypeId={DOC_TYPE_ID}
                                  style={styles}
                                  render={this.renderer}/>;
@@ -30,15 +30,10 @@ class Documents extends React.PureComponent {
                 ref='btnUpload'
                 docTypeId={DOC_TYPE_ID}
                 show={true}
-                onClick={this.handleImport}
             />
         </div>
     }
 
-    handleImport(status) {
-        if (status) {
-        }
-    }
 
 }
 

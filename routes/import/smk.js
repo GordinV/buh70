@@ -1,39 +1,109 @@
-module.exports = async (file, mimeType) => {
-    console.log('mimeType', mimeType);
+module.exports = async (file, mimeType, user) => {
+    const Doc = require('./../../classes/DocumentTemplate');
+    const Document = new Doc('PANK_VV', null, user.userId, user.asutusId, 'lapsed');
 
-    let reply;
+    let rows = [];
+
     if (mimeType === 'text/xml') {
-        reply = await readXML(file);
+        rows = await readXML(file);
     } else if (mimeType === 'application/octet-stream') {
-        reply = await readCSV(file);
+        rows = await readCSV(file);
     }
-    console.log('reply', reply);
-    return reply
+    let saved = 0;
+    if (rows.length) {
+        // сохраняем
+
+        const params = {
+            data: JSON.stringify({data: rows}),
+            userId: user.id,
+            asutusId: user.asutusId
+        };
+        const response = await Document.save(params, true);
+        saved = response.data && response.data.length > 0 ? response.data[0].result : 0;
+        timestamp = response.data && response.data.length > 0 ? response.data[0].stamp : null;
+
+        console.log('saved', response, saved, timestamp);
+        if (saved && timestamp) {
+            let mk_params = [timestamp, user.id];
+            const mkCount = await Document.executeTask('koostaMK', mk_params);
+        }
+    }
+    return `Kokku leidsin ${rows.length} maksed, salvestatud kokku: ${saved}`;
 
 };
 
 const readXML = async (xmlContent) => {
     const xml2js = require('xml2js');
     const parser = new xml2js.Parser({ignoreAttrs: true});
-    const fileContent = await parser.parseString(xmlContent, (err, result) => {
-        console.log('err -> ', err);
-        console.log('result -> ', JSON.stringify(result));
-        return result
+    const fileContent = [];
+    const rows = [];
+
+    const result = await parser.parseString(xmlContent, (err, result) => {
+        if (err) return err;
+
+        let stmtes = result.Document.BkToCstmrStmt[0].Stmt;
+        let Ntres = stmtes[0].Ntry;
+        Ntres.forEach(ntry => {
+            if (ntry.CdtDbtInd[0] == 'CRDT') {
+                let summa = Number(ntry.Amt[0]);
+                let kpv = ntry.ValDt[0].Dt[0];
+                let pankId = ntry.AcctSvcrRef[0];
+                let NtryDtls = ntry.NtryDtls[0].TxDtls[0];
+                let RmtInf = NtryDtls.RmtInf[0];
+                let viitenr = RmtInf.Strd ? RmtInf.Strd[0].CdtrRefInf[0].Ref[0] : null;
+                let selg = RmtInf.Ustrd[0];
+                let maksja = NtryDtls.RltdPties[0].Cdtr ? NtryDtls.RltdPties[0].Cdtr[0].Nm[0] : null;
+
+                let eban = NtryDtls.RltdPties[0].CdtrAcct ? NtryDtls.RltdPties[0].CdtrAcct[0].Id[0].IBAN[0] : null;
+
+                rows.push({
+                    pank_id: pankId,
+                    summa: summa,
+                    kpv: kpv,
+                    selg: selg,
+                    viitenr: viitenr,
+                    maksja: maksja,
+                    iban: eban
+                });
+
+            }
+
+        });
+        return `Ok ${rows.length}, xml`;
     });
 
-    return 'Ok, xml';
+    return rows;
 
 };
 
 const readCSV = async (csvContent) => {
     const parse = require('csv-parse');
-    let result = [];
+    const rows = [];
     // Create the parser
-    const fileContent = await parse(csvContent,{delimiter:';'}, (err, output) => {
-        console.log('err, output', err, output);
+    const fileContent = await parse(csvContent, {delimiter: ';', columns: false}, (err, output) => {
         result = output;
-        return output;
+
+        output.forEach(row => {
+            if (row[7] == 'C') {
+                // кредит
+                rows.push({
+                    pank_id: row[10],
+                    summa: Number(row[8]),
+                    kpv: parce_kpv(row[2]),
+                    selg: row[11],
+                    viitenr: row[9],
+                    maksja: row[4],
+                    iban: row[3]
+                });
+            }
+
+        });
     });
-    console.log('fileContent',result);
-    return `Ok, csv, Result: ${result.length}`
+    console.log('rows', rows);
+    return rows;
+};
+
+const parce_kpv = (l_date) => {
+    let kpv = l_date.split('.');
+    return new Date(kpv[2], kpv[1], kpv[0]).toLocaleDateString();
 };
