@@ -14,7 +14,8 @@ SELECT l.id                                                                 AS l
        n.kood,
        n.nimetus,
        coalesce((lk.properties ->> 'alg_kpv')::DATE, date(year(), 1, 1))    AS alg_kpv,
-       coalesce((lk.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)) AS lopp_kpv
+       coalesce((lk.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)) AS lopp_kpv,
+       case WHEN  (lk.properties->>'kas_inf3')::BOOLEAN then 'INF3' else '' end as inf3
 
 FROM lapsed.laps l
          INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.id

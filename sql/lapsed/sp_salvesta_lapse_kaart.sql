@@ -28,9 +28,7 @@ DECLARE
     doc_muud             TEXT    = doc_data ->> 'muud';
     doc_kogus            NUMERIC = doc_data ->> 'kogus';
     doc_ettemaksu_period INTEGER = doc_data ->> 'ettemaksu_period';
-    v_vanem              RECORD;
     json_props           JSONB;
-    json_props_vanem     JSONB;
     json_ajalugu         JSONB;
 BEGIN
     IF (doc_id IS NULL)
@@ -85,8 +83,7 @@ BEGIN
 
         json_ajalugu = to_jsonb(row)
                        FROM (SELECT now()    AS updated,
-                                    userName AS user,
-                                    l.*      AS data
+                                    userName AS user
                              FROM lapsed.lapse_kaart l
                              WHERE id = doc_id
                             ) row;
@@ -95,7 +92,7 @@ BEGIN
         SET nomid      = doc_nomid,
             tunnus     = doc_tunnus,
             hind       = doc_hind,
-            properties = properties || json_props,
+            properties = coalesce(properties, '[]')::JSONB || json_props,
             muud       = doc_muud,
             ajalugu    = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu
         WHERE id = doc_id RETURNING id

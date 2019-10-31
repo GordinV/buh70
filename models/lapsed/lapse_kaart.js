@@ -139,6 +139,7 @@ module.exports = {
                 {id: "hind", name: "Hind", width: "20%"},
                 {id: "yksus", name: "Üksus", width: "20%"},
                 {id: "kehtivus", name: "Kehtib", width: "20%"},
+                {id: "inf3", name: "INF3", width: "10%"},
             ],
             sqlString:
                     `SELECT id,
@@ -153,7 +154,8 @@ module.exports = {
                             lapsed.get_viitenumber($1, lapsid)                                             AS viitenumber,
                             $1::INTEGER                                                                    AS rekvid,
                             $2::INTEGER                                                                    AS user_id,
-                            to_char(alg_kpv, 'DD.MM.YYYY') || ' - ' || to_char(lopp_kpv, 'DD.MM.YYYY')     AS kehtivus
+                            to_char(alg_kpv, 'DD.MM.YYYY') || ' - ' || to_char(lopp_kpv, 'DD.MM.YYYY')     AS kehtivus,
+                            v.inf3                                                                         AS inf3
                      FROM lapsed.cur_lapse_kaart v
                      WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
             params:

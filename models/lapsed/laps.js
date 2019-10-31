@@ -69,7 +69,8 @@ module.exports = {
                          n.nimetus,
                          k.hind,
                          k.properties ->> 'yksus'     AS yksus,
-                         k.properties ->> 'all_yksus' AS all_yksus
+                         k.properties ->> 'all_yksus' AS all_yksus,
+                         case WHEN  (k.properties->>'kas_inf3')::BOOLEAN then 'INF3' else '' end as inf3
                   FROM lapsed.lapse_kaart k
                            INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
                   WHERE k.parentid = $1
@@ -104,7 +105,8 @@ module.exports = {
                     {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
                     {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'text', readOnly: false},
                     {id: 'yksus', name: 'Üksus', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'all_yksus', name: 'All üksus', width: '100px', show: true, type: 'text', readOnly: false}
+                    {id: 'all_yksus', name: 'All üksus', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'inf3', name: 'INF3', width: '100px', show: true, type: 'text', readOnly: false},
                 ]
         },
     requiredFields: [

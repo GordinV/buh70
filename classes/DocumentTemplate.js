@@ -70,9 +70,10 @@ class Document {
         }
 
         let sql = this.config.saveDoc;
-
+        console.log('save sql', sql, JSON.stringify(params.data));
         let data = await db.queryDb(sql, [params.data, params.userId, params.asutusId]);
-        console.log('data', data);
+        console.log('ok', data);
+
         if (data.data[0].id && !isNotSelect ) {
             this.documentId = data.data[0].id;
             data = await this.select();
