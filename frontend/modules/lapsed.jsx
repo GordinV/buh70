@@ -39,6 +39,9 @@ const AsutusRegister = require('./../docs/asutused/index.jsx'),
 const LapseGruppRegister = require('./../docs/lapse_grupp/index.jsx'),
     LapseGruppDocument = require('./../docs/lapse_grupp/document/index.jsx');
 
+const PankVVRegister = require('./../docs/pank_vv/index.jsx');
+
+
 const {Route, withRouter, Redirect} = require('react-router-dom');
 const {StyleRoot} = require('radium');
 const MODULE = 'Lapsed';
@@ -159,6 +162,11 @@ class App extends React.Component {
                            history={props.history}
                            initData={this.props.initData}/>}/>
 
+                <Route exact path="/lapsed/pank_vv"
+                       render={(props) => <PankVVRegister
+                           module={MODULE}
+                           history={props.history}
+                           initData={this.props.initData}/>}/>
             </StyleRoot>
         )
     }
