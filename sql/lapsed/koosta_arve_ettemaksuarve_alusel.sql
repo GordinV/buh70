@@ -100,7 +100,6 @@ BEGIN
                                         l_doklausend_id                                            AS doklausid,
                                         v_arv.liik                                                 AS liik,
                                         l_kpv                                                      AS kpv,
-                                        l_kpv + 15                                                 AS tahtaeg,
                                         v_arv.asutusid                                             AS asutusid,
                                         v_arv.lapsid                                               AS lapsid,
                                         v_arv.properties ->> 'aa'                                  AS aa,
@@ -146,6 +145,6 @@ GRANT EXECUTE ON FUNCTION lapsed.koosta_arve_ettemaksuarve_alusel(INTEGER, INTEG
 
 
 /*
-select lapsed.koosta_arve_taabeli_alusel(70, 16)
+select lapsed.koosta_arve_ettemaksuarve_alusel(70, 1616363)
  */
 

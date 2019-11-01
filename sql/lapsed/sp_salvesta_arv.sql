@@ -108,6 +108,12 @@ BEGIN
   END IF;
 */
 
+-- установим срок оплаты, если не задан
+    IF doc_tahtaeg IS NULL OR doc_tahtaeg < doc_kpv
+    THEN
+        doc_tahtaeg = doc_kpv + coalesce((SELECT tahtpaev FROM ou.config WHERE rekvid = user_rekvid LIMIT 1), 14);
+    END IF;
+
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
@@ -344,9 +350,7 @@ BEGIN
     END IF;
 
 
-
     PERFORM docs.sp_update_arv_jaak(doc_id);
-
 
 
     -- lapse module

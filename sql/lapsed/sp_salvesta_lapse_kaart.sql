@@ -21,10 +21,10 @@ DECLARE
     doc_kas_eraldi       BOOLEAN = doc_data ->> 'kas_eraldi';
     doc_kas_ettemaks     BOOLEAN = doc_data ->> 'kas_ettemaks';
     doc_kas_inf3         BOOLEAN = doc_data ->> 'kas_inf3';
-    doc_sooduse_alg      DATE    = doc_data ->> 'sooduse_alg';
-    doc_sooduse_lopp     DATE    = doc_data ->> 'sooduse_lopp';
-    doc_alg_kpv          DATE    = doc_data ->> 'alg_kpv';
-    doc_lopp_kpv         DATE    = doc_data ->> 'lopp_kpv';
+    doc_sooduse_alg      DATE    = (case when (doc_data ->> 'sooduse_alg')::text = '' then null else doc_data ->> 'sooduse_alg' END)::date ;
+    doc_sooduse_lopp     DATE    = (case when (doc_data ->> 'sooduse_lopp')::text = '' then null else doc_data ->> 'sooduse_lopp' END)::date;
+    doc_alg_kpv          DATE    = (case when (doc_data ->> 'alg_kpv')::text = '' then null else doc_data ->> 'alg_kpv' END)::date;
+    doc_lopp_kpv         DATE    = (case when (doc_data ->> 'lopp_kpv')::text = '' then null else doc_data ->> 'lopp_kpv' END)::date;
     doc_muud             TEXT    = doc_data ->> 'muud';
     doc_kogus            NUMERIC = doc_data ->> 'kogus';
     doc_ettemaksu_period INTEGER = doc_data ->> 'ettemaksu_period';

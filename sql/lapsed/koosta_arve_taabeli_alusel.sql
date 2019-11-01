@@ -195,7 +195,6 @@ BEGIN
                                                 l_doklausend_id                                      AS doklausid,
                                                 l_liik                                               AS liik,
                                                 l_kpv                                                AS kpv,
-                                                l_kpv + 15                                           AS tahtaeg,
                                                 l_asutus_id                                          AS asutusid,
                                                 l_aa                                                 AS aa,
                                                 l_laps_id                                            AS lapsid,
