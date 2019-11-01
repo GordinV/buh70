@@ -207,7 +207,7 @@ class DocumentTemplate extends React.PureComponent {
                 if (!this.props.docId || docId !== this.props.docId)  {
                     // reload / redirect
                     setTimeout(() => {
-                        const current = `/${this.props.module}/${docTypeId}/${docId}`;
+                        const current = `/${this.props.module ? this.props.module: 'lapsed'}/${docTypeId}/${docId}`;
                         this.props.history.replace(`/reload`);
                         setTimeout(() => {
                             this.props.history.replace(current);

@@ -33,7 +33,6 @@ class ButtonLogs extends React.PureComponent {
             return this.props.onClick('logid');
         } else {
             //redirect
-            console.log('redirect',DocContext.module );
             this.props.history.push(`/${DocContext.module}/pank_vv`);
         }
     }

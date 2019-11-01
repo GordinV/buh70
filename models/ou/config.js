@@ -3,7 +3,8 @@ module.exports = {
         sql: `SELECT
                 'CONFIG'     AS doc_type_id,
                 $2::INTEGER AS userid,
-                c.id,
+                c.id as docId,
+                c.rekvid as id,
                 c.rekvid,
                 coalesce(c.number,'')::VARCHAR(20) as number,
                 coalesce((u.properties->>'keel')::integer,2)::integer as keel,

@@ -75,7 +75,7 @@ BEGIN
 
   UPDATE ou.userid SET properties = properties::JSONB || doc_json::JSONB WHERE id = user_id;
 
-  RETURN config_id;
+  RETURN user_rekvid;
   EXCEPTION
   WHEN OTHERS
     THEN

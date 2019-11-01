@@ -24,5 +24,6 @@ module.exports = {
     lapse_kaart:'/lapsed/lapse_kaart',
     lapse_taabel:'/lapsed/lapse_taabel',
     lapse_grupp:'/lapsed/lapse_grupp',
-    pank_vv: '/lapsed/pank_vv'
+    pank_vv: '/lapsed/pank_vv',
+    config: '/ou/config',
 };

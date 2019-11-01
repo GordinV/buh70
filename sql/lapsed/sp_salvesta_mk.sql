@@ -25,7 +25,7 @@ DECLARE
                              WHERE ltrim(rtrim(kood)) = ltrim(rtrim(upper(doc_type_kood)))
                                AND library = 'DOK'
                              LIMIT 1);
-    doc_number    TEXT    = coalesce(doc_data ->> 'number', '1');
+    doc_number    TEXT    = doc_data ->> 'number';
     doc_kpv       DATE    = doc_data ->> 'kpv';
     doc_aa_id     INTEGER = doc_data ->> 'aaid';
     doc_arvid     INTEGER = doc_data ->> 'arvid';
@@ -61,6 +61,13 @@ BEGIN
     THEN
         doc_id = doc_data ->> 'id';
     END IF;
+
+    IF doc_number IS NULL OR doc_number = ''
+    THEN
+        -- присвоим новый номер
+        doc_number = docs.sp_get_number(user_rekvid, 'SMK', YEAR(doc_kpv), doc_doklausid);
+    END IF;
+
 
     IF doc_aa_id IS NULL
     THEN

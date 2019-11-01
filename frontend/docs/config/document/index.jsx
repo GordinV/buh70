@@ -5,12 +5,13 @@ const PropTypes = require('prop-types');
 const DocumentTemplate = require('./../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
-    styles = require('./tunnus-styles');
+
+    styles = require('./styles');
 
 /**
  * Класс реализует документ справочника признаков.
  */
-class Tunnus extends React.PureComponent {
+class Config extends React.PureComponent {
     constructor(props) {
         super(props);
 
@@ -25,7 +26,8 @@ class Tunnus extends React.PureComponent {
         return (
             <DocumentTemplate docId={this.state.docId}
                               ref='document'
-                              docTypeId='TUNNUS'
+                              docTypeId='CONFIG'
+                              history={this.props.history}
                               module={this.props.module}
                               initData={this.props.initData}
                               renderer={this.renderer}
@@ -45,44 +47,43 @@ class Tunnus extends React.PureComponent {
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>
-                    <InputText title="Kood "
-                               name='kood'
-                               ref="input-kood"
-                               readOnly={!self.state.edited}
-                               value={self.docData.kood || ''}
-                               onChange={self.handleInputChange}/>
+                    <div style={styles.docColumn}>
+                        <InputText title="Prefiks: "
+                                   name='number'
+                                   ref="input-number"
+                                   readOnly={!self.state.edited}
+                                   value={self.docData.number || ''}
+                                   onChange={self.handleInputChange}/>
+                        <InputText title="Arvete tahtpäev "
+                                   name='tahtpaev'
+                                   ref="input-tahtpaev"
+                                   readOnly={!self.state.edited}
+                                   value={self.docData.tahtpaev || ''}
+                                   onChange={self.handleInputChange}/>
+                    </div>
                 </div>
                 <div style={styles.docRow}>
-                    <InputText title="Nimetus "
-                               name='nimetus'
-                               ref="input-nimetus"
-                               readOnly={!self.state.edited}
-                               value={self.docData.nimetus || ''}
-                               onChange={self.handleInputChange}/>
-                </div>
-
-                <div style={styles.docRow}>
-                    <TextArea title="Muud"
-                              name='muud'
-                              ref="textarea-muud"
+                    <TextArea title="Omniva e-arvete server"
+                              name='earved'
+                              ref="textarea-earved"
                               onChange={self.handleInputChange}
-                              value={self.docData.muud || ''}
+                              value={self.docData.earved || ''}
                               readOnly={!self.state.edited}/>
                 </div>
-            </div>
-        );
+
+            </div>);
     }
 
 }
 
-Tunnus.propTypes = {
+Config.propTypes = {
     docId: PropTypes.number,
     initData: PropTypes.object
 };
 
-Tunnus.defaultProps = {
+Config.defaultProps = {
     initData: {},
 };
 
 
-module.exports = (Tunnus);
+module.exports = (Config);

@@ -29,6 +29,7 @@ module.exports = {
         account: '/images/icons/account.png',
         rekv: '/images/icons/rekv.png',
         info: '/images/icons/info.png',
+        settings: '/images/icons/settings.png',
     }
 
 
