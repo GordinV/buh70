@@ -77,6 +77,7 @@ module.exports = {
                 {id: "kuu", name: "Kuu", width: "10%"},
                 {id: "aasta", name: "Aasta", width: "10%"},
                 {id: "kogus", name: "Kogus", width: "10%"},
+                {id: "hind", name: "Hind", width: "20%"},
             ],
             sqlString:
                     `SELECT lt.id,
@@ -86,6 +87,7 @@ module.exports = {
                             lt.kuu,
                             lt.aasta,
                             lt.kogus,
+                            lt.hind,
                             lt.isikukood,
                             lt.nimi,
                             lt.kood,

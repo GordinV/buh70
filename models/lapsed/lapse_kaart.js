@@ -3,7 +3,7 @@ module.exports = {
                           n.kood::TEXT                  AS kood,
                           n.nimetus::TEXT ||
                           coalesce(' (' || (lk.properties ->> 'yksus') || '/' || (lk.properties ->> 'all_yksus') || ')',
-                                   '')::TEXT            AS nimetus,
+                                   '')::TEXT || ', hind: '|| (lk.hind::numeric(12,2))::text            AS nimetus,
                           lk.parentid                   AS lapsid,
                           lk.properties ->> 'yksus'     AS yksus,
                           lk.properties ->> 'all_yksus' AS all_yksus,
