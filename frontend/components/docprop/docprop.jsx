@@ -15,7 +15,7 @@ class SelectTextWidget extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            value: props.value ? props.value: null,
+            value: props.value ? props.value : null,
             description: '', // пойдет в текстовую область
             libData: props.data
         };
@@ -25,7 +25,7 @@ class SelectTextWidget extends React.PureComponent {
 
     // will update state if props changed
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.value !== prevState.value ) {
+        if (nextProps.value !== prevState.value) {
             return {value: nextProps.value};
         } else return null;
     }
@@ -35,7 +35,7 @@ class SelectTextWidget extends React.PureComponent {
 
         // отработаем событие и поменяем состояние
 
-        this.setState({value: value},()=> {
+        this.setState({value: value}, () => {
             this.props.onChange(this.props.name, value);
         });
     }
@@ -87,38 +87,28 @@ class SelectTextWidget extends React.PureComponent {
 
     render() {
         return (
-            <div>
-                <div style={styles.wrapper}>
-                    <Select className={this.props.className}
-                            ref="select"
-                            title={this.props.title}
-                            name={this.props.name}
-                            data={this.props.data}
-                            collId={'id'}
-                            value={this.state.value || ''}
-                            defaultValue={this.props.defaultValue || ''}
-                            placeholder={this.props.placeholder || this.props.title}
-                            readOnly={this.props.readOnly}
-                            onChange={this.handleSelectOnChange}
-                    />
-                    {this.state.value ?
-                        <ButtonEdit
-                            show={this.props.readOnly}
-                            onClick={this.handleClick}
-                        /> :
-                        <ButtonAdd
-                            show={this.props.readOnly}
-                            onClick={this.handleClick}/>
-                    }
-
-                </div>
-                <Text ref="text"
-                      name='muud'
-                      placeholder='DokProp'
-                      value={this.state.description || ''}
-                      readOnly={this.props.readOnly}
-                      disabled={!this.props.readOnly}
+            <div style={styles.wrapper}>
+                <Select className={this.props.className}
+                        ref="select"
+                        title={this.props.title}
+                        name={this.props.name}
+                        data={this.props.data}
+                        collId={'id'}
+                        value={this.state.value || ''}
+                        defaultValue={this.props.defaultValue || ''}
+                        placeholder={this.props.placeholder || this.props.title}
+                        readOnly={this.props.readOnly}
+                        onChange={this.handleSelectOnChange}
                 />
+                {this.state.value ?
+                    <ButtonEdit
+                        show={this.props.readOnly}
+                        onClick={this.handleClick}
+                    /> :
+                    <ButtonAdd
+                        show={this.props.readOnly}
+                        onClick={this.handleClick}/>
+                }
 
             </div>
         );

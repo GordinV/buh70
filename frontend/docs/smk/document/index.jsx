@@ -105,7 +105,7 @@ class Smk extends React.PureComponent {
                             <Select title="Arveldus arve"
                                     name='aa_id'
                                     libs="aa"
-                                    value={self.docData.aa_id}
+                                    value={Number(self.docData.aa_id) || 0}
                                     data={self.libs['aa']}
                                     defaultValue={String(self.docData.pank) || ''}
                                     onChange = {self.handleInputChange}
@@ -135,7 +135,7 @@ class Smk extends React.PureComponent {
                                      name='doklausid'
                                      data={self.libs['dokProps']}
                                      dokTypeId={'SMK'}
-                                     value={self.docData.doklausid || 0}
+                                     value={Number(self.docData.doklausid) || 0}
                                      defaultValue={self.docData.dokprop || ''}
                                      history={this.props.history}
                                      ref="dokprop"
@@ -312,21 +312,24 @@ class Smk extends React.PureComponent {
 
         //подставим наименование услогу
 
-        let nomDataName = doc.libs['nomenclature'].filter(lib => {
-            if (lib.id === doc.gridRowData['nomid']) return lib;
-        });
-
         if (doc.gridRowData['nomid']) {
-            doc.gridRowData['kood'] = nomDataName[0].kood;
-            doc.gridRowData['nimetus'] = nomDataName[0].name;
+            let nomDataName = doc.libs['nomenclature'].find(lib => lib.id === Number(doc.gridRowData['nomid']));
+
+            if (nomDataName) {
+                doc.gridRowData['kood'] = nomDataName.kood;
+                doc.gridRowData['nimetus'] = nomDataName.nimetus;
+            }
         }
 
-        let asutusDataName = doc.libs['asutused'].filter(lib => {
-            if (lib.id === doc.gridRowData['asutusid']) return lib;
-        });
-
+        //подставим наименование
         if (doc.gridRowData['asutusid']) {
-            doc.gridRowData['asutus'] = asutusDataName[0].name;
+
+            let asutusDataName = doc.libs['asutused'].find(lib => lib.id === Number(doc.gridRowData['asutusid']));
+
+            if (asutusDataName) {
+                doc.gridRowData['asutus'] = asutusDataName.nimetus;
+            }
+
         }
     }
 

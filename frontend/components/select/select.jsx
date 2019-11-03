@@ -23,21 +23,6 @@ class Select extends React.PureComponent {
     }
 
     /**
-     * привяжет к значеню поля
-     * @param data - коллекция
-     * @param collId - поле
-     * @param value - значение
-     */
-    findFieldValue(data, collId, value) {
-        // надо привязать данные
-        data.forEach((row) => {
-            if (row[collId] === value) {
-                this.setState({value: row[collId], fieldValue: row[collId]});
-            }
-        }, this);
-    }
-
-    /**
      *
      * @param collId
      * @param rowId
@@ -45,16 +30,11 @@ class Select extends React.PureComponent {
      */
     getValueById(collId, rowId) {
         // вернет значения поля по выбранному ИД
-
-        let fieldValue,
-            data = this.props.data;
-
-        data.forEach((row) => {
-            if (row[collId] === rowId) {
-                fieldValue = row[collId];
-                this.setState({fieldValue: fieldValue});
-            }
-        }, this);
+        let fieldValue;
+        const foundRow = this.props.data.find(row => row[collId] === rowId);
+        if (foundRow) {
+            fieldValue = foundRow[collId];
+        }
 
         return fieldValue;
     }
@@ -69,7 +49,7 @@ class Select extends React.PureComponent {
     componentDidMount() {
         if (this.props.collId && this.props.collId !== 'id') {
             // ищем ИД по значению поля
-            this.findFieldValue(this.props.data, this.props.collId, this.props.value);
+            this.getValueById(this.props.collId, this.props.value);
         }
 
     }
@@ -81,12 +61,12 @@ class Select extends React.PureComponent {
             fieldValue = null;
         }
 
-        if (this.props.collId) {
+        if (this.props.collId && this.props.collId !== 'id') {
             // найдем по ид значение поля в collId
             fieldValue = this.getValueById(this.props.collId, fieldValue);
         }
         // сохраним ид как value
-        this.setState({value: e.target.value, fieldValue: fieldValue});
+        this.setState({fieldValue: fieldValue, value: e.target.value});
 
         if (this.props.onChange) {
             // смотрим к чему привязан селект и отдаим его наверх
@@ -95,8 +75,6 @@ class Select extends React.PureComponent {
     }
 
     render() {
-        let inputReadOnly = this.state.readOnly || false;
-
         const selectStyle = Object.assign({}, styles.select,
                 this.props.style ? this.props.style : {});
 
@@ -137,7 +115,7 @@ class Select extends React.PureComponent {
 
 
         if (data.length) {
-            if (!this.state.value) {
+            if (!this.state.value && !data.find(row =>row.id === 0)) {
                 // will add empty row
                 data.unshift({id: 0, kood: '', nimetus: ''});
             }
