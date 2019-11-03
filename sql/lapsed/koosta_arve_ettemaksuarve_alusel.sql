@@ -25,7 +25,6 @@ BEGIN
 
     -- will return docTypeid of new doc
     doc_type_id = 'ARV';
-
     -- грузим счет на предоплату
     SELECT a.*,
            (a.properties ->> 'ettemaksu_period')::INTEGER AS ettemaksu_period,

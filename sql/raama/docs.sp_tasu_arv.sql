@@ -22,8 +22,10 @@ DECLARE
     v_tulu_arved     RECORD;
     l_tasu_summa     NUMERIC = 0;
 BEGIN
-    SELECT d.id, d.docs_ids, a.properties ->> 'tyyp' AS tyyp
-    into v_arv
+    SELECT d.id,
+           d.docs_ids,
+           a.properties ->> 'tyyp' AS tyyp
+           INTO v_arv
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
     WHERE d.id = l_arv_id;
@@ -68,11 +70,13 @@ BEGIN
     );
 
     l_doc_tasu_id = (
-        SELECT id
-        FROM docs.arvtasu
+        SELECT a.id
+        FROM docs.arvtasu a
         WHERE rekvid = v_tasu.rekvid
           AND doc_arv_id = l_arv_id
           AND doc_tasu_id = l_tasu_id
+        ORDER BY a.id DESC
+        LIMIT 1
     );
 
     SELECT coalesce(l_doc_tasu_id, 0) AS id,
@@ -114,6 +118,8 @@ BEGIN
                     WHERE rekvid = v_tasu.rekvid
                       AND doc_arv_id = v_tulu_arved.id
                       AND doc_tasu_id = l_tasu_id
+                    ORDER BY id DESC
+                    LIMIT 1
                 );
 
                 -- готовим параметры

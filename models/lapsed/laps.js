@@ -68,9 +68,9 @@ module.exports = {
                          n.kood,
                          n.nimetus,
                          k.hind,
-                         k.properties ->> 'yksus'     AS yksus,
-                         k.properties ->> 'all_yksus' AS all_yksus,
-                         case WHEN  (k.properties->>'kas_inf3')::BOOLEAN then 'INF3' else '' end as inf3
+                         k.properties ->> 'yksus'                                                 AS yksus,
+                         k.properties ->> 'all_yksus'                                             AS all_yksus,
+                         CASE WHEN (k.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3
                   FROM lapsed.lapse_kaart k
                            INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
                   WHERE k.parentid = $1
@@ -88,7 +88,7 @@ module.exports = {
             row: {},
             details: [],
             teenused: [],
-            vanemad:  [],
+            vanemad: [],
             gridConfig:
                 [
                     {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
@@ -133,8 +133,8 @@ module.exports = {
                             nimi,
                             yksused,
                             lapsed.get_viitenumber($1, l.id) AS viitenumber,
-                            $1::INTEGER AS rekvid,
-                            $2::INTEGER AS user_id
+                            $1::INTEGER                      AS rekvid,
+                            $2::INTEGER                      AS user_id
                      FROM lapsed.cur_lapsed l
                      WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
             `,     //  $1 всегда ид учреждения, $2 - userId
@@ -162,7 +162,9 @@ module.exports = {
         alias: 'arvestaTaabel'
     },
     validateIsikukood: {
-      command: `select id from lapsed.laps where isikukood = $1::text`,
+        command: `SELECT id
+                  FROM lapsed.laps
+                  WHERE isikukood = $1::TEXT`,
         type: 'sql',
         alias: 'validateIsikukood'
     },
@@ -190,11 +192,11 @@ module.exports = {
     print: [
         {
             view: 'lapse_kaart',
-            params:'id'
+            params: 'id'
         },
         {
             view: 'laste_register',
-            params:'sqlWhere'
+            params: 'sqlWhere'
         },
     ],
     getLog: {
@@ -215,7 +217,6 @@ module.exports = {
         type: "sql",
         alias: "getLogs"
     },
-
 
 
 }

@@ -31,7 +31,7 @@ class Select extends React.PureComponent {
     findFieldValue(data, collId, value) {
         // надо привязать данные
         data.forEach((row) => {
-            if (row[collId] == value) {
+            if (row[collId] === value) {
                 this.setState({value: row[collId], fieldValue: row[collId]});
             }
         }, this);
@@ -50,7 +50,7 @@ class Select extends React.PureComponent {
             data = this.props.data;
 
         data.forEach((row) => {
-            if (row[collId] == rowId) {
+            if (row[collId] === rowId) {
                 fieldValue = row[collId];
                 this.setState({fieldValue: fieldValue});
             }
@@ -77,7 +77,7 @@ class Select extends React.PureComponent {
     onChange(e) {
         let fieldValue = e.target.value;
 
-        if (fieldValue == '') {
+        if (fieldValue === '') {
             fieldValue = null;
         }
 
@@ -95,20 +95,10 @@ class Select extends React.PureComponent {
     }
 
     render() {
-        let inputReadOnly = this.state.readOnly || false,
-            inputDefaultValue = this.props.defaultValue ? this.props.defaultValue : this.props.value || ''; // Дадим дефолтное значение для виджета, чтоб покать его сразу, до подгрузки библиотеки
+        let inputReadOnly = this.state.readOnly || false;
 
-        let dataValue = this.props.data.filter((item) => {
-            if (item[this.props.collId] === this.state.value) {
-                return item;
-            }
-        }, this);
-
-        let inputStyle = Object.assign({}, styles.input, inputReadOnly ? {} : styles.hide,
-            inputReadOnly ? styles.readOnly : {}),
-            selectStyle = Object.assign({}, styles.select,
-                this.props.style ? this.props.style : {}),
-            buttonStyle = Object.assign({}, styles.button, this.props.btnDelete ? {} : styles.hide);
+        const selectStyle = Object.assign({}, styles.select,
+                this.props.style ? this.props.style : {});
 
         return (
             <div style={styles.wrapper} ref="wrapper">
@@ -185,7 +175,6 @@ Select.propTypes = {
     readOnly: PropTypes.bool,
     disabled: PropTypes.bool,
     btnDelete: PropTypes.bool,
-    libs: PropTypes.string,
     collId: PropTypes.string.isRequired,
     title: PropTypes.string,
     placeholder: PropTypes.string,

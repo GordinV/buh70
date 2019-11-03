@@ -3,7 +3,11 @@
 
 const PropTypes = require('prop-types');
 const Select = require('../select/select.jsx');
+const ButtonEdit = require('../button-register/button-register-edit/button-register-edit.jsx');
+const ButtonAdd = require('../button-register/button-register-add/button-register-add.jsx');
 const Text = require('../text-area/text-area.jsx');
+const DocContext = require('./../../doc-context.js');
+const styles = require('./styles.js');
 
 const React = require('react');
 
@@ -11,19 +15,49 @@ class SelectTextWidget extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            value: props.value,
+            value: props.value ? props.value: null,
             description: '', // пойдет в текстовую область
-            libData: []
+            libData: props.data
         };
         this.handleSelectOnChange = this.handleSelectOnChange.bind(this);
+        this.handleClick = this.handleClick.bind(this);
     }
 
-    handleSelectOnChange(e, name, value) {
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.value !== prevState.value ) {
+            return {value: nextProps.value};
+        } else return null;
+    }
+
+
+    handleSelectOnChange(name, value) {
+
         // отработаем событие и поменяем состояние
-        if (this.state.libData) {
-            let selg = this.getDescriptionBySelectValue(this.state.libData) || null;
-            this.setState({value: value, description: selg});
+
+        this.setState({value: value},()=> {
+            this.props.onChange(this.props.name, value);
+        });
+    }
+
+    /**
+     *     кастомный обработчик собютия клик
+     */
+    handleClick(event) {
+        // делаем редайрект на страницц справочника
+        if (event === 'edit') {
+            this.props.history.push({
+                pathname: `/${DocContext.module}/dokprops/${this.state.value}`,
+                state: {dokPropId: DocContext.docTypeId, type: 'text'}
+            });
+
+        } else if (event === 'add') {
+            this.props.history.push({
+                pathname: `/${DocContext.module}/dokprops/0`,
+                state: {dokPropId: DocContext.docTypeId, type: 'text'}
+            });
         }
+
     }
 
     /**
@@ -35,7 +69,7 @@ class SelectTextWidget extends React.PureComponent {
         // найдем в справочнике описание и установим его состояние
         let libRow = libData.filter((lib) => {
 
-                if (lib.id == this.props.value) {
+                if (lib.id === this.props.value) {
                     return lib;
                 }
             }),
@@ -54,24 +88,36 @@ class SelectTextWidget extends React.PureComponent {
     render() {
         return (
             <div>
-                <Select className={this.props.className}
-                        ref="select"
-                        title={this.props.title}
-                        name={this.props.name}
-                        libs={this.props.libs}
-                        data={this.props.data}
-                        value={this.props.value || ''}
-                        defaultValue={this.props.defaultValue || ''}
-                        placeholder={this.props.placeholder || this.props.title}
-                        readOnly={this.props.readOnly}
-                        onChange={this.handleSelectOnChange}
-                />
+                <div style={styles.wrapper}>
+                    <Select className={this.props.className}
+                            ref="select"
+                            title={this.props.title}
+                            name={this.props.name}
+                            data={this.props.data}
+                            collId={'id'}
+                            value={this.state.value || ''}
+                            defaultValue={this.props.defaultValue || ''}
+                            placeholder={this.props.placeholder || this.props.title}
+                            readOnly={this.props.readOnly}
+                            onChange={this.handleSelectOnChange}
+                    />
+                    {this.state.value ?
+                        <ButtonEdit
+                            show={this.props.readOnly}
+                            onClick={this.handleClick}
+                        /> :
+                        <ButtonAdd
+                            show={this.props.readOnly}
+                            onClick={this.handleClick}/>
+                    }
+
+                </div>
                 <Text ref="text"
                       name='muud'
                       placeholder='DokProp'
                       value={this.state.description || ''}
-                      readOnly={true}
-                      disabled={true}
+                      readOnly={this.props.readOnly}
+                      disabled={!this.props.readOnly}
                 />
 
             </div>

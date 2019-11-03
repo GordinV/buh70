@@ -101,8 +101,9 @@ BEGIN
     ORDER BY D.ID DESC
     LIMIT 1;
 
-    IF l_arv_id IS NOT NULL AND l_status = 2
+    IF l_arv_id IS NOT NULL AND l_status <  3
     THEN
+
         -- в этом периоде счет на предоплату уже авыписан
         error_code = 3;
         result = 0;

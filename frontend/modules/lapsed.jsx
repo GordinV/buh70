@@ -41,9 +41,10 @@ const LapseGruppRegister = require('./../docs/lapse_grupp/index.jsx'),
 
 const PankVVRegister = require('./../docs/pank_vv/index.jsx');
 const ConfigDocument = require('./../docs/config/document/index.jsx');
+const DokpropsDocument = require('./../docs/dokprops/document/index.jsx');
 
 
-const {Route, withRouter, Redirect} = require('react-router-dom');
+const {Route} = require('react-router-dom');
 const {StyleRoot} = require('radium');
 const MODULE = 'Lapsed';
 const DocContext = require('./../doc-context.js');
@@ -172,6 +173,8 @@ class App extends React.Component {
                 <Route exact path="/lapsed/config/:docId"
                        render={(props) => <ConfigDocument {...props} history={props.history}/>}/>
 
+                <Route exact path="/lapsed/dokprops/:docId"
+                       render={(props) => <DokpropsDocument {...props} history={props.history}/>}/>
             </StyleRoot>
         )
     }

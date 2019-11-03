@@ -81,8 +81,6 @@ BEGIN
         THEN
             RAISE NOTICE 'pank not found %', doc_aa_id;
             RETURN 0;
-        ELSE
-            RAISE NOTICE 'pank: %', doc_aa_id;
         END IF;
     END IF;
 

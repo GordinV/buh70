@@ -14,10 +14,9 @@ const DocumentTemplate = require('../../documentTemplate/index.jsx'),
     ModalPage = require('./../../../components/modalpage/modalPage.jsx'),
     styles = require('./smk-style');
 
-const LIBDOK = 'SMK',
-    LIBRARIES = [
+const  LIBRARIES = [
         {id:'kontod',filter:''},
-        {id:'dokProps',filter:''},
+        {id:'dokProps',filter:`WHERE kood = 'SMK'`},
         {id:'users',filter:''},
         {id:'tunnus',filter:''},
         {id:'project',filter:''},
@@ -25,8 +24,6 @@ const LIBDOK = 'SMK',
         {id:'asutused',filter:`where id in (select asutusid from lapsed.vanemad)`},
         {id:'aa',filter:''}
     ];
-
-let now = new Date();
 
 class Smk extends React.PureComponent {
     constructor(props) {
@@ -81,8 +78,7 @@ class Smk extends React.PureComponent {
      * @returns {XML}
      */
     renderer (self) {
-        let bpm = self.docData && self.docData.bpm ? self.docData.bpm : [],
-            isEditeMode = self.state.edited;
+        let  isEditeMode = self.state.edited;
 
         // формируем зависимости
         if (self.docData.relations) {
@@ -137,9 +133,11 @@ class Smk extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <DokProp title="Konteerimine: "
                                      name='doklausid'
-                                     libs="dokProps"
+                                     data={self.libs['dokProps']}
+                                     dokTypeId={'SMK'}
                                      value={self.docData.doklausid || 0}
                                      defaultValue={self.docData.dokprop || ''}
+                                     history={this.props.history}
                                      ref="dokprop"
                                      onChange = {self.handleInputChange}
                                      readOnly={!isEditeMode}/>
