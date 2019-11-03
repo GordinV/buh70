@@ -7,7 +7,9 @@ const
     DocumentTemplate = require('./../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
+    Select = require('../../../components/select/select.jsx'),
     styles = require('./styles');
+const  LIBRARIES = [{id:'kontod',filter:'where len(kood::text) >= 6'}];
 
 class Project extends React.PureComponent {
     constructor(props) {
@@ -25,6 +27,7 @@ class Project extends React.PureComponent {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  history={this.props.history}
+                                 libs={LIBRARIES}
                                  docTypeId='DOKPROPS'
                                  initData={this.props.initData}
                                  renderer={this.renderer}/>
@@ -53,18 +56,26 @@ class Project extends React.PureComponent {
                                    readOnly={true}
                                    value={self.docData.dok}
                         />
-                        <InputText title="Korr.konto "
-                                   name='konto'
-                                   ref="input-konto"
-                                   readOnly={!self.state.edited}
-                                   value={self.docData.konto || ''}
-                                   onChange={self.handleInputChange}/>
-                        <InputText title="KBM.konto "
-                                   name='kbmkonto'
-                                   ref="input-kbmkonto"
-                                   readOnly={!self.state.edited}
-                                   value={self.docData.kbmkonto || ''}
-                                   onChange={self.handleInputChange}/>
+                        <Select title="Korr. konto: "
+                                name='konto'
+                                libs="kontod"
+                                data={self.libs['kontod']}
+                                value={self.docData.konto}
+                                readOnly={!self.state.edited}
+                                ref='konto'
+                                collId="kood"
+                                onChange={self.handleInputChange}/>
+
+                        <Select title="KBM.konto: "
+                                name='kbmkonto'
+                                libs="kontod"
+                                data={self.libs['kontod']}
+                                value={self.docData.kbmkonto}
+                                readOnly={!self.state.edited}
+                                ref='kbmkonto'
+                                collId="kood"
+                                onChange={self.handleInputChange}/>
+
                     </div>
 
                 </div>
