@@ -42,7 +42,7 @@ class Project extends React.PureComponent {
         if (!self.docData) {
             return null;
         }
-        if (!self.docData.dok) {
+        if (!self.docData.dok && this.props.history) {
             self.docData.dok = this.props.history.location.state.dokPropId;
         }
 
