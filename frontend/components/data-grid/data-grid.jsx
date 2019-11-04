@@ -25,7 +25,7 @@ const isExists = (object, prop) => {
 };
 
 //@keydown @todo
-class DataGrid extends React.PureComponent {
+class DataGrid extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -47,12 +47,17 @@ class DataGrid extends React.PureComponent {
         this.getGridRowIndexById = this.getGridRowIndexById.bind(this);
     }
 
+
     // will update state if props changed
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (JSON.stringify(nextProps.gridData) !== JSON.stringify(prevState.gridData) || (nextProps.value && nextProps.value !== prevState.value)) {
+        return nextProps;
+        if (JSON.stringify(nextProps.gridData) !== JSON.stringify(prevState.gridData) ||
+            (nextProps.value && nextProps.value !== prevState.value) || nextProps.gridData.length !== prevState.gridData.length) {
             return {gridData: nextProps.gridData, value: nextProps.value};
-        } else return null;
+        } else
+            return null;
     }
+
 
     render() {
         let tableStyle = Object.assign({}, styles.headerTable, this.props.style);
@@ -329,7 +334,8 @@ class DataGrid extends React.PureComponent {
                 onClick={this.handleGridHeaderClick.bind(this, column.id)}>
                 <span>{column.name}</span>
                 {isHidden ? <img ref="imageAsc" style={imageStyleAsc} src={styles.icons['asc']} alt={'asc'}/> : null}
-                {isHidden ? <img ref="imageDesc" style={imageStyleDesc} src={styles.icons['desc']} alt={'desc'}/> : null}
+                {isHidden ?
+                    <img ref="imageDesc" style={imageStyleDesc} src={styles.icons['desc']} alt={'desc'}/> : null}
             </th>)
         }, this);
     }

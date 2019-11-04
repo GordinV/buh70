@@ -510,7 +510,7 @@ class Arve extends React.PureComponent {
 
         let vat = 0;
         if (doc.gridRowData['nomid']) {
-            let nomDataName = doc.libs['nomenclature'].find(lib => lib.id === doc.gridRowData['nomid']);
+            let nomDataName = doc.libs['nomenclature'].find(lib => Number(lib.id) === Number(doc.gridRowData['nomid']));
 
             if (nomDataName) {
                 vat = nomDataName.vat ? Number(nomDataName.vat) / 100 : 0;

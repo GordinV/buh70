@@ -94,6 +94,7 @@ class DocumentTemplate extends React.PureComponent {
         const warningStyle = styles[this.state.warningType] ? styles[this.state.warningType] : null;
 
         let dialogString = this.serverValidation.length > 0 ? `Dokument ${this.serverValidation[0].name} = ${this.serverValidation[0].value} juba olemas. Kas jätka?` : '';
+        console.log('templ render', this.docData.gridData);
         return (
             <div>
                 {this.renderDocToolBar()}

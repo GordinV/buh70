@@ -63,6 +63,11 @@ class LapseGrupp extends React.PureComponent {
             self.docData.parentid = this.state.lapsId;
         }
 
+        let gridValue;
+        if (self.gridRowData) {
+            gridValue = self.gridRowData.id ? self.gridRowData.id: null;
+        }
+
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>
@@ -124,6 +129,7 @@ class LapseGrupp extends React.PureComponent {
                               handleGridRow={self.handleGridRow}
                               handleGridBtnClick={self.handleGridBtnClick}
                               readOnly={!isEditMode}
+                              value={gridValue}
                               style={styles.grid.headerTable}
                               ref="data-grid"/>
                 </div>
@@ -226,15 +232,15 @@ class LapseGrupp extends React.PureComponent {
 
             //подставим наименование услогу
 
-            let nomDataName = doc.libs['nomenclature'].filter(lib => {
-                if (lib.id === doc.gridRowData['nomid']) return lib;
-            });
-
             if (doc.gridRowData['nomid']) {
-                doc.gridRowData['kood'] = nomDataName[0].kood;
-                doc.gridRowData['nimetus'] = nomDataName[0].nimetus;
+
+                let nomDataName = doc.libs['nomenclature'].find(lib => Number(lib.id) === Number(doc.gridRowData['nomid']));
+
+                doc.gridRowData['kood'] = nomDataName.kood;
+                doc.gridRowData['nimetus'] = nomDataName.nimetus;
+
                 if (!doc.gridRowData['hind']) {
-                    doc.gridRowData['hind'] = nomDataName[0].hind;
+                    doc.gridRowData['hind'] = nomDataName.hind;
                 }
             }
 
