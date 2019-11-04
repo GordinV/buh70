@@ -199,12 +199,13 @@ class DocumentTemplate extends React.PureComponent {
                 let docTypeId = this.props.docTypeId,
                     docId = this.docData.id;
 
-                if (docTypeId.toUpperCase() === 'LAPS') {
+                if (docTypeId.toUpperCase() === 'LAPS' && this.props.docId === 0) {
+                    // делаем редайрект на карту услуг
                     docTypeId = 'LAPSE_KAART';
                     docId = 0;
                 }
 
-                if (!this.props.docId || docId !== this.props.docId)  {
+                if (!this.props.docId)  {
                     // reload / redirect
                     setTimeout(() => {
                         const current = `/${this.props.module ? this.props.module: 'lapsed'}/${docTypeId}/${docId}`;

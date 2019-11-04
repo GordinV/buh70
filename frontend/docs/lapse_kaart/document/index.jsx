@@ -6,7 +6,6 @@ const DocContext = require('../../../doc-context');
 
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
-    InputText = require('../../../components/input-text/input-text.jsx'),
     InputNumber = require('../../../components/input-number/input-number.jsx'),
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     InputDate = require('../../../components/input-date/input-date.jsx'),
@@ -16,8 +15,7 @@ const
     TextArea = require('../../../components/text-area/text-area.jsx'),
     styles = require('./styles');
 
-const LIBDOK = 'LAPSE_KAART',
-    LIBRARIES = [
+const LIBRARIES = [
         {
             id: 'tunnus', filter: ''
         },
@@ -93,11 +91,10 @@ class Laps extends React.PureComponent {
      */
 
     renderer(self) {
-        let bpm = self.docData && self.docData.bpm ? self.docData.bpm : [],
-            isEditMode = self.state.edited;
+        let isEditMode = self.state.edited;
 
 
-        if ((self.docData.id == 0 || !self.docData.parentid) && this.state.lapsId) {
+        if ((!Number(self.docData.id)  || !self.docData.parentid) && this.state.lapsId) {
             //new record
             self.docData.parentid = this.state.lapsId;
         }
@@ -372,11 +369,11 @@ class Laps extends React.PureComponent {
 
             let yksus;
             if (Doc.libs['lapse_grupp'] && Doc.docData.yksus) {
-                yksus = Doc.libs['lapse_grupp'].find(yksus => yksus.kood === Doc.docData.yksus);
+                yksus = Doc.libs['lapse_grupp'].find(obj => obj.kood === Doc.docData.yksus);
             }
 
             if (yksus.teenused) {
-                let teenus = yksus.teenused.find(row => row.id === inputValue);
+                let teenus = yksus.teenused.find(obj => Number(obj.id) === Number(inputValue));
                 Doc.docData.kogus = teenus.kogus ? teenus.kogus : Doc.docData.kogus;
                 Doc.docData.hind = teenus.hind ? teenus.hind : Doc.docData.hind;
             }
