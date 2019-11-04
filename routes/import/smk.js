@@ -4,11 +4,17 @@ module.exports = async (file, mimeType, user) => {
 
     let rows = [];
 
-    if (mimeType === 'text/xml') {
-        rows = await readXML(file);
-    } else if (mimeType === 'application/octet-stream') {
-        rows = await readCSV(file);
+    try {
+        if (mimeType === 'text/xml') {
+            rows = await readXML(file);
+        } else if (mimeType === 'application/octet-stream') {
+            rows = await readCSV(file);
+        }
+
+    } catch (e) {
+        console.error(e);
     }
+
     let saved = 0;
     if (rows.length) {
         // сохраняем
@@ -22,7 +28,6 @@ module.exports = async (file, mimeType, user) => {
         saved = response.data && response.data.length > 0 ? response.data[0].result : 0;
         timestamp = response.data && response.data.length > 0 ? response.data[0].stamp : null;
 
-        console.log('saved', response, saved, timestamp);
         if (saved && timestamp) {
             let mk_params = [timestamp, user.id];
             const mkCount = await Document.executeTask('koostaMK', mk_params);
@@ -39,9 +44,11 @@ const readXML = async (xmlContent) => {
     const rows = [];
 
     const result = await parser.parseString(xmlContent, (err, result) => {
-        if (err) return err;
-
+        if (err) {
+            throw err;
+        }
         let stmtes = result.Document.BkToCstmrStmt[0].Stmt;
+        let Acct = stmtes[0].Acct[0].Svcr[0].FinInstnId[0].BIC[0]; //banc code
         let Ntres = stmtes[0].Ntry;
         Ntres.forEach(ntry => {
             if (ntry.CdtDbtInd[0] == 'CRDT') {
@@ -63,7 +70,8 @@ const readXML = async (xmlContent) => {
                     selg: selg,
                     viitenr: viitenr,
                     maksja: maksja,
-                    iban: eban
+                    iban: eban,
+                    pank: Acct
                 });
 
             }
@@ -80,8 +88,11 @@ const readCSV = async (csvContent) => {
     const parse = require('csv-parse');
     const rows = [];
     // Create the parser
-    const fileContent = await parse(csvContent, {delimiter: ';', columns: false}, (err, output) => {
+    const fileContent = await parse(csvContent,{headers: false, delimiter: ';', columns: false},(err, output) => {
         result = output;
+        if (err) {
+
+        }
 
         output.forEach(row => {
             if (row[7] == 'C') {
@@ -93,13 +104,13 @@ const readCSV = async (csvContent) => {
                     selg: row[11],
                     viitenr: row[9],
                     maksja: row[4],
-                    iban: row[3]
+                    iban: row[3],
+                    pank: row[5]
                 });
             }
 
         });
     });
-    console.log('rows', rows);
     return rows;
 };
 

@@ -7,40 +7,44 @@ const Smk = {
         {
             sql: `SELECT d.id,
                          d.docs_ids,
-                         (to_char(created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT              AS created,
-                         (to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT           AS lastupdate,
-                         k.number                                                       AS number,
-                         to_char(k.maksepaev, 'YYYY-MM-DD')::TEXT                       AS maksepaev,
-                         to_char(k.maksepaev, 'DD.MM.YYYY')::TEXT                       AS maksepaev_print,
+                         (to_char(created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT    AS created,
+                         (to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT AS lastupdate,
+                         k.number                                             AS number,
+                         to_char(k.maksepaev, 'YYYY-MM-DD')::TEXT             AS maksepaev,
+                         to_char(k.maksepaev, 'DD.MM.YYYY')::TEXT             AS maksepaev_print,
                          k.viitenr,
-                         k.aaid                                                         AS aa_id,
-                         aa.pank                                                        AS pank,
-                         trim(aa.arve)::VARCHAR(20)                                     AS omaArve,
+                         k.aaid                                               AS aa_id,
+                         aa.pank                                              AS pank,
+                         trim(aa.arve)::VARCHAR(20)                           AS omaArve,
                          k.rekvId,
-                         to_char(k.kpv, 'YYYY-MM-DD')::TEXT                             AS kpv,
-                         to_char(k.kpv, 'DD.MM.YYYY')::TEXT                             AS kpv_print,
+                         to_char(k.kpv, 'YYYY-MM-DD')::TEXT                   AS kpv,
+                         to_char(k.kpv, 'DD.MM.YYYY')::TEXT                   AS kpv_print,
                          k.selg,
                          k.muud,
                          k.opt,
                          k.arvid,
                          k.aaid,
                          ('Number:' || arv.number :: TEXT || ' Kuupäev:' || arv.kpv :: TEXT || ' Jääk:' ||
-                          arv.jaak :: TEXT)                                             AS arvnr,
+                          (arv.jaak::NUMERIC(12, 2)) :: TEXT)                 AS arvnr,
                          (SELECT sum(summa)
                           FROM docs.mk1
-                          WHERE parentid = k.id)                                        AS summa,
-                         coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20) AS konto,
-                         dp.selg::VARCHAR(120)                                          AS dokprop,
-                         k.doklausid,
-                         (d.history -> 0 ->> 'user')::VARCHAR(120)                      AS koostaja
+                          WHERE parentid = k.id):: NUMERIC (12, 2) AS summa,
+                      COALESCE ((dp.details :: JSONB ->>
+                         'konto'),
+                         '') :: VARCHAR (20) AS konto,
+                      dp.selg::VARCHAR (120) AS dokprop,
+                      k.doklausid,
+                      (D.history -> 0 ->>
+                         'user')::VARCHAR (120) AS koostaja
 
-                  FROM docs.doc d
-                           INNER JOIN docs.mk k ON k.parentId = d.id
-                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                           LEFT OUTER JOIN ou.aa AS aa ON k.aaid = aa.Id
-                           LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.parentId
-                           LEFT OUTER JOIN libs.dokprop dp ON dp.id = k.doklausid
-                  WHERE d.id = $1`,
+                  FROM docs.doc D
+                      INNER JOIN docs.mk k
+                  ON k.parentId = D.id
+                      INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                      LEFT OUTER JOIN ou.aa AS aa ON k.aaid = aa.Id
+                      LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.parentId
+                      LEFT OUTER JOIN libs.dokprop dp ON dp.id = k.doklausid
+                  WHERE D.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                  AS id,
                               $2 :: INTEGER                                  AS userid,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT  AS created,
@@ -123,7 +127,6 @@ const Smk = {
             {id: "nomid", name: "nomid", width: "200px", show: false},
             {id: "aa", name: "Arveldus arve", width: "100px"},
             {id: "viitenr", name: "Viite number", width: "100px"},
-            {id: "maksepaev", name: "Maksepäev", width: "100px"},
             {id: "nimi", name: "Nimi", width: "100px"},
             {id: "isikukood", name: "Isikukood", width: "100px"},
 
@@ -134,8 +137,8 @@ const Smk = {
                            mk.asutus,
                            mk.kood,
                            mk.rekvid,
-                           mk.deebet,
-                           mk.kreedit,
+                           mk.deebet::NUMERIC(12, 2),
+                           mk.kreedit::NUMERIC(12, 2),
                            mk.number,
                            mk.journalid,
                            mk.aa,
@@ -146,7 +149,7 @@ const Smk = {
                            mk.isikukood,
                            mk.nimi,
                            $2                                  AS userid,
-                           mk.viitenr::text  
+                           mk.viitenr::TEXT
                     FROM lapsed.cur_lapsed_mk mk
                     WHERE mk.rekvId = $1`,
 //                      AND coalesce(docs.usersRigths(mk.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя

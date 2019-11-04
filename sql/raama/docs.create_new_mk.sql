@@ -9,20 +9,24 @@ CREATE OR REPLACE FUNCTION docs.create_new_mk(IN user_id INTEGER,
     RETURNS RECORD AS
 $BODY$
 DECLARE
-    l_arv_id    INTEGER        = params ->> 'arv_id';
-    l_dok       TEXT           = coalesce((params ->> 'dok') :: TEXT, 'MK');
-    l_summa     NUMERIC(12, 2) = params ->> 'summa';
-    mk_id       INTEGER;
-    v_arv       RECORD;
-    json_object JSONB;
-    v_params    RECORD;
-    json_mk1    JSONB;
-    l_pank_id   INTEGER;
-    l_laps_id   INTEGER        = (SELECT parentid
-                                  FROM lapsed.liidestamine
-                                  WHERE docid = l_arv_id);
+    l_arv_id     INTEGER        = params ->> 'arv_id';
+    l_dok        TEXT           = coalesce((params ->> 'dok') :: TEXT, 'MK');
+    l_summa      NUMERIC(12, 2) = params ->> 'summa';
+    l_dokprop_id INTEGER        = params ->> 'dokprop_id';
+    l_viitenr    TEXT           = params ->> 'viitenumber';
+    l_selg       TEXT           = params ->> 'selg';
+    mk_id        INTEGER;
+    v_arv        RECORD;
+    json_object  JSONB;
+    v_params     RECORD;
+    json_mk1     JSONB;
+    l_pank_id    INTEGER;
+    l_laps_id    INTEGER        = (SELECT parentid
+                                   FROM lapsed.liidestamine
+                                   WHERE docid = l_arv_id);
 
 BEGIN
+
     -- выборка из "документа"
     SELECT a.* INTO v_arv
     FROM docs.doc d
@@ -105,17 +109,18 @@ BEGIN
                                    ) AS m1
     ));
     SELECT 0              AS id,
-           NULL           AS doklausid,
+           l_dokprop_id   AS doklausid,
            l_pank_id      AS aaid,
            v_arv.parentid AS arvid,
            CASE
                WHEN v_arv.liik = 0
                    THEN 2 -- если счет доходный, то мк на поступление средств, иначе расзодное поручение
                ELSE 1 END AS opt,
+           l_viitenr      AS viitenr,
            date()         AS maksepaev,
            date()         AS kpv,
            NULL           AS number,
-           NULL           AS selg,
+           l_selg         AS selg,
            NULL           AS muud,
            json_mk1       AS "gridData",
            l_laps_id      AS lapsid

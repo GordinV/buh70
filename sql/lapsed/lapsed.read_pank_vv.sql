@@ -24,18 +24,41 @@ DECLARE
     l_count_kokku INTEGER        = 0;
     l_makse_summa NUMERIC(12, 2) = 0;
     l_tasu_jaak   NUMERIC(12, 2) = 0;
+    l_db_konto    TEXT           = '100100'; -- дебетовая (банк) сторона
+    l_kr_konto    TEXT           = '103000'; -- кредитовая сторона
+    l_dokprop_id  INTEGER;
 BEGIN
     -- ищем платежи
-
     FOR v_pank_vv IN
         SELECT *
         FROM lapsed.pank_vv v
-        WHERE timestamp::TEXT = l_timestamp::TEXT
+        WHERE timestamp::TIMESTAMP = l_timestamp::TIMESTAMP
           AND (doc_id IS NULL OR doc_id = 0)
         ORDER BY kpv, id
         LOOP
+
             -- читаем ссылку и ищем учреждение
             l_rekvid = substr(v_pank_vv.viitenumber, 1, len(v_pank_vv.viitenumber::TEXT) - 7)::INTEGER;
+
+            -- ищем ид конфигурации контировки
+            IF v_pank_vv.pank = 'EEUHEE2X' OR v_pank_vv.pank = '401'
+            THEN
+                -- seb
+                l_db_konto = '10010008';
+            ELSEIF v_pank_vv.pank = 'HABAEE2X' OR v_pank_vv.pank = '767'
+            THEN
+                -- swed
+                l_db_konto = '10010002';
+            END IF;
+
+            l_dokprop_id = (SELECT dp.id
+                            FROM libs.dokprop dp
+                                     INNER JOIN libs.library l ON l.id = dp.parentid
+                            WHERE dp.rekvid = l_rekvid
+                              AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
+                            ORDER BY dp.id DESC
+                            LIMIT 1
+            );
 
             -- обнуляем счетчик найденных счетов
             l_count = 0;
@@ -45,8 +68,6 @@ BEGIN
             l_tasu_jaak = v_pank_vv.summa;
             -- ищкм счет
 
-            RAISE NOTICE 'loop %', v_pank_vv.id;
-
             FOR v_arv IN
                 SELECT id, jaak, rekvid, asutusid, asutus AS maksja
                 FROM lapsed.cur_laste_arved a
@@ -55,7 +76,7 @@ BEGIN
                   AND a.jaak > 0
                 ORDER BY kpv ASC
                 LOOP
-                    RAISE NOTICE 'found arv %', v_arv.id;
+
 
                     -- считаем остаток не списанной суммы
                     l_makse_summa = CASE
@@ -64,14 +85,16 @@ BEGIN
 
                     -- создаем параметры для расчета платежкм
                     SELECT row_to_json(row) INTO json_object
-                    FROM (SELECT v_arv.id AS arv_id,
+                    FROM (SELECT v_arv.id              AS arv_id,
+                                 l_dokprop_id          AS dokprop_id,
+                                 v_pank_vv.viitenumber AS viitenumber,
+                                 v_pank_vv.selg        AS selg,
                                  l_makse_summa) row;
 
                     -- создаем платежку
                     SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
                     FROM docs.create_new_mk(user_id, json_object) fnc;
 
-                    RAISE NOTICE 'MK -> %', l_mk_id;
                     -- проверим на соответствие платильщика
                     IF upper(v_arv.maksja)::TEXT <> upper(v_pank_vv.maksja)::TEXT
                     THEN
@@ -80,13 +103,18 @@ BEGIN
 
                     -- сохраняем пулученную информаци.
                     UPDATE lapsed.pank_vv v SET doc_id = l_mk_id, markused = l_error WHERE id = v_pank_vv.id;
+
                     IF l_mk_id IS NOT NULL AND l_mk_id > 0
                     THEN
                         l_count = l_count + 1;
                         l_count_kokku = l_count_kokku + 1;
                         -- считаем остаток средств
                         l_tasu_jaak = l_tasu_jaak - l_makse_summa;
+
+                        -- lausend
+                        PERFORM docs.gen_lausend_smk(l_mk_id, user_id);
                     END IF;
+
 
                     IF (l_tasu_jaak <= 0)
                     THEN
@@ -122,7 +150,7 @@ GRANT EXECUTE ON FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN TEXT) TO ar
 
 
 /*
-SELECT lapsed.read_pank_vv(70, '2019-10-31 11:01:46.563122'::TIMESTAMP)
+SELECT lapsed.read_pank_vv(70, '2019-11-04 19:36:00.119068')
 SELECT lapsed.read_pank_vv(70,'2019-10-31 15:17:27.681873')
 
 */

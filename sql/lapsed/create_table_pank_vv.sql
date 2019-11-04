@@ -14,6 +14,7 @@ CREATE TABLE lapsed.pank_vv (
     selg        TEXT,
     markused    TEXT,
     properties  JSONB,
+    pank        TEXT,
     TIMESTAMP   TIMESTAMP DEFAULT now(),
     CONSTRAINT pank_vv_pkey PRIMARY KEY (id)
 )
