@@ -109,7 +109,6 @@ class Documents extends React.PureComponent {
     render() {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
         const warningStyle = this.state.warningType && styles[this.state.warningType] ? styles[this.state.warningType] : null;
-
         return (
             <div style={_style.doc}>
                 <div style={_style.docRow}>
@@ -496,7 +495,6 @@ class Documents extends React.PureComponent {
                 }
 
                 if (method === 'selectDocs') {
-
                     this.gridData = response.data.result.data;
 
                     if (response.data.gridConfig.length) {

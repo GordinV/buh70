@@ -82,7 +82,6 @@ class DataGrid extends React.Component {
                 }
             }, (this.props.toolbarParams ? this.props.toolbarParams : {})
         );
-
         return (
             <div style={styles.main}>
                 {this.props.showToolBar ?

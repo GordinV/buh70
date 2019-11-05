@@ -16,6 +16,7 @@ class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
         this.renderer = this.renderer.bind(this);
+        this.handleClick = this.handleClick.bind(this);
     }
 
     render() {
@@ -35,6 +36,7 @@ class Documents extends React.PureComponent {
                 <ButtonUpload
                     ref='btnUpload'
                     docTypeId={DOC_TYPE_ID}
+                    onClick={this.handleClick}
                     show={true}
                 />
                 <BtnLogs
@@ -44,6 +46,23 @@ class Documents extends React.PureComponent {
                 />
             </ToolbarContainer>
         )
+    }
+
+    /**
+     * кастомный обработчик события клик на кнопку импорта
+     */
+    handleClick() {
+        //обновим данные
+        const Doc = this.refs['register'];
+
+        setTimeout(() => {
+            Doc.fetchData('selectDocs').then((data) => {
+                this.forceUpdate();
+            },()=> {
+                console.error('rejected');
+            });
+
+        },1000);
     }
 }
 

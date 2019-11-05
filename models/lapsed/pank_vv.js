@@ -57,7 +57,8 @@ module.exports = {
                     FROM lapsed.pank_vv v
                              LEFT OUTER JOIN lapsed.cur_lapsed_mk mk ON mk.id = v.doc_id
                              LEFT OUTER JOIN ou.rekv r ON r.id = mk.rekvid
-                             LEFT OUTER JOIN ou.userid u ON u.id = $2`,     //  $1 всегда ид учреждения, $2 - userId
+                             LEFT OUTER JOIN ou.userid u ON u.id = $2
+                    ORDER BY timestamp DESC`,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
         alias: 'curPankVV'
     },

@@ -85,7 +85,11 @@ class UploadButton extends React.PureComponent {
                 this.setState({response: null, show: false, loading: false});
             }
 
-//            @todo redirect to import log or reload page
+            if (this.props.onClick) {
+                // выполним кастомный метод обработчика события
+                this.props.onClick();
+            }
+
 
         } else {
             this.setState({response: null, show: false, loading: false});
