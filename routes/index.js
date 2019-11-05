@@ -47,6 +47,7 @@ module.exports = function (app) {
     app.get('/print/:documentType/:uuid/', require('./print').get); //checkAuth
 
 
+    app.get('/pdf/:documentType/:uuid/:id/', require('./pdf').get); //checkAuth
     app.delete('/newApi/:documentType/:id', checkAuth, require('./documentRegister').delete); //апи для обмена даты по протоколу delete с моделью документа
 
     /*
