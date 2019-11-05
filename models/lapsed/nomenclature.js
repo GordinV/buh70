@@ -66,10 +66,11 @@ module.exports = {
                 FROM libs.sp_delete_nomenclature($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
-            {id: "id", name: "id", width: "10%", show: false},
-            {id: "kood", name: "Kood", width: "25%"},
-            {id: "nimetus", name: "Nimetus", width: "35%"},
-            {id: "dok", name: "Dokument", width: "30%"}
+            {id: "id", name: "id", width: "0%", show: false},
+            {id: "kood", name: "Kood", width: "20%"},
+            {id: "nimetus", name: "Nimetus", width: "40%"},
+            {id: "hind", name: "Hind", width: "20%", type: "number"},
+            {id: "dok", name: "Dokument", width: "20%"}
         ],
         sqlString: `SELECT id,
                            coalesce(kood, '')::VARCHAR(20)     AS kood,
@@ -78,7 +79,7 @@ module.exports = {
                            n.dok,
                            (n.properties ->> 'konto')::TEXT    AS konto,
                            (n.properties ->> 'tunnus')::TEXT   AS tunnus,
-                           n.hind
+                           n.hind::NUMERIC(12, 2)
                     FROM libs.nomenklatuur n
                     WHERE (n.rekvId = $1 OR n.rekvid IS NULL)
                       AND n.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
