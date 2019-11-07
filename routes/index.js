@@ -48,6 +48,8 @@ module.exports = function (app) {
 
 
     app.get('/pdf/:documentType/:uuid/:id/', require('./pdf').get); //checkAuth
+    app.get('/email/:documentType/:uuid/:id/', require('./email').get); //checkAuth
+
     app.delete('/newApi/:documentType/:id', checkAuth, require('./documentRegister').delete); //апи для обмена даты по протоколу delete с моделью документа
 
     /*

@@ -36,6 +36,7 @@ class MenuToolBar extends React.PureComponent {
         this.renderStartMenu = this.renderStartMenu.bind(this);
         this.startMenuClickHandler = this.startMenuClickHandler.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.btnAccountClick = this.btnAccountClick.bind(this);
 
     }
 
@@ -180,8 +181,12 @@ class MenuToolBar extends React.PureComponent {
 
 
     btnAccountClick() {
-        //@todo Страницу с данными пользователся
-        console.log('btnAccount');
+        return this.props.history.push({
+            pathname: `/${DocContext.module}/userid/${DocContext.userData.userId}`,
+            state: {module: DocContext.module}
+        });
+
+
     }
 
     handleChange(inputName, inputValue) {

@@ -9,7 +9,7 @@ module.exports = {
     asutused:'/libs/libraries/asutused',
     kontod:'/libs/libraries/kontod',
     dokprops: '/libs/libraries/dokprops',
-    users: '/ou/userid',
+    userid: '/ou/userid',
     nomenclature: '/lapsed/nomenclature',
     document: '/libs/libraries/document',
     aa: '/ou/aa',

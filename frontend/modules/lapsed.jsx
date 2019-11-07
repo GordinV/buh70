@@ -42,6 +42,7 @@ const LapseGruppRegister = require('./../docs/lapse_grupp/index.jsx'),
 const PankVVRegister = require('./../docs/pank_vv/index.jsx');
 const ConfigDocument = require('./../docs/config/document/index.jsx');
 const DokpropsDocument = require('./../docs/dokprops/document/index.jsx');
+const UserDocument = require('./../docs/userid/document/index.jsx');
 
 
 const {Route} = require('react-router-dom');
@@ -63,6 +64,7 @@ class App extends React.Component {
             <StyleRoot>
                 <Route path="/lapsed"
                        render={() => <Menu params={btnParams}
+                                           history={this.props.history}
                                            rekvId={DocContext.userData ? DocContext.userData.asutusId : 0}
                                            module={MODULE}/>}
                 />
@@ -175,6 +177,8 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/dokprops/:docId"
                        render={(props) => <DokpropsDocument {...props} history={props.history}/>}/>
+                <Route exact path="/lapsed/userid/:docId"
+                       render={(props) => <UserDocument {...props} history={props.history}/>}/>
             </StyleRoot>
         )
     }

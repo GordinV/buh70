@@ -2,7 +2,10 @@
 const db = require('./../libs/db');
 const pdf = require('html-pdf');
 const jade = require('jade');
+const nodemailer = require('nodemailer');
+const Doc = require('./../classes/DocumentTemplate');
 
+const config = {};
 
 exports.get = async (req, res) => {
     const id = Number(req.params.id || 0); // параметр id документа
@@ -10,7 +13,6 @@ exports.get = async (req, res) => {
     const docTypeId = req.params.documentType || ''; // параметр тип документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user = require('../middleware/userData')(req, uuid); // данные пользователя
-
 
     let template = docTypeId; // jade template
     const limit = 1000;
@@ -20,9 +22,33 @@ exports.get = async (req, res) => {
         return res.status(401).end();
     }
 
+    if (!config) {
+        const docConfig = new Doc('config', user.asutusId, user.userId, user.asutusId, 'lapsed');
+        const configData = await docConfig.select();
+        config.email = {...configData.row[0]};
+        console.log('config',config);
+    }
+
+ /*   if (!config.user) {
+        let testAccount = await nodemailer.createTestAccount();
+        console.log('testAccount',testAccount);
+    }
+*/
+    // create reusable transporter object using the default SMTP transport
+    let transporter = nodemailer.createTransport({
+        host: config['email'].smtp,
+        port: config['email'].port,
+        secure: config['email'].port == 465 ? true: false, // true for 465, false for other ports
+        auth: {
+            user: config['email'].user,
+            pass: config['email'].pass
+        }
+    });
+
+
+    // создаем вложение
     try {
         // создать объект
-        const Doc = require('./../classes/DocumentTemplate');
         const doc = new Doc(docTypeId, (id ? id : null), user.userId, user.asutusId, 'lapsed');
 
         const printTemplates = doc.config.print;
@@ -52,21 +78,27 @@ exports.get = async (req, res) => {
 
 
         res.render(template, {title: 'PDF print', data: data, user: user}, (err, html) => {
-                /*
-                                pdf.create(html, {format: 'A4'}).toFile('./public/pdf/arve.pdf', (err, res) => {
-                                    if (err) {
-                                        console.log(err);
-                                    } else {
-                                        console.log(res);
-                                    }
-                                });
-
-                                res.sendfile('./public/pdf/arve.pdf');
-                  */
-                pdf.create(html, {format: 'Legal', "base": "http://localhost:3000" }).toStream((err, stream) => {
+                pdf.create(html, {format: 'Legal', "base": "http://localhost:3000" }).toFile('./public/pdf/doc.pdf',(err, data) => {
                     if (err) return res.end(err.stack);
-                    res.setHeader('Content-type', 'application/pdf');
-                    stream.pipe(res)
+                // sending email
+
+                    // send mail with defined transport object
+                    transporter.sendMail({
+                        from: '"VG" <vladislav.gordin@bs2.ee>', // sender address
+                        to: 'vladislav.gordin@gmail.com', // (, baz@example.com) list of receivers
+                        subject: 'Test', // Subject line
+                        text: 'Hello world with test account?', // plain text body
+                        html: '<b>Hello world?</b>' // html body
+                    },(err, data) => {
+                        if (err) {
+                            console.error(err);
+                            res.send({status: 401, result: err});
+                            return err;
+                        }
+                        console.log('sent', data);
+                        res.send({status: 200, result: 'Ok'});
+                    });
+
 
                 });
 

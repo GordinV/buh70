@@ -23,7 +23,12 @@ module.exports = {
                          coalesce((u.roles ->> 'is_rekl_administraator') :: BOOLEAN, FALSE) :: INTEGER AS is_rekl_administraator,
                          coalesce((u.roles ->> 'is_rekl_maksuhaldur') :: BOOLEAN, FALSE) :: INTEGER    AS is_rekl_maksuhaldur,
                          coalesce((u.roles ->> 'is_ladu_kasutaja') :: BOOLEAN, FALSE) :: INTEGER       AS is_ladu_kasutaja,
-                         (u.properties ->> 'email') :: VARCHAR(254)                                    AS email
+                         (u.properties ->> 'email') :: VARCHAR(254)                                    AS email,
+                         (u.properties ->> 'port') :: TEXT                                             AS port,
+                         (u.properties ->> 'user') :: TEXT                                             AS user,
+                         (u.properties ->> 'pass') :: TEXT                                             AS pass,
+                         (u.properties ->> 'smtp') :: TEXT                                             AS smtp,
+                         (u.properties ->> 'earved') :: TEXT                                           AS earved
                   FROM ou.userid u
                   WHERE id = $1`,
             sqlAsNew: `SELECT
@@ -79,7 +84,7 @@ module.exports = {
         },
         {
             sql: `SELECT *
-                  FROM ou.get_user_data($1::TEXT, $2::INTEGER, null::TEXT)`, //$1 - login, $2 - rekv or null, $3 - module or null
+                  FROM ou.get_user_data($1::TEXT, $2::INTEGER, NULL::TEXT)`, //$1 - login, $2 - rekv or null, $3 - module or null
             query: null,
             multiple: true,
             alias: 'get_last_login',
