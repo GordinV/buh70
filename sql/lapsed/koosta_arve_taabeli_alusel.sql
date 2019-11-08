@@ -49,7 +49,22 @@ DECLARE
                                WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
                                  AND kassa = 1);
 
+    l_db_konto         TEXT    = '103000'; -- согдасно описанию отдела культуры
+
 BEGIN
+
+    -- ищем ид конфигурации контировки
+
+    l_doklausend_id = (SELECT dp.id
+                       FROM libs.dokprop dp
+                                INNER JOIN libs.library l ON l.id = dp.parentid
+                       WHERE dp.rekvid = l_rekvid
+                         AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
+                         AND l.kood = 'ARV'
+                       ORDER BY dp.id DESC
+                       LIMIT 1
+    );
+
 
     SELECT id,
            coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN AS kas_paber,
@@ -286,6 +301,9 @@ BEGIN
 
     IF l_arv_id IS NOT NULL AND l_arv_id > 0
     THEN
+        -- контируем
+        PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
+
         result = l_arv_id;
     ELSE
         result = 0;

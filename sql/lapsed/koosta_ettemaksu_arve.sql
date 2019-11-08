@@ -48,8 +48,23 @@ DECLARE
                                     AND kassa = 1);
     l_ettemaksu_period INTEGER = 1;
     l_tulu_arved       INTEGER = 0; -- кол-во доходных счетов, должно быть = кол-ву периодов
+    l_db_konto         TEXT    = '103000'; -- согдасно описанию отдела культуры
+    l_kr_konto         TEXT    = '203900';
 
 BEGIN
+    -- ищем ид конфигурации контировки
+
+    l_doklausend_id = (SELECT dp.id
+                       FROM libs.dokprop dp
+                                INNER JOIN libs.library l ON l.id = dp.parentid
+                       WHERE dp.rekvid = l_rekvid
+                         AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
+                         AND l.kood = 'ARV'
+                       ORDER BY dp.id DESC
+                       LIMIT 1
+    );
+
+
     SELECT id,
            coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN AS kas_paber,
            coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN   AS kas_earve,
@@ -101,7 +116,7 @@ BEGIN
     ORDER BY D.ID DESC
     LIMIT 1;
 
-    IF l_arv_id IS NOT NULL AND l_status <  3
+    IF l_arv_id IS NOT NULL AND l_status < 3
     THEN
 
         -- в этом периоде счет на предоплату уже авыписан
@@ -135,7 +150,7 @@ BEGIN
                lk.properties ->> 'all_yksus'                                AS all_yksus,
                coalesce((lk.properties ->> 'ettemaksu_period')::INTEGER, 1) AS ettemaksu_period,
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC      AS vat,
-               (n.properties::JSONB ->> 'konto')::VARCHAR(20)               AS konto,
+               l_kr_konto::VARCHAR(20)                                      AS konto,
                (n.properties::JSONB ->> 'projekt')::VARCHAR(20)             AS projekt,
                (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)              AS tunnus,
                (n.properties::JSONB ->> 'tegev')::VARCHAR(20)               AS tegev,
@@ -225,10 +240,14 @@ BEGIN
 
     SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
 
+
     -- проверка
 
     IF l_arv_id IS NOT NULL AND l_arv_id > 0
     THEN
+        -- контируем
+        PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
+
         -- создаем дохожные счета
         l_tulu_arved = (SELECT fnc.result FROM lapsed.koosta_arve_ettemaksuarve_alusel(user_id, l_arv_id) fnc);
         IF l_tulu_arved IS NOT NULL OR l_tulu_arved = 0

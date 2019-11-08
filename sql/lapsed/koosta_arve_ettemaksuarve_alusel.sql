@@ -21,6 +21,7 @@ DECLARE
     json_object     JSONB;
     l_json_arve     JSON;
     json_arvread    JSONB = '[]';
+    l_db_konto      TEXT  = '203900';
 BEGIN
 
     -- will return docTypeid of new doc
@@ -43,6 +44,19 @@ BEGIN
         RETURN;
     END IF;
 
+    -- ищем ид конфигурации контировки
+
+    l_doklausend_id = (SELECT dp.id
+                       FROM libs.dokprop dp
+                                INNER JOIN libs.library l ON l.id = dp.parentid
+                       WHERE dp.rekvid = v_arv.rekvid
+                         AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
+                         AND l.kood = 'ARV'
+                       ORDER BY dp.id DESC
+                       LIMIT 1
+    );
+
+
     -- идем в цикле по периодам
     FOR i IN 1..v_arv.ettemaksu_period
         LOOP
@@ -61,8 +75,10 @@ BEGIN
                        round((a1.kbmta / v_arv.ettemaksu_period), 2) AS calc_kbmta,
                        round((a1.summa / v_arv.ettemaksu_period), 2) AS calc_summa,
                        a1.hind                                       AS hind_kokku,
-                       a1.kogus
+                       a1.kogus,
+                       n.properties ->> 'konto'                      AS korr_konto
                 FROM docs.arv1 a1
+                         INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
                 WHERE a1.parentid = v_arv.id
                 LOOP
                     -- создаем параметры строки
@@ -78,7 +94,7 @@ BEGIN
                                                                  v_arvread.kood2                      AS kood2,
                                                                  v_arvread.kood3                      AS kood3,
                                                                  v_arvread.kood5                      AS kood5,
-                                                                 v_arvread.konto                      AS konto,
+                                                                 v_arvread.korr_konto                 AS konto,
                                                                  v_arvread.tunnus,
                                                                  v_arvread.proj                       AS projekt,
                                                                  v_arvread.properties ->> 'yksus'     AS yksus,
@@ -116,6 +132,9 @@ BEGIN
             SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, v_arv.rekvid) INTO l_arve_id;
             IF l_arve_id IS NOT NULL AND l_arve_id > 0
             THEN
+                -- контируем
+                PERFORM docs.gen_lausend_arv(l_arve_id, user_id);
+
                 result = coalesce(result, 0) + 1;
             END IF;
 
