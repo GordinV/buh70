@@ -1,0 +1,32 @@
+.label {
+    width:10%;
+}
+
+.label_subtotal {
+    width:70%;
+}
+
+.input {
+    width:90%;
+    margin-left:5%;
+    font-weight: bold;
+}
+
+.row_wrapper {
+    display:-webkit-box;
+    flexDirection: row;
+}
+
+.body_wrapper {
+    margin-left:5%;
+    width:auto;
+}
+
+.grid_data {
+    width: -webkit-fill-available;
+    border: 1px solid lightgray;
+}
+
+.grid_head {
+    background-color:lightgray;
+}

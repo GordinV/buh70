@@ -10,6 +10,7 @@ const React = require('react'),
     BtnSave = require('./../button-register/button-register-save/button-register-save.jsx'),
     BtnCancel = require('./../button-register/button-register-cancel/button-register-cancel.jsx'),
     BtnPrint = require('./../button-register/button-register-print/button-register-print.jsx'),
+    BtnEmail = require('./../button-register/button-email/index.jsx'),
     BtnLogs = require('./../show-logs/index.jsx'),
     TaskWidget = require('./../task-widget/task-widget.jsx');
 
@@ -22,6 +23,7 @@ class DocToolBar extends React.PureComponent {
         this.btnSaveClick = this.btnSaveClick.bind(this);
         this.btnCancelClick = this.btnCancelClick.bind(this);
         this.btnPrintClick = this.btnPrintClick.bind(this);
+        this.btnEmailClick = this.btnEmailClick.bind(this);
         this.btnLogsClick = this.btnLogsClick.bind(this);
         this.handleButtonTask = this.handleButtonTask.bind(this);
         this.handleSelectTask = this.handleSelectTask.bind(this);
@@ -50,6 +52,10 @@ class DocToolBar extends React.PureComponent {
                     show: true,
                     disabled: false
                 },
+                btnEmail: {
+                    show: true,
+                    disabled: false
+                },
                 btnSave: {
                     show: isEditMode && !isDocDisabled,
                     disabled: false
@@ -73,6 +79,8 @@ class DocToolBar extends React.PureComponent {
                        disabled={toolbarParams['btnCancel'].disabled}/>
             <BtnPrint ref='btnPrint' onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
                       disabled={toolbarParams['btnPrint'].disabled}/>
+            <BtnEmail ref='btnPrint' onClick={this.btnEmailClick} show={toolbarParams['btnEmail'].show}
+                      disabled={toolbarParams['btnEmail'].disabled}/>
             <BtnLogs ref='btnLogs'
                      data={this.props.logs}
                      onClick={this.btnLogsClick}
@@ -119,6 +127,15 @@ class DocToolBar extends React.PureComponent {
     btnPrintClick() {
         if (this.props.btnPrintClick) {
             this.props.btnPrintClick();
+        }
+    }
+
+    /**
+     * обработчик для кнопки email
+     */
+    btnEmailClick() {
+        if (this.props.btnEmailClick) {
+            this.props.btnEmailClick();
         }
     }
 

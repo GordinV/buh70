@@ -31,6 +31,7 @@ module.exports = {
         rekv: '/images/icons/rekv.png',
         info: '/images/icons/info.png',
         settings: '/images/icons/settings.png',
+        mail: '/images/icons/mail.png',
     }
 
 

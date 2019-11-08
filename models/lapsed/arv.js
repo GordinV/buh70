@@ -36,6 +36,7 @@ const Arv = {
                          asutus.regkood,
                          asutus.nimetus::TEXT                               AS asutus,
                          asutus.aadress,
+                         asutus.email::TEXT                                 AS email,
                          asutus.properties ->> 'kmkr'                       AS kmkr,
                          a.doklausid,
                          a.journalid,
@@ -433,6 +434,7 @@ const Arv = {
                          to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS koostatud,
                          to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS muudatud,
                          to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS')   AS prinditud,
+                         to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS')   AS email,
                          to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS kustutatud
 
                   FROM (
@@ -474,7 +476,20 @@ const Arv = {
             view: 'arve_register',
             params: 'sqlWhere'
         },
-    ]
+    ],
+    email: [
+        {
+            view: 'arve_email',
+            params: 'id',
+            register: `UPDATE docs.doc
+                       SET history = history ||
+                                     (SELECT row_to_json(row)
+                                      FROM (SELECT now()                                                AS email,
+                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                       WHERE id = $1`
+        }
+    ],
+
 
 };
 

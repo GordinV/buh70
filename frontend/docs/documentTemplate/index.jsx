@@ -46,7 +46,7 @@ class DocumentTemplate extends React.PureComponent {
         this.pages = this.props.pages || null;
 
         this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
-            'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick',
+            'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick','btnEmailClick',
             'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
             'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick','btnLogsClick');
@@ -174,6 +174,32 @@ class DocumentTemplate extends React.PureComponent {
         let url = `/print/${this.props.docTypeId}/${DocContext.userData.uuid}/${this.state.docId}`;
         window.open(`${url}`);
 
+    }
+
+    /**
+     * обработчик для кнопки отправки почты
+     */
+    btnEmailClick() {
+        this.fetchData('Post', '/email').then((response) => {
+            console.log('response', response);
+            if (response.status === 200) {
+                this.setState({
+                    reloadData: false,
+                    warning: 'Email saadetud edukalt',
+                    warningType: 'ok',
+                });
+
+            } else {
+                let errorMessage = response.error_message ? response.error_message: '';
+                this.setState({
+                    reloadData: false,
+                    warning: `Tekkis viga ${errorMessage}`,
+                    warningType: 'error',
+                });
+
+            }
+
+        });
     }
 
     /**
@@ -435,6 +461,7 @@ class DocumentTemplate extends React.PureComponent {
                             btnEditClick={this.btnEditClick}
                             btnCancelClick={this.btnCancelClick}
                             btnPrintClick={this.btnPrintClick}
+                            btnEmailClick={this.btnEmailClick}
                             btnSaveClick={this.btnSaveClick}
                             btnLogsClick={this.btnLogsClick}
                             btnTaskClick={this.btnTaskClick}/>

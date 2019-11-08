@@ -10,6 +10,7 @@ module.exports = {
     kontod:'/libs/libraries/kontod',
     dokprops: '/libs/libraries/dokprops',
     userid: '/ou/userid',
+    users: '/ou/userid',
     nomenclature: '/lapsed/nomenclature',
     document: '/libs/libraries/document',
     aa: '/ou/aa',

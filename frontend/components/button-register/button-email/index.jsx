@@ -1,0 +1,78 @@
+'use strict';
+
+const PropTypes = require('prop-types');
+
+const React = require('react'),
+    styles = require('../button-register-styles'),
+    Button = require('../button-register.jsx'),
+    ModalPage = require('./../../modalpage/modalPage.jsx'),
+    ICON = 'mail';
+
+
+class ButtonRegisterEmail extends React.PureComponent {
+// кнопка создания документа в регистрах
+    constructor(props) {
+        super(props);
+        this.state = {
+            showModal: false
+        };
+        this.modalPageClick = this.modalPageClick.bind(this);
+    }
+
+    /**
+     * обработчик события клик, откроет модальное окно
+     * @param e
+     */
+    handleClick(e) {
+        this.setState({showModal: true});
+    }
+
+    render() {
+        return (
+            <div>
+                <Button
+                    ref="btnEmail"
+                    value='Email'
+                    show={this.props.show}
+                    disabled={this.props.disabled}
+                    onClick={(e) => this.handleClick(e)}>
+                    <img ref='image' src={styles.icons[ICON]}/>
+                </Button>
+                <ModalPage
+                    modalPageBtnClick={this.modalPageClick}
+                    modalPageName={`Email`}
+                    show={this.state.showModal}
+                    modalObjects={['btnOk', 'btnCancel']}
+                >
+                    {`Kas saada email ?`}
+                </ModalPage>
+
+            </div>
+        )
+    }
+
+    /**
+     * обработчик на событие клика на кнопки можального окна
+     * @param btnEvent
+     */
+    modalPageClick(btnEvent) {
+        if (btnEvent === 'Ok') {
+            this.props.onClick();
+        }
+        this.setState({showModal: false});
+    }
+
+}
+
+/*
+ButtonRegisterPrint.propTypes = {
+    onClick: PropTypes.func.isRequired
+}
+*/
+
+ButtonRegisterEmail.defaultProps = {
+    disabled: false,
+    show: true
+};
+
+module.exports = ButtonRegisterEmail;

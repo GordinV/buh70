@@ -23,7 +23,6 @@ class Document {
     setConfig(docTypeId, module) {
         let config;
         // check if exists model for this type
-
         try {
             config = getModule(docTypeId, null, path, module ? module : 'lapsed');
         } catch (e) {
@@ -39,7 +38,7 @@ class Document {
      */
     async createNew() {
         if (!this.config) {
-            return null;
+            throw new Error('No mpodel configuration found');
         }
         let sqls = [{alias: 'row', sql: this.config.select[0].sqlAsNew}];
         return await db.executeQueries(sqls, [0, this.userId],
@@ -50,13 +49,15 @@ class Document {
     /**
      * Вернет промис с данными документа
      */
-    async select() {
-        if (!this.config) {
-            return null;
+    async select(config) {
+        const _config = config ? config: this.config;
+
+        if (!_config) {
+            throw new Error('No model configuration found');
         }
 
-        const objectTemplate = Object.assign({}, this.config.returnData);
-        return await db.executeQueries(this.config.select, [this.documentId, this.userId], objectTemplate);
+        const objectTemplate = Object.assign({}, _config.returnData);
+        return await db.executeQueries(_config.select, [this.documentId, this.userId], objectTemplate);
     }
 
     /**
@@ -70,9 +71,7 @@ class Document {
         }
 
         let sql = this.config.saveDoc;
-        console.log('save sql', sql, JSON.stringify(params.data));
         let data = await db.queryDb(sql, [params.data, params.userId, params.asutusId]);
-        console.log('ok', data);
 
         if (data.data[0].id && !isNotSelect ) {
             this.documentId = data.data[0].id;
