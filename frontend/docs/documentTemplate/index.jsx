@@ -254,7 +254,14 @@ class DocumentTemplate extends React.PureComponent {
      */
     btnCancelClick() {
         //востановим прежнее состояние
-        this.restoreFromBackup();
+        if (this.state.docId) {
+            this.restoreFromBackup();
+        } else {
+            this.props.history.goBack();
+        }
+        //режим редактирования
+        this.setState({edited: false, warning: '', warningType: null});
+
     }
 
     /**
@@ -321,8 +328,6 @@ class DocumentTemplate extends React.PureComponent {
      */
     restoreFromBackup() {
         this.docData = JSON.parse(this.backup);
-        //режим редактирования
-        this.setState({edited: false, warning: '', warningType: null});
     }
 
     /**
