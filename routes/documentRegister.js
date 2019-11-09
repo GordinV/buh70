@@ -185,7 +185,11 @@ exports.delete = async (req, res) => {
     let data;
 
     data = {result: await Document.delete()};
-    res.send({action: 'delete', data: data});
+    if (!data.result.error_code) {
+        res.send({action: 'delete', error: 0, error_message: null, data: data});
+    } else {
+        res.send({action: 'delete', error: data.result.error_code,  data: data, error_message: data.result.error_message});
+    }
 
 };
 

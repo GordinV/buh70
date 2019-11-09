@@ -267,16 +267,13 @@ class Documents extends React.PureComponent {
      */
     modalDeletePageBtnClick(btnEvent) {
         this.setState({isDelete: false});
-
         if (btnEvent === 'Ok') {
             // delete document
             this.fetchData('delete')
-                .then((responce) => {
-                        this.setState({warning: 'Edukalt', warningType: 'ok'}, () => {
-                            this.fetchData('selectDocs')
-                        });
-                    }
-                );
+                .catch((err) => {
+                    console.error('error in fetch-> ', err);
+                })
+                .then(() => this.fetchData('selectDocs'));
         }
     }
 
@@ -486,12 +483,17 @@ class Documents extends React.PureComponent {
             userId: DocContext.userData.userId,
             uuid: DocContext.userData.uuid
         };
+        const self = this;
         try {
 
             return fetchData['fetchDataPost'](URL, params).then(response => {
-
-                if (response.status && response.status == 401) {
+                if (response.status && response.status === 401) {
                     document.location = `/login`;
+                }
+
+                if (response.data && response.data.error_message) {
+                    let error = '' + response.data.error_message ? response.data.error_message : '';
+                    throw new Error(error);
                 }
 
                 if (method === 'selectDocs') {
@@ -517,13 +519,14 @@ class Documents extends React.PureComponent {
                             this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
                         }
                     }
+                    this.forceUpdate()
 
+                } else {
+                    this.setState({warning: 'Edukalt', warningType: 'ok'})
                 }
-                this.forceUpdate();
-
-            }).catch(function (error) {
+            }).catch((error) => {
                 // Something happened in setting up the request that triggered an Error
-                this.setState({
+                self.setState({
                     warning: `Tekkis viga ${error}`,
                     warningType: 'error'
                 });
