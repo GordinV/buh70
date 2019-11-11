@@ -10,6 +10,7 @@ exports.get = async (req, res) => {
     let template = docTypeId; // jade template
     const limit = 1000;
 
+
     if (!user) {
         console.error('error 401 newAPI');
         return res.status(401).end();
@@ -26,7 +27,6 @@ exports.get = async (req, res) => {
             const templateObject = printTemplates.find(templ => templ.params === (id ? 'id' : 'sqlWhere'));
             template = templateObject.view;
 
-            console.log('print tempolate', template);
             if (id && templateObject.register) {
                 // если есть метод регистрации, отметим печать
                 let sql = templateObject.register,

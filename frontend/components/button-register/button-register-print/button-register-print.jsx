@@ -15,20 +15,22 @@ class ButtonRegisterPrint extends React.PureComponent{
     }
 
     handleClick(e) {
-        return this.props.onClick();
+        return this.props.onClick('print');
     }
 
     render() {
+        let value = this.props.value ? this.props.value: 'Print';
         return <Button
             ref="btnPrint"
-            value='Print'
+            value={value}
             show={this.props.show}
             disabled={this.props.disabled}
             onClick={(e)=> this.handleClick(e)}>
             <img ref='image' src={styles.icons[ICON]}/>
         </Button>
     }
-};
+}
+
 /*
 ButtonRegisterPrint.propTypes = {
     onClick: PropTypes.func.isRequired

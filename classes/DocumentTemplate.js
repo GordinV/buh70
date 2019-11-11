@@ -14,6 +14,10 @@ class Document {
 
     }
 
+    setDocumentId(id) {
+        this.documentId = id;
+    }
+
     /**
      * подгрузит модель
      * @param docTypeId тип локумента
@@ -50,7 +54,8 @@ class Document {
      * Вернет промис с данными документа
      */
     async select(config) {
-        const _config = config ? config: this.config;
+        console.log('select', this.documentId);
+        const _config = config ? config : this.config;
 
         if (!_config) {
             throw new Error('No model configuration found');
@@ -73,7 +78,7 @@ class Document {
         let sql = this.config.saveDoc;
         let data = await db.queryDb(sql, [params.data, params.userId, params.asutusId]);
 
-        if (data.data[0].id && !isNotSelect ) {
+        if (data.data[0].id && !isNotSelect) {
             this.documentId = data.data[0].id;
             data = await this.select();
         }
@@ -86,7 +91,7 @@ class Document {
      */
     async executeTask(task, params) {
         let sql = this.config[task].command;
-        let _params = params ? params: [this.documentId, this.userId];
+        let _params = params ? params : [this.documentId, this.userId];
 
         if (!sql) {
             return {error: 'No task found'}
@@ -102,7 +107,7 @@ class Document {
         let sql = this.config.grid.sqlString,
             params = [this.rekvId, this.userId];
 
-        return await db.queryDb(sql, params, sortBy, sqlWhere, limit );
+        return await db.queryDb(sql, params, sortBy, sqlWhere, limit);
     }
 
     /**
@@ -135,7 +140,7 @@ class Document {
             return [];
         }
 
-       return await db.queryDb(sql, params);
+        return await db.queryDb(sql, params);
     }
 
 }

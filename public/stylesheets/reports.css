@@ -22,6 +22,14 @@
     width:auto;
 }
 
+@media print {
+    h3 { page-break-after: always }
+}
+
+@page {
+    size: auto;   /* auto is the initial value */
+    margin: 0;  /* this affects the margin in the printer settings */
+}
 .grid_data {
     width: -webkit-fill-available;
     border: 1px solid lightgray;

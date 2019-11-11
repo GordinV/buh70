@@ -4,6 +4,7 @@ const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 const BtnSettings = require('./../../components/button-register/button-settings/index.jsx');
+const BtnPrint = require('./../../components/button-register/button-register-print/button-register-print.jsx');
 
 const styles = require('./arv-register-styles');
 const DOC_TYPE_ID = 'ARV';
@@ -31,6 +32,10 @@ class Documents extends React.PureComponent {
 
     renderer(self) {
         return (<ToolbarContainer>
+            <BtnPrint
+                onClick={this.onClickHandler}
+                value={'Trükk kõik valitud arved'}
+                />
             <BtnSettings
                 history={self.props.history ? self.props.history : null}
                 onClick={this.onClickHandler}
@@ -41,9 +46,26 @@ class Documents extends React.PureComponent {
     }
 
     //handler для события клик на кнопках панели
-    onClickHandler () {
-        //делаем редайрект на конфигурацию
-        this.props.history.push(`/${this.props.module}/config/${DocContext.userData.asutusId}`);
+    onClickHandler (event) {
+        switch (event) {
+            case 'settings':
+                //делаем редайрект на конфигурацию
+                this.props.history.push(`/${this.props.module}/config/${DocContext.userData.asutusId}`);
+            break;
+            case 'print':
+                const Doc = this.refs['register'];
+
+                let ids = [];
+                Doc.gridData.forEach(row => {
+                   ids.push(row.id);
+                });
+
+                let url = `/multiple_print/${DOC_TYPE_ID}/${DocContext.userData.uuid}/${ids}`;
+                window.open(`${url}`);
+
+                break;
+
+        }
     }
 }
 

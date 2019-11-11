@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+html(lang="et")
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        -var User = user ? user : {asutus: ''};
+
+        each doc in data
+            p #{User.asutus}, reg.kood: #{User.regkood}
+            p #{User.aadress}
+            p #{User.tel}
+            p #{User.email}
+
+                h1
+                    p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
+
+                div.row_wrapper
+                    p.label Number:
+                    p.input #{doc.number}
+
+                div.row_wrapper
+                    p.label Kuupäev:
+                    p.input #{doc.kpv_print}
+
+                div.row_wrapper
+                    p.label Viitenumber:
+                    p.input #{doc.viitenr}
+
+                div.row_wrapper
+                    p.label Maksta arvele:
+                    p.input #{doc.aa}
+
+                div.row_wrapper
+                    p.label Tähtaeg:
+                    p.input #{doc.tahtaeg_print}
+
+
+                div.row_wrapper
+                    p.label Maksja:
+                    p.input #{`${doc.asutus.trim()} reg.kood: ${doc.regkood}`}
+
+                div.row_wrapper
+                    p.label Aadress:
+                    p.input #{`${doc.aadress}`}
+
+                div.row_wrapper
+                    p.label Lisa:
+                    p.input #{`${doc.lisa ? doc.lisa: ''}`}
+
+                table.table.table-hover.grid_data
+                    thead.grid_head
+                        tr
+                            th Teenuse nimetus
+                            th Hind
+                            th Kogus
+                            th Käibemaks
+                            th Rea summa
+                            th Märkused
+
+                    tbody
+                        each row in doc.details
+                            tr
+                                td=row.nimetus
+                                td=Number(row.hind).toFixed(2)
+                                td=row.kogus
+                                td=Number(row.kbm).toFixed(2)
+                                td=Number(row.summa).toFixed(2)
+                                td=row.muud
+                div.row_wrapper
+                    p.label_subtotal Summa käibemaksuta:
+                    p.input #{`${Number(doc.kbmta).toFixed(2)}`}
+                div.row_wrapper
+                    p.label_subtotal Käibemaks:
+                    p.input #{`${Number(doc.kbm).toFixed(2)}`}
+                div.row_wrapper
+                    p.label_subtotal Kokku:
+                    p.input #{`${Number(doc.summa).toFixed(2)}`}
+
+                h3

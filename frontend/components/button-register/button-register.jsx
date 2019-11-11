@@ -19,10 +19,10 @@ class Button extends React.PureComponent {
     handleClick(event) {
         switch (event.type) {
             case 'click':
-                this.props.onClick();
+                this.props.onClick(this.props.value);
                 break;
             case 'dblclick':
-                this.props.onClick();
+                this.props.onClick(this.props.value);
                 break;
             default:
                 console.log('unhandled', event.type);

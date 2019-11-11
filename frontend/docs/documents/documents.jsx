@@ -13,6 +13,7 @@ const
     BtnDelete = require('./../../components/button-register/button-register-delete/button-register-delete.jsx'),
     BtnPrint = require('./../../components/button-register/button-register-print/button-register-print.jsx'),
     BtnFilter = require('./../../components/button-register/button-register-filter/button-register-filter.jsx'),
+    BtnSelect = require('./../../components/button-register/button-register.jsx'),
     ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx'),
     GridFilter = require('./../../components/data-grid/grid-filter/grid-filter.jsx'),
     ModalPage = require('./../../components/modalpage/modalPage.jsx'),
@@ -49,11 +50,12 @@ class Documents extends React.PureComponent {
             startMenuValue: 'parentid',
             warning: '', // строка извещений
             warningType: '',
-            limit: 100 // default limit for query
+            limit: 100, // default limit for query,
+            showSelectFields: false //will open or close column in grid to select rows
         };
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
-            'headerClickHandler', 'btnFilterClick', 'modalPageBtnClick', 'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
+            'headerClickHandler', 'btnFilterClick','btnSelectClick', 'modalPageBtnClick', 'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData', 'prepareSqlWhereFromFilter', 'handleInputChange');
 
     }
@@ -132,6 +134,7 @@ class Documents extends React.PureComponent {
                               onClick={this.clickHandler}
                               onDblClick={this.dblClickHandler}
                               onHeaderClick={this.headerClickHandler}
+                              isSelect={this.state.showSelectFields}
                               value={this.state.value}/>
                     <ModalPage ref='modalpageFilter'
                                modalPageBtnClick={this.modalPageBtnClick}
@@ -335,6 +338,11 @@ class Documents extends React.PureComponent {
 
     }
 
+    btnSelectClick() {
+        this.setState({showSelectFields:!this.state.showSelectFields});
+
+    }
+
     /**
      * Вернет компонет с данными строки фильтрации
      * @returns {XML}
@@ -395,6 +403,13 @@ class Documents extends React.PureComponent {
                         <BtnPrint onClick={this.btnPrintClick.bind(this)} show={toolbarParams['btnPrint'].show}
                                   disable={toolbarParams['btnPrint'].disabled}/>
                         <BtnFilter onClick={this.btnFilterClick}/>
+                        <BtnSelect
+                            show={toolbarParams['btnSelect'].show}
+                            value={'Valida'}
+                            onClick={this.btnSelectClick}
+                            ref="grid-button-select"/>
+
+
                     </ToolbarContainer>
                 </div>
             </div>
@@ -448,9 +463,12 @@ class Documents extends React.PureComponent {
             btnAccount: {
                 show: true,
                 disabled: false
+            },
+            btnSelect: {
+                show: !!this.gridConfig.find(row => row.id === 'select'),
+                disabled: false
             }
         }, (this.props.toolbarParams ? this.props.toolbarParams : {}),);
-
         return params
     }
 

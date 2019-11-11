@@ -37,8 +37,10 @@ class DataGrid extends React.Component {
                 direction: null
             },
             value: this.props.value ? this.props.value : 0,
-            gridData: props.gridData
+            gridData: props.gridData,
+            isSelect: this.props.isSelect ? true : false,
         };
+
         this.handleGridHeaderClick = this.handleGridHeaderClick.bind(this);
         this.handleCellDblClick = this.handleCellDblClick.bind(this);
         this.handleKeyDown = this.handleKeyDown.bind(this);
@@ -52,12 +54,13 @@ class DataGrid extends React.Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         return nextProps;
         if (JSON.stringify(nextProps.gridData) !== JSON.stringify(prevState.gridData) ||
-            (nextProps.value && nextProps.value !== prevState.value) || nextProps.gridData.length !== prevState.gridData.length) {
+            (nextProps.value && nextProps.value !== prevState.value) ||
+            nextProps.gridData.length !== prevState.gridData.length ||
+            nextProps.isSelect !== prevState.isSelect) {
             return {gridData: nextProps.gridData, value: nextProps.value};
         } else
             return null;
     }
-
 
     render() {
         let tableStyle = Object.assign({}, styles.headerTable, this.props.style);
@@ -100,6 +103,7 @@ class DataGrid extends React.Component {
                             show={toolbarParams.btnDelete.show}
                             onClick={this.handleGridBtnClick}
                             ref="grid-button-delete"/>
+
                     </ToolbarContainer> : null}
 
                 <div style={styles.header}>
@@ -185,10 +189,17 @@ class DataGrid extends React.Component {
             let action = this.props.onChangeAction || null;
 
             let docId = this.state.gridData[idx].id;
+            const gridData = {...this.state.gridData};
+
+            if (this.state.isSelect) {
+                // уже выбран, надо исключить
+                gridData[idx].select = !gridData[idx].select;
+            }
 
             this.setState({
+                gridData: gridData,
                 activeRow: idx,
-                value: docId
+                value: docId,
             });
 
 
@@ -216,6 +227,11 @@ class DataGrid extends React.Component {
      * @param name - наименование колонки
      */
     handleGridHeaderClick(name) {
+        if (name === 'valitud') {
+            // виртуальная колонка
+            return;
+        }
+
         let sort = this.state.sort;
         if (sort.name === name) {
             sort.direction = sort.direction === 'asc' ? 'desc' : 'asc';
@@ -272,8 +288,16 @@ class DataGrid extends React.Component {
      */
     prepareTableRow() {
         let activeRow = this.getGridRowIndexById();
+
         return this.state.gridData.map((row, rowIndex) => {
             let objectIndex = 'tr-' + rowIndex;
+
+            let gridColumns = this.props.gridColumns.map(row => {
+                if (row.id === 'select' && this.props.isSelect) {
+                    row.show = true;
+                }
+                return row;
+            });
 
             return (<tr
                 ref={objectIndex}
@@ -283,7 +307,7 @@ class DataGrid extends React.Component {
                 style={Object.assign({}, styles.tr, activeRow === rowIndex ? styles.focused : {})}
                 key={objectIndex}>
                 {
-                    this.props.gridColumns.map((column, columnIndex) => {
+                    gridColumns.map((column, columnIndex) => {
                         let cellIndex = 'td-' + rowIndex + '-' + columnIndex;
 
                         let display = (isExists(column, 'show') ? column.show : true),
@@ -292,7 +316,8 @@ class DataGrid extends React.Component {
 
                         return (
                             <td style={style} ref={cellIndex} key={cellIndex}>
-                                {row[column.id]}
+                                {typeof row[column.id] === 'boolean' && row[column.id] ?
+                                    <span>&#9745;</span> : row[column.id]}
                             </td>
                         );
                     })
@@ -307,7 +332,14 @@ class DataGrid extends React.Component {
      * @param isHidden - колонка будет скрыта
      */
     prepareTableHeader(isHidden) {
-        let gridColumns = this.props.gridColumns;
+
+        // если есть опция выбор, то добавим в массив колонку с полем ticked
+        const gridColumns = this.props.gridColumns.map(row => {
+            if (row.id === 'select') {
+                row.show = this.props.isSelect;
+            }
+            return row;
+        });
 
         return gridColumns.map((column, index) => {
             let headerIndex = 'th-' + index;

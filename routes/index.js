@@ -44,6 +44,7 @@ module.exports = function (app) {
     app.get('/print/:documentType/:uuid/:id/:params', require('./print').get); //checkAuth
 //    app.get('/print/:documentType/:uuid/:id/:sqlWhere/:sqlSort', require('./print').get); //checkAuth
     app.get('/print/:documentType/:uuid/:id/', require('./print').get); //checkAuth
+    app.get('/multiple_print/:documentType/:uuid/:id/', require('./multiple_print').get); //checkAuth
     app.get('/print/:documentType/:uuid/', require('./print').get); //checkAuth
 
 

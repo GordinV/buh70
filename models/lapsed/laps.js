@@ -125,10 +125,12 @@ module.exports = {
                 {id: "isikukood", name: "Isikukood", width: "30%"},
                 {id: "nimi", name: "Nimi", width: "40%"},
                 {id: "viitenumber", name: "Viitenumber", width: "20%"},
-                {id: "yksused", name: "Üksused", width: "30%"}
+                {id: "yksused", name: "Üksused", width: "30%"},
+                {id: "select", name: "Valitud", width: "10%", show: false}
             ],
             sqlString:
-                    `SELECT id,
+                    `SELECT TRUE                             AS select,
+                            id,
                             isikukood,
                             nimi,
                             yksused,
