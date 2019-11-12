@@ -54,10 +54,10 @@ class DataGrid extends React.Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         return nextProps;
         if (JSON.stringify(nextProps.gridData) !== JSON.stringify(prevState.gridData) ||
-            (nextProps.value && nextProps.value !== prevState.value) ||
+         //   (nextProps.value && nextProps.value !== prevState.value) ||
             nextProps.gridData.length !== prevState.gridData.length ||
             nextProps.isSelect !== prevState.isSelect) {
-            return {gridData: nextProps.gridData, value: nextProps.value};
+            return {gridData: nextProps.gridData};
         } else
             return null;
     }
@@ -85,6 +85,7 @@ class DataGrid extends React.Component {
                 }
             }, (this.props.toolbarParams ? this.props.toolbarParams : {})
         );
+
         return (
             <div style={styles.main}>
                 {this.props.showToolBar ?
@@ -201,7 +202,6 @@ class DataGrid extends React.Component {
                 activeRow: idx,
                 value: docId,
             });
-
 
             if (this.props.onClick) {
                 this.props.onClick(action, docId, idx);

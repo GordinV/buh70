@@ -129,11 +129,9 @@ class LapseGrupp extends React.PureComponent {
                               handleGridRow={self.handleGridRow}
                               handleGridBtnClick={self.handleGridBtnClick}
                               readOnly={!isEditMode}
-                              value={gridValue}
                               style={styles.grid.headerTable}
                               ref="data-grid"/>
                 </div>
-
                 <div style={styles.docRow}>
                     <TextArea title="Märkused"
                               name='muud'
