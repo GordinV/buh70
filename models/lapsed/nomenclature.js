@@ -49,7 +49,19 @@ module.exports = {
         alias: 'row',
         data: []
     }],
-    selectAsLibs: `SELECT *
+    selectAsLibs: `SELECT id,
+                          kood,
+                          trim(nimetus) || ' (' || (hind::numeric(12,2))::TEXT || ')'::TEXT AS nimetus,
+                          dok,
+                          hind,
+                          vat,
+                          kogus,
+                          tyyp,
+                          konto,
+                          tegev,
+                          allikas,
+                          artikkel,
+                          tunnus
                    FROM com_nomenclature
                    WHERE (rekvid = $1 OR rekvid IS NULL)
                    ORDER BY kood`,

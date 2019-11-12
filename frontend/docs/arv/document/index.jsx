@@ -513,6 +513,7 @@ class Arve extends React.PureComponent {
             let nomDataName = doc.libs['nomenclature'].find(lib => Number(lib.id) === Number(doc.gridRowData['nomid']));
 
             if (nomDataName) {
+                doc.gridRowData['hind'] = nomDataName.hind && !doc.gridRowData['hind'] ? nomDataName.hind : doc.gridRowData['hind'];
                 vat = nomDataName.vat ? Number(nomDataName.vat) / 100 : 0;
                 doc.gridRowData['kood'] = nomDataName.kood ? nomDataName.kood : null;
                 doc.gridRowData['nimetus'] = nomDataName.name ? nomDataName.name : null;
