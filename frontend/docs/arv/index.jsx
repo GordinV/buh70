@@ -34,6 +34,7 @@ class Documents extends React.PureComponent {
         return (<ToolbarContainer>
             <BtnPrint
                 onClick={this.onClickHandler}
+                ref='btnPrint'
                 value={'Trükk kõik valitud arved'}
                 />
             <BtnSettings

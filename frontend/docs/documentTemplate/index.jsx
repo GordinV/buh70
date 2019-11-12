@@ -181,7 +181,6 @@ class DocumentTemplate extends React.PureComponent {
      */
     btnEmailClick() {
         this.fetchData('Post', '/email').then((response) => {
-            console.log('response', response);
             if (response.status === 200) {
                 this.setState({
                     reloadData: false,

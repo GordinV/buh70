@@ -2,6 +2,9 @@
 
 const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
+const BtnArvesta = require('./../../components/button-register/button-task/index.jsx');
+const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
+
 const styles = require('./laps-register-styles');
 const DOC_TYPE_ID = 'LAPS';
 
@@ -12,6 +15,8 @@ const DOC_TYPE_ID = 'LAPS';
 class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
+        this.onClickHandler = this.onClickHandler.bind(this);
+        this.renderer = this.renderer.bind(this);
     }
 
     render() {
@@ -27,7 +32,41 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
-        return <div>Laste register special render</div>
+        const Doc = this.refs['register'];
+
+        return (
+            <ToolbarContainer>
+                <BtnArvesta
+                    value={'Tabeli koostamine'}
+                    onClick={this.onClickHandler}
+                />
+            </ToolbarContainer>
+        )
+    }
+
+    onClickHandler(event) {
+        const Doc = this.refs['register'];
+
+        // собираем параметры
+        const ids = [];
+        Doc.gridData.filter(row => row.select).forEach(row => {
+            ids.push(row.id);
+        });
+
+        // отправляем запрос на выполнение
+        Doc.fetchData(`calc/arvestaTaabel`, ids).then((data) => {
+            if (data.result) {
+                Doc.setState({warning: `Kokku arvestatud: ${data.result}, suunatamine...`, warningType: 'ok'});
+
+                // ждем 10 сек и редайрект на табеля
+                setTimeout(() => {
+                    this.props.history.push(`/lapsed/lapse_taabel`);
+                }, 1000 * 5);
+            } else {
+                Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'notValid'});
+            }
+
+        });
     }
 }
 

@@ -55,7 +55,7 @@ class Documents extends React.PureComponent {
         };
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
-            'headerClickHandler', 'btnFilterClick','btnSelectClick', 'modalPageBtnClick', 'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
+            'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'modalPageBtnClick', 'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData', 'prepareSqlWhereFromFilter', 'handleInputChange');
 
     }
@@ -339,7 +339,7 @@ class Documents extends React.PureComponent {
     }
 
     btnSelectClick() {
-        this.setState({showSelectFields:!this.state.showSelectFields});
+        this.setState({showSelectFields: !this.state.showSelectFields});
 
     }
 
@@ -474,7 +474,7 @@ class Documents extends React.PureComponent {
     /**
      * Выполнит запросы
      */
-    fetchData(method) {
+    fetchData(method, additionalData) {
         let URL = `/newApi`;
         switch (method) {
             case 'delete':
@@ -483,9 +483,11 @@ class Documents extends React.PureComponent {
             case 'print':
                 URL = `/print/${this.docTypeId}`;
                 break;
-            default:
+            case 'selectDocs':
                 URL = `/newApi`;
-
+                break;
+            default:
+                URL = `/${method}`;
         }
 
         const params = {
@@ -498,59 +500,62 @@ class Documents extends React.PureComponent {
             lastDocId: null,
             module: this.props.module,
             userId: DocContext.userData.userId,
-            uuid: DocContext.userData.uuid
+            uuid: DocContext.userData.uuid,
+            data: additionalData
         };
-        const self = this;
         try {
+            return new Promise((resolved, rejected) => {
 
-            return fetchData['fetchDataPost'](URL, params).then(response => {
-                if (response.status && response.status === 401) {
-                    document.location = `/login`;
-                }
-
-                if (response.data && response.data.error_message) {
-                    let error = '' + response.data.error_message ? response.data.error_message : '';
-                    throw new Error(error);
-                }
-
-                if (method === 'selectDocs') {
-                    this.gridData = response.data.result.data;
-
-                    if (response.data.gridConfig.length) {
-
-                        //если конфиг отличается, формируем новый фильтр грида
-                        if (!this.gridConfig.length || JSON.stringify(this.gridConfig) !== JSON.stringify(response.data.gridConfig)) {
-                            this.gridConfig = response.data.gridConfig;
-
-                            //refresh filterdata
-                            this.filterData = this.gridConfig.map((row) => {
-                                // props.data пустое, создаем
-
-                                return {value: null, name: row.id, type: row.type ? row.type : 'text'};
-                            });
-
-                        }
-
-                        //apply filter
-                        if (this.props.history && this.props.history.location.state) {
-                            this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
-                        }
+                fetchData['fetchDataPost'](URL, params).then(response => {
+                    if (response.status && response.status === 401) {
+                        document.location = `/login`;
                     }
-                    this.forceUpdate()
 
-                } else {
-                    this.setState({warning: 'Edukalt', warningType: 'ok'})
-                }
-            }).catch((error) => {
-                // Something happened in setting up the request that triggered an Error
-                self.setState({
-                    warning: `Tekkis viga ${error}`,
-                    warningType: 'error'
+                    if (response.data && response.data.error_message) {
+                        let error = '' + response.data.error_message ? response.data.error_message : '';
+                        throw new Error(error);
+                    }
+
+                    if (method === 'selectDocs') {
+                        this.gridData = response.data.result.data;
+
+                        if (response.data.gridConfig.length) {
+
+                            //если конфиг отличается, формируем новый фильтр грида
+                            if (!this.gridConfig.length || JSON.stringify(this.gridConfig) !== JSON.stringify(response.data.gridConfig)) {
+                                this.gridConfig = response.data.gridConfig;
+
+                                //refresh filterdata
+                                this.filterData = this.gridConfig.map((row) => {
+                                    // props.data пустое, создаем
+
+                                    return {value: null, name: row.id, type: row.type ? row.type : 'text'};
+                                });
+
+                            }
+
+                            //apply filter
+                            if (this.props.history && this.props.history.location.state) {
+                                this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
+                            }
+                        }
+                        this.forceUpdate()
+
+                    } else {
+                        this.setState({warning: 'Edukalt', warningType: 'ok'})
+                    }
+                    resolved(response.data);
+                }).catch((error) => {
+                    // Something happened in setting up the request that triggered an Error
+                    this.setState({
+                        warning: `Tekkis viga ${error}`,
+                        warningType: 'error'
+                    });
+                    rejected(error);
+
+                    console.error('Error', error);
                 });
-
-                console.error('Error', error);
             });
-
         } catch (e) {
             console.error(e);
             this.setState({

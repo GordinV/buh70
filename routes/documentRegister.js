@@ -292,7 +292,6 @@ exports.upload = async (req, res) => {
             const readFile = require(`./import/${params.docTypeId}`);
             readFile(content, req.file.mimetype, user).then((result) => {
                     // ответ
-                    console.log('success', result);
                     return res.status(200).send(result);
                 }
             );
