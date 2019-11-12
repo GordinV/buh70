@@ -13,7 +13,7 @@ const
     BtnDelete = require('./../../components/button-register/button-register-delete/button-register-delete.jsx'),
     BtnPrint = require('./../../components/button-register/button-register-print/button-register-print.jsx'),
     BtnFilter = require('./../../components/button-register/button-register-filter/button-register-filter.jsx'),
-    BtnSelect = require('./../../components/button-register/button-register.jsx'),
+    BtnSelect = require('./../../components/button-register/button-select/index.jsx'),
     ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx'),
     GridFilter = require('./../../components/data-grid/grid-filter/grid-filter.jsx'),
     ModalPage = require('./../../components/modalpage/modalPage.jsx'),
@@ -408,7 +408,6 @@ class Documents extends React.PureComponent {
                             value={'Valida'}
                             onClick={this.btnSelectClick}
                             ref="grid-button-select"/>
-
 
                     </ToolbarContainer>
                 </div>

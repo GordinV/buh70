@@ -32,6 +32,7 @@ module.exports = {
         info: '/images/icons/info.png',
         settings: '/images/icons/settings.png',
         mail: '/images/icons/mail.png',
+        select: '/images/icons/select.png',
     }
 
 

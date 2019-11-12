@@ -83,11 +83,19 @@ class GridFilter extends React.PureComponent {
     }
 
     prepareFilterFields() {
-    let data = this.state.data;
-        return this.state.gridConfig.map((row) => {
+        let data = this.state.data;
+
+        // только поля, которые отмечаны как show:true или явно ка указаны
+        const filterFields = this.state.gridConfig.filter(field => {
+            if (!('show' in field) || field.show) {
+                return field;
+            }
+        });
+
+        return filterFields.map((row) => {
             let componentType = row.type ? row.type : 'text';
             const obj = data[_.findIndex(data, {name: row.id})];
-           let value = _.has(obj, 'value') ? obj.value : '';
+            let value = _.has(obj, 'value') ? obj.value : '';
 
             return <div style={styles.formWidget} key={'fieldSet-' + row.id}>
                 <div style={styles.formWidgetLabel}>

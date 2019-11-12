@@ -23,12 +23,16 @@ SELECT d.id                                                                     
        coalesce((a.properties ->> 'viitenr'), lapsed.get_viitenumber(d.rekvid, l.id)) :: TEXT AS viitenr,
        coalesce((a.properties ->> 'tyyp'), '') :: TEXT                                        AS tyyp,
        l.isikukood                                                                            AS isikukood,
-       l.nimi                                                                                 AS nimi
+       l.nimi                                                                                 AS nimi,
+       coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN                     AS kas_earved,
+       coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN                      AS kas_email,
+       coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN                    AS kas_paberil
 FROM docs.doc d
          INNER JOIN docs.arv a ON a.parentId = d.id
          INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
          INNER JOIN lapsed.laps l ON l.id = ld.parentid
          INNER JOIN libs.asutus asutus ON a.asutusid = asutus.id
+         INNER JOIN lapsed.vanemad v ON l.id = v.parentid AND v.asutusid = asutus.id
          LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
          LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
 ORDER BY d.lastupdate DESC;

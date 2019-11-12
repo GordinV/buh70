@@ -56,12 +56,27 @@ class Documents extends React.PureComponent {
                 const Doc = this.refs['register'];
 
                 let ids = [];
+
+                // будет выведено на печать выбранные и только для печати счета
                 Doc.gridData.forEach(row => {
-                   ids.push(row.id);
+                    if (row.select && row.kas_paberil) {
+                        // выбрано для печати
+                        ids.push(row.id);
+                    }
                 });
 
-                let url = `/multiple_print/${DOC_TYPE_ID}/${DocContext.userData.uuid}/${ids}`;
-                window.open(`${url}`);
+                if (ids.length > 0) {
+                    Doc.setState({warning: `Leidsin ${ids.length} arveid printimiseks`, // строка извещений
+                        warningType: 'ok',
+                    });
+
+                    let url = `/multiple_print/${DOC_TYPE_ID}/${DocContext.userData.uuid}/${ids}`;
+                    window.open(`${url}`);
+                } else {
+                    Doc.setState({warning: 'Mitte ühtegi arve leidnum', // строка извещений
+                        warningType: 'notValid',
+                    });
+                }
 
                 break;
 

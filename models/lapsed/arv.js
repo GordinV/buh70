@@ -309,7 +309,8 @@ const Arv = {
             {id: "nimi", name: "Nimi", width: "100px"},
             {id: "isikukood", name: "Isikukood", width: "100px"},
             {id: "viitenr", name: "Viitenumber", width: "100px"},
-            {id: "tyyp", name: "Tüüp", width: "100px"}
+            {id: "tyyp", name: "Tüüp", width: "100px"},
+            {id: "select", name: "Valitud", width: "10%", show: false}
 
         ],
         sqlString: `SELECT id,
@@ -335,7 +336,9 @@ const Arv = {
                            a.isikukood,
                            a.nimi,
                            a.tyyp,
-                           $2::INTEGER                          AS userId
+                           $2::INTEGER                          AS userId,
+                           TRUE                                 AS select,
+                           kas_paberil::BOOLEAN                 AS kas_paberil
                     FROM lapsed.cur_laste_arved a
                     WHERE a.rekvId = $1::INTEGER`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
