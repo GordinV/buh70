@@ -65,7 +65,7 @@ class LapseGrupp extends React.PureComponent {
 
         let gridValue;
         if (self.gridRowData) {
-            gridValue = self.gridRowData.id ? self.gridRowData.id: null;
+            gridValue = self.gridRowData.id ? self.gridRowData.id : null;
         }
 
         return (
@@ -194,7 +194,7 @@ class LapseGrupp extends React.PureComponent {
 
                             <InputNumber title='Kogus: '
                                          name='kogus'
-                                         value={Number(row.kogus) || 0}
+                                         value={Number(row.kogus) || 1}
                                          bindData={false}
                                          ref='kogus'
                                          onChange={self.handleGridRowInput}/>
@@ -241,6 +241,11 @@ class LapseGrupp extends React.PureComponent {
                     doc.gridRowData['hind'] = nomDataName.hind;
                 }
             }
+
+            if (!doc.gridRowData['kogus']) {
+                doc.gridRowData['kogus'] = 1;
+            }
+
 
         }
         return warning;
