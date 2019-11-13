@@ -6,15 +6,11 @@ const React = require('react');
 
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
-    InputText = require('../../../components/input-text/input-text.jsx'),
     InputNumber = require('../../../components/input-number/input-number.jsx'),
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
-    InputDate = require('../../../components/input-date/input-date.jsx'),
     Select = require('../../../components/select/select.jsx'),
     SelectData = require('../../../components/select-data/select-data.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
-    DataGrid = require('../../../components/data-grid/data-grid.jsx'),
-    ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     styles = require('./styles');
 
 const DocContext = require('../../../doc-context');
@@ -83,17 +79,15 @@ class Laps extends React.PureComponent {
      */
 
     renderer(self) {
-        let bpm = self.docData && self.docData.bpm ? self.docData.bpm : [],
-            isEditMode = self.state.edited;
+        let isEditMode = self.state.edited;
 
 
-        if ((self.docData.id == 0 || !self.docData.parentid) && this.state.lapsId) {
+        if ((self.docData.id === 0 || !self.docData.parentid) && this.state.lapsId) {
             //new record
             self.docData.parentid = this.state.lapsId;
         }
 
         if (!this.state.lapsId && self.docData.parentid) {
-            const doc = self;
             this.setState({lapsId: self.docData.parentid})
         }
 
@@ -103,8 +97,9 @@ class Laps extends React.PureComponent {
 
         let buttonEditNom = styles.btnEditNom;
 
+        //фильтр на используемы номенклатуры
+        const nomData = self.libs['lapse_kaart'] ? self.libs['lapse_kaart'].filter(row => row.lapsid ===  self.docData.parentid): [];
 
-        const nomData = self.libs['lapse_kaart'] ? self.libs['lapse_kaart'].filter(row => self.docData.parentid): [];
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>
