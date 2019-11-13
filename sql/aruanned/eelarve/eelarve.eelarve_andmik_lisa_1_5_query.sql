@@ -15,7 +15,7 @@ DECLARE
 BEGIN
 
 
-    DROP TABLE IF EXISTS tmp_andmik;
+   DROP TABLE IF EXISTS tmp_andmik;
 
     CREATE TEMPORARY TABLE tmp_andmik (
         idx         TEXT,

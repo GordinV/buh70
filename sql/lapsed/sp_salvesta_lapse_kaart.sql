@@ -9,7 +9,7 @@ $BODY$
 DECLARE
     userName             TEXT;
     doc_data             JSON    = data ->> 'data';
-    doc_id               INTEGER = doc_data ->> 'id';
+    doc_id               INTEGER = (select case when (doc_data ->> 'id')::text ilike '%NEW%' THEN 0::TEXT ELSE (doc_data ->> 'id')::TEXT END)::INTEGER;
     doc_parentid         INTEGER = doc_data ->> 'parentid';
     doc_nomid            INTEGER = doc_data ->> 'nomid';
     doc_tunnus           TEXT    = doc_data ->> 'tunnus';

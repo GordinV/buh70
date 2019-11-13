@@ -27,11 +27,16 @@ DECLARE
     la_kontod TEXT[]  = ARRAY ['100','1000','1001','15','1501','1502','1511','1512','1531','1532','2580','2581','2585','2586','3000','3030',
         '3034','3041','3044','3045','3047','32','3500','3502','352','35200','35201','381','382','38250','38251',
         '38252','38254','3880','3882','3888','40','413','4500','4502','452','50','55','60','650','655'];
+
+    l_3888 numeric(12,4) = 0;
 BEGIN
     -- ,'9100','9101'
 
     -- will fill temp table with row data
     PERFORM eelarve.eelarve_andmik_lisa_1_5_query(l_kpv, l_rekvid, l_kond);
+
+    select sum(tmp_andmik.kassa) into l_3888 from tmp_andmik  where tmp_andmik.artikkel::text = '3888';
+    raise notice 'l_3888 %', l_3888;
 
 -- data analise
     RETURN QUERY
@@ -61,7 +66,7 @@ BEGIN
                         coalesce(coalesce(sum(q.kassa), 0), 0)::NUMERIC(12, 2)   AS kassa,
                         get_saldo('KD', '32', NULL, NULL)::NUMERIC(12, 2)        AS saldoandmik
                  FROM tmp_andmik q
-                 WHERE q.artikkel LIKE '32%'
+                 WHERE q.artikkel in ('320','3220','3221','3222','3224','3229','3232','3233','3237','3238')
                    AND tyyp = 1
                  UNION ALL
                  SELECT '2.1'::VARCHAR(20),
@@ -667,7 +672,7 @@ BEGIN
                         coalesce(sum(q.kassa), 0)                                          AS kassa,
                         get_saldo('KD', q.artikkel, NULL, NULL)                            AS saldoandmik
                  FROM tmp_andmik q
-                 WHERE left(q.artikkel, 2) NOT IN ('32', '15', '40', '50', '55', '60')
+                 WHERE left(q.artikkel, 2) NOT IN ('15', '40', '50', '55', '60')
                    AND left(q.artikkel, 4) NOT IN ('3502', '3823', '2585', '2586', '1001', '4500', '4502')
                    AND left(q.artikkel, 3) NOT IN ('655', '650', '352', '381', '413', '452')
                    AND tyyp = 1
@@ -715,61 +720,9 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 /*
 
 SELECT *
-FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2018,12,31), 63, 1) qry
+FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019,03,31), 63, 1) qry
 where (not empty(qry.tegev) or not empty(qry.artikkel))
 and qry.artikkel like '32%'
 
-
-select * from tmp_andmik where artikkel ilike '381%'
-select * from eelarve where rekvid = 63 and aasta = 2019 and kood1 = '01112'
-
-
-select get_saldo('MDK','50', null, null)
-
-
-select * from tmp_andmik where artikkel like '382%'
-
-select coalesce((SELECT sum(case
-	when 'KD' like '%KD' then (kr - db) when 'KD' like '%DK' then (db - kr)
-	else  saldoandmik end)
-			from tmp_andmik s,
-			(select min(aasta) as eelmine_aasta, max(aasta) as aasta, min(kuu) as eelmine_kuu, max(kuu) as kuu from tmp_andmik) aasta
-			where s.tyyp = 2
-			and s.aasta = case when left('KD',1) = 'M' then aasta.eelmine_aasta else  aasta.aasta end
-			and ('50' is null or s.artikkel like trim('50'::text ||  '%'))
-						 and (null is null or trim(s.rahavoog) = null)
-				and (null is null or trim(s.tegev) = null)
-)
-			,0)
-
-
-CREATE TYPE eelarve_andmik_type AS (idx varchar(20), is_e integer, rekvid integer, tegev varchar(20), allikas varchar(20), artikkel varchar(20), nimetus varchar(254), eelarve numeric(14,2), tegelik numeric(14,2), kassa numeric(14,2), saldoandmik numeric(14,2));
-
-
---and tegev = '03600'
-order by tegev, artikkel
-
-
-select sum(saldoandmik)  from tmp_andmik where artikkel like '352010%'
-
-
-select get_saldo('MKD','208', null, null), get_saldo('MKD','258', null, null)
-
-SELECT *
-FROM eelarve_andmik(DATE(2019,01,31), 63, 0)
-where (not empty(tegev) or not empty(artikkel))
-and artikkel = '2580'
-
-SELECT s.aasta, eelmine_aasta, (case f
-	when 'KD' like '%KD' then (kr - db) when 'KD' like '%DK' then (db - kr)
-	else  saldoandmik end)
-			from tmp_andmik s,
-			(select min(aasta) as eelmine_aasta, max(aasta) as aasta, min(kuu) as eelmine_kuu, max(kuu) as kuu from tmp_andmik) aasta
-			where s.tyyp = 2
-			and s.aasta = case when left('KD',1) = 'M' then aasta.eelmine_aasta else  aasta.aasta end
-			and s.kuu = case when left('KD',1) = 'M' then aasta.eelmine_kuu else  aasta.kuu end
-			and ('30' is null or s.artikkel like trim('30'::text ||  '%'))
-			 and (null is null or trim(s.rahavoog) = null)
-			 and (null is null or trim(s.tegev) = null)
 --test
 */
