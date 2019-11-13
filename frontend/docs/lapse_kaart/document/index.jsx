@@ -112,7 +112,9 @@ class Laps extends React.PureComponent {
         // фильтр на номенклатуры
         let nomData = [{id: 0, kood: '', nimetus: '', hind: 0, kogus: 0}];
         if (yksus) {
-            nomData = nomData.concat(yksus.teenused ? yksus.teenused : []);
+            nomData = nomData.concat(yksus.teenused ? yksus.teenused : []).map(nom => {
+                return {...nom, id: Number(!nom.nomid || nom.nomid == NaN ? 0: nom.nomid)}
+            });
         }
 
         return (
@@ -373,9 +375,12 @@ class Laps extends React.PureComponent {
             }
 
             if (yksus.teenused) {
-                let teenus = yksus.teenused.find(obj => Number(obj.id) === Number(inputValue));
+                let teenus = yksus.teenused.find(obj => obj.nomid == inputValue);
+
                 Doc.docData.kogus = teenus.kogus ? teenus.kogus : Doc.docData.kogus;
                 Doc.docData.hind = teenus.hind ? teenus.hind : Doc.docData.hind;
+                // подменим номид на ид, так как ид виртуальный
+                Doc.docData.nomid = teenus.nomid ? teenus.nomid : Doc.docData.nomid;
             }
 
         }
