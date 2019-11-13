@@ -54,7 +54,6 @@ class Document {
      * Вернет промис с данными документа
      */
     async select(config) {
-        console.log('select', this.documentId);
         const _config = config ? config : this.config;
 
         if (!_config) {

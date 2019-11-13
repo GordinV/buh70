@@ -7,6 +7,11 @@ const ToolbarContainer = require('./../../components/toolbar-container/toolbar-c
 
 const styles = require('./laps-register-styles');
 const DOC_TYPE_ID = 'LAPS';
+const EVENTS = [
+    {name: 'Tabeli koostamine', method: 'arvestaTaabel', docTypeId: 'lapse_taabel'},
+    {name: 'Arve koostamine', method: 'koostaArve', docTypeId: 'arv'},
+    {name: 'Ettemaksuarve koostamine', method: 'koostaEttemaksuArve', docTypeId: 'arv'},
+];
 
 
 /**
@@ -36,10 +41,15 @@ class Documents extends React.PureComponent {
 
         return (
             <ToolbarContainer>
-                <BtnArvesta
-                    value={'Tabeli koostamine'}
-                    onClick={this.onClickHandler}
-                />
+                {EVENTS.map(event => {
+                    return (
+                        <BtnArvesta
+                            value={event.name}
+                            onClick={this.onClickHandler}
+                            ref={`btn-${event.name}`}
+                        />
+                    )
+                })}
             </ToolbarContainer>
         )
     }
@@ -53,14 +63,20 @@ class Documents extends React.PureComponent {
             ids.push(row.id);
         });
 
+
+        const task = EVENTS.find(task => task.name === event);
+        if (!task) {
+            return Doc.setState({warning: `Task: ${event} ei leidnud`, warningType: 'error'});
+        }
+
         // отправляем запрос на выполнение
-        Doc.fetchData(`calc/arvestaTaabel`, ids).then((data) => {
+        Doc.fetchData(`calc/${task.method}`, ids).then((data) => {
             if (data.result) {
                 Doc.setState({warning: `Kokku arvestatud: ${data.result}, suunatamine...`, warningType: 'ok'});
 
                 // ждем 10 сек и редайрект на табеля
                 setTimeout(() => {
-                    this.props.history.push(`/lapsed/lapse_taabel`);
+                    this.props.history.push(`/lapsed/${task.docTypeId}`);
                 }, 1000 * 5);
             } else {
                 Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'notValid'});

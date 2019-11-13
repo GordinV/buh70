@@ -87,8 +87,7 @@ BEGIN
 
         json_ajalugu = to_jsonb(row)
                        FROM (SELECT now()    AS updated,
-                                    userName AS user,
-                                    lt.*     AS data
+                                    userName AS user
                              FROM lapsed.lapse_taabel lt
                              WHERE id = doc_id
                             ) row;

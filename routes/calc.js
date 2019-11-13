@@ -7,20 +7,22 @@ const Doc = require('./../classes/DocumentTemplate');
 
 const UserConfig = {};
 
-exports.arvestaTaabel = async (req, res) => {
+exports.post = async (req, res) => {
     const params = req.body;
+    const taskName = req.params.taskName;
     const docTypeId = params.parameter;
     const ids = params.data; // параметр ids документа
     const user = require('../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
-    const taskName = 'arvestaTaabel';
-    const doc = new Doc(docTypeId, null, user.userId, user.asutusId, module);
+//    const taskName = 'arvestaTaabel';
     let result = 0;
 
     if (!user) {
         console.error('error 401 newAPI');
         return res.status(401).end();
     }
+
+    const doc = new Doc(docTypeId, null, user.userId, user.asutusId, module);
 
     if (!ids || ids.length === 0) {
         return res.send({status: 200, result: null, error_message: `Valitud lapsed ei leidnud`});
@@ -41,7 +43,15 @@ exports.arvestaTaabel = async (req, res) => {
 
     // решаем их
     let promiseResult = await Promise.all(promises).then((data) => {
-        result = data.length;
+        const replyWithDocs = data.filter(obj => {
+            if(!obj.error_code && obj.result && obj.result > 0) {
+                return obj;
+            }
+        });
+        result = replyWithDocs.length;
+
+    }).catch((err)=>{
+        return res.send({status: 500, result: null, error_message: err});
     });
 
     //ответ
