@@ -107,7 +107,8 @@ module.exports = {
                             $1::INTEGER AS rekvid,
                             $2::INTEGER AS user_id
                      FROM lapsed.cur_lapse_grupp v
-                     WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
+                     WHERE rekvid = $1::INTEGER
+                     ORDER BY kood`,     //  $1 всегда ид учреждения, $2 - userId
             params:
                 '',
             alias:
