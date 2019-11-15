@@ -123,7 +123,22 @@ module.exports = {
             view: 'lapse_grupp_register',
             params: 'sqlWhere'
         },
-    ]
+    ],
+
+    uuendaHinnad: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM lapsed.update_prices_in_group($2::INTEGER, $1::INTEGER)`,//$1 docId, $2 - userId
+        type: 'sql',
+        alias: 'uuendaHinnad'
+    },
+    bpm: [
+        {
+            name: 'Uuendada hinnad',
+            task: 'uuendaHinnad',
+            type: 'manual',
+            action: 'uuendaHinnad',
+        }
+    ],
 
 };
 
