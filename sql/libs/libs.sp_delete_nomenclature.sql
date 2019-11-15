@@ -64,6 +64,18 @@ BEGIN
              SELECT id
              FROM docs.leping2
              WHERE nomid = v_doc.id
+             UNION
+             SELECT id
+             FROM lapsed.lapse_kaart
+             WHERE nomid = v_doc.id
+             UNION
+             SELECT id
+             FROM docs.mk1
+             WHERE nomid = v_doc.id
+             UNION
+             SELECT id
+             FROM docs.pv_oper
+             WHERE nomid = v_doc.id
 
            ) qry
   )
