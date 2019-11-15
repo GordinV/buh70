@@ -37,8 +37,6 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
-        const Doc = this.refs['register'];
-
         return (
             <ToolbarContainer>
                 {EVENTS.map(event => {

@@ -32,7 +32,7 @@ class ButtonRegisterEmail extends React.PureComponent {
             <div>
                 <Button
                     ref="btnEmail"
-                    value='Email'
+                    value={this.props.value}
                     show={this.props.show}
                     disabled={this.props.disabled}
                     onClick={(e) => this.handleClick(e)}>
@@ -40,7 +40,7 @@ class ButtonRegisterEmail extends React.PureComponent {
                 </Button>
                 <ModalPage
                     modalPageBtnClick={this.modalPageClick}
-                    modalPageName={`Email`}
+                    modalPageName={`${this.props.value}`}
                     show={this.state.showModal}
                     modalObjects={['btnOk', 'btnCancel']}
                 >
@@ -57,7 +57,7 @@ class ButtonRegisterEmail extends React.PureComponent {
      */
     modalPageClick(btnEvent) {
         if (btnEvent === 'Ok') {
-            this.props.onClick();
+            this.props.onClick(this.props.value);
         }
         this.setState({showModal: false});
     }
@@ -72,7 +72,8 @@ ButtonRegisterPrint.propTypes = {
 
 ButtonRegisterEmail.defaultProps = {
     disabled: false,
-    show: true
+    show: true,
+    value: 'Email'
 };
 
 module.exports = ButtonRegisterEmail;

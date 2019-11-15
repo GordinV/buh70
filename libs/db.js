@@ -21,7 +21,7 @@ const db = {
 
         try {
             const res = await client.query(prepairedSqlString, params);
-            if (res.rowCount && res.rowCount === 1 && 'error_code' in res.rows[0]) {
+            if (res.rowCount && res.rowCount === 1 &&  res.rows && res.rows.length === 1 && ('error_code' in res.rows[0])) {
                 // executed procedure
                 result = Object.assign(result, res.rows[0]);
             } else {

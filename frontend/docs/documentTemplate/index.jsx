@@ -539,7 +539,6 @@ class DocumentTemplate extends React.PureComponent {
             method = 'fetchData' + protocol;
             params = Object.assign(params, this.docData,);
         }
-
         return new Promise((resolved, rejected) => {
             fetchData[method](url, params).then(response => {
                     if (response.status && response.status === 401) {

@@ -492,6 +492,7 @@ class Documents extends React.PureComponent {
 
         const params = {
             parameter: this.docTypeId, // параметры
+            docTypeId: this.docTypeId, // для согласования с документом
             sortBy: this.state.sortBy, // сортировка
             limit: this.state.limit, // row limit in query
             docId: this.state.value,

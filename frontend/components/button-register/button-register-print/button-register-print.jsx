@@ -15,14 +15,13 @@ class ButtonRegisterPrint extends React.PureComponent{
     }
 
     handleClick(e) {
-        return this.props.onClick('print');
+        return this.props.onClick(this.props.value);
     }
 
     render() {
-        let value = this.props.value ? this.props.value: 'Print';
         return <Button
             ref="btnPrint"
-            value={value}
+            value={this.props.value}
             show={this.props.show}
             disabled={this.props.disabled}
             onClick={(e)=> this.handleClick(e)}>
@@ -39,7 +38,8 @@ ButtonRegisterPrint.propTypes = {
 
 ButtonRegisterPrint.defaultProps = {
     disabled: false,
-    show: true
+    show: true,
+    value: 'Print'
 };
 
 module.exports = ButtonRegisterPrint;

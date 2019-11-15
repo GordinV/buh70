@@ -338,7 +338,8 @@ const Arv = {
                            a.tyyp,
                            $2::INTEGER                          AS userId,
                            TRUE                                 AS select,
-                           kas_paberil::BOOLEAN                 AS kas_paberil
+                           kas_paberil::BOOLEAN                 AS kas_paberil,
+                           kas_email::BOOLEAN                   AS kas_email
                     FROM lapsed.cur_laste_arved a
                     WHERE a.rekvId = $1::INTEGER`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
