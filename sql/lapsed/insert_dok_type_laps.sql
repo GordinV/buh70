@@ -37,3 +37,11 @@ SELECT 1::INTEGER,
        'DOK'                                     AS library,
        '{"type":"library", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'LAPSE_GRUPP');
+
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
+       'INF3'                                    AS kood,
+       'INF3 Füüsiliste isikute tasutud koolituskulude deklaratsioon'                                  AS nimetus,
+       'DOK'                                     AS library,
+       '{"type":"aruanne", "module":["Lapsed"]}' AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'INF3');
