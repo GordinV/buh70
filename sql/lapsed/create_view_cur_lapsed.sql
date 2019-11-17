@@ -10,8 +10,8 @@ SELECT l.id,
        lk.rekv_ids
 FROM lapsed.laps l
          JOIN (SELECT parentid,
-                      regexp_replace(json_agg((k.properties ->> 'yksus')::TEXT || '-' ||
-                                              (k.properties ->> 'all_yksus'))::TEXT, '"', '', 'g') AS yksused,
+                      regexp_replace(json_agg((k.properties ->> 'yksus')::TEXT || case when (k.properties ->> 'all_yksus') is not null then '-' ||
+                                              (k.properties ->> 'all_yksus')::TEXT else '' end )::text, '"', '', 'g') AS yksused,
                       array_agg(rekvid)                                                             AS rekv_ids
                FROM lapsed.lapse_kaart k
                WHERE k.staatus <> 3

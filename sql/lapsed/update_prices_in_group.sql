@@ -29,10 +29,10 @@ BEGIN
     doc_type_id = 'LAPSE_KAART';
 
     FOR v_noms IN
-        WITH v_group AS (SELECT id, (properties::JSONB -> 'teenused')::JSONB AS teenused
+        WITH v_group AS (SELECT id, kood, (properties::JSONB -> 'teenused')::JSONB AS teenused
                          FROM libs.library
                          WHERE id = l_group_id)
-        SELECT x.*
+        SELECT x.*, v_group.kood as yksus
         FROM v_group,
              jsonb_to_recordset(
                      v_group.teenused::JSONB
@@ -63,6 +63,7 @@ BEGIN
                        lk.muud
                 FROM lapsed.lapse_kaart lk
                 WHERE lk.nomid = v_noms.nomid
+                  and (lk.properties ->> 'yksus') = v_noms.yksus
                   AND lk.staatus = DOC_STATUS
                   AND lk.hind <> v_noms.hind
                   AND (lk.properties ->> 'alg_kpv' IS NULL OR
