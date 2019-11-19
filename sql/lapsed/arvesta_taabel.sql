@@ -54,7 +54,7 @@ BEGIN
           AND lk.staatus = DOC_STATUS
           AND (lk.properties ->> 'alg_kpv' IS NULL OR (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
           AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
-          AND NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN
+          AND ((lk.properties ->> 'kas_ettemaks') is null or NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN)
         LOOP
             -- ищем аналогичный табель в периоде
             -- критерий
