@@ -53,10 +53,11 @@ module.exports = {
                          n.id AS id,
                          n.kood::TEXT,
                          n.nimetus::TEXT,
+                         n.uhik::TEXT,
                          $2   AS userid
                   FROM jsonb_to_recordset((SELECT properties::JSONB -> 'teenused'
                                            FROM libs.library
-                                           WHERE id = $1)) AS x(hind NUMERIC, kogus NUMERIC, nomid INTEGER)
+                                           WHERE id = $1)) AS x(hind NUMERIC(12,2), kogus NUMERIC(12,2), nomid INTEGER)
                            INNER JOIN libs.nomenklatuur n ON n.id = x.nomid`,
             query: null,
             multiple: true,
@@ -72,10 +73,11 @@ module.exports = {
             gridConfig:
                 [
                     {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
-                    {id: 'kood', name: 'Kood', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'kogus', name: 'Kogus', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'text', readOnly: false}
+                    {id: 'kood', name: 'Kood', width: '20%', show: true, type: 'text', readOnly: false},
+                    {id: 'nimetus', name: 'Nimetus', width: '30%', show: true, type: 'text', readOnly: false},
+                    {id: 'kogus', name: 'Kogus', width: '20%', show: true, type: 'text', readOnly: false},
+                    {id: 'hind', name: 'Hind', width: '20%', show: true, type: 'text', readOnly: false},
+                    {id: 'uhik', name: 'Mõttühik', width: '10%', show: true, type: 'text', readOnly: false},
                 ],
         }
     ,

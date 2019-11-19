@@ -16,19 +16,19 @@ const
     styles = require('./styles');
 
 const LIBRARIES = [
-        {
-            id: 'tunnus', filter: ''
-        },
-        {
-            id: 'nomenclature',
-            filter: `where dok = 'ARV'`
-        },
-        {
-            id: 'lapse_grupp',
-            filter: ``
-        }
+    {
+        id: 'tunnus', filter: ''
+    },
+    {
+        id: 'nomenclature',
+        filter: `where dok = 'ARV'`
+    },
+    {
+        id: 'lapse_grupp',
+        filter: ``
+    }
 
-    ];
+];
 
 class Laps extends React.PureComponent {
     constructor(props) {
@@ -61,7 +61,7 @@ class Laps extends React.PureComponent {
         if (this.props.history && this.props.history.location.state) {
             lapsId = this.props.history.location.state.lapsId;
         } else {
-            lapsId = DocContext['laps'] ? DocContext['laps']: null;
+            lapsId = DocContext['laps'] ? DocContext['laps'] : null;
         }
         this.setState({lapsId: lapsId});
 
@@ -94,7 +94,7 @@ class Laps extends React.PureComponent {
         let isEditMode = self.state.edited;
 
 
-        if ((!Number(self.docData.id)  || !self.docData.parentid) && this.state.lapsId) {
+        if ((!Number(self.docData.id) || !self.docData.parentid) && this.state.lapsId) {
             //new record
             self.docData.parentid = this.state.lapsId;
         }
@@ -111,14 +111,19 @@ class Laps extends React.PureComponent {
 
         // фильтр на номенклатуры
         let nomData = [{id: 0, kood: '', nimetus: '', hind: 0, kogus: 0}];
-        // берем только услуги для группы и их сортируем
+        // берем только услуги для группы, добавляяем цену и ед.измерения и сортируем
         if (yksus) {
-            nomData = nomData.concat(yksus.teenused ? yksus.teenused : []).map(nom => {
-                const teenuseNimetus = nom.nimetus ? `${nom.nimetus} (${Number(nom.hind).toFixed(2)}) `: '';
-                return {...nom, nimetus: teenuseNimetus, id: Number(!nom.nomid || nom.nomid == NaN ? 0: nom.nomid)}
+            nomData = (yksus.teenused ? yksus.teenused : []).map(nom => {
+                const row = self.libs['nomenclature'].find(lib => lib.id === nom.id);
+
+                if (row) {
+                    const teenuseNimetus = row.nimetus ? `${row.nimetus} (hind: ${Number(nom.hind).toFixed(2)}) ` : '';
+                    return {...row, nimetus: teenuseNimetus, id: Number(!nom.id || nom.id == NaN ? 0 : nom.id)}
+                }
             }).sort((a, b) => {
                 return a.kood.localeCompare(b.kood)
             });
+
         }
 
         return (

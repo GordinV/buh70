@@ -3,7 +3,7 @@ module.exports = {
                           n.kood::TEXT                  AS kood,
                           n.nimetus::TEXT ||
                           coalesce(' (' || (lk.properties ->> 'yksus') || '/' || (lk.properties ->> 'all_yksus') || ')',
-                                   '')::TEXT || ', hind: '|| (lk.hind::numeric(12,2))::text            AS nimetus,
+                                   '')::TEXT || ', hind: '|| (lk.hind::numeric(12,2)) || ' ' || n.uhik::text            AS nimetus,
                           lk.parentid                   AS lapsid,
                           lk.properties ->> 'yksus'     AS yksus,
                           lk.properties ->> 'all_yksus' AS all_yksus,
@@ -137,6 +137,7 @@ module.exports = {
                 {id: "kood", name: "Kood", width: "20%"},
                 {id: "nimetus", name: "Nimetus", width: "40%"},
                 {id: "hind", name: "Hind", width: "20%"},
+                {id: "uhik", name: "Ühik", width: "10%"},
                 {id: "yksus", name: "Üksus", width: "20%"},
                 {id: "kehtivus", name: "Kehtib", width: "20%"},
                 {id: "inf3", name: "INF3", width: "10%"},
@@ -151,6 +152,7 @@ module.exports = {
                             yksus::TEXT ||
                             CASE WHEN all_yksus IS NOT NULL THEN '(' || all_yksus::TEXT || ')' ELSE '' END AS yksus,
                             hind,
+                            uhik,
                             lapsed.get_viitenumber($1, lapsid)                                             AS viitenumber,
                             $1::INTEGER                                                                    AS rekvid,
                             $2::INTEGER                                                                    AS user_id,

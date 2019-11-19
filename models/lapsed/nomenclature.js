@@ -2,7 +2,7 @@ module.exports = {
     select: [{
         sql: `SELECT n.kood::TEXT,
                      n.id,
-                     n.nimetus::TEXT,
+                     n.nimetus::TEXT || ' ' || n.uhik::text as nimetus,
                      n.dok::TEXT,
                      n.muud,
                      n.rekvid,
@@ -51,7 +51,7 @@ module.exports = {
     }],
     selectAsLibs: `SELECT id,
                           kood,
-                          trim(nimetus) || ' (' || (hind::NUMERIC(12, 2))::TEXT || ')'::TEXT AS nimetus,
+                          trim(nimetus) || ' (' || (hind::NUMERIC(12, 2))::TEXT || ') ' || uhik::TEXT AS nimetus,
                           dok,
                           hind,
                           vat,
