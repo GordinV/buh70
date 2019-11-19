@@ -21,6 +21,15 @@ const TAXIES = [
     {id: 6, kood: '20', name: '20%'}
 ];
 
+const UHIK = [
+    {id: 1, kood: 'muud', name: 'Muud'},
+    {id: 2, kood: 'tk', name: 'Tükk'},
+    {id: 3, kood: 'päev', name: 'Päev'},
+    {id: 4, kood: 'kuu', name: 'Kuu'},
+    {id: 5, kood: 'aasta', name: 'Aasta'}
+];
+
+
 class Nomenclature extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -54,6 +63,7 @@ class Nomenclature extends React.PureComponent {
         }
 
         let isEditeMode = self.state.edited;
+
         return (
             <div>
                 <div style={styles.doc}>
@@ -64,20 +74,11 @@ class Nomenclature extends React.PureComponent {
                                        ref="input-kood"
                                        value={self.docData.kood}
                                        onChange={self.handleInputChange}/>
-                        </div>
-                    </div>
-                    <div style={styles.docRow}>
-                        <div style={styles.docColumn}>
                             <InputText title="Nimetus "
                                        name='nimetus'
                                        ref="input-nimetus"
                                        value={self.docData.nimetus}
                                        onChange={self.handleInputChange}/>
-                        </div>
-                    </div>
-
-                    <div style={styles.docRow}>
-                        <div style={styles.docColumn}>
                             <Select title="Dokument:"
                                     name='dok'
                                     data={self.libs['document']}
@@ -87,10 +88,6 @@ class Nomenclature extends React.PureComponent {
                                     btnDelete={isEditeMode}
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditeMode}/>
-                        </div>
-                    </div>
-                    <div style={styles.docRow}>
-                        <div style={styles.docColumn}>
                             <Select title="Maksumäär:"
                                     name='vat'
                                     data={TAXIES}
@@ -101,16 +98,22 @@ class Nomenclature extends React.PureComponent {
                                     btnDelete={isEditeMode}
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditeMode}/>
-                        </div>
-                    </div>
-                    <div style={styles.docRow}>
-                        <div style={styles.docColumn}>
                             <InputNumber title="Hind: "
                                          name='hind'
                                          ref="input-hind"
                                          value={Number(self.docData.hind || null)}
                                          readOnly={!isEditeMode}
                                          onChange={self.handleInputChange}/>
+                            <Select title="Mõttühik:"
+                                    name='uhik'
+                                    data={UHIK}
+                                    collId='kood'
+                                    value={self.docData.uhik || ''}
+                                    defaultValue={self.docData.uhik}
+                                    ref="select-uhik"
+                                    btnDelete={isEditeMode}
+                                    onChange={self.handleInputChange}
+                                    readOnly={!isEditeMode}/>
                         </div>
                     </div>
                     <div style={styles.docRow}>

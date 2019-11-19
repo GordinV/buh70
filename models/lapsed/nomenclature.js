@@ -1,16 +1,16 @@
 module.exports = {
     select: [{
-        sql: `SELECT n.kood,
+        sql: `SELECT n.kood::TEXT,
                      n.id,
-                     n.nimetus,
-                     n.dok::VARCHAR(20),
+                     n.nimetus::TEXT,
+                     n.dok::TEXT,
                      n.muud,
                      n.rekvid,
                      $2::INTEGER                                       AS userid,
                      'NOMENCLATURE'                                    AS doc_type_id,
                      'EUR'                                             AS valuuta,
                      1                                                 AS kuurs,
-                     n.uhik                                            AS uhik,
+                     n.uhik::TEXT                                      AS uhik,
                      n.hind                                            AS hind,
                      (n.properties::JSONB ->> 'vat')::VARCHAR(20)      AS vat,
                      (n.properties::JSONB ->> 'konto')::VARCHAR(20)    AS konto,
@@ -51,7 +51,7 @@ module.exports = {
     }],
     selectAsLibs: `SELECT id,
                           kood,
-                          trim(nimetus) || ' (' || (hind::numeric(12,2))::TEXT || ')'::TEXT AS nimetus,
+                          trim(nimetus) || ' (' || (hind::NUMERIC(12, 2))::TEXT || ')'::TEXT AS nimetus,
                           dok,
                           hind,
                           vat,
@@ -82,6 +82,7 @@ module.exports = {
             {id: "kood", name: "Kood", width: "20%"},
             {id: "nimetus", name: "Nimetus", width: "40%"},
             {id: "hind", name: "Hind", width: "20%", type: "number"},
+            {id: "uhik", name: "Mõttühik", width: "10%"},
             {id: "dok", name: "Dokument", width: "20%"}
         ],
         sqlString: `SELECT id,
@@ -91,7 +92,8 @@ module.exports = {
                            n.dok,
                            (n.properties ->> 'konto')::TEXT    AS konto,
                            (n.properties ->> 'tunnus')::TEXT   AS tunnus,
-                           n.hind::NUMERIC(12, 2)
+                           n.hind::NUMERIC(12, 2),
+                           n.uhik
                     FROM libs.nomenklatuur n
                     WHERE (n.rekvId = $1 OR n.rekvid IS NULL)
                       AND n.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
