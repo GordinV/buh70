@@ -1,13 +1,13 @@
 'use strict';
 
 const PropTypes = require('prop-types');
-
+const Moment = require('moment');
 const React = require('react'),
     Button = require('../button-register/button-register-execute/button-register-execute.jsx'),
     ButtonOpen = require('../button-register/button-register.jsx'),
     Select = require('../../components/select/select.jsx'),
+    InputDate = require('../../components/input-date/input-date.jsx'),
     ModalPage = require('./../../components/modalpage/modalPage.jsx'),
-
     styles = require('./task-widget-styles');
 
 class TaskWidget extends React.PureComponent {
@@ -17,12 +17,14 @@ class TaskWidget extends React.PureComponent {
             taskList: props.taskList || [],
             actualTask: props.taskList[0].name,
             showList: false,
-            showModal: false
+            showModal: false,
+            seisuga: Moment().format('YYYY-MM-DD')
         };
         this.handleSelectTask = this.handleSelectTask.bind(this);
         this.handleButtonTask = this.handleButtonTask.bind(this);
         this.handleButtonOpenClick = this.handleButtonOpenClick.bind(this);
-        this. modalPageClick =  this.modalPageClick.bind(this);
+        this.modalPageClick =  this.modalPageClick.bind(this);
+        this.handleInputChange = this.handleInputChange.bind(this);
     }
 
     render() {
@@ -31,6 +33,7 @@ class TaskWidget extends React.PureComponent {
         const tasks = this.state.taskList.map((task, index) => {
             return {id: index++, name: task.name}
         });
+
         return (<div style={styles.wrapper}>
                 <div>
                     <div style={styles.wrapper}>
@@ -63,6 +66,13 @@ class TaskWidget extends React.PureComponent {
                             modalObjects={['btnOk', 'btnCancel']}
                         >
                             {`Kas käivata ${this.state.actualTask} ?`}
+                            <InputDate title='Seisuga '
+                                       name='kpv'
+                                       value={this.state.seisuga}
+                                       ref='input-kpv'
+                                       readOnly={false}
+                                       onChange={this.handleInputChange}/>
+
                         </ModalPage>: null
                     }
                 </div>
@@ -74,7 +84,7 @@ class TaskWidget extends React.PureComponent {
     modalPageClick(btnEvent) {
         this.setState({showModal: false});
         if (btnEvent === 'Ok') {
-            this.props.handleButtonTask(this.state.actualTask);
+            this.props.handleButtonTask(this.state.actualTask, this.state.seisuga);
         }
     }
 
@@ -91,6 +101,11 @@ class TaskWidget extends React.PureComponent {
     handleButtonTask() {
 //        this.props.handleButtonTask(this.state.actualTask);
         this.setState({showModal: true});
+    }
+
+    //will save value
+    handleInputChange(name, value) {
+        this.setState({seisuga: value});
     }
 
 

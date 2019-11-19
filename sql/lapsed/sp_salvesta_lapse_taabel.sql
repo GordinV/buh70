@@ -20,7 +20,6 @@ DECLARE
     doc_aasta          INTEGER = doc_data ->> 'aasta';
     doc_muud           TEXT    = doc_data ->> 'muud';
     doc_staatus        INTEGER = 1;
-    json_props         JSONB;
     json_ajalugu       JSONB;
     v_lapse_kaart      RECORD;
 BEGIN
@@ -48,13 +47,11 @@ BEGIN
     FROM lapsed.lapse_kaart lk
     WHERE lk.id = doc_lapse_kaart_id;
 
-    IF v_lapse_kaart.alg_kpv > date(doc_aasta, doc_kuu, 1) OR
-       v_lapse_kaart.lopp_kpv < (date(doc_aasta, doc_kuu, 1) + INTERVAL '1 month')
+    IF v_lapse_kaart.alg_kpv > date(doc_aasta, doc_kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' OR
+       v_lapse_kaart.lopp_kpv < (date(doc_aasta, doc_kuu, 1))
     THEN
         -- date is not in range
         RAISE EXCEPTION 'Teenus selles periodil ei kehti';
-        RETURN 0;
-
     END IF;
 
     -- поиск удаленной записи

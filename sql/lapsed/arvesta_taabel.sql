@@ -22,8 +22,6 @@ DECLARE
     json_object  JSONB;
 
     l_status     INTEGER;
-    l_number     TEXT;
-    l_arve_summa NUMERIC = 0;
     DOC_STATUS   INTEGER = 1; -- только активные услуги
     l_taabel_id  INTEGER;
     l_count      INTEGER = 0;
@@ -40,14 +38,14 @@ BEGIN
                n.uhik,
                CASE
                    WHEN coalesce((lk.properties ->> 'kogus')::NUMERIC, 0) > 0 THEN (lk.properties ->> 'kogus')::NUMERIC
-                   WHEN upper(n.uhik) IN ('PAEV', 'PÄEV') THEN
+                   WHEN upper(n.uhik) IN ('PAEV', 'PÄEV','päev') THEN
                        (SELECT palk.get_work_days((SELECT to_jsonb(row)
-                                                   FROM (SELECT date_part('month', l_kpv) AS kuu,
-                                                                date_part('year', l_kpv)  AS aasta) row
+                                                   FROM (SELECT date_part('month'::text, l_kpv::date) AS kuu,
+                                                                date_part('year'::text, l_kpv::date)  AS aasta) row
                        )::JSON))
                    ELSE 1 END            AS kogus,
-               date_part('month', l_kpv) AS kuu,
-               date_part('year', l_kpv)  AS aasta
+               date_part('month'::text, l_kpv::date) AS kuu,
+               date_part('year'::text, l_kpv::date)  AS aasta
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.parentid = l_laps_id
@@ -67,8 +65,8 @@ BEGIN
                    INTO l_taabel_id, l_status
             FROM lapsed.lapse_taabel lt
             WHERE lt.lapse_kaart_id = v_kaart.lapse_kaart_id
-              AND kuu = date_part('year', l_kpv)
-              AND aasta = date_part('month', l_kpv)
+              AND kuu = date_part('year'::text, l_kpv::date)
+              AND aasta = date_part('month'::text, l_kpv::date)
             LIMIT 1;
 
             IF l_taabel_id IS NULL OR l_status <> 2
@@ -124,6 +122,6 @@ GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arves
 
 
 /*
-select lapsed.arvesta_taabel(70, 40)
+select lapsed.arvesta_taabel(70, 16,'2019-01-30')
 
  */

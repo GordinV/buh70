@@ -3,6 +3,8 @@
 
 const React = require('react');
 const ReactServer = require('react-dom/server');
+const Moment = require('moment');
+let now = Moment().format('YYYY-MM-DD');
 
 exports.get = async (req, res) => {
     // рендер грида на сервере при первой загрузке странице
@@ -198,9 +200,19 @@ exports.executeTask = async (req, res) => {
     const taskName = req.params.taskName; // получим из параметра task
     const Doc = require('./../classes/DocumentTemplate');
     const params = req.body;
-    const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, params.module.toLowerCase());
+    let module = (params.module ? params.module: 'lapsed').toLowerCase();
 
-    const data = await Document.executeTask(taskName);
+    let seisuga = params.seisuga ? params.seisuga: now;
+    const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, module);
+
+    let taskParams;
+
+    if (params.docTypeId === 'LAPS') {
+        //@TODO сделать универсальный набор параметров
+         taskParams = [params.docId, user.userId, seisuga];
+    }
+    const data = await Document.executeTask(taskName, taskParams ? taskParams: null);
+
 
     const prepairedData = Object.assign({}, data);
     res.send({

@@ -53,7 +53,7 @@ BEGIN
     --	ids =  v_doc.rigths->'delete';
     IF (v_doc.is_arvestaja IS NULL OR NOT v_doc.is_arvestaja)
     THEN
-        RAISE NOTICE 'У пользователя нет прав на удаление';
+        RAISE NOTICE 'У пользователя нет прав на удаление ';
         error_code = 4;
         error_message = 'Ei saa kustuta dokument. Puudub õigused';
         result = 0;
@@ -85,7 +85,9 @@ GRANT EXECUTE ON FUNCTION lapsed.sp_delete_lapse_taabel(INTEGER, INTEGER) TO dbp
 
 
 /*
-select lapsed.sp_delete_laps(70,1)
+select lapsed.sp_delete_lapse_taabel(70,24)
 
-select * from lapsed.laps
+select * from ou.userid where id =  70
+
+update ou.userid set roles = roles || '{"is_arvestaja":true}' where id = 70
  */

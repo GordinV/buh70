@@ -266,12 +266,12 @@ class DocumentTemplate extends React.PureComponent {
     /**
      *
      */
-    btnTaskClick(taskName) {
+    btnTaskClick(taskName, kpv) {
 
         const task = this.bpm.find(task => task.name === taskName);
         let api = `/newApi/task/${task.task}`;
 
-        this.fetchData('Post', api).then((response) => {
+        this.fetchData('Post', api, kpv ? {seisuga: kpv}: null).then((response) => {
             const dataRow = response.result;
             const dataMessage = response.data.error_message ? response.data.error_message : '';
 
@@ -521,13 +521,13 @@ class DocumentTemplate extends React.PureComponent {
     /**
      * Выполнит запросы
      */
-    fetchData(protocol, api) {
+    fetchData(protocol, api, api_params) {
 
         let url = api ? api : `${URL}/${this.props.docTypeId}/${this.state.docId}`;
         let method = 'fetchDataPost';
         let params = {
-            docTypeId: this.props.docTypeId,
-            module: this.props.module,
+            docTypeId: this.props.docTypeId ? this.props.docTypeId: DocContext.docTypeId,
+            module: this.props.module ? this.props.module: DocContext.module,
             userId: DocContext.userData.userId,
             uuid: DocContext.userData.uuid,
             docId: this.state.docId,
@@ -537,8 +537,9 @@ class DocumentTemplate extends React.PureComponent {
         if (protocol) {
             //request call not default
             method = 'fetchData' + protocol;
-            params = Object.assign(params, this.docData,);
+            params = Object.assign({}, params, this.docData, api_params ? api_params: {});
         }
+
         return new Promise((resolved, rejected) => {
             fetchData[method](url, params).then(response => {
                     if (response.status && response.status === 401) {
