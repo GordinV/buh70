@@ -31,7 +31,7 @@ class ShowLogs extends React.PureComponent {
                 <Button
                     ref="btnLogs"
                     value='Loggid'
-                    show={true}
+                    show={this.props.show}
                     onClick={(e) => this.handleClick(e)}>
                     <img ref='image' src={styles.button.icon}/>
                 </Button>
@@ -81,7 +81,7 @@ ShowLogs.propTypes = {
 };
 
 ShowLogs.defaultProps = {
-    show: false
+    show: true
 };
 
 module.exports = ShowLogs;
