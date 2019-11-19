@@ -22,6 +22,7 @@ DECLARE
     doc_staatus        INTEGER = 1;
     json_props         JSONB;
     json_ajalugu       JSONB;
+    v_lapse_kaart      RECORD;
 BEGIN
 
     IF (doc_id IS NULL)
@@ -39,6 +40,22 @@ BEGIN
         RETURN 0;
     END IF;
 
+    -- check if service is valid
+
+    SELECT coalesce((lk.properties ->> 'alg_kpv')::DATE, date(year(), month(), 1)) AS alg_kpv,
+           coalesce((lk.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31))    AS lopp_kpv
+           INTO v_lapse_kaart
+    FROM lapsed.lapse_kaart lk
+    WHERE lk.id = doc_lapse_kaart_id;
+
+    IF v_lapse_kaart.alg_kpv > date(doc_aasta, doc_kuu, 1) OR
+       v_lapse_kaart.lopp_kpv < (date(doc_aasta, doc_kuu, 1) + INTERVAL '1 month')
+    THEN
+        -- date is not in range
+        RAISE EXCEPTION 'Teenus selles periodil ei kehti';
+        RETURN 0;
+
+    END IF;
 
     -- поиск удаленной записи
     IF doc_id IS NULL OR doc_id = 0

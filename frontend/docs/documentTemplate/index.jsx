@@ -566,6 +566,16 @@ class DocumentTemplate extends React.PureComponent {
                             resolved(response.data.data[0]);
                         }
 
+                        if (response.data.action && response.data.action === 'save' && response.data.result.error_code ) {
+                            // error in save
+                            this.setState({
+                                warning: `Tekkis viga ${response.data.result.error_message}`,
+                                warningType: 'error'
+                            });
+                            return rejected();
+
+                        }
+
                         return resolved(response.data);
                     } else {
                         console.error('Fetch viga ', response, params);

@@ -37,7 +37,7 @@ class DocToolBar extends React.PureComponent {
 
     render() {
         let isEditMode = this.props.edited,
-            isDocDisabled = this.props.docStatus === 2 || isEditMode,
+            isDocDisabled = this.props.docStatus === 2 ,
             docId = this.docId,
             toolbarParams = {
                 btnAdd: {
@@ -85,7 +85,7 @@ class DocToolBar extends React.PureComponent {
                      data={this.props.logs}
                      onClick={this.btnLogsClick}
                      show={!isEditMode}/>
-            {(this.props.bpm.length && !isDocDisabled) ? <TaskWidget ref='taskWidget'
+            {(this.props.bpm.length && !isDocDisabled && !isEditMode) ? <TaskWidget ref='taskWidget'
                                                                      taskList={this.props.bpm}
                                                                      handleSelectTask={this.handleSelectTask}
                                                                      handleButtonTask={this.handleButtonTask}
