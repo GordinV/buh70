@@ -30,6 +30,7 @@ class Laps extends React.PureComponent {
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
         this.btnEditNomClick = this.btnEditNomClick.bind(this);
         this.btnEditLapsClick = this.btnEditLapsClick.bind(this);
+        this.lapsIdChangehandler = this.lapsIdChangehandler.bind(this);
 
 
         this.pages = [
@@ -81,7 +82,6 @@ class Laps extends React.PureComponent {
     renderer(self) {
         let isEditMode = self.state.edited;
 
-
         if ((self.docData.id === 0 || !self.docData.parentid) && this.state.lapsId) {
             //new record
             self.docData.parentid = this.state.lapsId;
@@ -116,7 +116,7 @@ class Laps extends React.PureComponent {
                                     ref="select-parentid"
                                     btnDelete={false}
                                     userData={self.userData}
-                                    onChange={self.handleInputChange}
+                                    onChange={this.lapsIdChangehandler}
                                     readOnly={!isEditMode}/>
                     </div>
                     <div style={styles.docColumn}>
@@ -232,6 +232,18 @@ class Laps extends React.PureComponent {
 
         // осуществит переход на карточку контр-агента
         this.props.history.push(`/lapsed/laps/${docLapsId}`);
+
+    }
+
+    lapsIdChangehandler(inputName, inputValue) {
+        const Doc = this.refs['document'];
+
+        // отдать значение документу
+        Doc.handleInputChange(inputName, inputValue);
+
+        // обновить справочник
+        Doc.createLibs();
+
 
     }
 }

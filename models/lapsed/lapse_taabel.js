@@ -74,8 +74,8 @@ module.exports = {
                 {id: "nimi", name: "Nimi", width: "30%"},
                 {id: "teenus", name: "Teenus", width: "30%"},
                 {id: "yksus", name: "Üksus", width: "20%"},
-                {id: "kuu", name: "Kuu", width: "10%"},
-                {id: "aasta", name: "Aasta", width: "10%"},
+                {id: "kuu", name: "Kuu", width: "10%", type:"integer"},
+                {id: "aasta", name: "Aasta", width: "10%",type:"integer"},
                 {id: "kogus", name: "Kogus", width: "10%"},
                 {id: "hind", name: "Hind", width: "20%"},
             ],
@@ -92,8 +92,9 @@ module.exports = {
                             lt.nimi,
                             lt.kood,
                             lt.teenus,
-                            coalesce(lt.yksus || '/' || lt.all_yksus) AS yksus,
-                            $2::INTEGER                               AS userid
+                            (coalesce(lt.yksus, '') ||
+                             CASE WHEN lt.all_yksus IS NULL THEN '' ELSE '-' || lt.all_yksus END) AS yksus,
+                            $2::INTEGER                                                           AS userid
                      FROM lapsed.cur_lapse_taabel lt
                      WHERE rekvid = $1::INTEGER
             `,     //  $1 всегда ид учреждения, $2 - userId
