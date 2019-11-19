@@ -10,9 +10,9 @@ block content
         table.table.table-hover.grid_data
             thead.grid_head
                 tr
-                    th Ees- ja perekonnanimi
+                    th Koolituse eest tasunud isiku ees- ja perekonnanimi
                     th Isikukood
-                    th Ees- ja perekonnanimi
+                    th Koolitava isiku ees- ja perekonnanimi
                     th Isikukood
                     th Koolituse eest tasutud summa
                     th Koolituse liik
@@ -20,10 +20,10 @@ block content
             tbody
                 each rea in data
                     tr
-                        td=rea.lapse_nimi
-                        td=rea.lapse_isikukood
                         td=rea.maksja_nimi
                         td=rea.maksja_isikukood
+                        td=rea.lapse_nimi
+                        td=rea.lapse_isikukood
                         td=rea.summa
                         td=rea.liik
 
