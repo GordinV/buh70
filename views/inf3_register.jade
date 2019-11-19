@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 FÜÜSILISTE ISIKUTE TASUTUD KOOLITUSKULUDE DEKLARATSIOON
+        p Aasta #{data[0].aasta}
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Ees- ja perekonnanimi
+                    th Isikukood
+                    th Ees- ja perekonnanimi
+                    th Isikukood
+                    th Koolituse eest tasutud summa
+                    th Koolituse liik
+
+            tbody
+                each rea in data
+                    tr
+                        td=rea.lapse_nimi
+                        td=rea.lapse_isikukood
+                        td=rea.maksja_nimi
+                        td=rea.maksja_isikukood
+                        td=rea.summa
+                        td=rea.liik
+

@@ -1,28 +1,28 @@
 module.exports = {
     selectAsLibs: `SELECT id, nimetus::VARCHAR(254), regkood::VARCHAR(20), parentid
-                   FROM com_rekv`,
+                   FROM com_rekv
+                   ORDER BY nimetus`,
     select: [{
-        sql: `SELECT
-                'REKV'                                                           AS doc_type_id,
-                $2::INTEGER                                                     AS userid,
-                r.id,
-                r.parentid,
-                r.nimetus::VARCHAR(254),
-                r.aadress,
-                r.email::VARCHAR(254),
-                r.faks::VARCHAR(254),
-                r.haldus::VARCHAR(254),
-                r.juht::VARCHAR(254),
-                r.raama::VARCHAR(254),
-                r.kbmkood::VARCHAR(20),
-                r.muud,
-                r.regkood::VARCHAR(20),
-                r.tel::VARCHAR(254),
-                ((r.properties ->> 'arved')::JSONB ->> 'tahtpaev')::INTEGER      AS tahtpaev,
-                ((r.properties ->> 'reklftp')::JSONB ->> 'ftp')::VARCHAR(120)    AS ftp,
-                ((r.properties ->> 'reklftp')::JSONB ->> 'login')::VARCHAR(120)  AS login,
-                ((r.properties ->> 'reklftp')::JSONB ->> 'parool')::VARCHAR(120) AS parool,
-                (r.properties ->> 'earved') ::VARCHAR(254) AS earved
+        sql: `SELECT 'REKV'                                                           AS doc_type_id,
+                     $2::INTEGER                                                      AS userid,
+                     r.id,
+                     r.parentid,
+                     r.nimetus::VARCHAR(254),
+                     r.aadress,
+                     r.email::VARCHAR(254),
+                     r.faks::VARCHAR(254),
+                     r.haldus::VARCHAR(254),
+                     r.juht::VARCHAR(254),
+                     r.raama::VARCHAR(254),
+                     r.kbmkood::VARCHAR(20),
+                     r.muud,
+                     r.regkood::VARCHAR(20),
+                     r.tel::VARCHAR(254),
+                     ((r.properties ->> 'arved')::JSONB ->> 'tahtpaev')::INTEGER      AS tahtpaev,
+                     ((r.properties ->> 'reklftp')::JSONB ->> 'ftp')::VARCHAR(120)    AS ftp,
+                     ((r.properties ->> 'reklftp')::JSONB ->> 'login')::VARCHAR(120)  AS login,
+                     ((r.properties ->> 'reklftp')::JSONB ->> 'parool')::VARCHAR(120) AS parool,
+                     (r.properties ->> 'earved') ::VARCHAR(254)                       AS earved
               FROM ou.rekv r
               WHERE id = $1`,
         sqlAsNew: `SELECT
@@ -69,13 +69,13 @@ module.exports = {
                          c.toolbar2,
                          c.toolbar3,
                          c.tahtpaev,
-                         coalesce((u.properties ->> 'keel')::INTEGER, 2)::INTEGER         AS keel,
-                         coalesce((u.properties ->> 'port')::VARCHAR(100))::VARCHAR(254)  AS port,
-                         coalesce((u.properties ->> 'smtp')::VARCHAR(100))::VARCHAR(254)  AS smtp,
-                         coalesce((u.properties ->> 'user')::VARCHAR(100))::VARCHAR(254)  AS user,
-                         coalesce((u.properties ->> 'pass')::VARCHAR(100))::VARCHAR(254)  AS pass,
-                         coalesce((u.properties ->> 'email')::VARCHAR(100))::VARCHAR(254) AS email,
-                         coalesce((c.properties->>'earved')::varchar(254))::varchar(254) as earved
+                         coalesce((u.properties ->> 'keel')::INTEGER, 2)::INTEGER          AS keel,
+                         coalesce((u.properties ->> 'port')::VARCHAR(100))::VARCHAR(254)   AS port,
+                         coalesce((u.properties ->> 'smtp')::VARCHAR(100))::VARCHAR(254)   AS smtp,
+                         coalesce((u.properties ->> 'user')::VARCHAR(100))::VARCHAR(254)   AS user,
+                         coalesce((u.properties ->> 'pass')::VARCHAR(100))::VARCHAR(254)   AS pass,
+                         coalesce((u.properties ->> 'email')::VARCHAR(100))::VARCHAR(254)  AS email,
+                         coalesce((c.properties ->> 'earved')::VARCHAR(254))::VARCHAR(254) AS earved
                   FROM ou.config c,
                        ou.userid u
                   WHERE c.rekvid = $1
@@ -104,9 +104,8 @@ module.exports = {
             {id: "regkood", name: "Kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
-        sqlString: `SELECT
-                      $2 AS user_id,
-                      r.*
+        sqlString: `SELECT $2 AS user_id,
+                           r.*
                     FROM cur_rekv r
                     WHERE r.status <> 3
                       AND r.id IN (SELECT rekv_id

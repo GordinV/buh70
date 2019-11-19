@@ -81,7 +81,6 @@ class MenuToolBar extends React.PureComponent {
 
             // сортировка
             userAccessList = userAccessList.sort((a,b)=> {
-                console.log(a, b);
                 return a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
             });
 

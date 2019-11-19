@@ -27,4 +27,5 @@ module.exports = {
     lapse_grupp:'/lapsed/lapse_grupp',
     pank_vv: '/lapsed/pank_vv',
     config: '/ou/config',
+    inf3:'/aruanned/lapsed/inf3'
 };

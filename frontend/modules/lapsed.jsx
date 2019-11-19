@@ -43,6 +43,7 @@ const PankVVRegister = require('./../docs/pank_vv/index.jsx');
 const ConfigDocument = require('./../docs/config/document/index.jsx');
 const DokpropsDocument = require('./../docs/dokprops/document/index.jsx');
 const UserDocument = require('./../docs/userid/document/index.jsx');
+const Inf3Report = require('./../docs/inf3/index.jsx');
 
 
 const {Route} = require('react-router-dom');
@@ -179,6 +180,13 @@ class App extends React.Component {
                        render={(props) => <DokpropsDocument {...props} history={props.history}/>}/>
                 <Route exact path="/lapsed/userid/:docId"
                        render={(props) => <UserDocument {...props} history={props.history}/>}/>
+
+                <Route exact path="/lapsed/inf3"
+                       render={(props) => <Inf3Report
+                           module={MODULE}
+                           history={props.history}
+                           initData={this.props.initData}/>}/>
+
             </StyleRoot>
         )
     }
