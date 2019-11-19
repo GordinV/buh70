@@ -7,6 +7,7 @@ module.exports = {
                                     AND lk.parentid = l.id
                               ) AS is_exists
                    FROM lapsed.laps l
+                   WHERE l.staatus < 3
                    ORDER BY nimi`,
     libGridConfig: {
         grid: [
