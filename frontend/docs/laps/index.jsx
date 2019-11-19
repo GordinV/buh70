@@ -52,7 +52,7 @@ class Documents extends React.PureComponent {
         )
     }
 
-    onClickHandler(event) {
+    onClickHandler(event, seisuga) {
         const Doc = this.refs['register'];
 
         // собираем параметры
@@ -68,7 +68,7 @@ class Documents extends React.PureComponent {
         }
 
         // отправляем запрос на выполнение
-        Doc.fetchData(`calc/${task.method}`, ids).then((data) => {
+        Doc.fetchData(`calc/${task.method}`, {docs:ids, seisuga:seisuga}).then((data) => {
             if (data.result) {
                 Doc.setState({warning: `Kokku arvestatud: ${data.result}, suunatamine...`, warningType: 'ok'});
 

@@ -2,10 +2,13 @@
 
 const React = require('react');
 const PropTypes = require('prop-types');
+const getNow = require('./../../../../libs/getNow');
+
 const ModalPage = require('./../../modalpage/modalPage.jsx');
 
 const styles = require('../button-register-styles'),
     Button = require('../button-register.jsx'),
+    InputDate = require('../../input-date/input-date.jsx'),
     ICON = 'execute';
 
 
@@ -14,10 +17,12 @@ class ButtonTask extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            showModal: false
+            showModal: false,
+            seisuga: getNow()
         };
         this.handleClick = this.handleClick.bind(this);
         this.modalPageClick = this.modalPageClick.bind(this);
+        this.handleInputChange = this.handleInputChange.bind(this);
     }
 
     handleClick(e) {
@@ -45,6 +50,13 @@ class ButtonTask extends React.PureComponent {
                         modalObjects={['btnOk', 'btnCancel']}
                     >
                         {`Kas käivata "${value}" ?`}
+                        <InputDate title='Seisuga '
+                                   name='kpv'
+                                   value={this.state.seisuga}
+                                   ref='input-kpv'
+                                   readOnly={false}
+                                   onChange={this.handleInputChange}/>
+
                     </ModalPage> : null
                 }
             </div>
@@ -54,9 +66,15 @@ class ButtonTask extends React.PureComponent {
     modalPageClick(btnEvent) {
         this.setState({showModal: false});
         if (btnEvent === 'Ok') {
-            this.props.onClick(this.props.value);
+            this.props.onClick(this.props.value, this.state.seisuga);
         }
     }
+
+    //will save value
+    handleInputChange(name, value) {
+        this.setState({seisuga: value});
+    }
+
 }
 
 ButtonTask.defaultProps = {

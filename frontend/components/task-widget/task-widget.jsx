@@ -1,7 +1,7 @@
 'use strict';
 
 const PropTypes = require('prop-types');
-const Moment = require('moment');
+const getNow = require('./../../../libs/getNow');
 const React = require('react'),
     Button = require('../button-register/button-register-execute/button-register-execute.jsx'),
     ButtonOpen = require('../button-register/button-register.jsx'),
@@ -18,7 +18,7 @@ class TaskWidget extends React.PureComponent {
             actualTask: props.taskList[0].name,
             showList: false,
             showModal: false,
-            seisuga: Moment().format('YYYY-MM-DD')
+            seisuga: getNow()
         };
         this.handleSelectTask = this.handleSelectTask.bind(this);
         this.handleButtonTask = this.handleButtonTask.bind(this);

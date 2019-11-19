@@ -2,7 +2,7 @@
 const db = require('./../libs/db');
 const pdf = require('html-pdf');
 const util = require('util');
-
+const getNow = require('./../libs/getNow');
 const Doc = require('./../classes/DocumentTemplate');
 
 const UserConfig = {};
@@ -11,7 +11,8 @@ exports.post = async (req, res) => {
     const params = req.body;
     const taskName = req.params.taskName;
     const docTypeId = params.parameter;
-    const ids = params.data; // параметр ids документа
+    const ids = params.data.docs; // параметр ids документа
+    const execDate = params.data.seisuga || getNow(); // доп параметр дата
     const user = require('../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
 //    const taskName = 'arvestaTaabel';
@@ -37,7 +38,8 @@ exports.post = async (req, res) => {
     const promises = ids.map(id => {
         return new Promise(resolve => {
             doc.setDocumentId(id);
-            resolve(doc.executeTask(taskName))
+
+            resolve(doc.executeTask(taskName, [id, user.userId, execDate]));
         })
     });
 
