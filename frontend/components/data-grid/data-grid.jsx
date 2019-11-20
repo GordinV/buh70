@@ -38,6 +38,7 @@ class DataGrid extends React.Component {
             },
             value: this.props.value ? this.props.value : 0,
             gridData: props.gridData,
+            subtotals: props.subtotals ? props.subtotals : [],
             isSelect: this.props.isSelect ? true : false,
         };
 
@@ -47,6 +48,8 @@ class DataGrid extends React.Component {
         this.prepareTableRow = this.prepareTableRow.bind(this);
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
         this.getGridRowIndexById = this.getGridRowIndexById.bind(this);
+        this.prepareTableFooter = this.prepareTableFooter.bind(this);
+        this.getSum = this.getSum.bind(this);
     }
 
 
@@ -54,7 +57,7 @@ class DataGrid extends React.Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         return nextProps;
         if (JSON.stringify(nextProps.gridData) !== JSON.stringify(prevState.gridData) ||
-         //   (nextProps.value && nextProps.value !== prevState.value) ||
+            //   (nextProps.value && nextProps.value !== prevState.value) ||
             nextProps.gridData.length !== prevState.gridData.length ||
             nextProps.isSelect !== prevState.isSelect) {
             return {gridData: nextProps.gridData};
@@ -124,8 +127,19 @@ class DataGrid extends React.Component {
                             {this.prepareTableHeader(true)}
                         </tr>
                         {this.prepareTableRow()}
+                        {
+                            this.state.subtotals.length ?
+                                <tfoot style={{position: "absolute", left:"0", right: "15px"}}>
+                                    <tr>
+                                        {this.prepareTableFooter()}
+                                    </tr>
+                                </tfoot>
+                                : null
+                        }
+
                         </tbody>
                     </table>
+
                 </div>
                 <ModalPageDelete
                     show={this.state.isDelete}
@@ -328,6 +342,40 @@ class DataGrid extends React.Component {
     }
 
     /**
+     * Готовит компонент итоговая строка грида
+     * @param isHidden - колонка будет скрыта
+     */
+    prepareTableFooter(isHidden) {
+        return (
+            this.props.gridColumns.map((column, index) => {
+                let headerIndex = 'td-' + index;
+
+                let headerStyle = 'td';
+
+                let display = (isExists(column, 'show') ? column.show : true),
+                    width = isExists(column, 'width') ? column.width : '100%',
+                    style = Object.assign({}, styles[headerStyle], !display ? {display: 'none'} : {}, {width: width});
+
+                let subIndex = this.state.subtotals.indexOf(column.id);
+                let total;
+                if (subIndex > -1) {
+                    total = this.getSum(column.id);
+                }
+
+                // установить видимость
+                return (<td
+                    style={style}
+                    ref={headerIndex}
+                    key={headerIndex}
+                >
+                    <span>{total}</span>
+                </td>)
+            }, this)
+
+        )
+    }
+
+    /**
      * Готовит компонент заголовок грида
      * @param isHidden - колонка будет скрыта
      */
@@ -370,7 +418,18 @@ class DataGrid extends React.Component {
             </th>)
         }, this);
     }
+
+    getSum(columnField) {
+        let total = 0;
+        if (this.state.gridData.length && this.state.gridData[0][columnField]) {
+            this.state.gridData.forEach(row => total = total + Number(row[columnField]));
+        }
+
+        return total.toFixed(2);
+    }
+
 }
+
 
 DataGrid.propTypes = {
     gridColumns: PropTypes.arrayOf(

@@ -21,12 +21,15 @@ exports.post = async (req, res) => {
         const Doc = require('./../classes/DocumentTemplate');
         const doc = new Doc(parameter, null, user.userId, user.asutusId, module);
         let gridConfig = doc.config.grid.gridConfiguration;
+        let subtotals = doc.config.grid.subtotals ? doc.config.grid.subtotals : [];
 
+        console.log('subtotals', subtotals);
         // вызвать метод
         let data = {
             docTypeId: parameter,
             result: await doc[method](sortBy, sqlWhere, limit ),
-            gridConfig: gridConfig
+            gridConfig: gridConfig,
+            subtotals: subtotals
         };
 
         // вернуть данные

@@ -16,7 +16,7 @@ module.exports = {
     },
     doc: {
         position: 'relative',
-        height: '90vh',
+        height: '80vh',
         display: 'flex',
         flexDirection: 'column',
         /*
@@ -26,7 +26,7 @@ module.exports = {
     gridContainer: {
         display: 'flex',
         flexFlow: 'row wrap',
-        height: '87%',
+        height: '95%',
     },
     grid: {
         mainTable: {

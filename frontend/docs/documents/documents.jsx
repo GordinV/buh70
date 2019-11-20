@@ -32,10 +32,12 @@ class Documents extends React.PureComponent {
         this.gridData = [];
         this.gridConfig = [];
         this.filterData = [];
+        this.subtotals = [];
         this.startMenuData = []; // здесь будут данные для старт меню
         if (props.initData) {
             this.gridData = props.initData.result.data || [];
             this.gridConfig = props.initData.gridConfig || [];
+            this.subtotals = props.initData.subtotals || [];
         }
 
         this.docTypeId = props.docTypeId;
@@ -111,6 +113,7 @@ class Documents extends React.PureComponent {
     render() {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
         const warningStyle = this.state.warningType && styles[this.state.warningType] ? styles[this.state.warningType] : null;
+
         return (
             <div style={_style.doc}>
                 <div style={_style.docRow}>
@@ -131,6 +134,7 @@ class Documents extends React.PureComponent {
                               style={_style.grid.mainTable}
                               gridData={this.gridData}
                               gridColumns={this.gridConfig}
+                              subtotals = {this.subtotals}
                               onClick={this.clickHandler}
                               onDblClick={this.dblClickHandler}
                               onHeaderClick={this.headerClickHandler}
@@ -525,6 +529,7 @@ class Documents extends React.PureComponent {
                             //если конфиг отличается, формируем новый фильтр грида
                             if (!this.gridConfig.length || JSON.stringify(this.gridConfig) !== JSON.stringify(response.data.gridConfig)) {
                                 this.gridConfig = response.data.gridConfig;
+                                this.subtotals = response.data.subtotals;
 
                                 //refresh filterdata
                                 this.filterData = this.gridConfig.map((row) => {

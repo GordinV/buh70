@@ -11,6 +11,13 @@ module.exports = {
         width:'100%',
         borderCollapse:'collapse'
     },
+    footerTable: {
+        tableLayout: 'fixed',
+        width:'100%',
+        borderCollapse:'collapse'
+
+    },
+
     th: {
         borderBottom: '1px solid black',
         backgroundColor: 'grey',

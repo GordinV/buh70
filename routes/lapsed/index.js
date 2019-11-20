@@ -31,7 +31,8 @@ exports.get = async (req, res) => {
         docTypeId: documentType,
         result: await Document.selectDocs(),
         gridConfig: gridConfig,
-        requiredFields: Document.requiredFields ? Document.requiredFields: []
+        requiredFields: Document.requiredFields ? Document.requiredFields: [],
+        subtotals: Document.config.grid.subtotals ? Document.config.grid.subtotals : []
     };
 
     let storeInitialData = JSON.stringify(sqlData);

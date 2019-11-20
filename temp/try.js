@@ -1,7 +1,6 @@
-const Moment = require('moment');
-const getNow = require('./../libs/getNow');
-let kpv = Moment().format('YYYY-MM-DD');
-let d = new Date(2019,12,31);
-let simple = getNow(new Date(2019,12,31));
+const gridData = [{"summa": 100}, {"summa":200}];
+let sumField = 'summa';
+let total = 0;
+ gridData.forEach(row =>  total = total + row[sumField]);
 
-console.log(kpv, simple, d);
+console.log('total', total);
