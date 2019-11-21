@@ -41,6 +41,7 @@ const LapseGruppRegister = require('./../docs/lapse_grupp/index.jsx'),
 
 const PankVVRegister = require('./../docs/pank_vv/index.jsx');
 const ConfigDocument = require('./../docs/config/document/index.jsx');
+const RekvDocument = require('./../docs/rekv/document/index.jsx');
 const DokpropsDocument = require('./../docs/dokprops/document/index.jsx');
 const UserDocument = require('./../docs/userid/document/index.jsx');
 const Inf3Report = require('./../docs/inf3/index.jsx');
@@ -175,6 +176,9 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/config/:docId"
                        render={(props) => <ConfigDocument {...props} history={props.history}/>}/>
+
+                <Route exact path="/lapsed/rekv/:docId"
+                       render={(props) => <RekvDocument {...props} history={props.history}/>}/>
 
                 <Route exact path="/lapsed/dokprops/:docId"
                        render={(props) => <DokpropsDocument {...props} history={props.history}/>}/>

@@ -12,6 +12,7 @@ const React = require('react'),
     ToolbarContainer = require('./../toolbar-container/toolbar-container.jsx'),
     BtnStart = require('./../button-register/button-register-start/button-register-start.jsx'),
     BtnLogin = require('./../button-register/button-login/button-login.jsx'),
+    BtnEdit = require('./../button-register/button-register-edit/button-register-edit.jsx'),
     StartMenu = require('./../start-menu/start-menu.jsx'),
     SelectRekv = require('./../select-rekv/index.jsx'),
     BtnAccount = require('./../button-register/button-account/button-account.jsx');
@@ -37,6 +38,7 @@ class MenuToolBar extends React.PureComponent {
         this.startMenuClickHandler = this.startMenuClickHandler.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.btnAccountClick = this.btnAccountClick.bind(this);
+        this.btnEditRekvClick = this.btnEditRekvClick.bind(this);
 
     }
 
@@ -112,6 +114,11 @@ class MenuToolBar extends React.PureComponent {
                                 ref='rekvId'
                                 onChange={this.handleChange}/>
 
+                    <BtnEdit
+                        ref='btnEditRekv'
+                        value='Muuda'
+                        onClick={this.btnEditRekvClick}
+                    />
                     <BtnAccount ref='btnAccount'
                                 value={DocContext.userData ? DocContext.userData.userName : ''}
                                 onClick={this.btnAccountClick}
@@ -192,6 +199,14 @@ class MenuToolBar extends React.PureComponent {
             state: {module: DocContext.module}
         });
 
+
+    }
+
+    btnEditRekvClick() {
+        return this.props.history.push({
+            pathname: `/${DocContext.module}/rekv/${DocContext.userData.asutusId}`,
+            state: {module: DocContext.module}
+        });
 
     }
 

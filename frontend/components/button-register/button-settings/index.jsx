@@ -16,12 +16,12 @@ class ButtonSettings extends React.PureComponent{
     }
 
     handleClick(e) {
-        return this.props.onClick('settings');
+        return this.props.onClick(this.props.value);
     }
 
     render() {
         return <Button
-            value = 'Settings'
+            value = {this.props.value}
             ref="btnSettings"
             style={styles.button}
             disabled={false}
@@ -33,7 +33,8 @@ class ButtonSettings extends React.PureComponent{
 
 ButtonSettings.defaultProps = {
     disabled: false,
-    show: true
+    show: true,
+    value: 'Settings'
 };
 
 module.exports = ButtonSettings;

@@ -11,6 +11,7 @@ module.exports = {
     dokprops: '/libs/libraries/dokprops',
     userid: '/ou/userid',
     users: '/ou/userid',
+    rekv:'/ou/rekv',
     nomenclature: '/lapsed/nomenclature',
     document: '/libs/libraries/document',
     aa: '/ou/aa',

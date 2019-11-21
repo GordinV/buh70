@@ -39,7 +39,7 @@ class DataGrid extends React.Component {
             value: this.props.value ? this.props.value : 0,
             gridData: props.gridData,
             subtotals: props.subtotals ? props.subtotals : [],
-            isSelect: this.props.isSelect ? true : false,
+            isSelect: this.props.isSelect,
         };
 
         this.handleGridHeaderClick = this.handleGridHeaderClick.bind(this);
@@ -98,14 +98,17 @@ class DataGrid extends React.Component {
                         <GridButtonAdd
                             show={toolbarParams.btnAdd.show}
                             onClick={this.handleGridBtnClick}
+                            value={'Add'}
                             ref="grid-button-add"/>
                         <GridButtonEdit
                             show={toolbarParams.btnEdit.show}
                             onClick={this.handleGridBtnClick}
+                            value={'Edit'}
                             ref="grid-button-edit"/>
                         <GridButtonDelete
                             show={toolbarParams.btnDelete.show}
                             onClick={this.handleGridBtnClick}
+                            value={'Delete'}
                             ref="grid-button-delete"/>
 
                     </ToolbarContainer> : null}
@@ -166,6 +169,7 @@ class DataGrid extends React.Component {
     }
 
     handleGridBtnClick(btnName) {
+        console.log(' handleGridBtnClick', btnName);
         let activeRow = this.state.activeRow;
 
         let id = _.size(this.state.gridData) ? this.state.gridData[activeRow].id : 0;

@@ -76,7 +76,7 @@ class Documents extends React.PureComponent {
                 ids.push(row.id);
             }
         });
-
+console.log('onClickHandler',event);
         switch (event) {
             case EVENTS[0].name:
                 //делаем редайрект на конфигурацию

@@ -19,7 +19,7 @@ class ButtonRegisterEdit extends React.PureComponent {
     }
 
     handleClick(e) {
-        return this.props.onClick('edit');
+        return this.props.onClick(this.props.value);
     }
 
     // will update state if props changed
@@ -35,7 +35,7 @@ class ButtonRegisterEdit extends React.PureComponent {
         let btnStyle = Object.assign({}, styles.buttonEdit, this.props.style ? this.props.style : {});
 
         return <Button
-            value='Edit'
+            value={this.props.value}
             ref="btnEdit"
             style={btnStyle}
             show={this.props.show}
@@ -55,7 +55,8 @@ ButtonRegisterEdit.propTypes = {
 
 ButtonRegisterEdit.defaultProps = {
     disabled: false,
-    show: true
+    show: true,
+    value: 'Edit'
 };
 
 module.exports = ButtonRegisterEdit;

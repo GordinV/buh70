@@ -52,12 +52,20 @@ module.exports = {
         data: []
     },
         {
-            sql: `SELECT aa.*,
-                         kassa AS kassapank
+            sql: `SELECT aa.id,
+                         aa.arve,
+                         aa.nimetus,
+                         aa.default_,
+                         aa.kassa,
+                         aa.pank,
+                         aa.konto::TEXT,
+                         aa.tp,
+                         kassa AS kassapank,
+                         $2    AS userId
                   FROM ou.Aa aa
                   WHERE Aa.parentid = $1`,
             query: null,
-            multiple: false,
+            multiple: true,
             alias: 'details',
             data: []
         },
@@ -89,7 +97,15 @@ module.exports = {
     ],
     returnData: {
         row: {},
-        details: []
+        details: [],
+        gridConfig: [
+            {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
+            {id: 'arve', name: 'Arve', width: '100px', show: true, type: 'text', readOnly: false},
+            {id: 'nimetus', name: 'Nimetus', width: '300px', show: true, readOnly: true},
+            {id: 'konto', name: 'Konto', width: '100px', show: true, type: 'text', readOnly: false},
+            {id: 'tp', name: 'TP', width: '100px', show: true, type: 'text', readOnly: false},
+        ]
+
     },
     requiredFields: [
         {name: 'regkood', type: 'C'},

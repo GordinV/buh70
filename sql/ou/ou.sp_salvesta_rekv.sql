@@ -163,7 +163,7 @@ BEGIN
         LOOP
             SELECT * INTO json_record
             FROM jsonb_to_record(
-                         json_object) AS x (id TEXT, parentid INTEGER, arve TEXT, nimetus TEXT, default_ INTEGER,
+                         json_object) AS x (id TEXT, parentid INTEGER, arve TEXT, nimetus TEXT, default_ boolean,
                                             kassa INTEGER,
                                             pank INTEGER,
                                             konto TEXT, tp TEXT, muud TEXT, kassapank INTEGER);
@@ -176,7 +176,8 @@ BEGIN
 
 
                 INSERT INTO ou.aa (parentid, arve, nimetus, default_, kassa, pank, konto, tp, muud)
-                VALUES (rekv_id, json_record.arve, json_record.nimetus, json_record.default_,
+                VALUES (rekv_id, json_record.arve, json_record.nimetus,
+                        (case when empty(json_record.default_) then 0 else 1 end),
                         json_record.kassapank, json_record.pank, json_record.konto, json_record.tp,
                         json_record.muud) RETURNING id
                            INTO detail_id;

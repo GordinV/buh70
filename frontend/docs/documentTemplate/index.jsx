@@ -689,19 +689,20 @@ class DocumentTemplate extends React.PureComponent {
      * обработчик событий для панели инструментов грида
      */
     handleGridBtnClick(btnName, activeRow, id, docTypeId) {
+
         if (this.props.handleGridBtnClick) {
             // если есть обработчик, то отдаем туда, иначе вызываем метод на редактирование строки
             this.props.handleGridBtnClick(btnName, activeRow, id, docTypeId);
 
         } else {
             switch (btnName) {
-                case 'add':
+                case 'Add':
                     this.addRow();
                     break;
-                case 'edit':
+                case 'Edit':
                     this.editRow();
                     break;
-                case 'delete':
+                case 'Delete':
                     this.deleteRow();
                     break;
             }
