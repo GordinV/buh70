@@ -6,6 +6,7 @@ const ToolbarContainer = require('./../../components/toolbar-container/toolbar-c
 const BtnSettings = require('./../../components/button-register/button-settings/index.jsx');
 const BtnPrint = require('./../../components/button-register/button-register-print/button-register-print.jsx');
 const BtnEmail = require('./../../components/button-register/button-email/index.jsx');
+const BtnEarve = require('./../../components/button-register/button-earve/index.jsx');
 
 const styles = require('./arv-register-styles');
 const DOC_TYPE_ID = 'ARV';
@@ -14,6 +15,7 @@ const EVENTS = [
     {name: 'Häälestamine', method: null, docTypeId: null},
     {name: 'Trükk kõik valitud arved', method: null, docTypeId: null},
     {name: 'Email kõik valitud arved', method: null, docTypeId: null},
+    {name: 'Saada E-Arved kõik valitud arved', method: null, docTypeId: null},
 ];
 
 /**
@@ -38,6 +40,11 @@ class Documents extends React.PureComponent {
 
     renderer(self) {
         return (<ToolbarContainer>
+            <BtnEarve
+                onClick={this.onClickHandler}
+                ref='btnEarve'
+                value={EVENTS[3].name}
+            />
             <BtnEmail
                 onClick={this.onClickHandler}
                 ref='btnEmail'
@@ -136,6 +143,39 @@ class Documents extends React.PureComponent {
 
                 break;
 
+            case EVENTS[3].name:
+                //e-arved
+
+                // будет отправлено на почту  выбранные и только для эл.почты счета
+                Doc.gridData.forEach(row => {
+                    if (row.select && row.kas_email) {
+                        // выбрано для печати
+                        ids.push(row.id);
+                    }
+                });
+
+                if (!ids.length) {
+                    Doc.setState({
+                        warning: 'Mitte ühtegi arve leidnum', // строка извещений
+                        warningType: 'notValid',
+                    });
+                } else {
+                    // отправляем запрос на выполнение
+
+                    Doc.fetchData(`e-arved`, ids).then((data) => {
+                        if (data.result) {
+                            Doc.setState({warning: `Kokku saadetud arveid  : ${data.result}`, warningType: 'ok'});
+
+                        } else {
+                            Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'notValid'});
+                        }
+
+                    });
+
+
+                }
+
+                break;
         }
     }
 }
