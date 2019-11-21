@@ -184,9 +184,10 @@ class LapseGrupp extends React.PureComponent {
                                     name='nomid'
                                     libs="nomenclature"
                                     data={self.libs['nomenclature']}
-                                    value={row.nomid || 0}
+                                    value={Number(row.nomid) || 0}
                                     defaultValue={row.kood || ''}
                                     ref='nomid'
+                                    collId={'id'}
                                     placeholder='Teenuse kood'
                                     onChange={self.handleGridRowChange}/>
                         </div>

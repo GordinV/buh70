@@ -114,11 +114,11 @@ class Laps extends React.PureComponent {
         // берем только услуги для группы, добавляяем цену и ед.измерения и сортируем
         if (yksus) {
             nomData = (yksus.teenused ? yksus.teenused : []).map(nom => {
-                const row = self.libs['nomenclature'].find(lib => lib.id === nom.id);
+                const row = self.libs['nomenclature'].find(lib => lib.id === Number(nom.nomid));
 
                 if (row) {
                     const teenuseNimetus = row.nimetus ? `${row.nimetus} (hind: ${Number(nom.hind).toFixed(2)}) ` : '';
-                    return {...row, nimetus: teenuseNimetus, id: Number(!nom.id || nom.id == NaN ? 0 : nom.id)}
+                    return {...row, nimetus: teenuseNimetus, id: Number(nom.nomid)}
                 }
             }).sort((a, b) => {
                 return a.kood.localeCompare(b.kood)
@@ -199,6 +199,7 @@ class Laps extends React.PureComponent {
 
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
+
                         <Select title="Kood:"
                                 name='nomid'
                                 libs="nomenclature"
@@ -210,6 +211,7 @@ class Laps extends React.PureComponent {
                                 btnDelete={isEditMode}
                                 onChange={self.handleInputChange}
                                 readOnly={!isEditMode}/>
+
                     </div>
                     <div style={styles.docColumn}>
                         <ButtonEdit

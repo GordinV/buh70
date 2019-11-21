@@ -169,7 +169,6 @@ class DataGrid extends React.Component {
     }
 
     handleGridBtnClick(btnName) {
-        console.log(' handleGridBtnClick', btnName);
         let activeRow = this.state.activeRow;
 
         let id = _.size(this.state.gridData) ? this.state.gridData[activeRow].id : 0;

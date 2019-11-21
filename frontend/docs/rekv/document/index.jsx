@@ -177,7 +177,7 @@ class Rekv extends React.PureComponent {
 
 
         if (!row) return <div/>;
-        console.log('row.konto',row.konto);
+
         return (<div className='.modalPage'>
             <ModalPage
                 modalObjects={modalObjects}
