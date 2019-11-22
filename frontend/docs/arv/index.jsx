@@ -76,7 +76,7 @@ class Documents extends React.PureComponent {
                 ids.push(row.id);
             }
         });
-console.log('onClickHandler',event);
+
         switch (event) {
             case EVENTS[0].name:
                 //делаем редайрект на конфигурацию
@@ -148,7 +148,7 @@ console.log('onClickHandler',event);
 
                 // будет отправлено на почту  выбранные и только для эл.почты счета
                 Doc.gridData.forEach(row => {
-                    if (row.select && row.kas_email) {
+                    if (row.select && row.kas_earve) {
                         // выбрано для печати
                         ids.push(row.id);
                     }
@@ -163,13 +163,17 @@ console.log('onClickHandler',event);
                     // отправляем запрос на выполнение
 
                     Doc.fetchData(`e-arved`, ids).then((data) => {
-                        if (data.result) {
+                        if (data && 'result' in data) {
                             Doc.setState({warning: `Kokku saadetud arveid  : ${data.result}`, warningType: 'ok'});
 
                         } else {
-                            Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'notValid'});
+                            let error_message = 'Tekkis viga' + (data && ('error_message' in data.error_message) && data.error_message) ? data.error_message : '';
+                            Doc.setState({warning: `${error_message}`, warningType: 'error'});
                         }
 
+                    }).catch(err => {
+                        let error_message = 'Tekkis viga' + (err.TypeError) ? err.TypeError : '';
+                        Doc.setState({warning: `${error_message}`, warningType: 'error'});
                     });
 
 

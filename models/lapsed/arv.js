@@ -439,6 +439,7 @@ const Arv = {
                          to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS muudatud,
                          to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS')   AS prinditud,
                          to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS')   AS email,
+                         to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS')   AS earve,
                          to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS kustutatud
 
                   FROM (
@@ -493,6 +494,18 @@ const Arv = {
                        WHERE id = $1`
         }
     ],
+    earve: [
+        {
+            params: 'id',
+            register: `UPDATE docs.doc
+                       SET history = history ||
+                                     (SELECT row_to_json(row)
+                                      FROM (SELECT now()                                                AS earve,
+                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                       WHERE id = $1`
+
+        }
+    ]
 
 
 };

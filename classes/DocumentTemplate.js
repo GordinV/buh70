@@ -57,11 +57,12 @@ class Document {
         const _config = config ? config : this.config;
 
         if (!_config) {
+            console.error('select !_config');
             throw new Error('No model configuration found');
         }
-
         const objectTemplate = Object.assign({}, _config.returnData);
-        return await db.executeQueries(_config.select, [this.documentId, this.userId], objectTemplate);
+        const data =  await db.executeQueries(_config.select, [this.documentId, this.userId], objectTemplate);
+        return data;
     }
 
     /**

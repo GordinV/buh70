@@ -22,9 +22,13 @@ module.exports = {
                      ((r.properties ->> 'reklftp')::JSONB ->> 'ftp')::VARCHAR(120)    AS ftp,
                      ((r.properties ->> 'reklftp')::JSONB ->> 'login')::VARCHAR(120)  AS login,
                      ((r.properties ->> 'reklftp')::JSONB ->> 'parool')::VARCHAR(120) AS parool,
-                     (r.properties ->> 'earved') ::VARCHAR(254)                       AS earved
-              FROM ou.rekv r
-              WHERE id = $1`,
+                     (r.properties ->> 'earved') ::VARCHAR(254)                       AS earved,
+                     (u.properties ->> 'earved') :: TEXT                              AS earved_omniva
+
+              FROM ou.rekv r,
+                   ou.userid u
+              WHERE r.id = $1
+                AND u.id = $2`,
         sqlAsNew: `SELECT
                       $1 :: INTEGER        AS id,
                       $2 :: INTEGER        AS userid,

@@ -516,9 +516,11 @@ class Documents extends React.PureComponent {
                         document.location = `/login`;
                     }
 
-                    if (response.data && response.data.error_message) {
-                        let error = '' + response.data.error_message ? response.data.error_message : '';
-                        throw new Error(error);
+                    // error handling
+                    if (response.status !== 200) {
+                        this.setState({warning: `${response.error_message}`, warningType: 'error'});
+
+                        return {result: null, status:response.status, error_message: `error ${(response.data && response.data.error_message) ? 'response.data.error_message': response.error_message}` }
                     }
 
                     if (method === 'selectDocs') {

@@ -16,7 +16,7 @@ module.exports = {
         return axios.post(url, params)
             .catch(error => {
                 console.error('fetch status, error', error.response.status, error);
-                return ({result: 'error', status: error.response.status});
+                return ({result: 'error', status: error.response.status, error_message: error.message ? error.message: 'Error'});
             })
     },
     fetchDataPut(url, params) {

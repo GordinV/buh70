@@ -10,11 +10,12 @@ const React = require('react'),
 
 const gridConfig = [
     {id: "kasutaja", name: "Kasutaja", width: "20%", show: true},
-    {id: "koostatud", name: "Koostatud", width: "20%"},
-    {id: "muudatud", name: "Muudatud", width: "20%"},
-    {id: "prinditud", name: "Prinditud", width: "20%"},
-    {id: "email", name: "Meilitud", width: "20%"},
-    {id: "kustutatud", name: "Kustutatud", width: "20%"}];
+    {id: "koostatud", name: "Koostatud", width: "15%"},
+    {id: "muudatud", name: "Muudatud", width: "15%"},
+    {id: "prinditud", name: "Prinditud", width: "15%"},
+    {id: "email", name: "Meilitud", width: "15%"},
+    {id: "earve", name: "e-Arve", width: "15%"},
+    {id: "kustutatud", name: "Kustutatud", width: "15%"}];
 
 class ShowLogs extends React.PureComponent {
     constructor(props) {
