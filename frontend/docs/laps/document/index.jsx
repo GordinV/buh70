@@ -192,21 +192,21 @@ class Laps extends React.PureComponent {
     // обработчик события клик на гриде родителей
     handleGridBtnClick(btnName, activeRow, id, docTypeId) {
 
-        switch (btnName) {
-            case "edit":
+        switch (btnName.toUpperCase()) {
+            case "EDIT":
 
                 this.props.history.push({
                     pathname: `/lapsed/${docTypeId}/${id}`,
                     state: {lapsId: this.docId, module: this.state.module}
                 });
                 break;
-            case "add":
+            case "ADD":
                 this.props.history.push({
                     pathname: `/lapsed/${docTypeId}/0`,
                     state: {lapsId: this.docId, module: this.state.module}
                 });
                 break;
-            case "delete":
+            case "DELETE":
                 //send post to delete row
                 this.fetchData(docTypeId, id).then(() => {
 

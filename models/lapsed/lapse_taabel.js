@@ -79,7 +79,8 @@ module.exports = {
                 {id: "kogus", name: "Kogus", width: "10%"},
                 {id: "hind", name: "Hind", width: "10%"},
                 {id: "uhik", name: "Ühik", width: "5%"},
-                {id: "summa", name: "Summa", width: "15%", type:"number"},
+                {id: "soodustus", name: "Soodustus", width: "10%"},
+                {id: "summa", name: "Summa", width: "15%", type: "number"},
             ],
             sqlString:
                     `SELECT lt.id,
@@ -88,10 +89,18 @@ module.exports = {
                             lt.nomid,
                             lt.kuu,
                             lt.aasta,
-                            lt.kogus::numeric(12,2),
-                            lt.hind::numeric(12,2),
+                            lt.kogus::NUMERIC(12, 2),
+                            lt.hind::NUMERIC(12, 2),
                             lt.uhik,
-                            (lt.hind * lt.kogus)::numeric(12,2) as summa,
+                            (CASE
+                                 WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
+                                                           ((lt.soodustus * lt.sooduse_kehtivus) / 100)
+                                 ELSE lt.soodustus * lt.sooduse_kehtivus END)::NUMERIC(12, 2)     AS soodustus,
+                            ((lt.hind - (CASE
+                                             WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
+                                                                       ((lt.soodustus * lt.sooduse_kehtivus) / 100)
+                                             ELSE lt.soodustus * lt.sooduse_kehtivus END)) *
+                             lt.kogus)::NUMERIC(12, 2)                                            AS summa,
                             lt.isikukood,
                             lt.nimi,
                             lt.kood,

@@ -3,7 +3,8 @@ module.exports = {
                           n.kood::TEXT                  AS kood,
                           n.nimetus::TEXT ||
                           coalesce(' (' || (lk.properties ->> 'yksus') || '/' || (lk.properties ->> 'all_yksus') || ')',
-                                   '')::TEXT || ', hind: '|| (lk.hind::numeric(12,2)) || ' ' || n.uhik::text            AS nimetus,
+                                   '')::TEXT || ', hind: ' || (lk.hind::NUMERIC(12, 2)) || ' ' ||
+                          n.uhik::TEXT                  AS nimetus,
                           lk.parentid                   AS lapsid,
                           lk.properties ->> 'yksus'     AS yksus,
                           lk.properties ->> 'all_yksus' AS all_yksus,
@@ -131,15 +132,16 @@ module.exports = {
         {
             gridConfiguration: [
                 {id: "id", name: "id", width: "1%", show: false},
-                {id: "isikukood", name: "Isikukood", width: "20%", show: true},
+                {id: "isikukood", name: "Isikukood", width: "10%", show: true},
                 {id: "nimi", name: "Nimi", width: "20%", show: true},
-                {id: "viitenumber", name: "Viitenumber", width: "15%", show: true},
-                {id: "kood", name: "Kood", width: "20%"},
-                {id: "nimetus", name: "Nimetus", width: "40%"},
-                {id: "hind", name: "Hind", width: "20%"},
+                {id: "viitenumber", name: "Viitenumber", width: "10%", show: true},
+                {id: "kood", name: "Kood", width: "10%"},
+                {id: "nimetus", name: "Nimetus", width: "20%"},
+                {id: "hind", name: "Hind", width: "10%"},
+                {id: "soodustus", name: "Soodustus", width: "15%"},
                 {id: "uhik", name: "Ühik", width: "10%"},
-                {id: "yksus", name: "Üksus", width: "20%"},
-                {id: "kehtivus", name: "Kehtib", width: "20%"},
+                {id: "yksus", name: "Üksus", width: "15%"},
+                {id: "kehtivus", name: "Kehtib", width: "10%"},
                 {id: "inf3", name: "INF3", width: "10%"},
             ],
             sqlString:
@@ -157,7 +159,12 @@ module.exports = {
                             $1::INTEGER                                                                    AS rekvid,
                             $2::INTEGER                                                                    AS user_id,
                             to_char(alg_kpv, 'DD.MM.YYYY') || ' - ' || to_char(lopp_kpv, 'DD.MM.YYYY')     AS kehtivus,
-                            v.inf3                                                                         AS inf3
+                            v.inf3                                                                         AS inf3,
+                            CASE
+                                WHEN (soodustus::NUMERIC(12, 2)) > 0 THEN ((soodustus::NUMERIC(12, 2))::TEXT || ' ' ||
+                                                                          kas_protsent || '(' || sooduse_kehtivus ||
+                                                                          ')')
+                                ELSE '' END                                                                AS soodustus
                      FROM lapsed.cur_lapse_kaart v
                      WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
             params:
