@@ -11,8 +11,14 @@ block content
             p #{User.aadress}
             p #{User.tel}
             p #{User.email}
+            div.row_wrapper
+                p.label Raha saaja:
+                p.input #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
+            div.row_wrapper
+                p.label Maksta arvele:
+                p.input #{data[0].aa}
 
-                h1
+            h1
                     p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
 
                 div.row_wrapper
@@ -28,17 +34,15 @@ block content
                     p.input #{doc.viitenr}
 
                 div.row_wrapper
-                    p.label Maksta arvele:
-                    p.input #{doc.aa}
-
-                div.row_wrapper
                     p.label Tähtaeg:
                     p.input #{doc.tahtaeg_print}
-
 
                 div.row_wrapper
                     p.label Maksja:
                     p.input #{`${doc.asutus.trim()} reg.kood: ${doc.regkood}`}
+                div.row_wrapper
+                    p.label Teenuse saaja:
+                    p.input #{`${data[0].lapse_nimi.trim()}, isikukood: ${data[0].isikukood}`}
 
                 div.row_wrapper
                     p.label Aadress:
@@ -47,6 +51,9 @@ block content
                 div.row_wrapper
                     p.label Lisa:
                     p.input #{`${doc.lisa ? doc.lisa: ''}`}
+                div.row_wrapper
+                    p.label Märkused:
+                    p.input #{`${data[0].muud ? data[0].muud : ''}`}
 
                 table.table.table-hover.grid_data
                     thead.grid_head

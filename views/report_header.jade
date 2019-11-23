@@ -2,10 +2,10 @@ doctype html
 html
     body
         -var User = user ? user : {asutus: ''};
-
-        p #{User.asutus}, reg.kood: #{User.regkood}
-        p #{User.aadress}
-        p #{User.tel}
-        p #{User.email}
+        div.doc_wrapper
+            p #{User.asutus_tais ? User.asutus_tais: User.asutus}, reg.kood: #{User.regkood}
+            p #{User.aadress}
+            p #{User.tel}
+            p #{User.email}
 
     block content

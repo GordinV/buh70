@@ -13,12 +13,15 @@ SELECT u.id,
        u.muud,
        u.last_login,
        r.nimetus            AS asutus,
+       CASE WHEN r.muud IS NOT NULL THEN r.muud ELSE r.nimetus END ::TEXT AS asutus_tais,
        rs.a                 AS allowed_access,
        libs.libs            AS allowed_libs_old,
-       allowed_modules.libs AS allowed_libs
-
+       allowed_modules.libs AS allowed_libs,
+       r.parentid,
+       parent_r.nimetus::text as parent_asutus
 FROM ou.userid u
          JOIN ou.rekv r ON r.id = u.rekvid
+         LEFT OUTER JOIN ou.rekv parent_r ON parent_r.id = r.parentid
          JOIN (SELECT u_1.kasutaja,
                       array_agg(((('{"id":'::TEXT || u_1.rekvid::TEXT) || ',"nimetus":"'::TEXT) ||
                                  ltrim(rtrim(rekv.nimetus::TEXT))) || '"}'::TEXT) AS a
@@ -59,8 +62,7 @@ GRANT SELECT ON TABLE ou.view_get_users_data TO dbkasutaja;
 
 /*
 select * from ou.view_get_users_data v
-                 where (v.rekvid = 2 or 2 is null) 
-                 and upper(ltrim(rtrim(v.kasutaja))) = upper('vlad') 
+                 where (v.rekvid = 2 or 2 is null)
+                 and upper(ltrim(rtrim(v.kasutaja))) = upper('vlad')
                  order by v.last_login desc limit 1
 */
-                 
