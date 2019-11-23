@@ -9,7 +9,7 @@ DECLARE
     l_sequence_name TEXT = lower(l_dok) || '_' || l_rekvid::TEXT || '_number';
     l_sql           TEXT;
     l_number        TEXT;
-    l_result INTEGER;
+    l_result        INTEGER;
 BEGIN
     -- sequence name
     -- check if exists sequencetbl
@@ -20,19 +20,27 @@ BEGIN
 
         -- get last doc number
         l_sql = 'select (max(SUBSTRING(''0'' || coalesce(tbl.number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
-                ')::bigint) ::bigint) from docs.' || l_dok || ' tbl where rekvid = $1 ';
+                ')::bigint) ::bigint) from docs.' || l_dok || ' tbl where rekvid = $1 ' ||
+                CASE WHEN l_dok = 'ARV' THEN ' and liik = 0' ELSE '' END;
         EXECUTE l_sql INTO l_number USING l_rekvid;
+
+        IF len(l_number) > 6
+        THEN
+            l_number = '1';
+        END IF;
+
 
         l_sql = 'CREATE SEQUENCE ' || l_sequence_name || ' AS integer;' ||
                 'GRANT ALL ON SEQUENCE ' || l_sequence_name || ' TO public;';
 
-        if l_number is not null and l_number::INTEGER > 0 THEN
+        IF l_number IS NOT NULL AND l_number::INTEGER > 0
+        THEN
             -- will store last value
             l_sql = l_sql || 'select setval(' || quote_literal(l_sequence_name) || ',' || l_number || ');';
 
         END IF;
         -- execute sequnce
-        EXECUTE l_sql into l_result;
+        EXECUTE l_sql INTO l_result;
     END IF;
 
     -- return name of sequence

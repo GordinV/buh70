@@ -110,6 +110,7 @@ module.exports = {
                             $2::INTEGER                                                           AS userid
                      FROM lapsed.cur_lapse_taabel lt
                      WHERE rekvid = $1::INTEGER
+                     ORDER BY aasta DESC, kuu DESC, lt.nimi
             `,     //  $1 всегда ид учреждения, $2 - userId
             params:
                 '',
