@@ -1,11 +1,20 @@
 <!DOCTYPE html>
 html(lang="et")
+
+
 extends report_header
 
 block content
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
+        div.row_wrapper
+            p.label Raha saaja:
+            p.input #{User.parent_id == 119 ? User.parent_asutus : User.asutusTais }
+        div.row_wrapper
+            p.label Maksta arvele:
+            p.input #{data[0].aa}
+
         h1
             p #{`${data[0].tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
 
@@ -22,17 +31,16 @@ block content
             p.input #{data[0].viitenr}
 
         div.row_wrapper
-            p.label Maksta arvele:
-            p.input #{data[0].aa}
-
-        div.row_wrapper
             p.label Tähtaeg:
             p.input #{data[0].tahtaeg_print}
 
 
         div.row_wrapper
             p.label Maksja:
-            p.input #{`${data[0].asutus.trim()} reg.kood: ${data[0].regkood}`}
+            p.input #{`${data[0].asutus.trim()} isikukood/reg.kood: ${data[0].regkood}`}
+        div.row_wrapper
+            p.label Teenuse saaja:
+            p.input #{`${data[0].lapse_nimi.trim()}, isikukood: ${data[0].isikukood}`}
 
         div.row_wrapper
             p.label Aadress:
@@ -42,6 +50,9 @@ block content
             p.label Lisa:
             p.input #{`${data[0].lisa ? data[0].lisa: ''}`}
 
+        div.row_wrapper
+            p.label Märkused:
+            p.input #{`${data[0].muud ? data[0].muud : ''}`}
         table.table.table-hover.grid_data
             thead.grid_head
                 tr
