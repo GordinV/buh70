@@ -47,7 +47,7 @@ const UserDocument = require('./../docs/userid/document/index.jsx');
 const Inf3Report = require('./../docs/inf3/index.jsx');
 
 
-const {Route} = require('react-router-dom');
+const {Route, Redirect} = require('react-router-dom');
 const {StyleRoot} = require('radium');
 const MODULE = 'Lapsed';
 const DocContext = require('./../doc-context.js');
@@ -176,14 +176,22 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/config/:docId"
                        render={(props) => <ConfigDocument {...props} history={props.history}/>}/>
+                <Route exact path="/lapsed/config"
+                       render={(props) => <Redirect to={`/lapsed/config/${DocContext.userData.asutusId}`} />}/>
 
                 <Route exact path="/lapsed/rekv/:docId"
                        render={(props) => <RekvDocument {...props} history={props.history}/>}/>
 
+                <Route exact path="/lapsed/rekv"
+                    render={(props) => <Redirect to={`/lapsed/rekv/${DocContext.userData.asutusId}`} />}/>
+
                 <Route exact path="/lapsed/dokprops/:docId"
                        render={(props) => <DokpropsDocument {...props} history={props.history}/>}/>
+
                 <Route exact path="/lapsed/userid/:docId"
                        render={(props) => <UserDocument {...props} history={props.history}/>}/>
+                <Route exact path="/lapsed/userid/"
+                       render={(props) => <Redirect to={`/lapsed/userid/${DocContext.userData.id}`} />}/>
 
                 <Route exact path="/lapsed/inf3"
                        render={(props) => <Inf3Report

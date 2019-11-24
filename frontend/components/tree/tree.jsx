@@ -108,7 +108,7 @@ class Tree extends React.PureComponent {
                     if (!subRow.is_node && this.state.parentId !== subRow.parentid) {
                         is_hidden = true;
                     }
-console.log('subRow.id',subRow.id, subRow.kood);
+
                     return (
                         <li
                             className={subRow.is_node ? 'node' : 'menu'}

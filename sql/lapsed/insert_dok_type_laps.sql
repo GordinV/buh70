@@ -8,48 +8,64 @@ WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'L
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
-       'VANEM'                                    AS kood,
-       'Vanemate register'                                  AS nimetus,
+       'VANEM'                                   AS kood,
+       'Vanemate register'                       AS nimetus,
        'DOK'                                     AS library,
        '{"type":"library", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'VANEM');
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
-       'LAPSE_KAART'                                    AS kood,
-       'Teenused lastele'                                  AS nimetus,
+       'LAPSE_KAART'                             AS kood,
+       'Teenused lastele'                        AS nimetus,
        'DOK'                                     AS library,
        '{"type":"library", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'LAPSE_KAART');
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
-       'LAPSE_TAABEL'                                    AS kood,
-       'Teenuste taabel lastele'                                  AS nimetus,
+       'LAPSE_TAABEL'                            AS kood,
+       'Teenuste taabel lastele'                 AS nimetus,
        'DOK'                                     AS library,
        '{"type":"library", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'LAPSE_TAABEL');
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
-       'LAPSE_GRUPP'                                    AS kood,
-       'Lastegruppid'                                  AS nimetus,
+       'LAPSE_GRUPP'                             AS kood,
+       'Lastegruppid'                            AS nimetus,
        'DOK'                                     AS library,
        '{"type":"library", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'LAPSE_GRUPP');
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
-       'INF3'                                    AS kood,
-       'INF3 Füüsiliste isikute tasutud koolituskulude deklaratsioon'                                  AS nimetus,
-       'DOK'                                     AS library,
-       '{"type":"aruanne", "module":["Lapsed"]}' AS properties
+       'INF3'                                                         AS kood,
+       'INF3 Füüsiliste isikute tasutud koolituskulude deklaratsioon' AS nimetus,
+       'DOK'                                                          AS library,
+       '{"type":"aruanne", "module":["Lapsed"]}'                      AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'INF3');
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
-       'REKV'                                    AS kood,
-       'Oma asutuse andmed'                                  AS nimetus,
-       'DOK'                                     AS library,
+       'REKV'                                     AS kood,
+       'Oma asutuse andmed'                       AS nimetus,
+       'DOK'                                      AS library,
        '{"type":"settings", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'REKV');
+
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
+       'CONFIG'                                   AS kood,
+       'Konfiguratsioon'                          AS nimetus,
+       'DOK'                                      AS library,
+       '{"type":"settings", "module":["Lapsed"]}' AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'CONFIG');
+
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
+       'USERID'                                   AS kood,
+       'Kasutaja andmed'                          AS nimetus,
+       'DOK'                                      AS library,
+       '{"type":"settings", "module":["Lapsed"]}' AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'USERID');
