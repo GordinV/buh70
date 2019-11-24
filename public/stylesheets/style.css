@@ -6,6 +6,6 @@ ul {
 
 }
 
-ul li:hover {
+ul li.menu:hover {
     background-color: lightblue;
 }

@@ -12,10 +12,12 @@ class Tree extends React.PureComponent {
         this.state = {
             index: this.getIndex(props.value),
             value: props.value,
-            hover: false
+            hover: false,
+            parentId: 'document'
         };
         this.handleLiClick = this.handleLiClick.bind(this);
         this.toggleHover = this.toggleHover.bind(this);
+        this.getTree = this.getTree.bind(this);
     }
 
     componentDidUpdate(nextProps) {
@@ -24,6 +26,7 @@ class Tree extends React.PureComponent {
     }
 
     render() {
+        //this.state.parentId
         return (
             <div ref="tree">
                 {this.getTree('0')}
@@ -40,7 +43,7 @@ class Tree extends React.PureComponent {
     handleLiClick(selectedIndex, selectedId, isNode) {
         if (!isNode && !isNaN(selectedId)) {
             // не нода, а документ
-            let data = this.props.data.filter((row) => {
+            const data = this.props.data.filter((row) => {
                     if (row.id === selectedId) {
                         return row;
                     }
@@ -54,6 +57,11 @@ class Tree extends React.PureComponent {
 
             if (this.props.onClickAction) {
                 this.props.onClickAction(this.props.name + 'Change', value);
+            }
+        } else {
+            //isNode
+            if (selectedId !== '0' && selectedId !== 'Lapsed') {
+                this.setState({parentId: selectedId});
             }
         }
     }
@@ -86,24 +94,38 @@ class Tree extends React.PureComponent {
             linkStyle = {backgroundColor: 'blue'}
         }
 
-        return (<ul style={styles.ul} ref='tree-ul'>
-            {data.map((subRow, index) => {
-                let style = Object.assign({}, styles.li,
-                    value === subRow[this.props.bindDataField] && !subRow.is_node ? styles.focused : {}),
-                    refId = 'li-' + index + Math.random();
+        return (
+            <ul
+                style={styles.ul}
+                ref='tree-ul'>
+                {data.map((subRow, index) => {
+                    let style = Object.assign({}, styles.li,
+                        value === subRow[this.props.bindDataField] && !subRow.is_node ? styles.focused : {}),
+                        refId = 'li-' + index + Math.random();
 
-                return (
-                    <li
-                        style={style}
-                        onClick={this.handleLiClick.bind(this, index, subRow.id, subRow.is_node)}
-                        key={refId}
-                        ref={refId}>
-                        {subRow.name} {this.getTree(subRow.id)}
-                    </li>)
-            })
-            }
+                    let is_hidden = false;
 
-        </ul>)
+                    if (!subRow.is_node && this.state.parentId !== subRow.parentid) {
+                        is_hidden = true;
+                    }
+
+                    return (
+                        <li
+                            className={subRow.is_node ? 'node' : 'menu'}
+                            style={style}
+                            onClick={this.handleLiClick.bind(this, index, subRow.id, subRow.is_node)}
+                            key={refId}
+                            value={subRow.id}
+                            hidden={is_hidden}
+                            ref={refId}>
+                            {subRow.is_node ? (this.state.parentId == subRow.id ? '-' : '+') : null} {subRow.name} {this.getTree(subRow.id)}
+                        </li>
+                    )
+
+                })
+                }
+
+            </ul>)
     }
 
 
