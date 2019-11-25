@@ -5,6 +5,7 @@ const jade = require('jade');
 const nodemailer = require('nodemailer');
 const util = require('util');
 const fs = require('fs');
+const config = require('../config/default');
 
 
 const PATH_TO_PDF = './public/pdf/doc.pdf';
@@ -13,10 +14,11 @@ const Doc = require('./../classes/DocumentTemplate');
 
 const UserConfig = {};
 
-const createPDF = async function createFile(html) {
+const createPDF = async function createFile(html, fileName='doc') {
     let options = {
-        filename: './public/pdf/doc.pdf',
-        format: 'Legal'
+        filename: `./public/pdf/${fileName}.pdf`,
+        format: 'Legal',
+        "base": `http://localhost:${config.port}`
     };
 
     let create = util.promisify(pdf.create);
@@ -35,7 +37,7 @@ const getConfigData = async function (user) {
 exports.post = async (req, res) => {
     const params = req.body;
     const id = Number(params.docId || 0); // параметр id документа
-    const ids = params.data || []; // параметр ids документов
+    let ids = params.data || []; // параметр ids документов
 
     const user = require('../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
@@ -49,6 +51,9 @@ exports.post = async (req, res) => {
     if (!ids.length && id) {
         // передан ид документа
         ids.push(id);
+    } else {
+        // проверка на уникальность
+        ids = [...new Set(ids)];
     }
 
     if (!params.docTypeId) {
@@ -109,6 +114,7 @@ exports.post = async (req, res) => {
     // решаем их
     const selectedDocs = [];
     let promiseSelectResult = await Promise.all(dataPromises).then((result) => {
+
         // убираем из получателей тех, у кого нет адреса
         result.forEach(arve => {
             if (arve.row[0].email) {
@@ -140,27 +146,24 @@ exports.post = async (req, res) => {
             emailHtml = html;
         });
 
-        console.log('will prepaire filePDF', filePDF);
-
         //attachment
-        let filePDF = await createPDF(printHtml);
+        let filePDF = await createPDF(printHtml,`${arve.id}`);
 
-        console.log('filePDF', filePDF);
         // sending email
         // send mail with defined transport object
         return new Promise((resolve, reject) => {
             transporter.sendMail({
                     from: `"${user.userName}" <${UserConfig['email'].email}>`, //`${user.userName} <${config['email'].email}>`, // sender address
                     to: `${receiverEmail}`, // (, baz@example.com) list of receivers
-                    subject: `Saadan dokument nr. ${docNumber}`, // Subject line
+                    subject: `Saadan dokument nr. ${arve.number}`, // Subject line
                     text: 'Automaat e-mail', // plain text body
                     html: emailHtml, // html body
                     attachments: [
                         // String attachment
                         {
-                            filename: 'doc.pdf',
+                            filename: `doc.pdf`,
                             content: 'Dokument ',
-                            path: PATH_TO_PDF
+                            path: filePDF
                         }]
 
                 }, async (err, info) => {
@@ -170,7 +173,7 @@ exports.post = async (req, res) => {
                         result++;
 
                         // удаляем файл
-                        await fs.unlink(PATH_TO_PDF,(err,data) => {
+                        await fs.unlink(filePDF,(err,data) => {
                             if (err) {
                                 return reject(err);
                             }
@@ -189,25 +192,18 @@ exports.post = async (req, res) => {
                         }
 
 
-                        return resolve(1);
+                        return resolve(arve.id);
                     }
 
                 }
             );
         });
-
-        try {
-            const sendMailTulemus = await sendMail();
-
-        } catch(e) {
-            console.error(e);
-            return res.send({status: 500, result: null, error_message: err});
-        }
     });
 
     // решаем их
 
     let promiseEmailResult = await Promise.all(emailPromises).catch((err) => {
+        console.error('promiseEmailResult',err);
         return res.send({status: 500, result: null, error_message: err});
     });
 
