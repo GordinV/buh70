@@ -1,7 +1,23 @@
 'use strict';
 const db = require('./../libs/db');
-const pdf = require('html-pdf');
+const wkhtmltopdf = require('wkhtmltopdf');
 const jade = require('jade');
+const createPDF = async function createFile(html, fileName = 'doc') {
+
+    const options = {
+        pageSize: 'letter',
+    };
+    let outFile = path.join(__dirname, '..', 'public', 'pdf', `${fileName}.pdf`);
+
+    console.log('outFile', outFile);
+    try {
+        await exportHtml(html, outFile, options);
+    } catch (error) {
+        console.log(`ERROR: Handle rejected promise: '${error}' !!!`);
+        outFile = null;
+    }
+    return outFile;
+};
 
 
 exports.get = async (req, res) => {
@@ -51,27 +67,17 @@ exports.get = async (req, res) => {
         const html = jade.render(template, {title: 'Tunnused', data: data, user: user});
 
 
-        res.render(template, {title: 'PDF print', data: data, user: user}, (err, html) => {
-                /*
-                                pdf.create(html, {format: 'A4'}).toFile('./public/pdf/arve.pdf', (err, res) => {
-                                    if (err) {
-                                        console.log(err);
-                                    } else {
-                                        console.log(res);
-                                    }
-                                });
+        res.render(template, {title: 'PDF print', data: data, user: user}, async (err, html) => {
 
-                                res.sendfile('./public/pdf/arve.pdf');
-                  */
-                pdf.create(html, {format: 'Legal', "base": "http://localhost:3000" }).toStream((err, stream) => {
-                    if (err) return res.end(err.stack);
-                    res.setHeader('Content-type', 'application/pdf');
-                    stream.pipe(res)
-
-                });
-
+            //attachment
+            let filePDF = await createPDF(printHtml, `doc`);
+            if (!filePDF) {
+                // error in PDF create
+                throw new Error('PDF faili viga');
             }
-        );
+
+            res.sendFile(filePDF)
+        });
 
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок
@@ -79,3 +85,17 @@ exports.get = async (req, res) => {
 
     }
 };
+
+
+function exportHtml(html, file, options) {
+    return new Promise((resolve, reject) => {
+        wkhtmltopdf(html, options, (err, stream) => {
+            if (err) {
+                reject(err);
+            } else {
+                stream.pipe(fs.createWriteStream(file));
+                resolve();
+            }
+        });
+    });
+}

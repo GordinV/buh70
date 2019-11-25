@@ -1,6 +1,5 @@
 'use strict';
 const db = require('./../libs/db');
-//const pdf = require('html-pdf');
 const wkhtmltopdf = require('wkhtmltopdf');
 const path = require('path');
 const jade = require('jade');
@@ -23,11 +22,10 @@ const createPDF = async function createFile(html, fileName='doc') {
     };
     let outFile = path.join(__dirname, '..','public', 'pdf',`${fileName}.pdf`);
 
-    console.log('outFile',outFile);
     try {
         await exportHtml(html, outFile, options);
     } catch (error) {
-        console.log(`ERROR: Handle rejected promise: '${error}' !!!`);
+        console.error(`ERROR: Handle rejected promise: '${error}' !!!`);
         outFile = null;
     }
     return outFile;
