@@ -171,19 +171,23 @@ BEGIN
 
         END IF;
 
+raise notice 'min sots kontroll summa %, l_sotsmaks_min_palgast %, l_alus_summa %', summa, l_sotsmaks_min_palgast, l_alus_summa;
         IF coalesce(summa, 0) < l_sotsmaks_min_palgast AND (l_alus_summa = 0 OR summa > 0)
 
         THEN
             -- ainult , kui olid tulud
             l_sotsmaks_min_palgast = (l_sotsmaks_min_palgast - summa);
             sm = l_min_palk - l_alus_summa;
+        ELSE
+            l_sotsmaks_min_palgast = 0;
+
 
         END IF;
-
         selg = coalesce(summa, 0) :: TEXT || ' + (SM min.palgast) ' || l_sotsmaks_min_palgast :: TEXT ||
                ' + (umardamine) ' || ln_umardamine :: TEXT;
 
         summa = f_round(coalesce(summa, 0) + l_sotsmaks_min_palgast + ln_umardamine, l_round);
+
 
     ELSE
         -- arvestus
@@ -206,5 +210,15 @@ select * from palk.sp_calc_sots(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-0
 select * from  palk.sp_calc_sots(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":100, "summa":33, "is_percent":true,"minsots":1}'::JSON)
 select * from palk.sp_calc_sots(1, '{"alus_summa":100, "summa":33, "is_percent":true,"minsots":1}'::JSON)
 select * from palk.sp_calc_sots(1,'{"lepingid":4,"libid":524,"kpv":20180407}'::JSON)
+
+select * from libs.asutus where regkood = '46107103726'
+-- 23932
+
+select * from palk.tooleping where parentid =  23932 and rekvid in (select id from ou.rekv where nimetus ilike '%tareke%')
+26028
+
+select * from palk.palk_oper where lepingid = 26028 and kpv = '2019-11-20'
+
+select * from palk.sp_calc_sots(70, '{"lepingid":26028, "libid":149418, "kpv":"2019-11-20"}'::JSON)
 
  */
