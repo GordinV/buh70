@@ -30,7 +30,7 @@
     "cors": "^2.8.5",
     "csurf": "^1.10.0",
     "csv-parse": "^4.6.5",
-    "debug": "~2.2.0",
+    "debug": "~2.6.9",
     "easy-soap-request": "^2.6.0",
     "errorhandler": "^1.5.1",
     "express": "^4.17.1",
