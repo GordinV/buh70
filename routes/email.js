@@ -22,8 +22,15 @@ const createPDF = async function createFile(html, fileName='doc') {
     };
 
     let create = util.promisify(pdf.create);
-    let creator = await create(html, options);
-    return options.filename;
+    let filename = options.filename;
+
+    try {
+        let creator = await create(html, options);
+    } catch (e) {
+        console.error ('create pdf error', e);
+        filename = null;
+    }
+    return filename;
 };
 
 
@@ -148,6 +155,10 @@ exports.post = async (req, res) => {
 
         //attachment
         let filePDF = await createPDF(printHtml,`${arve.id}`);
+        if (!filePDF) {
+            // error in PDF create
+            throw new Error('PDF faili viga');
+        }
 
         // sending email
         // send mail with defined transport object
