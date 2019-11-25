@@ -40,7 +40,6 @@
     "gulp": "^3.9.1",
     "gulp-mocha": "^4.1.0",
     "helmet": "^3.21.1",
-    "html-pdf": "^2.2.0",
     "immutable": "^3.8.1",
     "jade": "~1.11.0",
     "jquery": "^3.4.1",
@@ -68,6 +67,7 @@
     "uuid": "^3.3.3",
     "webpack": "^1.14.0",
     "winston": "^2.4.4",
+    "wkhtmltopdf": "^0.3.4",
     "xml2js": "^0.4.22",
     "xmlbuilder": "^13.0.2"
   },

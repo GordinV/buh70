@@ -1,6 +1,8 @@
 'use strict';
 const db = require('./../libs/db');
-const pdf = require('html-pdf');
+//const pdf = require('html-pdf');
+const wkhtmltopdf = require('wkhtmltopdf');
+const path = require('path');
 const jade = require('jade');
 const nodemailer = require('nodemailer');
 const util = require('util');
@@ -8,41 +10,27 @@ const fs = require('fs');
 const config = require('../config/default');
 
 
-const PATH_TO_PDF = './public/pdf/doc.pdf';
-
 const Doc = require('./../classes/DocumentTemplate');
 
 const UserConfig = {};
 
+
+
 const createPDF = async function createFile(html, fileName='doc') {
-    let options = {
-        filename: `./public/pdf/${fileName}.pdf`,
-        format: 'Legal',
-        "base": `http://localhost:${config.port}`
+
+    const options = {
+        pageSize: 'letter',
     };
+    let outFile = path.join(__dirname, '..','public', 'pdf',`${fileName}.pdf`);
 
-    let filename = options.filename;
-    console.log('filename', filename);
-
-/*
-    const dir = './pdf';
-    if (!fs.existsSync(dir)){
-        try {
-            fs.mkdirSync(dir);
-        } catch (e) {
-            console.error('path create error',dir, e)
-        }
-    }
-*/
-
+    console.log('outFile',outFile);
     try {
-        let create = util.promisify(pdf.create);
-        let creator = await create(html, options);
-    } catch (e) {
-        console.error ('create pdf error', e);
-        filename = null;
+        await exportHtml(html, outFile, options);
+    } catch (error) {
+        console.log(`ERROR: Handle rejected promise: '${error}' !!!`);
+        outFile = null;
     }
-    return filename;
+    return outFile;
 };
 
 
@@ -196,6 +184,7 @@ exports.post = async (req, res) => {
                         result++;
 
                         // удаляем файл
+
                         await fs.unlink(filePDF,(err,data) => {
                             if (err) {
                                 return reject(err);
@@ -244,3 +233,16 @@ exports.post = async (req, res) => {
 
 
 };
+
+function exportHtml(html, file, options) {
+    return new Promise((resolve, reject) => {
+        wkhtmltopdf(html, options, (err, stream) => {
+            if (err) {
+                reject(err);
+            } else {
+                stream.pipe(fs.createWriteStream(file));
+                resolve();
+            }
+        });
+    });
+}
