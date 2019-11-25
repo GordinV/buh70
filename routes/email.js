@@ -16,12 +16,12 @@ const UserConfig = {};
 const createPDF = async function createFile(html) {
     let options = {
         filename: './public/pdf/doc.pdf',
-        format: 'Legal',
-        "base": "http://localhost:3000"
+        format: 'Legal'
     };
 
     let create = util.promisify(pdf.create);
     let creator = await create(html, options);
+    return options.filename;
 };
 
 
@@ -109,11 +109,13 @@ exports.post = async (req, res) => {
     // решаем их
     const selectedDocs = [];
     let promiseSelectResult = await Promise.all(dataPromises).then((result) => {
-
         // убираем из получателей тех, у кого нет адреса
-        if (result[0].row[0].email) {
-            selectedDocs.push({...result[0].row[0], details: result[0].details});
-        }
+        result.forEach(arve => {
+            if (arve.row[0].email) {
+                selectedDocs.push({...arve.row[0], details: result[0].details});
+            }
+
+        })
 
 
     }).catch((err) => {
@@ -137,7 +139,6 @@ exports.post = async (req, res) => {
         res.render(emailTemplate, {user: user}, (err, html) => {
             emailHtml = html;
         });
-
 
         //attachment
         let filePDF = await createPDF(printHtml);
@@ -192,6 +193,13 @@ exports.post = async (req, res) => {
             );
         });
 
+        try {
+            const sendMailTulemus = await sendMail();
+
+        } catch(e) {
+            console.error(e);
+            return res.send({status: 500, result: null, error_message: err});
+        }
     });
 
     // решаем их
