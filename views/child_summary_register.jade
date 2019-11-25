@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 LASTE KOKKUVÕTTE
+        p Seisuga #{data.length > 0 ? data[0].print_date : new Date().toISOString().substring(0, 10)}
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Koolitava isiku ees- ja perekonnanimi
+                    th Isikukood
+                    th Arve nr.
+                    th Arve kpv
+                    th Arve summa
+                    th Jääk
+                    th Koolituse eest tasunud isiku ees- ja perekonnanimi
+                    th Isikukood
+                    th Asutus
+
+            tbody
+                each rea in data
+                    tr
+                        td=rea.lapse_nimi
+                        td=rea.lapse_isikukood
+                        td=rea.number
+                        td=rea.kpv
+                        td=rea.summa
+                        td=rea.jaak
+                        td=rea.maksja_nimi
+                        td=rea.maksja_isikukood
+                        td=rea.asutus
+

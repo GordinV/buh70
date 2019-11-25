@@ -44,7 +44,9 @@ const ConfigDocument = require('./../docs/config/document/index.jsx');
 const RekvDocument = require('./../docs/rekv/document/index.jsx');
 const DokpropsDocument = require('./../docs/dokprops/document/index.jsx');
 const UserDocument = require('./../docs/userid/document/index.jsx');
+
 const Inf3Report = require('./../docs/inf3/index.jsx');
+const ChildSummaryReport = require('./../docs/child_summary/index.jsx');
 
 
 const {Route, Redirect} = require('react-router-dom');
@@ -198,6 +200,13 @@ class App extends React.Component {
                            module={MODULE}
                            history={props.history}
                            initData={this.props.initData}/>}/>
+
+                <Route exact path="/lapsed/laps_kokkuvotte"
+                       render={(props) => <ChildSummaryReport
+                           module={MODULE}
+                           history={props.history}
+                           initData={this.props.initData}/>}/>
+
 
             </StyleRoot>
         )
