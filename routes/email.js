@@ -21,11 +21,11 @@ const createPDF = async function createFile(html, fileName='doc') {
         "base": `http://localhost:${config.port}`
     };
 
-    let create = util.promisify(pdf.create);
     let filename = options.filename;
+    console.log('filename', filename);
 
+/*
     const dir = './pdf';
-
     if (!fs.existsSync(dir)){
         try {
             fs.mkdirSync(dir);
@@ -33,8 +33,10 @@ const createPDF = async function createFile(html, fileName='doc') {
             console.error('path create error',dir, e)
         }
     }
+*/
 
     try {
+        let create = util.promisify(pdf.create);
         let creator = await create(html, options);
     } catch (e) {
         console.error ('create pdf error', e);
@@ -164,7 +166,7 @@ exports.post = async (req, res) => {
         });
 
         //attachment
-        let filePDF = await createPDF(printHtml,`${arve.id}`);
+        let filePDF = await createPDF(printHtml,`doc_${arve.id}`);
         if (!filePDF) {
             // error in PDF create
             throw new Error('PDF faili viga');
