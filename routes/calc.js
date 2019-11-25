@@ -1,11 +1,6 @@
 'use strict';
-const db = require('./../libs/db');
-const pdf = require('html-pdf');
-const util = require('util');
 const getNow = require('./../libs/getNow');
 const Doc = require('./../classes/DocumentTemplate');
-
-const UserConfig = {};
 
 exports.post = async (req, res) => {
     const params = req.body;
