@@ -133,8 +133,13 @@ class Documents extends React.PureComponent {
                             Doc.setState({warning: `Kokku saadetud arveid emailga: ${data.result}`, warningType: 'ok'});
 
                         } else {
-                            Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'notValid'});
+                            console.error('email error', data);
+                            Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
                         }
+
+                    }).catch(error => {
+                        console.error('email error', error);
+                        Doc.setState({warning: `Tekkis viga: ${error}`, warningType: 'error'});
 
                     });
 

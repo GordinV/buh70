@@ -24,6 +24,7 @@ const createPDF = async function createFile(html, fileName='doc') {
     let create = util.promisify(pdf.create);
     let filename = options.filename;
 
+    console.log('optiond', options);
     try {
         let creator = await create(html, options);
     } catch (e) {
