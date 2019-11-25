@@ -62,7 +62,7 @@ exports.post = async (req, res) => {
     }
 
     // создать объект
-    const emailDoc = new Doc(param.docTypeId, null, user.userId, user.asutusId, module);
+    const emailDoc = new Doc(params.docTypeId, null, user.userId, user.asutusId, module);
 
     if (!UserConfig.email) {
         await getConfigData(user);
