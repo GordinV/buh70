@@ -27,7 +27,11 @@ const createPDF = async function createFile(html, fileName='doc') {
     const dir = './pdf';
 
     if (!fs.existsSync(dir)){
-        fs.mkdirSync(dir);
+        try {
+            fs.mkdirSync(dir);
+        } catch (e) {
+            console.error('path create error',dir, e)
+        }
     }
 
     try {
