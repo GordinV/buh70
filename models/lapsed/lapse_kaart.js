@@ -137,7 +137,7 @@ module.exports = {
                 {id: "viitenumber", name: "Viitenumber", width: "10%", show: true},
                 {id: "kood", name: "Kood", width: "10%"},
                 {id: "nimetus", name: "Nimetus", width: "20%"},
-                {id: "hind", name: "Hind", width: "10%"},
+                {id: "hind", name: "Hind", width: "10%", type:"number"},
                 {id: "soodustus", name: "Soodustus", width: "15%"},
                 {id: "uhik", name: "Ühik", width: "10%"},
                 {id: "yksus", name: "Üksus", width: "15%"},

@@ -76,10 +76,10 @@ module.exports = {
                 {id: "yksus", name: "Üksus", width: "20%"},
                 {id: "kuu", name: "Kuu", width: "10%", type: "integer"},
                 {id: "aasta", name: "Aasta", width: "10%", type: "integer"},
-                {id: "kogus", name: "Kogus", width: "10%"},
-                {id: "hind", name: "Hind", width: "10%"},
+                {id: "kogus", name: "Kogus", width: "10%", type:"number"},
+                {id: "hind", name: "Hind", width: "10%",type:"number"},
                 {id: "uhik", name: "Ühik", width: "5%"},
-                {id: "soodustus", name: "Soodustus", width: "10%"},
+                {id: "soodustus", name: "Soodustus", width: "10%",type:"number"},
                 {id: "summa", name: "Summa", width: "15%", type: "number"},
             ],
             sqlString:
