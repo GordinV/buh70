@@ -380,8 +380,12 @@ class Documents extends React.PureComponent {
         let string = '';
 
         this.filterData.map(row => {
-            if (row.value) {
-                string = string + row.name + ':' + row.value + '; ';
+            if (row.start) {
+                string = `${string} ${row.name}>=${row.start},${row.name}<=${row.end};`;
+            } else {
+                if (row.value) {
+                    string = string + row.name + ':' + row.value + '; ';
+                }
             }
         });
         return string;
