@@ -29,5 +29,6 @@ module.exports = {
     pank_vv: '/lapsed/pank_vv',
     config: '/ou/config',
     inf3:'/aruanned/lapsed/inf3',
-    laps_kokkuvotte:'/aruanned/lapsed/laps_kokkuvotte'
+    laps_kokkuvotte:'/aruanned/lapsed/laps_kokkuvotte',
+    arved_koodi_jargi:'/aruanned/lapsed/arved_koodi_jargi'
 };

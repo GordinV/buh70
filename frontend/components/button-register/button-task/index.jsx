@@ -50,12 +50,13 @@ class ButtonTask extends React.PureComponent {
                         modalObjects={['btnOk', 'btnCancel']}
                     >
                         {`Kas käivata "${value}" ?`}
-                        <InputDate title='Seisuga '
-                                   name='kpv'
-                                   value={this.state.seisuga}
-                                   ref='input-kpv'
-                                   readOnly={false}
-                                   onChange={this.handleInputChange}/>
+                        {this.props.showDate ? <InputDate title='Seisuga '
+                                                          name='kpv'
+                                                          value={this.state.seisuga}
+                                                          ref='input-kpv'
+                                                          readOnly={false}
+                                                          onChange={this.handleInputChange}/> : null}
+
 
                     </ModalPage> : null
                 }
@@ -79,7 +80,8 @@ class ButtonTask extends React.PureComponent {
 
 ButtonTask.defaultProps = {
     disabled: false,
-    show: true
+    show: true,
+    showDate: true
 };
 
 module.exports = ButtonTask;

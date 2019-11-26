@@ -27,6 +27,10 @@ class GridFilter extends React.PureComponent {
      */
     handleChange(e) {
         let data = this.state.data;
+        if (!data.length) {
+           data = prepareData(this.props.gridConfig);
+        }
+
         let value = e.target.value,
             id = e.target.name,
             index,
@@ -67,7 +71,7 @@ class GridFilter extends React.PureComponent {
             data[index].value = value;
         }
 
-        this.setState({data: data});
+//        this.setState({data: data});
 
         if (this.props.handler) {
             this.props.handler(data);
@@ -77,30 +81,20 @@ class GridFilter extends React.PureComponent {
     }
 
     componentDidMount() {
-        const data = [];
-        this.props.gridConfig.map((row) => {
-            const field = {
-                value: null,
-                name: row.id,
-                type: row.type ? row.type : 'text',
-                interval: !!row.interval,
-                start: null,
-                end: null
-            };
-
-            data.push(field);
-
-        });
-        this.setState({data: data});
-
+        const data = prepareData(this.props.gridConfig);
+        if (this.props.handler) {
+            this.props.handler(data);
+        }
     }
 
-
     // will update state if props changed
+
     static getDerivedStateFromProps(nextProps, prevState) {
 
         if (JSON.stringify(nextProps.gridConfig) !== JSON.stringify(prevState.gridConfig) ||
-            JSON.stringify(nextProps.data) !== JSON.stringify(prevState.data)) {
+            JSON.stringify(nextProps.data) !== JSON.stringify(prevState.data)
+            || prevState.data.length === 0
+        ) {
             return {gridConfig: nextProps.gridConfig, data: nextProps.data};
         } else return null;
 
@@ -197,6 +191,27 @@ class GridFilter extends React.PureComponent {
 
 
 }
+
+function prepareData(gridConfig) {
+    const data = [];
+
+    gridConfig.map((row) => {
+        const field = {
+            value: null,
+            name: row.id,
+            type: row.type ? row.type : 'text',
+            interval: !!row.interval,
+            start: null,
+            end: null
+        };
+
+        data.push(field);
+
+    });
+    return data;
+
+}
+
 
 GridFilter.propTypes = {
     gridConfig: PropTypes.array.isRequired,

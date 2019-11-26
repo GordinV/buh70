@@ -25,7 +25,7 @@ const
 /**
  * Класс реализует документ справочника признаков.
  */
-class Documents extends React.PureComponent {
+class Documents extends React.Component {
     constructor(props) {
         super(props);
 
@@ -113,7 +113,6 @@ class Documents extends React.PureComponent {
     render() {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
         const warningStyle = this.state.warningType && styles[this.state.warningType] ? styles[this.state.warningType] : null;
-
         return (
             <div style={_style.doc}>
                 <div style={_style.docRow}>
@@ -244,9 +243,18 @@ class Documents extends React.PureComponent {
     btnPrintClick() {
         let sqlWhere = this.state.sqlWhere;
         let sortBy = JSON.stringify(this.state.sortBy);
-        let url = `/print/${this.props.docTypeId}/${DocContext.userData.uuid}/0`;
+        let url ;
         let params = encodeURIComponent(`${sqlWhere}`);
+        let filter = encodeURIComponent(`${JSON.stringify(this.filterData)}`);
+
+        if (this.filterData.length) {
+            url = `/print/${this.props.docTypeId}/${DocContext.userData.uuid}/${filter}`;
+
+        } else {
+            url = `/print/${this.props.docTypeId}/${DocContext.userData.uuid}/0`;
+        }
         window.open(`${url}/${params}`);
+
     }
 
     /**
