@@ -302,10 +302,18 @@ class Documents extends React.PureComponent {
                         filterString = filterString + row.name + " = '" + row.value + "'";
                         break;
                     case 'number':
-                        filterString = filterString + row.name + " = " + row.value;
+                        if ('start' in row) {
+                            filterString = `${filterString} ${row.name}  >=  ${row.start} and ${row.name}  <=  ${row.end} `;
+                        } else {
+                            filterString = filterString + row.name + " = " + row.value;
+                        }
                         break;
                     case 'integer':
-                        filterString = filterString + row.name + " = " + row.value;
+                        if ('start' in row) {
+                            filterString = `${filterString} ${row.name}  >=  ${row.start} and ${row.name}  <=  ${row.end} `;
+                        } else {
+                            filterString = filterString + row.name + " = " + row.value;
+                        }
                         break;
                 }
             }

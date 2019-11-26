@@ -1,7 +1,6 @@
-var path = require('path');
-
-var x = path.join('Users', 'Refsnes', '..', 'public','pdf','demo_path.js');
-const wkhtmltopdf = require('wkhtmltopdf');
-
-wkhtmltopdf('<h1>Test</h1><p>Hello world</p>', {output: 'c:/temp/doc.pdf'});
-console.log(x);
+//const obj = [{id:1, summa: 0, interval: true, start: 1, end: 2}, {id:2, summa1: 0}];
+let fieldNameStart = 'field_start';
+let fieldNameEnd = 'field_end';
+//x.replace(/|/i, ""));
+let isEnd = !!fieldNameEnd.match(/_end1/);
+console.log(isEnd, fieldNameStart.replace(/_start/i,''), fieldNameEnd.replace(/_end/i,''), );

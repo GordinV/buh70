@@ -18,6 +18,7 @@ class GridFilter extends React.PureComponent {
 
         this.handleChange = this.handleChange.bind(this);
         this.prepareFilterFields = this.prepareFilterFields.bind(this);
+        this.returnInterval = this.returnInterval.bind(this);
     }
 
     /**
@@ -28,17 +29,41 @@ class GridFilter extends React.PureComponent {
         let data = this.state.data;
         let value = e.target.value,
             id = e.target.name,
-            index;
+            index,
+            isIntervalStart = !!id.match(/_start/),
+            isIntervalEnd = !!id.match(/_end/);
+        let fieldName = id;
 
         // надо найти элемент массива с данными для этого компонента
         for (let i = 0; i < this.state.data.length; i++) {
-            if (this.state.data[i].name === id) {
+
+                isIntervalStart = !!id.match(/_start/);
+                isIntervalEnd = !!id.match(/_end/);
+
+            if (isIntervalStart) {
+                // will replace start from firldName
+                fieldName = id.replace(/_start/i,'');
+            }
+
+            if (isIntervalEnd) {
+                // will replace end from firldName
+                fieldName = id.replace(/_end/i,'');
+            }
+
+            if (this.state.data[i].name === (fieldName)) {
                 index = i;
                 break;
             }
         }
 
         if (index) {
+            if (isIntervalStart) {
+                data[index].start = value;
+            }
+            if (isIntervalEnd) {
+                data[index].end = value;
+            }
+
             data[index].value = value;
         }
 
@@ -52,12 +77,18 @@ class GridFilter extends React.PureComponent {
     }
 
     componentDidMount() {
-        let data = this.state.data;
+        const data = [];
         this.props.gridConfig.map((row) => {
-            let componentType = row.type ? row.type : 'text';
+            const field = {
+                value: null,
+                name: row.id,
+                type: row.type ? row.type : 'text',
+                interval: !!row.interval,
+                start: null,
+                end: null
+            };
 
-            // props.data пустое, создаем
-            data.push({value: null, name: row.id, type: componentType});
+            data.push(field);
 
         });
         this.setState({data: data});
@@ -102,21 +133,69 @@ class GridFilter extends React.PureComponent {
                     <span>{row.name}</span>
                 </div>
                 <div style={styles.formWidgetInput}>
-                    <input style={styles.input}
-                           type={componentType}
-                           title={row.name}
-                           name={row.id}
-                           placeholder={row.name}
-                           ref={row.id}
-                           value={value || ''}
-                           onChange={this.handleChange}
-                           defaultValue={this.props.data[row.id]}
-                    />
+                    {row.interval ? this.returnInterval(row)
+                        : <input style={styles.input}
+                                 type={componentType}
+                                 title={row.name}
+                                 name={row.id}
+                                 placeholder={row.name}
+                                 ref={row.id}
+                                 value={value || ''}
+                                 onChange={this.handleChange}
+                                 defaultValue={this.props.data[row.id]}/>
+                    }
+
                 </div>
             </div>
         });
 
     }
+
+    /**
+     * вернет два инпута, где будут хранится значения для сначала и конца диапазона
+     * @param row
+     */
+    returnInterval(row) {
+        if (row.interval && !('start' in row)) {
+            row = {...row, ...{start: null}, ...{end:null}}
+        }
+
+        const data = this.state.data;
+        const obj = data[_.findIndex(data, {name: row.id})];
+
+        let valueStart = row.interval ? obj[`start`] : obj.value;
+        let valueEnd = row.interval ? obj[`end`] : obj.value;
+
+        let componentType = row.type ? row.type : 'text';
+
+        return (
+            <div style={styles.interval}>
+                <input style={styles.input}
+                       type={componentType}
+                       title={row.name}
+                       name={`${row.id}_start`}
+                       placeholder={row.name}
+                       ref={`${row.id}_start`}
+                       value={valueStart || ''}
+                       onChange={this.handleChange}
+                       defaultValue={this.props.data[row.id]}
+                />
+                <span>-</span>
+                <input style={styles.input}
+                       type={componentType}
+                       title={row.name}
+                       name={`${row.id}_end`}
+                       placeholder={row.name}
+                       ref={`${row.id}_end`}
+                       value={valueEnd || ''}
+                       onChange={this.handleChange}
+                       defaultValue={this.props.data[row.id]}
+                />
+            </div>
+        )
+    }
+
+
 }
 
 GridFilter.propTypes = {
