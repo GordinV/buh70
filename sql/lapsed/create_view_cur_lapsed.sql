@@ -6,17 +6,24 @@ SELECT l.id,
        l.isikukood,
        l.nimi,
        l.properties,
-       btrim(lk.yksused::TEXT, '[]')::TEXT AS yksused,
+       array_to_string(lk.yksused,','::text)::TEXT AS yksused,
        lk.rekv_ids
 FROM lapsed.laps l
-         JOIN (SELECT parentid,
-                      regexp_replace(json_agg((k.properties ->> 'yksus')::TEXT || case when (k.properties ->> 'all_yksus') is not null then '-' ||
-                                              (k.properties ->> 'all_yksus')::TEXT else '' end )::text, '"', '', 'g') AS yksused,
-                      array_agg(rekvid)                                                             AS rekv_ids
-               FROM lapsed.lapse_kaart k
-               WHERE k.staatus <> 3
-               GROUP BY parentid
-) lk ON lk.parentid = l.id
+         JOIN (SELECT parentid, array_agg(rekvid) AS rekv_ids, array_agg(yksused) AS yksused
+               FROM (
+                        SELECT parentid,
+                               rekvid,
+                               (get_unique_value_from_json(json_agg((k.properties ->> 'yksus')::TEXT || CASE
+                                                                                                            WHEN (k.properties ->> 'all_yksus') IS NOT NULL
+                                                                                                                THEN
+                                                                                                                    '-' ||
+                                                                                                                    (k.properties ->> 'all_yksus')::TEXT
+                                                                                                            ELSE '' END)::JSONB)) AS yksused
+                        FROM lapsed.lapse_kaart k
+                        WHERE k.staatus <> 3
+                        GROUP BY parentid, rekvid
+                    ) qry
+               GROUP BY parentid) lk ON lk.parentid = l.id
 WHERE l.staatus <> 3
 ORDER BY nimi;
 

@@ -23,7 +23,7 @@ SELECT lt.id,
        n.kood::TEXT,
        n.nimetus::TEXT                                             AS teenus,
        n.uhik::TEXT,
-       lk.properties ->> 'yksus'                                   AS yksus,
+       grupp.nimetus::TEXT                                         AS yksus,
        lk.properties ->> 'all_yksus'                               AS all_yksus,
        lt.lapse_kaart_id,
        (lk.properties ->> 'sooduse_alg')::DATE                     AS sooduse_alg,
@@ -32,7 +32,9 @@ SELECT lt.id,
 FROM lapsed.lapse_taabel lt
          INNER JOIN lapsed.laps l ON l.id = lt.parentid
          INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
-         LEFT OUTER JOIN lapsed.lapse_kaart lk ON lk.id = lt.lapse_kaart_id
+         INNER JOIN lapsed.lapse_kaart lk ON lk.id = lt.lapse_kaart_id
+         INNER JOIN libs.library grupp ON grupp.library::TEXT = 'LAPSE_GRUPP'::TEXT AND grupp.rekvid = lk.rekvid
+    AND grupp.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
 WHERE lt.staatus <> 3
 ORDER BY aasta, kuu, nimi, kood;
 

@@ -9,7 +9,7 @@ SELECT l.id                                                                     
        l.nimi,
        lk.rekvid,
        lk.hind,
-       lk.properties ->> 'yksus'                                                     AS yksus,
+       grupp.nimetus::TEXT                                                           AS yksus,
        lk.properties ->> 'all_yksus'                                                 AS all_yksus,
        n.kood::TEXT,
        n.nimetus::TEXT,
@@ -27,6 +27,9 @@ SELECT l.id                                                                     
 FROM lapsed.laps l
          INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.id
          INNER JOIN libs.nomenklatuur n ON lk.nomid = n.id
+         INNER JOIN libs.library grupp ON grupp.library::TEXT = 'LAPSE_GRUPP'::TEXT AND grupp.rekvid = lk.rekvid
+    AND grupp.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
+
 WHERE lk.staatus <> 3;
 
 GRANT SELECT ON TABLE lapsed.cur_lapse_kaart TO arvestaja;
