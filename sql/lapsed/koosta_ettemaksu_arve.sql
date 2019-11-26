@@ -45,7 +45,9 @@ DECLARE
     l_aa               TEXT    = (SELECT arve
                                   FROM ou.aa
                                   WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
-                                    AND kassa = 1);
+                                    AND kassa = 1
+                                  ORDER BY default_ DESC
+                                  LIMIT 1);
     l_ettemaksu_period INTEGER = 1;
     l_tulu_arved       INTEGER = 0; -- кол-во доходных счетов, должно быть = кол-ву периодов
     l_db_konto         TEXT    = '103000'; -- согдасно описанию отдела культуры
