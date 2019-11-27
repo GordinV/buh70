@@ -144,7 +144,7 @@ BEGIN
                        THEN 1
                    ELSE 0 END                                               AS real_soodus,
 
-               (lk.properties ->> 'yksus')::TEXT || CASE
+               (gr.nimetus::TEXT)::TEXT || CASE
                                                         WHEN (lk.properties ->> 'all_yksus')::TEXT IS NOT NULL
                                                             THEN '(' || (lk.properties ->> 'all_yksus')::TEXT || ')'
                                                         ELSE '' END         AS muud,
@@ -162,6 +162,9 @@ BEGIN
 
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
+                 LEFT OUTER JOIN libs.library gr ON gr.library = 'LAPSE_GRUPP' AND gr.rekvid = lk.rekvid AND
+                                                    gr.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
+
         WHERE lk.parentid = l_laps_id
           AND lk.staatus <> 3
           AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
