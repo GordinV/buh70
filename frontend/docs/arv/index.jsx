@@ -66,16 +66,9 @@ class Documents extends React.PureComponent {
 
     //handler для события клик на кнопках панели
     onClickHandler(event) {
-        const ids = []; // сюда пишем ид счетом, которые под обработку
-        const Doc = this.refs['register'];
+        let ids = new Set; // сюда пишем ид счетом, которые под обработку
 
-        // будет выведено на печать выбранные и только для печати счета
-        Doc.gridData.forEach(row => {
-            if (row.select && row.kas_paberil) {
-                // выбрано для печати
-                ids.push(row.id);
-            }
-        });
+        const Doc = this.refs['register'];
 
         switch (event) {
             case EVENTS[0].name:
@@ -89,9 +82,11 @@ class Documents extends React.PureComponent {
                 Doc.gridData.forEach(row => {
                     if (row.select && row.kas_paberil) {
                         // выбрано для печати
-                        ids.push(row.id);
+                        ids.add(row.id);
                     }
                 });
+                // конвертация в массив
+                ids = Array.from(ids);
 
                 if (ids.length > 0) {
                     Doc.setState({
@@ -116,9 +111,12 @@ class Documents extends React.PureComponent {
                 Doc.gridData.forEach(row => {
                     if (row.select && row.kas_email) {
                         // выбрано для печати
-                        ids.push(row.id);
+                        ids.add(row.id);
                     }
                 });
+
+                // конвертация в массив
+                ids = Array.from(ids);
 
                 if (!ids.length) {
                     Doc.setState({
@@ -155,9 +153,11 @@ class Documents extends React.PureComponent {
                 Doc.gridData.forEach(row => {
                     if (row.select && row.kas_earve) {
                         // выбрано для печати
-                        ids.push(row.id);
+                        ids.add(row.id);
                     }
                 });
+                // конвертация в массив
+                ids = Array.from(ids);
 
                 if (!ids.length) {
                     Doc.setState({

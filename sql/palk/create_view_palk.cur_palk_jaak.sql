@@ -30,3 +30,5 @@ CREATE VIEW palk.cur_palk_jaak
       JOIN ou.rekv rekv ON rekv.id = t.rekvid
       JOIN libs.asutus a ON t.parentid = a.id
       JOIN libs.library l ON t.osakondid = l.id;
+
+

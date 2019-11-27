@@ -50,6 +50,12 @@ FROM palk.palk_jaak j
          INNER JOIN libs.library o ON o.id = t.osakondid;
 
 
+GRANT SELECT ON TABLE palk.print_palk_jaak TO dbkasutaja;
+GRANT SELECT  ON TABLE palk.print_palk_jaak TO dbpeakasutaja;
+GRANT SELECT ON TABLE palk.print_palk_jaak TO dbvaatleja;
+GRANT  SELECT ON TABLE palk.print_palk_jaak TO taabel;
+GRANT ALL ON TABLE palk.print_palk_jaak TO vlad;
+
 /*
 select * from palk.print_palk_jaak where aasta = 2018
  */
