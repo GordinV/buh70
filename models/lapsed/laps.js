@@ -69,11 +69,14 @@ module.exports = {
                          n.kood,
                          n.nimetus,
                          k.hind,
-                         k.properties ->> 'yksus'                                                 AS yksus,
+                         gr.nimetus::TEXT                                                         AS yksus,
                          k.properties ->> 'all_yksus'                                             AS all_yksus,
                          CASE WHEN (k.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3
                   FROM lapsed.lapse_kaart k
                            INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
+                           LEFT OUTER JOIN libs.library gr ON gr.library = 'LAPSE_GRUPP'
+                      AND gr.rekvid = k.rekvid
+                      AND gr.kood::TEXT = (k.properties ->> 'yksus')::TEXT
                   WHERE k.parentid = $1
                     AND k.staatus <> 3
                     AND k.rekvid IN (SELECT rekvid FROM ou.userid WHERE id = $2)`,
