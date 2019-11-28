@@ -307,7 +307,12 @@ class Documents extends React.Component {
                         filterString = `${filterString}  encode(${row.name}::bytea, 'escape')  ilike '%${row.value.trim()}%'`;
                         break;
                     case 'date':
-                        filterString = filterString + row.name + " = '" + row.value + "'";
+                        if ('start' in row) {
+                            filterString = `${filterString} ${row.name}  >=  '${row.start}' and ${row.name}  <=  '${row.end}' `;
+                        } else {
+                            filterString = filterString + row.name + " = '" + row.value + "'";
+                        }
+
                         break;
                     case 'number':
                         if ('start' in row) {
@@ -522,6 +527,7 @@ class Documents extends React.Component {
             docId: this.state.value,
             method: method,
             sqlWhere: this.state.sqlWhere, // динамический фильтр грида
+            filterData: this.filterData,
             lastDocId: null,
             module: this.props.module,
             userId: DocContext.userData.userId,

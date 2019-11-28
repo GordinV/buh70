@@ -27,7 +27,9 @@ class GridFilter extends React.PureComponent {
      */
     handleChange(e) {
         let data = this.state.data;
-        if (!data.length) {
+
+        // проверим на наличие полей для фильтрации
+        if (!data.length)  {
            data = prepareData(this.props.gridConfig);
         }
 
@@ -60,7 +62,7 @@ class GridFilter extends React.PureComponent {
             }
         }
 
-        if (index) {
+        if (index > -1) {
             if (isIntervalStart) {
                 data[index].start = value;
             }
@@ -70,8 +72,6 @@ class GridFilter extends React.PureComponent {
 
             data[index].value = value;
         }
-
-//        this.setState({data: data});
 
         if (this.props.handler) {
             this.props.handler(data);
@@ -112,7 +112,7 @@ class GridFilter extends React.PureComponent {
 
         // только поля, которые отмечаны как show:true или явно ка указаны
         const filterFields = this.state.gridConfig.filter(field => {
-            if (!('show' in field) || field.show) {
+            if (field.id !== 'id') {
                 return field;
             }
         });

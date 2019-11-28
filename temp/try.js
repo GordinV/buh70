@@ -1,10 +1,5 @@
+const getGroupedData = require('./../public/javascripts/getGroupedData');
+const data = [{"id":1,"parent":2}, {"id":2,"parent":2}, {"id":3,"parent":1}];
 
-const data = [{"id":1,"kood":"test 1"},{"id":2,"kood":"test 2"}];
-// rows
-let csv;
-    csvRows = data.map(row=> {
-    // field
-    return  stringRow = Object.values(row).join();
-}).join('\n');
-
-    console.log(csvRows);
+const result = getGroupedData(data,'parent');
+console.log(result);

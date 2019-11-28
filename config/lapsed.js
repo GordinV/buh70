@@ -30,5 +30,6 @@ module.exports = {
     config: '/ou/config',
     inf3:'/aruanned/lapsed/inf3',
     laps_kokkuvotte:'/aruanned/lapsed/laps_kokkuvotte',
-    arved_koodi_jargi:'/aruanned/lapsed/arved_koodi_jargi'
+    arved_koodi_jargi:'/aruanned/lapsed/arved_koodi_jargi',
+    saldo_ja_kaive:'/aruanned/lapsed/saldo_ja_kaive'
 };

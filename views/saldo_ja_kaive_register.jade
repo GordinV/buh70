@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+//script(type="text/javascript" src="/javascripts/getGroupedData.js")
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 SALDO JA KÄIVE ARUANNE
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        each asutus in Object.keys(data[0])
+            p #{asutus}
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Külastatavus
+                        th Rühm
+                        th Lapse ees- ja perekonnanimi
+                        th Arve number
+                        th Alg.saldo
+                        th Arvestatud
+                        th Soodustus
+                        th Kokku arvestatud
+                        th Laekumised
+                        th Tagastatud
+                        th Võlg
+
+                tbody
+                    each rea in data[0][asutus]
+                        tr
+                            td=rea.kulastatavus
+                            td=rea.yksus
+                            td=rea.lapse_nimi
+                            td=rea.number
+                            td=rea.alg_saldo
+                            td=rea.arvestatud
+                            td=rea.soodustus
+                            td=((Number(rea.arvestatud) - Number(rea.soodustus)).toFixed(2))
+                            td=rea.laekumised
+                            td=rea.tagastatud
+                            td=rea.jaak
+                tr.group
+                    td.group=''
+                    td.group=''
+                    td.group=''
+                    td.group=''
+                    td.group=data[0][asutus][0].alg_saldo_group
+                    td.group=data[0][asutus][0].arvestatud_group
+                    td.group=data[0][asutus][0].soodustus_group
+                    td.group=((Number(data[0][asutus][0].arvestatud_group) - Number(data[0][asutus][0].soodustus_group)).toFixed(2))
+                    td.group=data[0][asutus][0].laekumised_group
+                    td.group=data[0][asutus][0].tagastatud_group
+                    td.group=data[0][asutus][0].jaak_group
+

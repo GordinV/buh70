@@ -144,8 +144,7 @@ module.exports = {
                      FROM lapsed.cur_lapsed l
                      WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
             `,     //  $1 всегда ид учреждения, $2 - userId
-            params:
-                '',
+            params: ['rekvid','userid'],
             alias:
                 'curLapsed'
         },

@@ -43,3 +43,7 @@
 .grid_head {
     background-color:lightgray;
 }
+.group {
+    font-weight: bold;
+    border-top:1px solid lightgray;
+}

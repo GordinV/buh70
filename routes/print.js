@@ -1,5 +1,7 @@
 'use strict';
 const db = require('./../libs/db');
+const getParameterFromFilter = require('./../libs/getParameterFromFilter');
+const getGroupedData = require('./../libs/getGroupedData');
 
 exports.get = async (req, res) => {
     let ids = (req.params.id || 0); // параметр id документа
@@ -36,8 +38,9 @@ console.log('filter', filterData);
 
         const printTemplates = doc.config.print;
 
+        let templateObject;
         if (printTemplates) {
-            const templateObject = printTemplates.find(templ => templ.params === (id ? 'id' : 'sqlWhere'));
+            templateObject = printTemplates.find(templ => templ.params === (id ? 'id' : 'sqlWhere'));
             template = templateObject.view;
 
             if (id && templateObject.register) {
@@ -53,10 +56,22 @@ console.log('filter', filterData);
 
         // вызвать метод
         const method = id ? 'select' : 'selectDocs';
-        let result = await doc[method]('', sqlWhere, limit);
-        const data = id ? {...result.row, ...result} : result.data;
-        // вернуть отчет
+        let gridParams;
 
+        if (method === 'selectDocs'  && doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
+            gridParams = getParameterFromFilter(user.asutusId,  user.userId, doc.config.grid.params , filterData);
+        }
+
+        let result = await doc[method]('', sqlWhere, limit, gridParams);
+
+        let data = id ? {...result.row, ...result} : result.data;
+
+        // groups
+        if (templateObject.group) {
+            //преобразуем данные по группам
+            data = getGroupedData(data,templateObject.group);
+        }
+        // вернуть отчет
         res.render(template, {title: 'Tunnused', data: data, user: user, filter: filterData});
 
     } catch (error) {

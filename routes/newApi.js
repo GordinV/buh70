@@ -1,5 +1,7 @@
 'use strict';
 
+const getParameterFromFilter = require('./../libs/getParameterFromFilter');
+
 exports.post = async (req, res) => {
     const user = require('../middleware/userData')(req), // данные пользователя
         parameter = req.body.parameter || '',// параметры если переданы
@@ -7,7 +9,9 @@ exports.post = async (req, res) => {
         sortBy = req.body.sortBy, //порядок сортировки
         limit = req.body.limit ? req.body.limit: 100, //порядок сортировки
         method = req.body.method ? req.body.method: 'selectDocs', //порядок сортировки
-        sqlWhere = req.body.sqlWhere; //динамический фильтр
+        sqlWhere = req.body.sqlWhere, //динамический фильтр
+        filterData = req.body.filterData || []; // параметры фильтры
+
 
 
     if (!user) {
@@ -16,18 +20,23 @@ exports.post = async (req, res) => {
 
     }
 
+    console.log('newApi', method, req.body);
     try {
         // создать объект
         const Doc = require('./../classes/DocumentTemplate');
         const doc = new Doc(parameter, null, user.userId, user.asutusId, module);
         let gridConfig = doc.config.grid.gridConfiguration;
+        let gridParams;
         let subtotals = doc.config.grid.subtotals ? doc.config.grid.subtotals : [];
 
-        console.log('subtotals', subtotals);
+        if (filterData.length > 0 && doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
+            gridParams = getParameterFromFilter(user.asutusId,  user.userId, doc.config.grid.params , filterData);
+        }
+
         // вызвать метод
         let data = {
             docTypeId: parameter,
-            result: await doc[method](sortBy, sqlWhere, limit ),
+            result: await doc[method](sortBy, sqlWhere, limit, gridParams ),
             gridConfig: gridConfig,
             subtotals: subtotals
         };
@@ -42,25 +51,3 @@ exports.post = async (req, res) => {
     }
 };
 
-/*
-
-exports.delete = async (req, res) => {
-    let user = require('../middleware/userData')(req),
-        parameter = req.params.id,
-        docTypePattern = /[0-9]/gi,
-        docIdPattern = /[^0-9]/gi,
-        docId = parameter.replace(docIdPattern, '').trim(),
-        docTypeId = parameter.replace( docTypePattern, '').trim(),
-        params = [user.userId, docId];
-
-    try {
-        // тут вызов метода сохранение
-        let results = await DocDataObject.deleteDocPromise(docTypeId, params);
-        res.send(results);
-    } catch (err) {
-        console.error('error:', err);
-        res.send({result: 'Error'});
-
-    }
-}; //function delete
-*/

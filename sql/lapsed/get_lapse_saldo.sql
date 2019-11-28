@@ -37,7 +37,8 @@ GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE) TO arvestaja;
 
 
 /*
-SELECT *
-FROM lapsed.lapse_saldod(1)
-
+SELECT jaak
+FROM lapsed.lapse_saldod('2019-11-27'::date)
+where laps_id = 16
+and rekv_id = 63
 */
