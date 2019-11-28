@@ -50,7 +50,8 @@ class Documents extends React.PureComponent {
             let sqlWhere = Doc.state.sqlWhere;
             let url = `/reports/saldo_ja_kaive/${DocContext.userData.uuid}`;
             let params = encodeURIComponent(`${sqlWhere}`);
-            window.open(`${url}/${params/$Doc.filterData}`);
+            let filter = encodeURIComponent(`${(JSON.stringify(Doc.filterData))}`);
+            window.open(`${url}/${params}/${filter}`);
         } else {
             Doc.setState({
                 warning: 'Mitte ühtegi kirjed leidnud', // строка извещений

@@ -8,12 +8,15 @@ exports.get = async (req, res) => {
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user = require('../../middleware/userData')(req, uuid); // данные пользователя
 
+    let filterData = JSON.parse(filter);
+
     if (!user) {
         console.error('error 401 newAPI');
         return res.status(401).end();
     }
 
-    let filterData = filter.filter(row => {
+
+    filterData = filterData.filter(row => {
         if (row.value) {
             return row;
         }

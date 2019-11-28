@@ -20,7 +20,6 @@ exports.post = async (req, res) => {
 
     }
 
-    console.log('newApi', method, req.body);
     try {
         // создать объект
         const Doc = require('./../classes/DocumentTemplate');
