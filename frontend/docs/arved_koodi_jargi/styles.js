@@ -8,8 +8,12 @@ module.exports = {
         },
 
         gridContainer: {
-            width: '100%'
+            width: '95%'
         }
 
     },
+    total: {
+        width: 'auto'
+    }
+
 };
