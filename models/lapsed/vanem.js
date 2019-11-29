@@ -97,9 +97,10 @@ module.exports = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
-            {id: "isikukood", name: "Isikukood", width: "30%"},
+            {id: "isikukood", name: "Isikukood", width: "20%"},
             {id: "nimi", name: "Nimi", width: "40%"},
-            {id: "lapsed", name: "Lapsed", width: "30%"}
+            {id: "email", name: "E-mail", width: "15%"},
+            {id: "lapsed", name: "Lapsed", width: "25%"}
         ],
         sqlString: `SELECT id,
                            isikukood,
