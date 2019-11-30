@@ -3,6 +3,7 @@
 const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
+const getSum = require('./../../../libs/getSum');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'LAPSE_TAABEL';
@@ -16,7 +17,6 @@ class Documents extends React.PureComponent {
         this.state = {
             summa: 0
         };
-        this.getSum = this.getSum.bind(this);
         this.renderer = this.renderer.bind(this);
 
     }
@@ -47,7 +47,7 @@ class Documents extends React.PureComponent {
 
     // custom render
     renderer(self) {
-        let summa = this.getSum(self.gridData || [],'summa');
+        let summa = getSum(self.gridData || [],'summa');
         if (summa) {
             this.setState({summa: summa});
         }

@@ -112,18 +112,23 @@ class Laps extends React.PureComponent {
         // фильтр на номенклатуры
         let nomData = [{id: 0, kood: '', nimetus: '', hind: 0, kogus: 0}];
         // берем только услуги для группы, добавляяем цену и ед.измерения и сортируем
-        if (yksus) {
-            nomData = (yksus.teenused ? yksus.teenused : []).map(nom => {
-                const row = self.libs['nomenclature'].find(lib => lib.id === Number(nom.nomid));
+        try {
+            if (yksus) {
+                nomData = (yksus.teenused && self.libs['nomenclature'].length > 0 ? yksus.teenused : []).map(nom => {
+                    const row = self.libs['nomenclature'].find(lib => lib.id === Number(nom.nomid));
 
-                if (row) {
-                    const teenuseNimetus = row.nimetus ? `${row.nimetus} (hind: ${Number(nom.hind).toFixed(2)}) ` : '';
-                    return {...row, nimetus: teenuseNimetus, id: Number(nom.nomid)}
-                }
-            }).sort((a, b) => {
-                return a.kood.localeCompare(b.kood)
-            });
+                    if (row) {
+                        const teenuseNimetus = row.nimetus ? `${row.nimetus} (hind: ${Number(nom.hind).toFixed(2)}) ` : '';
+                        return {...row, nimetus: teenuseNimetus, id: Number(nom.nomid)}
+                    }
+                }).sort((a, b) => {
+                    return a.kood.localeCompare(b.kood)
+                });
 
+            }
+
+        } catch (e) {
+            console.error(e, nomData);
         }
 
         return (

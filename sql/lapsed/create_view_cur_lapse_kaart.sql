@@ -22,7 +22,8 @@ SELECT l.id                                                                     
            WHEN ((lk.properties ->> 'sooduse_alg')::DATE > current_date OR
                  (lk.properties ->> 'sooduse_lopp')::DATE < current_date) THEN 'ei kehti'
            ELSE 'kehtiv' END                                                         AS sooduse_kehtivus,
-       CASE WHEN (lk.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END     AS inf3
+       CASE WHEN (lk.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END     AS inf3,
+       (lk.properties ->> 'kas_ettemaks')::BOOLEAN                                   AS kas_ettemaks
 
 FROM lapsed.laps l
          INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.id

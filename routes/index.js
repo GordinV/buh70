@@ -58,6 +58,7 @@ module.exports = function (app) {
     app.post('/email', checkAuth, require('./email').post); //checkAuth
     app.post('/e-arved', checkAuth, require('./e-arved').post); //checkAuth
 
+    app.post('/calc/muuda_ettemaksu_period', checkAuth, require('./lapsed/muuda_ettemaksu_period').post); //checkAuth
     app.post('/calc/:taskName', checkAuth, require('./calc').post); //checkAuth
     app.delete('/newApi/:documentType/:id', checkAuth, require('./documentRegister').delete); //апи для обмена даты по протоколу delete с моделью документа
 

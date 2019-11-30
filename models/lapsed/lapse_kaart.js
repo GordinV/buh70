@@ -115,14 +115,6 @@ module.exports = {
         {name: 'hind', type: 'I'}
 
     ],
-    /*
-    executeCommand: {
-        command: `SELECT result, selgitus, summa
-                  FROM docs.sp_calc_kulum(?tnId::INTEGER, current_date::DATE)`,
-        type: 'sql',
-        alias: 'arvestaKulum'
-    },
-*/
     saveDoc:
         `select lapsed.sp_salvesta_lapse_kaart($1::jsonb, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc:
@@ -137,12 +129,13 @@ module.exports = {
                 {id: "viitenumber", name: "Viitenumber", width: "10%", show: true},
                 {id: "kood", name: "Kood", width: "10%"},
                 {id: "nimetus", name: "Nimetus", width: "20%"},
-                {id: "hind", name: "Hind", width: "10%", type:"number"},
+                {id: "hind", name: "Hind", width: "10%", type: "number"},
                 {id: "soodustus", name: "Soodustus", width: "15%"},
                 {id: "uhik", name: "Ühik", width: "10%"},
                 {id: "yksus", name: "Üksus", width: "15%"},
                 {id: "kehtivus", name: "Kehtib", width: "10%"},
                 {id: "inf3", name: "INF3", width: "10%"},
+                {id: "select", name: "Valitud", width: "10%", show: false}
             ],
             sqlString:
                     `SELECT id,
@@ -162,9 +155,12 @@ module.exports = {
                             v.inf3                                                                         AS inf3,
                             CASE
                                 WHEN (soodustus::NUMERIC(12, 2)) > 0 THEN ((soodustus::NUMERIC(12, 2))::TEXT || ' ' ||
-                                                                          kas_protsent || '(' || sooduse_kehtivus ||
-                                                                          ')')
-                                ELSE '' END                                                                AS soodustus
+                                                                           kas_protsent || '(' || sooduse_kehtivus ||
+                                                                           ')')
+                                ELSE '' END                                                                AS soodustus,
+                            kas_ettemaks::BOOLEAN                                                          AS ettemaks,
+                            TRUE                                                                           AS select
+
                      FROM lapsed.cur_lapse_kaart v
                      WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
             params:
@@ -200,6 +196,13 @@ module.exports = {
         type: "sql",
         alias: "getLogs"
     },
+    muudaEttemaksuPeriod: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM lapsed.muuda_ettemaksu_period($2::INTEGER, $1::INTEGER, $3::INTEGER)`,//$1 docId, $2 - userId, $3 - ETTEMAKSU_PERIOD
+        type: 'sql',
+        alias: 'muudaEttemaksuPeriod'
+    },
+
 
 };
 

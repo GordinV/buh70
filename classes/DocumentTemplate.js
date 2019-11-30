@@ -96,7 +96,6 @@ class Document {
         if (!sql) {
             return {error: 'No task found'}
         }
-
         return await db.queryDb(sql, _params);
     }
 
@@ -104,7 +103,6 @@ class Document {
      * грузит гриды
      */
     async selectDocs(sortBy, sqlWhere, limit, params = [this.rekvId, this.userId]) {
-        console.log('selectDocs', params, this.docTypeId);
         let sql = this.config.grid.sqlString;
 
         return await db.queryDb(sql, params, sortBy, sqlWhere, limit);
