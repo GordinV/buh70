@@ -54,16 +54,6 @@ class Documents extends React.PureComponent {
         return <div>Lapse taabel register special render</div>
     }
 
-    // will calculate sum of some field
-    getSum(data, columnField) {
-
-        let total = 0;
-        if (data && data.length && data[0][columnField]) {
-            data.forEach(row => total = total + Number(row[columnField]));
-        }
-
-        return total.toFixed(2);
-    }
 }
 
 

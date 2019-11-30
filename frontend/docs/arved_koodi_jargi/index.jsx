@@ -5,6 +5,7 @@ const DocumentRegister = require('./../documents/documents.jsx');
 const BtnGetCsv = require('./../../components/button-register/button-task/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
+const getSum = require('./../../../libs/getSum');
 
 const DocContext = require('./../../doc-context.js');
 
@@ -46,7 +47,7 @@ class Documents extends React.PureComponent {
     }
 
     renderer(self) {
-        let summa = self.gridData ? self.gridData[0].summa_kokku : 0;
+        let summa = self.gridData ? getSum (self.gridData,'summa') : 0;
         if (summa) {
             this.setState({summa: summa});
         }

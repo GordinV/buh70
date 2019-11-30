@@ -9,24 +9,28 @@ CREATE OR REPLACE FUNCTION lapsed.child_summary(l_rekvid INTEGER, l_kond INTEGER
         number           TEXT,
         kpv              DATE,
         summa            NUMERIC(12, 2),
+        tasutud          NUMERIC(12, 2),
         jaak             NUMERIC(12, 2),
         rekvid           INTEGER
     ) AS
 $BODY$
-SELECT c.nimetus::TEXT   AS maksja_nimi,
-       c.regkood::TEXT   AS maksja_isikukood,
-       l.nimi::TEXT      AS lapse_nimi,
-       l.isikukood::TEXT AS lapse_isikukood,
-       a.number::TEXT    AS number,
-       a.kpv             AS kpv,
-       a.summa           AS summa,
-       a.jaak            AS jaak,
-       d.rekvid          AS rekvid
+SELECT c.nimetus::TEXT                      AS maksja_nimi,
+       c.regkood::TEXT                      AS maksja_isikukood,
+       l.nimi::TEXT                         AS lapse_nimi,
+       l.isikukood::TEXT                    AS lapse_isikukood,
+       a.number::TEXT                       AS number,
+       a.kpv                                AS kpv,
+       a.summa::NUMERIC(12, 2)              AS summa,
+       coalesce(t.summa, 0)::NUMERIC(12, 2) AS tasutud,
+       a.jaak::NUMERIC(12, 2)               AS jaak,
+       d.rekvid                             AS rekvid
 FROM docs.doc d
          INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
          INNER JOIN lapsed.laps l ON l.id = ld.parentid
          INNER JOIN docs.arv a ON a.parentid = d.id
          INNER JOIN libs.asutus c ON c.id = a.asutusid
+         LEFT OUTER JOIN (SELECT doc_arv_id, sum(summa) AS summa FROM docs.arvtasu at GROUP BY doc_arv_id) t
+                         ON t.doc_arv_id = d.id
 WHERE d.rekvid IN (SELECT rekv_id
                    FROM get_asutuse_struktuur(l_rekvid))
 
@@ -45,5 +49,6 @@ GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER) TO dbvaatleja;
 
 SELECT *
 FROM lapsed.child_summary(63, 1)
+where lapse_isikukood = '40308233762'
 
 */
