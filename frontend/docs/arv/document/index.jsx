@@ -517,6 +517,7 @@ class Arve extends React.PureComponent {
                 vat = nomDataName.vat ? Number(nomDataName.vat) / 100 : 0;
                 doc.gridRowData['kood'] = nomDataName.kood ? nomDataName.kood : null;
                 doc.gridRowData['nimetus'] = nomDataName.name ? nomDataName.name : null;
+                doc.gridRowData['uhik'] = nomDataName.uhik ? nomDataName.uhik : null;
                 doc.gridRowData['konto'] = nomDataName.konto ? nomDataName.konto : null;
                 doc.gridRowData['tunnus'] = nomDataName.tunnus ? nomDataName.tunnus : null;
                 doc.gridRowData['proj'] = nomDataName.proj ? nomDataName.proj : null;
