@@ -1,5 +1,13 @@
-const getGroupedData = require('./../public/javascripts/getGroupedData');
-const data = [{"id":1,"parent":2}, {"id":2,"parent":2}, {"id":3,"parent":1}];
+let sqlParamsQantity = 4;
+let params = [1, 2];
+let paramsToAdd = sqlParamsQantity - params.length;
 
-const result = getGroupedData(data,'parent');
-console.log(result);
+if (sqlParamsQantity > 2 && params.length == 2) {
+    console.log('sqlParamsQantity',sqlParamsQantity, params.length, paramsToAdd);
+    for (let i = 0; i < paramsToAdd; i++ ) {
+        console.log('i',i);
+        params.push(null)
+    }
+}
+
+console.log(params);

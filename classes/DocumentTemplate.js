@@ -104,7 +104,22 @@ class Document {
      */
     async selectDocs(sortBy, sqlWhere, limit, params = [this.rekvId, this.userId]) {
         let sql = this.config.grid.sqlString;
+        let sqlParamsQantity = (this.config.grid.params == '' ? 2: this.config.grid.params.length);
 
+// добавим при необходимости кол-во параметром
+        let paramsToAdd = sqlParamsQantity - params.length;
+
+        if (sqlParamsQantity > 2 && params.length == 2) {
+            for (let i = 0; i < paramsToAdd; i++ ) {
+                params.push(null)
+            }
+        }
+
+        if (sqlParamsQantity > 2 && params.length == 2) {
+            params = params.map (parameter => {
+
+            })
+        }
         return await db.queryDb(sql, params, sortBy, sqlWhere, limit);
     }
 

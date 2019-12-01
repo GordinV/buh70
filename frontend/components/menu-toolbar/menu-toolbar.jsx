@@ -19,7 +19,7 @@ const React = require('react'),
 
 const style = require('./menu-toolbar.styles');
 
-class MenuToolBar extends React.PureComponent {
+class MenuToolBar extends React.Component {
     constructor(props) {
         super(props);
 
@@ -42,14 +42,6 @@ class MenuToolBar extends React.PureComponent {
 
     }
 
-    // will update state if props changed
-    static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.rekvId !== prevState.rekvId) {
-            return {rekvId: nextProps.rekvId};
-        } else return null;
-    }
-
-
     render() {
         let isEditMode = this.props.edited,
             toolbarParams = {
@@ -67,12 +59,6 @@ class MenuToolBar extends React.PureComponent {
                 }
             };
 
-        const selectStyle = {
-            margin: '5px',
-            display: 'flex',
-            width: '95%'
-        };
-
         let userAccessList = [];
 
         if (_.has(DocContext.userData, 'userAccessList')) {
@@ -88,9 +74,10 @@ class MenuToolBar extends React.PureComponent {
 
         }
 
-
-        let rekvId = DocContext.userData ? DocContext.userData.asutusId: 0,
-            asutus = DocContext.userData ? DocContext.userData.asutus : '';
+        let rekvId = this.state.rekvId,
+            asutus = userAccessList.find(row=> {
+                return row.id == rekvId
+            }).name;
 
         return (
             <div style={style['container']}>
@@ -105,7 +92,7 @@ class MenuToolBar extends React.PureComponent {
 
                     <SelectRekv name='rekvId'
                                 libs="rekv"
-                                style={selectStyle}
+                                style={style['selectStyle']}
                                 data={userAccessList}
                                 readOnly={false}
                                 value={rekvId}
@@ -224,11 +211,22 @@ class MenuToolBar extends React.PureComponent {
             let userId = this.state.logedIn ? DocContext.userData.userId : null;
             let uuid = this.state.logedIn ? DocContext.userData.uuid : null;
 
-            const params = {userId: userId, module: DocContext.module, uuid: uuid};
+            const params = {userId: userId,
+                module: DocContext.module,
+                docTypeId: DocContext.docTypeId,
+                uuid: uuid};
+
+            this.setState({rekvId: rekvId});
 
             fetchData.fetchDataPost(localUrl, params).then(response => {
                 DocContext.userData = Object.assign(DocContext.userData, response.config.data);
+
+                // redirect to main
+                this.props.history.push({
+                    pathname: `/lapsed/`,
+                });
                 document.location.reload();
+
             });
 
         } catch (e) {
