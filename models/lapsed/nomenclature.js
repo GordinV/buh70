@@ -2,24 +2,25 @@ module.exports = {
     select: [{
         sql: `SELECT n.kood::TEXT,
                      n.id,
-                     n.nimetus::TEXT || ' ' || n.uhik::text as nimetus,
+                     n.nimetus::TEXT || ' ' || n.uhik::TEXT                         AS nimetus,
                      n.dok::TEXT,
                      n.muud,
                      n.rekvid,
-                     $2::INTEGER                                       AS userid,
-                     'NOMENCLATURE'                                    AS doc_type_id,
-                     'EUR'                                             AS valuuta,
-                     1                                                 AS kuurs,
-                     n.uhik::TEXT                                      AS uhik,
-                     n.hind                                            AS hind,
-                     (n.properties::JSONB ->> 'vat')::VARCHAR(20)      AS vat,
-                     (n.properties::JSONB ->> 'konto')::VARCHAR(20)    AS konto,
-                     (n.properties::JSONB ->> 'projekt')::VARCHAR(20)  AS projekt,
-                     (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)   AS tunnus,
-                     (n.properties::JSONB ->> 'tegev')::VARCHAR(20)    AS tegev,
-                     (n.properties::JSONB ->> 'allikas')::VARCHAR(20)  AS allikas,
-                     (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20) AS rahavoog,
-                     (n.properties::JSONB ->> 'artikkel')::VARCHAR(20) AS artikkel
+                     $2::INTEGER                                                    AS userid,
+                     'NOMENCLATURE'                                                 AS doc_type_id,
+                     'EUR'                                                          AS valuuta,
+                     1                                                              AS kuurs,
+                     n.uhik::TEXT                                                   AS uhik,
+                     n.hind                                                         AS hind,
+                     (n.properties::JSONB ->> 'vat')::VARCHAR(20)                   AS vat,
+                     (n.properties::JSONB ->> 'konto')::VARCHAR(20)                 AS konto,
+                     (n.properties::JSONB ->> 'projekt')::VARCHAR(20)               AS projekt,
+                     (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)                AS tunnus,
+                     (n.properties::JSONB ->> 'tegev')::VARCHAR(20)                 AS tegev,
+                     (n.properties::JSONB ->> 'allikas')::VARCHAR(20)               AS allikas,
+                     (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)              AS rahavoog,
+                     (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)              AS artikkel,
+                     coalesce((n.properties::JSONB ->> 'kas_inf3')::BOOLEAN, FALSE) AS kas_inf3
               FROM libs.nomenklatuur n
               WHERE n.id = $1`,
         sqlAsNew: `select  $1::integer as id , $2::integer as userid, 'NOMENCLATURE' as doc_type_id,
@@ -37,6 +38,7 @@ module.exports = {
             null::text as properties,
             'EUR' as valuuta, 1 as kuurs,
             '20'::varchar(20) as vat,
+            false as kas_inf3,
             null::varchar(20) as konto,
             null::varchar(20) as projekt,
             null::varchar(20) as tunnus,
@@ -61,7 +63,8 @@ module.exports = {
                           tegev,
                           allikas,
                           artikkel,
-                          tunnus
+                          tunnus,
+                          kas_inf3
                    FROM com_nomenclature
                    WHERE (rekvid = $1 OR rekvid IS NULL)
                    ORDER BY kood`,

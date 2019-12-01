@@ -110,7 +110,7 @@ class Laps extends React.PureComponent {
         });
 
         // фильтр на номенклатуры
-        let nomData = [{id: 0, kood: '', nimetus: '', hind: 0, kogus: 0}];
+        let nomData = [{id: 0, kood: '', nimetus: '', hind: 0, kogus: 0, kas_inf3: false}];
         // берем только услуги для группы, добавляяем цену и ед.измерения и сортируем
         try {
             if (yksus) {
@@ -381,9 +381,11 @@ class Laps extends React.PureComponent {
 
     //handler for input for this document type
     handleInputChange(inputName, inputValue) {
+
         if (inputName === 'nomid') {
-            // надо задать цену и кол-во из того, что привязанно в группе
             const Doc = this.refs['document'];
+
+            // надо задать цену и кол-во из того, что привязанно в группе
 
             let yksus;
             if (Doc.libs['lapse_grupp'] && Doc.docData.yksus) {
@@ -397,7 +399,19 @@ class Laps extends React.PureComponent {
                 Doc.docData.hind = teenus.hind ? teenus.hind : Doc.docData.hind;
                 // подменим номид на ид, так как ид виртуальный
                 Doc.docData.nomid = teenus.nomid ? teenus.nomid : Doc.docData.nomid;
+
+                // если это создание карточки, то добавим inf3
+                let is_new = (!('id' in Doc.docData) || !Doc.docData.id) ? true : false;
+
+                if (is_new) {
+                    const row = Doc.libs['nomenclature'].find(lib => lib.id === Number(Doc.docData.nomid));
+                    if (row && row.kas_inf3) {
+                        Doc.docData.kas_inf3 = row.kas_inf3;
+                    }
+                }
+
             }
+
 
         }
 

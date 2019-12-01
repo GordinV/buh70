@@ -33,6 +33,7 @@ DECLARE
     doc_rasv      TEXT    = doc_data ->> 'rasv';
     doc_vailkaine NUMERIC = doc_data ->> 'vailkaine';
     doc_grupp     TEXT    = doc_data ->> 'grupp';
+    doc_INF3      BOOLEAN = coalesce((doc_data ->> 'kas_inf3')::BOOLEAN, FALSE);
     json_object   JSONB;
     new_history   JSONB;
     new_rights    JSONB;
@@ -71,7 +72,8 @@ BEGIN
                  doc_sahharid                   AS sahharid,
                  doc_rasv                       AS rasv,
                  doc_vailkaine                  AS vailkaine,
-                 doc_grupp                      AS grupp
+                 doc_grupp                      AS grupp,
+                 doc_INF3                       AS kas_inf3
          ) row;
 
     IF doc_id IS NULL OR doc_id = 0

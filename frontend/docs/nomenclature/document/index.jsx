@@ -8,6 +8,7 @@ const
     Select = require('../../../components/select/select.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     InputNumber = require('../../../components/input-number/input-number.jsx'),
+    CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     styles = require('./nomenclature-styles'),
     LIBRARIES = ['kontod', 'tunnus', 'project', 'document', 'artikkel', 'allikas', 'tegev'];
 
@@ -147,6 +148,7 @@ class Nomenclature extends React.PureComponent {
                                     data={self.libs['tegev']}
                                     value={self.docData['tegev'] || ''}
                                     ref='tegev'
+                                    readOnly={!isEditeMode}
                                     collId="kood"
                                     onChange={self.handleInputChange}/>
                         </div>
@@ -169,6 +171,7 @@ class Nomenclature extends React.PureComponent {
                                     data={self.libs['allikas']}
                                     value={self.docData['allikas'] || ''}
                                     ref='allikas'
+                                    readOnly={!isEditeMode}
                                     collId="kood"
                                     onChange={self.handleInputChange}/>
                         </div>
@@ -180,8 +183,20 @@ class Nomenclature extends React.PureComponent {
                                     data={self.libs['artikkel']}
                                     value={self.docData['artikkel'] || ''}
                                     ref='artikkel'
+                                    readOnly={!isEditeMode}
                                     collId="kood"
                                     onChange={self.handleInputChange}/>
+                        </div>
+                    </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <CheckBox title="Kas INF3?"
+                                      name='kas_inf3'
+                                      value={Boolean(self.docData.kas_inf3)}
+                                      ref={'checkbox_kas_inf3'}
+                                      onChange={self.handleInputChange}
+                                      readOnly={!isEditeMode}
+                            />
                         </div>
                     </div>
                     <div style={styles.docRow}>

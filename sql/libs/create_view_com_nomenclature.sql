@@ -23,7 +23,8 @@ FROM (SELECT 0                    AS id,
              NULL :: VARCHAR(20)  AS proj,
              'EUR' :: VARCHAR     AS valuuta,
              1                    AS kuurs,
-             '':: VARCHAR(20)     AS tunnus
+             '':: VARCHAR(20)     AS tunnus,
+             FALSE                AS kas_inf3
       UNION
       SELECT n.id,
              n.rekvid,
@@ -45,7 +46,9 @@ FROM (SELECT 0                    AS id,
              coalesce((n.properties :: JSONB ->> 'projekt') :: TEXT, '')         AS proj,
              'EUR' :: VARCHAR                                                    AS valuuta,
              1 :: NUMERIC                                                        AS kuurs,
-             coalesce((n.properties :: JSONB ->> 'tunnus') :: VARCHAR(20), '')   AS tunnus
+             coalesce((n.properties :: JSONB ->> 'tunnus') :: VARCHAR(20), '')   AS tunnus,
+             coalesce((n.properties::JSONB ->> 'kas_inf3')::BOOLEAN, FALSE)      AS kas_inf3
+
       FROM libs.nomenklatuur n
       WHERE n.status <> 3
      ) qry
