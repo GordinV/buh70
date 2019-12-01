@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 SAADETUD DOKUMENDID
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Saaja isiku ees- ja perekonnanimi
+                    th Isikukood
+                    th e-mail
+                    th Arve nr.
+                    th Arve kpv
+                    th Prinditud
+                    th Emailitud
+                    th Saadetud e-arve
+                    th Asutus
+
+            tbody
+                each rea in data
+                    tr
+                        td=rea.saaja_nimi
+                        td=rea.saaja_isikukood
+                        td=rea.saaja_email
+                        td=rea.number
+                        td=rea.kpv
+                        td=rea.print
+                        td=rea.email
+                        td=rea.earve
+                        td=rea.asutus
+

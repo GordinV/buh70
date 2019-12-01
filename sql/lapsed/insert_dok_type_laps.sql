@@ -94,3 +94,12 @@ SELECT 1::INTEGER,
        'DOK'                                                          AS library,
        '{"type":"aruanne", "module":["Lapsed"]}'                      AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'SALDO_JA_KAIVE');
+
+
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
+       'SENT_DOCS'                                                         AS kood,
+       'Saadetud dokumendid' AS nimetus,
+       'DOK'                                                          AS library,
+       '{"type":"aruanne", "module":["Lapsed"]}'                      AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'SENT_DOCS');

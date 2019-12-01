@@ -49,6 +49,7 @@ const Inf3Report = require('./../docs/inf3/index.jsx');
 const ChildSummaryReport = require('./../docs/child_summary/index.jsx');
 const ArvedKoodiJargiReport = require('./../docs/arved_koodi_jargi/index.jsx');
 const SaldoJaKaiveReport = require('./../docs/saldo_ja_kaive/index.jsx');
+const SentDocsReport = require('./../docs/sent_docs/index.jsx');
 
 
 const {Route, Redirect} = require('react-router-dom');
@@ -217,6 +218,12 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/saldo_ja_kaive"
                        render={(props) => <SaldoJaKaiveReport
+                           module={MODULE}
+                           history={props.history}
+                           initData={this.props.initData}/>}/>
+
+                <Route exact path="/lapsed/sent_docs"
+                       render={(props) => <SentDocsReport
                            module={MODULE}
                            history={props.history}
                            initData={this.props.initData}/>}/>
