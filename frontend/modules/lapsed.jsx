@@ -50,6 +50,7 @@ const ChildSummaryReport = require('./../docs/child_summary/index.jsx');
 const ArvedKoodiJargiReport = require('./../docs/arved_koodi_jargi/index.jsx');
 const SaldoJaKaiveReport = require('./../docs/saldo_ja_kaive/index.jsx');
 const SentDocsReport = require('./../docs/sent_docs/index.jsx');
+const ChildAgeReport = require('./../docs/child_age/index.jsx');
 
 
 const {Route, Redirect} = require('react-router-dom');
@@ -228,6 +229,11 @@ class App extends React.Component {
                            history={props.history}
                            initData={this.props.initData}/>}/>
 
+                <Route exact path="/lapsed/child_age"
+                       render={(props) => <ChildAgeReport
+                           module={MODULE}
+                           history={props.history}
+                           initData={this.props.initData}/>}/>
             </StyleRoot>
         )
     }

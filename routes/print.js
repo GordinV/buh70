@@ -71,6 +71,8 @@ console.log('filter', filterData);
             //преобразуем данные по группам
             data = getGroupedData(data,templateObject.group);
         }
+
+        console.log('grouped data', JSON.stringify(data));
         // вернуть отчет
         res.render(template, {title: 'Tunnused', data: data, user: user, filter: filterData});
 

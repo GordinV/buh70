@@ -12,8 +12,9 @@ block content
         each parameter in filter
             p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
 
-        each asutus in Object.keys(data[0])
-            p #{asutus}
+        each asutus in data
+            p #{Object.keys(asutus)[0]}
+
             table.table.table-hover.grid_data
                 thead.grid_head
                     tr
@@ -30,7 +31,7 @@ block content
                         th Võlg
 
                 tbody
-                    each rea in data[0][asutus]
+                    each rea in asutus[Object.keys(asutus)[0]]
                         tr
                             td=rea.kulastatavus
                             td=rea.yksus
@@ -48,11 +49,11 @@ block content
                     td.group=''
                     td.group=''
                     td.group=''
-                    td.group=data[0][asutus][0].alg_saldo_group
-                    td.group=data[0][asutus][0].arvestatud_group
-                    td.group=data[0][asutus][0].soodustus_group
-                    td.group=((Number(data[0][asutus][0].arvestatud_group) - Number(data[0][asutus][0].soodustus_group)).toFixed(2))
-                    td.group=data[0][asutus][0].laekumised_group
-                    td.group=data[0][asutus][0].tagastatud_group
-                    td.group=data[0][asutus][0].jaak_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].alg_saldo_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].arvestatud_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].soodustus_group
+                    td.group=((Number(asutus[Object.keys(asutus)[0]][0].arvestatud_group) - Number(asutus[Object.keys(asutus)[0]][0].soodustus_group)).toFixed(2))
+                    td.group=asutus[Object.keys(asutus)[0]][0].laekumised_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].tagastatud_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].jaak_group
 

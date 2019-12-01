@@ -47,8 +47,11 @@ module.exports = function (app) {
     app.get('/multiple_print/:documentType/:uuid/:id/', require('./multiple_print').get); //checkAuth
     app.get('/print/:documentType/:uuid/', require('./print').get); //checkAuth
 
-    app.get('/reports/saldo_ja_kaive/:uuid/:params/:filter*?',require('./reports/saldo_ja_kaive').get);
-    app.get('/reports/saldo_ja_kaive/:uuid/:params*?',require('./reports/saldo_ja_kaive').get);
+
+    app.get('/reports/child_age/:uuid/:filter/:params*?',require('./reports/child_age').get);
+
+    app.get('/reports/saldo_ja_kaive/:uuid/:filter/:params*?',require('./reports/saldo_ja_kaive').get);
+
     app.get('/reports/arved_koodi_jargi/:uuid/:params*?',require('./reports/arved_koodi_jargi').get);
     app.get('/reports/inf3/:uuid/:params/',require('./reports/inf3').get);
     app.get('/reports/inf3/:uuid/',require('./reports/inf3').get);

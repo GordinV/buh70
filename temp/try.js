@@ -1,13 +1,10 @@
-let sqlParamsQantity = 4;
-let params = [1, 2];
-let paramsToAdd = sqlParamsQantity - params.length;
+const data = JSON.parse(`[
+    {"Projekt LSP6 T":[{"id":"2","isikukood":"37303023721","nimi":"Lev Gordin","asutus":"Projekt LSP6 T","age":"02.03.1973","age_27":"02.03.2000"}]},
+    {"RAHANDUSAMET T":[{"id":"1","isikukood":"37303023721","nimi":"Lev Gordin","asutus":"RAHANDUSAMET T","age":"02.03.1973","age_27":"02.03.2000"}]}]`);
 
-if (sqlParamsQantity > 2 && params.length == 2) {
-    console.log('sqlParamsQantity',sqlParamsQantity, params.length, paramsToAdd);
-    for (let i = 0; i < paramsToAdd; i++ ) {
-        console.log('i',i);
-        params.push(null)
-    }
-}
+data.forEach(row=> {
+    console.log('row', Object.keys(row)[0]);
+    console.log('data', row[Object.keys(row)[0]]);
+});
 
-console.log(params);
+//console.log(Object.keys(data[0]))

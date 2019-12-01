@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 LASTE VANUS ARUANNE
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        each asutus in data
+            p #{Object.keys(asutus)[0]}
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Isikukood
+                        th Lapse ees- ja perekonnanimi
+                        th Sünniaeg
+                        th 27 aastane
+
+                tbody
+                    each rea in asutus[Object.keys(asutus)[0]]
+                        tr
+                            td=rea.isikukood
+                            td=rea.nimi
+                            td=rea.age
+                            td=rea.age_27
+
