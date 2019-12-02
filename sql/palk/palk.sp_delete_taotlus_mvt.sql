@@ -47,6 +47,20 @@ BEGIN
 
   END IF;
 
+  -- контроля
+
+  IF exists(
+          SELECT 1
+          FROM palk.palk_oper
+          WHERE lepingid = v_doc.lepingid AND kpv >= v_doc.alg_kpv AND kpv <= v_doc.lopp_kpv
+          LIMIT 1
+    )
+  THEN
+    RAISE EXCEPTION 'Ei saa kustuta taotluse andmed sest sellest periodis juba arvestatud palk';
+  END IF;
+
+
+
   -- Логгирование удаленного документа
 
   SELECT row_to_json(row)

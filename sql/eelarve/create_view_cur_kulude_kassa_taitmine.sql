@@ -39,7 +39,7 @@ FROM (
                   JOIN eelarve.kassa_kontod kassakontod
                        ON ltrim(rtrim(j1.kreedit)) ~~ ltrim(rtrim(kassakontod.kood))
                   LEFT OUTER JOIN libs.library l ON l.kood = j1.kood5 AND l.library = 'TULUDEALLIKAD'
-         WHERE l.tun5 = 2
+--         WHERE l.tun5 = 2
      ) qry
 GROUP BY kuu, aasta, rekvid, asutus, parentid, tunnus,
          artikkel,

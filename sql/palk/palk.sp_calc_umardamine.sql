@@ -182,14 +182,14 @@ BEGIN
         --saving diff
         -- will find last arvestus
 
+
         IF l_lepingid IS NULL
         THEN
 
           SELECT
             libid,
-            lepingid,
-            Doklausid
-          INTO l_libId, l_lepingId, l_Doklausid
+            lepingid
+          INTO l_libId, l_lepingId
           FROM palk.cur_palkoper po
           WHERE po.lepingid IN (SELECT t.id
                                 FROM palk.tooleping t
@@ -244,5 +244,8 @@ GRANT EXECUTE ON FUNCTION palk.sp_calc_umardamine(INTEGER, JSON) TO dbpeakasutaj
 
 
 /*
+
+select * from palk.
+
 SELECT * FROM palk.sp_calc_umardamine(1, '{"lepingid": 33369,"libid": 148689,"kpv": "2019-10-31"}')
  */

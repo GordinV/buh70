@@ -38,7 +38,8 @@ FROM (
                   INNER JOIN ou.rekv rekv ON j.rekvid = rekv.id
                   JOIN FAKT_kulud ON ltrim(rtrim(j1.deebet)) ~~ ltrim(rtrim(fakt_kulud.kood))
                   LEFT OUTER JOIN libs.library l
-                                  ON l.kood = j1.kood5 AND l.library = 'TULUDEALLIKAD' AND l.tun5 = 2
+                                  ON l.kood = j1.kood5 AND l.library = 'TULUDEALLIKAD'
+                                         --AND l.tun5 = 2
      ) qry
 GROUP BY kuu, aasta, rekvid, asutus, parentid, tunnus,
          artikkel,
