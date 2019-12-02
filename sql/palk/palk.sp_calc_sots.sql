@@ -171,13 +171,17 @@ BEGIN
 
         END IF;
 
-raise notice 'min sots kontroll summa %, l_sotsmaks_min_palgast %, l_alus_summa %', summa, l_sotsmaks_min_palgast, l_alus_summa;
         IF coalesce(summa, 0) < l_sotsmaks_min_palgast AND (l_alus_summa = 0 OR summa > 0)
 
         THEN
             -- ainult , kui olid tulud
             l_sotsmaks_min_palgast = (l_sotsmaks_min_palgast - summa);
-            sm = l_min_palk - l_alus_summa;
+
+            raise notice 'l_min_palk %, l_puudu_paevad %', l_min_palk, l_puudu_paevad;
+            if l_puudu_paevad > 0 THEN
+                l_min_palk = (l_min_palk / 30 * (30 - l_puudu_paevad));
+            END IF;
+            sm = l_min_palk   - l_alus_summa;
         ELSE
             l_sotsmaks_min_palgast = 0;
 

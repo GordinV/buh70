@@ -62,13 +62,15 @@ BEGIN
 
 
     -- arvestame tunnid
-    SELECT sum(p.summa), (SELECT  palk.get_work_days(params :: JSON)) as paevad
-        INTO l_puhkuse_tunnid, l_paevad
+    SELECT sum(p.summa)
+        INTO l_puhkuse_tunnid
     FROM palk.cur_puudumine p
     WHERE lepingid = l_lepingid
       AND ((month(kpv1) = l_kuu AND year(kpv1) = l_aasta)
              OR (month(kpv2) = l_kuu AND year(kpv2) = l_aasta))
       AND (l_pohjus IS NULL OR p.pohjus = l_pohjus);
+
+      raise notice 'l_paevad puhkused %, l_puhkuse_tunnid %, l_result %', l_paevad, l_puhkuse_tunnid, l_result;
 
     IF (l_paevad is null or empty(l_paevad)) and coalesce(l_puhkuse_tunnid, 0) > 0
     THEN

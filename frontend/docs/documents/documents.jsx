@@ -301,6 +301,7 @@ class Documents extends React.Component {
                 switch (row.type) {
 
                     case 'text':
+
                         filterString = `${filterString}  encode(${row.name}::bytea, 'escape')  ilike '%${row.value.trim()}%'`;
                         break;
                     case 'string':
