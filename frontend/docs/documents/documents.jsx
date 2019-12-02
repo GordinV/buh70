@@ -302,7 +302,14 @@ class Documents extends React.Component {
 
                     case 'text':
 
-                        filterString = `${filterString}  encode(${row.name}::bytea, 'escape')  ilike '%${row.value.trim()}%'`;
+                        let prepairedParameter = row.value.split(',').map(str=>`'${str.trim()}'`).join(',');
+
+                        // если параметры раздедены, то множественный параметр
+                        if (row.value.match(/,/)) {
+                            filterString = `${filterString} ${row.name} in (${prepairedParameter})`;
+                        } else {
+                            filterString = `${filterString}  encode(${row.name}::bytea, 'escape')  ilike '%${row.value.trim()}%'`;
+                        }
                         break;
                     case 'string':
                         filterString = `${filterString}  encode(${row.name}::bytea, 'escape')  ilike '%${row.value.trim()}%'`;
@@ -333,7 +340,6 @@ class Documents extends React.Component {
             }
             return row;
         }, this);
-
         return filterString;
     }
 
