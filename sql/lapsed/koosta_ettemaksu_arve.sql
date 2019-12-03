@@ -133,7 +133,7 @@ BEGIN
     -- читаем карту услуг и создаем детали счета
     FOR v_kaart IN
         SELECT lk.nomid,
-               1                                                            AS kogus,
+               coalesce((lk.properties ->> 'ettemaksu_period')::INTEGER, 1) AS kogus,
                coalesce(lk.hind, 0)                                         AS hind,
                CASE
                    WHEN coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN
