@@ -70,13 +70,14 @@ BEGIN
             -- выбираем услуги
             FOR v_arvread IN
                 SELECT a1.*,
-                       round((a1.hind / v_arv.ettemaksu_period), 2)  AS calc_hind,
-                       round((a1.kbm / v_arv.ettemaksu_period), 2)   AS calc_kbm,
-                       round((a1.kbmta / v_arv.ettemaksu_period), 2) AS calc_kbmta,
-                       round((a1.summa / v_arv.ettemaksu_period), 2) AS calc_summa,
-                       a1.hind                                       AS hind_kokku,
-                       a1.kogus,
-                       n.properties ->> 'konto'                      AS korr_konto
+                       a1.hind                                                                         AS calc_hind,
+                       1                                                                               AS calc_kogus,
+                       a1.hind *
+                       (coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC / 100)                 AS calc_kbm,
+                       a1.hind * 1                                                                     AS calc_kbmta,
+                       a1.hind * 1 + (a1.hind *
+                                      (coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC / 100)) AS calc_summa,
+                       n.properties ->> 'konto'                                                        AS korr_konto
                 FROM docs.arv1 a1
                          INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
                 WHERE a1.parentid = v_arv.id
@@ -85,7 +86,7 @@ BEGIN
                     -- формируем строку
                     json_arvread = json_arvread || (SELECT row_to_json(row)
                                                     FROM (SELECT v_arvread.nomid                      AS nomid,
-                                                                 v_arvread.kogus                      AS kogus,
+                                                                 v_arvread.calc_kogus                 AS kogus,
                                                                  v_arvread.calc_hind                  AS hind,
                                                                  v_arvread.calc_kbmta                 AS kbmta,
                                                                  v_arvread.calc_kbm                   AS kbm,
@@ -163,6 +164,6 @@ GRANT EXECUTE ON FUNCTION lapsed.koosta_arve_ettemaksuarve_alusel(INTEGER, INTEG
 
 
 /*
-select lapsed.koosta_arve_ettemaksuarve_alusel(70, 1616363)
+select lapsed.koosta_arve_ettemaksuarve_alusel(70, 1616643)
  */
 
