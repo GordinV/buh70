@@ -12,7 +12,7 @@ const ToolbarContainer = require('./../../components/toolbar-container/toolbar-c
 /**
  * Класс реализует документ приходного платежного ордера.
  */
-class Documents extends React.PureComponent {
+class Documents extends React.Component {
     constructor(props) {
         super(props);
         this.renderer = this.renderer.bind(this);
@@ -57,12 +57,18 @@ class Documents extends React.PureComponent {
 
         setTimeout(() => {
             Doc.fetchData('selectDocs').then((data) => {
-                this.forceUpdate();
-            },()=> {
-                console.error('rejected');
-            });
 
-        },1000);
+                this.forceUpdate();
+                /*
+                                setTimeout(() => {
+                                    this.props.history.push({
+                                        pathname: `/${this.props.module}/pank_vv`,
+                                        state: {module: this.props.module}
+                                    });
+                                }, 1000);
+                */
+            });
+        }, 1000);
     }
 }
 

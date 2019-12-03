@@ -69,7 +69,7 @@ BEGIN
                         '(select left(l.number,2)::text as number, l.parentid, l.rekvid, l.algkpv as kpv from rekl.luba l)';
         END CASE;
 
-    IF v_number IS NULL
+    IF tcDok not in ('ARV')
     THEN
         -- building sql query with regexp for only numbers
         lcSqlString = 'select (max(SUBSTRING(''0'' || coalesce(tbl.number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
@@ -89,6 +89,11 @@ BEGIN
     IF lcPref = '%'
     THEN
         lcPref = '';
+    END IF;
+
+    IF v_number IS NULL
+    THEN
+        RETURN 1::TEXT;
     END IF;
 
     lcNumber = lcPref || (coalesce(v_number.number, 0) + 1) :: TEXT;

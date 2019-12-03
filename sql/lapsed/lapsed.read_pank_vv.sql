@@ -8,15 +8,9 @@ CREATE OR REPLACE FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN l_timestam
     RETURNS RECORD AS
 $BODY$
 DECLARE
-    l_arv_id      INTEGER;
-    l_dok         TEXT           = 'MK';
     l_mk_id       INTEGER;
     v_arv         RECORD;
     json_object   JSONB;
-    v_params      RECORD;
-    json_mk1      JSONB;
-    l_pank_id     INTEGER;
-    l_laps_id     INTEGER;
     v_pank_vv     RECORD;
     l_rekvid      INTEGER;
     l_error       TEXT; -- извещение о том, что пошло не так
@@ -89,7 +83,7 @@ BEGIN
                                  l_dokprop_id          AS dokprop_id,
                                  v_pank_vv.viitenumber AS viitenumber,
                                  v_pank_vv.selg        AS selg,
-                                 l_makse_summa) row;
+                                 l_makse_summa         AS summa) row;
 
                     -- создаем платежку
                     SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
@@ -121,7 +115,6 @@ BEGIN
                         -- вся оплата списана
                         EXIT;
                     END IF;
-
                 END LOOP;
             IF l_count = 0
             THEN

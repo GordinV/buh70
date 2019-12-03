@@ -51,6 +51,7 @@ const readXML = async (xmlContent) => {
         let Acct = stmtes[0].Acct[0].Svcr[0].FinInstnId[0].BIC[0]; //banc code
         let Ntres = stmtes[0].Ntry;
         Ntres.forEach(ntry => {
+
             if (ntry.CdtDbtInd[0] == 'CRDT') {
                 let summa = Number(ntry.Amt[0]);
                 let kpv = ntry.ValDt[0].Dt[0];
@@ -59,9 +60,9 @@ const readXML = async (xmlContent) => {
                 let RmtInf = NtryDtls.RmtInf[0];
                 let viitenr = RmtInf.Strd ? RmtInf.Strd[0].CdtrRefInf[0].Ref[0] : null;
                 let selg = RmtInf.Ustrd[0];
-                let maksja = NtryDtls.RltdPties[0].Cdtr ? NtryDtls.RltdPties[0].Cdtr[0].Nm[0] : null;
+                let maksja = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Nm[0] : null;
 
-                let eban = NtryDtls.RltdPties[0].CdtrAcct ? NtryDtls.RltdPties[0].CdtrAcct[0].Id[0].IBAN[0] : null;
+                let eban = NtryDtls.RltdPties[0].DbtrAcct ? NtryDtls.RltdPties[0].DbtrAcct[0].Id[0].IBAN[0] : null;
 
                 rows.push({
                     pank_id: pankId,
