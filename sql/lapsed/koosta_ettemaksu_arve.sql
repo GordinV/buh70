@@ -118,6 +118,7 @@ BEGIN
     ORDER BY D.ID DESC
     LIMIT 1;
 
+    RAISE NOTICE 'l_arv_id %', l_arv_id;
     IF l_arv_id IS NOT NULL AND l_status < 3
     THEN
 
@@ -145,9 +146,9 @@ BEGIN
                    ELSE 0 END                                               AS real_soodus,
 
                (gr.nimetus::TEXT)::TEXT || CASE
-                                                        WHEN (lk.properties ->> 'all_yksus')::TEXT IS NOT NULL
-                                                            THEN '(' || (lk.properties ->> 'all_yksus')::TEXT || ')'
-                                                        ELSE '' END         AS muud,
+                                               WHEN (lk.properties ->> 'all_yksus')::TEXT IS NOT NULL
+                                                   THEN '(' || (lk.properties ->> 'all_yksus')::TEXT || ')'
+                                               ELSE '' END                  AS muud,
                lk.properties ->> 'yksus'                                    AS yksus,
                lk.properties ->> 'all_yksus'                                AS all_yksus,
                coalesce((lk.properties ->> 'ettemaksu_period')::INTEGER, 1) AS ettemaksu_period,
@@ -233,8 +234,12 @@ BEGIN
                                 l_ettemaksu_period    AS ettemaksu_period,
                                 l_aa                  AS aa,
                                 jsonb_print           AS print,
-                                'Ettemaksuarve ' || to_char(l_kpv, 'MM.YYYY')::TEXT || ' - ' ||
-                                to_char(l_kpv + make_interval(months => l_ettemaksu_period), 'MM.YYYY') ||
+                                'Ettemaksuarve ' || CASE
+                                                        WHEN l_ettemaksu_period <= 1 THEN to_char(l_kpv, 'MM.YYYY')::TEXT
+                                                        ELSE to_char(l_kpv, 'MM.YYYY')::TEXT || ' - ' ||
+                                                             to_char(
+                                                                     l_kpv + make_interval(months => l_ettemaksu_period - 1),
+                                                                     'MM.YYYY')::TEXT END ||
                                 ' kuu eest'           AS muud,
 
                                 json_arvread          AS "gridData") row);
@@ -291,7 +296,7 @@ GRANT EXECUTE ON FUNCTION lapsed.koosta_ettemaksu_arve(INTEGER, INTEGER, DATE) T
 
 
 /*
-select lapsed.koosta_ettemaksu_arve(70, 16)
+select lapsed.koosta_ettemaksu_arve(70, 38)
 
 select * from lapsed.laps where staatus = 1
 
