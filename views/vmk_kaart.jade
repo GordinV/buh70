@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 Väljamakse korraldus
+
+        div.row_wrapper
+            p.label Number:
+            p.input #{data[0].number}
+
+        div.row_wrapper
+            p.label Kuupäev:
+            p.input #{data[0].kpv_print}
+
+        div.row_wrapper
+            p.label Makseäev:
+            p.input #{data[0].maksepaev_print}
+
+        div.row_wrapper
+            p.label Viitenumber:
+            p.input #{data[0].viitenr}
+
+        div.row_wrapper
+            p.label Arveldus arve:
+            p.input #{data[0].omaarve}
+
+        div.row_wrapper
+            p.label Makse selgetus:
+            p.input #{data[0].selg}
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Saaja
+                    th Aa
+                    th Summa
+                    th Märkused
+
+            tbody
+                each row in data.details
+                    tr
+                        td=row.asutus
+                        td=row.aa
+                        td=Number(row.summa).toFixed(2)
+                        td=row.muud
+        div.row_wrapper
+            p.label Summa kokku:
+            p.input #{`${Number(data[0].summa).toFixed(2)}`}
+

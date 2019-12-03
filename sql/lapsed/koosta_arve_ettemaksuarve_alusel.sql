@@ -111,20 +111,21 @@ BEGIN
                      make_interval(months => i))::DATE - 1;
 
             l_json_arve = (SELECT to_json(row)
-                           FROM (SELECT coalesce(l_arve_id, 0)                                     AS id,
-                                        l_number                                                   AS number,
-                                        l_doklausend_id                                            AS doklausid,
-                                        v_arv.liik                                                 AS liik,
-                                        l_kpv                                                      AS kpv,
-                                        v_arv.asutusid                                             AS asutusid,
-                                        v_arv.lapsid                                               AS lapsid,
-                                        v_arv.properties ->> 'aa'                                  AS aa,
-                                        (v_arv.properties ->> 'print')::JSONB                      AS print,
-                                        i                                                          AS ettemaksu_period,
-                                        l_ettemaksu_arve_id                                        AS ettemaksu_arve_id,
-                                        'Ettemaksuarve number ' || v_arv.number::TEXT || ' alusel' AS muud,
+                           FROM (SELECT coalesce(l_arve_id, 0)                                       AS id,
+                                        l_number                                                     AS number,
+                                        l_doklausend_id                                              AS doklausid,
+                                        v_arv.liik                                                   AS liik,
+                                        l_kpv                                                        AS kpv,
+                                        v_arv.asutusid                                               AS asutusid,
+                                        v_arv.lapsid                                                 AS lapsid,
+                                        v_arv.properties ->> 'aa'                                    AS aa,
+                                        (v_arv.properties ->> 'print')::JSONB                        AS print,
+                                        i                                                            AS ettemaksu_period,
+                                        l_ettemaksu_arve_id                                          AS ettemaksu_arve_id,
+                                        'Ettemaksuarve number ' || v_arv.number::TEXT || ' alusel, ' ||
+                                        to_char(l_kpv, 'MM.YYYY') || ' (' || i::TEXT || ') kuu eest' AS muud,
 
-                                        json_arvread                                               AS "gridData") row);
+                                        json_arvread                                                 AS "gridData") row);
 
             -- подготавливаем параметры для создания счета
             SELECT row_to_json(row) INTO json_object

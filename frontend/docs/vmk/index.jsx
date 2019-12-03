@@ -3,7 +3,7 @@
 const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const styles = require('./vmk-register-styles');
-const DOC_TYPE_ID = 'vmk';
+const DOC_TYPE_ID = 'VMK';
 
 /**
  * Класс реализует документ приходного платежного ордера.
@@ -18,6 +18,7 @@ class Documents extends React.PureComponent {
                                  ref = 'register'
                                  history = {this.props.history ? this.props.history: null}
                                  docTypeId={DOC_TYPE_ID}
+                                 module={this.props.module}
                                  style={styles}
                                  render={this.renderer}/>;
     }

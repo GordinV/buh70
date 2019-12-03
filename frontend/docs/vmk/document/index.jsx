@@ -7,8 +7,9 @@ const DocumentTemplate = require('../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
     InputDate = require('../../../components/input-date/input-date.jsx'),
     InputNumber = require('../../../components/input-number/input-number.jsx'),
-    DocCommon = require('../../../components/doc-common/doc-common.jsx'),
     Select = require('../../../components/select/select.jsx'),
+    SelectData = require('../../../components/select-data/select-data.jsx'),
+    ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
     DokProp = require('../../../components/docprop/docprop.jsx'),
@@ -16,17 +17,26 @@ const DocumentTemplate = require('../../documentTemplate/index.jsx'),
     ModalPage = require('./../../../components/modalpage/modalPage.jsx'),
     styles = require('./vmk-style');
 
-const LIBDOK = 'VMK',
-    LIBRARIES = ['asutused', 'kontod', 'dokProps', 'tunnus', 'project', 'nomenclature', 'aa'];
+const LIBRARIES = [
+    {id: 'kontod', filter: ``},
+    {id: 'dokProps', filter: `where kood = 'VMK'`},
+    {id: 'users', filter: ''},
+    {id: 'tunnus', filter: ''},
+    {id: 'project', filter: ''},
+    {id: 'artikkel', filter: ''},
+    {id: 'allikas', filter: ''},
+    {id: 'tegev', filter: ''},
+    {id: 'aa', filter: ''},
+    {id: 'asutused', filter: `where id in (select asutusid from lapsed.vanemad)`},
+    {id: 'nomenclature', filter: `where dok in ('VMK','MK')`}
+];
 
-let now = new Date();
-
-class Vmk extends React.PureComponent {
+class Vmk extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            docId: props.docId ? props.docId: Number(props.match.params.docId),
+            docId: props.docId ? props.docId : Number(props.match.params.docId),
             loadedData: false
         };
 
@@ -45,6 +55,7 @@ class Vmk extends React.PureComponent {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='VMK'
+                                 history={this.props.history}
                                  initData={this.props.initData}
                                  libs={LIBRARIES}
                                  pages={this.pages}
@@ -56,136 +67,167 @@ class Vmk extends React.PureComponent {
 
     }
 
-    renderer (self) {
-        let bpm = self.docData && self.docData.bpm ? self.docData.bpm : [],
-            isEditeMode = self.state.edited;
+    /**
+     * Вернет кастомные компоненты документа
+     * @returns {XML}
+     */
+    renderer(self) {
+        let isEditeMode = self.state.edited;
+        if (!self.docData) {
+            return
+        }
 
         // формируем зависимости
         if (self.docData.relations) {
             relatedDocuments(self);
         }
 
-        let doc = this.refs['document'];
-        let libs = doc ? doc.libs : {};
-
         return (
             <div>
                 <div className='div-doc'>
-                    <div style={styles.docRow}>
-                        <DocCommon
-                            ref='doc-common'
-                            data={self.docData}
-                            readOnly={!isEditeMode}/>
-                    </div>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
                             <InputText title='Number'
                                        name='number'
                                        value={String(self.docData.number) || ''}
                                        ref="input-number"
-                                       onChange = {self.handleInputChange}
+                                       onChange={self.handleInputChange}
                                        readOnly={!isEditeMode}/>
                             <InputDate title='Kuupäev '
                                        name='kpv'
                                        value={self.docData.kpv}
                                        ref='input-kpv'
-                                       onChange = {self.handleInputChange}
+                                       onChange={self.handleInputChange}
                                        readOnly={!isEditeMode}/>
-                            <Select title="Arvelsus arve"
-                                    name='aa_id'
+                            <Select title="Arveldus arve"
+                                    name='aaid'
                                     libs="aa"
-                                    value={self.docData.aa_id}
+                                    value={Number(self.docData.aa_id) || 0}
                                     data={self.libs['aa']}
-                                    defaultValue={self.docData.pank || ''}
-                                    onChange = {self.handleInputChange}
+                                    defaultValue={String(self.docData.pank) || self.libs['aa']}
+                                    collId={'id'}
+                                    onChange={self.handleInputChange}
                                     ref="select-aaId"
                                     readOnly={!isEditeMode}/>
                             <InputText title="Arve nr."
                                        name='arvnr'
                                        value={self.docData.arvnr || ''}
                                        ref="input-arvnr"
-                                       onChange = {self.handleInputChange}
+                                       onChange={self.handleInputChange}
                                        readOnly={true}/>
                             <InputDate title='Maksepäev '
                                        name='maksepaev'
                                        value={self.docData.maksepaev}
                                        ref='input-maksepaev'
-                                       onChange = {self.handleInputChange}
+                                       onChange={self.handleInputChange}
                                        readOnly={!isEditeMode}/>
                             <InputText title='Viitenumber '
                                        name='viitenr'
                                        value={self.docData.viitenr || ''}
                                        ref='input-viitenr'
-                                       onChange = {self.handleInputChange}
+                                       onChange={self.handleInputChange}
                                        readOnly={!isEditeMode}/>
                         </div>
                         <div style={styles.docColumn}>
                             <DokProp title="Konteerimine: "
                                      name='doklausid'
-                                     libs="dokProps"
-                                     value={self.docData.doklausid}
+                                     data={self.libs['dokProps']}
+                                     dokTypeId={'VMK'}
+                                     value={Number(self.docData.doklausid) || 0}
                                      defaultValue={self.docData.dokprop || ''}
+                                     history={this.props.history}
                                      ref="dokprop"
-                                     onChange = {self.handleInputChange}
+                                     onChange={self.handleInputChange}
                                      readOnly={!isEditeMode}/>
                         </div>
                     </div>
                     <div style={styles.docRow}>
-                            <TextArea title="Selgitus"
-                                      name='selg'
-                                      ref="textarea-selg"
-                                      value={self.docData.selg || ''}
-                                      onChange = {self.handleInputChange}
-                                      readOnly={!isEditeMode}/>
+                        <div style={styles.docColumn}>
+                            <SelectData title="Lapse nimi:"
+                                        name='lapsid'
+                                        libName="laps"
+                                        sqlFields={['nimi', 'isikukood']}
+                                        data={[]}
+                                        value={self.docData.lapsid || 0}
+                                        defaultValue={self.docData.lapse_nimi}
+                                        boundToGrid='nimi'
+                                        boundToData='nimi'
+                                        ref="select-lapsid"
+                                        btnDelete={false}
+                                        userData={self.userData}
+                                        onChange={self.handleInputChange}
+                                        readOnly={!isEditeMode}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <ButtonEdit
+                                ref='btnEdit'
+                                onClick={this.btnEditLapsClick}
+                                show={!isEditeMode}
+                                style={styles.btnEdit}
+                                disabled={false}
+                            />
+                        </div>
                     </div>
-                    <div style={styles.docRow}>
-                        <DataGrid source='details'
-                                  gridData={self.docData.gridData}
-                                  gridColumns={self.docData.gridConfig}
-                                  handleGridRow={self.handleGridRow}
-                                  handleGridBtnClick = {self.handleGridBtnClick}
-                                  readOnly={!isEditeMode}
-                                  showToolBar = {isEditeMode}
-                                  style={styles.grid.headerTable}
-                                  ref="data-grid"/>
-                    </div>
-                    <div style={styles.docRow}>
-                        <InputText title="Kokku: "
-                                   name='summa'
-                                   ref="input-summa"
-                                   value={String(self.docData.summa)}
-                                   width='auto'
-                                   disabled={true}
-                        />
-                    </div>
-                    <div style={styles.docRow}>
-                            <TextArea title="Märkused"
-                                      name='muud'
-                                      ref="textarea-muud"
-                                      value={self.docData.muud || ''}
-                                      onChange = {self.handleInputChange}
-                                      readOnly={!isEditeMode}/>
-                    </div>
-
-                    {self.state.gridRowEdit ?
-                        this.createGridRow(self)
-                        : null}
-
                 </div>
+                < div
+                    style={styles.docRow}>
+                    < TextArea
+                        title="Selgitus"
+                        name='selg'
+                        ref="textarea-selg"
+                        value={self.docData.selg || ''}
+                        onChange={self.handleInputChange}
+                        readOnly={
+                            !isEditeMode
+                        }
+                    />
+                </div>
+
+                <div style={styles.docRow}>
+                    <DataGrid source='details'
+                              gridData={self.docData.gridData}
+                              gridColumns={self.docData.gridConfig}
+                              showToolBar={isEditeMode}
+                              handleGridRow={self.handleGridRow}
+                              handleGridBtnClick={self.handleGridBtnClick}
+                              readOnly={!isEditeMode}
+                              style={styles.grid.headerTable}
+                              ref="data-grid"/>
+                </div>
+                <div style={styles.docRow}>
+                    <InputText title="Kokku: "
+                               name='summa'
+                               ref="input-summa"
+                               value={String(self.docData.summa) || '0.00'}
+                               width='auto'
+                               disabled={true}/>
+                </div>
+                <div style={styles.docRow}>
+                    <TextArea title="Märkused"
+                              name='muud'
+                              ref="textarea-muud"
+                              value={self.docData.muud || ''}
+                              onChange={self.handleInputChange}
+                              readOnly={!isEditeMode}/>
+                </div>
+
+                {self.state.gridRowEdit ?
+                    this.createGridRow(self)
+                    : null}
+
             </div>
         );
     }
-
 
     /**
      * формирует объекты модального окна редактирования строки грида
      * @returns {XML}
      */
     createGridRow(self) {
-        let row = Object.assign({}, self.gridRowData),
-            validateMessage = '',
-            modalObjects = ['btnOk', 'btnCancel'],
-            buttonOkReadOnly = validateMessage.length > 0 || !self.state.checked;
+        let row = self.gridRowData ? self.gridRowData : {},
+            validateMessage = '', // self.state.warning
+            buttonOkReadOnly = validateMessage.length > 0 || !self.state.checked,
+            modalObjects = ['btnOk', 'btnCancel'];
 
         if (buttonOkReadOnly) {
             // уберем кнопку Ок
@@ -194,9 +236,12 @@ class Vmk extends React.PureComponent {
 
         if (!row) return <div/>;
 
-        let nomData = self.libs['nomenclature'].filter(lib => {
-            if (!lib.dok || lib.dok === LIBDOK) return lib;
+        const nomData = self.libs['nomenclature'].filter(row => {
+            if (row.dok === 'MK' || row.dok === 'VMK') {
+                return row;
+            }
         });
+
         return (<div className='.modalPage'>
                 <ModalPage
                     modalObjects={modalObjects}
@@ -209,8 +254,8 @@ class Vmk extends React.PureComponent {
                             <Select title="Operatsioon"
                                     name='nomid'
                                     data={nomData}
-                                    value={row.nomid}
-                                    collId = 'id'
+                                    value={row.nomid || 0}
+                                    collId='id'
                                     defaultValue={row.kood || ''}
                                     ref='nomid'
                                     onChange={self.handleGridRowChange}/>
@@ -226,30 +271,28 @@ class Vmk extends React.PureComponent {
                                     onChange={self.handleGridRowChange}/>
                         </div>
                         <div style={styles.docRow}>
-
                             <InputText title='Arveldus arve: '
                                        name='aa'
-                                       value={String(row.aa) || ''}
+                                       value={row.aa || ''}
                                        bindData={false}
                                        ref='aa'
+                                       readOnly={false}
                                        onChange={self.handleGridRowInput}/>
-
                         </div>
                         <div style={styles.docRow}>
-
                             <InputNumber title='Summa: '
                                          name='summa'
-                                         value={Number(row.summa || 0)}
+                                         value={Number(row.summa)}
                                          bindData={false}
                                          ref='summa'
                                          onChange={self.handleGridRowInput}/>
-
                         </div>
                         <div style={styles.docRow}>
                             <Select title="Korr. konto"
                                     name='konto'
+                                    libs="kontod"
                                     data={self.libs['kontod']}
-                                    value={row.konto || ''}
+                                    value={row.konto}
                                     ref='konto'
                                     collId="kood"
                                     onChange={self.handleGridRowChange}/>
@@ -257,35 +300,34 @@ class Vmk extends React.PureComponent {
                         <div style={styles.docRow}>
                             <Select title="Tunnus:"
                                     name='tunnus'
+                                    libs="tunnus"
                                     data={self.libs['tunnus']}
-                                    value={row.tunnus || ''}
+                                    value={row.tunnus}
                                     ref='tunnus'
                                     collId="kood"
                                     onChange={self.handleGridRowChange}/>
                         </div>
                         <div style={styles.docRow}>
-
                             <Select title="Project:"
                                     name='proj'
+                                    libs="project"
                                     data={self.libs['project']}
-                                    value={row.proj || ''}
+                                    value={row.proj}
                                     ref='project'
                                     collId="kood"
                                     onChange={self.handleGridRowChange}/>
-
                         </div>
                     </div>
                     <div><span>{validateMessage}</span></div>
                 </ModalPage>
             </
-                div >
+                div>
         )
             ;
     }
 
-
     /**
-     *  перерасчет итоговой суммы документа
+     * перерасчет итоговой суммы документа
      */
     recalcDocSumma() {
         let doc = this.refs['document'];
@@ -307,27 +349,32 @@ class Vmk extends React.PureComponent {
 
         //подставим наименование услогу
 
-        let nomDataName = doc.libs['nomenclature'].filter(lib => {
-            if (lib.id === doc.gridRowData['nomid']) return lib;
-        });
-
         if (doc.gridRowData['nomid']) {
-            doc.gridRowData['kood'] = nomDataName[0].kood;
-            doc.gridRowData['nimetus'] = nomDataName[0].name;
+            let nomDataName = doc.libs['nomenclature'].find(lib => lib.id === Number(doc.gridRowData['nomid']));
+
+            if (nomDataName) {
+                doc.gridRowData['kood'] = nomDataName.kood;
+                doc.gridRowData['nimetus'] = nomDataName.nimetus;
+            }
         }
 
-        let asutusDataName = doc.libs['asutused'].filter(lib => {
-            if (lib.id === doc.gridRowData['asutusid']) return lib;
-        });
-
+        //подставим наименование
         if (doc.gridRowData['asutusid']) {
-            doc.gridRowData['asutus'] = asutusDataName[0].name;
+
+            let asutusDataName = doc.libs['asutused'].find(lib => lib.id === Number(doc.gridRowData['asutusid']));
+            console.log('asutusDataName', asutusDataName);
+
+            if (asutusDataName) {
+                doc.gridRowData['asutus'] = asutusDataName.nimetus;
+                doc.gridRowData['aa'] = asutusDataName.pank;
+            }
+
         }
     }
 
+
     /**
      * валидатор для строки грида
-     * @param gridRowData строка грида
      * @returns {string}
      */
     gridValidateFields() {
@@ -338,7 +385,7 @@ class Vmk extends React.PureComponent {
             // только после проверки формы на валидность
             if (doc.gridRowData && !doc.gridRowData['nomid']) warning = warning + ' Код операции';
             if (!doc.gridRowData['summa']) warning = warning + ' Сумма';
-            if (!doc.gridRowData['asutusid']) warning = warning + ' Получатель';
+            if (!doc.gridRowData['asutusid']) warning = warning + ' Платильщик';
 
             this.recalcRowSumm();
             this.recalcDocSumma('summa');
@@ -357,8 +404,8 @@ Vmk.propTypes = {
 };
 
 Vmk.defaultProps = {
-    initData:{},
-    userData:{}
+    initData: {},
+    userData: {}
 };
 
 module.exports = (Vmk);

@@ -133,7 +133,7 @@ class Documents extends React.Component {
                               style={_style.grid.mainTable}
                               gridData={this.gridData}
                               gridColumns={this.gridConfig}
-                              subtotals = {this.subtotals}
+                              subtotals={this.subtotals}
                               onClick={this.clickHandler}
                               onDblClick={this.dblClickHandler}
                               onHeaderClick={this.headerClickHandler}
@@ -242,8 +242,7 @@ class Documents extends React.Component {
      */
     btnPrintClick() {
         let sqlWhere = this.state.sqlWhere;
-        let sortBy = JSON.stringify(this.state.sortBy);
-        let url ;
+        let url;
         let params = encodeURIComponent(`${sqlWhere}`);
         let filter = encodeURIComponent(`${JSON.stringify(this.filterData)}`);
 
@@ -302,7 +301,7 @@ class Documents extends React.Component {
 
                     case 'text':
 
-                        let prepairedParameter = row.value.split(',').map(str=>`'${str.trim()}'`).join(',');
+                        let prepairedParameter = row.value.split(',').map(str => `'${str.trim()}'`).join(',');
 
                         // если параметры раздедены, то множественный параметр
                         if (row.value.match(/,/)) {
@@ -471,7 +470,7 @@ class Documents extends React.Component {
      * @returns {{btnAdd: {show: boolean, disabled: boolean}, btnEdit: {show: boolean, disabled: boolean}, btnDelete: {show: boolean, disabled: boolean}, btnPrint: {show: boolean, disabled: boolean}}}
      */
     prepareParamsForToolbar() {
-        let params = Object.assign({
+        return Object.assign({
             btnAdd: {
                 show: this.docTypeId !== 'DOK', //todo сделать поумнее
                 disabled: false
@@ -504,7 +503,6 @@ class Documents extends React.Component {
                 disabled: false
             }
         }, (this.props.toolbarParams ? this.props.toolbarParams : {}),);
-        return params
     }
 
     /**
@@ -553,7 +551,11 @@ class Documents extends React.Component {
                     if (response.status !== 200) {
                         this.setState({warning: `${response.error_message}`, warningType: 'error'});
 
-                        return {result: null, status:response.status, error_message: `error ${(response.data && response.data.error_message) ? 'response.data.error_message': response.error_message}` }
+                        return {
+                            result: null,
+                            status: response.status,
+                            error_message: `error ${(response.data && response.data.error_message) ? 'response.data.error_message' : response.error_message}`
+                        }
                     }
 
                     if (method === 'selectDocs') {
@@ -622,6 +624,12 @@ Documents.propTypes = {
     }),
     docTypeId: PropTypes.string.isRequired
 };
+
+
+Documents.defaultProps = {
+    module: 'lapsed'
+};
+
 
 module.exports = (Documents);
 

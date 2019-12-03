@@ -5,7 +5,6 @@ const React = require('react');
 const Menu = require('./../components/menu-toolbar/menu-toolbar.jsx');
 const JournalDocument = require('../docs/journal/document/index.jsx');
 
-
 const LapseDokument = require('./../docs/laps/document/index.jsx');
 const LasteRegister = require('./../docs/laps/index.jsx');
 
@@ -23,6 +22,9 @@ const ArveDocument = require('./../docs/arv/document/index.jsx');
 
 const SmkRegister = require('./../docs/smk/index.jsx');
 const SmkDocument = require('./../docs/smk/document/index.jsx');
+const VmkRegister = require('./../docs/vmk/index.jsx');
+const VmkDocument = require('./../docs/vmk/document/index.jsx');
+
 
 const SorderideRegister = require('./../docs/sorder/index.jsx');
 const SorderDocument = require('./../docs/sorder/document/index.jsx');
@@ -146,6 +148,13 @@ class App extends React.Component {
                 <Route exact path="/lapsed/smk/:docId"
                        render={(props) => <SmkDocument {...props} history={props.history}/>}/>
 
+                <Route exact path="/lapsed/vmk"
+                       render={(props) => <VmkRegister history={props.history}
+                                                       initData={this.props.initData}
+                                                       module={MODULE}/>}/>
+                <Route exact path="/lapsed/vmk/:docId"
+                       render={(props) => <VmkDocument {...props} history={props.history}/>}/>
+
 
                 <Route exact path="/lapsed/sorder"
                        render={(props) =>
@@ -183,13 +192,13 @@ class App extends React.Component {
                 <Route exact path="/lapsed/config/:docId"
                        render={(props) => <ConfigDocument {...props} history={props.history}/>}/>
                 <Route exact path="/lapsed/config"
-                       render={(props) => <Redirect to={`/lapsed/config/${DocContext.userData.asutusId}`} />}/>
+                       render={() => <Redirect to={`/lapsed/config/${DocContext.userData.asutusId}`} />}/>
 
                 <Route exact path="/lapsed/rekv/:docId"
                        render={(props) => <RekvDocument {...props} history={props.history}/>}/>
 
                 <Route exact path="/lapsed/rekv"
-                    render={(props) => <Redirect to={`/lapsed/rekv/${DocContext.userData.asutusId}`} />}/>
+                    render={() => <Redirect to={`/lapsed/rekv/${DocContext.userData.asutusId}`} />}/>
 
                 <Route exact path="/lapsed/dokprops/:docId"
                        render={(props) => <DokpropsDocument {...props} history={props.history}/>}/>
@@ -197,7 +206,7 @@ class App extends React.Component {
                 <Route exact path="/lapsed/userid/:docId"
                        render={(props) => <UserDocument {...props} history={props.history}/>}/>
                 <Route exact path="/lapsed/userid/"
-                       render={(props) => <Redirect to={`/lapsed/userid/${DocContext.userData.id}`} />}/>
+                       render={() => <Redirect to={`/lapsed/userid/${DocContext.userData.id}`} />}/>
 
                 <Route exact path="/lapsed/inf3"
                        render={(props) => <Inf3Report

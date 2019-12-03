@@ -20,7 +20,7 @@ const  LIBRARIES = [
         {id:'users',filter:''},
         {id:'tunnus',filter:''},
         {id:'project',filter:''},
-        {id:'nomenclature',filter:`where dok = 'MK'`},
+        {id:'nomenclature',filter:`where dok in ('MK','SMK')`},
         {id:'asutused',filter:`where id in (select asutusid from lapsed.vanemad)`},
         {id:'aa',filter:''}
     ];
@@ -336,7 +336,6 @@ class Smk extends React.PureComponent {
 
     /**
      * валидатор для строки грида
-     * @param gridRowData строка грида
      * @returns {string}
      */
     gridValidateFields() {

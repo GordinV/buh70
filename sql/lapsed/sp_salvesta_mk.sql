@@ -68,13 +68,18 @@ BEGIN
         doc_number = docs.sp_get_number(user_rekvid, 'SMK', YEAR(doc_kpv), doc_doklausid);
     END IF;
 
-
-    IF doc_aa_id IS NULL
+-- проверим расч. счет
+    IF doc_aa_id IS NULL OR NOT exists(SELECT id
+                                       FROM ou.aa
+                                       WHERE parentId = user_rekvid
+                                         AND kassa = 1
+                                         AND id = doc_aa_id
+                                       ORDER BY default_ DESC)
     THEN
         SELECT id INTO doc_aa_id
         FROM ou.aa
         WHERE parentId = user_rekvid
-          AND pank = 1
+          AND kassa = 1
         ORDER BY default_ DESC
         LIMIT 1;
         IF NOT found

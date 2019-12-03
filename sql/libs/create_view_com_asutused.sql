@@ -8,7 +8,8 @@ SELECT qry.id,
        qry.email,
        qry.kehtivus,
        qry.aadress,
-       qry.tel
+       qry.tel,
+       qry.pank
 FROM (SELECT 0                            AS id,
              ''::CHARACTER VARYING(20)    AS regkood,
              ''::CHARACTER VARYING(254)   AS nimetus,
@@ -16,7 +17,9 @@ FROM (SELECT 0                            AS id,
              ''::VARCHAR(254)             AS email,
              date() + INTERVAL '100 year' AS kehtivus,
              ''::TEXT                     AS aadress,
-             ''::VARCHAR(120)             AS tel
+             ''::VARCHAR(120)             AS tel,
+             ''::VARCHAR(20)              AS pank
+
       UNION
       SELECT asutus.id,
              btrim(asutus.regkood::TEXT)                                                           AS regkood,
@@ -25,7 +28,9 @@ FROM (SELECT 0                            AS id,
              asutus.email,
              coalesce((asutus.properties ->> 'kehtivus'::TEXT)::DATE, date() + INTERVAL '10 year') AS kehtivus,
              asutus.aadress,
-             asutus.tel
+             asutus.tel,
+             (properties -> 'asutus_aa' -> 0 ->> 'aa')::VARCHAR(20)                                AS pank
+
       FROM libs.asutus asutus
       WHERE asutus.staatus <> 3) qry
 ORDER BY qry.nimetus;

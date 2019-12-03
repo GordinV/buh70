@@ -151,7 +151,8 @@ const Smk = {
                            $2                                  AS userid,
                            mk.viitenr::TEXT
                     FROM lapsed.cur_lapsed_mk mk
-                    WHERE mk.rekvId = $1`,
+                    WHERE mk.opt = 2 
+                      and mk.rekvId = $1`,
 //                      AND coalesce(docs.usersRigths(mk.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curLasteMk'

@@ -19,7 +19,7 @@ const
 /**
  * Класс реализует базовый документ .
  */
-class DocumentTemplate extends React.PureComponent {
+class DocumentTemplate extends React.Component {
     constructor(props) {
         super(props);
         this.libs = {};
@@ -695,14 +695,14 @@ class DocumentTemplate extends React.PureComponent {
             this.props.handleGridBtnClick(btnName, activeRow, id, docTypeId);
 
         } else {
-            switch (btnName) {
-                case 'Add':
+            switch (btnName.toLowerCase()) {
+                case 'add':
                     this.addRow();
                     break;
-                case 'Edit':
+                case 'edit':
                     this.editRow();
                     break;
-                case 'Delete':
+                case 'delete':
                     this.deleteRow();
                     break;
             }
