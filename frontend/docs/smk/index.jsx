@@ -12,7 +12,7 @@ const ToolbarContainer = require('./../../components/toolbar-container/toolbar-c
 /**
  * Класс реализует документ приходного платежного ордера.
  */
-class Documents extends React.Component {
+class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
         this.renderer = this.renderer.bind(this);
