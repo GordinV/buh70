@@ -78,7 +78,6 @@ BEGIN
                  LIMIT
                      1);
 
-
     json_mk1 = array_to_json((SELECT array_agg(row_to_json(m1.*))
                               FROM (SELECT 0                                                          AS id,
                                            (SELECT id

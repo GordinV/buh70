@@ -51,7 +51,6 @@ const readXML = async (xmlContent) => {
         let Acct = stmtes[0].Acct[0].Svcr[0].FinInstnId[0].BIC[0]; //banc code
         let Ntres = stmtes[0].Ntry;
         Ntres.forEach(ntry => {
-
             if (ntry.CdtDbtInd[0] == 'CRDT') {
                 let summa = Number(ntry.Amt[0]);
                 let kpv = ntry.ValDt[0].Dt[0];

@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyear INTEGER, tndokpropid INTEGER);
+﻿DROP FUNCTION IF EXISTS sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyear INTEGER, tndokpropid INTEGER);
 DROP FUNCTION IF EXISTS docs.sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyear INTEGER, tndokpropid INTEGER);
 
 CREATE FUNCTION docs.sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyear INTEGER, tndokpropid INTEGER)
@@ -91,11 +91,6 @@ BEGIN
     IF lcPref = '%'
     THEN
         lcPref = '';
-    END IF;
-
-    IF v_number IS NULL
-    THEN
-        RETURN 1::TEXT;
     END IF;
 
     lcNumber = lcPref || (coalesce(v_number.number, 0) + 1) :: TEXT;

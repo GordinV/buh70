@@ -95,6 +95,8 @@ BEGIN
                                  l_dokprop_id          AS dokprop_id,
                                  v_pank_vv.viitenumber AS viitenumber,
                                  v_pank_vv.selg        AS selg,
+                                 v_pank_vv.number      AS number,
+                                 v_pank_vv.kpv         AS kpv,
                                  l_makse_summa         AS summa) row;
 
                     -- создаем платежку
@@ -127,6 +129,7 @@ BEGIN
                         -- вся оплата списана
                         EXIT;
                     END IF;
+
                 END LOOP;
             IF l_count = 0
             THEN

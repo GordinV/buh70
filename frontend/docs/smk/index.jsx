@@ -56,20 +56,10 @@ class Documents extends React.PureComponent {
         const Doc = this.refs['register'];
 
         setTimeout(() => {
-            Doc.fetchData('selectDocs').then((data) => {
-
-                this.forceUpdate();
-                /*
-                                setTimeout(() => {
-                                    this.props.history.push({
-                                        pathname: `/${this.props.module}/pank_vv`,
-                                        state: {module: this.props.module}
-                                    });
-                                }, 1000);
-                */
-            });
-        }, 1000);
+            Doc.fetchData('selectDocs');
+        }, 10000);
     }
+
 }
 
 module.exports = (Documents);
