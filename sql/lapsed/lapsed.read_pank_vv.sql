@@ -8,19 +8,30 @@ CREATE OR REPLACE FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN l_timestam
     RETURNS RECORD AS
 $BODY$
 DECLARE
-    l_mk_id       INTEGER;
-    v_arv         RECORD;
-    json_object   JSONB;
-    v_pank_vv     RECORD;
-    l_rekvid      INTEGER;
-    l_error       TEXT; -- извещение о том, что пошло не так
-    l_count       INTEGER        = 0;
-    l_count_kokku INTEGER        = 0;
-    l_makse_summa NUMERIC(12, 2) = 0;
-    l_tasu_jaak   NUMERIC(12, 2) = 0;
-    l_db_konto    TEXT           = '100100'; -- дебетовая (банк) сторона
-    l_kr_konto    TEXT           = '103000'; -- кредитовая сторона
-    l_dokprop_id  INTEGER;
+    l_arv_id         INTEGER;
+    l_dok            TEXT           = 'MK';
+    l_mk_id          INTEGER;
+    v_arv            RECORD;
+    json_object      JSONB;
+    v_params         RECORD;
+    json_mk1         JSONB;
+    l_pank_id        INTEGER;
+    l_laps_id        INTEGER;
+    v_pank_vv        RECORD;
+    l_rekvid         INTEGER;
+    l_error          TEXT; -- извещение о том, что пошло не так
+    l_count          INTEGER        = 0;
+    l_count_kokku    INTEGER        = 0;
+    l_makse_summa    NUMERIC(12, 2) = 0;
+    l_tasu_jaak      NUMERIC(12, 2) = 0;
+    l_db_konto       TEXT           = '100100'; -- дебетовая (банк) сторона
+    l_kr_konto       TEXT           = '103000'; -- кредитовая сторона
+    l_dokprop_id     INTEGER;
+    l_target_user_id INTEGER        = user_id;
+    l_user_kood      TEXT           = (SELECT kasutaja
+                                       FROM ou.userid
+                                       WHERE id = user_id
+                                       LIMIT 1);
 BEGIN
     -- ищем платежи
     FOR v_pank_vv IN
@@ -33,6 +44,12 @@ BEGIN
 
             -- читаем ссылку и ищем учреждение
             l_rekvid = substr(v_pank_vv.viitenumber, 1, len(v_pank_vv.viitenumber::TEXT) - 7)::INTEGER;
+
+            -- ищем пользователя в целевом цчреждении
+            SELECT id INTO l_target_user_id
+            FROM ou.userid
+            WHERE rekvid = l_rekvid AND kasutaja::TEXT = l_user_kood::TEXT
+            LIMIT 1;
 
             -- ищем ид конфигурации контировки
             IF v_pank_vv.pank = 'EEUHEE2X' OR v_pank_vv.pank = '401'
@@ -87,7 +104,7 @@ BEGIN
 
                     -- создаем платежку
                     SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
-                    FROM docs.create_new_mk(user_id, json_object) fnc;
+                    FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
 
                     -- проверим на соответствие платильщика
                     IF upper(v_arv.maksja)::TEXT <> upper(v_pank_vv.maksja)::TEXT
@@ -106,7 +123,7 @@ BEGIN
                         l_tasu_jaak = l_tasu_jaak - l_makse_summa;
 
                         -- lausend
-                        PERFORM docs.gen_lausend_smk(l_mk_id, user_id);
+                        PERFORM docs.gen_lausend_smk(l_mk_id, l_target_user_id);
                     END IF;
 
 
