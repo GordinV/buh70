@@ -88,7 +88,9 @@ class App extends React.Component {
                 />
                 <Route exact path="/lapsed/laps"
                        render={(props) => <LasteRegister history={props.history}
-                                                         initData={this.props.initData} module={MODULE}/>}/>
+                                                         initData={this.props.initData}
+                                                         module={MODULE}/>}
+                />
 
                 <Route exact path="/lapsed/laps/:docId"
                        render={(props) => <LapseDokument {...props} history={props.history}/>}/>
