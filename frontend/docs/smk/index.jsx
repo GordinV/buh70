@@ -52,10 +52,12 @@ class Documents extends React.PureComponent {
      * кастомный обработчик события клик на кнопку импорта
      */
     handleClick() {
+
         //обновим данные
         const Doc = this.refs['register'];
 
         setTimeout(() => {
+            console.log('reload');
             Doc.fetchData('selectDocs');
         }, 10000);
     }
