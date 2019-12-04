@@ -1,6 +1,7 @@
 DROP FUNCTION IF EXISTS docs.create_number_sequence(INTEGER, TEXT);
+DROP FUNCTION IF EXISTS docs.create_number_sequence(INTEGER, TEXT, BOOLEAN);
 
-CREATE FUNCTION docs.create_number_sequence(l_rekvid INTEGER, l_dok TEXT)
+CREATE FUNCTION docs.create_number_sequence(l_rekvid INTEGER, l_dok TEXT, l_found_last_num BOOLEAN DEFAULT TRUE)
     RETURNS TEXT
     LANGUAGE plpgsql
 AS
@@ -19,16 +20,21 @@ BEGIN
         -- IF NOT then sql for create sequence
 
         -- get last doc number
-        l_sql = 'select (max(SUBSTRING(''0'' || coalesce(tbl.number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
-                ')::bigint) ::bigint) from docs.' || l_dok || ' tbl where rekvid = $1 ' ||
-                CASE WHEN l_dok = 'ARV' THEN ' and liik = 0' ELSE '' END;
-        EXECUTE l_sql INTO l_number USING l_rekvid;
-
-        IF len(l_number) > 6
+        IF l_found_last_num
         THEN
+
+            l_sql = 'select (max(SUBSTRING(''0'' || coalesce(tbl.number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
+                    ')::bigint) ::bigint) from docs.' || l_dok || ' tbl where rekvid = $1 ' ||
+                    CASE WHEN l_dok = 'ARV' THEN ' and liik = 0' ELSE '' END;
+            EXECUTE l_sql INTO l_number USING l_rekvid;
+
+            IF len(l_number) > 6
+            THEN
+                l_number = '1';
+            END IF;
+        ELSE
             l_number = '1';
         END IF;
-
 
         l_sql = 'CREATE SEQUENCE ' || l_sequence_name || ' AS integer;' ||
                 'GRANT ALL ON SEQUENCE ' || l_sequence_name || ' TO public;';
@@ -49,9 +55,9 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION docs.create_number_sequence(INTEGER, TEXT) TO arvestaja;
-GRANT EXECUTE ON FUNCTION docs.create_number_sequence(INTEGER, TEXT) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.create_number_sequence(INTEGER, TEXT) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.create_number_sequence(INTEGER, TEXT, BOOLEAN) TO arvestaja;
+GRANT EXECUTE ON FUNCTION docs.create_number_sequence(INTEGER, TEXT, BOOLEAN) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.create_number_sequence(INTEGER, TEXT, BOOLEAN) TO dbpeakasutaja;
 
 /*
 select docs.create_number_sequence(63, 'ARV')

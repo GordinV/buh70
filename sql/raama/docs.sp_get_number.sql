@@ -1,4 +1,4 @@
-﻿DROP FUNCTION IF EXISTS sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyear INTEGER, tndokpropid INTEGER);
+DROP FUNCTION IF EXISTS sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyear INTEGER, tndokpropid INTEGER);
 DROP FUNCTION IF EXISTS docs.sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyear INTEGER, tndokpropid INTEGER);
 
 CREATE FUNCTION docs.sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyear INTEGER, tndokpropid INTEGER)
@@ -53,6 +53,8 @@ BEGIN
             THEN
                 lcTableName = 'docs.mk';
                 lcAdditionalWhere = ' and OPT = 1 ';
+                l_seq_name = docs.create_number_sequence(tnrekvid, tcDok);
+                SELECT nextval(l_seq_name) AS number INTO v_number;
         WHEN tcDok = 'VMK'
             THEN
                 lcTableName = 'docs.mk';
@@ -69,7 +71,7 @@ BEGIN
                         '(select left(l.number,2)::text as number, l.parentid, l.rekvid, l.algkpv as kpv from rekl.luba l)';
         END CASE;
 
-    IF tcDok not in ('ARV')
+    IF tcDok not in ('ARV','SMK')
     THEN
         -- building sql query with regexp for only numbers
         lcSqlString = 'select (max(SUBSTRING(''0'' || coalesce(tbl.number,''0''), ' || quote_literal('Y*[0-9]\d+') ||

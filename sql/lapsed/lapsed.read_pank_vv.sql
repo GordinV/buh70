@@ -160,6 +160,8 @@ GRANT EXECUTE ON FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN TEXT) TO ar
 
 
 /*
+select * from lapsed.pank_vv
+
 SELECT lapsed.read_pank_vv(70, '2019-11-04 19:36:00.119068')
 SELECT lapsed.read_pank_vv(70,'2019-10-31 15:17:27.681873')
 

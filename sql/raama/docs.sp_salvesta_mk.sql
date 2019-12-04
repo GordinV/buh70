@@ -24,7 +24,7 @@ DECLARE
                            FROM libs.library
                            WHERE ltrim(rtrim(kood)) = ltrim(rtrim(upper(doc_type_kood))) AND library = 'DOK'
                            LIMIT 1);
-  doc_number    TEXT = coalesce(doc_data ->> 'number', '1');
+  doc_number    TEXT = doc_data ->> 'number';
   doc_kpv       DATE = doc_data ->> 'kpv';
   doc_aa_id     INTEGER = doc_data ->> 'aaid';
   doc_arvid     INTEGER = doc_data ->> 'arvid';
@@ -38,8 +38,7 @@ DECLARE
   new_history   JSONB;
   ids           INTEGER [];
   docs          INTEGER [];
-  arv_parent_id INTEGER;
-  a_dokvaluuta  TEXT [] = enum_range(NULL :: DOK_VALUUTA);
+
   is_import     BOOLEAN = data ->> 'import';
 
 BEGIN
@@ -75,6 +74,14 @@ BEGIN
       RAISE NOTICE 'pank: %', doc_aa_id;
     END IF;
   END IF;
+
+  IF doc_number IS NULL OR doc_number = ''
+  THEN
+    -- присвоим новый номер
+    doc_number = docs.sp_get_number(user_rekvid, 'SMK', YEAR(doc_kpv), doc_doklausid);
+  END IF;
+
+
 
   -- вставка или апдейт docs.doc
 
