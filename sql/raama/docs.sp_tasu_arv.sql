@@ -21,10 +21,12 @@ DECLARE
     v_arv            RECORD;
     v_tulu_arved     RECORD;
     l_tasu_summa     NUMERIC = 0;
+    is_refund        BOOLEAN = FALSE;
 BEGIN
     SELECT d.id,
            d.docs_ids,
-           a.properties ->> 'tyyp' AS tyyp
+           a.properties ->> 'tyyp'                                AS tyyp,
+           CASE WHEN a.liik = 1 THEN 'KULU' ELSE 'TULU' END::TEXT AS arve_tyyp
            INTO v_arv
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
@@ -53,7 +55,11 @@ BEGIN
     l_summa = (
         SELECT sum(summa) AS summa
         FROM (
-                 SELECT summa
+                 SELECT summa * (CASE
+                                     WHEN v_arv.arve_tyyp = 'TULU' AND m.opt = 2 THEN 1
+                                     WHEN v_arv.arve_tyyp = 'TULU' AND m.opt = 1 THEN -1
+                                     WHEN v_arv.arve_tyyp = 'KULU' AND m.opt = 1 THEN 1
+                                     WHEN v_arv.arve_tyyp = 'KULU' AND m.opt = 2 THEN -1 END)::INTEGER AS summa
                  FROM docs.mk m
                           INNER JOIN docs.mk1 m1 ON m.id = m1.parentid
                  WHERE m.parentid = l_tasu_id
@@ -79,19 +85,19 @@ BEGIN
         LIMIT 1
     );
 
-    SELECT coalesce(l_doc_tasu_id, 0) AS id,
-           v_tasu.rekvid              AS rekvid,
-           l_arv_id                   AS doc_arv_id,
-           v_tasu.created :: DATE     AS kpv,
-           l_tasu_type                AS pankkassa,
+    SELECT coalesce(l_doc_tasu_id, 0)                         AS id,
+           v_tasu.rekvid                                      AS rekvid,
+           l_arv_id                                           AS doc_arv_id,
+           v_tasu.created :: DATE                             AS kpv,
+           l_tasu_type                                        AS pankkassa,
            -- 1 - mk, 2- kassa, 3 - lausend
-           l_tasu_id                  AS doc_tasu_id,
-           l_summa                    AS summa
+           l_tasu_id                                          AS doc_tasu_id,
+           l_summa * (CASE WHEN is_refund THEN -1 ELSE 1 END) AS summa
            INTO v_params;
 
     SELECT row_to_json(row) INTO json_object
-    FROM (SELECT 0        AS id,
-                 v_params AS data) row;
+    FROM (SELECT coalesce(l_doc_tasu_id, 0) AS id,
+                 v_params                   AS data) row;
 
     SELECT docs.sp_salvesta_arvtasu(json_object :: JSON, l_user_id, v_tasu.rekvid) INTO l_doc_id;
 
@@ -162,3 +168,7 @@ $BODY$
 GRANT EXECUTE ON FUNCTION docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER) TO dbpeakasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER) TO arvestaja;
+
+
+SELECT *
+FROM docs.sp_tasu_arv(1616679::INTEGER, 1616591::INTEGER, 70::INTEGER);

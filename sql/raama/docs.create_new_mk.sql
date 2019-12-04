@@ -23,17 +23,31 @@ DECLARE
     l_pank_id    INTEGER;
     l_laps_id    INTEGER        = (SELECT parentid
                                    FROM lapsed.liidestamine
-                                   WHERE docid = l_arv_id);
+                                   WHERE docid = l_arv_id
+                                   LIMIT 1);
+    l_opt        INTEGER;
 
 BEGIN
 
-    -- выборка из "документа"
     SELECT a.* INTO v_arv
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
     WHERE d.id = l_arv_id;
 
     doc_type_id = CASE WHEN v_arv.liik = 0 THEN 'SMK' ELSE 'VMK' END;
+
+    l_opt = (CASE
+                 WHEN v_arv.liik = 0
+                     THEN 2 -- если счет доходный, то мк на поступление средств, иначе расзодное поручение
+                 ELSE 1 END);
+
+    -- если счет имеет обратное сальдо , то меняем тип на противоположный
+    IF v_arv.jaak < 0
+    THEN
+        l_opt = CASE WHEN l_opt = 1 THEN 2 ELSE 1 END;
+        doc_type_id = CASE WHEN v_arv.liik = 0 THEN 'VMK' ELSE 'SMK' END;
+        l_summa = coalesce(l_summa, -1 * v_arv.jaak);
+    END IF;
 
 
     IF l_arv_id IS NULL OR v_arv.id IS NULL OR empty(l_arv_id)
@@ -44,11 +58,11 @@ BEGIN
         RETURN;
     END IF;
 
-    IF v_arv.jaak <= 0
+    IF v_arv.jaak = 0
     THEN
         result = 0;
         error_code = 0;
-        error_message = 'Arve jaak <= 0';
+        error_message = 'Arve jaak = 0';
         RETURN;
     END IF;
 
@@ -110,10 +124,7 @@ BEGIN
            l_dokprop_id   AS doklausid,
            l_pank_id      AS aaid,
            v_arv.parentid AS arvid,
-           CASE
-               WHEN v_arv.liik = 0
-                   THEN 2 -- если счет доходный, то мк на поступление средств, иначе расзодное поручение
-               ELSE 1 END AS opt,
+           l_opt          AS opt,
            l_viitenr      AS viitenr,
            date()         AS maksepaev,
            date()         AS kpv,
@@ -158,7 +169,7 @@ GRANT EXECUTE ON FUNCTION docs.create_new_mk(INTEGER, JSONB) TO dbpeakasutaja;
 
 
 /*
-SELECT docs.create_new_mk(2477, '{"arv_id":1245465,"dok":"SMK"}')
+SELECT docs.create_new_mk(70, '{"arv_id":1616591}')
 select * from docs.arv where rekvid = 63 order by id desc limit 1
 
 select * from docs.doc where id = 1245484

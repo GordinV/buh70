@@ -32,8 +32,6 @@ BEGIN
   WHERE arvtasu.doc_arv_Id = l_arv_Id
     AND arvtasu.status < 3;
 
-  RAISE NOTICE 'l_tasu_summa %, l_kpv %', l_tasu_summa, l_kpv;
-
   IF l_arv_summa < 0
   THEN
     -- kreeditarve
@@ -61,7 +59,7 @@ BEGIN
 
   UPDATE docs.doc
   SET status = CASE
-                 WHEN l_jaak <= 0
+                 WHEN l_jaak = 0
                    THEN DOC_STATUS_CLOSED
                  ELSE DOC_STATUS_ACTIVE END
   WHERE id = l_arv_Id;
