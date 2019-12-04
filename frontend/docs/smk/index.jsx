@@ -57,7 +57,6 @@ class Documents extends React.PureComponent {
         const Doc = this.refs['register'];
 
         setTimeout(() => {
-            console.log('reload');
             Doc.fetchData('selectDocs');
         }, 10000);
     }
