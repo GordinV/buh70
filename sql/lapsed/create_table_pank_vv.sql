@@ -28,6 +28,9 @@ GRANT ALL ON TABLE lapsed.pank_vv TO dbadmin;
 GRANT SELECT ON TABLE lapsed.pank_vv TO dbvaatleja;
 
 
+ALTER TABLE lapsed.pank_vv ADD COLUMN IF NOT EXISTS number text;
+
+
 /*
 pank_id TEXT, summa NUMERIC(12, 2), kpv DATE, maksja TEXT, iban TEXT,
                                             selg TEXT, viitenr TEXT

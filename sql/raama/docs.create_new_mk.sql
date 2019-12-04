@@ -14,6 +14,8 @@ DECLARE
     l_summa      NUMERIC(12, 2) = params ->> 'summa';
     l_dokprop_id INTEGER        = params ->> 'dokprop_id';
     l_viitenr    TEXT           = params ->> 'viitenumber';
+    l_number     TEXT           = params ->> 'number';
+    l_kpv        DATE           = params ->> 'kpv';
     l_selg       TEXT           = params ->> 'selg';
     mk_id        INTEGER;
     v_arv        RECORD;
@@ -126,9 +128,9 @@ BEGIN
            v_arv.parentid AS arvid,
            l_opt          AS opt,
            l_viitenr      AS viitenr,
-           date()         AS maksepaev,
-           date()         AS kpv,
-           NULL           AS number,
+           l_number       AS number,
+           l_kpv          AS maksepaev,
+           l_kpv          AS kpv,
            l_selg         AS selg,
            NULL           AS muud,
            json_mk1       AS "gridData",

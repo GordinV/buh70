@@ -26,12 +26,12 @@ DECLARE
                                AND library = 'DOK'
                              LIMIT 1);
     doc_number    TEXT    = doc_data ->> 'number';
-    doc_kpv       DATE    = doc_data ->> 'kpv';
+    doc_kpv       DATE    = coalesce((doc_data ->> 'kpv')::date,current_date);
     doc_aa_id     INTEGER = doc_data ->> 'aa_id';
     doc_arvid     INTEGER = doc_data ->> 'arvid';
     doc_muud      TEXT    = doc_data ->> 'muud';
     doc_doklausid INTEGER = doc_data ->> 'doklausid';
-    doc_maksepaev DATE    = doc_data ->> 'maksepaev';
+    doc_maksepaev DATE    = coalesce((doc_data ->> 'maksepaev')::date,current_date);
     doc_selg      TEXT    = doc_data ->> 'selg';
     doc_viitenr   TEXT    = doc_data ->> 'viitenr';
     doc_lapsid    INTEGER = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis

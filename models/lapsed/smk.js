@@ -28,22 +28,22 @@ const Smk = {
                           (arv.jaak::NUMERIC(12, 2)) :: TEXT)                 AS arvnr,
                          (SELECT sum(summa)
                           FROM docs.mk1
-                          WHERE parentid = k.id):: NUMERIC (12, 2) AS summa,
-                      COALESCE ((dp.details :: JSONB ->>
-                         'konto'),
-                         '') :: VARCHAR (20) AS konto,
-                      dp.selg::VARCHAR (120) AS dokprop,
-                      k.doklausid,
-                      (D.history -> 0 ->>
-                         'user')::VARCHAR (120) AS koostaja
+                          WHERE parentid = k.id):: NUMERIC(12, 2)             AS summa,
+                         COALESCE((dp.details :: JSONB ->>
+                                   'konto'),
+                                  '') :: VARCHAR(20)                          AS konto,
+                         dp.selg::VARCHAR(120)                                AS dokprop,
+                         k.doklausid,
+                         (D.history -> 0 ->>
+                          'user')::VARCHAR(120)                               AS koostaja
 
                   FROM docs.doc D
-                      INNER JOIN docs.mk k
-                  ON k.parentId = D.id
-                      INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                      LEFT OUTER JOIN ou.aa AS aa ON k.aaid = aa.Id
-                      LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.parentId
-                      LEFT OUTER JOIN libs.dokprop dp ON dp.id = k.doklausid
+                           INNER JOIN docs.mk k
+                                      ON k.parentId = D.id
+                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                           LEFT OUTER JOIN ou.aa AS aa ON k.aaid = aa.Id
+                           LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.parentId
+                           LEFT OUTER JOIN libs.dokprop dp ON dp.id = k.doklausid
                   WHERE D.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                  AS id,
                               $2 :: INTEGER                                  AS userid,
@@ -119,7 +119,7 @@ const Smk = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "0%", show: false},
-            {id: "kpv", name: "Kuupäev", width: "10%"},
+            {id: "kpv", name: "Maksepäev", width: "10%"},
             {id: "number", name: "Number", width: "5%"},
             {id: "asutus", name: "Maksja", width: "20%"},
             {id: "deebet", name: "Summa", width: "5%"},
@@ -130,7 +130,8 @@ const Smk = {
 
         ],
         sqlString: `SELECT mk.id,
-                           to_char(mk.kpv, 'DD.MM.YYYY')::TEXT AS kpv,
+                           to_char(mk.kpv, 'DD.MM.YYYY')::TEXT       AS kpv,
+                           to_char(mk.maksepaev, 'DD.MM.YYYY')::TEXT AS maksepaev,
                            mk.selg,
                            mk.asutus,
                            mk.kood,
@@ -143,14 +144,14 @@ const Smk = {
                            mk.journalnr,
                            mk.opt,
                            mk.vanem_isikukood,
-                           0                                   AS valitud,
+                           0                                         AS valitud,
                            mk.isikukood,
                            mk.nimi,
-                           $2                                  AS userid,
+                           $2                                        AS userid,
                            mk.viitenr::TEXT
                     FROM lapsed.cur_lapsed_mk mk
-                    WHERE mk.opt = 2 
-                      and mk.rekvId = $1`,
+                    WHERE mk.opt = 2
+                      AND mk.rekvId = $1`,
 //                      AND coalesce(docs.usersRigths(mk.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curLasteMk'

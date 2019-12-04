@@ -8,15 +8,9 @@ CREATE OR REPLACE FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN l_timestam
     RETURNS RECORD AS
 $BODY$
 DECLARE
-    l_arv_id         INTEGER;
-    l_dok            TEXT           = 'MK';
     l_mk_id          INTEGER;
     v_arv            RECORD;
     json_object      JSONB;
-    v_params         RECORD;
-    json_mk1         JSONB;
-    l_pank_id        INTEGER;
-    l_laps_id        INTEGER;
     v_pank_vv        RECORD;
     l_rekvid         INTEGER;
     l_error          TEXT; -- извещение о том, что пошло не так
@@ -48,7 +42,8 @@ BEGIN
             -- ищем пользователя в целевом цчреждении
             SELECT id INTO l_target_user_id
             FROM ou.userid
-            WHERE rekvid = l_rekvid AND kasutaja::TEXT = l_user_kood::TEXT
+            WHERE rekvid = l_rekvid
+              AND kasutaja::TEXT = l_user_kood::TEXT
             LIMIT 1;
 
             -- ищем ид конфигурации контировки

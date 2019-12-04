@@ -57,6 +57,7 @@ const readXML = async (xmlContent) => {
                 let kpv = ntry.ValDt[0].Dt[0];
                 let pankId = ntry.AcctSvcrRef[0];
                 let NtryDtls = ntry.NtryDtls[0].TxDtls[0];
+                let number = NtryDtls.Refs[0].InstrId[0];
                 let RmtInf = NtryDtls.RmtInf[0];
                 let viitenr = RmtInf.Strd ? RmtInf.Strd[0].CdtrRefInf[0].Ref[0] : null;
                 let selg = RmtInf.Ustrd[0];
@@ -72,7 +73,8 @@ const readXML = async (xmlContent) => {
                     viitenr: viitenr,
                     maksja: maksja,
                     iban: eban,
-                    pank: Acct
+                    pank: Acct,
+                    number:number
                 });
 
             }
@@ -89,7 +91,7 @@ const readCSV = async (csvContent) => {
     const parse = require('csv-parse');
     const rows = [];
     // Create the parser
-    const fileContent = await parse(csvContent,{headers: false, delimiter: ';', columns: false},(err, output) => {
+    const fileContent = await parse(csvContent, {headers: false, delimiter: ';', columns: false}, (err, output) => {
         result = output;
         if (err) {
 

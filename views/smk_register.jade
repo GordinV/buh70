@@ -13,7 +13,7 @@ block content
             thead.grid_head
                 tr
                     th Number
-                    th Kuupäev
+                    th Maksepäev
                     th Maksja isikukood
                     th Maksja
                     th Summa
@@ -26,7 +26,7 @@ block content
                 each mk in data
                     tr
                         td=mk.number
-                        td=mk.kpv
+                        td=mk.maksepaev
                         td=mk.vanem_isikukood
                         td=mk.asutus
                         td=Number(mk.deebet).toFixed(2)
