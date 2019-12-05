@@ -37,7 +37,7 @@ BEGIN
             SELECT * INTO json_record
             FROM json_to_record(
                          json_object) AS x (pank_id TEXT, summa NUMERIC(12, 2), kpv DATE, maksja TEXT, iban TEXT,
-                                            selg TEXT, viitenr TEXT, pank TEXT, number TEXT);
+                                            selg TEXT, viitenr TEXT, pank TEXT, number TEXT, isikukood text);
 
             -- проверяем уникальность записи по pank_id
 
@@ -45,10 +45,10 @@ BEGIN
             THEN
 
                 INSERT INTO lapsed.pank_vv (userid, pank_id, viitenumber, maksja, iban, summa, kpv, selg, timestamp,
-                                            pank, number)
+                                            pank, number, isikukood)
                 VALUES (user_id, json_record.pank_id, json_record.viitenr, json_record.maksja, json_record.iban,
                         json_record.summa, json_record.kpv, json_record.selg, l_timestamp, json_record.pank,
-                        json_record.number);
+                        json_record.number, json_record.isikukood);
 
                 count = count + 1;
             END IF;

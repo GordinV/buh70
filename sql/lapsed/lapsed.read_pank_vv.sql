@@ -26,6 +26,10 @@ DECLARE
                                        FROM ou.userid
                                        WHERE id = user_id
                                        LIMIT 1);
+    l_maksja_id      INTEGER;
+    l_laps_id        INTEGER;
+    v_vanem          RECORD;
+    l_vanem          INTEGER;
 BEGIN
     -- ищем платежи
     FOR v_pank_vv IN
@@ -36,8 +40,20 @@ BEGIN
         ORDER BY kpv, id
         LOOP
 
+            -- ишем плательшика
+            SELECT row_to_json(row) INTO json_object
+            FROM (SELECT v_pank_vv.isikukood AS regkood,
+                         v_pank_vv.maksja    AS nimetus,
+                         v_pank_vv.iban      AS aa,
+                         'ISIK'::TEXT        AS omvorm) row;
+
+            l_maksja_id = (SELECT a.result FROM libs.create_new_asutus(user_id, json_object::JSONB) a);
+
             -- читаем ссылку и ищем учреждение
             l_rekvid = substr(v_pank_vv.viitenumber, 1, len(v_pank_vv.viitenumber::TEXT) - 7)::INTEGER;
+
+            -- получим ид ребенка
+            l_laps_id = left(right(v_pank_vv.viitenumber::TEXT, 7), 6)::INTEGER;
 
             -- ищем пользователя в целевом цчреждении
             SELECT id INTO l_target_user_id
@@ -45,6 +61,26 @@ BEGIN
             WHERE rekvid = l_rekvid
               AND kasutaja::TEXT = l_user_kood::TEXT
             LIMIT 1;
+
+
+            -- ищем родителя
+            IF l_laps_id IS NOT NULL AND l_rekvid IS NOT NULL AND NOT exists(
+                    SELECT id
+                    FROM lapsed.vanemad v
+                    WHERE v.asutusid = l_maksja_id
+                      AND parentid = l_laps_id
+                )
+            THEN
+                -- сохраним плательзика как родителя
+                SELECT l_laps_id AS parentid, l_maksja_id AS asutusid INTO v_vanem;
+
+                SELECT row_to_json(row) INTO json_object
+                FROM (SELECT 0         AS id,
+                             v_vanem AS data) row;
+
+                l_vanem = (SELECT lapsed.sp_salvesta_vanem(json_object :: JSONB, l_target_user_id, l_rekvid));
+
+            END IF;
 
             -- ищем ид конфигурации контировки
             IF v_pank_vv.pank = 'EEUHEE2X' OR v_pank_vv.pank = '401'
@@ -83,7 +119,6 @@ BEGIN
                 ORDER BY kpv ASC
                 LOOP
 
-
                     -- считаем остаток не списанной суммы
                     l_makse_summa = CASE
                                         WHEN l_tasu_jaak > v_arv.jaak THEN v_arv.jaak
@@ -92,6 +127,7 @@ BEGIN
                     -- создаем параметры для расчета платежкм
                     SELECT row_to_json(row) INTO json_object
                     FROM (SELECT v_arv.id              AS arv_id,
+                                 l_maksja_id           AS maksja_id,
                                  l_dokprop_id          AS dokprop_id,
                                  v_pank_vv.viitenumber AS viitenumber,
                                  v_pank_vv.selg        AS selg,

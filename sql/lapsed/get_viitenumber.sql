@@ -20,7 +20,6 @@ BEGIN
     -- перемножаем в цикле
     FOR i IN 1 .. length(l_731)
         LOOP
-            RAISE NOTICE 'i %', i;
             l_multiple = substring(viitenumber FROM i FOR 1)::INTEGER * substring(l_731 FROM i FOR 1)::INTEGER;
             l_summa = l_summa + l_multiple;
         END LOOP;

@@ -17,6 +17,7 @@ DECLARE
     l_number     TEXT           = params ->> 'number';
     l_kpv        DATE           = params ->> 'kpv';
     l_selg       TEXT           = params ->> 'selg';
+    l_asutus_id  INTEGER        = params ->> 'maksja_id';
     mk_id        INTEGER;
     v_arv        RECORD;
     json_object  JSONB;
@@ -79,7 +80,7 @@ BEGIN
                      1);
 
     json_mk1 = array_to_json((SELECT array_agg(row_to_json(m1.*))
-                              FROM (SELECT 0                                                          AS id,
+                              FROM (SELECT 0                                                                      AS id,
                                            (SELECT id
                                             FROM libs.nomenklatuur n
                                             WHERE rekvid = v_arv.rekvid
@@ -87,9 +88,9 @@ BEGIN
                                             ORDER BY id
                                                 DESC
                                             LIMIT
-                                                1)                                                    AS nomid,
-                                           v_arv.asutusid                                             AS asutusid,
-                                           CASE WHEN l_summa IS NULL THEN v_arv.jaak ELSE l_summa END AS summa,
+                                                1)                                                                AS nomid,
+                                           CASE WHEN l_asutus_id IS NULL THEN v_arv.asutusid ELSE l_asutus_id END AS asutusid,
+                                           CASE WHEN l_summa IS NULL THEN v_arv.jaak ELSE l_summa END             AS summa,
                                            coalesce((
                                                         SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa
                                                         FROM libs.asutus a,
@@ -100,7 +101,7 @@ BEGIN
                                                         WHERE a.id = v_arv.asutusid
                                                         LIMIT
                                                             1
-                                                    ), '') :: TEXT                                    AS aa,
+                                                    ), '') :: TEXT                                                AS aa,
                                            a1.kood1,
                                            a1.kood2,
                                            a1.kood3,

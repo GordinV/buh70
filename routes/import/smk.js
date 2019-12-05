@@ -61,7 +61,7 @@ const readXML = async (xmlContent) => {
                 let viitenr = RmtInf.Strd ? RmtInf.Strd[0].CdtrRefInf[0].Ref[0] : null;
                 let selg = RmtInf.Ustrd[0];
                 let maksja = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Nm[0] : null;
-
+                let isikukood = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0].Id[0] : null;
                 let eban = NtryDtls.RltdPties[0].DbtrAcct ? NtryDtls.RltdPties[0].DbtrAcct[0].Id[0].IBAN[0] : null;
 
                 rows.push({
@@ -73,7 +73,8 @@ const readXML = async (xmlContent) => {
                     maksja: maksja,
                     iban: eban,
                     pank: Acct,
-                    number:number
+                    number:number,
+                    isikukood: isikukood
                 });
 
             }
