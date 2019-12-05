@@ -43,6 +43,7 @@ class Documents extends React.PureComponent {
         return (<ToolbarContainer>
             <BtnEarve
                 onClick={this.onClickHandler}
+                phrase={`Kas laadida XML fail?`}
                 ref='btnEarveXML'
                 value={EVENTS[4].name}
             />
@@ -196,7 +197,6 @@ class Documents extends React.PureComponent {
 
                 // будет отправлено на почту  выбранные и только для эл.почты счета
                 Doc.gridData.forEach(row => {
-                    console.log('row',row);
                     if (row.select && row.kas_earved) {
                         // выбрано для печати
                         ids.add(row.id);
@@ -204,8 +204,6 @@ class Documents extends React.PureComponent {
                 });
                 // конвертация в массив
                 ids = Array.from(ids);
-
-                console.log('xml ids', ids);
 
                 if (!ids.length) {
                     Doc.setState({

@@ -28,6 +28,8 @@ class ButtonRegisterEmail extends React.PureComponent {
     }
 
     render() {
+        let phrase = this.props.phrase ? this.props.phrase : `Kas saada E-Arve ?`;
+
         return (
             <div>
                 <Button
@@ -44,7 +46,7 @@ class ButtonRegisterEmail extends React.PureComponent {
                     show={this.state.showModal}
                     modalObjects={['btnOk', 'btnCancel']}
                 >
-                    {`Kas saada E-Arve ?`}
+                    {phrase}
                 </ModalPage>
 
             </div>

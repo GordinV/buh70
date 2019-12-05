@@ -64,9 +64,10 @@ exports.get = async (req, res) => {
         user: user.userName
     };
 
+
     try {
         // делаем XML
-        const xml = getEarve(selectedDocs, asutusConfig, false);
+        const xml = getEarve(selectedDocs[0], asutusConfig, false);
 
         // register e-arve event
         let sql = earveDoc.config.earve[0].register;
@@ -168,11 +169,10 @@ exports.post = async (req, res) => {
 
     try {
         // делаем XML
-        const xml = getEarve(selectedDocs, asutusConfig).replace('<?xml version="1.0" encoding="utf-8"?>', '');
+        const xml = getEarve(selectedDocs[0], asutusConfig).replace('<?xml version="1.0" encoding="utf-8"?>', '');
 
         // отправляем в Омнива
         const sendResult = await sendToOmniva(xml, asutusConfig);
-
         if (sendResult === 200) {
             //success
             // register e-arve event
@@ -191,7 +191,7 @@ exports.post = async (req, res) => {
 
             //ответ
             res.send({
-                status: 200, result: ids.length , data: {
+                status: 200, result: ids.length, data: {
                     action: 'earve',
                     result: {
                         error_code: 0,
@@ -216,7 +216,6 @@ exports.post = async (req, res) => {
             });
 
         }
-
 
 
     } catch (e) {

@@ -37,10 +37,11 @@ const getVat = (data) => {
 
 const get_earve = (arved, asutusConfig, isOmniva = true) => {
     let totalAmount = 0;
-    const data = arved.map((arve, index) => {
-        const row = arve[index].row[0];
-        const details = arve[index].details;
-        return Object.assign({}, row, {details: details})
+
+    const data = [];
+
+    arved.forEach((arve, index) => {
+        data.push(Object.assign({}, arve.row[0], {details:arve.details}));
     });
 
     data.forEach(arve => {
@@ -56,7 +57,6 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
         },
         Invoice: data.map(arve => {
             // считаем налоги
-
             const qryeArvedVat = getVat(arve.details);
 
             // детали счета
@@ -136,7 +136,6 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
             TotalAmount: totalAmount.toFixed(2)
         }
     };
-
 
     const omnivaObj = {
         'soapenv:Envelope': {
