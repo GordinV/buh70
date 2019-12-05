@@ -16,6 +16,90 @@ const getConfigData = async function (user) {
 
 };
 
+exports.get = async (req, res) => {
+    let ids = req.params.id || ''; // параметр id документа
+    const uuid = req.params.uuid || ''; // параметр uuid пользователя
+    const user = require('../middleware/userData')(req, uuid); // данные пользователя
+
+    if (!user) {
+        console.error('error 401 newAPI');
+        return res.status(401).end();
+    }
+
+    ids = ids.split(",").map(Number);
+
+    // данные предприятия
+    const rekvDoc = new Doc('REKV', user.asutusId, user.userId, user.asutusId, 'lapsed');
+    const rekvData = await rekvDoc['select'](rekvDoc.config);
+
+    // создать объект
+    const earveDoc = new Doc('ARV', null, user.userId, user.asutusId, 'lapsed');
+
+    // выборка данных
+    // делаем массив промисов
+    const dataPromises = ids.map(id => {
+        return new Promise(resolve => {
+            earveDoc.setDocumentId(id);
+            resolve(earveDoc['select'](earveDoc.config));
+        })
+    });
+
+    // решаем их
+    const selectedDocs = [];
+    let promiseSelectResult = await Promise.all(dataPromises).then((result) => {
+
+        //      selectedDocs.push({...result[0].row[0], details: result[0].details});
+        selectedDocs.push(result);
+    }).catch((err) => {
+        console.error('catched error->', err);
+        return res.send({status: 500, result: null, error_message: err});
+    });
+
+    // готовим параметры
+    const asutusConfig = {
+        url: rekvData.row[0].earved_omniva, //'https://finance.omniva.eu/finance/erp/',
+        secret: rekvData.row[0].earved, //'106549:elbevswsackajyafdoupavfwewuiafbeeiqatgvyqcqdqxairz',
+        asutus: rekvData.row[0].muud ? rekvData.row[0].muud : rekvData.row[0].nimetus,
+        regkood: rekvData.row[0].regkood,
+        user: user.userName
+    };
+
+    try {
+        // делаем XML
+        const xml = getEarve(selectedDocs, asutusConfig, false);
+
+        // register e-arve event
+        let sql = earveDoc.config.earve[0].register;
+
+        // делаем массив промисов
+        const registerPromises = ids.map(id => {
+            return new Promise(resolve => {
+                let params = [id, user.userId];
+                db.queryDb(sql, params);
+            })
+        });
+
+        // решаем их
+        let promiseRegisterResult = Promise.all(registerPromises);
+
+        // возвращаем его
+        if (xml) {
+            res.attachment('e-arve.xml');
+            res.type('xml');
+            res.send(xml);
+        } else {
+            res.status(500).send('Error in getting XML');
+        }
+
+    } catch (error) {
+        console.error('error:', error); // @todo Обработка ошибок
+        res.send({status: 500, result: 'Error'});
+
+    }
+
+};
+
+
 exports.post = async (req, res) => {
     const params = req.body;
     const id = Number(params.docId || 0); // параметр id документа

@@ -53,13 +53,16 @@ module.exports = function (app) {
     app.get('/reports/saldo_ja_kaive/:uuid/:filter/:params*?',require('./reports/saldo_ja_kaive').get);
 
     app.get('/reports/arved_koodi_jargi/:uuid/:params*?',require('./reports/arved_koodi_jargi').get);
+
     app.get('/reports/inf3/:uuid/:params/',require('./reports/inf3').get);
     app.get('/reports/inf3/:uuid/',require('./reports/inf3').get);
 
     app.get('/pdf/:documentType/:uuid/:id/', require('./pdf').get); //checkAuth
 
     app.post('/email', checkAuth, require('./email').post); //checkAuth
+
     app.post('/e-arved', checkAuth, require('./e-arved').post); //checkAuth
+    app.get('/e-arved/:uuid/:id/',require('./e-arved').get);
 
     app.post('/calc/muuda_ettemaksu_period', checkAuth, require('./lapsed/muuda_ettemaksu_period').post); //checkAuth
     app.post('/calc/:taskName', checkAuth, require('./calc').post); //checkAuth

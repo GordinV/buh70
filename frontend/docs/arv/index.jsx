@@ -15,7 +15,8 @@ const EVENTS = [
     {name: 'Häälestamine', method: null, docTypeId: null},
     {name: 'Trükk kõik valitud arved', method: null, docTypeId: null},
     {name: 'Email kõik valitud arved', method: null, docTypeId: null},
-    {name: 'Saada E-Arved kõik valitud arved', method: null, docTypeId: null},
+    {name: 'Saada E-Arved (Omniva) kõik valitud arved', method: null, docTypeId: null},
+    {name: 'Saama XML e-arved kõik valitud arved', method: null, docTypeId: null},
 ];
 
 /**
@@ -42,7 +43,12 @@ class Documents extends React.PureComponent {
         return (<ToolbarContainer>
             <BtnEarve
                 onClick={this.onClickHandler}
-                ref='btnEarve'
+                ref='btnEarveXML'
+                value={EVENTS[4].name}
+            />
+            <BtnEarve
+                onClick={this.onClickHandler}
+                ref='btnEarveOmniva'
                 value={EVENTS[3].name}
             />
             <BtnEmail
@@ -151,7 +157,7 @@ class Documents extends React.PureComponent {
 
                 // будет отправлено на почту  выбранные и только для эл.почты счета
                 Doc.gridData.forEach(row => {
-                    if (row.select && row.kas_earve) {
+                    if (row.select && row.kas_earved) {
                         // выбрано для печати
                         ids.add(row.id);
                     }
@@ -181,6 +187,40 @@ class Documents extends React.PureComponent {
                         Doc.setState({warning: `${error_message}`, warningType: 'error'});
                     });
 
+
+                }
+
+                break;
+            case EVENTS[4].name:
+                //e-arved (XML)
+
+                // будет отправлено на почту  выбранные и только для эл.почты счета
+                Doc.gridData.forEach(row => {
+                    console.log('row',row);
+                    if (row.select && row.kas_earved) {
+                        // выбрано для печати
+                        ids.add(row.id);
+                    }
+                });
+                // конвертация в массив
+                ids = Array.from(ids);
+
+                console.log('xml ids', ids);
+
+                if (!ids.length) {
+                    Doc.setState({
+                        warning: 'Mitte ühtegi arve leidnum', // строка извещений
+                        warningType: 'notValid',
+                    });
+                } else {
+                    // отправляем запрос на выполнение
+                    Doc.setState({
+                        warning: `Leidsin ${ids.length} arveid`, // строка извещений
+                        warningType: 'ok',
+                    });
+
+                    let url = `/e-arved/${DocContext.userData.uuid}/${ids}`;
+                    window.open(`${url}`);
 
                 }
 
