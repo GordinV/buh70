@@ -75,7 +75,7 @@ BEGIN
                 SELECT l_laps_id AS parentid, l_maksja_id AS asutusid INTO v_vanem;
 
                 SELECT row_to_json(row) INTO json_object
-                FROM (SELECT 0         AS id,
+                FROM (SELECT 0       AS id,
                              v_vanem AS data) row;
 
                 l_vanem = (SELECT lapsed.sp_salvesta_vanem(json_object :: JSONB, l_target_user_id, l_rekvid));
@@ -167,6 +167,43 @@ BEGIN
                     END IF;
 
                 END LOOP;
+            IF (l_tasu_jaak >= 0)
+            THEN
+                -- оплата не списана
+                -- создаем поручение с суммой равной остатку, без привязки к счету
+
+                -- создаем параметры для расчета платежкм
+                SELECT row_to_json(row) INTO json_object
+                FROM (SELECT NULL                  AS arv_id,
+                             l_maksja_id           AS maksja_id,
+                             l_dokprop_id          AS dokprop_id,
+                             v_pank_vv.viitenumber AS viitenumber,
+                             v_pank_vv.selg        AS selg,
+                             v_pank_vv.number      AS number,
+                             v_pank_vv.kpv         AS kpv,
+                             l_tasu_jaak           AS summa) row;
+
+                -- создаем платежку
+                SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
+                FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
+
+                -- сохраняем пулученную информаци.
+                UPDATE lapsed.pank_vv v
+                SET doc_id   = l_mk_id,
+                    markused = 'Koostatud eetemaks ' || coalesce(l_error, '')
+                WHERE id = v_pank_vv.id;
+
+                IF l_mk_id IS NOT NULL AND l_mk_id > 0
+                THEN
+                    -- считаем остаток средств
+                    l_tasu_jaak = 0;
+
+                    -- lausend
+                    PERFORM docs.gen_lausend_smk(l_mk_id, l_target_user_id);
+                END IF;
+
+
+            END IF;
             IF l_count = 0
             THEN
                 UPDATE lapsed.pank_vv v SET markused = 'Arved ei leidnud' WHERE id = v_pank_vv.id;

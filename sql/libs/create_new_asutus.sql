@@ -33,7 +33,7 @@ BEGIN
                     LIMIT 1);
     END IF;
 
-    IF (l_row_id)
+    IF (l_row_id is not null and l_row_id > 0)
     THEN
         -- такая запись уже есть, вернем ссылку на нее
         result = l_row_id;

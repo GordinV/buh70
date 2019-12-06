@@ -20,15 +20,23 @@ DECLARE
     l_asutus_id  INTEGER        = params ->> 'maksja_id';
     mk_id        INTEGER;
     v_arv        RECORD;
+    v_mk1        RECORD;
     json_object  JSONB;
     v_params     RECORD;
     json_mk1     JSONB;
     l_pank_id    INTEGER;
-    l_laps_id    INTEGER        = (SELECT parentid
-                                   FROM lapsed.liidestamine
-                                   WHERE docid = l_arv_id
-                                   LIMIT 1);
+    l_laps_id    INTEGER        = CASE
+                                      WHEN l_arv_id IS NOT NULL THEN (SELECT parentid
+                                                                      FROM lapsed.liidestamine
+                                                                      WHERE docid = l_arv_id
+                                                                      LIMIT 1)
+                                      ELSE left(right(l_viitenr::TEXT, 7), 6)::INTEGER END;
     l_opt        INTEGER;
+    l_rekvId     INTEGER        = (SELECT rekvid
+                                   FROM ou.userid
+                                   WHERE id = user_id);
+    l_nom_id     INTEGER;
+    l_aa         TEXT;
 
 BEGIN
 
@@ -37,36 +45,39 @@ BEGIN
              INNER JOIN docs.arv a ON a.parentid = d.id
     WHERE d.id = l_arv_id;
 
-    doc_type_id = CASE WHEN v_arv.liik = 0 THEN 'SMK' ELSE 'VMK' END;
+    doc_type_id = CASE WHEN v_arv.liik = 0 OR v_arv.id IS NULL THEN 'SMK' ELSE 'VMK' END;
 
     l_opt = (CASE
-                 WHEN v_arv.liik = 0
+                 WHEN v_arv.liik = 0 OR v_arv.id IS NULL
                      THEN 2 -- если счет доходный, то мк на поступление средств, иначе расзодное поручение
                  ELSE 1 END);
 
     -- если счет имеет обратное сальдо , то меняем тип на противоположный
-    IF v_arv.jaak < 0
+    IF v_arv.id IS NOT NULL AND v_arv.jaak < 0
     THEN
         l_opt = CASE WHEN l_opt = 1 THEN 2 ELSE 1 END;
         doc_type_id = CASE WHEN v_arv.liik = 0 THEN 'VMK' ELSE 'SMK' END;
         l_summa = coalesce(l_summa, -1 * v_arv.jaak);
     END IF;
 
-
-    IF l_arv_id IS NULL OR v_arv.id IS NULL OR empty(l_arv_id)
+    IF coalesce(l_summa, 0) <= 0
     THEN
-        error_message = 'Arve puudub või vale parametrid';
-        error_code = 6;
-        result = 0;
+        -- платеж равен нулю
+        error_message = 'Makse summa <= 0';
         RETURN;
     END IF;
 
-    IF v_arv.jaak = 0
+    IF (l_asutus_id IS NULL AND v_arv.id IS NULL)
     THEN
-        result = 0;
-        error_code = 0;
-        error_message = 'Arve jaak = 0';
+        -- платильщик не идентифицирован
+        error_message = 'Maksja puudub';
         RETURN;
+
+    END IF;
+
+    IF l_asutus_id IS NULL
+    THEN
+        l_asutus_id = v_arv.asutusid;
     END IF;
 
     -- создаем параметры для платежки
@@ -74,54 +85,67 @@ BEGIN
     l_pank_id = (SELECT id
                  FROM ou.aa
                  WHERE kassa = 1
-                   AND parentid = v_arv.rekvid
+                   AND parentid = l_rekvId
                  ORDER BY default_
                  LIMIT
                      1);
 
-    json_mk1 = array_to_json((SELECT array_agg(row_to_json(m1.*))
-                              FROM (SELECT 0                                                                      AS id,
-                                           (SELECT id
-                                            FROM libs.nomenklatuur n
-                                            WHERE rekvid = v_arv.rekvid
-                                              AND dok IN (l_dok, doc_type_id)
-                                            ORDER BY id
-                                                DESC
-                                            LIMIT
-                                                1)                                                                AS nomid,
-                                           CASE WHEN l_asutus_id IS NULL THEN v_arv.asutusid ELSE l_asutus_id END AS asutusid,
-                                           CASE WHEN l_summa IS NULL THEN v_arv.jaak ELSE l_summa END             AS summa,
-                                           coalesce((
-                                                        SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa
-                                                        FROM libs.asutus a,
-                                                             json_array_elements(CASE
-                                                                                     WHEN (a.properties ->> 'asutus_aa') IS NULL
-                                                                                         THEN '[]'::JSON
-                                                                                     ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (element)
-                                                        WHERE a.id = v_arv.asutusid
-                                                        LIMIT
-                                                            1
-                                                    ), '') :: TEXT                                                AS aa,
-                                           a1.kood1,
-                                           a1.kood2,
-                                           a1.kood3,
-                                           a1.kood4,
-                                           a1.kood5,
-                                           a1.konto,
-                                           a1.tp,
-                                           a1.tunnus,
-                                           a1.proj
-                                    FROM docs.arv1 a1
-                                    WHERE a1.parentid = v_arv.id
-                                    ORDER BY kood5,
-                                             kood2
-                                        DESC,
-                                             kood1
-                                        DESC
-                                    LIMIT
-                                        1
-                                   ) AS m1
-    ));
+    l_nom_id = (SELECT id
+                FROM libs.nomenklatuur n
+                WHERE rekvid = l_rekvId
+                  AND dok IN (l_dok, doc_type_id)
+                ORDER BY id DESC
+                LIMIT 1);
+
+    l_aa = (COALESCE((
+                         SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa
+                         FROM libs.asutus a,
+                              json_array_elements(CASE
+                                                      WHEN (a.properties ->> 'asutus_aa') IS NULL
+                                                          THEN '[]'::JSON
+                                                      ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (ELEMENT)
+                         WHERE a.id = l_asutus_id
+                         LIMIT
+                             1
+                     ), ''));
+
+    IF v_arv.id IS NOT NULL
+    THEN
+        -- если есть счет, то собираем строку с классфикаторами оттуда
+        SELECT 0                                                          AS id,
+               l_nom_id                                                   AS nomid,
+               l_asutus_id                                                AS asutusid,
+               CASE WHEN l_summa IS NULL THEN v_arv.jaak ELSE l_summa END AS summa,
+               l_aa :: TEXT                                               AS aa,
+               a1.kood1,
+               a1.kood2,
+               a1.kood3,
+               a1.kood4,
+               a1.kood5,
+               a1.konto,
+               a1.tp,
+               a1.tunnus,
+               a1.proj
+        FROM docs.arv1 a1
+        WHERE a1.
+                  parentid = v_arv.id
+        ORDER BY kood5, kood2 DESC, kood1 DESC
+        LIMIT 1
+            INTO v_mk1;
+
+    ELSE
+        SELECT 0           AS id,
+               l_nom_id    AS nomid,
+               l_asutus_id AS asutusid,
+               l_summa     AS summa,
+               l_aa        AS aa,
+               '103000'    AS konto
+               INTO v_mk1;
+    END IF;
+
+
+    json_mk1 = array_to_json((SELECT array_agg(row_to_json(v_mk1))));
+
     SELECT 0              AS id,
            l_dokprop_id   AS doklausid,
            l_pank_id      AS aaid,
@@ -141,7 +165,7 @@ BEGIN
     FROM (SELECT 0        AS id,
                  v_params AS data) row;
 
-    SELECT docs.sp_salvesta_mk(json_object :: JSON, user_id, v_arv.rekvid) INTO mk_id;
+    SELECT docs.sp_salvesta_mk(json_object :: JSON, user_id, l_rekvId) INTO mk_id;
 
     IF mk_id IS NOT NULL AND mk_id > 0
     THEN
