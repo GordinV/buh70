@@ -168,17 +168,14 @@ BEGIN
                                             pank INTEGER,
                                             konto TEXT, tp TEXT, muud TEXT, kassapank INTEGER);
 
-            RAISE NOTICE ' aa %', json_record.nimetus;
-
-
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
             THEN
 
 
                 INSERT INTO ou.aa (parentid, arve, nimetus, default_, kassa, pank, konto, tp, muud)
-                VALUES (rekv_id, json_record.arve, json_record.nimetus,
-                        (case when empty(json_record.default_) then 0 else 1 end),
-                        json_record.kassapank, json_record.pank, json_record.konto, json_record.tp,
+                VALUES (user_rekvid, json_record.arve, json_record.nimetus,
+                        (case when json_record.default_ is null or not json_record.default_  then 0 else 1 end),
+                        json_record.kassapank, coalesce(json_record.pank,1), json_record.konto, json_record.tp,
                         json_record.muud) RETURNING id
                            INTO detail_id;
 
@@ -186,7 +183,7 @@ BEGIN
                 UPDATE ou.aa
                 SET arve     = json_record.arve,
                     nimetus  = json_record.nimetus,
-                    default_ = json_record.default_,
+                    default_ = (case when json_record.default_ is null or not(json_record.default_)  then 0 else 1 end),
                     kassa    = json_record.kassapank,
                     pank     = json_record.pank,
                     konto    = json_record.konto,
@@ -207,8 +204,6 @@ BEGIN
     WHERE parentid = doc_id
       AND id NOT IN (SELECT unnest(ids));
 
-    RAISE NOTICE 'return %', rekv_id;
-
     RETURN rekv_id;
 EXCEPTION
     WHEN OTHERS
@@ -227,6 +222,6 @@ GRANT EXECUTE ON FUNCTION ou.sp_salvesta_rekv(JSON, INTEGER, INTEGER) TO dbkasut
 GRANT EXECUTE ON FUNCTION ou.sp_salvesta_rekv(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT ou.sp_salvesta_rekv('{"id":1,"data":{"tahtpaev":15,"aadress":null,"doc_type_id":"REKV","email":null,"faks":null,"haldus":null,"id":1,"juht":null,"kbmkood":null,"muud":null,"nimetus":"Test","parentid":4,"regkood":"10000","tel":null,"userid":1,"ftp":"ftp.avpsoft.ee","login":"login","parool":"pwd","gridData":[{"arve":"kassa1","default_":1,"id":1,"kassa":1,"kassapank":0,"konto":"111","muud":null,"nimetus":"Kassa1","pank":0,"parentid":1,"saldo":0,"tp":null}]}}', 1, 1);
+SELECT ou.sp_salvesta_rekv('{"id":1,"data":{"docTypeId":"REKV","module":"lapsed","userId":70,"uuid":"679c46a0-181b-11ea-9662-c7e1326a899d","docId":63,"context":null,"doc_type_id":"REKV","userid":70,"id":63,"parentid":0,"nimetus":"RAHANDUSAMET T","aadress":"Peetri 5, Narva","email":"rahandus@narva.ee","faks":"3599181","haldus":"","juht":"Jelena Golubeva","raama":"Jelena Tsekanina","kbmkood":"","muud":"Narva Linnavalitsuse Rahandusamet","regkood":"75008427","tel":"3599190","tahtpaev":null,"ftp":null,"login":null,"parool":null,"earved":"106549:elbevswsackajyafdoupavfwewuiafbeeiqatgvyqcqdqxairz","earved_omniva":"https://finance.omniva.eu/finance/erp/","row":[{"doc_type_id":"REKV","userid":70,"id":63,"parentid":0,"nimetus":"RAHANDUSAMET T","aadress":"Peetri 5, Narva","email":"rahandus@narva.ee","faks":"3599181","haldus":"","juht":"Jelena Golubeva","raama":"Jelena Tsekanina","kbmkood":"","muud":"Narva Linnavalitsuse Rahandusamet","regkood":"75008427","tel":"3599190","tahtpaev":null,"ftp":null,"login":null,"parool":null,"earved":"106549:elbevswsackajyafdoupavfwewuiafbeeiqatgvyqcqdqxairz","earved_omniva":"https://finance.omniva.eu/finance/erp/"}],"details":[{"id":1,"arve":"TP                  ","nimetus":"RAHANDUSAMET                                                                                                                                                                                                                                                  ","default_":1,"kassa":2,"pank":1,"konto":"","tp":"18510101","kassapank":2,"userid":"70"},{"id":2,"arve":"EE051010562011276005","nimetus":"SEB                                                                                                                                                                                                                                                           ","default_":1,"kassa":1,"pank":401,"konto":"10010002","tp":"800401","kassapank":1,"userid":"70"},{"id":3,"arve":"kassa               ","nimetus":"Kassa                                                                                                                                                                                                                                                         ","default_":1,"kassa":0,"pank":1,"konto":"100000","tp":"18510101","kassapank":0,"userid":"70"}],"gridConfig":[{"id":"id","name":"id","width":"0px","show":false,"type":"text","readOnly":true},{"id":"arve","name":"Arve","width":"100px","show":true,"type":"text","readOnly":false},{"id":"nimetus","name":"Nimetus","width":"300px","show":true,"readOnly":true},{"id":"konto","name":"Konto","width":"100px","show":true,"type":"text","readOnly":false},{"id":"tp","name":"TP","width":"100px","show":true,"type":"text","readOnly":false}],"default.json":[{"id":75,"number":"","rekvid":63,"toolbar1":0,"toolbar2":0,"toolbar3":0,"tahtpaev":14,"keel":2,"port":"465","smtp":"smtp.gmail.com","user":"vladislav.gordin@gmail.com","pass":"Vlad490710A","email":"vladislav.gordin@gmail.com","earved":"https://finance.omniva.eu/finance/erp/"}],"gridData":[{"id":"NEW0.352711495575625","arve":"EE712200221023241719","nimetus":"test arve","konto":"10010009","tp":"","kassapank":"1"},{"id":1,"arve":"TP                  ","nimetus":"RAHANDUSAMET                                                                                                                                                                                                                                                  ","default_":1,"kassa":2,"pank":1,"konto":"","tp":"18510101","kassapank":2,"userid":"70"},{"id":2,"arve":"EE051010562011276005","nimetus":"SEB                                                                                                                                                                                                                                                           ","default_":1,"kassa":1,"pank":401,"konto":"10010002","tp":"800401","kassapank":1,"userid":"70"},{"id":3,"arve":"kassa               ","nimetus":"Kassa                                                                                                                                                                                                                                                         ","default_":1,"kassa":0,"pank":1,"konto":"100000","tp":"18510101","kassapank":0,"userid":"70"}],"bpm":[],"requiredFields":[{"name":"regkood","type":"C"},{"name":"nimetus","type":"C"}]}}', 70, 63);
 
 */

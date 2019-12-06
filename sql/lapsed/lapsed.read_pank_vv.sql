@@ -25,7 +25,7 @@ DECLARE
     l_user_kood      TEXT           = (SELECT kasutaja
                                        FROM ou.userid
                                        WHERE id = user_id
-                                       LIMIT 1);
+                                           LIMIT 1);
     l_maksja_id      INTEGER;
     l_laps_id        INTEGER;
     v_vanem          RECORD;
@@ -37,7 +37,8 @@ BEGIN
         FROM lapsed.pank_vv v
         WHERE timestamp::TIMESTAMP = l_timestamp::TIMESTAMP
           AND (doc_id IS NULL OR doc_id = 0)
-        ORDER BY kpv, id
+            ORDER BY kpv
+            , id
         LOOP
 
             -- ишем плательшика
@@ -60,7 +61,7 @@ BEGIN
             FROM ou.userid
             WHERE rekvid = l_rekvid
               AND kasutaja::TEXT = l_user_kood::TEXT
-            LIMIT 1;
+                LIMIT 1;
 
 
             -- ищем родителя
@@ -98,8 +99,8 @@ BEGIN
                                      INNER JOIN libs.library l ON l.id = dp.parentid
                             WHERE dp.rekvid = l_rekvid
                               AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
-                            ORDER BY dp.id DESC
-                            LIMIT 1
+                                ORDER BY dp.id DESC
+                                LIMIT 1
             );
 
             -- обнуляем счетчик найденных счетов
@@ -116,7 +117,7 @@ BEGIN
                 WHERE a.rekvid = l_rekvid
                   AND (a.viitenr = v_pank_vv.viitenumber OR a.viitenr::TEXT = '0'::TEXT || v_pank_vv.viitenumber::TEXT)
                   AND a.jaak > 0
-                ORDER BY kpv ASC
+                    ORDER BY kpv ASC
                 LOOP
 
                     -- считаем остаток не списанной суммы
@@ -133,6 +134,7 @@ BEGIN
                                  v_pank_vv.selg        AS selg,
                                  v_pank_vv.number      AS number,
                                  v_pank_vv.kpv         AS kpv,
+                                 v_pank_vv.aa          AS aa,
                                  l_makse_summa         AS summa) row;
 
                     -- создаем платежку
@@ -181,9 +183,11 @@ BEGIN
                              v_pank_vv.selg        AS selg,
                              v_pank_vv.number      AS number,
                              v_pank_vv.kpv         AS kpv,
+                             v_pank_vv.aa          AS aa,
                              l_tasu_jaak           AS summa) row;
 
                 -- создаем платежку
+
                 SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
                 FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
 

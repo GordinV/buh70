@@ -68,8 +68,6 @@ BEGIN
         doc_number = docs.sp_get_number(user_rekvid, 'SMK', YEAR(doc_kpv), doc_doklausid);
     END IF;
 
-    raise notice 'doc_number %', doc_number;
-
 -- проверим расч. счет
     IF doc_aa_id IS NULL OR NOT exists(SELECT id
                                        FROM ou.aa

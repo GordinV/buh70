@@ -18,6 +18,7 @@ DECLARE
     l_kpv        DATE           = params ->> 'kpv';
     l_selg       TEXT           = params ->> 'selg';
     l_asutus_id  INTEGER        = params ->> 'maksja_id';
+    l_asutus_aa  TEXT           = params ->> 'aa';
     mk_id        INTEGER;
     v_arv        RECORD;
     v_mk1        RECORD;
@@ -29,7 +30,7 @@ DECLARE
                                       WHEN l_arv_id IS NOT NULL THEN (SELECT parentid
                                                                       FROM lapsed.liidestamine
                                                                       WHERE docid = l_arv_id
-                                                                      LIMIT 1)
+                                                                          LIMIT 1)
                                       ELSE left(right(l_viitenr::TEXT, 7), 6)::INTEGER END;
     l_opt        INTEGER;
     l_rekvId     INTEGER        = (SELECT rekvid
@@ -37,7 +38,6 @@ DECLARE
                                    WHERE id = user_id);
     l_nom_id     INTEGER;
     l_aa         TEXT;
-
 BEGIN
 
     SELECT a.* INTO v_arv
@@ -82,20 +82,34 @@ BEGIN
 
     -- создаем параметры для платежки
 
-    l_pank_id = (SELECT id
-                 FROM ou.aa
-                 WHERE kassa = 1
-                   AND parentid = l_rekvId
-                 ORDER BY default_
-                 LIMIT
-                     1);
+    -- ищем расчетный счет учреждения
+    IF l_asutus_aa IS NOT NULL
+    THEN
+        l_pank_id = (SELECT id
+                     FROM ou.aa aa
+                     WHERE kassa = 1
+                       AND parentid = l_rekvId
+                       AND aa.arve::TEXT = l_asutus_aa::TEXT
+                         ORDER BY default_
+                         LIMIT 1);
+
+    END IF;
+
+    l_pank_id = CASE
+                    WHEN l_pank_id IS NULL THEN (SELECT id
+                                                 FROM ou.aa
+                                                 WHERE kassa = 1
+                                                   AND parentid = l_rekvId
+                                                     ORDER BY default_
+                                                     LIMIT 1)
+                    ELSE l_pank_id END;
 
     l_nom_id = (SELECT id
                 FROM libs.nomenklatuur n
                 WHERE rekvid = l_rekvId
                   AND dok IN (l_dok, doc_type_id)
-                ORDER BY id DESC
-                LIMIT 1);
+                    ORDER BY id DESC
+                    LIMIT 1);
 
     l_aa = (COALESCE((
                          SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa
@@ -105,8 +119,7 @@ BEGIN
                                                           THEN '[]'::JSON
                                                       ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (ELEMENT)
                          WHERE a.id = l_asutus_id
-                         LIMIT
-                             1
+                             LIMIT 1
                      ), ''));
 
     IF v_arv.id IS NOT NULL
@@ -129,9 +142,10 @@ BEGIN
         FROM docs.arv1 a1
         WHERE a1.
                   parentid = v_arv.id
-        ORDER BY kood5, kood2 DESC, kood1 DESC
-        LIMIT 1
-            INTO v_mk1;
+            ORDER BY kood5
+            , kood2 DESC
+            , kood1 DESC
+            LIMIT 1 INTO v_mk1;
 
     ELSE
         SELECT 0           AS id,
@@ -148,7 +162,7 @@ BEGIN
 
     SELECT 0              AS id,
            l_dokprop_id   AS doklausid,
-           l_pank_id      AS aaid,
+           l_pank_id      AS aa_id,
            v_arv.parentid AS arvid,
            l_opt          AS opt,
            l_viitenr      AS viitenr,

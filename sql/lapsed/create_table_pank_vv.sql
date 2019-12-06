@@ -30,6 +30,7 @@ GRANT SELECT ON TABLE lapsed.pank_vv TO dbvaatleja;
 
 ALTER TABLE lapsed.pank_vv ADD COLUMN IF NOT EXISTS number text;
 ALTER TABLE lapsed.pank_vv ADD COLUMN IF NOT EXISTS isikukood text;
+ALTER TABLE lapsed.pank_vv ADD COLUMN IF NOT EXISTS aa text;
 
 
 /*

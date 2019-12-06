@@ -48,6 +48,7 @@ const readXML = async (xmlContent) => {
             throw err;
         }
         let stmtes = result.Document.BkToCstmrStmt[0].Stmt;
+        let aa = stmtes[0].Acct[0].Id[0].IBAN[0];
         let Acct = stmtes[0].Acct[0].Svcr[0].FinInstnId[0].BIC[0]; //banc code
         let Ntres = stmtes[0].Ntry;
         Ntres.forEach(ntry => {
@@ -74,7 +75,8 @@ const readXML = async (xmlContent) => {
                     iban: eban,
                     pank: Acct,
                     number:number,
-                    isikukood: isikukood
+                    isikukood: isikukood,
+                    aa:aa
                 });
 
             }
