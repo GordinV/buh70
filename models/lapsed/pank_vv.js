@@ -32,7 +32,7 @@ module.exports = {
             {id: "maksja", name: "Maksja", width: "15%"},
             {id: "viitenumber", name: "Viitenr", width: "10%"},
             {id: "iban", name: "Arveldus arve", width: "20%"},
-            {id: "kpv", name: "Kuupäev", width: "10%", show:false},
+            {id: "kpv", name: "Maksepäev", width: "10%", show:true},
             {id: "summa", name: "Summa", width: "10%"},
             {id: "pank_id", name: "Tehingu nr.", width: "15%"},
             {id: "selg", name: "Makse selgitus", width: "20%"},

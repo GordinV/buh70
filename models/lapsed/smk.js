@@ -164,7 +164,7 @@ const Smk = {
             {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
             {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
             {id: 'asutus', name: 'Maksja', width: '200px', show: true, type: 'text', readOnly: false},
-            {id: 'aa', name: 'Arveldus arve', width: '150px', show: true, type: 'text', readOnly: false},
+            {id: 'aa', name: 'Maksja arveldusarve', width: '150px', show: true, type: 'text', readOnly: false},
             {id: 'summa', name: 'Summa', width: '100px', show: true, type: 'number', readOnly: false},
             {id: 'konto', name: 'Korr.konto', width: '100px', show: true, type: 'text', readOnly: false},
             {id: 'tunnus', name: 'Tunnus', width: '100px', show: true, type: 'text', readOnly: false},
