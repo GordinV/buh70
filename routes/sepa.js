@@ -1,7 +1,6 @@
 'use strict';
 const db = require('./../libs/db');
-const getEarve = require('./lapsed/get_e-arve');
-const sendToOmniva = require('./lapsed/send_xml_omniva');
+const getSepa = require('./lapsed/get_sepa_xml');
 
 const Doc = require('./../classes/DocumentTemplate');
 
@@ -31,14 +30,14 @@ exports.get = async (req, res) => {
     const rekvData = await rekvDoc['select'](rekvDoc.config);
 
     // создать объект
-    const earveDoc = new Doc('ARV', null, user.userId, user.asutusId, 'lapsed');
+    const eSepaDoc = new Doc('VMK', null, user.userId, user.asutusId, 'lapsed');
 
     // выборка данных
     // делаем массив промисов
     const dataPromises = ids.map(id => {
         return new Promise(resolve => {
-            earveDoc.setDocumentId(id);
-            resolve(earveDoc['select'](earveDoc.config));
+            eSepaDoc.setDocumentId(id);
+            resolve(eSepaDoc['select'](eSepaDoc.config));
         })
     });
 
@@ -46,17 +45,15 @@ exports.get = async (req, res) => {
     const selectedDocs = [];
     let promiseSelectResult = await Promise.all(dataPromises).then((result) => {
 
-        //      selectedDocs.push({...result[0].row[0], details: result[0].details});
         selectedDocs.push(result);
     }).catch((err) => {
         console.error('catched error->', err);
         return res.send({status: 500, result: null, error_message: err});
     });
 
+
     // готовим параметры
     const asutusConfig = {
-        url: rekvData.row[0].earved_omniva, //'https://finance.omniva.eu/finance/erp/',
-        secret: rekvData.row[0].earved, //'106549:elbevswsackajyafdoupavfwewuiafbeeiqatgvyqcqdqxairz',
         asutus: rekvData.row[0].muud ? rekvData.row[0].muud : rekvData.row[0].nimetus,
         regkood: rekvData.row[0].regkood,
         user: user.userName
@@ -65,10 +62,10 @@ exports.get = async (req, res) => {
 
     try {
         // делаем XML
-        const xml = getEarve(selectedDocs[0], asutusConfig, false);
+        const xml = getSepa(selectedDocs[0], asutusConfig);
 
-        // register e-arve event
-        let sql = earveDoc.config.earve[0].register;
+        // register eksport event
+        let sql = eSepaDoc.config.sepa[0].register;
 
         // делаем массив промисов
         const registerPromises = ids.map(id => {
@@ -83,7 +80,7 @@ exports.get = async (req, res) => {
 
         // возвращаем его
         if (xml) {
-            res.attachment('e-arve.xml');
+            res.attachment('sepa.xml');
             res.type('xml');
             res.send(xml);
         } else {

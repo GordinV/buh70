@@ -18,6 +18,7 @@ DECLARE
     l_kpv        DATE           = params ->> 'kpv';
     l_selg       TEXT           = params ->> 'selg';
     l_asutus_id  INTEGER        = params ->> 'maksja_id';
+    l_aa         TEXT           = params ->> 'maksja_arve';
     l_asutus_aa  TEXT           = params ->> 'aa';
     mk_id        INTEGER;
     v_arv        RECORD;
@@ -37,7 +38,6 @@ DECLARE
                                    FROM ou.userid
                                    WHERE id = user_id);
     l_nom_id     INTEGER;
-    l_aa         TEXT;
 BEGIN
 
     SELECT a.* INTO v_arv
@@ -111,16 +111,18 @@ BEGIN
                     ORDER BY id DESC
                     LIMIT 1);
 
-    l_aa = (COALESCE((
-                         SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa
-                         FROM libs.asutus a,
-                              json_array_elements(CASE
-                                                      WHEN (a.properties ->> 'asutus_aa') IS NULL
-                                                          THEN '[]'::JSON
-                                                      ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (ELEMENT)
-                         WHERE a.id = l_asutus_id
-                             LIMIT 1
-                     ), ''));
+    l_aa = CASE
+               WHEN l_aa IS NULL THEN (COALESCE((
+                                                    SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa
+                                                    FROM libs.asutus a,
+                                                         json_array_elements(CASE
+                                                                                 WHEN (a.properties ->> 'asutus_aa') IS NULL
+                                                                                     THEN '[]'::JSON
+                                                                                 ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (ELEMENT)
+                                                    WHERE a.id = l_asutus_id
+                                                        LIMIT 1
+                                                ), ''))
+               ELSE l_aa END;
 
     IF v_arv.id IS NOT NULL
     THEN

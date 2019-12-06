@@ -3,6 +3,10 @@
 const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const styles = require('./vmk-register-styles');
+const DocContext = require('./../../doc-context.js');
+
+const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
+const BtnSepa = require('./../../components/button-register/button-earve/index.jsx');
 const DOC_TYPE_ID = 'VMK';
 
 /**
@@ -11,12 +15,15 @@ const DOC_TYPE_ID = 'VMK';
 class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
+        this.onClickHandler = this.onClickHandler.bind(this);
+        this.renderer = this.renderer.bind(this)
+
     }
 
     render() {
         return <DocumentRegister initData={this.props.initData}
-                                 ref = 'register'
-                                 history = {this.props.history ? this.props.history: null}
+                                 ref='register'
+                                 history={this.props.history ? this.props.history : null}
                                  docTypeId={DOC_TYPE_ID}
                                  module={this.props.module}
                                  style={styles}
@@ -24,9 +31,48 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
-        return <div>VMK register special render</div>
+        return (
+            <ToolbarContainer>
+                <BtnSepa
+                    onClick={this.onClickHandler}
+                    phrase={`Kas laadida XML fail?`}
+                    ref='btnSepaXML'
+                    value={'Saama XML (SEPA) kõik valitud maksed'}
+                />
+            </ToolbarContainer>
+        );
     }
 
+    //handler для события клик на кнопках панели
+    onClickHandler(event) {
+        let ids = new Set; // сюда пишем ид счетом, которые под обработку
+
+        const Doc = this.refs['register'];
+        // будет отправлено на почту  выбранные и только для эл.почты счета
+        Doc.gridData.forEach(row => {
+            // выбрано для печати
+            ids.add(row.id);
+        });
+
+        // конвертация в массив
+        ids = Array.from(ids);
+
+        if (!ids.length) {
+            Doc.setState({
+                warning: 'Mitte ühtegi makse leidnum', // строка извещений
+                warningType: 'notValid',
+            });
+        } else {
+            // отправляем запрос на выполнение
+            Doc.setState({
+                warning: `Leidsin ${ids.length} maksed`, // строка извещений
+                warningType: 'ok',
+            });
+
+            let url = `/sepa/${DocContext.userData.uuid}/${ids}`;
+            window.open(`${url}`);
+        }
+    }
 }
 
 module.exports = (Documents);

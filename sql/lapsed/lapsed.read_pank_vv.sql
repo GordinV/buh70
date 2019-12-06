@@ -19,7 +19,6 @@ DECLARE
     l_makse_summa    NUMERIC(12, 2) = 0;
     l_tasu_jaak      NUMERIC(12, 2) = 0;
     l_db_konto       TEXT           = '100100'; -- дебетовая (банк) сторона
-    l_kr_konto       TEXT           = '103000'; -- кредитовая сторона
     l_dokprop_id     INTEGER;
     l_target_user_id INTEGER        = user_id;
     l_user_kood      TEXT           = (SELECT kasutaja
@@ -135,6 +134,7 @@ BEGIN
                                  v_pank_vv.number      AS number,
                                  v_pank_vv.kpv         AS kpv,
                                  v_pank_vv.aa          AS aa,
+                                 v_pank_vv.iban        AS maksja_arve,
                                  l_makse_summa         AS summa) row;
 
                     -- создаем платежку
@@ -184,6 +184,7 @@ BEGIN
                              v_pank_vv.number      AS number,
                              v_pank_vv.kpv         AS kpv,
                              v_pank_vv.aa          AS aa,
+                             v_pank_vv.iban        AS maksja_arve,
                              l_tasu_jaak           AS summa) row;
 
                 -- создаем платежку

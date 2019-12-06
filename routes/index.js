@@ -63,6 +63,7 @@ module.exports = function (app) {
 
     app.post('/e-arved', checkAuth, require('./e-arved').post); //checkAuth
     app.get('/e-arved/:uuid/:id/',require('./e-arved').get);
+    app.get('/sepa/:uuid/:id/',require('./sepa').get);
 
     app.post('/calc/muuda_ettemaksu_period', checkAuth, require('./lapsed/muuda_ettemaksu_period').post); //checkAuth
     app.post('/calc/:taskName', checkAuth, require('./calc').post); //checkAuth

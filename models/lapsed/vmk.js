@@ -204,11 +204,6 @@ const Vmk = {
         let taskFunction = eval(executeTask[0]);
         return taskFunction(docId, userId, Vmk);
     },
-    register: {
-        command: `UPDATE docs.doc
-                  SET status = 1
-                  WHERE id = $1`, type: "sql"
-    },
     generateJournal: {
         command: `SELECT error_code, result, error_message
                   FROM docs.gen_lausend_vmk($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
@@ -239,6 +234,16 @@ const Vmk = {
             view: 'vmk_register',
             params: 'sqlWhere'
         },
+    ],
+    sepa: [
+        {
+            register: `UPDATE docs.doc
+                       SET history = history ||
+                                     (SELECT row_to_json(row)
+                                      FROM (SELECT now()                                                AS earve,
+                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                       WHERE id = $1`
+        }
     ],
     getLog: {
         command: `SELECT ROW_NUMBER() OVER ()                                               AS id,
