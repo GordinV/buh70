@@ -1,0 +1,2 @@
+ALTER TABLE docs.mk ALTER COLUMN arvid drop NOT NULL;
+ALTER TABLE docs.korder1 ALTER COLUMN arvid drop NOT NULL;

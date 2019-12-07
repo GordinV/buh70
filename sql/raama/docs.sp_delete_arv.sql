@@ -1,162 +1,173 @@
 ﻿DROP FUNCTION IF EXISTS docs.sp_delete_arv(INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION docs.sp_delete_arv(
-  IN  user_id       INTEGER,
-  IN  doc_id        INTEGER,
-  OUT error_code    INTEGER,
-  OUT result        INTEGER,
-  OUT error_message TEXT)
+CREATE OR REPLACE FUNCTION docs.sp_delete_arv(IN user_id INTEGER,
+                                              IN doc_id INTEGER,
+                                              OUT error_code INTEGER,
+                                              OUT result INTEGER,
+                                              OUT error_message TEXT)
 AS
 $BODY$
 
 DECLARE
-  v_doc           RECORD;
-  v_dependid_docs RECORD;
-  arv_id          INTEGER;
-  ids             INTEGER [];
-  arv_history     JSONB;
-  arv1_history    JSONB;
-  arvtasu_history JSONB;
-  new_history     JSONB;
-  DOC_STATUS      INTEGER = 3; -- документ удален
+    v_doc           RECORD;
+    v_dependid_docs RECORD;
+    arv_id          INTEGER;
+    ids             INTEGER[];
+    arv_history     JSONB;
+    arv1_history    JSONB;
+    arvtasu_history JSONB;
+    new_history     JSONB;
+    DOC_STATUS      INTEGER = 3; -- документ удален
 BEGIN
 
-  SELECT d.*, u.ametnik AS user_name
-      INTO v_doc
-  FROM docs.doc d
-         LEFT OUTER JOIN ou.userid u ON u.id = user_id
-  WHERE d.id = doc_id;
+    SELECT d.*,
+           u.ametnik AS user_name
+           INTO v_doc
+    FROM docs.doc d
+             LEFT OUTER JOIN ou.userid u ON u.id = user_id
+    WHERE d.id = doc_id;
 
-  -- проверка на пользователя и его соответствие учреждению
+    -- проверка на пользователя и его соответствие учреждению
 
-  IF NOT exists(SELECT id FROM ou.userid u WHERE id = user_id
-                                             AND u.rekvid = v_doc.rekvid
-  )
-  THEN
+    IF NOT exists(SELECT id
+                  FROM ou.userid u
+                  WHERE id = user_id
+                    AND u.rekvid = v_doc.rekvid
+        )
+    THEN
 
-    error_code = 5;
-    error_message = 'Kasutaja ei leitud';
-    result = 0;
-    RETURN;
+        error_code = 5;
+        error_message = 'Kasutaja ei leitud';
+        result = 0;
+        RETURN;
 
-  END IF;
+    END IF;
 
-  -- проверка на права. Предполагает наличие прописанных прав на удаление для данного пользователя в поле rigths
+    -- проверка на права. Предполагает наличие прописанных прав на удаление для данного пользователя в поле rigths
 
-  --	ids =  v_doc.rigths->'delete';
+    --	ids =  v_doc.rigths->'delete';
 
-  IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
-  THEN
-      RAISE NOTICE 'У пользователя нет прав на удаление';
-      error_code = 4;
-      error_message = 'Ei saa kustuta dokument. Puudub õigused';
---     result = 0;
+    IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
+    THEN
+        RAISE NOTICE 'У пользователя нет прав на удаление';
+        error_code = 4;
+        error_message = 'Ei saa kustuta dokument. Puudub õigused';
+        --     result = 0;
 --      RETURN;
 
-  END IF;
+    END IF;
 
-  -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
+    -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
 
-  IF exists(
-      SELECT d.id
-      FROM docs.doc d
-             INNER JOIN libs.library l ON l.id = d.doc_type_id
-      WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
-        AND d.status <> 3
-        AND l.kood IN ('ARV', 'MK', 'SORDER', 'KORDER'))
-  THEN
+    IF exists(
+            SELECT d.id
+            FROM docs.doc d
+                     INNER JOIN libs.library l ON l.id = d.doc_type_id
+            WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
+              AND d.status <> 3
+              AND l.kood IN ('ARV', 'MK', 'SORDER', 'KORDER'))
+    THEN
 
-    RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
-    error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
-    error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
-    result = 0;
-    RETURN;
-  END IF;
+        RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
+        error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
+        error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
+        result = 0;
+        RETURN;
+    END IF;
 
-  -- Логгирование удаленного документа
-  -- docs.arv
+    -- Логгирование удаленного документа
+    -- docs.arv
 
-  arv_history = row_to_json(row.*) FROM (SELECT a.*
-  FROM docs.arv a WHERE a.parentid = doc_id) ROW;
+    arv_history = row_to_json(row.*)
+                  FROM (SELECT a.*
+                        FROM docs.arv a
+                        WHERE a.parentid = doc_id) ROW;
 
-  -- docs.arv1
+    -- docs.arv1
 
-  arv1_history = jsonb_build_array(array(SELECT row_to_json(row.*)
-                                         FROM (SELECT a1.*
-                                               FROM docs.arv1 a1
-                                                      INNER JOIN docs.arv a ON a.id = a1.parentid
-                                               WHERE a.parentid = doc_id) row));
-  -- docs.arvtasu
+    arv1_history = jsonb_build_array(array(SELECT row_to_json(row.*)
+                                           FROM (SELECT a1.*
+                                                 FROM docs.arv1 a1
+                                                          INNER JOIN docs.arv a ON a.id = a1.parentid
+                                                 WHERE a.parentid = doc_id) row));
+    -- docs.arvtasu
 
-  arvtasu_history = jsonb_build_array(array(SELECT row_to_json(row.*)
-                                            FROM (SELECT at.*
-                                                  FROM docs.arvtasu at
-                                                         INNER JOIN docs.arv a ON a.id = at.doc_arv_id
-                                                  WHERE a.parentid = doc_id) row));
+    arvtasu_history = jsonb_build_array(array(SELECT row_to_json(row.*)
+                                              FROM (SELECT at.*
+                                                    FROM docs.arvtasu at
+                                                             INNER JOIN docs.arv a ON a.id = at.doc_arv_id
+                                                    WHERE a.parentid = doc_id) row));
 
-  SELECT row_to_json(row)
-      INTO new_history
-  FROM (SELECT now()           AS deleted,
-               v_doc.user_name AS user,
-               arv_history     AS arv,
-               arv1_history    AS arv1,
-               arvtasu_history AS arvtasu) row;
+    SELECT row_to_json(row) INTO new_history
+    FROM (SELECT now()           AS deleted,
+                 v_doc.user_name AS user,
+                 arv_history     AS arv,
+                 arv1_history    AS arv1,
+                 arvtasu_history AS arvtasu) row;
 
-  -- удаление связей
-  UPDATE docs.doc
-  SET docs_ids = array_remove(docs_ids, v_doc.id)
-  WHERE id IN (SELECT unnest(docs_ids) FROM docs.doc WHERE id = v_doc.id)
-    AND status < DOC_STATUS;
-
-  IF (SELECT (properties->> 'arve_id') AS arve_id
-      FROM docs.arv1 a1
-      WHERE a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id) limit 1) IS NOT NULL
-  THEN
-    -- есть ссылка, надо снять
+    -- удаление связей
     UPDATE docs.doc
-    SET docs_ids = array_remove(docs_ids, doc_id)
-    WHERE id IN (SELECT (a1.properties->> 'arve_id') :: INTEGER
-                 FROM docs.arv1 a1
-                        INNER JOIN docs.arv a ON a.id = a1.parentid
-                 WHERE a.parentid = doc_id);
-  END IF;
+    SET docs_ids = array_remove(docs_ids, v_doc.id)
+    WHERE id IN (SELECT unnest(docs_ids) FROM docs.doc WHERE id = v_doc.id)
+      AND status < DOC_STATUS;
+
+    IF (SELECT (properties ->> 'arve_id') AS arve_id
+        FROM docs.arv1 a1
+        WHERE a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id)
+        LIMIT 1) IS NOT NULL
+    THEN
+        -- есть ссылка, надо снять
+        UPDATE docs.doc
+        SET docs_ids = array_remove(docs_ids, doc_id)
+        WHERE id IN (SELECT (a1.properties ->> 'arve_id') :: INTEGER
+                     FROM docs.arv1 a1
+                              INNER JOIN docs.arv a ON a.id = a1.parentid
+                     WHERE a.parentid = doc_id);
+    END IF;
 
 
-  DELETE FROM docs.arv1 WHERE parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id);
-  DELETE FROM docs.arv WHERE parentid = v_doc.id; --@todo констрейн на удаление
 
-  -- Установка статуса ("Удален")  и сохранение истории
+    DELETE FROM docs.arv1 WHERE parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id);
+    DELETE FROM docs.arv WHERE parentid = v_doc.id;
+    --@todo констрейн на удаление
 
-  UPDATE docs.doc
-  SET lastupdate = now(),
-      history    = coalesce(history, '[]') :: JSONB || new_history,
-      rekvid     = v_doc.rekvid,
-      status     = DOC_STATUS
-  WHERE id = doc_id;
+    -- уберем ссылку на счет
+    UPDATE docs.mk SET arvid = NULL WHERE arvid = doc_id;
+    UPDATE docs.korder1 SET arvid = NULL WHERE arvid = doc_id;
 
-  -- Удаление данных из связанных таблиц (удаляем проводки)
+    -- Установка статуса ("Удален")  и сохранение истории
 
-  IF (v_doc.docs_ids IS NOT NULL)
-  THEN
-    PERFORM docs.sp_delete_journal(user_id, parentid)
-    FROM docs.journal
-    WHERE parentid IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
+    UPDATE docs.doc
+    SET lastupdate = now(),
+        history    = coalesce(history, '[]') :: JSONB || new_history,
+        rekvid     = v_doc.rekvid,
+        status     = DOC_STATUS
+    WHERE id = doc_id;
 
-  END IF;
+    -- Удаление данных из связанных таблиц (удаляем проводки)
 
-  -- удаляем ссылки на договор
-  IF exists(SELECT id FROM docs.leping1 WHERE parentid IN (SELECT unnest(v_doc.docs_ids)))
-  THEN
-    UPDATE docs.doc SET docs_ids = array_remove(docs_ids, doc_id) WHERE id IN (SELECT unnest(v_doc.docs_ids));
-  END IF;
+    IF (v_doc.docs_ids IS NOT NULL)
+    THEN
+        PERFORM docs.sp_delete_journal(user_id, parentid)
+        FROM docs.journal
+        WHERE parentid IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
+
+    END IF;
+
+    -- удаляем ссылки на договор
+    IF exists(SELECT id FROM docs.leping1 WHERE parentid IN (SELECT unnest(v_doc.docs_ids)))
+    THEN
+        UPDATE docs.doc SET docs_ids = array_remove(docs_ids, doc_id) WHERE id IN (SELECT unnest(v_doc.docs_ids));
+    END IF;
 
 
-  result = 1;
-  RETURN;
-END;$BODY$
-LANGUAGE plpgsql
-VOLATILE
-COST 100;
+    result = 1;
+    RETURN;
+END;
+$BODY$
+    LANGUAGE plpgsql
+    VOLATILE
+    COST 100;
 
 GRANT EXECUTE ON FUNCTION docs.sp_delete_arv(INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_delete_arv(INTEGER, INTEGER) TO dbpeakasutaja;
