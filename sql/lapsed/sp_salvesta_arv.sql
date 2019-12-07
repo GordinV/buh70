@@ -1,7 +1,7 @@
 DROP FUNCTION IF EXISTS docs.sp_salvesta_arv(JSON, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.sp_salvesta_arv(data JSON,
-                                                userid INTEGER,
+                                                user_id INTEGER,
                                                 user_rekvid INTEGER)
     RETURNS INTEGER AS
 $BODY$
@@ -13,11 +13,6 @@ DECLARE
     doc_id                INTEGER        = data ->> 'id';
     doc_data              JSON           = data ->> 'data';
     doc_type_kood         TEXT           = 'ARV'/*data->>'doc_type_id'*/;
-    doc_type_id           INTEGER        = (SELECT id
-                                            FROM libs.library
-                                            WHERE kood = doc_type_kood
-                                              AND library = 'DOK'
-                                            LIMIT 1);
 
     doc_details           JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     doc_number            TEXT           = doc_data ->> 'number';
@@ -46,12 +41,7 @@ DECLARE
     doc_ettemaksu_period  INTEGER        = doc_data ->> 'ettemaksu_period'; -- период в месяцах для счета на предоплату или номер периода в доходных
     doc_ettemaksu_arve_id INTEGER        = doc_data ->> 'ettemaksu_arve_id'; -- ссылка на счет предоплатв
 
-    dok_props             JSONB          = (SELECT row_to_json(row)
-                                            FROM (SELECT doc_aa               AS aa,
-                                                         doc_viitenr          AS viitenr,
-                                                         doc_type             AS tyyp,
-                                                         doc_ettemaksu_period AS ettemaksu_period,
-                                                         doc_print            AS print) row);
+    dok_props             JSONB;
 
     json_object           JSON;
     json_record           RECORD;
@@ -62,6 +52,7 @@ DECLARE
     is_import             BOOLEAN        = data ->> 'import';
 
     arv1_rea_json         JSONB;
+    l_jaak NUMERIC;
 BEGIN
 
     -- если есть ссылка на ребенка, то присвоим viitenumber
@@ -69,6 +60,12 @@ BEGIN
     THEN
         doc_viitenr = lapsed.get_viitenumber(user_rekvid, doc_lapsid);
     END IF;
+    dok_props = (SELECT row_to_json(row)
+                 FROM (SELECT doc_aa               AS aa,
+                              doc_viitenr          AS viitenr,
+                              doc_type             AS tyyp,
+                              doc_ettemaksu_period AS ettemaksu_period,
+                              doc_print            AS print) row);
 
     IF (doc_id IS NULL)
     THEN
@@ -84,29 +81,13 @@ BEGIN
     SELECT kasutaja INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
-      AND u.id = userId;
+      AND u.id = user_id;
 
     IF is_import IS NULL AND userName IS NULL
     THEN
         RAISE NOTICE 'User not found %', user;
         RETURN 0;
     END IF;
-
-    -- проверка на номер
-/*
-  SELECT row_to_json(row)
-         INTO json_object
-  FROM (SELECT
-          doc_liik      AS tyyp,
-          doc_number    AS number,
-          year(doc_kpv) AS aasta,
-          doc_asutusid  AS asutus) row;
-  IF NOT docs.check_arv_number(user_rekvid::INTEGER, json_object::JSON)::BOOLEAN
-  THEN
-    RAISE NOTICE 'Number not valid';
-    RETURN 0;
-  END IF;
-*/
 
 -- установим срок оплаты, если не задан
     IF doc_tahtaeg IS NULL OR doc_tahtaeg < doc_kpv
@@ -123,9 +104,9 @@ BEGIN
                      userName AS user) row;
 
         SELECT row_to_json(row) INTO new_rights
-        FROM (SELECT ARRAY [userId] AS "select",
-                     ARRAY [userId] AS "update",
-                     ARRAY [userId] AS "delete") row;
+        FROM (SELECT ARRAY [user_id] AS "select",
+                     ARRAY [user_id] AS "update",
+                     ARRAY [user_id] AS "delete") row;
 
 
         INSERT INTO docs.doc (doc_type_id, history, rigths, rekvId)
@@ -136,7 +117,7 @@ BEGIN
 
         INSERT INTO docs.arv (parentid, rekvid, userid, liik, operid, number, kpv, asutusid, lisa, tahtaeg, kbmta, kbm,
                               summa, muud, objektid, objekt, doklausid, properties)
-        VALUES (doc_id, user_rekvid, userId, doc_liik, doc_operid, doc_number, doc_kpv, doc_asutusid, doc_lisa,
+        VALUES (doc_id, user_rekvid, user_id, doc_liik, doc_operid, doc_number, doc_kpv, doc_asutusid, doc_lisa,
                 doc_tahtaeg,
                 doc_kbmta, doc_kbm, doc_summa,
                 doc_muud, doc_objektid, doc_objekt, tnDokLausId, dok_props) RETURNING id
@@ -349,9 +330,7 @@ BEGIN
 
     END IF;
 
-
     PERFORM docs.sp_update_arv_jaak(doc_id);
-
 
     -- lapse module
 
@@ -364,7 +343,12 @@ BEGIN
 
     END IF;
 
-
+    l_jaak = (SELECT jaak FROM docs.arv WHERE parentid = doc_id);
+    IF doc_id IS NOT NULL AND doc_id > 0 AND l_jaak > 0
+    THEN
+        -- проверить на наличие предоплат
+        PERFORM docs.check_ettemaks(doc_id, user_id);
+    END IF;
     RETURN doc_id;
 END;
 $BODY$

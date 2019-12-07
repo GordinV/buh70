@@ -336,6 +336,6 @@ GRANT EXECUTE ON FUNCTION lapsed.koosta_arve_taabeli_alusel(INTEGER, INTEGER, DA
 
 
 /*
-select lapsed.koosta_arve_taabeli_alusel(70, 16)
+select lapsed.koosta_arve_taabeli_alusel(70, 47, '2019-11-30')
  */
 
