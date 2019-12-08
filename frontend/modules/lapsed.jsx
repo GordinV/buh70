@@ -53,7 +53,7 @@ const ArvedKoodiJargiReport = require('./../docs/arved_koodi_jargi/index.jsx');
 const SaldoJaKaiveReport = require('./../docs/saldo_ja_kaive/index.jsx');
 const SentDocsReport = require('./../docs/sent_docs/index.jsx');
 const ChildAgeReport = require('./../docs/child_age/index.jsx');
-
+const SoodustusedReport = require('./../docs/soodustused/index.jsx');
 
 const {Route, Redirect} = require('react-router-dom');
 const {StyleRoot} = require('radium');
@@ -242,6 +242,11 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/child_age"
                        render={(props) => <ChildAgeReport
+                           module={MODULE}
+                           history={props.history}
+                           initData={this.props.initData}/>}/>
+                <Route exact path="/lapsed/soodustused"
+                       render={(props) => <SoodustusedReport
                            module={MODULE}
                            history={props.history}
                            initData={this.props.initData}/>}/>

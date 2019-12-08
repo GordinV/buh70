@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 SOODUSTUSED
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+
+        - var groupValue = Object.keys(data[0])[0];
+        - var lapsedKokku = data[0][groupValue][0].lapsed_kokku;
+        - var veadKokku = data[0][groupValue][0].vead_kokku;
+        - var peredKokku = data[0][groupValue][0].pered_kokku;
+
+        each vanem_isikukood in data
+            p #{Object.keys(vanem_isikukood)[0]} lapsed kokku: #{vanem_isikukood[Object.keys(vanem_isikukood)[0]][0].lapsed}, % - #{vanem_isikukood[Object.keys(vanem_isikukood)[0]][0].percent}
+
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Lapse nimi
+                        th Vead
+                        th Arvestatud
+                        th Asutus
+
+                tbody
+                    each rea in vanem_isikukood[Object.keys(vanem_isikukood)[0]]
+                        tr
+                            td=rea.lapse_nimi
+                            td=rea.viga
+                            td=rea.soodustus
+                            td=rea.asutus
+        h2 Lapsed kokku: #{lapsedKokku} Vead kokku: #{veadKokku} Pered kokku: #{peredKokku}
