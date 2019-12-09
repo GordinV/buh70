@@ -78,14 +78,27 @@ BEGIN
 
         IF coalesce(l_min_sots, 0) > 0
         THEN
--- считает отсутствие на раб. месте
-            l_puudu_paevad = coalesce((SELECT sum(paevad)
+            -- считает отсутствие на раб. месте
+
+/*            l_puudu_paevad = coalesce((SELECT sum(paevad)
                                        FROM palk.cur_puudumine
                                        WHERE lepingid = l_lepingid
-                                         and pohjus in ('PUHKUS','HAIGUS')
+                                         AND (pohjus IN ('HAIGUS')
+                                           OR pohjus = 'PUHKUS' AND tyyp < 4)
                                          AND kpv1 >= date(YEAR(l_kpv), MONTH(l_kpv), 1)
                                          AND kpv2 <=
                                              (date(YEAR(l_kpv), MONTH(l_kpv), 1) + INTERVAL '1 month')::DATE - 1), 0);
+*/
+
+-- params
+            SELECT row_to_json(row) INTO l_params
+            FROM (SELECT month(l_kpv) AS kuu,
+                         year(l_kpv)  AS aasta,
+                         l_lepingid   AS lepingid) row;
+
+
+            l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
+
 
             --parandame tööpäevad, kui töötaja töötas mitte täis kuu
             l_too_paevad = CASE
@@ -98,14 +111,6 @@ BEGIN
                                ELSE date(YEAR(l_kpv), MONTH(l_kpv), 1) END +
                            1 - l_puudu_paevad;
 
-            -- params
-            SELECT row_to_json(row) INTO l_params
-            FROM (SELECT month(l_kpv) AS kuu,
-                         year(l_kpv)  AS aasta,
-                         l_lepingid   AS lepingid) row;
-
-
-            l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
 
             -- kontrollime enne arvestatud sotsmaks
 
@@ -177,11 +182,11 @@ BEGIN
             -- ainult , kui olid tulud
             l_sotsmaks_min_palgast = (l_sotsmaks_min_palgast - summa);
 
-            raise notice 'l_min_palk %, l_puudu_paevad %', l_min_palk, l_puudu_paevad;
-            if l_puudu_paevad > 0 THEN
+            IF l_puudu_paevad > 0
+            THEN
                 l_min_palk = (l_min_palk / 30 * (30 - l_puudu_paevad));
             END IF;
-            sm = l_min_palk   - l_alus_summa;
+            sm = l_min_palk - l_alus_summa;
         ELSE
             l_sotsmaks_min_palgast = 0;
 
