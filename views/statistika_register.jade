@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 STATISTIKA
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+        - var aruanned = {stat1: 'Lapsed peres - pere suurus (1) / lapsed (2)', stat2: 'Soodustuse saajad, kood (1), protsent (2), summa (3)'}
+        each aruanne in data
+
+            p #{aruanned[Object.keys(aruanne)[0]]}
+
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Kood
+                        th 1
+                        th 2
+                        th 3
+
+                tbody
+                    each rea in aruanne[Object.keys(aruanne)[0]]
+                        tr
+                            td=rea.text_indikator
+                            td=rea.indikator_1
+                            td=rea.indikator_2
+                            td=rea.indikator_3
+
+                tr.group
+                    td.group='Kokku: '
+                    td.group=aruanne[Object.keys(aruanne)[0]][0].indikator_1_group
+                    td.group=aruanne[Object.keys(aruanne)[0]][0].indikator_2_group
+                    td.group=aruanne[Object.keys(aruanne)[0]][0].indikator_3_group
+

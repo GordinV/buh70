@@ -122,9 +122,9 @@ BEGIN
                        THEN 1
                    ELSE 0 END                                                        AS real_soodus,
                (gr.nimetus::TEXT)::TEXT || CASE
-                                                        WHEN (lk.properties ->> 'all_yksus')::TEXT IS NOT NULL
-                                                            THEN '(' || (lk.properties ->> 'all_yksus')::TEXT || ')'
-                                                        ELSE '' END                  AS muud,
+                                               WHEN (lk.properties ->> 'all_yksus')::TEXT IS NOT NULL
+                                                   THEN '(' || (lk.properties ->> 'all_yksus')::TEXT || ')'
+                                               ELSE '' END                           AS muud,
                lk.properties ->> 'yksus'                                             AS yksus,
                lk.properties ->> 'all_yksus'                                         AS all_yksus,
                lt.id                                                                 AS lapse_taabel_id,
@@ -173,6 +173,7 @@ BEGIN
                                                        v_taabel.yksus,
                                                        v_taabel.all_yksus,
                                                        v_taabel.lapse_taabel_id,
+                                                       v_taabel.real_soodus                                    AS soodustus,
                                                        v_taabel.muud || CASE
                                                                             WHEN v_taabel.real_soodus > 0
                                                                                 THEN ' kasutatud soodustus summas ' ||

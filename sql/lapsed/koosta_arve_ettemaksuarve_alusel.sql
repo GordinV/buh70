@@ -77,7 +77,8 @@ BEGIN
                        a1.hind * 1                                                                     AS calc_kbmta,
                        a1.hind * 1 + (a1.hind *
                                       (coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC / 100)) AS calc_summa,
-                       n.properties ->> 'konto'                                                        AS korr_konto
+                       n.properties ->> 'konto'                                                        AS korr_konto,
+                       coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0)::NUMERIC                  AS soodustus
                 FROM docs.arv1 a1
                          INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
                 WHERE a1.parentid = v_arv.id
@@ -101,6 +102,7 @@ BEGIN
                                                                  v_arvread.properties ->> 'yksus'     AS yksus,
                                                                  v_arvread.properties ->> 'all_yksus' AS all_yksus,
                                                                  v_arvread.muud                       AS muud,
+                                                                 v_arvread.soodustus                  AS soodustus,
                                                                  v_arvread.tp                         AS tp) row) :: JSONB;
 
 

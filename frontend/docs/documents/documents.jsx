@@ -315,7 +315,7 @@ class Documents extends React.Component {
                         break;
                     case 'date':
                         if ('start' in row) {
-                            filterString = `${filterString} format_date(${row.name})  >=  format_date('${row.start}') and format_date(${row.name})  <=  format_date('${row.end}')`;
+                            filterString = `${filterString} format_date(${row.name}::text)  >=  format_date('${row.start}'::text) and format_date(${row.name}::text)  <=  format_date('${row.end}'::text)`;
                         } else {
                             filterString = filterString + row.name + " = '" + row.value + "'";
                         }

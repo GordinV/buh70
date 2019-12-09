@@ -177,11 +177,11 @@ BEGIN
                                             kood3 TEXT,
                                             kood4 TEXT, kood5 TEXT,
                                             konto TEXT, tunnus TEXT, tp TEXT, proj TEXT, arve_id INTEGER, muud TEXT,
-                                            km TEXT, yksus TEXT, all_yksus TEXT, lapse_taabel_id INTEGER);
+                                            km TEXT, yksus TEXT, all_yksus TEXT, lapse_taabel_id INTEGER, soodustus NUMERIC);
 
 
             SELECT row_to_json(row) INTO arv1_rea_json
-            FROM (SELECT json_record.yksus, json_record.all_yksus, json_record.lapse_taabel_id) row;
+            FROM (SELECT json_record.yksus, json_record.all_yksus, json_record.lapse_taabel_id, json_record.soodustus) row;
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
             THEN

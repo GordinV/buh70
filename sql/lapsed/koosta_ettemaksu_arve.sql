@@ -198,6 +198,7 @@ BEGIN
                                                          v_kaart.projekt,
                                                          v_kaart.yksus,
                                                          v_kaart.all_yksus,
+                                                         v_kaart.real_soodus                                  AS soodustus,
                                                          v_kaart.muud || CASE
                                                                              WHEN v_kaart.real_soodus > 0
                                                                                  THEN ' kasutatud soodustus summas ' || round(v_kaart.real_soodus, 2)::TEXT

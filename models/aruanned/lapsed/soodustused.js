@@ -34,13 +34,13 @@ module.exports = {
                                WHEN lapsed > 2 AND soodustus < 100 THEN 'Viga, < 100'
                                ELSE NULL::TEXT
                                END::TEXT                                                                AS viga,
-                           $2                                                                           AS kond
-                    FROM lapsed.soodustused($1, 1) qry
+                           $2                                                                           AS user_id
+                    FROM lapsed.soodustused($1, 1, $3, $4) qry
                     WHERE qry.rekvid IN (SELECT rekv_id
                                          FROM get_asutuse_struktuur($1))
                     ORDER BY vanem_isikukood, lapse_nimi
         `,     // $1 - rekvid, $3 - kond
-        params: '',
+        params: ['rekvid', 'userid', 'period_start', 'period_end'],
         alias: 'soodustused_report'
     },
     print: [

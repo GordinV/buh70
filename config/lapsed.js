@@ -35,4 +35,5 @@ module.exports = {
     sent_docs:'/aruanned/lapsed/sent_docs',
     child_age:'/aruanned/lapsed/child_age',
     soodustused: '/aruanned/lapsed/soodustused',
+    statistika: '/aruanned/lapsed/statistika',
 };
