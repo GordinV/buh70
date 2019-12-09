@@ -6,20 +6,21 @@ CREATE FUNCTION palk.sp_salvesta_taotlus_mvt(data JSON, userid INTEGER, user_rek
 AS
 $$
 DECLARE
-    taotlus_id    INTEGER;
-    userName      TEXT;
-    doc_id        INTEGER        = data ->> 'id';
-    doc_data      JSON           = data ->> 'data';
-    doc_kpv       DATE           = doc_data ->> 'kpv';
-    doc_alg_kpv   DATE           = doc_data ->> 'alg_kpv';
-    doc_lopp_kpv  DATE           = doc_data ->> 'lopp_kpv';
-    doc_lepingid  INTEGER        = doc_data ->> 'lepingid';
-    doc_summa     NUMERIC(12, 2) = doc_data ->> 'summa';
-    doc_muud      TEXT           = doc_data ->> 'muud';
+    taotlus_id      INTEGER;
+    userName        TEXT;
+    doc_id          INTEGER        = data ->> 'id';
+    doc_data        JSON           = data ->> 'data';
+    doc_kpv         DATE           = doc_data ->> 'kpv';
+    doc_alg_kpv     DATE           = doc_data ->> 'alg_kpv';
+    doc_lopp_kpv    DATE           = doc_data ->> 'lopp_kpv';
+    doc_lepingid    INTEGER        = doc_data ->> 'lepingid';
+    doc_summa       NUMERIC(12, 2) = doc_data ->> 'summa';
+    doc_muud        TEXT           = doc_data ->> 'muud';
 
-    new_history   JSONB;
-    v_taotlus_mvt RECORD;
-    is_import     BOOLEAN        = data ->> 'import';
+    new_history     JSONB;
+    v_taotlus_mvt   RECORD;
+    is_import       BOOLEAN        = data ->> 'import';
+    l_error_message TEXT;
 BEGIN
 
     SELECT kasutaja INTO userName
@@ -53,15 +54,25 @@ BEGIN
     ELSE
         -- контроля
 
-        IF exists(
-                SELECT 1
-                FROM palk.palk_oper
-                WHERE lepingid = doc_lepingid AND kpv >= doc_alg_kpv AND kpv <= doc_lopp_kpv
-                LIMIT 1
-            )
+        SELECT * INTO v_taotlus_mvt FROM palk.taotlus_mvt WHERE id = doc_id;
+
+        -- Если в текущем месяце внесено новое заявление с суммой, то сумму можно менять только первый месяц подачи заявления
+        -- - текущий месяц (работник может предоставить заявление в начале месяца и в середине месяца с разными суммами)
+        IF current_date > v_taotlus_mvt.kpv
+            AND date(year(current_date), month(current_date), 1) + INTERVAL '1 month' > v_taotlus_mvt.kpv
         THEN
-            RAISE EXCEPTION 'Ei saa muuda taotluse andmed sest sellest periodis juba arvestatud palk';
+            l_error_message = 'Taotlus juba kinni';
+            -- lubatud ainult lopp kpv
+            IF doc_lopp_kpv < (date(year(current_date), month(current_date), 1) - 1)
+            THEN
+                doc_lopp_kpv = v_taotlus_mvt.lopp_kpv;
+            END IF;
+        ELSE
+
         END IF;
+
+        --        RAISE EXCEPTION 'Ei saa muuda taotluse andmed sest sellest periodis juba arvestatud palk';
+
 
         -- history
 
@@ -69,15 +80,24 @@ BEGIN
         FROM (SELECT now()    AS updated,
                      userName AS user) row;
 
-        UPDATE palk.taotlus_mvt
-        SET kpv      = doc_kpv,
-            alg_kpv  = doc_alg_kpv,
-            lopp_kpv = doc_lopp_kpv,
-            summa    = doc_summa,
-            ajalugu  = new_history,
-            muud     = doc_muud
-        WHERE id = doc_id RETURNING id
-            INTO taotlus_id;
+        IF l_error_message IS NOT NULL
+        THEN
+            UPDATE palk.taotlus_mvt
+            SET lopp_kpv = doc_lopp_kpv,
+                ajalugu  = new_history,
+                muud     = doc_muud
+            WHERE id = doc_id RETURNING id
+                INTO taotlus_id;
+        ELSE
+            UPDATE palk.taotlus_mvt
+            SET kpv      = doc_kpv,
+                lopp_kpv = doc_lopp_kpv,
+                summa    = doc_summa,
+                ajalugu  = new_history,
+                muud     = doc_muud
+            WHERE id = doc_id RETURNING id
+                INTO taotlus_id;
+        END IF;
 
     END IF;
 
