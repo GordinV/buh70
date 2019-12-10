@@ -7,6 +7,7 @@ exports.get = async (req, res) => {
     const filter = req.params.filter || [];// массив фильтров документов;
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user = require('../../middleware/userData')(req, uuid); // данные пользователя
+    const DOC_TYPE_ID = 'ebatoenaolised';
 
     let filterData = [];
 
@@ -29,7 +30,7 @@ exports.get = async (req, res) => {
     try {
         // создать объект
         const Doc = require('./../../classes/DocumentTemplate');
-        const doc = new Doc('child_age', null, user.userId, user.asutusId, 'lapsed');
+        const doc = new Doc(DOC_TYPE_ID, null, user.userId, user.asutusId, 'lapsed');
 
         let gridParams;
         if (doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
@@ -38,15 +39,18 @@ exports.get = async (req, res) => {
 
         const data = await doc.selectDocs('', sqlWhere, 10000, gridParams);
 
-
         // get xml
         const csv = getCSV(data.data.map(row => {
             //поправить если структура меняется
             return {
-                isikukood: row.isikukood,
-                nimi: row.nimi,
-                age: row.age,
-                age_27: row.age_27,
+                number: row.number,
+                lapse_nimi: row.lapse_nimi,
+                lapse_ik: row.lapse_isikukood,
+                maksja_nimi: row.maksja_nimi,
+                maksja_ik: row.maksja_ik,
+                noude_50: row.noude_50,
+                noude_100:row.noude_100,
+                volg: row.vold,
                 asutus: row.asutus
 
             }

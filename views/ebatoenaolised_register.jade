@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 EBATÕENÄOLISED NÕUDED
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        each asutus in data
+            p #{Object.keys(asutus)[0]}
+
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Arve nr.
+                        th Lapse IK
+                        th Lapse nimi
+                        th Maksja IK
+                        th Maksja nimi
+                        th 50%
+                        th 100%
+                        th Summa
+
+                tbody
+                    each rea in asutus[Object.keys(asutus)[0]]
+                        tr
+                            td=rea.number
+                            td=rea.lapse_isikukood
+                            td=rea.lapse_nimi
+                            td=rea.maksja_nimi
+                            td=rea.maksja_isikukood
+                            td=rea.noude_50
+                            td=rea.noude_100
+                            td=rea.jaak
+                tr.group
+                    td.group=''
+                    td.group=''
+                    td.group=''
+                    td.group=''
+                    td.group='Kokku:'
+                    td.group=asutus[Object.keys(asutus)[0]][0].noude_50_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].noude_100_group
+                    td.group=asutus[Object.keys(asutus)[0]][0].jaak_group
+

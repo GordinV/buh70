@@ -36,4 +36,5 @@ module.exports = {
     child_age:'/aruanned/lapsed/child_age',
     soodustused: '/aruanned/lapsed/soodustused',
     statistika: '/aruanned/lapsed/statistika',
+    ebatoenaolised: '/aruanned/lapsed/ebatoenaolised',
 };
