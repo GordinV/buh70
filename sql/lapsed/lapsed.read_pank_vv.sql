@@ -24,7 +24,7 @@ DECLARE
     l_user_kood      TEXT           = (SELECT kasutaja
                                        FROM ou.userid
                                        WHERE id = user_id
-                                           LIMIT 1);
+                                       LIMIT 1);
     l_maksja_id      INTEGER;
     l_laps_id        INTEGER;
     v_vanem          RECORD;
@@ -36,8 +36,8 @@ BEGIN
         FROM lapsed.pank_vv v
         WHERE timestamp::TIMESTAMP = l_timestamp::TIMESTAMP
           AND (doc_id IS NULL OR doc_id = 0)
-            ORDER BY kpv
-            , id
+        ORDER BY kpv
+               , id
         LOOP
 
             -- ишем плательшика
@@ -60,7 +60,7 @@ BEGIN
             FROM ou.userid
             WHERE rekvid = l_rekvid
               AND kasutaja::TEXT = l_user_kood::TEXT
-                LIMIT 1;
+            LIMIT 1;
 
 
             -- ищем родителя
@@ -98,8 +98,8 @@ BEGIN
                                      INNER JOIN libs.library l ON l.id = dp.parentid
                             WHERE dp.rekvid = l_rekvid
                               AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
-                                ORDER BY dp.id DESC
-                                LIMIT 1
+                            ORDER BY dp.id DESC
+                            LIMIT 1
             );
 
             -- обнуляем счетчик найденных счетов
@@ -116,7 +116,7 @@ BEGIN
                 WHERE a.rekvid = l_rekvid
                   AND (a.viitenr = v_pank_vv.viitenumber OR a.viitenr::TEXT = '0'::TEXT || v_pank_vv.viitenumber::TEXT)
                   AND a.jaak > 0
-                    ORDER BY kpv ASC
+                ORDER BY kpv ASC
                 LOOP
 
                     -- считаем остаток не списанной суммы
@@ -161,7 +161,6 @@ BEGIN
                         PERFORM docs.gen_lausend_smk(l_mk_id, l_target_user_id);
                     END IF;
 
-
                     IF (l_tasu_jaak <= 0)
                     THEN
                         -- вся оплата списана
@@ -169,7 +168,7 @@ BEGIN
                     END IF;
 
                 END LOOP;
-            IF (l_tasu_jaak >= 0)
+            IF (l_tasu_jaak > 0)
             THEN
                 -- оплата не списана
                 -- создаем поручение с суммой равной остатку, без привязки к счету
@@ -238,7 +237,12 @@ GRANT EXECUTE ON FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN TEXT) TO ar
 /*
 select * from lapsed.pank_vv
 
-SELECT lapsed.read_pank_vv(70, '2019-11-04 19:36:00.119068')
-SELECT lapsed.read_pank_vv(70,'2019-10-31 15:17:27.681873')
+SELECT lapsed.read_pank_vv(70, '2019-12-10 18:43:33.009860')
 
+
+doc_aa_id 11,  user_rekvid 63
+[2019-12-10 20:52:57] [00000] l_tasu_summa 7.0000, l_kpv 2019-12-10
+[2019-12-10 20:52:57] [00000] l_tasu_summa 7.0000, l_kpv 2019-12-10
+[2019-12-10 20:52:57] [00000] l_mk_id 1616718, l_error <NULL>, v_arv.id 1616712
+[2019-12-10 20:52:57] [00000] l_tasu_jaak 0.00
 */
