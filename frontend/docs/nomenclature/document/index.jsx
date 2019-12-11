@@ -30,6 +30,10 @@ const UHIK = [
     {id: 5, kood: 'aasta', name: 'Aasta'}
 ];
 
+const OPPE = [
+    {id: 1, kood: 'Põhiõpe', name: 'Põhiõpe (Õppetasu, Arvestatud õppetasu)'},
+    {id: 2, kood: 'Vabaõpe', name: 'Vabaõpe (Arvestatud õppetasu (vabaõpe))'},
+];
 
 class Nomenclature extends React.PureComponent {
     constructor(props) {
@@ -112,6 +116,16 @@ class Nomenclature extends React.PureComponent {
                                     value={self.docData.uhik || ''}
                                     defaultValue={self.docData.uhik}
                                     ref="select-uhik"
+                                    btnDelete={isEditeMode}
+                                    onChange={self.handleInputChange}
+                                    readOnly={!isEditeMode}/>
+                            <Select title="Koolituse liigid:"
+                                    name='oppe_tyyp'
+                                    data={OPPE}
+                                    collId='kood'
+                                    value={self.docData.oppe_tyyp || ''}
+                                    defaultValue={self.docData.oppe_tyyp}
+                                    ref="select-oppe_tyyp"
                                     btnDelete={isEditeMode}
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditeMode}/>
