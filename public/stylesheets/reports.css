@@ -45,5 +45,11 @@
 }
 .group {
     font-weight: bold;
-    border-top:1px solid lightgray;
+    border-top: 1px solid lightgray;
+}
+.row_rigth {
+    text-align: right;
+}
+.margin_left {
+    margin-left: 150px;
 }

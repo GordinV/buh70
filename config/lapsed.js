@@ -37,4 +37,5 @@ module.exports = {
     soodustused: '/aruanned/lapsed/soodustused',
     statistika: '/aruanned/lapsed/statistika',
     ebatoenaolised: '/aruanned/lapsed/ebatoenaolised',
+    kondarve: '/aruanned/lapsed/kondarve',
 };

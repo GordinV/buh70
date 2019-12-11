@@ -50,6 +50,7 @@ module.exports = function (app) {
 
     app.get('/reports/child_age/:uuid/:filter/:params*?',require('./reports/child_age').get);
     app.get('/reports/ebatoenaolised/:uuid/:filter/:params*?',require('./reports/ebatoenaolised').get);
+    app.get('/reports/kondarve/:uuid/:filter/:params*?',require('./reports/kondarve').get);
 
     app.get('/reports/saldo_ja_kaive/:uuid/:filter/:params*?',require('./reports/saldo_ja_kaive').get);
 

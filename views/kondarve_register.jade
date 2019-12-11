@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+html(lang="et")
+
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        - var User = user ? user : {userName: ''};
+        p.row_rigth Raamatupidamiseõiend _______ nr. __________________
+        p.row_rigth Päevaraamatus kirjendite koostamiseks
+
+        h1 KONDARVE
+
+        h2 Koolieelsed lasteasutused (Vanemtasu)
+        p nr. #{data[0].parameter}
+
+        p Tuludesse kandmise period: #{data[0].parameter}
+
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value: parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Rea.nr
+                    th Kood
+                    th Nimetus
+                    th Konto
+                    th Summa
+
+            tbody
+                each rea in data
+                    tr
+                        td=rea.row_id
+                        td=rea.kood
+                        td=rea.konto
+                        td=rea.summa
+
+        p Raamatupidaja ______________________________
+
+        br
+
+        p Kondarve trükkija:  #{User.userName}
+        p Välatükkitatud: #{data[0].print_aeg}
