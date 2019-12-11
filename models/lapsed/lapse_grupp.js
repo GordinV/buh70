@@ -29,7 +29,9 @@ module.exports = {
                      ((l.properties::JSONB -> 'all_yksused') #>> '{4}')::TEXT AS all_yksus_5,
                      $2                                                       AS userid,
                      rtrim(regexp_replace((properties::JSONB ->> 'all_yksused'), '[^a-zA-Z0-9,]', '', 'g'),
-                           ',')                                               AS all_yksused
+                           ',')                                               AS all_yksused,
+                     (l.properties::JSONB -> 'liik')::INTEGER                 AS liik,
+                     (l.properties::JSONB -> 'tyyp')::INTEGER                 AS tyyp
               FROM libs.library l
               WHERE l.id = $1::INTEGER`,
         sqlAsNew: `SELECT
@@ -42,7 +44,9 @@ module.exports = {
                   null::text as all_yksus_5,
                   null::text as kood,
                   null::text as nimetus,
-                  null::text as muud`,
+                  null::text as muud,
+                  1 as liik,
+                  1 as tyyp`,
         query: null,
         multiple: false,
         alias: 'row',
@@ -57,7 +61,7 @@ module.exports = {
                          $2   AS userid
                   FROM jsonb_to_recordset((SELECT properties::JSONB -> 'teenused'
                                            FROM libs.library
-                                           WHERE id = $1)) AS x(hind NUMERIC(12,2), kogus NUMERIC(12,2), nomid INTEGER)
+                                           WHERE id = $1)) AS x(hind NUMERIC(12, 2), kogus NUMERIC(12, 2), nomid INTEGER)
                            INNER JOIN libs.nomenklatuur n ON n.id = x.nomid`,
             query: null,
             multiple: true,

@@ -17,6 +17,20 @@ const LIBRARIES = [
     {id: 'nomenclature', filter: `where dok = 'ARV'`}
 ];
 
+const GRUPI_LIIK = [
+    {id: 1, kood: 'LASTEAED', name: 'Lasteaed'},
+    {id: 2, kood: 'HUVIKOOL', name: 'Huvikool'},
+    {id: 3, kood: 'KOOL', name: 'Kool'},
+];
+
+const KOOLITUSE_TYYP = [
+    {id: 1, kood: 'LASTEAJARÜHM', name: 'Lasteajarühm'},
+    {id: 2, kood: 'AED', name: 'Lasteaed'},
+    {id: 3, kood: 'SPORT', name: 'Spordirühm'},
+    {id: 4, kood: 'HUVIRING', name: 'Huviring'},
+
+];
+
 class LapseGrupp extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -85,6 +99,24 @@ class LapseGrupp extends React.PureComponent {
                                    ref='input-nimetus'
                                    readOnly={!isEditMode}
                                    onChange={self.handleInputChange}/>
+                        <Select title="Grupi liik:"
+                                name='liik'
+                                data={GRUPI_LIIK}
+                                collId='id'
+                                value={self.docData.liik || 1}
+                                btnDelete={isEditMode}
+                                onChange={self.handleInputChange}
+                                readOnly={!isEditMode}/>
+
+                        <Select title="Koolituse tüüp:"
+                                name='tyyp'
+                                data={KOOLITUSE_TYYP}
+                                collId='id'
+                                value={self.docData.tyyp || 1}
+                                btnDelete={isEditMode}
+                                onChange={self.handleInputChange}
+                                readOnly={!isEditMode}/>
+
                         <label>
                             All üksused
                             <InputText title=''

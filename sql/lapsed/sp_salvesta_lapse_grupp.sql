@@ -16,12 +16,15 @@ DECLARE
     doc_nimetus     TEXT    = doc_data ->> 'nimetus';
     doc_library     TEXT    = 'LAPSE_GRUPP';
     doc_muud        TEXT    = doc_data ->> 'muud';
-    doc_all_yksus_1 TEXT    = coalesce((doc_data ->> 'all_yksus_1'),'');
-    doc_all_yksus_2 TEXT    = coalesce((doc_data ->> 'all_yksus_2'),'');
-    doc_all_yksus_3 TEXT    = coalesce((doc_data ->> 'all_yksus_3'),'');
-    doc_all_yksus_4 TEXT    = coalesce((doc_data ->> 'all_yksus_4'),'');
-    doc_all_yksus_5 TEXT    = coalesce((doc_data ->> 'all_yksus_5'),'');
+    doc_all_yksus_1 TEXT    = coalesce((doc_data ->> 'all_yksus_1'), '');
+    doc_all_yksus_2 TEXT    = coalesce((doc_data ->> 'all_yksus_2'), '');
+    doc_all_yksus_3 TEXT    = coalesce((doc_data ->> 'all_yksus_3'), '');
+    doc_all_yksus_4 TEXT    = coalesce((doc_data ->> 'all_yksus_4'), '');
+    doc_all_yksus_5 TEXT    = coalesce((doc_data ->> 'all_yksus_5'), '');
     doc_details     JSONB   = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
+    doc_liik        INTEGER    = doc_data ->> 'liik';
+    doc_tyyp        INTEGER    = doc_data ->> 'tyyp';
+
     is_import       BOOLEAN = data ->> 'import';
     all_yksused     TEXT[]  = ARRAY [doc_all_yksus_1, doc_all_yksus_2, doc_all_yksus_3, doc_all_yksus_4, doc_all_yksus_5];
     json_object     JSONB;
@@ -46,7 +49,11 @@ BEGIN
 -- prepairing all yksused
 
     SELECT to_jsonb(row) INTO json_object
-    FROM (SELECT all_yksused AS all_yksused, doc_details as teenused) row;
+    FROM (SELECT all_yksused AS all_yksused,
+                 doc_details AS teenused,
+                 doc_liik as liik,
+                 doc_tyyp as tyyp
+                 ) row;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
