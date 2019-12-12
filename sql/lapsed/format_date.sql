@@ -1,30 +1,40 @@
 -- Function: docs.sp_delete_mk(integer, integer)
 
-DROP FUNCTION IF EXISTS format_date(TEXT );
+DROP FUNCTION IF EXISTS format_date(TEXT);
 DROP FUNCTION IF EXISTS format_date(DATE);
 
 CREATE OR REPLACE FUNCTION format_date(l_kpv TEXT
 )
-    RETURNS date AS
+    RETURNS DATE AS
 
-    $BODY$
+$BODY$
 
 DECLARE
-    return_date date;
+    return_date DATE;
 BEGIN
+    -- format DD.MM.YYYY
+    IF (SELECT l_kpv SIMILAR TO '__.__.____')
+    THEN
+        return_date = make_date(substring(l_kpv FROM 7 FOR 4)::INTEGER, substring(l_kpv FROM 4 FOR 2)::INTEGER,
+                                left(l_kpv, 2)::INTEGER);
 
-    IF (isfinite(l_kpv::DATE)) THEN
+    ELSEIF (isfinite(l_kpv::DATE))
+    THEN
         return_date = l_kpv;
     END IF;
+
     RETURN return_date;
 
-EXCEPTION WHEN OTHERS
-    THEN
-        RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-        RETURN null;
+EXCEPTION
+    WHEN OTHERS
+        THEN
+            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+            RETURN NULL;
 
-END;$BODY$
-    LANGUAGE plpgsql VOLATILE
+END;
+$BODY$
+    LANGUAGE plpgsql
+    VOLATILE
     COST 100;
 
 /*

@@ -569,10 +569,11 @@ class Documents extends React.Component {
                                 this.subtotals = response.data.subtotals;
 
                                 //refresh filterdata
+
                                 this.filterData = this.gridConfig.map((row) => {
                                     // props.data пустое, создаем
-
-                                    return {value: null, name: row.id, type: row.type ? row.type : 'text'};
+                                    let value = row.value ? row.value: null;
+                                    return {value: value, name: row.id, type: row.type ? row.type : 'text'};
                                 });
 
                             }

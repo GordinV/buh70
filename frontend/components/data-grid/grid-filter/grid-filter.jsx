@@ -29,8 +29,8 @@ class GridFilter extends React.PureComponent {
         let data = this.state.data;
 
         // проверим на наличие полей для фильтрации
-        if (!data.length)  {
-           data = prepareData(this.props.gridConfig);
+        if (!data.length) {
+            data = prepareData(this.props.gridConfig);
         }
 
         let value = e.target.value,
@@ -43,17 +43,17 @@ class GridFilter extends React.PureComponent {
         // надо найти элемент массива с данными для этого компонента
         for (let i = 0; i < this.state.data.length; i++) {
 
-                isIntervalStart = !!id.match(/_start/);
-                isIntervalEnd = !!id.match(/_end/);
+            isIntervalStart = !!id.match(/_start/);
+            isIntervalEnd = !!id.match(/_end/);
 
             if (isIntervalStart) {
                 // will replace start from firldName
-                fieldName = id.replace(/_start/i,'');
+                fieldName = id.replace(/_start/i, '');
             }
 
             if (isIntervalEnd) {
                 // will replace end from firldName
-                fieldName = id.replace(/_end/i,'');
+                fieldName = id.replace(/_end/i, '');
             }
 
             if (this.state.data[i].name === (fieldName)) {
@@ -109,6 +109,7 @@ class GridFilter extends React.PureComponent {
 
     prepareFilterFields() {
         let data = this.state.data;
+        let isStateUpdated = false; // if true then will call setState
 
         // только поля, которые отмечаны как show:true или явно ка указаны
         const filterFields = this.state.gridConfig.filter(field => {
@@ -117,11 +118,23 @@ class GridFilter extends React.PureComponent {
             }
         });
 
-        return filterFields.map((row) => {
+        return filterFields.map((row, index) => {
             let componentType = row.type ? row.type : 'text';
-            const obj = data[_.findIndex(data, {name: row.id})];
-            let value = _.has(obj, 'value') ? obj.value : '';
 
+            // ишем дефолтное значение
+            let value = row.value ? row.value : '';
+
+            // ищем инициализированное значение
+            const obj = data[_.findIndex(data, {name: row.id})];
+
+            if (_.has(obj, 'value')) {
+                if (!obj.value && value) {
+                    // есть дефолтное значение
+                    isStateUpdated = true;
+                    data = data[index][row.id] = value;
+                }
+                value = obj.value ? obj.value : value
+            }
             return <div style={styles.formWidget} key={'fieldSet-' + row.id}>
                 <div style={styles.formWidgetLabel}>
                     <span>{row.name}</span>
@@ -132,7 +145,7 @@ class GridFilter extends React.PureComponent {
                                  type={componentType}
                                  title={row.name}
                                  name={row.id}
-                                 placeholder={row.toolTip ? row.toolTip: row.name}
+                                 placeholder={row.toolTip ? row.toolTip : row.name}
                                  ref={row.id}
                                  value={value || ''}
                                  onChange={this.handleChange}
@@ -151,7 +164,8 @@ class GridFilter extends React.PureComponent {
      */
     returnInterval(row) {
         if (row.interval && !('start' in row)) {
-            row = {...row, ...{start: null}, ...{end:null}}
+            let value = row.value ? row.value: null;
+            row = {...row, ...{start: value}, ...{end: value}}
         }
 
         const data = this.state.data;
@@ -197,12 +211,12 @@ function prepareData(gridConfig) {
 
     gridConfig.map((row) => {
         const field = {
-            value: null,
+            value: row.value ? row.value : null,
             name: row.id,
             type: row.type ? row.type : 'text',
             interval: !!row.interval,
-            start: null,
-            end: null
+            start: row.value ? row.value: null,
+            end: row.value ? row.value: null
         };
 
         data.push(field);
