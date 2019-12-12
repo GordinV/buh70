@@ -112,7 +112,7 @@ class GridFilter extends React.PureComponent {
 
         // только поля, которые отмечаны как show:true или явно ка указаны
         const filterFields = this.state.gridConfig.filter(field => {
-            if (field.id !== 'id') {
+            if (field.id !== 'id' && (!field.filter || field.filter == 'show')) {
                 return field;
             }
         });
@@ -132,7 +132,7 @@ class GridFilter extends React.PureComponent {
                                  type={componentType}
                                  title={row.name}
                                  name={row.id}
-                                 placeholder={row.name}
+                                 placeholder={row.toolTip ? row.toolTip: row.name}
                                  ref={row.id}
                                  value={value || ''}
                                  onChange={this.handleChange}

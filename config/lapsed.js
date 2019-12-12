@@ -38,4 +38,5 @@ module.exports = {
     statistika: '/aruanned/lapsed/statistika',
     ebatoenaolised: '/aruanned/lapsed/ebatoenaolised',
     kondarve: '/aruanned/lapsed/kondarve',
+    aasta_naitajad: '/aruanned/lapsed/aasta_naitajad',
 };
