@@ -80,6 +80,8 @@ class Documents extends React.PureComponent {
                             Doc.setState({warning: `0 dokumendid koostatud`, warningType: 'notValid'});
                         }
                     }
+                    Doc.fetchData('selectDocs');
+
                 });
                 break;
             case 'Email kõik valitud teatised':
@@ -106,6 +108,7 @@ class Documents extends React.PureComponent {
                     Doc.fetchData(`email/teatis`, ids).then((data) => {
                         if (data.result) {
                             Doc.setState({warning: `Kokku saadetud teatised emailga: ${data.result}`, warningType: 'ok'});
+                            Doc.fetchData('selectDocs');
 
                         } else {
                             console.error('email error', data);
@@ -139,6 +142,7 @@ class Documents extends React.PureComponent {
                         warning: `Leidsin ${ids.length} teatised printimiseks`, // строка извещений
                         warningType: 'ok',
                     });
+                    Doc.fetchData('selectDocs');
 
                     let url = `/multiple_print/${DOC_TYPE_ID}/${DocContext.userData.uuid}/${ids}`;
                     window.open(`${url}`);
@@ -150,7 +154,6 @@ class Documents extends React.PureComponent {
                 }
 
         }
-        Doc.fetchData('selectDocs');
     }
 }
 

@@ -25,12 +25,17 @@ exports.post = async (req, res) => {
     }
 
     // делаем массив промисов
-    const data = await new Promise(resolve => {
-        resolve(doc.executeTask(taskName, [user.userId, arvestuseKpv]));
+    const data = await new Promise((resolve, reject) => {
+        try {
+            resolve(doc.executeTask(taskName, [user.userId, arvestuseKpv]));
+        } catch (e) {
+            console.error(e);
+            reject(e);
+        }
     });
 
+
     //ответ
-    console.log('result',data);
     res.send({
         status: 200, result: data.result, data: {
             action: taskName,

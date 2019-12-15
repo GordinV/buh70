@@ -131,14 +131,11 @@ exports.put = async (req, res) => {
     const savedData = await Document.save(params);
 
     if (Document.config.bpm) {
-        console.log('bpm', Document.config.bpm);
         // bpm proccess
         const automatTaks = Document.config.bpm.filter(task => task.type === 'automat');
 
         automatTaks.forEach(async (process) => {
-            console.log('process', process);
             const bpmResult = await Document.executeTask(process.action);
-            console.log('bpmResult', bpmResult);
         })
 
     }

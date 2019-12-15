@@ -33,23 +33,26 @@ BEGIN
     -- делаем выборку неоплаченных счетов на дату
 
     FOR v_arv IN
-        SELECT array_to_string(array_agg(d.id),',')                                                                         AS docs,
+        SELECT array_to_string(array_agg(d.id), ',')                                                   AS docs,
                sum(a.jaak)                                                                             AS volg,
                a.asutusid,
                array_agg('Arve nr.:' || a.number::TEXT || ' kuupäev:' || to_char(a.kpv, 'DD.MM.YYYY')) AS selg
         FROM docs.doc d
                  INNER JOIN docs.arv a ON a.parentid = d.id
         WHERE a.jaak > 0
-            AND a.tahtaeg IS NULL
-           OR a.tahtaeg < current_date
-            AND d.rekvid = l_rekvid
-
+          AND (a.tahtaeg IS NULL
+            OR a.tahtaeg < l_kpv)
+          AND d.rekvid = l_rekvid
+          AND a.asutusid NOT IN (SELECT t.asutusid
+                                 FROM docs.teatis t
+                                          INNER JOIN docs.doc dd ON dd.id = t.parentid
+                                 WHERE dd.rekvid = l_rekvid
+                                   AND dd.status <> 3
+                                   AND t.kpv = l_kpv)
         GROUP BY a.asutusid
         LOOP
             -- ищем требование. если есть и датировано сегодня - то осключаем (не нужны повторы)
             -- критерий
-
-            RAISE NOTICE 'v_arv.* %',v_arv;
 
             SELECT d.id,
                    d.status
@@ -76,13 +79,11 @@ BEGIN
                        l_sisu         AS sisu
                        INTO v_teatis;
 
-                RAISE NOTICE 'v_teatis %', v_teatis;
-
                 -- подготавливаем параметры для сохранения
                 SELECT row_to_json(row) INTO json_object
                 FROM (SELECT coalesce(l_teatis_id, 0)      AS id,
                              (SELECT to_jsonb(v_teatis.*)) AS data) row;
-                RAISE NOTICE 'json_object %', json_object;
+
                 SELECT docs.sp_salvesta_teatis(json_object :: JSONB, user_id, l_rekvid) INTO l_teatis_id;
 
                 IF l_teatis_id > 0
@@ -127,6 +128,6 @@ GRANT EXECUTE ON FUNCTION docs.koosta_teatis(INTEGER, DATE) TO arvestaja;
 
 
 /*
-select docs.koosta_teatis(70)
+select docs.koosta_teatis(70,'2019-12-15')
 
  */
