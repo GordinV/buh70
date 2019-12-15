@@ -131,7 +131,16 @@ exports.post = async (req, res) => {
         docNumber = arve.number ? arve.number : null;
         receiverEmail = arve.email ? arve.email : null;
 
-        res.render('arve_kaartid', {data: [arve], user: user}, (err, html) => {
+        let renderForm = 'arve_kaartid';
+        switch (params.docTypeId) {
+            case 'ARV':
+                renderForm = 'arve_kaartid';
+                break;
+            case 'TEATIS':
+                renderForm = 'teatis_kaartid';
+                break;
+        }
+        res.render(renderForm, {data: [arve], user: user}, (err, html) => {
             printHtml = html;
         });
 

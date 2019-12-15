@@ -1,4 +1,5 @@
 'use strict';
+const db = require('./../libs/db');
 
 exports.get = async (req, res) => {
     let ids = req.params.id || ''; // параметр id документа
@@ -20,7 +21,7 @@ exports.get = async (req, res) => {
     const doc = new Doc(docTypeId, null, user.userId, user.asutusId, 'lapsed');
 
     // ищем шаблон
-//    const template = doc.config.print.find(templ => templ.params === 'id').view;
+    const template = doc.config.print.find(templ => templ.params === 'id').view;
 
     const promises = ids.map(id => {
         return new Promise(resolve => {
@@ -71,7 +72,7 @@ exports.teatis = async (req, res) => {
     const doc = new Doc('teatis', null, user.userId, user.asutusId, 'lapsed');
 
     // ищем шаблон
-//    const template = doc.config.print.find(templ => templ.params === 'id').view;
+    const template = doc.config.print.find(templ => templ.params === 'id');
 
     const promises = ids.map(id => {
         return new Promise(resolve => {
@@ -86,6 +87,23 @@ exports.teatis = async (req, res) => {
         })
 
     });
+
+    // register print event
+    if (template) {
+
+        const registerPromises = ids.map(id => {
+            return new Promise(resolve => {
+                let sql = template.register,
+                    params = [id, user.userId];
+
+                if (sql) {
+                    resolve(db.queryDb(sql, params));
+                }
+            })
+        });
+
+        Promise.all(registerPromises);
+    }
 
     if (!rows || rows.length === 0) {
         res.send({status: 200, result: 'Teatised ei leidnum'});

@@ -39,6 +39,7 @@ BEGIN
                array_agg('Arve nr.:' || a.number::TEXT || ' kuupäev:' || to_char(a.kpv, 'DD.MM.YYYY')) AS selg
         FROM docs.doc d
                  INNER JOIN docs.arv a ON a.parentid = d.id
+                 INNER JOIN lapsed.liidestamine l ON l.docid = d.id
         WHERE a.jaak > 0
           AND (a.tahtaeg IS NULL
             OR a.tahtaeg < l_kpv)
