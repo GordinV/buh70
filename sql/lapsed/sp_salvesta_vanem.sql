@@ -72,8 +72,7 @@ BEGIN
 
         json_ajalugu = to_jsonb(row)
                        FROM (SELECT now()    AS updated,
-                                    userName AS user,
-                                    l.*      AS data
+                                    userName AS user
                              FROM lapsed.vanemad l
                              WHERE id = doc_id
                             ) row;

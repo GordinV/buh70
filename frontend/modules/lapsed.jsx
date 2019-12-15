@@ -41,6 +41,10 @@ const AsutusRegister = require('./../docs/asutused/index.jsx'),
 const LapseGruppRegister = require('./../docs/lapse_grupp/index.jsx'),
     LapseGruppDocument = require('./../docs/lapse_grupp/document/index.jsx');
 
+const TeatisRegister = require('./../docs/teatis/index.jsx'),
+    TeatisDocument = require('./../docs/teatis/document/index.jsx');
+
+
 const PankVVRegister = require('./../docs/pank_vv/index.jsx');
 const ConfigDocument = require('./../docs/config/document/index.jsx');
 const RekvDocument = require('./../docs/rekv/document/index.jsx');
@@ -185,6 +189,13 @@ class App extends React.Component {
                 <Route exact path="/lapsed/tunnus/:docId" component={TunnusDocument}/>
                 <Route exact path="/lapsed/tunnus"
                        render={(props) => <TunnusRegister
+                           module={MODULE}
+                           history={props.history}
+                           initData={this.props.initData}/>}/>
+
+                <Route exact path="/lapsed/teatis/:docId" component={TeatisDocument}/>
+                <Route exact path="/lapsed/teatis"
+                       render={(props) => <TeatisRegister
                            module={MODULE}
                            history={props.history}
                            initData={this.props.initData}/>}/>

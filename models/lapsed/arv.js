@@ -160,10 +160,19 @@ const Arv = {
             data: []
         },
         {
-            sql: `SELECT rd.id, $2 :: INTEGER AS userid, trim(l.kood) AS doc_type, trim(l.nimetus) AS name
+            sql: `SELECT rd.id,
+                         $2 :: INTEGER                                AS userid,
+                         trim(l.kood)                                 AS doc_type,
+                         trim(l.nimetus)                              AS name,
+                         CASE 
+                             WHEN t.id IS NOT NULL THEN t.number
+                             WHEN m.id IS NOT NULL THEN m.number
+                             END AS number
                   FROM docs.doc d
                            LEFT OUTER JOIN docs.doc rd ON rd.id IN (SELECT unnest(d.docs_ids))
                            LEFT OUTER JOIN libs.library l ON rd.doc_type_id = l.id
+                           LEFT OUTER JOIN docs.teatis t ON t.parentid = rd.id
+                           LEFT OUTER JOIN docs.mk m ON m.parentid = rd.id
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                   WHERE d.id = $1 :: INTEGER`,
             query: null,
@@ -301,7 +310,7 @@ const Arv = {
         gridConfiguration: [
             {id: "id", name: "id", width: "25px", show: false},
             {id: "number", name: "Number", width: "100px"},
-            {id: "kpv", name: "Kuupaev", width: "100px", type: "date",interval: true},
+            {id: "kpv", name: "Kuupaev", width: "100px", type: "date", interval: true},
             {id: "asutus", name: "Maksja", width: "200px"},
             {id: "summa", name: "Summa", width: "75px", type: "number"},
             {id: "tahtaeg", name: "Tähtaeg", width: "100px"},

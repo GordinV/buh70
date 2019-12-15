@@ -33,6 +33,10 @@ BEGIN
 
                 l_seq_name = docs.create_number_sequence(tnrekvid, tcDok);
                 SELECT nextval(l_seq_name) AS number INTO v_number;
+        WHEN tcDok = 'TEATIS'
+            THEN
+                l_seq_name = docs.create_number_sequence(tnrekvid, tcDok, false);
+                SELECT nextval(l_seq_name) AS number INTO v_number;
         WHEN tcDok = 'SARV'
             THEN
                 lcTableName = 'docs.arv';
@@ -71,7 +75,7 @@ BEGIN
                         '(select left(l.number,2)::text as number, l.parentid, l.rekvid, l.algkpv as kpv from rekl.luba l)';
         END CASE;
 
-    IF tcDok not in ('ARV','SMK')
+    IF tcDok NOT IN ('ARV', 'SMK', 'TEATIS')
     THEN
         -- building sql query with regexp for only numbers
         lcSqlString = 'select (max(SUBSTRING(''0'' || coalesce(tbl.number,''0''), ' || quote_literal('Y*[0-9]\d+') ||

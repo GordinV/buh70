@@ -44,6 +44,7 @@ module.exports = function (app) {
     app.get('/print/:documentType/:uuid/:id/:params', require('./print').get); //checkAuth
 //    app.get('/print/:documentType/:uuid/:id/:sqlWhere/:sqlSort', require('./print').get); //checkAuth
     app.get('/print/:documentType/:uuid/:id/', require('./print').get); //checkAuth
+    app.get('/multiple_print/teatis/:uuid/:id/', require('./multiple_print').teatis); //checkAuth
     app.get('/multiple_print/:documentType/:uuid/:id/', require('./multiple_print').get); //checkAuth
     app.get('/print/:documentType/:uuid/', require('./print').get); //checkAuth
 
@@ -61,14 +62,17 @@ module.exports = function (app) {
 
     app.get('/pdf/:documentType/:uuid/:id/', require('./pdf').get); //checkAuth
 
+    app.post('/email/teatis', checkAuth, require('./email').sendTeatis); //checkAuth
     app.post('/email', checkAuth, require('./email').post); //checkAuth
 
     app.post('/e-arved', checkAuth, require('./e-arved').post); //checkAuth
     app.get('/e-arved/:uuid/:id/',require('./e-arved').get);
     app.get('/sepa/:uuid/:id/',require('./sepa').get);
 
+    app.post('/calc/koostaTeatis', checkAuth, require('./lapsed/koostaTeatis').post); //checkAuth
     app.post('/calc/muuda_ettemaksu_period', checkAuth, require('./lapsed/muuda_ettemaksu_period').post); //checkAuth
     app.post('/calc/:taskName', checkAuth, require('./calc').post); //checkAuth
+
     app.delete('/newApi/:documentType/:id', checkAuth, require('./documentRegister').delete); //апи для обмена даты по протоколу delete с моделью документа
 
     /*

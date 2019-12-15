@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+html(lang="et")
+style(type='text/css').
+    .doc_wrapper {
+        margin-left:5%;
+        margin-top:5%;
+        width:auto;
+    }
+    .row_wrapper {
+        display:-webkit-box;
+        flexDirection: row;
+    }
+    .label {
+        width:10%;
+    }
+    .text {
+        width:100%;
+    }
+    .input {
+        width:90%;
+        margin-left:5%;
+        font-weight: bold;
+    }
+
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+
+        h1
+            p #{`TEATIS`}
+
+        div.row_wrapper
+            p.label Number:
+            p.input #{data[0].number}
+
+        div.row_wrapper
+            p.label Kuupäev:
+            p.input #{data[0].kpv_print}
+
+        div.row_wrapper
+            p.label Saaja:
+            p.input #{`${data[0].asutus.trim()} isikukood/reg.kood: ${data[0].regkood}`}
+
+        div.row_wrapper
+            p.label Aadress:
+            p.input #{`${data[0].aadress}`}
+
+        div.row_wrapper
+            p.label E-mail:
+            p.input #{`${data[0].email}`}
+
+        div.row_wrapper
+            p.text #{`${data[0].sisu}`}
+
+
+         p.text Dokumendi koostaja: #{User.userName}
+         p Välatükkitatud: #{data[0].print_aeg}

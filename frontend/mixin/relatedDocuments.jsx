@@ -18,7 +18,8 @@ const relatedDocuments = (self) => {
 
                 if (!isExists) {
                     // в массиве нет, добавим ссылку на документ
-                    self.pages.push({docTypeId: doc.doc_type, docId: doc.id, pageName: doc.name + ' id:' + doc.id})
+                    self.pages.push({docTypeId: doc.doc_type, docId: doc.id,
+                        pageName: doc.name + (doc.number ? ' nr:' + doc.number: ' id:' + doc.id)})
                 }
             }
         });

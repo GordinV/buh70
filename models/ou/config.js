@@ -1,28 +1,31 @@
 module.exports = {
     select: [{
-        sql: `SELECT
-                'CONFIG'     AS doc_type_id,
-                $2::INTEGER AS userid,
-                c.id as docId,
-                c.rekvid as id,
-                c.rekvid,
-                coalesce(c.number,'')::VARCHAR(20) as number,
-                coalesce((u.properties->>'keel')::integer,2)::integer as keel,
-                coalesce((u.properties->>'port')::varchar(100))::varchar(100) as port,
-                coalesce((u.properties->>'smtp')::varchar(100))::varchar(100) as smtp,
-                coalesce((u.properties->>'user')::varchar(100))::varchar(100) as user,
-                coalesce((u.properties->>'pass')::varchar(100))::varchar(100) as pass,
-                coalesce((u.properties->>'email')::varchar(254))::varchar(254) as email,
-                coalesce((c.properties->>'earved')::varchar(254))::varchar(254) as earved,
-                c.tahtpaev
-              FROM ou.config c, ou.userid u
-              WHERE c.rekvid = $1 and u.id = $2`,
+        sql: `SELECT 'CONFIG'                                                          AS doc_type_id,
+                     $2::INTEGER                                                       AS userid,
+                     c.id                                                              AS docId,
+                     c.rekvid                                                          AS id,
+                     c.rekvid,
+                     coalesce(c.number, '')::VARCHAR(20)                               AS number,
+                     coalesce((c.properties ->> 'limiit')::NUMERIC, 0)::NUMERIC(12, 2) AS limiit,
+                     coalesce((u.properties ->> 'keel')::INTEGER, 2)::INTEGER          AS keel,
+                     coalesce((u.properties ->> 'port')::VARCHAR(100))::VARCHAR(100)   AS port,
+                     coalesce((u.properties ->> 'smtp')::VARCHAR(100))::VARCHAR(100)   AS smtp,
+                     coalesce((u.properties ->> 'user')::VARCHAR(100))::VARCHAR(100)   AS user,
+                     coalesce((u.properties ->> 'pass')::VARCHAR(100))::VARCHAR(100)   AS pass,
+                     coalesce((u.properties ->> 'email')::VARCHAR(254))::VARCHAR(254)  AS email,
+                     coalesce((c.properties ->> 'earved')::VARCHAR(254))::VARCHAR(254) AS earved,
+                     c.tahtpaev
+              FROM ou.config c,
+                   ou.userid u
+              WHERE c.rekvid = $1
+                AND u.id = $2`,
         sqlAsNew: `SELECT
                       $1 :: INTEGER         AS id,
                       $2 :: INTEGER         AS userid,
                       'CONFIG'              AS doc_type_id,
                       0 :: INTEGER          AS rekvid,
                       '' :: VARCHAR(20)   AS number,
+                      0::numeric(12,2) as limiit,
                       1 :: integer          AS keel,
                       ''::varchar(254) as port,
                       ''::varchar(254) as smtp,
@@ -49,12 +52,11 @@ module.exports = {
             {id: "regkood", name: "Kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
-        sqlString: `SELECT
-                      $2 AS user_id,
-                      c.*
+        sqlString: `SELECT $2 AS user_id,
+                           c.*
                     FROM ou.config c
-                          where c.rekvid IN (SELECT rekv_id
-                                       FROM get_asutuse_struktuur($1::integer))`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                    WHERE c.rekvid IN (SELECT rekv_id
+                                       FROM get_asutuse_struktuur($1::INTEGER))`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curConfig'
     },

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+html(lang="et")
+style(type='text/css').
+    .doc_wrapper {
+        margin-left:5%;
+        margin-top:5%;
+        width:auto;
+    }
+    .row_wrapper {
+        display:-webkit-box;
+        flexDirection: row;
+    }
+    .label {
+        width:10%;
+    }
+    .text {
+        width:100%;
+    }
+    .input {
+        width:90%;
+        margin-left:5%;
+        font-weight: bold;
+    }
+
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    -var User = user ? user : {asutus: ''};
+
+    each doc in data
+        div.body_wrapper
+            h1
+        div.doc_wrapper
+            p #{User.asutus_tais ? User.asutus_tais : User.asutus}, reg.kood: #{User.regkood}
+            p #{User.aadress}
+            p #{User.tel}
+            p #{User.email}
+
+            h1 #{`TEATIS`}
+
+            div.row_wrapper
+                p.label Number:
+                p.input #{doc.number}
+
+            div.row_wrapper
+                p.label Kuupäev:
+                p.input #{doc.kpv_print}
+
+            div.row_wrapper
+                p.label Saaja:
+                p.input #{`${doc.asutus.trim()} isikukood/reg.kood: ${doc.regkood}`}
+
+            div.row_wrapper
+                p.label Aadress:
+                p.input #{`${doc.aadress}`}
+
+            div.row_wrapper
+                p.label E-mail:
+                p.input #{`${doc.email}`}
+
+            div.row_wrapper
+                p.text #{`${doc.sisu}`}
+
+
+            p.text Dokumendi koostaja: #{User.userName}
+            p Välatükkitatud: #{doc.print_aeg}
+
+            h3

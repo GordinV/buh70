@@ -12,8 +12,8 @@ $BODY$
 DECLARE
     return_date DATE;
 BEGIN
-    -- format DD.MM.YYYY
-    IF (SELECT l_kpv SIMILAR TO '__.__.____')
+    -- format DD.MM.YYYY HH:MI:SS
+    IF (SELECT l_kpv SIMILAR TO '__.__.____') or (SELECT l_kpv SIMILAR TO '__.__.____ __:__*')
     THEN
         return_date = make_date(substring(l_kpv FROM 7 FOR 4)::INTEGER, substring(l_kpv FROM 4 FOR 2)::INTEGER,
                                 left(l_kpv, 2)::INTEGER);

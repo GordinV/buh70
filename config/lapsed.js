@@ -39,4 +39,5 @@ module.exports = {
     ebatoenaolised: '/aruanned/lapsed/ebatoenaolised',
     kondarve: '/aruanned/lapsed/kondarve',
     aasta_naitajad: '/aruanned/lapsed/aasta_naitajad',
+    teatis: '/lapsed/teatis',
 };

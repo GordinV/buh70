@@ -4,6 +4,7 @@ const PropTypes = require('prop-types');
 
 const DocumentTemplate = require('./../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
+    InputNumber = require('../../../components/input-number/input-number.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
 
     styles = require('./styles');
@@ -60,6 +61,12 @@ class Config extends React.PureComponent {
                                    readOnly={!self.state.edited}
                                    value={self.docData.tahtpaev || ''}
                                    onChange={self.handleInputChange}/>
+                        <InputNumber title="Arve võlgnevuse limiit: "
+                                     name='limiit'
+                                     ref="input-limiit"
+                                     readOnly={!self.state.edited}
+                                     value={self.docData.limiit || 0}
+                                     onChange={self.handleInputChange}/>
                     </div>
                 </div>
                 <div style={styles.docRow}>

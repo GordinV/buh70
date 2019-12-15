@@ -20,6 +20,8 @@ DECLARE
     doc_email       TEXT    = doc_data ->> 'email';
     doc_tahtpaev    INTEGER = (doc_data ->> 'tahtpaev')::INTEGER;
     doc_earved      TEXT    = doc_data ->> 'earved';
+    doc_limiit      NUMERIC = doc_data ->> 'limiit';
+
     doc_json        JSON    = ((SELECT row_to_json(row)
                                 FROM (SELECT doc_keel  AS keel,
                                              doc_port  AS port,
@@ -29,7 +31,9 @@ DECLARE
                                              doc_email AS email) ROW));
 
     doc_config_json JSONB   = ((SELECT row_to_json(row)
-                                FROM (SELECT doc_earved AS earved) ROW));
+                                FROM (SELECT doc_earved AS earved,
+                                             doc_limiit AS limiit
+                                     ) ROW));
 
 BEGIN
 
