@@ -129,9 +129,11 @@ BEGIN
     --@todo констрейн на удаление
 
     -- удаляем оплату
-    PERFORM docs.sp_delete_arvtasu(l_user_id, id)
-    FROM docs.arvtasu a
-    WHERE a.doc_tasu_id = doc_id;
+
+    DELETE
+    FROM docs.arvtasu
+    WHERE doc_tasu_id = v_doc.id;
+
 
     -- удаляем данные из выписки
     DELETE FROM lapsed.pank_vv WHERE lapsed.pank_vv.doc_id = v_doc.id;

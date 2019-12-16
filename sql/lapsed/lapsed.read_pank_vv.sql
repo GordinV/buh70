@@ -111,14 +111,16 @@ BEGIN
             -- ищкм счет
 
             FOR v_arv IN
-                SELECT id, jaak, rekvid, asutusid, asutus AS maksja
+                SELECT a.id, a.jaak, a.rekvid, a.asutusid, a.asutus AS maksja
                 FROM lapsed.cur_laste_arved a
+                         INNER JOIN docs.arv arv ON a.id = arv.parentid
                 WHERE a.rekvid = l_rekvid
                   AND (a.viitenr = v_pank_vv.viitenumber OR a.viitenr::TEXT = '0'::TEXT || v_pank_vv.viitenumber::TEXT)
                   AND a.jaak > 0
-                ORDER BY kpv ASC
+                  AND (arv.properties ->> 'ettemaksu_period' IS NULL OR
+                       arv.properties ->> 'tyyp' = 'ETTEMAKS') -- только обычные счета или предоплаты
+                ORDER BY a.kpv, a.id
                 LOOP
-
                     -- считаем остаток не списанной суммы
                     l_makse_summa = CASE
                                         WHEN l_tasu_jaak > v_arv.jaak THEN v_arv.jaak
@@ -166,7 +168,6 @@ BEGIN
                         -- вся оплата списана
                         EXIT;
                     END IF;
-
                 END LOOP;
             IF (l_tasu_jaak > 0)
             THEN

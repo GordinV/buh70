@@ -167,12 +167,14 @@ const Arv = {
                          CASE 
                              WHEN t.id IS NOT NULL THEN t.number
                              WHEN m.id IS NOT NULL THEN m.number
+                             WHEN aa.id IS NOT NULL THEN aa.number
                              END AS number
                   FROM docs.doc d
                            LEFT OUTER JOIN docs.doc rd ON rd.id IN (SELECT unnest(d.docs_ids))
                            LEFT OUTER JOIN libs.library l ON rd.doc_type_id = l.id
                            LEFT OUTER JOIN docs.teatis t ON t.parentid = rd.id
                            LEFT OUTER JOIN docs.mk m ON m.parentid = rd.id
+                           LEFT OUTER JOIN docs.arv aa ON aa.parentid = rd.id
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                   WHERE d.id = $1 :: INTEGER`,
             query: null,
