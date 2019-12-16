@@ -111,9 +111,10 @@ BEGIN
     WHERE l.parentid = l_laps_id
       AND a.asutusid = l_asutus_id
       -- ищем счета в периоде
-      AND l_kpv BETWEEN date(year(a.kpv), month(a.kpv), 1) AND date(year(a.kpv), month(a.kpv), 1) + make_interval(
-            months => ((lk.properties ->> 'ettemaksu_period')::INTEGER) - 1)
+      AND l_kpv BETWEEN date(year(a.kpv), month(a.kpv), 1) AND (date(year(a.kpv), month(a.kpv), 1) + make_interval(
+            months => ((lk.properties ->> 'ettemaksu_period')::INTEGER)))::DATE - 1
       AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
+      AND (a.properties ->> 'tyyp')::TEXT = 'ETTEMAKS'
       AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
     ORDER BY D.ID DESC
     LIMIT 1;
