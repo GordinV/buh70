@@ -111,14 +111,13 @@ BEGIN
     WHERE l.parentid = l_laps_id
       AND a.asutusid = l_asutus_id
       -- ищем счета в периоде
-      AND a.kpv BETWEEN date(year(a.kpv), month(a.kpv), 1) AND date(year(a.kpv), month(a.kpv), 1) + make_interval(
+      AND l_kpv BETWEEN date(year(a.kpv), month(a.kpv), 1) AND date(year(a.kpv), month(a.kpv), 1) + make_interval(
             months => (lk.properties ->> 'ettemaksu_period')::INTEGER)
       AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
       AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
     ORDER BY D.ID DESC
     LIMIT 1;
 
-    RAISE NOTICE 'l_arv_id %', l_arv_id;
     IF l_arv_id IS NOT NULL AND l_status < 3
     THEN
 

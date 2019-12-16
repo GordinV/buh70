@@ -77,7 +77,12 @@ class Documents extends React.PureComponent {
                     this.props.history.push(`/lapsed/${task.docTypeId}`);
                 }, 1000 * 5);
             } else {
-                Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'notValid'});
+                if (data.error_message) {
+                    Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
+                } else  {
+                    Doc.setState({warning: `Kokku arvestatud : ${data.result}, võib olla selles perioodil kõik arved juba väljastatud`, warningType: 'notValid'});
+                }
+
             }
 
         });
