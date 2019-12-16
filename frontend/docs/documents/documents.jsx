@@ -287,7 +287,13 @@ class Documents extends React.Component {
                 .catch((err) => {
                     console.error('error in fetch-> ', err);
                 })
-                .then(() => this.fetchData('selectDocs'));
+                .then((data) => {
+                    if (data.error_message) {
+                        this.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'})
+                    } else {
+                        this.fetchData('selectDocs')
+                    }
+                });
         }
     }
 

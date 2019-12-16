@@ -104,7 +104,7 @@ BEGIN
                      INNER JOIN libs.library l ON l.id = d.doc_type_id
             WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
               AND d.status <> 3
-              AND l.kood IN ('ARV', 'MK', 'SORDER', 'KORDER'))
+              AND l.kood IN ('TEATIS', 'MK', 'SORDER', 'KORDER'))
     THEN
 
         RAISE NOTICE 'Есть связанные доку менты. удалять нельзя %', v_doc.docs_ids;
