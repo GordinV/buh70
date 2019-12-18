@@ -76,6 +76,7 @@ class Document {
         }
 
         let sql = this.config.saveDoc;
+
         let data = await db.queryDb(sql, [params.data, params.userId, params.asutusId]);
 
         if (data.data[0].id && !isNotSelect) {

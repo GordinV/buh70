@@ -274,7 +274,6 @@ exports.getLogs = async (req, res) => {
 
 };
 
-
 exports.upload = async (req, res) => {
     const multer = require('multer');
     const storage = multer.memoryStorage();
@@ -306,10 +305,15 @@ exports.upload = async (req, res) => {
                     // ответ
                     return res.status(200).send(result);
                 }
-            );
+            ).catch(error => {
+                console.error('error', error);
+                return res.status(500).send(error);
+
+            });
 
 
         } catch (e) {
+            console.log('viga', e);
             return res.status(500);
 
         }

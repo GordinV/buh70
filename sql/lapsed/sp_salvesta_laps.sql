@@ -16,6 +16,7 @@ DECLARE
     doc_viitenr      TEXT    = doc_data ->> 'viitenumber';
     doc_vanemId      INTEGER = doc_data ->> 'vanemid';
     doc_muud         TEXT    = doc_data ->> 'muud';
+    is_import        BOOLEAN = doc_data ->> 'import';
     v_vanem          RECORD;
     json_props       JSONB;
     json_props_vanem JSONB;
@@ -39,6 +40,14 @@ BEGIN
 
     json_props = to_jsonb(row)
                  FROM (SELECT doc_viitenr AS viitenumber) row;
+
+
+    -- поиск на наличие в регистре
+    doc_id = (SELECT id FROM lapsed.laps l WHERE l.isikukood = doc_isikukood LIMIT 1);
+    IF doc_id IS NOT NULL AND is_import
+    THEN
+        RETURN 0;
+    END IF;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
@@ -82,10 +91,7 @@ BEGIN
 
         json_ajalugu = to_jsonb(row)
                        FROM (SELECT now()    AS updated,
-                                    userName AS user,
-                                    l.*      AS data
-                             FROM lapsed.laps l
-                             WHERE id = doc_id
+                                    userName AS user
                             ) row;
 
         UPDATE lapsed.laps

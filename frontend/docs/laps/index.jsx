@@ -3,6 +3,8 @@
 const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const BtnArvesta = require('./../../components/button-register/button-task/index.jsx');
+const ButtonUpload = require('./../../components/upload_button/index.jsx');
+
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 
 const styles = require('./laps-register-styles');
@@ -21,6 +23,7 @@ class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
         this.onClickHandler = this.onClickHandler.bind(this);
+        this.handleClick = this.handleClick.bind(this);
         this.renderer = this.renderer.bind(this);
     }
 
@@ -46,8 +49,16 @@ class Documents extends React.PureComponent {
                             onClick={this.onClickHandler}
                             ref={`btn-${event.name}`}
                         />
+
                     )
                 })}
+                <ButtonUpload
+                    ref='btnUpload'
+                    docTypeId={DOC_TYPE_ID}
+                    onClick={this.handleClick}
+                    show={true}
+                />
+
             </ToolbarContainer>
         )
     }
@@ -86,6 +97,23 @@ class Documents extends React.PureComponent {
             }
 
         });
+    }
+
+    /**
+     * кастомный обработчик события клик на кнопку импорта
+     */
+    handleClick(result) {
+
+        //обновим данные
+        const Doc = this.refs['register'];
+        if (!Doc) {
+            return null;
+        }
+
+        Doc.setState({warning:`Edukalt:  ${result}: `, warningType:'ok'});
+        setTimeout(() => {
+            Doc.fetchData('selectDocs');
+        }, 10000);
     }
 }
 

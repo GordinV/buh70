@@ -80,7 +80,10 @@ class UploadButton extends React.PureComponent {
                             this.setState({response: null, show: false, loading: false});
                         }, 1000);
                     });
-                })
+                    if (this.props.onClick) {
+                        this.props.onClick(response.data);
+                    }
+                });
             } else {
                 this.setState({response: null, show: false, loading: false});
             }
