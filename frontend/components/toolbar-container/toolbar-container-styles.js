@@ -5,7 +5,6 @@ module.exports =  {
         display: 'flex',
         width: '100%',
         height: 'Auto',
-        border: '1px solid lightGrey',
         marginBottom:'5px',
         marginHeight:'5px',
         borderRadius:'5px'
@@ -19,5 +18,5 @@ module.exports =  {
         justifyContent: 'flex-start',
     }
 
-}
+};
 
