@@ -68,6 +68,7 @@ BEGIN
              SELECT id
              FROM lapsed.lapse_kaart
              WHERE nomid = v_doc.id
+             and staatus <> 3
              UNION
              SELECT id
              FROM docs.mk1
