@@ -14,6 +14,7 @@ const
     BtnPrint = require('./../../components/button-register/button-register-print/button-register-print.jsx'),
     BtnFilter = require('./../../components/button-register/button-register-filter/button-register-filter.jsx'),
     BtnSelect = require('./../../components/button-register/button-select/index.jsx'),
+    BtnRefresh = require('./../../components/button-register/button-refresh/index.jsx'),
     ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx'),
     GridFilter = require('./../../components/data-grid/grid-filter/grid-filter.jsx'),
     ModalPage = require('./../../components/modalpage/modalPage.jsx'),
@@ -57,7 +58,7 @@ class Documents extends React.Component {
         };
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
-            'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'modalPageBtnClick', 'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
+            'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick', 'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData', 'prepareSqlWhereFromFilter', 'handleInputChange');
 
     }
@@ -196,6 +197,16 @@ class Documents extends React.Component {
     btnFilterClick() {
         this.setState({getFilter: true})
     }
+
+    /**
+     * выполнит запрос и обновит данные грида
+     */
+    btnRefreshClick() {
+        this.fetchData('selectDocs').then(() => {
+            this.setState({warning: 'Edukalt', warningType: 'ok'});
+        });
+    }
+
 
     /**
      * Обработчик для кнопки Add
@@ -444,6 +455,7 @@ class Documents extends React.Component {
                         <BtnPrint onClick={this.btnPrintClick.bind(this)} show={toolbarParams['btnPrint'].show}
                                   disable={toolbarParams['btnPrint'].disabled}/>
                         <BtnFilter onClick={this.btnFilterClick}/>
+                        <BtnRefresh onClick={this.btnRefreshClick}/>
                         <BtnSelect
                             show={toolbarParams['btnSelect'].show}
                             value={'Valida'}
@@ -578,7 +590,7 @@ class Documents extends React.Component {
 
                                 this.filterData = this.gridConfig.map((row) => {
                                     // props.data пустое, создаем
-                                    let value = row.value ? row.value: null;
+                                    let value = row.value ? row.value : null;
                                     return {value: value, name: row.id, type: row.type ? row.type : 'text'};
                                 });
 

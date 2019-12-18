@@ -33,6 +33,7 @@ module.exports = {
         settings: '/images/icons/settings.png',
         mail: '/images/icons/mail.png',
         select: '/images/icons/select.png',
+        refresh: '/images/icons/refresh.png',
     }
 
 
