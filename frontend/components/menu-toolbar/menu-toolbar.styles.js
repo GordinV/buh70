@@ -6,6 +6,10 @@ module.exports = {
         margin: '5px',
         display: 'flex',
         width: '95%'
+    },
+    pageName: {
+        fontWeight: 'bold',
+        fontSize:'x-large'
     }
 
 };

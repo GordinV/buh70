@@ -41,7 +41,7 @@ exports.get = async (req, res) => {
 
     const Component = React.createElement(
         DocumentRegister,
-        {id: 'doc', initData: data, userData: user}, 'Тут будут компоненты');
+        {id: 'doc', initData: data, userData: user, title: documentType}, 'Тут будут компоненты');
 
     try {
         let html = ReactServer.renderToString(Component);
@@ -53,7 +53,8 @@ exports.get = async (req, res) => {
         res.render(documentType + 'Register', {
             "user": user,
             "userData": userData,
-            "store": storeInitialData
+            "store": storeInitialData,
+            "title": documentType
             , react: html
         });
 
@@ -99,7 +100,7 @@ exports.post = async (req, res) => {
         {requiredFields: Document.config.requiredFields ? Document.config.requiredFields : []}
     );
 
-    res.send({action: 'select', result: 'ok', data: [preparedData], userData: user});
+    res.send({action: 'select', result: 'ok', data: [preparedData], userData: user, title: documentType});
 
 };
 

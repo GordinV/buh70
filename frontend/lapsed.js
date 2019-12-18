@@ -12,6 +12,7 @@ userData = JSON.parse(userData);
 DocContext.initData = initData;
 DocContext.userData = userData;
 DocContext.module = 'lapsed';
+DocContext.pageName = 'Laste register';
 
 ReactDOM.hydrate(
     <BrowserRouter>

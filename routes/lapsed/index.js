@@ -8,8 +8,6 @@ const {StaticRouter} = require('react-router');
 const App = require('./../../frontend/modules/lapsed.jsx');
 const DocContext = require('./../../frontend/doc-context');
 
-
-
 exports.get = async (req, res) => {
     let documentType = req.params.documentType ? req.params.documentType : 'laps';
 
@@ -58,7 +56,7 @@ exports.get = async (req, res) => {
             res.end()
         } else {
             res.render('lapsed', {
-                "title": 'Module lapsed',
+                "title": documentType,
                 "user": user,
                 "userData": userData,
                 "store": storeInitialData

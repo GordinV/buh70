@@ -81,6 +81,7 @@ class MenuToolBar extends React.Component {
 
         return (
             <div style={style['container']}>
+                <p style = {style['pageName']}> {DocContext.pageName} </p>
                 <ToolbarContainer
                     ref='menuToolbarContainer'
                     position="left">
@@ -147,6 +148,12 @@ class MenuToolBar extends React.Component {
      */
     startMenuClickHandler(value) {
         this.setState({showStartMenu: false});
+
+        let docType = DocContext.menu.find(row => row.kood === value);
+        if (docType) {
+            DocContext.pageName = docType.name;
+        }
+
         if (this.props.history) {
             return this.props.history.push({
                 pathname: `/${DocContext.module}/${value}`,

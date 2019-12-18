@@ -72,6 +72,8 @@ class StartMenu extends React.PureComponent {
                     if (response) {
 
                         this.treeData = response.data.data;
+                        // запомним содержимое
+                        DocContext.menu = this.treeData;
                         this.forceUpdate();
                     }
                 })
