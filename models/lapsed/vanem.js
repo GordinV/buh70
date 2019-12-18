@@ -126,6 +126,13 @@ module.exports = {
             params: 'sqlWhere'
         },
     ],
+    importVanemad: {
+        command: `SELECT error_code, result, error_message
+                  FROM lapsed.import_vanemad( $1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+        type: 'sql',
+        alias: 'importVanemad'
+    },
+
     getLog: {
         command: `SELECT ROW_NUMBER() OVER ()                                               AS id,
                          (ajalugu ->> 'user')::TEXT                                         AS kasutaja,

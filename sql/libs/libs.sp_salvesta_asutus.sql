@@ -66,7 +66,6 @@ BEGIN
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
-
         SELECT row_to_json(row) INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;

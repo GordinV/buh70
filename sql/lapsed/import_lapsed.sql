@@ -54,8 +54,6 @@ BEGIN
                 THEN
                     count = count + 1;
                 END IF;
-
-                count = count + 1;
             END IF;
         END LOOP;
 
