@@ -77,6 +77,7 @@ class Document {
 
         let sql = this.config.saveDoc;
 
+
         let data = await db.queryDb(sql, [params.data, params.userId, params.asutusId]);
 
         if (data.data[0].id && !isNotSelect) {
@@ -92,11 +93,13 @@ class Document {
      */
     async executeTask(task, params) {
         let sql = this.config[task].command;
+
         let _params = params ? params : [this.documentId, this.userId];
 
         if (!sql) {
             return {error: 'No task found'}
         }
+
         return await db.queryDb(sql, _params);
     }
 

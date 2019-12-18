@@ -12,38 +12,26 @@ module.exports = async (file, mimeType, user) => {
         }
 
     } catch (e) {
-        console.error(e);
+        console.error('Viga:', e);
         return {error_message: e, result: 0}
     }
     let saved = 0;
     if (rows.length) {
         // сохраняем
 
-        // делаем массив промисов
-        const dataPromises = rows.map(row => {
-            return new Promise(resolve => {
-                const params = {
-                    is_import: true,
-                    data: JSON.stringify({data: row}),
-                    userId: user.id,
-                    asutusId: user.asutusId
-                };
+        const params = [JSON.stringify(rows), user.id, user.asutusId];
 
-                resolve(Document.save(params, true));
-            })
-        });
+        const result = await Document.executeTask('importLapsed', params).then((result) => {
+                saved = result.result ? result.result : 0;
+            }
+        );
 
-        // решаем их
-        await Promise.all(dataPromises).then((result) => {
-            saved = result.length;
-        }).catch((err) => {
-            console.error('catched error->', err);
-            return res.send({status: 500, result: null, error_message: err});
-        });
+        return `Kokku leidsin ${rows.length} lapsed, salvestatud kokku: ${saved}`;
+
+    } else {
+        return `Kokku leidsin 0 lapsed, salvestatud kokku: 0`;
 
     }
-    return `Kokku leidsin ${rows.length} lapsed, salvestatud kokku: ${saved}`;
-
 };
 
 const readCSV = async (csvContent) => {
@@ -62,8 +50,7 @@ const readCSV = async (csvContent) => {
             if (isNumber(row[0])) {
                 rows.push({
                     isikukood: row[0],
-                    nimi: row[1],
-                    import: true
+                    nimi: row[1]
                 });
             }
 

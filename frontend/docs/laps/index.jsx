@@ -79,7 +79,7 @@ class Documents extends React.PureComponent {
         }
 
         // отправляем запрос на выполнение
-        Doc.fetchData(`calc/${task.method}`, {docs:ids, seisuga:seisuga}).then((data) => {
+        Doc.fetchData(`calc/${task.method}`, {docs: ids, seisuga: seisuga}).then((data) => {
             if (data.result) {
                 Doc.setState({warning: `Kokku arvestatud: ${data.result}, suunatamine...`, warningType: 'ok'});
 
@@ -90,8 +90,11 @@ class Documents extends React.PureComponent {
             } else {
                 if (data.error_message) {
                     Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
-                } else  {
-                    Doc.setState({warning: `Kokku arvestatud : ${data.result}, võib olla selles perioodil kõik arved juba väljastatud`, warningType: 'notValid'});
+                } else {
+                    Doc.setState({
+                        warning: `Kokku arvestatud : ${data.result}, võib olla selles perioodil kõik arved juba väljastatud`,
+                        warningType: 'notValid'
+                    });
                 }
 
             }
@@ -109,11 +112,12 @@ class Documents extends React.PureComponent {
         if (!Doc) {
             return null;
         }
-
-        Doc.setState({warning:`Edukalt:  ${result}: `, warningType:'ok'});
-        setTimeout(() => {
-            Doc.fetchData('selectDocs');
-        }, 10000);
+        if (result) {
+            Doc.setState({warning: `Edukalt:  ${result}: `, warningType: 'ok'});
+            setTimeout(() => {
+                Doc.fetchData('selectDocs');
+            }, 10000);
+        }
     }
 }
 

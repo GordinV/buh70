@@ -282,7 +282,7 @@ exports.upload = async (req, res) => {
     }).single('file');
 
     // читаем из буфера файл в память
-    upload(req, res, function (err) {
+    upload(req, res, async function (err) {
         if (err instanceof multer.MulterError) {
             return res.status(500).json(err);
         } else if (err) {
@@ -301,7 +301,7 @@ exports.upload = async (req, res) => {
         // вызываем разбор файла
         try {
             const readFile = require(`./import/${params.docTypeId.toLowerCase()}`);
-            readFile(content, req.file.mimetype, user).then((result) => {
+            await readFile(content, req.file.mimetype, user).then((result) => {
                     // ответ
                     return res.status(200).send(result);
                 }
@@ -313,8 +313,8 @@ exports.upload = async (req, res) => {
 
 
         } catch (e) {
-            console.log('viga', e);
-            return res.status(500);
+            console.error('viga', e);
+            return res.status(500).send(e.error);
 
         }
 
