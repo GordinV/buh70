@@ -23,7 +23,7 @@ class Kontod extends React.PureComponent {
     }
 
     renderer() {
-        return <div>Kontod register special render</div>
+        return null
     }
 
 }

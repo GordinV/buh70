@@ -27,7 +27,7 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
-        return <div/>
+        return null;
 
     }
 

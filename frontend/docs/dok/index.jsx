@@ -26,7 +26,7 @@ class Docs extends React.PureComponent {
     }
 
     renderer() {
-        return <div> register special render</div>
+        return null
     }
 
 }

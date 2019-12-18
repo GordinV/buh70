@@ -22,7 +22,7 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
-        return <div>JOURNAL register special render</div>
+        return null
     }
 
 }

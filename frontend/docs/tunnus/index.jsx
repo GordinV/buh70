@@ -24,7 +24,7 @@ class Tunnused extends React.PureComponent {
     }
 
     renderer() {
-        return <div>Tunnused register special render</div>
+        return null;
     }
 }
 

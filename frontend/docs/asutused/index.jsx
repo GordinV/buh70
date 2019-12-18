@@ -25,7 +25,7 @@ class Asutused extends React.PureComponent {
     }
 
     renderer() {
-        return <div>ASUTUSED register special render</div>
+        return null
     }
 
 }

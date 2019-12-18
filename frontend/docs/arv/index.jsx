@@ -31,8 +31,6 @@ class Documents extends React.PureComponent {
 
     render() {
         return (
-            <div>
-                <p> Arved </p>
                 <DocumentRegister initData={this.props.initData}
                                   history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
@@ -40,8 +38,6 @@ class Documents extends React.PureComponent {
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
                                   render={this.renderer}/>
-            </div>
-
         );
     }
 

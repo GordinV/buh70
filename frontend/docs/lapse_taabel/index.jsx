@@ -51,7 +51,7 @@ class Documents extends React.PureComponent {
         if (summa) {
             this.setState({summa: summa});
         }
-        return <div>Lapse taabel register special render</div>
+        return null;
     }
 
 }

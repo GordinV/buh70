@@ -25,7 +25,7 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
-        return <div>Lapse grupp register special render</div>
+        return null
     }
 }
 

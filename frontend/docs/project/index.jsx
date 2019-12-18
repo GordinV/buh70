@@ -24,7 +24,7 @@ class Project extends React.PureComponent {
     }
 
     renderer() {
-        return <div>Project register special render</div>
+        return null;
     }
 
 }

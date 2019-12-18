@@ -24,7 +24,7 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
-        return <div>Sorder register special render</div>
+        return null;
     }
 
 }

@@ -23,7 +23,7 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
-        return <div>Vorder register special render</div>
+        return null;
     }
 
 }

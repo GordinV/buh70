@@ -24,7 +24,7 @@ class Nomenclatures extends React.PureComponent {
     }
 
     renderer() {
-        return <div>NOMENCLATURE register special render</div>
+        return null
     }
 
 }

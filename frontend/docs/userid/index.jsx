@@ -24,7 +24,7 @@ class Userid extends React.PureComponent {
     }
 
     renderer() {
-        return <div>Userid register special render</div>
+        return null;
     }
 }
 
