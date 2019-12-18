@@ -16,7 +16,7 @@ DECLARE
     doc_viitenr      TEXT    = doc_data ->> 'viitenumber';
     doc_vanemId      INTEGER = doc_data ->> 'vanemid';
     doc_muud         TEXT    = doc_data ->> 'muud';
-    is_import        BOOLEAN = doc_data ->> 'import';
+    is_import        BOOLEAN = coalesce((doc_data ->> 'import')::BOOLEAN, FALSE);
     v_vanem          RECORD;
     json_props       JSONB;
     json_props_vanem JSONB;
@@ -32,6 +32,7 @@ BEGIN
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
+
     IF userName IS NULL
     THEN
         RAISE NOTICE 'User not found %', user;
@@ -44,7 +45,7 @@ BEGIN
 
     -- поиск на наличие в регистре
     doc_id = (SELECT id FROM lapsed.laps l WHERE l.isikukood = doc_isikukood LIMIT 1);
-    IF doc_id IS NOT NULL AND is_import
+    IF doc_id IS NOT NULL AND is_import = TRUE
     THEN
         RETURN 0;
     END IF;

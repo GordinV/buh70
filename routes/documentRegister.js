@@ -300,7 +300,7 @@ exports.upload = async (req, res) => {
 
         // вызываем разбор файла
         try {
-            const readFile = require(`./import/${params.docTypeId}`);
+            const readFile = require(`./import/${params.docTypeId.toLowerCase()}`);
             readFile(content, req.file.mimetype, user).then((result) => {
                     // ответ
                     return res.status(200).send(result);
