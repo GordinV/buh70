@@ -1,6 +1,6 @@
 'use strict';
 
-const React = require('react');;
+const React = require('react');
 const PropTypes = require('prop-types');
 
 const styles = require('../button-register-styles'),
@@ -20,7 +20,7 @@ class ButtonRegisterAdd extends React.PureComponent{
 
     render() {
         return <Button
-            value = 'Add'
+            value = 'Lisa'
             ref="btnAdd"
             style={styles.button}
             show={this.props.show}
@@ -29,7 +29,7 @@ class ButtonRegisterAdd extends React.PureComponent{
             <img ref="image" src={styles.icons[ICON]}/>
         </Button>
     }
-};
+}
 
 /*
 ButtonRegisterAdd.propTypes = {

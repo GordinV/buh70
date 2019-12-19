@@ -122,6 +122,7 @@ class Laps extends React.PureComponent {
                     <div style={styles.docColumn}>
                         <ButtonEdit
                             ref='btnEdit'
+                            value={'Muuda'}
                             onClick={this.btnEditLapsClick}
                             show={!isEditMode}
                             style={buttonEditNom}
@@ -148,6 +149,7 @@ class Laps extends React.PureComponent {
                     <div style={styles.docColumn}>
                         <ButtonEdit
                             ref='btnEdit'
+                            value={'Muuda'}
                             onClick={this.btnEditNomClick}
                             show={!isEditMode}
                             style={buttonEditNom}

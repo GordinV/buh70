@@ -161,6 +161,7 @@ class Vmk extends React.Component {
                         <div style={styles.docColumn}>
                             <ButtonEdit
                                 ref='btnEdit'
+                                value={'Muuda'}
                                 onClick={this.btnEditLapsClick}
                                 show={!isEditeMode}
                                 style={styles.btnEdit}

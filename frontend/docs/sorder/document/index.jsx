@@ -143,6 +143,7 @@ class Sorder extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <ButtonEdit
                                 ref='btnEdit'
+                                value={'Muuda'}
                                 onClick={this.btnEditAsutusClick}
                                 show={!isEditeMode}
                                 style={styles.btnEdit}

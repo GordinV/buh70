@@ -45,13 +45,13 @@ class SelectTextWidget extends React.PureComponent {
      */
     handleClick(event) {
         // делаем редайрект на страницц справочника
-        if (event === 'edit') {
+        if (event === 'edit' || event === 'Muuda') {
             this.props.history.push({
                 pathname: `/${DocContext.module}/dokprops/${this.state.value}`,
                 state: {dokPropId: DocContext.docTypeId, type: 'text'}
             });
 
-        } else if (event === 'add') {
+        } else if (event === 'add' || event === 'Lisa') {
             this.props.history.push({
                 pathname: `/${DocContext.module}/dokprops/0`,
                 state: {dokPropId: DocContext.docTypeId, type: 'text'}
@@ -102,10 +102,12 @@ class SelectTextWidget extends React.PureComponent {
                 />
                 {this.state.value ?
                     <ButtonEdit
+                        value={'Muuda'}
                         show={this.props.readOnly}
                         onClick={this.handleClick}
                     /> :
                     <ButtonAdd
+                        value={'Lisa'}
                         show={this.props.readOnly}
                         onClick={this.handleClick}/>
                 }

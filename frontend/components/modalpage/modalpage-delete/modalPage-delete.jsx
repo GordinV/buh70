@@ -30,7 +30,7 @@ class ModalPageDelete extends React.PureComponent {
             modalPageName='Delete document'>
             <div ref="container">
                 <img ref="image" src={styles.icon}/>
-                <span ref="message"> Удалить документ ? </span>
+                <span ref="message"> Kas kustuta dokument ? </span>
             </div>
         </ModalPage>
     }

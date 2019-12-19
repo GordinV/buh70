@@ -105,6 +105,7 @@ class Vanem extends React.PureComponent {
                     <div style={styles.docColumn}>
                         <ButtonEdit
                             ref='btnEdit'
+                            value={'Muuda'}
                             onClick={this.btnEditAsutusClick}
                             show={!isEditMode}
                             style={styles.btnEdit}

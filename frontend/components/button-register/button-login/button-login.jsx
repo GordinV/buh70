@@ -14,7 +14,7 @@ class ButtonLogin extends React.PureComponent {
         super(props);
 
         this.state = {
-            value: props.value || 'LogIn'
+            value: props.value || 'Sisse'
         }
 
     }
@@ -56,7 +56,7 @@ ButtonLogin.propTypes = {
 ButtonLogin.defaultProps = {
     disabled: false,
     show: true,
-    value: 'LogOut'
+    value: 'Välju'
 };
 
 module.exports = ButtonLogin;

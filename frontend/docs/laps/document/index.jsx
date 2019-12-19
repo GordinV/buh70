@@ -200,7 +200,21 @@ class Laps extends React.PureComponent {
                     state: {lapsId: this.docId, module: this.state.module}
                 });
                 break;
-            case "ADD":
+            case "MUUDA":
+
+                this.props.history.push({
+                    pathname: `/lapsed/${docTypeId}/${id}`,
+                    state: {lapsId: this.docId, module: this.state.module}
+                });
+                break;
+
+            case "ADD" :
+                this.props.history.push({
+                    pathname: `/lapsed/${docTypeId}/0`,
+                    state: {lapsId: this.docId, module: this.state.module}
+                });
+                break;
+            case "LISA" :
                 this.props.history.push({
                     pathname: `/lapsed/${docTypeId}/0`,
                     state: {lapsId: this.docId, module: this.state.module}
@@ -218,8 +232,20 @@ class Laps extends React.PureComponent {
 
                 });
                 break;
+            case "KUSTUTA":
+                //send post to delete row
+                this.fetchData(docTypeId, id).then(() => {
+
+                    const current = this.props.location.pathname;
+                    this.props.history.replace(`/reload`);
+                    setTimeout(() => {
+                        this.props.history.replace(current);
+                    });
+
+                });
+                break;
             default:
-                console.log('Vigane click');
+                console.log('Vigane click', btnName);
         }
 
     }

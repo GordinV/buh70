@@ -446,13 +446,19 @@ class Documents extends React.Component {
                                onChange={this.handleInputChange}/>
 
                     <ToolbarContainer ref='toolbarContainer'>
-                        <BtnAdd onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
+                        <BtnAdd onClick={this.btnAddClick}
+                                show={toolbarParams['btnAdd'].show}
                                 disable={toolbarParams['btnAdd'].disabled}/>
-                        <BtnEdit onClick={this.btnEditClick} show={toolbarParams['btnEdit'].show}
+                        <BtnEdit onClick={this.btnEditClick}
+                                 value={'Muuda'}
+                                 show={toolbarParams['btnEdit'].show}
                                  disable={toolbarParams['btnEdit'].disabled}/>
-                        <BtnDelete onClick={this.btnDeleteClick.bind(this)} show={toolbarParams['btnDelete'].show}
+                        <BtnDelete onClick={this.btnDeleteClick.bind(this)}
+                                   show={toolbarParams['btnDelete'].show}
                                    disable={toolbarParams['btnDelete'].disabled}/>
-                        <BtnPrint onClick={this.btnPrintClick.bind(this)} show={toolbarParams['btnPrint'].show}
+                        <BtnPrint onClick={this.btnPrintClick.bind(this)}
+                                  show={toolbarParams['btnPrint'].show}
+                                  value={'Trükk'}
                                   disable={toolbarParams['btnPrint'].disabled}/>
                         <BtnFilter onClick={this.btnFilterClick}/>
                         <BtnRefresh onClick={this.btnRefreshClick}/>

@@ -70,14 +70,24 @@ class DocToolBar extends React.PureComponent {
             <BtnAdd ref='btnAdd' onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
                     disabled={toolbarParams['btnAdd'].disabled}/>
             <BtnEdit ref='btnEdit'
+                     value={'Muuda'}
                      onClick={this.btnEditClick}
                      show={toolbarParams['btnEdit'].show}
                      disabled={toolbarParams['btnEdit'].disabled}/>
-            <BtnSave ref='btnSave' onClick={this.btnSaveClick} show={toolbarParams['btnSave'].show}
+            <BtnSave ref='btnSave'
+                     value={'Salvesta'}
+                     onClick={this.btnSaveClick}
+                     show={toolbarParams['btnSave'].show}
                      disabled={toolbarParams['btnSave'].disabled}/>
-            <BtnCancel ref='btnCancel' onClick={this.btnCancelClick} show={toolbarParams['btnCancel'].show}
+            <BtnCancel ref='btnCancel'
+                       value={'Tühista'}
+                       onClick={this.btnCancelClick}
+                       show={toolbarParams['btnCancel'].show}
                        disabled={toolbarParams['btnCancel'].disabled}/>
-            <BtnPrint ref='btnPrint' onClick={this.btnPrintClick} show={toolbarParams['btnPrint'].show}
+            <BtnPrint ref='btnPrint'
+                      value={'Trükk'}
+                      onClick={this.btnPrintClick}
+                      show={toolbarParams['btnPrint'].show}
                       disabled={toolbarParams['btnPrint'].disabled}/>
             <BtnEmail ref='btnPrint' onClick={this.btnEmailClick} show={toolbarParams['btnEmail'].show}
                       disabled={toolbarParams['btnEmail'].disabled}/>

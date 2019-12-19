@@ -20,7 +20,7 @@ class ButtonRegisterDelete extends React.PureComponent{
 
     render() {
         return <Button
-            value = 'Delete'
+            value = 'Kustuta'
             ref = 'btnDelete'
             show={this.props.show}
             disabled={this.props.disabled}
@@ -28,7 +28,7 @@ class ButtonRegisterDelete extends React.PureComponent{
             <img ref = 'image' src={styles.icons[ICON]}/>
         </Button>
     }
-};
+}
 
 /*
 ButtonRegisterDelete.propTypes = {

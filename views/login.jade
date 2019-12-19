@@ -1,17 +1,18 @@
 extends layout
 block content
     link(rel='stylesheet', href='/stylesheets/login.css')
-    h1= 'Вход'
-    p= 'Введите имя пользователя и пароль'
+    h1= 'Lapsed'
+    h2= 'Sisselogimine'
+    p= 'Sissesta kasutaja nimi ja parool'
     form(name="login-form", method="post")
         div.loginForm
             div.loginText
-                label.labelName Имя
+                label.labelName Kasutaja nimi:
                 input(type="text" name='username' )
             div.loginText
-                label.labelPassword Пароль
+                label.labelPassword Parool:
                     input(type="password" name='password')
             div.loginSubmit
-                input(type='submit', value='Войти' class='loginSubmit')
+                input(type='submit', value='Sisse' class='loginSubmit')
 
         label.labelErrorMessage #{errorMessage}

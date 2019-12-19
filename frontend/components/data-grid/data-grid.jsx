@@ -98,17 +98,17 @@ class DataGrid extends React.Component {
                         <GridButtonAdd
                             show={toolbarParams.btnAdd.show}
                             onClick={this.handleGridBtnClick}
-                            value={'Add'}
+                            value={'Lisa'}
                             ref="grid-button-add"/>
                         <GridButtonEdit
                             show={toolbarParams.btnEdit.show}
                             onClick={this.handleGridBtnClick}
-                            value={'Edit'}
+                            value={'Muuda'}
                             ref="grid-button-edit"/>
                         <GridButtonDelete
                             show={toolbarParams.btnDelete.show}
                             onClick={this.handleGridBtnClick}
-                            value={'Delete'}
+                            value={'Kustuta'}
                             ref="grid-button-delete"/>
 
                     </ToolbarContainer> : null}
@@ -175,7 +175,7 @@ class DataGrid extends React.Component {
 
         let docTypeId = this.props.docTypeId ? this.props.docTypeId : '';
 
-        if (btnName === 'delete' && !this.state.isDelete) {
+        if ((btnName === 'delete' || btnName === 'Kustuta') && !this.state.isDelete) {
             // should open modal page and ask confirmation
             return this.setState({isDelete: true});
         }

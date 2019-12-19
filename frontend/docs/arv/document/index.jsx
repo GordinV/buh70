@@ -165,6 +165,7 @@ class Arve extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <ButtonEdit
                                 ref='btnEdit'
+                                value={'Muuda'}
                                 onClick={this.btnEditAsutusClick}
                                 show={!isEditMode}
                                 style={styles.btnEdit}
@@ -192,6 +193,7 @@ class Arve extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <ButtonEdit
                                 ref='btnEdit'
+                                value={'Muuda'}
                                 onClick={this.btnEditLapsClick}
                                 show={!isEditMode}
                                 style={styles.btnEdit}

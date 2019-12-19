@@ -35,7 +35,7 @@ class DocumentTemplate extends React.Component {
             checked: true,
             loadedLibs: false,
             libParams: {},
-            logs:[]
+            logs: []
         };
 
         this.docData = Object.keys(props.initData).length ? props.initData : {id: this.props.docId};
@@ -46,10 +46,10 @@ class DocumentTemplate extends React.Component {
         this.pages = this.props.pages || null;
 
         this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
-            'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick','btnEmailClick',
+            'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick', 'btnEmailClick',
             'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
-            'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick','btnLogsClick');
+            'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick', 'btnLogsClick');
 
 
         this.gridRowData = {}; //будем хранить строку грида
@@ -189,7 +189,7 @@ class DocumentTemplate extends React.Component {
                 });
 
             } else {
-                let errorMessage = response.error_message ? response.error_message: '';
+                let errorMessage = response.error_message ? response.error_message : '';
                 this.setState({
                     reloadData: false,
                     warning: `Tekkis viga ${errorMessage}`,
@@ -231,10 +231,10 @@ class DocumentTemplate extends React.Component {
                     docId = 0;
                 }
 
-                if (!this.props.docId)  {
+                if (!this.props.docId) {
                     // reload / redirect
                     setTimeout(() => {
-                        const current = `/${this.props.module ? this.props.module: 'lapsed'}/${docTypeId}/${docId}`;
+                        const current = `/${this.props.module ? this.props.module : 'lapsed'}/${docTypeId}/${docId}`;
                         this.props.history.replace(`/reload`);
                         setTimeout(() => {
                             this.props.history.replace(current);
@@ -271,7 +271,7 @@ class DocumentTemplate extends React.Component {
         const task = this.bpm.find(task => task.name === taskName);
         let api = `/newApi/task/${task.task}`;
 
-        this.fetchData('Post', api, kpv ? {seisuga: kpv}: null).then((response) => {
+        this.fetchData('Post', api, kpv ? {seisuga: kpv} : null).then((response) => {
             const dataRow = response.result;
             const dataMessage = response.data.error_message ? response.data.error_message : '';
 
@@ -526,8 +526,8 @@ class DocumentTemplate extends React.Component {
         let url = api ? api : `${URL}/${this.props.docTypeId}/${this.state.docId}`;
         let method = 'fetchDataPost';
         let params = {
-            docTypeId: this.props.docTypeId ? this.props.docTypeId: DocContext.docTypeId,
-            module: this.props.module ? this.props.module: DocContext.module,
+            docTypeId: this.props.docTypeId ? this.props.docTypeId : DocContext.docTypeId,
+            module: this.props.module ? this.props.module : DocContext.module,
             userId: DocContext.userData.userId,
             uuid: DocContext.userData.uuid,
             docId: this.state.docId,
@@ -537,7 +537,7 @@ class DocumentTemplate extends React.Component {
         if (protocol) {
             //request call not default
             method = 'fetchData' + protocol;
-            params = Object.assign({}, params, this.docData, api_params ? api_params: {});
+            params = Object.assign({}, params, this.docData, api_params ? api_params : {});
         }
 
         return new Promise((resolved, rejected) => {
@@ -567,7 +567,7 @@ class DocumentTemplate extends React.Component {
                             resolved(response.data.data[0]);
                         }
 
-                        if (response.data.action && response.data.action === 'save' && response.data.result.error_code ) {
+                        if (response.data.action && response.data.action === 'save' && response.data.result.error_code) {
                             // error in save
                             this.setState({
                                 warning: `Tekkis viga ${response.data.result.error_message}`,
@@ -699,12 +699,24 @@ class DocumentTemplate extends React.Component {
                 case 'add':
                     this.addRow();
                     break;
+                case 'lisa':
+                    this.addRow();
+                    break;
                 case 'edit':
+                    this.editRow();
+                    break;
+                case 'muuda':
                     this.editRow();
                     break;
                 case 'delete':
                     this.deleteRow();
                     break;
+                case 'kustuta':
+                    this.deleteRow();
+                    break;
+                default:
+                    console.log('Vigane click', btnName);
+
             }
         }
     }

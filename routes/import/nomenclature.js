@@ -2,6 +2,7 @@ module.exports = async (file, mimeType, user) => {
     const Doc = require('./../../classes/DocumentTemplate');
     const Document = new Doc('NOMENCLATURE', null, user.userId, user.asutusId, 'lapsed');
 
+    console.log('start');
     let rows = [];
 
     try {
@@ -15,6 +16,8 @@ module.exports = async (file, mimeType, user) => {
         console.error('Viga:', e);
         return {error_message: e, result: 0}
     }
+
+    console.log('rows',rows);
 
     let saved = 0;
     if (rows.length) {
