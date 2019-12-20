@@ -44,12 +44,14 @@ BEGIN
 
 
     -- поиск на наличие в регистре
-    doc_id = (SELECT id FROM lapsed.laps l WHERE l.isikukood = doc_isikukood LIMIT 1);
-    IF doc_id IS NOT NULL AND is_import = TRUE
+    IF doc_id IS NULL
     THEN
-        RETURN 0;
+        doc_id = (SELECT id FROM lapsed.laps l WHERE l.isikukood = doc_isikukood LIMIT 1);
+        IF doc_id IS NOT NULL AND is_import = TRUE
+        THEN
+            RETURN 0;
+        END IF;
     END IF;
-
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
