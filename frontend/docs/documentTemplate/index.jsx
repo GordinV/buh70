@@ -180,25 +180,36 @@ class DocumentTemplate extends React.Component {
      * обработчик для кнопки отправки почты
      */
     btnEmailClick() {
-        this.fetchData('Post', '/email').then((response) => {
-            if (response.status === 200) {
-                this.setState({
-                    reloadData: false,
-                    warning: 'Email saadetud edukalt',
-                    warningType: 'ok',
-                });
+        // если документ тип счет или извещение, то отправим напрямую, иначе переадрисуем на письмо
+        if ((this.props.docTypeId).toLowerCase() == 'arv' || (this.props.docTypeId).toLowerCase() == 'teatis') {
+            this.fetchData('Post', '/email').then((response) => {
+                if (response.status === 200) {
+                    this.setState({
+                        reloadData: false,
+                        warning: 'Email saadetud edukalt',
+                        warningType: 'ok',
+                    });
 
-            } else {
-                let errorMessage = response.error_message ? response.error_message : '';
-                this.setState({
-                    reloadData: false,
-                    warning: `Tekkis viga ${errorMessage}`,
-                    warningType: 'error',
-                });
+                } else {
+                    let errorMessage = response.error_message ? response.error_message : '';
+                    this.setState({
+                        reloadData: false,
+                        warning: `Tekkis viga ${errorMessage}`,
+                        warningType: 'error',
+                    });
+                }
+            });
 
-            }
+        } else {
+            // сохраним параметры для формирования вложения в контексте
+            DocContext['email-params'] = {
+                docId: this.state.docId,
+                docTypeId: this.props.docTypeId,
+                queryType: 'id' // ид - документ, where -
+            };
 
-        });
+            this.props.history.push(`/${this.props.module}/e-mail/0`);
+        }
     }
 
     /**
@@ -455,6 +466,7 @@ class DocumentTemplate extends React.Component {
         return (
             <ToolbarContainer ref='toolbarContainer'>
                 <DocToolBar ref='doc-toolbar'
+                            docTypeId={this.props.docTypeId}
                             bpm={this.bpm ? this.bpm : []}
                             logs={this.state.logs}
                             docId={this.state.docId}

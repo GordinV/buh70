@@ -2,6 +2,12 @@
 const db = require('./../libs/db');
 const wkhtmltopdf = require('wkhtmltopdf');
 const jade = require('jade');
+const path = require('path');
+const fs = require('fs');
+const getParameterFromFilter = require('./../libs/getParameterFromFilter');
+const getGroupedData = require('./../libs/getGroupedData');
+
+
 const createPDF = async function createFile(html, fileName = 'doc') {
 
     const options = {
@@ -9,11 +15,10 @@ const createPDF = async function createFile(html, fileName = 'doc') {
     };
     let outFile = path.join(__dirname, '..', 'public', 'pdf', `${fileName}.pdf`);
 
-    console.log('outFile', outFile);
     try {
         await exportHtml(html, outFile, options);
     } catch (error) {
-        console.log(`ERROR: Handle rejected promise: '${error}' !!!`);
+        console.error(`ERROR: Handle rejected promise: '${error}' !!!`);
         outFile = null;
     }
     return outFile;
@@ -21,13 +26,27 @@ const createPDF = async function createFile(html, fileName = 'doc') {
 
 
 exports.get = async (req, res) => {
-    const id = Number(req.params.id || 0); // параметр id документа
+    let id = req.params.id || 0; // параметр id документа
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const docTypeId = req.params.documentType || ''; // параметр тип документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user = require('../middleware/userData')(req, uuid); // данные пользователя
+    let filterData = []; // параметр filter документов;
 
+    if (id && !sqlWhere) {
+        // only 1 id
+        id = Number(id);
+    } else {
+        if (id) {
+            filterData = JSON.parse(id).filter(row => {
+                if (row.value) {
+                    return row;
+                }
+            });
 
+        }
+        id = null;
+    }
     let template = docTypeId; // jade template
     const limit = 1000;
 
@@ -43,9 +62,13 @@ exports.get = async (req, res) => {
 
         const printTemplates = doc.config.print;
 
+        let renderForm;
+
+        let templateObject;
+
         if (printTemplates) {
-            const templateObject = printTemplates.find(templ => templ.params === (id ? 'id' : 'sqlWhere'));
-            template = templateObject.view;
+            templateObject = printTemplates.find(templ => templ.params === (id ? 'id' : 'sqlWhere'));
+            renderForm = templateObject.view;
 
             if (id && templateObject.register) {
                 // если есть метод регистрации, отметим печать
@@ -58,30 +81,55 @@ exports.get = async (req, res) => {
             }
         }
 
+
         // вызвать метод
         const method = id ? 'select' : 'selectDocs';
         let result = await doc[method]('', sqlWhere, limit);
-        const data = id ? {...result.row, ...result} : result.data;
+        let data = id ? {...result.row, ...result} : result.data;
+
+        // groups
+        if (templateObject.group) {
+            //преобразуем данные по группам
+            data = getGroupedData(data,templateObject.group);
+        }
+
         // вернуть отчет
+        let printHtml;
 
-        const html = jade.render(template, {title: 'Tunnused', data: data, user: user});
-
-
-        res.render(template, {title: 'PDF print', data: data, user: user}, async (err, html) => {
-
-            //attachment
-            let filePDF = await createPDF(printHtml, `doc`);
-            if (!filePDF) {
-                // error in PDF create
-                throw new Error('PDF faili viga');
-            }
-
-            res.sendFile(filePDF)
+        // вернуть отчет
+        res.render(renderForm, {data: data, user: user, filter: filterData}, (err, html) => {
+            printHtml = html;
         });
 
+        //attachment
+        let filePDF = await createPDF(printHtml, `doc_${Math.floor(Math.random() * 1000000)}`);
+
+        if (filePDF) {
+            fs.readFile(filePDF, (err, data) => {
+                if (filePDF) {
+                    // удаляем файл
+                    fs.unlink(filePDF, (err, data) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                    });
+                }
+
+                if (err) {
+                    consol.log(err);
+                } else {
+                    res.setHeader('Content-Type', 'application/pdf');
+                    res.setHeader('Content-Disposition', `attachment; filename=doc.pdf`);
+                    res.send(data);
+                }
+            });
+        } else {
+            res.send({status: 500, result: 'Puudub fail'});
+        }
+
     } catch (error) {
-        console.error('error:', error); // @todo Обработка ошибок
-        res.send({status: 500, result: 'Error'});
+        console.error('error', error);
+        res.send({status: 500, result: 'Error' + error.TypeError});
 
     }
 };

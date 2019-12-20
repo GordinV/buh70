@@ -50,6 +50,7 @@ const ConfigDocument = require('./../docs/config/document/index.jsx');
 const RekvDocument = require('./../docs/rekv/document/index.jsx');
 const DokpropsDocument = require('./../docs/dokprops/document/index.jsx');
 const UserDocument = require('./../docs/userid/document/index.jsx');
+const EmailDocument = require('./../docs/e-mail/document/index.jsx');
 
 const Inf3Report = require('./../docs/inf3/index.jsx');
 const ChildSummaryReport = require('./../docs/child_summary/index.jsx');
@@ -163,7 +164,8 @@ class App extends React.Component {
                                                        initData={this.props.initData}
                                                        module={MODULE}/>}/>
                 <Route exact path="/lapsed/vmk/:docId"
-                       render={(props) => <VmkDocument {...props} history={props.history}/>}/>
+                       render={(props) => <VmkDocument {...props}
+                                                       history={props.history}/>}/>
 
 
                 <Route exact path="/lapsed/sorder"
@@ -210,6 +212,11 @@ class App extends React.Component {
                        render={(props) => <ConfigDocument {...props} history={props.history}/>}/>
                 <Route exact path="/lapsed/config"
                        render={() => <Redirect to={`/lapsed/config/${DocContext.userData.asutusId}`} />}/>
+
+                <Route exact path="/lapsed/e-mail/:docId"
+                       render={(props) => <EmailDocument {...props} history={props.history}/>}/>
+                <Route exact path="/lapsed/e-mail"
+                       render={() => <Redirect to={`/lapsed/e-mail/0`} />}/>
 
                 <Route exact path="/lapsed/rekv/:docId"
                        render={(props) => <RekvDocument {...props} history={props.history}/>}/>

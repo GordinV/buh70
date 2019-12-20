@@ -9,7 +9,7 @@ const React = require('react'),
     ICON = 'mail';
 
 
-class ButtonRegisterEmail extends React.PureComponent {
+class ButtonRegisterEmail extends React.Component {
 // кнопка создания документа в регистрах
     constructor(props) {
         super(props);
@@ -24,10 +24,18 @@ class ButtonRegisterEmail extends React.PureComponent {
      * @param e
      */
     handleClick(e) {
-        this.setState({showModal: true});
+        console.log('this.props.docTypeId', this.props.docTypeId);
+        // если требуется предварительно ихвещение, то открываем модальное окно, иначе вызываем метод из пропсов
+        if (this.props.docTypeId.toLowerCase() === 'arv' || this.props.docTypeId.toLowerCase() === 'teatis') {
+            this.setState({showModal: true});
+        } else {
+            this.modalPageClick('Ok')
+        }
+
     }
 
     render() {
+        console.log('render btn', this.props.disabled);
         return (
             <div>
                 <Button
@@ -56,6 +64,7 @@ class ButtonRegisterEmail extends React.PureComponent {
      * @param btnEvent
      */
     modalPageClick(btnEvent) {
+        console.log('btnEvent',btnEvent);
         if (btnEvent === 'Ok') {
             this.props.onClick(this.props.value);
         }

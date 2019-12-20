@@ -60,10 +60,13 @@ module.exports = function (app) {
     app.get('/reports/inf3/:uuid/:params/',require('./reports/inf3').get);
     app.get('/reports/inf3/:uuid/',require('./reports/inf3').get);
 
+    app.get('/pdf/:documentType/:uuid/:id/:params', require('./pdf').get); //checkAuth
     app.get('/pdf/:documentType/:uuid/:id/', require('./pdf').get); //checkAuth
 
-    app.post('/email/teatis', checkAuth, require('./email').sendTeatis); //checkAuth
-    app.post('/email', checkAuth, require('./email').post); //checkAuth
+
+    app.post('/email/sendPrintForm', checkAuth, require('./email').sendPrintForm); //will send printForm to receiver
+    app.post('/email/teatis', checkAuth, require('./email').sendTeatis); //will send teatis
+    app.post('/email', checkAuth, require('./email').post); //will send arve
 
     app.post('/e-arved', checkAuth, require('./e-arved').post); //checkAuth
     app.get('/e-arved/:uuid/:id/',require('./e-arved').get);

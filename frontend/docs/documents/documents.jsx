@@ -14,6 +14,7 @@ const
     BtnPrint = require('./../../components/button-register/button-register-print/button-register-print.jsx'),
     BtnFilter = require('./../../components/button-register/button-register-filter/button-register-filter.jsx'),
     BtnSelect = require('./../../components/button-register/button-select/index.jsx'),
+    BtnEmail = require('./../../components/button-register/button-email/index.jsx'),
     BtnRefresh = require('./../../components/button-register/button-refresh/index.jsx'),
     ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx'),
     GridFilter = require('./../../components/data-grid/grid-filter/grid-filter.jsx'),
@@ -59,7 +60,8 @@ class Documents extends React.Component {
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
             'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick', 'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
-            'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData', 'prepareSqlWhereFromFilter', 'handleInputChange');
+            'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData', 'prepareSqlWhereFromFilter',
+            'handleInputChange', 'btnEmailClick');
 
     }
 
@@ -89,6 +91,9 @@ class Documents extends React.Component {
             });
 
         }
+
+        // will save current docTypeid
+        DocContext['docTypeId'] = this.props.docTypeId;
 
         // if lastDocId available, will point it as selected
         if (DocContext[(this.props.docTypeId).toLowerCase()]) {
@@ -460,6 +465,11 @@ class Documents extends React.Component {
                                   show={toolbarParams['btnPrint'].show}
                                   value={'Trükk'}
                                   disable={toolbarParams['btnPrint'].disabled}/>
+                        <BtnEmail onClick={this.btnEmailClick.bind(this)}
+                                  show={toolbarParams['btnEmail'].show}
+                                  value={'Email'}
+                                  docTypeId={this.props.docTypeId}
+                                  disable={toolbarParams['btnEmail'].disabled}/>
                         <BtnFilter onClick={this.btnFilterClick}/>
                         <BtnRefresh onClick={this.btnRefreshClick}/>
                         <BtnSelect
@@ -508,6 +518,10 @@ class Documents extends React.Component {
                 disabled: !this.state.value
             },
             btnPrint: {
+                show: true,
+                disabled: false
+            },
+            btnEmail: {
                 show: true,
                 disabled: false
             },
@@ -632,6 +646,23 @@ class Documents extends React.Component {
             });
 
         }
+    }
+
+    /**
+     * обработчик для кнопки отправки почты
+     */
+    btnEmailClick() {
+        // сохраним параметры для формирования вложения в контексте
+        DocContext['email-params'] = {
+            docId: this.state.docId,
+            docTypeId: this.props.docTypeId,
+            queryType: 'sqlWhere', // ид - документ
+            sqlWhere: this.state.sqlWhere,
+            filterData: this.filterData
+        };
+
+
+        this.props.history.push(`/${this.props.module}/e-mail/0`);
     }
 
     _bind(...methods) {

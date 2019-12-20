@@ -89,7 +89,10 @@ class DocToolBar extends React.PureComponent {
                       onClick={this.btnPrintClick}
                       show={toolbarParams['btnPrint'].show}
                       disabled={toolbarParams['btnPrint'].disabled}/>
-            <BtnEmail ref='btnPrint' onClick={this.btnEmailClick} show={toolbarParams['btnEmail'].show}
+            <BtnEmail ref='btnEmail'
+                      docTypeId={this.props.docTypeId}
+                      onClick={this.btnEmailClick}
+                      show={toolbarParams['btnEmail'].show}
                       disabled={toolbarParams['btnEmail'].disabled}/>
             <BtnLogs ref='btnLogs'
                      data={this.props.logs}
@@ -213,6 +216,7 @@ class DocToolBar extends React.PureComponent {
 
 DocToolBar.propTypes = {
     bpm: PropTypes.array,
+    docTypeId: PropTypes.text,
     edited: PropTypes.bool,
     docStatus: PropTypes.number,
     validator: PropTypes.func

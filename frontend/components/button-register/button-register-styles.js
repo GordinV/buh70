@@ -34,6 +34,7 @@ module.exports = {
         mail: '/images/icons/mail.png',
         select: '/images/icons/select.png',
         refresh: '/images/icons/refresh.png',
+        attachment: '/images/icons/attachment.png',
     }
 
 

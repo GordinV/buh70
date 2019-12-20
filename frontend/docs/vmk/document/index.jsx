@@ -37,7 +37,9 @@ class Vmk extends React.Component {
 
         this.state = {
             docId: props.docId ? props.docId : Number(props.match.params.docId),
-            loadedData: false
+            loadedData: false,
+            module: this.props.module
+
         };
 
         this.createGridRow = this.createGridRow.bind(this);
@@ -47,7 +49,7 @@ class Vmk extends React.Component {
         this.renderer = this.renderer.bind(this);
         this.gridValidateFields = this.gridValidateFields.bind(this);
 
-        this.pages = [{pageName: 'Väljamakse korraldus'}];
+        this.pages = [{pageName: 'Väljamakse korraldus', docTypeId: 'SMK'}];
     }
 
 
@@ -55,6 +57,7 @@ class Vmk extends React.Component {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='VMK'
+                                 module={'lapsed'}
                                  history={this.props.history}
                                  initData={this.props.initData}
                                  libs={LIBRARIES}
@@ -363,7 +366,6 @@ class Vmk extends React.Component {
         if (doc.gridRowData['asutusid']) {
 
             let asutusDataName = doc.libs['asutused'].find(lib => lib.id === Number(doc.gridRowData['asutusid']));
-            console.log('asutusDataName', asutusDataName);
 
             if (asutusDataName) {
                 doc.gridRowData['asutus'] = asutusDataName.nimetus;

@@ -16,6 +16,13 @@ class Button extends React.PureComponent {
         }
     }
 
+    // will update state if props changed
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.disabled !== prevState.disabled) {
+            return {disabled: nextProps.disabled};
+        } else return null;
+    }
+
     handleClick(event) {
         switch (event.type) {
             case 'click':

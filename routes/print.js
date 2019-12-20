@@ -25,7 +25,6 @@ exports.get = async (req, res) => {
         });
     }
 
-console.log('filter', filterData);
     if (!user) {
         console.error('error 401 newAPI');
         return res.status(401).end();
@@ -72,7 +71,6 @@ console.log('filter', filterData);
             data = getGroupedData(data,templateObject.group);
         }
 
-        console.log('grouped data', JSON.stringify(data));
         // вернуть отчет
         res.render(template, {title: 'Tunnused', data: data, user: user, filter: filterData});
 
