@@ -107,17 +107,11 @@ exports.get = async (req, res) => {
         let filePDF = await createPDF(printHtml, l_file_name);
 
         if (filePDF) {
-            res.download(path.join(__dirname, './../public', 'pdf', `${l_file_name}.pdf`));
 
-//            res.sendFile(filePDF,(err) => {
-//                console.error(err);
-//                res.send({status: 500, result: 'Viga'});
-//            })
-/*
-            fs.readFile(filePDF,'utf8', (err, data) => {
+            await fs.readFile(filePDF, async (err, data) => {
                 if (filePDF) {
                     // удаляем файл
-                    fs.unlink(filePDF, (err, data) => {
+                    await fs.unlink(filePDF, (err, data) => {
                         if (err) {
                             return reject(err);
                         }
@@ -133,7 +127,7 @@ exports.get = async (req, res) => {
                     res.send(data);
                 }
             });
-*/
+
         } else {
             res.send({status: 500, result: 'Puudub fail'});
         }
