@@ -107,26 +107,12 @@ exports.get = async (req, res) => {
         let filePDF = await createPDF(printHtml, l_file_name);
 
         if (filePDF) {
+            const stream = await fs.createReadStream(filePDF);
 
-            await fs.readFile(filePDF, async (err, data) => {
-                if (filePDF) {
-                    // удаляем файл
-                    await fs.unlink(filePDF, (err, data) => {
-                        if (err) {
-                            return reject(err);
-                        }
-                    });
-                }
+            res.setHeader('Content-disposition', 'inline; filename="doc.pdf"');
+            res.setHeader('Content-type', 'application/pdf');
 
-                if (err) {
-                    console.error(err);
-                    return res.send({status: 500, result: err});
-                } else {
-                    res.setHeader('Content-Type', 'application/pdf');
-                    res.setHeader('Content-Disposition', `attachment; filename=doc.pdf`);
-                    res.send(data);
-                }
-            });
+            stream.pipe(res);
 
         } else {
             res.send({status: 500, result: 'Puudub fail'});
