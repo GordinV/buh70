@@ -90,7 +90,7 @@ exports.get = async (req, res) => {
         // groups
         if (templateObject.group) {
             //преобразуем данные по группам
-            data = getGroupedData(data,templateObject.group);
+            data = getGroupedData(data, templateObject.group);
         }
 
         // вернуть отчет
@@ -114,6 +114,12 @@ exports.get = async (req, res) => {
 
             stream.pipe(res);
 
+            // удаляем файл
+            await fs.unlink(filePDF, (err, data) => {
+                if (err) {
+                    return reject(err);
+                }
+            });
         } else {
             res.send({status: 500, result: 'Puudub fail'});
         }
