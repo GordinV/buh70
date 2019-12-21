@@ -102,10 +102,19 @@ exports.get = async (req, res) => {
         });
 
         //attachment
-        let filePDF = await createPDF(printHtml, `doc_${Math.floor(Math.random() * 1000000)}`);
+        let l_file_name = `doc_${Math.floor(Math.random() * 1000000)}`;
+
+        let filePDF = await createPDF(printHtml, l_file_name);
 
         if (filePDF) {
-            fs.readFile(filePDF, (err, data) => {
+            res.download(path.join(__dirname, './../public', 'pdf', `${l_file_name}.pdf`));
+
+//            res.sendFile(filePDF,(err) => {
+//                console.error(err);
+//                res.send({status: 500, result: 'Viga'});
+//            })
+/*
+            fs.readFile(filePDF,'utf8', (err, data) => {
                 if (filePDF) {
                     // удаляем файл
                     fs.unlink(filePDF, (err, data) => {
@@ -116,13 +125,15 @@ exports.get = async (req, res) => {
                 }
 
                 if (err) {
-                    consol.log(err);
+                    console.error(err);
+                    return res.send({status: 500, result: err});
                 } else {
                     res.setHeader('Content-Type', 'application/pdf');
                     res.setHeader('Content-Disposition', `attachment; filename=doc.pdf`);
                     res.send(data);
                 }
             });
+*/
         } else {
             res.send({status: 500, result: 'Puudub fail'});
         }
