@@ -47,7 +47,7 @@ class DocumentTemplate extends React.Component {
 
         this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick', 'btnEmailClick',
-            'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs',
+            'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs', 'hasLibInCache',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
             'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick', 'btnLogsClick');
 
@@ -621,33 +621,56 @@ class DocumentTemplate extends React.Component {
         let libsToLoad = libName ? [libName] : Object.keys(this.libs);
 
         libsToLoad.forEach((lib) => {
+            let hasSqlWhere = _.has(this.state.libParams, lib);
+
             let params = Object.assign({
                 module: this.props.module,
                 userId: DocContext.userData.id,
                 uuid: DocContext.userData.uuid,
-            }, _.has(this.state.libParams, lib) ? {
+            }, hasSqlWhere ? {
                 sql: this.state.libParams[lib]
             } : {});
 
-            fetchData.fetchDataPost(`${postUrl}/${lib}`, params).then(response => {
-                if (response && 'data' in response) {
-                    this.libs[lib] = response.data.result.result.data;
-                    libsCount--;
-                }
+            if (!!this.state.libParams[lib] || !this.hasLibInCache(lib)) {
 
-                if (libsCount === 0) {
-                    //all libs loaded;
-                    if (this.state.loadedLibs) {
-                        this.forceUpdate();
-                    } else {
-                        this.setState({loadedLibs: true});
-                    }
-                }
+                fetchData.fetchDataPost(`${postUrl}/${lib}`, params)
+                    .then(response => {
+                        if (response && 'data' in response) {
+                            this.libs[lib] = response.data.result.result.data;
+                            libsCount--;
+                        }
+                        // save lib in cache
+                        DocContext.libs[lib] = this.libs[lib];
 
-            }).catch(error => {
-                console.error('loadLibs error', error);
-            });
+                        if (libsCount === 0) {
+                            //all libs loaded;
+                            if (this.state.loadedLibs) {
+                                this.forceUpdate();
+                            } else {
+                                this.setState({loadedLibs: true});
+                            }
+                        }
+
+                    })
+                    .catch(error => {
+                        console.error('loadLibs error', error);
+                    });
+            } else {
+                this.libs[lib] = DocContext.libs[lib];
+            }
         });
+    }
+
+    /**
+     * проверит наличии в кеше данных и если нет, то вернет false
+     * @param lib
+     * @returns {boolean}
+     */
+    hasLibInCache(lib) {
+        if (!DocContext.libs) {
+            DocContext.libs = {};
+        }
+        return (!DocContext.libs[lib] || DocContext.libs[lib].length === 0) ? false : true;
     }
 
     /**

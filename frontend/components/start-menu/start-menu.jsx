@@ -63,23 +63,33 @@ class StartMenu extends React.PureComponent {
         let params = {userId: DocContext.userData.userId, uuid: DocContext.userData.uuid};
 
         try {
-            fetchData.fetchDataPost(url, params)
-                .then(response => {
-                    if (response.status && response.status == 401) {
-                        console.error('Error 401, redirect');
-                        document.location = `/login`;
-                    }
-                    if (response) {
+            // will check in cache
+            if (!DocContext.libs) {
+                DocContext.libs = {};
+            }
 
-                        this.treeData = response.data.data;
-                        // запомним содержимое
-                        DocContext.menu = this.treeData;
-                        this.forceUpdate();
-                    }
-                })
-                .catch(error => {
-                    console.error('received error-> ', error)
-                });
+            if (!DocContext.libs['menu'] || DocContext.libs['menu'].length === 0) {
+                fetchData.fetchDataPost(url, params)
+                    .then(response => {
+                        if (response.status && response.status == 401) {
+                            console.error('Error 401, redirect');
+                            document.location = `/login`;
+                        }
+                        if (response) {
+
+                            this.treeData = response.data.data;
+                            // запомним содержимое
+                            DocContext.libs['menu'] = this.treeData;
+                            this.forceUpdate();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('received error-> ', error)
+                    });
+            } else {
+                this.treeData = DocContext.libs['menu'];
+                this.forceUpdate();
+            }
 
         } catch (e) {
             console.error(e);

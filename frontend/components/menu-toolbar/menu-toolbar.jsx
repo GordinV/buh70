@@ -149,7 +149,7 @@ class MenuToolBar extends React.Component {
     startMenuClickHandler(value) {
         this.setState({showStartMenu: false});
 
-        let docType = DocContext.menu.find(row => row.kood === value);
+        let docType = DocContext.libs['menu'].find(row => row.kood === value);
         if (docType) {
             DocContext.pageName = docType.name;
         }
