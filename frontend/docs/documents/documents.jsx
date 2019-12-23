@@ -447,7 +447,7 @@ class Documents extends React.Component {
                                title='Limiit:'
                                name='limit'
                                style={styles.limit}
-                               value={this.state.limit || '100'}
+                               value={String(this.state.limit) || '100'}
                                readOnly={false}
                                onChange={this.handleInputChange}/>
 

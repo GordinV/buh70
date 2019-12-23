@@ -216,7 +216,6 @@ class DocToolBar extends React.PureComponent {
 
 DocToolBar.propTypes = {
     bpm: PropTypes.array,
-    docTypeId: PropTypes.text,
     edited: PropTypes.bool,
     docStatus: PropTypes.number,
     validator: PropTypes.func

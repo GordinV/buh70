@@ -38,7 +38,7 @@ class ButtonTask extends React.PureComponent {
                 <Button
                     show={true}
                     value={value}
-                    ref="btnTask"
+                    ref={'btnTask' || this.props.ref}
                     style={styles.button}
                     disabled={false}
                     onClick={this.handleClick}>

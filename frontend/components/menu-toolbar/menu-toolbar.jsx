@@ -79,7 +79,7 @@ class MenuToolBar extends React.Component {
 
         return (
             <div style={style['container']}>
-                <p style = {style['pageName']}> {DocContext.pageName} </p>
+                <p style = {style['pageName']}> {DocContext.pageName ? DocContext.pageName: 'Laste register'} </p>
                 <ToolbarContainer
                     ref='menuToolbarContainer'
                     position="left">

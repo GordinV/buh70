@@ -1,7 +1,7 @@
 module.exports = {
     input: {
         width: '70%',
-        marginLeft: '5px',
+        margin: '5px 2px',
         borderRadius:'3px',
         ':focus': {
             backgroundColor: 'lightpink'

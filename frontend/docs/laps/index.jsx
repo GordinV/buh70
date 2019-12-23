@@ -48,6 +48,7 @@ class Documents extends React.PureComponent {
                             value={event.name}
                             onClick={this.onClickHandler}
                             ref={`btn-${event.name}`}
+                            key={`key-${event.name}`}
                         />
 
                     )

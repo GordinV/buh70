@@ -2,8 +2,8 @@ var path = require('path');
 const webpack = require('webpack');
 
 //const NODE_ENV = process.env.NODE_ENV || 'development';
-const NODE_ENV = 'development';
-//const NODE_ENV = 'production';
+//const NODE_ENV = 'development';
+const NODE_ENV = 'production';
 
 /*
  if (!DEBUG) {
@@ -59,7 +59,7 @@ module.exports = {
                 //include: __dirname + '/frontend',
                 loader: 'babel-loader',
                 query: {
-                    compact: false,
+                    compact: true,
                     plugins: ['transform-decorators-legacy', "transform-class-properties"],
                     presets: ['es2015', 'stage-0', 'react']
                 }
