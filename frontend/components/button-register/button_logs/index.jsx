@@ -51,7 +51,6 @@ class ButtonLogs extends React.PureComponent {
 }
 
 ButtonLogs.propTypes = {
-    onClick: PropTypes.func.isRequired,
     value: PropTypes.string
 };
 

@@ -31,8 +31,9 @@ const UHIK = [
 ];
 
 const OPPE = [
-    {id: 1, kood: 'Põhiõpe', name: 'Põhiõpe (Õppetasu, Arvestatud õppetasu)'},
-    {id: 2, kood: 'Vabaõpe', name: 'Vabaõpe (Arvestatud õppetasu (vabaõpe))'},
+    {id: 1, kood: 'Põhiõpe', name: 'Põhiõpe'},
+    {id: 2, kood: 'Vabaõpe', name: 'Vabaõpe'},
+    {id: 3, kood: 'Muud', name: 'Muud'},
 ];
 
 class Nomenclature extends React.PureComponent {
