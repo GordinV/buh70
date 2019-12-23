@@ -5,8 +5,6 @@ const DocContext = require('../../doc-context');
 const PropTypes = require('prop-types');
 const {withRouter} = require('react-router-dom');
 const fetchData = require('./../../../libs/fetchData');
-const _ = require('lodash');
-
 
 const React = require('react'),
     ToolbarContainer = require('./../toolbar-container/toolbar-container.jsx'),
@@ -61,7 +59,7 @@ class MenuToolBar extends React.Component {
 
         let userAccessList = [];
 
-        if (_.has(DocContext.userData, 'userAccessList')) {
+        if (('userAccessList' in DocContext.userData)) {
             userAccessList = DocContext.userData.userAccessList.map((row) => {
                 let rowObject = JSON.parse(row);
                 return {id: rowObject.id, kood: '', name: rowObject.nimetus};

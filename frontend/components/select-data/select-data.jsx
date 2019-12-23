@@ -4,7 +4,6 @@ const DocContext = require('../../doc-context');
 
 const PropTypes = require('prop-types');
 const fetchData = require('./../../../libs/fetchData');
-const _ = require('lodash');
 
 const React = require('react'),
     styles = require('./select-data-styles'),
@@ -242,7 +241,7 @@ class SelectData extends React.PureComponent {
                     gridConfig = response.data.result.result.gridConfig;
                 }
 
-                if (_.size(gridData) > 0) {
+                if (gridData && gridData.length > 0) {
                     if (isSeachById && !this.state.show) {
 
                         // только одна запись. Грид не нужен

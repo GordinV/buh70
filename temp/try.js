@@ -1,8 +1,9 @@
-const obj = [
-    {id: 1},
-    {id: 2, filter:'show'}
-];
+const obj = {
+    id: 1,
+    nimetus: 'test',
+    uuid: 'ddsdsdsd'
+};
 
-obj.forEach(row => {
-    console.log(!row.filter)
-});
+let hasKey = obj.uuid ? true: false;
+
+console.log('hasKey', hasKey);

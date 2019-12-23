@@ -12,13 +12,11 @@ const React = require('react'),
 
     keydown = require('react-keydown');
 
-const _ = require('lodash');
-
 //const    KEYS = [38, 40]; // мониторим только стрелки вверх и внизх
 
 const isExists = (object, prop) => {
     let result = false;
-    if (prop in object) {
+    if (object && (prop in object)) {
         result = true;
     }
     return result;
@@ -163,7 +161,7 @@ class DataGrid extends React.Component {
         if (btnEvent === 'Ok' && this.props.handleGridBtnClick) {
             this.props.handleGridBtnClick('delete',
                 this.state.activeRow,
-                _.size(this.state.gridData) ? this.state.gridData[this.state.activeRow].id : 0,
+                this.state.gridData.length ? this.state.gridData[this.state.activeRow].id : 0,
                 this.props.docTypeId ? this.props.docTypeId : '');
         }
     }
@@ -171,7 +169,7 @@ class DataGrid extends React.Component {
     handleGridBtnClick(btnName) {
         let activeRow = this.state.activeRow;
 
-        let id = _.size(this.state.gridData) ? this.state.gridData[activeRow].id : 0;
+        let id =this.state.gridData.length ? this.state.gridData[activeRow].id : 0;
 
         let docTypeId = this.props.docTypeId ? this.props.docTypeId : '';
 

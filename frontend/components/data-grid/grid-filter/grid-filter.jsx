@@ -5,8 +5,6 @@ const PropTypes = require('prop-types');
 const React = require('react'),
     styles = require('./grid-filter-styles');
 
-const _ = require('lodash');
-
 class GridFilter extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -125,9 +123,9 @@ class GridFilter extends React.PureComponent {
             let value = row.value ? row.value : '';
 
             // ищем инициализированное значение
-            const obj = data[_.findIndex(data, {name: row.id})];
+            let obj = data.find(dataRow => dataRow.name == row.id);
 
-            if (_.has(obj, 'value')) {
+            if (obj && ('value' in obj)) {
                 if (!obj.value && value) {
                     // есть дефолтное значение
                     isStateUpdated = true;
@@ -169,7 +167,8 @@ class GridFilter extends React.PureComponent {
         }
 
         const data = this.state.data;
-        const obj = data[_.findIndex(data, {name: row.id})];
+        let obj = data.find(dataRow => dataRow.name == row.id);
+
 
         let valueStart = row.interval ? obj[`start`] : obj.value;
         let valueEnd = row.interval ? obj[`end`] : obj.value;

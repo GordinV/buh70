@@ -104,10 +104,11 @@ class Documents extends React.Component {
 
     // присвоит фильтру значения переданные в параметре
     mergeParametersWithFilter(filter, parameters) {
-        let keys = _.keys(parameters);
-        _.forEach(keys, (key) => {
+        let keys = Object.keys(parameters);
+        keys.forEach((key) => {
             // find row in filter array
-            let filterRowIndex = _.findIndex(filter, {name: key});
+            let filterRowIndex = filter.findIndex(row => row.name === key);
+
             if (filterRowIndex >= 0 && parameters[key]) {
                 filter[filterRowIndex].value = parameters[key];
             }

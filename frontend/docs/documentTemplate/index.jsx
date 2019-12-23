@@ -1,7 +1,6 @@
 'use strict';
 
 const PropTypes = require('prop-types');
-const _ = require('lodash');
 const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
 const DocContext = require('./../../doc-context.js');
@@ -87,7 +86,7 @@ class DocumentTemplate extends React.Component {
     render() {
         let isInEditMode = this.state.edited;
 
-        if (this.props.libs.length && !this.state.loadedLibs && _.has(this.userData, 'uuid')) {
+        if (this.props.libs.length && !this.state.loadedLibs) {
             this.loadLibs();
         }
 
@@ -621,7 +620,7 @@ class DocumentTemplate extends React.Component {
         let libsToLoad = libName ? [libName] : Object.keys(this.libs);
 
         libsToLoad.forEach((lib) => {
-            let hasSqlWhere = _.has(this.state.libParams, lib);
+            let hasSqlWhere = (lib in this.state.libParams);
 
             let params = Object.assign({
                 module: this.props.module,

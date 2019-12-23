@@ -9,9 +9,8 @@ const ReactDOM = require('react-dom');
 let  btnClickResult = null;
 
 const btnClick = ()=> {
-    console.log('clicked');
     btnClickResult = 'Ok';
-}
+};
 
 describe('component test, sidebar', () => {
     const Sidebar = require('./sidebar.jsx');

@@ -8,7 +8,7 @@ const React = require('react'),
 
 let  btnClickResult = null;
 
-const btnClick = jest.fn()
+const btnClick = jest.fn();
 
 describe.only('component test, buttonExecute', () => {
 
@@ -49,7 +49,6 @@ describe.only('component test, buttonExecute', () => {
     it.skip('should onClick be called',()=> {
         let buttonExecute = component.refs['btnExecute'];
         expect(buttonExecute).toBeDefined();
-        console.log('buttonExecute', buttonExecute);
         ReactTestUtils.Simulate.click(buttonExecute);
         expect(btnClick).toHaveBeenCalled();
     })

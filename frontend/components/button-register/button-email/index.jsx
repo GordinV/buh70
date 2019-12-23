@@ -24,7 +24,6 @@ class ButtonRegisterEmail extends React.Component {
      * @param e
      */
     handleClick(e) {
-        console.log('this.props.docTypeId', this.props.docTypeId);
         // если требуется предварительно ихвещение, то открываем модальное окно, иначе вызываем метод из пропсов
         if (this.props.docTypeId.toLowerCase() === 'arv' || this.props.docTypeId.toLowerCase() === 'teatis') {
             this.setState({showModal: true});
@@ -35,7 +34,6 @@ class ButtonRegisterEmail extends React.Component {
     }
 
     render() {
-        console.log('render btn', this.props.disabled);
         return (
             <div>
                 <Button
@@ -64,7 +62,6 @@ class ButtonRegisterEmail extends React.Component {
      * @param btnEvent
      */
     modalPageClick(btnEvent) {
-        console.log('btnEvent',btnEvent);
         if (btnEvent === 'Ok') {
             this.props.onClick(this.props.value);
         }
