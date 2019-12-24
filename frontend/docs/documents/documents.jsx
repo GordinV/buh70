@@ -55,6 +55,7 @@ class Documents extends React.Component {
             warning: '', // строка извещений
             warningType: '',
             limit: 100, // default limit for query,
+            isEmptyFilter: false, // если true то обнулит данные фильтра при перегрузке данных
             showSelectFields: false //will open or close column in grid to select rows
         };
 
@@ -136,6 +137,7 @@ class Documents extends React.Component {
                     {/*рендерим частные компоненты */}
                     {this.props.render(this)}
                 </div>
+                {this.renderFilterToolbar()}
                 {this.renderDocToolBar()}
                 {this.state.warning ?
                     <ToolbarContainer ref='toolbar-container'>
@@ -295,11 +297,15 @@ class Documents extends React.Component {
 
             filterString = this.prepareSqlWhereFromFilter();
         } else {
-            //          this.filterData = this.filterData.map((row) => row.value = null);
             filterString = '';
+
         }
 
-        this.setState({getFilter: false, sqlWhere: filterString}, () => this.fetchData('selectDocs'));
+        this.setState({
+            getFilter: false,
+            sqlWhere: filterString,
+            isEmptyFilter: !filterString
+        }, () => this.fetchData('selectDocs'));
     }
 
     /**
@@ -390,7 +396,6 @@ class Documents extends React.Component {
         if (!DocContext.filter[this.props.docTypeId]) {
             DocContext.filter[this.props.docTypeId] = [];
         }
-//        DocContext.filter[this.props.docTypeId] = this.filterData;
     }
 
     /**
@@ -422,6 +427,7 @@ class Documents extends React.Component {
      * @returns {XML}
      */
     renderFilterToolbar() {
+
         let filter = this.getFilterString();
         let component;
 
@@ -458,10 +464,11 @@ class Documents extends React.Component {
      * @returns {XML}
      */
     renderDocToolBar() {
+        let filter = this.getFilterString();
+
         let toolbarParams = this.prepareParamsForToolbar(); //параметры для кнопок управления, взависимости от активной строки
         return (
             <div>
-                {this.renderFilterToolbar()}
                 <div style={styles.docRow}>
                     <InputText ref="input-limit"
                                title='Limiit:'
@@ -622,18 +629,27 @@ class Documents extends React.Component {
 
                         if (response.data.gridConfig.length) {
 
-                            //если конфиг отличается, формируем новый фильтр грида
-                            if (!this.gridConfig.length || JSON.stringify(this.gridConfig) !== JSON.stringify(response.data.gridConfig)) {
+                            //если конфиг отличается, формируем новый фильтр грида или надо очистить фильтр
+                            if (!this.gridConfig.length ||
+                                JSON.stringify(this.gridConfig) !== JSON.stringify(response.data.gridConfig) ||
+                                this.state.isEmptyFilter) {
                                 this.gridConfig = response.data.gridConfig;
                                 this.subtotals = response.data.subtotals;
 
                                 //refresh filterdata
-                                this.filterData = this.gridConfig.map((row) => {
-                                    // props.data пустое, создаем
-                                    let value = row.value ? row.value : null;
-                                    return {value: value, name: row.id, type: row.type ? row.type : 'text'};
-                                });
+                                if (!this.state.isEmptyFilter && DocContext.filter[this.props.docTypeId].length > 0) {
+                                    // есть сохраненный фильтр
+                                    this.filterData = DocContext.filter[this.props.docTypeId];
+                                } else {
+                                    this.setState({isEmptyFilter: false});
+                                    this.filterData = this.gridConfig.map((row) => {
+                                        // props.data пустое, создаем
+                                        let value = row.value ? row.value : null;
+                                        return {value: value, name: row.id, type: row.type ? row.type : 'text'};
+                                    });
+                                    DocContext.filter[this.props.docTypeId] = this.filterData;
 
+                                }
                             }
 
                             //apply filter
