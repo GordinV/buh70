@@ -77,7 +77,7 @@ exports.post = async (req, res) => {
     }
 
     const printTemplates = emailDoc.config.print;
-//    const emailTemplates = emailDoc.config.email ? emailDoc.config.email: '';
+   const emailTemplates = emailDoc.config.email ? emailDoc.config.email: '';
 
     if (!printTemplates) {
         // нет документов для отправки
