@@ -69,6 +69,10 @@ class Documents extends React.Component {
      * пишем делаем запрос по итогу загрузки
      */
     componentDidMount() {
+        if (!DocContext.filter) {
+            DocContext.filter = {};
+        }
+
         let reload = false; // if reload === true then it will call to reload
 
         if (this.props.initData.docTypeId && this.props.initData.docTypeId.toUpperCase() !== this.docTypeId.toUpperCase()) {
@@ -78,6 +82,12 @@ class Documents extends React.Component {
         if (this.props.history && this.props.history.location.state) {
             this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
             reload = true;
+        } else {
+            // проверим сохраненный фильтр для этого типа
+            if (DocContext.filter[this.props.docTypeId] && DocContext.filter[this.props.docTypeId].length > 0) {
+                this.filterData = DocContext.filter[this.props.docTypeId];
+                reload = true;
+            }
         }
 
         if (reload || !this.props.initData || !this.gridData.length) {
@@ -151,6 +161,7 @@ class Documents extends React.Component {
                                modalPageName='Filter'
                                show={this.state.getFilter}>
                         <GridFilter ref='gridFilter'
+                                    docTypeId={this.props.docTypeId}
                                     handler={this.filterDataHandler}
                                     gridConfig={this.gridConfig}
                                     data={this.filterData}/>
@@ -168,7 +179,6 @@ class Documents extends React.Component {
     handleInputChange(name, value) {
         this.setState({limit: !value || value > 1000 ? 1000 : value});
     }
-
 
     /**
      * вызовер подгрузку данных с параметром сортировки
@@ -371,6 +381,16 @@ class Documents extends React.Component {
      */
     filterDataHandler(data) {
         this.filterData = data;
+
+        // создади обьект = держатель состояния фильтра
+        if (!DocContext.filter) {
+            DocContext.filter = {};
+        }
+
+        if (!DocContext.filter[this.props.docTypeId]) {
+            DocContext.filter[this.props.docTypeId] = [];
+        }
+//        DocContext.filter[this.props.docTypeId] = this.filterData;
     }
 
     /**
@@ -608,7 +628,6 @@ class Documents extends React.Component {
                                 this.subtotals = response.data.subtotals;
 
                                 //refresh filterdata
-
                                 this.filterData = this.gridConfig.map((row) => {
                                     // props.data пустое, создаем
                                     let value = row.value ? row.value : null;

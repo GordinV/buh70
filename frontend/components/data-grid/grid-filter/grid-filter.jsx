@@ -1,6 +1,7 @@
 'use strict';
 
 const PropTypes = require('prop-types');
+const DocContext = require('./../../../doc-context.js');
 
 const React = require('react'),
     styles = require('./grid-filter-styles');
@@ -28,7 +29,7 @@ class GridFilter extends React.PureComponent {
 
         // проверим на наличие полей для фильтрации
         if (!data.length) {
-            data = prepareData(this.props.gridConfig);
+            data = prepareData(this.props.gridConfig, this.props.docTypeId);
         }
 
         let value = e.target.value,
@@ -71,6 +72,9 @@ class GridFilter extends React.PureComponent {
             data[index].value = value;
         }
 
+        // сохраним фильтр
+        DocContext.filter[this.props.docTypeId] = data;
+
         if (this.props.handler) {
             this.props.handler(data);
         }
@@ -79,7 +83,7 @@ class GridFilter extends React.PureComponent {
     }
 
     componentDidMount() {
-        const data = prepareData(this.props.gridConfig);
+        const data = prepareData(this.props.gridConfig, this.props.docTypeId);
         if (this.props.handler) {
             this.props.handler(data);
         }
@@ -162,7 +166,7 @@ class GridFilter extends React.PureComponent {
      */
     returnInterval(row) {
         if (row.interval && !('start' in row)) {
-            let value = row.value ? row.value: null;
+            let value = row.value ? row.value : null;
             row = {...row, ...{start: value}, ...{end: value}}
         }
 
@@ -205,22 +209,37 @@ class GridFilter extends React.PureComponent {
 
 }
 
-function prepareData(gridConfig) {
-    const data = [];
+function prepareData(gridConfig, docTypeId) {
+    let data = [];
 
-    gridConfig.map((row) => {
-        const field = {
-            value: row.value ? row.value : null,
-            name: row.id,
-            type: row.type ? row.type : 'text',
-            interval: !!row.interval,
-            start: row.value ? row.value: null,
-            end: row.value ? row.value: null
-        };
 
-        data.push(field);
+    if (!DocContext.filter) {
+        DocContext.filter = {};
+    }
 
-    });
+    if (!DocContext.filter[docTypeId]) {
+        DocContext.filter[docTypeId] = [];
+    }
+
+    // проверим, если фильтр уже сохранен, то вернем уже ранее сохжанный массив
+    if (docTypeId && DocContext.filter[docTypeId].length > 0) {
+        data = DocContext.filter[docTypeId];
+    } else {
+        gridConfig.map((row) => {
+            const field = {
+                value: row.value ? row.value : null,
+                name: row.id,
+                type: row.type ? row.type : 'text',
+                interval: !!row.interval,
+                start: row.value ? row.value : null,
+                end: row.value ? row.value : null
+            };
+
+            data.push(field);
+
+        });
+    }
+
     return data;
 
 }
