@@ -165,7 +165,7 @@ class GridFilter extends React.PureComponent {
      * @param row
      */
     returnInterval(row) {
-        if (row.interval && !('start' in row)) {
+        if (row && row.interval && !('start' in row)) {
             let value = row.value ? row.value : null;
             row = {...row, ...{start: value}, ...{end: value}}
         }
@@ -173,6 +173,9 @@ class GridFilter extends React.PureComponent {
         const data = this.state.data;
         let obj = data.find(dataRow => dataRow.name == row.id);
 
+        if (!obj) {
+            return null;
+        }
 
         let valueStart = row.interval ? obj[`start`] : obj.value;
         let valueEnd = row.interval ? obj[`end`] : obj.value;

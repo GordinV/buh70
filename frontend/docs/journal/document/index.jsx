@@ -8,7 +8,6 @@ const
     InputText = require('../../../components/input-text/input-text.jsx'),
     InputDate = require('../../../components/input-date/input-date.jsx'),
     InputNumber = require('../../../components/input-number/input-number.jsx'),
-    DocCommon = require('../../../components/doc-common/doc-common.jsx'),
     Select = require('../../../components/select/select.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
