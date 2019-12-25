@@ -4,6 +4,7 @@ const PropTypes = require('prop-types');
 const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
 const DocContext = require('./../../doc-context.js');
+const Menu = require('./../../components/menu-toolbar/menu-toolbar.jsx');
 
 const
     DataGrid = require('./../../components/data-grid/data-grid.jsx'),
@@ -36,10 +37,16 @@ class Documents extends React.Component {
         this.filterData = [];
         this.subtotals = [];
         this.startMenuData = []; // здесь будут данные для старт меню
-        if (props.initData) {
+
+        if (props.initData && props.initData.result) {
             this.gridData = props.initData.result.data || [];
             this.gridConfig = props.initData.gridConfig || [];
             this.subtotals = props.initData.subtotals || [];
+        } else if (props.initData && props.initData.gridData) {
+
+            this.gridData = props.initData.gridData || [];
+            this.gridConfig = props.initData.gridConfig || [];
+            this.subtotals = [];
         }
 
         this.docTypeId = props.docTypeId;
@@ -70,6 +77,7 @@ class Documents extends React.Component {
      * пишем делаем запрос по итогу загрузки
      */
     componentDidMount() {
+
         if (!DocContext.filter) {
             DocContext.filter = {};
         }
@@ -91,7 +99,7 @@ class Documents extends React.Component {
             }
         }
 
-        if (reload || !this.props.initData || !this.gridData.length) {
+        if (reload || !this.props.initData || !this.gridData.length || !this.props.initData.docTypeId) {
 
             // проверим на фильтр
             let sqlWhere = this.prepareSqlWhereFromFilter();
@@ -131,8 +139,27 @@ class Documents extends React.Component {
     render() {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
         const warningStyle = this.state.warningType && styles[this.state.warningType] ? styles[this.state.warningType] : null;
+        const btnParams = {
+            btnStart: {
+                show: true
+            },
+            btnLogin: {
+                show: true,
+                disabled: false
+            },
+            btnAccount: {
+                show: true,
+                disabled: false
+            }
+
+        };
         return (
             <div style={_style.doc}>
+                <Menu params={btnParams}
+                      history={this.props.history}
+                      rekvId={DocContext.userData ? DocContext.userData.asutusId : 0}
+                      module={this.props.module}/>
+
                 <div style={_style.docRow}>
                     {/*рендерим частные компоненты */}
                     {this.props.render(this)}

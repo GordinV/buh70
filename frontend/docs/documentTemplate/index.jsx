@@ -4,6 +4,7 @@ const PropTypes = require('prop-types');
 const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
 const DocContext = require('./../../doc-context.js');
+const Menu = require('./../../components/menu-toolbar/menu-toolbar.jsx');
 
 const URL = 'newApi/document';
 
@@ -93,9 +94,26 @@ class DocumentTemplate extends React.Component {
         const warningStyle = styles[this.state.warningType] ? styles[this.state.warningType] : null;
 
         let dialogString = this.serverValidation.length > 0 ? `Dokument ${this.serverValidation[0].name} = ${this.serverValidation[0].value} juba olemas. Kas jätka?` : '';
+        const btnParams = {
+            btnStart: {
+                show: true
+            },
+            btnLogin: {
+                show: true,
+                disabled: false
+            },
+            btnAccount: {
+                show: true,
+                disabled: false
+            }
 
+        };
         return (
             <div>
+                <Menu params={btnParams}
+                      history={this.props.history}
+                      rekvId={DocContext.userData ? DocContext.userData.asutusId : 0}
+                      module={this.props.module}/>
                 {this.renderDocToolBar()}
                 <Form pages={this.pages}
                       ref="form"

@@ -81,12 +81,6 @@ class App extends React.Component {
         let btnParams = this.prepareParamsForToolbar();
         return (
             <StyleRoot>
-                <Route path="/lapsed"
-                       render={() => <Menu params={btnParams}
-                                           history={this.props.history}
-                                           rekvId={DocContext.userData ? DocContext.userData.asutusId : 0}
-                                           module={MODULE}/>}
-                />
 
                 <Route exact path="/lapsed"
                        render={(props) =>
