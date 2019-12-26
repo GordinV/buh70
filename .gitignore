@@ -36,3 +36,9 @@ public/javascripts/vorder.js
 frontend/docs/kontod/document/component-kontod.test.js
 proc/
 #public/javascripts/raama.js
+
+#ssh
+routes/ssh
+
+#config/ default/json
+config/default.json

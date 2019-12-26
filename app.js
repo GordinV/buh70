@@ -22,6 +22,7 @@ const app = express(),
     RateLimit = require('express-rate-limit'),
     helmet = require('helmet'),
     cors = require('cors'),
+    fs = require('fs'),
     csrf = require('csurf');
 
 
@@ -68,19 +69,22 @@ http.createServer(app).listen(config.get('port'), function () {
     log.info('Express server listening on port ' + port);
 });
 
-/*
-const options = {
-    key: '',
-    cert: '',
-    ca: ''
-};
+let pathToSshKey = path.join(__dirname,'routes', 'ssh', 'server.key');
+let pathToSshCert = path.join(__dirname,'routes', 'ssh', 'server.cert');
 
+// will check if cert is available
+if (fs.existsSync(pathToSshCert)) {
+    const options = {
+        key: fs.readFileSync(pathToSshKey),
+        cert: fs.readFileSync(pathToSshCert),
+        ca: ''
+    };
 
-https.createServer(options, app).listen(config.get('https'), ()=>{
-    console.log('Express server listening on port ' + config.get('https'));
-});
+    https.createServer(options, app).listen(config.get('https'), ()=>{
+        log.info('Express server listening on port ' + config.get('https'));
+    });
+}
 
-*/
 
 /*
 const allowCrossDomain = function(req, res, next) {
