@@ -81,6 +81,7 @@ if (fs.existsSync(pathToSshCert)) {
     };
 
     https.createServer(options, app).listen(config.get('https'), ()=>{
+        console.log('Express server listening on port ' + config.get('https'));
         log.info('Express server listening on port ' + config.get('https'));
     });
 }
