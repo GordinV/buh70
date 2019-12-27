@@ -99,7 +99,6 @@ class Document {
         if (!sql) {
             return {error: 'No task found'}
         }
-        console.log(sql, _params);
         return await db.queryDb(sql, _params);
     }
 

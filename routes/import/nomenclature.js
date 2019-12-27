@@ -2,24 +2,16 @@ module.exports = async (file, mimeType, user) => {
     const Doc = require('./../../classes/DocumentTemplate');
     const Document = new Doc('NOMENCLATURE', null, user.userId, user.asutusId, 'lapsed');
 
-    console.log('start');
     let rows = [];
 
     try {
-        if (mimeType === 'application/octet-stream' || mimeType === 'application/json') {
-            rows = await readCSV(file);
-        } else {
-            return {error_message: 'Vale formaat', result: 0}
-        }
+        rows = await readCSV(file);
 
-console.log('rows', rows);
 
     } catch (e) {
         console.error('Viga:', e);
-        return {error_message: e, result: 0}
+        return `Tekkis viga, võib olla vale formaat`;
     }
-
-    console.log('rows',rows);
 
     let saved = 0;
     if (rows.length) {
