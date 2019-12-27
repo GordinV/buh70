@@ -6,11 +6,13 @@ module.exports = async (file, mimeType, user) => {
     let rows = [];
 
     try {
-        if (mimeType === 'application/octet-stream') {
+        if (mimeType === 'application/octet-stream' || mimeType === 'application/json') {
             rows = await readCSV(file);
         } else {
             return {error_message: 'Vale formaat', result: 0}
         }
+
+console.log('rows', rows);
 
     } catch (e) {
         console.error('Viga:', e);
