@@ -137,6 +137,13 @@ module.exports = {
         type: 'sql',
         alias: 'uuendaHinnad'
     },
+    importGroups: {
+        command: `SELECT error_code, result, error_message
+                  FROM lapsed.import_groups( $1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+        type: 'sql',
+        alias: 'importGroups'
+    },
+
     bpm: [
         {
             name: 'Uuendada hinnad',
@@ -145,6 +152,8 @@ module.exports = {
             action: 'uuendaHinnad',
         }
     ],
+
+
 
 };
 
