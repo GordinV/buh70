@@ -79,7 +79,6 @@ class GridFilter extends React.PureComponent {
             this.props.handler(data);
         }
         this.forceUpdate();
-
     }
 
     componentDidMount() {

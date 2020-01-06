@@ -91,6 +91,7 @@ class Documents extends React.Component {
         if (this.props.history && this.props.history.location.state) {
             this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
             reload = true;
+
         } else {
             // проверим сохраненный фильтр для этого типа
             if (DocContext.filter[this.props.docTypeId] && DocContext.filter[this.props.docTypeId].length > 0) {
@@ -423,6 +424,12 @@ class Documents extends React.Component {
         if (!DocContext.filter[this.props.docTypeId]) {
             DocContext.filter[this.props.docTypeId] = [];
         }
+
+        if (data && data.length > 0 && this.props.history.location && this.props.history.location.state) {
+            DocContext.filter[this.props.docTypeId] = this.filterData;
+        }
+        let params = {};
+
     }
 
     /**
@@ -682,6 +689,7 @@ class Documents extends React.Component {
                             //apply filter
                             if (this.props.history && this.props.history.location.state) {
                                 this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
+                                this.props.history.location.state = null;
                             }
                         }
                         this.forceUpdate()

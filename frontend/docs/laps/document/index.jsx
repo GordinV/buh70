@@ -185,7 +185,6 @@ class Laps extends React.PureComponent {
             pathname: `/lapsed/${pageDocTypeId}`,
             state: {isikukood: isikukood, type: 'text'}
         });
-
     }
 
 
