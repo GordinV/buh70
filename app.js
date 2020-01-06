@@ -73,7 +73,7 @@ let pathToSshKey = path.join(__dirname,'routes', 'ssh', 'server.key');
 let pathToSshCert = path.join(__dirname,'routes', 'ssh', 'server.cert');
 
 // will check if cert is available
-if (fs.existsSync(pathToSshCert)) {
+if (fs.existsSync(pathToSshCert) && config.get('https')) {
     const options = {
         key: fs.readFileSync(pathToSshKey),
         cert: fs.readFileSync(pathToSshCert),
