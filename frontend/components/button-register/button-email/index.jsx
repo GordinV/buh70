@@ -79,7 +79,8 @@ ButtonRegisterPrint.propTypes = {
 ButtonRegisterEmail.defaultProps = {
     disabled: false,
     show: true,
-    value: 'Email'
+    value: 'Email',
+    docTypeId:''
 };
 
 module.exports = ButtonRegisterEmail;

@@ -45,27 +45,32 @@ class Documents extends React.PureComponent {
         return (<ToolbarContainer>
             <BtnEarve
                 onClick={this.onClickHandler}
+                docTypeId={DOC_TYPE_ID}
                 phrase={`Kas laadida XML fail?`}
                 ref='btnEarveXML'
                 value={EVENTS[4].name}
             />
             <BtnEarve
                 onClick={this.onClickHandler}
+                docTypeId={DOC_TYPE_ID}
                 ref='btnEarveOmniva'
                 value={EVENTS[3].name}
             />
             <BtnEmail
                 onClick={this.onClickHandler}
+                docTypeId={DOC_TYPE_ID}
                 ref='btnEmail'
                 value={EVENTS[2].name}
             />
             <BtnPrint
                 onClick={this.onClickHandler}
+                docTypeId={DOC_TYPE_ID}
                 ref='btnPrint'
                 value={EVENTS[1].name}
             />
             <BtnSettings
                 history={self.props.history ? self.props.history : null}
+                docTypeId={DOC_TYPE_ID}
                 onClick={this.onClickHandler}
                 ref='btnSettings'
                 value={EVENTS[0].name}
