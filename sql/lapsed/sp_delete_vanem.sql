@@ -53,7 +53,7 @@ BEGIN
     --	ids =  v_doc.rigths->'delete';
     IF (v_doc.is_arvestaja IS NULL OR NOT v_doc.is_arvestaja)
     THEN
-        RAISE NOTICE 'У пользователя нет прав на удаление';
+        RAISE NOTICE 'У пользователя нет прав на удаление %, doc_id %, user_id %',v_doc.is_arvestaja , doc_id, user_id;
         error_code = 4;
         error_message = 'Ei saa kustuta dokument. Puudub õigused';
         result = 0;

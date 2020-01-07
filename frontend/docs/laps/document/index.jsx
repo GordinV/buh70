@@ -63,6 +63,7 @@ class Laps extends React.PureComponent {
                               history={this.props.history}
                               module={this.state.module}
                               docTypeId='LAPS'
+                              reload={true}
                               initData={this.props.initData ? this.props.initData : {}}
                               libs={LIBRARIES}
                               pages={this.pages}
@@ -221,25 +222,63 @@ class Laps extends React.PureComponent {
                 break;
             case "DELETE":
                 //send post to delete row
-                this.fetchData(docTypeId, id).then(() => {
+                this.fetchData(docTypeId, id).then((response) => {
+                    let isTrue = response && response.status && response.status === 200 ? 'Ok' : 'Error';
+                    let errorMessage = 'Viga';
+                    if (isTrue && response.data && response.data.error) {
+                        // error
+                        isTrue = false;
+                        errorMessage = response.data.error_message;
+                    }
+                    const Doc = this.refs['document'];
+                    if (isTrue === 'Ok') {
 
-                    const current = this.props.location.pathname;
-                    this.props.history.replace(`/reload`);
-                    setTimeout(() => {
-                        this.props.history.replace(current);
-                    });
+                        Doc.setState({
+                            reloadData: true,
+                            warning: 'Kiri kustutatud',
+                            warningType: 'ok',
+                        }, ()=> {
+                            setTimeout(()=> {
+                                const current = this.props.location.pathname;
+                                this.props.history.replace(`/reload`);
+                                setTimeout(() => {
+                                    this.props.history.replace(current);
+                                });
+
+                            }, 2000)
+                        });
+
+                    } else {
+                        Doc.setState({
+                            reloadData: false,
+                            warning: `${errorMessage}`,
+                            warningType: 'error',
+                        });
+                    }
 
                 });
                 break;
             case "KUSTUTA":
                 //send post to delete row
-                this.fetchData(docTypeId, id).then(() => {
+                this.fetchData(docTypeId, id).then((response) => {
+                    let isTrue = response && response.status && response.status === 200 ? 'Ok' : 'Error';
+                    const Doc = this.refs['document'];
+                    if (isTrue === 'Ok') {
 
-                    const current = this.props.location.pathname;
-                    this.props.history.replace(`/reload`);
-                    setTimeout(() => {
-                        this.props.history.replace(current);
-                    });
+                        Doc.setState({
+                            reloadData: true,
+                            warning: 'Kiri kustutatud',
+                            warningType: 'ok',
+                        });
+
+                    } else {
+                        let errorMessage = response.data && response.data.error_message ? response.data.error_message : 'Viga';
+                        Doc.setState({
+                            reloadData: false,
+                            warning: `${errorMessage}`,
+                            warningType: 'error',
+                        });
+                    }
 
                 });
                 break;

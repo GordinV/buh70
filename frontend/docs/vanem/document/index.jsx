@@ -59,6 +59,7 @@ class Vanem extends React.PureComponent {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
                                  docTypeId='VANEM'
+                                 history={this.props.history}
                                  module={this.state.module}
                                  userData={this.props.userData}
                                  initData={initData}

@@ -123,7 +123,8 @@ class App extends React.Component {
                 <Route exact path="/lapsed/vanem"
                        render={(props) => <VanemateRegister history={props.history}
                                                             initData={this.props.initData} module={MODULE}/>}/>
-                <Route exact path="/lapsed/vanem/:docId" component={VanemDokument}/>
+                <Route exact path="/lapsed/vanem/:docId"
+                        render={(props) => <VanemDokument {...props} history={props.history}/>}/>
 
                 <Route exact path="/lapsed/lapse_kaart"
                        render={(props) => <LasteTeenustRegister history={props.history}

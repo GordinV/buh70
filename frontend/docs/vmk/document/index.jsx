@@ -58,6 +58,7 @@ class Vmk extends React.Component {
                                  ref='document'
                                  docTypeId='VMK'
                                  module={'lapsed'}
+                                 reload={true}
                                  history={this.props.history}
                                  initData={this.props.initData}
                                  libs={LIBRARIES}

@@ -63,6 +63,7 @@ class Smk extends React.PureComponent {
                                  history={this.props.history}
                                  module={this.state.module}
                                  initData={this.props.initData}
+                                 reload={true}
                                  libs={LIBRARIES}
                                  pages={this.pages}
                                  renderer={this.renderer}

@@ -44,6 +44,7 @@ class Vorder extends React.PureComponent {
                                  ref='document'
                                  docTypeId='SORDER'
                                  initData={this.props.initData}
+                                 reload={true}
                                  libs={LIBRARIES}
                                  pages={this.pages}
                                  renderer={this.renderer}

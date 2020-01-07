@@ -69,6 +69,7 @@ class Sorder extends React.PureComponent {
                                  history={this.props.history}
                                  initData={this.props.initData}
                                  module={this.state.module}
+                                 reload={true}
                                  libs={LIBRARIES}
                                  pages={this.pages}
                                  renderer={this.renderer}

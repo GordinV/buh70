@@ -68,6 +68,7 @@ class Arve extends React.PureComponent {
                                  docTypeId='ARV'
                                  module={this.state.module}
                                  initData={this.props.initData ? this.props.initData : {}}
+                                 reload={true}
                                  libs={LIB_OBJS}
                                  pages={this.pages}
                                  renderer={this.renderer}
