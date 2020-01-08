@@ -127,7 +127,11 @@ GRANT EXECUTE ON FUNCTION lapsed.koosta_mk_arve_alusel(INTEGER,INTEGER, DATE) TO
 /*
 -- 1616795
 
-SELECT * from lapsed.koosta_mk_arve_alusel(70,1616793)
+select * from docs.arv where rekvid = 128 and number = '10'
+
+select * from ou.userid where rekvid = 128 and kasutaja = 'temp'
+
+SELECT * from lapsed.koosta_mk_arve_alusel(4452,1773420)
 
 
 doc_aa_id 11,  user_rekvid 63

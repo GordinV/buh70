@@ -109,5 +109,12 @@ GRANT EXECUTE ON FUNCTION docs.sp_get_number(tnrekvid INTEGER, tcdok TEXT, tnyea
 
 
 /*
-select docs.sp_get_number(130, 'ARV', 2018, null)
+select docs.sp_get_number(118, 'SMK', 2020, null)
+
+SELECT 1 FROM pg_class WHERE relname = 'smk_128_number'
+
+select
+CREATE SEQUENCE smk_128_number AS integer;
+GRANT ALL ON SEQUENCE smk_128_number TO public;
+select setval('smk_128_number',1)
  */

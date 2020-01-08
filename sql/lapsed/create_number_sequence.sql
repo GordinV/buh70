@@ -11,11 +11,13 @@ DECLARE
     l_sql           TEXT;
     l_number        TEXT;
     l_result        INTEGER;
+    l_last_id       INTEGER;
 BEGIN
     -- sequence name
     -- check if exists sequencetbl
     IF NOT EXISTS(
-            SELECT 1 FROM pg_class WHERE relname = l_sequence_name)
+            SELECT 1 FROM pg_class WHERE relname = l_sequence_name
+        )
     THEN
         -- IF NOT then sql for create sequence
 
@@ -45,8 +47,9 @@ BEGIN
             l_sql = l_sql || 'select setval(' || quote_literal(l_sequence_name) || ',' || l_number || ');';
 
         END IF;
+
         -- execute sequnce
-        PERFORM l_sql;
+        EXECUTE l_sql INTO l_last_id;
     ELSE
         l_sql = 'GRANT ALL ON SEQUENCE ' || l_sequence_name || ' TO public;';
 
@@ -58,7 +61,7 @@ BEGIN
         END IF;
 
         -- execute sequnce
-            PERFORM l_sql;
+        EXECUTE l_sql INTO l_last_id;
     END IF;
 
     -- return name of sequence
