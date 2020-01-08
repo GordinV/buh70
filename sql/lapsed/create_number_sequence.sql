@@ -49,7 +49,7 @@ BEGIN
         END IF;
 
         -- execute sequnce
-        EXECUTE l_sql INTO l_last_id;
+        EXECUTE l_sql;
     ELSE
         l_sql = 'GRANT ALL ON SEQUENCE ' || l_sequence_name || ' TO public;';
 
@@ -61,7 +61,7 @@ BEGIN
         END IF;
 
         -- execute sequnce
-        EXECUTE l_sql INTO l_last_id;
+        EXECUTE l_sql;
     END IF;
 
     -- return name of sequence

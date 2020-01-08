@@ -93,6 +93,7 @@ class Smk extends React.PureComponent {
             relatedDocuments(self);
         }
 
+        let isNewDoc = !self.docData.id || self.docData.id == 0;
         if ((!self.docData.id || self.docData.id == 0) && self.docData.arvid && this.state.isAskToCreateFromArv) {
             this.setState({getSMK: true, isAskToCreateFromArv: false, arvId: self.docData.arvid});
         }
@@ -122,24 +123,28 @@ class Smk extends React.PureComponent {
                                     onChange={self.handleInputChange}
                                     ref="select-aaId"
                                     readOnly={!isEditeMode}/>
-                            <InputText title="Arve nr."
-                                       name='_arvnr'
-                                       value={self.docData.arvnr || ''}
-                                       ref="input-arvnr"
-                                       onChange={self.handleInputChange}
-                                       readOnly={true}/>
 
-                            <SelectData title="Arve nr."
-                                        name='arvid'
-                                        libName="arv"
-                                        sqlFields={['number', 'kpv', 'asutus']}
-                                        data={[]}
-                                        value={self.docData.arvid || ''}
-                                        ref="select-arve"
-                                        btnDelete={false}
-                                        userData={self.userData}
-                                        onChange={self.handleInputChange}
-                                        readOnly={!isEditeMode}/>
+                            {!isNewDoc ?
+                                <InputText title="Arve nr."
+                                           name='_arvnr'
+                                           value={self.docData.arvnr || ''}
+                                           ref="input-arvnr"
+                                           show={!isNewDoc}
+                                           onChange={self.handleInputChange}
+                                           readOnly={true}/>
+                                : null
+                            }
+                            {isNewDoc ? <SelectData title="Arve nr."
+                                                    name='arvid'
+                                                    libName="arv"
+                                                    sqlFields={['number', 'kpv', 'asutus']}
+                                                    data={[]}
+                                                    value={self.docData.arvid || ''}
+                                                    ref="select-arve"
+                                                    btnDelete={false}
+                                                    userData={self.userData}
+                                                    onChange={self.handleInputChange}
+                                                    readOnly={!isEditeMode}/> : null}
 
 
                             <InputDate title='Maksepäev '
@@ -250,7 +255,7 @@ class Smk extends React.PureComponent {
                     });
                 } else {
                     if (response && response.result) {
-                        let newDocId = response.data && response.data && response.data.result && response.data.result.doc_id ? response.data.result.doc_id: 0;
+                        let newDocId = response.data && response.data && response.data.result && response.data.result.doc_id ? response.data.result.doc_id : 0;
                         Doc.setState({
                             warning: 'Edukalt, suunatan ...',
                             warningType: 'ok'
@@ -278,7 +283,7 @@ class Smk extends React.PureComponent {
             }).catch((error) => {
                 console.error('api call error', error);
                 Doc.setState({
-                    warning: `Viga ${error}` ,
+                    warning: `Viga ${error}`,
                     warningType: 'error'
                 });
             });
