@@ -5,8 +5,17 @@ let now = new Date();
 const Arv = {
     selectAsLibs: `SELECT *
                    FROM com_arved a
-                   WHERE (a.rekvId = $1::INTEGER)
-                     AND docs.usersRigths(a.id, 'select', $2::INTEGER)`, //$1 - rekvid, $2 userid
+                   WHERE (a.rekvId = $1::INTEGER)`, //$1 - rekvid, $2 userid
+    libGridConfig: {
+        grid: [
+            {id: "id", name: "id", width: "0%", show: false},
+            {id: "number", name: "Number", width: "15%"},
+            {id: "kpv", name: "Kuupäev", width: "15%", type:"date"},
+            {id: "asutus", name: "Maksja", width: "55%"},
+            {id: "jaak", name: "Jääk", width: "15%"}
+        ]
+    },
+
     select: [
         {
             sql: `SELECT d.id,

@@ -39,7 +39,6 @@ describe('test for documentNew', () => {
         expect(response.statusCode).toBeDefined();
         expect(response.statusCode).toBe(200);
         let result = JSON.parse(response.body).result;
-        console.log('result tunnus',result);
         expect(result.result.error_code).toBe(0);
         done();
     });
@@ -56,7 +55,6 @@ const asyncRequestPost = (url, params, jar, cookie) => {
 
         }, (error, response, body) => {
             if (error) return reject(error);
-            console.log('post reply');
             resolve(response);
         });
     });

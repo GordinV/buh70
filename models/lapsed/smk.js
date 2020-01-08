@@ -45,31 +45,31 @@ const Smk = {
                            LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.parentId
                            LEFT OUTER JOIN libs.dokprop dp ON dp.id = k.doklausid
                   WHERE D.id = $1`,
-            sqlAsNew: `SELECT $1 :: INTEGER                                  AS id,
-                              $2 :: INTEGER                                  AS userid,
-                              to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT  AS created,
-                              to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT  AS lastupdate,
-                              docs.sp_get_number(u.rekvid::INTEGER, 'SMK'::TEXT,
-                                                 date_part('year', current_date)::INTEGER,
-                                                 NULL::INTEGER)::VARCHAR(20) AS number,
-                              to_char(now(), 'YYYY-MM-DD')::TEXT             AS maksepaev,
-                              0                                              AS aaid,
-                              trim('')::VARCHAR(20)                          AS pank,
-                              NULL::INTEGER                                  AS rekvId,
-                              to_char(now(), 'YYYY-MM-DD')::TEXT             AS kpv,
-                              NULL::VARCHAR(120)                             AS viitenr,
-                              NULL::TEXT                                     AS selg,
-                              NULL::TEXT                                     AS muud,
-                              2                                              AS opt,
-                              NULL::VARCHAR(20)                              AS regkood,
-                              NULL::VARCHAR(254)                             AS asutus,
-                              NULL::INTEGER                                  AS arvid,
-                              NULL::VARCHAR(20)                              AS arvnr,
-                              0::NUMERIC(12, 2)                              AS summa,
-                              NULL::VARCHAR(120)                             AS dokprop,
-                              NULL::VARCHAR(20)                              AS konto,
-                              0                                              AS doklausid,
-                              NULL::INTEGER                                  AS lapsId
+            sqlAsNew: `SELECT 0 :: INTEGER                                                 AS id,
+                              $2 :: INTEGER                                                AS userid,
+                              to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                AS created,
+                              to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                AS lastupdate,
+                              coalesce(docs.sp_get_number(u.rekvid::INTEGER, 'SMK'::TEXT,
+                                                          date_part('year', current_date)::INTEGER,
+                                                          NULL::INTEGER)::VARCHAR(20), '') AS number,
+                              to_char(now(), 'YYYY-MM-DD')::TEXT                           AS maksepaev,
+                              0                                                            AS aaid,
+                              trim('')::VARCHAR(20)                                        AS pank,
+                              NULL::INTEGER                                                AS rekvId,
+                              to_char(now(), 'YYYY-MM-DD')::TEXT                           AS kpv,
+                              NULL::VARCHAR(120)                                           AS viitenr,
+                              NULL::TEXT                                                   AS selg,
+                              NULL::TEXT                                                   AS muud,
+                              2                                                            AS opt,
+                              NULL::VARCHAR(20)                                            AS regkood,
+                              NULL::VARCHAR(254)                                           AS asutus,
+                              NULL::INTEGER                                                AS arvid,
+                              NULL::VARCHAR(20)                                            AS arvnr,
+                              0::NUMERIC(12, 2)                                            AS summa,
+                              NULL::VARCHAR(120)                                           AS dokprop,
+                              NULL::VARCHAR(20)                                            AS konto,
+                              0                                                            AS doklausid,
+                              NULL::INTEGER                                                AS lapsId
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER`,
             query: null,
@@ -203,6 +203,12 @@ const Smk = {
                   FROM docs.gen_lausend_smk($2::INTEGER, $1::INTEGER)`, // $1 - userId, $2 - docId
         type: "sql",
         alias: 'generateJournal'
+    },
+    koostaMK: {
+        command: `SELECT error_code, result, error_message
+                  FROM lapsed.koosta_mk_arve_alusel($2::INTEGER, $1::INTEGER, $3::date) row`, //$1 - docs.doc.id, $2 - userId
+        type: "sql",
+        alias: 'koostaMK'
     },
     print: [
         {

@@ -295,7 +295,6 @@ class DocumentTemplate extends React.Component {
      *
      */
     btnTaskClick(taskName, kpv) {
-
         const task = this.bpm.find(task => task.name === taskName);
         let api = `/newApi/task/${task.task}`;
 
@@ -616,14 +615,16 @@ class DocumentTemplate extends React.Component {
                         return rejected();
                     }
                 }
-            )
-        }, error => {
-            console.error('doc template Error:', error);
-            // possibly auth error, so re-login
-            if (this.props.history) {
-                this.props.history.push(`/login`);
-            }
-            return rejected();
+            ).catch((e) => {
+                console.error(`catched fetch error ${e}`);
+                this.setState({
+                    warning: `Tekkis viga ${e}`,
+                    warningType: 'error'
+                });
+
+                return rejected();
+            });
+
         });
     }
 

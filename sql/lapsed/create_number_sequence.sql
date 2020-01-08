@@ -46,7 +46,19 @@ BEGIN
 
         END IF;
         -- execute sequnce
-        EXECUTE l_sql INTO l_result;
+        PERFORM l_sql;
+    ELSE
+        l_sql = 'GRANT ALL ON SEQUENCE ' || l_sequence_name || ' TO public;';
+
+        IF l_number IS NOT NULL AND l_number::INTEGER > 0
+        THEN
+            -- will store last value
+            l_sql = l_sql || 'select setval(' || quote_literal(l_sequence_name) || ',0);';
+
+        END IF;
+
+        -- execute sequnce
+            PERFORM l_sql;
     END IF;
 
     -- return name of sequence

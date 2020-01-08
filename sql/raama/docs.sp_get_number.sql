@@ -57,7 +57,7 @@ BEGIN
             THEN
                 lcTableName = 'docs.mk';
                 lcAdditionalWhere = ' and OPT = 1 ';
-                l_seq_name = docs.create_number_sequence(tnrekvid, tcDok);
+                l_seq_name = docs.create_number_sequence(tnrekvid, tcDok, FALSE);
                 SELECT nextval(l_seq_name) AS number INTO v_number;
         WHEN tcDok = 'VMK'
             THEN
