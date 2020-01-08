@@ -46,7 +46,7 @@ const Sorder = {
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                            LEFT OUTER JOIN libs.asutus AS asutus ON asutus.id = k.asutusId
                            LEFT OUTER JOIN ou.aa AS aa ON k.kassaid = aa.Id
-                           LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.Id
+                           LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.parentId
                            LEFT OUTER JOIN docs.journal j ON j.parentid = k.journalid
                            LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
                            LEFT OUTER JOIN libs.dokprop dp ON dp.id = k.doklausid
@@ -191,6 +191,13 @@ const Sorder = {
         type: "sql",
         alias: 'generateJournal'
     },
+    koostaSorder: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM docs.create_new_order($2::INTEGER, (SELECT to_jsonb(row.*) FROM (SELECT $1 AS arv_id, $3 as kpv, 'SORDER' as dok) row))`, //$1 - docs.doc.id, $2 - userId
+        type: "sql",
+        alias: 'koostaSorder'
+    },
+
     print: [
         {
             view: 'sorder_kaart',

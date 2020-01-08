@@ -213,6 +213,7 @@ class Smk extends React.PureComponent {
                     {self.state.gridRowEdit ?
                         this.createGridRow(self)
                         : null}
+
                     <ModalPage ref='modalpageCreateOrder'
                                modalPageBtnClick={this.modalPageBtnClick}
                                modalPageName='Kas koosta SMK'
@@ -230,7 +231,6 @@ class Smk extends React.PureComponent {
      * will create SMK
      */
     modalPageBtnClick(btnEvent) {
-        let doc_id = Number(this.state.arvId);
         this.setState({getSMK: false});
         if (btnEvent === 'Ok') {
             const Doc = this.refs['document'];

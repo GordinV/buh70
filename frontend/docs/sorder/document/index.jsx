@@ -18,18 +18,18 @@ const
     ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     styles = require('./sorder-style');
 
-const LIBDOK = 'SORDER',
-    LIBRARIES = [
-        {id:'kontod',filter:''},
-        {id:'dokProps',filter:''},
-        {id:'tunnus',filter:''},
-        {id:'project',filter:''},
-        {id:'nomenclature',filter:`where dok = 'SORDER'`},
-        {id:'kassa',filter:''}
-    ];
+const DOC_TYPE_ID = 'SORDER';
+const DocContext = require('./../../../doc-context.js');
 
 
-const now = new Date();
+const LIBRARIES = [
+    {id: 'kontod', filter: ''},
+    {id: 'dokProps', filter: ''},
+    {id: 'tunnus', filter: ''},
+    {id: 'project', filter: ''},
+    {id: 'nomenclature', filter: `where dok = 'SORDER'`},
+    {id: 'kassa', filter: ''}
+];
 
 class Sorder extends React.PureComponent {
     constructor(props) {
@@ -38,7 +38,10 @@ class Sorder extends React.PureComponent {
             loadedData: false,
             docId: props.docId ? props.docId : Number(props.match.params.docId),
             lapsId: null,
-            module: 'lapsed'
+            module: 'lapsed',
+            isAskToCreateFromArv: true, // если указан счет, а док.ид = 0 , то можно создпть ордер по счету
+            getSMK: false,
+            arvId: 0
 
         };
         this.createGridRow = this.createGridRow.bind(this);
@@ -47,6 +50,7 @@ class Sorder extends React.PureComponent {
 
         this.renderer = this.renderer.bind(this);
         this.gridValidateFields = this.gridValidateFields.bind(this);
+        this.modalPageBtnClick = this.modalPageBtnClick.bind(this);
 
         this.pages = [{pageName: 'Sissetuliku kassaorder', docTypeId: 'SORDER'}];
 
@@ -65,7 +69,7 @@ class Sorder extends React.PureComponent {
     render() {
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
-                                 docTypeId='SORDER'
+                                 docTypeId={DOC_TYPE_ID}
                                  history={this.props.history}
                                  initData={this.props.initData}
                                  module={this.state.module}
@@ -94,11 +98,12 @@ class Sorder extends React.PureComponent {
             relatedDocuments(self);
         }
 
-        let doc = this.refs['document'];
-        let libs = doc ? doc.libs : {};
+        let isNewDoc = !self.docData.id || self.docData.id == 0;
+        if ((!self.docData.id || self.docData.id == 0) && self.docData.arvid && this.state.isAskToCreateFromArv) {
+            this.setState({getSMK: true, isAskToCreateFromArv: false, arvId: self.docData.arvid});
+        }
 
         return (
-            <div>
                 <div style={styles.doc}>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
@@ -108,6 +113,20 @@ class Sorder extends React.PureComponent {
                                        ref="input-number"
                                        onChange={self.handleInputChange}
                                        readOnly={!isEditeMode}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <DokProp title="Konteerimine: "
+                                     name='doklausid'
+                                     libs="dokProps"
+                                     value={self.docData.doklausid}
+                                     defaultValue={self.docData.dokprop || ''}
+                                     ref="dokprop"
+                                     onChange={self.handleInputChange}
+                                     readOnly={!isEditeMode}/>
+                        </div>
+                    </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
                             <InputDate title='Kuupäev:'
                                        name='kpv'
                                        value={self.docData.kpv}
@@ -154,14 +173,28 @@ class Sorder extends React.PureComponent {
                     </div>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
+                            {!isNewDoc ?
+                                <InputText title="Arve nr."
+                                           name='_arvnr'
+                                           value={self.docData.arvnr || ''}
+                                           ref="input-arvnr"
+                                           show={!isNewDoc}
+                                           onChange={self.handleInputChange}
+                                           readOnly={true}/>
+                                : null
+                            }
+                            {isNewDoc ? <SelectData title="Arve nr."
+                                                    name='arvid'
+                                                    libName="arv"
+                                                    sqlFields={['number', 'kpv', 'asutus']}
+                                                    data={[]}
+                                                    value={self.docData.arvid || ''}
+                                                    ref="select-arve"
+                                                    btnDelete={false}
+                                                    userData={self.userData}
+                                                    onChange={self.handleInputChange}
+                                                    readOnly={!isEditeMode}/> : null}
 
-
-                            <InputText title="Arve nr.:"
-                                       name='arvnr'
-                                       value={self.docData.arvnr || ''}
-                                       ref="input-arvnr"
-                                       onChange={self.handleInputChange}
-                                       readOnly={true}/>
                             <InputText title='Dokument:'
                                        name='dokument'
                                        value={self.docData.dokument || ''}
@@ -169,16 +202,6 @@ class Sorder extends React.PureComponent {
                                        onChange={self.handleInputChange}
                                        readOnly={!isEditeMode}/>
                         </div>
-                    </div>
-                    <div style={styles.docColumn}>
-                        <DokProp title="Konteerimine: "
-                                 name='doklausid'
-                                 libs="dokProps"
-                                 value={self.docData.doklausid}
-                                 defaultValue={self.docData.dokprop || ''}
-                                 ref="dokprop"
-                                 onChange={self.handleInputChange}
-                                 readOnly={!isEditeMode}/>
                     </div>
                     <div style={styles.docRow}>
                         <TextArea title="Nimi"
@@ -237,11 +260,79 @@ class Sorder extends React.PureComponent {
                     {self.state.gridRowEdit ?
                         this.createGridRow(self)
                         : null}
-
+                    <ModalPage ref='modalpageCreateOrder'
+                               modalPageBtnClick={this.modalPageBtnClick}
+                               modalPageName='Kas koosta SMK'
+                               show={this.state.getSMK}>
+                        Kas koosta kassaorder?
+                    </ModalPage>
                 </div>
-            </div>
         );
     }
+
+    /**
+     * will create SORDER
+     */
+    modalPageBtnClick(btnEvent) {
+        this.setState({getSMK: false});
+        if (btnEvent === 'Ok') {
+            const Doc = this.refs['document'];
+            let api = `/calc/koostaSorder`;
+
+            const params = {
+                docTypeId: DOC_TYPE_ID,
+                module: this.props.module ? this.props.module : DocContext.module,
+                userId: DocContext.userData.userId,
+                uuid: DocContext.userData.uuid,
+                docs: [Number(this.state.arvId)],
+                seisuga: Doc.docData && Doc.docData.kpv ? Doc.docData.kpv : null,
+                context: DocContext[api] ? DocContext[api] : null,
+                taskName: 'koostaSorder'
+            };
+
+            Doc.fetchData('Post', api, {data: params}).then((response) => {
+                if (response && response.error_message) {
+                    Doc.setState({
+                        warning: `viga: ${response.error_message}`,
+                        warningType: 'error'
+                    });
+                } else {
+                    if (response && response.result) {
+                        let newDocId = response.data && response.data && response.data.result && response.data.result.doc_id ? response.data.result.doc_id : 0;
+                        Doc.setState({
+                            warning: 'Edukalt, suunatan ...',
+                            warningType: 'ok'
+                        });
+
+                        // переходим на созданнй док
+                        if (newDocId) {
+                            setTimeout(() => {
+                                const current = `/${this.props.module ? this.props.module : DocContext.module}/${DOC_TYPE_ID}/${newDocId}`;
+                                this.props.history.replace(`/reload`);
+                                setTimeout(() => {
+                                    this.props.history.replace(current);
+                                });
+
+                            }, 2000);
+                        }
+                    } else {
+                        Doc.setState({
+                            warning: 'Tekkis viga',
+                            warningType: 'error'
+                        });
+                    }
+                }
+
+            }).catch((error) => {
+                console.error('api call error', error);
+                Doc.setState({
+                    warning: `Viga ${error}`,
+                    warningType: 'error'
+                });
+            });
+        }
+    }
+
 
     /**
      * валидатор для строки грида

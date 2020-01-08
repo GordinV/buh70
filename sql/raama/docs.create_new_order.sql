@@ -21,10 +21,16 @@ DECLARE
                             FROM lapsed.liidestamine
                             WHERE docid = l_arv_id);
 
+    DOC_TYPE_ID  TEXT    = 'SORDER';
+    KASSA_ID     INTEGER = 0;
+    l_dokprop_id INTEGER;
+
+
 BEGIN
 
     -- выборка из "документа"
-    SELECT a.*,
+    SELECT d.rekvid     AS rekv_id,
+           a.*,
            isik.nimetus AS nimi,
            isik.aadress
            INTO v_arv
@@ -41,6 +47,15 @@ BEGIN
         RETURN;
     END IF;
 
+-- dokprop_id
+    l_dokprop_id = (SELECT D.id
+                    FROM libs.dokprop D
+                             INNER JOIN libs.library l ON l.id = d.parentid
+                    WHERE d.rekvid = v_arv.rekv_id
+                      AND l.kood = DOC_TYPE_ID
+                    ORDER BY d.id DESC
+                    LIMIT 1);
+
     IF v_arv.jaak <= 0
     THEN
         result = 0;
@@ -53,9 +68,9 @@ BEGIN
 
     l_kassa_id = (SELECT id
                   FROM ou.aa
-                  WHERE kassa = 0
-                    AND parentid = v_arv.rekvid
-                  ORDER BY default_
+                  WHERE kassa = KASSA_ID
+                    AND parentid = v_arv.rekv_id
+                  ORDER BY default_ DESC
                   LIMIT 1);
 
     json_korder1 = array_to_json((SELECT array_agg(row_to_json(m1.*))
@@ -83,23 +98,23 @@ BEGIN
                                        ) AS m1
     ));
 
-    SELECT 0                                                                            AS id,
-           NULL                                                                         AS doklausid,
-           v_arv.asutusid                                                               AS asutusid,
-           v_arv.nimi                                                                   AS nimi,
+    SELECT 0              AS id,
+           l_dokprop_id   AS doklausid,
+           v_arv.asutusid AS asutusid,
+           v_arv.nimi     AS nimi,
            v_arv.aadress,
-           l_kassa_id                                                                   AS kassaid,
-           v_arv.parentid                                                               AS arvid,
+           l_kassa_id     AS kassa_id,
+           v_arv.parentid AS arvid,
            CASE
                WHEN v_arv.liik = 0
                    THEN 1
-               ELSE 2 END                                                               AS TYYP,
-           v_arv.jaak                                                                   AS summa,
-           date()                                                                       AS kpv,
-           NULL                                                                         AS selg,
-           NULL                                                                         AS muud,
-           l_laps_id                                                                    AS lapsid,
-           json_korder1                                                                 AS "gridData"
+               ELSE 2 END AS TYYP,
+           v_arv.jaak     AS summa,
+           date()         AS kpv,
+           NULL           AS selg,
+           NULL           AS muud,
+           l_laps_id      AS lapsid,
+           json_korder1   AS "gridData"
            INTO v_params;
 
     SELECT row_to_json(row) INTO json_object
@@ -107,6 +122,8 @@ BEGIN
                  v_params AS data) row;
 
     SELECT docs.sp_salvesta_korder(json_object :: JSON, user_id, v_arv.rekvid) INTO korder_id;
+
+    RAISE NOTICE 'salvestan korder_id %, v_arv.jaa %', korder_id, v_arv.jaak;
 
     doc_type_id = CASE WHEN v_arv.liik = 0 THEN 'SORDER' ELSE 'VORDER' END;
 
@@ -140,20 +157,5 @@ GRANT EXECUTE ON FUNCTION docs.create_new_order(INTEGER, JSONB) TO dbpeakasutaja
 
 
 /*
-SELECT docs.create_new_mk(2477, '{"arv_id":1245465,"dok":"SMK"}')
-select * from docs.arv where rekvid = 63 order by id desc limit 1
-
-select * from docs.doc where id = 1245484
-
-select * from docs.mk where parentid = 1245484
-
-select * from docs.mk1 where parentid = 283417
-
-select * from docs.arvtasu where doc_arv_id = 1245465
-
-select d.*, 0 as valitud from cur_mk d
-                where d.rekvId = 63
-                and coalesce(docs.usersRigths(d.id, 'select', 2477),true)
-
-select * from libs.library where id = 55
+SELECT docs.create_new_order(70, '{"arv_id":1616785,"dok":"SORDER"}')
 */
