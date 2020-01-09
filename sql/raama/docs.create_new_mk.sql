@@ -31,7 +31,7 @@ DECLARE
                                       WHEN l_arv_id IS NOT NULL THEN (SELECT parentid
                                                                       FROM lapsed.liidestamine
                                                                       WHERE docid = l_arv_id
-                                                                          LIMIT 1)
+                                                                      LIMIT 1)
                                       ELSE left(right(l_viitenr::TEXT, 7), 6)::INTEGER END;
     l_opt        INTEGER;
     l_rekvId     INTEGER        = (SELECT rekvid
@@ -51,6 +51,11 @@ BEGIN
                  WHEN v_arv.liik = 0 OR v_arv.id IS NULL
                      THEN 2 -- если счет доходный, то мк на поступление средств, иначе расзодное поручение
                  ELSE 1 END);
+
+    IF l_summa IS NULL
+    THEN
+        l_summa = v_arv.jaak;
+    END IF;
 
     -- если счет имеет обратное сальдо , то меняем тип на противоположный
     IF v_arv.id IS NOT NULL AND v_arv.jaak < 0
@@ -90,8 +95,8 @@ BEGIN
                      WHERE kassa = 1
                        AND parentid = l_rekvId
                        AND aa.arve::TEXT = l_asutus_aa::TEXT
-                         ORDER BY default_
-                         LIMIT 1);
+                     ORDER BY default_
+                     LIMIT 1);
 
     END IF;
 
@@ -100,16 +105,16 @@ BEGIN
                                                  FROM ou.aa
                                                  WHERE kassa = 1
                                                    AND parentid = l_rekvId
-                                                     ORDER BY default_
-                                                     LIMIT 1)
+                                                 ORDER BY default_
+                                                 LIMIT 1)
                     ELSE l_pank_id END;
 
     l_nom_id = (SELECT id
                 FROM libs.nomenklatuur n
                 WHERE rekvid = l_rekvId
                   AND dok IN (l_dok, doc_type_id)
-                    ORDER BY id DESC
-                    LIMIT 1);
+                ORDER BY id DESC
+                LIMIT 1);
 
     l_aa = CASE
                WHEN l_aa IS NULL THEN (COALESCE((
@@ -120,7 +125,7 @@ BEGIN
                                                                                      THEN '[]'::JSON
                                                                                  ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (ELEMENT)
                                                     WHERE a.id = l_asutus_id
-                                                        LIMIT 1
+                                                    LIMIT 1
                                                 ), ''))
                ELSE l_aa END;
 
@@ -144,10 +149,10 @@ BEGIN
         FROM docs.arv1 a1
         WHERE a1.
                   parentid = v_arv.id
-            ORDER BY kood5
-            , kood2 DESC
-            , kood1 DESC
-            LIMIT 1 INTO v_mk1;
+        ORDER BY kood5
+               , kood2 DESC
+               , kood1 DESC
+        LIMIT 1 INTO v_mk1;
 
     ELSE
         SELECT 0           AS id,
