@@ -26,12 +26,12 @@ DECLARE
                                AND library = 'DOK'
                              LIMIT 1);
     doc_number    TEXT    = doc_data ->> 'number';
-    doc_kpv       DATE    = coalesce((doc_data ->> 'kpv')::date,current_date);
+    doc_kpv       DATE    = coalesce((doc_data ->> 'kpv')::DATE, current_date);
     doc_aa_id     INTEGER = doc_data ->> 'aa_id';
     doc_arvid     INTEGER = doc_data ->> 'arvid';
     doc_muud      TEXT    = doc_data ->> 'muud';
     doc_doklausid INTEGER = doc_data ->> 'doklausid';
-    doc_maksepaev DATE    = coalesce((doc_data ->> 'maksepaev')::date,current_date);
+    doc_maksepaev DATE    = coalesce((doc_data ->> 'maksepaev')::DATE, current_date);
     doc_selg      TEXT    = doc_data ->> 'selg';
     doc_viitenr   TEXT    = doc_data ->> 'viitenr';
     doc_lapsid    INTEGER = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
@@ -41,8 +41,6 @@ DECLARE
     new_history   JSONB;
     ids           INTEGER[];
     docs          INTEGER[];
-    arv_parent_id INTEGER;
-    a_dokvaluuta  TEXT[]  = enum_range(NULL :: DOK_VALUUTA);
     is_import     BOOLEAN = data ->> 'import';
 
 BEGIN
@@ -220,6 +218,15 @@ BEGIN
         -- произведем оплату счета
         PERFORM docs.sp_tasu_arv(doc_id, doc_arvid, userid);
 
+    END IF;
+
+
+    IF doc_id IS NOT NULL AND doc_id > 0 AND doc_viitenr IS NOT NULL AND doc_lapsid IS NULL
+    THEN
+        -- пробуем найти ребенка по ссылке
+        SELECT id INTO doc_lapsid
+        FROM lapsed.cur_lapsed
+        WHERE id = val(substring(doc_viitenr FROM 4 FOR len(doc_viitenr) - 4));
     END IF;
 
     -- lapse module

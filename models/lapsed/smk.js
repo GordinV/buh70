@@ -45,7 +45,7 @@ const Smk = {
                            LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.parentId
                            LEFT OUTER JOIN libs.dokprop dp ON dp.id = k.doklausid
                   WHERE D.id = $1`,
-            sqlAsNew: `SELECT 0 :: INTEGER                                                 AS id,
+            sqlAsNew: `SELECT $1 :: INTEGER                                                AS id,
                               $2 :: INTEGER                                                AS userid,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                AS created,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT                AS lastupdate,
@@ -71,7 +71,8 @@ const Smk = {
                               0                                                            AS doklausid,
                               NULL::INTEGER                                                AS lapsId
                        FROM ou.userid u
-                       WHERE u.id = $2 :: INTEGER`,
+                       WHERE u.id = $2 :: INTEGER
+            `,
             query: null,
             multiple: false,
             alias: 'row',
@@ -206,7 +207,7 @@ const Smk = {
     },
     koostaMK: {
         command: `SELECT error_code, result, error_message
-                  FROM lapsed.koosta_mk_arve_alusel($2::INTEGER, $1::INTEGER, $3::date) row`, //$1 - docs.doc.id, $2 - userId
+                  FROM lapsed.koosta_mk_arve_alusel($2::INTEGER, $1::INTEGER, $3::DATE) row`, //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'koostaMK'
     },

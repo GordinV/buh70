@@ -3,6 +3,7 @@ DROP VIEW IF EXISTS lapsed.cur_lapsed_mk;
 CREATE OR REPLACE VIEW lapsed.cur_lapsed_mk AS
 SELECT d.id,
        Mk.rekvid,
+       mk.arvid,
        Mk1.journalid,
        Mk.kpv,
        mk.maksepaev,
@@ -17,6 +18,7 @@ SELECT d.id,
            WHEN mk.opt = 1 OR coalesce(mk.opt, 0) = 0
                THEN Mk1.summa
            ELSE 0 :: NUMERIC(14, 2) END     AS kreedit,
+       a.id as maksja_id,
        A.regkood::VARCHAR(20)               AS vanem_isikukood,
        A.nimetus::VARCHAR(254)              AS asutus,
        coalesce(N.kood, '')::VARCHAR(20)    AS kood,

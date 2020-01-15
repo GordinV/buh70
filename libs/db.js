@@ -43,10 +43,10 @@ const db = {
         const client = new Client(config.pg.connection);
         await client.connect();
         let result = [];
-
+        let sqlString;
         try {
             await Promise.all(sqls.map(async sql => {
-                let sqlString = typeof sql === 'string' ? sql : sql.sql;
+                sqlString = typeof sql === 'string' ? sql : sql.sql;
                 let data = await client.query(sqlString, params);
                 // запишем итог в объект, который вернем как результат
                 result.push({error_code: 0, result: data.rowCount, data: data.rows});
@@ -57,6 +57,7 @@ const db = {
                 }
             }));
         } catch (e) {
+            console.error('Error in query',sqlString);
             result.push({error_code: 9, result: null, data: [], error_message: e.message});
         }
         await client.end();

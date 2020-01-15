@@ -123,17 +123,17 @@ class Arve extends React.PureComponent {
 
                         </div>
 
-                        <div style={styles.docColumn}>
-                            <Select title="Konteerimine:"
-                                    name='doklausid'
-                                    libs="dokProps"
-                                    data={self.libs['dokProps']}
-                                    readOnly={!isEditMode}
-                                    value={self.docData.doklausid}
-                                    collId='id'
-                                    ref='dokprop-doklausid'
-                                    placeholder='Konteerimine'
-                                    onChange={self.handleInputChange}/>
+                        < div style={styles.docColumn}>
+                            < Select title="Konteerimine:"
+                                     name='doklausid'
+                                     libs="dokProps"
+                                     data={self.libs['dokProps']}
+                                     readOnly={!isEditMode}
+                                     value={self.docData.doklausid}
+                                     collId='id'
+                                     ref='dokprop-doklausid'
+                                     placeholder='Konteerimine'
+                                     onChange={self.handleInputChange}/>
 
                             <InputText ref="input-lausend"
                                        title='Lausend nr.:'

@@ -17,6 +17,9 @@ style(type='text/css').
         display:-webkit-box;
         flexDirection: row;
     }
+    .row_hr {
+        border-top: 1px solid lightgray;
+    }
     .label {
         width:10%;
     }
@@ -28,6 +31,10 @@ style(type='text/css').
     .label_subtotal {
         width:70%;
     }
+    .hr_style {
+        border-top: 1px solid #8c8b8b;
+    }
+
 
 block content
     link(rel='stylesheet', href='/stylesheets/reports.css')
@@ -113,5 +120,15 @@ block content
                 div.row_wrapper
                     p.label_subtotal Kokku:
                     p.input #{`${Number(doc.summa).toFixed(2)}`}
+                div.row_hr
+                div.row_wrapper
+                    p.label_subtotal Teil on ettemaks:
+                    p.input #{`${Number(data[0].ettemaksud).toFixed(2)}`}
+                div.row_wrapper
+                    p.label_subtotal Laekumised periodis: #{`${data[0].laekumise_period}`}
+                    p.input #{`${Number(data[0].laekumised).toFixed(2)}`}
+                div.row_wrapper
+                    p.label_subtotal Kuulub tasumisele:
+                    p.input #{`${Number(data[0].jaak).toFixed(2)}`}
 
                 h3

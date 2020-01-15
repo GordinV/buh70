@@ -10,7 +10,7 @@ const Arv = {
         grid: [
             {id: "id", name: "id", width: "0%", show: false},
             {id: "number", name: "Number", width: "15%"},
-            {id: "kpv", name: "Kuupäev", width: "15%", type:"date"},
+            {id: "kpv", name: "Kuupäev", width: "15%", type: "date"},
             {id: "asutus", name: "Maksja", width: "55%"},
             {id: "jaak", name: "Jääk", width: "15%"}
         ]
@@ -19,48 +19,53 @@ const Arv = {
     select: [
         {
             sql: `SELECT d.id,
-                         $2 :: INTEGER                                      AS userid,
-                         to_char(created, 'DD.MM.YYYY HH:MM:SS') :: TEXT    AS created,
-                         to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT AS lastupdate,
+                         $2 :: INTEGER                                                 AS userid,
+                         to_char(created, 'DD.MM.YYYY HH:MM:SS') :: TEXT               AS created,
+                         to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT            AS lastupdate,
                          d.bpm,
-                         d.status                                           AS doc_status,
-                         a.number::TEXT                                     AS number,
+                         d.status                                                      AS doc_status,
+                         a.number::TEXT                                                AS number,
                          a.rekvId,
                          a.liik,
                          a.operid,
-                         to_char(a.kpv, 'YYYY-MM-DD')::TEXT                 AS kpv,
-                         to_char(a.kpv, 'DD.MM.YYYY')::TEXT                 AS kpv_print,
+                         to_char(a.kpv, 'YYYY-MM-DD')::TEXT                            AS kpv,
+                         to_char(a.kpv, 'DD.MM.YYYY')::TEXT                            AS kpv_print,
                          a.asutusid,
                          a.arvId,
-                         a.lisa:: TEXT                                      AS lisa,
-                         to_char(a.tahtaeg, 'YYYY-MM-DD')::TEXT             AS tahtaeg,
-                         to_char(a.tahtaeg, 'DD.MM.YYYY')::TEXT             AS tahtaeg_print,
+                         a.lisa:: TEXT                                                 AS lisa,
+                         to_char(a.tahtaeg, 'YYYY-MM-DD')::TEXT                        AS tahtaeg,
+                         to_char(a.tahtaeg, 'DD.MM.YYYY')::TEXT                        AS tahtaeg_print,
                          a.kbmta,
                          a.kbm,
                          a.summa,
                          a.tasud,
-                         a.tasudok::TEXT                                    AS tasudok,
+                         a.tasudok::TEXT                                               AS tasudok,
                          a.muud,
                          a.jaak,
                          asutus.regkood,
-                         asutus.nimetus::TEXT                               AS asutus,
+                         asutus.nimetus::TEXT                                          AS asutus,
                          asutus.aadress,
-                         asutus.email::TEXT                                 AS email,
-                         asutus.properties ->> 'kmkr'                       AS kmkr,
+                         asutus.email::TEXT                                            AS email,
+                         asutus.properties ->> 'kmkr'                                  AS kmkr,
                          a.doklausid,
                          a.journalid,
-                         coalesce(jid.number, 0) :: INTEGER                 AS laus_nr,
-                         dp.details :: JSONB ->> 'konto'                    AS konto,
-                         dp.details :: JSONB ->> 'kbmkonto'                 AS kbmkonto,
-                         dp.selg :: TEXT                                    AS dokprop,
-                         dp.vaatalaus                                       AS is_show_journal,
-                         d.history -> 0 ->> 'user'                          AS koostaja,
-                         a.properties ->> 'aa'                              AS aa,
-                         l.id                                               AS lapsId,
+                         coalesce(jid.number, 0) :: INTEGER                            AS laus_nr,
+                         dp.details :: JSONB ->> 'konto'                               AS konto,
+                         dp.details :: JSONB ->> 'kbmkonto'                            AS kbmkonto,
+                         dp.selg :: TEXT                                               AS dokprop,
+                         dp.vaatalaus                                                  AS is_show_journal,
+                         d.history -> 0 ->> 'user'                                     AS koostaja,
+                         a.properties ->> 'aa'                                         AS aa,
+                         l.id                                                          AS lapsId,
                          l.isikukood::TEXT,
-                         l.nimi::TEXT                                       AS lapse_nimi,
-                         lapsed.get_viitenumber(d.rekvid, l.id)             AS viitenr,
-                         a.properties ->> 'tyyp'::TEXT                      AS tyyp
+                         l.nimi::TEXT                                                  AS lapse_nimi,
+                         lapsed.get_viitenumber(d.rekvid, l.id)                        AS viitenr,
+                         a.properties ->> 'tyyp'::TEXT                                 AS tyyp,
+                         coalesce(saldod.jaak, 0)::NUMERIC                             AS jaak,
+                         coalesce(saldod.laekumised, 0)::NUMERIC                       AS laekumised,
+                         coalesce(saldod.ettemaksud, 0)::NUMERIC                       AS ettemaksud,
+                         lpad(month(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT,2,'0') || '.' ||
+                         year(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT AS laekumise_period
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
@@ -71,6 +76,10 @@ const Arv = {
                            LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
                            LEFT OUTER JOIN lapsed.laps l
                                            ON l.id = ll.parentid
+                           LEFT OUTER JOIN (SELECT *
+                                            FROM lapsed.lapse_saldod((SELECT kpv FROM docs.arv WHERE parentid = $1))) saldod
+                                           ON saldod.laps_id = l.id AND saldod.rekv_id = d.rekvid
+
                   WHERE D.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                                          AS id,
                               $2 :: INTEGER                                                          AS userid,
@@ -170,14 +179,14 @@ const Arv = {
         },
         {
             sql: `SELECT rd.id,
-                         $2 :: INTEGER                                AS userid,
-                         trim(l.kood)                                 AS doc_type,
-                         trim(l.nimetus)                              AS name,
-                         CASE 
+                         $2 :: INTEGER   AS userid,
+                         trim(l.kood)    AS doc_type,
+                         trim(l.nimetus) AS name,
+                         CASE
                              WHEN t.id IS NOT NULL THEN t.number
                              WHEN m.id IS NOT NULL THEN m.number
                              WHEN aa.id IS NOT NULL THEN aa.number
-                             END AS number
+                             END         AS number
                   FROM docs.doc d
                            LEFT OUTER JOIN docs.doc rd ON rd.id IN (SELECT unnest(d.docs_ids))
                            LEFT OUTER JOIN libs.library l ON rd.doc_type_id = l.id
@@ -309,7 +318,7 @@ const Arv = {
             sql: `SELECT *
                   FROM json_to_recordset((SELECT (bpm ->> 'omniva')::JSON
                                           FROM docs.doc
-                                          WHERE id = $1)) AS x(kpv VARCHAR(40), isik VARCHAR(254), rolli VARCHAR(20))`, //$1 - docId
+                                          WHERE id = $1)) AS x(kpv VARCHAR(40), isik VARCHAR(254), rolli VARCHAR(20), $2 as user_id)`, //$1 - docId
             query: null,
             multuple: false,
             alias: 'get_omniva_bpm',

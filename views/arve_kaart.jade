@@ -110,4 +110,15 @@ block content
         div.row_wrapper
             p.label_subtotal Kokku:
             p.input #{`${Number(data[0].summa).toFixed(2)}`}
+        hr
+        div.row_wrapper
+            p.label_subtotal Teil on ettemaks:
+            p.input #{`${Number(data[0].ettemaksud).toFixed(2)}`}
+        div.row_wrapper
+            p.label_subtotal Laekumised periodis: #{`${data[0].laekumise_period}`}
+            p.input #{`${Number(data[0].laekumised).toFixed(2)}`}
+        div.row_wrapper
+            p.label_subtotal Kuulub tasumisele:
+            p.input #{`${Number(data[0].jaak).toFixed(2)}`}
+
 
