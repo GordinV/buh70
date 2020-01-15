@@ -64,8 +64,9 @@ const Arv = {
                          coalesce(saldod.jaak, 0)::NUMERIC                             AS jaak,
                          coalesce(saldod.laekumised, 0)::NUMERIC                       AS laekumised,
                          coalesce(saldod.ettemaksud, 0)::NUMERIC                       AS ettemaksud,
-                         lpad(month(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT,2,'0') || '.' ||
-                         year(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT AS laekumise_period
+                         lpad(month(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT, 2, '0') || '.' ||
+                         year(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT AS laekumise_period,
+                         (coalesce(saldod.jaak, 0) + a.summa)::NUMERIC                 AS tasumisele
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
@@ -318,7 +319,7 @@ const Arv = {
             sql: `SELECT *
                   FROM json_to_recordset((SELECT (bpm ->> 'omniva')::JSON
                                           FROM docs.doc
-                                          WHERE id = $1)) AS x(kpv VARCHAR(40), isik VARCHAR(254), rolli VARCHAR(20), $2 as user_id)`, //$1 - docId
+                                          WHERE id = $1)) AS x(kpv VARCHAR(40), isik VARCHAR(254), rolli VARCHAR(20), $2 AS user_id)`, //$1 - docId
             query: null,
             multuple: false,
             alias: 'get_omniva_bpm',

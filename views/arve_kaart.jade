@@ -118,7 +118,10 @@ block content
             p.label_subtotal Laekumised periodis: #{`${data[0].laekumise_period}`}
             p.input #{`${Number(data[0].laekumised).toFixed(2)}`}
         div.row_wrapper
-            p.label_subtotal Kuulub tasumisele:
+            p.label_subtotal Seisuga #{`${data[0].kpv_print}`} on maksmata:
             p.input #{`${Number(data[0].jaak).toFixed(2)}`}
+        div.row_wrapper
+            p.label_subtotal Kuulub tasumisele:
+            p.input #{`${Number(data[0].tasumisele).toFixed(2)}`}
 
 
