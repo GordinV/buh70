@@ -76,7 +76,7 @@ BEGIN
         IF l_aasta_id IS NULL OR l_aasta_id = 0
         THEN
             INSERT INTO ou.aasta (rekvid, ajalugu, kuu, aasta)
-            VALUES (l_rekv_id, new_history, l_kuu, l_aasta) RETURNING id
+            VALUES (l_rekv_id, '[]' :: JSONB || new_history:: JSONB, l_kuu, l_aasta) RETURNING id
                 INTO l_aasta_id;
 
         END IF;
@@ -96,7 +96,7 @@ BEGIN
     END IF;
 
     UPDATE ou.aasta
-    SET ajalugu = coalesce(ajalugu, '[]'::JSONB)::JSONB || new_history::JSONB,
+    SET ajalugu = coalesce(ajalugu, '[]') :: JSONB || new_history:: JSONB,
         kinni   = l_status
     WHERE id = l_aasta_id;
 
