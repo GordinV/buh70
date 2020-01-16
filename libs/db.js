@@ -57,7 +57,7 @@ const db = {
                 }
             }));
         } catch (e) {
-            console.error('Error in query',sqlString);
+            console.error('Error in query',sqlString, params, e);
             result.push({error_code: 9, result: null, data: [], error_message: e.message});
         }
         await client.end();
