@@ -80,7 +80,12 @@ class Document {
 
         let data = await db.queryDb(sql, [params.data, params.userId, params.asutusId]);
 
-        if (data.data[0].id && !isNotSelect) {
+        if (data && data.error_code ) {
+            console.error('Viga', data.error_message);
+            return data;
+        }
+
+        if (data && data.data && data.data[0].id && !isNotSelect) {
             this.documentId = data.data[0].id;
             data = await this.select();
         }

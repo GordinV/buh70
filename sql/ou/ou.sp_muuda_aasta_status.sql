@@ -119,7 +119,7 @@ $BODY$
 GRANT EXECUTE ON FUNCTION ou.sp_muuda_aasta_status(INTEGER, JSON) TO dbpeakasutaja;
 
 /*
-select ou.sp_muuda_aasta_status(2477,'{"id":0,"status":1, "kuu":1, "aasta":2020}')
+select ou.sp_muuda_aasta_status(2477,'{"id":0,"status":0, "kuu":1, "aasta":2020}')
 
 
 select * from ou.userid where rekvid = 63 and kasutaja = 'vlad'
