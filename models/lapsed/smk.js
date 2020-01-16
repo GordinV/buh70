@@ -201,7 +201,7 @@ const Smk = {
     },
     generateJournal: {
         command: `SELECT error_code, result, error_message
-                  FROM docs.gen_lausend_smk($2::INTEGER, $1::INTEGER)`, // $1 - userId, $2 - docId
+                  FROM docs.gen_lausend_smk($1::INTEGER, $2::INTEGER)`, // $1 - docId $2- userId
         type: "sql",
         alias: 'generateJournal'
     },
@@ -245,6 +245,14 @@ const Smk = {
         type: "sql",
         alias: "getLogs"
     },
+    bpm: [
+        {
+            name: 'Контировка',
+            action: 'generateJournal',
+            type: 'automat',
+            actualStep: false
+        }
+    ],
 
 };
 

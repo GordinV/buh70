@@ -51,7 +51,7 @@ BEGIN
   IF rows_fetched = 0
   THEN
     error_code = 4; -- No documents found
-    error_message = 'No documents found';
+    error_message = 'No documents found ' || tnid::text;
     result = 0;
     RETURN;
   END IF;

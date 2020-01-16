@@ -259,7 +259,7 @@ class DocumentTemplate extends React.Component {
                     docId = 0;
                 }
 
-                if (!this.props.docId && this.props.reload) {
+                if (this.props.reload) {
                     // reload / redirect
                     setTimeout(() => {
                         const current = `/${this.props.module ? this.props.module : 'lapsed'}/${docTypeId}/${docId}`;
