@@ -131,25 +131,30 @@ exports.put = async (req, res) => {
 
     const savedData = await Document.save(params);
 
+    let l_error = '';
     if (Document.config.bpm) {
         // bpm proccess
-        const automatTaks = Document.config.bpm.filter(task => task.type === 'automat');
+        const automatTask = await Document.config.bpm.filter(task => task.type === 'automat');
 
-        automatTaks.forEach(async (process) => {
+        await automatTask.forEach(async (process) => {
             const bpmResult = await Document.executeTask(process.action);
-        })
+            if (bpmResult && bpmResult.error_code ) {
+                // raise error
+                l_error = l_error ? l_error: 'Lisa töö viga ' + bpmResult.error_message ? bpmResult.error_message: '';
+                console.error('BPM error', l_error);
+            }
 
+        });
     }
 
-    if (!savedData.row || savedData.row.length < 1) {
+    if (!savedData.row || savedData.row.length < 1 || l_error.length > 1) {
         console.error('error in save', params, savedData);
-        let l_error = savedData && savedData.error_message ? savedData.error_message: null;
+        l_error = l_error + (savedData && savedData.error_message ? savedData.error_message: null);
         return res.send({
             action: 'save',
             result: {error_code: 1, error_message: l_error ? l_error:  'Error in save ', docId: 0}
         });
     }
-
 
     const prepairedData = Object.assign({}, savedData.row[0],
         savedData,

@@ -41,7 +41,7 @@ BEGIN
 
     GET DIAGNOSTICS rows_fetched = ROW_COUNT;
 
-    IF rows_fetched = 0
+    IF v_arv is null
     THEN
         RAISE NOTICE 'rows_fetched = 0';
         error_code = 4; -- No documents found

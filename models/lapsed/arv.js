@@ -211,8 +211,7 @@ const Arv = {
                          mk1.journalid,
                          doc_tasu_id,
                          coalesce(journalid.number, 0) AS number,
-                         'EUR' :: VARCHAR              AS valuuta,
-                         1 :: NUMERIC                  AS kuurs
+                         $2                            AS userid
                   FROM docs.arvtasu arvtasu
                            INNER JOIN docs.mk mk ON (arvtasu.doc_tasu_id = mk.parentid AND arvtasu.pankkassa = 1)
                            INNER JOIN docs.mk1 mk1 ON (mk.id = mk1.parentid)
@@ -230,8 +229,7 @@ const Arv = {
                          korder1.journalid,
                          doc_tasu_id,
                          coalesce(journalid.number, 0) AS number,
-                         'EUR' :: VARCHAR              AS valuuta,
-                         1 :: NUMERIC                  AS kuurs
+                         $2                            AS userid
                   FROM docs.arvtasu arvtasu
                            INNER JOIN docs.korder1 korder1
                                       ON (arvtasu.doc_tasu_id = korder1.parentid AND arvtasu.pankkassa = 2)
@@ -249,8 +247,7 @@ const Arv = {
                          arvtasu.doc_tasu_id           AS journalid,
                          doc_tasu_id,
                          coalesce(journalid.number, 0) AS number,
-                         'EUR' :: VARCHAR              AS valuuta,
-                         1 :: NUMERIC                  AS kuurs
+                         $2                            AS userid
                   FROM docs.arvtasu arvtasu
                            LEFT OUTER JOIN docs.journal journal
                                            ON (arvtasu.doc_tasu_id = journal.parentId AND arvtasu.pankkassa = 3)
@@ -269,8 +266,8 @@ const Arv = {
                          0                 AS journalid,
                          NULL,
                          0                 AS number,
-                         'EUR' :: VARCHAR  AS valuuta,
-                         1 :: NUMERIC      AS kuurs
+                         $2                AS userid
+
                   FROM docs.arvtasu arvtasu
                   WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
@@ -283,51 +280,52 @@ const Arv = {
             alias: 'queryArvTasu',
             data: []
         },
-        {
-            sql: `SELECT result, error_code, error_message
-                  FROM docs.create_new_mk($1::INTEGER, $2::JSONB)`, //$1 - userId, $2 - params -> {"arv_id": ?, "dok":"SMK" }
-            query: null,
-            multuple: false,
-            alias: 'create_new_mk',
-            data: []
-        },
-        {
-            sql: `SELECT result, error_code, error_message
-                  FROM docs.create_new_order($1::INTEGER, $2::JSONB)`, //$1 - userId, $2 - params -> {"arv_id": ?, "dok":"SORDER" }
-            query: null,
-            multuple: false,
-            alias: 'create_new_order',
-            data: []
-        },
-        {
-            sql: `SELECT docs.check_arv_number($1::integer, $2::JSON)::integer as tulemus`, //$1 - rekvId, $2 - params ->'{"tyyp":1, "number":"10", "aasta": 2017, "asutus": 5155}'
-            query: null,
-            multuple: false,
-            alias: 'validate_arve_number',
-            data: []
-
-        },
         /*
                 {
-                    sql: `SELECT docs.sp_update_doc_bpm_data($1::integer, $2::integer, $3::JSONB)::integer as tulemus`, //$1 - docId, $2 - userId, $3 - params ->'{"omniva":[{"isik":"koostaja", "kpv":"2019-05-31","rolli":"creator"},{"isik":"koostaja", "kpv":"2019-05-31","rolli":"kinnitaja"}]}')
+                    sql: `SELECT result, error_code, error_message
+                          FROM docs.create_new_mk($1::INTEGER, $2::JSONB)`, //$1 - userId, $2 - params -> {"arv_id": ?, "dok":"SMK" }
                     query: null,
                     multuple: false,
-                    alias: 'update_bpm',
+                    alias: 'create_new_mk',
+                    data: []
+                },
+                {
+                    sql: `SELECT result, error_code, error_message
+                          FROM docs.create_new_order($1::INTEGER, $2::JSONB)`, //$1 - userId, $2 - params -> {"arv_id": ?, "dok":"SORDER" }
+                    query: null,
+                    multuple: false,
+                    alias: 'create_new_order',
+                    data: []
+                },
+                {
+                    sql: `SELECT docs.check_arv_number($1::integer, $2::JSON)::integer as tulemus`, //$1 - rekvId, $2 - params ->'{"tyyp":1, "number":"10", "aasta": 2017, "asutus": 5155}'
+                    query: null,
+                    multuple: false,
+                    alias: 'validate_arve_number',
                     data: []
 
                 },
 
-                {
-                    sql: `SELECT *, $2 AS user_id
-                          FROM json_to_recordset((SELECT (bpm ->> 'omniva')::JSON
-                                                  FROM docs.doc
-                                                  WHERE id = $1)) AS x(kpv VARCHAR(40), isik VARCHAR(254), rolli VARCHAR(20))`, //$1 - docId, $2 - userid
-                    query: null,
-                    multuple: false,
-                    alias: 'get_omniva_bpm',
-                    data: []
-                }
-        */
+                        {
+                            sql: `SELECT docs.sp_update_doc_bpm_data($1::integer, $2::integer, $3::JSONB)::integer as tulemus`, //$1 - docId, $2 - userId, $3 - params ->'{"omniva":[{"isik":"koostaja", "kpv":"2019-05-31","rolli":"creator"},{"isik":"koostaja", "kpv":"2019-05-31","rolli":"kinnitaja"}]}')
+                            query: null,
+                            multuple: false,
+                            alias: 'update_bpm',
+                            data: []
+
+                        },
+
+                        {
+                            sql: `SELECT *, $2 AS user_id
+                                  FROM json_to_recordset((SELECT (bpm ->> 'omniva')::JSON
+                                                          FROM docs.doc
+                                                          WHERE id = $1)) AS x(kpv VARCHAR(40), isik VARCHAR(254), rolli VARCHAR(20))`, //$1 - docId, $2 - userid
+                            query: null,
+                            multuple: false,
+                            alias: 'get_omniva_bpm',
+                            data: []
+                        }
+                */
 
     ],
     grid: {
@@ -452,13 +450,13 @@ const Arv = {
 
     ],
     generateJournal: {
-        command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($2::INTEGER, $1::INTEGER)", //$1 - docs.doc.id, $2 - userId
+        command: "SELECT error_code, result, error_message FROM docs.gen_lausend_arv($1::INTEGER, $2::INTEGER)", //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generateJournal'
     },
     generatePaymentOrder: {
         command: `SELECT error_code, result, error_message, doc_type_id
-                  FROM docs.create_new_mk($2::INTEGER, (SELECT to_jsonb(row.*) FROM (SELECT $1 AS arv_id) row))`, //$1 - docs.doc.id, $2 - userId
+                  FROM docs.create_new_mk($1::INTEGER, (SELECT to_jsonb(row.*) FROM (SELECT $2 AS arv_id) row))`, //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generatePaymentOrder'
     },

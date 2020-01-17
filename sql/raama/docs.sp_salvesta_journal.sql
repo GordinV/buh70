@@ -30,6 +30,8 @@ DECLARE
                                          WHERE rekvId = user_rekvid
                                            AND aasta = (date_part('year' :: TEXT, doc_kpv) :: INTEGER)), 1);
     json_object      JSON;
+    json_lausend     JSON;
+
     json_params      JSON;
     json_record      RECORD;
     new_history      JSONB;
@@ -39,6 +41,13 @@ DECLARE
     is_rekl_ettemaks BOOLEAN = FALSE;
     l_prev_kpv       DATE;
     l_arv_id         INTEGER; --ид счета, если проводка является оплатой
+    l_oma_tp         TEXT    = (SELECT tp
+                                FROM ou.aa
+                                WHERE parentid = user_rekvid
+                                  AND kassa = 2
+                                LIMIT 1);
+
+    l_check_lausend  TEXT;
 BEGIN
 
     SELECT kasutaja,
@@ -129,6 +138,27 @@ BEGIN
                                             kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, lisa_d TEXT,
                                             lisa_k TEXT,
                                             valuuta TEXT, kuurs NUMERIC(14, 8));
+
+            -- проверка проводки
+            SELECT row_to_json(row) INTO json_lausend
+            FROM (SELECT json_record.deebet  AS db,
+                         json_record.kreedit AS kr,
+                         json_record.lisa_d  AS tpd,
+                         json_record.lisa_k  AS tpk,
+                         json_record.kood1   AS tt,
+                         json_record.kood2   AS allikas,
+                         json_record.kood3   AS rahavoog,
+                         json_record.kood5   AS eelarve,
+                         doc_kpv             AS kpv,
+                         l_oma_tp            AS oma_tp
+                 ) row;
+
+            l_check_lausend = docs.sp_lausendikontrol(json_lausend::JSONB);
+            IF NOT empty(l_check_lausend)
+            THEN
+                RAISE EXCEPTION '%',l_check_lausend;
+            END IF;
+
 
             IF json_record.summa <> 0
             THEN
