@@ -22,14 +22,16 @@ class GridFilter extends React.PureComponent {
 
     /**
      * Обработчик на изменения инпутов
-     * @param e
      */
     handleChange(e) {
-        let data = this.state.data;
+        let data = this.props.data;
+        let row = data.find(item => item.name === e.target.name);
 
         // проверим на наличие полей для фильтрации
-        if (!data.length) {
+        if (!data.length || !row) {
             data = prepareData(this.props.gridConfig, this.props.docTypeId);
+        } else {
+            data = this.props.data;
         }
 
         let value = e.target.value,
@@ -40,7 +42,7 @@ class GridFilter extends React.PureComponent {
         let fieldName = id;
 
         // надо найти элемент массива с данными для этого компонента
-        for (let i = 0; i < this.state.data.length; i++) {
+        for (let i = 0; i < data.length; i++) {
 
             isIntervalStart = !!id.match(/_start/);
             isIntervalEnd = !!id.match(/_end/);
@@ -55,7 +57,7 @@ class GridFilter extends React.PureComponent {
                 fieldName = id.replace(/_end/i, '');
             }
 
-            if (this.state.data[i].name === (fieldName)) {
+            if (data[i].name === (fieldName)) {
                 index = i;
                 break;
             }
@@ -90,11 +92,12 @@ class GridFilter extends React.PureComponent {
 
     // will update state if props changed
 
+
     static getDerivedStateFromProps(nextProps, prevState) {
 
         if (JSON.stringify(nextProps.gridConfig) !== JSON.stringify(prevState.gridConfig) ||
             JSON.stringify(nextProps.data) !== JSON.stringify(prevState.data)
-            || prevState.data.length === 0
+            || prevState.data.length === 0 || prevState.data.length !== nextProps.data.length
         ) {
             return {gridConfig: nextProps.gridConfig, data: nextProps.data};
         } else return null;
@@ -109,11 +112,16 @@ class GridFilter extends React.PureComponent {
     }
 
     prepareFilterFields() {
-        let data = this.state.data;
+        let data = this.props.data;
+        // проверим на наличие полей для фильтрации
+        if (!data.length) {
+            data = prepareData(this.props.gridConfig, this.props.docTypeId);
+        }
+
         let isStateUpdated = false; // if true then will call setState
 
         // только поля, которые отмечаны как show:true или явно ка указаны
-        const filterFields = this.state.gridConfig.filter(field => {
+        const filterFields = this.props.gridConfig.filter(field => {
             if (field.id !== 'id' && (!field.filter || field.filter == 'show')) {
                 return field;
             }
@@ -169,7 +177,7 @@ class GridFilter extends React.PureComponent {
             row = {...row, ...{start: value}, ...{end: value}}
         }
 
-        const data = this.state.data;
+        const data = this.props.data;
         let obj = data.find(dataRow => dataRow.name == row.id);
 
         if (!obj) {

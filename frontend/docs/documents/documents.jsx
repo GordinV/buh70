@@ -428,7 +428,6 @@ class Documents extends React.Component {
         if (data && data.length > 0 && this.props.history.location && this.props.history.location.state) {
             DocContext.filter[this.props.docTypeId] = this.filterData;
         }
-        let params = {};
 
     }
 
@@ -671,11 +670,12 @@ class Documents extends React.Component {
                                 this.subtotals = response.data.subtotals;
 
                                 //refresh filterdata
-                                if (!this.state.isEmptyFilter && DocContext.filter[this.props.docTypeId].length > 0) {
+                                if (!this.state.isEmptyFilter && DocContext.filter[this.props.docTypeId].length > 0 && this.gridConfig.length === this.filterData.length) {
                                     // есть сохраненный фильтр
                                     this.filterData = DocContext.filter[this.props.docTypeId];
                                 } else {
                                     this.setState({isEmptyFilter: false});
+
                                     this.filterData = this.gridConfig.map((row) => {
                                         // props.data пустое, создаем
                                         let value = row.value ? row.value : null;
@@ -744,6 +744,42 @@ class Documents extends React.Component {
 }
 
 
+function prepareData(gridConfig, docTypeId) {
+    let data = [];
+
+
+    if (!DocContext.filter) {
+        DocContext.filter = {};
+    }
+
+    if (!DocContext.filter[docTypeId]) {
+        DocContext.filter[docTypeId] = [];
+    }
+
+    // проверим, если фильтр уже сохранен, то вернем уже ранее сохжанный массив
+    if (docTypeId && DocContext.filter[docTypeId].length > 0) {
+        data = DocContext.filter[docTypeId];
+    } else {
+        gridConfig.map((row) => {
+            const field = {
+                value: row.value ? row.value : null,
+                name: row.id,
+                type: row.type ? row.type : 'text',
+                interval: !!row.interval,
+                start: row.value ? row.value : null,
+                end: row.value ? row.value : null
+            };
+
+            data.push(field);
+
+        });
+    }
+
+    return data;
+
+}
+
+
 Documents.propTypes = {
     initData: PropTypes.shape({
         result: PropTypes.object,
@@ -756,6 +792,8 @@ Documents.propTypes = {
 Documents.defaultProps = {
     module: 'lapsed'
 };
+
+
 
 
 module.exports = (Documents);
