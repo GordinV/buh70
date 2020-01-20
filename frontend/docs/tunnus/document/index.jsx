@@ -29,6 +29,9 @@ class Tunnus extends React.PureComponent {
                               module={this.props.module}
                               initData={this.props.initData}
                               renderer={this.renderer}
+                              focusElement={'input-kood'}
+                              history={this.props.history}
+
             />
         )
     }

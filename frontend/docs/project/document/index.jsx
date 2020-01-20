@@ -24,8 +24,11 @@ class Project extends React.PureComponent {
         return <DocumentTemplate docId = {this.state.docId }
                                  ref = 'document'
                                  docTypeId='PROJECT'
+                                 history={this.props.history}
                                  initData = {this.props.initData}
-                                 renderer={this.renderer}/>
+                                 renderer={this.renderer}
+                                 focusElement={'input-kood'}
+        />
     }
 
     /**

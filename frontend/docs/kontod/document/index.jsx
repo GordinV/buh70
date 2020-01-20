@@ -33,8 +33,11 @@ class Kontod extends React.PureComponent {
         return <DocumentTemplate docId = {this.state.docId }
                                  ref = 'document'
                                  docTypeId='KONTOD'
+                                 history = {this.props.history ? this.props.history: null}
                                  initData = {this.props.initData}
-                                 renderer={this.renderer}/>
+                                 renderer={this.renderer}
+                                 focusElement={'input-kood'}
+        />
     }
 
     renderer(self) {

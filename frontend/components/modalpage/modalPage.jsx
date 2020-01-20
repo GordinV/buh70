@@ -40,6 +40,10 @@ class ModalPage extends React.PureComponent {
         }
     }
 
+    /**
+     * перехватит сыбтия нажатия кнопки и вызовет дефолтные методы
+     * @param e
+     */
     onKeyUp(e) {
         switch (e.key) {
             case 'Enter':

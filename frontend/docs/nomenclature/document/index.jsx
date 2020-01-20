@@ -55,7 +55,9 @@ class Nomenclature extends React.PureComponent {
                                  history={this.props.history}
                                  userData={this.props.userData}
                                  libs={LIBRARIES}
-                                 renderer={this.renderer}/>
+                                 renderer={this.renderer}
+                                 focusElement={'input-kood'}
+        />
     }
 
     /**

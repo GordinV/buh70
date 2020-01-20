@@ -67,7 +67,6 @@ class Vanem extends React.PureComponent {
                                  pages={this.pages}
                                  renderer={this.renderer}
                                  handleGridBtnClick={this.handleLasteGridBtnClick}
-                                 focusElement={'input-isikukood'}
         />
     }
 

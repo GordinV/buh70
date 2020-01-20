@@ -51,7 +51,7 @@ class Vorder extends React.PureComponent {
                                  createGridRow={this.createGridRow}
                                  gridValidator={this.gridValidateFields}
                                  recalcDoc={this.recalcDocSumma}
-        />
+                                 focusElement={'input-number'}        />
     }
 
     /**
@@ -73,12 +73,6 @@ class Vorder extends React.PureComponent {
         return (
             <div>
                 <div className='div-doc'>
-                    <div style={styles.docRow}>
-                        <DocCommon
-                            ref='doc-common'
-                            data={self.docData}
-                            readOnly={!isEditeMode}/>
-                    </div>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
                             <InputText title='Number'

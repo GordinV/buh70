@@ -47,6 +47,7 @@ class Journal extends React.PureComponent {
                                  createGridRow={this.createGridRow}
                                  gridValidator={this.gridValidateFields}
                                  recalcDoc={this.recalcDocSumma}
+                                 focusElement={'input-number'}
         />
     }
 

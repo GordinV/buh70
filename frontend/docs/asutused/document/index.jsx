@@ -29,7 +29,10 @@ class Asutused extends React.PureComponent {
                                  module={DocContext.module}
                                  docTypeId='ASUTUSED'
                                  initData={this.props.initData}
-                                 renderer={this.renderer}/>
+                                 renderer={this.renderer}
+                                 focusElement={'input-regkood'}
+
+        />
     }
 
     renderer(self) {

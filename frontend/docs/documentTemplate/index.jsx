@@ -76,9 +76,11 @@ class DocumentTemplate extends React.Component {
         }
 
         this.libs = this.createLibs(); //создаст объект для хранения справочников
-        if (this.props.docId === 0) {
-            //@todo реализовать
-//            this.focusElement()
+        if (this.props.focusElement) {
+            const focusElement = this.refs[this.props.focusElement];
+            if (focusElement) {
+                focusElement.focus()
+            }
         }
 
     }

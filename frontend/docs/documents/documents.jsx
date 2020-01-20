@@ -186,16 +186,19 @@ class Documents extends React.Component {
                               onHeaderClick={this.headerClickHandler}
                               isSelect={this.state.showSelectFields}
                               value={this.state.value}/>
-                    <ModalPage ref='modalpageFilter'
-                               modalPageBtnClick={this.modalPageBtnClick}
-                               modalPageName='Filter'
-                               show={this.state.getFilter}>
-                        <GridFilter ref='gridFilter'
-                                    docTypeId={this.props.docTypeId}
-                                    handler={this.filterDataHandler}
-                                    gridConfig={this.gridConfig}
-                                    data={this.filterData}/>
-                    </ModalPage>
+                    {this.state.getFilter ?
+                        <ModalPage ref='modalpageFilter'
+                                   modalPageBtnClick={this.modalPageBtnClick}
+                                   modalPageName='Filter'
+                                   show={true}>
+                            <GridFilter ref='gridFilter'
+                                        focusElement={this.gridConfig[1].id}
+                                        docTypeId={this.props.docTypeId}
+                                        handler={this.filterDataHandler}
+                                        gridConfig={this.gridConfig}
+                                        data={this.filterData}/>
+                        </ModalPage> : null
+                    }
                     <ModalPageDelete
                         show={this.state.isDelete}
                         modalPageBtnClick={this.modalDeletePageBtnClick.bind(this)}>
@@ -638,85 +641,82 @@ class Documents extends React.Component {
             uuid: DocContext.userData.uuid,
             data: additionalData
         };
-        try {
-            return new Promise((resolved, rejected) => {
+        return new Promise((resolved, rejected) => {
 
-                fetchData['fetchDataPost'](URL, params).then(response => {
-                    if (response.status && response.status === 401) {
-                        document.location = `/login`;
+            fetchData['fetchDataPost'](URL, params).then(response => {
+                if (response.status && response.status === 401) {
+                    document.location = `/login`;
+                }
+
+                // error handling
+                if (response.status !== 200) {
+                    this.setState({warning: `${response.error_message}`, warningType: 'error'});
+
+                    return {
+                        result: null,
+                        status: response.status,
+                        error_message: `error ${(response.data && response.data.error_message) ? 'response.data.error_message' : response.error_message}`
                     }
+                }
 
-                    // error handling
-                    if (response.status !== 200) {
-                        this.setState({warning: `${response.error_message}`, warningType: 'error'});
+                if (method === 'selectDocs') {
+                    this.gridData = response.data.result.data;
 
-                        return {
-                            result: null,
-                            status: response.status,
-                            error_message: `error ${(response.data && response.data.error_message) ? 'response.data.error_message' : response.error_message}`
-                        }
-                    }
+                    if (response.data && response.data.gridConfig && response.data.gridConfig.length) {
 
-                    if (method === 'selectDocs') {
-                        this.gridData = response.data.result.data;
+                        //если конфиг отличается, формируем новый фильтр грида или надо очистить фильтр
+                        if (!this.gridConfig.length ||
+                            JSON.stringify(this.gridConfig) !== JSON.stringify(response.data.gridConfig) ||
+                            this.state.isEmptyFilter) {
 
-                        if (response.data.gridConfig.length) {
+                            this.gridConfig = response.data.gridConfig;
+                            this.subtotals = response.data.subtotals;
 
-                            //если конфиг отличается, формируем новый фильтр грида или надо очистить фильтр
-                            if (!this.gridConfig.length ||
-                                JSON.stringify(this.gridConfig) !== JSON.stringify(response.data.gridConfig) ||
-                                this.state.isEmptyFilter) {
-                                this.gridConfig = response.data.gridConfig;
-                                this.subtotals = response.data.subtotals;
+                            //refresh filterdata
+                            if (!this.state.isEmptyFilter &&
+                                DocContext.filter &&
+                                DocContext.filter[this.props.docTypeId] &&
+                                this.filterData &&
+                                this.gridConfig.length === this.filterData.length) {
 
-                                //refresh filterdata
-                                if (!this.state.isEmptyFilter && DocContext.filter[this.props.docTypeId].length > 0 && this.gridConfig.length === this.filterData.length) {
-                                    // есть сохраненный фильтр
-                                    this.filterData = DocContext.filter[this.props.docTypeId];
-                                } else {
-                                    this.setState({isEmptyFilter: false});
+                                // есть сохраненный фильтр
+                                this.filterData = DocContext.filter[this.props.docTypeId];
+                            } else {
+                                this.setState({isEmptyFilter: false});
 
-                                    this.filterData = this.gridConfig.map((row) => {
-                                        // props.data пустое, создаем
-                                        let value = row.value ? row.value : null;
-                                        return {value: value, name: row.id, type: row.type ? row.type : 'text'};
-                                    });
-                                    DocContext.filter[this.props.docTypeId] = this.filterData;
+                                this.filterData = this.gridConfig.map((row) => {
+                                    // props.data пустое, создаем
+                                    let value = row.value ? row.value : null;
+                                    return {value: value, name: row.id, type: row.type ? row.type : 'text'};
+                                });
+                                DocContext.filter[this.props.docTypeId] = this.filterData;
 
-                                }
-                            }
-
-                            //apply filter
-                            if (this.props.history && this.props.history.location.state) {
-                                this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
-                                this.props.history.location.state = null;
                             }
                         }
-                        this.forceUpdate()
 
-                    } else {
-                        this.setState({warning: 'Edukalt', warningType: 'ok'})
+                        //apply filter
+                        if (this.props.history && this.props.history.location.state) {
+                            this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
+                            this.props.history.location.state = null;
+                        }
                     }
-                    resolved(response.data);
-                }).catch((error) => {
-                    // Something happened in setting up the request that triggered an Error
-                    this.setState({
-                        warning: `Tekkis viga ${error}`,
-                        warningType: 'error'
-                    });
-                    rejected(error);
+                    this.forceUpdate()
 
-                    console.error('Error', error);
+                } else {
+                    this.setState({warning: 'Edukalt', warningType: 'ok'})
+                }
+                resolved(response.data);
+            }).catch((error) => {
+                // Something happened in setting up the request that triggered an Error
+                this.setState({
+                    warning: `Tekkis viga ${error}`,
+                    warningType: 'error'
                 });
-            });
-        } catch (e) {
-            console.error(e);
-            this.setState({
-                warning: `Tekkis viga ${e}`,
-                warningType: 'error'
-            });
+                rejected(error);
 
-        }
+                console.error('Error in fetch', error);
+            });
+        });
     }
 
     /**
@@ -792,8 +792,6 @@ Documents.propTypes = {
 Documents.defaultProps = {
     module: 'lapsed'
 };
-
-
 
 
 module.exports = (Documents);

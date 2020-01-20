@@ -67,6 +67,7 @@ class Vmk extends React.Component {
                                  createGridRow={this.createGridRow}
                                  gridValidator={this.gridValidateFields}
                                  recalcDoc={this.recalcDocSumma}
+                                 focusElement={'input-number'}
         />
 
     }

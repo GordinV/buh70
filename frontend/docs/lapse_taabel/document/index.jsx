@@ -71,7 +71,6 @@ class Laps extends React.PureComponent {
                                  renderer={this.renderer}
                                  handleGridBtnClick={this.handleGridBtnClick}
                                  history={this.props.history}
-                                 focusElement={'input-kood'}
         />
     }
 

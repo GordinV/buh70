@@ -52,6 +52,7 @@ class Teatis extends React.PureComponent {
                                  libs={LIBRARIES}
                                  pages={this.pages}
                                  renderer={this.renderer}
+                                 focusElement={'input-number'}
         />
     }
 

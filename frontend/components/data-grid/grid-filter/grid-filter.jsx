@@ -88,6 +88,15 @@ class GridFilter extends React.PureComponent {
         if (this.props.handler) {
             this.props.handler(data);
         }
+
+
+        // если указан элемент , то установим на него фокус
+        if (this.props.focusElement) {
+            const focusElement = this.refs[this.props.focusElement];
+            if (focusElement) {
+                focusElement.focus()
+            }
+        }
     }
 
     // will update state if props changed
