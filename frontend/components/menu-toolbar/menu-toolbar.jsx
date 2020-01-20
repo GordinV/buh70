@@ -11,6 +11,7 @@ const React = require('react'),
     BtnStart = require('./../button-register/button-register-start/button-register-start.jsx'),
     BtnLogin = require('./../button-register/button-login/button-login.jsx'),
     BtnEdit = require('./../button-register/button-register-edit/button-register-edit.jsx'),
+    BtnInfo = require('./../button-register/button-info/index.jsx'),
     StartMenu = require('./../start-menu/start-menu.jsx'),
     SelectRekv = require('./../select-rekv/index.jsx'),
     BtnAccount = require('./../button-register/button-account/button-account.jsx');
@@ -54,6 +55,10 @@ class MenuToolBar extends React.Component {
                 btnAccount: {
                     show: this.state.logedIn || false,
                     disabled: false
+                },
+                btnInfo: {
+                    show: true,
+                    disabled: false
                 }
             };
 
@@ -66,20 +71,20 @@ class MenuToolBar extends React.Component {
             });
 
             // сортировка
-            userAccessList = userAccessList.sort((a,b)=> {
+            userAccessList = userAccessList.sort((a, b) => {
                 return a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
             });
 
         }
 
         let rekvId = this.state.rekvId,
-            asutus = userAccessList.find(row=> {
+            asutus = userAccessList.find(row => {
                 return row.id == rekvId
             }).name;
 
         return (
             <div style={style['container']}>
-                <p style = {style['pageName']}> {DocContext.pageName ? DocContext.pageName: 'Laste register'} </p>
+                <p style={style['pageName']}> {DocContext.pageName ? DocContext.pageName : 'Laste register'} </p>
                 <ToolbarContainer
                     ref='menuToolbarContainer'
                     position="left">
@@ -115,6 +120,9 @@ class MenuToolBar extends React.Component {
                               onClick={this.btnLoginClick}
                               show={toolbarParams['btnLogin'].show}
                               disabled={toolbarParams['btnLogin'].disabled}/>
+                    <BtnInfo ref='btnInfo'
+                             value={'Juhend'}
+                             show={toolbarParams['btnInfo'].show}/>
                 </ToolbarContainer>
                 {this.renderStartMenu()}
 
@@ -216,10 +224,12 @@ class MenuToolBar extends React.Component {
             let userId = this.state.logedIn ? DocContext.userData.userId : null;
             let uuid = this.state.logedIn ? DocContext.userData.uuid : null;
 
-            const params = {userId: userId,
+            const params = {
+                userId: userId,
                 module: DocContext.module,
                 docTypeId: DocContext.docTypeId,
-                uuid: uuid};
+                uuid: uuid
+            };
 
             this.setState({rekvId: rekvId});
 

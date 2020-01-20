@@ -48,6 +48,7 @@ module.exports = function (app) {
     app.get('/multiple_print/:documentType/:uuid/:id/', require('./multiple_print').get); //checkAuth
     app.get('/print/:documentType/:uuid/', require('./print').get); //checkAuth
 
+    app.get('/help/:documentType?/', require('./help').get); //checkAuth
 
     app.get('/reports/child_age/:uuid/:filter/:params*?',require('./reports/child_age').get);
     app.get('/reports/ebatoenaolised/:uuid/:filter/:params*?',require('./reports/ebatoenaolised').get);

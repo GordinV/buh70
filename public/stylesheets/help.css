@@ -1,0 +1,15 @@
+.body_wrapper {
+    margin-left:5%;
+    width:auto;
+}
+
+.doc_wrapper {
+    margin-left:5%;
+    margin-top:5%;
+    width:auto;
+}
+
+@page {
+    size: auto;   /* auto is the initial value */
+    margin: 5px 5px;  /* this affects the margin in the printer settings */
+}
