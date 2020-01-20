@@ -14,17 +14,18 @@ class ModalPage extends React.PureComponent {
         this.changeVisibilityModalPage.bind(this);
         this.state = {
             show: this.props.show
-        }
+        };
+        this.onKeyUp = this.onKeyUp.bind(this);
     }
 
     changeVisibilityModalPage() {
         let visibility = this.state.show;
-        this.setState({show:!visibility});
+        this.setState({show: !visibility});
     }
 
     // will update state if props changed
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.show !== prevState.show ) {
+        if (nextProps.show !== prevState.show) {
             return {show: nextProps.show};
         } else return null;
     }
@@ -39,22 +40,42 @@ class ModalPage extends React.PureComponent {
         }
     }
 
+    onKeyUp(e) {
+        switch (e.key) {
+            case 'Enter':
+                if (this.refs['btnOk']) {
+                    this.handleBtnClick('Ok');
+                }
+                break;
+            case 'Escape':
+                if (this.refs['btnCancel']) {
+                    this.handleBtnClick('Cancel');
+                }
+                break;
+        }
+    }
+
     render() {
         // если передан атрибу modalObjects = ['btnOk','btnCancel']
         let hideBtnOk = this.props.modalObjects.indexOf('btnOk') == -1 ? false : true, // управление кнопкой Ок
             hideBtnCancel = this.props.modalObjects.indexOf('btnCancel') == -1 ? false : true, // управление кнопкой Cancel
-            displayModal = this.state.show ? 'flex': 'none' ,
-            pagePosition =  this.props.position,
-            containerStyle = Object.assign({}, styles.container, {display: displayModal}, {justifyContent:pagePosition}),
+            displayModal = this.state.show ? 'flex' : 'none',
+            pagePosition = this.props.position,
+            containerStyle = Object.assign({}, styles.container, {display: displayModal}, {justifyContent: pagePosition}),
             buttonOkStyle = Object.assign({}, styles.modalPageButtons, styles.defaultButton);
 
 
         return (
-            <div ref="container" style={containerStyle}>
+            <div
+                ref="container"
+                style={containerStyle}
+                onKeyUp={this.onKeyUp}
+            >
                 <div style={styles.modalPage} ref='modalPageContainer'>
                     <div style={styles.header} ref='modalPageHeader'>
                         <span ref='headerName' style={styles.headerName}> {this.props.modalPageName} </span>
-                        <Button style={styles.buttonClose} ref="btnClose" onClick={this.changeVisibilityModalPage.bind(this)} value="x" />
+                        <Button style={styles.buttonClose} ref="btnClose"
+                                onClick={this.changeVisibilityModalPage.bind(this)} value="x"/>
                     </div>
                     <div style={styles.modalPageContent} ref="modalPageContent">
                         {this.props.children}
@@ -66,8 +87,8 @@ class ModalPage extends React.PureComponent {
                                 ref="btnOk"
                                 value="Ok"
                                 style={buttonOkStyle}
-                                width={('width' in styles.modalPageButtons)? styles.modalPageButtons.width: null}
-                                height={('height' in styles.modalPageButtons)? styles.modalPageButtons.height: null}
+                                width={('width' in styles.modalPageButtons) ? styles.modalPageButtons.width : null}
+                                height={('height' in styles.modalPageButtons) ? styles.modalPageButtons.height : null}
                                 onClick={this.handleBtnClick.bind(this, 'Ok')}
                                 id='btnOk'>
                                 <img ref="image" src={buttonStyles.icons['ok']}/>
@@ -79,8 +100,8 @@ class ModalPage extends React.PureComponent {
                                 ref="btnCancel"
                                 value="Cancel"
                                 style={styles.modalPageButtons}
-                                width={('width' in styles.modalPageButtons)? styles.modalPageButtons.width: null}
-                                height={('height' in styles.modalPageButtons)? styles.modalPageButtons.height: null}
+                                width={('width' in styles.modalPageButtons) ? styles.modalPageButtons.width : null}
+                                height={('height' in styles.modalPageButtons) ? styles.modalPageButtons.height : null}
                                 onClick={this.handleBtnClick.bind(this, 'Cancel')}
                                 className='modalPageButtons'
                                 id='btnCancel'>
@@ -93,6 +114,7 @@ class ModalPage extends React.PureComponent {
         )
     }
 }
+
 /*
 ModalPage.propTypes = {
     modalPageName: PropTypes.string.isRequired,
