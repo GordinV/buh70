@@ -1,16 +1,13 @@
-html(lang="et")
-    head
-        meta(charset='utf-8')
-        link(rel='stylesheet', href='/stylesheets/help.css')
-    body
-        div.doc_wrapper
-            h1 LEHT "Sisselogimine"
+extends help_header
+block content
+    div.doc_wrapper
+        h1 LEHT "Sisselogimine"
 
-            p Sisselogimiseks vaja sisestage oma kasutajatunnus ja parool. Pärast vajuta nupp Sisse
-            br
-            img(src='/images/help/login.png' alt='Sisselogimine')
-            br
-            br
-            a(href="/help") Indeks
+        p Sisselogimiseks vaja sisestage oma kasutajatunnus ja parool. Pärast vajuta nupp Sisse
+        br
+        img(src='/images/help/login.png' alt='Sisselogimine')
+        br
+        br
+        a(href="/help") Indeks
 
 

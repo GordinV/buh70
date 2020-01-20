@@ -1,28 +1,25 @@
-html(lang="et")
-    head
-        meta(charset='utf-8')
-        link(rel='stylesheet', href='/stylesheets/help.css')
-    body
-        div.doc_wrapper
-            h1 LEHT "Menu"
-            br
-            p Vasak nurgas asub menu nupp
-            img(src='/images/icons/start.png')
-            br
-            img(src='/images/help/start_menu_1.png')
-            p Hiirega valime vajaliku menu punkt. Kohe toimub valitud lehele suunamine
-            br
-            p Menus on järgmised gruppid
-            a(href="/help/reports") - Aruanned
-            br
-            a(href="/help/docs") - Dokumendid
-            br
-            a(href="/help/libraries") - Püsiandmed
-            br
-            a(href="/help/service") - Häälestamine
-            br
-            p Iga gruppi all asuvad saadal ressursid
-            br
-            a(href="/help") Indeks
+extends help_header
+block content
+    div.doc_wrapper
+        h1 LEHT "Menu"
+        br
+        p Vasak nurgas asub menu nupp
+        img(src='/images/icons/start.png')
+        br
+        img(src='/images/help/start_menu_1.png')
+        p Hiirega valime vajaliku menu punkt. Kohe toimub valitud lehele suunamine
+        br
+        p Menus on järgmised gruppid
+        a(href="/help/reports") - Aruanned
+        br
+        a(href="/help/docs") - Dokumendid
+        br
+        a(href="/help/libraries") - Püsiandmed
+        br
+        a(href="/help/service") - Häälestamine
+        br
+        p Iga gruppi all asuvad saadal ressursid
+        br
+        a(href="/help") Indeks
 
 
