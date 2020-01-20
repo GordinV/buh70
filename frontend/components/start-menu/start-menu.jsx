@@ -84,7 +84,10 @@ class StartMenu extends React.PureComponent {
                         }
                     })
                     .catch(error => {
-                        console.error('received error-> ', error)
+                        console.error('received error-> ', error);
+                        if (error) {
+                            document.location = `/login`;
+                        }
                     });
             } else {
                 this.treeData = DocContext.libs['menu'];

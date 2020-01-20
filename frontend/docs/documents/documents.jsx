@@ -353,7 +353,12 @@ class Documents extends React.Component {
                 })
                 .then((data) => {
                     if (data.error_message) {
-                        this.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'})
+                        this.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
+                        if (data.status && data.status == 401) {
+                            setTimeout(() => {
+                                document.location = `/login`;
+                            },1000);
+                        }
                     } else {
                         this.fetchData('selectDocs')
                     }
