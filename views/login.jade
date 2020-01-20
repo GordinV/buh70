@@ -3,6 +3,7 @@ block content
     link(rel='stylesheet', href='/stylesheets/login.css')
     h1= 'Lapsed'
     h2= 'Sisselogimine'
+    br
     p= 'Sissesta kasutaja nimi ja parool'
     form(name="login-form", method="post")
         div.loginForm
@@ -16,3 +17,10 @@ block content
                 input(type='submit', value='Sisse' class='loginSubmit')
 
         label.labelErrorMessage #{errorMessage}
+    br
+    br
+    br
+    a(href="/help/login")
+        img(src='/images/icons/info.png')
+        span Abi
+
