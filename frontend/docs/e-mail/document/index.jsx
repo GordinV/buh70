@@ -10,6 +10,7 @@ const InputText = require('../../../components/input-text/input-text.jsx'),
     BtnGetPdf = require('./../../../components/button-register/button-pdf/index.jsx'),
     ToolbarContainer = require('../../../components/toolbar-container/toolbar-container.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
+    BtnInfo = require('./../../../components/button-register/button-info/index.jsx'),
     styles = require('./styles');
 
 
@@ -48,6 +49,11 @@ class Email extends React.Component {
                         onClick={this.btnEmailClickHandler}
                         disabled={!hasEmail}
                     />
+                    <BtnInfo ref='btnInfo'
+                             value={''}
+                             docTypeId={'email_document'}
+                             show={true}/>
+
                 </ToolbarContainer>
                 <ToolbarContainer ref='toolbar-container'>
                     <div className='doc-toolbar-warning' style={warningStyle}>
