@@ -6,6 +6,7 @@ const React = require('react'),
     styles = require('./styles'),
     DataGrid = require('../../components/data-grid/data-grid.jsx'),
     Button = require('./../../components/button-register/button-register.jsx'),
+    BtnInfo = require('./../button-register/button-info/index.jsx'),
     ModalPage = require('./../../components/modalpage/modalPage.jsx');
 
 const gridConfig = [
@@ -58,6 +59,12 @@ class ShowLogs extends React.PureComponent {
                 show={true}
                 modalPageBtnClick={this.modalPageClick}
                 modalPageName='Loggid'>
+                <div style={styles.btnInfo}>
+                    <BtnInfo ref='btnInfo'
+                             value={''}
+                             docTypeId={'logid'}
+                             show={true}/>
+                </div>
                 <div ref="grid-row-container">
                     <DataGrid gridData={this.props.data.data}
                               gridColumns={gridConfig}

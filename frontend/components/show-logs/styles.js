@@ -9,4 +9,8 @@ module.exports = {
         icon:     '/images/icons/info.png',
         width: '10%'
     },
+    btnInfo: {
+        display: 'flex',
+        flexDirection: 'row-reverse'
+    }
 };
