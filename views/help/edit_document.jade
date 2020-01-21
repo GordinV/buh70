@@ -2,6 +2,23 @@ extends help_header
 block content
     div.doc_wrapper
         h1 LEHT "Dokumendi parandamine"
+        p Dokumendi paramdamiseks vajutame nupp Muuda
+        img(src='/images/help/muuda_1.png')
+        br
+        p Sisestame kõik vajalikud andmed
+        p kui tähtis infot puudub, tuleb teavitus kollase värviga
+        img(src='/images/help/create_2.png')
+        br
+        p andmete salvestamiseks vajutage nupp Save või Salvesta ehk cancel või katkesta kui ei taha salvesta parandused
+        img(src='/images/help/create_4.png')
+        br
+        p Roheline teavitus kinnitab et salvestamine oli edukalt,  teistpidi tuleb punane värviga teatis informeerib mis viga oli
+        br
+        p Iga muudatus registreeritakse
+        a(href="/help/logid")
+            span  logiraamatus
+        img(src='/images/help/create_5.png')
+
 
     include help_footer
 
