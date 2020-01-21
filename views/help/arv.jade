@@ -2,6 +2,105 @@ extends help_header
 block content
     div.doc_wrapper
         h1 LEHT "Arved"
+        br
+        h3 Register
+        p Selline register koguneb väljastatud arved.
+        p Register asub menust Dokumendid -> arved
+        br
+        p Baasi funktsionaalsus nagu kõik teistes
+            a(href="/help/registers")
+                span  registris
+        br
+        img(src='/images/help/arv_1.png')
+
+        p Tabelis on number, kuupäev, maksja, arve summa, tähtaeg, dok. jääk, lekumiste summa, lapse nimi, lapse isikukood, viitenumber ja arve tüüp
+        br
+        h3 registri täiendav funktsionalsus
+        p - Saama XML e-arved
+        img(src='/images/help/arv_2.png')
+        p salvestab XML fail
+        br
+        p - Saada E-Arved (Omniva)
+        img(src='/images/help/arv_3.png')
+        p Võtab ühendus Omnivaga ja saadab kõik valitud arved.
+        p Ainult need arved üleannatakse kus maksjatel oli luba
+            a(href="/help/vanem")
+                span   luba
+            span  kasutada e-arve
+
+        br
+        p - Email kõik valitud arved
+        img(src='/images/help/arv_4.png')
+        p Saadab maksjatele arved PDF formatis emailiga.
+        p Ainult need arved üleannatakse kus maksjatel oli luba
+            a(href="/help/vanem")
+                span   luba
+            span  kasutada email ja emaili aadress salvestatud
+                a(href="/help/asutused")
+                        span   kontr-agentide registris
+        br
+        p - Trükk kõik valitud arved
+        img(src='/images/help/arv_5.png')
+        p Prindib kõik valitud arved (avab uues lehekülgi)
+        p Ainult need arved üleannatakse kus maksjatel oli luba
+            a(href="/help/vanem")
+                span   luba
+            span  väljastada arved paberi kandjal
+
+        p - Häälestamine
+        img(src='/images/help/arv_6.png')
+        p Suunab
+            a(href="/help/config")
+                span   konfiguratsiooni
+            span  lehele,kus asub omniva serveri andmed
+        br
+        h3 Dokument
+        img(src='/images/help/arv_7.png')
+        p - number
+        p - kpv
+        p - om. vorm
+        p - tähtaeg
+        p - maksja
+        p - lapse nimi
+        p - lisa
+        p - viitenumber (genereeritakse automatselt)
+        p - märkused
+        p - teenused ja summa
+        br
+        h3 Arve teenuse parandamine
+        img(src='/images/help/arv_8.png')
+        p vajuta nuppud Lisa ehk Muuda teenuse rea parandamiseks
+        br
+        p Dokumendi summad, jääk arvestatakse automatselt
+        br
+        img(src='/images/help/arv_9.png')
+        p Kui dokument sisaldab seotud dokumendid, nende lingid asuvad ülemises nurgas nagu lehed.
+        p Klikkige hiirega leht seotud dokumendi avamiseks
+        br
+        h3 Dokumendi täiendav funktsionalsus
+        br
+        img(src='/images/help/arv_10.png')
+        p vajuta nupp lisa ülesannete valimiseks
+        p - Koostab
+            a(href="/help/smk")
+                span  maksekorraldus
+            span  koostab uus maksekoraldus arve infost ja vormistab arve tasumine
+        p - Koostab
+            a(href="/help/sorder")
+                span  kassaorder
+            span  koostab uus kassaorder  arve infost ja vormistab arve tasumine
+
+        p Andmete
+            a(href="/help/add_document")
+                span  lisamine,
+            a(href="/help/edit_document")
+                span  parandamine,
+            a(href="/help/print_document")
+                span  printimine,
+            a(href="/help/email_document")
+                span  email,
+            a(href="/help/logid")
+                span  logid
 
     include help_footer
 
