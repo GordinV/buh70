@@ -3,7 +3,79 @@ block content
     div.doc_wrapper
         h1 LEHT "LAPS"
         h3 Register
+        img(src='/images/help/laps_1.png')
+        p Laste register näitab kõik lapsed, kellel on kehtiv teenused valitud asutuses.
+        p Tabelis on lapse isikukood, nimi, viitenumber üksus (või grupp).
+
+        h3 Täiendav funktsionalsus
+        p Tabeli koostamine
+        img(src='/images/help/laps_2.png')
+        p Käivitab
+            a(href="/help/lapse_taabel")
+                span  tabeli arvestamine
+        p Pärast edukalt lõpetatud arvestust programm suunata tabeli lehekülge
+
+        p Arve koostamine
+        img(src='/images/help/laps_3.png')
+
+        p Käivitab
+            a(href="/help/arv")
+                span  arvete arvestamine
+        p Pärast edukalt lõpetatud arvestust programm suunata arvete lehekülge
+
+        p Ettemaksuarve koostamine
+        img(src='/images/help/laps_4.png')
+        p Käivitab
+            a(href="/help/arv")
+                span  ettemaksuarvete arvestamine
+        p Pärast edukalt lõpetatud arvestust programm suunata arvete lehekülge
+
+        p Import
+        p Ainult programmi administratoori jaoks. Importeeritab laste andmed.
+
         h3 Dokument
+        img(src='/images/help/laps_5.png')
+        p koguneb kõik lapse andmed
+        p - lapse isikukood,
+        p - lapse nimi
+        p - lapse viitenumber
+        p - märkused
+        p jääk ja viitenumber arvestatakse automatselt
+        br
+        a(href="/help/vanem") seotatud lapsega sugulased
+        img(src='/images/help/laps_8.png')
+        p kui vaja ava vanemate leht, siis vajutame nupp Muuda
+        p kui vaja lisada  vanem, siis vajutame nupp Lisa
+        p kui vaja kustuta ära side koos vanematega, siis vajutame nupp Kustuta
+        br
+        a(href="/help/lapse_kaart") seotatud lapsega teenused
+        img(src='/images/help/laps_9.png')
+        p kui vaja ava vanemate leht, siis vajutame nupp Muuda
+        p kui vaja lisada  vanem, siis vajutame nupp Lisa
+        p kui vaja kustuta ära side koos vanematega, siis vajutame nupp Kustuta
+        br
+        p Täiendatav funktsionalsus
+        br
+        a(href="/help/lisa_document") Lisa uus laps
+        br
+        a(href="/help/edit_document") Parandada andmed
+        br
+        a(href="/help/print_document") Prindi andmed
+        br
+        a(href="/help/email_document") Saada andmed emailiga
+        br
+        a(href="/help/logid") ava dokumendi logid
+        br
+        p paremal nurgas on mitme ülesande valik
+        img(src='/images/help/laps_7.png')
+        p kus on
+        a(href="/help/lapse_taabel") Arvesta tabel
+        img(src='/images/help/laps_6.png')
+        br
+        a(href="/help/arv") Koosta arve tabeli alusel
+        br
+        a(href="/help/arv") Koosta ettemaksuarve
+
 
     include help_footer
 
