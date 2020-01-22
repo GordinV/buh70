@@ -2,6 +2,47 @@ extends help_header
 block content
     div.doc_wrapper
         h1 LEHT "Vanemate register"
+        br
+        h3 Register
+        p Selline register koguneb andmed lapse vanemad järgi.
+        p Register asub menust Püsiandmed -> Vanemate register
+        img(src='/images/help/vanem_1.png')
+        br
+        p Baasi funktsionaalsus nagu kõik teistes
+            a(href="/help/registers")
+                span  registris
+        br
+        p Tabelis on isikukood, nimi, email ja lapsed
+        br
+        h3 Dokument
+        img(src='/images/help/vanem_2.png')
+        p - seotatud isikukaart kontr-agentise registrist
+        img(src='/images/help/vanem_4.png')
+        a(href="/help/asutused")
+            span  avab isikukaart
+        p - sugulus
+        p - kas isik vastab arvelduse eest
+        p - kas isik aktsepteerib arve paberi kandjal
+        p - kas isik aktsepteerib e-arve
+        p - kas isik aktsepteerib arved emailis
+        p - märkused
+        p - lapsed
+        br
+        p olemas ka lühike tee kõikide seotud dokumentidele
+        img(src='/images/help/vanem_3.png')
+        br
+        p Andmete
+            a(href="/help/add_document")
+                span  lisamine,
+            a(href="/help/edit_document")
+                span  parandamine,
+            a(href="/help/print_document")
+                span  printimine,
+            a(href="/help/email_document")
+                span  email,
+            a(href="/help/logid")
+                span  logid
+
 
     include help_footer
 
