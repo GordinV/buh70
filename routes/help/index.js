@@ -9,13 +9,19 @@ exports.get = async (req, res) => {
         if (docTypeId) {
             template = `help/${docTypeId.toLowerCase()}`;
         }
-        console.log('help', docTypeId, template);
-
     try {
         // вернуть отчет
-        res.render(template);
+        res.render(template, (err, html)=> {
+            if (err) {
+                console.error('no teplate, redirect to index:', err);
+                res.render(`help/index`);
+
+            } else {
+                res.send(html);
+            }
+        });
     } catch (error) {
-        console.error('error:', error);
+        console.error('help  error:', error);
         res.send({status: 500, result: 'Error'});
 
     }
