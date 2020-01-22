@@ -2,6 +2,26 @@ extends help_header
 block content
     div.doc_wrapper
         h1 LEHT "Konfiguratsioon"
+        br
+        p Seisab tehnisise info
+        p Asub menust Häälestamine -> Konfiguratsioon
+        img(src='/images/help/config_1.png')
+        p Dokument sisaldab
+        p - arve numbri prefiks
+        p - arve tähtpäev
+        p - arve võlgnevuse limiit
+        p - omniva serveri aadress
+        br
+        p Andmete
+            a(href="/help/edit_document")
+                span  parandamine,
+            a(href="/help/print_document")
+                span  printimine,
+            a(href="/help/email_document")
+                span  email,
+            a(href="/help/logid")
+                span  logid
+
 
     include help_footer
 
