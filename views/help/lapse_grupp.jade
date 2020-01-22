@@ -1,0 +1,50 @@
+extends help_header
+block content
+    div.doc_wrapper
+        h1 LEHT "lastegruppid"
+        br
+        h3 Register
+        p Selline register vormistab asutuse struktuur.
+        p Register asub menust Püsiandmed -> Lastegruppid
+        img(src='/images/help/grupp_1.png')
+        br
+        p Baasi funktsionaalsus nagu kõik teistes
+            a(href="/help/registers")
+                span  registris
+        br
+        p Tabelis on kood, nimetus ja all üksused
+        br
+        h3 Täiendav funktsionalsus
+        p Import
+        p Ainult programmi administratoori jaoks. Importeeritab laste andmed.
+        br
+        h3 Dokument
+        img(src='/images/help/grupp_2.png')
+        p - kood
+        p - nimetus
+        p - gruppi liik
+        p - koolituse tüüp
+        p - all üksused
+        p - teenused, hinnad ja teenuste kogus mis pakuvad selles grupis
+        p - märkused
+        br
+        h3 Dokumendi täiendav funktsionalsus
+        p - Uuenda hinnad
+        img(src='/images/help/grupp_3.png')
+        p - Kõikede gruppi liikmes hinnad sünkroniseeritatakse
+        br
+        p Andmete
+            a(href="/help/add_document")
+                span  lisamine,
+            a(href="/help/edit_document")
+                span  parandamine,
+            a(href="/help/print_document")
+                span  printimine,
+            a(href="/help/email_document")
+                span  email,
+            a(href="/help/logid")
+                span  logid
+
+    include help_footer
+
+
