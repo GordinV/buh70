@@ -2,6 +2,67 @@ extends help_header
 block content
     div.doc_wrapper
         h1 LEHT "Sissemakse kassaorder"
+        br
+        h3 Register
+        p Selline register koguneb sissemakse kassaorderid.
+        p Register asub menust
+            a(href="/help/docs")
+                span  Dokumendid
+            span  -> Sissemakse kassaorderid
+
+        br
+        img(src='/images/help/sorder_1.png')
+
+        p Baasi funktsionaalsus nagu kõik teistes
+            a(href="/help/registers")
+                span  registris
+        br
+        p Tabelis on kuupäev, number, kassa, maksja nimi,  summa, lapse nimi ja isikukood, korr. konto
+        br
+        h3 Dokument
+        img(src='/images/help/sorder_2.png')
+        p - number
+        p - kuupäev
+        p - kassa
+        a(href="/help/asutused")
+            p - maksja
+        a(href="/help/arv")
+            p - arve nr
+        p - dokument
+        p - raha saaja nimi
+        p - raha saaja aadress
+        p - alus
+        p - makse teenused ja summa
+        p - märkused
+        br
+        h3 Kassaordiri teenuse parandamine
+        p vajuta dokumendi nupp Muuda rea parandamiseks
+        img(src='/images/help/sorder_3.png')
+        p vajuta nuppud Lisa ehk Muuda teenuse rea parandamiseks
+        br
+        p Dokumendi summa arvestatakse automatselt
+        br
+        img(src='/images/help/sorder_4.png')
+        p Kui dokument sisaldab seotud dokumendid, nende lingid asuvad ülemises nurgas nagu lehed.
+        p Klikkige hiirega leht seotud dokumendi avamiseks
+        br
+        h3 Dokumendi täiendav funktsionalsus
+        br
+        p Juhul kui korralduses määratud arve siis toimub arve makse protseduur. Makse korraldus vormistatakse arve andmete alusel.
+        img(src='/images/help/smk_6.png')
+
+        p Andmete
+            a(href="/help/add_document")
+                span  lisamine,
+            a(href="/help/edit_document")
+                span  parandamine,
+            a(href="/help/print_document")
+                span  printimine,
+            a(href="/help/email_document")
+                span  email,
+            a(href="/help/logid")
+                span  logid
+
 
     include help_footer
 
