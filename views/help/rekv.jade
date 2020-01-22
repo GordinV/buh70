@@ -2,6 +2,33 @@ extends help_header
 block content
     div.doc_wrapper
         h1 LEHT "Asutuse andmed"
+        br
+        p Seisab asutuse andmed
+        p Avamiseks vajuta nupp Muuda paremal asutuse nimelt
+        img(src='/images/help/rekv_1.png')
+        p Dokument sisaldab
+        p - reg. number
+        p - kbm. kood
+        p - nimetus
+        p - täisnimetus (kasutatakse dokumentides)
+        p - aadress
+        p - juhataja
+        p - raamatupidaja
+        p - email
+        p - omniva salasõna ( kasutatakse omniva andmete vahetusele)
+        p - oma TP kood
+        p - pangade arveid
+        img(src='/images/help/rekv_2.png')
+        br
+        p Andmete
+            a(href="/help/edit_document")
+                span  parandamine,
+            a(href="/help/print_document")
+                span  printimine,
+            a(href="/help/email_document")
+                span  email,
+            a(href="/help/logid")
+                span  logid
 
     include help_footer
 
