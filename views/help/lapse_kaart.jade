@@ -2,6 +2,58 @@ extends help_header
 block content
     div.doc_wrapper
         h1 LEHT "Teenused lastele"
+        br
+        h3 Register
+        p Selline register koguneb teenused lastele.
+        p Register asub menust Püsiandmed -> Teenused Lastele
+        img(src='/images/help/teen_1.png')
+        br
+        p Baasi funktsionaalsus nagu kõik teistes
+            a(href="/help/registers")
+                span  registris
+        br
+        p Tabelis on isikukood, lapse nimi, viitenumber, teenuse kood ja nimetus, teenuse hind, soodustus, ühik, grupp ja all.üksused, teenuse kehtivus, kas teenus on INF3
+        br
+        h3 Täiendav funktsionalsus
+        p Muuda ettemaksu period
+        img(src='/images/help/teen_2.png')
+        p Salvestab kõikede selle gruppi lastele ettemaksu period, kui teemal on teenused seotud ettemaksu arveldusega
+        br
+        h3 Dokument
+        img(src='/images/help/teen_3.png')
+        a(href="/help/registers")
+            p - lapse nimi
+        a(href="/help/lapse_grupp")
+            p - üksus
+        p - all üksus
+        a(href="/help/lapse_grupp")
+            p - teenuse kood
+        p - hind ja kogus
+        a(href="/help/tunnus")
+            p - eri tunnus
+        p - teenuse kehtuse kuupäevad
+        p - kas ettemaksu teenus
+        p - kas selle teenuse eest vormitakse eraldi arve
+        p - kas see teenus on INF3
+        p - kas on soodustus, soodustuse alg ja lõpp kuupäevad
+        p - märkused
+        br
+        h3 Dokumendi täiendav funktsionalsus
+        p - Uuenda hinnad
+        img(src='/images/help/grupp_3.png')
+        p - Kõikede gruppi liikmes hinnad sünkroniseeritatakse
+        br
+        p Andmete
+            a(href="/help/add_document")
+                span  lisamine,
+            a(href="/help/edit_document")
+                span  parandamine,
+            a(href="/help/print_document")
+                span  printimine,
+            a(href="/help/email_document")
+                span  email,
+            a(href="/help/logid")
+                span  logid
 
     include help_footer
 
