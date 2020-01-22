@@ -2,6 +2,29 @@ extends help_header
 block content
     div.doc_wrapper
         h1 LEHT "Kasutaja andmed"
+        br
+        p Seisab kasutaja andmed
+        p Avamiseks vajuta nupp Kasutaja nimega
+        img(src='/images/help/user_2.png')
+        p Dokument sisaldab
+        p - kasutaja tunnus
+        p - kasutaja nimi
+        p - email
+        p - emaili serveri aadress (SMTP)
+        p - emaili serveri port (465)
+        p - emaili serveri kasutaja
+        p - emaili serveri kasutaja parool
+        img(src='/images/help/user_1.png')
+        br
+        p Andmete
+            a(href="/help/edit_document")
+                span  parandamine,
+            a(href="/help/print_document")
+                span  printimine,
+            a(href="/help/email_document")
+                span  email,
+            a(href="/help/logid")
+                span  logid
 
     include help_footer
 
