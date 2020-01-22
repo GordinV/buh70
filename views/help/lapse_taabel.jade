@@ -2,6 +2,44 @@ extends help_header
 block content
     div.doc_wrapper
         h1 LEHT "Teenuste taabel lastele"
+        br
+        h3 Register
+        p Selline register seisab külastuste (teenuse kogus) andmed.
+        p Register asub menust
+            a(href="/help/libraries")
+                span  Püsiandmed
+            span  -> Teenuste taabel lastele
+
+        img(src='/images/help/taabel_1.png')
+        br
+        p Baasi funktsionaalsus nagu kõik teistes
+            a(href="/help/registers")
+                span  registris
+        br
+        p Tabelis on laste isikukood, nimi, teenuste nimetus, grupp ja all üksused, kuu ja assta, kogus, hind,  ühik, kasutatud soodustus ja teenuse summa
+        br
+        h3 Dokument
+        img(src='/images/help/taabel_2.png')
+        a(href="/help/laps")
+            p - laps
+        a(href="/help/nomenclature")
+            p - teenus
+        p - teenuse kogus
+        p - kuu
+        p - aasta
+        p - märkused
+        br
+        p Andmete
+            a(href="/help/add_document")
+                span  lisamine,
+            a(href="/help/edit_document")
+                span  parandamine,
+            a(href="/help/print_document")
+                span  printimine,
+            a(href="/help/email_document")
+                span  email,
+            a(href="/help/logid")
+                span  logid
 
     include help_footer
 
