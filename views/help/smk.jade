@@ -2,6 +2,70 @@ extends help_header
 block content
     div.doc_wrapper
         h1 LEHT "Sissemakse korraldus"
+        br
+        h3 Register
+        p Selline register koguneb sissemakse korraldused.
+        p Register asub menust Dokumendid -> Sissemakse korraldused
+        br
+        img(src='/images/help/smk_1.png')
+
+        p Baasi funktsionaalsus nagu kõik teistes
+            a(href="/help/registers")
+                span  registris
+        br
+        p maksepäev, korralduse number, maksja nimi, summa, arveldusarve, viitenumber, lapse nimi ja isikukood
+        br
+        h3 registri täiendav funktsionalsus
+        p - maksekorralduste import
+        img(src='/images/help/smk_2.png')
+        p - programm loeab XML fail ja salvestab andmed
+            a(href="/help/pank_vv")
+                span   (väljavõte raamat)
+        p - kui makse sisaldab viitenumber siis programm loeb andmed ja koostab maksekorraldus viitenumbri järgi.
+        p - panga
+            a(href="/help/pank_vv")
+                span   väljavõte raamat
+        p - suunatab registrisse, kus asuvad salvestatud panga väljavõtted
+        br
+        h3 Dokument
+        img(src='/images/help/smk_3.png')
+        p - number
+        p - kpv
+        p - arveldusarve
+        p - arve nr
+        p - maksepäev
+        p - viitenumber
+        p - selgitus
+        p - makse teenused ja summa
+        br
+        h3 MK teenuse parandamine
+        p vajuta dokumendi nupp Muuda rea parandamiseks
+        img(src='/images/help/smk_4.png')
+        p vajuta nuppud Lisa ehk Muuda teenuse rea parandamiseks
+        br
+        p Dokumendi summa arvestatakse automatselt
+        br
+        img(src='/images/help/smk_5.png')
+        p Kui dokument sisaldab seotud dokumendid, nende lingid asuvad ülemises nurgas nagu lehed.
+        p Klikkige hiirega leht seotud dokumendi avamiseks
+        br
+        h3 Dokumendi täiendav funktsionalsus
+        br
+        p Juhul kui korralduses määratud arve siis toimub arve makse protseduur. Makse korraldus vormistatakse arve andmete alusel.
+        img(src='/images/help/smk_6.png')
+
+        p Andmete
+            a(href="/help/add_document")
+                span  lisamine,
+            a(href="/help/edit_document")
+                span  parandamine,
+            a(href="/help/print_document")
+                span  printimine,
+            a(href="/help/email_document")
+                span  email,
+            a(href="/help/logid")
+                span  logid
+
 
     include help_footer
 
