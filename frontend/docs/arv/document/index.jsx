@@ -96,7 +96,6 @@ class Arve extends React.PureComponent {
         if (this.state.lapsId && !self.docData.lapsid) {
             self.docData.lapsid = this.state.lapsId;
         }
-
         return (
             <div>
                 <div style={styles.doc}>

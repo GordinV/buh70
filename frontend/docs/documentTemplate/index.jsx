@@ -38,12 +38,12 @@ class DocumentTemplate extends React.Component {
             logs: []
         };
 
-        this.docData = Object.keys(props.initData).length ? props.initData : {id: this.props.docId};
+        this.docData = Object.keys(props.initData).length ? props.initData : {id: props.docId};
         this.backup = {};
         this.requiredFields = [];
         this.serverValidation = [];
         this.bpm = [];
-        this.pages = this.props.pages || null;
+        this.pages = props.pages;
 
         this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick', 'btnEmailClick',

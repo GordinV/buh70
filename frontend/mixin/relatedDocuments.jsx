@@ -2,13 +2,19 @@
 
 const relatedDocuments = (self) => {
     // формируем зависимости
+    let pages = self.pages;
+    let relatedDocuments = self.docData.relations ? self.docData.relations: [];
+    if (self.pages && self.pages.length && (!self.docData.id || self.docData.id ===0)) {
+        // создаем новый док
+        pages= [self.pages[0]];
+        relatedDocuments = [];
+    }
 
-    let relatedDocuments = self.docData.relations || [];
     if (relatedDocuments.length > 0) {
         relatedDocuments.forEach((doc) => {
             if (doc.id) {
                 // проверим на уникальность списка документов
-                let isExists = self.pages.find((page) => {
+                let isExists = pages.find((page) => {
                     if (!page.docId) {
                         return false;
                     } else {
@@ -18,12 +24,13 @@ const relatedDocuments = (self) => {
 
                 if (!isExists) {
                     // в массиве нет, добавим ссылку на документ
-                    self.pages.push({docTypeId: doc.doc_type, docId: doc.id,
+                    pages.push({docTypeId: doc.doc_type, docId: doc.id,
                         pageName: doc.name + (doc.number ? ' nr:' + doc.number: ' id:' + doc.id)})
                 }
             }
         });
     }
+    self.pages = pages;
 };
 
 module.exports = relatedDocuments;
