@@ -263,6 +263,10 @@ exports.getLogs = async (req, res) => {
     const user = require('../middleware/userData')(req); // данные пользователя
     const Doc = require('./../classes/DocumentTemplate');
     const params = req.body;
+    if (!user || !user.userId) {
+        // ошибка ацтификации
+        return res.status(401).end();
+    }
     const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, params.module.toLowerCase());
 
     const data = await Document.executeTask('getLog');
