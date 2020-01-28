@@ -8,6 +8,14 @@ const ToolbarContainer = require('./../../components/toolbar-container/toolbar-c
 const styles = require('./styles');
 const DOC_TYPE_ID = 'INF3';
 const DocContext = require('./../../doc-context.js');
+const TOOLBAR_PROPS = {
+    add: false,
+    edit: false,
+    delete: false,
+    start: false,
+    print: true,
+    email: true
+};
 
 /**
  * Класс реализует документ справочника признаков.
@@ -24,6 +32,7 @@ class Documents extends React.PureComponent {
                                  history={this.props.history ? this.props.history : null}
                                  module={this.props.module}
                                  ref='register'
+                                 toolbarProps={TOOLBAR_PROPS}
                                  docTypeId={DOC_TYPE_ID}
                                  style={styles}
                                  render={this.renderer}/>;

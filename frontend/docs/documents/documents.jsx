@@ -573,29 +573,38 @@ class Documents extends React.Component {
      * @returns {{btnAdd: {show: boolean, disabled: boolean}, btnEdit: {show: boolean, disabled: boolean}, btnDelete: {show: boolean, disabled: boolean}, btnPrint: {show: boolean, disabled: boolean}}}
      */
     prepareParamsForToolbar() {
+        let toolbarProps = {
+            add: this.props.toolbarProps  ? !!this.props.toolbarProps.add: true,
+            edit: this.props.toolbarProps ? !!this.props.toolbarProps.edit: true,
+            delete: this.props.toolbarProps ? !!this.props.toolbarProps.delete: true,
+            print: this.props.toolbarProps  ? !!this.props.toolbarProps.print: true,
+            email: this.props.toolbarProps  ? !!this.props.toolbarProps.email: true,
+            start: this.props.toolbarProps ? !!this.props.toolbarProps.start: true
+        };
+
         return Object.assign({
             btnAdd: {
-                show: this.docTypeId !== 'DOK', //todo сделать поумнее
+                show: toolbarProps['add'],
                 disabled: false
             },
             btnEdit: {
-                show: true,
+                show: toolbarProps['edit'],
                 disabled: !this.state.value
             },
             btnDelete: {
-                show: true,
+                show: toolbarProps['delete'],
                 disabled: !this.state.value
             },
             btnPrint: {
-                show: true,
+                show: toolbarProps['print'],
                 disabled: false
             },
             btnEmail: {
-                show: true,
+                show: toolbarProps['email'],
                 disabled: false
             },
             btnStart: {
-                show: true
+                show: toolbarProps['start']
             },
             btnLogin: {
                 show: true,

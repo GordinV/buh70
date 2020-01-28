@@ -8,6 +8,14 @@ const DocContext = require('./../../doc-context.js');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'EBATOENAOLISED';
+const TOOLBAR_PROPS = {
+    add: false,
+    edit: false,
+    delete: false,
+    start: false,
+    print: true,
+    email: true
+};
 
 /**
  * Класс реализует документ справочника признаков.
@@ -27,6 +35,7 @@ class Documents extends React.PureComponent {
                                   module={this.props.module}
                                   ref='register'
                                   docTypeId={DOC_TYPE_ID}
+                                  toolbarProps={TOOLBAR_PROPS}
                                   style={styles}
                                   render={this.renderer}/>;
             </div>
