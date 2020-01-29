@@ -4,7 +4,7 @@ module.exports = {
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "10%"},
             {id: "lapse_nimi", name: "Lapse nimi", width: "20%"},
             {id: "number", name: "Arve nr", width: "10%"},
-            {id: "kpv", name: "Kuupäev", width: "10%", type: "date"},
+            {id: "kpv", name: "Kuupäev", width: "10%", type: "date", interval: true},
             {id: "summa", name: "Arve summa", width: "10%", type: "number"},
             {id: "tasutud", name: "Tasutud", width: "10%", type: "number"},
             {id: "jaak", name: "Jääk", width: "10%", type: "number"},
