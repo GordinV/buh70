@@ -30,7 +30,7 @@ const LIBRARIES = [
 
 ];
 
-class Laps extends React.PureComponent {
+class LapseKaart extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
@@ -92,7 +92,6 @@ class Laps extends React.PureComponent {
     renderer(self) {
         let isEditMode = self.state.edited;
 
-
         if ((!Number(self.docData.id) || !self.docData.parentid) && this.state.lapsId) {
             //new record
             self.docData.parentid = this.state.lapsId;
@@ -129,6 +128,8 @@ class Laps extends React.PureComponent {
         } catch (e) {
             console.error(e, nomData);
         }
+            // проверим стоит ли разрешить редактирование
+        let isEditLapsid = !!self.docData.parentid;
 
         return (
             <div style={styles.doc}>
@@ -148,7 +149,7 @@ class Laps extends React.PureComponent {
                                     btnDelete={false}
                                     onChange={self.handleInputChange}
                                     history={this.props.history}
-                                    readOnly={!isEditMode}/>
+                                    readOnly={isEditLapsid}/>
                     </div>
                     <div style={styles.docColumn}>
                         <ButtonEdit
@@ -375,15 +376,16 @@ class Laps extends React.PureComponent {
         );
     }
 
-
+    /**
+     * отработает клик по вкладе и осуществит переход на заданную страницу
+     * @param pageDocTypeId
+     */
     handlePageClick(pageDocTypeId) {
-        //        document.location.href = `/lapsed/${pageDocTypeId}/`;//@todo Обновить
         this.props.history.push(`/lapsed/${pageDocTypeId}`)
     }
 
     //handler for input for this document type
     handleInputChange(inputName, inputValue) {
-
         if (inputName === 'nomid') {
             const Doc = this.refs['document'];
 
@@ -476,17 +478,17 @@ class Laps extends React.PureComponent {
 
 }
 
-Laps.propTypes = {
+LapseKaart.propTypes = {
     docId: PropTypes.number,
     initData: PropTypes.object,
     userData: PropTypes.object,
 };
 
-Laps.defaultProps = {
+LapseKaart.defaultProps = {
     params: {docId: 0},
     initData: {},
     userData: {}
 };
 
 
-module.exports = (Laps);
+module.exports = (LapseKaart);

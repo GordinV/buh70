@@ -58,13 +58,18 @@ class SelectData extends React.PureComponent {
         let isEditeMode = !this.state.readOnly,
             btnStyle = Object.assign({}, styles.button, {display: isEditeMode ? 'inline' : 'none'});
 
+        let isReadOnly = this.props.readOnly;
+        if (this.state.show) {
+            isReadOnly = false
+        }
+
         return (
             <div style={styles.wrapper}>
                 <InputText ref="inputName"
                            title={this.props.title}
                            name={this.props.name}
                            value={this.state.fieldValue || ''}
-                           readOnly={!isEditeMode}
+                           readOnly={isReadOnly}
                            onChange={this.handleInputChange}/>
 
                 <Button value='v'
@@ -119,7 +124,7 @@ class SelectData extends React.PureComponent {
                                title='Otsingu parametrid:'
                                name='gridFilter'
                                value={this.state.fieldValue || ''}
-                               readOnly={false}
+                               readOnly={this.props.readOnly || !this.state.show}
                                onChange={this.handleInputChange}/>
                     <DataGrid gridData={this.state.gridData}
                               gridColumns={this.state.gridConfig}
@@ -141,6 +146,11 @@ class SelectData extends React.PureComponent {
 
     // обработчик события измения значения в текстовом (поисковом) поле
     handleInputChange(name, value) {
+        if (this.props.readOnly) {
+            console.error ('readonly ');
+            return
+        }
+
         if (name === 'gridFilter') {
             // обновим стейт
             this.setState({value: 0, fieldValue: value, show: true}, () => {
@@ -153,6 +163,21 @@ class SelectData extends React.PureComponent {
 
             });
         }
+
+        else {
+
+            this.setState({value: 0, fieldValue: value, show: false}, () => {
+                if (value.length) {
+                    //выполним запрос
+                    setTimeout(() => {
+                        this.loadLibs(value);
+                    }, 1000);
+                }
+
+            });
+
+        }
+
 
         if (name === 'limit') {
             this.setState({limit: value});
@@ -204,7 +229,6 @@ class SelectData extends React.PureComponent {
     }
 
     loadLibs(fieldValue) {
-
         const postUrl = '/newApi/loadLibs';
         let lib = this.props.libName;
         let sqlWhere = '';
@@ -243,7 +267,6 @@ class SelectData extends React.PureComponent {
 
                 if (gridData && gridData.length > 0) {
                     if (isSeachById && !this.state.show) {
-
                         // только одна запись. Грид не нужен
                         this.setState({
                             fieldValue: gridData[0][this.props.boundToGrid],
@@ -252,7 +275,7 @@ class SelectData extends React.PureComponent {
                             gridConfig: gridConfig
                         });
                     } else {
-                        this.setState({gridData: gridData, gridConfig: gridConfig});
+                       this.setState({gridData: gridData, gridConfig: gridConfig, show: true});
                     }
                 }
 
