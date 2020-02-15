@@ -47,6 +47,7 @@ class UploadButton extends React.PureComponent {
 
     modalPage() {
         let modalObjects = this.state.loading ? ['btnCancel'] : ['btnOk', 'btnCancel'];
+        let mimeTypes = this.props.mime ? this.props.mime: ".csv, .xml";
 
         return (
             <ModalPage
@@ -56,7 +57,10 @@ class UploadButton extends React.PureComponent {
                 modalPageBtnClick={this.modalPageClick}
                 modalPageName='Import'>
                 <div style={styles.docRow}>
-                    <input type="file" name="file" onChange={this.onChangeHandler}/>
+                    <input type="file"
+                           name="file"
+                           onChange={this.onChangeHandler}
+                           accept={mimeTypes}/>
                 </div>
                 <div>
                     {this.state.response ? <span>{this.state.response}</span> : null}

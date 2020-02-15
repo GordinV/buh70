@@ -3,7 +3,6 @@ module.exports = async (file, mimeType, user) => {
     const Document = new Doc('PANK_VV', null, user.userId, user.asutusId, 'lapsed');
 
     let rows = [];
-
     try {
         if (mimeType === 'text/xml') {
             rows = await readXML(file);

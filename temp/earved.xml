@@ -1,74 +1,657 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<E_Invoice>
-    <Header>
-        <Date>2017-03-02</Date>
-        <FileId>382505</FileId>
-        <AppId>EARVE</AppId>
-        <Version>1.1</Version>
-    </Header>
-    <Invoice invoiceId="8600017092" regNumber="75014289">
-        <InvoiceParties>
-            <SellerParty>
-                <Name>0860001 Kultuuriosakond</Name>
-                <RegNumber>75024260</RegNumber>
-            </SellerParty>
-            <BuyerParty>
-                <Name>Tallinna Haridusamet KOV</Name>
-                <RegNumber>75014289</RegNumber>
-            </BuyerParty>
-        </InvoiceParties>
-        <InvoiceInformation>
-            <Type type="DEB"/>
-            <DocumentName>Arve</DocumentName>
-            <InvoiceNumber>8600017092</InvoiceNumber>
-            <InvoiceDate>2017-03-02</InvoiceDate>
-        </InvoiceInformation>
-        <InvoiceSumGroup>
-            <InvoiceSum>-55.32</InvoiceSum>
-            <VAT>
-                <VATRate>0</VATRate>
-                <VATSum>0.00</VATSum>
-            </VAT>
-            <TotalSum>-55.32</TotalSum>
-            <Currency>EUR</Currency>
-        </InvoiceSumGroup>
-        <InvoiceItem>
-            <InvoiceItemGroup>
-
-                <ItemEntry>
-                    <Description>Opilaskohad - Narva Kreenholmi Gumnaasium D103000-K322000</Description>
-                    <ItemDetailInfo>
-                        <ItemUnit></ItemUnit>
-                        <ItemAmount>-1.0000</ItemAmount>
-                        <ItemPrice>55.32</ItemPrice>
-                    </ItemDetailInfo>
-                    <ItemSum>-55.32</ItemSum>
-                    <VAT>
-                        <VATRate>0</VATRate>
-                        <VATSum>' + Alltrim(Str(qryeArvedDet.vatSum,14,2))+'</VATSum>'+Chr(13)+;
-                    </VAT>
-                    <ItemTotal>-55.32</ItemTotal>
-                </ItemEntry>
-            </InvoiceItemGroup>
-        </InvoiceItem>
-        <AdditionalInformation>
-            <InformationName>Lisa</InformationName>
-            <InformationContent>Perioodi eest 01-28.02.2017.a (tekkepohised tulud on kajastatud 02.2017)
-            </InformationContent>
-        </AdditionalInformation>
-        <PaymentInfo>
-            <Currency>EUR</Currency>
-            <PaymentRefId>382505</PaymentRefId>
-            <PaymentDescription>Arve 8600017092</PaymentDescription>
-            <Payable>NO</Payable>
-            <PayDueDate>2017-03-16</PayDueDate>
-            <PaymentTotalSum>-55.32</PaymentTotalSum>
-            <PayerName>Tallinna Haridusamet KOV</PayerName>
-        </PaymentInfo>
-    </Invoice>
-
-    <Footer>
-        <TotalNumberInvoices>1</TotalNumberInvoices>
-        <TotalAmount>-55.32</TotalAmount>
-    </Footer>
-</E_Invoice>
+﻿<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:erp="http://e-arvetekeskus.eu/erp">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <erp:DimensionRegistryRequest format="AXAPTA" replace="NO" parseConnections="YES" authPhrase="60945:epdujtvlcvodupnztxsoncvtroczvvcgwkwyhppnnpbcluoigi">
+            <Dimensioonid><Uuritused><Uuritus><Num>021</Num>
+                <Description>"Laulge kassa" (ETV), rahvapidu 08.06</Description>
+            </Uuritus><Uuritus><Num>028</Num>
+                <Description>"Narva päevad" 06-10.06.2007 "Narva Linnapäev" 09.06</Description>
+            </Uuritus><Uuritus><Num>005</Num>
+                <Description>"Narva-jazz 2007" 05.2007</Description>
+            </Uuritus><Uuritus><Num>024</Num>
+                <Description>"Noor laulusolist", regionaalkonkurss 03.2007 (Narva Koorikool)</Description>
+            </Uuritus><Uuritus><Num>043</Num>
+                <Description>"Slaavi pärg-2007" raames vene kooride uldlaulupeo 70 aastapäevale püh</Description>
+            </Uuritus><Uuritus><Num>056</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>057</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>059</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>060</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>062</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>063</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>064</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>067</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>068</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>071</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>077</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>078</Num>
+                <Description>(vaba)</Description>
+            </Uuritus><Uuritus><Num>81101</Num>
+                <Description>0810101 Korvpallitreenerite toetus</Description>
+            </Uuritus><Uuritus><Num>81102</Num>
+                <Description>0810102 Korvpallitreenerite toetus</Description>
+            </Uuritus><Uuritus><Num>1202</Num>
+                <Description>0810501 City Twins Youth Network</Description>
+            </Uuritus><Uuritus><Num>0046 abikolblik</Num>
+                <Description>0810671 - projekt 2.5.0101.12-0046</Description>
+            </Uuritus><Uuritus><Num>0046 mitteabiko</Num>
+                <Description>0810671 - projekt 2.5.0101.12-0046</Description>
+            </Uuritus><Uuritus><Num>0047 abikolblik</Num>
+                <Description>0810672 projekt</Description>
+            </Uuritus><Uuritus><Num>0048 mitteabiko</Num>
+                <Description>0810672 projekt</Description>
+            </Uuritus><Uuritus><Num>0049 abikolblik</Num>
+                <Description>0810799 - projekt 2.5.0101.13-0049</Description>
+            </Uuritus><Uuritus><Num>0049 mitteabiko</Num>
+                <Description>0810799 - projekt 2.5.0101.13-0049</Description>
+            </Uuritus><Uuritus><Num>90031</Num>
+                <Description>0820601 VIII Vabariikliku noorte pianistide instrumentaalkontserdi kon</Description>
+            </Uuritus><Uuritus><Num>1304</Num>
+                <Description>091 ja 092 Lasteaedadele ja koolidele rahavahendite eraldamine</Description>
+            </Uuritus><Uuritus><Num>1303</Num>
+                <Description>0922006 Tarkvara arenduse tugitehnik</Description>
+            </Uuritus><Uuritus><Num>80983</Num>
+                <Description>0922006 Tiigrihüppe sihtasutus arvutiprojektorite hankimiseks</Description>
+            </Uuritus><Uuritus><Num>80986</Num>
+                <Description>0922011 Tiigrihüppe sihtasutus arvutiprojektorite hankimiseks</Description>
+            </Uuritus><Uuritus><Num>1402</Num>
+                <Description>0922013 Karjaarioppe Narva Soldino Gumnaasiumis</Description>
+            </Uuritus><Uuritus><Num>80987</Num>
+                <Description>0922013 Tiigrihüppe sihtasutus arvutiprojektorite hankimiseks</Description>
+            </Uuritus><Uuritus><Num>80981</Num>
+                <Description>0922051 Tiigrihüppe sihtasutus arvutiprojektorite hankimiseks</Description>
+            </Uuritus><Uuritus><Num>1302</Num>
+                <Description>0922052 Sihtasutusele eksamite labiviimiseks</Description>
+            </Uuritus><Uuritus><Num>1301</Num>
+                <Description>0922054 Tarkvara arenduse tugitehnik</Description>
+            </Uuritus><Uuritus><Num>80982</Num>
+                <Description>0922054 Tiigrihüppe sihtasutus arvutiprojektorite hankimiseks</Description>
+            </Uuritus><Uuritus><Num>80984</Num>
+                <Description>0922060 Tiigrihüppe sihtasutus arvutiprojektorite hankimiseks</Description>
+            </Uuritus><Uuritus><Num>1401</Num>
+                <Description>0922064 IKT alase Tehnoloogiapaeva korraldamine Narva Humanitaargumnaa</Description>
+            </Uuritus><Uuritus><Num>80985</Num>
+                <Description>0922064 Tiigrihüppe sihtasutus arvutiprojektorite hankimiseks</Description>
+            </Uuritus><Uuritus><Num>80988</Num>
+                <Description>0922177 Tiigrihüppe sihtasutus arvutiprojektorite hankimiseks</Description>
+            </Uuritus><Uuritus><Num>181</Num>
+                <Description>1.1 Õpilasürituste (olümpiaadide, võistluste, ürituste) korraldamisega</Description>
+            </Uuritus><Uuritus><Num>182</Num>
+                <Description>1.2 aineühenduste tegevuse korraldavate juhtide tasustamine</Description>
+            </Uuritus><Uuritus><Num>183</Num>
+                <Description>1.3 parimaid praktikaid jagavate õpetajate, koolijuhtide tasustamine</Description>
+            </Uuritus><Uuritus><Num>184</Num>
+                <Description>1.4 õppe- ja kasvatustöös uusi meetodeid tutvustavate õpetajate, kooli</Description>
+            </Uuritus><Uuritus><Num>185</Num>
+                <Description>1.5 omaloodud metoodilise materjali propageerivate, tutvustavate õpeta</Description>
+            </Uuritus><Uuritus><Num>186</Num>
+                <Description>1.6 koolijuhtide ja õpetajate koostöö kogemuste jagamine (õpetajate, k</Description>
+            </Uuritus><Uuritus><Num>195</Num>
+                <Description>10. Transpordikulud (õpilastele, kes esindavad linna õpilasüritustel, </Description>
+            </Uuritus><Uuritus><Num>196</Num>
+                <Description>11. Administreerimiskulud (bürootarbed, teavikud, trükised) õpilastele</Description>
+            </Uuritus><Uuritus><Num>197</Num>
+                <Description>12. Paljundus ja printimine õpilastele, kes esindavad linna õpilasürit</Description>
+            </Uuritus><Uuritus><Num>198</Num>
+                <Description>13. Autasud õpilastele, kes esindavad linna õpilasüritustel, aineolümp</Description>
+            </Uuritus><Uuritus><Num>199</Num>
+                <Description>14. Osalustasu (linna esindavate õpilaste osavõtt õpilasüritustel, ain</Description>
+            </Uuritus><Uuritus><Num>200</Num>
+                <Description>15. Õpilaste saatjate majutus (linna esindavate õpilaste saatmine õpil</Description>
+            </Uuritus><Uuritus><Num>187</Num>
+                <Description>2. Õppematerjalid aineühenduste juhtide ja koolijuhtide täienduskoolit</Description>
+            </Uuritus><Uuritus><Num>188</Num>
+                <Description>3. Ruumide rent (aineühenduste juhtide ja koolijuhtide täienduskoolitu</Description>
+            </Uuritus><Uuritus><Num>189</Num>
+                <Description>4. Transpordikulud (aineühenduste juhtide, koolijuhtide täienduskoolit</Description>
+            </Uuritus><Uuritus><Num>190</Num>
+                <Description>5. Administreerimiskulud (bürootarbed, teavikud, trükised) aineühendus</Description>
+            </Uuritus><Uuritus><Num>191</Num>
+                <Description>6. Paljundus ja printimine (aineühenduste juhtide ja koolijuhtide täie</Description>
+            </Uuritus><Uuritus><Num>192</Num>
+                <Description>7. Autasud (aineühenduste juhtide ja koolijuhtide täienduskoolitused j</Description>
+            </Uuritus><Uuritus><Num>193</Num>
+                <Description>8. Õppematerjalid (õpilastele, kes esindavad linna aineolümpiaadidel, </Description>
+            </Uuritus><Uuritus><Num>194</Num>
+                <Description>9. Ruumide rent (linna aineolümpiaadide, -võistluste, õpilasürituste k</Description>
+            </Uuritus><Uuritus><Num>HU161105</Num>
+                <Description>Administreerimine, sh burootarbed (opilasvoistlus - voistlusel osalemi</Description>
+            </Uuritus><Uuritus><Num>HU161205</Num>
+                <Description>Administreerimine, sh burootarbed (opilasvoistlus - voistluse korralda</Description>
+            </Uuritus><Uuritus><Num>HU162305</Num>
+                <Description>Administreerimine, sh burootarbed (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU162405</Num>
+                <Description>Administreerimine, sh burootarbed (opilasuritus - urituse korraldamine</Description>
+            </Uuritus><Uuritus><Num>HU171105</Num>
+                <Description>Administreerimine, sh burootarbed (opilasvoistlus - voistlusel osalemi</Description>
+            </Uuritus><Uuritus><Num>HU171205</Num>
+                <Description>Administreerimine, sh burootarbed (opilasvoistlus - voistluse korralda</Description>
+            </Uuritus><Uuritus><Num>HU172305</Num>
+                <Description>Administreerimine, sh burootarbed (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU172405</Num>
+                <Description>Administreerimine, sh burootarbed (opilasuritus - urituse korraldamine</Description>
+            </Uuritus><Uuritus><Num>HU163505</Num>
+                <Description>Administreerimine, sh burootarbed (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU163605</Num>
+                <Description>Administreerimine, sh burootarbed (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU173505</Num>
+                <Description>Administreerimine, sh burootarbed (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU173605</Num>
+                <Description>Administreerimine, sh burootarbed (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>010</Num>
+                <Description>Akordionistide festival 14.04.2007</Description>
+            </Uuritus><Uuritus><Num>074</Num>
+                <Description>American  Embassy</Description>
+            </Uuritus><Uuritus><Num>117</Num>
+                <Description>Arendusstipendium</Description>
+            </Uuritus><Uuritus><Num>172</Num>
+                <Description>Arkamise aeg  0922051</Description>
+            </Uuritus><Uuritus><Num>HU162409</Num>
+                <Description>Autasud (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU172409</Num>
+                <Description>Autasud (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU162309</Num>
+                <Description>Autasud (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU172309</Num>
+                <Description>Autasud (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161209</Num>
+                <Description>Autasud (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU171209</Num>
+                <Description>Autasud (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU161109</Num>
+                <Description>Autasud (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU171109</Num>
+                <Description>Autasud (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU163609</Num>
+                <Description>Autasud (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU173609</Num>
+                <Description>Autasud (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU163509</Num>
+                <Description>Autasud (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU173509</Num>
+                <Description>Autasud (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>155</Num>
+                <Description>Betreuter Spielplatztreff</Description>
+            </Uuritus><Uuritus><Num>014</Num>
+                <Description>Bikefest 07.2007</Description>
+            </Uuritus><Uuritus><Num>072</Num>
+                <Description>Chopini konkurss</Description>
+            </Uuritus><Uuritus><Num>139</Num>
+                <Description>Comenius 2005-102</Description>
+            </Uuritus><Uuritus><Num>138</Num>
+                <Description>Comenius 2005-4</Description>
+            </Uuritus><Uuritus><Num>137</Num>
+                <Description>Comenius 2005-44</Description>
+            </Uuritus><Uuritus><Num>168</Num>
+                <Description>Comenius 2006-PV-08</Description>
+            </Uuritus><Uuritus><Num>169</Num>
+                <Description>Comenius 2006-PV-12</Description>
+            </Uuritus><Uuritus><Num>101</Num>
+                <Description>Comenius1. Rahvusvaheline kooliarendusprojekt</Description>
+            </Uuritus><Uuritus><Num>012</Num>
+                <Description>D.J.Street schow 12.08.2007</Description>
+            </Uuritus><Uuritus><Num>140</Num>
+                <Description>Demokraatlik osalus noorteorganisatsioonides</Description>
+            </Uuritus><Uuritus><Num>081</Num>
+                <Description>Eesti  Kultuurkapital</Description>
+            </Uuritus><Uuritus><Num>082</Num>
+                <Description>Eesti Kultuurkapital</Description>
+            </Uuritus><Uuritus><Num>41022</Num>
+                <Description>Eesti Kultuurkapital Sihtstipendiumi leping S05-06/1261L</Description>
+            </Uuritus><Uuritus><Num>41023</Num>
+                <Description>Eesti Kultuurkapital Sihtstipendiumi leping M03-06/0304L</Description>
+            </Uuritus><Uuritus><Num>015</Num>
+                <Description>Eesti Vabariigi 89. Iseseisvuspäevale pühendatus piduluk kontsert 23.0</Description>
+            </Uuritus><Uuritus><Num>016</Num>
+                <Description>Eesti Vabariigi Taasiseseisvumispäevale pühendatud pidulik kontsert 19</Description>
+            </Uuritus><Uuritus><Num>132</Num>
+                <Description>Eestimaa kuningriik ja tema kuningad</Description>
+            </Uuritus><Uuritus><Num>170</Num>
+                <Description>Eestimaa looduse tundmaõppimine</Description>
+            </Uuritus><Uuritus><Num>001</Num>
+                <Description>F.Chopini loomingule pühendarud VI-Rahvusvaheline noorte pianistide ko</Description>
+            </Uuritus><Uuritus><Num>003</Num>
+                <Description>Fenno-Ugria traditsiooniline rahvapidu 10.2007</Description>
+            </Uuritus><Uuritus><Num>013</Num>
+                <Description>Fest Danse 11.03.2007</Description>
+            </Uuritus><Uuritus><Num>147</Num>
+                <Description>Finnish-Estonian seminar</Description>
+            </Uuritus><Uuritus><Num>41024</Num>
+                <Description>Füüsilised isikud  Osavõtutasu projekt 4102</Description>
+            </Uuritus><Uuritus><Num>G</Num>
+                <Description>Gumnaasium (G)</Description>
+            </Uuritus><Uuritus><Num>144</Num>
+                <Description>Help a Child to be Happó</Description>
+            </Uuritus><Uuritus><Num>143</Num>
+                <Description>Hoiame lapse silmavaate selge</Description>
+            </Uuritus><Uuritus><Num>146</Num>
+                <Description>Hoiame lapse silmavaate selge</Description>
+            </Uuritus><Uuritus><Num>031</Num>
+                <Description>I.Advent Peetri platsil Jõulukuuse süütamine 11.2007</Description>
+            </Uuritus><Uuritus><Num>066</Num>
+                <Description>II Rahvusvahelisele noorte festivalile "Päike,Sõprus,Rahu - 2006" (Bul</Description>
+            </Uuritus><Uuritus><Num>102</Num>
+                <Description>ISIC kaardi toetus õpilasesindusele</Description>
+            </Uuritus><Uuritus><Num>002</Num>
+                <Description>J.Mravinski nimeline Rahvusvaheline muusikafestival 25.05-05.06.2007</Description>
+            </Uuritus><Uuritus><Num>046</Num>
+                <Description>J.Mravinski nimelise XIII rahvusvahelise muusikafestivali korraldamine</Description>
+            </Uuritus><Uuritus><Num>018</Num>
+                <Description>Jaanipäev 23.06.2007</Description>
+            </Uuritus><Uuritus><Num>J</Num>
+                <Description>Juhataja (J)</Description>
+            </Uuritus><Uuritus><Num>130</Num>
+                <Description>Keelekümblus looduses</Description>
+            </Uuritus><Uuritus><Num>129</Num>
+                <Description>Keelelager. Õpi kuulama</Description>
+            </Uuritus><Uuritus><Num>158</Num>
+                <Description>Kes püüab kõigest väest saab üle igast mäest</Description>
+            </Uuritus><Uuritus><Num>027</Num>
+                <Description>Kontserttegevuse korraldamisels</Description>
+            </Uuritus><Uuritus><Num>180</Num>
+                <Description>Koolisport</Description>
+            </Uuritus><Uuritus><Num>HU162407</Num>
+                <Description>Koolituskulu (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU162307</Num>
+                <Description>Koolituskulu (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161107</Num>
+                <Description>Koolituskulu (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161207</Num>
+                <Description>Koolituskulu (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU163607</Num>
+                <Description>Koolituskulu (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU163507</Num>
+                <Description>Koolituskulu (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU172307</Num>
+                <Description>Koolituskulu voi osavotumaks (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU172407</Num>
+                <Description>Koolituskulu voi osavotumaks (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU171107</Num>
+                <Description>Koolituskulu voi osavotumaks (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU171207</Num>
+                <Description>Koolituskulu voi osavotumaks (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU173507</Num>
+                <Description>Koolituskulu voi osavotumaks (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU173607</Num>
+                <Description>Koolituskulu voi osavotumaks (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>41021</Num>
+                <Description>Kultuuriministeerium Leping  16/01.2007 8.14./42</Description>
+            </Uuritus><Uuritus><Num>152</Num>
+                <Description>Kultuuriradadel</Description>
+            </Uuritus><Uuritus><Num>009</Num>
+                <Description>Kultuurivahetus (S.Peterburi, Kirovi r-ni ja Leningradi oblastiga)</Description>
+            </Uuritus><Uuritus><Num>058</Num>
+                <Description>Laanemere Maletahed 2006</Description>
+            </Uuritus><Uuritus><Num>LE-LA Laenud</Num>
+                <Description>Laenud</Description>
+            </Uuritus><Uuritus><Num>LE-LAOF15 Laenu</Num>
+                <Description>Laenud 15</Description>
+            </Uuritus><Uuritus><Num>164</Num>
+                <Description>Lastetualett ruumiderenoveriimene 0911016                             </Description>
+            </Uuritus><Uuritus><Num>029</Num>
+                <Description>Laulu- ja tansupidu Narva päevade raames 10.06.2007</Description>
+            </Uuritus><Uuritus><Num>050</Num>
+                <Description>Lõbusate ja taibukate klubi (LTK)</Description>
+            </Uuritus><Uuritus><Num>075</Num>
+                <Description>Maleturnir 08.11-12.11.2006</Description>
+            </Uuritus><Uuritus><Num>041</Num>
+                <Description>Meistrite Akadeemia kontserdisari</Description>
+            </Uuritus><Uuritus><Num>1601-0820101</Num>
+                <Description>Merekultuuriaasta 2016 ideekonkurss</Description>
+            </Uuritus><Uuritus><Num>161</Num>
+                <Description>Mineviku radadel</Description>
+            </Uuritus><Uuritus><Num>166</Num>
+                <Description>Minu roheline kool</Description>
+            </Uuritus><Uuritus><Num>034</Num>
+                <Description>MTÜ "Vene tudengite ühing" toetamine (KVN)</Description>
+            </Uuritus><Uuritus><Num>039</Num>
+                <Description>Muud üritused (sh Slaavi Pärg)</Description>
+            </Uuritus><Uuritus><Num>033</Num>
+                <Description>Muude Kultuuriosakonna alluvate asutuste ürituste korraldamiseks</Description>
+            </Uuritus><Uuritus><Num>040</Num>
+                <Description>Narva Aleksandri kirikus kontserttegevuse korraldamiseks</Description>
+            </Uuritus><Uuritus><Num>079</Num>
+                <Description>Narva Keskraamatukogu teavikute soetamiseks</Description>
+            </Uuritus><Uuritus><Num>076</Num>
+                <Description>Narva Keskraamatukogu üritus "Multikultuuriline raamatukogu-quo vadis"</Description>
+            </Uuritus><Uuritus><Num>035</Num>
+                <Description>Narva Kutseõppekeskuse üritused (kevad-,suvi-, sügislaat ja rallisprin</Description>
+            </Uuritus><Uuritus><Num>061</Num>
+                <Description>Narva laste suvejazz 2006</Description>
+            </Uuritus><Uuritus><Num>124</Num>
+                <Description>Narva Noortekeskuse teavitamis- ja nõustamispunkti rekonnstrueerimine</Description>
+            </Uuritus><Uuritus><Num>007</Num>
+                <Description>Narva suvine teatrihooaeg 06-08.2007</Description>
+            </Uuritus><Uuritus><Num>156</Num>
+                <Description>Narva töömalevad</Description>
+            </Uuritus><Uuritus><Num>008</Num>
+                <Description>Noorsokultuuri festival "N-Fest 2007" 12.08.07</Description>
+            </Uuritus><Uuritus><Num>126</Num>
+                <Description>Noorte kaasamine infomaailma</Description>
+            </Uuritus><Uuritus><Num>037</Num>
+                <Description>Noorte Laulupeo 2007</Description>
+            </Uuritus><Uuritus><Num>030</Num>
+                <Description>Noorte suvemuusika 07.-08.2007</Description>
+            </Uuritus><Uuritus><Num>107</Num>
+                <Description>Noortekeskuse projekti tegevus</Description>
+            </Uuritus><Uuritus><Num>153</Num>
+                <Description>Noorteparlamentide päev</Description>
+            </Uuritus><Uuritus><Num>004</Num>
+                <Description>Noortepianistide instrumentaalkontserdi konkurss</Description>
+            </Uuritus><Uuritus><Num>055</Num>
+                <Description>Opilaskodu</Description>
+            </Uuritus><Uuritus><Num>HU162304</Num>
+                <Description>Opilaste toitlustamine (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU162404</Num>
+                <Description>Opilaste toitlustamine (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU172304</Num>
+                <Description>Opilaste toitlustamine (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU172404</Num>
+                <Description>Opilaste toitlustamine (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU161104</Num>
+                <Description>Opilaste toitlustamine (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161204</Num>
+                <Description>Opilaste toitlustamine (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU171104</Num>
+                <Description>Opilaste toitlustamine (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU171204</Num>
+                <Description>Opilaste toitlustamine (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU163604</Num>
+                <Description>Opilaste toitlustamine (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU173604</Num>
+                <Description>Opilaste toitlustamine (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU163504</Num>
+                <Description>Opilaste toitlustamine (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU173504</Num>
+                <Description>Opilaste toitlustamine (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU162401</Num>
+                <Description>Oppematerjalid (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU172401</Num>
+                <Description>Oppematerjalid (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU162301</Num>
+                <Description>Oppematerjalid (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU172301</Num>
+                <Description>Oppematerjalid (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161101</Num>
+                <Description>Oppematerjalid (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161201</Num>
+                <Description>Oppematerjalid (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU171101</Num>
+                <Description>Oppematerjalid (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU171201</Num>
+                <Description>Oppematerjalid (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU163601</Num>
+                <Description>Oppematerjalid (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU173601</Num>
+                <Description>Oppematerjalid (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU163501</Num>
+                <Description>Oppematerjalid (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU173501</Num>
+                <Description>Oppematerjalid (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>150</Num>
+                <Description>Orientiir 2006</Description>
+            </Uuritus><Uuritus><Num>047</Num>
+                <Description>Osalemine festivali "Olomouc 2007"</Description>
+            </Uuritus><Uuritus><Num>080</Num>
+                <Description>Osalemine läti muusikafestivali "Silver bells"</Description>
+            </Uuritus><Uuritus><Num>070</Num>
+                <Description>Osalemine VII rahvusvahelisel noorte pianistide konkursil Portugalias</Description>
+            </Uuritus><Uuritus><Num>025</Num>
+                <Description>Osavõtt vabariiklikest kultuuriüritustest</Description>
+            </Uuritus><Uuritus><Num>HU162308</Num>
+                <Description>Paljundus-printimine (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU162408</Num>
+                <Description>Paljundus-printimine (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU172308</Num>
+                <Description>Paljundus-printimine (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU172408</Num>
+                <Description>Paljundus-printimine (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU161108</Num>
+                <Description>Paljundus-printimine (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161208</Num>
+                <Description>Paljundus-printimine (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU171108</Num>
+                <Description>Paljundus-printimine (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU171208</Num>
+                <Description>Paljundus-printimine (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU163608</Num>
+                <Description>Paljundus-printimine (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU173608</Num>
+                <Description>Paljundus-printimine (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU163508</Num>
+                <Description>Paljundus-printimine (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU173508</Num>
+                <Description>Paljundus-printimine (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>UP10</Num>
+                <Description>Pangakonto SEB Pangas</Description>
+            </Uuritus><Uuritus><Num>UP11</Num>
+                <Description>Pangakonto SEB Pangas</Description>
+            </Uuritus><Uuritus><Num>UP12</Num>
+                <Description>Pangakonto SEB Pangas</Description>
+            </Uuritus><Uuritus><Num>HP17</Num>
+                <Description>Pangakonto Swedbankis</Description>
+            </Uuritus><Uuritus><Num>HP19</Num>
+                <Description>Pangakonto Swedbankis</Description>
+            </Uuritus><Uuritus><Num>HP30</Num>
+                <Description>Pangakonto Swedbankis</Description>
+            </Uuritus><Uuritus><Num>HP32</Num>
+                <Description>Pangakonto Swedbankis</Description>
+            </Uuritus><Uuritus><Num>HP53</Num>
+                <Description>Pangakonto Swedbankis</Description>
+            </Uuritus><Uuritus><Num>HP89</Num>
+                <Description>Pangakonto Swedbankis</Description>
+            </Uuritus><Uuritus><Num>173</Num>
+                <Description>Partner-linnad</Description>
+            </Uuritus><Uuritus><Num>109</Num>
+                <Description>Piima Nina</Description>
+            </Uuritus><Uuritus><Num>PE Pohieelarve</Num>
+                <Description>Pohieelarve (v.a laenud)</Description>
+            </Uuritus><Uuritus><Num>PE15 Pohieelarv</Num>
+                <Description>Pohieelarve 15 (v.a laenud)</Description>
+            </Uuritus><Uuritus><Num>PE45 Pohieelarv</Num>
+                <Description>Pohieelarve 45</Description>
+            </Uuritus><Uuritus><Num>PE50 Pohieelarv</Num>
+                <Description>Pohieelarve 50</Description>
+            </Uuritus><Uuritus><Num>PE55 Pohieelarv</Num>
+                <Description>Pohieelarve 55</Description>
+            </Uuritus><Uuritus><Num>P</Num>
+                <Description>Pohikool (P)</Description>
+            </Uuritus><Uuritus><Num>048</Num>
+                <Description>Poistekoori juubelikontserdi korraldamine</Description>
+            </Uuritus><Uuritus><Num>011</Num>
+                <Description>Popkultuuri festival 15.07.2007</Description>
+            </Uuritus><Uuritus><Num>171</Num>
+                <Description>Pr.Sponsori abi</Description>
+            </Uuritus><Uuritus><Num>054</Num>
+                <Description>Projekt "Veni,vidi,vici ehk Terra incognita</Description>
+            </Uuritus><Uuritus><Num>032</Num>
+                <Description>Purjeregatt Piirist Piirini 17.06</Description>
+            </Uuritus><Uuritus><Num>162</Num>
+                <Description>Põnev koolivaheaeg</Description>
+            </Uuritus><Uuritus><Num>30%</Num>
+                <Description>Raha jaotus sihtprojektis</Description>
+            </Uuritus><Uuritus><Num>70%</Num>
+                <Description>Raha jaotus sihtprojektis</Description>
+            </Uuritus><Uuritus><Num>023</Num>
+                <Description>Rahvakultuuriseltside pidu 09.06</Description>
+            </Uuritus><Uuritus><Num>038</Num>
+                <Description>Rahvusriiete õmblemine</Description>
+            </Uuritus><Uuritus><Num>160</Num>
+                <Description>Rahvusvähemuste integratsioon,noorte osalus</Description>
+            </Uuritus><Uuritus><Num>026</Num>
+                <Description>Regionaalsete ürituste korraldus ja osavõtt</Description>
+            </Uuritus><Uuritus><Num>036</Num>
+                <Description>Reklaam, trükikulud,lilled,suveniirid</Description>
+            </Uuritus><Uuritus><Num>RE Riigieelarve</Num>
+                <Description>Riigieelarve</Description>
+            </Uuritus><Uuritus><Num>RE15 Riigieelar</Num>
+                <Description>Riigieelarve 15</Description>
+            </Uuritus><Uuritus><Num>RE50 Riigieelar</Num>
+                <Description>Riigieelarve 50</Description>
+            </Uuritus><Uuritus><Num>RE55 Riigieelar</Num>
+                <Description>Riigieelarve 55</Description>
+            </Uuritus><Uuritus><Num>HU162402</Num>
+                <Description>Ruumide rent (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU162302</Num>
+                <Description>Ruumide rent (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161102</Num>
+                <Description>Ruumide rent (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161202</Num>
+                <Description>Ruumide rent (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU163602</Num>
+                <Description>Ruumide rent (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU163502</Num>
+                <Description>Ruumide rent (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU172302</Num>
+                <Description>Ruumide rent voi majutus (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU172402</Num>
+                <Description>Ruumide rent voi majutus (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU171102</Num>
+                <Description>Ruumide rent voi majutus (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU171202</Num>
+                <Description>Ruumide rent voi majutus (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU173602</Num>
+                <Description>Ruumide rent voi majutus (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU173502</Num>
+                <Description>Ruumide rent voi majutus (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>18112-15%</Num>
+                <Description>Sihtprojeki 18112 kulude jaotus 15%</Description>
+            </Uuritus><Uuritus><Num>18112-85%</Num>
+                <Description>Sihtprojeki 18112 kulude jaotus 85%</Description>
+            </Uuritus><Uuritus><Num>16125-15%person</Num>
+                <Description>Sihtprojekt 16125 - 15% personalikuludest</Description>
+            </Uuritus><Uuritus><Num>10067</Num>
+                <Description>Sihtprojekti 10067 vaba kulu</Description>
+            </Uuritus><Uuritus><Num>10068</Num>
+                <Description>Sihtprojekti 10068 vaba kulu</Description>
+            </Uuritus><Uuritus><Num>10070</Num>
+                <Description>Sihtprojekti 10070 vaba kulu</Description>
+            </Uuritus><Uuritus><Num>1201</Num>
+                <Description>Sihtteenus - 0922013 Pilootkooli karjääriõppe arendustegevus</Description>
+            </Uuritus><Uuritus><Num>51071</Num>
+                <Description>Sillamäe Linnavalitsus (Sillamäe LV 24.05.2007 korraldus nr 272-k)</Description>
+            </Uuritus><Uuritus><Num>069</Num>
+                <Description>Sponsori abi</Description>
+            </Uuritus><Uuritus><Num>149</Num>
+                <Description>Sponsori abi</Description>
+            </Uuritus><Uuritus><Num>157</Num>
+                <Description>Sponsori abi</Description>
+            </Uuritus><Uuritus><Num>165</Num>
+                <Description>Sponsori abi 0911021</Description>
+            </Uuritus><Uuritus><Num>110</Num>
+                <Description>Sponsoriabi urituse kulude katmiseks</Description>
+            </Uuritus><Uuritus><Num>065</Num>
+                <Description>Suvi, raamat, jäätis</Description>
+            </Uuritus><Uuritus><Num>154</Num>
+                <Description>Säästa keskkonda-säästad oma tulevikku</Description>
+            </Uuritus><Uuritus><Num>51461</Num>
+                <Description>Sügisene jazz 2007</Description>
+            </Uuritus><Uuritus><Num>51462</Num>
+                <Description>Sügisene jazz 2007</Description>
+            </Uuritus><Uuritus><Num>022</Num>
+                <Description>Talve ärasaatmine 18.02</Description>
+            </Uuritus><Uuritus><Num>006</Num>
+                <Description>Teatride etendused-2007</Description>
+            </Uuritus><Uuritus><Num>051</Num>
+                <Description>Teavikute soetamine</Description>
+            </Uuritus><Uuritus><Num>163</Num>
+                <Description>Tiiger</Description>
+            </Uuritus><Uuritus><Num>HU162403</Num>
+                <Description>Transpordikulud (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU172403</Num>
+                <Description>Transpordikulud (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU162303</Num>
+                <Description>Transpordikulud (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU172303</Num>
+                <Description>Transpordikulud (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161103</Num>
+                <Description>Transpordikulud (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161203</Num>
+                <Description>Transpordikulud (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU171103</Num>
+                <Description>Transpordikulud (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU171203</Num>
+                <Description>Transpordikulud (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU163603</Num>
+                <Description>Transpordikulud (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU173603</Num>
+                <Description>Transpordikulud (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU163503</Num>
+                <Description>Transpordikulud (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU173503</Num>
+                <Description>Transpordikulud (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU162306</Num>
+                <Description>Trukised, teavikud (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU162406</Num>
+                <Description>Trukised, teavikud (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU172306</Num>
+                <Description>Trukised, teavikud (opilasuritus - uritusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU172406</Num>
+                <Description>Trukised, teavikud (opilasuritus - urituse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU161106</Num>
+                <Description>Trukised, teavikud (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU161206</Num>
+                <Description>Trukised, teavikud (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU171106</Num>
+                <Description>Trukised, teavikud (opilasvoistlus - voistlusel osalemine)</Description>
+            </Uuritus><Uuritus><Num>HU171206</Num>
+                <Description>Trukised, teavikud (opilasvoistlus - voistluse korraldamine)</Description>
+            </Uuritus><Uuritus><Num>HU163606</Num>
+                <Description>Trukised, teavikud (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU173606</Num>
+                <Description>Trukised, teavikud (uhendused- koolitused)</Description>
+            </Uuritus><Uuritus><Num>HU163506</Num>
+                <Description>Trukised, teavikud (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>HU173506</Num>
+                <Description>Trukised, teavikud (uhendused- toojoukulud)</Description>
+            </Uuritus><Uuritus><Num>148</Num>
+                <Description>Tund piirideta</Description>
+            </Uuritus><Uuritus><Num>111</Num>
+                <Description>Tutvumine vene-eesti tavandi ja kombetalituskultuuriga.Rahvakalender</Description>
+            </Uuritus><Uuritus><Num>201</Num>
+                <Description>Ujumine</Description>
+            </Uuritus><Uuritus><Num>019</Num>
+                <Description>Uusaasta vastuvõtt Peetri platsil 31.12</Description>
+            </Uuritus><Uuritus><Num>000</Num>
+                <Description>vaba</Description>
+            </Uuritus><Uuritus><Num>045</Num>
+                <Description>vaba</Description>
+            </Uuritus><Uuritus><Num>Vaba kood</Num>
+                <Description>Vaba kood</Description>
+            </Uuritus><Uuritus><Num>151</Num>
+                <Description>Vabaaja orienteerimine</Description>
+            </Uuritus><Uuritus><Num>073</Num>
+                <Description>Vabariikliku puhkpillide ja klaveri konkursi korraldamine</Description>
+            </Uuritus><Uuritus><Num>020</Num>
+                <Description>Vastlapäev, folklooripidu 20.02</Description>
+            </Uuritus><Uuritus><Num>888</Num>
+                <Description>Vigade parandused</Description>
+            </Uuritus><Uuritus><Num>049</Num>
+                <Description>Vokaalkvarteti Cool & Jazz</Description>
+            </Uuritus><Uuritus><Num>142</Num>
+                <Description>Väikesed hirmud suures koolitus</Description>
+            </Uuritus><Uuritus><Num>017</Num>
+                <Description>Võidupäeva tähistamine 23.06</Description>
+            </Uuritus><Uuritus><Num>044</Num>
+                <Description>XI laste jazz-festivali läbiviimine</Description>
+            </Uuritus><Uuritus><Num>042</Num>
+                <Description>XII rahvusvahelise noorte muusikafestivali "Narva-Jazz 2007"</Description>
+            </Uuritus><Uuritus><Num>167</Num>
+                <Description>Youth work Narva-Lübeck</Description>
+            </Uuritus><Uuritus><Num>159</Num>
+                <Description>Õpetame õppides</Description>
+            </Uuritus></Uuritused>
+            </Dimensioonid>
+        </erp:DimensionRegistryRequest>
+    </soapenv:Body>
+</soapenv:Envelope>

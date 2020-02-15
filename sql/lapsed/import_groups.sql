@@ -25,14 +25,16 @@ BEGIN
 
     SELECT kasutaja INTO userName
     FROM ou.userid u
-        WHERE u.rekvid = user_rekvid
-             AND u.id = user_id;
+    WHERE u.rekvid = user_rekvid
+      AND u.id = user_id;
     IF userName IS NULL
     THEN
         error_message = 'User not found';
 
         RETURN;
     END IF;
+
+    RAISE NOTICE '%', data;
 
     FOR json_object IN
         SELECT *
@@ -55,76 +57,79 @@ BEGIN
             -- проверяем уникальность записи по kood
             l_group_id = (SELECT l.id
                           FROM libs.library l
-                              WHERE l.kood::TEXT = json_record.kood
-                                   AND library = 'LAPSE_GRUPP'
-                                   AND l.rekvid = user_rekvid
-                                   AND l.status <> 3
-                              LIMIT 1);
+                          WHERE l.kood::TEXT = json_record.kood
+                            AND library = 'LAPSE_GRUPP'
+                            AND l.rekvid = user_rekvid
+                            AND l.status <> 3
+                          LIMIT 1);
 
             -- подготавливаем параметры для сохранения
-            IF l_group_id IS NULL
-            THEN
+            --           IF l_group_id IS NULL
+            --          THEN
 
-                -- готовим список услуг
-                FOR v_details IN
-                    WITH qryJsons AS (
-                        SELECT *
-                        FROM jsonb_to_recordset(data::JSONB)
-                                 AS x(asutus TEXT, kood TEXT, nimetus TEXT, grupi_liik TEXT,
-                                      all_yksus_1 TEXT,
-                                      all_yksus_2 TEXT,
-                                      all_yksus_3 TEXT,
-                                      all_yksus_4 TEXT,
-                                      all_yksus_5 TEXT,
-                                      koolituse_liik TEXT,
-                                      teenus TEXT, kogus NUMERIC, hind NUMERIC)
-                    )
+            -- готовим список услуг
+            details = '[]'::JSONB;
+
+            FOR v_details IN
+                WITH qryJsons AS (
                     SELECT *
-                    FROM qryJsons
-                        WHERE kood = json_record.kood
-                    LOOP
-                        SELECT n.id,
-                               n.id             AS nomid,
-                               v_details.teenus AS kood,
-                               n.nimetus        AS nimetus,
-                               v_details.kogus  AS kogus,
-                               v_details.hind   AS hind
-                               INTO v_row
-                        FROM libs.nomenklatuur n
-                            WHERE n.rekvid = user_rekvid
-                                 AND kood = v_details.teenus
-                                 AND n.dok = 'ARV'
-                            ORDER BY id DESC LIMIT 1;
+                    FROM jsonb_to_recordset(data::JSONB)
+                             AS x(asutus TEXT, kood TEXT, nimetus TEXT, grupi_liik TEXT,
+                                  all_yksus_1 TEXT,
+                                  all_yksus_2 TEXT,
+                                  all_yksus_3 TEXT,
+                                  all_yksus_4 TEXT,
+                                  all_yksus_5 TEXT,
+                                  koolituse_liik TEXT,
+                                  teenus TEXT, kogus NUMERIC, hind NUMERIC)
+                )
+                SELECT DISTINCT *
+                FROM qryJsons
+                WHERE kood = json_record.kood
+                LOOP
+                    SELECT DISTINCT n.id,
+                                    n.id             AS nomid,
+                                    v_details.teenus AS kood,
+                                    n.nimetus        AS nimetus,
+                                    v_details.kogus  AS kogus,
+                                    v_details.hind   AS hind
+                                    INTO v_row
+                    FROM libs.nomenklatuur n
+                    WHERE n.rekvid = user_rekvid
+                      AND kood = v_details.teenus
+                      AND n.dok = 'ARV'
+                    ORDER BY id DESC
+                    LIMIT 1;
 
-                        IF v_row IS NOT NULL
-                        THEN
-                            details = details::JSONB || row_to_json(v_row)::JSONB;
-                        END IF;
-                    END LOOP;
+                    IF v_row IS NOT NULL
+                    THEN
+                        details = details::JSONB || row_to_json(v_row)::JSONB;
+                    END IF;
+                END LOOP;
 
 
-                SELECT coalesce(l_group_id, 0)   AS id,
-                       json_record.kood          AS kood,
-                       json_record.nimetus       AS nimetus,
-                       json_record.all_yksused_1 AS all_yksus_1,
-                       json_record.all_yksused_2 AS all_yksus_2,
-                       json_record.all_yksused_3 AS all_yksus_3,
-                       json_record.all_yksused_4 AS all_yksus_4,
-                       json_record.all_yksused_5 AS all_yksus_5,
-                       details                   AS gridData
-                       INTO v_group;
+            SELECT coalesce(l_group_id, 0)   AS id,
+                   json_record.kood          AS kood,
+                   json_record.nimetus       AS nimetus,
+                   json_record.all_yksused_1 AS all_yksus_1,
+                   json_record.all_yksused_2 AS all_yksus_2,
+                   json_record.all_yksused_3 AS all_yksus_3,
+                   json_record.all_yksused_4 AS all_yksus_4,
+                   json_record.all_yksused_5 AS all_yksus_5,
+                   details                   AS gridData
+                   INTO v_group;
 
-                SELECT row_to_json(row) INTO json_save_params
-                FROM (SELECT 0                            AS id,
-                             (SELECT to_jsonb(v_group.*)) AS data) row;
+            SELECT row_to_json(row) INTO json_save_params
+            FROM (SELECT 0                            AS id,
+                         (SELECT to_jsonb(v_group.*)) AS data) row;
 
-                SELECT lapsed.sp_salvesta_lapse_grupp(json_save_params :: JSONB, user_id, user_rekvid) INTO l_group_id;
+            SELECT lapsed.sp_salvesta_lapse_grupp(json_save_params :: JSONB, user_id, user_rekvid) INTO l_group_id;
 
-                IF l_group_id > 0
-                THEN
-                    count = count + 1;
-                END IF;
+            IF l_group_id > 0
+            THEN
+                count = count + 1;
             END IF;
+            --           END IF;
         END LOOP;
 
     -- расшифруем платежи

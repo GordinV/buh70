@@ -169,7 +169,7 @@ BEGIN
     IF exists(SELECT id
               FROM docs.arv1 a1
               WHERE a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id)
-                AND (a1.properties -> 'lapse_taabel_id') IS NOT NULL)
+                AND (a1.properties ->> 'lapse_taabel_id') IS NOT NULL)
     THEN
 
         UPDATE lapsed.lapse_taabel

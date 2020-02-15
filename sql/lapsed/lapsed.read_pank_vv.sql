@@ -29,6 +29,7 @@ DECLARE
     l_laps_id        INTEGER;
     v_vanem          RECORD;
     l_vanem          INTEGER;
+    l_new_viitenr    TEXT;
 BEGIN
     -- ищем платежи
     FOR v_pank_vv IN
@@ -36,8 +37,7 @@ BEGIN
         FROM lapsed.pank_vv v
         WHERE timestamp::TIMESTAMP = l_timestamp::TIMESTAMP
           AND (doc_id IS NULL OR doc_id = 0)
-        ORDER BY kpv
-               , id
+        ORDER BY kpv, id
         LOOP
 
             -- ишем плательшика
@@ -49,11 +49,22 @@ BEGIN
 
             l_maksja_id = (SELECT a.result FROM libs.create_new_asutus(user_id, json_object::JSONB) a);
 
+            -- проверяем viitenumber
+            -- если длина ссылки меньше 9, то это старый  номер
+            IF (len(v_pank_vv.viitenumber::TEXT)) < 9
+            THEN
+                l_new_viitenr = lapsed.get_viitenumber_from_old(v_pank_vv.viitenumber::TEXT);
+
+            ELSE
+                l_new_viitenr = v_pank_vv.viitenumber;
+
+            END IF;
+
             -- читаем ссылку и ищем учреждение
-            l_rekvid = substr(v_pank_vv.viitenumber, 1, len(v_pank_vv.viitenumber::TEXT) - 7)::INTEGER;
+            l_rekvid = substr(l_new_viitenr, 1, len(l_new_viitenr::TEXT) - 7)::INTEGER;
 
             -- получим ид ребенка
-            l_laps_id = left(right(v_pank_vv.viitenumber::TEXT, 7), 6)::INTEGER;
+            l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
 
             -- ищем пользователя в целевом цчреждении
             SELECT id INTO l_target_user_id
@@ -115,7 +126,7 @@ BEGIN
                 FROM lapsed.cur_laste_arved a
                          INNER JOIN docs.arv arv ON a.id = arv.parentid
                 WHERE a.rekvid = l_rekvid
-                  AND (a.viitenr = v_pank_vv.viitenumber OR a.viitenr::TEXT = '0'::TEXT || v_pank_vv.viitenumber::TEXT)
+                  AND (a.viitenr = l_new_viitenr OR a.viitenr::TEXT = '0'::TEXT || l_new_viitenr::TEXT)
                   AND a.jaak > 0
                   AND (arv.properties ->> 'ettemaksu_period' IS NULL OR
                        arv.properties ->> 'tyyp' = 'ETTEMAKS') -- только обычные счета или предоплаты
@@ -128,16 +139,16 @@ BEGIN
 
                     -- создаем параметры для расчета платежкм
                     SELECT row_to_json(row) INTO json_object
-                    FROM (SELECT v_arv.id              AS arv_id,
-                                 l_maksja_id           AS maksja_id,
-                                 l_dokprop_id          AS dokprop_id,
-                                 v_pank_vv.viitenumber AS viitenumber,
-                                 v_pank_vv.selg        AS selg,
-                                 v_pank_vv.number      AS number,
-                                 v_pank_vv.kpv         AS kpv,
-                                 v_pank_vv.aa          AS aa,
-                                 v_pank_vv.iban        AS maksja_arve,
-                                 l_makse_summa         AS summa) row;
+                    FROM (SELECT v_arv.id         AS arv_id,
+                                 l_maksja_id      AS maksja_id,
+                                 l_dokprop_id     AS dokprop_id,
+                                 l_new_viitenr    AS viitenumber,
+                                 v_pank_vv.selg   AS selg,
+                                 v_pank_vv.number AS number,
+                                 v_pank_vv.kpv    AS kpv,
+                                 v_pank_vv.aa     AS aa,
+                                 v_pank_vv.iban   AS maksja_arve,
+                                 l_makse_summa    AS summa) row;
 
                     -- создаем платежку
                     SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
@@ -176,16 +187,16 @@ BEGIN
 
                 -- создаем параметры для расчета платежкм
                 SELECT row_to_json(row) INTO json_object
-                FROM (SELECT NULL                  AS arv_id,
-                             l_maksja_id           AS maksja_id,
-                             l_dokprop_id          AS dokprop_id,
-                             v_pank_vv.viitenumber AS viitenumber,
-                             v_pank_vv.selg        AS selg,
-                             v_pank_vv.number      AS number,
-                             v_pank_vv.kpv         AS kpv,
-                             v_pank_vv.aa          AS aa,
-                             v_pank_vv.iban        AS maksja_arve,
-                             l_tasu_jaak           AS summa) row;
+                FROM (SELECT NULL             AS arv_id,
+                             l_maksja_id      AS maksja_id,
+                             l_dokprop_id     AS dokprop_id,
+                             l_new_viitenr    AS viitenumber,
+                             v_pank_vv.selg   AS selg,
+                             v_pank_vv.number AS number,
+                             v_pank_vv.kpv    AS kpv,
+                             v_pank_vv.aa     AS aa,
+                             v_pank_vv.iban   AS maksja_arve,
+                             l_tasu_jaak      AS summa) row;
 
                 -- создаем платежку
 
@@ -238,7 +249,14 @@ GRANT EXECUTE ON FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN TEXT) TO ar
 /*
 select * from lapsed.pank_vv
 
-SELECT lapsed.read_pank_vv(70, '2019-12-10 18:43:33.009860')
+SELECT lapsed.read_pank_vv(70, '2020-02-15 10:36:32.748115')
+
+
+       SELECT *
+        FROM lapsed.pank_vv v
+        WHERE timestamp::TIMESTAMP = '2020-02-15 10:36:32.748115'::TIMESTAMP
+          AND (doc_id IS NULL OR doc_id = 0)
+        ORDER BY kpv, id
 
 
 doc_aa_id 11,  user_rekvid 63
