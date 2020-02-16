@@ -47,7 +47,7 @@ class UploadButton extends React.PureComponent {
 
     modalPage() {
         let modalObjects = this.state.loading ? ['btnCancel'] : ['btnOk', 'btnCancel'];
-        let mimeTypes = this.props.mime ? this.props.mime: ".csv, .xml";
+        let mimeTypes = this.props.mimeTypes ? this.props.mimeTypes: ".csv, .xml";
 
         return (
             <ModalPage

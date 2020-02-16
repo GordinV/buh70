@@ -36,6 +36,7 @@ class Nomenclatures extends React.PureComponent {
                     docTypeId={DOC_TYPE_ID}
                     onClick={this.handleClick}
                     show={true}
+                    mimeTypes={'.csv'}
                 />
 
             </ToolbarContainer>
