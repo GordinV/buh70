@@ -12,6 +12,7 @@ DECLARE
     doc_id       INTEGER = data ->> 'id';
     doc_data     JSON    = data ->> 'data';
     doc_kasutaja TEXT    = doc_data ->> 'kasutaja';
+    doc_parool   TEXT    = doc_data ->> 'parool';
     doc_ametnik  TEXT    = doc_data ->> 'ametnik';
     doc_muud     TEXT    = doc_data ->> 'muud';
 
@@ -49,13 +50,15 @@ DECLARE
                                  ) row);
 
     is_import    BOOLEAN = data ->> 'import';
+    roles_list   TEXT    = 'dbvaatleja';
+    l_string     TEXT;
 BEGIN
 
     SELECT kasutaja INTO userName
     FROM ou.userid u
-    WHERE u.id = user_id;
-    --    AND roles ->> 'is_admin' IS NOT NULL
---    AND (roles ->> 'is_admin')::BOOLEAN;
+    WHERE u.id = user_id
+      AND roles ->> 'is_admin' IS NOT NULL
+      AND (roles ->> 'is_admin')::BOOLEAN;
 
 
     IF is_import IS NULL AND userName IS NULL
@@ -84,9 +87,11 @@ BEGIN
                       WHERE id = user_id
                         AND coalesce(is_admin :: BOOLEAN, FALSE))
             THEN
-                RAISE NOTICE 'new account';
-                EXECUTE 'CREATE ROLE ' || quote_ident(doc_kasutaja) ||
-                        ' NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION ';
+                l_string = 'CREATE USER ' || doc_kasutaja ||
+                           ' WITH PASSWORD ' || quote_literal(doc_parool) ||
+                           ' NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION ';
+                RAISE NOTICE '%', l_string;
+                EXECUTE (l_string);
                 IF roles_json ->> 'is_kasutaja'
                 THEN
                     EXECUTE 'GRANT dbkasutaja TO ' || doc_kasutaja;
@@ -129,6 +134,48 @@ BEGIN
         WHERE id = doc_id RETURNING id
             INTO new_user_id;
     END IF;
+
+    -- roles
+--    EXECUTE 'revoke eelkoostaja, dbkasutaja, dbpeakasutaja, arvestaja, eelaktsepterja, eelallkirjastaja, eelesitaja, ladukasutaja to' ||
+--            doc_kasutaja;
+
+    IF roles_json ->> 'is_kasutaja'
+    THEN
+        roles_list = roles_list || ',dbkasutaja';
+    END IF;
+    IF roles_json ->> 'is_peakasutaja'
+    THEN
+        roles_list = roles_list || ',dbpeakasutaja';
+    END IF;
+    IF roles_json ->> 'is_ladu_kasutaja'
+    THEN
+        roles_list = roles_list || ',ladukasutaja';
+    END IF;
+
+    IF roles_json ->> 'is_eel_koostaja'
+    THEN
+        roles_list = roles_list || ',eelkoostaja';
+    END IF;
+
+    IF roles_json ->> 'is_eel_allkirjastaja'
+    THEN
+        roles_list = roles_list || ',eelallkirjastaja';
+    END IF;
+
+    IF roles_json ->> 'is_eel_aktsepterja'
+    THEN
+        roles_list = roles_list || ',eelaktsepterja';
+    END IF;
+
+    IF roles_json ->> 'is_eel_esitaja'
+    THEN
+        roles_list = roles_list || ',eelesitaja';
+    END IF;
+
+
+    EXECUTE 'GRANT ' || roles_list || ' TO ' || doc_kasutaja;
+
+
     RETURN new_user_id;
 
 END;
