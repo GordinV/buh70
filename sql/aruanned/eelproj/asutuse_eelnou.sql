@@ -193,6 +193,7 @@ FROM qryTaitmine qt
          INNER JOIN libs.library l ON l.kood = qt.kood5
     AND l.library = 'TULUDEALLIKAD'
          INNER JOIN ou.rekv r ON r.id = qt.rekvid
+WHERE l.tun5 = 2
 GROUP BY qt.kood5, l.nimetus, qt.rekvid, r.nimetus;
 
 $BODY$
