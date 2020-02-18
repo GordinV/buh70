@@ -1,6 +1,6 @@
-DROP FUNCTION IF EXISTS eelarve.eelarve_eelnou(DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS eelarve.asutuse_eelnou(DATE, INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION eelarve.eelarve_eelnou(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER)
+CREATE OR REPLACE FUNCTION eelarve.asutuse_eelnou(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER)
     RETURNS TABLE (
         rekv_id  INTEGER,
         artikkel VARCHAR(20),
@@ -11,7 +11,8 @@ CREATE OR REPLACE FUNCTION eelarve.eelarve_eelnou(l_kpv DATE, l_rekvid INTEGER, 
         summa_4  NUMERIC(14, 2),
         summa_5  NUMERIC(14, 2),
         summa_6  NUMERIC(14, 2),
-        summa_7  NUMERIC(14, 2)
+        summa_7  NUMERIC(14, 2),
+        asutus   VARCHAR(254)
     ) AS
 $BODY$
 
@@ -177,7 +178,7 @@ WITH qryTaitmine AS (
     GROUP BY t.rekvid, t1.kood5
 )
 
-SELECT l_rekvid,
+SELECT qt.rekvid,
        qt.kood5::VARCHAR(20)        AS artikkel,
        l.nimetus::VARCHAR(254)      AS nimetus,
        sum(summa_1)::NUMERIC(14, 2) AS summa_1,
@@ -186,33 +187,36 @@ SELECT l_rekvid,
        sum(summa_4)::NUMERIC(14, 2) AS summa_4,
        sum(summa_5)::NUMERIC(14, 2) AS summa_5,
        sum(summa_6)::NUMERIC(14, 2) AS summa_6,
-       sum(summa_7)::NUMERIC(14, 2) AS summa_7
+       sum(summa_7)::NUMERIC(14, 2) AS summa_7,
+       r.nimetus::VARCHAR(254)      AS asutus
 FROM qryTaitmine qt
          INNER JOIN libs.library l ON l.kood = qt.kood5
     AND l.library = 'TULUDEALLIKAD'
-GROUP BY qt.kood5, l.nimetus;
+         INNER JOIN ou.rekv r ON r.id = qt.rekvid
+GROUP BY qt.kood5, l.nimetus, qt.rekvid, r.nimetus;
 
 $BODY$
     LANGUAGE SQL
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION eelarve.eelarve_eelnou(DATE, INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.eelarve_eelnou(DATE, INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.eelarve_eelnou(DATE, INTEGER, INTEGER) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.eelarve_eelnou(DATE, INTEGER, INTEGER) TO dbvaatleja;
+
+GRANT EXECUTE ON FUNCTION eelarve.asutuse_eelnou(DATE, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.asutuse_eelnou(DATE, INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.asutuse_eelnou(DATE, INTEGER, INTEGER) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.asutuse_eelnou(DATE, INTEGER, INTEGER) TO dbvaatleja;
 
 
 /*
 
 SELECT *
-FROM eelarve.eelarve_eelnou('2020-12-31', 63, 1)
+FROM eelarve.asutuse_eelnou('2020-12-31', 63, 1)
 
 select * from libs.library
 where library.library = 'DOK'
-AND kood = 'EELARVE_EELNOU'
+AND kood = 'ASUTUSE_EELNOU'
 
 INSERT into libs.library (rekvid, kood, nimetus, library, properties, status)
-    VALUES (1, 'EELARVE_EELNOU', 'Narva linna kondeelarve eelnõu', 'DOK','{"type":"aruanne", "module":["Eelproj"]}', 1)
+    VALUES (1, 'ASUTUSE_EELNOU', 'Narva linna kondeelarve eelnõu', 'DOK','{"type":"aruanne", "module":["Eelproj"]}', 1)
 */
 
