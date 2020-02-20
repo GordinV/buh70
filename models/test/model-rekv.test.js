@@ -99,7 +99,7 @@ describe('dok. type Rekv tests', function () {
 
     it('should succefully execute sql request config', async()=> {
         let sql = _.find(doc.select,{alias:'default.json'}).sql;
-        let returnValue = await db.queryDb(sql, [1, 1]);
+        let returnValue = await db.queryDb(sql, [63, 1]);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);

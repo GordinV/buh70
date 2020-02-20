@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 Asutuse andmed
+
+        div.row_wrapper
+            p.label Reg.kood:
+            p.input #{data[0].regkood}
+
+        div.row_wrapper
+            p.label KBM.kood:
+            p.input #{data[0].kbmkood}
+
+        div.row_wrapper
+            p.label Nimetus:
+            p.input #{data[0].nimetus}
+
+        div.row_wrapper
+            p.label Täis nimetus:
+            p.input #{data[0].muud}
+
+        div.row_wrapper
+            p.label Liik:
+            p.input #{data[0].liik}
+
+        div.row_wrapper
+            p.label Aadress:
+            p.input #{data[0].aadress}
+
+        div.row_wrapper
+            p.label Juhataja:
+            p.input #{data[0].juht}
+
+        div.row_wrapper
+            p.label Raamatupidaja:
+            p.input #{data[0].raama}
+
+        div.row_wrapper
+            p.label Tel.:
+            p.input #{data[0].tel}
+
+        div.row_wrapper
+            p.label Email.:
+            p.input #{data[0].email}
+
+        div(style="font-weight: bold; margin-left:5%")
+            p Pank, kassad
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Arve
+                    th Nimetus
+                    th Konto
+                    th TP
+
+            tbody
+                each aa in data.details
+                    tr
+                        td=aa.arve
+                        td=aa.nimetus
+                        td=aa.konto
+                        td=aa.tp
+

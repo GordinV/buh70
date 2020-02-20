@@ -14,6 +14,7 @@ const DocumentTemplate = require('./../../documentTemplate/index.jsx'),
 
 const LIB_OBJS = [
     {id: 'kontod', filter: ``},
+    {id: 'asutuse_liik', filter: ''},
 ];
 
 
@@ -97,6 +98,20 @@ class Rekv extends React.PureComponent {
                                value={self.docData.muud || ''}
                                onChange={self.handleInputChange}/>
                 </div>
+                <div style={styles.docRow}>
+                    <Select title="Asutuse liik:"
+                            name='liik'
+                            data={self.libs['asutuse_liik']}
+                            value={self.docData.liik || ''}
+                            defaultValue={self.docData.liik || ''}
+                            ref='liik'
+                            collId="kood"
+                            readOnly={!self.state.edited}
+                            onChange={self.handleInputChange}/>
+
+
+                </div>
+
                 <div style={styles.docRow}>
                     <TextArea title="Aadress: "
                               name='aadress'

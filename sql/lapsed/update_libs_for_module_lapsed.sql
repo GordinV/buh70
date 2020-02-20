@@ -8,3 +8,6 @@ UPDATE libs.library
 SET properties = properties::JSONB || '{"type":"settings", "module":["Raamatupidamine","Lapsed"]}'
 WHERE library = 'DOK'
   AND kood IN ('USERID', 'REKV');
+
+
+

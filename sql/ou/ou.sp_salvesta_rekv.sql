@@ -28,6 +28,7 @@ DECLARE
     doc_parool   TEXT    = doc_data ->> 'parool';
     doc_tahtpaev INTEGER = doc_data ->> 'tahtpaev';
     doc_earved   TEXT    = doc_data ->> 'earved';
+    doc_liik     TEXT    = doc_data ->> 'liik';
 
     doc_details  JSON    = doc_data ->> 'gridData';
     detail_id    INTEGER;
@@ -54,10 +55,31 @@ BEGIN
         RETURN 0;
     END IF;
 
+    -- rekl ftp andmed
+    json_object = (SELECT to_jsonb(row)
+                   FROM (SELECT doc_ftp    AS ftp,
+                                doc_login  AS login,
+                                doc_parool AS parool) row);
+
+    json_object = (SELECT to_jsonb(row)
+                   FROM (SELECT json_object :: JSONB AS reklftp) row);
+
+    -- arved properties
+
+    json_arved = (SELECT to_jsonb(row)
+                  FROM (SELECT doc_tahtpaev AS tahtpaev) row);
+
+    json_object = json_object || (SELECT to_jsonb(row)
+                                  FROM (SELECT json_arved :: JSONB AS arved,
+                                               doc_earved          AS earved,
+                                               doc_liik            AS liik) row);
+
+
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
     END IF;
+
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
@@ -68,12 +90,13 @@ BEGIN
         FROM (SELECT now()    AS created,
                      userName AS user) row;
 
+
         INSERT INTO ou.rekv (parentid, regkood, nimetus, kbmkood, aadress, haldus, tel, faks, email, juht, raama, muud,
-                             ajalugu, status)
+                             ajalugu, status, properties)
         VALUES (doc_parentid, doc_regkood, doc_nimetus, doc_kbmkood, doc_aadress, doc_haldus, doc_tel, doc_faks,
                 doc_email,
                 doc_juht, doc_raama, doc_muud, new_history,
-                array_position((enum_range(NULL :: DOK_STATUS)), 'active')) RETURNING id
+                array_position((enum_range(NULL :: DOK_STATUS)), 'active'), json_object) RETURNING id
                    INTO rekv_id;
 
         -- should insert admin user
@@ -120,24 +143,6 @@ BEGIN
         aa_history = ('{"aa":' || aa_history :: TEXT || '}') :: JSON;
         new_history = new_history :: JSONB || aa_history :: JSONB;
 
-        -- rekl ftp andmed
-        json_object = (SELECT to_jsonb(row)
-                       FROM (SELECT doc_ftp    AS ftp,
-                                    doc_login  AS login,
-                                    doc_parool AS parool) row);
-
-        json_object = (SELECT to_jsonb(row)
-                       FROM (SELECT json_object :: JSONB AS reklftp) row);
-
-        -- arved properties
-
-        json_arved = (SELECT to_jsonb(row)
-                      FROM (SELECT doc_tahtpaev AS tahtpaev) row);
-
-        json_object = json_object || (SELECT to_jsonb(row)
-                                      FROM (SELECT json_arved :: JSONB AS arved,
-                                                   doc_earved          AS earved) row);
-
         UPDATE ou.rekv
         SET parentid   = doc_parentid,
             regkood    = doc_regkood,
@@ -163,7 +168,7 @@ BEGIN
         LOOP
             SELECT * INTO json_record
             FROM jsonb_to_record(
-                         json_object) AS x (id TEXT, parentid INTEGER, arve TEXT, nimetus TEXT, default_ boolean,
+                         json_object) AS x (id TEXT, parentid INTEGER, arve TEXT, nimetus TEXT, default_ BOOLEAN,
                                             kassa INTEGER,
                                             pank INTEGER,
                                             konto TEXT, tp TEXT, muud TEXT, kassapank INTEGER);
@@ -174,8 +179,8 @@ BEGIN
 
                 INSERT INTO ou.aa (parentid, arve, nimetus, default_, kassa, pank, konto, tp, muud)
                 VALUES (user_rekvid, json_record.arve, json_record.nimetus,
-                        (case when json_record.default_ is null or not json_record.default_  then 0 else 1 end),
-                        json_record.kassapank, coalesce(json_record.pank,1), json_record.konto, json_record.tp,
+                        (CASE WHEN json_record.default_ IS NULL OR NOT json_record.default_ THEN 0 ELSE 1 END),
+                        json_record.kassapank, coalesce(json_record.pank, 1), json_record.konto, json_record.tp,
                         json_record.muud) RETURNING id
                            INTO detail_id;
 
@@ -183,7 +188,7 @@ BEGIN
                 UPDATE ou.aa
                 SET arve     = json_record.arve,
                     nimetus  = json_record.nimetus,
-                    default_ = (case when json_record.default_ is null or not(json_record.default_)  then 0 else 1 end),
+                    default_ = (CASE WHEN json_record.default_ IS NULL OR NOT (json_record.default_) THEN 0 ELSE 1 END),
                     kassa    = json_record.kassapank,
                     pank     = json_record.pank,
                     konto    = json_record.konto,
