@@ -261,6 +261,12 @@ class DocumentTemplate extends React.Component {
                     docId = 0;
                 }
 
+                // если есть в кеше , то читим
+                let lib = this.props.docTypeId.toLowerCase();
+                if (DocContext.libs[lib] && DocContext.libs[lib].length > 0) {
+                    DocContext.libs[lib] = []
+                }
+
                 if (this.props.reload) {
                     // reload / redirect
                     setTimeout(() => {

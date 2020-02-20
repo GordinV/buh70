@@ -360,7 +360,13 @@ class Documents extends React.Component {
                             },1000);
                         }
                     } else {
-                        this.fetchData('selectDocs')
+                        this.fetchData('selectDocs');
+                        // если есть в кеше , то чиcтим
+                        let lib = this.props.docTypeId.toLowerCase();
+                        if (DocContext.libs[lib] && DocContext.libs[lib].length > 0) {
+                            DocContext.libs[lib] = []
+                        }
+
                     }
                 });
         }
