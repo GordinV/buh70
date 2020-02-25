@@ -42,4 +42,5 @@ module.exports = {
     teatis: '/lapsed/teatis',
     asutuse_liik: '/libs/libraries/asutuse_liik',
     koolituse_tyyp: '/libs/libraries/koolituse_tyyp',
+    koolituse_liik: '/libs/libraries/koolituse_liik',
 };

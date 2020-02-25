@@ -50,6 +50,8 @@ const AsutuseLiikRegister = require('./../docs/asutuse_liik/index.jsx'),
 const KoolituseTyypRegister = require('./../docs/koolituse_tyyp/index.jsx'),
     KoolituseTyypDocument = require('./../docs/koolituse_tyyp/document/index.jsx');
 
+const KoolituseLiikRegister = require('./../docs/koolituse_liik/index.jsx'),
+    KoolituseLiikDocument = require('./../docs/koolituse_liik/document/index.jsx');
 
 const PankVVRegister = require('./../docs/pank_vv/index.jsx');
 const ConfigDocument = require('./../docs/config/document/index.jsx');
@@ -310,9 +312,21 @@ class App extends React.Component {
                            initData={this.props.initData}/>}/>
                 <Route exact path="/lapsed/koolituse_tyyp/:docId"
                        render={(props) => <KoolituseTyypDocument {...props}
-                                                               module={MODULE}
-                                                               history={props.history}
+                                                                 module={MODULE}
+                                                                 history={props.history}
                        />}/>
+                <Route exact path="/lapsed/koolituse_liik"
+                       render={(props) => <KoolituseLiikRegister
+                           module={MODULE}
+                           history={props.history}
+                           initData={this.props.initData}/>}/>
+                <Route exact path="/lapsed/koolituse_Liik/:docId"
+                       render={(props) => <KoolituseLiikDocument {...props}
+                                                                 module={MODULE}
+                                                                 history={props.history}
+                       />}/>
+
+
             </StyleRoot>
         )
     }

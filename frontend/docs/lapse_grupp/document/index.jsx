@@ -18,14 +18,6 @@ const LIBRARIES = [
     {id: 'koolituse_tyyp', filter: ``}
 ];
 
-const KOOLITUSE_TYYP = [
-    {id: 1, kood: 'LASTEAJARÜHM', name: 'Lasteajarühm'},
-    {id: 2, kood: 'AED', name: 'Lasteaed'},
-    {id: 3, kood: 'SPORT', name: 'Spordirühm'},
-    {id: 4, kood: 'HUVIRING', name: 'Huviring'},
-
-];
-
 class LapseGrupp extends React.PureComponent {
     constructor(props) {
         super(props);

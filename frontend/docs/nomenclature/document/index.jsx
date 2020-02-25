@@ -10,8 +10,16 @@ const
     InputNumber = require('../../../components/input-number/input-number.jsx'),
     CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     styles = require('./nomenclature-styles'),
-    LIBRARIES = ['kontod', 'tunnus', 'project', 'document', 'artikkel', 'allikas', 'tegev'];
-
+    LIBRARIES = [
+        {id: 'kontod', filter: ``},
+        {id: 'tunnus', filter: ``},
+        {id: 'project', filter: ``},
+        {id: 'document', filter: `where kood::TEXT = 'ARV'`},
+        {id: 'artikkel', filter: ``},
+        {id: 'allikas', filter: ``},
+        {id: 'tegev', filter: ``},
+        {id: 'koolituse_liik', filter: ``},
+    ];
 
 const TAXIES = [
     {id: 1, kood: null, name: '-%'},
@@ -28,12 +36,6 @@ const UHIK = [
     {id: 3, kood: 'päev', name: 'Päev'},
     {id: 4, kood: 'kuu', name: 'Kuu'},
     {id: 5, kood: 'aasta', name: 'Aasta'}
-];
-
-const OPPE = [
-    {id: 1, kood: 'Põhiõpe', name: 'Põhiõpe'},
-    {id: 2, kood: 'Vabaõpe', name: 'Vabaõpe'},
-    {id: 3, kood: 'Muud', name: 'Muud'},
 ];
 
 class Nomenclature extends React.PureComponent {
@@ -124,7 +126,7 @@ class Nomenclature extends React.PureComponent {
                                     readOnly={!isEditeMode}/>
                             <Select title="Koolituse liigid:"
                                     name='oppe_tyyp'
-                                    data={OPPE}
+                                    data={self.libs['koolituse_liik']}
                                     collId='kood'
                                     value={self.docData.oppe_tyyp || ''}
                                     defaultValue={self.docData.oppe_tyyp}
