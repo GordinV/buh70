@@ -22,7 +22,6 @@ DECLARE
     doc_all_yksus_4 TEXT    = coalesce((doc_data ->> 'all_yksus_4'), '');
     doc_all_yksus_5 TEXT    = coalesce((doc_data ->> 'all_yksus_5'), '');
     doc_details     JSONB   = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
-    doc_liik        INTEGER    = doc_data ->> 'liik';
     doc_tyyp        INTEGER    = doc_data ->> 'tyyp';
 
     is_import       BOOLEAN = data ->> 'import';
@@ -51,7 +50,6 @@ BEGIN
     SELECT to_jsonb(row) INTO json_object
     FROM (SELECT all_yksused AS all_yksused,
                  doc_details AS teenused,
-                 doc_liik as liik,
                  doc_tyyp as tyyp
                  ) row;
 

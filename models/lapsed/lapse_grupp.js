@@ -30,7 +30,6 @@ module.exports = {
                      $2                                                             AS userid,
                      rtrim(regexp_replace((properties::JSONB ->> 'all_yksused'), '[^a-zA-Z0-9,]', '', 'g'),
                            ',')                                                     AS all_yksused,
-                     coalesce((l.properties::JSONB ->> 'liik')::INTEGER, 1)::INTEGER AS liik,
                      coalesce((l.properties::JSONB ->> 'tyyp')::INTEGER, 1)::INTEGER AS tyyp
               FROM libs.library l
               WHERE l.id = $1::INTEGER`,
@@ -45,7 +44,6 @@ module.exports = {
                   null::text as kood,
                   null::text as nimetus,
                   null::text as muud,
-                  1 as liik,
                   1 as tyyp`,
         query: null,
         multiple: false,
