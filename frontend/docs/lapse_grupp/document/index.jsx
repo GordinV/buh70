@@ -14,7 +14,8 @@ const
     styles = require('./styles');
 
 const LIBRARIES = [
-    {id: 'nomenclature', filter: `where dok = 'ARV'`}
+    {id: 'nomenclature', filter: `where dok = 'ARV'`},
+    {id: 'koolituse_tyyp', filter: ``}
 ];
 
 const KOOLITUSE_TYYP = [
@@ -96,12 +97,12 @@ class LapseGrupp extends React.PureComponent {
 
                         <Select title="Koolituse tüüp:"
                                 name='tyyp'
-                                data={KOOLITUSE_TYYP}
-                                collId='id'
-                                value={self.docData.tyyp || 1}
-                                btnDelete={isEditMode}
-                                onChange={self.handleInputChange}
-                                readOnly={!isEditMode}/>
+                                data={self.libs['koolituse_tyyp']}
+                                value={self.docData.tyyp}
+                                ref='tyyp'
+                                collId="id"
+                                readOnly={!self.state.edited}
+                                onChange={self.handleInputChange}/>
 
                         <label>
                             All üksused
