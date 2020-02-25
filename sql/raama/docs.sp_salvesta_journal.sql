@@ -16,8 +16,7 @@ DECLARE
                                 FROM libs.library
                                 WHERE kood = doc_type_kood
                                   AND library = 'DOK'
-                                LIMIT
-                                    1);
+                                    LIMIT 1);
     doc_data         JSON    = data ->> 'data';
     doc_details      JSON    = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     doc_asutusid     INTEGER = doc_data ->> 'asutusid';
@@ -45,7 +44,7 @@ DECLARE
                                 FROM ou.aa
                                 WHERE parentid = user_rekvid
                                   AND kassa = 2
-                                LIMIT 1);
+                                    LIMIT 1);
 
     l_check_lausend  TEXT;
 BEGIN
@@ -68,7 +67,7 @@ BEGIN
     END IF;
 
     -- проверка на период
-    IF NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv)
+    IF is_import IS NULL AND NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv)
     THEN
         RAISE EXCEPTION 'Period on kinni';
     END IF;
@@ -154,7 +153,7 @@ BEGIN
                  ) row;
 
             l_check_lausend = docs.sp_lausendikontrol(json_lausend::JSONB);
-            IF NOT empty(l_check_lausend)
+            IF is_import IS NULL AND NOT empty(l_check_lausend)
             THEN
                 RAISE EXCEPTION '%',l_check_lausend;
             END IF;
@@ -220,10 +219,9 @@ BEGIN
               AND a1.asutusId = doc_asutusid
               AND (ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.deebet)) OR
                    ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.kreedit)))
-            ORDER BY a1.kpv
+                ORDER BY a1.kpv
                 DESC
-            LIMIT
-                1;
+                LIMIT 1;
 
             IF lnId IS NOT NULL
             THEN
@@ -263,11 +261,12 @@ BEGIN
                 WHERE a.asutusid = doc_asutusid
                   AND number = doc_dok
                   AND a.rekvid = user_rekvid
-                ORDER BY a.jaak DESC, a.kpv
-                LIMIT 1
+                    ORDER BY a.jaak DESC
+                    , a.kpv
+                    LIMIT 1
     );
 
-    IF l_arv_id IS NOT NULL
+    IF is_import IS NULL AND l_arv_id IS NOT NULL
     THEN
         PERFORM docs.sp_tasu_arv(
                         doc_id, l_arv_id, userid);
