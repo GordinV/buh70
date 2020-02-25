@@ -41,4 +41,5 @@ module.exports = {
     aasta_naitajad: '/aruanned/lapsed/aasta_naitajad',
     teatis: '/lapsed/teatis',
     asutuse_liik: '/libs/libraries/asutuse_liik',
+    koolituse_tyyp: '/libs/libraries/koolituse_tyyp',
 };

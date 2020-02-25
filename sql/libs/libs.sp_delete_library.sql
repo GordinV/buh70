@@ -45,9 +45,10 @@ BEGIN
     END IF;
 
     -- проверим на использование кода в справочниках
-    IF v_doc.library = 'ASUTUSE_LIIK' and exists(SELECT id
-              FROM ou.rekv r
-              WHERE r.properties ->> 'liik' IS NOT NULL AND r.properties ->> 'liik' = v_doc.kood::TEXT)
+    IF v_doc.library = 'ASUTUSE_LIIK' AND exists(SELECT id
+                                                 FROM ou.rekv r
+                                                 WHERE r.properties ->> 'liik' IS NOT NULL
+                                                   AND r.properties ->> 'liik' = v_doc.kood::TEXT)
     THEN
         RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
         error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
@@ -56,6 +57,23 @@ BEGIN
         RETURN;
 
     END IF;
+
+    -- проверим на использование кода в справочниках
+    IF v_doc.library = 'KOOLITUSE_TYYP' AND exists(SELECT id
+                                                   FROM libs.library l
+                                                   WHERE l.library = 'LAPSE_GRUPP'
+                                                     AND status <> 3
+                                                     AND coalesce((l.properties::JSONB ->> 'tyyp')::INTEGER, 0)::INTEGER =
+                                                         v_doc.id)
+    THEN
+        RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
+        error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
+        error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
+        result = 0;
+        RETURN;
+
+    END IF;
+
 
     UPDATE libs.library
     SET status = 3

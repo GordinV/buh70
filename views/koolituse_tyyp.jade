@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 Koolituse tüüp
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Kood
+                    th Nimetus
+                    th Märkused
+
+            tbody
+                each rea in data
+                    tr
+                        td=rea.kood
+                        td=rea.nimetus
+                        td=rea.muud

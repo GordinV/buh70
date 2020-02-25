@@ -172,3 +172,11 @@ SELECT 1::INTEGER,
        1
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'ASUTUSE_LIIK');
 
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties, status)
+SELECT 1::INTEGER,
+       'KOOLITUSE_TYYP'                                    AS kood,
+       'Koolituse tüüp'                                  AS nimetus,
+       'DOK'                                     AS library,
+       '{"type":"library", "module":["Lapsed"]}' AS properties,
+       1
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'KOOLITUSE_TYYP');
