@@ -14,13 +14,11 @@ BEGIN
 
     -- 0 = открыт
     -- 1 закрыт
-    IF docs.is_period_opened(new.id)
+    IF NOT docs.is_period_opened(new.id)
     THEN
-        RETURN new;
-    ELSE
         RAISE EXCEPTION 'Period on suletatud';
     END IF;
-
+    RETURN new;
 END;
 $$;
 

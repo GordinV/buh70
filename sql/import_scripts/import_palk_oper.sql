@@ -1,5 +1,41 @@
 DROP FUNCTION IF EXISTS import_palk_oper( INTEGER );
 
+DROP FOREIGN TABLE IF EXISTS remote_palk_oper;
+
+CREATE FOREIGN TABLE remote_palk_oper (
+  id INTEGER NOT NULL,
+  rekvid      INTEGER                                    NOT NULL,
+  libid       INTEGER        DEFAULT 0                   NOT NULL,
+  lepingid    INTEGER        DEFAULT 0                   NOT NULL,
+  kpv         DATE           DEFAULT ('now'::TEXT)::DATE NOT NULL,
+  summa       NUMERIC(12, 4) DEFAULT 0                   NOT NULL,
+  doklausid   INTEGER        DEFAULT 0                   NOT NULL,
+  journalid   INTEGER        DEFAULT 0                   NOT NULL,
+  journal1id  INTEGER        DEFAULT 0                   NOT NULL,
+  muud        TEXT,
+  kood1       VARCHAR(20)    DEFAULT space(20)           NOT NULL,
+  kood2       VARCHAR(20)    DEFAULT space(20)           NOT NULL,
+  kood3       VARCHAR(20)    DEFAULT space(20)           NOT NULL,
+  kood4       VARCHAR(20)    DEFAULT space(20)           NOT NULL,
+  kood5       VARCHAR(20)    DEFAULT space(20)           NOT NULL,
+  konto       VARCHAR(20)    DEFAULT space(20)           NOT NULL,
+  tp          VARCHAR(20)    DEFAULT space(20)           NOT NULL,
+  tunnus      VARCHAR(20)    DEFAULT space(20)           NOT NULL,
+  proj        VARCHAR(20)    DEFAULT space(1)            NOT NULL,
+  palk_lehtid INTEGER,
+  tulumaks    NUMERIC(18, 2),
+  sotsmaks    NUMERIC(18, 2),
+  tootumaks   NUMERIC(18, 2),
+  pensmaks    NUMERIC(18, 2),
+  tulubaas    NUMERIC(18, 2),
+  tka         NUMERIC(18, 2),
+  period      DATE,
+  pohjus      VARCHAR(20)
+  )
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'palk_oper');
+
+
 CREATE OR REPLACE FUNCTION import_palk_oper(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -24,10 +60,10 @@ BEGIN
     p.*,
     t.rekvid,
     pl.tululiik
-  FROM palk_oper p
-    INNER JOIN tooleping t ON t.id = p.lepingid
-    INNER JOIN rekv ON rekv.id = t.rekvid AND rekv.parentid < 999
-    INNER JOIN palk_lib pl ON pl.parentid = p.libid
+  FROM remote_palk_oper p
+    INNER JOIN remote_tooleping t ON t.id = p.lepingid
+    INNER JOIN remote_rekv rekv ON rekv.id = t.rekvid AND rekv.parentid < 999
+    INNER JOIN remote_palk_lib pl ON pl.parentid = p.libid
   WHERE (p.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP

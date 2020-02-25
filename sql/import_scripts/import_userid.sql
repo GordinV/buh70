@@ -1,5 +1,20 @@
 DROP FUNCTION IF EXISTS import_userid( INTEGER );
 
+CREATE FOREIGN TABLE remote_userid (
+
+  id       INTEGER                                        NOT NULL,
+  rekvid       INTEGER                 NOT NULL,
+  kasutaja     CHAR(50)                NOT NULL,
+  ametnik      CHAR(254)               NOT NULL,
+  parool       TEXT,
+  kasutaja_    INTEGER   DEFAULT 1     NOT NULL,
+  peakasutaja_ INTEGER   DEFAULT 0     NOT NULL,
+  admin        INTEGER   DEFAULT 0     NOT NULL,
+  muud         TEXT  )
+
+  SERVER db_narva_ee
+  OPTIONS (schema_name 'public', table_name 'userid');
+
 CREATE OR REPLACE FUNCTION import_userid(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$

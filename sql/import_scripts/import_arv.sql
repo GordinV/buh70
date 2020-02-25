@@ -88,8 +88,8 @@ BEGIN
 
   FOR v_arv IN
   SELECT a.*
-  FROM remote_arv a
-         INNER JOIN rekv ON a.rekvid = rekv.id AND rekv.parentid < 999
+  FROM arv a
+         INNER JOIN remote_rekv rekv ON a.rekvid = rekv.id AND rekv.parentid < 999
   WHERE (a.id = in_old_id OR in_old_id IS NULL)
   ORDER BY a.kpv
   LIMIT ALL
@@ -136,7 +136,7 @@ BEGIN
                                                     WHERE ltrim(rtrim(arv.number)) :: TEXT = ltrim(rtrim(substr(a1.muud, 10, 20)))
                                                       AND arv.rekvid = v_arv.rekvid)
                                              LIMIT 1) AS arve_id
-                                     FROM remote_arv1 a1
+                                     FROM arv1 a1
                                      WHERE a1.parentid = v_arv.id) AS a1));
 
     RAISE NOTICE 'json_arv1 %', json_arv1;

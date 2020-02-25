@@ -59,7 +59,7 @@ BEGIN
 
   FOR v_nom IN
   SELECT *
-  FROM remote_nomenklatuur n
+  FROM nomenklatuur n
     INNER JOIN rekv ON rekv.id = n.rekvid AND rekv.parentid < 999
   WHERE (n.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
@@ -80,7 +80,7 @@ BEGIN
       l.kood AS tunnus
     INTO v_libs
     FROM remote_klassiflib k
-      LEFT OUTER JOIN remote_library l ON l.id = k.tunnusid
+      LEFT OUTER JOIN library l ON l.id = k.tunnusid
     WHERE nomid = v_nom.id
     ORDER BY konto DESC, tyyp
     LIMIT 1;

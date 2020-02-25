@@ -1,5 +1,27 @@
 DROP FUNCTION IF EXISTS import_taabel( INTEGER );
 
+
+DROP FOREIGN TABLE IF EXISTS remote_palk_taabel1;
+
+CREATE FOREIGN TABLE remote_palk_taabel1 (
+  id        INTEGER                    NOT NULL,
+  toolepingid INTEGER        DEFAULT 0                          NOT NULL,
+  kuu         SMALLINT       DEFAULT month(('now'::TEXT)::DATE) NOT NULL,
+  aasta       SMALLINT       DEFAULT year(('now'::TEXT)::DATE)  NOT NULL,
+  muud        TEXT,
+  kokku       NUMERIC(12, 4) DEFAULT 0,
+  too         NUMERIC(12, 4) DEFAULT 0,
+  paev        NUMERIC(12, 4) DEFAULT 0,
+  ohtu        NUMERIC(12, 4) DEFAULT 0,
+  oo          NUMERIC(12, 4) DEFAULT 0,
+  tahtpaev    NUMERIC(12, 4) DEFAULT 0,
+  puhapaev    NUMERIC(12, 4) DEFAULT 0,
+  uleajatoo   NUMERIC(12, 4) DEFAULT 0
+  )  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'palk_taabel1');
+
+
+
 CREATE OR REPLACE FUNCTION import_taabel(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -20,9 +42,9 @@ BEGIN
     pt.*,
     t.rekvid,
     il.new_id AS new_leping_id
-  FROM palk_taabel1 pt
-    INNER JOIN tooleping t ON t.id = pt.toolepingid
-    INNER JOIN rekv ON rekv.id = t.rekvid AND rekv.parentid < 999
+  FROM remote_palk_taabel1 pt
+    INNER JOIN remote_tooleping t ON t.id = pt.toolepingid
+    INNER JOIN remote_rekv rekv ON rekv.id = t.rekvid AND rekv.parentid < 999
     INNER JOIN import_log il ON il.old_id = t.id AND il.lib_name = 'TOOLEPING'
   WHERE (pt.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL

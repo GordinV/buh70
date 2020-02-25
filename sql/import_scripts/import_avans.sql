@@ -126,8 +126,8 @@ BEGIN
 
     -- правим ссылку на проводку
 
-    IF year(v_avans1.kpv) = 2018 AND NOT empty(v_avans1.journalid)
-    THEN
+--    IF year(v_avans1.kpv) = 2018 AND NOT empty(v_avans1.journalid)
+ --   THEN
       SELECT new_id
       INTO l_journal_id
       FROM import_log
@@ -139,7 +139,7 @@ BEGIN
         SET journalid = l_journal_id
         WHERE parentid = avans_id;
       END IF;
-    END IF;
+ --   END IF;
 
     -- правим автора
     UPDATE docs.doc

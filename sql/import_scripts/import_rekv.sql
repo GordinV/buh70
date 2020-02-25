@@ -1,5 +1,26 @@
 DROP FUNCTION IF EXISTS import_rekv( );
 
+DROP FOREIGN TABLE IF EXISTS remote_rekv;
+
+CREATE FOREIGN TABLE remote_rekv (
+  id      INTEGER                       NOT NULL,
+  parentid INTEGER                    NOT NULL,
+  regkood  CHAR(20)  DEFAULT space(1) NOT NULL,
+  nimetus  CHAR(254) DEFAULT space(1) NOT NULL,
+  kbmkood  CHAR(20)  DEFAULT space(1) NOT NULL,
+  aadress  TEXT      DEFAULT space(1) NOT NULL,
+  haldus   CHAR(254) DEFAULT space(1) NOT NULL,
+  tel      CHAR(120) DEFAULT space(1) NOT NULL,
+  faks     CHAR(120) DEFAULT space(1) NOT NULL,
+  email    CHAR(120) DEFAULT space(1) NOT NULL,
+  juht     CHAR(120) DEFAULT space(1) NOT NULL,
+  raama    CHAR(120) DEFAULT space(1) NOT NULL,
+  muud     TEXT,
+  recalc   SMALLINT  DEFAULT 1        NOT NULL)
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'rekv');
+
+
 CREATE OR REPLACE FUNCTION import_rekv()
   RETURNS INTEGER AS
 $BODY$
@@ -19,8 +40,9 @@ BEGIN
 
   FOR v_rekv IN
   SELECT *
-  FROM rekv r
+  FROM remote_rekv r
   WHERE r.parentid < 999
+  and id > 130
   LIMIT ALL
   LOOP
 
@@ -87,13 +109,13 @@ BEGIN
     INTO v_params;
 
     RAISE NOTICE 'salvestame, params';
-    json_object = ('{"data":' || trim(TRAILING FROM (row_to_json(v_params)) :: TEXT, '}') :: TEXT ||
+    json_object = ('{"import":true, "data":' || trim(TRAILING FROM (row_to_json(v_params)) :: TEXT, '}') :: TEXT ||
                    ',"gridData":' || json_aa :: TEXT || '}}');
 
     RAISE NOTICE 'salvestame, params %', json_object;
 
 
-    SELECT ou.sp_salvesta_REKV(json_object :: JSON, 1, 1)
+    SELECT ou.sp_salvesta_REKV(json_object :: JSON, 63, 2477)
     INTO rekv_id;
     RAISE NOTICE 'lib_id %, l_count %, json_object %', rekv_id, l_count, json_object;
 
@@ -131,7 +153,7 @@ BEGIN
   THEN
     RAISE NOTICE 'Import ->ok';
   ELSE
-    RAISE EXCEPTION 'Import failed, new_count < old_count %', l_count;
+ --   RAISE EXCEPTION 'Import failed, new_count < old_count %', l_count;
   END IF;
 
 

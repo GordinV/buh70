@@ -1,5 +1,26 @@
 DROP FUNCTION IF EXISTS import_arvtasu( INTEGER );
 
+DROP FOREIGN TABLE IF EXISTS remote_arvtasu;
+
+CREATE FOREIGN TABLE remote_arvtasu (
+  id        INTEGER                                    NOT NULL,
+  rekvid    INTEGER                                    NOT NULL,
+  arvid     INTEGER        DEFAULT 0                   NOT NULL,
+  kpv       DATE           DEFAULT ('now'::TEXT)::DATE NOT NULL,
+  summa     NUMERIC(12, 4) DEFAULT 0                   NOT NULL,
+  dok       CHAR(60)       DEFAULT space(1)            NOT NULL,
+  nomid     INTEGER        DEFAULT 0                   NOT NULL,
+  pankkassa SMALLINT       DEFAULT 0                   NOT NULL,
+  journalid INTEGER        DEFAULT 0                   NOT NULL,
+  sorderid  INTEGER        DEFAULT 0                   NOT NULL,
+  muud      TEXT,
+  doklausid INTEGER        DEFAULT 0                   NOT NULL,
+  vanaid    INTEGER
+  )
+  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'arvtasu');
+
+
 CREATE OR REPLACE FUNCTION import_arvtasu(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -24,7 +45,7 @@ BEGIN
 
   FOR v_arvtasu IN
   SELECT a.*
-  FROM arvtasu a
+  FROM remote_arvtasu a
   WHERE (a.id = in_old_id OR in_old_id IS NULL)
   ORDER BY a.kpv
   LIMIT ALL

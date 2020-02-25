@@ -42,6 +42,8 @@ DECLARE
     user_json    JSON;
     v_user       RECORD;
     new_user_id  INTEGER;
+    is_import      BOOLEAN = data ->> 'import';
+
 BEGIN
 
     SELECT kasutaja INTO userName
@@ -49,7 +51,7 @@ BEGIN
     WHERE u.rekvid = user_rekvid
       AND u.id = user_id;
 
-    IF userName IS NULL
+    IF  is_import IS NULL AND userName IS NULL
     THEN
         RAISE EXCEPTION 'User not found %', user;
         RETURN 0;
@@ -115,15 +117,16 @@ BEGIN
 
         SELECT row_to_json(row) INTO user_json
         FROM (SELECT 0      AS id,
+                     is_import as import,
                      v_user AS data) row;
 
-        new_user_id = ou.sp_salvesta_userid(user_json, user_id, rekv_id);
+/*        new_user_id = ou.sp_salvesta_userid(user_json, user_id, rekv_id);
 
         IF new_user_id IS NULL OR new_user_id = 0
         THEN
             RAISE EXCEPTION 'Uue kasutaja salvestamine eba õnnestus';
         END IF;
-
+*/
     ELSE
 
         SELECT row_to_json(row) INTO new_history

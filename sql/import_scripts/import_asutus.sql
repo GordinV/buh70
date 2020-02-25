@@ -46,7 +46,7 @@ BEGIN
     CASE WHEN a.rekvid > 999
       THEN a.rekvid
     ELSE NULL END AS kehtivus
-  FROM remote_asutus a
+  FROM asutus a
   WHERE (a.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP

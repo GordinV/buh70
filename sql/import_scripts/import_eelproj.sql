@@ -1,5 +1,7 @@
 DROP FUNCTION IF EXISTS import_eelproj(INTEGER);
 
+DROP FOREIGN TABLE IF EXISTS remote_eelproj;
+
 CREATE FOREIGN TABLE remote_eelproj (
   id SERIAL NOT NULL,
   rekvid    INTEGER              NOT NULL,
@@ -30,7 +32,7 @@ BEGIN
   FOR v_proj IN
   SELECT
     e.*
-  FROM remote_eelproj e
+  FROM eelproj e
   WHERE (e.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP

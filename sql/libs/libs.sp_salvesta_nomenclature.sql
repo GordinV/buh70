@@ -101,6 +101,8 @@ BEGIN
     ELSE
         -- muuda
 
+        raise notice 'doc_nimetus %', doc_nimetus;
+
         UPDATE libs.nomenklatuur
         SET rekvid     = CASE WHEN is_import IS NOT NULL THEN user_rekvid ELSE rekvid END,
             dok        = doc_dok,

@@ -1,5 +1,23 @@
 DROP FUNCTION IF EXISTS import_puudumine( INTEGER );
 
+
+DROP FOREIGN TABLE IF EXISTS remote_puudumine;
+
+CREATE FOREIGN TABLE remote_puudumine (
+  id        INTEGER                    NOT NULL,
+  kpv1     DATE           DEFAULT ('now'::TEXT)::DATE NOT NULL,
+  kpv2     DATE           DEFAULT ('now'::TEXT)::DATE NOT NULL,
+  paevad   INTEGER        DEFAULT 0                   NOT NULL,
+  summa    NUMERIC(12, 4) DEFAULT 0                   NOT NULL,
+  tunnus   INTEGER        DEFAULT 0                   NOT NULL,
+  tyyp     INTEGER        DEFAULT 0                   NOT NULL,
+  muud     TEXT,
+  libid    INTEGER        DEFAULT 0,
+  lepingid INTEGER
+  )  SERVER db_narva_ee
+  OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'puudumine');
+
+
 CREATE OR REPLACE FUNCTION import_puudumine(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -20,9 +38,9 @@ BEGIN
     p.*,
     t.rekvid,
     il.new_id AS new_leping_id
-  FROM puudumine p
-    INNER JOIN tooleping t ON t.id = p.lepingid
-    INNER JOIN rekv ON rekv.id = t.rekvid AND rekv.parentid < 999
+  FROM remote_puudumine p
+    INNER JOIN remote_tooleping t ON t.id = p.lepingid
+    INNER JOIN remote_rekv rekv ON rekv.id = t.rekvid AND rekv.parentid < 999
     INNER JOIN import_log il ON il.old_id = t.id AND il.lib_name = 'TOOLEPING'
   WHERE (p.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
