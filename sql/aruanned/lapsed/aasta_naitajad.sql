@@ -50,9 +50,11 @@ FROM (
                         ELSE l_kpv END::DATE AS kpv
          ),
               qry_liik AS (
-                  SELECT DISTINCT coalesce((n.properties ->> 'oppe_tyyp')::TEXT, 'Põhiõpe')::TEXT       AS liik,
+                  SELECT DISTINCT coalesce((n.properties ->> 'oppe_tyyp')::TEXT, 'Põhiõpe')::TEXT AS liik,
                                   d.id,
-                                  array_agg(DISTINCT lg.kood::TEXT || '-' || coalesce(r.properties ->>'liik','') || '-' || lg.tyyp) AS yksused
+                                  array_agg(DISTINCT
+                                            lg.kood::TEXT || '-' || coalesce(r.properties ->> 'liik', '') || '-' ||
+                                            lg.tyyp)                                              AS yksused
                   FROM qryPeriod,
                        docs.doc d
                            INNER JOIN docs.arv a ON d.id = a.parentid
@@ -60,25 +62,17 @@ FROM (
                            INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
                            INNER JOIN lapsed.liidestamine l ON l.docid = d.id
                            INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.parentid AND lk.nomid = a1.nomid
-                           INNER JOIN (SELECT rekvid,
-                                              kood,
-                                              CASE
-                                                  WHEN COALESCE((l.properties::JSONB ->>
-                                                                 'tyyp')::INTEGER, 1) = 1 THEN 'LASTEAJARÜHM'
-                                                  WHEN COALESCE((l.properties::JSONB ->>
-                                                                 'tyyp')::INTEGER, 1) = 2 THEN 'AED'
-                                                  WHEN COALESCE((l.properties::JSONB ->>
-                                                                 'tyyp')::INTEGER, 1) = 3 THEN 'SPORT'
-                                                  WHEN COALESCE((l.properties::JSONB ->>
-                                                                 'tyyp')::INTEGER, 1) = 4 THEN 'HUVIRING'
-                                                  END AS tyyp
+                           INNER JOIN (SELECT l.rekvid,
+                                              l.kood,
+                                              t.kood AS tyyp
                                        FROM libs.library l
-                                       WHERE library = 'LAPSE_GRUPP'
+                                                LEFT OUTER JOIN libs.library t ON (l.properties::jsonb ->> 'tyyp')::INTEGER = t.id
+                                       WHERE l.library = 'LAPSE_GRUPP'
                        ) lg ON lg.rekvid = d.rekvid AND lg.kood::TEXT = lk.properties ->> 'yksus'
                            INNER JOIN ou.rekv r ON r.id = a.rekvid
                   WHERE year(a.kpv) = year(qryPeriod.kpv)
                     AND a.kpv <= qryPeriod.kpv
-                    AND (l_liik IS NULL OR coalesce(r.properties ->>'liik','') ILIKE l_liik || '%')
+                    AND (l_liik IS NULL OR coalesce(r.properties ->> 'liik', '') ILIKE l_liik || '%')
                     AND (l_tyyp IS NULL OR lg.tyyp ILIKE l_tyyp || '%')
                       GROUP BY (n.properties ->> 'oppe_tyyp')
                       , d.id
