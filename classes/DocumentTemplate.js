@@ -143,7 +143,6 @@ class Document {
         if (!sql) {
             return [];
         }
-
         return Object.assign({},
             await db.queryDb(sql, params, '', sqlWhere, sqlLimit),
             {gridConfig: libGridConfig, searchFields: libSearchFields}

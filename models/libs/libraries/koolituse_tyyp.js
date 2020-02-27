@@ -1,11 +1,12 @@
 module.exports = {
     selectAsLibs: `SELECT *
                    FROM (
-                            SELECT 0 AS id, ''::VARCHAR(20) AS kood, ''::VARCHAR(254) AS nimetus, $1 AS rekv_id
+                            SELECT 0 AS id, ''::VARCHAR(20) AS kood, ''::VARCHAR(254) AS nimetus
                             UNION
-                            SELECT id, kood::TEXT AS kood, nimetus::TEXT AS name, $1 AS rekv_id
+                            SELECT id, kood::TEXT AS kood, nimetus::TEXT AS name
                             FROM libs.library l
                             WHERE library::TEXT = 'KOOLITUSE_TYYP'
+                              AND l.rekvid::INTEGER = $1::INTEGER
                               AND l.status <> 3
                         ) qry
                    ORDER BY kood`,
@@ -16,7 +17,7 @@ module.exports = {
                      l.library::VARCHAR(20),
                      l.muud,
                      $2::INTEGER             AS userid,
-                     'KOOLITUSE_TYYP'          AS doc_type_id
+                     'KOOLITUSE_TYYP'        AS doc_type_id
               FROM libs.library l
               WHERE l.library = 'KOOLITUSE_TYYP'
                 AND l.id = $1`,
@@ -56,6 +57,7 @@ module.exports = {
         sqlString: `SELECT l.*, $1::INTEGER AS rekv_id, $2::INTEGER AS userId
                     FROM libs.library l
                     WHERE l.library::TEXT = 'KOOLITUSE_TYYP'
+                      AND l.rekvid = $1
                       AND l.status <> 3`,
         params: '',
         alias: 'curLiik'
