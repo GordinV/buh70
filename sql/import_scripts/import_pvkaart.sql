@@ -21,10 +21,9 @@ BEGIN
     p.*,
     l.nimetus AS fixed_nimi
   FROM curpohivara p
-    INNER JOIN library_ l ON l.id = p.id
+    INNER JOIN library l ON l.id = p.id
     INNER JOIN rekv ON rekv.id = p.rekvid AND rekv.parentid < 999
   WHERE (p.id = in_old_id OR in_old_id IS NULL)
-        AND (mahakantud IS NULL OR mahakantud < date(2017, 01, 01))
   LIMIT ALL
   LOOP
 
@@ -152,6 +151,7 @@ COST 100;
 
 /*
 SELECT import_pvkaart(4407)
-SELECT import_pvkaart(id) from curPohivara where mahakantud is null or year(mahakantud) >= 2017
+SELECT import_pvkaart(id) from curPohivara where mahakantud is null or year(mahakantud) >= 2019
+and rekvid in (3, 63, 131)
 
 */

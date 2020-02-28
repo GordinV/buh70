@@ -31,7 +31,7 @@
                      ((r.properties -&gt;&gt; 'reklftp')::JSONB -&gt;&gt; 'parool')::VARCHAR(120) AS parool,
                      (r.properties -&gt;&gt; 'earved') ::VARCHAR(254)                       AS earved,
                      (u.properties -&gt;&gt; 'earved') :: TEXT                              AS earved_omniva,
-                     (u.properties -&gt;&gt; 'liik') :: VARCHAR(20)                         AS liik
+                     (r.properties -&gt;&gt; 'liik') :: VARCHAR(20)                         AS liik
               FROM ou.rekv r,
                    ou.userid u
               WHERE r.id = $1
@@ -102,7 +102,7 @@
                     AND u.id = $2</sql>
     <query />
     <multiple>false</multiple>
-    <alias>default.json</alias>
+    <alias>config</alias>
   </select>
   <selectAsLibs>
     <sql>SELECT id, nimetus::VARCHAR(254), regkood::VARCHAR(20), parentid
@@ -142,5 +142,8 @@
     <sql />
     <alias />
   </generateJournal>
-  <print></print>
+  <print>
+    <view>rekv_kaart</view>
+    <params>id</params>
+  </print>
 </VFPData>

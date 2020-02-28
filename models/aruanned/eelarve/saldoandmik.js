@@ -10,7 +10,25 @@ module.exports = {
             {id: "lopp_db", name: "Lõpp deebet", width: "100px"},
             {id: "lopp_kr", name: "Lõpp kreedit", width: "200px"}
         ],
-        sqlString: ` SELECT * from eelarve.saldoandmik_aruanne($1::date, $2::date, $3::integer)`,     // $1 - kpv1 $2 - kpv2, $3 - rekvid (svod)
+        sqlString: `
+            SELECT rekv_id,
+                   sum(deebet)  AS deebet,
+                   sum(kreedit) AS kreedit,
+                   konto,
+                   tp,
+                   tegev,
+                   allikas,
+                   rahavoog,
+                   artikkel
+            FROM eelarve.saldoandmik_aruanne($1::DATE, $2::DATE, $3::INTEGER)
+            GROUP BY rekv_id,
+                     konto,
+                     tp,
+                     tegev,
+                     allikas,
+                     rahavoog,
+                     artikkel
+            ORDER BY konto, tp, tegev, allikas, rahavoog`,     // $1 - kpv1 $2 - kpv2, $3 - rekvid (svod)
         params: '',
         alias: 'saldoandmik_report'
     }

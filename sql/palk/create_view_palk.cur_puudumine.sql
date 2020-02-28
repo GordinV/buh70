@@ -11,7 +11,7 @@ CREATE OR REPLACE VIEW palk.cur_puudumine AS
     p.puudumiste_liik :: VARCHAR(20) AS pohjus,
     p.tyyp,
     amet.nimetus                     AS amet,
-    amet.rekvid,
+    t.rekvid,
     a.regkood                        AS isikukood,
     a.nimetus                        AS isik,
     tyyp.eesti :: VARCHAR(20)        AS liik

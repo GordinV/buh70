@@ -26,6 +26,7 @@ BEGIN
     INNER JOIN rekv ON rekv.id = l.rekvid AND rekv.parentid < 999
     left outer join remote_dokvaluuta1 v on v.dokid = p.id and v.dokliik = 13
   WHERE (p.id = in_old_id OR in_old_id IS NULL)
+  order by p.parentid, p.id
   LIMIT ALL
   LOOP
 
@@ -96,7 +97,7 @@ BEGIN
       v_pv_oper.kpv,
       v_pv_oper.muud,
       v_pv_oper.liik,
-      round(v_pv_oper.summa / v_pv_oper.kuurs,14,2) as summa,
+      round((v_pv_oper.summa / v_pv_oper.kuurs),2) as summa,
       v_pv_oper.konto,
       v_pv_oper.tunnus,
       v_pv_oper.tp,

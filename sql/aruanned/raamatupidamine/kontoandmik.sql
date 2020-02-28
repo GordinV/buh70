@@ -7,6 +7,7 @@ CREATE OR REPLACE FUNCTION docs.kontoandmik(l_konto TEXT, l_kpv1 DATE, l_kpv2 DA
         db_kokku  NUMERIC(14, 2),
         kr_kokku  NUMERIC(14, 2),
         rekv_id   INTEGER,
+        rekv_nimi VARCHAR(254),
         kpv       DATE,
         deebet    NUMERIC(14, 2),
         kreedit   NUMERIC(14, 2),
@@ -38,12 +39,13 @@ WITH alg_kaibed AS (
       AND kpv < l_kpv1
       AND j.rekvid IN (SELECT rekv_id
                        FROM get_asutuse_struktuur(l_rekvid))
-    GROUP BY rekvid
+        GROUP BY rekvid
 )
 SELECT coalesce(a.alg_saldo, 0)::NUMERIC(14, 2)                                                            AS alg_saldo,
-       sum(coalesce(CASE WHEN j.deebet::TEXT = l_konto THEN summa ELSE 0 END, 0)) OVER () ::NUMERIC(14, 2) AS db_kokku,
-       sum(coalesce(CASE WHEN j.kreedit::TEXT = l_konto THEN summa ELSE 0 END, 0)) OVER ()::NUMERIC(14, 2) AS kr_kokku,
-       coalesce(j.rekvid, a.rekvid)                                                                       AS rekv_id,
+       sum(coalesce(CASE WHEN j.deebet::TEXT = l_konto THEN summa ELSE 0 END, 0)) OVER (PARTITION BY j.rekvid) ::NUMERIC(14, 2) AS db_kokku,
+       sum(coalesce(CASE WHEN j.kreedit::TEXT = l_konto THEN summa ELSE 0 END, 0)) OVER (PARTITION BY j.rekvid)::NUMERIC(14, 2) AS kr_kokku,
+       coalesce(j.rekvid, a.rekvid)                                                                        AS rekv_id,
+       coalesce(j.rekv_nimi, r.nimetus)::VARCHAR(254)                                                      AS rekv_nimi,
        coalesce(j.kpv, l_kpv1)                                                                             AS kpv,
        coalesce(CASE WHEN j.deebet::TEXT = l_konto THEN j.summa ELSE 0 END, 0)::NUMERIC(14, 2)             AS deebet,
        coalesce(CASE WHEN j.kreedit::TEXT = l_konto THEN j.summa ELSE 0 END, 0)::NUMERIC(14, 2)            AS kreedit,
@@ -60,14 +62,16 @@ SELECT coalesce(a.alg_saldo, 0)::NUMERIC(14, 2)                                 
        coalesce(tunnus, '')::VARCHAR(20)
 FROM alg_kaibed a
          FULL OUTER JOIN
-     (SELECT *
+     (SELECT J.*, r.nimetus AS rekv_nimi
       FROM cur_journal j
+               INNER JOIN ou.rekv r ON j.rekvid = r.id
       WHERE (j.deebet::TEXT = l_konto OR j.kreedit::TEXT = l_konto)
         AND kpv >= l_kpv1
         AND kpv <= l_kpv2
         AND j.rekvid IN (SELECT rekv_id
                          FROM get_asutuse_struktuur(l_rekvid))) j
      ON j.rekvid = a.rekvid
+         LEFT OUTER JOIN ou.rekv r ON r.id = a.rekvid
 
 $BODY$
     LANGUAGE SQL

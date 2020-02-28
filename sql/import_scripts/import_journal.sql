@@ -80,7 +80,7 @@ BEGIN
     SELECT
       j.*,
       jid.number
-    FROM journal j
+    FROM remote_journal j
            INNER JOIN remote_rekv rekv ON j.rekvid = rekv.id AND rekv.parentid < 999
            INNER JOIN (SELECT
                          max(number) AS number,
@@ -222,7 +222,7 @@ BEGIN
       IF (l_j_count) <> l_control_count OR
          (l_j_summa) <> l_control_summa
       THEN
-        RAISE EXCEPTION 'kontrol failed v_journal.id % , journal_id %, l_control_summa %, l_j_summa %,, l_control_count %, l_j_count %', v_journal.id,journal_id, l_control_summa,l_j_summa,l_control_count, l_j_count;
+        RAISE notice 'kontrol failed v_journal.id % , journal_id %, l_control_summa %, l_j_summa %,, l_control_count %, l_j_count %', v_journal.id,journal_id, l_control_summa,l_j_summa,l_control_count, l_j_count;
       END IF;
       l_count = l_count + 1;
     END LOOP;

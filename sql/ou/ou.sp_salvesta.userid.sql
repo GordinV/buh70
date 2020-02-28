@@ -172,8 +172,8 @@ BEGIN
         roles_list = roles_list || ',eelesitaja';
     END IF;
 
-
-    EXECUTE 'GRANT ' || roles_list || ' TO ' || doc_kasutaja;
+    l_string = 'GRANT ' || roles_list || ' TO ' || quote_ident(doc_kasutaja);
+    EXECUTE (l_string);
 
 
     RETURN new_user_id;
