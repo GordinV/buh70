@@ -237,7 +237,6 @@ class DocumentTemplate extends React.Component {
     btnSaveClick() {
         this.fetchData('Put').then((response) => {
             if (!response) return false;
-
             //call to save
             this.docData = response.data[0];
 
@@ -263,7 +262,8 @@ class DocumentTemplate extends React.Component {
 
                 // если есть в кеше , то читим
                 let lib = this.props.docTypeId.toLowerCase();
-                if (DocContext.libs[lib] && DocContext.libs[lib].length > 0) {
+
+                if (DocContext.libs && DocContext.libs[lib] && DocContext.libs[lib].length > 0) {
                     DocContext.libs[lib] = []
                 }
 
@@ -402,16 +402,15 @@ class DocumentTemplate extends React.Component {
 
             this.requiredFields.forEach((field) => {
                 if (field.name in this.docData) {
-
                     let value = this.docData[field.name];
 
-                    if (!value) {
+                    if (!value && field.type !=='B') {
                         notRequiredFields.push(field.name);
                     } else {
                         if (field.serverValidation) {
                             // send paring to server to validate
 
-                            this.fetchData('Post', `/newApi/validate/validateIsikukood/${value}`).then(response => {
+                            this.fetchData('Post', `/newApi/validate/${field.serverValidation}/${value}`).then(response => {
                                 if (response.data.data.length) {
 
                                     let docId = response.data.data[0].id;

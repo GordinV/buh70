@@ -5,19 +5,20 @@ CREATE OR REPLACE FUNCTION lapsed.sp_salvesta_vanem(data JSONB,
 $BODY$
 
 DECLARE
-    userName        TEXT;
-    doc_data        JSON    = data ->> 'data';
-    doc_id          INTEGER = doc_data ->> 'id';
-    doc_parentid    INTEGER = doc_data ->> 'parentid';
-    doc_asutusid    INTEGER = doc_data ->> 'asutusid';
-    doc_arved       TEXT    = doc_data ->> 'arved';
-    doc_suhtumine   TEXT    = doc_data ->> 'suhtumine';
-    doc_kas_paberil BOOLEAN = coalesce((doc_data ->> 'kas_paberil')::BOOLEAN, FALSE);
-    doc_kas_email   BOOLEAN = coalesce((doc_data ->> 'kas_email')::BOOLEAN, FALSE);
-    doc_kas_earve   BOOLEAN = coalesce((doc_data ->> 'kas_earve')::BOOLEAN, FALSE);
-    doc_muud        TEXT    = doc_data ->> 'muud';
-    json_props      JSONB;
-    json_ajalugu    JSONB;
+    userName         TEXT;
+    doc_data         JSON    = data ->> 'data';
+    doc_id           INTEGER = doc_data ->> 'id';
+    doc_parentid     INTEGER = doc_data ->> 'parentid';
+    doc_asutusid     INTEGER = doc_data ->> 'asutusid';
+    doc_arved        TEXT    = doc_data ->> 'arved';
+    doc_suhtumine    TEXT    = doc_data ->> 'suhtumine';
+    doc_kas_paberil  BOOLEAN = coalesce((doc_data ->> 'kas_paberil')::BOOLEAN, FALSE);
+    doc_kas_email    BOOLEAN = coalesce((doc_data ->> 'kas_email')::BOOLEAN, FALSE);
+    doc_kas_earve    BOOLEAN = coalesce((doc_data ->> 'kas_earve')::BOOLEAN, FALSE);
+    doc_kas_esindaja BOOLEAN = coalesce((doc_data ->> 'kas_esindaja')::BOOLEAN, FALSE);
+    doc_muud         TEXT    = doc_data ->> 'muud';
+    json_props       JSONB;
+    json_ajalugu     JSONB;
 
 BEGIN
 
@@ -38,11 +39,12 @@ BEGIN
 
 
     json_props = to_jsonb(row)
-                 FROM (SELECT doc_arved       AS arved,
-                              doc_suhtumine   AS suhtumine,
-                              doc_kas_paberil AS kas_paberil,
-                              doc_kas_email   AS kas_email,
-                              doc_kas_earve   AS kas_earve) row;
+                 FROM (SELECT doc_arved        AS arved,
+                              doc_suhtumine    AS suhtumine,
+                              doc_kas_paberil  AS kas_paberil,
+                              doc_kas_email    AS kas_email,
+                              doc_kas_esindaja AS kas_esindaja,
+                              doc_kas_earve    AS kas_earve) row;
 
 
     -- ищем ранее удаленные записи
@@ -86,6 +88,23 @@ BEGIN
         WHERE id = doc_id RETURNING id
             INTO doc_id;
 
+    END IF;
+
+-- проверим наличие статус ответственного у родителей
+    IF doc_kas_esindaja AND exists(SELECT id
+                                   FROM lapsed.vanemad
+                                   WHERE parentid = doc_parentid
+                                     AND (properties ->> 'kas_esindaja')::BOOLEAN
+                                     AND id <> doc_id)
+    THEN
+        -- убираем этот статус , если есть у других роделей ребенка
+        UPDATE lapsed.vanemad
+        SET properties = properties::JSONB || '{
+          "kas_esindaja": false
+        }'::JSONB
+        WHERE parentid = doc_parentid
+          AND id <> doc_id
+          AND (properties ->> 'kas_esindaja')::BOOLEAN;
     END IF;
 
     RETURN doc_id;

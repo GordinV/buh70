@@ -119,6 +119,12 @@ BEGIN
 
     SELECT docs.sp_salvesta_pv_oper(json_object :: JSON, 1, v_pv_oper.rekvid)
     INTO pv_oper_id;
+
+    -- проверка на статус карты
+    UPDATE libs.library set status = (case WHEN (properties::jsonb->>'mahakantud') is not null then 2 else status end)
+    where id = l_pv_kaart_id;
+
+
     RAISE NOTICE 'pv_oper_id %, l_count %', pv_oper_id, l_count;
 
     -- lausedn

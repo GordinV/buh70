@@ -1,4 +1,5 @@
 const DocContext = {
-    filter: {}
+    filter: {},
+    libs:{}
 };
 module.export = (DocContext);

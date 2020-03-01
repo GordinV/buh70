@@ -17,17 +17,18 @@ module.exports = {
         sql: `SELECT v.id,
                      v.parentid,
                      v.asutusid,
-                     v.properties ->> 'arved'                                            AS arved,
-                     v.properties ->> 'suhtumine'                                        AS suhtumine,
-                     coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN AS kas_paberil,
-                     coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN   AS kas_earve,
-                     coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN   AS kas_email,
+                     v.properties ->> 'arved'                                             AS arved,
+                     v.properties ->> 'suhtumine'                                         AS suhtumine,
+                     coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN  AS kas_paberil,
+                     coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN    AS kas_earve,
+                     coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN    AS kas_email,
+                     coalesce((v.properties ->> 'kas_esindaja')::BOOLEAN, FALSE)::BOOLEAN AS kas_esindaja,
                      v.muud,
-                     a.nimetus::TEXT                                                     AS vanem_nimi,
-                     a.regkood::TEXT                                                     AS vanem_isikukood,
-                     $2::INTEGER                                                         AS userid,
-                     a.nimetus::TEXT                                                     AS nimi,
-                     a.regkood::TEXT                                                     AS isikukood,
+                     a.nimetus::TEXT                                                      AS vanem_nimi,
+                     a.regkood::TEXT                                                      AS vanem_isikukood,
+                     $2::INTEGER                                                          AS userid,
+                     a.nimetus::TEXT                                                      AS nimi,
+                     a.regkood::TEXT                                                      AS isikukood,
                      a.aadress::TEXT,
                      a.email::TEXT,
                      a.tel::TEXT
@@ -47,6 +48,7 @@ module.exports = {
                   false as kas_paberil,
                   true as kas_email,
                   true as kas_earve,
+                  false as kas_esindaja,
                   null::text as muud`,
         query: null,
         multiple: false,
@@ -81,7 +83,7 @@ module.exports = {
 
     requiredFields: [
         {name: 'parentid', type: 'I'},
-        {name: 'asutusid', type: 'I'}
+        {name: 'asutusid', type: 'I'},
     ],
     /*
     executeCommand: {
@@ -128,22 +130,50 @@ module.exports = {
     ],
     importVanemad: {
         command: `SELECT error_code, result, error_message
-                  FROM lapsed.import_vanemad( $1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+                  FROM lapsed.import_vanemad($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
         type: 'sql',
         alias: 'importVanemad'
     },
-
+    validateEsindaja: {
+        command: `SELECT id
+                  FROM lapsed.vanemad
+                  WHERE parentId IN (SELECT parentid FROM lapsed.vanemad WHERE id = $1)
+                    AND coalesce((properties ->> 'kas_esindaja')::BOOLEAN, FALSE)::BOOLEAN`,
+        TYPE: 'sql',
+        ALIAS: 'validateEsindaja'
+    },
     getLog: {
-        command: `SELECT ROW_NUMBER() OVER ()                                               AS id,
-                         (ajalugu ->> 'user')::TEXT                                         AS kasutaja,
-                         to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS koostatud,
-                         to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS muudatud,
-                         to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS')   AS prinditud,
-                         to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS')   AS prinditud,
-                         to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS kustutatud
+        command: `SELECT ROW_NUMBER() OVER () AS id,
+                         (ajalugu -> > 'user'
+                             )
+                             ::TEXT
+                                              AS
+                                                 kasutaja,
+                         to_char((ajalugu -> > 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'
+                             )
+                                              AS
+                                                 koostatud,
+                         to_char((ajalugu -> > 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'
+                             )
+                                              AS
+                                                 muudatud,
+                         to_char((ajalugu -> > 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'
+                             )
+                                              AS
+                                                 prinditud,
+                         to_char((ajalugu -> > 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'
+                             )
+                                              AS
+                                                 prinditud,
+                         to_char((ajalugu -> > 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'
+                             )
+                                              AS
+                                                 kustutatud
 
                   FROM (
-                           SELECT jsonb_array_elements(d.ajalugu) AS ajalugu
+                           SELECT jsonb_array_elements(d.ajalugu)
+                                      AS
+                                      ajalugu
                            FROM lapsed.vanemad d,
                                 ou.userid u
                            WHERE d.id = $1

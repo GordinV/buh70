@@ -98,7 +98,6 @@ class Document {
      */
     async executeTask(task, params) {
         let sql = this.config[task].command;
-
         let _params = params ? params : [this.documentId, this.userId];
 
         if (!sql) {
