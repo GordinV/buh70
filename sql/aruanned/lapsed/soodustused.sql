@@ -40,7 +40,7 @@ WITH qry AS (
                              WHERE (lk.properties ->> 'soodus')::NUMERIC > 0
                                AND ((lk.properties ->> 'sooduse_alg')::DATE >= kpv_start OR
                                     (lk.properties ->> 'sooduse_alg')::DATE <= kpv_end)
-                               AND ((lk.properties ->> 'sooduse_lopp')::DATE >= kpv_end OR
+                               AND ((lk.properties ->> 'sooduse_lopp')::DATE >= kpv_start OR
                                     (lk.properties ->> 'sooduse_lopp')::DATE <= kpv_start)
                                AND lk.staatus <> 3
                              GROUP BY lk.rekvid, lk.parentid
@@ -48,14 +48,18 @@ WITH qry AS (
                  INNER JOIN ou.rekv r ON r.id = lk.rekvid
     )
 )
-SELECT soodustus::NUMERIC(12, 2)                                                     AS soodustus,
-       kpv_start::DATE                                                               AS period,
+SELECT soodustus::NUMERIC(12, 2)                                   AS soodustus,
+       kpv_start::DATE                                             AS period,
        lapse_isikukood,
        lapse_nimi,
-       a.nimetus::TEXT                                                               AS vanem_nimi,
-       a.regkood::TEXT                                                               AS vanem_isikukood,
-       (SELECT count(id) FROM lapsed.vanemad WHERE asutusid = qry.vanem_id)::INTEGER AS lapsed,
-       (SELECT count(DISTINCT vanem_id) FROM qry)::INTEGER                           AS pered_kokku,
+       a.nimetus::TEXT                                             AS vanem_nimi,
+       a.regkood::TEXT                                             AS vanem_isikukood,
+       (SELECT count(id)
+        FROM lapsed.vanemad v
+        WHERE v.asutusid = qry.vanem_id
+          AND v.staatus <> 3
+          AND (v.properties ->> 'kas_esindaja')::BOOLEAN)::INTEGER AS lapsed,
+       (SELECT count(DISTINCT vanem_id) FROM qry)::INTEGER         AS pered_kokku,
        qry.asutus,
        qry.rekvid
 FROM qry

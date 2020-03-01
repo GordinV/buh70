@@ -775,7 +775,7 @@ class DocumentTemplate extends React.Component {
                     this.deleteRow();
                     break;
                 default:
-                    console.log('Vigane click', btnName);
+                    console.log('Vigane click . ', btnName.toLowerCase());
 
             }
         }

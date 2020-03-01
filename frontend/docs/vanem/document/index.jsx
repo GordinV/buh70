@@ -220,6 +220,13 @@ class Vanem extends React.PureComponent {
                 });
 
                 break;
+            case "Muuda":
+                this.props.history.push({
+                    pathname: `/lapsed/${docTypeId}/${id}`,
+                    state: {vanemId: this.state.docId, module: this.state.module}
+                });
+
+                break;
             case "add":
                 this.props.history.push({
                     pathname: `/lapsed/${docTypeId}/0`,
