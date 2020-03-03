@@ -89,6 +89,11 @@ class Nomenclature extends React.PureComponent {
                                        ref="input-nimetus"
                                        value={self.docData.nimetus}
                                        onChange={self.handleInputChange}/>
+                            <InputText title="Lühike nimetus "
+                                       name='luno'
+                                       ref="input-luno"
+                                       value={self.docData.luno || ''}
+                                       onChange={self.handleInputChange}/>
                             <Select title="Dokument:"
                                     name='dok'
                                     data={self.libs['document']}

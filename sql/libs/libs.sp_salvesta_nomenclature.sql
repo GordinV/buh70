@@ -12,6 +12,7 @@ DECLARE
     doc_data      JSON    = data ->> 'data';
     doc_kood      TEXT    = doc_data ->> 'kood';
     doc_nimetus   TEXT    = doc_data ->> 'nimetus';
+    doc_luno      TEXT    = doc_data ->> 'luno'; -- краткое название для столбцов в табеле
     doc_dok       TEXT    = doc_data ->> 'dok';
     doc_uhik      TEXT    = doc_data ->> 'uhik';
     doc_hind      NUMERIC = coalesce((doc_data ->> 'hind') :: NUMERIC, 0);
@@ -61,6 +62,7 @@ BEGIN
 
     SELECT row_to_json(row) INTO json_object
     FROM (SELECT doc_vat                        AS vat,
+                 doc_luno                       AS luno,
                  coalesce(doc_konto, 'null')    AS konto,
                  doc_projekt                    AS projekt,
                  coalesce(doc_tunnus, 'null')   AS tunnus,
@@ -101,7 +103,7 @@ BEGIN
     ELSE
         -- muuda
 
-        raise notice 'doc_nimetus %', doc_nimetus;
+        RAISE NOTICE 'doc_nimetus %', doc_nimetus;
 
         UPDATE libs.nomenklatuur
         SET rekvid     = CASE WHEN is_import IS NOT NULL THEN user_rekvid ELSE rekvid END,

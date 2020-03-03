@@ -12,6 +12,7 @@ module.exports = {
                      1                                                                      AS kuurs,
                      n.uhik::TEXT                                                           AS uhik,
                      n.hind                                                                 AS hind,
+                     (n.properties::JSONB ->> 'luno')::TEXT                                 AS luno,
                      (n.properties::JSONB ->> 'vat')::VARCHAR(20)                           AS vat,
                      (n.properties::JSONB ->> 'konto')::VARCHAR(20)                         AS konto,
                      (n.properties::JSONB ->> 'projekt')::VARCHAR(20)                       AS projekt,
@@ -28,6 +29,7 @@ module.exports = {
             ''::varchar(20) as  kood,
             0::integer as rekvid,
             ''::varchar(254) as nimetus,
+            null::text as luno,
             ''::varchar(20) as dok,
             ''::varchar(20) as uhik,
             0::numeric as hind,
@@ -132,7 +134,7 @@ module.exports = {
     },
     importNoms: {
         command: `SELECT error_code, result, error_message
-                  FROM lapsed.import_noms( $1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+                  FROM lapsed.import_noms($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
         type: 'sql',
         alias: 'importNoms'
     },
