@@ -17,3 +17,8 @@ CREATE VIEW palk.cur_used_mvt AS
     INNER JOIN libs.asutus a ON a.id = l.parentid
     INNER JOIN libs.library amet ON amet.id = l.ametid
   WHERE t.status <> 'deleted';
+
+GRANT SELECT ON TABLE palk.cur_used_mvt TO dbkasutaja;
+GRANT SELECT ON TABLE palk.cur_used_mvt TO dbvaatleja;
+GRANT SELECT ON TABLE palk.cur_used_mvt TO dbpeakasutaja;
+

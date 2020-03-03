@@ -46,6 +46,11 @@ CREATE VIEW palk.cur_palk_kaart AS
            LEFT OUTER JOIN libs.library osakond ON osakond.id = t.osakondid
          WHERE pk.status <> 3) qry;
 
+
+GRANT SELECT ON TABLE palk.cur_palk_kaart TO dbkasutaja;
+GRANT SELECT ON TABLE palk.cur_palk_kaart TO dbvaatleja;
+GRANT SELECT ON TABLE palk.cur_palk_kaart TO dbpeakasutaja;
+
 /*
 
 select (enum_range(null :: palk_oper_liik))[1]

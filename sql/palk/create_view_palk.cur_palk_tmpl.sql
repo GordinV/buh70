@@ -42,3 +42,8 @@ CREATE VIEW palk.cur_palk_tmpl AS
 /*
 select * from palk.cur_palk_tmpl
  */
+
+
+GRANT SELECT ON TABLE palk.cur_palk_tmpl TO dbkasutaja;
+GRANT SELECT ON TABLE palk.cur_palk_tmpl TO dbvaatleja;
+GRANT SELECT ON TABLE palk.cur_palk_tmpl TO dbpeakasutaja;

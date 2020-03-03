@@ -27,3 +27,10 @@ CREATE VIEW palk.com_toolepingud AS
     INNER JOIN libs.library osakonnad ON t.osakondid = osakonnad.id
     INNER JOIN libs.library ametid ON t.ametid = ametid.id
   WHERE t.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
+
+
+
+
+GRANT SELECT ON TABLE palk.com_toolepingud TO dbkasutaja;
+GRANT SELECT ON TABLE palk.com_toolepingud TO dbvaatleja;
+GRANT SELECT ON TABLE palk.com_toolepingud TO dbpeakasutaja;

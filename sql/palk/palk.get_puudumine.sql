@@ -9,19 +9,21 @@ CREATE FUNCTION palk.get_puudumine(params JSONB)
 AS
 $$
 DECLARE
-    l_lepingid       INTEGER = params ->> 'lepingid';
-    l_kuu            INTEGER = params ->> 'kuu';
-    l_aasta          INTEGER = params ->> 'aasta';
-    l_pohjus         TEXT    = (params ->> 'pohjus');
+    l_lepingid        INTEGER = params ->> 'lepingid';
+    l_kuu             INTEGER = params ->> 'kuu';
+    l_aasta           INTEGER = params ->> 'aasta';
+    l_pohjus          TEXT    = (params ->> 'pohjus');
 
-    l_start_paev     INTEGER;
-    l_lopp_paev      INTEGER;
+    l_start_paev      INTEGER;
+    l_lopp_paev       INTEGER;
 
-    l_result         NUMERIC = 0;
-    qryPuhkused      RECORD;
-    l_puhkuse_tunnid NUMERIC = 0;
-    l_paevad         NUMERIC = 0;
-    params           JSONB;
+    l_result          NUMERIC = 0;
+    qryPuhkused       RECORD;
+    l_puhkuse_tunnid  NUMERIC = 0;
+    l_paevad          NUMERIC = 0;
+    params            JSONB;
+    l_miinus_holidays INTEGER = 0; -- days with - holidays
+    l_miinus_weekends INTEGER = 0; -- days with - weekend
 BEGIN
 
     --selecting data
@@ -51,7 +53,7 @@ BEGIN
             THEN
                 l_lopp_paev = day(qryPuhkused.kpv2);
             ELSE
-                l_lopp_paev = get_last_day(date(tnAasta, tnKuu, 1));
+                l_lopp_paev = get_last_day(date(l_aasta, l_kuu, 1));
             END IF;
 
             -- считаем часы по кол-ву раб. дней
@@ -74,6 +76,7 @@ BEGIN
                 SELECT id FROM palk.cur_puudumine p WHERE lepingid = l_lepingid AND p.pohjus = 'PUHKUS' AND tyyp = 4
             );
 
+
             IF (l_paevad IS NULL OR empty(l_paevad)) AND coalesce(l_puhkuse_tunnid, 0) > 0
             THEN
                 l_result = l_result + (l_puhkuse_tunnid / qryPuhkused.toopaev);
@@ -81,6 +84,20 @@ BEGIN
                 l_result = l_result + l_paevad;
             END IF;
         END LOOP;
+    -- arvestame holidays in periood
+    SELECT count(*) INTO l_miinus_holidays
+    FROM cur_calender(make_date(l_aasta, l_kuu, l_start_paev), make_date(l_aasta, l_kuu, l_lopp_paev),
+                      qryPuhkused.rekvid)
+    WHERE is_tahtpaev;
+
+    -- arvestame puhkepaevad perioodis
+    SELECT count(*) INTO l_miinus_weekends
+    FROM cur_calender(make_date(l_aasta, l_kuu, l_start_paev), make_date(l_aasta, l_kuu, l_lopp_paev),
+                      qryPuhkused.rekvid)
+    WHERE NOT is_toopaev;
+
+    -- miinus
+    l_result = l_result - (l_miinus_holidays + l_miinus_weekends);
     RETURN l_result;
 
 END;
@@ -93,7 +110,7 @@ GRANT EXECUTE ON FUNCTION palk.get_puudumine(JSONB) TO dbpeakasutaja;
 
 
 /*
-select palk.get_puudumine('{"lepingid":27377, "kuu":11, "aasta":2018}'::jsonb)  -- -> 0
+select palk.get_puudumine('{"lepingid":34408, "kuu":2, "aasta":2020, "pohjus":"HAIGUS"}'::jsonb)  -- -> 0
 
 select palk.get_puudumine(null::jsonb)  -- -> 0
 select palk.get_puudumine('{"lepingid":4}'::jsonb)  -- -> 0

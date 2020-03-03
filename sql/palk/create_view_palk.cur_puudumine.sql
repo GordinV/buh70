@@ -28,6 +28,8 @@ GRANT ALL ON TABLE palk.cur_puudumine TO dbadmin;
 GRANT SELECT ON TABLE palk.cur_puudumine TO dbvaatleja;
 GRANT ALL ON TABLE palk.cur_puudumine TO taabel;
 
+
 /*
 select * from palk.cur_puudumine
  */
+

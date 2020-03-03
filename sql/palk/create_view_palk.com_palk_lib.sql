@@ -31,3 +31,8 @@ CREATE VIEW palk.com_palk_lib AS
   FROM libs.library l
   WHERE l.library = 'PALK'
         AND l.status <> array_position(enum_range(NULL :: DOK_STATUS), 'deleted');
+
+
+GRANT SELECT ON TABLE palk.com_palk_lib TO dbkasutaja;
+GRANT SELECT ON TABLE palk.com_palk_lib TO dbvaatleja;
+GRANT SELECT ON TABLE palk.com_palk_lib TO dbpeakasutaja;

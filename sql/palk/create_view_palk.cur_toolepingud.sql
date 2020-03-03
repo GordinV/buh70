@@ -30,3 +30,8 @@ CREATE VIEW palk.cur_toolepingud AS
     LEFT OUTER JOIN docs.dokvaluuta1 v
       ON (v.dokid = t.id AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'tooleping'))
   WHERE t.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
+
+
+GRANT SELECT ON TABLE palk.cur_toolepingud TO dbkasutaja;
+GRANT SELECT ON TABLE palk.cur_toolepingud TO dbvaatleja;
+GRANT SELECT ON TABLE palk.cur_toolepingud TO dbpeakasutaja;

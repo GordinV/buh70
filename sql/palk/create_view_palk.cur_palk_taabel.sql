@@ -29,3 +29,10 @@ FROM palk.palk_taabel1 pt
          INNER JOIN libs.LIBRARY amet ON t.ametid = amet.id
          JOIN libs.LIBRARY osakond ON t.osakondid = osakond.id
 WHERE pt.status <> 'deleted';
+
+GRANT SELECT ON TABLE palk.cur_palk_taabel TO dbkasutaja;
+GRANT SELECT ON TABLE palk.cur_palk_taabel TO dbvaatleja;
+GRANT SELECT ON TABLE palk.cur_palk_taabel TO dbpeakasutaja;
+
+
+

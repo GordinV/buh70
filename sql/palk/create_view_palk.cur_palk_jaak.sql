@@ -32,3 +32,7 @@ CREATE VIEW palk.cur_palk_jaak
       JOIN libs.library l ON t.osakondid = l.id;
 
 
+
+GRANT SELECT ON TABLE palk.cur_palk_jaak TO dbkasutaja;
+GRANT SELECT ON TABLE palk.cur_palk_jaak TO dbvaatleja;
+GRANT SELECT ON TABLE palk.cur_palk_jaak TO dbpeakasutaja;

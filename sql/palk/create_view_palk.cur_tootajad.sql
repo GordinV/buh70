@@ -4,7 +4,8 @@ CREATE OR REPLACE VIEW palk.cur_tootajad AS
   SELECT
     a.id,
     btrim(a.regkood :: TEXT) :: CHARACTER VARYING(20)  AS isikukood,
-    btrim(a.nimetus :: TEXT) :: CHARACTER VARYING(254) AS nimetus,
+--    btrim(encode(a.nimetus::BYTEA, 'escape')) :: CHARACTER VARYING(254) AS nimetus,
+    btrim(a.nimetus) :: CHARACTER VARYING(254) AS nimetus,
     osakond.kood                                       AS osakond,
     amet.kood                                          AS amet,
     t.lopp,

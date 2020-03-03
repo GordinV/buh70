@@ -19,3 +19,8 @@ CREATE VIEW palk.cur_toografik AS
     INNER JOIN libs.library amet ON amet.id = t.ametid
     INNER JOIN libs.asutus a ON a.id = t.parentid
   WHERE p.status <> 'deleted';
+
+GRANT SELECT ON TABLE palk.cur_toografik TO dbkasutaja;
+GRANT SELECT ON TABLE palk.cur_toografik TO dbvaatleja;
+GRANT SELECT ON TABLE palk.cur_toografik TO dbpeakasutaja;
+

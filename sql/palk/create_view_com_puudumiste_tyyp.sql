@@ -70,3 +70,9 @@ CREATE VIEW palk.com_puudumiste_tyyp AS
 
 SELECT *
 FROM palk.com_puudumiste_tyyp
+
+
+
+GRANT SELECT ON TABLE palk.com_puudumiste_tyyp TO dbkasutaja;
+GRANT SELECT ON TABLE palk.com_puudumiste_tyyp TO dbvaatleja;
+GRANT SELECT ON TABLE palk.com_puudumiste_tyyp TO dbpeakasutaja;

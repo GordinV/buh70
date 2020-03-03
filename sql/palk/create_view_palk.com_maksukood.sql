@@ -15,3 +15,7 @@ CREATE VIEW palk.com_maksukood AS
   FROM libs.library l
   WHERE l.library = 'MAKSUKOOD'
         AND l.status <> array_position(enum_range(NULL :: DOK_STATUS), 'deleted');
+
+GRANT SELECT ON TABLE palk.com_maksukood TO dbkasutaja;
+GRANT SELECT ON TABLE palk.com_maksukood TO dbvaatleja;
+GRANT SELECT ON TABLE palk.com_maksukood TO dbpeakasutaja;
