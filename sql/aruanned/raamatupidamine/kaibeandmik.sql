@@ -25,18 +25,18 @@ WITH algsaldo AS (
              WHERE j.kpv < l_kpv1
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
-                 UNION ALL
-                 SELECT d.rekvid
-                 ,
-                 0 :: NUMERIC AS deebet
-                 ,
-                 (j1.summa) AS kreedit
-                 ,
-                 trim(j1.kreedit)::VARCHAR(20) AS konto
-                 FROM docs.doc d
-                 INNER JOIN docs.journal j ON j.parentid = d.id
-                 INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-                 WHERE j.kpv < l_kpv1
+             UNION ALL
+             SELECT d.rekvid
+                     ,
+                    0 :: NUMERIC                  AS deebet
+                     ,
+                    (j1.summa)                    AS kreedit
+                     ,
+                    trim(j1.kreedit)::VARCHAR(20) AS konto
+             FROM docs.doc d
+                      INNER JOIN docs.journal j ON j.parentid = d.id
+                      INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+             WHERE j.kpv < l_kpv1
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
          ) qry
@@ -68,20 +68,20 @@ FROM (
            AND j.kpv <= l_kpv2
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
-             UNION ALL
-             SELECT d.rekvid
-             ,
-             0 :: NUMERIC(14, 2) AS alg_saldo
-             ,
-             0 :: NUMERIC AS deebet
-             ,
-             (j1.summa) AS kreedit
-             ,
-             trim(j1.kreedit)::VARCHAR(20) AS konto
-             FROM docs.doc d
-             INNER JOIN docs.journal j ON j.parentid = d.id
-             INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-             WHERE j.kpv >= l_kpv1
+         UNION ALL
+         SELECT d.rekvid
+                 ,
+                0 :: NUMERIC(14, 2)           AS alg_saldo
+                 ,
+                0 :: NUMERIC                  AS deebet
+                 ,
+                (j1.summa)                    AS kreedit
+                 ,
+                trim(j1.kreedit)::VARCHAR(20) AS konto
+         FROM docs.doc d
+                  INNER JOIN docs.journal j ON j.parentid = d.id
+                  INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+         WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
@@ -89,9 +89,10 @@ FROM (
          INNER JOIN ou.rekv r ON r.id = qry.rekvid
 
 WHERE NOT empty(qry.konto)
-    GROUP BY konto
-    , rekvid
-    , r.nimetus;
+  AND left(konto, 2) NOT IN ('90', '91', '92', '93', '94', '95', '96', '97', '98')
+GROUP BY konto
+       , rekvid
+       , r.nimetus;
 $BODY$
     LANGUAGE SQL
     VOLATILE

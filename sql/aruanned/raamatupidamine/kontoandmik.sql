@@ -21,7 +21,8 @@ CREATE OR REPLACE FUNCTION docs.kontoandmik(l_konto TEXT, l_kpv1 DATE, l_kpv2 DA
         kood4     VARCHAR(20),
         kood5     VARCHAR(20),
         proj      VARCHAR(20),
-        tunnus    VARCHAR(20)
+        tunnus    VARCHAR(20),
+        selg      TEXT
     ) AS
 $BODY$
 WITH alg_kaibed AS (
@@ -39,27 +40,30 @@ WITH alg_kaibed AS (
       AND kpv < l_kpv1
       AND j.rekvid IN (SELECT rekv_id
                        FROM get_asutuse_struktuur(l_rekvid))
-        GROUP BY rekvid
+    GROUP BY rekvid
 )
-SELECT coalesce(a.alg_saldo, 0)::NUMERIC(14, 2)                                                            AS alg_saldo,
-       sum(coalesce(CASE WHEN j.deebet::TEXT = l_konto THEN summa ELSE 0 END, 0)) OVER (PARTITION BY j.rekvid) ::NUMERIC(14, 2) AS db_kokku,
-       sum(coalesce(CASE WHEN j.kreedit::TEXT = l_konto THEN summa ELSE 0 END, 0)) OVER (PARTITION BY j.rekvid)::NUMERIC(14, 2) AS kr_kokku,
-       coalesce(j.rekvid, a.rekvid)                                                                        AS rekv_id,
-       coalesce(j.rekv_nimi, r.nimetus)::VARCHAR(254)                                                      AS rekv_nimi,
-       coalesce(j.kpv, l_kpv1)                                                                             AS kpv,
-       coalesce(CASE WHEN j.deebet::TEXT = l_konto THEN j.summa ELSE 0 END, 0)::NUMERIC(14, 2)             AS deebet,
-       coalesce(CASE WHEN j.kreedit::TEXT = l_konto THEN j.summa ELSE 0 END, 0)::NUMERIC(14, 2)            AS kreedit,
-       coalesce(CASE WHEN j.deebet::TEXT = l_konto THEN j.kreedit ELSE j.deebet END, '')::VARCHAR(20)      AS konto,
-       coalesce(dok, '')::VARCHAR(120)                                                                     AS dok,
-       coalesce(asutus, '')::VARCHAR(254)                                                                  AS asutus,
-       coalesce(number, 0)::INTEGER                                                                        AS number,
+SELECT coalesce(a.alg_saldo, 0)::NUMERIC(14, 2)                                                       AS alg_saldo,
+       sum(coalesce(CASE WHEN j.deebet::TEXT = l_konto THEN summa ELSE 0 END, 0))
+           OVER (PARTITION BY j.rekvid) ::NUMERIC(14, 2)                                              AS db_kokku,
+       sum(coalesce(CASE WHEN j.kreedit::TEXT = l_konto THEN summa ELSE 0 END, 0))
+           OVER (PARTITION BY j.rekvid)::NUMERIC(14, 2)                                               AS kr_kokku,
+       coalesce(j.rekvid, a.rekvid)                                                                   AS rekv_id,
+       coalesce(j.rekv_nimi, r.nimetus)::VARCHAR(254)                                                 AS rekv_nimi,
+       coalesce(j.kpv, l_kpv1)                                                                        AS kpv,
+       coalesce(CASE WHEN j.deebet::TEXT = l_konto THEN j.summa ELSE 0 END, 0)::NUMERIC(14, 2)        AS deebet,
+       coalesce(CASE WHEN j.kreedit::TEXT = l_konto THEN j.summa ELSE 0 END, 0)::NUMERIC(14, 2)       AS kreedit,
+       coalesce(CASE WHEN j.deebet::TEXT = l_konto THEN j.kreedit ELSE j.deebet END, '')::VARCHAR(20) AS konto,
+       coalesce(dok, '')::VARCHAR(120)                                                                AS dok,
+       coalesce(asutus, '')::VARCHAR(254)                                                             AS asutus,
+       coalesce(number, 0)::INTEGER                                                                   AS number,
        coalesce(kood1, '')::VARCHAR(20),
        coalesce(kood2, '')::VARCHAR(20),
        coalesce(kood3, '')::VARCHAR(20),
        coalesce(kood4, '')::VARCHAR(20),
        coalesce(kood5, '')::VARCHAR(20),
        coalesce(proj, '')::VARCHAR(20),
-       coalesce(tunnus, '')::VARCHAR(20)
+       coalesce(tunnus, '')::VARCHAR(20),
+       coalesce(selg, '')::TEXT                                                                       AS selg
 FROM alg_kaibed a
          FULL OUTER JOIN
      (SELECT J.*, r.nimetus AS rekv_nimi
@@ -84,6 +88,6 @@ GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER ) TO dbkas
 
 /*
 SELECT *
-FROM docs.kontoandmik('155100', '2018-03-01', '2018-03-31' :: DATE, 130)
+FROM docs.kontoandmik('100100', '2020-01-01', '2020-01-31' :: DATE, 3)
 
 */

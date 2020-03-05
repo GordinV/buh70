@@ -45,12 +45,12 @@ DECLARE
   l_where      TEXT = ' where d.rekvid in (select rekv_id from get_asutuse_struktuur(' || l_rekvid :: TEXT || '))' ||
                       CASE WHEN params IS NOT NULL
                         THEN
-                          ' and artikkel ilike ' || quote_literal(doc_artikkel) ||
-                          ' and asutus ilike ' || quote_literal(doc_asutus) ||
-                          ' and tegev ilike ' || quote_literal(doc_tegev) ||
-                          ' and allikas ilike ' || quote_literal(doc_allikas) ||
-                          ' and nimetus ilike ' || quote_literal(doc_nimetus) ||
-                          ' and coalesce(tunnus,'''') ilike ' || quote_literal(doc_tunnus) ||
+                          ' and artikkel like ' || quote_literal(doc_artikkel) ||
+                          ' and asutus like ' || quote_literal(doc_asutus) ||
+                          ' and tegev like ' || quote_literal(doc_tegev) ||
+                          ' and allikas like ' || quote_literal(doc_allikas) ||
+                          ' and fix_text(nimetus::text) ilike ' || quote_literal(doc_nimetus) ||
+                          ' and fix_text(coalesce(tunnus,'''')::text) ilike ' || quote_literal(doc_tunnus) ||
                           ' and summa >= ' || doc_summa1 :: TEXT ||
                           ' and summa <= ' || doc_summa2 :: TEXT ||
                           ' and kuu >= ' || doc_kuu1 :: TEXT ||

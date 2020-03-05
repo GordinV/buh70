@@ -25,8 +25,6 @@ DECLARE
   doc_muud    TEXT = doc_data ->> 'muud';
   is_import   BOOLEAN = data ->> 'import';
   json_object JSONB;
-  new_history JSONB;
-  new_rights  JSONB;
 BEGIN
 
   IF (doc_id IS NULL)
@@ -79,7 +77,7 @@ BEGIN
       INTO lib_id;
 
   END IF;
-
+raise notice 'konto nimi %', doc_nimetus;
   RETURN lib_id;
 
   EXCEPTION WHEN OTHERS

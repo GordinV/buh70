@@ -144,7 +144,7 @@ module.exports = {
                      FROM lapsed.cur_lapsed l
                      WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
             `,     //  $1 всегда ид учреждения, $2 - userId
-            params: ['rekvid','userid'],
+            params: ['rekvid', 'userid'],
             alias:
                 'curLapsed'
         },
@@ -154,9 +154,17 @@ module.exports = {
         type: 'sql',
         alias: 'koostaArve'
     },
+    koostaEttemaksuArved: {
+        command: `SELECT lapsed.koosta_ettemaksu_arve($2::INTEGER, id::INTEGER, $3::DATE)
+                  FROM lapsed.laps
+                  WHERE id in (
+                      SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
+                      )`,//$1 docId, $2 - userId
+        type: 'sql',
+        alias: 'koostaEttemaksuArved'
+    },
     koostaEttemaksuArve: {
-        command: `SELECT error_code, result, error_message, doc_type_id
-                  FROM lapsed.koosta_ettemaksu_arve($2::INTEGER, $1::INTEGER, $3::DATE)`,//$1 docId, $2 - userId
+        command: `SELECT * from lapsed.koosta_ettemaksu_arve($2::INTEGER, $1::INTEGER, $3::DATE)`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'koostaEttemaksuArve'
     },
@@ -168,7 +176,7 @@ module.exports = {
     },
     importLapsed: {
         command: `SELECT error_code, result, error_message
-                  FROM lapsed.import_lapsed( $1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+                  FROM lapsed.import_lapsed($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
         type: 'sql',
         alias: 'importLapsed'
     },

@@ -12,7 +12,7 @@ const DOC_TYPE_ID = 'LAPS';
 const EVENTS = [
     {name: 'Tabeli koostamine', method: 'arvestaTaabel', docTypeId: 'lapse_taabel'},
     {name: 'Arve koostamine', method: 'koostaArve', docTypeId: 'arv'},
-    {name: 'Ettemaksuarve koostamine', method: 'koostaEttemaksuArve', docTypeId: 'arv'},
+    {name: 'Ettemaksuarve koostamine', method: 'koostaEttemaksuArved', docTypeId: 'arv'},
 ];
 
 
@@ -81,9 +81,16 @@ class Documents extends React.PureComponent {
         }
 
         // отправляем запрос на выполнение
+        let message = `võib olla selles perioodil kõik arved juba väljastatud`;
         Doc.fetchData(`calc/${task.method}`, {docs: ids, seisuga: seisuga}).then((data) => {
             if (data.result) {
-                Doc.setState({warning: `Kokku arvestatud: ${data.result}, suunatamine...`, warningType: 'ok'});
+                if (task.method == 'koostaEttemaksuArved') {
+                    message = `task saadetud täitmisele`;
+                } else {
+                    message = `Kokku arvestatud: ${data.result}, suunatamine...`;
+                }
+
+                Doc.setState({warning: `${message}, suunatamine...`, warningType: 'ok'});
 
                 // ждем 10 сек и редайрект на табеля
                 setTimeout(() => {
@@ -94,7 +101,7 @@ class Documents extends React.PureComponent {
                     Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
                 } else {
                     Doc.setState({
-                        warning: `Kokku arvestatud : ${data.result}, võib olla selles perioodil kõik arved juba väljastatud`,
+                        warning: `Kokku arvestatud : ${data.result}, ${message}`,
                         warningType: 'notValid'
                     });
                 }
