@@ -230,6 +230,13 @@ BEGIN
     END IF;
 
     -- lapse module
+    IF doc_viitenr IS NOT NULL AND doc_lapsid IS NULL
+    THEN
+        -- попробуем найти ребенка по ссылке
+        doc_lapsid = lapsed.get_laps_from_viitenumber(doc_viitenr);
+
+    END IF;
+
     IF doc_lapsid IS NOT NULL
     THEN
         IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
