@@ -18,7 +18,8 @@ SELECT j.jaak,
        a.id                                 AS isikid,
        a.regkood                            AS isikukood,
        a.nimetus                            AS isik,
-       o.kood                               AS osakond
+       o.kood                               AS osakond,
+       coalesce(p.status, 2)                AS status
 FROM palk.palk_jaak j
          LEFT OUTER JOIN (
     SELECT month(p.kpv)                                                          AS kuu,
@@ -38,12 +39,13 @@ FROM palk.palk_jaak j
            sum(p.tka)                                                            AS tka,
            sum(p.tootumaks)                                                      AS tki,
            sum(p.tulumaks)                                                       AS tm,
-           p.lepingid
+           p.lepingid,
+           t.status
     FROM docs.doc d
              INNER JOIN palk.palk_oper p ON p.parentid = d.id
              INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
              INNER JOIN palk.tooleping t ON p.lepingid = t.id
-    GROUP BY month(p.kpv), year(p.kpv), p.lepingid) p
+    GROUP BY month(p.kpv), year(p.kpv), p.lepingid, t.status) p
                          ON p.lepingid = j.lepingid AND p.kuu = j.kuu AND p.aasta = j.aasta
          INNER JOIN palk.tooleping t ON t.id = j.lepingid
          INNER JOIN libs.asutus a ON a.id = t.parentid
@@ -51,11 +53,11 @@ FROM palk.palk_jaak j
 
 
 GRANT SELECT ON TABLE palk.print_palk_jaak TO dbkasutaja;
-GRANT SELECT  ON TABLE palk.print_palk_jaak TO dbpeakasutaja;
+GRANT SELECT ON TABLE palk.print_palk_jaak TO dbpeakasutaja;
 GRANT SELECT ON TABLE palk.print_palk_jaak TO dbvaatleja;
-GRANT  SELECT ON TABLE palk.print_palk_jaak TO taabel;
+GRANT SELECT ON TABLE palk.print_palk_jaak TO taabel;
 GRANT ALL ON TABLE palk.print_palk_jaak TO vlad;
 
 /*
-select * from palk.print_palk_jaak where aasta = 2018
+select * from palk.print_palk_jaak where aasta = 2020 and kuu = 2  and isik ilike '%Repina%' and rekvid = 3
  */
