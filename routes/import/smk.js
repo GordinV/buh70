@@ -46,20 +46,23 @@ const readXML = async (xmlContent) => {
         if (err) {
             throw err;
         }
+
         let stmtes = result.Document.BkToCstmrStmt[0].Stmt;
+
         let aa = stmtes[0].Acct[0].Id[0].IBAN[0];
         let Acct = stmtes[0].Acct[0].Svcr[0].FinInstnId[0].BIC[0]; //banc code
         let Ntres = stmtes[0].Ntry;
+
         Ntres.forEach(ntry => {
             if (ntry.CdtDbtInd[0] == 'CRDT') {
                 let summa = Number(ntry.Amt[0]);
                 let kpv = ntry.ValDt[0].Dt[0];
                 let pankId = ntry.AcctSvcrRef[0];
                 let NtryDtls = ntry.NtryDtls[0].TxDtls[0];
-                let number = NtryDtls.Refs[0].InstrId[0];
+                let number = NtryDtls.Refs[0].InstrId ? NtryDtls.Refs[0].InstrId[0]: null;
                 let RmtInf = NtryDtls.RmtInf[0];
                 let viitenr = RmtInf.Strd ? RmtInf.Strd[0].CdtrRefInf[0].Ref[0] : null;
-                let selg = RmtInf.Ustrd[0];
+                let selg = RmtInf.Ustrd ?  RmtInf.Ustrd[0]: null;
                 let maksja = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Nm[0] : null;
                 let isikukood = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0].Id[0] : null;
                 let eban = NtryDtls.RltdPties[0].DbtrAcct ? NtryDtls.RltdPties[0].DbtrAcct[0].Id[0].IBAN[0] : null;
