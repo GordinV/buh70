@@ -1,34 +1,32 @@
-const fs = require('fs');
-const filename = 'c:/temp/viitenr.csv';
-
-fs.readFile(filename, "utf8", function(err, data) {
-    if (err) {
-        // may be filename does not exists?
-        console.error('error', err);
-    } else {
-        import_viitenr(data);
-    }
-});
-
-
-const import_viitenr =  async (file) => {
+module.exports = async (file, mimeType, user) => {
     let rows = [];
-
     try {
         rows = await readCSV(file);
-
     } catch (e) {
         console.error('Viga:', e);
-        return `Tekkis viga, võib olla vale formaat`;
+        return `Viga, salvestatud kokku: 0`;
     }
+    const Doc = require('./../../classes/DocumentTemplate');
+    const Document = new Doc('LAPS', null, user.userId, user.asutusId, 'lapsed');
 
     let saved = 0;
     if (rows.length) {
-        console.log(`Kokku leidsin ${rows.length} operatsioonid, salvestan..`);
         // сохраняем
-        writeJson(rows);
+
+        const params = [JSON.stringify(rows), user.id, user.asutusId];
+
+        const result = await Document.executeTask('importViitenr', params).then((result) => {
+                saved = result.result ? result.result : 0;
+            }
+        );
+
+        return `Kokku leidsin ${rows.length} laste viitenumbrid, salvestatud kokku: ${saved}`;
+
+    } else {
+        return `Kokku leidsin 0 viitenumbrid, salvestatud kokku: 0`;
 
     }
+
 };
 
 const readCSV = async (csvContent) => {
@@ -59,12 +57,8 @@ const readCSV = async (csvContent) => {
     return rows;
 };
 
-
-const writeJson = (content) => {
-    let jsonText = JSON.stringify(content);
-    fs.writeFile('c:/temp/viitenr.json', jsonText, (err) => {
-        if (err) throw err;
-        console.log('The file has been saved!');
-    });
-};
+function isNumber(val) {
+    // negative or positive
+    return /^[-]?\d+$/.test(val);
+}
 

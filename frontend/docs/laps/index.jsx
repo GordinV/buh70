@@ -58,6 +58,15 @@ class Documents extends React.PureComponent {
                     docTypeId={DOC_TYPE_ID}
                     onClick={this.handleClick}
                     show={true}
+                    value={'Import lapsed'}
+                    mimeTypes={'.csv'}
+                />
+                <ButtonUpload
+                    ref='btnUpload'
+                    docTypeId={'VIITENR'}
+                    onClick={this.handleClick}
+                    show={true}
+                    value={'Import viitenumbrid'}
                     mimeTypes={'.csv'}
                 />
 

@@ -180,6 +180,12 @@ module.exports = {
         type: 'sql',
         alias: 'importLapsed'
     },
+    importViitenr: {
+        command: `SELECT error_code, result, error_message
+                  FROM lapsed.import_viitenr($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+        type: 'sql',
+        alias: 'importViitenr'
+    },
     validateIsikukood: {
         command: `SELECT id
                   FROM lapsed.laps

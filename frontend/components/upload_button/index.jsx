@@ -29,7 +29,7 @@ class UploadButton extends React.PureComponent {
         return (this.state.show ? this.modalPage() : (
                 <Button
                     ref="btnUpload"
-                    value='Import'
+                    value={this.props.value ? this.props.value : 'Import'}
                     show={true}
                     onClick={(e) => this.handleClick(e)}>
                     <img ref='image' src={styles.button.icon}/>

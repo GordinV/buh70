@@ -311,7 +311,9 @@ exports.upload = async (req, res) => {
 
         // вызываем разбор файла
         try {
+            console.log('params.docTypeId', params.docTypeId);
             const readFile = require(`./import/${params.docTypeId.toLowerCase()}`);
+
             await readFile(content, req.file.mimetype, user).then((result) => {
                     // ответ
                     return res.status(200).send(result);
