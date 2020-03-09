@@ -5,6 +5,10 @@ const DocumentRegister = require('./../documents/documents.jsx');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'VANEM';
+const ButtonUpload = require('./../../components/upload_button/index.jsx');
+const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
+
+
 const toolbarParams = {
     btnAdd: {
         show: false,
@@ -48,7 +52,18 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
-        return null;
+        return (
+            <ToolbarContainer>
+                <ButtonUpload
+                    ref='btnUpload'
+                    docTypeId={DOC_TYPE_ID}
+                    onClick={this.handleClick}
+                    show={true}
+                    mimeTypes={'.csv'}
+                />
+
+            </ToolbarContainer>
+        )
     }
 
 }

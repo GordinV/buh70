@@ -5,23 +5,19 @@ module.exports = async (file, mimeType, user) => {
     let rows = [];
 
     try {
-        if (mimeType === 'application/octet-stream') {
-            rows = await readCSV(file);
-        } else {
-            return {error_message: 'Vale formaat', result: 0}
-        }
-
-    } catch (e) {
+        rows = await readCSV(file);
+    } catch
+        (e) {
         console.error('Viga:', e);
-        return {error_message: e, result: 0}
+        return `Tekkis viga, vale formaat`;
     }
     let saved = 0;
     if (rows.length) {
         // сохраняем
 
         const params = [JSON.stringify(rows), user.id, user.asutusId];
-
-        const result = await Document.executeTask('importVanemad', params).then((result) => {
+console.log(params, user.id, user.asutusId);
+        const result = await Document.executeTask('importVanemateRegister', params).then((result) => {
                 saved = result.result ? result.result : 0;
             }
         );
@@ -32,7 +28,8 @@ module.exports = async (file, mimeType, user) => {
         return `Kokku leidsin 0 isikud, salvestatud kokku: 0`;
 
     }
-};
+}
+;
 
 const readCSV = async (csvContent) => {
     const parse = require('csv-parse');
@@ -44,17 +41,20 @@ const readCSV = async (csvContent) => {
             console.error(err);
             return null;
         }
-
         output.forEach(row => {
             // проверим на заголовок
             if (isNumber(row[0])) {
                 rows.push({
-                    isikukood: row[0],
-                    nimi: row[1],
-                    aadress: `${row[2]} ${row[2]} ${row[3]}`,
+                    lapse_ik: row[0],
+                    vanem_ik: row[1],
+                    sugulus: row[2],
+                    arveldus: row[3],
+                    paper: row[4],
+                    earve: row[5],
+                    email: row[6],
+                    esindaja: row[7],
                 });
             }
-
         });
     });
     return rows;
