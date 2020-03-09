@@ -202,6 +202,13 @@ module.exports = {
         type: 'sql',
         alias: 'muudaEttemaksuPeriod'
     },
+    importTeenused: {
+        command: `SELECT error_code, result, error_message
+                  FROM lapsed.import_laste_teenused($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+        type: 'sql',
+        alias: 'importTeenused'
+    },
+
 
 
 };

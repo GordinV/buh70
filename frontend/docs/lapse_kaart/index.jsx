@@ -4,6 +4,7 @@ const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const BtnTask = require('./../../components/button-register/button-task/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
+const ButtonUpload = require('./../../components/upload_button/index.jsx');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'LAPSE_KAART';
@@ -40,6 +41,14 @@ class Documents extends React.PureComponent {
                     showKogus={true}
                     ref={`btn-ettemaksu_period`}
                 />
+                <ButtonUpload
+                    ref='btnUpload'
+                    docTypeId={DOC_TYPE_ID}
+                    onClick={this.handleClick}
+                    show={true}
+                    mimeTypes={'.csv'}
+                />
+
             </ToolbarContainer>
         )
     }
