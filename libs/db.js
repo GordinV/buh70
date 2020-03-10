@@ -79,15 +79,27 @@ function createSqlString(sql, sortBy, sqlWhere, sqlLimit) {
 
     if (sortBy.length) {
         // есть параметр для сортировки
-        sortByColumn = ' order by ' +  ' ' + sortBy[0].column;
+        let column = sortBy[0].column;
+        if (sortBy[0].type) {
+            // задан тип, конвертируем
+            switch(sortBy[0].type) {
+                case 'date':
+                    column = `format_date(${column}::text)`;
+                    break;
+                case 'number':
+                    column = `(regexp_replace((${column})::text, '[^0-9,.,-]', ''))::NUMERIC`;
+                    break;
+                default:
+                // code block
+            }
+        }
+        sortByColumn = ' order by ' +  ' ' + column;
         sortByDirection = sortBy[0].direction;
     }
 
     if (sqlLimit) {
         rowsLimit = ` LIMIT ${sqlLimit}`;
     }
-
-
 
     return `select * from (${sql}) qry 
     ${sqlWhere}   ${sortByColumn}  ${sortByDirection} ${rowsLimit}`;

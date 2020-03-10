@@ -218,6 +218,11 @@ class Documents extends React.Component {
      * @param sortBy
      */
     headerClickHandler(sortBy) {
+        // ихем тип поля, если указан
+        const row = this.gridConfig.find(row => row.id == sortBy[0].column);
+        if (row && row.type) {
+            Object.assign(sortBy[0],{type: row.type});
+        }
         this.setState({sortBy: sortBy}, () => this.fetchData('selectDocs'));
     }
 
@@ -661,6 +666,7 @@ class Documents extends React.Component {
             uuid: DocContext.userData.uuid,
             data: additionalData
         };
+
         return new Promise((resolved, rejected) => {
 
             fetchData['fetchDataPost'](URL, params).then(response => {

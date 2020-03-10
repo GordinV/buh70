@@ -331,13 +331,13 @@ const Arv = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "25px", show: false},
-            {id: "number", name: "Number", width: "100px"},
+            {id: "number", name: "Number", width: "100px", type: "number"},
             {id: "kpv", name: "Kuupaev", width: "100px", type: "date", interval: true},
             {id: "asutus", name: "Maksja", width: "200px"},
             {id: "summa", name: "Summa", width: "75px", type: "number"},
-            {id: "tahtaeg", name: "Tähtaeg", width: "100px"},
+            {id: "tahtaeg", name: "Tähtaeg", width: "100px", type:"date"},
             {id: "jaak", name: "Jääk", width: "100px", type: "number"},
-            {id: "tasud", name: "Tasud", width: "100px"},
+            {id: "tasud", name: "Tasud", width: "100px",type:"date"},
             {id: "nimi", name: "Nimi", width: "100px"},
             {id: "isikukood", name: "Isikukood", width: "100px"},
             {id: "viitenr", name: "Viitenumber", width: "100px"},

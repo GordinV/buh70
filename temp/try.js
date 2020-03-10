@@ -1,3 +1,7 @@
-let arr = [1, 2, 3];
+let arr = [{id: "id", name: "id", width: "25px", show: false},
+    {id: "number", name: "Number", width: "100px"},
+    {id: "kpv", name: "Kuupaev", width: "100px", type: "date", interval: true}];
 
-console.log(arr.join(','));
+let row = arr.find(row => row.id == 'number');
+
+console.log(row);
