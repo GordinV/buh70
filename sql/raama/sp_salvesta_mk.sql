@@ -244,6 +244,13 @@ BEGIN
             INSERT INTO lapsed.liidestamine (parentid, docid) VALUES (doc_lapsid, doc_id);
         END IF;
 
+
+        IF doc_arvid IS NOT NULL AND NOT exists(SELECT id FROM docs.arvtasu WHERE doc_tasu_id = doc_id AND status <> 3)
+        THEN
+            -- произведем поиск и оплату счета
+            PERFORM docs.sp_loe_tasu(doc_id, userid);
+        END IF;
+
     END IF;
 
 

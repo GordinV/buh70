@@ -39,6 +39,8 @@ BEGIN
              INNER JOIN libs.library l ON l.id = d.doc_type_id
     WHERE d.id = l_tasu_id;
 
+raise notice 'v_tasu l_tasu_id %, %',l_tasu_id, v_tasu.rekvid;
+
     IF l_tasu_id IS NULL
     THEN
         -- Документ не найден
@@ -98,6 +100,8 @@ BEGIN
     SELECT row_to_json(row) INTO json_object
     FROM (SELECT coalesce(l_doc_tasu_id, 0) AS id,
                  v_params                   AS data) row;
+
+    raise notice 'salvestan arvtasu l_user_id %, v_tasu.rekvid %', l_user_id, v_tasu.rekvid;
 
     SELECT docs.sp_salvesta_arvtasu(json_object :: JSON, l_user_id, v_tasu.rekvid) INTO l_doc_id;
 
