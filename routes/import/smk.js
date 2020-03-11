@@ -6,7 +6,7 @@ module.exports = async (file, mimeType, user) => {
     try {
         if (mimeType === 'text/xml') {
             rows = await readXML(file);
-        } else if (mimeType === 'application/octet-stream') {
+        } else {
             rows = await readCSV(file);
         }
 
@@ -59,10 +59,10 @@ const readXML = async (xmlContent) => {
                 let kpv = ntry.ValDt[0].Dt[0];
                 let pankId = ntry.AcctSvcrRef[0];
                 let NtryDtls = ntry.NtryDtls[0].TxDtls[0];
-                let number = NtryDtls.Refs[0].InstrId ? NtryDtls.Refs[0].InstrId[0]: null;
+                let number = NtryDtls.Refs[0].InstrId ? NtryDtls.Refs[0].InstrId[0] : null;
                 let RmtInf = NtryDtls.RmtInf[0];
                 let viitenr = RmtInf.Strd ? RmtInf.Strd[0].CdtrRefInf[0].Ref[0] : null;
-                let selg = RmtInf.Ustrd ?  RmtInf.Ustrd[0]: null;
+                let selg = RmtInf.Ustrd ? RmtInf.Ustrd[0] : null;
                 let maksja = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Nm[0] : null;
                 let isikukood = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0].Id[0] : null;
                 let eban = NtryDtls.RltdPties[0].DbtrAcct ? NtryDtls.RltdPties[0].DbtrAcct[0].Id[0].IBAN[0] : null;
@@ -76,9 +76,9 @@ const readXML = async (xmlContent) => {
                     maksja: maksja,
                     iban: eban,
                     pank: Acct,
-                    number:number,
+                    number: number,
                     isikukood: isikukood,
-                    aa:aa
+                    aa: aa
                 });
 
             }
