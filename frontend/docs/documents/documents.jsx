@@ -409,16 +409,16 @@ class Documents extends React.Component {
                         break;
                     case 'number':
                         if ('start' in row) {
-                            filterString = `${filterString} ${row.name}  >=  ${row.start} and ${row.name}  <=  ${row.end} `;
+                            filterString = `${filterString} ${row.name}::numeric  >=  ${row.start} and ${row.name}::numeric  <=  ${row.end} `;
                         } else {
-                            filterString = filterString + row.name + " = " + row.value;
+                            filterString = filterString + row.name + "::numeric = " + row.value;
                         }
                         break;
                     case 'integer':
                         if ('start' in row) {
                             filterString = `${filterString} ${row.name}  >=  ${row.start} and ${row.name}  <=  ${row.end} `;
                         } else {
-                            filterString = filterString + row.name + " = " + row.value;
+                            filterString = filterString + row.name + "::integer = " + row.value;
                         }
                         break;
                 }
