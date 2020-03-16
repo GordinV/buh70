@@ -55,7 +55,13 @@ BEGIN
     IF l_summa IS NULL
     THEN
         l_summa = v_arv.jaak;
+        IF v_arv.jaak = 0 OR v_arv.jaak IS NULL
+        THEN
+            l_summa = v_arv.summa - (SELECT sum(summa) FROM docs.arvtasu WHERE doc_arv_id = l_arv_id AND status <> 3);
+        END IF;
     END IF;
+
+    raise notice 'l_summa %, v_arv.jaak %, v_arv.summa %', l_summa, v_arv.jaak, v_arv.summa;
 
     -- если счет имеет обратное сальдо , то меняем тип на противоположный
     IF v_arv.id IS NOT NULL AND v_arv.jaak < 0
@@ -216,7 +222,7 @@ GRANT EXECUTE ON FUNCTION docs.create_new_mk(INTEGER, JSONB) TO dbpeakasutaja;
 
 
 /*
-SELECT docs.create_new_mk(70, '{"arv_id":1616591}')
+SELECT docs.create_new_mk(70, '{"arv_id":1616845}')
 select * from docs.arv where rekvid = 63 order by id desc limit 1
 
 select * from docs.doc where id = 1245484
@@ -232,4 +238,6 @@ select d.*, 0 as valitud from cur_mk d
                 and coalesce(docs.usersRigths(d.id, 'select', 2477),true)
 
 select * from libs.library where id = 55
+
+    select * from docs.mk where parentid = 1616855
 */

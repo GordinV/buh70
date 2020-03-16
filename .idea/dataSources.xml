@@ -55,5 +55,11 @@
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://localhost:5432/db</jdbc-url>
     </data-source>
+    <data-source source="LOCAL" name="archive_2019" uuid="76fa3c8a-1504-42a2-907b-b00080a5f253">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://dbarch.narva.ee:5432/narvalv2019</jdbc-url>
+    </data-source>
   </component>
 </project>

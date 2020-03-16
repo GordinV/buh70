@@ -33,13 +33,22 @@ BEGIN
     WHERE d.id = l_arv_id;
 
     SELECT d.*,
-           l.kood AS doc_type
+           CASE
+               WHEN m.maksepaev IS NOT NULL THEN m.maksepaev
+               WHEN k.kpv IS NOT NULL THEN k.kpv
+               WHEN j.kpv IS NOT NULL THEN j.kpv
+               ELSE d.created::DATE
+               END AS kpv,
+           l.kood  AS doc_type
            INTO v_tasu
     FROM docs.doc d
              INNER JOIN libs.library l ON l.id = d.doc_type_id
+             LEFT OUTER JOIN docs.mk m ON m.parentid = d.id
+             LEFT OUTER JOIN docs.korder1 k
+                             ON k.parentid = D.id
+             LEFT OUTER JOIN docs.journal j
+                             ON j.parentid = d.id
     WHERE d.id = l_tasu_id;
-
-raise notice 'v_tasu l_tasu_id %, %',l_tasu_id, v_tasu.rekvid;
 
     IF l_tasu_id IS NULL
     THEN
@@ -100,8 +109,6 @@ raise notice 'v_tasu l_tasu_id %, %',l_tasu_id, v_tasu.rekvid;
     SELECT row_to_json(row) INTO json_object
     FROM (SELECT coalesce(l_doc_tasu_id, 0) AS id,
                  v_params                   AS data) row;
-
-    raise notice 'salvestan arvtasu l_user_id %, v_tasu.rekvid %', l_user_id, v_tasu.rekvid;
 
     SELECT docs.sp_salvesta_arvtasu(json_object :: JSON, l_user_id, v_tasu.rekvid) INTO l_doc_id;
 

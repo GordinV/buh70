@@ -41,7 +41,6 @@ const Arv = {
                          a.tasud,
                          a.tasudok::TEXT                                               AS tasudok,
                          a.muud,
-                         a.jaak,
                          asutus.regkood,
                          asutus.nimetus::TEXT                                          AS asutus,
                          asutus.aadress,
@@ -61,7 +60,7 @@ const Arv = {
                          l.nimi::TEXT                                                  AS lapse_nimi,
                          lapsed.get_viitenumber(d.rekvid, l.id)                        AS viitenr,
                          a.properties ->> 'tyyp'::TEXT                                 AS tyyp,
-                         coalesce(saldod.jaak, 0)::NUMERIC                             AS jaak,
+                         coalesce(saldod.jaak, a.jaak)::NUMERIC                        AS jaak,
                          coalesce(saldod.laekumised, 0)::NUMERIC                       AS laekumised,
                          coalesce(saldod.ettemaksud, 0)::NUMERIC                       AS ettemaksud,
                          lpad(month(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT, 2, '0') || '.' ||
@@ -335,9 +334,9 @@ const Arv = {
             {id: "kpv", name: "Kuupaev", width: "100px", type: "date", interval: true},
             {id: "asutus", name: "Maksja", width: "200px"},
             {id: "summa", name: "Summa", width: "75px", type: "number"},
-            {id: "tahtaeg", name: "Tähtaeg", width: "100px", type:"date"},
+            {id: "tahtaeg", name: "Tähtaeg", width: "100px", type: "date"},
             {id: "jaak", name: "Jääk", width: "100px", type: "number"},
-            {id: "tasud", name: "Tasud", width: "100px",type:"date"},
+            {id: "tasud", name: "Tasud", width: "100px", type: "date"},
             {id: "nimi", name: "Nimi", width: "100px"},
             {id: "isikukood", name: "Isikukood", width: "100px"},
             {id: "viitenr", name: "Viitenumber", width: "100px"},
@@ -456,7 +455,7 @@ const Arv = {
     },
     generatePaymentOrder: {
         command: `SELECT error_code, result, error_message, doc_type_id
-                  FROM docs.create_new_mk($1::INTEGER, (SELECT to_jsonb(row.*) FROM (SELECT $2 AS arv_id) row))`, //$1 - docs.doc.id, $2 - userId
+                  FROM docs.create_new_mk($2::INTEGER, (SELECT to_jsonb(row.*) FROM (SELECT $1 AS arv_id) row))`, //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generatePaymentOrder'
     },
