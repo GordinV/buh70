@@ -5,7 +5,7 @@ module.exports = {
         sql: `WITH v_grupp AS (
     SELECT grupp_id
     FROM lapsed.day_taabel
-    WHERE id = 32
+    WHERE id = $1::INTEGER
 )
 SELECT t.id,
        $2                                                                                   AS userid,
@@ -130,6 +130,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
             params: 'id',
             converter: (data) => {
                 // создать поля
+                const totals = {};
                 data.details = data.details.map((row) => {
                     //дополнить строки полями
                     data[0].noms.forEach((column, index) => {
@@ -142,10 +143,13 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
 
                         row[`header_${index}`] = column.teenus;
                         row[`data_${index}`] = kogus;
+                        totals[index] = (totals[index] ? totals[index]: 0)  + kogus;
                     });
                     return row;
                 });
-                console.log(data);
+
+                // totals
+                data[0].totals = totals;
                 return data;
             }
 

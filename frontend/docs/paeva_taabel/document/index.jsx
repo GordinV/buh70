@@ -96,9 +96,7 @@ class PaevaTaabel extends React.PureComponent {
      * поправит данные для грида
      */
     prepaireInitData(self) {
-
-        if (self.docData.gridData && self.docData.gridData.length) {
-
+        if (self.docData.gridData && self.docData.gridData.length && self.docData.noms && self.docData.noms.length) {
             // add column nomid to grid
             self.docData.noms.forEach(nom => {
                 let column = self.docData.gridConfig.find(row => row.id == String(nom.nom_id));
@@ -154,8 +152,6 @@ class PaevaTaabel extends React.PureComponent {
 
         }
         this.setState({grupp_id: self.docData.grupp_id, kpv: self.docData.kpv});
-
-
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>

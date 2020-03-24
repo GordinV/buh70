@@ -129,7 +129,7 @@ class DataGrid extends React.Component {
                         </tr>
                         {this.prepareTableRow()}
                         {
-                            this.props.subtotals.length ?
+                            this.props.subtotals && this.props.subtotals.length ?
                                 <tr>
                                     {this.prepareTableFooter()}
                                 </tr>
@@ -476,7 +476,8 @@ DataGrid.propTypes = {
     onHeaderClick: PropTypes.func,
     activeRow: PropTypes.number,
     handleGridCellClick: PropTypes.func,
-    showToolBar: PropTypes.bool
+    showToolBar: PropTypes.bool,
+    subtotals: PropTypes.array
 };
 
 DataGrid.defaultProps = {
@@ -484,7 +485,8 @@ DataGrid.defaultProps = {
     gridData: [],
     style: {},
     showToolBar: false,
-    isForUpdate: false
+    isForUpdate: false,
+    subtotals: []
 };
 
 module.exports = DataGrid;
