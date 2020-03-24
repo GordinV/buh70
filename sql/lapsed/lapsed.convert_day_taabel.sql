@@ -30,7 +30,7 @@ BEGIN
             FOR json_row IN
                 SELECT *
                 FROM jsonb_each(json_object)
-                WHERE regexp_match(key::text, '[0-9]') IS NOT NULL
+                WHERE regexp_match(key::TEXT, '[0-9]') IS NOT NULL
                 LOOP
 
                     -- 2. разбор цифровыйх полей
@@ -46,14 +46,13 @@ BEGIN
                     );
 
                     SELECT row_to_json(row) INTO json_taabel_row
-                    FROM (SELECT taabel1_id                                                                 AS id,
-                                 l_nom_id::INTEGER                                                          AS nom_id,
-                                 (json_object ->> 'lapsid')::INTEGER                                        AS laps_id,
-                                 CASE WHEN json_row.value::BOOLEAN = TRUE THEN 1 ELSE 0 END::NUMERIC(14, 4) AS kogus,
-                                 json_object ->> 'muud'                                                     AS muud
+                    FROM (SELECT taabel1_id                                                                         AS id,
+                                 l_nom_id::INTEGER                                                                  AS nom_id,
+                                 (json_object ->> 'lapsid')::INTEGER                                                AS laps_id,
+                                 CASE WHEN (json_row.value::TEXT)::BOOLEAN = TRUE THEN 1 ELSE 0 END::NUMERIC(14, 4) AS kogus,
+                                 json_object ->> 'muud'                                                             AS muud
                          ) row;
                     json_grid = json_grid || json_taabel_row;
-
                 END LOOP;
 
 --
@@ -84,7 +83,7 @@ GRANT EXECUTE ON FUNCTION lapsed.convert_day_taabel(JSONB, INTEGER, INTEGER) TO 
 GRANT EXECUTE ON FUNCTION lapsed.convert_day_taabel(JSONB, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.convert_day_taabel(JSONB, INTEGER, INTEGER) TO dbpeakasutaja;
 
-
+/*
 SELECT lapsed.convert_day_taabel('{
   "data": {
     "docTypeId": "PAEVA_TAABEL",
@@ -195,3 +194,4 @@ SELECT lapsed.convert_day_taabel('{
     ]
   }
 }'::JSONB, 70, 63);
+*/

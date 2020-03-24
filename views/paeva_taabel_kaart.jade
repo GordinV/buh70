@@ -40,6 +40,11 @@ block content
         .td {
             border-bottom: 1px solid lightgray;
         }
+
+        .total {
+            font-weight: bold
+        }
+
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
@@ -84,4 +89,17 @@ block content
                         td.td(align='center')=row.data_7 ? row.data_7: null
                         td.td(align='center')=row.data_8 ? row.data_8: null
                         td.td(align='center')=row.data_9 ? row.data_9: null
-
+            tfoot
+                tr
+                    td
+                    td.total(align='right') Total:
+                    td.total(align='center',style={visibility: data.details[0].header_0 ? 'visible' : 'hidden'})=data.details[0].header_0 ? data['0'].totals['0'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_1 ? 'visible' : 'hidden'})=data.details[0].header_1 ? data['0'].totals['1'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_2 ? 'visible' : 'hidden'})=data.details[0].header_2 ? data['0'].totals['2'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_3 ? 'visible' : 'hidden'})=data.details[0].header_3 ? data['0'].totals['3'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_4 ? 'visible' : 'hidden'})=data.details[0].header_4 ? data['0'].totals['4'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_5 ? 'visible' : 'hidden'})=data.details[0].header_5 ? data['0'].totals['5'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_6 ? 'visible' : 'hidden'})=data.details[0].header_6 ? data['0'].totals['6'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_7 ? 'visible' : 'hidden'})=data.details[0].header_7 ? data['0'].totals['7'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_8 ? 'visible' : 'hidden'})=data.details[0].header_8 ? data['0'].totals['8'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_9 ? 'visible' : 'hidden'})=data.details[0].header_9 ? data['0'].totals['9'] : null
