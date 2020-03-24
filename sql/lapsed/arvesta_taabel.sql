@@ -95,6 +95,28 @@ BEGIN
                     l_count = l_count + 1;
                 END IF;
 
+                -- установить статус на табель
+                UPDATE lapsed.day_taabel
+                SET staatus   = 2,
+                    ajalugu   = ajalugu ||
+                                (SELECT to_jsonb(row)
+                                 FROM (SELECT now()    AS created,
+                                              userName AS user) row),
+                    timestamp = now()
+                WHERE staatus = 1
+                  AND rekv_id = l_rekvid
+                  AND month(kpv) = month(l_kpv)
+                  AND year(kpv) = year(kpv)
+                  AND id IN (
+                    SELECT t1.parent_id
+                    FROM lapsed.day_taabel1 t1
+                             INNER JOIN lapsed.day_taabel t ON t.id = t1.parent_id
+                    WHERE month(t.kpv) = month(l_kpv)
+                      AND year(t.kpv) = year(l_kpv)
+                      AND t.rekv_id = l_rekvid
+                      AND t1.laps_id = v_kaart.parentid
+                );
+
             END IF;
 
         END LOOP;
@@ -132,6 +154,6 @@ GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arves
 
 
 /*
-select lapsed.arvesta_taabel(70, 16,'2019-01-30')
+select lapsed.arvesta_taabel(70, 16,'2019-03-30')
 
  */

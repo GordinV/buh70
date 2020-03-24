@@ -3,10 +3,10 @@
 DROP FUNCTION IF EXISTS lapsed.sp_delete_lapse_taabel(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION lapsed.sp_delete_lapse_taabel(IN user_id INTEGER,
-                                                 IN doc_id INTEGER,
-                                                 OUT error_code INTEGER,
-                                                 OUT result INTEGER,
-                                                 OUT error_message TEXT)
+                                                         IN doc_id INTEGER,
+                                                         OUT error_code INTEGER,
+                                                         OUT result INTEGER,
+                                                         OUT error_message TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -17,7 +17,7 @@ DECLARE
 BEGIN
 
     SELECT l.*,
-           u.ametnik::TEXT                      AS kasutaja,
+           u.ametnik::TEXT                       AS kasutaja,
            (u.roles ->> 'is_arvestaja')::BOOLEAN AS is_arvestaja
            INTO v_doc
     FROM lapsed.lapse_taabel l
@@ -60,6 +60,24 @@ BEGIN
         RETURN;
 
     END IF;
+
+    -- снять ограничения с дневного табеля
+    UPDATE lapsed.day_taabel
+    SET staatus = 1
+    WHERE staatus = 2
+      AND rekv_id = v_doc.rekvid
+      AND month(kpv) = v_doc.kuu
+      AND year(kpv) = v_doc.aasta
+      AND id IN (
+        SELECT t.id
+        FROM lapsed.day_taabel t
+                 INNER JOIN lapsed.day_taabel1 t1 ON t.id = t1.parent_id
+        WHERE rekv_id = v_doc.rekvid
+          AND month(kpv) = v_doc.kuu
+          AND year(kpv) = v_doc.aasta
+          AND t1.laps_id = v_doc.parentid
+          AND t1.nom_id = v_doc.nomid
+    );
 
     -- Логгирование удаленного документа
 

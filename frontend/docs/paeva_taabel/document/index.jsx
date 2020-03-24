@@ -48,6 +48,7 @@ class PaevaTaabel extends React.PureComponent {
         this.prepaireInitData = this.prepaireInitData.bind(this);
         this.handleGridCellClick = this.handleGridCellClick.bind(this);
         this.btnEditGruppClick = this.btnEditGruppClick.bind(this);
+        this.handleHeaderClick = this.handleHeaderClick.bind(this);
 
 
         this.pages = [
@@ -97,10 +98,12 @@ class PaevaTaabel extends React.PureComponent {
      */
     prepaireInitData(self) {
         if (self.docData.gridData && self.docData.gridData.length && self.docData.noms && self.docData.noms.length) {
+
             // add column nomid to grid
             self.docData.noms.forEach(nom => {
                 let column = self.docData.gridConfig.find(row => row.id == String(nom.nom_id));
-                if (!column) {
+                // отсекаем услуги, которые не определены как дневные и те, что уже обрабтаны
+                if (nom.teenus && !column) {
                     self.docData.gridConfig.push({
                         id: String(nom.nom_id),
                         name: nom.teenus,
@@ -219,6 +222,7 @@ class PaevaTaabel extends React.PureComponent {
                               gridColumns={self.docData.gridConfig}
                               showToolBar={false}
                               handleGridRow={this.handleGridRow}
+                              onHeaderClick={this.handleHeaderClick}
                               onClick={self.handleGridCellClick}
                               readOnly={!isEditMode}
                               style={styles.grid.headerTable}
@@ -274,6 +278,35 @@ class PaevaTaabel extends React.PureComponent {
 
     handleGridRow(gridEvent) {
         this.setState({gridRowEdit: true, gridRowEvent: gridEvent});
+    }
+
+    /**
+     * обработчик события клика по колонке
+     * @param header
+     */
+    handleHeaderClick(header) {
+        let isEditeMode = this.refs['document'].state.edited;
+        if (!isEditeMode) {
+            console.log('not in edit mode');
+            return;
+        }
+
+        let column = header[0].column;
+        // проверим на колонку со значением кол-ва услуг
+        if (isNaN(Number(column))) {
+            console.log('vale verg, ignoreerime');
+            return;
+        }
+
+        // надо пройти циклом и поменять значение в указанном поле
+        const data = this.refs['document'].docData;
+        if (data && data.gridData && data.gridData.length) {
+            data.gridData.forEach(row => {
+                if (row[column] !== null && row[column] !== undefined ) {
+                    row[column] = !row[column];
+                }
+            });
+        }
     }
 
     handleGridCellClick(action, docId, idx, columnId) {
