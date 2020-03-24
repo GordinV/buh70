@@ -1,0 +1,131 @@
+DROP FUNCTION IF EXISTS lapsed.sp_salvesta_day_taabel(JSONB, INTEGER, INTEGER);
+
+CREATE OR REPLACE FUNCTION lapsed.sp_salvesta_day_taabel(data JSONB,
+                                                         user_id INTEGER,
+                                                         user_rekvid INTEGER)
+    RETURNS INTEGER AS
+$BODY$
+
+DECLARE
+    tab_id       INTEGER;
+    tab1_id      INTEGER;
+    userName     TEXT;
+    doc_id       INTEGER = data ->> 'id';
+    doc_data     JSON    = data ->> 'data';
+    doc_kpv      DATE    = doc_data ->> 'kpv';
+    doc_grupp_id INTEGER = doc_data ->> 'grupp_id';
+    doc_muud     TEXT    = doc_data ->> 'muud';
+    doc_details  JSONB   = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
+
+    json_object  JSONB;
+    json_record  RECORD;
+    new_history  JSONB;
+    ids          INTEGER[];
+
+BEGIN
+
+    IF (doc_id IS NULL)
+    THEN
+        doc_id = doc_data ->> 'id';
+    END IF;
+
+    SELECT kasutaja INTO userName
+    FROM ou.userid u
+    WHERE u.rekvid = user_rekvid
+      AND u.id = user_id;
+
+    IF userName IS NULL
+    THEN
+        RAISE EXCEPTION 'User not found %', user;
+    END IF;
+
+
+    -- вставка или апдейт docs.doc
+    IF doc_id IS NULL OR doc_id = 0
+    THEN
+        SELECT row_to_json(row) INTO new_history
+        FROM (SELECT now()    AS created,
+                     userName AS user) row;
+
+        INSERT INTO lapsed.day_taabel (rekv_id, kpv, grupp_id, muud, ajalugu)
+        VALUES (user_rekvid, doc_kpv, doc_grupp_id, doc_muud, '[]' :: JSONB || new_history) RETURNING id
+            INTO tab_id;
+    ELSE
+        -- history
+        SELECT row_to_json(row) INTO new_history
+        FROM (SELECT now()    AS updated,
+                     userName AS user) row;
+
+        UPDATE lapsed.day_taabel
+        SET kpv      = doc_kpv,
+            grupp_id = doc_grupp_id,
+            muud     = doc_muud,
+            ajalugu  = coalesce(ajalugu, '[]') :: JSONB || new_history
+        WHERE id = doc_id RETURNING id
+            INTO tab_id;
+
+    END IF;
+
+    -- вставка в таблицы документа
+    FOR json_object IN
+        SELECT *
+        FROM json_array_elements(doc_details::JSON)
+        LOOP
+            SELECT * INTO json_record
+            FROM jsonb_to_record(
+                         json_object) AS x (id TEXT, nom_id INTEGER, laps_id INTEGER, kogus NUMERIC(14, 4), muud TEXT);
+
+            IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
+            THEN
+                INSERT INTO lapsed.day_taabel1 (parent_id, nom_id, laps_id, kogus, muud)
+                VALUES (tab_id, json_record.nom_id, json_record.laps_id, json_record.kogus, json_record.muud);
+            ELSE
+                UPDATE lapsed.day_taabel1
+                SET nom_id = json_record.nom_id,
+                    laps_id= json_record.laps_id,
+                    kogus  = json_record.kogus,
+                    muud   = json_record.muud
+                WHERE id = json_record.id :: INTEGER RETURNING id INTO tab1_id;
+            END IF;
+            -- add new id into array of ids
+            ids = array_append(ids, tab1_id);
+
+        END LOOP;
+
+    -- delete record which not in json
+    IF array_length(ids, 1) > 0
+    THEN
+        DELETE
+        FROM lapsed.day_taabel1
+        WHERE parent_id = tab_id
+          AND id NOT IN (SELECT unnest(ids));
+    END IF;
+
+    RETURN tab_id;
+
+EXCEPTION
+    WHEN OTHERS
+        THEN
+            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+            RETURN 0;
+
+
+END;
+$BODY$
+    LANGUAGE plpgsql
+    VOLATILE
+    COST 100;
+
+GRANT EXECUTE ON FUNCTION lapsed.sp_salvesta_day_taabel(JSONB, INTEGER, INTEGER) TO arvestaja;
+GRANT EXECUTE ON FUNCTION lapsed.sp_salvesta_day_taabel(JSONB, INTEGER, INTEGER) TO dbpeakasutaja;
+
+
+/*
+
+SELECT lapsed.sp_salvesta_day_taabel('select lapsed.sp_salvesta_paeva_taabel($1::jsonb, $2::integer, $3::integer) as id {"userId":70,"asutusId":63,"data":{"data":{"docTypeId":"PAEVA_TAABEL","module":"lapsed","userId":70,"uuid":"c6ca4a60-6a77-11ea-935a-5f45be8e2066","docId":3,"context":null,"id":3,"userid":"70","kpv":"2020-03-01","muud":"test ","grupp_id":214107,"yksus":"grupp 2","row":[{"id":3,"userid":"70","kpv":"2020-03-01","muud":"test ","grupp_id":214107,"yksus":"grupp 2"}],"details":[{"userid":"70","id":"1","parent_id":3,"lapsid":38,"isikukood":"49308233762","nimi":"Angelina","grupp_id":214107,"rekvid":63,"noms":[{"nom_id":2738,"teenus":"inventaar","kogus":1,"id":1}]}],"gridConfig":[{"id":"id","name":"id","width":"0px","show":false,"type":"text","readOnly":true},{"id":"isikukood","name":"Isikukood","width":"100px","show":true,"type":"text","readOnly":true},{"id":"nimi","name":"Nimi","width":"300px","show":true,"type":"text","readOnly":true},{"id":"2738","name":"inventaar","width":"auto","type":"boolean"}],"gridData":[{"2738":true,"userid":"70","id":"1","parent_id":3,"lapsid":38,"isikukood":"49308233762","nimi":"Angelina","grupp_id":214107,"rekvid":63,"noms":[{"nom_id":2738,"teenus":"inventaar","kogus":1,"id":1}]}]}}}'
+,70, 63)
+
+select * from lapsed.day_taabel1
+*/
+
+

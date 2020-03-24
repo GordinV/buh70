@@ -1,7 +1,7 @@
 module.exports = {
     mainTable: {
         tableLayout: 'fixed',
-        width:'100%',
+        width:'-webkit-calc(100% + 16px)',
         position:'relative',
         top:'-30px',
         borderCollapse:'collapse'
@@ -69,7 +69,22 @@ module.exports = {
     header: {
         overflow: 'hidden'
 
-    }
+    },
+    boolSumbol: {
+        yes: {
+            value: '\u2714',
+            color: 'black'
+        },
+        no: {
+            value: '\u2716',
+            color: 'red'
+        }
+    },
+    boolColour: {
+        yes: 'green',
+        no: null
+    },
+
 
 
 };

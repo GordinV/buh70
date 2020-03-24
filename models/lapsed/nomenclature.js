@@ -49,6 +49,7 @@ module.exports = {
             null::varchar(20) as allikas,
             null::varchar(20) as rahavoog,
             null::varchar(20) as artikkel,
+            luhi_nimi::text as luhi_nimi,
             'Põhiõpe'::TEXT AS oppe_tyyp`,
         query: null,
         multiple: false,

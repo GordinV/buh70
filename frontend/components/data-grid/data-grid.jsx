@@ -9,7 +9,7 @@ const React = require('react'),
     GridButtonEdit = require('./../button-register/button-register-edit/button-register-edit.jsx'),
     GridButtonDelete = require('./../button-register/button-register-delete/button-register-delete.jsx'),
     ModalPageDelete = require('./../../components/modalpage/modalpage-delete/modalPage-delete.jsx'),
-
+    InputCheckBox = require('./../../components/input-checkbox/input-checkbox.jsx'),
     keydown = require('react-keydown');
 
 //const    KEYS = [38, 40]; // мониторим только стрелки вверх и внизх
@@ -48,6 +48,7 @@ class DataGrid extends React.Component {
         this.getGridRowIndexById = this.getGridRowIndexById.bind(this);
         this.prepareTableFooter = this.prepareTableFooter.bind(this);
         this.getSum = this.getSum.bind(this);
+        this.grid = [];
     }
 
 
@@ -55,7 +56,7 @@ class DataGrid extends React.Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         return nextProps;
         if (JSON.stringify(nextProps.gridData) !== JSON.stringify(prevState.gridData) ||
-            //   (nextProps.value && nextProps.value !== prevState.value) ||
+            JSON.stringify(nextProps.gridColumns) !== JSON.stringify(prevState.gridColumns) ||
             nextProps.gridData.length !== prevState.gridData.length ||
             nextProps.isSelect !== prevState.isSelect) {
             return {gridData: nextProps.gridData};
@@ -86,7 +87,6 @@ class DataGrid extends React.Component {
                 }
             }, (this.props.toolbarParams ? this.props.toolbarParams : {})
         );
-
         return (
             <div style={styles.main}>
                 {this.props.showToolBar ?
@@ -129,12 +129,10 @@ class DataGrid extends React.Component {
                         </tr>
                         {this.prepareTableRow()}
                         {
-                            this.state.subtotals.length ?
-                                <tfoot style={{position: "absolute", left:"0", right: "15px"}}>
-                                    <tr>
-                                        {this.prepareTableFooter()}
-                                    </tr>
-                                </tfoot>
+                            this.props.subtotals.length ?
+                                <tr>
+                                    {this.prepareTableFooter()}
+                                </tr>
                                 : null
                         }
 
@@ -169,7 +167,7 @@ class DataGrid extends React.Component {
     handleGridBtnClick(btnName) {
         let activeRow = this.state.activeRow;
 
-        let id =this.state.gridData.length ? this.state.gridData[activeRow].id : 0;
+        let id = this.state.gridData.length ? this.state.gridData[activeRow].id : 0;
 
         let docTypeId = this.props.docTypeId ? this.props.docTypeId : '';
 
@@ -200,7 +198,8 @@ class DataGrid extends React.Component {
      * отрабатывает событи клика по ячейке
      * @param idx
      */
-    handleCellClick(idx) {
+    handleCellClick(idx, columnId) {
+
         if (this.state.gridData.length > 0) {
             let action = this.props.onChangeAction || null;
 
@@ -212,15 +211,22 @@ class DataGrid extends React.Component {
                 gridData[idx].select = !gridData[idx].select;
             }
 
+            if (columnId && this.props.isForUpdate && gridData[idx][columnId] !== null && gridData[idx][columnId] !== undefined) {
+                // value changed
+                gridData[idx][columnId] = !gridData[idx][columnId];
+            }
+
+
             this.setState({
                 gridData: gridData,
                 activeRow: idx,
                 value: docId,
+            }, () => {
+                let value = this.state.gridData[idx][columnId];
+                if (this.props.onClick) {
+                    this.props.onClick(action, docId, idx, columnId, value);
+                }
             });
-
-            if (this.props.onClick) {
-                this.props.onClick(action, docId, idx);
-            }
         }
 
     }
@@ -231,7 +237,7 @@ class DataGrid extends React.Component {
      */
     handleCellDblClick(idx) {
         // отметим активную строку и вызовен обработчик события dblClick
-        this.handleCellClick(idx);
+        this.handleCellClick(idx, null);
         if (this.props.onDblClick) {
             this.props.onDblClick();
         }
@@ -314,9 +320,14 @@ class DataGrid extends React.Component {
                 return row;
             });
 
+            // символы да или нет
+            let boolValueYes = styles.boolSumbol['yes'].value;
+            let boolValueNo = styles.boolSumbol.no ? styles.boolSumbol['no'].value : null;
+            let boolValueNull = '-';
+
             return (<tr
                 ref={objectIndex}
-                onClick={this.handleCellClick.bind(this, rowIndex)}
+                onClick={this.handleCellClick.bind(this, rowIndex, null)}
                 onDoubleClick={this.handleCellDblClick.bind(this, rowIndex)}
                 onKeyDown={this.handleKeyDown.bind(this)}
                 style={Object.assign({}, styles.tr, activeRow === rowIndex ? styles.focused : {})}
@@ -329,10 +340,23 @@ class DataGrid extends React.Component {
                             width = isExists(column, 'width') ? column.width : '100%',
                             style = Object.assign({}, styles.td, !display ? {display: 'none'} : {}, {width: width});
 
+                        // проверим на заданный цвет
+                        if (styles.boolColour && column.type && column.type === 'boolean') {
+                            style = Object.assign(style,
+                                {backgroundColor: !!row[column.id] ? styles.boolColour.yes : styles.boolColour.no},
+                                {color: !!row[column.id] ? styles.boolSumbol['yes'].color : styles.boolSumbol['no'].color}
+                            );
+                        }
+
                         return (
-                            <td style={style} ref={cellIndex} key={cellIndex}>
-                                {typeof row[column.id] === 'boolean' && row[column.id] ?
-                                    <span>&#9745;</span> : row[column.id]}
+                            <td style={style}
+                                ref={cellIndex}
+                                key={cellIndex}
+                                align={column.type && column.type === 'boolean' ? 'center' : 'left'}
+                                onClick={this.handleCellClick.bind(this, rowIndex, column.id)}
+                            >
+                                {column.type && column.type === 'boolean' ?
+                                    <span>{!!row[column.id] ? boolValueYes : (row[column.id] == null ? '-': boolValueNo)}</span> : row[column.id]}
                             </td>
                         );
                     })
@@ -357,7 +381,7 @@ class DataGrid extends React.Component {
                     width = isExists(column, 'width') ? column.width : '100%',
                     style = Object.assign({}, styles[headerStyle], !display ? {display: 'none'} : {}, {width: width});
 
-                let subIndex = this.state.subtotals.indexOf(column.id);
+                let subIndex = this.props.subtotals.indexOf(column.id);
                 let total;
                 if (subIndex > -1) {
                     total = this.getSum(column.id);
@@ -422,8 +446,12 @@ class DataGrid extends React.Component {
 
     getSum(columnField) {
         let total = 0;
-        if (this.state.gridData.length && this.state.gridData[0][columnField]) {
-            this.state.gridData.forEach(row => total = total + Number(row[columnField]));
+        let summa = 0;
+        if (this.state.gridData.length) {
+            this.state.gridData.forEach(row => {
+                summa = row[columnField] && !isNaN(row[columnField]) ? Number(row[columnField]) : (row[columnField] ? 1 : 0);
+                total = total + Number(summa)
+            });
         }
 
         return total.toFixed(2);
@@ -439,7 +467,7 @@ DataGrid.propTypes = {
             name: PropTypes.string.isRequired,
             width: PropTypes.string,
             show: PropTypes.bool,
-            type: PropTypes.oneOf(['text', 'number', 'integer', 'date', 'string', 'select'])
+            type: PropTypes.oneOf(['text', 'number', 'integer', 'date', 'string', 'select', 'boolean'])
         })).isRequired,
     gridData: PropTypes.array.isRequired,
     onChangeAction: PropTypes.string,
@@ -447,6 +475,7 @@ DataGrid.propTypes = {
     onDblClick: PropTypes.func,
     onHeaderClick: PropTypes.func,
     activeRow: PropTypes.number,
+    handleGridCellClick: PropTypes.func,
     showToolBar: PropTypes.bool
 };
 
@@ -454,7 +483,8 @@ DataGrid.defaultProps = {
     gridColumns: [],
     gridData: [],
     style: {},
-    showToolBar: false
+    showToolBar: false,
+    isForUpdate: false
 };
 
 module.exports = DataGrid;

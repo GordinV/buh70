@@ -35,7 +35,9 @@ class DocumentTemplate extends React.Component {
             checked: true,
             loadedLibs: false,
             libParams: {},
-            logs: []
+            logs: [],
+            isDisableSave: props.isDisableSave,
+            docData: {}
         };
 
         this.docData = Object.keys(props.initData).length ? props.initData : {id: props.docId};
@@ -49,7 +51,8 @@ class DocumentTemplate extends React.Component {
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick', 'btnEmailClick',
             'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs', 'hasLibInCache',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
-            'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick', 'btnLogsClick');
+            'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick', 'btnLogsClick',
+            'handleGridCellClick');
 
 
         this.gridRowData = {}; //будем хранить строку грида
@@ -110,6 +113,7 @@ class DocumentTemplate extends React.Component {
             }
 
         };
+
         return (
             <div>
                 <Menu params={btnParams}
@@ -387,6 +391,18 @@ class DocumentTemplate extends React.Component {
     }
 
     /**
+     * обработчика грида
+     * @param gridData
+     */
+    handleGridCellClick(action, docId, idx, columnId, value) {
+        if (this.docData && this.docData.gridData) {
+            this.docData.gridData[idx][columnId] = value;
+            this.setState({docData: this.docData});
+        }
+
+    }
+
+    /**
      * вызовет метод валидации и вернет результат проверки
      * @returns {string}
      */
@@ -486,6 +502,7 @@ class DocumentTemplate extends React.Component {
      * @returns {XML}
      */
     renderDocToolBar() {
+        const toolbar = this.prepareParamsForToolbar();
         return (
             <ToolbarContainer ref='toolbarContainer'>
                 <DocToolBar ref='doc-toolbar'
@@ -503,7 +520,9 @@ class DocumentTemplate extends React.Component {
                             btnEmailClick={this.btnEmailClick}
                             btnSaveClick={this.btnSaveClick}
                             btnLogsClick={this.btnLogsClick}
-                            btnTaskClick={this.btnTaskClick}/>
+                            btnTaskClick={this.btnTaskClick}
+                            toolbarParams={toolbar}
+                />
             </ToolbarContainer>
         );
     }
@@ -524,7 +543,7 @@ class DocumentTemplate extends React.Component {
             },
             btnSave: {
                 show: this.state.edited,
-                disabled: false
+                disabled: this.state.isDisableSave
             },
             btnDelete: {
                 show: true,
@@ -734,6 +753,7 @@ class DocumentTemplate extends React.Component {
      * @param page
      */
     handlePageClick(page) {
+        console.log('page', page);
         if (page.handlePageClick) {
             page.handlePageClick(page.docTypeId);
         } else if (page.docId) {
@@ -986,7 +1006,9 @@ DocumentTemplate
     edited: false,
     requiredFields: [],
     pages: [],
-    libs: []
+    libs: [],
+    isDisableSave: false,
+    isGridDataSave: false
 };
 
 module

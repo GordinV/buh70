@@ -14,6 +14,9 @@ const LapseKaartDokument = require('./../docs/lapse_kaart/document/index.jsx');
 const LasteTaabelRegister = require('./../docs/lapse_taabel/index.jsx');
 const LapseTaabelDokument = require('./../docs/lapse_taabel/document/index.jsx');
 
+const PaevaTaabelRegister = require('./../docs/paeva_taabel/index.jsx');
+const PaevaTaabelDokument = require('./../docs/paeva_taabel/document/index.jsx');
+
 const VanemDokument = require('./../docs/vanem/document/index.jsx');
 const VanemateRegister = require('./../docs/vanem/index.jsx');
 
@@ -143,6 +146,11 @@ class App extends React.Component {
                        render={(props) => <LasteTaabelRegister history={props.history}
                                                                initData={this.props.initData} module={MODULE}/>}/>
                 <Route exact path="/lapsed/lapse_taabel/:docId" component={LapseTaabelDokument}/>
+
+                <Route exact path="/lapsed/paeva_taabel"
+                       render={(props) => <PaevaTaabelRegister history={props.history}
+                                                               initData={this.props.initData} module={MODULE}/>}/>
+                <Route exact path="/lapsed/paeva_taabel/:docId" component={PaevaTaabelDokument}/>
 
                 <Route exact path="/lapsed/arv"
                        render={(props) => <ArvedeRegister history={props.history}

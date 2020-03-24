@@ -1,0 +1,57 @@
+extends help_header
+block content
+    div.doc_wrapper
+        h1 LEHT "Päeva taabel lastele"
+        br
+        h3 Register
+        p Selline register seisab külastuste (teenuse kogus) andmed.
+        p Register asub menust
+            a(href="/help/libraries")
+                span  Püsiandmed
+                span  -> Päeva taabel lastele
+
+        img(src='/images/help/paeva_taabel_1.png')
+        br
+        p Baasi funktsionaalsus nagu kõik teistes
+            a(href="/help/registers")
+                span  registris
+        br
+        p Päeva taabeli koostamine
+        br
+        img(src='/images/help/paeva_taabel_3.png')
+        p Taabeli koostamiseks vaja sisestada kuupäev ja valida grupp.
+        p Vajuta nupp "Arvesta taabel?".
+        p Kui taabeli koostamine oli edukalt, siis avatakse päeva taabel.
+
+        p Päeva taabeli parandamine
+        br
+        h3 Dokument
+        img(src='/images/help/paeva_taabel_2.png')
+        br
+        p Taabelis, kui teenus oli täidetud, siis näidatakse
+            p='\u2714'
+        p see tähendab et teenuse kogus oli 1.
+        br
+        p Kui teenuse kogus oli 0, siis
+            p='\u2716'
+        br
+        p "-" tähendab et see teenus puudub lapse kaardis
+        br
+        p Kui vaja paranda kogus, siis vajuta hiirega vajaliku raku
+
+        br
+        p Andmete
+            a(href="/help/add_document")
+                span  lisamine,
+            a(href="/help/edit_document")
+                span  parandamine,
+            a(href="/help/print_document")
+                span  printimine,
+            a(href="/help/email_document")
+                span  email,
+            a(href="/help/logid")
+                span  logid
+
+    include help_footer
+
+

@@ -13,18 +13,19 @@ CREATE OR REPLACE FUNCTION lapsed.arvesta_taabel(IN user_id INTEGER,
 $BODY$
 
 DECLARE
-    l_rekvid     INTEGER = (SELECT rekvid
-                            FROM ou.userid u
-                            WHERE id = user_id
-                            LIMIT 1);
+    l_rekvid    INTEGER = (SELECT rekvid
+                           FROM ou.userid u
+                           WHERE id = user_id
+                           LIMIT 1);
 
-    v_kaart      RECORD;
-    json_object  JSONB;
+    v_kaart     RECORD;
+    json_object JSONB;
 
-    l_status     INTEGER;
-    DOC_STATUS   INTEGER = 1; -- только активные услуги
-    l_taabel_id  INTEGER;
-    l_count      INTEGER = 0;
+    l_status    INTEGER;
+    DOC_STATUS  INTEGER = 1; -- только активные услуги
+    l_taabel_id INTEGER;
+    l_count     INTEGER = 0;
+    l_kogus     NUMERIC = 0;
 BEGIN
     doc_type_id = 'LAPSE_TAABEL';
     -- will return docTypeid of new doc
@@ -33,26 +34,20 @@ BEGIN
 
     FOR v_kaart IN
         SELECT lk.nomid,
-               lk.id                     AS lapse_kaart_id,
+               lk.id                                             AS lapse_kaart_id,
                lk.parentid,
                n.uhik,
-               CASE
-                   WHEN coalesce((lk.properties ->> 'kogus')::NUMERIC, 0) > 0 THEN (lk.properties ->> 'kogus')::NUMERIC
-                   WHEN upper(n.uhik) IN ('PAEV', 'PÄEV','päev') THEN
-                       (SELECT palk.get_work_days((SELECT to_jsonb(row)
-                                                   FROM (SELECT date_part('month'::text, l_kpv::date) AS kuu,
-                                                                date_part('year'::text, l_kpv::date)  AS aasta) row
-                       )::JSON))
-                   ELSE 1 END            AS kogus,
-               date_part('month'::text, l_kpv::date) AS kuu,
-               date_part('year'::text, l_kpv::date)  AS aasta
+               coalesce((lk.properties ->> 'kogus')::NUMERIC, 0) AS kogus,
+               date_part('month'::TEXT, l_kpv::DATE)             AS kuu,
+               date_part('year'::TEXT, l_kpv::DATE)              AS aasta
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.parentid = l_laps_id
           AND lk.staatus = DOC_STATUS
-          AND (lk.properties ->> 'alg_kpv' IS NULL OR (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
+          AND (lk.properties ->> 'alg_kpv' IS NULL OR
+               (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
           AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
-          AND ((lk.properties ->> 'kas_ettemaks') is null or NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN)
+          AND ((lk.properties ->> 'kas_ettemaks') IS NULL OR NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN)
         LOOP
             -- ищем аналогичный табель в периоде
             -- критерий
@@ -60,13 +55,26 @@ BEGIN
             -- 3. период
             -- 4. услуги
 
+            IF upper(v_kaart.uhik) IN ('PAEV', 'PÄEV')
+            THEN
+                SELECT sum(kogus) INTO v_kaart.kogus
+                FROM lapsed.day_taabel1 t1
+                         INNER JOIN lapsed.day_taabel t ON t.id = t1.parent_id
+                WHERE t.staatus <> 3
+                  AND t.rekv_id = l_rekvid
+                  AND t1.laps_id = v_kaart.parentid
+                  AND t1.nom_id = v_kaart.nomid
+                  AND month(t.kpv) = month(l_kpv::DATE)
+                  AND year(t.kpv) = year(l_kpv::DATE);
+            END IF;
+
             SELECT lt.id,
                    lt.staatus
                    INTO l_taabel_id, l_status
             FROM lapsed.lapse_taabel lt
             WHERE lt.lapse_kaart_id = v_kaart.lapse_kaart_id
-              AND kuu = date_part('year'::text, l_kpv::date)
-              AND aasta = date_part('month'::text, l_kpv::date)
+              AND aasta = date_part('year'::TEXT, l_kpv::DATE)
+              AND kuu = date_part('month'::TEXT, l_kpv::DATE)
             LIMIT 1;
 
             IF l_taabel_id IS NULL OR l_status <> 2
@@ -77,6 +85,8 @@ BEGIN
                 SELECT row_to_json(row) INTO json_object
                 FROM (SELECT coalesce(l_taabel_id, 0)     AS id,
                              (SELECT to_jsonb(v_kaart.*)) AS data) row;
+
+                RAISE NOTICE 'json_object %', json_object;
 
                 SELECT lapsed.sp_salvesta_lapse_taabel(json_object :: JSONB, user_id, l_rekvid) INTO l_taabel_id;
 

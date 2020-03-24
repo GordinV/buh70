@@ -22,14 +22,14 @@ module.exports = {
                      l.muud,
                      l.kood,
                      l.nimetus,
-                     ((l.properties::JSONB -> 'all_yksused') #>> '{0}')::TEXT       AS all_yksus_1,
-                     ((l.properties::JSONB -> 'all_yksused') #>> '{1}')::TEXT       AS all_yksus_2,
-                     ((l.properties::JSONB -> 'all_yksused') #>> '{2}')::TEXT       AS all_yksus_3,
-                     ((l.properties::JSONB -> 'all_yksused') #>> '{3}')::TEXT       AS all_yksus_4,
-                     ((l.properties::JSONB -> 'all_yksused') #>> '{4}')::TEXT       AS all_yksus_5,
-                     $2                                                             AS userid,
+                     ((l.properties::JSONB -> 'all_yksused') #>> '{0}')::TEXT        AS all_yksus_1,
+                     ((l.properties::JSONB -> 'all_yksused') #>> '{1}')::TEXT        AS all_yksus_2,
+                     ((l.properties::JSONB -> 'all_yksused') #>> '{2}')::TEXT        AS all_yksus_3,
+                     ((l.properties::JSONB -> 'all_yksused') #>> '{3}')::TEXT        AS all_yksus_4,
+                     ((l.properties::JSONB -> 'all_yksused') #>> '{4}')::TEXT        AS all_yksus_5,
+                     $2                                                              AS userid,
                      rtrim(regexp_replace((properties::JSONB ->> 'all_yksused'), '[^a-zA-Z0-9,]', '', 'g'),
-                           ',')                                                     AS all_yksused,
+                           ',')                                                      AS all_yksused,
                      coalesce((l.properties::JSONB ->> 'tyyp')::INTEGER, 1)::INTEGER AS tyyp
               FROM libs.library l
               WHERE l.id = $1::INTEGER`,
@@ -130,17 +130,27 @@ module.exports = {
     ],
 
     uuendaHinnad: {
-        command: `SELECT error_code, result, error_message, doc_type_id
+        command: `SELECT error_code, result, error_message, doc_type_id, $3::DATE
                   FROM lapsed.update_prices_in_group($2::INTEGER, $1::INTEGER)`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'uuendaHinnad'
     },
     importGroups: {
         command: `SELECT error_code, result, error_message
-                  FROM lapsed.import_groups( $1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+                  FROM lapsed.import_groups($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
         type: 'sql',
         alias: 'importGroups'
     },
+
+    arvestaKondTaabel: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM lapsed.koosta_taabel_paeva_alusel(
+                               (SELECT to_jsonb(row.*) FROM (SELECT $1::INTEGER AS doc_id, $3::DATE AS kpv) row),
+                               $2::INTEGER)`, //$1 - grupp_id, $2 - userId, $3 - kpv
+        type: "sql",
+        alias: 'arvestaKondTaabel'
+    },
+
 
     bpm: [
         {
@@ -148,9 +158,15 @@ module.exports = {
             task: 'uuendaHinnad',
             type: 'manual',
             action: 'uuendaHinnad',
-        }
-    ],
+        },
+        {
+            name: 'Arvesta kondtaabel',
+            task: 'arvestaKondTaabel',
+            type: 'manual',
+            action: 'arvestaKondTaabel'
+        },
 
+    ],
 
 
 };

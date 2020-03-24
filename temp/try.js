@@ -1,7 +1,11 @@
-let arr = [{id: "id", name: "id", width: "25px", show: false},
-    {id: "number", name: "Number", width: "100px"},
-    {id: "kpv", name: "Kuupaev", width: "100px", type: "date", interval: true}];
+let arr = [{id:'id', type:'text'},{id:'123', type:'text'},{id:'321', type:'text'}];
+let result = [];
+const reg =  /^\d+$/;
 
-let row = arr.find(row => row.id == 'number');
+arr.forEach(row => {
+    if (reg.test(row.id)) {
+        result.push(row.id);
+    }
+});
 
-console.log(row);
+console.log('result', result);

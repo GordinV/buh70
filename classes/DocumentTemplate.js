@@ -77,7 +77,6 @@ class Document {
 
         let sql = this.config.saveDoc;
 
-
         let data = await db.queryDb(sql, [params.data, params.userId, params.asutusId]);
 
         if (data && data.error_code ) {

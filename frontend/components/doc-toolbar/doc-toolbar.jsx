@@ -33,13 +33,16 @@ class DocToolBar extends React.PureComponent {
         if (props.docId) {
             this.docId = props.docId
         }
+        this.state = {
+            docStatus: props.docStatus
+        }
     }
 
     render() {
         let isEditMode = this.props.edited,
-            isDocDisabled = this.props.docStatus === 2 ,
+            isDocDisabled = this.state.docStatus === 2 ,
             docId = this.docId,
-            toolbarParams = {
+            toolbarParams =   {
                 btnAdd: {
                     show: !isEditMode,
                     disabled: isEditMode
@@ -58,7 +61,7 @@ class DocToolBar extends React.PureComponent {
                 },
                 btnSave: {
                     show: isEditMode && !isDocDisabled,
-                    disabled: false
+                    disabled: this.props.toolbarParams && this.props.toolbarParams['btnSave'] ? this.props.toolbarParams['btnSave'].disabled: false
                 },
                 btnCancel: {
                     show: isEditMode && docId !== 0,

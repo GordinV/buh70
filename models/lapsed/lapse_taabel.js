@@ -18,7 +18,7 @@ module.exports = {
                      l.nimi,
                      $2                            AS userid,
                      n.kood,
-                     n.nimetus                     AS teenus
+                     n.nimetus                     AS teenus       
               FROM lapsed.lapse_taabel lt
                        INNER JOIN lapsed.laps l ON l.id = lt.parentid
                        INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid

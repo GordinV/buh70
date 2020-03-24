@@ -30,8 +30,12 @@ class LapseGrupp extends React.PureComponent {
         this.renderer = this.renderer.bind(this);
         this.createGridRow = this.createGridRow.bind(this);
         this.gridValidateFields = this.gridValidateFields.bind(this);
+        this.handlePageClick = this.handlePageClick.bind(this);
 
-//        this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
+        this.pages = [
+            {pageName: 'Lapse grupp', docTypeId: 'LAPSE_GRUPP'},
+            {pageName: 'Laste taabel', handlePageClick: this.handlePageClick, docTypeId: 'LAPSE_TAABEL'}
+        ];
     }
 
     render() {
@@ -43,6 +47,7 @@ class LapseGrupp extends React.PureComponent {
                                  docTypeId='LAPSE_GRUPP'
                                  libs={LIBRARIES}
                                  userData={this.props.userData}
+                                 pages={this.pages}
                                  initData={initData}
                                  renderer={this.renderer}
                                  createGridRow={this.createGridRow}
@@ -262,6 +267,20 @@ class LapseGrupp extends React.PureComponent {
         }
         return warning;
 
+    }
+
+    /**
+     * обработчик клика на страницу
+     * @param pageDocTypeId
+     */
+    handlePageClick(pageDocTypeId) {
+        // данные для фильтра
+        let yksus = this.refs['document'].docData.nimetus;
+
+        this.props.history.push({
+            pathname: `/lapsed/${pageDocTypeId}`,
+            state: {yksus: yksus, type: 'text'}
+        });
     }
 
 

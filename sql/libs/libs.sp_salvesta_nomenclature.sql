@@ -35,6 +35,7 @@ DECLARE
     doc_vailkaine NUMERIC = doc_data ->> 'vailkaine';
     doc_grupp     TEXT    = doc_data ->> 'grupp';
     doc_oppe_tyyp TEXT    = doc_data ->> 'oppe_tyyp';
+    doc_luhi_nimi TEXT    = doc_data ->> 'luhi_nimi';
     doc_INF3      BOOLEAN = coalesce((doc_data ->> 'kas_inf3')::BOOLEAN, FALSE);
     json_object   JSONB;
     new_history   JSONB;
