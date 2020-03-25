@@ -129,9 +129,9 @@ class GridFilter extends React.PureComponent {
 
         let isStateUpdated = false; // if true then will call setState
 
-        // только поля, которые отмечаны как show:true или явно ка указаны
+        // только поля, которые отмечаны как show:true или явно ка указаны и те, у котоых нету hideFilter
         const filterFields = this.props.gridConfig.filter(field => {
-            if (field.id !== 'id' && (!field.filter || field.filter == 'show')) {
+            if (field.id !== 'id' && !field.hideFilter && (!field.filter || field.filter == 'show')) {
                 return field;
             }
         });

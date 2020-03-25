@@ -35,7 +35,6 @@ class Documents extends React.Component {
         this.gridData = [];
         this.gridConfig = [];
         this.filterData = [];
-        this.subtotals = [];
         this.startMenuData = []; // здесь будут данные для старт меню
 
         if (props.initData && props.initData.result) {

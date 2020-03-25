@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+        .td {
+            border-bottom: 1px solid lightgray;
+        }
+
+        .total {
+            font-weight: bold
+        }
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 ASUTUSE KUU TAABEL
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        each yksus in data
+            p #{Object.keys(yksus)[0]}
+
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Teenus
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(1) > -1 ? 'red': 'none' }) 1
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(2) > -1 ? 'red': 'none' }) 2
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(3) > -1 ? 'red': 'none' }) 3
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(4) > -1 ? 'red': 'none' }) 4
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(5) > -1 ? 'red': 'none' }) 5
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(6) > -1 ? 'red': 'none' }) 6
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(7) > -1 ? 'red': 'none' }) 7
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(8) > -1 ? 'red': 'none' }) 8
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(9) > -1 ? 'red': 'none' }) 9
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(10) > -1 ? 'red': 'none' }) 10
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(11) > -1 ? 'red': 'none' }) 11
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(12) > -1 ? 'red': 'none' }) 12
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(13) > -1 ? 'red': 'none' }) 13
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(14) > -1 ? 'red': 'none' }) 14
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(15) > -1 ? 'red': 'none' }) 15
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(16) > -1 ? 'red': 'none' }) 16
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(17) > -1 ? 'red': 'none' }) 17
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(18) > -1 ? 'red': 'none' }) 18
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(19) > -1 ? 'red': 'none' }) 19
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(20) > -1 ? 'red': 'none' }) 20
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(21) > -1 ? 'red': 'none' }) 21
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(22) > -1 ? 'red': 'none' }) 22
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(23) > -1 ? 'red': 'none' }) 23
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(24) > -1 ? 'red': 'none' }) 24
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(25) > -1 ? 'red': 'none' }) 25
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(26) > -1 ? 'red': 'none' }) 26
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(27) > -1 ? 'red': 'none' }) 27
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(28) > -1 ? 'red': 'none' }) 28
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(29) > -1 ? 'red': 'none' }) 29
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(30) > -1 ? 'red': 'none' }) 30
+                        th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(31) > -1 ? 'red': 'none' }) 31
+                        th Kokku
+                tbody
+                    each rea in yksus[Object.keys(yksus)[0]]
+                        tr
+                            td=rea.teenus
+                            td.td(align='center')= rea.day_1
+                            td.td(align='center')=rea.day_2
+                            td.td(align='center')=rea.day_3
+                            td.td(align='center')=rea.day_4
+                            td.td(align='center')=rea.day_5
+                            td.td(align='center')=rea.day_6
+                            td.td(align='center')=rea.day_7
+                            td.td(align='center')=rea.day_8
+                            td.td(align='center')=rea.day_9
+                            td.td(align='center')=rea.day_10
+                            td.td(align='center')=rea.day_11
+                            td.td(align='center')=rea.day_12
+                            td.td(align='center')=rea.day_13
+                            td.td(align='center')=rea.day_14
+                            td.td(align='center')=rea.day_15
+                            td.td(align='center')=rea.day_16
+                            td.td(align='center')=rea.day_17
+                            td.td(align='center')=rea.day_18
+                            td.td(align='center')=rea.day_19
+                            td.td(align='center')=rea.day_20
+                            td.td(align='center')=rea.day_21
+                            td.td(align='center')=rea.day_22
+                            td.td(align='center')=rea.day_23
+                            td.td(align='center')=rea.day_24
+                            td.td(align='center')=rea.day_25
+                            td.td(align='center')=rea.day_26
+                            td.td(align='center')=rea.day_27
+                            td.td(align='center')=rea.day_28
+                            td.td(align='center')=rea.day_29
+                            td.td(align='center')=rea.day_30
+                            td.td(align='center')=rea.day_31
+                            td.td(align='center')=rea.kuu_kokku
+                tfoot
+                    tr
+                        td.total(align='right') Kokku:
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_1
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_2
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_3
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_4
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_5
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_6
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_7
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_8
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_9
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_10
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_11
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_12
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_13
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_14
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_15
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_16
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_17
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_18
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_19
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_20
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_21
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_22
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_23
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_24
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_25
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_26
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_27
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_28
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_29
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_30
+                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_31
+

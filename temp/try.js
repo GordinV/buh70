@@ -1,11 +1,3 @@
-let arr = [{id:'id', type:'text'},{id:'123', type:'text'},{id:'321', type:'text'}];
-let result = [];
+let arr = '1,2,3';
 const reg =  /^\d+$/;
-
-arr.forEach(row => {
-    if (reg.test(row.id)) {
-        result.push(row.id);
-    }
-});
-
-console.log('result', result);
+console.log('result', reg.test(1));
