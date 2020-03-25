@@ -207,3 +207,10 @@ SELECT 1::INTEGER,
        '{"type":"aruanne", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'KUU_TAABEL');
 
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
+       'YKSUSE_TAABEL'                              AS kood,
+       'Asutuse kuu taabel üksuse järgi'                      AS nimetus,
+       'DOK'                                     AS library,
+       '{"type":"aruanne", "module":["Lapsed"]}' AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'YKSUSE_TAABEL');

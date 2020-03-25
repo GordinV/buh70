@@ -384,8 +384,8 @@ class DataGrid extends React.Component {
                 let subIndex = this.props.subtotals.indexOf(column.id);
                 let total;
                 if (subIndex > -1) {
-                    total = this.getSum(column.id);
-                }
+                    total = this.getSum(column.id, column.type && column.type == 'integer' ? 0: 2);
+    }
 
                 // установить видимость
                 return (<td
@@ -444,7 +444,13 @@ class DataGrid extends React.Component {
         }, this);
     }
 
-    getSum(columnField) {
+    /**
+     * расчет итогов
+     * @param columnField
+     * @param dec
+     * @returns {string}
+     */
+    getSum(columnField, dec) {
         let total = 0;
         let summa = 0;
         if (this.state.gridData.length) {
@@ -454,7 +460,7 @@ class DataGrid extends React.Component {
             });
         }
 
-        return total.toFixed(2);
+        return total.toFixed(dec ? dec: 0);
     }
 
 }

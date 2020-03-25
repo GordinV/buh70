@@ -1,12 +1,16 @@
-DROP FUNCTION IF EXISTS lapsed.kuu_taabel(JSONB, INTEGER);
-DROP FUNCTION IF EXISTS lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS lapsed.yksuse_taabel(JSONB, INTEGER);
+DROP FUNCTION IF EXISTS lapsed.yksuse_taabel(INTEGER, INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION lapsed.kuu_taabel(l_rekvid INTEGER, l_kuu INTEGER, l_aasta INTEGER)
+CREATE OR REPLACE FUNCTION lapsed.yksuse_taabel(l_rekvid INTEGER, l_kuu INTEGER DEFAULT month(current_date),
+                                                l_aasta INTEGER DEFAULT year(current_date))
     RETURNS TABLE (
         rekv_id   INTEGER,
         asutus    TEXT,
         yksus     TEXT,
         teenus    TEXT,
+        isikukood TEXT,
+        nimi      TEXT,
+        viitenr   TEXT,
         kuu       INTEGER,
         aasta     INTEGER,
         kogus     INTEGER,
@@ -41,7 +45,8 @@ CREATE OR REPLACE FUNCTION lapsed.kuu_taabel(l_rekvid INTEGER, l_kuu INTEGER, l_
         day_29    INTEGER,
         day_30    INTEGER,
         day_31    INTEGER,
-        week_ends INTEGER[]
+        week_ends INTEGER[],
+        men_count INTEGER
 
     ) AS
 $BODY$
@@ -49,6 +54,9 @@ SELECT qry.rekv_id,
        r.nimetus::TEXT                                                AS asutus,
        l.nimetus::TEXT                                                AS yksus,
        coalesce((l.properties::JSONB ->> 'luno')::TEXT, n.kood)::TEXT AS teenus,
+       laps.isikukood::TEXT                                           AS isikukood,
+       laps.nimi::TEXT                                                AS nimi,
+       lapsed.get_viitenumber(qry.rekv_id, laps.id)::TEXT             AS viitenr,
        l_kuu::INTEGER                                                 AS kuu,
        l_aasta::INTEGER                                               AS aasta,
        coalesce(qry.kogus, 0)::INTEGER                                AS kogus,
@@ -83,11 +91,13 @@ SELECT qry.rekv_id,
        coalesce(qry.day_29, 0)::INTEGER                               AS day_29,
        coalesce(qry.day_30, 0)::INTEGER                               AS day_30,
        coalesce(qry.day_31, 0)::INTEGER                               AS day_31,
-       get_week_ends(l_kuu, l_aasta, l_rekvid)::INTEGER[]             AS week_ends
+       get_week_ends(l_kuu, l_aasta, l_rekvid)::INTEGER[]             AS week_ends,
+       ROW_NUMBER() OVER (PARTITION BY qry.laps_id)::INTEGER          AS men_count
 FROM (
          SELECT t.rekv_id,
                 t.grupp_id                                   AS grupp_id,
                 t1.nom_id                                    AS nom_id,
+                t1.laps_id                                   AS laps_id,
                 sum(t1.kogus)                                AS kogus,
                 sum(t1.kogus) FILTER (WHERE day(t.kpv) = 1)  AS day_1,
                 sum(t1.kogus) FILTER (WHERE day(t.kpv) = 2)  AS day_2,
@@ -120,18 +130,20 @@ FROM (
                 sum(t1.kogus) FILTER (WHERE day(t.kpv) = 29) AS day_29,
                 sum(t1.kogus) FILTER (WHERE day(t.kpv) = 30) AS day_30,
                 sum(t1.kogus) FILTER (WHERE day(t.kpv) = 31) AS day_31
+
          FROM lapsed.day_taabel t
                   INNER JOIN lapsed.day_taabel1 t1 ON t.id = t1.parent_id
                   INNER JOIN libs.library l ON l.id = t.grupp_id
-         WHERE month(t.kpv) = l_kuu::INTEGER
-           AND year(t.kpv) = l_aasta::INTEGER
+         WHERE month(t.kpv) = coalesce(l_kuu, month(current_date))::INTEGER
+           AND year(t.kpv) = coalesce(l_aasta, year(current_date))::INTEGER
            AND t.rekv_id = l_rekvid
            AND t.staatus <> 3
-         GROUP BY t.rekv_id, t.grupp_id, t1.nom_id
+         GROUP BY t.rekv_id, t.grupp_id, t1.nom_id, t1.laps_id
      ) qry
          INNER JOIN libs.nomenklatuur n ON n.id = qry.nom_id
          INNER JOIN libs.library l ON l.id = qry.grupp_id
          INNER JOIN ou.rekv r ON r.id = qry.rekv_id
+         INNER JOIN lapsed.laps laps ON laps.id = qry.laps_id
 
 $BODY$
     LANGUAGE SQL
@@ -139,12 +151,12 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER) TO arvestaja;
-GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.yksuse_taabel(INTEGER, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.yksuse_taabel(INTEGER, INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.yksuse_taabel(INTEGER, INTEGER, INTEGER) TO arvestaja;
+GRANT EXECUTE ON FUNCTION lapsed.yksuse_taabel(INTEGER, INTEGER, INTEGER) TO dbvaatleja;
 
 
 /*
-select * from lapsed.kuu_taabel(63, 3, 2020)
+select * from lapsed.yksuse_taabel(63, 3, 2020)
 */

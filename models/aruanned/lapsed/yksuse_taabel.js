@@ -1,8 +1,11 @@
 module.exports = {
     grid: {
         gridConfiguration: [
-            {id: "yksus", name: "Üksus", width: "10%"},
-            {id: "teenus", name: "Teenus", width: "10%"},
+            {id: "yksus", name: "Üksus", width: "7%"},
+            {id: "viitenr", name: "Viitenr.", width: "7%"},
+            {id: "isikukood", name: "Isikukood", width: "7%"},
+            {id: "nimi", name: "Nimi", width: "8%"},
+            {id: "teenus", name: "Teenus", width: "5%"},
             {id: "kuu", name: "Kuu", width: "3%", type: "integer"},
             {id: "aasta", name: "Aasta", width: "4%", type: "integer"},
             {id: "day_1", name: "1", width: "2%", hideFilter: true, type: "integer"},
@@ -40,6 +43,9 @@ module.exports = {
         ],
         sqlString: `SELECT yksus,
                            teenus,
+                           isikukood,
+                           viitenr,
+                           nimi,
                            kuu,
                            aasta,
                            day_1,
@@ -109,17 +115,18 @@ module.exports = {
                            sum(day_29) OVER (PARTITION BY yksus) AS total_29,
                            sum(day_30) OVER (PARTITION BY yksus) AS total_30,
                            sum(day_31) OVER (PARTITION BY yksus) AS total_31,
-                           week_ends::integer[] as week_ends
-                    FROM lapsed.kuu_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER) qryReport
-                    ORDER BY yksus, teenus
+                           week_ends::INTEGER[]                  AS week_ends,
+                           men_count::INTEGER
+                    FROM lapsed.yksuse_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER) qryReport
+                    ORDER BY yksus, nimi, men_count, teenus
         `,     // $1 - rekvid, $2-KUU $3 - aasta
         params: ['rekvid', 'kuu', 'aasta'],
-        alias: 'kuu_taabel_report',
+        alias: 'yksuse_taabel_report',
         subtotals: ['day_1', 'day_2', 'day_3', 'day_4', 'day_5', 'day_6', 'day_7', 'day_8', 'day_9', 'day_10', 'day_11', 'day_12', 'day_13', 'day_14', 'day_15', 'day_16', 'day_17', 'day_18', 'day_19', 'day_20', 'day_21', 'day_22', 'day_23', 'day_24', 'day_25', 'day_26', 'day_27', 'day_28', 'day_29', 'day_30', 'day_31']
     },
     print: [
         {
-            view: 'kuu_taabel_register',
+            view: 'yksuse_taabel_register',
             params: 'sqlWhere',
             group: 'yksus'
 

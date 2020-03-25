@@ -75,6 +75,7 @@ const EbatoenaolisedReport = require('./../docs/ebatoenaolised/index.jsx');
 const KondArveReport = require('./../docs/kondarve/index.jsx');
 const AastaNaitajadReport = require('./../docs/aasta_naitajad/index.jsx');
 const KuuTaabel = require('./../docs/kuu_taabel/index.jsx');
+const YksuseTaabel = require('./../docs/yksuse_taabel/index.jsx');
 
 const {Route, Redirect} = require('react-router-dom');
 const {StyleRoot} = require('radium');
@@ -309,7 +310,11 @@ class App extends React.Component {
                            module={MODULE}
                            history={props.history}
                            initData={this.props.initData}/>}/>
-
+                <Route exact path="/lapsed/yksuse_taabel"
+                       render={(props) => <YksuseTaabel
+                           module={MODULE}
+                           history={props.history}
+                           initData={this.props.initData}/>}/>
 
 
                 <Route exact path="/lapsed/asutuse_liik"
