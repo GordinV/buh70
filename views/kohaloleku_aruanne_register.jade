@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 KOHALOLEKU ARUANNE
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        each asutus in data
+            p #{Object.keys(asutus)[0]}
+
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Nr
+                        th Koolituse tüüp
+                        th Üksuste kogus
+                        th Laste kogus nimekirjas
+                        th Laste faktiline kogus
+                        th Laste/päevad
+
+                tbody
+                    each rea in asutus[Object.keys(asutus)[0]]
+                        tr
+                            td=rea.row_id
+                            td=rea.koolituse_tyyp
+                            td(align='center')=rea.yksuse_kogus
+                            td(align='center')=rea.nimekirje_kogus
+                            td(align='center')=rea.faktiline_kogus
+                            td(align='center')=rea.kogus
+
+                tr.group
+                    td
+                    td.group(align='right')='Kokku:'
+                    td(align='center').group=asutus[Object.keys(asutus)[0]][0].yksuse_kogus_kokku
+                    td(align='center').group=asutus[Object.keys(asutus)[0]][0].nimekirje_kogus_kokku
+                    td(align='center').group=asutus[Object.keys(asutus)[0]][0].faktiline_kogus_kokku
+                    td(align='center').group=asutus[Object.keys(asutus)[0]][0].kogus_kokku
+

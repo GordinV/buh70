@@ -46,4 +46,5 @@ module.exports = {
     koolituse_liik: '/libs/libraries/koolituse_liik',
     kuu_taabel: '/aruanned/lapsed/kuu_taabel',
     yksuse_taabel: '/aruanned/lapsed/yksuse_taabel',
+    kohaloleku_aruanne: '/aruanned/lapsed/kohaloleku_aruanne',
 };
