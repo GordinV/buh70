@@ -40,7 +40,12 @@ BEGIN
             OR (month(kpv2) = l_kuu AND year(kpv2) = l_aasta))
           AND (l_pohjus IS NULL OR p.pohjus = l_pohjus)
         LOOP
+            -- оюбнулим переменные
+            l_paevad = 0;
+
+
             -- arvestame alg. päev
+
             IF month(qryPuhkused.kpv1) = l_kuu AND year(qryPuhkused.kpv1) = l_aasta
             THEN
                 l_start_paev = day(qryPuhkused.kpv1);
@@ -53,48 +58,42 @@ BEGIN
             THEN
                 l_lopp_paev = day(qryPuhkused.kpv2);
             ELSE
-                l_lopp_paev = get_last_day(date(l_aasta, l_kuu, 1));
+                l_lopp_paev = day(get_last_day(date(l_aasta, l_kuu, 1)));
             END IF;
-
-            -- считаем часы по кол-ву раб. дней
-            SELECT row_to_json(row) INTO params
-            FROM (SELECT l_kuu        AS kuu,
-                         l_aasta      AS aasta,
-                         l_lepingid   AS lepingid,
-                         l_start_paev AS paev,
-                         l_lopp_paev  AS lopp) row;
-
 
             -- arvestame tunnid
-            SELECT sum(p.summa) INTO l_puhkuse_tunnid
-            FROM palk.cur_puudumine p
-            WHERE lepingid = l_lepingid
-              AND ((month(kpv1) = l_kuu AND year(kpv1) = l_aasta)
-                OR (month(kpv2) = l_kuu AND year(kpv2) = l_aasta))
-              AND (l_pohjus IS NULL OR p.pohjus = l_pohjus)
-              AND p.id NOT IN (
-                SELECT id FROM palk.cur_puudumine p WHERE lepingid = l_lepingid AND p.pohjus = 'PUHKUS' AND tyyp = 4
-            );
 
-
-            IF (l_paevad IS NULL OR empty(l_paevad)) AND coalesce(l_puhkuse_tunnid, 0) > 0
+            IF (qryPuhkused.pohjus = 'PUHKUS' AND qryPuhkused.tyyp = 4)
             THEN
-                l_result = l_result + (l_puhkuse_tunnid / qryPuhkused.toopaev);
+                -- except
+                RAISE NOTICE 'except';
             ELSE
-                l_result = l_result + l_paevad;
-            END IF;
-        END LOOP;
-    -- arvestame holidays in periood
-    SELECT count(*) INTO l_miinus_holidays
-    FROM cur_calender(make_date(l_aasta, l_kuu, l_start_paev), make_date(l_aasta, l_kuu, l_lopp_paev),
-                      qryPuhkused.rekvid)
-    WHERE is_tahtpaev;
+                l_result = l_result + CASE
+                                          WHEN month(qryPuhkused.kpv1) = month(qryPuhkused.kpv2)
+                                              THEN qryPuhkused.kpv2 - qryPuhkused.kpv1 + 1
+                                          WHEN month(qryPuhkused.kpv1) <> month(qryPuhkused.kpv2) AND
+                                               month(qryPuhkused.kpv2) = l_kuu
+                                              THEN qryPuhkused.kpv2 - make_date(l_aasta, l_kuu, 1)
+                                          ELSE get_last_day(qryPuhkused.kpv1) - qryPuhkused.kpv1 + 1 END;
 
-    -- arvestame puhkepaevad perioodis
-    SELECT count(*) INTO l_miinus_weekends
-    FROM cur_calender(make_date(l_aasta, l_kuu, l_start_paev), make_date(l_aasta, l_kuu, l_lopp_paev),
-                      qryPuhkused.rekvid)
-    WHERE NOT is_toopaev;
+            END IF;
+
+            -- arvestame holidays in periood
+            l_miinus_holidays = l_miinus_holidays + (SELECT count(*)
+                                                     FROM cur_calender(make_date(l_aasta, l_kuu, l_start_paev),
+                                                                       make_date(l_aasta, l_kuu, l_lopp_paev),
+                                                                       qryPuhkused.rekvid)
+                                                     WHERE is_tahtpaev);
+
+            -- arvestame puhkepaevad perioodis
+            l_miinus_weekends = l_miinus_weekends + (SELECT count(*)
+                                                     FROM cur_calender(make_date(l_aasta, l_kuu, l_start_paev),
+                                                                       make_date(l_aasta, l_kuu, l_lopp_paev),
+                                                                       qryPuhkused.rekvid)
+                                                     WHERE NOT is_toopaev);
+
+        END LOOP;
+
 
     -- miinus
     l_result = l_result - (l_miinus_holidays + l_miinus_weekends);

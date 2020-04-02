@@ -11,14 +11,14 @@ CREATE OR REPLACE FUNCTION cur_calender(l_alg_kpv DATE, l_lopp_kpv DATE, l_rekv 
 $BODY$
 
 SELECT day                                                                     AS paev,
-       l_alg_kpv + (day - 1)                                                   AS kpv,
-       DOW(l_alg_kpv + (day - 1))                                              AS dow,
-       CASE WHEN DOW(l_alg_kpv + (day - 1)) IN (0, 6) THEN FALSE ELSE TRUE END AS is_toopaev,
+       make_date(year(l_alg_kpv), month(l_alg_kpv),day)                                                   AS kpv,
+       DOW(make_date(year(l_alg_kpv), month(l_alg_kpv),day))                                              AS dow,
+       CASE WHEN DOW(make_date(year(l_alg_kpv), month(l_alg_kpv),day)) IN (0, 6) THEN FALSE ELSE TRUE END AS is_toopaev,
        (exists(SELECT id
                FROM cur_tahtpaevad
-               WHERE aasta = year(l_alg_kpv + (day - 1))
-                 AND kuu = month(l_alg_kpv + (day - 1))
-                 AND paev = day(l_alg_kpv + (day - 1))
+               WHERE aasta = year(make_date(year(l_alg_kpv), month(l_alg_kpv),day))
+                 AND kuu = month(make_date(year(l_alg_kpv), month(l_alg_kpv),day))
+                 AND paev = day(make_date(year(l_alg_kpv), month(l_alg_kpv),day))
            ))                                                                  AS is_tahtpaev
 FROM (
          SELECT extract(DAY FROM dt)::INTEGER AS day
@@ -36,11 +36,12 @@ $BODY$
 GRANT EXECUTE ON FUNCTION cur_calender(DATE, DATE, INTEGER) TO PUBLIC;
 
 
-
+/*
 SELECT *
-FROM cur_calender('2020-02-01', '2020-02-10' :: DATE, 3)
+FROM cur_calender('2020-03-01', '2020-03-10' :: DATE, 3);
 
 SELECT *
 FROM cur_calender(make_date(2020, 2,1), make_date(2020, 02, 29),
                   3)
 WHERE  NOT is_toopaev;
+*/

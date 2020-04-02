@@ -151,6 +151,7 @@ GRANT EXECUTE ON FUNCTION palk.sp_calc_taabel1(JSONB) TO dbpeakasutaja;
 /*
 select palk.sp_calc_taabel1(null::JSONB); -- -> 0
 
-select palk.sp_calc_taabel1('{"aasta":2018,"kuu":12,"lepingid":22301}'::JSONB); -- -> 145 ?
+select palk.sp_calc_taabel1('{"aasta":2020,"kuu":3,"lepingid":19394}'::JSONB); -- -> 145 ?
 
+select * from palk.tooleping where parentid in (select id from libs.asutus where regkood = '46312213713')
 */
