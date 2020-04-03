@@ -7,6 +7,7 @@ SELECT
   e.rekvid,
   e.aasta,
   e.summa,
+  e.summa_kassa,
   coalesce(e.kood1, '') :: VARCHAR(20)         AS kood1,
   coalesce(e.kood2, '') :: VARCHAR(20)         AS kood2,
   coalesce(e.kood3, '') :: VARCHAR(20)         AS kood3,
@@ -47,6 +48,6 @@ GRANT SELECT ON TABLE cur_kulud TO eelkoostaja;
 
 select * from eelarve.eelarve where rekvid = 63 and aasta = 2018
 
-select * from cur_eelarve
+select * from cur_kulud
  */
 

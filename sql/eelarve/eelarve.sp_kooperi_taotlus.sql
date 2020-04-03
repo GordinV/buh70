@@ -41,6 +41,7 @@ BEGIN
       0                  AS id,
       user_id :: INTEGER AS userid,
       t1.summa,
+      t1.summa_kassa,
       t1.tunnus,
       t1.proj,
       t1.kood1,

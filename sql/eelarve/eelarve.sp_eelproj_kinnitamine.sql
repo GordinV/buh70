@@ -67,6 +67,7 @@ BEGIN
     t.aasta,
     t.kuu,
     t1.summa,
+    t1.summa_kassa,
     t1.muud,
     t1.kood1,
     t1.kood2,
@@ -103,6 +104,7 @@ BEGIN
     SELECT
       v_taotlus.aasta,
       v_taotlus.summa,
+      v_taotlus.summa_kassa,
       v_taotlus.tunnus,
       v_taotlus.kood1,
       v_taotlus.kood2,

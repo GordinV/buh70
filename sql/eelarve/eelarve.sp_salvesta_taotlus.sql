@@ -128,7 +128,7 @@ BEGIN
     SELECT *
     INTO json_record
     FROM json_to_record(
-             json_object) AS x(id TEXT, summa NUMERIC(14, 4), tunnus TEXT, proj TEXT,
+             json_object) AS x(id TEXT, summa NUMERIC(14, 4), summa_kassa NUMERIC(14, 4), tunnus TEXT, proj TEXT,
          kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, muud TEXT, selg TEXT, eelarveid INTEGER, eelprojid INTEGER);
 
     IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
@@ -136,9 +136,9 @@ BEGIN
                   FROM eelarve.taotlus1
                   WHERE id = json_record.id :: INTEGER)
     THEN
-      INSERT INTO eelarve.taotlus1 (parentid, summa, tunnus, proj, kood1, kood2, kood3, kood4, kood5, muud, selg, eelarveid, eelprojid)
+      INSERT INTO eelarve.taotlus1 (parentid, summa, summa_kassa, tunnus, proj, kood1, kood2, kood3, kood4, kood5, muud, selg, eelarveid, eelprojid)
       VALUES
-        (taotlus_id, json_record.summa, json_record.tunnus, json_record.proj,
+        (taotlus_id, json_record.summa, json_record.summa_kassa, json_record.tunnus, json_record.proj,
                      json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5,
                      json_record.muud, json_record.selg, json_record.eelarveid, json_record.eelprojid)
 
@@ -153,6 +153,7 @@ BEGIN
       UPDATE eelarve.taotlus1
       SET
         summa  = json_record.summa,
+        summa_kassa  = json_record.summa_kassa,
         tunnus = json_record.tunnus,
         proj   = json_record.proj,
         kood1  = json_record.kood1,

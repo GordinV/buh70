@@ -26,6 +26,7 @@ module.exports = {
                   coalesce(esitaja.ametnik, '') :: VARCHAR(120)       AS esitaja,
                   coalesce(aktsepteerija.ametnik, '') :: VARCHAR(120) AS aktseptja,
                   (select sum(summa) from eelarve.taotlus1 t1  where t1.parentid = t.id)::numeric(12,2) as summa,
+                  (select sum(summa_kassa) from eelarve.taotlus1 t1  where t1.parentid = t.id)::numeric(12,2) as summa_kassa,
                   (to_json($2::integer)::jsonb <@ (d.rigths ->>'EelKoostaja')::jsonb)::boolean as is_koostaja,
                   (to_json($2::integer)::jsonb <@ (d.rigths ->>'EelAktsepterja')::jsonb)::boolean as is_aktsepterja,
                   (to_json($2::integer)::jsonb <@ (d.rigths ->>'EelAllkirjastaja')::jsonb)::boolean as is_allkirjastaja,
@@ -92,6 +93,7 @@ module.exports = {
                   t1.proj,
                   t1.tunnus,
                   t1.summa,
+                  t1.summa_kassa,
                   t1.selg,
                   t1.status,
                   t1.markused,
@@ -120,7 +122,6 @@ module.exports = {
         row: {}
     },
     requiredFields: [
-        {name: 'summa', type: 'N'},
         {name: 'koostajaId', type: 'I'},
         {name: 'aasta', type: 'I'},
         {name: 'kpv', type: 'D'}
@@ -164,6 +165,7 @@ module.exports = {
                       kood5,
                       tunnus,
                       summa,
+                      summa_kassa,
                       parentid,
                       regkood,
                       nimetus::varchar(254),
