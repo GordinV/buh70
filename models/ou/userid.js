@@ -87,7 +87,7 @@ module.exports = {
         },
         {
             sql: `SELECT *
-                  FROM ou.get_user_data($1::TEXT, (SELECT rekvid FROM ou.userid WHERE id = $1)::INTEGER, NULL::TEXT)`, //$1 - login, $2 - rekv or null, $3 - module or null
+                  FROM ou.get_user_data($1::TEXT, $2::INTEGER, NULL::TEXT)`, //$1 - login, $2 - rekv or null, $3 - module or null
             query: null,
             multiple: true,
             alias: 'get_last_login',
