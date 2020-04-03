@@ -46,7 +46,9 @@ DECLARE
                                          coalesce((doc_data ->> 'is_rekl_maksuhaldur') :: BOOLEAN,
                                                   FALSE)                                              AS is_rekl_maksuhaldur,
                                          coalesce((doc_data ->> 'is_ladu_kasutaja') :: BOOLEAN,
-                                                  FALSE)                                              AS is_ladu_kasutaja
+                                                  FALSE)                                              AS is_ladu_kasutaja,
+                                      coalesce((doc_data ->> 'is_arvestaja') :: BOOLEAN,
+                                               FALSE)                                              AS is_arvestaja
                                  ) row);
 
     is_import    BOOLEAN = data ->> 'import';
@@ -170,6 +172,10 @@ BEGIN
     IF roles_json ->> 'is_eel_esitaja'
     THEN
         roles_list = roles_list || ',eelesitaja';
+    END IF;
+
+    if roles_json ->>'is_arvestaja' THEN
+        roles_list = roles_list || ',arvestaja';
     END IF;
 
     l_string = 'GRANT ' || roles_list || ' TO ' || quote_ident(doc_kasutaja);
