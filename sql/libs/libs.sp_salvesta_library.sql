@@ -8,21 +8,23 @@ CREATE OR REPLACE FUNCTION libs.sp_salvesta_library(data JSON,
 $BODY$
 
 DECLARE
-    lib_id      INTEGER;
-    userName    TEXT;
-    doc_id      INTEGER = data ->> 'id';
-    doc_data    JSON    = data ->> 'data';
-    doc_kood    TEXT    = doc_data ->> 'kood';
-    doc_nimetus TEXT    = doc_data ->> 'nimetus';
-    doc_library TEXT    = doc_data ->> 'library';
-    doc_tun1    INTEGER = doc_data ->> 'tun1'; --liik
-    doc_tun2    INTEGER = doc_data ->> 'tun2'; -- tegev
-    doc_tun3    INTEGER = doc_data ->> 'tun3'; -- allikas
-    doc_tun4    INTEGER = doc_data ->> 'tun4'; -- rahavoog
-    doc_tun5    INTEGER = doc_data ->> 'tun5';
-    doc_muud    TEXT    = doc_data ->> 'muud';
-    is_import   BOOLEAN = data ->> 'import';
-    v_doc       RECORD;
+    lib_id         INTEGER;
+    userName       TEXT;
+    doc_id         INTEGER = data ->> 'id';
+    doc_data       JSON    = data ->> 'data';
+    doc_kood       TEXT    = doc_data ->> 'kood';
+    doc_nimetus    TEXT    = doc_data ->> 'nimetus';
+    doc_library    TEXT    = doc_data ->> 'library';
+    doc_tun1       INTEGER = doc_data ->> 'tun1'; --liik
+    doc_tun2       INTEGER = doc_data ->> 'tun2'; -- tegev
+    doc_tun3       INTEGER = doc_data ->> 'tun3'; -- allikas
+    doc_tun4       INTEGER = doc_data ->> 'tun4'; -- rahavoog
+    doc_tun5       INTEGER = doc_data ->> 'tun5';
+    doc_muud       TEXT    = doc_data ->> 'muud';
+    is_import      BOOLEAN = data ->> 'import';
+    v_doc          RECORD;
+    is_peakasutaja BOOLEAN = FALSE;
+
 BEGIN
 
     IF (doc_id IS NULL)
@@ -31,7 +33,9 @@ BEGIN
     END IF;
 
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja,
+           (u.roles ->> 'is_peakasutaja')::BOOLEAN AS is_peakasutaja
+           INTO userName, is_peakasutaja
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -39,6 +43,12 @@ BEGIN
     IF is_import IS NULL AND userName IS NULL
     THEN
         RAISE NOTICE 'User not found %', user;
+        RETURN 0;
+    END IF;
+
+    -- проверка на тип справочника и роль
+    if  not is_peakasutaja and doc_library in ('ALLIKAD', 'TEGEV','TULUDEALLIKAD','RAHA') THEN
+        RAISE NOTICE 'Puudub õigused';
         RETURN 0;
     END IF;
 

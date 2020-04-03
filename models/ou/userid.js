@@ -23,6 +23,7 @@ module.exports = {
                          coalesce((u.roles ->> 'is_rekl_administraator') :: BOOLEAN, FALSE) :: INTEGER AS is_rekl_administraator,
                          coalesce((u.roles ->> 'is_rekl_maksuhaldur') :: BOOLEAN, FALSE) :: INTEGER    AS is_rekl_maksuhaldur,
                          coalesce((u.roles ->> 'is_ladu_kasutaja') :: BOOLEAN, FALSE) :: INTEGER       AS is_ladu_kasutaja,
+                         coalesce((u.roles ->> 'is_arvestaja') :: BOOLEAN, FALSE) :: INTEGER           AS is_arvestaja,
                          (u.properties ->> 'email') :: VARCHAR(254)                                    AS email,
                          (u.properties ->> 'port') :: TEXT                                             AS port,
                          (u.properties ->> 'user') :: TEXT                                             AS user,
@@ -52,6 +53,7 @@ module.exports = {
                       0 :: INTEGER     AS is_rekl_maksuhaldur,
                       0 :: INTEGER     AS is_ladu_kasutaja,
                       0 :: INTEGER     AS is_kasutaja,
+                      0:: integer as is_arvestaja,
                       '' :: VARCHAR(254) AS email`,
             query: null,
             multiple: false,
@@ -76,7 +78,8 @@ module.exports = {
                   WHERE ($1 = 0
                       OR u.id = $1)
                     AND r.status <> 3
-                  ORDER BY u.last_login DESC, u.id DESC;`,
+                      ORDER BY u.last_login DESC
+                      , u.id DESC;`,
             query: null,
             multiple: true,
             alias: 'get_all_users',
