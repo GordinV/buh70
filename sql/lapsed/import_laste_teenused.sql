@@ -66,6 +66,7 @@ BEGIN
                 IF NOT exists(SELECT id
                               FROM lapsed.lapse_kaart
                               WHERE parentid = l_laps_id
+                                AND staatus <> 3
                                 AND nomid = l_nom_id
                                 AND rekvid = user_rekvid)
                 THEN

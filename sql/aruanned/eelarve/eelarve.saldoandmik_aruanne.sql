@@ -69,14 +69,8 @@ FROM (
                   SELECT j.kpv,
                          j.rekvid,
                          j1.deebet                                                       AS konto,
-                         coalesce(CASE
-                                      WHEN left(l.kood, 3) IN ('154', '155', '156')
-                                          THEN ''
-                                      ELSE j1.lisa_d END, '')::TEXT                      AS tp,
-                         coalesce(CASE
-                                      WHEN left(l.kood, 3) IN ('154', '155', '156')
-                                          THEN ''
-                                      ELSE j1.kood1 END, '') :: VARCHAR(20)              AS tegev,
+                         coalesce(j1.lisa_d, '')::TEXT                                   AS tp,
+                         coalesce(j1.kood1, '') :: VARCHAR(20)                           AS tegev,
                          coalesce(j1.kood2, '') :: VARCHAR(20)                           AS allikas,
                          coalesce(CASE
                                       WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
@@ -102,14 +96,8 @@ FROM (
                   SELECT j.kpv,
                          j.rekvid,
                          j1.kreedit                           AS konto,
-                         CASE
-                             WHEN left(l.kood, 3) IN ('154', '155', '156')
-                                 THEN ''
-                             ELSE j1.lisa_k END::TEXT         AS tp,
-                         CASE
-                             WHEN left(l.kood, 3) IN ('154', '155', '156')
-                                 THEN ''
-                             ELSE j1.kood1 END :: VARCHAR(20) AS tegev,
+                         j1.lisa_k:: VARCHAR(20)              AS tp,
+                         j1.kood1 :: VARCHAR(20)               AS tegev,
                          j1.kood2 :: VARCHAR(20)              AS allikas,
                          CASE
                              WHEN j.kpv < make_date(year(l_kpv2), 1, 1)

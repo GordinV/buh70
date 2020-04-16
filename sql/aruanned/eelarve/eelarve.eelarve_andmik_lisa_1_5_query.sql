@@ -15,26 +15,29 @@ DECLARE
 BEGIN
 
 
-   DROP TABLE IF EXISTS tmp_andmik;
+    DROP TABLE IF EXISTS tmp_andmik;
 
     CREATE TEMPORARY TABLE tmp_andmik (
-        idx         TEXT,
-        tyyp        INTEGER,
-        rekvid      INTEGER,
-        tegev       VARCHAR(20),
-        allikas     VARCHAR(20),
-        artikkel    VARCHAR(20),
-        rahavoog    VARCHAR(20),
-        nimetus     VARCHAR(254),
-        eelarve     NUMERIC(14, 2),
-        tegelik     NUMERIC(14, 2),
-        kassa       NUMERIC(14, 2),
-        saldoandmik NUMERIC(14, 2),
-        db          NUMERIC(14, 2),
-        kr          NUMERIC(14, 2),
-        aasta       INTEGER,
-        kuu         INTEGER,
-        is_kulud    INTEGER DEFAULT 0
+        idx                TEXT,
+        tyyp               INTEGER,
+        rekvid             INTEGER,
+        tegev              VARCHAR(20),
+        allikas            VARCHAR(20),
+        artikkel           VARCHAR(20),
+        rahavoog           VARCHAR(20),
+        nimetus            VARCHAR(254),
+        eelarve            NUMERIC(14, 2),
+        eelarve_taps       NUMERIC(14, 2),
+        eelarve_kassa      NUMERIC(14, 2),
+        eelarve_kassa_taps NUMERIC(14, 2),
+        tegelik            NUMERIC(14, 2),
+        kassa              NUMERIC(14, 2),
+        saldoandmik        NUMERIC(14, 2),
+        db                 NUMERIC(14, 2),
+        kr                 NUMERIC(14, 2),
+        aasta              INTEGER,
+        kuu                INTEGER,
+        is_kulud           INTEGER DEFAULT 0
     );
 
 /*
@@ -56,7 +59,10 @@ BEGIN
       (rahavoog);
 
 */
-    INSERT INTO tmp_andmik (idx, tyyp, rekvid, tegev, allikas, artikkel, nimetus, eelarve, tegelik, kassa, aasta, kuu,
+    INSERT INTO tmp_andmik (idx, tyyp, rekvid, tegev, allikas, artikkel, nimetus, eelarve, eelarve_kassa,
+                            eelarve_taps, eelarve_kassa_taps,
+                            tegelik,
+                            kassa, aasta, kuu,
                             is_kulud)
     SELECT '2.1'                                           AS idx,
            1                                               AS tyyp,
@@ -66,19 +72,26 @@ BEGIN
            qry.artikkel::VARCHAR(20)                       AS artikkel,
            l.nimetus::VARCHAR(254),
            sum(qry.eelarve)::NUMERIC(14, 2)                AS eelarve,
+           sum(qry.eelarve_kassa)::NUMERIC(14, 2)          AS eelarve_kassa,
+           sum(qry.eelarve_taps)::NUMERIC(14, 2)           AS eelarve_taps,
+           sum(qry.eelarve_kassa_taps)::NUMERIC(14, 2)     AS eelarve_kassa_taps,
            sum(qry.tegelik)::NUMERIC(14, 2)                AS tegelik,
            sum(qry.kassa)::NUMERIC(14, 2)                  AS kassa,
            year(l_kpv)                                     AS aasta,
            month(l_kpv),
            CASE WHEN l.tun5 = 1 THEN 0 ELSE 1 END::INTEGER AS is_kulud
     FROM (
+             -- eelarve kinni
              SELECT e.rekvid,
-                    e.summa        AS eelarve,
-                    0 :: NUMERIC AS tegelik,
-                    0 :: NUMERIC AS kassa,
-                    e.kood1        AS tegev,
-                    e.kood2        AS allikas,
-                    e.kood5        AS artikkel
+                    e.summa       AS eelarve,
+                    e.summa_kassa AS eelarve_kassa,
+                    0             AS eelarve_taps,
+                    0             AS eelarve_kassa_taps,
+                    0 :: NUMERIC  AS tegelik,
+                    0 :: NUMERIC  AS kassa,
+                    e.kood1       AS tegev,
+                    e.kood2       AS allikas,
+                    e.kood5       AS artikkel
              FROM eelarve.eelarve e
              WHERE rekvid = (CASE
                                  WHEN $3 = 1
@@ -87,14 +100,54 @@ BEGIN
                AND e.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur($2))
                AND aasta = year($1)
-               AND (e.kpv IS NULL OR e.kpv <= $1)
+               AND (e.kpv IS NULL) --  OR e.kpv <= $1
              UNION ALL
-             SELECT rekvid,
-                    0 :: NUMERIC              AS eelarve,
-                    summa                     AS tegelik,
-                    0 :: NUMERIC              AS kassa,
-                    COALESCE(ft.tegev, '')    AS tegev,
-                    COALESCE(ft.allikas, '')  AS allikas,
+             -- eelarve taps
+             SELECT e.rekvid
+                     ,
+                    0             AS eelarve
+                     ,
+                    0             AS eelarve_kassa
+                     ,
+                    e.summa       AS eelarve_taps
+                     ,
+                    e.summa_kassa AS eelarve_kassa_taps
+                     ,
+                    0 :: NUMERIC  AS tegelik
+                     ,
+                    0 :: NUMERIC  AS kassa
+                     ,
+                    e.kood1       AS tegev
+                     ,
+                    e.kood2       AS allikas
+                     ,
+                    e.kood5       AS artikkel
+             FROM eelarve.eelarve e
+             WHERE rekvid = (CASE
+                                 WHEN $3 = 1
+                                     THEN rekvid
+                                 ELSE $2 END)
+               AND e.rekvid IN (SELECT rekv_id
+                                FROM get_asutuse_struktuur($2))
+               AND aasta = year($1)
+               AND (e.kpv IS NOT NULL AND e.kpv <= $1)
+             UNION ALL
+             SELECT rekvid
+                     ,
+                    0 :: NUMERIC              AS eelarve
+                     ,
+                    0 :: NUMERIC              AS eelarve_kassa
+                     ,
+                    0 :: NUMERIC              AS eelarve_taps,
+                    0 :: NUMERIC              AS eelarve_kassa_taps,
+                    summa                     AS tegelik
+                     ,
+                    0 :: NUMERIC              AS kassa
+                     ,
+                    COALESCE(ft.tegev, '')    AS tegev
+                     ,
+                    COALESCE(ft.allikas, '')  AS allikas
+                     ,
                     COALESCE(ft.artikkel, '') AS artikkel
              FROM cur_kulude_taitmine ft
              WHERE ft.rekvid = (CASE
@@ -108,12 +161,22 @@ BEGIN
                AND ft.artikkel IS NOT NULL
                AND NOT empty(ft.artikkel)
              UNION ALL
-             SELECT rekvid,
-                    0 :: NUMERIC              AS eelarve,
-                    summa                     AS tegelik,
-                    0 :: NUMERIC              AS kassa,
-                    COALESCE(tt.tegev, '')    AS tegev,
-                    COALESCE(tt.allikas, '')  AS allikas,
+             SELECT rekvid
+                     ,
+                    0 :: NUMERIC              AS eelarve
+                     ,
+                    0 :: NUMERIC              AS eelarve_kassa
+                     ,
+                    0 :: NUMERIC              AS eelarve_taps,
+                    0 :: NUMERIC              AS eelarve_kassa_taps,
+                    summa                     AS tegelik
+                     ,
+                    0 :: NUMERIC              AS kassa
+                     ,
+                    COALESCE(tt.tegev, '')    AS tegev
+                     ,
+                    COALESCE(tt.allikas, '')  AS allikas
+                     ,
                     COALESCE(tt.artikkel, '') AS artikkel
              FROM cur_tulude_taitmine tt
              WHERE tt.rekvid = (CASE
@@ -127,12 +190,23 @@ BEGIN
                AND tt.artikkel IS NOT NULL
                AND NOT empty(tt.artikkel)
              UNION ALL
-             SELECT rekvid,
-                    0 :: NUMERIC AS eelarve,
-                    0 :: NUMERIC AS tegelik,
-                    summa        AS kassa,
-                    tegev,
-                    allikas,
+             SELECT rekvid
+                     ,
+                    0 :: NUMERIC AS eelarve
+                     ,
+                    0 :: NUMERIC AS eelarve_kassa
+                     ,
+                    0 :: NUMERIC AS eelarve_taps,
+                    0 :: NUMERIC AS eelarve_kassa_taps,
+
+                    0 :: NUMERIC AS tegelik
+                     ,
+                    summa        AS kassa
+                     ,
+                    tegev
+                     ,
+                    allikas
+                     ,
                     artikkel
              FROM cur_kulude_kassa_taitmine kt
              WHERE kt.rekvid = (CASE
@@ -147,12 +221,23 @@ BEGIN
                AND kt.artikkel IS NOT NULL
                AND NOT empty(kt.artikkel)
              UNION ALL
-             SELECT rekvid,
-                    0 :: NUMERIC AS eelarve,
-                    0 :: NUMERIC AS tegelik,
-                    summa        AS kassa,
-                    tegev,
-                    allikas,
+             SELECT rekvid
+                     ,
+                    0 :: NUMERIC AS eelarve
+                     ,
+                    0 :: NUMERIC AS eelarve_kassa
+                     ,
+                    0 :: NUMERIC AS eelarve_taps,
+                    0 :: NUMERIC AS eelarve_kassa_taps,
+
+                    0 :: NUMERIC AS tegelik
+                     ,
+                    summa        AS kassa
+                     ,
+                    tegev
+                     ,
+                    allikas
+                     ,
                     artikkel
              FROM (
                       SELECT j.rekvid,
@@ -179,20 +264,33 @@ BEGIN
                         AND J.KPV <= $1
                         AND j1.kood5 IN
                             (SELECT kood FROM libs.library WHERE library.library = 'TULUDEALLIKAD' AND tun5 = 1)
-                      GROUP BY j.rekvid, j1.kood5, j1.kood1, j1.kood2
+                      GROUP BY j.rekvid
+                             , j1.kood5
+                             , j1.kood1
+                             , j1.kood2
                   ) tt
              WHERE tt.artikkel IS NOT NULL
                AND NOT empty(tt.artikkel)
-
              UNION ALL
 
              -- kassatulud (art.jargi) miinus
-             SELECT kassakulu.rekvid,
-                    0::NUMERIC   AS eelarve,
-                    0::NUMERIC   AS tegelik,
-                    -1 * (summa) AS kassa,
-                    kassakulu.tegev::VARCHAR(20),
-                    kassakulu.allikas::VARCHAR(20),
+             SELECT kassakulu.rekvid
+                     ,
+                    0::NUMERIC   AS eelarve
+                     ,
+                    0::NUMERIC   AS eelarve_kassa
+                     ,
+                    0 :: NUMERIC AS eelarve_taps,
+                    0 :: NUMERIC AS eelarve_kassa_taps,
+
+                    0::NUMERIC   AS tegelik
+                     ,
+                    -1 * (summa) AS kassa
+                     ,
+                    kassakulu.tegev::VARCHAR(20)
+                     ,
+                    kassakulu.allikas::VARCHAR(20)
+                     ,
                     kassakulu.artikkel::VARCHAR(20)
              FROM (
                       SELECT j.rekvid,
@@ -220,17 +318,31 @@ BEGIN
                         AND NOT empty(j1.kood5)
                         AND j1.kood5 IN
                             (SELECT kood FROM library WHERE library.library = 'TULUDEALLIKAD' AND tun5 = 1)
-                      GROUP BY j.rekvid, j1.kood1, j1.kood2, j1.kood5
+                      GROUP BY j.rekvid
+                             , j1.kood1
+                             , j1.kood2
+                             , j1.kood5
                   ) kassakulu
              UNION ALL
 
              -- kassatulud (art.jargi), kulud
-             SELECT kassatulu.rekvid,
-                    0::NUMERIC   AS eelarve,
-                    0::NUMERIC   AS tegelik,
-                    -1 * (summa) AS kassa,
-                    kassatulu.tegev::VARCHAR(20),
-                    kassatulu.allikas::VARCHAR(20),
+             SELECT kassatulu.rekvid
+                     ,
+                    0::NUMERIC   AS eelarve
+                     ,
+                    0::NUMERIC   AS eelarve_kassa
+                     ,
+                    0 :: NUMERIC AS eelarve_taps,
+                    0 :: NUMERIC AS eelarve_kassa_taps,
+
+                    0::NUMERIC   AS tegelik
+                     ,
+                    -1 * (summa) AS kassa
+                     ,
+                    kassatulu.tegev::VARCHAR(20)
+                     ,
+                    kassatulu.allikas::VARCHAR(20)
+                     ,
                     kassatulu.artikkel::VARCHAR(20)
              FROM (
                       SELECT j.rekvid,
@@ -257,8 +369,162 @@ BEGIN
                         AND NOT empty(j1.kood5)
                         AND j1.kood5 IN
                             (SELECT kood FROM libs.library WHERE library.library = 'TULUDEALLIKAD' AND tun5 = 2)
-                      GROUP BY j.rekvid, j1.kood1, j1.kood2, j1.kood5
+                      GROUP BY j.rekvid
+                             , j1.kood1
+                             , j1.kood2
+                             , j1.kood5
                   ) kassatulu
+             UNION ALL
+
+             -- 3500, 352
+             SELECT kassatulu.rekvid
+                     ,
+                    0::NUMERIC   AS eelarve
+                     ,
+                    0::NUMERIC   AS eelarve_kassa
+                     ,
+                    0 :: NUMERIC AS eelarve_taps,
+                    0 :: NUMERIC AS eelarve_kassa_taps,
+
+                    0::NUMERIC   AS tegelik
+                     ,
+                    (summa)      AS kassa
+                     ,
+                    kassatulu.tegev::VARCHAR(20)
+                     ,
+                    kassatulu.allikas::VARCHAR(20)
+                     ,
+                    kassatulu.artikkel::VARCHAR(20)
+             FROM (
+                      SELECT j.rekvid,
+                             sum(j1.summa) AS summa,
+                             j1.kood1      AS tegev,
+                             j1.kood2      AS allikas,
+                             j1.kood5      AS artikkel
+                      FROM docs.doc d
+                               INNER JOIN docs.journal j ON j.parentid = d.id
+                               INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                      WHERE j.kpv <= $1
+                        AND YEAR(j.kpv) = YEAR($1)
+                        AND j.rekvid = (CASE
+                                            WHEN $3 = 1
+                                                THEN j.rekvid
+                                            ELSE $2 END)
+                        AND j.rekvid IN (SELECT rekv_id
+                                         FROM get_asutuse_struktuur($2))
+                        AND j1.kood5 IS NOT NULL
+                        AND NOT empty(j1.kood5)
+                        AND j1.deebet LIKE '100%'
+                        AND kreedit LIKE '700000%'
+                        AND j1.kood5 IN ('3500', '352')
+                      GROUP BY j.rekvid
+                             , j1.kood1
+                             , j1.kood2
+                             , j1.kood5
+                  ) kassatulu
+             UNION ALL
+             -- возврат кассовых доходов
+             SELECT kassatulu.rekvid
+                     ,
+                    0::NUMERIC   AS eelarve
+                     ,
+                    0::NUMERIC   AS eelarve_kassa
+                     ,
+                    0 :: NUMERIC AS eelarve_taps,
+                    0 :: NUMERIC AS eelarve_kassa_taps,
+
+                    0::NUMERIC   AS tegelik
+                     ,
+                    -1 * (summa) AS kassa
+                     ,
+                    kassatulu.tegev::VARCHAR(20)
+                     ,
+                    kassatulu.allikas::VARCHAR(20)
+                     ,
+                    kassatulu.artikkel::VARCHAR(20)
+             FROM (
+                      SELECT j.rekvid,
+                             sum(j1.summa) AS summa,
+                             j1.kood1      AS tegev,
+                             j1.kood2      AS allikas,
+                             j1.kood5      AS artikkel
+                      FROM docs.doc d
+                               INNER JOIN docs.journal j ON j.parentid = d.id
+                               INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                               JOIN eelarve.kassa_tulud kassatulud
+                                    ON j1.deebet::TEXT ~~ kassatulud.kood::TEXT
+                               JOIN eelarve.kassa_kontod kassakontod
+                                    ON j1.kreedit::TEXT ~~ kassakontod.kood::TEXT
+                      WHERE j.kpv <= $1
+                        AND YEAR(j.kpv) = YEAR($1)
+                        AND j.rekvid = (CASE
+                                            WHEN $3 = 1
+                                                THEN j.rekvid
+                                            ELSE $2 END)
+                        AND j.rekvid IN (SELECT rekv_id
+                                         FROM get_asutuse_struktuur($2))
+                        AND j1.kood5 IS NOT NULL
+                        AND NOT empty(j1.kood5)
+                        AND j1.kood5 IN
+                            (SELECT kood FROM libs.library WHERE library.library = 'TULUDEALLIKAD' AND tun5 = 1)
+                      GROUP BY j.rekvid
+                             , j1.kood1
+                             , j1.kood2
+                             , j1.kood5
+                  ) kassatulu
+             UNION ALL
+             SELECT kassakulu.rekvid
+                     ,
+                    0::NUMERIC   AS eelarve
+                     ,
+                    0::NUMERIC   AS eelarve_kassa
+                     ,
+                    0 :: NUMERIC AS eelarve_taps,
+                    0 :: NUMERIC AS eelarve_kassa_taps,
+
+                    0::NUMERIC   AS tegelik
+                     ,
+                    (summa)      AS kassa
+                     ,
+                    kassakulu.tegev::VARCHAR(20)
+                     ,
+                    kassakulu.allikas::VARCHAR(20)
+                     ,
+                    kassakulu.artikkel::VARCHAR(20)
+             FROM (
+                      SELECT j.rekvid,
+                             sum(- 1 * j1.summa) AS summa,
+                             j1.kood1            AS tegev,
+                             j1.kood2            AS allikas,
+                             j1.kood5            AS artikkel
+                      FROM docs.doc d
+                               INNER JOIN docs.journal j ON j.parentid = d.id
+                               INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                      WHERE d.status < 3
+                        AND j.kpv <= $1
+                        AND YEAR(j.kpv) = YEAR($1)
+                        AND j.rekvid = (CASE
+                                            WHEN $3 = 1
+                                                THEN j.rekvid
+                                            ELSE $2 END)
+                        AND j.rekvid IN (SELECT rekv_id
+                                         FROM get_asutuse_struktuur($2))
+                        AND j1.kood5 IS NOT NULL
+                        AND NOT empty(j1.kood5)
+                        AND left(j1.kreedit, 3) IN ('100', '999')
+                        AND ltrim(rtrim(j1.deebet)) = '710001'
+                        AND j1.kood5 IN
+                            (SELECT kood
+                             FROM libs.library
+                             WHERE library.library = 'TULUDEALLIKAD'
+                               AND tun5 = 1
+                               AND (kood LIKE '3%' or kood like '655%')
+                            )
+                      GROUP BY j.rekvid
+                             , j1.kood1
+                             , j1.kood2
+                             , j1.kood5
+                  ) kassakulu
          ) qry
              LEFT OUTER JOIN libs.library l ON l.
                                                    kood = qry.artikkel AND l.library = 'TULUDEALLIKAD'
@@ -287,7 +553,10 @@ BEGIN
                         WHEN $3 = 1
                             THEN 999
                         ELSE $2 END)
-    GROUP BY tegev, konto, rahavoo, nimetus;
+    GROUP BY tegev
+           , konto
+           , rahavoo
+           , nimetus;
 
     GET DIAGNOSTICS l_count= ROW_COUNT;
 
@@ -316,7 +585,11 @@ BEGIN
                         WHEN $3 = 1
                             THEN 999
                         ELSE $2 END)
-    GROUP BY tegev, allikas, konto, rahavoo, nimetus;
+    GROUP BY tegev
+           , allikas
+           , konto
+           , rahavoo
+           , nimetus;
 
 
     GET DIAGNOSTICS l_count= ROW_COUNT;
