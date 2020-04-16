@@ -65,6 +65,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
                         INNER JOIN libs.library l ON l.kood = lk.properties ->>
                                                               'yksus' AND l.library =
                                                                           'LAPSE_GRUPP'
+                   AND l.id = t.grupp_id
                         INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                         INNER JOIN lapsed.laps laps ON laps.id = lk.parentid
                WHERE lk.staatus <> 3
@@ -143,7 +144,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
 
                         row[`header_${index}`] = column.teenus;
                         row[`data_${index}`] = kogus;
-                        totals[index] = (totals[index] ? totals[index]: 0)  + kogus;
+                        totals[index] = (totals[index] ? totals[index] : 0) + kogus;
                     });
                     return row;
                 });
