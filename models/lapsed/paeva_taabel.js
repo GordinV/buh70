@@ -70,8 +70,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
                         INNER JOIN lapsed.laps laps ON laps.id = lk.parentid
                WHERE lk.staatus <> 3
                  AND t1.parent_id = $1
-               GROUP BY parent_id, lk.parentid, laps.id, laps.isikukood, laps.nimi, lk.rekvid, l.id
-               order by laps.isikukood`,
+               GROUP BY parent_id, lk.parentid, laps.id, laps.isikukood, laps.nimi, lk.rekvid, l.id`,
         query: null,
         multiple: false,
         alias: 'details',
