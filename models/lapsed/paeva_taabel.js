@@ -70,7 +70,8 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
                         INNER JOIN lapsed.laps laps ON laps.id = lk.parentid
                WHERE lk.staatus <> 3
                  AND t1.parent_id = $1
-               GROUP BY parent_id, lk.parentid, laps.id, laps.isikukood, laps.nimi, lk.rekvid, l.id`,
+               GROUP BY parent_id, lk.parentid, laps.id, laps.isikukood, laps.nimi, lk.rekvid, l.id
+               order by laps.isikukood`,
         query: null,
         multiple: false,
         alias: 'details',
@@ -82,8 +83,8 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
             row: {},
             details: [],
             gridConfig: [
-                {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
-                {id: 'isikukood', name: 'Isikukood', width: '50px', show: true, type: 'text', readOnly: true},
+                {id: 'id', name: 'id', width: '10px', show: true, type: 'text', readOnly: true},
+                {id: 'isikukood', name: 'Isikukood', width: '50px', show: false, type: 'text', readOnly: true},
                 {id: 'viitenr', name: 'Viitenumber', width: '50px', show: true, type: 'text', readOnly: true},
                 {id: 'nimi', name: 'Nimi', width: '100px', show: true, type: 'text', readOnly: true},
             ]

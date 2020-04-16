@@ -49,17 +49,18 @@ BEGIN
                -- услуга должна ьыть в группе
                CASE
                    WHEN ('[]'::JSONB || jsonb_build_object('nomid', lk.nomid) <@
-                         (l.properties::JSONB ->> 'teenused')::JSONB) THEN 1
+                         (l.properties::JSONB ->> 'teenused')::JSONB) AND
+                        lower(ltrim(rtrim(n.uhik))) IN ('paev', 'päev')
+                       AND (lk.properties ->> 'alg_kpv' IS NULL OR
+                            (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
+                       AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
+                       THEN 1
                    ELSE NULL END
                            AS kogus
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.library l ON l.kood = lk.properties ->> 'yksus' AND l.library = 'LAPSE_GRUPP'
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.staatus <> 3
-          AND lower(ltrim(rtrim(n.uhik))) IN ('paev', 'päev')
-          AND (lk.properties ->> 'alg_kpv' IS NULL OR
-               (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
-          AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
           AND l.id = l_grupp_id
         LOOP
             -- details
