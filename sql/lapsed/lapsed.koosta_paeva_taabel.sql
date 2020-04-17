@@ -67,7 +67,8 @@ BEGIN
             SELECT 0               AS id,
                    v_lapsed.nomid  AS nom_id,
                    v_lapsed.lapsId AS laps_id,
-                   v_lapsed.kogus  AS kogus
+                   v_lapsed.kogus  AS kogus,
+                   1               AS osalemine
                    INTO v_row;
 
             l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_row);

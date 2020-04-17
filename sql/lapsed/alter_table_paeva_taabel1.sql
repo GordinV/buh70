@@ -1,0 +1,1 @@
+alter table lapsed.day_taabel1 add COLUMN osalemine INTEGER DEFAULT 1;

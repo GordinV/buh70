@@ -3,7 +3,6 @@
 const PropTypes = require('prop-types');
 
 const React = require('react'),
-    styles = require('./data-grid-styles'),
     ToolbarContainer = require('./../toolbar-container/toolbar-container.jsx'),
     GridButtonAdd = require('./../button-register/button-register-add/button-register-add.jsx'),
     GridButtonEdit = require('./../button-register/button-register-edit/button-register-edit.jsx'),
@@ -13,6 +12,8 @@ const React = require('react'),
     keydown = require('react-keydown');
 
 //const    KEYS = [38, 40]; // мониторим только стрелки вверх и внизх
+let  styles = require('./data-grid-styles');
+
 
 const isExists = (object, prop) => {
     let result = false;
@@ -49,6 +50,7 @@ class DataGrid extends React.Component {
         this.prepareTableFooter = this.prepareTableFooter.bind(this);
         this.getSum = this.getSum.bind(this);
         this.grid = [];
+
     }
 
 
@@ -87,6 +89,10 @@ class DataGrid extends React.Component {
                 }
             }, (this.props.toolbarParams ? this.props.toolbarParams : {})
         );
+
+        // примем в зачет переданные стили
+        styles = {...styles, ...this.props.style};
+
         return (
             <div style={styles.main}>
                 {this.props.showToolBar ?
@@ -321,9 +327,6 @@ class DataGrid extends React.Component {
             });
 
             // символы да или нет
-            let boolValueYes = styles.boolSumbol['yes'].value;
-            let boolValueNo = styles.boolSumbol.no ? styles.boolSumbol['no'].value : null;
-            let boolValueNull = '-';
 
             return (<tr
                 ref={objectIndex}
@@ -334,6 +337,11 @@ class DataGrid extends React.Component {
                 key={objectIndex}>
                 {
                     gridColumns.map((column, columnIndex) => {
+                        // назначим символы для отображения логических данных
+                        let boolValueYes = column.boolSumbolYes ? column.boolSumbolYes: styles.boolSumbol['yes'].value;
+                        let boolValueNo = column.boolSumbolNo ? column.boolSumbolNo: styles.boolSumbol['no'].value;
+                        let boolValueNull = column.boolSumbolNull ? column.boolSumbolNull: styles.boolSumbol['null'].value;
+
                         let cellIndex = 'td-' + rowIndex + '-' + columnIndex;
 
                         let display = (isExists(column, 'show') ? column.show : true),
@@ -348,6 +356,14 @@ class DataGrid extends React.Component {
                             );
                         }
 
+                        // цвет, при значении NULL
+                        if (styles.td && styles.td.nullColour && row[column.id] == null ) {
+                            style = Object.assign(style,
+                                {backgroundColor: styles.td.nullColour}
+                            );
+
+                        }
+
                         return (
                             <td style={style}
                                 ref={cellIndex}
@@ -356,7 +372,7 @@ class DataGrid extends React.Component {
                                 onClick={this.handleCellClick.bind(this, rowIndex, column.id)}
                             >
                                 {column.type && column.type === 'boolean' ?
-                                    <span>{!!row[column.id] ? boolValueYes : (row[column.id] == null ? '-': boolValueNo)}</span> : row[column.id]}
+                                    <span>{!!row[column.id] ? boolValueYes : (row[column.id] == null ? boolValueNull: boolValueNo)}</span> : row[column.id]}
                             </td>
                         );
                     })

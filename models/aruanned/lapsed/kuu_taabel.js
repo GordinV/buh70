@@ -5,43 +5,234 @@ module.exports = {
             {id: "teenus", name: "Teenus", width: "10%"},
             {id: "kuu", name: "Kuu", width: "3%", type: "integer"},
             {id: "aasta", name: "Aasta", width: "4%", type: "integer"},
-            {id: "day_1", name: "1", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_2", name: "2", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_3", name: "3", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_4", name: "4", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_5", name: "5", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_6", name: "6", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_7", name: "7", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_8", name: "8", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_9", name: "9", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_10", name: "10", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_11", name: "11", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_12", name: "12", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_13", name: "13", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_14", name: "14", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_15", name: "15", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_16", name: "16", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_17", name: "17", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_18", name: "18", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_19", name: "19", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_20", name: "20", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_21", name: "21", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_22", name: "22", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_23", name: "23", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_24", name: "24", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_25", name: "25", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_26", name: "26", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_27", name: "27", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_28", name: "28", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_29", name: "29", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_30", name: "30", width: "2%", hideFilter: true, type: "integer"},
-            {id: "day_31", name: "31", width: "2%", hideFilter: true, type: "integer"},
+            {
+                id: "day_1", name: "1", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_2", name: "2", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_3", name: "3", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_4", name: "4", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_5", name: "5", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_6", name: "6", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_7", name: "7", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_8", name: "8", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_9", name: "9", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_10", name: "10", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_11", name: "11", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_12", name: "12", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_13", name: "13", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_14", name: "14", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_15", name: "15", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_16", name: "16", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_17", name: "17", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_18", name: "18", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_19", name: "19", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_20", name: "20", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_21", name: "21", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_22", name: "22", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_23", name: "23", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_24", name: "24", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_25", name: "25", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_26", name: "26", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_27", name: "27", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_28", name: "28", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_29", name: "29", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_30", name: "30", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "day_31", name: "31", width: "2%", hideFilter: true,
+                type: "boolean",
+                boolSumbolYes: 1,
+                boolSumbolNo: '0',
+                boolSumbolNull: ' '
+            },
+            {
+                id: "kogus", name: "Kokku", width: "2%", hideFilter: true,
+                type: "integer"
+            },
             {id: "tuhi", name: " ", width: "1px", hideFilter: true},
         ],
         sqlString: `SELECT yksus,
                            teenus,
                            kuu,
                            aasta,
+                           kogus,
                            day_1,
                            day_2,
                            day_3,
@@ -109,7 +300,7 @@ module.exports = {
                            sum(day_29) OVER (PARTITION BY yksus) AS total_29,
                            sum(day_30) OVER (PARTITION BY yksus) AS total_30,
                            sum(day_31) OVER (PARTITION BY yksus) AS total_31,
-                           week_ends::integer[] as week_ends
+                           week_ends::INTEGER[]                  AS week_ends
                     FROM lapsed.kuu_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER) qryReport
                     ORDER BY yksus, teenus
         `,     // $1 - rekvid, $2-KUU $3 - aasta

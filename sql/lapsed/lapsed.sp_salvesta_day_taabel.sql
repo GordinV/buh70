@@ -73,18 +73,22 @@ BEGIN
         LOOP
             SELECT * INTO json_record
             FROM jsonb_to_record(
-                         json_object) AS x (id TEXT, nom_id INTEGER, laps_id INTEGER, kogus NUMERIC(14, 4), muud TEXT);
+                         json_object) AS x (id TEXT, nom_id INTEGER, laps_id INTEGER, kogus NUMERIC(14, 4),
+                                            osalemine INTEGER, muud TEXT);
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
             THEN
-                INSERT INTO lapsed.day_taabel1 (parent_id, nom_id, laps_id, kogus, muud)
-                VALUES (tab_id, json_record.nom_id, json_record.laps_id, json_record.kogus, json_record.muud);
+                INSERT INTO lapsed.day_taabel1 (parent_id, nom_id, laps_id, kogus, osalemine, muud)
+                VALUES (tab_id, json_record.nom_id, json_record.laps_id, json_record.kogus,
+                        coalesce(json_record.osalemine, 0),
+                        json_record.muud);
             ELSE
                 UPDATE lapsed.day_taabel1
-                SET nom_id = json_record.nom_id,
+                SET nom_id    = json_record.nom_id,
                     laps_id= json_record.laps_id,
-                    kogus  = json_record.kogus,
-                    muud   = json_record.muud
+                    kogus     = json_record.kogus,
+                    osalemine = coalesce(json_record.osalemine),
+                    muud      = json_record.muud
                 WHERE id = json_record.id :: INTEGER RETURNING id INTO tab1_id;
             END IF;
             -- add new id into array of ids

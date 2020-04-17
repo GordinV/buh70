@@ -24,15 +24,31 @@ module.exports = {
 
     grid: {
         mainTable: {
-            width: '100%'
+            tableLayout: 'fixed',
+            width:'-webkit-calc(100% + 16px)',
+            position:'relative',
+            top:'-30px',
+            borderCollapse:'collapse'
         },
         headerTable: {
-            width: '100%',
+            tableLayout: 'fixed',
+            width:'100%',
+            borderCollapse:'collapse'
         },
 
         gridContainer: {
             width: '100%'
-        }
+        },
+        boolSumbol: {
+            yes: {
+                value: '\u2714',
+                color: 'green'
+            },
+            no: {
+                value: null,
+                color: 'red'
+            }
+        },
 
     },
 

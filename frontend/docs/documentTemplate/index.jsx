@@ -398,7 +398,13 @@ class DocumentTemplate extends React.Component {
         if (this.docData && this.docData.gridData) {
             this.docData.gridData[idx][columnId] = value;
             this.setState({docData: this.docData});
+
+            // если есть триггер, вызовем его
+            if (this.props.trigger) {
+                this.props.trigger(this);
+            }
         }
+        this.validation();
 
     }
 
@@ -417,7 +423,7 @@ class DocumentTemplate extends React.Component {
         if (this.requiredFields) {
 
             this.requiredFields.forEach((field) => {
-                if (field.name in this.docData) {
+                if (field.name && field.name in this.docData) {
                     let value = this.docData[field.name];
 
                     if (!value && field.type !=='B') {
@@ -477,6 +483,10 @@ class DocumentTemplate extends React.Component {
                     if (checkValue) {
                         notMinMaxRule.push(field.name);
                     }
+                }
+
+                if (field.trigger) {
+                    field.trigger();
                 }
             });
 
@@ -753,7 +763,6 @@ class DocumentTemplate extends React.Component {
      * @param page
      */
     handlePageClick(page) {
-        console.log('page', page);
         if (page.handlePageClick) {
             page.handlePageClick(page.docTypeId);
         } else if (page.docId) {

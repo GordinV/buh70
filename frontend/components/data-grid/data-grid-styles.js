@@ -78,6 +78,10 @@ module.exports = {
         no: {
             //value: '\u2716',
             color: null
+        },
+        null: {
+            value: '-',
+            color: null
         }
     },
     boolColour: {

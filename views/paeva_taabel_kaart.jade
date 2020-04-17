@@ -61,8 +61,10 @@ block content
         table.table.table-hover.grid_data
             thead.grid_head
                 tr
-                    th Isikukood
+                    th Rea nr
+                    th Viitenumber
                     th Nimi
+                    th Osalemine
                     th(style={visibility: data.details[0].header_0 ? 'visible': 'hidden'})=data.details[0].header_0 ? data.details[0].header_0: null
                     th(style={visibility: data.details[0].header_1 ? 'visible': 'hidden'})=data.details[0].header_1 ? data.details[0].header_1: null
                     th(style={visibility: data.details[0].header_2 ? 'visible': 'hidden'})=data.details[0].header_2 ? data.details[0].header_2: null
@@ -77,8 +79,10 @@ block content
             tbody
                 each row in data.details
                     tr
-                        td.td=row.isikukood
+                        td.td=row.id
+                        td.td=row.viitenr
                         td.td=row.nimi
+                        td.td(align='center')=row.osalemine
                         td.td(align='center')=row.data_0 ? row.data_0: null
                         td.td(align='center')=row.data_1 ? row.data_1: null
                         td.td(align='center')=row.data_2 ? row.data_2: null
@@ -92,7 +96,9 @@ block content
             tfoot
                 tr
                     td
+                    td
                     td.total(align='right') Total:
+                    td.total(align='center',style={visibility: data.details[0].osalemine ? 'visible' : 'hidden'})=data.details[0].osalemine ? data['0'].totals['osalemine'] : null
                     td.total(align='center',style={visibility: data.details[0].header_0 ? 'visible' : 'hidden'})=data.details[0].header_0 ? data['0'].totals['0'] : null
                     td.total(align='center',style={visibility: data.details[0].header_1 ? 'visible' : 'hidden'})=data.details[0].header_1 ? data['0'].totals['1'] : null
                     td.total(align='center',style={visibility: data.details[0].header_2 ? 'visible' : 'hidden'})=data.details[0].header_2 ? data['0'].totals['2'] : null

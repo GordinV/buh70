@@ -50,6 +50,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
                       lapsed.get_viitenumber(lk.rekvid, laps.id) AS viitenr,
                       l.id                                       AS grupp_id,
                       lk.rekvid,
+                      max(t1.osalemine)                          AS osalemine,
                       json_agg(
                               json_build_object('nom_id', to_json(lk.nomid),
                                                 'teenus', to_json(COALESCE((n.properties ->>
@@ -86,6 +87,16 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
                 {id: 'isikukood', name: 'Isikukood', width: '50px', show: false, type: 'text', readOnly: true},
                 {id: 'viitenr', name: 'Viitenumber', width: '50px', show: true, type: 'text', readOnly: true},
                 {id: 'nimi', name: 'Nimi', width: '100px', show: true, type: 'text', readOnly: true},
+                {
+                    id: 'osalemine',
+                    name: 'Osalemine',
+                    width: '50px',
+                    show: true,
+                    type: 'boolean',
+                    readOnly: false,
+                    boolSumbolYes: '\u25CF',
+                    boolSumbolNo: '\u2716'
+                },
             ]
 
         }
@@ -95,6 +106,11 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
     requiredFields: [
         {name: 'grupp_id', type: 'I'},
         {name: 'kpv', type: 'D'},
+        {
+            trigger: () => {
+                console.log('called trigger');
+            }
+        }
 
     ],
     saveDoc:
@@ -132,7 +148,13 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
             converter: (data) => {
                 // создать поля
                 const totals = {};
+                let osalemine = 0;
                 data.details = data.details.map((row) => {
+                    // считаем кол-во
+                    if (row.osalemine) {
+                        osalemine++;
+                    }
+
                     //дополнить строки полями
                     data[0].noms.forEach((column, index) => {
                         // ищем количество
@@ -150,6 +172,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
                 });
 
                 // totals
+                totals['osalemine'] = osalemine;
                 data[0].totals = totals;
                 return data;
             }

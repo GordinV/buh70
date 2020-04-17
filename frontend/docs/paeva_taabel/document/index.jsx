@@ -23,8 +23,6 @@ const LIBRARIES = [
     }
 ];
 
-const getSum = require('../../../../libs/getSum');
-
 const DocContext = require('../../../doc-context');
 
 class PaevaTaabel extends React.PureComponent {
@@ -49,13 +47,13 @@ class PaevaTaabel extends React.PureComponent {
         this.handleGridCellClick = this.handleGridCellClick.bind(this);
         this.btnEditGruppClick = this.btnEditGruppClick.bind(this);
         this.handleHeaderClick = this.handleHeaderClick.bind(this);
-
+        this.checkData = this.checkData.bind(this);
 
         this.pages = [
             {pageName: 'Päeva taabel', docTypeId: 'PAEVA_TAABEL'}
         ];
 
-        this.subtotals = [];
+        this.subtotals = ['osalemine'];
 
     }
 
@@ -74,7 +72,6 @@ class PaevaTaabel extends React.PureComponent {
             doc.createLibs();
         }
 
-
     }
 
     render() {
@@ -90,6 +87,8 @@ class PaevaTaabel extends React.PureComponent {
                                  history={this.props.history}
                                  isDisableSave={!this.state.docId}
                                  isGridDataSave={true}
+                                 trigger={this.checkData}
+
         />
     }
 
@@ -155,6 +154,8 @@ class PaevaTaabel extends React.PureComponent {
 
         }
         this.setState({grupp_id: self.docData.grupp_id, kpv: self.docData.kpv});
+        const gridStyle = {...styles.grid.headerTable, ...styles.grid};
+
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>
@@ -225,7 +226,7 @@ class PaevaTaabel extends React.PureComponent {
                               onHeaderClick={this.handleHeaderClick}
                               onClick={self.handleGridCellClick}
                               readOnly={!isEditMode}
-                              style={styles.grid.headerTable}
+                              style={gridStyle}
                               isForUpdate={isEditMode}
                               subtotals={this.subtotals}
                               ref="data-grid"/>
@@ -276,6 +277,23 @@ class PaevaTaabel extends React.PureComponent {
         })
     }
 
+    /**
+     * будет вызвана триггером при ихменении. Проврит поля посещаемости и если нет, то проставит нет всем услушам
+     * @param self
+     */
+    checkData(self) {
+        self.docData.gridData.forEach(row => {
+            if (!row.osalemine) {
+                for (let [key, value] of Object.entries(row)) {
+                    if (!isNaN(key) && !!value) {
+                        // посещения нет, а значение положительное. меняем
+                        row[key] = !value;
+                    }
+                }
+            }
+        })
+    }
+
     handleGridRow(gridEvent) {
         this.setState({gridRowEdit: true, gridRowEvent: gridEvent});
     }
@@ -302,7 +320,7 @@ class PaevaTaabel extends React.PureComponent {
         const data = this.refs['document'].docData;
         if (data && data.gridData && data.gridData.length) {
             data.gridData.forEach(row => {
-                if (row[column] !== null && row[column] !== undefined ) {
+                if (row[column] !== null && row[column] !== undefined) {
                     row[column] = !row[column];
                 }
             });
@@ -319,7 +337,7 @@ class PaevaTaabel extends React.PureComponent {
     btnEditGruppClick() {
         let docGruppId = this.refs['document'].docData.grupp_id;
 
-        // осуществит переход на карточку контр-агента
+        // осуществит переход на карточку
         this.props.history.push(`/${this.state.module}/lapse_grupp/${docGruppId}`);
 
     }

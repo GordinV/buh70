@@ -128,7 +128,6 @@ exports.put = async (req, res) => {
 
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, docId, user.userId, user.asutusId, module);
-
     const savedData = await Document.save(params);
 
     let l_error = '';

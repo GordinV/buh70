@@ -50,6 +50,9 @@ BEGIN
                                  l_nom_id::INTEGER                                                                  AS nom_id,
                                  (json_object ->> 'lapsid')::INTEGER                                                AS laps_id,
                                  CASE WHEN (json_row.value::TEXT)::BOOLEAN = TRUE THEN 1 ELSE 0 END::NUMERIC(14, 4) AS kogus,
+                                 CASE
+                                     WHEN (json_object ->> 'osalemine'::TEXT)::BOOLEAN = TRUE THEN 1
+                                     ELSE 0 END::INTEGER                                                            AS osalemine,
                                  json_object ->> 'muud'                                                             AS muud
                          ) row;
                     json_grid = json_grid || json_taabel_row;
