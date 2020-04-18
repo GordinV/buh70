@@ -438,9 +438,14 @@ class DataGrid extends React.Component {
                 headerStyle = 'thHidden';
             }
 
+            // проверка на стиль заголовка, на фонт
+            let fontColor = {
+                color: column.showBold && styles[headerStyle].boldColor ? styles[headerStyle].boldColor: styles[headerStyle].color
+            };
+
             let display = (isExists(column, 'show') ? column.show : true),
                 width = isExists(column, 'width') ? column.width : '100%',
-                style = Object.assign({}, styles[headerStyle], !display ? {display: 'none'} : {}, {width: width}),
+                style = Object.assign({}, styles[headerStyle], !display ? {display: 'none'} : {}, {width: width}, fontColor),
                 activeColumn = this.state.activeColumn,
                 iconType = this.state.sort.direction,
                 imageStyleAsc = Object.assign({}, styles.image, (activeColumn === column.id && iconType === 'asc') ? {} : {display: 'none'}),

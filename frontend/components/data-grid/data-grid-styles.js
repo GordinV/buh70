@@ -1,36 +1,38 @@
 module.exports = {
     mainTable: {
         tableLayout: 'fixed',
-        width:'-webkit-calc(100% + 16px)',
-        position:'relative',
-        top:'-30px',
-        borderCollapse:'collapse'
+        width: '-webkit-calc(100% + 16px)',
+        position: 'relative',
+        top: '-30px',
+        borderCollapse: 'collapse'
     },
     headerTable: {
         tableLayout: 'fixed',
-        width:'100%',
-        borderCollapse:'collapse'
+        width: '100%',
+        borderCollapse: 'collapse'
     },
     footerTable: {
         tableLayout: 'fixed',
-        width:'100%',
-        borderCollapse:'collapse'
+        width: '100%',
+        borderCollapse: 'collapse'
 
     },
 
     th: {
         borderBottom: '1px solid black',
         backgroundColor: 'grey',
-        height:'30px',
-        border:'1px solid lightgray',
-        display: 'table-cell'
+        height: '30px',
+        border: '1px solid lightgray',
+        display: 'table-cell',
+        color:'black',
+        boldColor: 'red'
     },
 
     thHidden: {
         borderBottom: '1px solid black',
         backgroundColor: 'grey',
-        height:'1px',
-        border:'1px solid lightgray',
+        height: '1px',
+        border: '1px solid lightgray',
         display: 'table-cell'
     },
 
@@ -42,33 +44,32 @@ module.exports = {
         backgroundColor: 'lightblue'
     },
 
-    td : {
-        border:'1px solid lightgray',
+    td: {
+        border: '1px solid lightgray',
         display: 'table-cell',
-        paddingLeft:'5px'
+        paddingLeft: '5px'
     },
 
     icons: {
-        asc : '/images/icons/sort-alpha-asc.png',
-        desc : '/images/icons/sort-alpha-desc.png'
+        asc: '/images/icons/sort-alpha-asc.png',
+        desc: '/images/icons/sort-alpha-desc.png'
     },
 
     image: {
-        margin:'1px'
+        margin: '1px'
     },
 
     wrapper: {
-        height:'inherit',
+        height: 'inherit',
         overflow: 'scroll'
     },
 
     main: {
-        height:'inherit',
+        height: 'inherit',
     },
 
     header: {
         overflow: 'hidden'
-
     },
     boolSumbol: {
         yes: {
@@ -88,7 +89,6 @@ module.exports = {
         yes: null,
         no: null
     },
-
 
 
 };

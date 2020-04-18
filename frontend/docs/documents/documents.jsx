@@ -724,6 +724,12 @@ class Documents extends React.Component {
                             this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
                             this.props.history.location.state = null;
                         }
+
+                        // если задан триггер, вызовем его
+                        if (this.props.trigger_select) {
+                            this.props.trigger_select(this);
+                        }
+
                     }
                     this.forceUpdate()
 

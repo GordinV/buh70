@@ -4,5 +4,6 @@ const reg =  /^\d+$/;
 console.log('result', reg.test(1));*/
 
 
-let field = '123';
-console.log((isNaN(field)), field);
+let field = Number('a');
+let weekEnds = [1,3,5];
+console.log(weekEnds.indexOf(field));

@@ -24,6 +24,7 @@ class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
         this.renderer = this.renderer.bind(this);
+        this.checkWeekEnds = this.checkWeekEnds.bind(this);
     }
 
     render() {
@@ -34,11 +35,37 @@ class Documents extends React.PureComponent {
                                  toolbarProps={TOOLBAR_PROPS}
                                  docTypeId={DOC_TYPE_ID}
                                  style={styles}
-                                 render={this.renderer}/>;
+                                 render={this.renderer}
+                                 trigger_select={this.checkWeekEnds}
+        />;
     }
 
     renderer(self) {
         return null
+    }
+
+    /**
+     * преобразует заголовок таблицы в части стиля
+     * @param self
+     */
+    checkWeekEnds(self) {
+        if (!self.gridConfig) {
+            return null;
+        }
+
+        let weekEnds = [];
+        if (self.gridData.length) {
+            weekEnds = self.gridData[0].week_ends;
+        }
+
+        if (weekEnds.length) {
+            self.gridConfig.map(column => {
+                // проверяем есть ли выходной в этот день и задаем жирный цвет если есть
+                column.showBold = weekEnds.indexOf(Number(column.name)) > -1 ? true : false;
+                return column;
+            });
+        }
+
     }
 
 }

@@ -13,6 +13,16 @@ module.exports = {
             width:'100%',
         },
 
+        th: {
+            borderBottom: '1px solid black',
+            backgroundColor: 'grey',
+            height: '30px',
+            border: '1px solid lightgray',
+            display: 'table-cell',
+            color:'black',
+            boldColor: 'red'
+        },
+
         gridContainer: {
             width: '100%'
         },
