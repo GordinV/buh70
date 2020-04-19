@@ -31,6 +31,14 @@ module.exports = {
             no: null
         },
 
-
     },
+    // td custom styles
+    custom: {
+        positive: {
+            backgroundColor: 'lightgreen'
+        },
+        negative: {
+            backgroundColor: 'pink'
+        }
+    }
 };

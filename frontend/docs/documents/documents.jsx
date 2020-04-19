@@ -183,6 +183,7 @@ class Documents extends React.Component {
                               onClick={this.clickHandler}
                               onDblClick={this.dblClickHandler}
                               onHeaderClick={this.headerClickHandler}
+                              custom_styling={this.props.custom_styling ? this.props.custom_styling: null}
                               isSelect={this.state.showSelectFields}
                               value={this.state.value}/>
                     {this.state.getFilter ?

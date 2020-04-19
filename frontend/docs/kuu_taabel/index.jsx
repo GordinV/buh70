@@ -25,6 +25,7 @@ class Documents extends React.PureComponent {
         super(props);
         this.renderer = this.renderer.bind(this);
         this.checkWeekEnds = this.checkWeekEnds.bind(this);
+        this.custom_styling = this.custom_styling.bind(this);
     }
 
     render() {
@@ -37,6 +38,7 @@ class Documents extends React.PureComponent {
                                  style={styles}
                                  render={this.renderer}
                                  trigger_select={this.checkWeekEnds}
+                                 custom_styling={this.custom_styling}
         />;
     }
 
@@ -65,8 +67,21 @@ class Documents extends React.PureComponent {
                 return column;
             });
         }
-
     }
+
+    /**
+     * кастомное оьработка стиля для яцейки
+     */
+    custom_styling(column, row) {
+        let style = {};
+        if (!isNaN(column.name) && row.nom_id == 999999999 && row[column.id] !== null) {
+            // посещвемлсть
+            //В строке «Посещаемость» в полях отображаются суммарное количество посещений по группам и поля залиты соответственно: больше 0 – светло зеленым, 0 – светло красным цветом. Все поля с прочими услугами отображают суммарное значение из «Дневной формы учета ежедневных услуг», если их больше 0 или «Пусто» - если 0
+            style = row[column.id] ? styles.custom.positive : styles.custom.negative;
+        }
+        return style;
+    }
+
 
 }
 

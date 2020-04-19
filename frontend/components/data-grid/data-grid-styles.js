@@ -61,7 +61,7 @@ module.exports = {
 
     wrapper: {
         height: 'inherit',
-        overflow: 'scroll'
+        overflow: 'overlay'
     },
 
     main: {

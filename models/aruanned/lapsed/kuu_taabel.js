@@ -7,38 +7,23 @@ module.exports = {
             {id: "aasta", name: "Aasta", width: "4%", type: "integer"},
             {
                 id: "day_1", name: "1", width: "2%", hideFilter: true,
-                type: "boolean",
-                boolSumbolYes: 1,
-                boolSumbolNo: '0',
-                boolSumbolNull: ' '
+                type: "integer",
             },
             {
                 id: "day_2", name: "2", width: "2%", hideFilter: true,
-                type: "boolean",
-                boolSumbolYes: 1,
-                boolSumbolNo: '0',
-                boolSumbolNull: ' '
+                type: "integer",
             },
             {
                 id: "day_3", name: "3", width: "2%", hideFilter: true,
-                type: "boolean",
-                boolSumbolYes: 1,
-                boolSumbolNo: '0',
-                boolSumbolNull: ' '
+                type: "integer",
             },
             {
                 id: "day_4", name: "4", width: "2%", hideFilter: true,
-                type: "boolean",
-                boolSumbolYes: 1,
-                boolSumbolNo: '0',
-                boolSumbolNull: ' '
+                type: "integer",
             },
             {
                 id: "day_5", name: "5", width: "2%", hideFilter: true,
-                type: "boolean",
-                boolSumbolYes: 1,
-                boolSumbolNo: '0',
-                boolSumbolNull: ' '
+                type: "integer",
             },
             {
                 id: "day_6", name: "6", width: "2%", hideFilter: true,
@@ -217,7 +202,7 @@ module.exports = {
             },
             {
                 id: "day_31", name: "31", width: "2%", hideFilter: true,
-                type: "boolean",
+                type: "integer",
                 boolSumbolYes: 1,
                 boolSumbolNo: '0',
                 boolSumbolNull: ' '
@@ -225,10 +210,10 @@ module.exports = {
             {
                 id: "kogus", name: "Kokku", width: "2%", hideFilter: true,
                 type: "integer"
-            },
-            {id: "tuhi", name: " ", width: "1px", hideFilter: true},
+            }
         ],
         sqlString: `SELECT yksus,
+                           nom_id,
                            teenus,
                            kuu,
                            aasta,
@@ -264,11 +249,6 @@ module.exports = {
                            day_29,
                            day_30,
                            day_31,
-                           (day_1 + day_2 + day_3 + day_4 + day_5 + day_6 + day_7 + day_8 + day_9 + day_10 + day_11 +
-                            day_12
-                               + day_13 + day_14 + day_15 + day_16 + day_17 + day_18 + day_19 + day_20 + day_21 + day_22
-                               + day_23 + day_24 + day_25 + day_26 + day_27 + day_28 + day_29 + day_30 +
-                            day_31)::INTEGER                     AS kuu_kokku,
                            sum(day_1) OVER (PARTITION BY yksus)  AS total_1,
                            sum(day_2) OVER (PARTITION BY yksus)  AS total_2,
                            sum(day_3) OVER (PARTITION BY yksus)  AS total_3,
@@ -302,7 +282,7 @@ module.exports = {
                            sum(day_31) OVER (PARTITION BY yksus) AS total_31,
                            week_ends::INTEGER[]                  AS week_ends
                     FROM lapsed.kuu_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER) qryReport
-                    ORDER BY yksus, teenus
+                    ORDER BY yksus, nom_id DESC
         `,     // $1 - rekvid, $2-KUU $3 - aasta
         params: ['rekvid', 'kuu', 'aasta'],
         alias: 'kuu_taabel_report',

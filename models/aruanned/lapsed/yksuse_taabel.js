@@ -3,7 +3,6 @@ module.exports = {
         gridConfiguration: [
             {id: "yksus", name: "Üksus", width: "7%"},
             {id: "viitenr", name: "Viitenr.", width: "7%"},
-            {id: "isikukood", name: "Isikukood", width: "7%"},
             {id: "nimi", name: "Nimi", width: "8%"},
             {id: "teenus", name: "Teenus", width: "5%"},
             {id: "kuu", name: "Kuu", width: "3%", type: "integer"},
@@ -318,10 +317,11 @@ module.exports = {
                 boolSumbolNo: '0',
                 boolSumbolNull: ' '
             },
-            {id: "kogus", name: "kokku", width: "2%", hideFilter: true, type: "integer"},
-            {id: "tuhi", name: " ", width: "1px", hideFilter: true},
+            {id: "kogus", name: "kokku", width: "2%", hideFilter: true, type: "integer"}
+//            {id: "tuhi", name: " ", width: "1px", hideFilter: true},
         ],
         sqlString: `SELECT yksus,
+                           nom_id,
                            teenus,
                            isikukood,
                            viitenr,
@@ -399,7 +399,7 @@ module.exports = {
                            week_ends::INTEGER[]                  AS week_ends,
                            men_count::INTEGER
                     FROM lapsed.yksuse_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER) qryReport
-                    ORDER BY yksus, nimi, men_count, teenus
+                    ORDER BY yksus, nimi, nom_id DESC
         `,     // $1 - rekvid, $2-KUU $3 - aasta
         params: ['rekvid', 'kuu', 'aasta'],
         alias: 'yksuse_taabel_report',

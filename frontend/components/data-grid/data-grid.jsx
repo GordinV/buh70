@@ -92,7 +92,6 @@ class DataGrid extends React.Component {
 
         // примем в зачет переданные стили
         styles = {...styles, ...this.props.style};
-
         return (
             <div style={styles.main}>
                 {this.props.showToolBar ?
@@ -326,8 +325,6 @@ class DataGrid extends React.Component {
                 return row;
             });
 
-            // символы да или нет
-
             return (<tr
                 ref={objectIndex}
                 onClick={this.handleCellClick.bind(this, rowIndex, null)}
@@ -338,9 +335,9 @@ class DataGrid extends React.Component {
                 {
                     gridColumns.map((column, columnIndex) => {
                         // назначим символы для отображения логических данных
-                        let boolValueYes = column.boolSumbolYes ? column.boolSumbolYes: styles.boolSumbol['yes'].value;
-                        let boolValueNo = column.boolSumbolNo ? column.boolSumbolNo: styles.boolSumbol['no'].value;
-                        let boolValueNull = column.boolSumbolNull ? column.boolSumbolNull: styles.boolSumbol['null'].value;
+                        let boolValueYes = column.boolSumbolYes ? column.boolSumbolYes: styles.boolSumbol['yes'].value || null;
+                        let boolValueNo = column.boolSumbolNo ? column.boolSumbolNo: styles.boolSumbol['no'].value || null;
+                        let boolValueNull = column.boolSumbolNull ? column.boolSumbolNull: styles.boolSumbol['null'] ? styles.boolSumbol['null'].value: null;
 
                         let cellIndex = 'td-' + rowIndex + '-' + columnIndex;
 
@@ -361,7 +358,12 @@ class DataGrid extends React.Component {
                             style = Object.assign(style,
                                 {backgroundColor: styles.td.nullColour}
                             );
+                        }
 
+                        // кастомное обработка стилей на клетку
+                        if (this.props.custom_styling) {
+                            let customeStyle = this.props.custom_styling(column, row);
+                            style = {...style, ...customeStyle};
                         }
 
                         return (
@@ -501,6 +503,7 @@ DataGrid.propTypes = {
     onClick: PropTypes.func,
     onDblClick: PropTypes.func,
     onHeaderClick: PropTypes.func,
+    custom_styling: PropTypes.func,
     activeRow: PropTypes.number,
     handleGridCellClick: PropTypes.func,
     showToolBar: PropTypes.bool,
@@ -513,6 +516,7 @@ DataGrid.defaultProps = {
     style: {},
     showToolBar: false,
     isForUpdate: false,
+    custom_styling: null,
     subtotals: []
 };
 
