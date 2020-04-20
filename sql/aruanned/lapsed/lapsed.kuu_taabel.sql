@@ -6,6 +6,7 @@ CREATE OR REPLACE FUNCTION lapsed.kuu_taabel(l_rekvid INTEGER, l_kuu INTEGER, l_
         rekv_id   INTEGER,
         asutus    TEXT,
         yksus     TEXT,
+        tyyp      TEXT,
         nom_id    INTEGER,
         teenus    TEXT,
         kuu       INTEGER,
@@ -49,6 +50,7 @@ $BODY$
 SELECT qry.rekv_id,
        r.nimetus::TEXT                                                AS asutus,
        l.nimetus::TEXT                                                AS yksus,
+       t.nimetus::TEXT                                                AS tyyp,
        n.id                                                           AS nom_id,
        coalesce((l.properties::JSONB ->> 'luno')::TEXT, n.kood)::TEXT AS teenus,
        coalesce(l_kuu, month(current_date))::INTEGER                  AS kuu,
@@ -215,8 +217,9 @@ FROM (
     SELECT 999999999 AS id, 'Osalem.' AS kood, 'Osalemine' AS nimetus
 ) n ON n.id = qry.nom_id
          INNER JOIN libs.library l ON l.id = qry.grupp_id
+         LEFT OUTER JOIN libs.library t ON t.id = (l.properties::JSONB ->> 'tyyp')::INTEGER
          INNER JOIN ou.rekv r ON r.id = qry.rekv_id
-GROUP BY qry.rekv_id, qry.nom_id, qry.grupp_id, r.nimetus, l.nimetus, n.id,
+GROUP BY qry.rekv_id, qry.nom_id, qry.grupp_id, r.nimetus, l.nimetus, t.nimetus, n.id,
          coalesce((l.properties::JSONB ->> 'luno')::TEXT, n.kood)::TEXT
 
 $BODY$

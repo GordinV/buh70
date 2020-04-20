@@ -47,6 +47,10 @@ block content
         .total {
             font-weight: bold
         }
+        .yksus {
+            border-bottom: 1px solid lightgray;
+        }
+
 
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
@@ -100,13 +104,13 @@ block content
                 tbody
                     each rea in yksus[Object.keys(yksus)[0]]
                         tr
-                            td(style={visibility:rea.men_count == 1 ? 'visible' : 'hidden'})=rea.viitenr
-                            td(style={visibility:rea.men_count == 1 ? 'visible' : 'hidden'})=rea.nimi
+                            td.yksus(style={visibility:rea.men_count == 1 ? 'visible' : 'hidden'})=rea.viitenr
+                            td.yksus(style={visibility:rea.men_count == 1 ? 'visible' : 'hidden'})=rea.nimi
                             td.td=rea.teenus
-                            td.td(align='center' style={"background-color": rea.day_1 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})= rea.day_1
-                            td.td(align='center' style={"background-color": rea.day_2 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_2
-                            td.td(align='center' style={"background-color": rea.day_3 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_3
-                            td.td(align='center' style={"background-color": rea.day_4 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_4
+                            td.td(align='center' style={"background-color": rea.day_1 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen': 'pink': null)})= rea.day_1
+                            td.td(align='center' style={"background-color": rea.day_2 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen': 'pink': null)})=rea.day_2
+                            td.td(align='center' style={"background-color": rea.day_3 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_3 > 0 ? 'lightgreen': 'pink': null)})=rea.day_3
+                            td.td(align='center' style={"background-color": rea.day_4 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_4 > 0 ? 'lightgreen': 'pink': null)})=rea.day_4
                             td.td(align='center' style={"background-color": rea.day_5 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_5
                             td.td(align='center' style={"background-color": rea.day_6 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_6
                             td.td(align='center' style={"background-color": rea.day_7 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_7
