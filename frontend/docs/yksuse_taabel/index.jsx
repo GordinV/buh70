@@ -67,6 +67,10 @@ class Documents extends React.PureComponent {
             });
         }
 
+        // filter
+        self.gridData = self.gridData.filter(row =>row.is_row)
+
+
     }
 
     /**

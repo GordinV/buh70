@@ -48,7 +48,7 @@ block content
             font-weight: bold
         }
         .yksus {
-            border-bottom: 1px solid lightgray;
+            border-top: 1px solid lightgray;
         }
 
 
@@ -66,6 +66,7 @@ block content
             table.table.table-hover.grid_data
                 thead.grid_head
                     tr
+                        th Nr.
                         th Viitenr
                         th Nimi
                         th Teenus
@@ -102,77 +103,83 @@ block content
                         th(style={color: yksus[Object.keys(yksus)[0]][0].week_ends.indexOf(31) > -1 ? 'red': 'none' }) 31
                         th Kokku
                 tbody
+                    -var id = 1;
                     each rea in yksus[Object.keys(yksus)[0]]
-                        tr
-                            td.yksus(style={visibility:rea.men_count == 1 ? 'visible' : 'hidden'})=rea.viitenr
-                            td.yksus(style={visibility:rea.men_count == 1 ? 'visible' : 'hidden'})=rea.nimi
-                            td.td=rea.teenus
-                            td.td(align='center' style={"background-color": rea.day_1 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen': 'pink': null)})= rea.day_1
-                            td.td(align='center' style={"background-color": rea.day_2 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen': 'pink': null)})=rea.day_2
-                            td.td(align='center' style={"background-color": rea.day_3 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_3 > 0 ? 'lightgreen': 'pink': null)})=rea.day_3
-                            td.td(align='center' style={"background-color": rea.day_4 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_4 > 0 ? 'lightgreen': 'pink': null)})=rea.day_4
-                            td.td(align='center' style={"background-color": rea.day_5 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_5
-                            td.td(align='center' style={"background-color": rea.day_6 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_6
-                            td.td(align='center' style={"background-color": rea.day_7 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_7
-                            td.td(align='center' style={"background-color": rea.day_8 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_8
-                            td.td(align='center' style={"background-color": rea.day_9 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_9
-                            td.td(align='center' style={"background-color": rea.day_10 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_10
-                            td.td(align='center' style={"background-color": rea.day_11 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_11
-                            td.td(align='center' style={"background-color": rea.day_12 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_12
-                            td.td(align='center' style={"background-color": rea.day_13 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_13
-                            td.td(align='center' style={"background-color": rea.day_14 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_14
-                            td.td(align='center' style={"background-color": rea.day_15 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_15
-                            td.td(align='center' style={"background-color": rea.day_16 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_16
-                            td.td(align='center' style={"background-color": rea.day_17 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_17
-                            td.td(align='center' style={"background-color": rea.day_18 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_18
-                            td.td(align='center' style={"background-color": rea.day_19 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_19
-                            td.td(align='center' style={"background-color": rea.day_20 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_20
-                            td.td(align='center' style={"background-color": rea.day_21 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_21
-                            td.td(align='center' style={"background-color": rea.day_22 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_22
-                            td.td(align='center' style={"background-color": rea.day_23 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_23
-                            td.td(align='center' style={"background-color": rea.day_24 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_24
-                            td.td(align='center' style={"background-color": rea.day_25 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_25
-                            td.td(align='center' style={"background-color": rea.day_26 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_26
-                            td.td(align='center' style={"background-color": rea.day_27 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_27
-                            td.td(align='center' style={"background-color": rea.day_28 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_28
-                            td.td(align='center' style={"background-color": rea.day_29 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_29
-                            td.td(align='center' style={"background-color": rea.day_30 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_30
-                            td.td(align='center' style={"background-color": rea.day_31 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_31
-                            td.td(align='center')=rea.kogus
-                tfoot
-                    tr
-                        td
-                        td
-                        td.total(align='right') Kokku:
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_1
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_2
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_3
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_4
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_5
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_6
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_7
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_8
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_9
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_10
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_11
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_12
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_13
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_14
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_15
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_16
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_17
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_18
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_19
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_20
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_21
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_22
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_23
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_24
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_25
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_26
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_27
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_28
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_29
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_30
-                        td.total(align='center')= yksus[Object.keys(yksus)[0]][0].total_31
+                        if rea.is_row
+                            tr
+                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden'})=rea.rea_count == 1 ? id++ : id
+                                td.yksus(style={visibility:rea.rea_count == 1 ? 'visible' : 'hidden'})=rea.viitenr
+                                td.yksus(style={visibility:rea.rea_count == 1 ? 'visible' : 'hidden'})=rea.nimi
+                                td.td=rea.teenus
+                                td.td(align='center' style={"background-color": rea.day_1 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen': 'pink': null)})= rea.day_1
+                                td.td(align='center' style={"background-color": rea.day_2 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen': 'pink': null)})=rea.day_2
+                                td.td(align='center' style={"background-color": rea.day_3 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_3 > 0 ? 'lightgreen': 'pink': null)})=rea.day_3
+                                td.td(align='center' style={"background-color": rea.day_4 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_4 > 0 ? 'lightgreen': 'pink': null)})=rea.day_4
+                                td.td(align='center' style={"background-color": rea.day_5 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_5
+                                td.td(align='center' style={"background-color": rea.day_6 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_6
+                                td.td(align='center' style={"background-color": rea.day_7 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_7
+                                td.td(align='center' style={"background-color": rea.day_8 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_8
+                                td.td(align='center' style={"background-color": rea.day_9 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_9
+                                td.td(align='center' style={"background-color": rea.day_10 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_10
+                                td.td(align='center' style={"background-color": rea.day_11 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_11
+                                td.td(align='center' style={"background-color": rea.day_12 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_12
+                                td.td(align='center' style={"background-color": rea.day_13 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_13
+                                td.td(align='center' style={"background-color": rea.day_14 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_14
+                                td.td(align='center' style={"background-color": rea.day_15 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_15
+                                td.td(align='center' style={"background-color": rea.day_16 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_16
+                                td.td(align='center' style={"background-color": rea.day_17 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_17
+                                td.td(align='center' style={"background-color": rea.day_18 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_18
+                                td.td(align='center' style={"background-color": rea.day_19 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_19
+                                td.td(align='center' style={"background-color": rea.day_20 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_20
+                                td.td(align='center' style={"background-color": rea.day_21 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_21
+                                td.td(align='center' style={"background-color": rea.day_22 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_22
+                                td.td(align='center' style={"background-color": rea.day_23 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_23
+                                td.td(align='center' style={"background-color": rea.day_24 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_24
+                                td.td(align='center' style={"background-color": rea.day_25 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_25
+                                td.td(align='center' style={"background-color": rea.day_26 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_26
+                                td.td(align='center' style={"background-color": rea.day_27 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_27
+                                td.td(align='center' style={"background-color": rea.day_28 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_28
+                                td.td(align='center' style={"background-color": rea.day_29 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_29
+                                td.td(align='center' style={"background-color": rea.day_30 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_30
+                                td.td(align='center' style={"background-color": rea.day_31 == null ? 'lightgray': (rea.nom_id == 999999999 ? 'lightgreen': null)})=rea.day_31
+                                td.td(align='center')=rea.kogus
+                        else
+                            tr
+                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden'})
+                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden'})
+                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden'})=rea.nimi
+                                td.td=rea.teenus
+                                td.td(align='center' style={"background-color": rea.day_1 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen' : 'pink' : null)})= rea.day_1
+                                td.td(align='center' style={"background-color": rea.day_2 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen' : 'pink' : null)})=rea.day_2
+                                td.td(align='center' style={"background-color": rea.day_3 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_3 > 0 ? 'lightgreen' : 'pink' : null)})=rea.day_3
+                                td.td(align='center' style={"background-color": rea.day_4 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_4 > 0 ? 'lightgreen' : 'pink' : null)})=rea.day_4
+                                td.td(align='center' style={"background-color": rea.day_5 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_5
+                                td.td(align='center' style={"background-color": rea.day_6 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_6
+                                td.td(align='center' style={"background-color": rea.day_7 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_7
+                                td.td(align='center' style={"background-color": rea.day_8 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_8
+                                td.td(align='center' style={"background-color": rea.day_9 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_9
+                                td.td(align='center' style={"background-color": rea.day_10 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_10
+                                td.td(align='center' style={"background-color": rea.day_11 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_11
+                                td.td(align='center' style={"background-color": rea.day_12 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_12
+                                td.td(align='center' style={"background-color": rea.day_13 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_13
+                                td.td(align='center' style={"background-color": rea.day_14 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_14
+                                td.td(align='center' style={"background-color": rea.day_15 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_15
+                                td.td(align='center' style={"background-color": rea.day_16 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_16
+                                td.td(align='center' style={"background-color": rea.day_17 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_17
+                                td.td(align='center' style={"background-color": rea.day_18 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_18
+                                td.td(align='center' style={"background-color": rea.day_19 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_19
+                                td.td(align='center' style={"background-color": rea.day_20 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_20
+                                td.td(align='center' style={"background-color": rea.day_21 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_21
+                                td.td(align='center' style={"background-color": rea.day_22 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_22
+                                td.td(align='center' style={"background-color": rea.day_23 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_23
+                                td.td(align='center' style={"background-color": rea.day_24 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_24
+                                td.td(align='center' style={"background-color": rea.day_25 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_25
+                                td.td(align='center' style={"background-color": rea.day_26 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_26
+                                td.td(align='center' style={"background-color": rea.day_27 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_27
+                                td.td(align='center' style={"background-color": rea.day_28 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_28
+                                td.td(align='center' style={"background-color": rea.day_29 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_29
+                                td.td(align='center' style={"background-color": rea.day_30 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_30
+                                td.td(align='center' style={"background-color": rea.day_31 == null ? 'lightgray' : (rea.nom_id == 999999999 ? 'lightgreen' : null)})=rea.day_31
+                                td.td(align='center')=rea.kogus
+
 
