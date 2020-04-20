@@ -325,9 +325,11 @@ module.exports = {
                    *
 
             FROM (
-                     SELECT row_number() OVER (PARTITION BY yksus, isikukood ORDER BY
+                     SELECT row_number() OVER (PARTITION BY yksus, isikukood 
+                         ORDER BY
                          yksus,
                          nimi,
+                         isikukood,                         
                          nom_id DESC
                          ,is_row)     AS rea_count,
                             *
@@ -436,12 +438,12 @@ module.exports = {
                                    kuu,
                                    aasta
                           ) qry
-                         ORDER BY
-                          yksus,
-                          nimi,
-                          nom_id DESC,
-                          is_row
                  ) qry
+                ORDER BY
+                 yksus,
+                 is_row desc,
+                 nimi,
+                 nom_id DESC
         `,     // $1 - rekvid, $2-KUU $3 - aasta
         params: ['rekvid', 'kuu', 'aasta'],
         alias: 'yksuse_taabel_report',

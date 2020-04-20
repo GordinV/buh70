@@ -136,12 +136,8 @@ module.exports = {
             }
         ],
         sqlString: `
-            SELECT row_number() OVER (PARTITION BY yksus
-                ORDER BY tyyp, yksus,
-                    nom_id desc,
-                    teenus, 
-                    is_row ) AS id,
-                   row_number()  over(PARTITION BY tyyp, yksus) as rea_count,                   
+            SELECT 
+                   row_number()  over(PARTITION BY tyyp, yksus order by tyyp, yksus, nom_id desc, is_row) as rea_count,                   
                    *
             FROM (
                      WITH kuu_taabel AS (
