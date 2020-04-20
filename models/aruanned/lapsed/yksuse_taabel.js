@@ -321,11 +321,16 @@ module.exports = {
 //            {id: "tuhi", name: " ", width: "1px", hideFilter: true},
         ],
         sqlString: `
-            SELECT row_number() OVER (PARTITION BY yksus, isikukood)     AS rea_count,
+            SELECT 
                    *
 
             FROM (
-                     SELECT *
+                     SELECT row_number() OVER (PARTITION BY yksus, isikukood ORDER BY
+                         yksus,
+                         nimi,
+                         nom_id DESC
+                         ,is_row)     AS rea_count,
+                            *
                      FROM (
                               WITH yksuse_taabel AS (
                                   SELECT yksus,
