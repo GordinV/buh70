@@ -341,7 +341,7 @@ const Arv = {
             {id: "isikukood", name: "Isikukood", width: "100px"},
             {id: "viitenr", name: "Viitenumber", width: "100px"},
             {id: "tyyp", name: "Tüüp", width: "100px"},
-            {id: "select", name: "Valitud", width: "10%", show: false}
+            {id: "select", name: "Valitud", width: "10%", show: false, type:'boolean'}
 
         ],
         sqlString: `SELECT id,

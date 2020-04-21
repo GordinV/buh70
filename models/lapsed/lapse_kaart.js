@@ -135,7 +135,7 @@ module.exports = {
                 {id: "yksus", name: "Üksus", width: "15%"},
                 {id: "kehtivus", name: "Kehtib", width: "10%"},
                 {id: "inf3", name: "INF3", width: "10%"},
-                {id: "select", name: "Valitud", width: "10%", show: false}
+                {id: "select", name: "Valitud", width: "10%", show: false, type:'boolean'}
             ],
             sqlString:
                     `SELECT id,

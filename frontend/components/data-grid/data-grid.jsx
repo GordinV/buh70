@@ -204,14 +204,14 @@ class DataGrid extends React.Component {
      * @param idx
      */
     handleCellClick(idx, columnId) {
-
         if (this.state.gridData.length > 0) {
             let action = this.props.onChangeAction || null;
 
             let docId = this.state.gridData[idx].id;
             const gridData = {...this.state.gridData};
 
-            if (this.state.isSelect) {
+            // Отработает клик по колонки селект для выбора массива записей
+            if (this.state.isSelect && columnId == 'select') {
                 // уже выбран, надо исключить
                 gridData[idx].select = !gridData[idx].select;
             }
@@ -322,6 +322,7 @@ class DataGrid extends React.Component {
                 if (row.id === 'select' && this.props.isSelect) {
                     row.show = true;
                 }
+
                 return row;
             });
 
