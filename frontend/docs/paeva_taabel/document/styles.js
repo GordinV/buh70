@@ -42,7 +42,7 @@ module.exports = {
         boolSumbol: {
             yes: {
                 value: '\u2714',
-                color: 'green'
+                color: '#007300'
             },
             no: {
                 value: null,
