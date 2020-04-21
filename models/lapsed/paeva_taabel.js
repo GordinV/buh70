@@ -95,6 +95,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
                     type: 'boolean',
                     readOnly: false,
                     boolSumbolYes: '\u25CF',
+                    yesBackgroundColor: '#8BC34A',
                     boolSumbolNo: '\u2716'
                 },
             ]

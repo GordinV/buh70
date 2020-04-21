@@ -353,6 +353,11 @@ class DataGrid extends React.Component {
                             );
                         }
 
+                        // если задан фон в конфиге грида
+                        if (column.yesBackgroundColor) {
+                            style = {...style, backgroundColor: column.yesBackgroundColor};
+                        }
+
                         // цвет, при значении NULL
                         if (styles.td && styles.td.nullColour && row[column.id] == null ) {
                             style = Object.assign(style,
