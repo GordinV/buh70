@@ -1269,47 +1269,38 @@ BEGIN
                         , q.artikkel
                         , q.nimetus
                  UNION ALL
-                 SELECT '3.1'::VARCHAR(20)                                    AS idx
-                         ,
-                        1                                                     AS is_e
-                         ,
-                        l_rekvid                                              AS rekvid
-                         ,
-                        qry.tegev
-                         ,
-                        ''::VARCHAR(20)                                       AS allikas
-                         ,
-                        ''::VARCHAR(20)                                       AS artikkel
-                         ,
-                        l.nimetus
-                         ,
+                 SELECT '3.1'::VARCHAR(20)                                    AS idx,
+                        1                                                     AS is_e,
+                        l_rekvid                                              AS rekvid,
+                        qry.tegev,
+                        ''::VARCHAR(20)                                       AS allikas,
+                        ''::VARCHAR(20)                                       AS artikkel,
+                        l.nimetus,
                         coalesce(sum(CASE
                                          WHEN qry.tegev = '01112' AND qry.artikkel = '1532' THEN 0
-                                         ELSE qry.eelarve END), 0)            AS eelarve
-                         ,
+                                         ELSE qry.eelarve END), 0)            AS eelarve,
                         coalesce(sum(CASE
                                          WHEN qry.tegev = '01112' AND qry.artikkel = '1532' THEN 0
-                                         ELSE qry.eelarve_kassa END), 0)      AS eelarve_kassa
-                         ,
+                                         ELSE qry.eelarve_kassa END), 0)      AS eelarve_kassa,
                         coalesce(sum(CASE
                                          WHEN qry.tegev = '01112' AND qry.artikkel = '1532' THEN 0
-                                         ELSE qry.eelarve_taps END), 0)       AS eelarve_taps
-                         ,
+                                         ELSE qry.eelarve_taps END), 0)       AS eelarve_taps,
                         coalesce(sum(CASE
                                          WHEN qry.tegev = '01112' AND qry.artikkel = '1532' THEN 0
-                                         ELSE qry.eelarve_kassa_taps END), 0) AS eelarve_kassa_taps
-                         ,
+                                         ELSE qry.eelarve_kassa_taps END), 0) AS eelarve_kassa_taps,
                         coalesce(sum(CASE
                                          WHEN qry.tegev = '01112' AND qry.artikkel = '1532' THEN 0
-                                         ELSE qry.tegelik END), 0)            AS tegelik
-                         ,
+                                         ELSE qry.tegelik END), 0)            AS tegelik,
                         coalesce(sum(CASE WHEN qry.tegev = '01112' AND qry.artikkel = '1532' THEN 0 ELSE qry.kassa END),
-                                 0)                                           AS kassa
-                         ,
-                        get_saldo('DK', '4', NULL, qry.tegev) +
+                                 0)                                           AS kassa,
+                      (get_saldo('DK', '4', NULL, qry.tegev) +
                         get_saldo('DK', '5', NULL, qry.tegev) +
                         get_saldo('DK', '6', NULL, qry.tegev) +
-                        get_saldo('DK', '15', NULL, qry.tegev)                AS saldoandmik
+                        get_saldo('DK', '15', NULL, qry.tegev) -
+                       get_saldo('DK', '610', NULL, qry.tegev) -
+                       get_saldo('DK', '611', NULL, qry.tegev) -
+                       get_saldo('DK', '613', NULL, qry.tegev))
+                        AS saldoandmik
                  FROM tmp_andmik qry
                           LEFT OUTER JOIN library l ON l.kood = qry.tegev AND l.library = 'TEGEV'
                  WHERE tyyp = 1
@@ -1335,12 +1326,15 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 
 /*
 
-select * from (
-SELECT *
+select  * from (
+SELECT  *
 FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019,12,31), 63, 1) qry
 where (not empty(qry.tegev) or not empty(qry.artikkel))
 and qry.artikkel like '32%'
 ) qry
 where eelarve <> eelarve_taps
 --test
+
+select get_saldo('DK', '613', NULL, null)
+
 */
