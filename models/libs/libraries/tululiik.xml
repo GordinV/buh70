@@ -1,20 +1,38 @@
 <?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
 <VFPData>
   <grid>
-    <sql>select id, kood, nimetus,  
-            $2::integer as userId,
-            tun1, tun2, tun3, tun4, tun5
-            from libs.library l
-            where l.library = 'MAKSUKOOD'
-            and l.status &lt;&gt; 3</sql>
+    <sql>SELECT id,
+                           kood,
+                           nimetus,
+                           $1::INTEGER AS rekvId,
+                           $2::INTEGER AS userId,
+                           tun1,
+                           tun2,
+                           tun3,
+                           tun4,
+                           tun5
+                    FROM libs.library l
+                        WHERE l.library = 'MAKSUKOOD'
+                             AND l.status &lt;&gt; 3</sql>
     <alias>curMaksukoodid</alias>
   </grid>
   <select>
-    <sql>select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, 
-                l.tun1, l.tun2, l.tun3, l.tun4, l.tun5, 
-                $2::integer as userid, 'MAKSUKOOD' as doc_type_id
-                from libs.library l 
-                where l.id = $1</sql>
+    <sql>SELECT l.id,
+                     l.rekvid,
+                     l.kood,
+                     l.nimetus,
+                     l.muud,
+                     l.status,
+                     l.library,
+                     l.tun1,
+                     l.tun2,
+                     l.tun3,
+                     l.tun4,
+                     l.tun5,
+                     $2::INTEGER AS userid,
+                     'MAKSUKOOD' AS doc_type_id
+              FROM libs.library l
+                  WHERE l.id = $1</sql>
     <sqlAsNew>select  $1::integer as id , 
             null::integer as tun1,
             null::integer as tun2,
@@ -34,8 +52,8 @@
     <alias>row</alias>
   </select>
   <selectAsLibs>
-    <sql>select * from com_tululiigid l
-        where  (l.rekvId = $1 or l.rekvid is null)</sql>
+    <sql>SELECT $1::INTEGER AS rekv_id, *
+                   FROM com_tululiigid l</sql>
     <alias>selectAsLibs</alias>
   </selectAsLibs>
   <saveDoc>
@@ -43,7 +61,8 @@
     <alias>saveDoc</alias>
   </saveDoc>
   <deleteDoc>
-    <sql>select error_code, result, error_message from libs.sp_delete_library($1::integer, $2::integer)</sql>
+    <sql>SELECT error_code, result, error_message
+                FROM libs.sp_delete_library($1::INTEGER, $2::INTEGER)</sql>
     <alias>deleteDoc</alias>
   </deleteDoc>
   <requiredFields>

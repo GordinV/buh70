@@ -1,12 +1,23 @@
 module.exports = {
-    selectAsLibs: `select * from com_tululiigid l
-        where  (l.rekvId = $1 or l.rekvid is null)`,
+    selectAsLibs: `SELECT $1::INTEGER AS rekv_id, *
+                   FROM com_tululiigid l`,
     select: [{
-        sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, 
-                l.tun1, l.tun2, l.tun3, l.tun4, l.tun5, 
-                $2::integer as userid, 'MAKSUKOOD' as doc_type_id
-                from libs.library l 
-                where l.id = $1`,
+        sql: `SELECT l.id,
+                     l.rekvid,
+                     l.kood,
+                     l.nimetus,
+                     l.muud,
+                     l.status,
+                     l.library,
+                     l.tun1,
+                     l.tun2,
+                     l.tun3,
+                     l.tun4,
+                     l.tun5,
+                     $2::INTEGER AS userid,
+                     'MAKSUKOOD' AS doc_type_id
+              FROM libs.library l
+                  WHERE l.id = $1`,
         sqlAsNew: `select  $1::integer as id , 
             null::integer as tun1,
             null::integer as tun2,
@@ -35,19 +46,27 @@ module.exports = {
         {name: 'library', type: 'C'}
     ],
     saveDoc: `select libs.sp_salvesta_library($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from libs.sp_delete_library($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM libs.sp_delete_library($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
             {id: "kood", name: "Kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
-        sqlString: `select id, kood, nimetus,  
-            $2::integer as userId,
-            tun1, tun2, tun3, tun4, tun5
-            from libs.library l
-            where l.library = 'MAKSUKOOD'
-            and l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT id,
+                           kood,
+                           nimetus,
+                           $1::INTEGER AS rekvId,
+                           $2::INTEGER AS userId,
+                           tun1,
+                           tun2,
+                           tun3,
+                           tun4,
+                           tun5
+                    FROM libs.library l
+                        WHERE l.library = 'MAKSUKOOD'
+                             AND l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curMaksukoodid'
     },

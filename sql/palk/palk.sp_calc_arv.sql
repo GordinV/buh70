@@ -179,6 +179,10 @@ BEGIN
         THEN
             -- calc based on taabel
             -- prepaire parameters for hours calculation
+
+            -- установим 1 день для получения часов в месяц
+            l_kuu_alg = make_date(year(l_kuu_alg), month(l_kuu_alg),1);
+
             SELECT row_to_json(row) INTO l_params
             FROM (SELECT l_kpv           AS kpv,
                          l_lepingid      AS lepingid,
@@ -349,6 +353,7 @@ BEGIN
 
 
     -- TM arvestus
+
     tm = palk.fnc_calc_tm(summa, mvt, tki, pm, l_tululiik);
 
     selg = coalesce(selg, '') + 'TM arvestus:' + round(tm, 2) :: TEXT + ltEnter;

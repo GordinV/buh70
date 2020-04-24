@@ -77,7 +77,7 @@ BEGIN
     INTO l_puhkus_kasutatud
     FROM palk.cur_puudumine
     WHERE lepingid = leping_id
-          AND kpv1 >= date(year(date()), 1, 1)
+          AND kpv1 >= date(year(date()),1, 1)
           AND kpv2 <= l_kpv
           AND pohjus = l_puhkus
           AND tyyp = l_puhkuse_tyyp;
@@ -105,4 +105,6 @@ COMMENT ON FUNCTION palk.sp_calc_puhkuse_paevad(INTEGER, JSON) IS 'расчет 
 SELECT * from palk.sp_calc_puhkuse_paevad(1, '{"lepingid":4}')
 
 select * from palk.tooleping
+
+
 */

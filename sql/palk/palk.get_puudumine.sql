@@ -25,7 +25,6 @@ DECLARE
     l_miinus_holidays INTEGER = 0; -- days with - holidays
     l_miinus_weekends INTEGER = 0; -- days with - weekend
 BEGIN
-
     --selecting data
     FOR qryPuhkused IN
         SELECT p.*,
@@ -70,10 +69,10 @@ BEGIN
             ELSE
                 l_result = l_result + CASE
                                           WHEN month(qryPuhkused.kpv1) = month(qryPuhkused.kpv2)
-                                              THEN qryPuhkused.kpv2 - qryPuhkused.kpv1 + 1
+                                              THEN (qryPuhkused.kpv2 - qryPuhkused.kpv1) + 1
                                           WHEN month(qryPuhkused.kpv1) <> month(qryPuhkused.kpv2) AND
                                                month(qryPuhkused.kpv2) = l_kuu
-                                              THEN qryPuhkused.kpv2 - make_date(l_aasta, l_kuu, 1)
+                                              THEN qryPuhkused.kpv2 - make_date(l_aasta, l_kuu, 1) + 1
                                           ELSE get_last_day(qryPuhkused.kpv1) - qryPuhkused.kpv1 + 1 END;
 
             END IF;
@@ -83,7 +82,7 @@ BEGIN
                                                      FROM cur_calender(make_date(l_aasta, l_kuu, l_start_paev),
                                                                        make_date(l_aasta, l_kuu, l_lopp_paev),
                                                                        qryPuhkused.rekvid)
-                                                     WHERE is_tahtpaev);
+                                                     WHERE is_tahtpaev and is_toopaev);
 
             -- arvestame puhkepaevad perioodis
             l_miinus_weekends = l_miinus_weekends + (SELECT count(*)
@@ -91,9 +90,7 @@ BEGIN
                                                                        make_date(l_aasta, l_kuu, l_lopp_paev),
                                                                        qryPuhkused.rekvid)
                                                      WHERE NOT is_toopaev);
-
         END LOOP;
-
 
     -- miinus
     l_result = l_result - (l_miinus_holidays + l_miinus_weekends);

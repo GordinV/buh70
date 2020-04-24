@@ -28,7 +28,9 @@ SELECT l.id                                                                     
 FROM lapsed.laps l
          INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.id
          INNER JOIN libs.nomenklatuur n ON lk.nomid = n.id
-         INNER JOIN libs.library grupp ON grupp.library::TEXT = 'LAPSE_GRUPP'::TEXT AND grupp.rekvid = lk.rekvid
+         INNER JOIN libs.library grupp ON grupp.library::TEXT = 'LAPSE_GRUPP'::TEXT
+                                              AND grupp.rekvid = lk.rekvid
+                                              and grupp.status <> 3
     AND grupp.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
 
 WHERE lk.staatus <> 3;

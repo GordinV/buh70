@@ -86,7 +86,7 @@ BEGIN
     -- arv haiguse paevad
     l_haigus := palk.get_puudumine(params :: JSONB);
 
-    -- arv haiguse paevad
+    -- arv muu paevad
     SELECT row_to_json(row)
            INTO params
     FROM (SELECT
