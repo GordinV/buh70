@@ -19,19 +19,18 @@ class ModalPage extends React.PureComponent {
     }
 
     changeVisibilityModalPage() {
-        let visibility = this.state.show;
-        this.setState({show: !visibility});
+        this.setState({show: !this.state.show});
     }
 
     // will update state if props changed
-    /*
+
     static getDerivedStateFromProps(nextProps, prevState) {
         if (nextProps.show !== prevState.show) {
             return {show: nextProps.show};
         } else return null;
     }
 
-     */
+
 
 
     handleBtnClick(btnEvent) {
@@ -39,8 +38,9 @@ class ModalPage extends React.PureComponent {
 
         this.changeVisibilityModalPage();
         if (this.props.modalPageBtnClick) {
-            this.props.modalPageBtnClick(btnEvent);
+           let show =  this.props.modalPageBtnClick(btnEvent);
         }
+
     }
 
     /**

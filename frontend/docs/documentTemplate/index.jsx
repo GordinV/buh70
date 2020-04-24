@@ -957,6 +957,7 @@ class DocumentTemplate extends React.Component {
             this.props.recalcDoc();
         }
         this.setState({gridRowEdit: showModal});
+        return showModal;
     }
 
     _bind(...methods) {
