@@ -5,7 +5,7 @@ module.exports = {
                                    $1::INTEGER AS rekvid
                    FROM lapsed.vanemad v
                             INNER JOIN libs.asutus a ON a.id = v.asutusId
-                   WHERE v.staatus <> 3`,
+                       WHERE v.staatus <> 3`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},
@@ -17,7 +17,7 @@ module.exports = {
         sql: `SELECT v.id,
                      v.parentid,
                      v.asutusid,
-                     v.properties ->> 'arved'                                             AS arved,
+                     coalesce((va.arveldus)::BOOLEAN, FALSE)::BOOLEAN                     AS arved,
                      v.properties ->> 'suhtumine'                                         AS suhtumine,
                      coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN  AS kas_paberil,
                      coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN    AS kas_earve,
@@ -34,7 +34,11 @@ module.exports = {
                      a.tel::TEXT
               FROM lapsed.vanemad v
                        INNER JOIN libs.asutus a ON a.id = v.asutusId
-              WHERE v.id = $1::INTEGER`,
+                       LEFT OUTER JOIN lapsed.vanem_arveldus va ON v.parentid = va.parentid
+                  AND va.asutusid = a.id
+                  AND va.rekvid IN (SELECT rekvid
+                                    FROM ou.userid WHERE id = $2)
+                  WHERE v.id = $1::INTEGER`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,
@@ -43,7 +47,7 @@ module.exports = {
                   null::text as lapse_nimi,
                   null::text as  vanem_isikukood,
                   null::text as vanem_nimi,
-                  'Jah'::text as arved,
+                  false as arved,
                   null::text as suhtumine,
                   false as kas_paberil,
                   true as kas_email,
@@ -62,8 +66,9 @@ module.exports = {
                          $2 AS userid
                   FROM lapsed.laps l
                            INNER JOIN lapsed.vanemad v ON l.id = v.parentid
-                  WHERE l.staatus < 3
-                    AND v.asutusid IN (SELECT asutusid FROM lapsed.vanemad WHERE id = $1)`,
+                      WHERE l.staatus < 3
+                           AND v.asutusid IN (SELECT asutusid
+                                              FROM lapsed.vanemad WHERE id = $1)`,
             query: null,
             multiple: true,
             alias: 'lapsed',
@@ -114,7 +119,7 @@ module.exports = {
                            $1::INTEGER AS rekvid,
                            $2::INTEGER AS user_id
                     FROM lapsed.cur_vanemad v
-                    WHERE rekv_ids @> ARRAY [$1::INTEGER] `,     //  $1 всегда ид учреждения, $2 - userId
+                        WHERE rekv_ids @> ARRAY [$1::INTEGER] `,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
         alias: 'curLapsed'
     },
@@ -145,8 +150,9 @@ module.exports = {
     validateEsindaja: {
         command: `SELECT id
                   FROM lapsed.vanemad
-                  WHERE parentId IN (SELECT parentid FROM lapsed.vanemad WHERE id = $1)
-                    AND coalesce((properties ->> 'kas_esindaja')::BOOLEAN, FALSE)::BOOLEAN`,
+                      WHERE parentId IN (SELECT parentid
+                                         FROM lapsed.vanemad WHERE id = $1)
+                           AND coalesce((properties ->> 'kas_esindaja')::BOOLEAN, FALSE)::BOOLEAN`,
         TYPE: 'sql',
         ALIAS: 'validateEsindaja'
     },
@@ -184,8 +190,9 @@ module.exports = {
                                       ajalugu
                            FROM lapsed.vanemad d,
                                 ou.userid u
-                           WHERE d.id = $1
-                             AND u.id = $2
+                               WHERE
+                                d.id = $1
+                                    AND u.id = $2
                        ) qry`,
         type: "sql",
         alias: "getLogs"

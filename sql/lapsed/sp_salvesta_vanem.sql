@@ -10,7 +10,7 @@ DECLARE
     doc_id           INTEGER = doc_data ->> 'id';
     doc_parentid     INTEGER = doc_data ->> 'parentid';
     doc_asutusid     INTEGER = doc_data ->> 'asutusid';
-    doc_arved        TEXT    = doc_data ->> 'arved';
+    doc_arved        BOOLEAN = coalesce((doc_data ->> 'arved')::BOOLEAN, FALSE);
     doc_suhtumine    TEXT    = doc_data ->> 'suhtumine';
     doc_kas_paberil  BOOLEAN = coalesce((doc_data ->> 'kas_paberil')::BOOLEAN, FALSE);
     doc_kas_email    BOOLEAN = coalesce((doc_data ->> 'kas_email')::BOOLEAN, FALSE);
@@ -29,28 +29,26 @@ BEGIN
 
     SELECT kasutaja INTO userName
     FROM ou.userid u
-    WHERE u.rekvid = user_rekvid
-      AND u.id = userId;
+        WHERE u.rekvid = user_rekvid
+             AND u.id = userId;
     IF userName IS NULL
     THEN
         RAISE NOTICE 'User not found %', user;
         RETURN 0;
     END IF;
 
-
     json_props = to_jsonb(row)
-                 FROM (SELECT doc_arved        AS arved,
-                              doc_suhtumine    AS suhtumine,
+                 FROM (SELECT doc_suhtumine    AS suhtumine,
                               doc_kas_paberil  AS kas_paberil,
                               doc_kas_email    AS kas_email,
                               doc_kas_esindaja AS kas_esindaja,
                               doc_kas_earve    AS kas_earve) row;
 
-
     -- ищем ранее удаленные записи
     IF doc_id IS NULL OR doc_id = 0
     THEN
-        SELECT id INTO doc_id FROM lapsed.vanemad WHERE parentid = doc_parentid AND asutusid = doc_asutusid;
+        SELECT id INTO doc_id
+        FROM lapsed.vanemad WHERE parentid = doc_parentid AND asutusid = doc_asutusid;
     END IF;
 
 
@@ -75,8 +73,6 @@ BEGIN
         json_ajalugu = to_jsonb(row)
                        FROM (SELECT now()    AS updated,
                                     userName AS user
-                             FROM lapsed.vanemad l
-                             WHERE id = doc_id
                             ) row;
 
         UPDATE lapsed.vanemad
@@ -93,9 +89,9 @@ BEGIN
 -- проверим наличие статус ответственного у родителей
     IF doc_kas_esindaja AND exists(SELECT id
                                    FROM lapsed.vanemad
-                                   WHERE parentid = doc_parentid
-                                     AND (properties ->> 'kas_esindaja')::BOOLEAN
-                                     AND id <> doc_id)
+                                       WHERE parentid = doc_parentid
+                                            AND (properties ->> 'kas_esindaja')::BOOLEAN
+                                            AND id <> doc_id)
     THEN
         -- убираем этот статус , если есть у других роделей ребенка
         UPDATE lapsed.vanemad
@@ -106,6 +102,37 @@ BEGIN
           AND id <> doc_id
           AND (properties ->> 'kas_esindaja')::BOOLEAN;
     END IF;
+
+-- arveldused
+    IF exists(SELECT id
+              FROM lapsed.vanem_arveldus
+                  WHERE parentid = doc_parentid
+                       AND asutusid = doc_asutusid
+                       AND rekvid = user_rekvid)
+    THEN
+
+        UPDATE lapsed.vanem_arveldus
+        SET arveldus = doc_arved
+        WHERE parentid = doc_parentid
+          AND asutusid = doc_asutusid
+          AND rekvid = user_rekvid;
+    ELSE
+        INSERT INTO lapsed.vanem_arveldus (parentid, asutusid, rekvid, arveldus)
+        VALUES (doc_parentid, doc_asutusid, user_rekvid, doc_arved);
+
+    END IF;
+
+    -- уберем статус у других родителей, если надо
+    IF (doc_arved)
+    THEN
+        UPDATE lapsed.vanem_arveldus
+        SET arveldus = FALSE
+        WHERE parentid = doc_parentid
+          AND rekvid = user_rekvid
+          AND asutusid <> doc_asutusid
+          AND arveldus = TRUE;
+    END IF;
+
 
     RETURN doc_id;
 

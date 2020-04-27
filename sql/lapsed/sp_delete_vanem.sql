@@ -3,10 +3,10 @@
 DROP FUNCTION IF EXISTS lapsed.sp_delete_vanem(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION lapsed.sp_delete_vanem(IN user_id INTEGER,
-                                                 IN doc_id INTEGER,
-                                                 OUT error_code INTEGER,
-                                                 OUT result INTEGER,
-                                                 OUT error_message TEXT)
+                                                  IN doc_id INTEGER,
+                                                  OUT error_code INTEGER,
+                                                  OUT result INTEGER,
+                                                  OUT error_message TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -17,12 +17,12 @@ DECLARE
 BEGIN
 
     SELECT v.*,
-           u.ametnik::TEXT                      AS kasutaja,
+           u.ametnik::TEXT                       AS kasutaja,
            (u.roles ->> 'is_arvestaja')::BOOLEAN AS is_arvestaja
            INTO v_doc
     FROM lapsed.vanemad v
              JOIN ou.userid u ON u.id = user_id
-    WHERE v.id = doc_id;
+        WHERE v.id = doc_id;
 
     -- проверка на пользователя и его соответствие учреждению
 
@@ -61,6 +61,22 @@ BEGIN
 
     END IF;
 
+    -- проверка на ответственного за расчеты
+    IF exists(SELECT id
+              FROM lapsed.vanem_arveldus
+                  WHERE parentid = v_doc.parentid
+                       AND asutusid = v_doc.asutusid
+                       AND arveldus)
+    THEN
+        RAISE NOTICE 'Удаление запрещено, ответственный';
+        error_code = 4;
+        error_message = 'Ei saa kustuta kaart, sest isik vastab arvelduse eest ';
+        result = 0;
+        RETURN;
+
+    END IF;
+
+
     -- Логгирование удаленного документа
 
     SELECT to_jsonb(row) INTO json_ajalugu
@@ -71,6 +87,13 @@ BEGIN
     SET staatus = DOC_STATUS,
         ajalugu = coalesce(ajalugu, '[]')::JSONB || json_ajalugu
     WHERE id = doc_id;
+
+    -- удаляем связь с учреждением
+    DELETE
+    FROM lapsed.vanem_arveldus
+        WHERE parentid = v_doc.parentid
+             AND asutusid = v_doc.asutusid;
+
 
     result = 1;
     RETURN;

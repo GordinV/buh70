@@ -15,17 +15,21 @@ $BODY$
 DECLARE
     l_rekvid           INTEGER = (SELECT rekvid
                                   FROM ou.userid u
-                                  WHERE id = user_id
-                                  LIMIT 1);
+                                      WHERE id = user_id
+                                      LIMIT 1);
 
     l_asutus_id        INTEGER = (SELECT asutusid
-                                  FROM lapsed.vanemad v
+                                  FROM lapsed.vanem_arveldus v
                                            INNER JOIN libs.asutus a ON a.id = v.asutusid
-                                  WHERE v.parentid = l_laps_id
-                                    AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
-                                    AND v.staatus <> 3
-                                  ORDER BY (coalesce(v.properties ->> 'arved', 'ei')) DESC, v.id DESC
-                                  LIMIT 1);
+                                      WHERE
+                                       v.parentid = l_laps_id
+                                           AND v.rekvid = l_rekvid
+                                           AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
+                                      ORDER BY
+                                       v.arveldus DESC,
+                                       v.id DESC
+                                      LIMIT
+                                       1);
 
     l_doklausend_id    INTEGER;
     l_liik             INTEGER = 0;
@@ -44,26 +48,38 @@ DECLARE
     jsonb_print        JSONB   = '[]';
     l_aa               TEXT    = (SELECT arve
                                   FROM ou.aa
-                                  WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
-                                    AND kassa = 1
-                                  ORDER BY default_ DESC
-                                  LIMIT 1);
+                                      WHERE parentid IN (SELECT rekvid
+                                                         FROM ou.userid WHERE id = user_id)
+                                           AND kassa = 1
+                                      ORDER BY default_ DESC
+                                      LIMIT 1);
     l_ettemaksu_period INTEGER = 1;
     l_tulu_arved       INTEGER = 0; -- кол-во доходных счетов, должно быть = кол-ву периодов
     l_db_konto         TEXT    = '103000'; -- согдасно описанию отдела культуры
     l_kr_konto         TEXT    = '203900';
 
 BEGIN
+    IF l_asutus_id IS NULL
+    THEN
+        -- контр-анет не найден, выходим
+        result = 0;
+        error_message = 'Puudub kontragent';
+        error_code = 1;
+        RETURN;
+
+    END IF;
+
+
     -- ищем ид конфигурации контировки
 
     l_doklausend_id = (SELECT dp.id
                        FROM libs.dokprop dp
                                 INNER JOIN libs.library l ON l.id = dp.parentid
-                       WHERE dp.rekvid = l_rekvid
-                         AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
-                         AND l.kood = 'ARV'
-                       ORDER BY dp.id DESC
-                       LIMIT 1
+                           WHERE dp.rekvid = l_rekvid
+                                AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
+                                AND l.kood = 'ARV'
+                           ORDER BY dp.id DESC
+                           LIMIT 1
     );
 
 
@@ -73,8 +89,8 @@ BEGIN
            coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN   AS kas_email
            INTO v_maksja
     FROM lapsed.vanemad v
-    WHERE asutusid = l_asutus_id
-      AND v.parentid = l_laps_id;
+        WHERE asutusid = l_asutus_id
+             AND v.parentid = l_laps_id;
 
     jsonb_print = jsonb_print || coalesce(CASE
                                               WHEN v_maksja.kas_paber THEN '[
@@ -108,16 +124,18 @@ BEGIN
              INNER JOIN lapsed.liidestamine l ON l.docid = d.id
              INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.parentid
              INNER JOIN docs.arv1 a1 ON a.id = a1.parentid AND a1.nomid = lk.nomid
-    WHERE l.parentid = l_laps_id
-      AND a.asutusid = l_asutus_id
-      -- ищем счета в периоде
-      AND l_kpv BETWEEN date(year(a.kpv), month(a.kpv), 1) AND (date(year(a.kpv), month(a.kpv), 1) + make_interval(
-            months => ((lk.properties ->> 'ettemaksu_period')::INTEGER)))::DATE - 1
-      AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
-      AND (a.properties ->> 'tyyp')::TEXT = 'ETTEMAKS'
-      AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
-    ORDER BY D.ID DESC
-    LIMIT 1;
+        WHERE l.parentid = l_laps_id
+             AND a.asutusid = l_asutus_id
+             -- ищем счета в периоде
+             AND
+              l_kpv BETWEEN date(year(a.kpv), month(a.kpv), 1) AND (date(year(a.kpv), month(a.kpv), 1) + make_interval(
+                      months => ((lk.properties ->> 'ettemaksu_period')::INTEGER)))::DATE - 1
+             AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
+             AND (a.properties ->> 'tyyp')::TEXT = 'ETTEMAKS'
+             AND d.rekvid IN (SELECT rekvid
+                              FROM ou.userid u WHERE id = user_id)
+        ORDER BY D.ID DESC
+        LIMIT 1;
 
     IF l_arv_id IS NOT NULL AND l_status < 3
     THEN
@@ -165,13 +183,12 @@ BEGIN
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                  LEFT OUTER JOIN libs.library gr ON gr.library = 'LAPSE_GRUPP' AND gr.rekvid = lk.rekvid AND
                                                     gr.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
-
-        WHERE lk.parentid = l_laps_id
-          AND lk.staatus <> 3
-          AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
-          AND (lk.properties ->> 'alg_kpv' IS NULL OR
-               (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
-          AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
+            WHERE lk.parentid = l_laps_id
+                 AND lk.staatus <> 3
+                 AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
+                 AND (lk.properties ->> 'alg_kpv' IS NULL OR
+                      (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
+                 AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
 
 
         LOOP

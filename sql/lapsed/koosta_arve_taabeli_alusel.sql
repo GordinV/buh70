@@ -19,13 +19,17 @@ DECLARE
                                LIMIT 1);
 
     l_asutus_id     INTEGER = (SELECT asutusid
-                               FROM lapsed.vanemad v
+                               FROM lapsed.vanem_arveldus v
                                         INNER JOIN libs.asutus a ON a.id = v.asutusid
-                               WHERE v.parentid = l_laps_id
-                                 AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
-                                 AND v.staatus <> 3
-                               ORDER BY (coalesce(v.properties ->> 'arved', 'ei')) DESC, v.id DESC
-                               LIMIT 1);
+                                   WHERE
+                                    v.parentid = l_laps_id
+                                        AND v.rekvid = l_rekvid
+                                        AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
+                                   ORDER BY
+                                    v.arveldus DESC,
+                                    v.id DESC
+                                   LIMIT
+                                    1);
     l_doklausend_id INTEGER;
     l_liik          INTEGER = 0;
     v_taabel        RECORD;
@@ -55,6 +59,14 @@ DECLARE
 
 BEGIN
 
+    if l_asutus_id is null THEN
+        -- контр-анет не найден, выходим
+        result = 0;
+        error_message = 'Puudub kontragent';
+        error_code = 1;
+        RETURN;
+
+    END IF;
     -- ищем ид конфигурации контировки
 
     l_doklausend_id = (SELECT dp.id

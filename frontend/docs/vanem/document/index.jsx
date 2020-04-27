@@ -6,7 +6,6 @@ const React = require('react');
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
-    Select = require('../../../components/select/select.jsx'),
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     SelectData = require('../../../components/select-data/select-data.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
@@ -15,8 +14,7 @@ const
 
     styles = require('./styles');
 
-const LIBDOK = 'VANEM',
-    LIBRARIES = [];
+const LIBRARIES = [];
 
 const now = new Date();
 
@@ -122,17 +120,14 @@ class Vanem extends React.PureComponent {
                                    ref='input-suhtumine'
                                    readOnly={!isEditMode}
                                    onChange={self.handleInputChange}/>
-                        <Select title="Arveldus:"
-                                name='arved'
-                                data={[{name: 'Jah'}, {name: 'Ei'}]}
-                                value={self.docData.arved || 'Ei'}
-                                collId='name'
-                                defaultValue={self.docData.arved}
-                                ref="select-arved"
-                                btnDelete={false}
-                                onChange={self.handleInputChange}
-                                readOnly={!isEditMode}/>
-                        {self.docData.arved === 'Jah' ?
+                        <CheckBox title="Arveldus:"
+                                  name='arved'
+                                  value={Boolean(self.docData.arved)}
+                                  ref={'checkbox_arved'}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditMode}
+                        />
+                        {self.docData.arved ?
                             <CheckBox title="Print paberil ?"
                                       name='kas_paberil'
                                       value={Boolean(self.docData.kas_paberil)}
@@ -141,7 +136,7 @@ class Vanem extends React.PureComponent {
                                       readOnly={!isEditMode}
                             /> : null
                         }
-                        {self.docData.arved === 'Jah' ?
+                        {self.docData.arved ?
                             <CheckBox title="E-arve ?"
                                       name='kas_earve'
                                       value={Boolean(self.docData.kas_earve)}
@@ -150,7 +145,7 @@ class Vanem extends React.PureComponent {
                                       readOnly={!isEditMode}
                             /> : null
                         }
-                        {self.docData.arved === 'Jah' ?
+                        {self.docData.arved  ?
                             <CheckBox title="Kas email ?"
                                       name='kas_email'
                                       value={Boolean(self.docData.kas_email)}
@@ -166,7 +161,6 @@ class Vanem extends React.PureComponent {
                                   onChange={self.handleInputChange}
                                   readOnly={!isEditMode}
                         />
-
 
                     </div>
                 </div>
