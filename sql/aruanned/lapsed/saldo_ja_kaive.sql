@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
                                                  kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
         period           DATE,
-        kulastatavus       TEXT,
+        kulastatavus     TEXT,
         lapse_nimi       TEXT,
         lapse_isikukood  TEXT,
         maksja_nimi      TEXT,
@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
 $BODY$
 SELECT kpv_start                                                   AS period,
        CASE
-           WHEN  kulastavus.lopp_kpv >= kpv_end THEN 'Jah'
+           WHEN kulastavus.lopp_kpv >= kpv_end THEN 'Jah'
            ELSE 'Ei' END::TEXT                                     AS kulastatavus,
        l.nimi::TEXT                                                AS lapse_nimi,
        l.isikukood::TEXT                                           AS lapse_isikukood,
@@ -49,7 +49,7 @@ FROM docs.doc d
          INNER JOIN libs.asutus i ON i.id = a.asutusid
          INNER JOIN (SELECT parentid AS arv_id, sum(soodus) AS soodustus, array_agg(a1.properties ->> 'yksus') AS yksus
                      FROM docs.arv1 a1
-                     GROUP BY parentid) a1
+                         GROUP BY parentid) a1
                     ON a1.arv_id = a.id
          LEFT OUTER JOIN (SELECT jaak, laps_id, rekv_id
                           FROM lapsed.lapse_saldod(kpv_start::DATE)) alg_saldo
@@ -59,9 +59,9 @@ FROM docs.doc d
                                  sum(summa) FILTER ( WHERE summa > 0 ) AS laekumised,
                                  sum(summa)                            AS summa
                           FROM docs.arvtasu at
-                          WHERE at.kpv >= kpv_start
-                            AND at.kpv <= kpv_end
-                          GROUP BY at.doc_arv_id) laekumised ON laekumised.arv_id = d.id
+                              WHERE at.kpv >= kpv_start
+                                   AND at.kpv <= kpv_end
+                              GROUP BY at.doc_arv_id) laekumised ON laekumised.arv_id = d.id
          LEFT OUTER JOIN (SELECT parentid, rekvid, min(alg_kpv) AS alg_kpv, max(lopp_kpv) AS lopp_kpv
                           FROM (
                                    SELECT parentid,
@@ -71,17 +71,69 @@ FROM docs.doc d
                                           coalesce((lk.properties ->> 'lopp_kpv')::DATE,
                                                    date(year(current_date), 12, 31))::DATE AS lopp_kpv
                                    FROM lapsed.lapse_kaart lk
-                                   WHERE lk.staatus <> 3
+                                       WHERE lk.staatus <> 3
                                ) qry
-                          GROUP BY parentid, rekvid) kulastavus
+                              GROUP BY
+                               parentid,
+                               rekvid) kulastavus
                          ON kulastavus.parentid = l.id AND kulastavus.rekvid = d.rekvid
-
-WHERE coalesce((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
-  AND d.rekvid IN (SELECT rekv_id
-                   FROM get_asutuse_struktuur(l_rekvid))
-  AND (a.kpv >= kpv_start AND a.kpv <= kpv_end OR a.jaak > 0 OR a.tasud IS NULL OR a.tasud >= kpv_end)
-
-
+    WHERE
+     coalesce((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
+         AND d.rekvid IN (SELECT rekv_id
+                          FROM get_asutuse_struktuur(l_rekvid))
+         AND (a.kpv >= kpv_start AND a.kpv <= kpv_end OR a.jaak > 0 OR a.tasud IS NULL OR a.tasud >= kpv_end)
+    UNION ALL
+     -- Kui arved ei ole (alg.saldo)
+    SELECT
+     coalesce(kpv_start, kpv_end)::DATE AS period,
+     CASE
+         WHEN kulastavus.lopp_kpv >= kpv_end THEN 'Jah'
+         ELSE 'Ei' END::TEXT AS kulastatavus,
+     l.nimi::TEXT AS lapse_nimi,
+     l.isikukood::TEXT AS lapse_isikukood,
+     NULL::TEXT AS maksja_nimi,
+     NULL::TEXT AS maksja_isikukood,
+     kulastavus.yksus::TEXT AS yksus,
+     NULL::TEXT AS number,
+     lapsed.get_viitenumber(alg_saldo.rekv_id, l.id)::TEXT AS viitenumber,
+     alg_saldo.jaak::NUMERIC(14, 2) AS alg_saldo,
+     0 AS arvestatud,
+     0::NUMERIC(14, 2) AS soodustus,
+     0::NUMERIC(14, 2) AS laekumised,
+     0::NUMERIC(14, 2) AS tagastused,
+     alg_saldo.jaak::NUMERIC(14, 2) AS jaak,
+     alg_saldo.rekv_id::INTEGER AS rekvid
+    FROM
+     lapsed.lapse_saldod(coalesce(kpv_start, kpv_end)::DATE) alg_saldo
+         INNER JOIN lapsed.laps l ON l.id = alg_saldo.laps_id
+         LEFT OUTER JOIN (SELECT parentid,
+                                 rekvid,
+                                 regexp_replace(array_agg(yksus)::TEXT, '[{}]', '', 'g') AS yksus,
+                                 min(alg_kpv)                                            AS alg_kpv,
+                                 max(lopp_kpv)                                           AS lopp_kpv
+                          FROM (
+                                   SELECT parentid,
+                                          rekvid,
+                                          coalesce((lk.properties ->> 'alg_kpv')::DATE,
+                                                   date(year(current_date), 1, 1))::DATE   AS alg_kpv,
+                                          coalesce((lk.properties ->> 'lopp_kpv')::DATE,
+                                                   date(year(current_date), 12, 31))::DATE AS lopp_kpv,
+                                          lk.properties ->> 'yksus'::TEXT                  AS yksus
+                                   FROM lapsed.lapse_kaart lk
+                                       WHERE lk.staatus <> 3
+                               ) qry
+                              GROUP BY
+                               parentid,
+                               rekvid) kulastavus
+                         ON kulastavus.parentid = l.id AND kulastavus.rekvid = alg_saldo.rekv_id
+    WHERE
+     alg_saldo.rekv_id IN (SELECT rekv_id
+                           FROM get_asutuse_struktuur(l_rekvid))
+         AND NOT exists(SELECT a.id
+                        FROM docs.arv a
+                                 INNER JOIN lapsed.liidestamine l
+                                            ON l.docid = a.parentid AND l.parentid = alg_saldo.laps_id AND
+                                               a.rekvid = alg_saldo.rekv_id)
 $BODY$
     LANGUAGE SQL
     VOLATILE
@@ -97,7 +149,7 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 /*
 select * from (
 SELECT *
-FROM lapsed.saldo_ja_kaive(63, '2019-11-01', '2019-12-31')
+FROM lapsed.saldo_ja_kaive(88, null, '2020-04-30')
 ) qry
 where  period  >=  '2019-11-01' and period  <=  '2019-12-31'
 
