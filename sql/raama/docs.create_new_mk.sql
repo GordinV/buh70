@@ -61,8 +61,6 @@ BEGIN
         END IF;
     END IF;
 
-    raise notice 'l_summa %, v_arv.jaak %, v_arv.summa %', l_summa, v_arv.jaak, v_arv.summa;
-
     -- если счет имеет обратное сальдо , то меняем тип на противоположный
     IF v_arv.id IS NOT NULL AND v_arv.jaak < 0
     THEN

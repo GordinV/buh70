@@ -14,8 +14,8 @@ $BODY$
 DECLARE
     l_rekvid       INTEGER = (SELECT rekvid
                               FROM ou.userid u
-                              WHERE id = user_id
-                              LIMIT 1);
+                                  WHERE id = user_id
+                                  LIMIT 1);
     l_kpv          DATE    = coalesce((params ->> 'kpv')::DATE, current_date);
     l_grupp_id     INTEGER = (params ->> 'grupp_id')::INTEGER;
     l_json         JSONB;
@@ -28,10 +28,10 @@ BEGIN
     -- проверка
     IF l_grupp_id IS NULL OR EXISTS(SELECT id
                                     FROM lapsed.day_taabel
-                                    WHERE rekv_id = l_rekvid
-                                      AND grupp_id = l_grupp_id
-                                      AND kpv = l_kpv
-                                      AND staatus <> 3)
+                                        WHERE rekv_id = l_rekvid
+                                             AND grupp_id = l_grupp_id
+                                             AND kpv = l_kpv
+                                             AND staatus <> 3)
     THEN
         RAISE NOTICE 'Табель уже сформирован %, %', l_grupp_id, l_kpv;
         error_code = 4;
@@ -48,20 +48,26 @@ BEGIN
                lk.nomid,
                -- услуга должна ьыть в группе
                CASE
-                   WHEN ('[]'::JSONB || jsonb_build_object('nomid', lk.nomid) <@
-                         (l.properties::JSONB ->> 'teenused')::JSONB) AND
-                        lower(ltrim(rtrim(n.uhik))) IN ('paev', 'päev')
-                       AND (lk.properties ->> 'alg_kpv' IS NULL OR
-                            (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
-                       AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
+                   WHEN (('[]'::JSONB || jsonb_build_object('nomid', lk.nomid) <@
+                          (l.properties::JSONB ->> 'teenused')::JSONB) OR
+                         ('[]'::JSONB || jsonb_build_object('nomid', lk.nomid::TEXT) <@
+                           (l.properties::JSONB ->> 'teenused')::JSONB)
+                             )
+                             AND
+                         lower(ltrim(rtrim(n.uhik))) IN ('paev', 'päev')
+                             AND (lk.properties ->> 'alg_kpv' IS NULL OR
+                                  (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
+                             AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
                        THEN 1
                    ELSE NULL END
                            AS kogus
         FROM lapsed.lapse_kaart lk
-                 INNER JOIN libs.library l ON l.kood = lk.properties ->> 'yksus' AND l.library = 'LAPSE_GRUPP'
+                 INNER JOIN libs.library l ON l.kood = lk.properties ->> 'yksus'
+            AND l.library = 'LAPSE_GRUPP'
+            AND l.status <> 3
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
-        WHERE lk.staatus <> 3
-          AND l.id = l_grupp_id
+            WHERE lk.staatus <> 3
+                 AND l.id = l_grupp_id
         LOOP
             -- details
             SELECT 0               AS id,

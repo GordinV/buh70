@@ -12,7 +12,7 @@ const React = require('react'),
     keydown = require('react-keydown');
 
 //const    KEYS = [38, 40]; // мониторим только стрелки вверх и внизх
-let  styles = require('./data-grid-styles');
+let styles = require('./data-grid-styles');
 
 
 const isExists = (object, prop) => {
@@ -169,6 +169,11 @@ class DataGrid extends React.Component {
         }
     }
 
+    /**
+     * обработчика сабытия клика по кнопки панели грида
+     * @param btnName
+     * @returns {*}
+     */
     handleGridBtnClick(btnName) {
         let activeRow = this.state.activeRow;
 
@@ -216,11 +221,20 @@ class DataGrid extends React.Component {
                 gridData[idx].select = !gridData[idx].select;
             }
 
-            if (columnId && this.props.isForUpdate && gridData[idx][columnId] !== null && gridData[idx][columnId] !== undefined) {
-                // value changed
-                gridData[idx][columnId] = !gridData[idx][columnId];
-            }
+            // если поле не отмечено как readOnly то сл. действие не должно происходить
+            if (columnId) {
+                let column = this.props.gridColumns.filter((row) => row.id == columnId);
+                if (column
+                    && column.length
+                    && !column[0].readOnly
+                    && this.props.isForUpdate
+                    && gridData[idx][columnId] !== null
+                    && gridData[idx][columnId] !== undefined) {
 
+                    // value changed
+                    gridData[idx][columnId] = !gridData[idx][columnId];
+                }
+            }
 
             this.setState({
                 gridData: gridData,
@@ -336,9 +350,9 @@ class DataGrid extends React.Component {
                 {
                     gridColumns.map((column, columnIndex) => {
                         // назначим символы для отображения логических данных
-                        let boolValueYes = column.boolSumbolYes ? column.boolSumbolYes: styles.boolSumbol['yes'].value || null;
-                        let boolValueNo = column.boolSumbolNo ? column.boolSumbolNo: styles.boolSumbol['no'].value || null;
-                        let boolValueNull = column.boolSumbolNull ? column.boolSumbolNull: styles.boolSumbol['null'] ? styles.boolSumbol['null'].value: null;
+                        let boolValueYes = column.boolSumbolYes ? column.boolSumbolYes : styles.boolSumbol['yes'].value || null;
+                        let boolValueNo = column.boolSumbolNo ? column.boolSumbolNo : styles.boolSumbol['no'].value || null;
+                        let boolValueNull = column.boolSumbolNull ? column.boolSumbolNull : styles.boolSumbol['null'] ? styles.boolSumbol['null'].value : null;
 
                         let cellIndex = 'td-' + rowIndex + '-' + columnIndex;
 
@@ -367,7 +381,7 @@ class DataGrid extends React.Component {
                             style = {...style, backgroundColor: column.nullBackgroundColor};
                         }
                         // цвет, при значении NULL
-                        if (styles.td && styles.td.nullColour && row[column.id] == null ) {
+                        if (styles.td && styles.td.nullColour && row[column.id] == null) {
                             style = Object.assign(style,
                                 {backgroundColor: styles.td.nullColour}
                             );
@@ -387,7 +401,7 @@ class DataGrid extends React.Component {
                                 onClick={this.handleCellClick.bind(this, rowIndex, column.id)}
                             >
                                 {column.type && column.type === 'boolean' ?
-                                    <span>{!!row[column.id] ? boolValueYes : (row[column.id] == null ? boolValueNull: boolValueNo)}</span> : row[column.id]}
+                                    <span>{!!row[column.id] ? boolValueYes : (row[column.id] == null ? boolValueNull : boolValueNo)}</span> : row[column.id]}
                             </td>
                         );
                     })
@@ -415,8 +429,8 @@ class DataGrid extends React.Component {
                 let subIndex = this.props.subtotals.indexOf(column.id);
                 let total;
                 if (subIndex > -1) {
-                    total = this.getSum(column.id, column.type && column.type == 'integer' ? 0: 2);
-    }
+                    total = this.getSum(column.id, column.type && column.type == 'integer' ? 0 : 2);
+                }
 
                 // установить видимость
                 return (<td
@@ -455,7 +469,7 @@ class DataGrid extends React.Component {
 
             // проверка на стиль заголовка, на фонт
             let fontColor = {
-                color: column.showBold && styles[headerStyle].boldColor ? styles[headerStyle].boldColor: styles[headerStyle].color
+                color: column.showBold && styles[headerStyle].boldColor ? styles[headerStyle].boldColor : styles[headerStyle].color
             };
 
             let display = (isExists(column, 'show') ? column.show : true),
@@ -496,7 +510,7 @@ class DataGrid extends React.Component {
             });
         }
 
-        return total.toFixed(dec ? dec: 0);
+        return total.toFixed(dec ? dec : 0);
     }
 
 }
