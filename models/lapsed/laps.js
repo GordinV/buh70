@@ -168,13 +168,16 @@ module.exports = {
     },
     koostaEttemaksuArve: {
         command: `SELECT *
-                  FROM lapsed.koosta_ettemaksu_arve($2::INTEGER, $1::INTEGER, $3::DATE)`,//$1 docId, $2 - userId
+                  FROM lapsed.koosta_ettemaksu_arve($2::INTEGER, id::INTEGER, $3::DATE)`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'koostaEttemaksuArve'
     },
     arvestaTaabel: {
-        command: `SELECT error_code, result, error_message, doc_type_id
-                  FROM lapsed.arvesta_taabel($2::INTEGER, $1::INTEGER, $3::DATE)`,//$1 docId, $2 - userId
+        command: `SELECT lapsed.arvesta_taabel($2::INTEGER, id::INTEGER, $3::DATE)
+                  FROM lapsed.laps
+                      WHERE id IN (
+                      SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
+                  )`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'arvestaTaabel'
     },

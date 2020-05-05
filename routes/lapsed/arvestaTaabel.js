@@ -1,14 +1,14 @@
 'use strict';
-const getNow = require('./../libs/getNow');
-const Doc = require('./../classes/DocumentTemplate');
+const getNow = require('./../../libs/getNow');
+const Doc = require('./../../classes/DocumentTemplate');
 
 exports.post = async (req, res) => {
     const params = req.body;
-    const taskName = req.params.taskName;
+    const taskName = 'arvestaTaabel';
     const docTypeId = params.parameter ? params.parameter : params.data.docTypeId;
     let ids = params.data && params.data.docs ? params.data.docs : []; // параметр ids документа
     const execDate = params.data && params.data.seisuga ? params.data.seisuga : getNow(); // доп параметр дата
-    const user = require('../middleware/userData')(req); // данные пользователя
+    const user = require('./../../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
 
     let result = 0;
@@ -29,43 +29,21 @@ exports.post = async (req, res) => {
         return res.send({status: 500, result: null, error_message: `Task ${taskName ? taskName : ''} ei leidnud`});
     }
 
-    // делаем массив промисов
-    const promises = ids.map(id => {
-        return new Promise(resolve => {
-            doc.setDocumentId(id);
+    let lastDocId = 1;
+    try {
 
-            resolve(doc.executeTask(taskName, [id, user.userId, execDate]));
-        })
-    });
-
-    // решаем их
-    let lastDocId = 0;
-    let promiseResult = await Promise.all(promises).then((data, err) => {
-        if (err) {
-            return res.send({status: 500, result: null, error_message: err});
-        }
-
-        const replyWithDocs = data.filter(obj => {
-            if (!obj.error_code) {
-                return res.send({status: 500, result: null, error_message: err});
-            }
-        });
-
-        result = replyWithDocs.length;
-        if (result) {
-            lastDocId = replyWithDocs[result - 1].result
-        }
-
-
-    }).catch((err) => {
+        doc.setDocumentId(ids[0]);
+        let data = doc.executeTask(taskName, [ids.join(','), user.userId, execDate]);
+    } catch (e) {
         console.error('catch', err);
         return res.send({status: 500, result: null, error_message: err.error});
-    });
+
+    }
 
     //ответ
 
     res.send({
-        status: 200, result: result, data: {
+        status: 200, result: 1, data: {
             action: taskName,
             result: {
                 doc_id: lastDocId,
@@ -75,6 +53,4 @@ exports.post = async (req, res) => {
             data: result
         }
     });
-
-
 };

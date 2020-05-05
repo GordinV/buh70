@@ -88,8 +88,6 @@ BEGIN
                 FROM (SELECT coalesce(l_taabel_id, 0)     AS id,
                              (SELECT to_jsonb(v_kaart.*)) AS data) row;
 
-                RAISE NOTICE 'json_object %', json_object;
-
                 SELECT lapsed.sp_salvesta_lapse_taabel(json_object :: JSONB, user_id, l_rekvid) INTO l_taabel_id;
 
                 IF l_taabel_id > 0
@@ -124,8 +122,11 @@ BEGIN
         END LOOP;
 
 
+        result = coalesce(l_taabel_id,0) ;
+
     -- проверка
 
+        /*
     IF l_count > 0
     THEN
         result = l_taabel_id ;
@@ -134,6 +135,8 @@ BEGIN
         error_message = 'Dokumendi koostamise viga';
         error_code = 1;
     END IF;
+
+ */
     RETURN;
 
 EXCEPTION
