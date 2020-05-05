@@ -55,9 +55,6 @@ BEGIN
                              )
                              AND
                          lower(ltrim(rtrim(n.uhik))) IN ('paev', 'päev')
-                             AND (lk.properties ->> 'alg_kpv' IS NULL OR
-                                  (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
-                             AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
                        THEN 1
                    ELSE NULL END
                            AS kogus
@@ -68,6 +65,9 @@ BEGIN
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
             WHERE lk.staatus <> 3
                  AND l.id = l_grupp_id
+                 AND (lk.properties ->> 'alg_kpv' IS NULL OR
+                      (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
+                 AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
         LOOP
             -- details
             SELECT 0               AS id,
