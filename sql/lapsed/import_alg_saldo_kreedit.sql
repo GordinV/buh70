@@ -47,9 +47,9 @@ BEGIN
         WITH qryJsons AS (
             SELECT *
             FROM jsonb_to_recordset(data::JSONB)
-                     AS x(yksus TEXT, laps_ik TEXT, vanem_ik TEXT, summa TEXT, kr TEXT, kood TEXT)
+                     AS x(yksus TEXT, laps_ik TEXT, vanem_ik TEXT, summa TEXT, kr TEXT, kood TEXT, konto TEXT)
         )
-        SELECT DISTINCT yksus, laps_ik, vanem_ik
+        SELECT DISTINCT yksus, laps_ik, vanem_ik, konto
         FROM qryJsons
         LOOP
             RAISE NOTICE 'yksus %, laps_ik %, vanem_ik %', json_record.yksus, json_record.laps_ik, json_record.vanem_ik;
@@ -79,11 +79,11 @@ BEGIN
             FROM ou.aa
                 WHERE parentid = l_rekvid
                      AND kassa = 1
-                     AND NOT empty(konto)
+                     AND konto = json_record.konto
                 ORDER BY default_ DESC
                 LIMIT 1;
 
-            RAISE NOTICE 'l_mk_id %',l_mk_id;
+            RAISE NOTICE 'v_aa %',v_aa;
 
             -- ищем mk
             l_mk_id = (
@@ -119,7 +119,7 @@ BEGIN
                     FROM (SELECT 0                      AS id,
                                  0                      AS asutusid,
                                  NULL                   AS kbmkonto,
-                                 v_aa.konto             AS konto,
+                                 json_record.konto             AS konto,
                                  l_dok_id               AS parentid,
                                  1                      AS registr,
                                  'Sissemakse korraldus' AS selg,

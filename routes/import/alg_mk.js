@@ -2,7 +2,7 @@ import_algsaldo();
 
 async function import_algsaldo() {
     const fs = require('fs');
-    const path = 'c:/temp/csv/Alg_kr_0.csv';
+    const path = 'c:/temp/csv/Alg_kr_1.csv';
     const util = require('util');
 
 // Convert fs.readFile into Promise version of same
@@ -35,7 +35,8 @@ const readCSV = async (csvContent, cb) => {
                     vanem_ik: row[2],
                     summa: row[3],
                     kr: row[5],
-                    kood: row[6]
+                    kood: row[6],
+                    konto: row[8]
                 });
             }
 
