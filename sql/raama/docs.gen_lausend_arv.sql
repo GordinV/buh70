@@ -133,7 +133,7 @@ BEGIN
                lcSelg       AS selg,
                v_arv.muud,
                v_arv.Asutusid,
-               v_arv.number AS dok
+               'Arve nr' || v_arv.number::text AS dok
                INTO v_journal;
 
         l_json = row_to_json(v_journal);

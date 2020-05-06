@@ -167,65 +167,79 @@ FROM (
          FROM lapsed.day_taabel t
                   INNER JOIN lapsed.day_taabel1 t1 ON t.id = t1.parent_id
                   INNER JOIN libs.library l ON l.id = t.grupp_id
-         WHERE MONTH(t.kpv) = COALESCE(l_kuu, MONTH(CURRENT_DATE))::INTEGER
-           AND YEAR(t.kpv) = COALESCE(l_aasta, YEAR(CURRENT_DATE))::INTEGER
-           AND t.rekv_id = l_rekvid
-           AND t.staatus <> 3
-         GROUP BY t.rekv_id, t.grupp_id, t1.nom_id, t1.laps_id
-         UNION ALL
-         SELECT t.rekv_id,
-                t.grupp_id                                       AS grupp_id,
-                999999999                                        AS nom_id,
-                t1.laps_id                                       AS laps_id,
-                0                                                AS kogus,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 1)  AS day_1,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 2)  AS day_2,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 3)  AS day_3,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 4)  AS day_4,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 5)  AS day_5,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 6)  AS day_6,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 7)  AS day_7,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 8)  AS day_8,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 9)  AS day_9,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 10) AS day_10,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 11) AS day_11,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 12) AS day_12,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 13) AS day_13,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 14) AS day_14,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 15) AS day_15,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 16) AS day_16,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 17) AS day_17,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 18) AS day_18,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 19) AS day_19,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 20) AS day_20,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 21) AS day_21,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 22) AS day_22,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 23) AS day_23,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 24) AS day_24,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 25) AS day_25,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 26) AS day_26,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 27) AS day_27,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 28) AS day_28,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 29) AS day_29,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 30) AS day_30,
-                max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 31) AS day_31
-         FROM lapsed.day_taabel t
+             WHERE
+              MONTH(t.kpv) = COALESCE(l_kuu, MONTH(CURRENT_DATE))::INTEGER
+                  AND YEAR(t.kpv) = COALESCE(l_aasta, YEAR(CURRENT_DATE))::INTEGER
+                  AND t.rekv_id = l_rekvid
+                  AND t.staatus <> 3
+             GROUP BY
+              t.rekv_id,
+              t.grupp_id,
+              t1.nom_id,
+              t1.laps_id
+             UNION ALL
+             SELECT
+              t.rekv_id,
+              t.grupp_id AS grupp_id,
+              999999999 AS nom_id,
+              t1.laps_id AS laps_id,
+              0 AS kogus,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 1) AS day_1,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 2) AS day_2,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 3) AS day_3,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 4) AS day_4,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 5) AS day_5,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 6) AS day_6,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 7) AS day_7,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 8) AS day_8,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 9) AS day_9,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 10) AS day_10,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 11) AS day_11,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 12) AS day_12,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 13) AS day_13,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 14) AS day_14,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 15) AS day_15,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 16) AS day_16,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 17) AS day_17,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 18) AS day_18,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 19) AS day_19,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 20) AS day_20,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 21) AS day_21,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 22) AS day_22,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 23) AS day_23,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 24) AS day_24,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 25) AS day_25,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 26) AS day_26,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 27) AS day_27,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 28) AS day_28,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 29) AS day_29,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 30) AS day_30,
+              max(t1.osalemine) FILTER (WHERE DAY(t.kpv) = 31) AS day_31
+             FROM
+              lapsed.day_taabel t
                   INNER JOIN lapsed.day_taabel1 t1 ON t.id = t1.parent_id
                   INNER JOIN libs.library l ON l.id = t.grupp_id
-         WHERE MONTH(t.kpv) = COALESCE(l_kuu, MONTH(CURRENT_DATE))::INTEGER
-           AND YEAR(t.kpv) = COALESCE(l_aasta, YEAR(CURRENT_DATE))::INTEGER
-           AND t.rekv_id = l_rekvid
-           AND t.staatus <> 3
-         GROUP BY t.rekv_id, t.grupp_id, t1.laps_id
+             WHERE
+              MONTH(t.kpv) = COALESCE(l_kuu, MONTH(CURRENT_DATE))::INTEGER
+                  AND YEAR(t.kpv) = COALESCE(l_aasta, YEAR(CURRENT_DATE))::INTEGER
+                  AND t.rekv_id = l_rekvid
+                  AND t.staatus <> 3
+             GROUP BY
+              t.rekv_id,
+              t.grupp_id,
+              t1.laps_id
      ) qry
          INNER JOIN (
     SELECT id, kood, nimetus
     FROM libs.nomenklatuur n
-    WHERE n.rekvid = l_rekvid
-    UNION ALL
-    SELECT 999999999   AS id,
-           'Osalem.'   AS kood,
-           'Osalemine' AS nimetus
+        WHERE
+         n.rekvid = l_rekvid
+            AND (n.uhik) IN ('paev', 'päev', 'PAEV','PÄEV')
+        UNION ALL
+        SELECT
+         999999999 AS id,
+         'Osalem.' AS kood,
+         'Osalemine' AS nimetus
 ) n
                     ON n.
                            id = qry.nom_id

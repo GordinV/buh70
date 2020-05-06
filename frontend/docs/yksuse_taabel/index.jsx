@@ -81,7 +81,7 @@ class Documents extends React.PureComponent {
         if (!isNaN(column.name) && row.nom_id == 999999999 && row[column.id] !== null) {
             // посещвемлсть
             //В строке «Посещаемость» в полях отображаются суммарное количество посещений по группам и поля залиты соответственно: больше 0 – светло зеленым, 0 – светло красным цветом. Все поля с прочими услугами отображают суммарное значение из «Дневной формы учета ежедневных услуг», если их больше 0 или «Пусто» - если 0
-            style = row[column.id] ? styles.custom.positive : styles.custom.negative;
+            style = Number(row[column.id]) ? styles.custom.positive : styles.custom.negative;
         }
         return style;
     }

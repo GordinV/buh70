@@ -262,6 +262,7 @@ BEGIN
                 WHERE a.asutusid = doc_asutusid
                   AND number = doc_dok
                   AND a.rekvid = user_rekvid
+                  and a.journalid <> doc_id
                     ORDER BY a.jaak DESC
                     , a.kpv
                     LIMIT 1

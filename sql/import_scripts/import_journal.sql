@@ -2,7 +2,15 @@ DROP FOREIGN TABLE IF EXISTS remote_journal;
 DROP FOREIGN TABLE IF EXISTS remote_journal1;
 DROP FOREIGN TABLE IF EXISTS remote_journalid;
 
+/*
+drop SERVER if exists dbarch_narva_ee CASCADE ;
+CREATE SERVER dbarch_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'dbarch.narva.ee', dbname 'narvalv2019', port '5432');
 
+CREATE USER MAPPING FOR vlad
+  SERVER dbarch_narva_ee
+  OPTIONS (user 'vlad', password 'Vlad490710');
+
+*/
 CREATE FOREIGN TABLE remote_journalid (
   id SERIAL NOT NULL,
   rekvid INTEGER NOT NULL,
@@ -10,7 +18,7 @@ CREATE FOREIGN TABLE remote_journalid (
   number INTEGER DEFAULT 0 NOT NULL,
   aasta INTEGER DEFAULT year() NOT NULL
   )
-  SERVER db_narva_ee
+  SERVER dbarch_narva_ee
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'journalid');
 
 CREATE FOREIGN TABLE remote_journal (
@@ -22,10 +30,10 @@ CREATE FOREIGN TABLE remote_journal (
   selg TEXT DEFAULT space(1) NOT NULL,
   dok CHAR(60) DEFAULT space(1) NOT NULL,
   muud TEXT,
-  dokid INTEGER DEFAULT 0 NOT NULL,
-  objekt VARCHAR(20) DEFAULT space(20)
+--  objekt VARCHAR(20) DEFAULT space(20)
+  dokid INTEGER DEFAULT 0 NOT NULL
   )
-  SERVER db_narva_ee
+  SERVER dbarch_narva_ee
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'journal');
 
 CREATE FOREIGN TABLE remote_journal1 (
@@ -49,7 +57,7 @@ CREATE FOREIGN TABLE remote_journal1 (
   tunnus VARCHAR(20) DEFAULT space(20) NOT NULL,
   proj VARCHAR(20) DEFAULT space(1)
   )
-  SERVER db_narva_ee
+  SERVER dbarch_narva_ee
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'journal1');
 
 DROP FUNCTION IF EXISTS import_journal();
