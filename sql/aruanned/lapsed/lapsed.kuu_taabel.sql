@@ -210,9 +210,12 @@ FROM (
          GROUP BY t.rekv_id, t.grupp_id, t1.laps_id
      ) qry
          INNER JOIN (
-    SELECT id, kood, nimetus
+    SELECT id,
+           coalesce(n.properties ->> 'luno',kood)::text as kood,
+           nimetus
     FROM libs.nomenklatuur n
     WHERE n.rekvid = l_rekvid
+             AND (n.uhik) IN ('paev', 'päev', 'PAEV','PÄEV')
     UNION ALL
     SELECT 999999999 AS id, 'Osalem.' AS kood, 'Osalemine' AS nimetus
 ) n ON n.id = qry.nom_id

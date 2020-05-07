@@ -230,7 +230,9 @@ FROM (
               t1.laps_id
      ) qry
          INNER JOIN (
-    SELECT id, kood, nimetus
+    SELECT id,
+           coalesce(n.properties ->> 'luno',kood)::text as kood,
+           nimetus
     FROM libs.nomenklatuur n
         WHERE
          n.rekvid = l_rekvid
