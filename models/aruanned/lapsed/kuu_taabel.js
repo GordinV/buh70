@@ -184,10 +184,12 @@ module.exports = {
                          order by tyyp, yksus, nom_id desc
                      )
                      SELECT TRUE AS is_row,
+                            CASE WHEN nom_id = 999999999 THEN TRUE ELSE FALSE END AS is_osa,                            
                             *
                      FROM kuu_taabel tyyp
                          UNION ALL
                      SELECT FALSE AS is_row,
+                          CASE WHEN nom_id = 999999999 THEN TRUE ELSE FALSE END AS is_osa,                          
                          tyyp::TEXT || ' kokku:' AS yksus,
                          tyyp,
                          nom_id,
@@ -234,7 +236,7 @@ module.exports = {
                          kuu,
                          aasta
                  ) qry
-            ORDER BY tyyp, yksus, nom_id desc, is_row
+            ORDER BY tyyp, yksus, is_osa DESC, teenus, is_row
         `,     // $1 - rekvid, $2-KUU $3 - aasta
         params: ['rekvid', 'kuu', 'aasta'],
         alias: 'kuu_taabel_report',

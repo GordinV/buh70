@@ -1054,6 +1054,18 @@ BEGIN
                                 AND j.rekvid IN (SELECT rekv_id
                                                  FROM get_asutuse_struktuur(l_rekvid))
                                 AND (j.deebet LIKE '100%' OR j.kreedit LIKE '100%')
+                                AND j.kpv <= l_kpv
+                      ) -
+                      (SELECT sum(CASE WHEN deebet LIKE '100%' THEN summa ELSE 0 END)
+                                  - sum(CASE WHEN kreedit LIKE '100%' THEN summa ELSE 0 END)
+                       FROM cur_journal j
+                           WHERE j.rekvid = (CASE
+                                                 WHEN l_kond = 1
+                                                     THEN j.rekvid
+                                                 ELSE l_rekvid END)
+                                AND j.rekvid IN (SELECT rekv_id
+                                                 FROM get_asutuse_struktuur(l_rekvid))
+                                AND (j.deebet LIKE '100%' OR j.kreedit LIKE '100%')
                                 AND j.kpv < make_date(year(l_kpv), 1, 1)
                       ) as kassa,
                       get_saldo('DK', '100', NULL, NULL) -
@@ -1447,9 +1459,9 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 
 select  * from (
 SELECT  *
-FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019,12,31), 63, 1) qry
+FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019,06,30), 130, 1) qry
 where (not empty(qry.tegev) or not empty(qry.artikkel))
-and qry.artikkel like '32%'
+--and qry.artikkel like '32%'
 ) qry
 where eelarve <> eelarve_taps
 --test
