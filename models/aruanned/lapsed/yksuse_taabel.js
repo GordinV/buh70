@@ -313,6 +313,114 @@ module.exports = {
                                    teenus,
                                    kuu,
                                    aasta
+                                  UNION ALL
+                                  SELECT
+                                   FALSE AS is_row,
+                                   FALSE AS is_osa,
+                                   yksus,
+                                   1,
+                                   'Kalendripäevad kokku',
+                                   'XXXXXXXXXXX',
+                                   'XXXXXXXXXXX',
+                                   'Kokku' AS nimi,
+                                   kuu,
+                                   aasta,
+                                   day(gomonth(make_date($3,$2,01),1) - 1) AS kogus,
+                                   NULL AS day_1,
+                                   NULL AS day_2,
+                                   NULL AS day_3,
+                                   NULL AS day_4,
+                                   NULL AS day_5,
+                                   NULL AS day_6,
+                                   NULL AS day_7,
+                                   NULL AS day_8,
+                                   NULL AS day_9,
+                                   NULL AS day_10,
+                                   NULL AS day_11,
+                                   NULL AS day_12,
+                                   NULL AS day_13,
+                                   NULL AS day_14,
+                                   NULL AS day_15,
+                                   NULL AS day_16,
+                                   NULL AS day_17,
+                                   NULL AS day_18,
+                                   NULL AS day_19,
+                                   NULL AS day_20,
+                                   NULL AS day_21,
+                                   NULL AS day_22,
+                                   NULL AS day_23,
+                                   NULL AS day_24,
+                                   NULL AS day_25,
+                                   NULL AS day_26,
+                                   NULL AS day_27,
+                                   NULL AS day_28,
+                                   NULL AS day_29,
+                                   NULL AS day_30,
+                                   NULL AS day_31,
+                                   NULL::INTEGER[] AS week_ends
+                                  FROM
+                                   yksuse_taabel
+                                  GROUP BY
+                                   yksus,
+                                   kuu,
+                                   aasta
+                                  UNION ALL
+                                   -- toopaevad
+                                  SELECT
+                                   FALSE AS is_row,
+                                   FALSE AS is_osa,
+                                   yksus,
+                                   2,
+                                   'Tööpäevad kokku',
+                                   'XXXXXXXXXXX',
+                                   'XXXXXXXXXXX',
+                                   'Kokku' AS nimi,
+                                   kuu,
+                                   aasta,
+                                   palk.get_work_days((SELECT row_to_json(row)
+                                                       FROM (SELECT $2    AS kuu,
+                                                                    $3 AS aasta,
+                                                                    $1   AS rekvid) row))
+                                       AS kogus,
+                                   NULL AS day_1,
+                                   NULL AS day_2,
+                                   NULL AS day_3,
+                                   NULL AS day_4,
+                                   NULL AS day_5,
+                                   NULL AS day_6,
+                                   NULL AS day_7,
+                                   NULL AS day_8,
+                                   NULL AS day_9,
+                                   NULL AS day_10,
+                                   NULL AS day_11,
+                                   NULL AS day_12,
+                                   NULL AS day_13,
+                                   NULL AS day_14,
+                                   NULL AS day_15,
+                                   NULL AS day_16,
+                                   NULL AS day_17,
+                                   NULL AS day_18,
+                                   NULL AS day_19,
+                                   NULL AS day_20,
+                                   NULL AS day_21,
+                                   NULL AS day_22,
+                                   NULL AS day_23,
+                                   NULL AS day_24,
+                                   NULL AS day_25,
+                                   NULL AS day_26,
+                                   NULL AS day_27,
+                                   NULL AS day_28,
+                                   NULL AS day_29,
+                                   NULL AS day_30,
+                                   NULL AS day_31,
+                                   NULL::INTEGER[] AS week_ends
+                                  FROM
+                                   yksuse_taabel
+                                  GROUP BY
+                                   yksus,
+                                   kuu,
+                                   aasta
+                         
                           ) qry
                  ) qry
                 ORDER BY
