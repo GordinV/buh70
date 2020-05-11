@@ -393,7 +393,13 @@ class Documents extends React.Component {
                         if (row.value.match(/,/)) {
                             filterString = `${filterString} ${row.name} in (${prepairedParameter})`;
                         } else {
-                            filterString = `${filterString}  encode(${row.name}::bytea, 'escape')  ilike '%${row.value.trim()}%'`;
+                            if (this.props.docTypeId == 'KUU_TAABEL') {
+                                filterString = `${filterString}  ${row.name}  ilike '%${row.value.trim()}%'`;
+                            } else {
+                                // обработка некорректной кодировки
+                                filterString = `${filterString}  encode(${row.name}::bytea, 'escape')  ilike '%${row.value.trim()}%'`;
+
+                            }
                         }
                         break;
                     case 'string':
