@@ -153,10 +153,12 @@ BEGIN
                  ) row;
 
             l_check_lausend = docs.sp_lausendikontrol(json_lausend::JSONB);
+
+
             IF is_import IS NULL AND NOT empty(l_check_lausend)
             THEN
 --                RAISE EXCEPTION '%',l_check_lausend;
-                RAISE NOTICE '%',l_check_lausend;
+                RAISE NOTICE 'lausendi kontrol %',l_check_lausend;
             END IF;
 
 

@@ -173,19 +173,6 @@ FROM (
                     AND qry.kpv < make_date(year(l_kpv2), 1, 1)
                     AND qry.tyyp < 3
                   UNION ALL
-                  -- tulemus
-                  SELECT qryTulemusSaldoAndmik.rekvid,
-                         '298000'                           AS konto,
-                         ''::CHAR(20)                       AS tp,
-                         ''::CHAR(20)                       AS tegev,
-                         ''::CHAR(20)                       AS allikas,
-                         '00'::CHAR(20)                     AS rahavoog,
-                         ''::CHAR(20)                       AS artikkel,
-                         0::NUMERIC(12, 2)                     deebet,
-                         (kreedit - deebet)::NUMERIC(12, 2) AS kreedit,
-                         1                                  AS tyyp
-                  FROM qryTulemusSaldoAndmik
-                  UNION ALL
                   -- kaibed
                   SELECT rekvid                      AS rekv_id,
                          left(konto, 6)::TEXT        AS konto,
@@ -221,7 +208,22 @@ FROM (
                   FROM qrySaldoAndmik qry
                   WHERE konto NOT IN ('999999', '000000', '888888')
                     AND qry.kpv >= make_date(year(l_kpv2), 1, 1)
-              ) qry
+/*                  UNION ALL
+                  -- tulemus
+                  SELECT qryTulemusSaldoAndmik.rekvid,
+                         '298000'                           AS konto,
+                         ''::CHAR(20)                       AS tp,
+                         ''::CHAR(20)                       AS tegev,
+                         ''::CHAR(20)                       AS allikas,
+                         '00'::CHAR(20)                     AS rahavoog,
+                         ''::CHAR(20)                       AS artikkel,
+                         0::NUMERIC(12, 2)                     deebet,
+                         (kreedit - deebet)::NUMERIC(12, 2) AS kreedit,
+                         1                                  AS tyyp
+                  FROM qryTulemusSaldoAndmik
+
+                        */
+             ) qry
          WHERE deebet <> 0
             OR kreedit <> 0
          GROUP BY rekv_id, konto, tp, tegev, allikas, artikkel, rahavoog, qry.tyyp
@@ -235,6 +237,12 @@ $BODY$
     LANGUAGE SQL
     VOLATILE
     COST 100;
+
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER) TO dbvaatleja;
+
 
 /*
 SELECT sum(deebet) AS db, sum(kreedit), konto, tp

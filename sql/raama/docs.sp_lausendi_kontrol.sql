@@ -114,8 +114,8 @@ BEGIN
 
     IF v_konto_d.valid IS NOT NULL AND len(v_konto_d.valid::TEXT) = 8
     THEN
-        ldKpv = date(val(left(lnTPD::TEXT, 4)), val(substr(lnTPD::TEXT, 5, 2)),
-                     val(substr(lnTPD::TEXT, 7, 2)));
+        ldKpv = make_date(val(left(v_konto_d.valid::TEXT, 4)), val(substr(v_konto_d.valid::TEXT, 5, 2)),
+                     val(substr(v_konto_d.valid::TEXT, 7, 2)));
 
         IF l_kpv > ldKpv
         THEN
@@ -141,7 +141,7 @@ BEGIN
       AND l.kood::TEXT = l_kr::TEXT
     LIMIT 1;
 
-    IF v_konto_k.valid IS NOT NULL AND len(v_konto_k.valid::TEXT) = 8
+    IF v_konto_k.valid IS NOT NULL AND not empty(v_konto_k.valid) and len(v_konto_k.valid::TEXT) = 8
     THEN
         ldKpv = date(val(left(v_konto_k.valid::TEXT, 4)), val(substr(v_konto_k.valid::TEXT, 5, 2)),
                      val(substr(v_konto_k.valid, 7, 2)));
