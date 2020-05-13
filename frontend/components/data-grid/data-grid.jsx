@@ -354,6 +354,9 @@ class DataGrid extends React.Component {
                         let boolValueNo = column.boolSumbolNo ? column.boolSumbolNo : styles.boolSumbol['no'].value || null;
                         let boolValueNull = column.boolSumbolNull ? column.boolSumbolNull : styles.boolSumbol['null'] ? styles.boolSumbol['null'].value : null;
 
+                        // приведем значение value к заданому типу для параметра hideEmptyValue
+                        let fixedValue =  column.type && column.type == "integer" ? Number(row[column.id]): row[column.id];
+
                         let cellIndex = 'td-' + rowIndex + '-' + columnIndex;
 
                         let display = (isExists(column, 'show') ? column.show : true),
@@ -393,6 +396,14 @@ class DataGrid extends React.Component {
                             style = {...style, ...customeStyle};
                         }
 
+                        // оберем для конкретного поля параметр hideEmptyValue
+
+                        let isHideEmptyValue = column.hideEmptyValue ?  column.hideEmptyValue: false;
+
+                        if (column.hideEmptyValue && row['nom_id'] && row['nom_id'] == 999999999) {
+                            isHideEmptyValue = false;
+                        }
+
                         return (
                             <td style={style}
                                 ref={cellIndex}
@@ -401,7 +412,10 @@ class DataGrid extends React.Component {
                                 onClick={this.handleCellClick.bind(this, rowIndex, column.id)}
                             >
                                 {column.type && column.type === 'boolean' ?
-                                    <span>{!!row[column.id] ? boolValueYes : (row[column.id] == null ? boolValueNull : boolValueNo)}</span> : row[column.id]}
+                                    <span>{!!row[column.id] ?
+                                        boolValueYes : (row[column.id] == null ?
+                                            boolValueNull : boolValueNo)}</span> :
+                                    isHideEmptyValue && !fixedValue ? null : row[column.id]}
                             </td>
                         );
                     })

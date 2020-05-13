@@ -3,7 +3,7 @@ module.exports = {
         mainTable: {
             width: '100%',
             td : {
-                border:'1px solid lightgray',
+                border:'1px solid black',
                 display: 'table-cell',
                 paddingLeft:'5px',
                 nullColour:'lightGrey'

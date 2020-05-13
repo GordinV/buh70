@@ -12,186 +12,251 @@ module.exports = {
                 name: "1",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_2",
                 name: "2",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_3",
                 name: "3",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_4",
                 name: "4",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer",
             },
             {
                 id: "day_5",
                 name: "5",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_6",
                 name: "6",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_7",
                 name: "7",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_8",
                 name: "8",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_9",
                 name: "9",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_10",
                 name: "10",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_11",
                 name: "11",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_12",
                 name: "12",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_13",
                 name: "13",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_14",
                 name: "14",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_15",
                 name: "15",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
+
             },
             {
                 id: "day_16",
                 name: "16",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_17",
                 name: "17",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_18",
                 name: "18",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_19",
                 name: "19",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_20",
                 name: "20",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_21",
                 name: "21",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_22",
                 name: "22",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_23",
                 name: "23",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_24",
                 name: "24",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_25",
                 name: "25",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
+
             },
             {
                 id: "day_26",
                 name: "26",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_27",
                 name: "27",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_28",
                 name: "28",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_29",
                 name: "29",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_30",
                 name: "30",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
             },
             {
                 id: "day_31",
                 name: "31",
                 width: "2%",
                 hideFilter: true,
+                hideEmptyValue: true,
+                type: "integer"
+
             },
             {id: "kogus", name: "kokku", width: "2%", hideFilter: true, type: "integer"}
 //            {id: "tuhi", name: " ", width: "1px", hideFilter: true},
@@ -218,37 +283,37 @@ module.exports = {
                                          kuu,
                                          aasta,
                                          kogus,
-                                         CASE WHEN nom_id <> 999999999 AND day_1 = 0 THEN NULL ELSE day_1 END   AS day_1,
-                                         CASE WHEN nom_id <> 999999999 AND day_2 = 0 THEN NULL ELSE day_2 END   AS day_2,
-                                         CASE WHEN nom_id <> 999999999 AND day_3 = 0 THEN NULL ELSE day_3 END   AS day_3,
-                                         CASE WHEN nom_id <> 999999999 AND day_4 = 0 THEN NULL ELSE day_4 END   AS day_4,
-                                         CASE WHEN nom_id <> 999999999 AND day_5 = 0 THEN NULL ELSE day_5 END   AS day_5,
-                                         CASE WHEN nom_id <> 999999999 AND day_6 = 0 THEN NULL ELSE day_6 END   AS day_6,
-                                         CASE WHEN nom_id <> 999999999 AND day_7 = 0 THEN NULL ELSE day_7 END   AS day_7,
-                                         CASE WHEN nom_id <> 999999999 AND day_8 = 0 THEN NULL ELSE day_8 END   AS day_8,
-                                         CASE WHEN nom_id <> 999999999 AND day_9 = 0 THEN NULL ELSE day_9 END   AS day_9,
-                                         CASE WHEN nom_id <> 999999999 AND day_10 = 0 THEN NULL ELSE day_10 END AS day_10,
-                                         CASE WHEN nom_id <> 999999999 AND day_11 = 0 THEN NULL ELSE day_11 END AS day_11,
-                                         CASE WHEN nom_id <> 999999999 AND day_12 = 0 THEN NULL ELSE day_12 END AS day_12,
-                                         CASE WHEN nom_id <> 999999999 AND day_13 = 0 THEN NULL ELSE day_13 END AS day_13,
-                                         CASE WHEN nom_id <> 999999999 AND day_14 = 0 THEN NULL ELSE day_14 END AS day_14,
-                                         CASE WHEN nom_id <> 999999999 AND day_15 = 0 THEN NULL ELSE day_15 END AS day_15,
-                                         CASE WHEN nom_id <> 999999999 AND day_16 = 0 THEN NULL ELSE day_16 END AS day_16,
-                                         CASE WHEN nom_id <> 999999999 AND day_17 = 0 THEN NULL ELSE day_17 END AS day_17,
-                                         CASE WHEN nom_id <> 999999999 AND day_18 = 0 THEN NULL ELSE day_18 END AS day_18,
-                                         CASE WHEN nom_id <> 999999999 AND day_19 = 0 THEN NULL ELSE day_19 END AS day_19,
-                                         CASE WHEN nom_id <> 999999999 AND day_20 = 0 THEN NULL ELSE day_20 END AS day_20,
-                                         CASE WHEN nom_id <> 999999999 AND day_21 = 0 THEN NULL ELSE day_21 END AS day_21,
-                                         CASE WHEN nom_id <> 999999999 AND day_22 = 0 THEN NULL ELSE day_22 END AS day_22,
-                                         CASE WHEN nom_id <> 999999999 AND day_23 = 0 THEN NULL ELSE day_23 END AS day_23,
-                                         CASE WHEN nom_id <> 999999999 AND day_24 = 0 THEN NULL ELSE day_24 END AS day_24,
-                                         CASE WHEN nom_id <> 999999999 AND day_25 = 0 THEN NULL ELSE day_25 END AS day_25,
-                                         CASE WHEN nom_id <> 999999999 AND day_26 = 0 THEN NULL ELSE day_26 END AS day_26,
-                                         CASE WHEN nom_id <> 999999999 AND day_27 = 0 THEN NULL ELSE day_27 END AS day_27,
-                                         CASE WHEN nom_id <> 999999999 AND day_28 = 0 THEN NULL ELSE day_28 END AS day_28,
-                                         CASE WHEN nom_id <> 999999999 AND day_29 = 0 THEN NULL ELSE day_29 END AS day_29,
-                                         CASE WHEN nom_id <> 999999999 AND day_30 = 0 THEN NULL ELSE day_30 END AS day_30,
-                                         CASE WHEN nom_id <> 999999999 AND day_31 = 0 THEN NULL ELSE day_31 END AS day_31,
+                                         CASE WHEN nom_id <> 999999999 AND day_1 = 0 THEN 0 ELSE day_1 END   AS day_1,
+                                         CASE WHEN nom_id <> 999999999 AND day_2 = 0 THEN 0 ELSE day_2 END   AS day_2,
+                                         CASE WHEN nom_id <> 999999999 AND day_3 = 0 THEN 0 ELSE day_3 END   AS day_3,
+                                         CASE WHEN nom_id <> 999999999 AND day_4 = 0 THEN 0 ELSE day_4 END   AS day_4,
+                                         CASE WHEN nom_id <> 999999999 AND day_5 = 0 THEN 0 ELSE day_5 END   AS day_5,
+                                         CASE WHEN nom_id <> 999999999 AND day_6 = 0 THEN 0 ELSE day_6 END   AS day_6,
+                                         CASE WHEN nom_id <> 999999999 AND day_7 = 0 THEN 0 ELSE day_7 END   AS day_7,
+                                         CASE WHEN nom_id <> 999999999 AND day_8 = 0 THEN 0 ELSE day_8 END   AS day_8,
+                                         CASE WHEN nom_id <> 999999999 AND day_9 = 0 THEN 0 ELSE day_9 END   AS day_9,
+                                         CASE WHEN nom_id <> 999999999 AND day_10 = 0 THEN 0 ELSE day_10 END AS day_10,
+                                         CASE WHEN nom_id <> 999999999 AND day_11 = 0 THEN 0 ELSE day_11 END AS day_11,
+                                         CASE WHEN nom_id <> 999999999 AND day_12 = 0 THEN 0 ELSE day_12 END AS day_12,
+                                         CASE WHEN nom_id <> 999999999 AND day_13 = 0 THEN 0 ELSE day_13 END AS day_13,
+                                         CASE WHEN nom_id <> 999999999 AND day_14 = 0 THEN 0 ELSE day_14 END AS day_14,
+                                         CASE WHEN nom_id <> 999999999 AND day_15 = 0 THEN 0 ELSE day_15 END AS day_15,
+                                         CASE WHEN nom_id <> 999999999 AND day_16 = 0 THEN 0 ELSE day_16 END AS day_16,
+                                         CASE WHEN nom_id <> 999999999 AND day_17 = 0 THEN 0 ELSE day_17 END AS day_17,
+                                         CASE WHEN nom_id <> 999999999 AND day_18 = 0 THEN 0 ELSE day_18 END AS day_18,
+                                         CASE WHEN nom_id <> 999999999 AND day_19 = 0 THEN 0 ELSE day_19 END AS day_19,
+                                         CASE WHEN nom_id <> 999999999 AND day_20 = 0 THEN 0 ELSE day_20 END AS day_20,
+                                         CASE WHEN nom_id <> 999999999 AND day_21 = 0 THEN 0 ELSE day_21 END AS day_21,
+                                         CASE WHEN nom_id <> 999999999 AND day_22 = 0 THEN 0 ELSE day_22 END AS day_22,
+                                         CASE WHEN nom_id <> 999999999 AND day_23 = 0 THEN 0 ELSE day_23 END AS day_23,
+                                         CASE WHEN nom_id <> 999999999 AND day_24 = 0 THEN 0 ELSE day_24 END AS day_24,
+                                         CASE WHEN nom_id <> 999999999 AND day_25 = 0 THEN 0 ELSE day_25 END AS day_25,
+                                         CASE WHEN nom_id <> 999999999 AND day_26 = 0 THEN 0 ELSE day_26 END AS day_26,
+                                         CASE WHEN nom_id <> 999999999 AND day_27 = 0 THEN 0 ELSE day_27 END AS day_27,
+                                         CASE WHEN nom_id <> 999999999 AND day_28 = 0 THEN 0 ELSE day_28 END AS day_28,
+                                         CASE WHEN nom_id <> 999999999 AND day_29 = 0 THEN 0 ELSE day_29 END AS day_29,
+                                         CASE WHEN nom_id <> 999999999 AND day_30 = 0 THEN 0 ELSE day_30 END AS day_30,
+                                         CASE WHEN nom_id <> 999999999 AND day_31 = 0 THEN 0 ELSE day_31 END AS day_31,
                                          week_ends::INTEGER[]                                                   AS week_ends
                                   FROM lapsed.yksuse_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER) qryReport
                                   ORDER BY yksus,
