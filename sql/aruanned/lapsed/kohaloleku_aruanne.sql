@@ -18,7 +18,7 @@ CREATE OR REPLACE FUNCTION lapsed.kohaloleku_aruanne(l_rekvid INTEGER,
 $BODY$
 
 SELECT r.nimetus::TEXT                                AS asutus,
-       t.nimetus::TEXT                                   AS koolituse_tyyp,
+       t.nimetus::TEXT                                AS koolituse_tyyp,
        count(g.kood)::INTEGER                         AS yksuse_kogus,
        sum(coalesce(lk.nimekirje_kogus, 0))::INTEGER  AS nimekirje_kogus,
        sum(coalesce(tab.faktiline_kogus, 0))::INTEGER AS faktiline_kogus,
@@ -77,6 +77,7 @@ WHERE g.rekvid IN (SELECT rekv_id
                    FROM get_asutuse_struktuur(l_rekvid))
   AND g.library = 'LAPSE_GRUPP'
   AND t.library = 'KOOLITUSE_TYYP'
+  AND g.status <> 3
 GROUP BY t.nimetus, r.nimetus ;
 
 $BODY$

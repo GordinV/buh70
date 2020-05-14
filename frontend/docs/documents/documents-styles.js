@@ -32,6 +32,11 @@ module.exports = {
         mainTable: {
             tableLayout: 'fixed',
             position:'relative',
+            td: {
+                border: '1px solid lightGrey',
+                display: 'table-cell',
+                paddingLeft: '5px',
+            },
         },
         headerTable: {
             tableLayout: 'fixed',
