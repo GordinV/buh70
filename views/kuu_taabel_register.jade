@@ -41,7 +41,8 @@ block content
         }
 
         .td {
-            border-bottom: 1px solid lightgray;
+            border-bottom: 1px solid black;
+            border-left: 1px solid black;
         }
 
         .yksus {
@@ -58,8 +59,8 @@ block content
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
-        h1 ASUTUSE KUU TAABEL
-        h2 Vanematetasu
+        h2 ASUTUSE KUU TAABEL
+        h3 Vanematetasu
         each parameter in filter
             p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
 

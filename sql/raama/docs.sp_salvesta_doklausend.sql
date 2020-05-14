@@ -32,6 +32,7 @@ BEGIN
   INTO userName
   FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;
+
   IF userName IS NULL
   THEN
     RAISE NOTICE 'User not found %', user;
@@ -63,11 +64,15 @@ BEGIN
 
   END IF;
 
+raise notice 'doc_id %, doc_details %', doc_id, doc_details ;
+
   -- вставка в таблицы документа
   FOR json_object IN
   SELECT *
   FROM json_array_elements(doc_details)
   LOOP
+
+      raise notice 'json_object %', json_object;
     SELECT *
     INTO json_record
     FROM json_to_record(
@@ -108,12 +113,12 @@ BEGIN
       -- add existing id into array of ids
       ids = array_append(ids, d1_id);
     END IF;
-    -- delete record which not in json
-
-    DELETE FROM docs.doklausend
-    WHERE parentid = doc_id AND id NOT IN (SELECT unnest(ids));
-
   END LOOP;
+
+  -- delete record which not in json
+  DELETE FROM docs.doklausend
+  WHERE parentid = doc_id AND id NOT IN (SELECT unnest(ids));
+
 
   RETURN doc_id;
 
@@ -125,10 +130,11 @@ COST 100;
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_doklausend(JSON, INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_doklausend(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
+
+select docs.sp_salvesta_doklausend('{"id":6691,"data":{"dok":"","id":6691,"muud":"","rekvid":63,"selg":"arve, Importeeritud e-arvete registrist teenused","status":1,"userid":2477,"gridData":[{"deebet":"601000","id":17470,"id1":17470,"kood1":"01112","kood2":"LE-P","kood3":"01","kood4":"RF","kood5":"5513","kreedit":"201000","lisa_d":"014001","lisa_k":"800599","muud":null,"parentid":6691,"properties":null,"summa":2,"userid":2477},{"deebet":"551307","id":17471,"id1":17471,"kood1":"01112","kood2":"LE-P","kood3":"02","kood4":"RF","kood5":"5513","kreedit":"201000","lisa_d":"800599","lisa_k":"800599","muud":null,"parentid":6691,"properties":null,"summa":10,"userid":2477}]},{"dok":"","id":6691,"muud":"","rekvid":63,"selg":"arve, Importeeritud e-arvete registrist teenused","status":1,"userid":2477,"gridData":[{"deebet":"601000","id":17470,"id1":17470,"kood1":"01112","kood2":"LE-P","kood3":"01","kood4":"RF","kood5":"5513","kreedit":"201000","lisa_d":"014001","lisa_k":"800599","muud":null,"parentid":6691,"properties":null,"summa":2,"userid":2477},{"deebet":"551307","id":17471,"id1":17471,"kood1":"01112","kood2":"LE-P","kood3":"02","kood4":"RF","kood5":"5513","kreedit":"201000","lisa_d":"800599","lisa_k":"800599","muud":null,"parentid":6691,"properties":null,"summa":10,"userid":2477}]}}',2477, 63);
+
 /*
 
-select docs.sp_salvesta_doklausend('{"id":3,"data": {"dok":"test model","id":0,"muud":null,"rekvid":1,"selg":"__test5548","status":1,"userid":1,"gridData":[{"deebet":"111","id":0,"id1":0,"kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kreedit":"113","lisa_d":"","lisa_k":"","muud":"","parentid":0,"properties":"","summa":100,"userid":0}]}}
-',1, 1);
 
 select * from docs.doklausheader
 select * from docs.doklausend

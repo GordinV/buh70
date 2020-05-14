@@ -18,7 +18,6 @@ const DokLausend = {
                     d.muud,
                     d.status
                     FROM docs.doklausheader d
-                    INNER JOIN docs.doklausend d1 ON d1.parentId = d.id
                     INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                     WHERE d.id = $1`,
             sqlAsNew: `SELECT
