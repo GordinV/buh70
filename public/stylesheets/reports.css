@@ -54,3 +54,7 @@
 .margin_left {
     margin-left: 150px;
 }
+
+.table {
+    border-spacing: 0px
+}
