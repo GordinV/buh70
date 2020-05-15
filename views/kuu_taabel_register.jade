@@ -10,34 +10,9 @@ block content
             background-color: lightgray;;
         }
 
-        .doc_wrapper {
-            margin-left: 5%;
-            margin-top: 5%;
-            width: auto;
-        }
-
         .grid_data {
             width: 100%;
             border: 1px solid lightgray;
-        }
-
-        .row_wrapper {
-            display: -webkit-box;
-            flexDirection: row;
-        }
-
-        .label {
-            width: 10%;
-        }
-
-        .input {
-            width: 90%;
-            margin-left: 5%;
-            font-weight: bold;
-        }
-
-        .label_subtotal {
-            width: 70%;
         }
 
         .td {
@@ -45,17 +20,6 @@ block content
             border-left: 1px solid black;
         }
 
-        .yksus {
-            border-top: 1px solid lightgray;
-        }
-
-        .total {
-            font-weight: bold
-        }
-
-        .kokku {
-            text-align: right
-        }
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
@@ -110,8 +74,8 @@ block content
                     each rea in tyyp[Object.keys(tyyp)[0]]
                         if rea.is_row
                             tr
-                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden'})=rea.rea_count == 1 ? id++: id
-                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden'})=rea.yksus
+                                td(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid lightgray' : 'none'})=rea.rea_count == 1 ? id++: id
+                                td(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid lightgray' : 'none'})=rea.yksus
                                 td=rea.teenus
                                 td.td(align='center' style={"background-color": rea.day_1 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen': 'pink': null)})= rea.day_1
                                 td.td(align='center' style={"background-color": rea.day_2 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen': 'pink': null)})=rea.day_2
@@ -148,7 +112,7 @@ block content
                         else
                             tr
                                 td
-                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden'})=rea.yksus
+                                td(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid lightgray' : 'none'})=rea.yksus
                                 td=rea.teenus
                                 td.td(align='center' style={"background-color": rea.day_1 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen': 'pink' : null)})= rea.day_1
                                 td.td(align='center' style={"background-color": rea.day_2 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen': 'pink' : null)})=rea.day_2
