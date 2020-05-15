@@ -42,7 +42,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
         data: []
     }, {
         sql: ` SELECT $2                                         AS userid,
-                      row_number() OVER ()                       AS id,
+                      row_number() OVER (ORDER BY nimi)          AS id,
                       parent_id,
                       lk.parentid                                AS lapsId,
                       laps.isikukood,
@@ -84,7 +84,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
             row: {},
             details: [],
             gridConfig: [
-                {id: 'id', name: 'id', width: '10px', show: true, type: 'text', readOnly: true},
+                {id: 'id', name: 'Rea nr', width: '10px', show: true, type: 'text', readOnly: true},
                 {id: 'isikukood', name: 'Isikukood', width: '50px', show: false, type: 'text', readOnly: true},
                 {id: 'viitenr', name: 'Viitenumber', width: '50px', show: true, type: 'text', readOnly: true},
                 {id: 'nimi', name: 'Nimi', width: '100px', show: true, type: 'text', readOnly: true},
