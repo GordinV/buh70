@@ -57,6 +57,7 @@ block content
 
         .th_yksus {
             border-left: 1px solid black;
+            font-size: smaller;
         }
 
         .total {
@@ -64,11 +65,12 @@ block content
         }
         .yksus {
             border-top: 1px solid black;
+            font-size: smaller;
         }
 
 
     div.body_wrapper
-        h1.doc_header ÜKSUSE KUU TAABEL
+        h2.doc_header ÜKSUSE KUU TAABEL
         h2.doc_header Vanematetasu
         each parameter in filter
             p.doc_header #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
@@ -120,9 +122,9 @@ block content
                     each rea in yksus[Object.keys(yksus)[0]]
                         if rea.is_row
                             tr
-                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid lightgray' : 'none'})=rea.rea_count == 1 ? id++ : id
-                                td.yksus(style={visibility:rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid lightgray' : 'none'})=rea.viitenr
-                                td.yksus(style={visibility:rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid lightgray' : 'none'})=rea.nimi
+                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid black' : 'none'})=rea.rea_count == 1 ? id++ : id
+                                td.yksus(style={visibility:rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid black' : 'none'})=rea.viitenr
+                                td.yksus(style={visibility:rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid black' : 'none'})=rea.nimi
                                 td.td=rea.teenus
                                 td.td(align='center' style={"background-color": rea.day_1 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen': 'pink': null)})= rea.day_1 > 0 || rea.nom_id == 999999999 ? rea.day_1 : null
                                 td.td(align='center' style={"background-color": rea.day_2 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen': 'pink': null)})= rea.day_2 > 0 || rea.nom_id == 999999999 ? rea.day_2 : null
@@ -158,9 +160,9 @@ block content
                                 td.td(align='center')=rea.kogus
                         else
                             tr
-                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid lightgray' : 'none'})
-                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid lightgray' : 'none'})
-                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid lightgray' : 'none'})=rea.nimi
+                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid black' : 'none'})
+                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid black' : 'none'})
+                                td.yksus(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid black' : 'none'})=rea.nimi
                                 td.td=rea.teenus
                                 td.td(align='center' style={"background-color": rea.day_1 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen' : 'pink' : null)})= rea.day_1
                                 td.td(align='center' style={"background-color": rea.day_2 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen' : 'pink' : null)})=rea.day_2
