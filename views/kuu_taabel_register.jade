@@ -23,13 +23,13 @@ block content
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
-        h2 ASUTUSE KUU TAABEL
-        h2 Vanematetasu
+        h2.doc_header ASUTUSE KUU TAABEL
+        h2.doc_header Vanematetasu
         each parameter in filter
-            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+            p.doc_header #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
 
         each tyyp in data
-            p #{Object.keys(tyyp)[0]}
+            p.doc_header #{Object.keys(tyyp)[0]}
 
             table.table.table-hover.grid_data
                 thead.grid_head
