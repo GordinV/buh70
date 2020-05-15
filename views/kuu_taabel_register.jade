@@ -24,7 +24,7 @@ block content
 
     div.body_wrapper
         h2 ASUTUSE KUU TAABEL
-        h3 Vanematetasu
+        h2 Vanematetasu
         each parameter in filter
             p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
 

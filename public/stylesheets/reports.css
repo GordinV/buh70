@@ -27,6 +27,7 @@
     margin-top:5%;
     width:auto;
 }
+
 @media print {
     h3 { page-break-after: always }
 }
