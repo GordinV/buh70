@@ -1,5 +1,7 @@
 .label {
     width:10%;
+    margin-block-start:5px;
+    margin-block-end:5px;
 }
 
 .label_subtotal {
@@ -10,6 +12,9 @@
     width:90%;
     margin-left:5%;
     font-weight: bold;
+    margin-block-start:5px;
+    margin-block-end:5px;
+
 }
 
 .row_wrapper {

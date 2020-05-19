@@ -550,7 +550,7 @@ BEGIN
     WHERE aasta = year($1)
       AND kuu = month($1)
       AND rekvid = (CASE
-                        WHEN $3 = 1
+                        WHEN $3 = 1  and $2 = 63
                             THEN 999
                         ELSE $2 END)
     GROUP BY tegev
@@ -582,7 +582,7 @@ BEGIN
     WHERE aasta = year($1) - 1 --year(($1 - interval '3 month')::date)
       AND kuu = 12             -- month(($1 - interval '3 month')::date)
       AND rekvid = (CASE
-                        WHEN $3 = 1
+                        WHEN $3 = 1 and $2 = 63
                             THEN 999
                         ELSE $2 END)
     GROUP BY tegev

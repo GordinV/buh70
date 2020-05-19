@@ -34,11 +34,16 @@ block content
             font-weight: bold;
         }
 
-        .label_subtotal {
-            width: 70%;
-        }
         .td {
-            border-bottom: 1px solid lightgray;
+            font-size: smaller;
+            border-bottom: 1px solid black;
+            border-left: 1px solid black;
+        }
+
+        .th {
+            border-bottom: 1px solid black;
+            border-left: 1px solid black;
+            font-size: smaller;
         }
 
         .total {
@@ -48,33 +53,33 @@ block content
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
-        h1 Päeva taabel
+        h2.doc_header Päeva taabel
 
-        div.row_wrapper
+        div.doc_header.row_wrapper
             p.label Kuupäev:
             p.input #{data[0].kpv}
 
-        div.row_wrapper
+        div.doc_header.row_wrapper.doc_header
             p.label Üksus:
             p.input #{data[0].yksus}
 
         table.table.table-hover.grid_data
             thead.grid_head
                 tr
-                    th Rea nr
-                    th Viitenumber
-                    th Nimi
-                    th Osalemine
-                    th(style={visibility: data.details[0].header_0 ? 'visible': 'hidden'})=data.details[0].header_0 ? data.details[0].header_0: null
-                    th(style={visibility: data.details[0].header_1 ? 'visible': 'hidden'})=data.details[0].header_1 ? data.details[0].header_1: null
-                    th(style={visibility: data.details[0].header_2 ? 'visible': 'hidden'})=data.details[0].header_2 ? data.details[0].header_2: null
-                    th(style={visibility: data.details[0].header_3 ? 'visible': 'hidden'})=data.details[0].header_3 ? data.details[0].header_3: null
-                    th(style={visibility: data.details[0].header_4 ? 'visible': 'hidden'})=data.details[0].header_4 ? data.details[0].header_4: null
-                    th(style={visibility: data.details[0].header_5 ? 'visible': 'hidden'})=data.details[0].header_5 ? data.details[0].header_5: null
-                    th(style={visibility: data.details[0].header_6 ? 'visible': 'hidden'})=data.details[0].header_6 ? data.details[0].header_6: null
-                    th(style={visibility: data.details[0].header_7 ? 'visible': 'hidden'})=data.details[0].header_7 ? data.details[0].header_7: null
-                    th(style={visibility: data.details[0].header_8 ? 'visible': 'hidden'})=data.details[0].header_8 ? data.details[0].header_8: null
-                    th(style={visibility: data.details[0].header_9 ? 'visible': 'hidden'})=data.details[0].header_9 ? data.details[0].header_9: null
+                    th.th Rea nr
+                    th.th Viitenumber
+                    th.th Nimi
+                    th.th Osalemine
+                    th.th(style={"border-left":data.details[0].header_0 ? '1px solid black': 'hidden'})=data.details[0].header_0 ? data.details[0].header_0: null
+                    th.th(style={"border-left":data.details[0].header_1 ? '1px solid black': 'hidden'})=data.details[0].header_1 ? data.details[0].header_1: null
+                    th.th(style={"border-left":data.details[0].header_2 ? '1px solid black': 'hidden'})=data.details[0].header_2 ? data.details[0].header_2: null
+                    th.th(style={"border-left":data.details[0].header_3 ? '1px solid black': 'hidden'})=data.details[0].header_3 ? data.details[0].header_3: null
+                    th.th(style={"border-left":data.details[0].header_4 ? '1px solid black': 'hidden'})=data.details[0].header_4 ? data.details[0].header_4: null
+                    th.th(style={"border-left":data.details[0].header_5 ? '1px solid black': 'hidden'})=data.details[0].header_5 ? data.details[0].header_5: null
+                    th.th(style={"border-left":data.details[0].header_6 ? '1px solid black': 'hidden'})=data.details[0].header_6 ? data.details[0].header_6: null
+                    th.th(style={"border-left":data.details[0].header_7 ? '1px solid black': 'hidden'})=data.details[0].header_7 ? data.details[0].header_7: null
+                    th.th(style={"border-left":data.details[0].header_8 ? '1px solid black': 'hidden'})=data.details[0].header_8 ? data.details[0].header_8: null
+                    th.th(style={"border-left":data.details[0].header_9 ? '1px solid black': 'hidden     '})=data.details[0].header_9 ? data.details[0].header_9: null
 
             tbody
                 each row in data.details
@@ -83,16 +88,16 @@ block content
                         td.td=row.viitenr
                         td.td=row.nimi
                         td.td(align='center')=row.osalemine
-                        td.td(align='center')=row.data_0 ? row.data_0: null
-                        td.td(align='center')=row.data_1 ? row.data_1: null
-                        td.td(align='center')=row.data_2 ? row.data_2: null
-                        td.td(align='center')=row.data_3 ? row.data_3: null
-                        td.td(align='center')=row.data_4 ? row.data_4: null
-                        td.td(align='center')=row.data_5 ? row.data_5: null
-                        td.td(align='center')=row.data_6 ? row.data_6: null
-                        td.td(align='center')=row.data_7 ? row.data_7: null
-                        td.td(align='center')=row.data_8 ? row.data_8: null
-                        td.td(align='center')=row.data_9 ? row.data_9: null
+                        td.td(align='center',style= {"border-left":data.details[0].header_0 ? '1px solid black': 'none'})=row.data_0 ? row.data_0: null
+                        td.td(align='center',style= {"border-left":data.details[0].header_1 ? '1px solid black': 'none'})=row.data_1 ? row.data_1: null
+                        td.td(align='center',style= {"border-left":data.details[0].header_2 ? '1px solid black': 'none'})=row.data_2 ? row.data_2: null
+                        td.td(align='center',style= {"border-left":data.details[0].header_3 ? '1px solid black': 'none'})=row.data_3 ? row.data_3: null
+                        td.td(align='center',style= {"border-left":data.details[0].header_4 ? '1px solid black': 'none'})=row.data_4 ? row.data_4: null
+                        td.td(align='center',style= {"border-left":data.details[0].header_5 ? '1px solid black': 'none'})=row.data_5 ? row.data_5: null
+                        td.td(align='center',style= {"border-left":data.details[0].header_6 ? '1px solid black': 'none'})=row.data_6 ? row.data_6: null
+                        td.td(align='center',style= {"border-left":data.details[0].header_7 ? '1px solid black': 'none'})=row.data_7 ? row.data_7: null
+                        td.td(align='center',style= {"border-left":data.details[0].header_9 ? '1px solid black': 'none'})=row.data_8 ? row.data_8: null
+                        td.td(align='center',style= {"border-left":data.details[0].header_9 ? '1px solid black': 'none'})=row.data_9 ? row.data_9: null
             tfoot
                 tr
                     td
