@@ -4,7 +4,7 @@ module.exports = {
             {id: "id", name: "id", width: "0px", type: "integer", show: false},
             {id: "kuu", name: "Kuu", width: "5%", type: "integer"},
             {id: "aasta", name: "Aasta", width: "5%", type: "integer"},
-            {id: "asutus", name: "Teenus", width: "30%"},
+            {id: "asutus", name: "Asutus", width: "30%"},
             {id: "koolituse_tyyp", name: "Koolituse tüüp", width: "20%"},
             {id: "yksuse_kogus", name: "Üksuse kogus", width: "10%", type: "integer"},
             {id: "nimekirje_kogus", name: "Laste kogus nimekirjas", width: "10%", type: "integer"},

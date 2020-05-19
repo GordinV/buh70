@@ -38,6 +38,19 @@
     margin-block-end:5px;
 }
 
+.td {
+    font-size: smaller;
+    border-bottom: 1px solid black;
+    border-left: 1px solid black;
+}
+
+.th {
+    border-bottom: 1px solid black;
+    border-left: 1px solid black;
+    font-size: smaller;
+}
+
+
 @media print {
     h3 { page-break-after: always }
 }

@@ -53,13 +53,13 @@ module.exports = function (app) {
     app.get('/reports/child_age/:uuid/:filter/:params*?',require('./reports/child_age').get);
     app.get('/reports/ebatoenaolised/:uuid/:filter/:params*?',require('./reports/ebatoenaolised').get);
     app.get('/reports/kondarve/:uuid/:filter/:params*?',require('./reports/kondarve').get);
-
     app.get('/reports/saldo_ja_kaive/:uuid/:filter/:params*?',require('./reports/saldo_ja_kaive').get);
-
     app.get('/reports/arved_koodi_jargi/:uuid/:params*?',require('./reports/arved_koodi_jargi').get);
-
     app.get('/reports/inf3/:uuid/:params/',require('./reports/inf3').get);
     app.get('/reports/inf3/:uuid/',require('./reports/inf3').get);
+    app.get('/reports/kuu_taabel/:uuid/:filter/:params*?',require('./reports/kuu_taabel').get);
+    app.get('/reports/yksuse_taabel/:uuid/:filter/:params*?',require('./reports/yksuse_taabel').get);
+    app.get('/reports/kohaoleku_aruanne/:uuid/:filter/:params*?',require('./reports/kohaoleku_aruanne').get);
 
     app.get('/pdf/:documentType/:uuid/:id/:params', require('./pdf').get); //checkAuth
     app.get('/pdf/:documentType/:uuid/:id/', require('./pdf').get); //checkAuth

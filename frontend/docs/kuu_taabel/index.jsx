@@ -26,6 +26,7 @@ class Documents extends React.PureComponent {
         this.renderer = this.renderer.bind(this);
         this.checkWeekEnds = this.checkWeekEnds.bind(this);
         this.custom_styling = this.custom_styling.bind(this);
+        this.onClickHandler = this.onClickHandler.bind(this);
     }
 
     render() {
@@ -43,7 +44,15 @@ class Documents extends React.PureComponent {
     }
 
     renderer(self) {
-        return null
+        return (<ToolbarContainer>
+                <BtnGetXml
+                    value={'Saama CSV fail'}
+                    onClick={this.onClickHandler}
+                    ref={`btn-getXml`}
+                    showDate={false}
+                />
+            </ToolbarContainer>
+        )
     }
 
     /**
@@ -84,6 +93,29 @@ class Documents extends React.PureComponent {
         }
         return style;
     }
+
+    //handler для события клик на кнопках панели
+    onClickHandler(event) {
+        const Doc = this.refs['register'];
+
+        if (Doc.gridData && Doc.gridData.length) {
+            //делаем редайрект на конфигурацию
+            let sqlWhere = Doc.state.sqlWhere;
+            let url = `/reports/kuu_taabel/${DocContext.userData.uuid}`;
+            let params = encodeURIComponent(`${sqlWhere}`);
+            let filter = encodeURIComponent(`${(JSON.stringify(Doc.filterData))}`);
+            let fullUrl = sqlWhere ? `${url}/${filter}/${params}`: `${url}/${filter}`;
+            window.open(fullUrl);
+
+        } else {
+            Doc.setState({
+                warning: 'Tulemus 0', // строка извещений
+                warningType: 'notValid',
+
+            });
+        }
+    }
+
 
 
 }
