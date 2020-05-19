@@ -151,6 +151,7 @@ FROM libs.library l
          LEFT JOIN libs.asutus a ON (l.properties :: JSONB -> 'vastisikid') = to_jsonb(a.id)
          LEFT JOIN libs.library p ON (l.properties :: JSONB -> 'parent_id') = to_jsonb(p.id)
 WHERE l.library = 'POHIVARA'
+  AND l.status <> 3
   AND l.rekvid = l_rekvid
   AND (l.properties :: JSONB ->> 'soetkpv') :: DATE < l_kpv2
   AND ((l.properties :: JSONB ->> 'mahakantud')::DATE IS NULL

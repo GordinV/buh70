@@ -20,7 +20,7 @@ $BODY$
 SELECT
   s.konto,
   coalesce(k.nimetus, '') :: VARCHAR(254) AS nimetus,
-  s.tp,
+  left(s.tp,6) as tp,
   s.tegev,
   s.allikas,
   s.rahavoo,
@@ -33,7 +33,7 @@ WHERE s.aasta = year(l_kpv)
       AND s.kuu = month(l_kpv)
       AND s.rekvid = l_rekvid
 
-GROUP BY s.konto, k.nimetus, s.tp, s.tegev, s.allikas, s.rahavoo, s.tyyp;
+GROUP BY s.konto, k.nimetus, left(s.tp,6), s.tegev, s.allikas, s.rahavoo, s.tyyp;
 
 $BODY$
 LANGUAGE SQL VOLATILE

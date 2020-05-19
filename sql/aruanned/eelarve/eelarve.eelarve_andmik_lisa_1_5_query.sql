@@ -534,7 +534,7 @@ BEGIN
     SELECT 2,
            2,
            (CASE
-                WHEN $3 = 1
+                WHEN $3 = 1 and $2 = 63
                     THEN 999
                 ELSE $2 END),
            tegev,
@@ -565,7 +565,7 @@ BEGIN
     SELECT 2,
            2,
            (CASE
-                WHEN $3 = 1
+                WHEN $3 = 1 and $2 = 63
                     THEN 999
                 ELSE $2 END),
 
