@@ -11,6 +11,7 @@ const React = require('react'),
     BtnCancel = require('./../button-register/button-register-cancel/button-register-cancel.jsx'),
     BtnPrint = require('./../button-register/button-register-print/button-register-print.jsx'),
     BtnEmail = require('./../button-register/button-email/index.jsx'),
+    BtnPdf = require('./../button-register/button-pdf/index.jsx'),
     BtnLogs = require('./../show-logs/index.jsx'),
     TaskWidget = require('./../task-widget/task-widget.jsx');
 
@@ -23,6 +24,7 @@ class DocToolBar extends React.PureComponent {
         this.btnSaveClick = this.btnSaveClick.bind(this);
         this.btnCancelClick = this.btnCancelClick.bind(this);
         this.btnPrintClick = this.btnPrintClick.bind(this);
+        this.btnPdfClick = this.btnPdfClick.bind(this);
         this.btnEmailClick = this.btnEmailClick.bind(this);
         this.btnLogsClick = this.btnLogsClick.bind(this);
         this.handleButtonTask = this.handleButtonTask.bind(this);
@@ -146,6 +148,11 @@ class DocToolBar extends React.PureComponent {
         }
     }
 
+    btnPdfClick() {
+        if (this.props.btnPdfClick) {
+            this.props.btnPdfClick();
+        }
+    }
     /**
      * обработчик для кнопки email
      */

@@ -49,6 +49,7 @@ class DocumentTemplate extends React.Component {
 
         this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick', 'btnEmailClick',
+            'btnPdfClick',
             'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs', 'hasLibInCache',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
             'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick', 'btnLogsClick',
@@ -198,6 +199,12 @@ class DocumentTemplate extends React.Component {
         window.open(`${url}`);
 
     }
+
+    btnPdfClick() {
+        let url = `/pdf/${this.props.docTypeId}/${DocContext.userData.uuid}/${this.state.docId}`;
+        window.open(`${url}`);
+    }
+
 
     /**
      * обработчик для кнопки отправки почты

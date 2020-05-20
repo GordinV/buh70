@@ -13,6 +13,7 @@ const
     BtnEdit = require('./../../components/button-register/button-register-edit/button-register-edit.jsx'),
     BtnDelete = require('./../../components/button-register/button-register-delete/button-register-delete.jsx'),
     BtnPrint = require('./../../components/button-register/button-register-print/button-register-print.jsx'),
+    BtnPdf = require('./../../components/button-register/button-pdf/index.jsx'),
     BtnFilter = require('./../../components/button-register/button-register-filter/button-register-filter.jsx'),
     BtnSelect = require('./../../components/button-register/button-select/index.jsx'),
     BtnEmail = require('./../../components/button-register/button-email/index.jsx'),
@@ -66,7 +67,8 @@ class Documents extends React.Component {
         };
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
-            'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick', 'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
+            'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick',
+            'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData', 'prepareSqlWhereFromFilter',
             'handleInputChange', 'btnEmailClick');
 
@@ -322,6 +324,26 @@ class Documents extends React.Component {
     }
 
     /**
+     * Обработчик для кнопки Pdf
+     */
+    btnPdfClick() {
+        let sqlWhere = this.state.sqlWhere;
+        let url;
+        let params = encodeURIComponent(`${sqlWhere}`);
+        let filter = encodeURIComponent(`${JSON.stringify(this.filterData)}`);
+
+        if (this.filterData.length) {
+            url = `/pdf/${this.props.docTypeId}/${DocContext.userData.uuid}/${filter}`;
+
+        } else {
+            url = `/pdf/${this.props.docTypeId}/${DocContext.userData.uuid}/0`;
+        }
+        window.open(`${url}/${params}`);
+
+    }
+
+
+    /**
      * обработчик для кнопки фильтрации
      * @param btnEvent
      */
@@ -551,6 +573,10 @@ class Documents extends React.Component {
                                   show={toolbarParams['btnPrint'].show}
                                   value={'Trükk'}
                                   disable={toolbarParams['btnPrint'].disabled}/>
+                        <BtnPdf onClick={this.btnPdfClick.bind(this)}
+                                  show={toolbarParams['btnPdf'].show}
+                                  value={'PDF'}
+                                  disable={toolbarParams['btnPdf'].disabled}/>
                         <BtnEmail onClick={this.btnEmailClick.bind(this)}
                                   show={toolbarParams['btnEmail'].show}
                                   value={'Email'}
@@ -595,6 +621,7 @@ class Documents extends React.Component {
             edit: this.props.toolbarProps ? !!this.props.toolbarProps.edit: true,
             delete: this.props.toolbarProps ? !!this.props.toolbarProps.delete: true,
             print: this.props.toolbarProps  ? !!this.props.toolbarProps.print: true,
+            pdf: this.props.toolbarProps  ? !!this.props.toolbarProps.pdf: true,
             email: this.props.toolbarProps  ? !!this.props.toolbarProps.email: true,
             start: this.props.toolbarProps ? !!this.props.toolbarProps.start: true
         };
@@ -614,6 +641,10 @@ class Documents extends React.Component {
             },
             btnPrint: {
                 show: toolbarProps['print'],
+                disabled: false
+            },
+            btnPdf: {
+                show: toolbarProps['pdf'],
                 disabled: false
             },
             btnEmail: {

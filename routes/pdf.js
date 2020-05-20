@@ -84,7 +84,14 @@ exports.get = async (req, res) => {
 
         // вызвать метод
         const method = id ? 'select' : 'selectDocs';
-        let result = await doc[method]('', sqlWhere, limit);
+        let gridParams;
+
+        if (method === 'selectDocs'  && doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
+            gridParams = getParameterFromFilter(user.asutusId,  user.userId, doc.config.grid.params , filterData);
+        }
+
+        let result = await doc[method]('', sqlWhere, limit, gridParams);
+
         let data = id ? {...result.row, ...result} : result.data;
 
         // groups
