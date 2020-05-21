@@ -281,17 +281,19 @@ class PaevaTaabel extends React.PureComponent {
      * будет вызвана триггером при ихменении. Проврит поля посещаемости и если нет, то проставит нет всем услушам
      * @param self
      */
-    checkData(self) {
-        self.docData.gridData.forEach(row => {
-            if (!row.osalemine) {
-                for (let [key, value] of Object.entries(row)) {
+    checkData(self, idx, columnId, value) {
+        if (columnId && columnId == 'osalemine') {
+            if (!self.docData.gridData[idx].osalemine) {
+                // обнулить значения всех услуг
+                for (let [key, value] of Object.entries(self.docData.gridData[idx])) {
                     if (!isNaN(key) && !!value) {
                         // посещения нет, а значение положительное. меняем
-                        row[key] = !value;
+                        self.docData.gridData[idx][key] = !value;
                     }
                 }
             }
-        })
+        }
+
     }
 
     handleGridRow(gridEvent) {

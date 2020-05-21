@@ -408,7 +408,7 @@ class DocumentTemplate extends React.Component {
 
             // если есть триггер, вызовем его
             if (this.props.trigger) {
-                this.props.trigger(this);
+                this.props.trigger(this, idx, columnId, value);
             }
         }
         this.validation();
