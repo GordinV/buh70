@@ -96,9 +96,9 @@ BEGIN
              WHERE rekvid = (CASE
                                  WHEN $3 = 1
                                      THEN rekvid
-                                 ELSE $2 END)
+                                 ELSE l_rekvid END)
                AND e.rekvid IN (SELECT rekv_id
-                                FROM get_asutuse_struktuur($2))
+                                FROM get_asutuse_struktuur(l_rekvid))
                AND aasta = year($1)
                AND (e.kpv IS NULL) --  OR e.kpv <= $1
              UNION ALL
@@ -126,11 +126,11 @@ BEGIN
              WHERE rekvid = (CASE
                                  WHEN $3 = 1
                                      THEN rekvid
-                                 ELSE $2 END)
+                                 ELSE l_rekvid END)
                AND e.rekvid IN (SELECT rekv_id
-                                FROM get_asutuse_struktuur($2))
+                                FROM get_asutuse_struktuur(l_rekvid))
                AND aasta = year($1)
-               AND (e.kpv IS NOT NULL AND e.kpv <= $1)
+               AND (e.kpv IS NOT NULL AND e.kpv <= l_kpv)
              UNION ALL
              SELECT rekvid
                      ,
@@ -151,13 +151,13 @@ BEGIN
                     COALESCE(ft.artikkel, '') AS artikkel
              FROM cur_kulude_taitmine ft
              WHERE ft.rekvid = (CASE
-                                    WHEN $3 = 1
+                                    WHEN l_kond = 1
                                         THEN rekvid
-                                    ELSE $2 END)
+                                    ELSE l_rekvid END)
                AND ft.rekvid IN (SELECT rekv_id
-                                 FROM get_asutuse_struktuur($2))
-               AND ft.kuu <= MONTH($1)
-               AND ft.aasta = year($1)
+                                 FROM get_asutuse_struktuur(l_rekvid))
+               AND ft.kuu <= MONTH(l_kpv)
+               AND ft.aasta = year(l_kpv)
                AND ft.artikkel IS NOT NULL
                AND NOT empty(ft.artikkel)
              UNION ALL
@@ -180,13 +180,13 @@ BEGIN
                     COALESCE(tt.artikkel, '') AS artikkel
              FROM cur_tulude_taitmine tt
              WHERE tt.rekvid = (CASE
-                                    WHEN $3 = 1
+                                    WHEN l_kond = 1
                                         THEN rekvid
-                                    ELSE $2 END)
+                                    ELSE l_rekvid END)
                AND tt.rekvid IN (SELECT rekv_id
-                                 FROM get_asutuse_struktuur($2))
-               AND tt.kuu <= MONTH($1)
-               AND tt.aasta = year($1)
+                                 FROM get_asutuse_struktuur(l_rekvid))
+               AND tt.kuu <= MONTH(l_kpv)
+               AND tt.aasta = year(l_kpv)
                AND tt.artikkel IS NOT NULL
                AND NOT empty(tt.artikkel)
              UNION ALL
@@ -210,14 +210,14 @@ BEGIN
                     artikkel
              FROM cur_kulude_kassa_taitmine kt
              WHERE kt.rekvid = (CASE
-                                    WHEN $3 = 1
+                                    WHEN l_kond= 1
                                         THEN rekvid
-                                    ELSE $2 END)
+                                    ELSE l_rekvid END)
 
                AND kt.rekvid IN (SELECT rekv_id
-                                 FROM get_asutuse_struktuur($2))
-               AND kt.aasta = year($1)
-               AND kt.kuu <= MONTH($1)
+                                 FROM get_asutuse_struktuur(l_rekvid))
+               AND kt.aasta = year(l_kpv)
+               AND kt.kuu <= MONTH(l_kpv)
                AND kt.artikkel IS NOT NULL
                AND NOT empty(kt.artikkel)
              UNION ALL
@@ -254,14 +254,14 @@ BEGIN
                                     ON j1.deebet::TEXT ~~ kk.kood::TEXT
                       WHERE d.status < 3
                         AND j.rekvid = (CASE
-                                            WHEN $3 = 1
+                                            WHEN l_kond = 1
                                                 THEN j.rekvid
-                                            ELSE $2 END)
+                                            ELSE l_rekvid END)
 
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur($2))
-                        AND year(j.kpv) = year($1)
-                        AND J.KPV <= $1
+                                         FROM get_asutuse_struktuur(l_rekvid))
+                        AND year(j.kpv) = year(l_kpv)
+                        AND J.KPV <= l_kpv
                         AND j1.kood5 IN
                             (SELECT kood FROM libs.library WHERE library.library = 'TULUDEALLIKAD' AND tun5 = 1)
                       GROUP BY j.rekvid
@@ -307,13 +307,13 @@ BEGIN
                                     ON j1.kreedit::TEXT ~~ kassa.kood::TEXT
                       WHERE d.status < 3
                         AND j.kpv <= $1
-                        AND YEAR(j.kpv) = YEAR($1)
+                        AND YEAR(j.kpv) = YEAR(l_kpv)
                         AND j.rekvid = (CASE
-                                            WHEN $3 = 1
+                                            WHEN l_kond = 1
                                                 THEN j.rekvid
                                             ELSE $2 END)
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur($2))
+                                         FROM get_asutuse_struktuur(l_rekvid))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.kood5 IN
@@ -358,13 +358,13 @@ BEGIN
                                JOIN eelarve.kassa_kontod kassakontod
                                     ON j1.deebet::TEXT ~~ kassakontod.kood::TEXT
                       WHERE j.kpv <= $1
-                        AND YEAR(j.kpv) = YEAR($1)
+                        AND YEAR(j.kpv) = YEAR(l_kpv)
                         AND j.rekvid = (CASE
-                                            WHEN $3 = 1
+                                            WHEN l_kond = 1
                                                 THEN j.rekvid
-                                            ELSE $2 END)
+                                            ELSE l_rekvid END)
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur($2))
+                                         FROM get_asutuse_struktuur(l_rekvid))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.kood5 IN
@@ -610,11 +610,11 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5_query(DATE, INTEGER, I
 GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5_query(DATE, INTEGER, INTEGER ) TO dbvaatleja;
 
 /*
-SELECT eelarve.eelarve_andmik_lisa_1_5_query(DATE(2018, 12, 31), 63, 0);
+SELECT eelarve.eelarve_andmik_lisa_1_5_query(DATE(2019, 12, 31), 3, 0);
 
 SELECT *
 FROM tmp_andmik
-WHERE rekvid = 63
+WHERE rekvid = 3
   AND tyyp = 2;
 */
 --
