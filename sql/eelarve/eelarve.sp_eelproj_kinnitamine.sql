@@ -27,6 +27,7 @@ DECLARE
   'kinnitamine' AS status
   ) ROW;
 BEGIN
+
   -- find eelprojekt if eelproj_id is null
   IF ((eelproj_id IS NULL OR eelproj_id = 0) AND taotlus_id IS NOT NULL)
   THEN
@@ -63,6 +64,7 @@ BEGIN
 
   FOR v_taotlus IN
   SELECT
+    t1.eelarveid,
     t.rekvid,
     t.aasta,
     t.kuu,
@@ -87,7 +89,7 @@ BEGIN
         AND (d.id = taotlus_id OR taotlus_id IS NULL OR empty(taotlus_id))
         -- kui meil on taotlus_id parameter siis, kasutame
         AND t.status = array_position((enum_range(NULL :: TAOTLUSE_STATUS)), 'aktsepteeritud')
-        AND empty(t1.eelarveid)
+--        AND empty(t1.eelarveid)
 
   LOOP
     -- Kontrollime aasta
@@ -102,6 +104,7 @@ BEGIN
 
     -- Salvestame eelarve
     SELECT
+      coalesce(v_taotlus.eelarveid,0) as id,
       v_taotlus.aasta,
       v_taotlus.summa,
       v_taotlus.summa_kassa,

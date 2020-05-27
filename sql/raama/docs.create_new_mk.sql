@@ -40,6 +40,17 @@ DECLARE
     l_nom_id     INTEGER;
 BEGIN
 
+    IF (l_dokprop_id) IS NULL
+    THEN
+        l_dokprop_id = (SELECT id
+                        FROM com_dokprop l
+                        WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
+                          AND kood = l_dok
+                        ORDER BY id DESC
+                        LIMIT 1
+        );
+    END IF;
+
     SELECT a.* INTO v_arv
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
@@ -195,6 +206,8 @@ BEGIN
     IF mk_id IS NOT NULL AND mk_id > 0
     THEN
         result = mk_id;
+        -- register
+        PERFORM docs.gen_lausend_vmk(mk_id, user_id);
     ELSE
         result = 0;
         error_message = 'Dokumendi koostamise viga';

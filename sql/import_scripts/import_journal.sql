@@ -88,7 +88,7 @@ BEGIN
     SELECT
       j.*,
       jid.number
-    FROM remote_journal j
+    FROM journal j
            INNER JOIN remote_rekv rekv ON j.rekvid = rekv.id AND rekv.parentid < 999
            INNER JOIN (SELECT
                          max(number) AS number,
@@ -96,7 +96,7 @@ BEGIN
                        FROM remote_journalid jid
                        GROUP BY journalid) jid ON jid.journalid = j.id
     WHERE exists(SELECT 1
-                 FROM remote_journal1
+                 FROM journal1
                  WHERE parentid = j.id)
       AND (j.id = in_old_id OR in_old_id IS NULL)
       --    and rekvid = 63

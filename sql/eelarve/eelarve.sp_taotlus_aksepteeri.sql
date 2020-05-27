@@ -10,20 +10,7 @@ DECLARE
   doc_id      INTEGER = coalesce((params ->> 'doc_id') :: INTEGER, 0);
   ttMuud      TEXT    = params ->> 'muud';
   new_history JSON;
-  new_eelarve JSON;
-
-  lnTunnus    INTEGER = 0;
-
-  lnId        INTEGER;
-
-  tmpEelProj  RECORD;
   tmpTaotlus  RECORD;
-  tmpTaotlus1 RECORD;
-  tmpEelarve  RECORD;
-
-  ldKpv       DATE;
-  lcSelg      TEXT;
-  lnKuurs     NUMERIC;
 BEGIN
   IF doc_id IS NULL
   THEN
@@ -40,7 +27,6 @@ BEGIN
   WHERE t.parentid = doc_id
     AND u.id = user_id
     AND coalesce((u.roles ->> 'is_eel_aktsepterja') :: BOOLEAN, FALSE) :: BOOLEAN;
-  --        AND docs.usersRigths(t.parentid, 'EelAktsepterja', user_id);
 
   IF tmpTaotlus IS NULL
   THEN
@@ -71,7 +57,7 @@ BEGIN
             'aktsepteeri'     AS status
          ) row;
 
-    -- will check if arvId exists
+    -- update status
     UPDATE docs.doc
     SET
       lastupdate = now(),
@@ -86,6 +72,7 @@ BEGIN
     RETURN;
   END IF;
 
+
   SELECT *
          INTO error_code, result, error_message
   FROM eelarve.sp_eelproj_kinnitamine(user_id, ('{"taotlus_id":' || doc_id :: TEXT || '}') :: JSON);
@@ -96,3 +83,7 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION eelarve.sp_taotlus_aktsepteeri(INTEGER, JSON) TO eelaktsepterja;
+
+/*
+
+ */

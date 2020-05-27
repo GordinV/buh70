@@ -151,9 +151,9 @@ BEGIN
 
     IF (v_doc.docs_ids IS NOT NULL)
     THEN
-        PERFORM docs.sp_delete_journal(l_user_id, id)
+        PERFORM docs.sp_delete_journal(l_user_id, parentid)
         FROM docs.journal
-        WHERE id IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
+        WHERE parentid IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
     END IF;
 
     -- Установка статуса ("Удален")  и сохранение истории
