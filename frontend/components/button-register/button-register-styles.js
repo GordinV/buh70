@@ -4,7 +4,8 @@ module.exports = {
         margin: '5px 2px',
         borderRadius: '5px',
         height: '30px',
-        display: 'flex'
+        display: 'flex',
+        border: '1px solid gray'
     },
     buttonAccount: {
         width: '50%'

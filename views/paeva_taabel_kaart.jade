@@ -16,7 +16,7 @@ block content
 
         .grid_data {
             width: 100%;
-            border: 1px solid lightgray;
+            border: 1px solid black;
         }
 
         .row_wrapper {
@@ -47,7 +47,9 @@ block content
         }
 
         .total {
-            font-weight: bold
+            font-weight: bold;
+            font-size: smaller;
+            border-left: 1px solid black;
         }
 
     link(rel='stylesheet', href='/stylesheets/reports.css')
@@ -57,11 +59,11 @@ block content
 
         div.doc_header.row_wrapper
             p.label Kuupäev:
-            p.input #{data[0].kpv}
+            p.input #{data[0].kpv_print}
 
         div.doc_header.row_wrapper.doc_header
             p.label Üksus:
-            p.input #{data[0].yksus}
+            p.input #{data[0].yksuse_nimi}
 
         table.table.table-hover.grid_data
             thead.grid_head
@@ -102,7 +104,7 @@ block content
                 tr
                     td
                     td
-                    td.total(align='right') Total:
+                    td.total(align='center') Total:
                     td.total(align='center',style={visibility: data.details[0].osalemine ? 'visible' : 'hidden'})=data.details[0].osalemine ? data['0'].totals['osalemine'] : null
                     td.total(align='center',style={visibility: data.details[0].header_0 ? 'visible' : 'hidden'})=data.details[0].header_0 ? data['0'].totals['0'] : null
                     td.total(align='center',style={visibility: data.details[0].header_1 ? 'visible' : 'hidden'})=data.details[0].header_1 ? data['0'].totals['1'] : null

@@ -10,9 +10,11 @@ module.exports = {
 SELECT t.id,
        $2                                                                                   AS userid,
        to_char(t.kpv, 'YYYY-MM-DD')::TEXT                                                   AS kpv,
+       to_char(t.kpv, 'DD.MM.YYYY')::TEXT                                                   AS kpv_print,
        t.muud,
        t.grupp_id,
        l.kood::TEXT                                                                         AS yksus,
+       l.nimetus::TEXT                                                                         AS yksuse_nimi,
        s.nimetus                                                                            AS status,
        t.staatus                                                                            AS doc_status,
        json_agg(json_build_object('nom_id', to_json(n.nomid), 'teenus', to_json(n.teenus))) AS noms
@@ -27,7 +29,7 @@ FROM lapsed.day_taabel t
                LEFT OUTER JOIN libs.nomenklatuur n ON n.id = x.nomid AND lower(n.uhik) IN ('paev', 'päev')) n
 
 WHERE t.id = $1::INTEGER
-GROUP BY t.id, t.kpv, t.grupp_id, l.kood, s.nimetus, t.staatus`,
+GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,

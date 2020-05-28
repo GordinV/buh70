@@ -61,15 +61,16 @@
 }
 .grid_data {
     width: -webkit-fill-available;
-    border: 1px solid lightgray;
+    border: 1px solid black;
 }
 
 .grid_head {
     background-color:lightgray;
+    border: 1px solid black;
 }
 .group {
     font-weight: bold;
-    border-top: 1px solid lightgray;
+    border-top: 1px solid black;
 }
 .row_rigth {
     text-align: right;
@@ -79,5 +80,6 @@
 }
 
 .table {
-    border-spacing: 0px
+    border-spacing: 0px;
+    border: 1px solid black;
 }

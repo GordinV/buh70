@@ -5,6 +5,7 @@ module.exports = {
         ':focus': {
             backgroundColor: 'lightpink'
         },
+        border: '1px solid gray'
 
     },
     focused: {

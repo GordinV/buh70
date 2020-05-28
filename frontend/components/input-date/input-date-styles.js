@@ -5,7 +5,8 @@ module.exports = {
         marginLeft:'5px',
         ':focus': {
             backgroundColor: 'lightpink'
-        }
+        },
+        border: '1px solid gray'
     },
     focused: {
         backgroundColor: 'lightblue'
