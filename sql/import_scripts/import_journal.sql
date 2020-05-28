@@ -1,8 +1,8 @@
+/*
 DROP FOREIGN TABLE IF EXISTS remote_journal;
 DROP FOREIGN TABLE IF EXISTS remote_journal1;
 DROP FOREIGN TABLE IF EXISTS remote_journalid;
 
-/*
 drop SERVER if exists dbarch_narva_ee CASCADE ;
 CREATE SERVER dbarch_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'dbarch.narva.ee', dbname 'narvalv2019', port '5432');
 
@@ -10,7 +10,6 @@ CREATE USER MAPPING FOR vlad
   SERVER dbarch_narva_ee
   OPTIONS (user 'vlad', password 'Vlad490710');
 
-*/
 CREATE FOREIGN TABLE remote_journalid (
   id SERIAL NOT NULL,
   rekvid INTEGER NOT NULL,
@@ -59,6 +58,7 @@ CREATE FOREIGN TABLE remote_journal1 (
   )
   SERVER dbarch_narva_ee
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'journal1');
+*/
 
 DROP FUNCTION IF EXISTS import_journal();
 DROP FUNCTION IF EXISTS import_journal(INTEGER);
@@ -93,7 +93,7 @@ BEGIN
            INNER JOIN (SELECT
                          max(number) AS number,
                          journalid
-                       FROM remote_journalid jid
+                       FROM journalid jid
                        GROUP BY journalid) jid ON jid.journalid = j.id
     WHERE exists(SELECT 1
                  FROM journal1
@@ -132,7 +132,7 @@ BEGIN
                                              kood5,
                                              lisa_d,
                                              lisa_k
-                                           FROM remote_journal1 journal1
+                                           FROM journal1 journal1
                                            WHERE parentid = v_journal.id) AS j1
       ));
 
@@ -147,7 +147,8 @@ BEGIN
         coalesce(journal_id, 0)                 AS id,
         l_asutus                                AS asutusid,
         v_journal.kpv                           AS kpv,
-        encode(v_journal.selg::BYTEA, 'escape') AS selg,
+--        encode(v_journal.selg::BYTEA, 'escape') AS selg,
+        v_journal.selg as selg,
         v_journal.dok                           AS dok,
         v_journal.muud                          AS muud,
         json_journal1                           AS "gridData"

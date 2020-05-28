@@ -3,7 +3,7 @@
 DROP FUNCTION IF EXISTS docs.sp_salvesta_mk(JSON, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.sp_salvesta_mk(data JSON,
-                                               userid INTEGER,
+                                               user_id INTEGER,
                                                user_rekvid INTEGER)
     RETURNS INTEGER AS
 $BODY$
@@ -48,7 +48,7 @@ BEGIN
     SELECT kasutaja INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
-      AND u.id = userId;
+      AND u.id = user_id;
     IF is_import IS NULL AND userName IS NULL
     THEN
         RAISE NOTICE 'User not found %', user;
@@ -216,12 +216,12 @@ BEGIN
     IF doc_arvid IS NOT NULL
     THEN
         -- произведем оплату счета
-        PERFORM docs.sp_tasu_arv(doc_id, doc_arvid, userid);
+        PERFORM docs.sp_tasu_arv(doc_id, doc_arvid, user_id);
 
     END IF;
 
 
-    IF doc_id IS NOT NULL AND doc_id > 0 AND doc_viitenr IS NOT NULL AND doc_lapsid IS NULL
+    IF doc_id IS NOT NULL AND doc_id > 0 AND doc_viitenr IS NOT NULL AND NOT empty(doc_viitenr) AND doc_lapsid IS NULL
     THEN
         -- пробуем найти ребенка по ссылке
         SELECT id INTO doc_lapsid
@@ -230,7 +230,7 @@ BEGIN
     END IF;
 
     -- lapse module
-    IF doc_viitenr IS NOT NULL AND doc_lapsid IS NULL
+    IF doc_viitenr IS NOT NULL AND NOT empty(doc_viitenr) AND doc_lapsid IS NULL
     THEN
         -- попробуем найти ребенка по ссылке
         doc_lapsid = lapsed.get_laps_from_viitenumber(doc_viitenr);
@@ -248,7 +248,7 @@ BEGIN
         IF doc_arvid IS NOT NULL AND NOT exists(SELECT id FROM docs.arvtasu WHERE doc_tasu_id = doc_id AND status <> 3)
         THEN
             -- произведем поиск и оплату счета
-            PERFORM docs.sp_loe_tasu(doc_id, userid);
+            PERFORM docs.sp_loe_tasu(doc_id, user_id);
         END IF;
 
     END IF;

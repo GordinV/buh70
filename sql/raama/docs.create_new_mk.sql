@@ -56,6 +56,13 @@ BEGIN
              INNER JOIN docs.arv a ON a.parentid = d.id
     WHERE d.id = l_arv_id;
 
+
+    -- добавим пояснение
+    IF l_selg IS NULL AND l_arv_id IS NOT NULL
+    THEN
+        l_selg = 'Arve nr.' || ltrim(rtrim(v_arv.number))::TEXT;
+    END IF;
+
     doc_type_id = CASE WHEN v_arv.liik = 0 OR v_arv.id IS NULL THEN 'SMK' ELSE 'VMK' END;
 
     l_opt = (CASE
