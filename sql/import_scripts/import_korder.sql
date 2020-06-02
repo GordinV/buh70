@@ -30,7 +30,7 @@ BEGIN
   FOR v_korder IN
   SELECT k1.*
   FROM korder1 k1
-    INNER JOIN rekv ON k1.rekvid = rekv.id AND rekv.parentid < 999
+    INNER JOIN remote_rekv rekv ON k1.rekvid = rekv.id AND rekv.parentid < 999
   WHERE (k1.id = in_old_id OR in_old_id IS NULL)
   ORDER BY k1.kpv
   LIMIT ALL

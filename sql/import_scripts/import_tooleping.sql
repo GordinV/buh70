@@ -1,5 +1,5 @@
 DROP FUNCTION IF EXISTS import_tooleping( INTEGER );
-
+/*
 
 DROP FOREIGN TABLE IF EXISTS remote_tooleping;
 
@@ -30,6 +30,8 @@ CREATE FOREIGN TABLE remote_tooleping (
   SERVER db_narva_ee
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'tooleping');
 
+
+ */
 CREATE OR REPLACE FUNCTION import_tooleping(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -49,8 +51,8 @@ BEGIN
 
   FOR v_leping IN
   SELECT t.*
-  FROM REMOTE_tooleping t
-    INNER JOIN rekv ON rekv.id = t.rekvid AND rekv.parentid < 999 and rekvid not in (15)
+  FROM tooleping t
+    INNER JOIN remote_rekv rekv ON rekv.id = t.rekvid AND rekv.parentid < 999 and rekvid not in (15)
   WHERE (t.id = in_old_id OR in_old_id IS NULL)
     and t.osakondid in (select id from remote_library where library = 'OSAKOND')
     and t.ametid in (select id from remote_library where library = 'AMET')

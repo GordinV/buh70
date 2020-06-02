@@ -1,3 +1,4 @@
+/*
 DROP FUNCTION IF EXISTS import_arv();
 DROP FUNCTION IF EXISTS import_arv(INTEGER);
 
@@ -61,6 +62,7 @@ CREATE FOREIGN TABLE remote_arv1 (
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'arv1');
 
 
+ */
 CREATE OR REPLACE FUNCTION import_arv(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -132,7 +134,7 @@ BEGIN
                                              WHERE lib_name = 'ARV'
                                                AND old_id IN
                                                    (SELECT id
-                                                    FROM remote_arv arv
+                                                    FROM arv arv
                                                     WHERE ltrim(rtrim(arv.number)) :: TEXT = ltrim(rtrim(substr(a1.muud, 10, 20)))
                                                       AND arv.rekvid = v_arv.rekvid)
                                              LIMIT 1) AS arve_id

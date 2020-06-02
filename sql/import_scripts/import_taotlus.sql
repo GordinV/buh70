@@ -59,7 +59,7 @@ BEGIN
                     FOR v_taotlus1 IN
                         SELECT t1.id,
                                t1.eelarveid
-                        FROM remote_taotlus1 t1
+                        FROM taotlus1 t1
                         WHERE parentid = v_taotlus.id
                         LOOP
                             RAISE NOTICE 'v_taotlus1.eelarveid %, v_taotlus1.id %', v_taotlus1.eelarveid, v_taotlus1.id;
@@ -80,6 +80,7 @@ BEGIN
                                                          WHERE old_id = t1.eelprojid
                                                            AND lib_name = 'EELPROJ') AS eelprojid,
                                                         summa,
+                                                        summa as summa_kassa,
                                                         kood1,
                                                         kood2,
                                                         kood3,

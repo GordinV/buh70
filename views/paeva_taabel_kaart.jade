@@ -49,9 +49,10 @@ block content
         .total {
             font-weight: bold;
             font-size: smaller;
+        }
+        .line_left {
             border-left: 1px solid black;
         }
-
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
@@ -105,14 +106,14 @@ block content
                     td
                     td
                     td.total(align='center') Total:
-                    td.total(align='center',style={visibility: data.details[0].osalemine ? 'visible' : 'hidden'})=data.details[0].osalemine ? data['0'].totals['osalemine'] : null
-                    td.total(align='center',style={visibility: data.details[0].header_0 ? 'visible' : 'hidden'})=data.details[0].header_0 ? data['0'].totals['0'] : null
-                    td.total(align='center',style={visibility: data.details[0].header_1 ? 'visible' : 'hidden'})=data.details[0].header_1 ? data['0'].totals['1'] : null
-                    td.total(align='center',style={visibility: data.details[0].header_2 ? 'visible' : 'hidden'})=data.details[0].header_2 ? data['0'].totals['2'] : null
-                    td.total(align='center',style={visibility: data.details[0].header_3 ? 'visible' : 'hidden'})=data.details[0].header_3 ? data['0'].totals['3'] : null
-                    td.total(align='center',style={visibility: data.details[0].header_4 ? 'visible' : 'hidden'})=data.details[0].header_4 ? data['0'].totals['4'] : null
-                    td.total(align='center',style={visibility: data.details[0].header_5 ? 'visible' : 'hidden'})=data.details[0].header_5 ? data['0'].totals['5'] : null
-                    td.total(align='center',style={visibility: data.details[0].header_6 ? 'visible' : 'hidden'})=data.details[0].header_6 ? data['0'].totals['6'] : null
-                    td.total(align='center',style={visibility: data.details[0].header_7 ? 'visible' : 'hidden'})=data.details[0].header_7 ? data['0'].totals['7'] : null
-                    td.total(align='center',style={visibility: data.details[0].header_8 ? 'visible' : 'hidden'})=data.details[0].header_8 ? data['0'].totals['8'] : null
-                    td.total(align='center',style={visibility: data.details[0].header_9 ? 'visible' : 'hidden'})=data.details[0].header_9 ? data['0'].totals['9'] : null
+                    td.total(align='center',style={visibility: data.details[0].osalemine ? 'visible' : 'hidden',"border-left":'1px solid black'})=data.details[0].osalemine ? data['0'].totals['osalemine'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_0 ? 'visible' : 'hidden',"border-left":data.details[0].header_0 ? '1px solid black': 'none'})=data.details[0].header_0 ? data['0'].totals['0'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_1 ? 'visible' : 'hidden',"border-left":data.details[0].header_1 ? '1px solid black': 'none'})=data.details[0].header_1 ? data['0'].totals['1'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_2 ? 'visible' : 'hidden',"border-left":data.details[0].header_2 ? '1px solid black': 'none'})=data.details[0].header_2 ? data['0'].totals['2'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_3 ? 'visible' : 'hidden',"border-left":data.details[0].header_3 ? '1px solid black': 'none'})=data.details[0].header_3 ? data['0'].totals['3'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_4 ? 'visible' : 'hidden',"border-left":data.details[0].header_4 ? '1px solid black': 'none'})=data.details[0].header_4 ? data['0'].totals['4'] : null
+                    td.totalt(align='center',style={visibility: data.details[0].header_5 ? 'visible' : 'hidden',"border-left":data.details[0].header_5 ? '1px solid black': 'none'})=data.details[0].header_5 ? data['0'].totals['5'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_6 ? 'visible' : 'hidden',"border-left":data.details[0].header_6 ? '1px solid black': 'none'})=data.details[0].header_6 ? data['0'].totals['6'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_7 ? 'visible' : 'hidden',"border-left":data.details[0].header_7 ? '1px solid black': 'none'})=data.details[0].header_7 ? data['0'].totals['7'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_8 ? 'visible' : 'hidden', "border-left":data.details[0].header_8 ? '1px solid black': 'none'})=data.details[0].header_8 ? data['0'].totals['8'] : null
+                    td.total(align='center',style={visibility: data.details[0].header_9 ? 'visible' : 'hidden',"border-left":data.details[0].header_9 ? '1px solid black': 'none'})=data.details[0].header_9 ? data['0'].totals['9'] : null

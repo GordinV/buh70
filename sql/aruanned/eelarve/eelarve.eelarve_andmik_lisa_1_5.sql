@@ -961,30 +961,30 @@ BEGIN
                         -1 * coalesce(sum(q.tegelik), 0)                            AS tegelik
                          ,
 --                      -1 * coalesce(sum(q.kassa), 0) AS kassa
-                        (SELECT sum(CASE WHEN deebet LIKE '100%' THEN summa ELSE 0 END)
-                                    - sum(CASE WHEN kreedit LIKE '100%' THEN summa ELSE 0 END)
-                         FROM cur_journal j
-                         WHERE j.rekvid = (CASE
-                                               WHEN l_kond = 1
-                                                   THEN j.rekvid
-                                               ELSE l_rekvid END)
-                           AND j.rekvid IN (SELECT rekv_id
-                                            FROM get_asutuse_struktuur(l_rekvid))
-                           AND (j.deebet LIKE '100%' OR j.kreedit LIKE '100%')
-                           AND j.kpv <= l_kpv
-                        ) -
-                        (SELECT sum(CASE WHEN deebet LIKE '100%' THEN summa ELSE 0 END)
-                                    - sum(CASE WHEN kreedit LIKE '100%' THEN summa ELSE 0 END)
-                         FROM cur_journal j
-                         WHERE j.rekvid = (CASE
-                                               WHEN l_kond = 1
-                                                   THEN j.rekvid
-                                               ELSE l_rekvid END)
-                           AND j.rekvid IN (SELECT rekv_id
-                                            FROM get_asutuse_struktuur(l_rekvid))
-                           AND (j.deebet LIKE '100%' OR j.kreedit LIKE '100%')
-                           AND j.kpv < make_date(year(l_kpv), 1, 1)
-                        )                                                           AS kassa,
+                        ((SELECT sum(CASE WHEN deebet LIKE '100%' THEN summa ELSE 0 END)
+                                     - sum(CASE WHEN kreedit LIKE '100%' THEN summa ELSE 0 END)
+                          FROM cur_journal j
+                          WHERE j.rekvid = (CASE
+                                                WHEN l_kond = 1
+                                                    THEN j.rekvid
+                                                ELSE l_rekvid END)
+                            AND j.rekvid IN (SELECT rekv_id
+                                             FROM get_asutuse_struktuur(l_rekvid))
+                            AND (j.deebet LIKE '100%' OR j.kreedit LIKE '100%')
+                            AND j.kpv <= l_kpv
+                         ) -
+                         (SELECT sum(CASE WHEN deebet LIKE '100%' THEN summa ELSE 0 END)
+                                     - sum(CASE WHEN kreedit LIKE '100%' THEN summa ELSE 0 END)
+                          FROM cur_journal j
+                          WHERE j.rekvid = (CASE
+                                                WHEN l_kond = 1
+                                                    THEN j.rekvid
+                                                ELSE l_rekvid END)
+                            AND j.rekvid IN (SELECT rekv_id
+                                             FROM get_asutuse_struktuur(l_rekvid))
+                            AND (j.deebet LIKE '100%' OR j.kreedit LIKE '100%')
+                            AND j.kpv < make_date(year(l_kpv), 1, 1)
+                         ))                                                         AS kassa,
                         get_saldo('DK', '100', NULL, NULL) -
                         get_saldo('MDK', '100', NULL, NULL) +
                         get_saldo('DK', '101', NULL, NULL) -
@@ -1056,39 +1056,37 @@ BEGIN
                  UNION ALL
                  SELECT '8.1'
                          ,
-                        1                                                      AS is_e
+                        1                                                                            AS is_e
                          ,
-                        $2                                                     AS rekvid
+                        $2                                                                           AS rekvid
                          ,
-                        ''::VARCHAR(20)                                        AS tegev
+                        ''::VARCHAR(20)                                                              AS tegev
                          ,
-                        ''::VARCHAR(20)                                        AS allikas
+                        ''::VARCHAR(20)                                                              AS allikas
                          ,
-                        '1000'::VARCHAR(20)                                    AS artikkel
+                        '1000'::VARCHAR(20)                                                          AS artikkel
                          ,
-                      'Likviidsed varad' AS nimetus,
-                      get_saldo('MDK', '100', NULL, NULL) +
-                      get_saldo('MDK', '101', NULL, NULL) -
-                      get_saldo('MDK', '1019', NULL, NULL) +
-                      get_saldo('MDK', '151', NULL, NULL) -
-                      get_saldo('MDK', '1519', NULL, NULL) AS eelarve,
-                      get_saldo('MDK', '100', NULL, NULL) +
-                      get_saldo('MDK', '101', NULL, NULL) -
-                      get_saldo('MDK', '1019', NULL, NULL) +
-                      get_saldo('MDK', '151', NULL, NULL) -
-                      get_saldo('MDK', '1519', NULL, NULL) AS eelarve_kassa,
-                      0 AS eelarve_taps,
-                      0 AS eelarve_kassa_taps,
-                      0 AS tegelik
-                         ,
-                      0 AS kassa
-                         ,
-                      get_saldo('MDK', '100', NULL, NULL) +
-                      get_saldo('MDK', '101', NULL, NULL) -
-                      get_saldo('MDK', '1019', NULL, NULL) +
-                      get_saldo('MDK', '151', NULL, NULL) -
-                      get_saldo('MDK', '1519', NULL, NULL)
-                          AS saldoandmik
+                        'Likviidsed varad'                                                           AS nimetus,
+                        get_saldo('MDK', '100', NULL, NULL) +
+                        get_saldo('MDK', '101', NULL, NULL) -
+                        get_saldo('MDK', '1019', NULL, NULL) +
+                        get_saldo('MDK', '151', NULL, NULL) -
+                        get_saldo('MDK', '1519', NULL, NULL)                                         AS eelarve,
+                        get_saldo('MDK', '100', NULL, NULL) +
+                        get_saldo('MDK', '101', NULL, NULL) -
+                        get_saldo('MDK', '1019', NULL, NULL) +
+                        get_saldo('MDK', '151', NULL, NULL) -
+                        get_saldo('MDK', '1519', NULL, NULL)                                         AS eelarve_kassa,
+                        0                                                                            AS eelarve_taps,
+                        0                                                                            AS eelarve_kassa_taps,
+                        0                                                                            AS tegelik,
+                        get_saldo('MDK', '100', NULL, NULL) - get_saldo('MDK', '100080', NULL, NULL) AS kassa,
+                        get_saldo('MDK', '100', NULL, NULL) +
+                        get_saldo('MDK', '101', NULL, NULL) -
+                        get_saldo('MDK', '1019', NULL, NULL) +
+                        get_saldo('MDK', '151', NULL, NULL) -
+                        get_saldo('MDK', '1519', NULL, NULL)
+                                                                                                     AS saldoandmik
 -- MDK100+MDK101-MDK1019+MDK151-MDK1519
                  UNION ALL
                  SELECT '8.2'
@@ -1186,67 +1184,65 @@ BEGIN
                  UNION ALL
                  SELECT '8.2'
                          ,
-                        1                                                         AS is_e
+                        1                                   AS is_e
                          ,
-                        $2                                                        AS rekvid
+                        $2                                  AS rekvid
                          ,
-                        ''::VARCHAR(20)                                           AS tegev
+                        ''::VARCHAR(20)                     AS tegev
                          ,
-                        ''::VARCHAR(20)                                           AS allikas
+                        ''::VARCHAR(20)                     AS allikas
                          ,
-                        '1001'::VARCHAR(20)                                       AS artikkel
+                        '1001'::VARCHAR(20)                 AS artikkel
                          ,
-                        'Likviidsed varad'                                        AS nimetus
-                         ,
-                        (get_saldo('MDK', '100', NULL, NULL) +
-                         get_saldo('MDK', '101', NULL, NULL) -
-                         get_saldo('MDK', '1019', NULL, NULL) +
-                         get_saldo('MDK', '151', NULL, NULL) -
-                         get_saldo('MDK', '1519', NULL, NULL)) + (SELECT -1 * coalesce(sum(tmp_andmik.eelarve), 0)
-                                                                  FROM tmp_andmik
-                                                                  WHERE tmp_andmik.artikkel LIKE '100%'
-                                                                    AND tyyp = 1) AS eelarve
-                         ,
-                        (get_saldo('MDK', '100', NULL, NULL) +
-                         get_saldo('MDK', '101', NULL, NULL) -
-                         get_saldo('MDK', '1019', NULL, NULL) +
-                         get_saldo('MDK', '151', NULL, NULL) -
-                         get_saldo('MDK', '1519', NULL, NULL)) + (SELECT -1 * coalesce(sum(tmp_andmik.eelarve_kassa), 0)
-                                                                  FROM tmp_andmik
-                                                                  WHERE tmp_andmik.artikkel LIKE '100%'
-                                                                    AND tyyp = 1) AS eelarve_kassa
-                         ,
-
-                        (get_saldo('MDK', '100', NULL, NULL) +
-                         get_saldo('MDK', '101', NULL, NULL) -
-                         get_saldo('MDK', '1019', NULL, NULL) +
-                         get_saldo('MDK', '151', NULL, NULL) -
-                         get_saldo('MDK', '1519', NULL, NULL)) + (SELECT -1 * coalesce(sum(tmp_andmik.eelarve_taps), 0)
-                                                                  FROM tmp_andmik
-                                                                  WHERE tmp_andmik.artikkel LIKE '100%'
-                                                                    AND tyyp = 1) AS eelarve_taps
-                         ,
-                        (get_saldo('MDK', '100', NULL, NULL) +
-                         get_saldo('MDK', '101', NULL, NULL) -
-                         get_saldo('MDK', '1019', NULL, NULL) +
-                         get_saldo('MDK', '151', NULL, NULL) -
-                         get_saldo('MDK', '1519', NULL, NULL)) +
-                        (SELECT -1 * coalesce(sum(tmp_andmik.eelarve_kassa_taps), 0)
+                        'Likviidsed varad'                  AS nimetus,
+                        (SELECT coalesce(sum(tmp_andmik.eelarve), 0)
                          FROM tmp_andmik
-                         WHERE tmp_andmik.artikkel LIKE '100%'
-                           AND tyyp = 1)                                          AS eelarve_kassa_taps
-                         ,
+                         WHERE tmp_andmik.artikkel = '1001.'
+                           AND tyyp = 1)                    AS eelarve,
+                        (SELECT coalesce(sum(tmp_andmik.eelarve_kassa), 0)
+                         FROM tmp_andmik
+                         WHERE tmp_andmik.artikkel = '1001.'
+                           AND tyyp = 1)                    AS eelarve_kassa,
 
-
-                        0                                                         AS tegelik
-                         ,
-                        0                                                         AS kassa
-                         ,
+                        (SELECT coalesce(sum(tmp_andmik.eelarve_taps), 0)
+                         FROM tmp_andmik
+                         WHERE tmp_andmik.artikkel = '1001.'
+                           AND tyyp = 1)                    AS eelarve_taps,
+                        (SELECT coalesce(sum(tmp_andmik.eelarve_kassa_taps), 0)
+                         FROM tmp_andmik
+                         WHERE tmp_andmik.artikkel = '1001.'
+                           AND tyyp = 1)                    AS eelarve_kassa_taps,
+                        0                                   AS tegelik,
+                        (get_saldo('MDK', '100', NULL, NULL) - get_saldo('MDK', '100080', NULL, NULL)) +
+                        ((SELECT sum(CASE WHEN deebet LIKE '100%' THEN summa ELSE 0 END)
+                                     - sum(CASE WHEN kreedit LIKE '100%' THEN summa ELSE 0 END)
+                          FROM cur_journal j
+                          WHERE j.rekvid = (CASE
+                                                WHEN l_kond = 1
+                                                    THEN j.rekvid
+                                                ELSE l_rekvid END)
+                            AND j.rekvid IN (SELECT rekv_id
+                                             FROM get_asutuse_struktuur(l_rekvid))
+                            AND (j.deebet LIKE '100%' OR j.kreedit LIKE '100%')
+                            AND j.kpv <= l_kpv
+                         ) -
+                         (SELECT sum(CASE WHEN deebet LIKE '100%' THEN summa ELSE 0 END)
+                                     - sum(CASE WHEN kreedit LIKE '100%' THEN summa ELSE 0 END)
+                          FROM cur_journal j
+                          WHERE j.rekvid = (CASE
+                                                WHEN l_kond = 1
+                                                    THEN j.rekvid
+                                                ELSE l_rekvid END)
+                            AND j.rekvid IN (SELECT rekv_id
+                                             FROM get_asutuse_struktuur(l_rekvid))
+                            AND (j.deebet LIKE '100%' OR j.kreedit LIKE '100%')
+                            AND j.kpv < make_date(year(l_kpv), 1, 1)
+                         ))                                 AS kassa,
                         get_saldo('DK', '100', NULL, NULL) +
                         get_saldo('DK', '101', NULL, NULL) -
                         get_saldo('DK', '1019', NULL, NULL) +
                         get_saldo('DK', '151', NULL, NULL) -
-                        get_saldo('DK', '1519', NULL, NULL)                       AS saldoandmik
+                        get_saldo('DK', '1519', NULL, NULL) AS saldoandmik
 -- DK100+DK101-DK1019+DK151-DK1519
 
 -- pohi osa
@@ -1350,7 +1346,7 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 
 select  * from (
 SELECT  *
-FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019,06,30), 64, 0) qry
+FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019,12,31), 63, 0) qry
 where (not empty(qry.tegev) or not empty(qry.artikkel))
 and qry.artikkel like '100%'
 ) qry

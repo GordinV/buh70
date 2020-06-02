@@ -30,7 +30,7 @@ BEGIN
   FOR v_mk IN
   SELECT m.*
   FROM mk m
-    INNER JOIN rekv ON m.rekvid = rekv.id AND rekv.parentid < 999
+    INNER JOIN remote_rekv rekv ON m.rekvid = rekv.id AND rekv.parentid < 999
   WHERE (m.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP

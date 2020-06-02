@@ -27,7 +27,7 @@ DECLARE
                              LIMIT 1);
     doc_number    TEXT    = doc_data ->> 'number';
     doc_kpv       DATE    = coalesce((doc_data ->> 'kpv')::DATE, current_date);
-    doc_aa_id     INTEGER = doc_data ->> 'aa_id';
+    doc_aa_id     INTEGER = coalesce((doc_data ->> 'aa_id')::integer, (doc_data ->> 'aaid')::integer);
     doc_arvid     INTEGER = doc_data ->> 'arvid';
     doc_muud      TEXT    = doc_data ->> 'muud';
     doc_doklausid INTEGER = doc_data ->> 'doklausid';

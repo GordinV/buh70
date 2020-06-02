@@ -1,3 +1,4 @@
+/*
 DROP FUNCTION IF EXISTS import_eelarve( INTEGER );
 
 CREATE FOREIGN TABLE if not EXISTS  remote_eelarve (
@@ -22,6 +23,8 @@ CREATE FOREIGN TABLE if not EXISTS  remote_eelarve (
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'eelarve');
 
 
+ */
+
 CREATE OR REPLACE FUNCTION import_eelarve(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
@@ -42,7 +45,7 @@ BEGIN
 
   FOR v_eelarve IN
   SELECT e.*
-  FROM remote_eelarve e
+  FROM eelarve e
   WHERE (e.id = in_old_id OR in_old_id IS NULL)
   LIMIT ALL
   LOOP
@@ -80,7 +83,7 @@ BEGIN
     IF v_eelarve.tunnusid IS NOT NULL AND NOT empty(v_eelarve.tunnusid)
     THEN
       l_tunnus = (SELECT kood
-                  FROM remote_library
+                  FROM library
                   WHERE id = v_eelarve.tunnusid AND library = 'TUNNUS');
     ELSE
       l_tunnus = '';
@@ -112,6 +115,7 @@ BEGIN
       v_eelarve.rekvid        AS rekvid,
       v_eelarve.aasta         AS aasta,
       v_eelarve.summa         AS summa,
+      v_eelarve.summa         AS summa_kassa,
       is_kulud                AS is_kulud,
       CASE WHEN empty(v_eelarve.kpv)
         THEN 0
@@ -201,7 +205,6 @@ COST 100;
 
 
 /*
-update eelarve
 
 --SELECT import_eelarve(102876)
 

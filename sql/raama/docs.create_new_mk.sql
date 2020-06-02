@@ -16,6 +16,7 @@ DECLARE
     l_viitenr    TEXT           = params ->> 'viitenumber';
     l_number     TEXT           = params ->> 'number';
     l_kpv        DATE           = params ->> 'kpv';
+    l_maksepaev  DATE           = params ->> 'maksepaev';
     l_selg       TEXT           = params ->> 'selg';
     l_asutus_id  INTEGER        = params ->> 'maksja_id';
     l_aa         TEXT           = params ->> 'maksja_arve';
@@ -56,6 +57,11 @@ BEGIN
              INNER JOIN docs.arv a ON a.parentid = d.id
     WHERE d.id = l_arv_id;
 
+    -- maksepaev
+    IF l_maksepaev IS NULL
+    THEN
+        l_maksepaev = v_arv.tahtaeg;
+    END IF;
 
     -- добавим пояснение
     IF l_selg IS NULL AND l_arv_id IS NOT NULL
@@ -196,8 +202,8 @@ BEGIN
            l_opt          AS opt,
            l_viitenr      AS viitenr,
            l_number       AS number,
-           l_kpv          AS maksepaev,
            l_kpv          AS kpv,
+           l_maksepaev    AS maksepaev,
            l_selg         AS selg,
            NULL           AS muud,
            json_mk1       AS "gridData",

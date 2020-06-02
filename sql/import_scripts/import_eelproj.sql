@@ -1,4 +1,5 @@
 DROP FUNCTION IF EXISTS import_eelproj(INTEGER);
+/*
 
 DROP FOREIGN TABLE IF EXISTS remote_eelproj;
 
@@ -13,7 +14,7 @@ CREATE FOREIGN TABLE remote_eelproj (
   )
   SERVER db_narva_ee
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'eelproj');
-
+*/
 CREATE OR REPLACE FUNCTION import_eelproj(in_old_id INTEGER)
   RETURNS INTEGER AS
 $BODY$
