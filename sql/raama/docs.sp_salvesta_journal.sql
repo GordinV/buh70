@@ -16,7 +16,7 @@ DECLARE
                                 FROM libs.library
                                 WHERE kood = doc_type_kood
                                   AND library = 'DOK'
-                                    LIMIT 1);
+                                LIMIT 1);
     doc_data         JSON    = data ->> 'data';
     doc_details      JSON    = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     doc_asutusid     INTEGER = doc_data ->> 'asutusid';
@@ -44,9 +44,10 @@ DECLARE
                                 FROM ou.aa
                                 WHERE parentid = user_rekvid
                                   AND kassa = 2
-                                    LIMIT 1);
+                                LIMIT 1);
 
     l_check_lausend  TEXT;
+    l_avans_id       INTEGER;
 BEGIN
 
     SELECT kasutaja,
@@ -222,9 +223,9 @@ BEGIN
               AND a1.asutusId = doc_asutusid
               AND (ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.deebet)) OR
                    ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.kreedit)))
-                ORDER BY a1.kpv
+            ORDER BY a1.kpv
                 DESC
-                LIMIT 1;
+            LIMIT 1;
 
             IF lnId IS NOT NULL
             THEN
@@ -264,16 +265,33 @@ BEGIN
                 WHERE a.asutusid = doc_asutusid
                   AND number = doc_dok
                   AND a.rekvid = user_rekvid
-                  and a.journalid <> doc_id
-                    ORDER BY a.jaak DESC
-                    , a.kpv
-                    LIMIT 1
+                  AND a.journalid <> doc_id
+                ORDER BY a.jaak DESC
+                       , a.kpv
+                LIMIT 1
     );
 
     IF is_import IS NULL AND l_arv_id IS NOT NULL
     THEN
         PERFORM docs.sp_tasu_arv(
                         doc_id, l_arv_id, userid);
+    END IF;
+
+
+--avans
+    SELECT a1.parentid INTO l_avans_id
+    FROM docs.avans1 a1
+             INNER JOIN libs.dokprop d ON d.id = a1.dokpropid
+    WHERE ltrim(rtrim(number)) = ltrim(rtrim(doc_dok))
+      AND a1.rekvid = user_rekvid
+      AND a1.asutusId = doc_asutusid
+      AND ltrim(rtrim(coalesce((d.details :: JSONB ->> 'konto'), '') :: TEXT)) IN ('202050')
+    ORDER BY a1.kpv DESC
+    LIMIT 1;
+
+    IF l_avans_id IS NOT NULL
+    THEN
+        PERFORM docs.get_avans_jaak(l_avans_id);
     END IF;
 
 

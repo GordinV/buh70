@@ -13,6 +13,9 @@ BEGIN
 END;
 $$;
 
+GRANT EXECUTE ON FUNCTION fix_text(TEXT) TO public;
+
+
 
 SELECT fix_text('ÄÄÄÄÄÄÄ':: TEXT)
 

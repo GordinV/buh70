@@ -19,7 +19,8 @@ BEGIN
 
   SELECT
     l.*,
-    u.ametnik AS user_name
+    u.ametnik AS user_name,
+         u.rekvid as rekv_id         
   INTO v_doc
   FROM libs.library l
     LEFT OUTER JOIN ou.userid u ON u.id = userid
@@ -37,12 +38,12 @@ BEGIN
   IF NOT exists(SELECT id
                 FROM ou.userid u
                 WHERE id = userid
-                      AND (u.rekvid = v_doc.rekvid OR v_doc.rekvid IS NULL OR v_doc.rekvid = 0)
+                      AND (u.rekvid = v_doc.rekv_id)
   )
   THEN
 
     error_code = 5;
-    error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0) :: TEXT || ', userId:' ||
+    error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekv_id, 0) :: TEXT || ', userId:' ||
                     coalesce(userid, 0) :: TEXT;
     result = 0;
     RETURN;

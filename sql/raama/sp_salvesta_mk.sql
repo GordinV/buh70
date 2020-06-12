@@ -27,7 +27,7 @@ DECLARE
                              LIMIT 1);
     doc_number    TEXT    = doc_data ->> 'number';
     doc_kpv       DATE    = coalesce((doc_data ->> 'kpv')::DATE, current_date);
-    doc_aa_id     INTEGER = coalesce((doc_data ->> 'aa_id')::integer, (doc_data ->> 'aaid')::integer);
+    doc_aa_id     INTEGER = coalesce((doc_data ->> 'aa_id')::INTEGER, (doc_data ->> 'aaid')::INTEGER);
     doc_arvid     INTEGER = doc_data ->> 'arvid';
     doc_muud      TEXT    = doc_data ->> 'muud';
     doc_doklausid INTEGER = doc_data ->> 'doklausid';
@@ -35,6 +35,7 @@ DECLARE
     doc_selg      TEXT    = doc_data ->> 'selg';
     doc_viitenr   TEXT    = doc_data ->> 'viitenr';
     doc_lapsid    INTEGER = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
+    doc_dok_id    INTEGER = doc_data ->> 'dokid'; -- kui mk salvestatud avansiaruanne alusel
 
     json_object   JSON;
     json_record   RECORD;
@@ -101,11 +102,12 @@ BEGIN
         VALUES (doc_typeId, '[]' :: JSONB || new_history, user_rekvid, 1) RETURNING id
             INTO doc_id;
 
-        INSERT INTO docs.mk (parentid, rekvid, kpv, opt, aaId, number, muud, arvid, doklausid, maksepaev, selg, viitenr)
+        INSERT INTO docs.mk (parentid, rekvid, kpv, opt, aaId, number, muud, arvid, doklausid, maksepaev, selg, viitenr,
+                             dokid)
         VALUES (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, doc_number, doc_muud,
                 coalesce(doc_arvid, 0),
                 coalesce(doc_doklausid, 0), coalesce(doc_maksepaev, doc_kpv), coalesce(doc_selg, ''),
-                coalesce(doc_viitenr, '')) RETURNING id
+                coalesce(doc_viitenr, ''), doc_dok_id) RETURNING id
                    INTO mk_id;
 
     ELSE
@@ -141,7 +143,8 @@ BEGIN
             doklausid = coalesce(doc_doklausid, 0),
             maksepaev = coalesce(doc_maksepaev, doc_kpv),
             selg      = coalesce(doc_selg, ''),
-            viitenr   = coalesce(doc_viitenr, '')
+            viitenr   = coalesce(doc_viitenr, ''),
+            dokid     = doc_dok_id
         WHERE parentid = doc_id RETURNING id
             INTO mk_id;
 

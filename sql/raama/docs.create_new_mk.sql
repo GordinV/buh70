@@ -52,7 +52,7 @@ BEGIN
         );
     END IF;
 
-    SELECT a.* INTO v_arv
+    SELECT a.*, coalesce((a.properties ->> 'viitenr')::text,'')::varchar(120) as viitenr INTO v_arv
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
     WHERE d.id = l_arv_id;
@@ -61,6 +61,11 @@ BEGIN
     IF l_maksepaev IS NULL
     THEN
         l_maksepaev = v_arv.tahtaeg;
+    END IF;
+    
+    -- viitenr
+    if l_viitenr is null and v_arv.viitenr is not null and not empty(v_arv.viitenr) THEN
+        l_viitenr = v_arv.viitenr;
     END IF;
 
     -- добавим пояснение

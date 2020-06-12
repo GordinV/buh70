@@ -76,7 +76,9 @@ FROM (
                                       WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
                                           THEN '00'
                                       ELSE j1.kood3 :: VARCHAR(20) END, '')::VARCHAR(20) AS rahavoog,
-                         coalesce(j1.kood5, '') :: VARCHAR(20)                           AS artikkel,
+                         CASE
+                             WHEN coalesce(j1.kood5, '') = '601000' THEN ''
+                             ELSE coalesce(j1.kood5, '') END :: VARCHAR(20)              AS artikkel,
                          j1.summa                                                        AS deebet,
                          0 :: NUMERIC                                                    AS kreedit,
                          coalesce(l.tun5, 1)                                             AS tyyp,
@@ -95,28 +97,32 @@ FROM (
                   UNION ALL
                   SELECT j.kpv,
                          j.rekvid,
-                         j1.kreedit                           AS konto,
-                         j1.lisa_k:: VARCHAR(20)              AS tp,
-                         j1.kood1 :: VARCHAR(20)               AS tegev,
-                         j1.kood2 :: VARCHAR(20)              AS allikas,
+                         j1.kreedit                                         AS konto,
+                         j1.lisa_k:: VARCHAR(20)                            AS tp,
+                         j1.kood1 :: VARCHAR(20)                            AS tegev,
+                         j1.kood2 :: VARCHAR(20)                            AS allikas,
                          CASE
                              WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
                                  THEN '00'
-                             ELSE j1.kood3 :: VARCHAR(20) END AS rahavoog,
-                         j1.kood5 :: VARCHAR(20)              AS artikkel,
-                         0 :: NUMERIC                         AS deebet,
-                         j1.summa                             AS kreedit,
-                         coalesce(l.tun5, 1)                  AS tyyp,
-                         NOT empty(l.tun1)                    AS is_tp,
-                         NOT empty(l.tun2)                    AS is_tegev,
-                         NOT empty(l.tun3)                    AS is_allikas,
-                         NOT empty(l.tun4)                    AS is_rahavoog
-                  FROM docs.doc d
-                           INNER JOIN docs.journal j ON j.parentid = d.id
+                             ELSE j1.kood3 :: VARCHAR(20) END               AS rahavoog,
+                         CASE
+                             WHEN COALESCE(j1.kood5, '') = '601000' THEN ''
+                             ELSE COALESCE(j1.kood5, '') END :: VARCHAR(20) AS artikkel,
+                         0 :: NUMERIC                                       AS deebet,
+                         j1.summa                                           AS kreedit,
+                         COALESCE(l.tun5, 1)                                AS tyyp,
+                         NOT empty(l.tun1)                                  AS is_tp,
+                         (NOT empty(l.tun2) OR l.kood <>
+                                               '601000')                    AS is_tegev,
+                         NOT empty(l.tun3)                                  AS is_allikas,
+                         NOT empty(l.tun4)                                  AS is_rahavoog
+                  FROM docs.doc D
+                           INNER JOIN docs.journal j
+                                      ON j.parentid = D.id
                            INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                            INNER JOIN libs.library l ON l.library = 'KONTOD' AND
                                                         ltrim(rtrim(l.kood)) = ltrim(rtrim(j1.kreedit))
-                  WHERE d.rekvid IN (SELECT rekv_id
+                  WHERE D.rekvid IN (SELECT rekv_id
                                      FROM get_asutuse_struktuur(l_rekvid))
                     AND j.kpv <= l_kpv2
               )
@@ -156,7 +162,7 @@ FROM (
                                   THEN rahavoog
                               ELSE '' END)::TEXT     AS rahavoog,
                          (CASE
-                              WHEN is_tegev
+                              WHEN is_tegev AND konto::TEXT <> '601000'::TEXT
                                   THEN artikkel
                               ELSE '' END)::TEXT     AS artikkel,
                          CASE
@@ -193,7 +199,7 @@ FROM (
                                   THEN rahavoog
                               ELSE '' END)::TEXT     AS rahavoog,
                          (CASE
-                              WHEN is_tegev
+                              WHEN is_tegev and konto::text <> '601000'::text
                                   THEN artikkel
                               ELSE '' END)::TEXT     AS artikkel,
                          CASE
@@ -223,7 +229,7 @@ FROM (
                   FROM qryTulemusSaldoAndmik
 
                         */
-             ) qry
+              ) qry
          WHERE deebet <> 0
             OR kreedit <> 0
          GROUP BY rekv_id, konto, tp, tegev, allikas, artikkel, rahavoog, qry.tyyp
@@ -245,8 +251,8 @@ GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, 
 
 
 /*
-SELECT sum(deebet) AS db, sum(kreedit), konto, tp
-FROM eelarve.saldoandmik_aruanne('2020-01-31' :: DATE, current_date :: DATE, 3 :: INTEGER)
-WHERE konto = '103000'
+SELECT *
+FROM eelarve.saldoandmik_aruanne('2020-03-31' :: DATE, current_date :: DATE, 63 :: INTEGER)
+WHERE konto = '601000'
 GROUP BY konto, tp
 */
