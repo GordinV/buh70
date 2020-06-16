@@ -44,13 +44,6 @@ BEGIN
 
     END IF;
 
-    IF l_rekvid IS NULL
-    THEN
-      SELECT rekvid
-             INTO l_rekvId
-      FROM palk.tooleping
-      WHERE id = l_lepingid;
-    END IF;
   END IF;
 
   IF l_maxdays > l_lopp_paev
@@ -68,9 +61,9 @@ BEGIN
       ELSE
         IF exists(SELECT 1
                   FROM cur_tahtpaevad l
-                  WHERE (l.rekvId IS NULL OR l.rekvid = l_rekvId)
+                  WHERE (l.rekvId IS NULL OR l.rekvid = coalesce(l_rekvId, 63))
                     AND
-                    l.paEv = DAY(l_date)
+                      l.paEv = DAY(l_date)
                     AND kuu = MONTH(l_date)
                     AND (aasta IS NULL OR aasta = year(l_date)))
         THEN
@@ -93,7 +86,7 @@ GRANT EXECUTE ON FUNCTION palk.get_work_days( JSON ) TO dbpeakasutaja;
 /*
 SELECT sp_workdays(1, NULL :: JSON);
 
-SELECT sp_workdays('{"kuu":1,"aasta":2018}' :: JSON);
+SELECT sp_workdays('{"kuu":6,"aasta":2020}' :: JSON);
 
 SELECT sp_workdays('{"kuu":1,"aasta":2018,"lepingid":2}' :: JSON);
 
