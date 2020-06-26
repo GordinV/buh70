@@ -23,6 +23,9 @@ DECLARE
   l_params    JSON;
   l_tulemus   INTEGER;
 BEGIN
+
+    raise notice 'kond l_rekvid %', l_rekvid;
+
   IF NOT empty(kas_delete)
   THEN
 
@@ -58,7 +61,7 @@ BEGIN
     FOR v_rekv IN
     SELECT id
     FROM ou.rekv
-    WHERE parentid <> 9999 AND id NOT IN (123, 116, 122)
+    WHERE parentid < 999 AND id NOT IN (123, 116, 122)
           AND  id IN (SELECT rekv_id
                      FROM get_asutuse_struktuur(l_rekvid))
     LOOP
@@ -67,7 +70,7 @@ BEGIN
         eelarve.saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, kuu, rekvid, omatp,
                              tyyp)
         SELECT
-          l.nimetus,
+          coalesce(l.nimetus,''),
           qry.deebet,
           qry.kreedit,
           qry.konto,
@@ -81,7 +84,7 @@ BEGIN
           v_rekv.id,
           l_oma_tp,
           0
-        FROM eelarve.saldoandmik_aruanne(l_kpv1, l_kpv2, v_rekv.id) qry
+        FROM eelarve.saldoandmik_aruanne(l_kpv2, v_rekv.id, null) qry
           LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(l.kood)) = ltrim(rtrim(qry.konto))
         WHERE qry.rekv_id = v_rekv.id;
 
@@ -97,6 +100,7 @@ BEGIN
 
   IF NOT empty(l_kond) AND l_rekvid = 63 -- only for Rahandusamet
   THEN
+      raise notice 'start arv kond';
     -- koostame kond saldoandmik
     PERFORM eelarve.koosta_kond_saldoandmik(user_id, l_kpv);
   END IF;
@@ -117,8 +121,13 @@ COST 100;
 GRANT EXECUTE ON FUNCTION eelarve.sp_koosta_saldoandmik(INTEGER, JSON) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION eelarve.sp_koosta_saldoandmik(INTEGER, JSON) TO dbpeakasutaja;
 
+
+
 /*
-select error_code, result, error_message from eelarve.sp_koosta_saldoandmik(70,'{"kpv":"2018-09-30","tyyp":0,"kond":1, "rekvid":63}'::json)
+select error_code, result, error_message from eelarve.sp_koosta_saldoandmik(2477,'{"kpv":"2020-01-31","tyyp":0,"kond":1, "rekvid":63}'::json)
 
 select * from eelarve.saldoandmik where rekvid = 63 and kuu = 9 and aasta = 2018
+
+select * from ou.userid where rekvid = 63
+
 */

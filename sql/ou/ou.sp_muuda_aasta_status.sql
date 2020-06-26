@@ -20,7 +20,6 @@ DECLARE
                            WHERE id = user_id);
     new_history JSON;
 BEGIN
-    raise notice 'start';
     SELECT *,
            (roles ->> 'is_peakasutaja')::BOOLEAN AS is_peakasutaja
            INTO v_user

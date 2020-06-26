@@ -67,7 +67,7 @@ describe('dok. type Saldoandmik aruanne tests', function () {
 
     it('should select data from grid query', async()=> {
         let sql = doc.grid.sqlString;
-        let returnValue = await db.queryDb(sql, ['2018-01-01','2018-08-31', 1]);
+        let returnValue = await db.queryDb(sql, ['2020-01-31', 63, null]);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         let err = returnValue.error_code;

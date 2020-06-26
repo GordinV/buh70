@@ -18,17 +18,15 @@ module.exports = {
                    tp,
                    tegev,
                    allikas,
-                   rahavoog,
-                   artikkel
-            FROM eelarve.saldoandmik_aruanne($1::DATE, $2::DATE, $3::INTEGER)
+                   rahavoog
+            FROM eelarve.saldoandmik_aruanne($1::DATE, $2::INTEGER, $3::INTEGER)
             GROUP BY rekv_id,
                      konto,
                      tp,
                      tegev,
                      allikas,
-                     rahavoog,
-                     artikkel
-            ORDER BY konto, tp, tegev, allikas, rahavoog`,     // $1 - kpv1 $2 - kpv2, $3 - rekvid (svod)
+                     rahavoog
+            ORDER BY konto, tp, tegev, allikas, rahavoog`,     // $1 - kpv $2 - rekvid , $3 - KOND
         params: '',
         alias: 'saldoandmik_report'
     }

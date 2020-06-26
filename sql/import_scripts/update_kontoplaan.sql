@@ -43,17 +43,26 @@ BEGIN
         SELECT *
         FROM remote2_library
         WHERE library = 'KONTOD'
-          AND status = 1
+--          AND status = 1
         LOOP
-            SELECT * INTO v_konto FROM libs.library WHERE library.library = 'KONTOD' AND kood = v_lib.kood and status = 1;
-            IF ( v_konto is not null and upper(v_lib.properties::TEXT) <> upper(coalesce(v_konto.properties::TEXT, '')))
-                OR v_lib.tun1 <> v_konto.tun1
-                OR v_lib.tun2 <> v_konto.tun2
-                OR v_lib.tun3 <> v_konto.tun3
-                OR v_lib.tun4 <> v_konto.tun4
-                OR v_lib.tun5 <> v_konto.tun5
+            -- проверка на статус
+            IF v_lib.status = 3
             THEN
-/*                UPDATE libs.library
+                raise notice 'delete v_lib.konto %', v_lib.kood;
+                UPDATE libs.library SET status = v_lib.status WHERE library.library = 'KONTOD' AND kood = v_lib.kood;
+            ELSE
+                -- правим содержимое счета
+                SELECT * INTO v_konto
+                FROM libs.library
+                WHERE library.library = 'KONTOD' AND kood = v_lib.kood AND status = 1;
+                IF (v_konto IS NOT NULL AND upper(v_lib.properties::TEXT) <> upper(coalesce(v_konto.properties::TEXT, '')))
+                    OR v_lib.tun1 <> v_konto.tun1
+                    OR v_lib.tun2 <> v_konto.tun2
+                    OR v_lib.tun3 <> v_konto.tun3
+                    OR v_lib.tun4 <> v_konto.tun4
+                    OR v_lib.tun5 <> v_konto.tun5
+                THEN
+                UPDATE libs.library
                 SET properties = v_lib.properties,
                     tun1       = v_lib.tun1,
                     tun2       = v_lib.tun2,
@@ -61,15 +70,18 @@ BEGIN
                     tun4       = v_lib.tun4,
                     tun5       = v_lib.tun5
                 WHERE id = v_konto.id;
-*/
-                l_change = TRUE;
-                l_count = l_count + 1;
 
-            ELSE
-                l_change = FALSE;
+                    l_change = TRUE;
+                    l_count = l_count + 1;
+                    RAISE NOTICE 'konto -> %, v_konto-> %, l_change-> %', v_lib, v_konto, l_change;
+
+                ELSE
+                    l_change = FALSE;
+                END IF;
+
             END IF;
 
-            RAISE NOTICE 'konto -> %, v_konto-> %, l_change-> %', v_lib, v_konto, l_change;
+
         END LOOP;
     RETURN l_count;
 END;

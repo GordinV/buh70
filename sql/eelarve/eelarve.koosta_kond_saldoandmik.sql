@@ -26,6 +26,8 @@ BEGIN
         error_message = 'Kasutaja ei leitud,  userId:' ||
                         coalesce(user_id, 0) :: TEXT;
         result = 0;
+
+        raise notice 'eelarve.koosta_kond_saldoandmik, error_message %', error_message;
         RETURN;
     END IF;
 
@@ -51,7 +53,7 @@ BEGIN
         LOOP
             RAISE NOTICE 'v_omatp %', v_omatp.omatp;
             INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv, rekvid)
-            SELECT s.nimetus,
+            SELECT coalesce(s.nimetus,''),
                    CASE
                        WHEN kontod.tyyp IS NULL OR kontod.tyyp IN (1, 3)
                            THEN s.db - s.kr
@@ -89,7 +91,7 @@ BEGIN
 
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
                                                  rekvid)
-                    SELECT nimetus,
+                    SELECT coalesce(nimetus,''),
                            kr,
                            db,
                            konto,
@@ -110,7 +112,7 @@ BEGIN
                     -- kreedit
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
                                                  rekvid)
-                    SELECT nimetus,
+                    SELECT coalesce(nimetus,''),
                            kr,
                            db,
                            konto,
@@ -133,7 +135,7 @@ BEGIN
                     --	välja arvatud kontod 601000 ja 601001, mida ei võeta üldse arvesse olenemata TP koodist)))
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
                                                  rekvid)
-                    SELECT nimetus,
+                    SELECT coalesce(nimetus,''),
                            kr,
                            db,
                            konto,
@@ -156,7 +158,7 @@ BEGIN
 
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
                                                  rekvid)
-                    SELECT nimetus,
+                    SELECT coalesce(nimetus,''),
                            kr,
                            db,
                            konto,
@@ -178,7 +180,7 @@ BEGIN
                     --(esitaja saldoandmik sum (kõik kontod algusega 7, mille TP kood on võrreldava kood (deebet miinus kreedit)))
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
                                                  rekvid)
-                    SELECT nimetus,
+                    SELECT coalesce(nimetus,''),
                            kr,
                            db,
                            konto,
@@ -199,7 +201,7 @@ BEGIN
                     --(võrreldava saldoandmik (kõik kontod algusega 7, mille TP kood on aruande koostaja kood (kreedit miinus deebet)))
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
                                                  rekvid)
-                    SELECT nimetus,
+                    SELECT coalesce(nimetus,''),
                            kr,
                            db,
                            konto,
@@ -248,7 +250,7 @@ BEGIN
 
     INSERT INTO eelarve.saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, kuu, rekvid,
                                      omatp)
-    SELECT nimetus,
+    SELECT coalesce(nimetus,''),
            sum(db),
            sum(kr),
            konto,

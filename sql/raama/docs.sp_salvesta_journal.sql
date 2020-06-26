@@ -58,8 +58,7 @@ BEGIN
       AND u.id = userId;
     IF is_import IS NULL AND userName IS NULL
     THEN
-        RAISE NOTICE 'User not found %', user;
-        RETURN 0;
+        RAISE EXCEPTION 'Kasutaja ei leidnud või puuduvad õigused %', user;
     END IF;
 
     IF (doc_id IS NULL)
@@ -218,11 +217,11 @@ BEGIN
             SELECT a1.parentid INTO lnId
             FROM docs.avans1 a1
                      INNER JOIN libs.dokprop d ON d.id = a1.dokpropid
-            WHERE ltrim(rtrim(a1.number)) = ltrim(rtrim(doc_dok))
+            WHERE ltrim(rtrim(a1.number::text)) = ltrim(rtrim(doc_dok::text))
               AND a1.rekvid = user_rekvid
               AND a1.asutusId = doc_asutusid
-              AND (ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.deebet)) OR
-                   ltrim(rtrim((d.details :: JSONB ->> 'konto'))) = ltrim(rtrim(json_record.kreedit)))
+              AND (ltrim(rtrim((d.details :: JSONB ->> 'konto')::text)) = ltrim(rtrim(json_record.deebet)) OR
+                   ltrim(rtrim((d.details :: JSONB ->> 'konto')::text)) = ltrim(rtrim(json_record.kreedit)))
             ORDER BY a1.kpv
                 DESC
             LIMIT 1;
@@ -248,6 +247,7 @@ BEGIN
 
     -- rekl ettemaks
 
+
     IF is_rekl_ettemaks
     THEN
         SELECT row_to_json(row) INTO json_params
@@ -256,6 +256,7 @@ BEGIN
 
         PERFORM rekl.sp_koosta_ettemaks(userid, json_params);
     END IF;
+    raise notice 'salvestan journal, saved, avans done, rekl done';
 
     -- arve tasumine
 
@@ -270,19 +271,21 @@ BEGIN
                        , a.kpv
                 LIMIT 1
     );
+    raise notice 'salvestan journal, saved, avans done, rekl done, arv done';
 
     IF is_import IS NULL AND l_arv_id IS NOT NULL
     THEN
         PERFORM docs.sp_tasu_arv(
                         doc_id, l_arv_id, userid);
     END IF;
+    raise notice 'salvestan journal, saved, avans done, rekl done, arv done, arv tasu';
 
 
 --avans
     SELECT a1.parentid INTO l_avans_id
     FROM docs.avans1 a1
              INNER JOIN libs.dokprop d ON d.id = a1.dokpropid
-    WHERE ltrim(rtrim(number)) = ltrim(rtrim(doc_dok))
+    WHERE ltrim(rtrim(number::text)) = ltrim(rtrim(doc_dok::text))
       AND a1.rekvid = user_rekvid
       AND a1.asutusId = doc_asutusid
       AND ltrim(rtrim(coalesce((d.details :: JSONB ->> 'konto'), '') :: TEXT)) IN ('202050')
@@ -293,6 +296,8 @@ BEGIN
     THEN
         PERFORM docs.get_avans_jaak(l_avans_id);
     END IF;
+    raise notice 'salvestan journal, saved, avans done, rekl done, arv done, arv tasu, avans again';
+
 
 
     RETURN doc_id;

@@ -22,7 +22,7 @@ BEGIN
            j.dok,
            j.asutusid,
            j.kpv,
-           j.id as parentid,
+           j.id      AS parentid,
            u.ametnik AS user_name,
            j.kpv
            INTO v_doc
@@ -139,7 +139,8 @@ BEGIN
                       FROM docs.avans1
                       WHERE ltrim(rtrim(number)) = ltrim(rtrim(v_doc.dok))
                         AND asutusid = v_doc.asutusid
-                        AND year(kpv) = year(v_doc.kpv) limit 1);
+                        AND year(kpv) = year(v_doc.kpv)
+                      LIMIT 1);
 
     END IF;
 
@@ -147,6 +148,10 @@ BEGIN
     DELETE FROM docs.journal1 WHERE parentid IN (SELECT id FROM docs.journal WHERE parentid = v_doc.id);
 
     DELETE FROM docs.journal WHERE parentid = v_doc.id;
+
+    -- delete alg_saldo
+    DELETE FROM docs.alg_saldo WHERE journal_id = v_doc.id;
+
     --@todo констрейн на удаление
     -- delete avans
     IF l_avans_id IS NOT NULL

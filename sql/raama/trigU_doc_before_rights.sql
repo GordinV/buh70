@@ -229,6 +229,16 @@ BEGIN
                     doc_rigths = doc_rigths || muud_rigths;
 
                 END IF;
+        WHEN new.status = 4 -- alg.saaldo
+            THEN
+                SELECT row_to_json(row) INTO doc_rigths
+                FROM (SELECT ARRAY [0]                        AS "update",
+                             ARRAY [0]                        AS "delete",
+                             array(SELECT id
+                                   FROM ou.userid
+                                   WHERE rekvid = new.rekvid) AS "select") row;
+
+
         END CASE;
 
     new.rigths = doc_rigths;

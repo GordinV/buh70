@@ -22,7 +22,10 @@ WITH algsaldo AS (
              FROM docs.doc d
                       INNER JOIN docs.journal j ON j.parentid = d.id
                       INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-             WHERE j.kpv < l_kpv1
+                 -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                      LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+
+             WHERE coalesce(a.kpv, j.kpv) < l_kpv1
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
              UNION ALL
@@ -36,7 +39,9 @@ WITH algsaldo AS (
              FROM docs.doc d
                       INNER JOIN docs.journal j ON j.parentid = d.id
                       INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-             WHERE j.kpv < l_kpv1
+                 -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                      LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+             WHERE coalesce(a.kpv, j.kpv) < l_kpv1
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
          ) qry
@@ -64,8 +69,11 @@ FROM (
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-         WHERE j.kpv >= l_kpv1
-           AND j.kpv <= l_kpv2
+             -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+
+         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+           AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
          UNION ALL
@@ -81,8 +89,10 @@ FROM (
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-         WHERE j.kpv >= l_kpv1
-           AND j.kpv <= l_kpv2
+             -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+           AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
      ) qry
@@ -90,9 +100,7 @@ FROM (
 
 WHERE NOT empty(qry.konto)
   AND left(konto, 2) NOT IN ('90', '91', '92', '93', '94', '95', '96', '97', '98')
-GROUP BY konto
-       , rekvid
-       , r.nimetus;
+GROUP BY konto, rekvid, r.nimetus;
 $BODY$
     LANGUAGE SQL
     VOLATILE

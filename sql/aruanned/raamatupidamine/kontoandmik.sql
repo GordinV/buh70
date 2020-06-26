@@ -36,8 +36,11 @@ WITH alg_kaibed AS (
                        THEN j.summa
                    ELSE 0 :: NUMERIC(14, 2) END) AS alg_saldo
     FROM cur_journal j
+             -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+             LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = j.id
+
     WHERE (j.deebet::TEXT = l_konto OR j.kreedit::TEXT = l_konto)
-      AND kpv < l_kpv1
+      AND coalesce(a.kpv, j.kpv) < l_kpv1
       AND j.rekvid IN (SELECT rekv_id
                        FROM get_asutuse_struktuur(l_rekvid))
     GROUP BY rekvid
@@ -66,12 +69,31 @@ SELECT coalesce(a.alg_saldo, 0)::NUMERIC(14, 2)                                 
        coalesce(selg, '')::TEXT                                                                       AS selg
 FROM alg_kaibed a
          FULL OUTER JOIN
-     (SELECT J.*, r.nimetus AS rekv_nimi
+     (SELECT coalesce(a.kpv, j.kpv) AS kpv,
+             J.id,
+             j.rekvid,
+             j.asutus,
+             j.dok,
+             j.number,
+             j.selg,
+             j.summa,
+             j.deebet,
+             j.kreedit,
+             j.kood1,
+             j.kood2,
+             j.kood3,
+             j.kood4,
+             j.kood5,
+             j.proj,
+             j.tunnus,
+             r.nimetus              AS rekv_nimi
       FROM cur_journal j
+               -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+               LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = j.id
                INNER JOIN ou.rekv r ON j.rekvid = r.id
       WHERE (j.deebet::TEXT = l_konto OR j.kreedit::TEXT = l_konto)
-        AND kpv >= l_kpv1
-        AND kpv <= l_kpv2
+        AND coalesce(a.kpv, j.kpv) >= l_kpv1
+        AND coalesce(a.kpv, j.kpv) <= l_kpv2
         AND j.rekvid IN (SELECT rekv_id
                          FROM get_asutuse_struktuur(l_rekvid))) j
      ON j.rekvid = a.rekvid

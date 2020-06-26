@@ -120,10 +120,7 @@ BEGIN
 
         l_toopaevad = (SELECT palk.get_work_days(params::JSON));
 
-        raise notice 'toograf,l_toopaevad %, params %, l_tahtpaeva_tunnid %, v_Tooleping.koormus%', l_toopaevad, params, l_tahtpaeva_tunnid, v_Tooleping.koormus;
-
-
-        l_hours = l_toopaevad *  v_Tooleping.koormus / 100 * v_Tooleping.toopaev - l_tahtpaeva_tunnid;
+        l_hours = l_toopaevad *  v_Tooleping.toopaev - l_tahtpaeva_tunnid;
 
         IF l_hours < 0
         THEN
