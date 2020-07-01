@@ -16,7 +16,7 @@ CREATE TABLE docs.alg_saldo
 
 GRANT ALL ON TABLE docs.alg_saldo TO dbadmin;
 
-GRANT SELECT ON TABLE docs.alg_saldo TO dbkasutaja;
+GRANT SELECT, DELETE ON TABLE docs.alg_saldo TO dbkasutaja;
 
 GRANT SELECT, UPDATE, DELETE, INSERT ON TABLE docs.alg_saldo TO dbpeakasutaja;
 
