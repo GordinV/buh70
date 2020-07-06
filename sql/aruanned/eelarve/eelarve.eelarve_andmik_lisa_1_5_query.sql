@@ -99,7 +99,7 @@ BEGIN
                                      THEN rekvid
                                  ELSE l_rekv_id END)
                AND e.rekvid IN (SELECT rekv_id
-                                FROM get_asutuse_struktuur(l_rekv_id))
+                                FROM get_asutuse_struktuur(l_rekvid))
                AND aasta = year($1)
                AND (e.kpv IS NULL) --  OR e.kpv <= $1
              UNION ALL
@@ -129,7 +129,7 @@ BEGIN
                                      THEN rekvid
                                  ELSE l_rekv_id END)
                AND e.rekvid IN (SELECT rekv_id
-                                FROM get_asutuse_struktuur(l_rekv_id))
+                                FROM get_asutuse_struktuur(l_rekvid))
                AND aasta = year($1)
                AND (e.kpv IS NOT NULL AND e.kpv <= l_kpv)
              UNION ALL
@@ -156,7 +156,7 @@ BEGIN
                                         THEN rekvid
                                     ELSE l_rekv_id END)
                AND ft.rekvid IN (SELECT rekv_id
-                                 FROM get_asutuse_struktuur(l_rekv_id))
+                                 FROM get_asutuse_struktuur(l_rekvid))
                AND ft.kuu <= MONTH(l_kpv)
                AND ft.aasta = year(l_kpv)
                AND ft.artikkel IS NOT NULL
@@ -185,7 +185,7 @@ BEGIN
                                         THEN rekvid
                                     ELSE l_rekv_id END)
                AND tt.rekvid IN (SELECT rekv_id
-                                 FROM get_asutuse_struktuur(l_rekv_id))
+                                 FROM get_asutuse_struktuur(l_rekvid))
                AND tt.kuu <= MONTH(l_kpv)
                AND tt.aasta = year(l_kpv)
                AND tt.artikkel IS NOT NULL
@@ -216,7 +216,7 @@ BEGIN
                                     ELSE l_rekv_id END)
 
                AND kt.rekvid IN (SELECT rekv_id
-                                 FROM get_asutuse_struktuur(l_rekv_id))
+                                 FROM get_asutuse_struktuur(l_rekvid))
                AND kt.aasta = year(l_kpv)
                AND kt.kuu <= MONTH(l_kpv)
                AND kt.artikkel IS NOT NULL
@@ -260,7 +260,7 @@ BEGIN
                                             ELSE l_rekv_id END)
 
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekv_id))
+                                         FROM get_asutuse_struktuur(l_rekvid))
                         AND year(j.kpv) = year(l_kpv)
                         AND J.KPV <= l_kpv
                         AND j1.kood5 IN
@@ -314,7 +314,7 @@ BEGIN
                                                 THEN j.rekvid
                                             ELSE $2 END)
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekv_id))
+                                         FROM get_asutuse_struktuur(l_rekvid))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.kood5 IN
@@ -365,7 +365,7 @@ BEGIN
                                                 THEN j.rekvid
                                             ELSE l_rekv_id END)
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekv_id))
+                                         FROM get_asutuse_struktuur(l_rekvid))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.kood5 IN
@@ -410,9 +410,9 @@ BEGIN
                         AND j.rekvid = (CASE
                                             WHEN $3 = 1
                                                 THEN j.rekvid
-                                            ELSE $2 END)
+                                            ELSE l_rekvid END)
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur($2))
+                                         FROM get_asutuse_struktuur(l_rekvid))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.deebet LIKE '100%'
@@ -461,9 +461,9 @@ BEGIN
                         AND j.rekvid = (CASE
                                             WHEN $3 = 1
                                                 THEN j.rekvid
-                                            ELSE $2 END)
+                                            ELSE l_rekvid END)
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur($2))
+                                         FROM get_asutuse_struktuur(l_rekvid))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.kood5 IN
@@ -507,9 +507,9 @@ BEGIN
                         AND j.rekvid = (CASE
                                             WHEN $3 = 1
                                                 THEN j.rekvid
-                                            ELSE $2 END)
+                                            ELSE l_rekvid END)
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur($2))
+                                         FROM get_asutuse_struktuur(l_rekvid))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND left(j1.kreedit, 3) IN ('100', '999')
@@ -551,9 +551,9 @@ BEGIN
     WHERE aasta = year($1)
       AND kuu = month($1)
       AND rekvid = (CASE
-                        WHEN $3 = 1 AND $2 = 63
+                        WHEN $3 = 1 AND l_rekvid = 63
                             THEN 999
-                        ELSE $2 END)
+                        ELSE l_rekvid END)
     GROUP BY tegev
            , konto
            , rahavoo
@@ -566,9 +566,9 @@ BEGIN
     SELECT 2,
            2,
            (CASE
-                WHEN $3 = 1 AND $2 = 63
+                WHEN $3 = 1 AND l_rekvid = 63
                     THEN 999
-                ELSE $2 END),
+                ELSE l_rekvid END),
 
            tegev,
            konto,
@@ -583,9 +583,9 @@ BEGIN
     WHERE aasta = year($1) - 1 --year(($1 - interval '3 month')::date)
       AND kuu = 12             -- month(($1 - interval '3 month')::date)
       AND rekvid = (CASE
-                        WHEN $3 = 1 AND $2 = 63
+                        WHEN $3 = 1 AND l_rekvid = 63
                             THEN 999
-                        ELSE $2 END)
+                        ELSE l_rekvid END)
     GROUP BY tegev
            , allikas
            , konto

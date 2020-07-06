@@ -79,6 +79,7 @@ FROM (
                                  ON j.parentid = D.id
                       INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                       INNER JOIN libs.library l ON l.library = 'KONTOD' AND
+                                                   l.status <> 3 AND
                                                    ltrim(rtrim(l.kood)) = ltrim(rtrim(j1.kreedit))
                  -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                       LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id

@@ -23,6 +23,13 @@ DECLARE
     l_tasu_summa     NUMERIC = 0;
     is_refund        BOOLEAN = FALSE;
 BEGIN
+
+    IF exists(SELECT 1 FROM docs.arv WHERE journalid = l_tasu_id)
+    THEN
+        -- это не оплата, это проводка счета
+        RETURN 0;
+    END IF;
+
     SELECT d.id,
            d.docs_ids,
            a.properties ->> 'tyyp'                                AS tyyp,
