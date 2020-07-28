@@ -15,9 +15,9 @@ const REKV_ID = 63;
 describe('dok. type SMK tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../lapsed/smk'),
+    const doc = require('../raamatupidamine/smk'),
         docTypeId = 'SMK'.toLowerCase(),
-        modelForExport = 'lapsed/smk';
+        modelForExport = 'raamatupidamine/smk';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -25,7 +25,7 @@ describe('dok. type SMK tests', function () {
     let xml;
     let sourceFile;
 
-    it.skip (`${docTypeId} create XML model`, (done)=> {
+    it(`${docTypeId} create XML model`, (done)=> {
         //create model
         modelCreator(modelForExport,(err, xmlFile) => {
             sourceFile = xmlFile;
@@ -72,9 +72,9 @@ describe('dok. type SMK tests', function () {
 
     });
 
-    it.skip('should have copy in buh62 folder', (done) => {
-        let targetFile =  path.join('C:\\avpsoft\\buh62\\models\\', modelForExport + '.xml');
-        let copyFile =  path.join('C:\\avpsoft\\buh70\\models\\', modelForExport + '_copy.xml');
+    it('should have copy in buh62 folder', (done) => {
+        let targetFile =  path.join('C:\\development\\buh62\\models\\', modelForExport + '.xml');
+        let copyFile =  path.join('C:\\development\\buh70\\models\\', modelForExport + '_copy.xml');
         expect(fs.existsSync(sourceFile)).toBeTruthy();
         fs.copyFileSync(sourceFile, copyFile);
         expect(fs.existsSync(copyFile)).toBeTruthy();

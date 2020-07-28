@@ -17,19 +17,21 @@ SELECT sum(summa)    AS summa,
        nimetus
 FROM (
          SELECT d.id,
-                month(j.kpv)                                                                 AS kuu,
-                year(j.kpv)                                                                  AS aasta,
+                month(j.kpv)               AS kuu,
+                year(j.kpv)                AS aasta,
                 j.rekvid,
-                rekv.nimetus                                                                 AS asutus,
+                rekv.nimetus               AS asutus,
                 rekv.parentid,
-                j1.tunnus                                                                    AS tunnus,
-                j1.summa                                                                     AS summa,
-                j1.kood5                                                                     AS artikkel,
-                j1.kood1                                                                     AS tegev,
-                j1.kood2                                                                     AS allikas,
-                j1.kood3                                                                     AS rahavoog,
-                l.nimetus                                                                    AS nimetus,
-                (CASE WHEN (lpad(j1.deebet, 6) = '601000' or lpad(j1.deebet, 6) = '601001') THEN j1.summa ELSE 0 END):: NUMERIC AS kbm
+                j1.tunnus                  AS tunnus,
+                j1.summa                   AS summa,
+                j1.kood5                   AS artikkel,
+                j1.kood1                   AS tegev,
+                j1.kood2                   AS allikas,
+                j1.kood3                   AS rahavoog,
+                l.nimetus                  AS nimetus,
+                (CASE
+                     WHEN (lpad(j1.deebet, 6) = '601000' OR lpad(j1.deebet, 6) = '601001') THEN j1.summa
+                     ELSE 0 END):: NUMERIC AS kbm
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
                   INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
@@ -39,6 +41,8 @@ FROM (
                   JOIN eelarve.kassa_kontod kassakontod
                        ON ltrim(rtrim(j1.kreedit)) ~~ ltrim(rtrim(kassakontod.kood))
                   LEFT OUTER JOIN libs.library l ON l.kood = j1.kood5 AND l.library = 'TULUDEALLIKAD'
+         WHERE j1.kood2 =
+               CASE WHEN j1.kood5 = '2586' AND left(j1.kreedit, 6) IN ('100100', '999999') THEN '80' ELSE j1.kood2 END
 --         WHERE l.tun5 = 2
      ) qry
 GROUP BY kuu, aasta, rekvid, asutus, parentid, tunnus,
@@ -58,3 +62,12 @@ GRANT SELECT ON TABLE cur_kulude_kassa_taitmine TO eelallkirjastaja;
 GRANT SELECT ON TABLE cur_kulude_kassa_taitmine TO eelesitaja;
 GRANT SELECT ON TABLE cur_kulude_kassa_taitmine TO eelkoostaja;
 
+/*
+select sum(summa) from (
+                           SELECT *
+                           FROM cur_kulude_kassa_taitmine
+                           WHERE artikkel = '4133'
+    and rekvid = 64
+                       ) qry
+
+*/

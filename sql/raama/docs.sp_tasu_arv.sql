@@ -106,7 +106,7 @@ BEGIN
     SELECT coalesce(l_doc_tasu_id, 0)                         AS id,
            v_tasu.rekvid                                      AS rekvid,
            l_arv_id                                           AS doc_arv_id,
-           v_tasu.created :: DATE                             AS kpv,
+           v_tasu.kpv :: DATE                                 AS kpv,
            l_tasu_type                                        AS pankkassa,
            -- 1 - mk, 2- kassa, 3 - lausend
            l_tasu_id                                          AS doc_tasu_id,

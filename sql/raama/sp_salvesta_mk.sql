@@ -107,7 +107,7 @@ BEGIN
         VALUES (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, doc_number, doc_muud,
                 coalesce(doc_arvid, 0),
                 coalesce(doc_doklausid, 0), coalesce(doc_maksepaev, doc_kpv), coalesce(doc_selg, ''),
-                coalesce(doc_viitenr, ''), doc_dok_id) RETURNING id
+                coalesce(doc_viitenr, ''), coalesce(doc_dok_id,0)) RETURNING id
                    INTO mk_id;
 
     ELSE
@@ -144,7 +144,7 @@ BEGIN
             maksepaev = coalesce(doc_maksepaev, doc_kpv),
             selg      = coalesce(doc_selg, ''),
             viitenr   = coalesce(doc_viitenr, ''),
-            dokid     = doc_dok_id
+            dokid     = coalesce(doc_dok_id,0)
         WHERE parentid = doc_id RETURNING id
             INTO mk_id;
 

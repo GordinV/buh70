@@ -17,7 +17,8 @@ describe('dok. type Arv tests', function () {
 
     const docTypeId = 'ARV'.toLowerCase(),
         doc = require(`../${MODULE}/${docTypeId}`),
-        modelForExport = `${MODULE}/${docTypeId}`;
+//        modelForExport = `${MODULE}/${docTypeId}`;
+        modelForExport = 'raamatupidamine/arv';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -25,7 +26,7 @@ describe('dok. type Arv tests', function () {
     let xml;
     let sourceFile;
 
-    it.skip(`${docTypeId} create XML model`, (done) => {
+    it(`${docTypeId} create XML model`, (done) => {
         //create model
         modelCreator(modelForExport, (err, xmlFile) => {
             sourceFile = xmlFile;
@@ -81,7 +82,7 @@ describe('dok. type Arv tests', function () {
 
     });
 
-    it.skip('should have copy in buh62 folder', (done) => {
+    it('should have copy in buh62 folder', (done) => {
         let targetFile = path.join('C:\\development\\buh62\\models\\', modelForExport + '.xml');
         let copyFile = path.join('C:\\development\\buh70\\models\\', modelForExport + '_copy.xml');
         expect(fs.existsSync(sourceFile)).toBeTruthy();
@@ -146,7 +147,11 @@ describe('dok. type Arv tests', function () {
     });
 
     it('doc type library should contain MENU doc.type', async () => {
-        let sql = `select id from libs.library where kood = 'ARV' and  library = 'DOK' limit 1`;
+        let sql = `SELECT id
+                   FROM libs.library
+                   WHERE kood = 'ARV'
+                     AND library = 'DOK'
+                   LIMIT 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -155,7 +160,9 @@ describe('dok. type Arv tests', function () {
     });
 
     it('should exists view cur_laste_arved', async () => {
-        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_laste_arved'`;
+        let sql = `SELECT 1
+                   FROM pg_views
+                   WHERE viewname = 'cur_laste_arved'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -163,16 +170,18 @@ describe('dok. type Arv tests', function () {
 
     });
 
-    it('should succefully execute sql new query', async()=> {
+    it('should succefully execute sql new query', async () => {
         let sql = doc.select[0].sqlAsNew;
-        let returnValue = await db.queryDb(sql, [0,1]);
+        let returnValue = await db.queryDb(sql, [0, 1]);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         expect(result).toBeGreaterThan(0);
     });
 
     it('should exists proc sp_salvesta_arv', async () => {
-        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_arv'`;
+        let sql = `SELECT 1
+                   FROM pg_proc
+                   WHERE proname = 'sp_salvesta_arv'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -181,7 +190,9 @@ describe('dok. type Arv tests', function () {
     });
 
     it('should exists proc sp_delete_arv', async () => {
-        let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_arv'`;
+        let sql = `SELECT 1
+                   FROM pg_proc
+                   WHERE proname = 'sp_delete_arv'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -189,9 +200,12 @@ describe('dok. type Arv tests', function () {
 
     });
 
-    it('should save new row',async()=>{
-        let l_asutus_data = await db.queryDb(`select asutusid, parentid from lapsed.vanemad where staatus <> 3 limit 1`, []);
-        let l_nom_data = await db.queryDb(`select id from lapsed.lapse_kaart where staatus <> 3 and parentid = ${l_asutus_data.data[0].parentid} limit 1`, []);
+    it('should save new row', async () => {
+        let l_asutus_data = await db.queryDb(`SELECT asutusid, parentid
+                                              FROM lapsed.vanemad
+                                              WHERE staatus <> 3
+                                              LIMIT 1`, []);
+        let l_nom_data = await db.queryDb(`SELECT id FROM lapsed.lapse_kaart WHERE staatus <> 3 AND parentid = ${l_asutus_data.data[0].parentid} LIMIT 1`, []);
 
         let data = {
             id: 0,
@@ -200,14 +214,14 @@ describe('dok. type Arv tests', function () {
                 kpv: new Date(),
                 asutusid: l_asutus_data.data[0].asutusid,
                 lapsid: l_asutus_data.data[0].parentid,
-                aa:'AA',
+                aa: 'AA',
                 viitenr: 'viitenumber',
-                muud:'test muud',
+                muud: 'test muud',
                 liik: 0,
-                gridData:[
+                gridData: [
                     {
-                        id:0,
-                        nomid:l_nom_data.data[0].id,
+                        id: 0,
+                        nomid: l_nom_data.data[0].id,
                         kogus: 1,
                         hind: 100,
                         kbm: 0,
@@ -227,13 +241,13 @@ describe('dok. type Arv tests', function () {
         expect(returnValue.result).toBe(1);
         globalDocId = returnValue.data[0].id;
 
-        console.log('globalDocId',globalDocId);
+        console.log('globalDocId', globalDocId);
 
     });
 
-    it('should select saved row', async()=>{
+    it('should select saved row', async () => {
         let sql = doc.select[0].sql;
-        let returnValue = await db.queryDb(sql, [globalDocId,USER_ID]);
+        let returnValue = await db.queryDb(sql, [globalDocId, USER_ID]);
         expect(returnValue).toBeDefined();
 
         console.log('sql', sql, returnValue);
@@ -242,7 +256,7 @@ describe('dok. type Arv tests', function () {
 
     });
 
-    it('should select grid query', async()=> {
+    it('should select grid query', async () => {
         let sql = doc.grid.sqlString;
         let returnValue = await db.queryDb(sql, [REKV_ID, USER_ID]);
         expect(returnValue).toBeDefined();

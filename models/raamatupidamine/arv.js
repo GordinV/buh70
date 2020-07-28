@@ -306,6 +306,13 @@ const Arv = {
             multuple: false,
             alias: 'get_omniva_bpm',
             data: []
+        },
+        {
+            sql:`SELECT * from docs.check_arv_jaak($1, $2)`, //$1 - docId, $2 userId
+            query: null,
+            multuple: false,
+            alias: 'check_arv_jaak',
+            data: []
         }
 
     ],

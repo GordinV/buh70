@@ -553,7 +553,11 @@ BEGIN
       AND rekvid = (CASE
                         WHEN $3 = 1 AND l_rekvid = 63
                             THEN 999
+                        WHEN $3 = 1 AND l_rekvid <> 63 THEN rekvid
                         ELSE l_rekvid END)
+      AND rekvid IN (SELECT rekv_id
+                     FROM get_asutuse_struktuur(l_rekvid))
+
     GROUP BY tegev
            , konto
            , rahavoo
@@ -585,7 +589,11 @@ BEGIN
       AND rekvid = (CASE
                         WHEN $3 = 1 AND l_rekvid = 63
                             THEN 999
-                        ELSE l_rekvid END)
+                        WHEN $3 = 1 AND l_rekvid <> 63 THEN rekvid
+                        ELSE l_rekv_id END)
+      AND rekvid IN (SELECT rekv_id
+                     FROM get_asutuse_struktuur(l_rekvid))
+
     GROUP BY tegev
            , allikas
            , konto
