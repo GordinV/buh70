@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS eelarve.tekke_taitmine(DATE, DATE, INTEGER, INTEGER);
+--DROP FUNCTION IF EXISTS eelarve.tekke_taitmine(DATE, DATE, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION eelarve.tekke_taitmine(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER,
                                                   l_kond INTEGER)
@@ -52,12 +52,13 @@ FROM (
                   INNER JOIN docs.journal j ON j.parentid = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                   INNER JOIN qryKontodKulud k ON k.kood = j1.deebet
+                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 2 --kulud
+             AND l.library = 'TULUDEALLIKAD'
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND j.rekvid = CASE WHEN l_kond > 0 THEN j.rekvid ELSE l_rekvid END
-           AND left(j1.kood5, 3) NOT IN ('611', '613', '608')
 
          UNION ALL
          -- востановление расходов
@@ -72,12 +73,13 @@ FROM (
                   INNER JOIN docs.journal j ON j.parentid = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                   INNER JOIN qryKontodKulud k ON k.kood = j1.kreedit
+                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 2 --kulud
+             AND l.library = 'TULUDEALLIKAD'
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND j.rekvid = CASE WHEN l_kond > 0 THEN j.rekvid ELSE l_rekvid END
-           AND left(j1.kood5, 3) NOT IN ('611', '613', '608')
      ) qry
 WHERE NOT empty(artikkel)
   AND summa <> 0

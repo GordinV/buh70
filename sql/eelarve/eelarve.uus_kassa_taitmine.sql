@@ -70,8 +70,6 @@ FROM (
                               WHEN l_kond
                                   > 0 THEN j.rekvid
                               ELSE l_rekvid END
-           AND LEFT(j1.kood5
-                   , 3) NOT IN ('611', '613', '608')
          UNION ALL
          -- востановление расходов
          SELECT -1 * j1.summa  AS summa,
@@ -87,6 +85,8 @@ FROM (
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                   INNER JOIN qryKontodKulud k ON k.kood = j1.kreedit
                   INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.deebet
+                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 2 --kulud
+
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
@@ -95,8 +95,6 @@ FROM (
                               WHEN l_kond
                                   > 0 THEN j.rekvid
                               ELSE l_rekvid END
-           AND LEFT(j1.kood5
-                   , 3) NOT IN ('611', '613', '608')
 /*         UNION ALL
          -- доходы
          SELECT summa          AS summa,
@@ -162,7 +160,7 @@ GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_taitmine( DATE,DATE, INTEGER, INTEGE
 /*
 
 SELECT *
-FROM eelarve.uus_kassa_taitmine('2020-01-01', '2020-03-31', 3, 0)
-where artikkel = '4133'
+FROM eelarve.uus_kassa_taitmine('2020-01-01', '2020-03-31', 130, 0)
+where artikkel = '3237'
 
 */

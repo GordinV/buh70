@@ -126,6 +126,7 @@ BEGIN
           0 :: INTEGER AS id,
           MK_TYYP      AS opt,
           l_kpv        AS kpv,
+          l_kpv        AS maksepaev,
           'PALK'       AS muud,
           'Palk'       AS selg,
           (SELECT id

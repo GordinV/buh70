@@ -65,6 +65,13 @@ BEGIN
                             tegelik,
                             kassa, aasta, kuu,
                             is_kulud)
+    WITH cur_kulude_kassa_taitmine AS (
+        SELECT * FROM eelarve.uus_kassa_taitmine(make_date(year(l_kpv), 01, 01), l_kpv, l_rekvid, l_kond)
+    ),
+         cur_tulude_kassa_taitmine AS (
+             SELECT * FROM eelarve.uus_kassa_tulu_taitmine(make_date(year(l_kpv), 01, 01), l_kpv, l_rekvid, l_kond)
+         )
+
     SELECT '2.1'                                           AS idx,
            1                                               AS tyyp,
            qry.rekvid,
@@ -191,38 +198,34 @@ BEGIN
                AND tt.artikkel IS NOT NULL
                AND NOT empty(tt.artikkel)
              UNION ALL
-             SELECT rekvid
-                     ,
-                    0 :: NUMERIC AS eelarve
-                     ,
-                    0 :: NUMERIC AS eelarve_kassa
-                     ,
+             SELECT rekv_id      AS rekvid,
+                    0 :: NUMERIC AS eelarve,
+                    0 :: NUMERIC AS eelarve_kassa,
                     0 :: NUMERIC AS eelarve_taps,
                     0 :: NUMERIC AS eelarve_kassa_taps,
-
-                    0 :: NUMERIC AS tegelik
-                     ,
-                    summa        AS kassa
-                     ,
-                    tegev
-                     ,
-                    allikas
-                     ,
+                    0 :: NUMERIC AS tegelik,
+                    summa        AS kassa,
+                    tegev,
+                    allikas,
                     artikkel
              FROM cur_kulude_kassa_taitmine kt
-             WHERE kt.rekvid = (CASE
-                                    WHEN l_kond = 1
-                                        THEN rekvid
-                                    ELSE l_rekv_id END)
-
-               AND kt.rekvid IN (SELECT rekv_id
-                                 FROM get_asutuse_struktuur(l_rekvid))
-               AND kt.aasta = year(l_kpv)
-               AND kt.kuu <= MONTH(l_kpv)
-               AND kt.artikkel IS NOT NULL
+             WHERE kt.artikkel IS NOT NULL
                AND NOT empty(kt.artikkel)
              UNION ALL
-             SELECT rekvid
+             SELECT rekv_id      AS rekvid,
+                    0 :: NUMERIC AS eelarve,
+                    0 :: NUMERIC AS eelarve_kassa,
+                    0 :: NUMERIC AS eelarve_taps,
+                    0 :: NUMERIC AS eelarve_kassa_taps,
+                    0 :: NUMERIC AS tegelik,
+                    summa        AS kassa,
+                    tegev,
+                    allikas,
+                    artikkel
+             FROM eelarve.uus_kassa_tulu_taitmine kt
+             WHERE kt.artikkel IS NOT NULL
+               AND NOT empty(kt.artikkel)
+/*             SELECT rekvid
                      ,
                     0 :: NUMERIC AS eelarve
                      ,
@@ -272,7 +275,7 @@ BEGIN
                   ) tt
              WHERE tt.artikkel IS NOT NULL
                AND NOT empty(tt.artikkel)
-             UNION ALL
+*/             UNION ALL
 
              -- kassatulud (art.jargi) miinus
              SELECT kassakulu.rekvid
@@ -619,7 +622,7 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5_query(DATE, INTEGER, I
 GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5_query(DATE, INTEGER, INTEGER ) TO dbvaatleja;
 
 /*
-SELECT eelarve.eelarve_andmik_lisa_1_5_query(DATE(2019, 12, 31), 3, 0);
+SELECT eelarve.eelarve_andmik_lisa_1_5_query(DATE(2020, 03, 31), 63, 0);
 
 SELECT *
 FROM tmp_andmik
