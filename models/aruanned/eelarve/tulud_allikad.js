@@ -10,17 +10,22 @@ module.exports = {
             {id: "lopp_db", name: "Lõpp deebet", width: "100px"},
             {id: "lopp_kr", name: "Lõpp kreedit", width: "200px"}
         ],
-        sqlString: `SELECT
-                        qryReport.*,                        
-                        a.nimetus::varchar(254),
-                        r.regkood::varchar(20),
-                        r.nimetus::varchar(254) AS asutus,
-                        coalesce(p.regkood,'')::varchar(20) AS parregkood,
-                        coalesce(p.nimetus,'')::varchar(254) AS parasutus
-                    FROM eelarve.eelarve_tulud($1::integer,$2::date, $3::date, $4::boolean, $5::integer, $6::integer) qryReport
-                    INNER JOIN ou.rekv r ON r.id = qryReport.rekv_id
-                    LEFT OUTER JOIN com_artikkel a ON a.kood::text = qryReport.artikkel::text
-                    LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id                    `,     // $1 - aasta $2 - kpv, $3 - parandus, $4 - rekvid (svod)
+        sqlString: `SELECT qryReport.*,
+                           a.nimetus::VARCHAR(254),
+                           r.regkood::VARCHAR(20),
+                           r.nimetus::VARCHAR(254)               AS asutus,
+                           coalesce(p.regkood, '')::VARCHAR(20)  AS parregkood,
+                           coalesce(p.nimetus, '')::VARCHAR(254) AS parasutus
+                    FROM eelarve.eelarve_tulud($1::INTEGER, $2::DATE, $3::DATE, $4::BOOLEAN, $5::INTEGER,
+                                               $6::INTEGER) qryReport
+                             INNER JOIN (SELECT id, parentid, regkood, nimetus
+                                         FROM ou.rekv
+                                         WHERE parentid < 999
+                                         UNION ALL
+                                         SELECT 999999, 0, '' AS regkood, 'Kond' AS nimetus) r
+                                        ON r.id = qryReport.rekv_id
+                             LEFT OUTER JOIN com_artikkel a ON a.kood::TEXT = qryReport.artikkel::TEXT
+                             LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id                    `,     // $1 - aasta $2 - kpv, $3 - parandus, $4 - rekvid (svod)
         params: '',
         alias: 'tulud_report'
     }

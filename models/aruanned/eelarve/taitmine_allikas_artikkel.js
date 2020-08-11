@@ -19,7 +19,12 @@ module.exports = {
                     FROM eelarve.eelarve_taitmine_allikas_artikkel($1::INTEGER, $2::DATE, $3::INTEGER,
                                                                    $4::INTEGER) qryReport
                              LEFT OUTER JOIN com_artikkel a ON ltrim(rtrim(a.kood)) = ltrim(rtrim(qryReport.artikkel))
-                             INNER JOIN ou.rekv r ON r.id = qryReport.rekv_id
+                             INNER JOIN (SELECT id, parentid, regkood, nimetus
+                                         FROM ou.rekv
+                                         WHERE parentid < 999
+                                         UNION ALL
+                                         SELECT 999999, 0, '' AS regkood, 'Kond' AS nimetus) r
+                                        ON r.id = qryReport.rekv_id
                              LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id                    `,     // $1 - aasta $2 - kpv,  $3 - rekvid (svod), $4::integer  1 - kond, 0 - only asutus
         params: '',
         alias: 'kulud_report'

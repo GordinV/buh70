@@ -17,8 +17,8 @@ $BODY$
 WITH qryKontod AS (
     SELECT l.kood, l.tun5 AS tyyp
     FROM libs.library l
-             INNER JOIN eelarve.kassa_kulud kassakulud
-                        ON ((ltrim(rtrim((l.kood) :: TEXT)) ~~ ltrim(rtrim((kassakulud.kood) :: TEXT))))
+             INNER JOIN eelarve.kassa_tulud kassatulud
+                        ON ((ltrim(rtrim((l.kood) :: TEXT)) ~~ ltrim(rtrim((kassatulud.kood) :: TEXT))))
     WHERE l.library = 'KONTOD'
       AND L.status <> 3
 ),
@@ -48,7 +48,7 @@ FROM (
                 j1.kood5::TEXT AS artikkel,
                 j1.tunnus::TEXT,
                 j.rekvid,
-                TRUE           AS kas_kulud
+                FALSE           AS kas_kulud
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -106,7 +106,7 @@ GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_tulu_taitmine( DATE,DATE, INTEGER, I
 /*
 
 SELECT *
-FROM eelarve.uus_kassa_tulu_taitmine('2020-01-01', '2020-03-31', 130, 0)
-where artikkel = '3237'
+FROM eelarve.uus_kassa_tulu_taitmine('2020-01-01', '2020-03-31', 63, 0)
+where artikkel = '3030'
 
 */
