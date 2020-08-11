@@ -19,13 +19,13 @@ module.exports = {
                            sum(faktiline_kogus) OVER (PARTITION BY asutus) AS faktiline_kogus_kokku,
                            sum(kogus) OVER (PARTITION BY asutus)           AS kogus_kokku
                     FROM lapsed.kohaloleku_aruanne($1::INTEGER, CASE
-                                                                   WHEN $2::INTEGER < 1 OR $2::INTEGER > 12 THEN NULL
-                                                                   ELSE $2::INTEGER END,
-                                                  CASE
-                                                      WHEN $3::INTEGER < year(current_date) - 10 OR
-                                                           $3::INTEGER > year(current_date) + 1
-                                                          THEN NULL
-                                                      ELSE $3::INTEGER END) qryReport
+                                                                    WHEN $2::INTEGER < 1 OR $2::INTEGER > 12 THEN NULL
+                                                                    ELSE $2::INTEGER END,
+                                                   CASE
+                                                       WHEN $3::INTEGER < year(current_date) - 10 OR
+                                                            $3::INTEGER > year(current_date) + 1
+                                                           THEN NULL
+                                                       ELSE $3::INTEGER END) qryReport
                     ORDER BY asutus, koolituse_tyyp
         `,     // $1 - rekvid, $2-KUU $3 - aasta
         params: ['rekvid', 'kuu', 'aasta'],
@@ -37,7 +37,31 @@ module.exports = {
         {
             view: 'kohaloleku_aruanne_register',
             params: 'sqlWhere',
-            group: 'asutus'
+            group: 'asutus',
+            converter: function (data) {
+                let yksuse_kogus_kokku = 0;
+                let nimekirje_kogus_kokku = 0;
+                let faktiline_kogus_kokku = 0;
+                let kogus_kokku = 0;
+                let row_id = 0;
+                data.forEach(row => {
+                    yksuse_kogus_kokku = yksuse_kogus_kokku + row.yksuse_kogus;
+                    nimekirje_kogus_kokku = nimekirje_kogus_kokku + row.nimekirje_kogus;
+                    faktiline_kogus_kokku = faktiline_kogus_kokku + row.faktiline_kogus;
+                    kogus_kokku = kogus_kokku + row.kogus;
+                });
+
+                return data.map(row => {
+                    row_id++;
+                    row.yksuse_kogus_kokku = yksuse_kogus_kokku;
+                    row.nimekirje_kogus_kokku = nimekirje_kogus_kokku;
+                    row.faktiline_kogus_kokku = faktiline_kogus_kokku;
+                    row.kogus_kokku = kogus_kokku;
+                    row.row_id = row_id;
+                    return row;
+                })
+
+            }
 
         },
     ],
