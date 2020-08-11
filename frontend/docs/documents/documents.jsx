@@ -419,13 +419,13 @@ class Documents extends React.Component {
                                 filterString = `${filterString}  ${row.name}  ilike '%${row.value.trim()}%'`;
                             } else {
                                 // обработка некорректной кодировки
-                                filterString = `${filterString}  encode(${row.name}::bytea, 'escape')  ilike '%${row.value.trim()}%'`;
+                                filterString = `${filterString}  ${row.name}  ilike '%${row.value.trim()}%'`;
 
                             }
                         }
                         break;
                     case 'string':
-                        filterString = `${filterString}  encode(${row.name}::bytea, 'escape')  ilike '%${row.value.trim()}%'`;
+                        filterString = `${filterString}  ${row.name} ilike '%${row.value.trim()}%'`;
                         break;
                     case 'date':
                         if ('start' in row) {

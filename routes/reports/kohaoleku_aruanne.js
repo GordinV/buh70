@@ -33,7 +33,6 @@ exports.get = async (req, res) => {
         const doc = new Doc(DOC_TYPE_ID, null, user.userId, user.asutusId, 'lapsed');
 
         let gridParams;
-        console.log('doc', doc);
         if (doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
             gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
         }

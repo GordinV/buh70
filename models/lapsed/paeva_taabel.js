@@ -92,7 +92,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
                 {id: 'nimi', name: 'Nimi', width: '100px', show: true, type: 'text', readOnly: true},
                 {
                     id: 'osalemine',
-                    name: 'Osalemine',
+                    name: 'Külastamine',
                     width: '50px',
                     show: true,
                     type: 'boolean',

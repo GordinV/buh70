@@ -217,7 +217,7 @@ FROM (
     WHERE n.rekvid = l_rekvid
              AND (n.uhik) IN ('paev', 'päev', 'PAEV','PÄEV')
     UNION ALL
-    SELECT 999999999 AS id, 'Osalem.' AS kood, 'Osalemine' AS nimetus
+    SELECT 999999999 AS id, 'Külastamine' AS kood, 'Külastamine' AS nimetus
 ) n ON n.id = qry.nom_id
          INNER JOIN libs.library l ON l.id = qry.grupp_id
          LEFT OUTER JOIN libs.library t ON t.id = (l.properties::JSONB ->> 'tyyp')::INTEGER

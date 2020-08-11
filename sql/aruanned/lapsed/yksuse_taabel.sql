@@ -240,8 +240,8 @@ FROM (
         UNION ALL
         SELECT
          999999999 AS id,
-         'Osalem.' AS kood,
-         'Osalemine' AS nimetus
+         'Külastamine' AS kood,
+         'Külastamine' AS nimetus
 ) n
                     ON n.
                            id = qry.nom_id
