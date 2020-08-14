@@ -22,7 +22,7 @@ DECLARE
     userName       TEXT;
     a_docs_ids     INTEGER[];
     rows_fetched   INTEGER = 0;
-
+    l_arv_id       INTEGER; -- если есть ссылка на счте, то строки собираем от туда
 BEGIN
 
     SELECT d.docs_ids,
@@ -108,6 +108,8 @@ BEGIN
     ELSE
         lcSelg = trim(v_dokprop.selg);
     END IF;
+
+
 
     FOR v_vmk1 IN
         SELECT k1.*,

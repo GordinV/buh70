@@ -252,8 +252,10 @@ GRANT EXECUTE ON FUNCTION docs.create_new_mk(INTEGER, JSONB) TO dbpeakasutaja;
 
 
 /*
-SELECT docs.create_new_mk(70, '{"arv_id":1616845}')
-select * from docs.arv where rekvid = 63 order by id desc limit 1
+SELECT docs.create_new_mk(70, '{"arv_id":1902365}')
+select * from docs.arv where rekvid = 63
+and number = 'SN1079106'
+order by id desc limit 1
 
 select * from docs.doc where id = 1245484
 

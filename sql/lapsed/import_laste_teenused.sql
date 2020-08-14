@@ -18,6 +18,7 @@ DECLARE
     l_nom_id         INTEGER;
     l_id             INTEGER;
     json_save_params JSONB;
+    l_status         INTEGER;
 
 BEGIN
     SELECT kasutaja INTO userName
@@ -44,10 +45,10 @@ BEGIN
                                             sooduse_lopp TEXT, kas_protsent TEXT);
 
             -- ищем ребенка
-            SELECT id INTO l_laps_id
+            SELECT id, staatus INTO l_laps_id, l_status
             FROM lapsed.laps
             WHERE isikukood = json_record.isikukood
-              AND staatus <> 3
+--              AND staatus <> 3
             ORDER BY id
             LIMIT 1;
 
@@ -122,6 +123,13 @@ BEGIN
                     FROM (SELECT 0           AS id,
                                  json_object AS data) row;
 
+/*                    IF l_status = 3
+                    THEN
+                        -- карточка ребенка удалена, восстановим
+                        UPDATE lapsed.laps SET staatus = 1 WHERE id = l_laps_id;
+                    END IF;
+
+*/
                     SELECT lapsed.sp_salvesta_lapse_kaart(json_save_params :: JSONB, user_id, user_rekvid) INTO l_id;
                     IF l_id > 0
                     THEN
