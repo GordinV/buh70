@@ -7,7 +7,6 @@ module.exports = {
             {id: "lapse_nimi", name: "Lapse nimi", width: "15%"},
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "0%", show: false},
             {id: "viitenumber", name: "Viitenumber", width: "0%", show: false},
-            {id: "number", name: "Number", width: "10%"},
             {id: "alg_saldo", name: "Alg.saldo", width: "10%", type: "number", interval: true},
             {id: "arvestatud", name: "Arvestatud", width: "10%", type: "number"},
             {id: "soodustus", name: "Soodustus", width: "10%", type: "number"},
@@ -27,7 +26,7 @@ module.exports = {
                            r.nimetus::TEXT                                      AS asutus
                     FROM lapsed.saldo_ja_kaive($1::INTEGER, $3, $4) qryReport
                              INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
-                    ORDER BY r.nimetus, (regexp_replace(qryReport.number, '[^0-9]', '0', 'g')::INTEGER)
+                    ORDER BY r.nimetus
         `,     // $1 - rekvid, $3 - alg_kpv, $4 - lopp_kpv
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
         alias: 'saldo_ja_kaive_report'
