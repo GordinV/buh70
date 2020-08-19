@@ -53,8 +53,8 @@ FROM libs.library g
              WHERE t.staatus <> 3
                AND month(t.kpv) = coalesce(l_kuu, month(current_date))
                AND year(t.kpv) = coalesce(l_aasta, year(current_date))
-               AND t1.kogus IS NOT NULL
-               AND t1.kogus > 0
+               AND t1.osalemine IS NOT NULL
+               AND t1.osalemine > 0
          ) tab
     GROUP BY rekv_id, grupp_id
 ) tab ON tab.grupp_id = g.id
@@ -67,8 +67,8 @@ FROM libs.library g
                                    WHERE month(t.kpv) = coalesce(l_kuu, month(current_date))
                                      AND year(t.kpv) = coalesce(l_aasta, year(current_date))
                                      AND t.staatus <> 3
-                                     AND t1.kogus IS NOT NULL
-                                     AND t1.kogus > 0
+                                     AND t1.osalemine IS NOT NULL
+                                     AND t1.osalemine > 0
                                ) qry
                           GROUP BY grupp_id
 ) qry_kogus ON qry_kogus.grupp_id = g.id

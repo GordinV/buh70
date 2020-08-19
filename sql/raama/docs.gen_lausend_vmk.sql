@@ -8,21 +8,23 @@ CREATE OR REPLACE FUNCTION docs.gen_lausend_vmk(IN tnid INTEGER,
 AS
 $BODY$
 DECLARE
-    v_journal      RECORD;
-    v_journal1     RECORD;
-    v_vmk          RECORD;
-    v_vmk1         RECORD;
-    v_dokprop      RECORD;
-    lcAllikas      VARCHAR(20);
-    lcSelg         TEXT;
-    v_selg         RECORD;
-    l_json         TEXT;
-    l_json_details TEXT;
-    new_history    JSONB;
-    userName       TEXT;
-    a_docs_ids     INTEGER[];
-    rows_fetched   INTEGER = 0;
-    l_arv_id       INTEGER; -- если есть ссылка на счте, то строки собираем от туда
+    v_journal    RECORD;
+
+    v_journal1   RECORD;
+    v_vmk        RECORD;
+    v_vmk1       RECORD;
+    v_dokprop    RECORD;
+    lcAllikas    VARCHAR(20);
+    lcSelg       TEXT;
+    v_selg       RECORD;
+    l_json       TEXT;
+    new_history  JSONB;
+    userName     TEXT;
+    a_docs_ids   INTEGER[];
+    rows_fetched INTEGER = 0;
+    json_mk1     JSONB;
+    l_jaak       NUMERIC = 0;
+
 BEGIN
 
     SELECT d.docs_ids,
@@ -81,6 +83,7 @@ BEGIN
     WHERE dokprop.id = v_vmk.doklausid
     LIMIT 1;
 
+
     IF NOT Found OR v_dokprop.registr = 0
     THEN
         error_code = 1; -- Konteerimine pole vajalik
@@ -88,7 +91,6 @@ BEGIN
         error_message = 'Konteerimine pole vajalik';
         RETURN;
     END IF;
-
 
     -- koostame selg rea
     lcSelg = trim(v_dokprop.selg);
@@ -110,7 +112,6 @@ BEGIN
     END IF;
 
 
-
     FOR v_vmk1 IN
         SELECT k1.*,
                coalesce(dokvaluuta1.valuuta, 'EUR') :: VARCHAR AS valuuta,
@@ -121,7 +122,7 @@ BEGIN
                  INNER JOIN libs.asutus a ON a.id = k1.asutusid
         WHERE k1.parentid = v_vmk.Id
         LOOP
-
+            l_jaak = v_vmk1.summa;
             SELECT coalesce(v_vmk.journalid, 0) AS id,
                    'JOURNAL'                    AS doc_type_id,
                    v_vmk.kpv                    AS kpv,
@@ -137,34 +138,107 @@ BEGIN
                 v_journal.dok = (SELECT number FROM docs.avans1 WHERE parentid = v_vmk.dokid LIMIT 1);
             END IF;
 
-
             IF NOT empty(v_vmk1.kood2)
             THEN
                 lcAllikas = v_vmk1.kood2;
             END IF;
 
-            SELECT 0                               AS id,
-                   coalesce(v_vmk1.summa, 0)       AS summa,
-                   coalesce(v_vmk1.valuuta, 'EUR') AS valuuta,
-                   coalesce(v_vmk1.kuurs, 1)       AS kuurs,
-                   v_vmk1.konto                    AS deebet,
-                   coalesce(v_vmk1.tp, '800599')   AS lisa_d,
-                   v_vmk.konto                     AS kreedit,
-                   coalesce(v_vmk.tp, '800401')    AS lisa_k,
-                   coalesce(v_vmk1.tunnus, '')     AS tunnus,
-                   coalesce(v_vmk1.proj, '')       AS proj,
-                   coalesce(v_vmk1.kood1, '')      AS kood1,
-                   coalesce(v_vmk1.kood2, '')      AS kood2,
-                   coalesce(v_vmk1.kood3, '')      AS kood3,
-                   coalesce(v_vmk1.kood4, '')      AS kood4,
-                   coalesce(v_vmk1.kood5, '')      AS kood5
-                   INTO v_journal1;
+            IF (v_vmk.arvid IS NULL OR v_vmk.arvid = 0)
+            THEN
+                SELECT 0                               AS id,
+                       coalesce(v_vmk1.summa, 0)       AS summa,
+                       coalesce(v_vmk1.valuuta, 'EUR') AS valuuta,
+                       coalesce(v_vmk1.kuurs, 1)       AS kuurs,
+                       v_vmk1.konto                    AS deebet,
+                       coalesce(v_vmk1.tp, '800599')   AS lisa_d,
+                       v_vmk.konto                     AS kreedit,
+                       coalesce(v_vmk.tp, '800401')    AS lisa_k,
+                       coalesce(v_vmk1.tunnus, '')     AS tunnus,
+                       coalesce(v_vmk1.proj, '')       AS proj,
+                       coalesce(v_vmk1.kood1, '')      AS kood1,
+                       coalesce(v_vmk1.kood2, '')      AS kood2,
+                       coalesce(v_vmk1.kood3, '')      AS kood3,
+                       coalesce(v_vmk1.kood4, '')      AS kood4,
+                       coalesce(v_vmk1.kood5, '')      AS kood5
+                       INTO v_journal1;
 
-            l_json_details = row_to_json(v_journal1);
-            l_json = row_to_json(v_journal);
-            l_json = ('{"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":[' || l_json_details ||
-                      ']}}');
-            result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_vmk.rekvId);
+                json_mk1 = coalesce(json_mk1, '[]'::JSONB) || to_jsonb(v_journal1);
+
+            ELSE
+                FOR v_journal1 IN
+                    SELECT 0                                                         AS id,
+                           CASE WHEN l_jaak < a1.summa THEN l_jaak ELSE a1.summa END AS summa,
+                           coalesce(v_vmk1.valuuta, 'EUR')                           AS valuuta,
+                           coalesce(v_vmk1.kuurs, 1)                                 AS kuurs,
+                           v_vmk1.konto                                              AS deebet,
+                           coalesce(v_vmk1.tp, '800599')                             AS lisa_d,
+                           v_vmk.konto                                               AS kreedit,
+                           coalesce(v_vmk.tp, '800401')                              AS lisa_k,
+                           coalesce(a1.tunnus, '')                                   AS tunnus,
+                           coalesce(a1.proj, '')                                     AS proj,
+                           coalesce(a1.kood1, '')                                    AS kood1,
+                           coalesce(a1.kood2, '')                                    AS kood2,
+                           coalesce(a1.kood3, '')                                    AS kood3,
+                           coalesce(a1.kood4, '')                                    AS kood4,
+                           coalesce(a1.kood5, '')                                    AS kood5
+                    FROM docs.arv1 a1
+                             INNER JOIN docs.arv a ON a.id = a1.parentid
+                    WHERE a.parentid = v_vmk.arvid
+                    ORDER BY a1.id
+                    LOOP
+                        l_jaak = l_jaak - v_journal1.summa;
+                        json_mk1 = coalesce(json_mk1, '[]'::JSONB) || to_jsonb(v_journal1);
+                        IF l_jaak <= 0
+                        THEN
+                            EXIT;
+                        END IF;
+                    END LOOP;
+                IF l_jaak > 0
+                THEN
+                    SELECT 0                               AS id,
+                           l_jaak                          AS summa,
+                           coalesce(v_vmk1.valuuta, 'EUR') AS valuuta,
+                           coalesce(v_vmk1.kuurs, 1)       AS kuurs,
+                           v_vmk1.konto                    AS deebet,
+                           coalesce(v_vmk1.tp, '800599')   AS lisa_d,
+                           v_vmk.konto                     AS kreedit,
+                           coalesce(v_vmk.tp, '800401')    AS lisa_k,
+                           coalesce(v_vmk1.tunnus, '')     AS tunnus,
+                           coalesce(v_vmk1.proj, '')       AS proj,
+                           coalesce(v_vmk1.kood1, '')      AS kood1,
+                           coalesce(v_vmk1.kood2, '')      AS kood2,
+                           coalesce(v_vmk1.kood3, '')      AS kood3,
+                           coalesce(v_vmk1.kood4, '')      AS kood4,
+                           coalesce(v_vmk1.kood5, '')      AS kood5
+                           INTO v_journal1;
+
+                    json_mk1 = coalesce(json_mk1, '[]'::JSONB) || to_jsonb(v_journal1);
+
+                END IF;
+
+            END IF;
+
+            IF json_mk1 IS NOT NULL
+            THEN
+
+                SELECT v_journal.id,
+                       v_journal.doc_type_id,
+                       v_journal.kpv,
+                       v_journal.selg,
+                       v_journal.muud,
+                       v_journal.dok,
+                       v_journal.asutusid,
+                       json_mk1 AS "gridData"
+                       INTO v_journal;
+
+                SELECT row_to_json(row) INTO l_json
+                FROM (SELECT 0         AS id,
+                             v_journal AS data) row;
+
+                result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_vmk.rekvId);
+            ELSE
+                RAISE NOTICE 'null';
+            END IF;
 
             /* salvestan lausend */
 
@@ -209,7 +283,7 @@ BEGIN
                 EXIT;
             END IF;
 
-        END LOOP;
+        END LOOP; -- v_journal
     RETURN;
 END;
 $BODY$
@@ -224,13 +298,14 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_vmk(INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.gen_lausend_vmk(INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
+SELECT error_code,
+       result,
+       error_message
+FROM docs.gen_lausend_vmk(1616833, 70);
 
 
-SELECT
-  error_code,
-  result,
-  error_message
-FROM docs.gen_lausend_smk(1016,1);
+
+
 
 select * from libs.dokprop
 

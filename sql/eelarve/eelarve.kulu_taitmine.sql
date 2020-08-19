@@ -1,7 +1,7 @@
-DROP FUNCTION IF EXISTS eelarve.uus_kassa_tulu_taitmine(DATE, DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS eelarve.kulu_taitmine(DATE, DATE, INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION eelarve.uus_kassa_tulu_taitmine(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER,
-                                                           l_kond INTEGER)
+CREATE OR REPLACE FUNCTION eelarve.kulu_taitmine(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER,
+                                                 l_kond INTEGER)
     RETURNS TABLE (
         rekv_id  INTEGER,
         summa    NUMERIC(14, 2),
@@ -13,6 +13,7 @@ CREATE OR REPLACE FUNCTION eelarve.uus_kassa_tulu_taitmine(l_kpv1 DATE, l_kpv2 D
         docs_ids INTEGER[],
         kuu      INTEGER,
         aasta    INTEGER
+
     ) AS
 $BODY$
 
@@ -20,20 +21,11 @@ $BODY$
 WITH qryKontod AS (
     SELECT l.kood, l.tun5 AS tyyp
     FROM libs.library l
-             INNER JOIN eelarve.kassa_tulud kassatulud
-                        ON ((ltrim(rtrim((l.kood) :: TEXT)) ~~ ltrim(rtrim((kassatulud.kood) :: TEXT))))
+             INNER JOIN eelarve.FAKT_kulud kulud
+                        ON ((ltrim(rtrim((l.kood) :: TEXT)) ~~ ltrim(rtrim((kulud.kood) :: TEXT))))
     WHERE l.library = 'KONTOD'
       AND L.status <> 3
-),
-     qryKassaKontod AS (
-         SELECT l.kood, l.tun5 AS tyyp
-         FROM libs.library l
-                  INNER JOIN
-              eelarve.kassa_kontod kassakontod
-              ON ((ltrim(rtrim((l.kood) :: TEXT)) ~~ ltrim(rtrim((kassakontod.kood) :: TEXT))))
-         WHERE l.library = 'KONTOD'
-           AND L.status <> 3
-     )
+)
 
 SELECT rekvid              AS rekv_id,
        sum(summa)          AS summa,
@@ -54,15 +46,14 @@ FROM (
                 j1.kood5::TEXT AS artikkel,
                 j1.tunnus::TEXT,
                 j.rekvid,
-                FALSE          AS kas_kulud,
+                TRUE           AS kas_kulud,
                 d.id           AS docs_ids,
                 month(j.kpv)   AS kuu,
                 year(j.kpv)    AS aasta
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-                  INNER JOIN qryKontod k ON k.kood = j1.kreedit
-                  INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.deebet
+                  INNER JOIN qryKontod k ON k.kood = j1.deebet
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
@@ -88,9 +79,8 @@ FROM (
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-                  INNER JOIN qryKontod k ON k.kood = j1.deebet
-                  INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.kreedit
-                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 1 --tulud
+                  INNER JOIN qryKontod k ON k.kood = j1.kreedit
+                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 2 --kulud
 
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
@@ -112,14 +102,21 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_tulu_taitmine( DATE, DATE, INTEGER, INTEGER ) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_tulu_taitmine( DATE, DATE, INTEGER, INTEGER ) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_tulu_taitmine( DATE,DATE, INTEGER, INTEGER ) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_tulu_taitmine( DATE,DATE, INTEGER, INTEGER ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION eelarve.kulu_taitmine( DATE, DATE, INTEGER, INTEGER ) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.kulu_taitmine( DATE, DATE, INTEGER, INTEGER ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.kulu_taitmine( DATE,DATE, INTEGER, INTEGER ) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.kulu_taitmine( DATE,DATE, INTEGER, INTEGER ) TO dbvaatleja;
 /*
 
 SELECT *
-FROM eelarve.uus_kassa_tulu_taitmine('2020-01-01', '2020-03-31', 63, 0)
-where artikkel = '3030'
+FROM eelarve.tulu_taitmine('2020-01-01', '2020-03-31', 63, 0)
+where artikkel like '655%'
+
+ SELECT l.kood, l.tun5 AS tyyp
+    FROM libs.library l
+             INNER JOIN eelarve.fakt_tulud tulud
+                        ON ((ltrim(rtrim((l.kood) :: TEXT)) ~~ ltrim(rtrim((tulud.kood) :: TEXT))))
+    WHERE l.library = 'KONTOD'
+      AND L.status <> 3
 
 */

@@ -2,7 +2,7 @@ import_algsaldo();
 
 async function import_algsaldo() {
     const fs = require('fs');
-    const path = 'c:/temp/csv/Alg_Db_2.csv';
+    const path = 'c:/temp/csv/Alg_Db_3.csv';
     const util = require('util');
 
 // Convert fs.readFile into Promise version of same
@@ -48,7 +48,7 @@ const readCSV = async (csvContent, cb) => {
                    FROM lapsed.import_alg_saldo_deebet($1::JSONB, $2::INTEGER, $3::INTEGER)`;
 
              db.queryDb(sql, params).then(returnValue => {
-                console.log('tulemus->', returnValue);
+                console.log('tulemus->', returnValue, sql, params);
 
             });
         }

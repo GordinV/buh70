@@ -17,6 +17,9 @@ $BODY$
 WITH cur_tulude_kassa_taitmine AS (
     SELECT * FROM eelarve.uus_kassa_tulu_taitmine(make_date(l_aasta, 01, 01), l_kpv2, l_rekvid, l_kond)
 ),
+     cur_tulude_taitmine AS (
+         SELECT * FROM eelarve.tulu_taitmine(make_date(l_aasta, 01, 01), l_kpv2, l_rekvid, l_kond)
+     ),
      qryReport AS (
          SELECT rekvid,
                 sum(eelarve) AS eelarve,
@@ -45,7 +48,7 @@ WITH cur_tulude_kassa_taitmine AS (
                     AND aasta = l_aasta
                     AND (empty(is_parandus) OR (e.kpv IS NULL OR e.kpv <= l_kpv2))
                   UNION ALL
-                  SELECT rekvid,
+                  SELECT rekv_id      AS rekvid,
                          0 :: NUMERIC AS eelarve,
                          summa        AS tegelik,
                          0 :: NUMERIC AS kassa,
@@ -54,15 +57,6 @@ WITH cur_tulude_kassa_taitmine AS (
                          artikkel,
                          tunnus
                   FROM cur_tulude_taitmine ft
-                  WHERE rekvid = (CASE
-                                      WHEN l_kond = 1
-                                          THEN rekvid
-                                      ELSE l_rekvid END)
-                    AND ft.rekvid IN (SELECT rekv_id
-                                      FROM get_asutuse_struktuur(l_rekvid))
-                    AND ft.aasta = l_aasta
-                    AND ft.kuu >= MONTH(l_kpv1)
-                    AND ft.kuu <= MONTH(l_kpv2)
                   UNION ALL
                   SELECT rekv_id      AS rekvid,
                          0 :: NUMERIC AS eelarve,
@@ -106,9 +100,10 @@ $BODY$
     COST 100;
 
 
-select * from (
-                  SELECT *
-                  FROM eelarve.eelarve_tulud(2020, '2020-01-01', '2020-03-31', TRUE, 63, 0)
-              ) qry
-where artikkel like '3030%'
+SELECT *
+FROM (
+         SELECT *
+         FROM eelarve.eelarve_tulud(2020, '2020-01-01', '2020-03-31', TRUE, 63, 0)
+     ) qry
+WHERE artikkel LIKE '3030%'
 

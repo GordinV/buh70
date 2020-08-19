@@ -9,7 +9,10 @@ CREATE OR REPLACE FUNCTION eelarve.uus_kassa_taitmine(l_kpv1 DATE, l_kpv2 DATE, 
         allikas  VARCHAR(20),
         artikkel VARCHAR(20),
         rahavoog VARCHAR(20),
-        tunnus   VARCHAR(20)
+        tunnus   VARCHAR(20),
+        docs_ids INTEGER[],
+        kuu      INTEGER,
+        aasta    INTEGER
     ) AS
 $BODY$
 
@@ -30,24 +33,21 @@ WITH qryKontodKulud AS (
               ON ((ltrim(rtrim((l.kood) :: TEXT)) ~~ ltrim(rtrim((kassakontod.kood) :: TEXT))))
          WHERE l.library = 'KONTOD'
            AND L.status <> 3
-     )/*,
-     qryKontodTulud AS (
-         SELECT l.kood, l.tun5 AS tyyp
-         FROM libs.library l
-                  INNER JOIN eelarve.kassa_tulud kassatulud
-                             ON ((ltrim(rtrim((l.kood) :: TEXT)) ~~ ltrim(rtrim((kassatulud.kood) :: TEXT))))
-         WHERE l.library = 'KONTOD'
-           AND L.status <> 3
-     )*/
+     )
 
-SELECT rekvid     AS rekv_id,
-       sum(summa) AS summa,
+SELECT rekvid              AS rekv_id,
+       sum(summa)          AS summa,
        tegev,
        allikas,
        artikkel,
        rahavoog,
-       tunnus
+       tunnus,
+       array_agg(docs_ids) AS docs_ids,
+       kuu,
+       aasta
+
 FROM (
+
          -- расход
          SELECT summa          AS summa,
                 j1.kood1::TEXT AS tegev,
@@ -56,7 +56,10 @@ FROM (
                 j1.kood5::TEXT AS artikkel,
                 j1.tunnus::TEXT,
                 j.rekvid,
-                TRUE           AS kas_kulud
+                TRUE           AS kas_kulud,
+                d.id           AS docs_ids,
+                month(j.kpv)   AS kuu,
+                year(j.kpv)    AS aasta
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -79,7 +82,10 @@ FROM (
                 j1.kood5::TEXT AS artikkel,
                 j1.tunnus::TEXT,
                 j.rekvid,
-                TRUE           AS kas_kulud
+                TRUE           AS kas_kulud,
+                d.id           AS docs_ids,
+                month(j.kpv)   AS kuu,
+                year(j.kpv)    AS aasta
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -141,10 +147,10 @@ FROM (
                               WHEN l_kond
                                   > 0 THEN j.rekvid
                               ELSE l_rekvid END
-*/     ) qry
+*/ ) qry
 WHERE NOT empty(artikkel)
   AND summa <> 0
-GROUP BY rekvid, tegev, allikas, artikkel, tunnus, rahavoog
+GROUP BY rekvid, tegev, allikas, artikkel, tunnus, rahavoog, kuu, aasta
 HAVING sum(summa) <> 0;
 
 $BODY$

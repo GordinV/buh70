@@ -49,8 +49,6 @@ begin
 		return lcMsg;
 	end if;
 
-
-
 	raise notice 'val.kontrol kpv %',tdKpv;
 	raise notice 'val.kontrol tcValuuta %',tcValuuta;
 
