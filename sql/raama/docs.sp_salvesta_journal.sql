@@ -152,7 +152,7 @@ BEGIN
                          l_oma_tp            AS oma_tp
                  ) row;
 
-            l_check_lausend = docs.sp_lausendikontrol(json_lausend::JSONB);
+/*            l_check_lausend = docs.sp_lausendikontrol(json_lausend::JSONB);
 
 
             IF is_import IS NULL AND NOT empty(l_check_lausend)
@@ -160,7 +160,7 @@ BEGIN
 --                RAISE EXCEPTION '%',l_check_lausend;
                 RAISE NOTICE 'lausendi kontrol %',l_check_lausend;
             END IF;
-
+*/
 
             IF json_record.summa <> 0
             THEN

@@ -85,9 +85,9 @@ SELECT 999999,
        sum(eelarve) AS eelarve,
        sum(tegelik) AS tegelik,
        sum(kassa)   AS kassa,
-       tegev,
-       allikas,
        artikkel,
+       allikas,
+       tegev,
        tunnus
 FROM qryReport
 WHERE l_kond > 0

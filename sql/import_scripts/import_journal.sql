@@ -93,7 +93,7 @@ BEGIN
            INNER JOIN (SELECT
                          max(number) AS number,
                          journalid
-                       FROM journalid jid
+                       FROM remote_journalid jid
                        GROUP BY journalid) jid ON jid.journalid = j.id
     WHERE exists(SELECT 1
                  FROM journal1
@@ -265,6 +265,14 @@ $BODY$
 
 
 /*
-SELECT import_journal(8366010)
+SELECT import_journal(id) from journal where kpv >= '2020-01-04' and kpv <= '2020-06-30'
+and id in (9082550, 9155783, 9155784, 9155786, 9155787, 9155788, 9155790, 9155792, 9155793, 9155794, 9155796, 9155797, 9155799, 9155800, 9155801, 9155803, 9155806, 9155808)
+EXCEPT
+select j.id
+from journal j
+INNER JOIN import_log i on i.old_id = j.id AND i.lib_name = 'JOURNAL'
+where kpv >= '2020-01-04'
+and kpv <= '2020-06-30'
+
 
 */

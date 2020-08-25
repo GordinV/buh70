@@ -45,7 +45,7 @@ module.exports = {
                            v.maksja,
                            v.viitenumber,
                            v.iban,
-                           to_char(v.kpv, 'DD.MM.YYY')::TEXT                                       AS kpv,
+                           to_char(v.kpv, 'DD.MM.YYYY')::TEXT                                       AS kpv,
                            v.summa::NUMERIC(12, 2)                                                 AS summa,
                            v.pank_id,
                            v.selg,
