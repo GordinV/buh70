@@ -182,6 +182,19 @@ class Laps extends React.PureComponent {
         // данные для фильтра
         let isikukood = this.refs['document'].docData.isikukood;
 
+        // register name
+        if (DocContext.libs && DocContext.libs['menu']) {
+            let docType = DocContext.libs['menu'].find(row => row.kood.toUpperCase() === pageDocTypeId.toUpperCase());
+            if (docType) {
+                DocContext.pageName = docType;
+            }
+        } else {
+            let page = this.pages.find(row => row.docTypeId == pageDocTypeId);
+            if (page) {
+                DocContext.pageName = page.pageName;
+            }
+        }
+
         this.props.history.push({
             pathname: `/lapsed/${pageDocTypeId}`,
             state: {isikukood: isikukood, type: 'text'}

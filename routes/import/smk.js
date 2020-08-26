@@ -3,6 +3,7 @@ module.exports = async (file, mimeType, user) => {
     const Document = new Doc('PANK_VV', null, user.userId, user.asutusId, 'lapsed');
 
     let rows = [];
+
     try {
         if (mimeType === 'text/xml') {
             rows = await readXML(file);
@@ -56,7 +57,8 @@ const readXML = async (xmlContent) => {
         let Ntres = stmtes[0].Ntry;
 
         Ntres.forEach(ntry => {
-            if (ntry.CdtDbtInd[0] == 'CRDT') {
+            let CdtDbtInd = ntry.CdtDbtInd && ntry.CdtDbtInd.isArray ? CdtDbtInd[0]: ntry.CdtDbtInd;
+            if (CdtDbtInd == 'CRDT') {
                 let summa = Number(ntry.Amt[0]);
                 let kpv = ntry.ValDt[0].Dt[0];
                 let pankId = ntry.AcctSvcrRef[0];
@@ -66,7 +68,7 @@ const readXML = async (xmlContent) => {
                 let viitenr = RmtInf.Strd ? RmtInf.Strd[0].CdtrRefInf[0].Ref[0] : null;
                 let selg = RmtInf.Ustrd ? RmtInf.Ustrd[0] : null;
                 let maksja = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Nm[0] : null;
-                let isikukood = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0].Id[0] : null;
+                let isikukood = NtryDtls.RltdPties[0].Dbtr && NtryDtls.RltdPties[0].Dbtr[0].Id && NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId && NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0] ? NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0].Id[0] : null;
                 let eban = NtryDtls.RltdPties[0].DbtrAcct ? NtryDtls.RltdPties[0].DbtrAcct[0].Id[0].IBAN[0] : null;
 
                 rows.push({
