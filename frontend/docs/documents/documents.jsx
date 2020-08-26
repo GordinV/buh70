@@ -35,7 +35,7 @@ class Documents extends React.Component {
 
         this.gridData = [];
         this.gridConfig = [];
-        this.filterData = [];
+        this.filterData =  DocContext.filter && DocContext.filter[props.docTypeId] ?  DocContext.filter[props.docTypeId]: [];
         this.startMenuData = []; // здесь будут данные для старт меню
 
         if (props.initData && props.initData.result) {

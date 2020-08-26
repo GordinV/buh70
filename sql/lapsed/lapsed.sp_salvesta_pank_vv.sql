@@ -57,6 +57,10 @@ BEGIN
     -- расшифруем платежи
     result = count;
     stamp = l_timestamp::TEXT;
+
+    -- расшифруем
+    PERFORM lapsed.read_pank_vv(user_id::INTEGER, l_timestamp::TEXT);
+
     RETURN;
 
 EXCEPTION

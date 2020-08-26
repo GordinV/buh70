@@ -1,8 +1,9 @@
-/*
+
 DROP FUNCTION IF EXISTS lapsed.read_pank_vv(IN user_id INTEGER, IN TIMESTAMP);
 DROP FUNCTION IF EXISTS lapsed.read_pank_vv(IN user_id INTEGER, IN TEXT);
-*/
-CREATE OR REPLACE FUNCTION lapsed.read_pank_vv_(IN user_id INTEGER, IN l_timestamp TEXT,
+
+
+CREATE OR REPLACE FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN l_timestamp TEXT,
                                                OUT error_code INTEGER,
                                                OUT result INTEGER,
                                                OUT error_message TEXT)
@@ -40,7 +41,6 @@ BEGIN
           AND (doc_id IS NULL OR doc_id = 0)
         ORDER BY kpv, id
         LOOP
-            raise notice 'v_pank_vv %', v_pank_vv;
             -- ишем плательшика
             SELECT row_to_json(row) INTO json_object
             FROM (SELECT v_pank_vv.isikukood AS regkood,
@@ -226,7 +226,6 @@ BEGIN
                 UPDATE lapsed.pank_vv v SET markused = 'Arved ei leidnud' WHERE id = v_pank_vv.id;
             END IF;
 
-            raise notice 'l_maksja_id % l_laps_id % l_vanem  %, l_mk_id %', l_maksja_id,l_laps_id,l_vanem, l_mk_id;
         END LOOP;
     result = l_count_kokku;
     RETURN;

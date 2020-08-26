@@ -17,7 +17,7 @@ CREATE FOREIGN TABLE remote_journalid (
   number INTEGER DEFAULT 0 NOT NULL,
   aasta INTEGER DEFAULT year() NOT NULL
   )
-  SERVER dbarch_narva_ee
+  SERVER db_narva_ee
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'journalid');
 
 CREATE FOREIGN TABLE remote_journal (

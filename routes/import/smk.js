@@ -25,12 +25,14 @@ module.exports = async (file, mimeType, user) => {
         };
         const response = await Document.save(params, true);
         saved = response.data && response.data.length > 0 ? response.data[0].result : 0;
-        timestamp = response.data && response.data.length > 0 ? response.data[0].stamp : null;
 
+/*
+        timestamp = response.data && response.data.length > 0 ? response.data[0].stamp : null;
         if (saved && timestamp) {
             let mk_params = [timestamp, user.id];
             const mkCount = await Document.executeTask('koostaMK', mk_params);
         }
+*/
     }
     return `Kokku leidsin ${rows.length} maksed, salvestatud kokku: ${saved}`;
 

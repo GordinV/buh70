@@ -2,6 +2,7 @@
 
 const PropTypes = require('prop-types');
 const DocContext = require('./../../../doc-context.js');
+const prepareData = require('./../../../../libs/prepaireFilterData');
 
 const React = require('react'),
     styles = require('./grid-filter-styles');
@@ -24,8 +25,77 @@ class GridFilter extends React.PureComponent {
      * Обработчик на изменения инпутов
      */
     handleChange(e) {
+        this.saveFilterContent(e.target.name, e.target.value);
+        /*
+                let data = this.props.data;
+                let row = data.find(item => item.name === e.target.name);
+
+                // проверим на наличие полей для фильтрации
+                if (!data.length || !row) {
+                    data = prepareData(this.props.gridConfig, this.props.docTypeId);
+                } else {
+                    data = this.props.data;
+                }
+
+                let value = e.target.value,
+                    id = e.target.name,
+                    index,
+                    isIntervalStart = !!id.match(/_start/),
+                    isIntervalEnd = !!id.match(/_end/);
+                let fieldName = id;
+
+                // надо найти элемент массива с данными для этого компонента
+                for (let i = 0; i < data.length; i++) {
+
+                    isIntervalStart = !!id.match(/_start/);
+                    isIntervalEnd = !!id.match(/_end/);
+
+                    if (isIntervalStart) {
+                        // will replace start from firldName
+                        fieldName = id.replace(/_start/i, '');
+                    }
+
+                    if (isIntervalEnd) {
+                        // will replace end from firldName
+                        fieldName = id.replace(/_end/i, '');
+                    }
+
+                    if (data[i].name === (fieldName)) {
+                        index = i;
+                        break;
+                    }
+                }
+
+                if (index > -1) {
+                    if (isIntervalStart) {
+                        data[index].start = value;
+                    }
+                    if (isIntervalEnd) {
+                        data[index].end = value;
+                    }
+
+                    data[index].value = value;
+                }
+
+                // сохраним фильтр
+                DocContext.filter[this.props.docTypeId] = data;
+
+                if (this.props.handler) {
+                    this.props.handler(data);
+                }
+        */
+
+        this.forceUpdate();
+    }
+
+    /**
+     * сохранит значение фильтра
+     * @param name
+     * @param value
+     */
+    saveFilterContent(name, value) {
         let data = this.props.data;
-        let row = data.find(item => item.name === e.target.name);
+        let row = data.find(item => item.name === name);
 
         // проверим на наличие полей для фильтрации
         if (!data.length || !row) {
@@ -34,27 +104,25 @@ class GridFilter extends React.PureComponent {
             data = this.props.data;
         }
 
-        let value = e.target.value,
-            id = e.target.name,
-            index,
-            isIntervalStart = !!id.match(/_start/),
-            isIntervalEnd = !!id.match(/_end/);
-        let fieldName = id;
+        let index,
+            isIntervalStart = !!name.match(/_start/),
+            isIntervalEnd = !!name.match(/_end/);
+        let fieldName = name;
 
         // надо найти элемент массива с данными для этого компонента
         for (let i = 0; i < data.length; i++) {
 
-            isIntervalStart = !!id.match(/_start/);
-            isIntervalEnd = !!id.match(/_end/);
+            isIntervalStart = !!name.match(/_start/);
+            isIntervalEnd = !!name.match(/_end/);
 
             if (isIntervalStart) {
                 // will replace start from firldName
-                fieldName = id.replace(/_start/i, '');
+                fieldName = name.replace(/_start/i, '');
             }
 
             if (isIntervalEnd) {
                 // will replace end from firldName
-                fieldName = id.replace(/_end/i, '');
+                fieldName = name.replace(/_end/i, '');
             }
 
             if (data[i].name === (fieldName)) {
@@ -80,7 +148,7 @@ class GridFilter extends React.PureComponent {
         if (this.props.handler) {
             this.props.handler(data);
         }
-        this.forceUpdate();
+
     }
 
     componentDidMount() {
@@ -146,12 +214,14 @@ class GridFilter extends React.PureComponent {
             let obj = data.find(dataRow => dataRow.name == row.id);
 
             if (obj && ('value' in obj)) {
+                console.log('kas value ?, obj, isStateUpdated, value, row ', obj, isStateUpdated, value, row);
                 if (!obj.value && value) {
                     // есть дефолтное значение
                     isStateUpdated = true;
                     data = data[index][row.id] = value;
                 }
-                value = obj.value ? obj.value : value
+                value = obj.value ? obj.value : value;
+
             }
             return <div style={styles.formWidget} key={'fieldSet-' + row.id}>
                 <div style={styles.formWidgetLabel}>
@@ -193,10 +263,21 @@ class GridFilter extends React.PureComponent {
             return null;
         }
 
+        let defaulValue = getDefaultValues(row);
         let valueStart = row.interval ? obj[`start`] : obj.value;
+        if (!valueStart) {
+            valueStart = defaulValue.start;
+        }
         let valueEnd = row.interval ? obj[`end`] : obj.value;
-
+        if (!valueEnd) {
+            valueEnd = defaulValue.end;
+        }
         let componentType = row.type ? row.type : 'text';
+        if (valueStart && valueEnd) {
+            // сохраним значение
+            this.saveFilterContent(row.name, valueStart);
+            this.saveFilterContent(row.name, valueEnd);
+        }
 
         return (
             <div style={styles.interval}>
@@ -228,9 +309,9 @@ class GridFilter extends React.PureComponent {
 
 }
 
+/*
 function prepareData(gridConfig, docTypeId) {
     let data = [];
-
 
     if (!DocContext.filter) {
         DocContext.filter = {};
@@ -245,13 +326,17 @@ function prepareData(gridConfig, docTypeId) {
         data = DocContext.filter[docTypeId];
     } else {
         gridConfig.map((row) => {
+            let defValue = getDefaultValues(row);
+            let start = defValue.start;
+            let end = defValue.end;
+
             const field = {
                 value: row.value ? row.value : null,
                 name: row.id,
                 type: row.type ? row.type : 'text',
                 interval: !!row.interval,
-                start: row.value ? row.value : null,
-                end: row.value ? row.value : null
+                start: row.value ? row.value : start,
+                end: row.value ? row.value : end
             };
 
             data.push(field);
@@ -262,7 +347,52 @@ function prepareData(gridConfig, docTypeId) {
     return data;
 
 }
+*/
 
+/**
+ * добавит ноль в месяц или день по необходимости
+ * @param value
+ * @returns {string}
+ */
+const getTwoDigits = (value) => value < 10 ? `0${value}` : value;
+
+
+/**
+ * вернет дефолтные значения взависимости от типа
+ * @param row
+ */
+const getDefaultValues = (row) => {
+    let returnValue = {
+        start: null,
+        end: null,
+        value: null
+    };
+
+    Date.prototype.daysInMonth = function () {
+        return 33 - new Date(this.getFullYear(), this.getMonth(), 33).getDate();
+    };
+
+    let today = new Date();
+    let currentMonth = getTwoDigits(today.getMonth() + 1);
+    let currentYear = getTwoDigits(today.getFullYear());
+    let startMonth = `${currentYear}-${currentMonth}-01`;
+    let daysInMonth = getTwoDigits(new Date().daysInMonth());
+
+    let finishMonth = `${currentYear}-${currentMonth}-${daysInMonth}`;
+
+    if (!!row.interval && !row.start && !row.end) {
+        switch (row.type) {
+            case 'date':
+                returnValue.start = startMonth;
+                returnValue.end = finishMonth;
+                break;
+            default:
+                returnValue.start = null;
+                returnValue.end;
+        }
+    }
+    return returnValue;
+};
 
 GridFilter.propTypes = {
     gridConfig: PropTypes.array.isRequired,

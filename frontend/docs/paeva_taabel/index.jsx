@@ -5,6 +5,9 @@ const DocumentRegister = require('./../documents/documents.jsx');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'PAEVA_TAABEL';
+const getDefaultDates = require('./../../../libs/getDefaultDate');
+const DocContext = require('./../../doc-context.js');
+
 
 /**
  * Класс реализует документ справочника признаков.
@@ -17,12 +20,41 @@ class Documents extends React.PureComponent {
         };
         this.renderer = this.renderer.bind(this);
 
+// инициализация фильтра
+        if (!DocContext.filter[DOC_TYPE_ID]) {
+            let defaultDates = getDefaultDates();
+            const filterData =
+                [
+                    {
+                        name: "id",
+                        type: "text",
+                        value: null,
+                    }, {
+                    name: "kpv",
+                    type: "date",
+                    value: defaultDates.start,
+                    start: defaultDates.start,
+                    end: defaultDates.end
+                },
+                    {
+                        name: "yksus",
+                        type: "text",
+                        value: null,
+                    },
+                    {
+                        name: "staatus",
+                        type: "text",
+                        value: null
+                    }
+                ];
+            DocContext.filter[DOC_TYPE_ID] = filterData;
+        }
+
     }
 
     render() {
         return (
             <div>
-
                 <DocumentRegister initData={this.props.initData}
                                   history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
@@ -35,7 +67,7 @@ class Documents extends React.PureComponent {
 
     }
 
-    // custom render
+// custom render
     renderer(self) {
         return null;
     }
