@@ -29,6 +29,12 @@ FROM (SELECT 0                AS id,
              'Põhitegevuse kulud' AS nimetus,
              999999               AS rekvid,
              TRUE                 AS is_kulud
+      UNION ALL
+      SELECT 152586456            AS id,
+             '3'                  AS kood,
+             'Põhitegevuse tulud' AS nimetus,
+             999999               AS rekvid,
+             FALSE                AS is_kulud
      ) qry
 ORDER BY kood;
 

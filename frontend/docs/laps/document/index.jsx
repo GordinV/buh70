@@ -189,8 +189,8 @@ class Laps extends React.PureComponent {
                 DocContext.pageName = docType;
             }
         } else {
-            let page = this.pages.find(row => row.docTypeId == pageDocTypeId);
-            if (page) {
+            const page = this.pages.find(row => row.docTypeId == pageDocTypeId);
+            if (page && page.pageName) {
                 DocContext.pageName = page.pageName;
             }
         }

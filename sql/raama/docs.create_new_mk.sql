@@ -60,7 +60,7 @@ BEGIN
     -- maksepaev
     IF l_maksepaev IS NULL
     THEN
-        l_maksepaev = v_arv.tahtaeg;
+        l_maksepaev = l_kpv;
     END IF;
 
     -- viitenr

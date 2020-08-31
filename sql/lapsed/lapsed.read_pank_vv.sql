@@ -1,4 +1,3 @@
-
 DROP FUNCTION IF EXISTS lapsed.read_pank_vv(IN user_id INTEGER, IN TIMESTAMP);
 DROP FUNCTION IF EXISTS lapsed.read_pank_vv(IN user_id INTEGER, IN TEXT);
 
@@ -114,6 +113,17 @@ BEGIN
                             LIMIT 1
             );
 
+            IF l_dokprop_id IS NULL
+            THEN
+                l_dokprop_id = (SELECT id
+                                FROM com_dokprop l
+                                WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
+                                  AND kood = 'SMK'
+                                ORDER BY id DESC
+                                LIMIT 1
+                );
+            END IF;
+
             -- обнуляем счетчик найденных счетов
             l_count = 0;
             l_makse_summa = 0;
@@ -195,6 +205,7 @@ BEGIN
                              v_pank_vv.selg   AS selg,
                              v_pank_vv.number AS number,
                              v_pank_vv.kpv    AS kpv,
+                             v_pank_vv.kpv    AS maksepaev,
                              v_pank_vv.aa     AS aa,
                              v_pank_vv.iban   AS maksja_arve,
                              l_tasu_jaak      AS summa) row;

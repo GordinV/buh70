@@ -54,7 +54,7 @@ SELECT qry.rekv_id,
        n.id                                                           AS nom_id,
        coalesce((l.properties::JSONB ->> 'luno')::TEXT, n.kood)::TEXT AS teenus,
        coalesce(l_kuu, month(current_date))::INTEGER                  AS kuu,
-       coalesce(l_aasta, month(current_date))::INTEGER                AS aasta,
+       coalesce(l_aasta, year(current_date))::INTEGER                AS aasta,
        sum(coalesce(qry.day_1, 0) +
            coalesce(qry.day_2, 0) +
            coalesce(qry.day_3, 0) +

@@ -89,8 +89,8 @@ BEGIN
                       WHERE id = user_id
                         AND coalesce(is_admin :: BOOLEAN, FALSE))
             THEN
-                l_string = 'CREATE USER ' || doc_kasutaja ||
-                           ' WITH PASSWORD ' || quote_literal(doc_parool) ||
+                l_string = 'CREATE USER "' || doc_kasutaja ||
+                           '" WITH PASSWORD ' || quote_literal(doc_parool) ||
                            ' NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION ';
                 RAISE NOTICE '%', l_string;
                 EXECUTE (l_string);
@@ -179,6 +179,7 @@ BEGIN
     END IF;
 
     l_string = 'GRANT ' || roles_list || ' TO ' || quote_ident(doc_kasutaja);
+    raise notice '%', l_string;
     EXECUTE (l_string);
 
 
@@ -196,6 +197,9 @@ GRANT EXECUTE ON FUNCTION ou.sp_salvesta_userid(JSON, INTEGER, INTEGER) TO dbkas
 GRANT EXECUTE ON FUNCTION ou.sp_salvesta_userid(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
+select ou.sp_salvesta_userid('{"id":0,"data":{"ametnik":"Olga Agapova","doc_type_id":"","id":0,"is_admin":0,"is_arvestaja":1,"is_asutuste_korraldaja":0,"is_eel_aktsepterja":0,"is_eel_allkirjastaja":0,"is_eel_esitaja":0,"is_eel_koostaja":0,"is_kasutaja":0,"is_ladu_kasutaja":0,"is_peakasutaja":0,"is_rekl_administraator":0,"is_rekl_maksuhaldur":0,"kasutaja":"olga.agapova","muud":"","parool":"olga","rekvid":0}}'::json, 5155::integer, 85::integer) as id
+
+
 SELECT ou.sp_salvesta_userid('{"id":0,"data":{"rekvid":1, "kasutaja":"temp_2","ametnik":"test1","is_kasutaja":true}}', 1, 1);
 
 select * from ou.userid where id = 5693

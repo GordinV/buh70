@@ -99,7 +99,7 @@ BEGIN
         -- проерка "старого" периода
         SELECT kpv INTO l_prev_kpv FROM docs.journal WHERE id = journal_id;
 
-        IF NOT ou.fnc_aasta_kontrol(user_rekvid, coalesce(l_prev_kpv, doc_kpv))
+        IF NOT ou.fnc_aasta_kontrol(user_rekvid, coalesce(l_prev_kpv, doc_kpv)) AND NOT is_import
         THEN
             RAISE EXCEPTION 'Period on kinni';
         END IF;
@@ -217,11 +217,11 @@ BEGIN
             SELECT a1.parentid INTO lnId
             FROM docs.avans1 a1
                      INNER JOIN libs.dokprop d ON d.id = a1.dokpropid
-            WHERE ltrim(rtrim(a1.number::text)) = ltrim(rtrim(doc_dok::text))
+            WHERE ltrim(rtrim(a1.number::TEXT)) = ltrim(rtrim(doc_dok::TEXT))
               AND a1.rekvid = user_rekvid
               AND a1.asutusId = doc_asutusid
-              AND (ltrim(rtrim((d.details :: JSONB ->> 'konto')::text)) = ltrim(rtrim(json_record.deebet)) OR
-                   ltrim(rtrim((d.details :: JSONB ->> 'konto')::text)) = ltrim(rtrim(json_record.kreedit)))
+              AND (ltrim(rtrim((d.details :: JSONB ->> 'konto')::TEXT)) = ltrim(rtrim(json_record.deebet)) OR
+                   ltrim(rtrim((d.details :: JSONB ->> 'konto')::TEXT)) = ltrim(rtrim(json_record.kreedit)))
             ORDER BY a1.kpv
                 DESC
             LIMIT 1;
@@ -256,7 +256,7 @@ BEGIN
 
         PERFORM rekl.sp_koosta_ettemaks(userid, json_params);
     END IF;
-    raise notice 'salvestan journal, saved, avans done, rekl done';
+    RAISE NOTICE 'salvestan journal, saved, avans done, rekl done';
 
     -- arve tasumine
 
@@ -271,21 +271,21 @@ BEGIN
                        , a.kpv
                 LIMIT 1
     );
-    raise notice 'salvestan journal, saved, avans done, rekl done, arv done';
+    RAISE NOTICE 'salvestan journal, saved, avans done, rekl done, arv done';
 
     IF is_import IS NULL AND l_arv_id IS NOT NULL
     THEN
         PERFORM docs.sp_tasu_arv(
                         doc_id, l_arv_id, userid);
     END IF;
-    raise notice 'salvestan journal, saved, avans done, rekl done, arv done, arv tasu';
+    RAISE NOTICE 'salvestan journal, saved, avans done, rekl done, arv done, arv tasu';
 
 
 --avans
     SELECT a1.parentid INTO l_avans_id
     FROM docs.avans1 a1
              INNER JOIN libs.dokprop d ON d.id = a1.dokpropid
-    WHERE ltrim(rtrim(number::text)) = ltrim(rtrim(doc_dok::text))
+    WHERE ltrim(rtrim(number::TEXT)) = ltrim(rtrim(doc_dok::TEXT))
       AND a1.rekvid = user_rekvid
       AND a1.asutusId = doc_asutusid
       AND ltrim(rtrim(coalesce((d.details :: JSONB ->> 'konto'), '') :: TEXT)) IN ('202050')
@@ -296,8 +296,7 @@ BEGIN
     THEN
         PERFORM docs.get_avans_jaak(l_avans_id);
     END IF;
-    raise notice 'salvestan journal, saved, avans done, rekl done, arv done, arv tasu, avans again';
-
+    RAISE NOTICE 'salvestan journal, saved, avans done, rekl done, arv done, arv tasu, avans again';
 
 
     RETURN doc_id;
