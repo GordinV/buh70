@@ -5,6 +5,9 @@ const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
 const DocContext = require('./../../doc-context.js');
 const Menu = require('./../../components/menu-toolbar/menu-toolbar.jsx');
+const DocRights = require('./../../../config/doc_rights');
+const checkRights = require('./../../../libs/checkRights');
+
 
 const URL = 'newApi/document';
 
@@ -549,13 +552,16 @@ class DocumentTemplate extends React.Component {
      * @returns {{btnAdd: {show: boolean, disabled: boolean}, btnEdit: {show: boolean, disabled: boolean}, btnDelete: {show: boolean, disabled: boolean}, btnPrint: {show: boolean, disabled: boolean}}}
      */
     prepareParamsForToolbar() {
+        let docRights = DocRights[this.props.docTypeId] ? DocRights[this.props.docTypeId] : [];
+        let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
         return {
             btnAdd: {
-                show: true,
+                show: checkRights(userRoles, docRights, 'add'),
                 disabled: false
             },
             btnEdit: {
-                show: true,
+                show: checkRights(userRoles, docRights, 'edit'),
                 disabled: false
             },
             btnSave: {
@@ -563,11 +569,11 @@ class DocumentTemplate extends React.Component {
                 disabled: this.state.isDisableSave
             },
             btnDelete: {
-                show: true,
+                show: checkRights(userRoles, docRights, 'delete'),
                 disabled: false
             },
             btnPrint: {
-                show: true,
+                show: checkRights(userRoles, docRights, 'print'),
                 disabled: false
             },
             btnStart: {
@@ -630,8 +636,16 @@ class DocumentTemplate extends React.Component {
 
                             // will store bpm info
                             if (response.data.data[0].bpm) {
-                                this.bpm = response.data.data[0].bpm;
+                                let docRights = DocRights[this.props.docTypeId] ? DocRights[this.props.docTypeId] : [];
+                                let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
+                                // только доступные таски должны попасть в список
+                                this.bpm = response.data.data[0].bpm.filter(task => {
+                                            return checkRights(userRoles, docRights, task.task);
+                                });
                             }
+
+
 
                             //should return data and called for reload
                             this.setState({reloadData: false, warning: '', warningType: null});

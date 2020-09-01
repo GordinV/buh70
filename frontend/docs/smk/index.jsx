@@ -3,11 +3,17 @@
 const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const styles = require('./smk-register-styles');
-const DOC_TYPE_ID = 'smk';
+const DOC_TYPE_ID = 'SMK';
 const ButtonUpload = require('./../../components/upload_button/index.jsx');
 const BtnLogs = require('./../../components/button-register/button_logs/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 
+const DocRights = require('./../../../config/doc_rights');
+const checkRights = require('./../../../libs/checkRights');
+const DocContext = require('./../../doc-context.js');
+
+const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
+const userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
 /**
  * Класс реализует документ приходного платежного ордера.
@@ -33,13 +39,14 @@ class Documents extends React.PureComponent {
 
         return (
             <ToolbarContainer>
+                {checkRights(userRoles, docRights, 'import') ?
                 <ButtonUpload
                     ref='btnUpload'
                     docTypeId={DOC_TYPE_ID}
                     onClick={this.handleClick}
                     show={true}
                     mimeTypes={'.csv,.xml'}
-                />
+                />: null}
                 <BtnLogs
                     history={self.props.history ? self.props.history : null}
                     ref='btnLogs'

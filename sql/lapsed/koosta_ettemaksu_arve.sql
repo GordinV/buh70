@@ -310,7 +310,9 @@ $BODY$
 
 GRANT EXECUTE ON FUNCTION lapsed.koosta_ettemaksu_arve(INTEGER, INTEGER, DATE) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.koosta_ettemaksu_arve(INTEGER, INTEGER, DATE) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.koosta_ettemaksu_arve(INTEGER, INTEGER, DATE) TO arvestaja;
+REVOKE EXECUTE ON FUNCTION lapsed.koosta_ettemaksu_arve(INTEGER, INTEGER, DATE) FROM arvestaja;
+
+--GRANT EXECUTE ON FUNCTION lapsed.koosta_ettemaksu_arve(INTEGER, INTEGER, DATE) TO arvestaja;
 
 
 /*

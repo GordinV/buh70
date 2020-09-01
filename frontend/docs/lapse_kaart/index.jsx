@@ -9,6 +9,13 @@ const ButtonUpload = require('./../../components/upload_button/index.jsx');
 const styles = require('./styles');
 const DOC_TYPE_ID = 'LAPSE_KAART';
 
+const DocRights = require('./../../../config/doc_rights');
+const checkRights = require('./../../../libs/checkRights');
+const DocContext = require('./../../doc-context.js');
+
+const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
+const userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
 /**
  * Класс реализует документ справочника признаков.
  */
@@ -34,20 +41,22 @@ class Documents extends React.PureComponent {
 
         return (
             <ToolbarContainer>
+                {checkRights(userRoles, docRights, 'muudaEttemaksuPeriod') ?
                 <BtnTask
                     value={'Muuda ettemaksu period'}
                     onClick={this.onClickHandler}
                     showDate={false}
                     showKogus={true}
                     ref={`btn-ettemaksu_period`}
-                />
+                /> : null }
+                {checkRights(userRoles, docRights, 'importTeenused') ?
                 <ButtonUpload
                     ref='btnUpload'
                     docTypeId={DOC_TYPE_ID}
                     onClick={this.handleClick}
                     show={true}
                     mimeTypes={'.csv'}
-                />
+                />: null }
 
             </ToolbarContainer>
         )

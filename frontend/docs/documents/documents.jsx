@@ -5,6 +5,8 @@ const React = require('react');
 const fetchData = require('./../../../libs/fetchData');
 const DocContext = require('./../../doc-context.js');
 const Menu = require('./../../components/menu-toolbar/menu-toolbar.jsx');
+const DocRights = require('./../../../config/doc_rights');
+const checkRights = require('./../../../libs/checkRights');
 
 const
     DataGrid = require('./../../components/data-grid/data-grid.jsx'),
@@ -35,7 +37,7 @@ class Documents extends React.Component {
 
         this.gridData = [];
         this.gridConfig = [];
-        this.filterData =  DocContext.filter && DocContext.filter[props.docTypeId] ?  DocContext.filter[props.docTypeId]: [];
+        this.filterData = DocContext.filter && DocContext.filter[props.docTypeId] ? DocContext.filter[props.docTypeId] : [];
         this.startMenuData = []; // здесь будут данные для старт меню
 
         if (props.initData && props.initData.result) {
@@ -185,7 +187,7 @@ class Documents extends React.Component {
                               onClick={this.clickHandler}
                               onDblClick={this.dblClickHandler}
                               onHeaderClick={this.headerClickHandler}
-                              custom_styling={this.props.custom_styling ? this.props.custom_styling: null}
+                              custom_styling={this.props.custom_styling ? this.props.custom_styling : null}
                               isSelect={this.state.showSelectFields}
                               value={this.state.value}/>
                     {this.state.getFilter ?
@@ -223,7 +225,7 @@ class Documents extends React.Component {
         // ихем тип поля, если указан
         const row = this.gridConfig.find(row => row.id == sortBy[0].column);
         if (row && row.type) {
-            Object.assign(sortBy[0],{type: row.type});
+            Object.assign(sortBy[0], {type: row.type});
         }
         this.setState({sortBy: sortBy}, () => this.fetchData('selectDocs'));
     }
@@ -384,7 +386,7 @@ class Documents extends React.Component {
                         if (data.status && data.status == 401) {
                             setTimeout(() => {
                                 document.location = `/login`;
-                            },1000);
+                            }, 1000);
                         }
                     } else {
                         this.fetchData('selectDocs');
@@ -574,9 +576,9 @@ class Documents extends React.Component {
                                   value={'Trükk'}
                                   disable={toolbarParams['btnPrint'].disabled}/>
                         <BtnPdf onClick={this.btnPdfClick.bind(this)}
-                                  show={toolbarParams['btnPdf'].show}
-                                  value={'PDF'}
-                                  disable={toolbarParams['btnPdf'].disabled}/>
+                                show={toolbarParams['btnPdf'].show}
+                                value={'PDF'}
+                                disable={toolbarParams['btnPdf'].disabled}/>
                         <BtnEmail onClick={this.btnEmailClick.bind(this)}
                                   show={toolbarParams['btnEmail'].show}
                                   value={'Email'}
@@ -616,14 +618,17 @@ class Documents extends React.Component {
      * @returns {{btnAdd: {show: boolean, disabled: boolean}, btnEdit: {show: boolean, disabled: boolean}, btnDelete: {show: boolean, disabled: boolean}, btnPrint: {show: boolean, disabled: boolean}}}
      */
     prepareParamsForToolbar() {
+        let docRights = DocRights[this.docTypeId] ? DocRights[this.docTypeId] : [];
+        let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
         let toolbarProps = {
-            add: this.props.toolbarProps  ? !!this.props.toolbarProps.add: true,
-            edit: this.props.toolbarProps ? !!this.props.toolbarProps.edit: true,
-            delete: this.props.toolbarProps ? !!this.props.toolbarProps.delete: true,
-            print: this.props.toolbarProps  ? !!this.props.toolbarProps.print: true,
-            pdf: this.props.toolbarProps  ? !!this.props.toolbarProps.pdf: true,
-            email: this.props.toolbarProps  ? !!this.props.toolbarProps.email: true,
-            start: this.props.toolbarProps ? !!this.props.toolbarProps.start: true
+            add: this.props.toolbarProps ? !!this.props.toolbarProps.add : checkRights(userRoles, docRights, 'add'),
+            edit: this.props.toolbarProps ? !!this.props.toolbarProps.edit : checkRights(userRoles, docRights, 'edit'),
+            delete: this.props.toolbarProps ? !!this.props.toolbarProps.delete : checkRights(userRoles, docRights, 'delete'),
+            print: this.props.toolbarProps ? !!this.props.toolbarProps.print : checkRights(userRoles, docRights, 'print'),
+            pdf: this.props.toolbarProps ? !!this.props.toolbarProps.pdf : true,
+            email: this.props.toolbarProps ? !!this.props.toolbarProps.email : true,
+            start: this.props.toolbarProps ? !!this.props.toolbarProps.start : true
         };
 
         return Object.assign({

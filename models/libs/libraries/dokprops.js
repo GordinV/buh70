@@ -59,7 +59,12 @@ module.exports = {
         {
             name: 'dok',
             type: 'C'
-        }
+        },
+        {
+            name: 'parentid',
+            type: 'I'
+        },
+
     ],
     saveDoc: `select libs.sp_salvesta_dokprop($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `select error_code, result, error_message from libs.sp_delete_dokprop($1::integer, $2::integer)`, // $1 - userId, $2 - docId

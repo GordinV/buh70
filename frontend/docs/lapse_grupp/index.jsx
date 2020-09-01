@@ -8,6 +8,13 @@ const ToolbarContainer = require('./../../components/toolbar-container/toolbar-c
 const styles = require('./styles');
 const DOC_TYPE_ID = 'LAPSE_GRUPP';
 
+const DocRights = require('./../../../config/doc_rights');
+const checkRights = require('./../../../libs/checkRights');
+const DocContext = require('./../../doc-context.js');
+
+const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
+const userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
 /**
  * Класс реализует документ справочника признаков.
  */
@@ -30,13 +37,14 @@ class Documents extends React.PureComponent {
     renderer() {
         return (
             <ToolbarContainer>
-                <ButtonUpload
-                    ref='btnUpload'
-                    docTypeId={DOC_TYPE_ID}
-                    onClick={this.handleClick}
-                    show={true}
-                    mimeTypes={'.csv'}
-                />
+                {checkRights(userRoles, docRights, 'importGroups') ?
+                    <ButtonUpload
+                        ref='btnUpload'
+                        docTypeId={DOC_TYPE_ID}
+                        onClick={this.handleClick}
+                        show={true}
+                        mimeTypes={'.csv'}
+                    /> : null}
 
             </ToolbarContainer>
 

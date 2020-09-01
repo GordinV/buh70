@@ -18,7 +18,8 @@ SELECT u.id,
        libs.libs            AS allowed_libs_old,
        allowed_modules.libs AS allowed_libs,
        r.parentid,
-       parent_r.nimetus::text as parent_asutus
+       parent_r.nimetus::text as parent_asutus,
+       u.roles
 FROM ou.userid u
          JOIN ou.rekv r ON r.id = u.rekvid
          LEFT OUTER JOIN ou.rekv parent_r ON parent_r.id = r.parentid

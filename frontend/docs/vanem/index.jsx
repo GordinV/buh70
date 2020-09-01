@@ -4,29 +4,18 @@ const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 
 const styles = require('./styles');
-const DOC_TYPE_ID = 'VANEM';
 const ButtonUpload = require('./../../components/upload_button/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 
+const DOC_TYPE_ID = 'VANEM';
+const DocRights = require('./../../../config/doc_rights');
+const checkRights = require('./../../../libs/checkRights');
+const DocContext = require('./../../doc-context.js');
 
-const toolbarParams = {
-    btnAdd: {
-        show: false,
-        disabled: false
-    },
-    btnEdit: {
-        show: true,
-        disabled: false
-    },
-    btnDelete: {
-        show: true,
-        disabled: false
-    },
-    btnPrint: {
-        show: true,
-        disabled: false
-    }
-};
+const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
+const userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
+
 
 /**
  * Класс реализует документ справочника признаков.
@@ -39,6 +28,25 @@ class Documents extends React.PureComponent {
     }
 
     render() {
+
+        const toolbarParams = {
+            btnAdd: {
+                show: false,
+                disabled: false
+            },
+            btnEdit: {
+                show: checkRights(userRoles, docRights, 'edit'),
+                disabled: false
+            },
+            btnDelete: {
+                show: checkRights(userRoles, docRights, 'delete'),
+                disabled: false
+            },
+            btnPrint: {
+                show: true,
+                disabled: false
+            }
+        };
 
         return <DocumentRegister initData={this.props.initData}
                                  userData={this.props.userData}
@@ -54,14 +62,14 @@ class Documents extends React.PureComponent {
     renderer() {
         return (
             <ToolbarContainer>
-                <ButtonUpload
-                    ref='btnUpload'
-                    docTypeId={DOC_TYPE_ID}
-                    onClick={this.handleClick}
-                    show={true}
-                    mimeTypes={'.csv'}
-                />
-
+                {checkRights(userRoles, docRights, 'importLapsed') ?
+                    <ButtonUpload
+                        ref='btnUpload'
+                        docTypeId={DOC_TYPE_ID}
+                        onClick={this.handleClick}
+                        show={true}
+                        mimeTypes={'.csv'}
+                    /> : null}
             </ToolbarContainer>
         )
     }

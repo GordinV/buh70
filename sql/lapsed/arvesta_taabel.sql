@@ -15,8 +15,8 @@ $BODY$
 DECLARE
     l_rekvid    INTEGER = (SELECT rekvid
                            FROM ou.userid u
-                               WHERE id = user_id
-                               LIMIT 1);
+                           WHERE id = user_id
+                           LIMIT 1);
 
     v_kaart     RECORD;
     json_object JSONB;
@@ -27,7 +27,8 @@ DECLARE
     l_count     INTEGER = 0;
     l_kogus     NUMERIC = 0;
     userName    TEXT    = (SELECT ametnik
-                           FROM ou.userid WHERE id = user_id);
+                           FROM ou.userid
+                           WHERE id = user_id);
 BEGIN
     doc_type_id = 'LAPSE_TAABEL';
     -- will return docTypeid of new doc
@@ -44,12 +45,12 @@ BEGIN
                date_part('year'::TEXT, l_kpv::DATE)              AS aasta
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
-            WHERE lk.parentid = l_laps_id
-                 AND lk.staatus = DOC_STATUS
-                 AND (lk.properties ->> 'alg_kpv' IS NULL OR
-                      (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
-                 AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
-                 AND ((lk.properties ->> 'kas_ettemaks') IS NULL OR NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN)
+        WHERE lk.parentid = l_laps_id
+          AND lk.staatus = DOC_STATUS
+          AND (lk.properties ->> 'alg_kpv' IS NULL OR
+               (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
+          AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
+          AND ((lk.properties ->> 'kas_ettemaks') IS NULL OR NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN)
         LOOP
             -- ищем аналогичный табель в периоде
             -- критерий
@@ -62,22 +63,22 @@ BEGIN
                 SELECT sum(kogus) INTO v_kaart.kogus
                 FROM lapsed.day_taabel1 t1
                          INNER JOIN lapsed.day_taabel t ON t.id = t1.parent_id
-                    WHERE t.staatus <> 3
-                         AND t.rekv_id = l_rekvid
-                         AND t1.laps_id = v_kaart.parentid
-                         AND t1.nom_id = v_kaart.nomid
-                         AND month(t.kpv) = month(l_kpv::DATE)
-                         AND year(t.kpv) = year(l_kpv::DATE);
+                WHERE t.staatus <> 3
+                  AND t.rekv_id = l_rekvid
+                  AND t1.laps_id = v_kaart.parentid
+                  AND t1.nom_id = v_kaart.nomid
+                  AND month(t.kpv) = month(l_kpv::DATE)
+                  AND year(t.kpv) = year(l_kpv::DATE);
             END IF;
 
             SELECT lt.id,
                    lt.staatus
                    INTO l_taabel_id, l_status
             FROM lapsed.lapse_taabel lt
-                WHERE lt.lapse_kaart_id = v_kaart.lapse_kaart_id
-                     AND aasta = date_part('year'::TEXT, l_kpv::DATE)
-                     AND kuu = date_part('month'::TEXT, l_kpv::DATE)
-                LIMIT 1;
+            WHERE lt.lapse_kaart_id = v_kaart.lapse_kaart_id
+              AND aasta = date_part('year'::TEXT, l_kpv::DATE)
+              AND kuu = date_part('month'::TEXT, l_kpv::DATE)
+            LIMIT 1;
 
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN
@@ -111,10 +112,10 @@ BEGIN
                     SELECT t1.parent_id
                     FROM lapsed.day_taabel1 t1
                              INNER JOIN lapsed.day_taabel t ON t.id = t1.parent_id
-                        WHERE month(t.kpv) = month(l_kpv)
-                             AND year(t.kpv) = year(l_kpv)
-                             AND t.rekv_id = l_rekvid
-                             AND t1.laps_id = v_kaart.parentid
+                    WHERE month(t.kpv) = month(l_kpv)
+                      AND year(t.kpv) = year(l_kpv)
+                      AND t.rekv_id = l_rekvid
+                      AND t1.laps_id = v_kaart.parentid
                 );
 
             END IF;
@@ -122,21 +123,21 @@ BEGIN
         END LOOP;
 
 
-        result = coalesce(l_taabel_id,0) ;
+    result = coalesce(l_taabel_id, 0);
 
     -- проверка
 
-        /*
-    IF l_count > 0
-    THEN
-        result = l_taabel_id ;
-    ELSE
-        result = 0;
-        error_message = 'Dokumendi koostamise viga';
-        error_code = 1;
-    END IF;
+    /*
+IF l_count > 0
+THEN
+    result = l_taabel_id ;
+ELSE
+    result = 0;
+    error_message = 'Dokumendi koostamise viga';
+    error_code = 1;
+END IF;
 
- */
+*/
     RETURN;
 
 EXCEPTION
@@ -153,8 +154,8 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO dbpeakasutaja;
+REVOKE EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) FROM dbkasutaja;
+REVOKE EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) FROM dbpeakasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arvestaja;
 
 

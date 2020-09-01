@@ -2,6 +2,14 @@
 
 const PropTypes = require('prop-types');
 const React = require('react');
+const DOC_TYPE_ID = 'PAEVA_TAABEL';
+
+const DocRights = require('./../../../../config/doc_rights');
+const checkRights = require('./../../../../libs/checkRights');
+const DocContext = require('./../../../doc-context.js');
+
+const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
+const userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
 
 const
@@ -22,8 +30,6 @@ const LIBRARIES = [
         filter: ``
     }
 ];
-
-const DocContext = require('../../../doc-context');
 
 class PaevaTaabel extends React.PureComponent {
     constructor(props) {
@@ -50,7 +56,7 @@ class PaevaTaabel extends React.PureComponent {
         this.checkData = this.checkData.bind(this);
 
         this.pages = [
-            {pageName: 'Päeva taabel', docTypeId: 'PAEVA_TAABEL'}
+            {pageName: 'Päeva taabel', docTypeId: DOC_TYPE_ID}
         ];
 
         this.subtotals = ['osalemine'];
@@ -78,7 +84,7 @@ class PaevaTaabel extends React.PureComponent {
         let filter = this.state.lapsId ? `where lapsid = ${this.state.lapsId}` : '';
         return <DocumentTemplate docId={this.state.docId}
                                  ref='document'
-                                 docTypeId='PAEVA_TAABEL'
+                                 docTypeId={DOC_TYPE_ID}
                                  module={this.state.module}
                                  initData={this.props.initData}
                                  libs={LIBRARIES}
@@ -193,7 +199,7 @@ class PaevaTaabel extends React.PureComponent {
                                 readOnly={!isEditMode}
                         />
                     </div>
-                    {!self.docData.id && self.docData.grupp_id ? (
+                    {!self.docData.id && self.docData.grupp_id && checkRights(userRoles, docRights, 'add') ? (
                         <div style={styles.docColumn}>
                             <BtnArvesta
                                 value={'Arvesta taabel ?'}
@@ -206,14 +212,15 @@ class PaevaTaabel extends React.PureComponent {
                         </div>) : null
                     }
                     <div style={styles.docColumn}>
-                        <ButtonEdit
-                            ref='btnEdit'
-                            value={'Muuda'}
-                            onClick={this.btnEditGruppClick}
-                            show={!isEditMode}
-                            style={styles.btnEdit}
-                            disabled={false}
-                        />
+                        {checkRights(userRoles, docRights, 'edit') ?
+                            <ButtonEdit
+                                ref='btnEdit'
+                                value={'Muuda'}
+                                onClick={this.btnEditGruppClick}
+                                show={!isEditMode}
+                                style={styles.btnEdit}
+                                disabled={false}
+                            /> : null}
                     </div>
 
                 </div>

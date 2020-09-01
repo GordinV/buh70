@@ -5,23 +5,14 @@ const DocumentRegister = require('./../documents/documents.jsx');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'PANK_VV';
-const toolbarParams = {
-    btnAdd: {
-        show: false
-    },
-    btnEdit: {
-        show: true
-    },
-    btnDelete: {
-        show: true
-    },
-    btnPrint: {
-        show: false
-    },
-    btnStart: {
-        show: false
-    }
-};
+
+const DocRights = require('./../../../config/doc_rights');
+const checkRights = require('./../../../libs/checkRights');
+const DocContext = require('./../../doc-context.js');
+
+const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
+const userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
 
 /**
  * Класс реализует документ справочника признаков.
@@ -36,10 +27,30 @@ class Documents extends React.PureComponent {
     }
 
     render() {
-        const state = this.Doc && this.Doc.state ? this.Doc.state : null;
+        let state;
         if (this.Doc) {
-            toolbarParams['btnEdit'].show = state.value ? true : false;
+            state = this.Doc && this.Doc.state ? this.Doc.state : null;
         }
+
+        const toolbarParams = {
+            btnAdd: {
+                show: false
+            },
+            btnEdit: {
+                show: state && state.value && checkRights(userRoles, docRights, 'edit')
+            },
+            btnDelete: {
+                show: checkRights(userRoles, docRights, 'delete')
+            },
+            btnPrint: {
+                show: false
+            },
+            btnStart: {
+                show: false
+            }
+        };
+
+        console.log('toolbarParams', toolbarParams);
 
         return (
             <DocumentRegister initData={this.props.initData}
@@ -82,7 +93,6 @@ class Documents extends React.PureComponent {
     }
 
 }
-
 
 module.exports = (Documents);
 

@@ -121,7 +121,9 @@ $BODY$
 
 GRANT EXECUTE ON FUNCTION lapsed.koosta_mk_arve_alusel(INTEGER,INTEGER, DATE) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.koosta_mk_arve_alusel(INTEGER,INTEGER, DATE) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.koosta_mk_arve_alusel(INTEGER,INTEGER, DATE) TO arvestaja;
+REVOKE EXECUTE ON FUNCTION lapsed.koosta_paevad_taabel(JSONB, INTEGER) FROM arvestaja;
+
+--GRANT EXECUTE ON FUNCTION lapsed.koosta_mk_arve_alusel(INTEGER,INTEGER, DATE) TO arvestaja;
 
 
 /*

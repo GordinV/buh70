@@ -43,14 +43,15 @@ class DocToolBar extends React.PureComponent {
     render() {
         let isEditMode = this.props.edited,
             isDocDisabled = this.state.docStatus === 2 ,
-            docId = this.docId,
-            toolbarParams =   {
+            docId = this.docId;
+
+        let   toolbarParams =   {
                 btnAdd: {
-                    show: !isEditMode,
+                    show: !isEditMode && this.props.toolbarParams ? this.props.toolbarParams['btnAdd'].show: true,
                     disabled: isEditMode
                 },
                 btnEdit: {
-                    show: !isEditMode && !isDocDisabled,
+                    show: !isEditMode && !isDocDisabled && this.props.toolbarParams ? this.props.toolbarParams['btnEdit'].show: true,
                     disabled: isDocDisabled
                 },
                 btnPrint: {
@@ -72,7 +73,9 @@ class DocToolBar extends React.PureComponent {
             };
 
         return <ToolbarContainer ref='toolbarContainer'>
-            <BtnAdd ref='btnAdd' onClick={this.btnAddClick} show={toolbarParams['btnAdd'].show}
+            <BtnAdd ref='btnAdd'
+                    onClick={this.btnAddClick}
+                    show={toolbarParams['btnAdd'].show}
                     disabled={toolbarParams['btnAdd'].disabled}/>
             <BtnEdit ref='btnEdit'
                      value={'Muuda'}

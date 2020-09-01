@@ -21,7 +21,8 @@ CREATE OR REPLACE FUNCTION ou.get_user_data(l_kasutaja TEXT, l_rekvid INTEGER, l
         allowed_access TEXT[],
         allowed_libs   TEXT[],
         parentid       INTEGER,
-        parent_asutus  TEXT
+        parent_asutus  TEXT,
+        roles          JSONB
     ) AS
 $BODY$
 
@@ -35,18 +36,21 @@ SELECT u.id,
        u.admin,
        u.muud,
        u.last_login,
-       r.nimetus::TEXT                                                                         AS asutus,
-       CASE WHEN r.muud IS NOT NULL THEN r.muud ELSE r.nimetus END ::TEXT                      AS asutus_tais,
-       r.regkood::TEXT                                                                         AS regkood,
-       r.aadress::TEXT                                                                         AS aadress,
-       r.tel::TEXT                                                                             AS tel,
-       r.email::TEXT                                                                           AS email,
-       rs.a::TEXT[]                                                                            AS allowed_access,
-       allowed_modules.libs::TEXT[]                                                            AS allowed_libs,
+       r.nimetus::TEXT                                                    AS asutus,
+       CASE WHEN r.muud IS NOT NULL THEN r.muud ELSE r.nimetus END ::TEXT AS asutus_tais,
+       r.regkood::TEXT                                                    AS regkood,
+       r.aadress::TEXT                                                    AS aadress,
+       r.tel::TEXT                                                        AS tel,
+       r.email::TEXT                                                      AS email,
+       rs.a::TEXT[]                                                       AS allowed_access,
+       allowed_modules.libs::TEXT[]                                       AS allowed_libs,
        r.parentid,
-       CASE WHEN parent_r.muud IS NOT NULL THEN parent_r.muud ELSE
-           coalesce(parent_r.nimetus , CASE WHEN r.muud IS NOT NULL THEN r.muud ELSE r.nimetus END)
-           END ::TEXT AS parent_asutus
+       CASE
+           WHEN parent_r.muud IS NOT NULL THEN parent_r.muud
+           ELSE
+               coalesce(parent_r.nimetus, CASE WHEN r.muud IS NOT NULL THEN r.muud ELSE r.nimetus END)
+           END ::TEXT                                                     AS parent_asutus,
+       u.roles
 
 FROM ou.userid u
          JOIN ou.rekv r ON r.id = u.rekvid AND u.kasutaja::TEXT = l_kasutaja
@@ -67,7 +71,8 @@ FROM ou.userid u
                     kood::TEXT,
                     nimetus::TEXT,
                     library::TEXT                          AS lib,
-                    (properties::JSONB -> 'module')::JSONB AS module
+                    (properties::JSONB -> 'module')::JSONB AS module,
+                    (properties::JSONB -> 'roles')::JSONB AS roles
              FROM libs.library l
              WHERE l.library = 'DOK'
                AND status <> 3

@@ -136,8 +136,8 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION lapsed.koosta_taabel_paeva_alusel(JSONB, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.koosta_taabel_paeva_alusel(JSONB, INTEGER) TO dbpeakasutaja;
+REVOKE EXECUTE ON FUNCTION lapsed.koosta_taabel_paeva_alusel(JSONB, INTEGER) FROM dbkasutaja;
+REVOKE EXECUTE ON FUNCTION lapsed.koosta_taabel_paeva_alusel(JSONB, INTEGER) FROM dbpeakasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.koosta_taabel_paeva_alusel(JSONB, INTEGER) TO arvestaja;
 
 

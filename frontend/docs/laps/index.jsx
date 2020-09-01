@@ -15,6 +15,10 @@ const EVENTS = [
     {name: 'Ettemaksuarve koostamine', method: 'koostaEttemaksuArved', docTypeId: 'arv'},
 ];
 
+const DocRights = require('./../../../config/doc_rights');
+const checkRights = require('./../../../libs/checkRights');
+const DocContext = require('./../../doc-context.js');
+
 
 /**
  * Класс реализует документ справочника признаков.
@@ -40,9 +44,18 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
+        let docRights = DocRights['LAPS'] ? DocRights['LAPS'] : [];
+        let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
+        let events = EVENTS.filter(event => {
+            // только доступные таски должны попасть в список
+            let kas_lubatud = checkRights(userRoles, docRights, event.method);
+            return kas_lubatud;
+        });
+
         return (
             <ToolbarContainer>
-                {EVENTS.map(event => {
+                {events.map(event => {
                     return (
                         <BtnArvesta
                             value={event.name}
@@ -53,6 +66,7 @@ class Documents extends React.PureComponent {
 
                     )
                 })}
+                {checkRights(userRoles, docRights, 'importLapsed') ?
                 <ButtonUpload
                     ref='btnUpload'
                     docTypeId={DOC_TYPE_ID}
@@ -60,7 +74,8 @@ class Documents extends React.PureComponent {
                     show={true}
                     value={'Import lapsed'}
                     mimeTypes={'.csv'}
-                />
+                /> : null}
+                {checkRights(userRoles, docRights, 'importViitenr')?
                 <ButtonUpload
                     ref='btnUpload'
                     docTypeId={'VIITENR'}
@@ -68,7 +83,7 @@ class Documents extends React.PureComponent {
                     show={true}
                     value={'Import viitenumbrid'}
                     mimeTypes={'.csv'}
-                />
+                />: null}
 
             </ToolbarContainer>
         )
