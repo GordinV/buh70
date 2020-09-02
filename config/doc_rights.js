@@ -56,8 +56,8 @@ module.exports = {
     },
     ASUTUSED: {
         select: ['kasutaja', 'vaatleja', 'peakasutaja'],
-        add: ['kasutaja'],
-        edit: ['kasutaja'],
+        add: ['kasutaja', 'arvestaja'],
+        edit: ['kasutaja','arvestaja'],
         delete: ['kasutaja']
     },
 
