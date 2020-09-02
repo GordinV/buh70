@@ -4,6 +4,9 @@ const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const BtnGetXml = require('./../../components/button-register/button-task/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
+const InputNumber = require('../../components/input-number/input-number.jsx');
+
+
 const DocContext = require('./../../doc-context.js');
 
 const styles = require('./styles');
@@ -25,6 +28,9 @@ class Documents extends React.PureComponent {
         super(props);
         this.onClickHandler = this.onClickHandler.bind(this);
         this.renderer = this.renderer.bind(this);
+        this.state = {
+            read: 0
+        }
     }
 
     render() {
@@ -37,12 +43,23 @@ class Documents extends React.PureComponent {
                                   toolbarProps={TOOLBAR_PROPS}
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
-                                  render={this.renderer}/>;
+                                  render={this.renderer}/>
+                <InputNumber title="Read kokku:"
+                             name='read_kokku'
+                             style={styles.total}
+                             ref="input-read"
+                             value={Number(this.state.read) || 0}
+                             disabled={true}/>
+
             </div>
         )
     }
 
-    renderer() {
+    renderer(self) {
+        if (self.gridData && self.gridData.length) {
+            this.setState({read: self.gridData.length});
+        }
+
         return (<ToolbarContainer>
                 <BtnGetXml
                     value={'Saama CSV fail'}

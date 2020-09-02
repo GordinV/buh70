@@ -25,7 +25,8 @@ class Documents extends React.PureComponent {
         this.state = {
             summa: 0,
             tasutud: 0,
-            jaak: 0
+            jaak: 0,
+            read: 0
         };
 
         this.renderer = this.renderer.bind(this);
@@ -41,7 +42,13 @@ class Documents extends React.PureComponent {
                                   toolbarProps={TOOLBAR_PROPS}
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
-                                  render={this.renderer}/>;
+                                  render={this.renderer}/>
+                <InputNumber title="Read kokku:"
+                             name='read_kokku'
+                             style={styles.total}
+                             ref="input-read"
+                             value={Number(this.state.read) || 0}
+                             disabled={true}/>
                 <InputNumber title="Arve summa kokku:"
                              name='summa_kokku'
                              style={styles.total}
@@ -69,7 +76,7 @@ class Documents extends React.PureComponent {
         let tasutud = self.gridData ? getSum (self.gridData,'tasutud') : 0;
         let jaak = self.gridData ? getSum (self.gridData,'jaak') : 0;
         if (summa) {
-            this.setState({summa: summa, tasutud: tasutud, jaak: jaak});
+            this.setState({summa: summa, tasutud: tasutud, jaak: jaak, read: self.gridData.length});
         }
 
         return (<div/>

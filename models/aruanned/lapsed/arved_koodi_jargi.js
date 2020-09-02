@@ -41,7 +41,22 @@ module.exports = {
     print: [
         {
             view: 'arved_koodi_jargi_register',
-            params: 'sqlWhere'
+            params: 'sqlWhere',
+            converter: function (data) {
+                let summa_kokku = 0;
+                let row_id = 0;
+                data.forEach(row => {
+                    summa_kokku = summa_kokku + row.summa;
+                });
+
+                return data.map(row => {
+                    row_id++;
+                    row.summa_kokku = summa_kokku;
+                    row.row_id = row_id;
+                    return row;
+                })
+            }
+
         },
     ],
 

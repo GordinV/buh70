@@ -4,6 +4,8 @@ const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const BtnGetXml = require('./../../components/button-register/button-task/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
+const getSum = require('./../../../libs/getSum');
+const InputNumber = require('../../components/input-number/input-number.jsx');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'INF3';
@@ -25,20 +27,46 @@ class Documents extends React.PureComponent {
         super(props);
         this.onClickHandler = this.onClickHandler.bind(this);
         this.renderer = this.renderer.bind(this);
+        this.state = {
+            summa: 0,
+            read: 0
+        }
     }
 
     render() {
-        return <DocumentRegister initData={this.props.initData}
-                                 history={this.props.history ? this.props.history : null}
-                                 module={this.props.module}
-                                 ref='register'
-                                 toolbarProps={TOOLBAR_PROPS}
-                                 docTypeId={DOC_TYPE_ID}
-                                 style={styles}
-                                 render={this.renderer}/>;
+        return (
+            <div>
+                <DocumentRegister initData={this.props.initData}
+                                  history={this.props.history ? this.props.history : null}
+                                  module={this.props.module}
+                                  ref='register'
+                                  toolbarProps={TOOLBAR_PROPS}
+                                  docTypeId={DOC_TYPE_ID}
+                                  style={styles}
+                                  render={this.renderer}/>
+                <InputNumber title="Read kokku:"
+                             name='read_kokku'
+                             style={styles.total}
+                             ref="input-read"
+                             value={Number(this.state.read).toFixed(2) || 0}
+                             disabled={true}/>
+                <InputNumber title="Summa kokku:"
+                             name='summa_kokku'
+                             style={styles.total}
+                             ref="input-summa"
+                             value={Number(this.state.summa).toFixed(2) || 0}
+                             disabled={true}/>
+
+            </div>
+        )
     }
 
     renderer(self) {
+        let summa = self.gridData ? getSum (self.gridData,'summa') : 0;
+        if (summa) {
+            this.setState({summa: summa, read: self.gridData.length});
+        }
+
         return (<ToolbarContainer>
                 <BtnGetXml
                     value={'Saama XML fail'}

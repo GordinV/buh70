@@ -245,6 +245,28 @@ GROUP BY rekvid,
          artikkel,
          rahavoog,
          tunnus,
+         idx
+UNION ALL
+SELECT 999999,
+       sum(eelarve_kinni)            AS eelarve_kinni,
+       sum(eelarve_parandatud)       AS eelarve_parandatud,
+       sum(eelarve_kassa_kinni)      AS eelarve_kassa_kinni,
+       SUM(eelarve_kassa_parandatud) AS eelarve_kassa_parandatud,
+       sum(tegelik)                  AS tegelik,
+       sum(kassa)                    AS kassa,
+       tegev,
+       allikas,
+       artikkel,
+       rahavoog,
+       tunnus,
+       idx
+FROM qryReport
+WHERE l_kond > 0
+GROUP BY tegev,
+         allikas,
+         artikkel,
+         rahavoog,
+         tunnus,
          idx;
 
 $BODY$

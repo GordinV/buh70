@@ -8,26 +8,41 @@ module.exports = {
             {id: "summa", name: "Summa", width: "10%", type: "number"},
             {id: "aasta", name: "Aasta", width: "5%", type: "integer"},
         ],
-        sqlString: `SELECT sum(summa)::numeric(12,2) AS summa,
+        sqlString: `SELECT sum(summa)::NUMERIC(12, 2) AS summa,
                            lapse_nimi,
                            lapse_isikukood,
                            maksja_nimi,
                            maksja_isikukood,
                            aasta,
-                           3          AS liik,
-                           $2         AS user_id
+                           3                          AS liik,
+                           $2                         AS user_id
                     FROM lapsed.inf3($1::INTEGER, 1) qryReport
                     GROUP BY lapse_nimi, lapse_isikukood, maksja_nimi, maksja_isikukood, aasta
                     ORDER BY lapse_nimi
         `,     // $1 - rekvid, $3 - kond
         params: '',
-        alias: 'inf3_report'
+        alias: 'inf3_report',
     },
     print: [
         {
             view: 'inf3_register',
-            params: 'sqlWhere'
-        },
+            params: 'sqlWhere',
+            converter: function (data) {
+                let summa_kokku = 0;
+                let row_id = 0;
+                data.forEach(row => {
+                    summa_kokku = summa_kokku + row.summa;
+                });
+
+                return data.map(row => {
+                    row_id++;
+                    row.summa_kokku = summa_kokku;
+                    row.row_id = row_id;
+                    return row;
+                })
+            }
+
+        }
     ],
 
 };

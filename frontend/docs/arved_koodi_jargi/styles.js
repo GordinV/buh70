@@ -19,6 +19,10 @@ module.exports = {
     },
     total: {
         width: 'auto'
-    }
+    },
+    doc: {
+        height: '100%',
+    },
+
 
 };

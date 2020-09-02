@@ -418,16 +418,16 @@ class Documents extends React.Component {
                             filterString = `${filterString} ${row.name} in (${prepairedParameter})`;
                         } else {
                             if (this.props.docTypeId == 'KUU_TAABEL') {
-                                filterString = `${filterString}  ${row.name}  ilike '%${row.value.trim()}%'`;
+                                filterString = `${filterString}  upper(${row.name})  like upper('%${row.value.trim()}%')`;
                             } else {
                                 // обработка некорректной кодировки
-                                filterString = `${filterString}  ${row.name}  ilike '%${row.value.trim()}%'`;
+                                filterString = `${filterString}  upper(${row.name})  like upper('%${row.value.trim()}%')`;
 
                             }
                         }
                         break;
                     case 'string':
-                        filterString = `${filterString}  ${row.name} ilike '%${row.value.trim()}%'`;
+                        filterString = `${filterString}  upper(${row.name}) like upper('%${row.value.trim()}%')`;
                         break;
                     case 'date':
                         if ('start' in row) {

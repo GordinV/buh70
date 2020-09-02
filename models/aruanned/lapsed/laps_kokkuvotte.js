@@ -30,12 +30,31 @@ module.exports = {
                     ORDER BY lapse_nimi, r.nimetus, kpv
         `,     // $1 - rekvid, $3 - kond
         params: '',
-        alias: 'child_summary_report'
+        alias: 'child_summary_report',
+        subtotals: ['summa', 'jaak','tasutud']
+
     },
     print: [
         {
             view: 'child_summary_register',
-            params: 'sqlWhere'
+            params: 'sqlWhere',
+            converter: function (data) {
+                let summa_kokku = 0;
+                let jaak_kokku = 0;
+                let row_id = 0;
+                data.forEach(row => {
+                    summa_kokku = summa_kokku + Number(row.summa);
+                    jaak_kokku = jaak_kokku + Number(row.jaak);
+                });
+
+                return data.map(row => {
+                    row_id++;
+                    row.summa_kokku = summa_kokku;
+                    row.jaak_kokku = jaak_kokku;
+                    row.row_id = row_id;
+                    return row;
+                })
+            }
         },
     ],
 

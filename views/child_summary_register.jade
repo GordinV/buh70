@@ -44,4 +44,14 @@ block content
                         td.td=rea.maksja_nimi
                         td.td=rea.maksja_isikukood
                         td.td=rea.asutus
+            tr.group
+                td
+                td(align='center')='Read kokku:'
+                td=Number(data.length)
+                td(align='center')='Kokku:'
+                td=Number(data[0].summa_kokku).toFixed(2)
+                td=Number(data[0].jaak_kokku).toFixed(2)
+                td
+                td
+                td
 

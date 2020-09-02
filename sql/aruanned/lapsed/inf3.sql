@@ -58,10 +58,11 @@ GRANT EXECUTE ON FUNCTION lapsed.inf3(INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.inf3(INTEGER, INTEGER) TO dbpeakasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.inf3(INTEGER, INTEGER) TO eelaktsepterja;
 GRANT EXECUTE ON FUNCTION lapsed.inf3(INTEGER, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.inf3(INTEGER, INTEGER) TO arvestaja;
 
 /*
 
 SELECT *
-FROM lapsed.inf3(63, 1)
+FROM lapsed.inf3(88, 1)
 
 */

@@ -35,7 +35,33 @@ module.exports = {
         {
             view: 'saldo_ja_kaive_register',
             params: 'sqlWhere',
-            group: 'asutus'
+            group: 'asutus',
+            converter: function (data) {
+                let alg_saldo_kokku = 0;
+                let arvestatud_kokku = 0;
+                let soodustus_kokku = 0;
+                let laekumised_kokku = 0;
+                let tagastused_kokku = 0;
+                let row_id = 0;
+                data.forEach(row => {
+                    alg_saldo_kokku = alg_saldo_kokku + row.alg_saldo;
+                    arvestatud_kokku = arvestatud_kokku + row.arvestatud;
+                    soodustus_kokku = soodustus_kokku + row.soodustus;
+                    laekumised_kokku = laekumised_kokku + row.laekumised;
+                    tagastused_kokku = tagastused_kokku + row.tagastused;
+                });
+
+                return data.map(row => {
+                    row_id++;
+                    row.alg_saldo_kokku = alg_saldo_kokku;
+                    row.arvestatud_kokku = arvestatud_kokku;
+                    row.soodustus_kokku = soodustus_kokku;
+                    row.laekumised_kokku = laekumised_kokku;
+                    row.tagastused_kokku = tagastused_kokku;
+                    row.row_id = row_id;
+                    return row;
+                })
+            }
         },
     ],
 

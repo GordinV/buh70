@@ -39,7 +39,7 @@ module.exports = {
         {
             view: 'child_age_report',
             params: 'sqlWhere',
-            group: 'asutus'
+            group: 'asutus',
         },
     ],
 

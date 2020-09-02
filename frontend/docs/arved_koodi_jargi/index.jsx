@@ -27,7 +27,8 @@ class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            summa: 0
+            summa: 0,
+            read: 0
         };
         this.renderer = this.renderer.bind(this);
         this.onClickHandler = this.onClickHandler.bind(this);
@@ -44,7 +45,13 @@ class Documents extends React.PureComponent {
                                   toolbarProps={TOOLBAR_PROPS}
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
-                                  render={this.renderer}/>;
+                                  render={this.renderer}/>
+                <InputNumber title="Read kokku:"
+                             name='read_kokku'
+                             style={styles.total}
+                             ref="input-read"
+                             value={Number(this.state.read) || 0}
+                             disabled={true}/>
                 <InputNumber title="Summa kokku:"
                              name='summa_kokku'
                              style={styles.total}
@@ -56,9 +63,10 @@ class Documents extends React.PureComponent {
     }
 
     renderer(self) {
-        let summa = self.gridData ? getSum (self.gridData,'summa') : 0;
+        let summa = self.gridData ? getSum(self.gridData, 'summa') : 0;
+        let read = self.gridData ? self.gridData.length : 0;
         if (summa) {
-            this.setState({summa: summa});
+            this.setState({summa: summa, read: read});
         }
 
         return (<ToolbarContainer>

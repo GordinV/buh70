@@ -17,4 +17,11 @@ module.exports = {
         }
 
     },
+    doc: {
+        height: '100%',
+    },
+    total: {
+        width: 'auto'
+    },
+
 };

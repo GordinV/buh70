@@ -64,4 +64,11 @@ block content
                         td=rea.lapse_isikukood
                         td=rea.summa
                         td=rea.liik
+            tr.group
+                td
+                td(align='center')='Read kokku:'
+                td=Number(data.length)
+                td(align='center')='Summa kokku:'
+                td=Number(data[0].summa_kokku).toFixed(2)
+                td
 

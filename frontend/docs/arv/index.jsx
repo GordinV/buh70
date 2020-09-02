@@ -7,6 +7,8 @@ const BtnSettings = require('./../../components/button-register/button-settings/
 const BtnPrint = require('./../../components/button-register/button-register-print/button-register-print.jsx');
 const BtnEmail = require('./../../components/button-register/button-email/index.jsx');
 const BtnEarve = require('./../../components/button-register/button-earve/index.jsx');
+const InputNumber = require('../../components/input-number/input-number.jsx');
+const getSum = require('./../../../libs/getSum');
 
 const styles = require('./arv-register-styles');
 const DOC_TYPE_ID = 'ARV';
@@ -26,11 +28,18 @@ class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
         this.onClickHandler = this.onClickHandler.bind(this);
-        this.renderer = this.renderer.bind(this)
+        this.renderer = this.renderer.bind(this);
+        this.state = {
+            summa: 0,
+            jaak: 0,
+            read: 0
+        };
+
     }
 
     render() {
         return (
+            <div>
                 <DocumentRegister initData={this.props.initData}
                                   history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
@@ -38,10 +47,36 @@ class Documents extends React.PureComponent {
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
                                   render={this.renderer}/>
+                <InputNumber title="Read kokku:"
+                             name='read_kokku'
+                             style={styles.total}
+                             ref="input-read"
+                             value={Number(this.state.read) || 0}
+                             disabled={true}/>
+                <InputNumber title="Summa kokku:"
+                             name='summa_kokku'
+                             style={styles.total}
+                             ref="input-summa"
+                             value={Number(this.state.summa).toFixed(2) || 0}
+                             disabled={true}/>
+                <InputNumber title="Jääk kokku:"
+                             name='jaak_kokku'
+                             style={styles.total}
+                             ref="input-jaak"
+                             value={Number(this.state.jaak).toFixed(2) || 0}
+                             disabled={true}/>
+
+            </div>
         );
     }
 
     renderer(self) {
+        let summa = self.gridData ? getSum (self.gridData,'summa') : 0;
+        let jaak = self.gridData ? getSum (self.gridData,'jaak') : 0;
+        if (summa) {
+            this.setState({summa: summa, read: self.gridData.length, jaak: jaak});
+        }
+
         return (<ToolbarContainer>
             <BtnEarve
                 onClick={this.onClickHandler}
