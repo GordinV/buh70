@@ -51,7 +51,8 @@ module.exports = {
         select: ['kasutaja', 'vaatleja', 'peakasutaja'],
         add: ['kasutaja'],
         edit: ['kasutaja'],
-        delete: ['kasutaja']
+        delete: ['kasutaja'],
+        import: ['admin']
     },
     ASUTUSED: {
         select: ['kasutaja', 'vaatleja', 'peakasutaja'],

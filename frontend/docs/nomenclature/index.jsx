@@ -6,7 +6,14 @@ const ButtonUpload = require('./../../components/upload_button/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 
 const styles = require('./nomenclature-register-styles');
-const DOC_TYPE_ID = 'nomenclature';
+const DOC_TYPE_ID = 'NOMENCLATURE';
+
+const DocRights = require('./../../../config/doc_rights');
+const checkRights = require('./../../../libs/checkRights');
+const DocContext = require('./../../doc-context.js');
+let docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
+let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
 
 /**
  * Класс реализует документ справочника признаков.
@@ -31,13 +38,14 @@ class Nomenclatures extends React.PureComponent {
     renderer() {
         return (
             <ToolbarContainer>
-                <ButtonUpload
-                    ref='btnUpload'
-                    docTypeId={DOC_TYPE_ID}
-                    onClick={this.handleClick}
-                    show={true}
-                    mimeTypes={'.csv'}
-                />
+                {checkRights(userRoles, docRights, 'import') ?
+                    <ButtonUpload
+                        ref='btnUpload'
+                        docTypeId={DOC_TYPE_ID}
+                        onClick={this.handleClick}
+                        show={true}
+                        mimeTypes={'.csv'}
+                    /> : null}
 
             </ToolbarContainer>
         );
