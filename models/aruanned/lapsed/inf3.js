@@ -31,7 +31,7 @@ module.exports = {
                 let summa_kokku = 0;
                 let row_id = 0;
                 data.forEach(row => {
-                    summa_kokku = summa_kokku + row.summa;
+                    summa_kokku = summa_kokku + Number(row.summa);
                 });
 
                 return data.map(row => {

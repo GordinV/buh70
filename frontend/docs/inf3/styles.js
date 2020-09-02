@@ -23,5 +23,9 @@ module.exports = {
         display: 'flex',
         flexDirection: 'column',
     },
+    total: {
+        width: 'auto'
+    },
+
 
 };
