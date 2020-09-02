@@ -95,16 +95,16 @@ module.exports = {
     //koolituse_tyyp
     ASUTUSE_LIIK : {
         select: ['arvestaja'],
-        add: ['admin'],
-        edit: ['admin'],
-        delete: ['admin']
+        add: ['kasutaja'],
+        edit: ['kasutaja'],
+        delete: ['kasutaja']
     },
     //koolituse_liik
     KOOLITUSE_LIIK : {
         select: ['arvestaja'],
-        add: ['admin'],
-        edit: ['admin'],
-        delete: ['admin']
+        add: ['kasutaja'],
+        edit: ['kasutaja'],
+        delete: ['kasutaja']
     },
     //koolituse_tyyp
     KOOLITUSE_TYYP: {
