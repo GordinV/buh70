@@ -9,7 +9,6 @@ const checkRights = require('./../../../../libs/checkRights');
 const DocContext = require('./../../../doc-context.js');
 
 const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
-const userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
 
 const
@@ -142,6 +141,8 @@ class PaevaTaabel extends React.PureComponent {
 
     renderer(self) {
         let isEditMode = self.state.edited;
+        let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
         if (self.docData && self.docData.gridData && self.docData.gridData.length && (this.state.isInit || !isEditMode)) {
             // преобразовываем данные
             this.prepaireInitData(self);
