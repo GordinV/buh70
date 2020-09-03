@@ -14,7 +14,6 @@ const checkRights = require('./../../../libs/checkRights');
 const DocContext = require('./../../doc-context.js');
 
 const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
-const userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
 /**
  * Класс реализует документ справочника признаков.
@@ -38,7 +37,7 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
-
+        let userRoles = DocContext.userData ? DocContext.userData.roles : [];
         return (
             <ToolbarContainer>
                 {checkRights(userRoles, docRights, 'muudaEttemaksuPeriod') ?

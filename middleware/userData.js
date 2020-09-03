@@ -26,7 +26,8 @@ const userData = function (req, _uuid) {
         userLibraryList: [],
         parentid: req.session.users[userIndex].parentid,
         parent_asutus: req.session.users[userIndex].parent_asutus,
-        login: userIndex > -1 ? req.session.users[userIndex].kasutaja : null
+        login: userIndex > -1 ? req.session.users[userIndex].kasutaja : null,
+        roles: req.session.users[userIndex].roles
     }, userIndex > -1 ? req.session.users[userIndex] : {});
 
     return user;

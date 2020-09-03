@@ -12,7 +12,6 @@ const DocRights = require('./../../../config/doc_rights');
 const checkRights = require('./../../../libs/checkRights');
 const DocContext = require('./../../doc-context.js');
 let docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
-let userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
 
 /**
@@ -36,6 +35,8 @@ class Nomenclatures extends React.PureComponent {
     }
 
     renderer() {
+        let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
         return (
             <ToolbarContainer>
                 {checkRights(userRoles, docRights, 'import') ?
