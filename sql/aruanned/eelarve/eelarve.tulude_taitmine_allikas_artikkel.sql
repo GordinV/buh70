@@ -55,7 +55,7 @@ WITH cur_tulude_kassa_taitmine AS (
                          kood3        AS rahavoog,
                          COALESCE(tunnus,
                                   '') AS tunnus,
-                         210          AS idx
+                         200          AS idx
                   FROM eelarve.tulud e
                   WHERE rekvid = (CASE
                                       WHEN l_kond = 1
@@ -80,7 +80,7 @@ WITH cur_tulude_kassa_taitmine AS (
                          kood3        AS rahavoog,
                          COALESCE(tunnus,
                                   '') AS tunnus,
-                         210          AS idx
+                         200          AS idx
                   FROM eelarve.tulud e
                   WHERE rekvid = (CASE
                                       WHEN l_kond = 1

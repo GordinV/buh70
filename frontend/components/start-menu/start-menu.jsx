@@ -37,9 +37,11 @@ class StartMenu extends React.PureComponent {
     }
 
     render() {
+
         return (
             <div style={styles.container}>
                 <TreeList ref='treeList'
+                          style = {styles.ul}
                           data={this.treeData}
                           bindDataField="kood"
                           value={this.state.value}

@@ -63,6 +63,7 @@ FROM (
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                   INNER JOIN qryKontod k ON k.kood = j1.kreedit
                   INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.deebet
+                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 1 --tulud
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
@@ -103,6 +104,7 @@ FROM (
      ) qry
 WHERE NOT empty(artikkel)
   AND summa <> 0
+  AND artikkel NOT IN ('2586')
 GROUP BY rekvid, tegev, allikas, artikkel, tunnus, rahavoog, kuu, aasta
 HAVING sum(summa) <> 0;
 

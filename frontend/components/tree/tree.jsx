@@ -94,9 +94,11 @@ class Tree extends React.PureComponent {
             linkStyle = {backgroundColor: 'blue'}
         }
 
+        const style = Object.assign({},styles.ul, this.props.style ? this.props.style: {});
+
         return (
             <ul
-                style={styles.ul}
+                style={style}
                 ref='tree-ul'>
                 {data.map((subRow, index) => {
                     let style = Object.assign({}, styles.li,
@@ -108,6 +110,8 @@ class Tree extends React.PureComponent {
                     if (!subRow.is_node && this.state.parentId !== subRow.parentid) {
                         is_hidden = true;
                     }
+
+                    console.log('hover', this.state.hover);
 
                     return (
                         <li
