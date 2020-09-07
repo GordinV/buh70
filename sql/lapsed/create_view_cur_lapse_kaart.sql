@@ -9,6 +9,7 @@ SELECT l.id                                                                     
        l.nimi,
        lk.rekvid,
        lk.hind,
+       grupp.kood::TEXT                                                          AS yksuse_kood,
        grupp.nimetus::TEXT                                                       AS yksus,
        lk.properties ->> 'all_yksus'                                             AS all_yksus,
        n.kood::TEXT,
@@ -51,6 +52,7 @@ GRANT SELECT ON TABLE lapsed.cur_lapse_kaart TO dbpeakasutaja;
 
 SELECT *
 FROM lapsed.cur_lapse_kaart
+where kas_ettemaks
 LIMIT 10;
 
 /*
@@ -61,4 +63,5 @@ select * from lapsed.laps
     doc_soodus           NUMERIC = doc_data ->> 'soodus';
     doc_kas_protsent     BOOLEAN = doc_data ->> 'kas_protsent';
 
+select * from ou.rekv where id = 77
  */

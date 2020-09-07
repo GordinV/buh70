@@ -45,7 +45,7 @@ exports.get = async (req, res) => {
             let yksus = get_yksus(row.yksus);
             return {
                 isikukood: row.isikukood,
-                yksus: yksus.yksus,
+                yksus: row.yksuse_kood,
                 all_yksus: yksus.all_yksus,
                 kood: row.kood,
                 hind: row.hind,
@@ -53,7 +53,7 @@ exports.get = async (req, res) => {
                 tunnus: row.tunnus,
                 alg_kpv: row.alg_kpv,
                 lopp_kpv: row.lopp_kpv,
-                kas_ettemaks: row.kas_ettemaks ? 'yes': null,
+                kas_ettemaks: row.ettemaks ? 'yes': null,
                 ettemaksu_period: row.ettemaksu_period,
                 kas_eraldi: row.kas_eraldi ? 'yes': null,
                 kas_inf3: row.inf3 ? 'yes': null,

@@ -129,7 +129,7 @@ WITH cur_tulude_kassa_taitmine AS (
                   WHERE kt.artikkel IS NOT NULL
                     AND NOT empty(kt.artikkel)
                   UNION ALL
-                  -- Põhitegevuse tulud                  (здесь  art 2586 с RV 06, 4*, 5*, 6 )
+                  -- Põhitegevuse tulud
                   SELECT kt.rekv_id   AS rekvid,
                          0 :: NUMERIC AS eelarve_kinni,
                          0 :: NUMERIC AS eelarve_parandatud,
@@ -145,7 +145,6 @@ WITH cur_tulude_kassa_taitmine AS (
                          200          AS idx
                   FROM cur_tulude_kassa_taitmine kt
                   WHERE kt.artikkel IS NOT NULL
-                    AND (artikkel LIKE '3%')
                   GROUP BY kt.rekv_id
                   UNION ALL
                   SELECT ft.rekv_id   AS rekvid,

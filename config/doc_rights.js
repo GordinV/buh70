@@ -145,7 +145,8 @@ module.exports = {
         edit: ['arvestaja'],
         delete: ['arvestaja'],
         importTeenused: ['admin'],
-        muudaEttemaksuPeriod: ['arvestaja']
+        muudaEttemaksuPeriod: ['arvestaja'],
+        muudaTeenusteTahtaeg: ['arvestaja'],
     },
     LAPSE_TAABEL: {
         select: ['arvestaja'],

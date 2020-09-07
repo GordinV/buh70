@@ -24,6 +24,7 @@ class Documents extends React.PureComponent {
         super(props);
         this.onClickHandler = this.onClickHandler.bind(this);
         this.onClickExport = this.onClickExport.bind(this);
+        this.onClickTeenusteTahtaegHandler = this.onClickTeenusteTahtaegHandler.bind(this);
         this.renderer = this.renderer.bind(this);
     }
 
@@ -42,6 +43,15 @@ class Documents extends React.PureComponent {
         let userRoles = DocContext.userData ? DocContext.userData.roles : [];
         return (
             <ToolbarContainer>
+                {checkRights(userRoles, docRights, 'muudaTeenusteTahtaeg') ?
+                    <BtnTask
+                        value={'Muuda teenuste tähtaeg'}
+                        onClick={this.onClickTeenusteTahtaegHandler}
+                        showDate={true}
+                        showKogus={false}
+                        ref={`btn-teenuste_tahtaeg`}
+                    /> : null}
+
                 {checkRights(userRoles, docRights, 'muudaEttemaksuPeriod') ?
                     <BtnTask
                         value={'Muuda ettemaksu period'}
@@ -123,6 +133,34 @@ class Documents extends React.PureComponent {
         }
     }
 
+    onClickTeenusteTahtaegHandler(event, teenusteTahtaeg) {
+
+        const Doc = this.refs['register'];
+
+        // собираем параметры
+        const ids = [];
+        Doc.gridData.filter(row => {
+            if (row.select) {
+                return row;
+            }
+        }).forEach(row => {
+            ids.push(row.id);
+        });
+
+
+        // отправляем запрос на выполнение
+        Doc.fetchData(`calc/muuda_teenuste_tahtaeg`, {docs: ids, teenusteTahtaeg: teenusteTahtaeg}).then((data) => {
+
+            if (data.result) {
+                Doc.btnRefreshClick();
+                Doc.setState({warning: `Kokku muudetud: ${data.result}`, warningType: 'ok'});
+
+            } else {
+                Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'notValid'});
+            }
+
+        });
+    }
 
 }
 

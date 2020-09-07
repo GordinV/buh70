@@ -166,7 +166,10 @@ module.exports = {
                             v.ettemaksu_period,
                             v.kas_eraldi,
                             to_char(v.sooduse_alg, 'DD.MM.YYYY')                                           AS sooduse_alg,
-                            to_char(v.sooduse_lopp, 'DD.MM.YYYY')                                          AS sooduse_lopp
+                            to_char(v.sooduse_lopp, 'DD.MM.YYYY')                                          AS sooduse_lopp,
+                            to_char(v.alg_kpv, 'DD.MM.YYYY')                                               AS alg_kpv,
+                            to_char(v.lopp_kpv, 'DD.MM.YYYY')                                              AS lopp_kpv,
+                            v.yksuse_kood
                      FROM lapsed.cur_lapse_kaart v
                      WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
             params:
@@ -208,6 +211,16 @@ module.exports = {
         type: 'sql',
         alias: 'muudaEttemaksuPeriod'
     },
+    muudaTeenusteTahtaeg: {
+        command: `SELECT lapsed.muuda_teenuste_tahtaeg($2::INTEGER, id::INTEGER, $3::DATE)
+                  FROM lapsed.lapse_kaart
+                  WHERE id IN (
+                      SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
+                  )`,//$1 docId, $2 - userId
+        type: 'sql',
+        alias: 'muudaTeenusteTahtaeg'
+    },
+
     importTeenused: {
         command: `SELECT error_code, result, error_message
                   FROM lapsed.import_laste_teenused($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
