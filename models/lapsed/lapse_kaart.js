@@ -135,7 +135,7 @@ module.exports = {
                 {id: "yksus", name: "Üksus", width: "15%"},
                 {id: "kehtivus", name: "Kehtib", width: "10%"},
                 {id: "inf3", name: "INF3", width: "10%"},
-                {id: "select", name: "Valitud", width: "10%", show: false, type:'boolean'}
+                {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean'}
             ],
             sqlString:
                     `SELECT id,
@@ -158,9 +158,15 @@ module.exports = {
                                                                            kas_protsent || '(' || sooduse_kehtivus ||
                                                                            ')')
                                 ELSE '' END                                                                AS soodustus,
+                            soodustus::NUMERIC(12, 2)                                                      AS soodustuse_summa,
                             kas_ettemaks::BOOLEAN                                                          AS ettemaks,
-                            TRUE                                                                           AS select
-
+                            TRUE                                                                           AS select,
+                            v.kogus,
+                            v.tunnus,
+                            v.ettemaksu_period,
+                            v.kas_eraldi,
+                            to_char(v.sooduse_alg, 'DD.MM.YYYY')                                           AS sooduse_alg,
+                            to_char(v.sooduse_lopp, 'DD.MM.YYYY')                                          AS sooduse_lopp
                      FROM lapsed.cur_lapse_kaart v
                      WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
             params:
@@ -208,7 +214,6 @@ module.exports = {
         type: 'sql',
         alias: 'importTeenused'
     },
-
 
 
 };

@@ -10,10 +10,12 @@ const checkRights = (userRoles, docRights, action) => {
             if (!is_accepted) {
                 is_accepted = userRoles && userRoles.is_peakasutaja && role == 'peakasutaja' ? true : is_accepted;
             }
+
             // arvestajad
             if (!is_accepted) {
                 is_accepted = userRoles && userRoles.is_arvestaja && role == 'arvestaja' ? true : is_accepted;
             }
+
             // adminid
             if (!is_accepted) {
                 is_accepted = userRoles && userRoles.is_admin && role == 'admin' ? true : is_accepted;

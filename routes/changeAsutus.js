@@ -41,7 +41,9 @@ exports.post = (req, res) => {
                         userAsutusId: userData.rekvid,
                         userLastLogin: userData.last_login,
                         userAccessList: userData.allowed_access,
-                        userLibraryList: userData.allowed_libs
+                        userLibraryList: userData.allowed_libs,
+                        roles: userData.roles
+
                     }
                 }
 

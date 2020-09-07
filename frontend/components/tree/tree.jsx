@@ -111,8 +111,6 @@ class Tree extends React.PureComponent {
                         is_hidden = true;
                     }
 
-                    console.log('hover', this.state.hover);
-
                     return (
                         <li
                             className={subRow.is_node ? 'node' : 'menu'}

@@ -3,6 +3,7 @@
 const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const BtnTask = require('./../../components/button-register/button-task/index.jsx');
+
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 const ButtonUpload = require('./../../components/upload_button/index.jsx');
 
@@ -22,6 +23,7 @@ class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
         this.onClickHandler = this.onClickHandler.bind(this);
+        this.onClickExport = this.onClickExport.bind(this);
         this.renderer = this.renderer.bind(this);
     }
 
@@ -41,27 +43,34 @@ class Documents extends React.PureComponent {
         return (
             <ToolbarContainer>
                 {checkRights(userRoles, docRights, 'muudaEttemaksuPeriod') ?
-                <BtnTask
-                    value={'Muuda ettemaksu period'}
-                    onClick={this.onClickHandler}
-                    showDate={false}
-                    showKogus={true}
-                    ref={`btn-ettemaksu_period`}
-                /> : null }
+                    <BtnTask
+                        value={'Muuda ettemaksu period'}
+                        onClick={this.onClickHandler.bind(this, 'muudaEttemaks')}
+                        showDate={false}
+                        showKogus={true}
+                        ref={`btn-ettemaksu_period`}
+                    /> : null}
                 {checkRights(userRoles, docRights, 'importTeenused') ?
-                <ButtonUpload
-                    ref='btnUpload'
-                    docTypeId={DOC_TYPE_ID}
-                    onClick={this.handleClick}
-                    show={true}
-                    mimeTypes={'.csv'}
-                />: null }
-
+                    <ButtonUpload
+                        ref='btnUpload'
+                        docTypeId={DOC_TYPE_ID}
+                        onClick={this.handleClick}
+                        show={true}
+                        mimeTypes={'.csv'}
+                    /> : null}
+                <BtnTask
+                    value={'Saama CSV fail'}
+                    onClick={this.onClickExport}
+                    showDate={false}
+                    showKogus={false}
+                    ref={`btn-ettemaksu_period`}
+                />
             </ToolbarContainer>
         )
     }
 
     onClickHandler(event, ettemaksuPeriod) {
+
         const Doc = this.refs['register'];
 
         // собираем параметры
@@ -87,6 +96,33 @@ class Documents extends React.PureComponent {
 
         });
     }
+
+    onClickExport(event) {
+        const Doc = this.refs['register'];
+
+        if (Doc.gridData && Doc.gridData.length) {
+
+            //делаем редайрект на конфигурацию
+
+
+            let sqlWhere = Doc.state.sqlWhere;
+            let params = encodeURIComponent(`${sqlWhere}`);
+            let url = `/reports/lapse_kaart/${DocContext.userData.uuid}`;
+
+            let filter = encodeURIComponent(`${(JSON.stringify(Doc.filterData))}`);
+            let fullUrl = sqlWhere ? `${url}/${filter}/${params}`: `${url}/${filter}`;
+
+            window.open(fullUrl);
+
+        } else {
+            Doc.setState({
+                warning: 'Mitte ühtegi teenused leidnum', // строка извещений
+                warningType: 'notValid',
+
+            });
+        }
+    }
+
 
 }
 

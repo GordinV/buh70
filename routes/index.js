@@ -60,6 +60,8 @@ module.exports = function (app) {
     app.get('/reports/kuu_taabel/:uuid/:filter/:params*?',require('./reports/kuu_taabel').get);
     app.get('/reports/yksuse_taabel/:uuid/:filter/:params*?',require('./reports/yksuse_taabel').get);
     app.get('/reports/kohaoleku_aruanne/:uuid/:filter/:params*?',require('./reports/kohaoleku_aruanne').get);
+    app.get('/reports/lapse_kaart/:uuid/:filter/:params*?',require('./reports/lapse_kaart').get);
+    app.get('/reports/lapse_kaart/:uuid/',require('./reports/lapse_kaart').get);
 
     app.get('/pdf/:documentType/:uuid/:id/:params', require('./pdf').get); //checkAuth
     app.get('/pdf/:documentType/:uuid/:id/', require('./pdf').get); //checkAuth
