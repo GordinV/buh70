@@ -46,6 +46,7 @@ const Arv = {
                          asutus.aadress,
                          asutus.email::TEXT                                            AS email,
                          asutus.properties ->> 'kmkr'                                  AS kmkr,
+                         asutus.properties::JSONB -> 'asutus_aa' -> 0 ->> 'aa'         AS asutuse_aa,
                          a.doklausid,
                          a.journalid,
                          coalesce(jid.number, 0) :: INTEGER                            AS laus_nr,
@@ -60,12 +61,12 @@ const Arv = {
                          l.nimi::TEXT                                                  AS lapse_nimi,
                          lapsed.get_viitenumber(d.rekvid, l.id)                        AS viitenr,
                          a.properties ->> 'tyyp'::TEXT                                 AS tyyp,
-                         coalesce(saldod.jaak, a.jaak)::NUMERIC(12,2)                        AS jaak,
-                         coalesce(saldod.laekumised, 0)::NUMERIC(12,2)                       AS laekumised,
-                         coalesce(saldod.ettemaksud, 0)::NUMERIC(12,2)                       AS ettemaksud,
+                         coalesce(saldod.jaak, a.jaak)::NUMERIC(12, 2)                 AS jaak,
+                         coalesce(saldod.laekumised, 0)::NUMERIC(12, 2)                AS laekumised,
+                         coalesce(saldod.ettemaksud, 0)::NUMERIC(12, 2)                AS ettemaksud,
                          lpad(month(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT, 2, '0') || '.' ||
                          year(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT AS laekumise_period,
-                         (coalesce(saldod.jaak, 0) + a.summa)::NUMERIC(12,2)                 AS tasumisele
+                         (coalesce(saldod.jaak, 0) + a.summa)::NUMERIC(12, 2)          AS tasumisele
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
@@ -96,7 +97,7 @@ const Arv = {
                                LIMIT 1)::VARCHAR(20)                                                 AS aa,
 
                               docs.sp_get_number(u.rekvId, 'ARV', year(date()), NULL) :: VARCHAR(20) AS number,
-                              0.00::numeric(12,2)                                                                   AS summa,
+                              0.00::NUMERIC(12, 2)                                                   AS summa,
                               NULL :: INTEGER                                                        AS rekvId,
                               0                                                                      AS liik,
                               NULL :: INTEGER                                                        AS operid,
@@ -140,10 +141,10 @@ const Arv = {
                          $2 :: INTEGER                           AS userid,
                          a1.nomid,
                          a1.kogus,
-                         a1.hind::numeric(12,2),
-                         a1.kbm::numeric(12,2),
-                         a1.kbmta::numeric(12,2),
-                         a1.summa::numeric(12,2),
+                         a1.hind::NUMERIC(12, 2),
+                         a1.kbm::NUMERIC(12, 2),
+                         a1.kbmta::NUMERIC(12, 2),
+                         a1.summa::NUMERIC(12, 2),
                          trim(n.kood) :: VARCHAR(20)             AS kood,
                          trim(n.nimetus) :: VARCHAR(254)         AS nimetus,
                          n.uhik :: TEXT                          AS uhik,
@@ -295,7 +296,7 @@ const Arv = {
             {id: "isikukood", name: "Isikukood", width: "100px"},
             {id: "viitenr", name: "Viitenumber", width: "100px"},
             {id: "tyyp", name: "Tüüp", width: "100px"},
-            {id: "select", name: "Valitud", width: "10%", show: false, type:'boolean'}
+            {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean'}
 
         ],
         sqlString: `SELECT id,
@@ -325,7 +326,8 @@ const Arv = {
                            TRUE                                 AS select,
                            kas_paberil::BOOLEAN                 AS kas_paberil,
                            kas_email::BOOLEAN                   AS kas_email,
-                           kas_earved::BOOLEAN                  AS kas_earved
+                           kas_earved::BOOLEAN                  AS kas_earved,
+                           pank::TEXT
                     FROM lapsed.cur_laste_arved a
                     WHERE a.rekvId = $1::INTEGER`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',

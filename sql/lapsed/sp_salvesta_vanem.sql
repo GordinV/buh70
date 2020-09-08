@@ -15,6 +15,7 @@ DECLARE
     doc_kas_paberil  BOOLEAN = coalesce((doc_data ->> 'kas_paberil')::BOOLEAN, FALSE);
     doc_kas_email    BOOLEAN = coalesce((doc_data ->> 'kas_email')::BOOLEAN, FALSE);
     doc_kas_earve    BOOLEAN = coalesce((doc_data ->> 'kas_earve')::BOOLEAN, FALSE);
+    doc_pank         TEXT    = doc_data ->> 'pank';
     doc_kas_esindaja BOOLEAN = coalesce((doc_data ->> 'kas_esindaja')::BOOLEAN, FALSE);
     doc_muud         TEXT    = doc_data ->> 'muud';
     json_props       JSONB;
@@ -29,8 +30,8 @@ BEGIN
 
     SELECT kasutaja INTO userName
     FROM ou.userid u
-        WHERE u.rekvid = user_rekvid
-             AND u.id = userId;
+    WHERE u.rekvid = user_rekvid
+      AND u.id = userId;
     IF userName IS NULL
     THEN
         RAISE NOTICE 'User not found %', user;
@@ -39,16 +40,20 @@ BEGIN
 
     json_props = to_jsonb(row)
                  FROM (SELECT doc_suhtumine    AS suhtumine,
+                              doc_arved        AS arved,
                               doc_kas_paberil  AS kas_paberil,
                               doc_kas_email    AS kas_email,
                               doc_kas_esindaja AS kas_esindaja,
+                              doc_pank         AS pank,
                               doc_kas_earve    AS kas_earve) row;
 
     -- ищем ранее удаленные записи
     IF doc_id IS NULL OR doc_id = 0
     THEN
         SELECT id INTO doc_id
-        FROM lapsed.vanemad WHERE parentid = doc_parentid AND asutusid = doc_asutusid;
+        FROM lapsed.vanemad
+        WHERE parentid = doc_parentid
+          AND asutusid = doc_asutusid;
     END IF;
 
 
@@ -89,9 +94,9 @@ BEGIN
 -- проверим наличие статус ответственного у родителей
     IF doc_kas_esindaja AND exists(SELECT id
                                    FROM lapsed.vanemad
-                                       WHERE parentid = doc_parentid
-                                            AND (properties ->> 'kas_esindaja')::BOOLEAN
-                                            AND id <> doc_id)
+                                   WHERE parentid = doc_parentid
+                                     AND (properties ->> 'kas_esindaja')::BOOLEAN
+                                     AND id <> doc_id)
     THEN
         -- убираем этот статус , если есть у других роделей ребенка
         UPDATE lapsed.vanemad
@@ -106,9 +111,9 @@ BEGIN
 -- arveldused
     IF exists(SELECT id
               FROM lapsed.vanem_arveldus
-                  WHERE parentid = doc_parentid
-                       AND asutusid = doc_asutusid
-                       AND rekvid = user_rekvid)
+              WHERE parentid = doc_parentid
+                AND asutusid = doc_asutusid
+                AND rekvid = user_rekvid)
     THEN
 
         UPDATE lapsed.vanem_arveldus

@@ -58,29 +58,49 @@ BEGIN
 
             IF l_laps_id IS NOT NULL AND l_vanem_id IS NOT NULL
             THEN
+                json_object = to_jsonb(row)
+                              FROM (SELECT CASE WHEN json_record.arveldus ILIKE '%jah%' THEN 'Jah' ELSE 'Ei' END               AS arved,
+                                           json_record.sugulus                                                                 AS suhtumine,
+                                           json_record.paper IS NOT NULL AND
+                                           (json_record.paper ILIKE '%jah%' OR json_record.paper ILIKE '%yes%')::BOOLEAN       AS kas_paberil,
+                                           json_record.email IS NOT NULL AND
+                                           (json_record.email ILIKE '%jah%' OR json_record.email ILIKE '%yes%')::BOOLEAN       AS kas_email,
+                                           json_record.esindaja IS NOT NULL AND
+                                           (json_record.esindaja ILIKE '%jah%' OR json_record.esindaja ILIKE '%yes%')::BOOLEAN AS kas_esindaja,
+                                           json_record.earve IS NOT NULL AND
+                                           (json_record.earve ILIKE '%jah%' OR json_record.earve ILIKE '%yes%')::BOOLEAN       AS kas_earve) row;
+
+
                 -- проверяем уникальность записи
                 IF NOT exists(SELECT id FROM lapsed.vanemad WHERE parentid = l_laps_id AND asutusid = l_vanem_id)
                 THEN
-                    json_object = to_jsonb(row)
-                                  FROM (SELECT CASE WHEN json_record.arveldus ILIKE '%jah%' THEN 'Jah' ELSE 'Ei' END               AS arved,
-                                               json_record.sugulus                                                                 AS suhtumine,
-                                               json_record.paper IS NOT NULL AND
-                                               (json_record.paper ILIKE '%jah%' OR json_record.paper ILIKE '%yes%')::BOOLEAN       AS kas_paberil,
-                                               json_record.email IS NOT NULL AND
-                                               (json_record.email ILIKE '%jah%' OR json_record.email ILIKE '%yes%')::BOOLEAN       AS kas_email,
-                                               json_record.esindaja IS NOT NULL AND
-                                               (json_record.esindaja ILIKE '%jah%' OR json_record.esindaja ILIKE '%yes%')::BOOLEAN AS kas_esindaja,
-                                               json_record.earve IS NOT NULL AND
-                                               (json_record.earve ILIKE '%jah%' OR json_record.earve ILIKE '%yes%')::BOOLEAN       AS kas_earve) row;
 
                     -- сохраняем
                     INSERT INTO lapsed.vanemad (parentid, asutusid, properties)
-                    VALUES (l_laps_id, l_vanem_id, json_object) RETURNING  id into l_id;
-                    IF l_id > 0
-                    THEN
-                        count = count + 1;
-                    END IF;
+                    VALUES (l_laps_id, l_vanem_id, json_object) RETURNING id INTO l_id;
+                ELSE
+                    UPDATE lapsed.vanemad
+                    SET properties = properties::JSONB || json_object::JSONB
+                    WHERE parentid = l_laps_id
+                      AND asutusid = l_vanem_id RETURNING id INTO l_id;
 
+                END IF;
+                -- ответственный родитель
+                IF (json_record.arveldus ILIKE '%jah%')
+                THEN
+                    DELETE
+                    FROM lapsed.vanem_arveldus
+                    WHERE rekvid = user_rekvid
+                      AND parentid = l_laps_id;
+
+                    INSERT INTO lapsed.vanem_arveldus (parentid, asutusid, rekvid, arveldus)
+                    VALUES (l_laps_id, l_vanem_id, user_rekvid, TRUE);
+                END IF;
+
+
+                IF l_id > 0
+                THEN
+                    count = count + 1;
                 END IF;
 
             END IF;

@@ -18,7 +18,9 @@ module.exports = async (file, mimeType, user) => {
         const params = [JSON.stringify(rows), user.id, user.asutusId];
 
         const result = await Document.executeTask('importVanemateRegister', params).then((result) => {
+
                 saved = result.result ? result.result : 0;
+                return saved;
             }
         );
 

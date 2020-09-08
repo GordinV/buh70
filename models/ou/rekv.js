@@ -24,7 +24,10 @@ module.exports = {
                      ((r.properties ->> 'reklftp')::JSONB ->> 'parool')::VARCHAR(120) AS parool,
                      (r.properties ->> 'earved') ::VARCHAR(254)                       AS earved,
                      (u.properties ->> 'earved') :: TEXT                              AS earved_omniva,
-                     (r.properties ->> 'liik') :: VARCHAR(20)                         AS liik
+                     (r.properties ->> 'liik') :: VARCHAR(20)                         AS liik,
+                     (r.properties ->> 'swed') ::VARCHAR(254)                         AS swed,
+                     (r.properties ->> 'seb') ::VARCHAR(254)                          AS seb
+
               FROM ou.rekv r,
                    ou.userid u
               WHERE r.id = $1

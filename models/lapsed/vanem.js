@@ -5,7 +5,7 @@ module.exports = {
                                    $1::INTEGER AS rekvid
                    FROM lapsed.vanemad v
                             INNER JOIN libs.asutus a ON a.id = v.asutusId
-                       WHERE v.staatus <> 3`,
+                   WHERE v.staatus <> 3`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},
@@ -21,6 +21,7 @@ module.exports = {
                      v.properties ->> 'suhtumine'                                         AS suhtumine,
                      coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN  AS kas_paberil,
                      coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN    AS kas_earve,
+                     (v.properties ->> 'pank')::TEXT                                      AS pank,
                      coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN    AS kas_email,
                      coalesce((v.properties ->> 'kas_esindaja')::BOOLEAN, FALSE)::BOOLEAN AS kas_esindaja,
                      v.muud,
@@ -37,8 +38,9 @@ module.exports = {
                        LEFT OUTER JOIN lapsed.vanem_arveldus va ON v.parentid = va.parentid
                   AND va.asutusid = a.id
                   AND va.rekvid IN (SELECT rekvid
-                                    FROM ou.userid WHERE id = $2)
-                  WHERE v.id = $1::INTEGER`,
+                                    FROM ou.userid
+                                    WHERE id = $2)
+              WHERE v.id = $1::INTEGER`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,
@@ -52,6 +54,7 @@ module.exports = {
                   false as kas_paberil,
                   true as kas_email,
                   true as kas_earve,
+                  null::text as pank,
                   false as kas_esindaja,
                   null::text as muud`,
         query: null,
@@ -66,9 +69,10 @@ module.exports = {
                          $2 AS userid
                   FROM lapsed.laps l
                            INNER JOIN lapsed.vanemad v ON l.id = v.parentid
-                      WHERE l.staatus < 3
-                           AND v.asutusid IN (SELECT asutusid
-                                              FROM lapsed.vanemad WHERE id = $1)`,
+                  WHERE l.staatus < 3
+                    AND v.asutusid IN (SELECT asutusid
+                                       FROM lapsed.vanemad
+                                       WHERE id = $1)`,
             query: null,
             multiple: true,
             alias: 'lapsed',
@@ -81,7 +85,7 @@ module.exports = {
         gridConfig: [
             {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
             {id: 'isikukood', name: 'Isikukood', width: '100px', show: true, type: 'text', readOnly: false},
-            {id: 'nimi', name: 'Nimi', width: '100px', show: true, type: 'text', readOnly: false},
+            {id: 'nimi', name: 'Nimi', width: '100px', show: true, type: 'text', readOnly: false}
         ],
     },
 
@@ -119,7 +123,7 @@ module.exports = {
                            $1::INTEGER AS rekvid,
                            $2::INTEGER AS user_id
                     FROM lapsed.cur_vanemad v
-                        WHERE rekv_ids @> ARRAY [$1::INTEGER] `,     //  $1 всегда ид учреждения, $2 - userId
+                    WHERE rekv_ids @> ARRAY [$1::INTEGER] `,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
         alias: 'curLapsed'
     },
@@ -150,9 +154,10 @@ module.exports = {
     validateEsindaja: {
         command: `SELECT id
                   FROM lapsed.vanemad
-                      WHERE parentId IN (SELECT parentid
-                                         FROM lapsed.vanemad WHERE id = $1)
-                           AND coalesce((properties ->> 'kas_esindaja')::BOOLEAN, FALSE)::BOOLEAN`,
+                  WHERE parentId IN (SELECT parentid
+                                     FROM lapsed.vanemad
+                                     WHERE id = $1)
+                    AND coalesce((properties ->> 'kas_esindaja')::BOOLEAN, FALSE)::BOOLEAN`,
         TYPE: 'sql',
         ALIAS: 'validateEsindaja'
     },
@@ -190,9 +195,8 @@ module.exports = {
                                       ajalugu
                            FROM lapsed.vanemad d,
                                 ou.userid u
-                               WHERE
-                                d.id = $1
-                                    AND u.id = $2
+                           WHERE d.id = $1
+                             AND u.id = $2
                        ) qry`,
         type: "sql",
         alias: "getLogs"

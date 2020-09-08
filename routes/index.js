@@ -72,6 +72,8 @@ module.exports = function (app) {
     app.post('/email', checkAuth, require('./email').post); //will send arve
 
     app.post('/e-arved', checkAuth, require('./e-arved').post); //checkAuth
+    app.get('/e-arved/seb/:uuid/:id/',require('./e-arved').seb);
+    app.get('/e-arved/swed/:uuid/:id/',require('./e-arved').swed);
     app.get('/e-arved/:uuid/:id/',require('./e-arved').get);
     app.get('/sepa/:uuid/:id/',require('./sepa').get);
 

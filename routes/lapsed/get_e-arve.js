@@ -41,20 +41,29 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
     const data = [];
 
     arved.forEach((arve, index) => {
-        data.push(Object.assign({}, arve.row[0], {details:arve.details}));
+        data.push(Object.assign({}, arve.row[0], {details: arve.details}));
     });
 
     data.forEach(arve => {
         totalAmount = totalAmount + Number(arve.summa);
     });
 
+    let Header = {
+        Date: l_now,
+        FileId: Date.now(),
+        AppId: 'EARVE',
+        Version: '1.1'
+    };
+
+    if (asutusConfig.ReceiverId) {
+        Header = Object.assign(Header, {
+            SenderId: asutusConfig.SenderId,
+            ReceiverId: asutusConfig.ReceiverId
+        });
+    }
+
     const eArve = {
-        Header: {
-            Date: l_now,
-            FileId: Date.now(),
-            AppId: 'EARVE',
-            Version: '1.1'
-        },
+        Header: Header,
         Invoice: data.map(arve => {
             // считаем налоги
             const qryeArvedVat = getVat(arve.details);
@@ -82,6 +91,13 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
             return {
                 '@invoiceId': arve.number,
                 '@regNumber': arve.regkood.trim(),
+                '@channelId': asutusConfig.type ? asutusConfig.channelId : null,
+                '@channelAddress': asutusConfig.type ? arve.asutuse_aa : null,
+                '@presentment': asutusConfig.type ? 'YES' : null,
+                '@invoiceGlobUniqId': asutusConfig.type ? arve.id : null,
+                'sellerContractId': asutusConfig.type && asutusConfig.type == 'swed' ? asutusConfig.swed : asutusConfig.type ? asutusConfig.seb : null,
+                '@sellerRegnumber': asutusConfig.type ? arve.regkood.trim() : null,
+
                 InvoiceParties: {
                     SellerParty: {
                         Name: asutusConfig.asutus.trim(),
@@ -152,11 +168,10 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
     };
 
 
-    const obj = isOmniva ? omnivaObj: {E_Invoice: eArve};
+    const obj = isOmniva ? omnivaObj : {E_Invoice: eArve};
 
     return builder.create(obj, {encoding: 'utf-8'}).end({pretty: true});
 };
-
 
 module.exports = get_earve;
 

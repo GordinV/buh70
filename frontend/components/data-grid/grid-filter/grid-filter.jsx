@@ -214,7 +214,6 @@ class GridFilter extends React.PureComponent {
             let obj = data.find(dataRow => dataRow.name == row.id);
 
             if (obj && ('value' in obj)) {
-                console.log('kas value ?, obj, isStateUpdated, value, row ', obj, isStateUpdated, value, row);
                 if (!obj.value && value) {
                     // есть дефолтное значение
                     isStateUpdated = true;

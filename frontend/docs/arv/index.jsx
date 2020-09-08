@@ -19,6 +19,8 @@ const EVENTS = [
     {name: 'Email kõik valitud arved', method: null, docTypeId: null},
     {name: 'Saada E-Arved (Omniva) kõik valitud arved', method: null, docTypeId: null},
     {name: 'Saama XML e-arved kõik valitud arved', method: null, docTypeId: null},
+    {name: 'Saama XML e-arved (SEB) kõik valitud arved', method: null, docTypeId: null},
+    {name: 'Saama XML e-arved (SWED) kõik valitud arved', method: null, docTypeId: null},
 ];
 
 /**
@@ -71,13 +73,27 @@ class Documents extends React.PureComponent {
     }
 
     renderer(self) {
-        let summa = self.gridData ? getSum (self.gridData,'summa') : 0;
-        let jaak = self.gridData ? getSum (self.gridData,'jaak') : 0;
+        let summa = self.gridData ? getSum(self.gridData, 'summa') : 0;
+        let jaak = self.gridData ? getSum(self.gridData, 'jaak') : 0;
         if (summa) {
             this.setState({summa: summa, read: self.gridData.length, jaak: jaak});
         }
 
         return (<ToolbarContainer>
+            <BtnEarve
+                onClick={this.onClickHandler}
+                docTypeId={DOC_TYPE_ID}
+                phrase={`Kas laadida XML (SWED) fail?`}
+                ref='btnEarveSwedXML'
+                value={EVENTS[6].name}
+            />
+            <BtnEarve
+                onClick={this.onClickHandler}
+                docTypeId={DOC_TYPE_ID}
+                phrase={`Kas laadida XML (SEB) fail?`}
+                ref='btnEarveSebXML'
+                value={EVENTS[5].name}
+            />
             <BtnEarve
                 onClick={this.onClickHandler}
                 docTypeId={DOC_TYPE_ID}
@@ -265,6 +281,68 @@ class Documents extends React.PureComponent {
                 }
 
                 break;
+            case EVENTS[5].name:
+                //e-arved SEB (XML)
+
+                // будет сформирован файл для отправки в банк СЕБ
+                Doc.gridData.forEach(row => {
+                    if (row.pank && row.pank == 'SEB' && row.select) {
+                        // выбрано для печати
+                        ids.add(row.id);
+                    }
+                });
+                // конвертация в массив
+                ids = Array.from(ids);
+
+                if (!ids.length) {
+                    Doc.setState({
+                        warning: 'Mitte ühtegi arve leidnum', // строка извещений
+                        warningType: 'notValid',
+                    });
+                } else {
+                    // отправляем запрос на выполнение
+                    Doc.setState({
+                        warning: `Leidsin ${ids.length} arveid`, // строка извещений
+                        warningType: 'ok',
+                    });
+
+                    let url = `/e-arved/seb/${DocContext.userData.uuid}/${ids}`;
+                    window.open(`${url}`);
+
+                }
+                break;
+            case EVENTS[6].name:
+                //e-arved Swed (XML)
+
+                // будет сформирован файл для отправки в банк SWED
+                Doc.gridData.forEach(row => {
+                    if (row.select && row.pank && row.pank == 'SWED' ) {
+                        // && row.kas_swed
+                        // выбрано для печати
+                        ids.add(row.id);
+                    }
+                });
+                // конвертация в массив
+                ids = Array.from(ids);
+
+                if (!ids.length) {
+                    Doc.setState({
+                        warning: 'Mitte ühtegi arve leidnum', // строка извещений
+                        warningType: 'notValid',
+                    });
+                } else {
+                    // отправляем запрос на выполнение
+                    Doc.setState({
+                        warning: `Leidsin ${ids.length} arveid`, // строка извещений
+                        warningType: 'ok',
+                    });
+
+                    let url = `/e-arved/swed/${DocContext.userData.uuid}/${ids}`;
+                    window.open(`${url}`);
+
+                }
+                break;
+
         }
     }
 }

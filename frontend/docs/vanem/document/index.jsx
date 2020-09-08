@@ -8,6 +8,7 @@ const
     InputText = require('../../../components/input-text/input-text.jsx'),
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     SelectData = require('../../../components/select-data/select-data.jsx'),
+    Select = require('../../../components/select/select.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
     CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
@@ -145,7 +146,20 @@ class Vanem extends React.PureComponent {
                                       readOnly={!isEditMode}
                             /> : null
                         }
-                        {self.docData.arved  ?
+                        {self.docData.arved ?
+                            <Select title="Pank:"
+                                    name='pank'
+                                    data={[{id: 1, kood: 'SWED', nimetus: 'Swedpank'},{id:2, kood: 'SEB', nimetus: 'Seb pank'}]}
+                                    collId='kood'
+                                    value={self.docData.pank || ''}
+                                    defaultValue={self.docData.pank}
+                                    ref="select-pank"
+                                    btnDelete={isEditMode}
+                                    onChange={self.handleInputChange}
+                                    readOnly={!isEditMode}/>
+                            : null}
+
+                        {self.docData.arved ?
                             <CheckBox title="Kas email ?"
                                       name='kas_email'
                                       value={Boolean(self.docData.kas_email)}

@@ -24,9 +24,10 @@ SELECT d.id                                                                     
        coalesce((a.properties ->> 'tyyp'), '') :: TEXT                                        AS tyyp,
        l.isikukood                                                                            AS isikukood,
        l.nimi                                                                                 AS nimi,
-       coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN                     AS kas_earved,
+       coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN                      AS kas_earved,
        coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN                      AS kas_email,
-       coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN                    AS kas_paberil
+       coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN                    AS kas_paberil,
+       (v.properties ->> 'pank'):: TEXT                                                       AS pank
 FROM docs.doc d
          INNER JOIN docs.arv a ON a.parentId = d.id
          INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id

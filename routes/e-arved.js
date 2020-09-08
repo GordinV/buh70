@@ -14,6 +14,160 @@ const getConfigData = async function (user) {
 
 };
 
+exports.swed = async (req, res) => {
+    console.log('swed');
+    let ids = req.params.id || ''; // параметр id документа
+    const uuid = req.params.uuid || ''; // параметр uuid пользователя
+    const user = require('../middleware/userData')(req, uuid); // данные пользователя
+
+    if (!user) {
+        console.error('error 401 newAPI');
+        return res.status(401).end();
+    }
+
+    ids = ids.split(",").map(Number);
+
+    // данные предприятия
+    const rekvDoc = new Doc('REKV', user.asutusId, user.userId, user.asutusId, 'lapsed');
+    const rekvData = await rekvDoc['select'](rekvDoc.config);
+
+    // создать объект
+    const earveDoc = new Doc('ARV', null, user.userId, user.asutusId, 'lapsed');
+
+    // выборка данных
+    // делаем массив промисов
+    const dataPromises = ids.map(id => {
+        return new Promise(resolve => {
+            earveDoc.setDocumentId(id);
+            resolve(earveDoc['select'](earveDoc.config));
+        })
+    });
+
+    // решаем их
+    const selectedDocs = [];
+    let promiseSelectResult = await Promise.all(dataPromises).then((result) => {
+        selectedDocs.push(result);
+    }).catch((err) => {
+        console.error('catched error->', err);
+        return res.send({status: 500, result: null, error_message: err});
+    });
+
+    // готовим параметры
+    const asutusConfig = {
+        url: rekvData.row[0].earved_omniva, //'https://finance.omniva.eu/finance/erp/',
+        secret: rekvData.row[0].earved, //'106549:elbevswsackajyafdoupavfwewuiafbeeiqatgvyqcqdqxairz',
+        asutus: rekvData.row[0].muud ? rekvData.row[0].muud : rekvData.row[0].nimetus,
+        regkood: rekvData.row[0].regkood,
+        swed: rekvData.row[0].swed ? rekvData.row[0].swed: '',
+        seb: rekvData.row[0].seb ? rekvData.row[0].seb: '',
+        user: user.userName,
+        SenderId: 'NARVALVKO',
+        ReceiverId: 'SWEDB',
+        channelId: 'HABAEE2X',
+        type: 'swed'
+    };
+
+    try {
+        // делаем XML
+        const xml = getEarve(selectedDocs[0], asutusConfig, false);
+
+        // register e-arve event
+        let sql = earveDoc.config.earve[0].register;
+
+        // возвращаем его
+        if (xml) {
+            res.attachment('e-arve.xml');
+            res.type('xml');
+            res.send(xml);
+        } else {
+            res.status(500).send('Error in getting XML');
+        }
+
+    } catch (error) {
+        console.error('error:', error); // @todo Обработка ошибок
+        res.send({status: 500, result: 'Error'});
+
+    }
+
+};
+
+exports.seb = async (req, res) => {
+    console.log('seb');
+    let ids = req.params.id || ''; // параметр id документа
+    const uuid = req.params.uuid || ''; // параметр uuid пользователя
+    const user = require('../middleware/userData')(req, uuid); // данные пользователя
+
+    if (!user) {
+        console.error('error 401 newAPI');
+        return res.status(401).end();
+    }
+
+    ids = ids.split(",").map(Number);
+
+    // данные предприятия
+    const rekvDoc = new Doc('REKV', user.asutusId, user.userId, user.asutusId, 'lapsed');
+    const rekvData = await rekvDoc['select'](rekvDoc.config);
+
+    // создать объект
+    const earveDoc = new Doc('ARV', null, user.userId, user.asutusId, 'lapsed');
+
+    // выборка данных
+    // делаем массив промисов
+    const dataPromises = ids.map(id => {
+        return new Promise(resolve => {
+            earveDoc.setDocumentId(id);
+            resolve(earveDoc['select'](earveDoc.config));
+        })
+    });
+
+    // решаем их
+    const selectedDocs = [];
+    let promiseSelectResult = await Promise.all(dataPromises).then((result) => {
+        selectedDocs.push(result);
+    }).catch((err) => {
+        console.error('catched error->', err);
+        return res.send({status: 500, result: null, error_message: err});
+    });
+
+    // готовим параметры
+    const asutusConfig = {
+        url: rekvData.row[0].earved_omniva, //'https://finance.omniva.eu/finance/erp/',
+        secret: rekvData.row[0].earved, //'106549:elbevswsackajyafdoupavfwewuiafbeeiqatgvyqcqdqxairz',
+        asutus: rekvData.row[0].muud ? rekvData.row[0].muud : rekvData.row[0].nimetus,
+        regkood: rekvData.row[0].regkood,
+        swed: rekvData.row[0].swed ? rekvData.row[0].swed: '',
+        seb: rekvData.row[0].seb ? rekvData.row[0].seb: '',
+        user: user.userName,
+        SenderId: 'NARVALVKO',
+        ReceiverId: 'eyp',
+        channelId: 'EEUHEE2X',
+        type: 'seb'
+    };
+
+    try {
+        // делаем XML
+        const xml = getEarve(selectedDocs[0], asutusConfig, false);
+
+        // register e-arve event
+        let sql = earveDoc.config.earve[0].register;
+
+        // возвращаем его
+        if (xml) {
+            res.attachment('e-arve.xml');
+            res.type('xml');
+            res.send(xml);
+        } else {
+            res.status(500).send('Error in getting XML');
+        }
+
+    } catch (error) {
+        console.error('error:', error); // @todo Обработка ошибок
+        res.send({status: 500, result: 'Error'});
+
+    }
+
+};
+
 exports.get = async (req, res) => {
     let ids = req.params.id || ''; // параметр id документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
