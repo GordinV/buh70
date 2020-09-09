@@ -33,9 +33,11 @@ DECLARE
     is_import      BOOLEAN = data ->> 'import';
     doc_is_tootaja BOOLEAN = coalesce((doc_data ->> 'is_tootaja') :: BOOLEAN, FALSE);
     doc_asutus_aa  JSONB   = coalesce((doc_data ->> 'asutus_aa') :: JSONB, '[]':: JSONB);
+    doc_aa         TEXT    = doc_data ->> 'aa';
     new_properties JSONB;
     new_history    JSONB;
     new_rights     JSONB;
+    new_aa         JSONB;
 BEGIN
 
 
@@ -60,6 +62,22 @@ BEGIN
                  doc_is_tootaja         AS is_tootaja,
                  doc_asutus_aa :: JSONB AS asutus_aa,
                  doc_kmkr               AS kmkr) row;
+
+    -- если задан упрощенный расч. счет, то пишем его (для модуля дети)
+
+    IF (doc_aa IS NOT NULL)
+    THEN
+        SELECT row_to_json(row) INTO new_aa
+        FROM (SELECT doc_aa AS aa, '' AS pank) row;
+
+        SELECT row_to_json(row) INTO new_properties
+        FROM (SELECT doc_kehtivus                   AS kehtivus,
+                     doc_pank                       AS pank,
+                     doc_is_tootaja                 AS is_tootaja,
+                     '[]'::JSONB || new_aa :: JSONB AS asutus_aa,
+                     doc_kmkr                       AS kmkr) row;
+
+    END IF;
 
     -- вставка или апдейт docs.doc
 

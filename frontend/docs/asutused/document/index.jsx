@@ -61,6 +61,12 @@ class Asutused extends React.PureComponent {
                                    readOnly={!isEditeMode}
                                    value={self.docData.omvorm || ''}
                                    onChange={self.handleInputChange}/>
+                        <InputText title="Arveldus arve:"
+                                   name='aa'
+                                   ref="input-aa"
+                                   readOnly={!isEditeMode}
+                                   value={self.docData.aa || ''}
+                                   onChange={self.handleInputChange}/>
                     </div>
                 </div>
                 <div style={styles.docRow}>

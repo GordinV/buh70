@@ -1,11 +1,12 @@
 module.exports = {
     select: [{
         sql: `SELECT *,
-                     $2::INTEGER                          AS userid,
-                     'ASUTUSED'                           AS doc_type_id,
-                     (properties ->> 'pank')::VARCHAR(20) AS pank,
-                     (properties ->> 'kmkr')::VARCHAR(20) AS kmkr,
-                     (properties ->> 'kehtivus')::DATE    AS kehtivus
+                     $2::INTEGER                                     AS userid,
+                     'ASUTUSED'                                      AS doc_type_id,
+                     (properties ->> 'pank')::VARCHAR(20)            AS pank,
+                     (properties ->> 'kmkr')::VARCHAR(20)            AS kmkr,
+                     (properties ->> 'kehtivus')::DATE               AS kehtivus,
+                     (properties -> 'asutus_aa' -> 0 ->> 'aa')::TEXT AS aa
               FROM libs.asutus
               WHERE id = $1`,
         sqlAsNew: `select $1::integer as id , $2::integer as userid, 'ASUTUSED' as doc_type_id,
@@ -22,7 +23,8 @@ module.exports = {
             0::integer as staatus,
             ''::varchar(20) as pank,
             ''::varchar(20) as kmkr,
-            ''::text as mark`,
+            ''::text as mark,
+            ''::TEXT AS aa`,
         query: null,
         multiple: false,
         alias: 'row',
@@ -93,7 +95,7 @@ module.exports = {
     },
     importAsutused: {
         command: `SELECT error_code, result, error_message
-                  FROM lapsed.import_asutused( $1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+                  FROM lapsed.import_asutused($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
         type: 'sql',
         alias: 'importAsutused'
     },
@@ -110,11 +112,11 @@ module.exports = {
     print: [
         {
             view: 'asutus_register',
-            params:'id'
+            params: 'id'
         },
         {
             view: 'asutus_register',
-            params:'sqlWhere'
+            params: 'sqlWhere'
         },
     ],
     getLog: {

@@ -447,6 +447,7 @@ class DocumentTemplate extends React.Component {
 
                                     let docId = response.data.data[0].id;
                                     let _warning = this.state.warning;
+
                                     if (docId && docId !== this.state.docId) {
                                         //переадресовка
                                         this.serverValidation.push({
