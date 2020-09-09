@@ -3,12 +3,12 @@ module.exports = {
                           exists(
                                   SELECT id
                                   FROM lapsed.lapse_kaart lk
-                                      WHERE lk.rekvid = $1
-                                           AND lk.parentid = l.id
+                                  WHERE lk.rekvid = $1
+                                    AND lk.parentid = l.id
                               ) AS is_exists
                    FROM lapsed.laps l
-                       WHERE l.staatus < 3
-                       ORDER BY nimi`,
+                   WHERE l.staatus < 3
+                   ORDER BY nimi`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},
@@ -23,14 +23,16 @@ module.exports = {
                      l.nimi,
                      l.muud,
                      lapsed.get_viitenumber((SELECT rekvid
-                                             FROM ou.userid WHERE id = $2), l.id) AS viitenumber,
-                     $2::INTEGER                                                  AS userid,
-                     coalesce(ll.jaak, 0)::NUMERIC                                AS jaak
+                                             FROM ou.userid
+                                             WHERE id = $2), l.id) AS viitenumber,
+                     $2::INTEGER                                   AS userid,
+                     coalesce(ll.jaak, 0)::NUMERIC                 AS jaak
               FROM lapsed.laps l
                        LEFT OUTER JOIN lapsed.lapse_saldod() ll ON ll.laps_id = l.id AND
                                                                    ll.rekv_id IN (SELECT rekvid
-                                                                                  FROM ou.userid u WHERE u.id = $2)
-                  WHERE l.id = $1::INTEGER`,
+                                                                                  FROM ou.userid u
+                                                                                  WHERE u.id = $2)
+              WHERE l.id = $1::INTEGER`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,
@@ -57,8 +59,8 @@ module.exports = {
                          $2                           AS userid
                   FROM lapsed.vanemad v
                            INNER JOIN libs.asutus a ON a.id = v.asutusid
-                      WHERE v.parentid = $1
-                           AND v.staatus < 3`,
+                  WHERE v.parentid = $1
+                    AND v.staatus < 3`,
             query: null,
             multiple: true,
             alias: 'vanemad',
@@ -71,18 +73,24 @@ module.exports = {
                          n.kood,
                          n.nimetus,
                          k.hind,
-                         gr.nimetus::TEXT                                                         AS yksus,
-                         k.properties ->> 'all_yksus'                                             AS all_yksus,
-                         CASE WHEN (k.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3
+                         gr.nimetus::TEXT                                                                           AS yksus,
+                         k.properties ->> 'all_yksus'                                                               AS all_yksus,
+                         CASE WHEN (k.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END                   AS inf3,
+                         n.uhik,
+                         to_char(coalesce((k.properties ->> 'alg_kpv')::DATE, date(year(), 1, 1)), 'DD.MM.YYYY') ||
+                         ' - ' ||
+                         to_char(coalesce((k.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)),
+                                 'DD.MM.YYYY')                                                                      AS kehtivus
                   FROM lapsed.lapse_kaart k
                            INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
                            LEFT OUTER JOIN libs.library gr
                                            ON gr.library = 'LAPSE_GRUPP' AND gr.status <> 3 AND gr.rekvid = k.rekvid
                                                AND gr.kood::TEXT = (k.properties ->> 'yksus')::TEXT
-                      WHERE k.parentid = $1
-                           AND k.staatus <> 3
-                           AND k.rekvid IN (SELECT rekvid
-                                            FROM ou.userid WHERE id = $2)`,
+                  WHERE k.parentid = $1
+                    AND k.staatus <> 3
+                    AND k.rekvid IN (SELECT rekvid
+                                     FROM ou.userid
+                                     WHERE id = $2)`,
             query: null,
             multiple: true,
             alias: 'teenused',
@@ -110,10 +118,12 @@ module.exports = {
                     {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
                     {id: 'kood', name: 'Kood', width: '100px', show: true, type: 'text', readOnly: false},
                     {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'uhik', name: 'Ühik', width: '50px', show: true, type: 'text', readOnly: false},
                     {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'text', readOnly: false},
                     {id: 'yksus', name: 'Üksus', width: '100px', show: true, type: 'text', readOnly: false},
                     {id: 'all_yksus', name: 'All üksus', width: '100px', show: true, type: 'text', readOnly: false},
                     {id: 'inf3', name: 'INF3', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'kehtivus', name: 'Period', width: '150px', show: true, type: 'text', readOnly: false},
                 ]
         },
     requiredFields: [
@@ -145,7 +155,7 @@ module.exports = {
                             $1::INTEGER                      AS rekvid,
                             $2::INTEGER                      AS user_id
                      FROM lapsed.cur_lapsed l
-                         WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
+                     WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
             `,     //  $1 всегда ид учреждения, $2 - userId
             params: ['rekvid', 'userid'],
             alias:
@@ -160,7 +170,7 @@ module.exports = {
     koostaEttemaksuArved: {
         command: `SELECT lapsed.koosta_ettemaksu_arve($2::INTEGER, id::INTEGER, $3::DATE)
                   FROM lapsed.laps
-                      WHERE id IN (
+                  WHERE id IN (
                       SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
                   )`,//$1 docId, $2 - userId
         type: 'sql',
@@ -175,7 +185,7 @@ module.exports = {
     arvestaTaabel: {
         command: `SELECT lapsed.arvesta_taabel($2::INTEGER, id::INTEGER, $3::DATE)
                   FROM lapsed.laps
-                      WHERE id IN (
+                  WHERE id IN (
                       SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
                   )`,//$1 docId, $2 - userId
         type: 'sql',
@@ -196,7 +206,7 @@ module.exports = {
     validateIsikukood: {
         command: `SELECT id
                   FROM lapsed.laps
-                      WHERE isikukood = $1::TEXT`,
+                  WHERE isikukood = $1::TEXT`,
         type: 'sql',
         alias: 'validateIsikukood'
     },
@@ -243,9 +253,8 @@ module.exports = {
                            SELECT jsonb_array_elements(d.ajalugu) AS ajalugu
                            FROM lapsed.laps d,
                                 ou.userid u
-                               WHERE
-                                d.id = $1
-                                    AND u.id = $2
+                           WHERE d.id = $1
+                             AND u.id = $2
                        ) qry`,
         type: "sql",
         alias: "getLogs"
