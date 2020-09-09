@@ -55,6 +55,7 @@ const readCSV = async (csvContent) => {
                     earve: row[5],
                     email: row[6],
                     esindaja: row[7],
+                    pank: row[8]
                 });
             }
         });

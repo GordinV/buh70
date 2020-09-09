@@ -1,6 +1,10 @@
 DROP FUNCTION IF EXISTS import_kontoplaan();
 DROP FUNCTION IF EXISTS import_kontoplaan(BOOLEAN);
 
+drop SERVER if exists test2_narva_ee CASCADE ;
+CREATE SERVER test2_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'dbarch.narva.ee', dbname 'test2', port '5436');
+
+
 CREATE OR REPLACE FUNCTION import_kontoplaan(in_old_id INTEGER)
     RETURNS INTEGER AS
 $BODY$

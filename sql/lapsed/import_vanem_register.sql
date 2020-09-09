@@ -38,7 +38,7 @@ BEGIN
             SELECT * INTO json_record
             FROM json_to_record(
                          json_object) AS x (lapse_ik TEXT, vanem_ik TEXT, sugulus TEXT, arveldus TEXT, paper TEXT,
-                                            earve TEXT, email TEXT, esindaja TEXT);
+                                            earve TEXT, email TEXT, esindaja TEXT, pank TEXT);
 
             -- ищем ребенка
             SELECT id INTO l_laps_id
@@ -68,7 +68,8 @@ BEGIN
                                            json_record.esindaja IS NOT NULL AND
                                            (json_record.esindaja ILIKE '%jah%' OR json_record.esindaja ILIKE '%yes%')::BOOLEAN AS kas_esindaja,
                                            json_record.earve IS NOT NULL AND
-                                           (json_record.earve ILIKE '%jah%' OR json_record.earve ILIKE '%yes%')::BOOLEAN       AS kas_earve) row;
+                                           (json_record.earve ILIKE '%jah%' OR json_record.earve ILIKE '%yes%')::BOOLEAN       AS kas_earve,
+                                           json_record.pank as pank) row;
 
 
                 -- проверяем уникальность записи
