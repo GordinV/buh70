@@ -63,24 +63,24 @@ class Documents extends React.PureComponent {
         return (
             <ToolbarContainer>
                 {checkRights(userRoles, docRights, 'importLepingud') ?
-                    <div>
-                        <ButtonUpload
-                            ref='btnUploadSwed'
-                            docTypeId={'import_leping_swed'}
-                            onClick={this.handleClick}
-                            show={true}
-                            value={'Loe panga lepingud (SWED)'}
-                            mimeTypes={'.csv'}
-                        />
-                        < ButtonUpload
-                            ref='btnUploadSeb'
-                            docTypeId={'import_leping_seb'}
-                            onClick={this.handleClick}
-                            show={true}
-                            value={'Loe panga lepingud (SEB)'}
-                            mimeTypes={'.csv'}
-                        />
-                    </div>
+                    <ButtonUpload
+                        ref='btnUploadSwed'
+                        docTypeId={'import_leping_swed'}
+                        onClick={this.handleClick}
+                        show={true}
+                        value={'Loe panga lepingud (SWED)'}
+                        mimeTypes={'.csv'}
+                    /> : null}
+                {checkRights(userRoles, docRights, 'importLepingud') ?
+
+                    < ButtonUpload
+                        ref='btnUploadSeb'
+                        docTypeId={'import_leping_seb'}
+                        onClick={this.handleClick}
+                        show={true}
+                        value={'Loe panga lepingud (SEB)'}
+                        mimeTypes={'.csv'}
+                    />
                     : null}
                 {checkRights(userRoles, docRights, 'importVanemateRegister') ?
                     <ButtonUpload
