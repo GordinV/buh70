@@ -137,7 +137,8 @@ module.exports = {
         edit: ['arvestaja'],
         delete: ['arvestaja'],
         importVanemad: ['admin'],
-        importVanemateRegister: ['admin']
+        importVanemateRegister: ['admin'],
+        importLepingud:['admin']
     },
     LAPSE_KAART: {
         select: ['arvestaja'],

@@ -64,64 +64,66 @@ BEGIN
             IF l_laps_id IS NOT NULL AND l_nom_id IS NOT NULL
             THEN
                 -- проверяем уникальность записи
-                IF NOT exists(SELECT id
-                              FROM lapsed.lapse_kaart
-                              WHERE parentid = l_laps_id
-                                AND staatus <> 3
-                                AND nomid = l_nom_id
-                                AND rekvid = user_rekvid)
-                THEN
+                l_id = (SELECT id
+                        FROM lapsed.lapse_kaart lk
+                        WHERE parentid = l_laps_id
+                          AND upper(coalesce(lk.properties ->> 'yksus', '')) =
+                              upper(coalesce(json_record.yksus, ''))
+                          AND staatus <> 3
+                          AND nomid = l_nom_id
+                          AND rekvid = user_rekvid);
 
-                    json_object = to_jsonb(row)
-                                  FROM (SELECT l_laps_id                                         AS parentid,
-                                               l_nom_id                                          AS nomid,
-                                               json_record.yksus                                 AS yksus,
-                                               json_record.all_yksus                             AS all_yksus,
-                                               CASE
-                                                   WHEN empty(json_record.kogus) THEN 0::NUMERIC
-                                                   ELSE json_record.kogus::NUMERIC END           AS kogus,
-                                               CASE
-                                                   WHEN empty(json_record.hind) THEN 0::NUMERIC
-                                                   ELSE json_record.hind::NUMERIC END            AS hind,
-                                               CASE
-                                                   WHEN empty(json_record.ettemaksu_period::TEXT) OR
-                                                        json_record.ettemaksu_period IS NULL THEN NULL
-                                                   ELSE json_record.ettemaksu_period END         AS ettemaksu_period,
-                                               CASE
-                                                   WHEN empty(json_record.soodus) OR json_record.soodus = '' THEN NULL
-                                                   ELSE json_record.soodus END                   AS soodus,
-                                               json_record.kas_protsent IS NOT NULL AND
-                                               (json_record.kas_protsent ILIKE
-                                                '%jah%' OR
-                                                json_record.kas_protsent ILIKE
-                                                '%yes%'
-                                                   )::BOOLEAN                                    AS kas_protsent,
-                                               json_record.kas_inf3 IS NOT NULL AND
-                                               (json_record.kas_inf3 ILIKE '%jah%' OR
-                                                json_record.kas_inf3 ILIKE '%yes%')::BOOLEAN     AS kas_inf3,
-                                               CASE
-                                                   WHEN NOT empty(json_record.sooduse_alg)
-                                                       THEN format_date(json_record.sooduse_alg::TEXT)
-                                                   ELSE NULL END::DATE                           AS sooduse_alg,
-                                               CASE
-                                                   WHEN NOT empty(json_record.sooduse_lopp)
-                                                       THEN format_date(json_record.sooduse_lopp::TEXT)
-                                                   ELSE NULL::DATE END                           AS sooduse_lopp,
-                                               format_date(json_record.alg_kpv::TEXT)            AS alg_kpv,
-                                               format_date(json_record.lopp_kpv::TEXT)           AS lopp_kpv,
-                                               json_record.kas_eraldi IS NOT NULL AND
-                                               (json_record.kas_eraldi ILIKE '%jah%' OR
-                                                json_record.kas_eraldi ILIKE '%yes%')::BOOLEAN   AS kas_eraldi,
-                                               json_record.kas_ettemaks IS NOT NULL AND
-                                               (json_record.kas_ettemaks ILIKE '%jah%' OR
-                                                json_record.kas_ettemaks ILIKE '%yes%')::BOOLEAN AS kas_ettemaks
-                                       ) ROW;
+                json_object = to_jsonb(row)
+                              FROM (SELECT coalesce(l_id, 0)                                 AS id,
+                                           l_laps_id                                         AS parentid,
+                                           l_nom_id                                          AS nomid,
+                                           json_record.yksus                                 AS yksus,
+                                           json_record.all_yksus                             AS all_yksus,
+                                           CASE
+                                               WHEN empty(json_record.kogus) THEN 0::NUMERIC
+                                               ELSE json_record.kogus::NUMERIC END           AS kogus,
+                                           CASE
+                                               WHEN empty(json_record.hind) THEN 0::NUMERIC
+                                               ELSE json_record.hind::NUMERIC END            AS hind,
+                                           CASE
+                                               WHEN empty(json_record.ettemaksu_period::TEXT) OR
+                                                    json_record.ettemaksu_period IS NULL THEN NULL
+                                               ELSE json_record.ettemaksu_period END         AS ettemaksu_period,
+                                           CASE
+                                               WHEN empty(json_record.soodus) OR json_record.soodus = '' THEN NULL
+                                               ELSE json_record.soodus END                   AS soodus,
+                                           json_record.kas_protsent IS NOT NULL AND
+                                           (json_record.kas_protsent ILIKE
+                                            '%jah%' OR
+                                            json_record.kas_protsent ILIKE
+                                            '%yes%'
+                                               )::BOOLEAN                                    AS kas_protsent,
+                                           json_record.kas_inf3 IS NOT NULL AND
+                                           (json_record.kas_inf3 ILIKE '%jah%' OR
+                                            json_record.kas_inf3 ILIKE '%yes%')::BOOLEAN     AS kas_inf3,
+                                           CASE
+                                               WHEN NOT empty(json_record.sooduse_alg)
+                                                   THEN format_date(json_record.sooduse_alg::TEXT)
+                                               ELSE NULL END::DATE                           AS sooduse_alg,
+                                           CASE
+                                               WHEN NOT empty(json_record.sooduse_lopp)
+                                                   THEN format_date(json_record.sooduse_lopp::TEXT)
+                                               ELSE NULL::DATE END                           AS sooduse_lopp,
+                                           format_date(json_record.alg_kpv::TEXT)            AS alg_kpv,
+                                           format_date(json_record.lopp_kpv::TEXT)           AS lopp_kpv,
+                                           json_record.kas_eraldi IS NOT NULL AND
+                                           (json_record.kas_eraldi ILIKE '%jah%' OR
+                                            json_record.kas_eraldi ILIKE '%yes%')::BOOLEAN   AS kas_eraldi,
+                                           json_record.kas_ettemaks IS NOT NULL AND
+                                           (json_record.kas_ettemaks ILIKE '%jah%' OR
+                                            json_record.kas_ettemaks ILIKE '%yes%')::BOOLEAN AS kas_ettemaks
+                                   ) ROW;
 
-                    -- сохраняем
-                    -- подготавливаем параметры для сохранения
-                    SELECT row_to_json(row) INTO json_save_params
-                    FROM (SELECT 0           AS id,
-                                 json_object AS data) row;
+                -- сохраняем
+                -- подготавливаем параметры для сохранения
+                SELECT row_to_json(row) INTO json_save_params
+                FROM (SELECT 0           AS id,
+                             json_object AS data) row;
 
 /*                    IF l_status = 3
                     THEN
@@ -130,12 +132,10 @@ BEGIN
                     END IF;
 
 */
-                    SELECT lapsed.sp_salvesta_lapse_kaart(json_save_params :: JSONB, user_id, user_rekvid) INTO l_id;
-                    IF l_id > 0
-                    THEN
-                        count = count + 1;
-                    END IF;
-
+                SELECT lapsed.sp_salvesta_lapse_kaart(json_save_params :: JSONB, user_id, user_rekvid) INTO l_id;
+                IF l_id > 0
+                THEN
+                    count = count + 1;
                 END IF;
 
             END IF;

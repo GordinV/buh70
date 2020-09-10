@@ -149,6 +149,12 @@ module.exports = {
         type: 'sql',
         alias: 'importVanemateRegister'
     },
+    importPankLeping: {
+        command: `SELECT error_code, result, error_message
+                  FROM lapsed.loe_panga_lepingud($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+        type: 'sql',
+        alias: 'importPankLeping'
+    },
 
 
     validateEsindaja: {

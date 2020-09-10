@@ -11,10 +11,7 @@ const DOC_TYPE_ID = 'VANEM';
 const DocRights = require('./../../../config/doc_rights');
 const checkRights = require('./../../../libs/checkRights');
 const DocContext = require('./../../doc-context.js');
-
 const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
-const userRoles = DocContext.userData ? DocContext.userData.roles : [];
-
 
 
 /**
@@ -28,6 +25,7 @@ class Documents extends React.PureComponent {
     }
 
     render() {
+        const userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
         const toolbarParams = {
             btnAdd: {
@@ -60,9 +58,31 @@ class Documents extends React.PureComponent {
     }
 
     renderer() {
+        const userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
         return (
             <ToolbarContainer>
-                {checkRights(userRoles, docRights, 'importLapsed') ?
+                {checkRights(userRoles, docRights, 'importLepingud') ?
+                    <div>
+                        <ButtonUpload
+                            ref='btnUploadSwed'
+                            docTypeId={'import_leping_swed'}
+                            onClick={this.handleClick}
+                            show={true}
+                            value={'Loe panga lepingud (SWED)'}
+                            mimeTypes={'.csv'}
+                        />
+                        < ButtonUpload
+                            ref='btnUploadSeb'
+                            docTypeId={'import_leping_seb'}
+                            onClick={this.handleClick}
+                            show={true}
+                            value={'Loe panga lepingud (SEB)'}
+                            mimeTypes={'.csv'}
+                        />
+                    </div>
+                    : null}
+                {checkRights(userRoles, docRights, 'importVanemateRegister') ?
                     <ButtonUpload
                         ref='btnUpload'
                         docTypeId={DOC_TYPE_ID}
