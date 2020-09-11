@@ -32,7 +32,7 @@ module.exports = {
             {id: "maksja", name: "Maksja", width: "15%"},
             {id: "viitenumber", name: "Viitenr", width: "10%"},
             {id: "iban", name: "Arveldus arve", width: "20%"},
-            {id: "kpv", name: "Maksepäev", width: "10%", show:true},
+            {id: "kpv", name: "Maksepäev", width: "10%", show: true},
             {id: "summa", name: "Summa", width: "10%"},
             {id: "pank_id", name: "Tehingu nr.", width: "15%"},
             {id: "selg", name: "Makse selgitus", width: "20%"},
@@ -40,20 +40,24 @@ module.exports = {
             {id: "number", name: "MK number", width: "10%"},
             {id: "asutus", name: "Asutus", width: "10%"}
         ],
-        sqlString: `SELECT v.id                                                                    AS id,
-                           v.doc_id                                                                AS doc_id,
+        sqlString: `SELECT v.id                                                                                       AS id,
+                           v.doc_id                                                                                   AS doc_id,
                            v.maksja,
                            v.viitenumber,
                            v.iban,
-                           to_char(v.kpv, 'DD.MM.YYYY')::TEXT                                       AS kpv,
-                           v.summa::NUMERIC(12, 2)                                                 AS summa,
+                           to_char(v.kpv, 'DD.MM.YYYY')::TEXT                                                         AS kpv,
+                           v.summa::NUMERIC(12, 2)                                                                    AS summa,
                            v.pank_id,
                            v.selg,
                            v.markused,
-                           (CASE WHEN v.doc_id IS NOT NULL THEN mk.number ELSE 'PUUDUB' END)::TEXT AS number,
-                           (CASE WHEN v.doc_id IS NOT NULL THEN r.nimetus ELSE 'PUUDUB' END)::TEXT AS asutus,
-                           to_char(v.timestamp, 'DD.MM.YYYY HH.MM.SSSS')::TEXT                     AS timestamp,
-                           $1                                                                      AS not_in_use
+                           (CASE
+                                WHEN v.doc_id IS NOT NULL AND NOT empty(v.doc_id) THEN mk.number
+                                ELSE 'PUUDUB' END)::TEXT                                                              AS number,
+                           (CASE
+                                WHEN v.doc_id IS NOT NULL OR empty(v.doc_id) THEN r.nimetus
+                                ELSE 'PUUDUB' END)::TEXT                                                              AS asutus,
+                           to_char(v.timestamp, 'DD.MM.YYYY HH.MM.SSSS')::TEXT                                        AS timestamp,
+                           $1                                                                                         AS not_in_use
                     FROM lapsed.pank_vv v
                              LEFT OUTER JOIN lapsed.cur_lapsed_mk mk ON mk.id = v.doc_id
                              LEFT OUTER JOIN ou.rekv r ON r.id = mk.rekvid

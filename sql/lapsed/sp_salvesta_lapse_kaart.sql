@@ -9,7 +9,9 @@ $BODY$
 DECLARE
     userName             TEXT;
     doc_data             JSON    = data ->> 'data';
-    doc_id               INTEGER = (select case when (doc_data ->> 'id')::text ilike '%NEW%' THEN 0::TEXT ELSE (doc_data ->> 'id')::TEXT END)::INTEGER;
+    doc_id               INTEGER = (SELECT CASE
+                                               WHEN (doc_data ->> 'id')::TEXT ILIKE '%NEW%' THEN 0::TEXT
+                                               ELSE (doc_data ->> 'id')::TEXT END)::INTEGER;
     doc_parentid         INTEGER = doc_data ->> 'parentid';
     doc_nomid            INTEGER = doc_data ->> 'nomid';
     doc_tunnus           TEXT    = doc_data ->> 'tunnus';
@@ -21,10 +23,18 @@ DECLARE
     doc_kas_eraldi       BOOLEAN = doc_data ->> 'kas_eraldi';
     doc_kas_ettemaks     BOOLEAN = doc_data ->> 'kas_ettemaks';
     doc_kas_inf3         BOOLEAN = doc_data ->> 'kas_inf3';
-    doc_sooduse_alg      DATE    = (case when (doc_data ->> 'sooduse_alg')::text = '' then null else doc_data ->> 'sooduse_alg' END)::date ;
-    doc_sooduse_lopp     DATE    = (case when (doc_data ->> 'sooduse_lopp')::text = '' then null else doc_data ->> 'sooduse_lopp' END)::date;
-    doc_alg_kpv          DATE    = (case when (doc_data ->> 'alg_kpv')::text = '' then null else doc_data ->> 'alg_kpv' END)::date;
-    doc_lopp_kpv         DATE    = (case when (doc_data ->> 'lopp_kpv')::text = '' then null else doc_data ->> 'lopp_kpv' END)::date;
+    doc_sooduse_alg      DATE    = (CASE
+                                        WHEN (doc_data ->> 'sooduse_alg')::TEXT = '' THEN NULL
+                                        ELSE doc_data ->> 'sooduse_alg' END)::DATE ;
+    doc_sooduse_lopp     DATE    = (CASE
+                                        WHEN (doc_data ->> 'sooduse_lopp')::TEXT = '' THEN NULL
+                                        ELSE doc_data ->> 'sooduse_lopp' END)::DATE;
+    doc_alg_kpv          DATE    = (CASE
+                                        WHEN (doc_data ->> 'alg_kpv')::TEXT = '' THEN NULL
+                                        ELSE doc_data ->> 'alg_kpv' END)::DATE;
+    doc_lopp_kpv         DATE    = (CASE
+                                        WHEN (doc_data ->> 'lopp_kpv')::TEXT = '' THEN NULL
+                                        ELSE doc_data ->> 'lopp_kpv' END)::DATE;
     doc_muud             TEXT    = doc_data ->> 'muud';
     doc_kogus            NUMERIC = doc_data ->> 'kogus';
     doc_ettemaksu_period INTEGER = doc_data ->> 'ettemaksu_period';
@@ -94,7 +104,8 @@ BEGIN
             hind       = doc_hind,
             properties = coalesce(properties, '[]')::JSONB || json_props,
             muud       = doc_muud,
-            ajalugu    = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu
+            ajalugu    = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu,
+            staatus    = 1
         WHERE id = doc_id RETURNING id
             INTO doc_id;
 

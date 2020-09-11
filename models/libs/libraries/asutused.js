@@ -43,7 +43,8 @@ module.exports = {
             alias: 'asutus_aa',
             data: []
 
-        }, {
+        },
+        {
             sql: `SELECT Asutus.id
                   FROM libs.asutus Asutus
                   WHERE (upper(rtrim(ltrim(Asutus.regkood))) = upper($1) OR empty($1))
