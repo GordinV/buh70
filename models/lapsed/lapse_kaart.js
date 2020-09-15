@@ -216,7 +216,8 @@ module.exports = {
                   FROM lapsed.lapse_kaart
                   WHERE id IN (
                       SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
-                  )`,//$1 docId, $2 - userId
+                  )
+                  and staatus <> 3`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'muudaTeenusteTahtaeg'
     },

@@ -45,13 +45,26 @@ BEGIN
                lk.properties ->> 'sooduse_alg'      AS sooduse_alg,
                lk.properties ->> 'sooduse_lopp'     AS sooduse_lopp,
                lk.properties ->> 'alg_kpv'          AS alg_kpv,
+               lk.properties ->> 'lopp_kpv'         AS vana_lopp_kpv,
                l_kpv                                AS lopp_kpv,
                lk.properties ->> 'kogus'            AS kogus,
                lk.muud
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.id = l_id
+          AND staatus <> 3
         LOOP
+            -- проверка на срок действия
+            IF v_kaart.vana_lopp_kpv IS NULL
+                   OR empty(v_kaart.vana_lopp_kpv)
+                   OR v_kaart.vana_lopp_kpv::DATE < l_kpv
+                   OR v_kaart.alg_kpv::DATE > l_kpv
+            THEN
+                -- услуга не действует
+                result = 0;
+                RETURN;
+            END IF;
+
             -- salvestame kaart
             SELECT row_to_json(row) INTO json_object
             FROM (SELECT v_kaart.id                   AS id,
@@ -91,9 +104,10 @@ GRANT EXECUTE ON FUNCTION lapsed.muuda_teenuste_tahtaeg(INTEGER, INTEGER, DATE) 
 
 
 /*
-select * from lapsed.lapse_kaart
+select properties->>'alg_kpv', properties->>'lopp_kpv', * from lapsed.lapse_kaart
 where id = 91
 order by id desc limit 10
+
 select lapsed.muuda_teenuste_tahtaeg(70, 91,'2020-12-31')
 
 

@@ -149,7 +149,7 @@ class Vanem extends React.PureComponent {
                         {self.docData.arved ?
                             <Select title="Pank:"
                                     name='pank'
-                                    data={[{id: 1, kood: 'SWED', nimetus: 'Swedpank'},{id:2, kood: 'SEB', nimetus: 'Seb pank'}]}
+                                    data={[{id: 0, kood: '', nimetus: ''}, {id: 1, kood: 'SWED', nimetus: 'Swedpank'},{id:2, kood: 'SEB', nimetus: 'Seb pank'}]}
                                     collId='kood'
                                     value={self.docData.pank || ''}
                                     defaultValue={self.docData.pank}

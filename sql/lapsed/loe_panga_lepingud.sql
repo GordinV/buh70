@@ -103,38 +103,45 @@ BEGIN
                     END IF;
 
                     --  пишем в карточку номер расчетного счета
-                    -- asutus_aa
-                    json_asutus_aa = array_to_json((SELECT array_agg(row_to_json(aa.*))
-                                                    FROM (SELECT json_record.aa AS aa,
-                                                                 l_pank         AS pank) AS aa
-                    ));
-                    -- сохранение
-                    SELECT a.id                          AS id,
-                           a.regkood                     AS regkood,
-                           a.nimetus                     AS nimetus,
-                           a.omvorm                      AS omvorm,
-                           a.kontakt                     AS kontakt,
-                           a.aadress                     AS aadress,
-                           a.tel                         AS tel,
-                           a.email                       AS email,
-                           a.mark                        AS mark,
-                           a.properties ->> 'kmkr'       AS kmkr,
-                           a.properties ->> 'kehtivus'   AS kehtivus,
-                           a.properties ->> 'is_tootaja' AS is_tootaja,
-                           a.muud                        AS muud,
-                           a.tp                          AS tp,
-                           json_asutus_aa                AS asutus_aa
-                           INTO v_asutus
-                    FROM libs.asutus a
-                    WHERE id = l_vanem_id;
+                    -- если нет расчетного счета
+                    IF coalesce(jsonb_array_length((SELECT (a.properties -> 'asutus_aa')::JSONB AS asutus_aa
+                                                    FROM libs.asutus a
+                                                    WHERE a.id = l_vanem_id
+                                                      AND properties ->> 'asutus_aa' IS NOT NULL
+                    )), 0) = 0
+                    THEN
+                        -- asutus_aa
+                        json_asutus_aa = array_to_json((SELECT array_agg(row_to_json(aa.*))
+                                                        FROM (SELECT json_record.aa AS aa,
+                                                                     l_pank         AS pank) AS aa
+                        ));
+                        -- сохранение
+                        SELECT a.id                          AS id,
+                               a.regkood                     AS regkood,
+                               a.nimetus                     AS nimetus,
+                               a.omvorm                      AS omvorm,
+                               a.kontakt                     AS kontakt,
+                               a.aadress                     AS aadress,
+                               a.tel                         AS tel,
+                               a.email                       AS email,
+                               a.mark                        AS mark,
+                               a.properties ->> 'kmkr'       AS kmkr,
+                               a.properties ->> 'kehtivus'   AS kehtivus,
+                               a.properties ->> 'is_tootaja' AS is_tootaja,
+                               a.muud                        AS muud,
+                               a.tp                          AS tp,
+                               json_asutus_aa                AS asutus_aa
+                               INTO v_asutus
+                        FROM libs.asutus a
+                        WHERE id = l_vanem_id;
 
-                    SELECT row_to_json(row) INTO json_params
-                    FROM (SELECT l_vanem_id AS id,
-                                 FALSE      AS import,
-                                 v_asutus   AS data) row;
+                        SELECT row_to_json(row) INTO json_params
+                        FROM (SELECT l_vanem_id AS id,
+                                     FALSE      AS import,
+                                     v_asutus   AS data) row;
 
-                    PERFORM libs.sp_salvesta_asutus(json_params :: JSON, user_id, user_rekvid);
-
+                        PERFORM libs.sp_salvesta_asutus(json_params :: JSON, user_id, user_rekvid);
+                    END IF;
                     count = count + 1;
                 END IF;
             END IF;
