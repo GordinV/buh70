@@ -26,65 +26,6 @@ class GridFilter extends React.PureComponent {
      */
     handleChange(e) {
         this.saveFilterContent(e.target.name, e.target.value);
-        /*
-                let data = this.props.data;
-                let row = data.find(item => item.name === e.target.name);
-
-                // проверим на наличие полей для фильтрации
-                if (!data.length || !row) {
-                    data = prepareData(this.props.gridConfig, this.props.docTypeId);
-                } else {
-                    data = this.props.data;
-                }
-
-                let value = e.target.value,
-                    id = e.target.name,
-                    index,
-                    isIntervalStart = !!id.match(/_start/),
-                    isIntervalEnd = !!id.match(/_end/);
-                let fieldName = id;
-
-                // надо найти элемент массива с данными для этого компонента
-                for (let i = 0; i < data.length; i++) {
-
-                    isIntervalStart = !!id.match(/_start/);
-                    isIntervalEnd = !!id.match(/_end/);
-
-                    if (isIntervalStart) {
-                        // will replace start from firldName
-                        fieldName = id.replace(/_start/i, '');
-                    }
-
-                    if (isIntervalEnd) {
-                        // will replace end from firldName
-                        fieldName = id.replace(/_end/i, '');
-                    }
-
-                    if (data[i].name === (fieldName)) {
-                        index = i;
-                        break;
-                    }
-                }
-
-                if (index > -1) {
-                    if (isIntervalStart) {
-                        data[index].start = value;
-                    }
-                    if (isIntervalEnd) {
-                        data[index].end = value;
-                    }
-
-                    data[index].value = value;
-                }
-
-                // сохраним фильтр
-                DocContext.filter[this.props.docTypeId] = data;
-
-                if (this.props.handler) {
-                    this.props.handler(data);
-                }
-        */
-
         this.forceUpdate();
     }
 

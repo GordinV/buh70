@@ -125,17 +125,18 @@ module.exports = {
             gridConfiguration: [
                 {id: "id", name: "id", width: "1%", show: false},
                 {id: "isikukood", name: "Isikukood", width: "10%", show: true},
-                {id: "nimi", name: "Nimi", width: "20%", show: true},
+                {id: "nimi", name: "Nimi", width: "15%", show: true},
                 {id: "viitenumber", name: "Viitenumber", width: "10%", show: true},
                 {id: "kood", name: "Kood", width: "10%"},
-                {id: "nimetus", name: "Nimetus", width: "20%"},
+                {id: "nimetus", name: "Nimetus", width: "15%"},
                 {id: "hind", name: "Hind", width: "10%", type: "number"},
-                {id: "soodustus", name: "Soodustus", width: "15%"},
-                {id: "uhik", name: "Ühik", width: "10%"},
-                {id: "yksus", name: "Üksus", width: "15%"},
-                {id: "kehtivus", name: "Kehtib", width: "10%"},
-                {id: "inf3", name: "INF3", width: "10%"},
-                {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean'}
+                {id: "soodustus", name: "Soodustus", width: "10%"},
+                {id: "uhik", name: "Ühik", width: "5%"},
+                {id: "yksus", name: "Üksus", width: "10%"},
+                {id: "alg_kpv", name: "Kpv-st", width: "7%", type: 'date', interval: true},
+                {id: "lopp_kpv", name: "Kpv-ni", width: "7%", type: 'date',interval: true},
+                {id: "inf3", name: "INF3", width: "5%"},
+                {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean'}
             ],
             sqlString:
                     `SELECT id,

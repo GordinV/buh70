@@ -62,6 +62,8 @@ FROM ou.userid u
              FROM ou.rekv r
                       JOIN ou.userid u_1 ON u_1.rekvid = r.id
              WHERE u_1.kasutaja::TEXT = l_kasutaja
+               AND r.status <> 3
+               AND u_1.status <> 3
          ) r) rs ON rs.a IS NOT NULL
          JOIN (
     SELECT array_agg('{"id":'::TEXT || lib.id::TEXT || ',"nimetus":"'::TEXT || lib.nimetus || '"}')
@@ -72,7 +74,7 @@ FROM ou.userid u
                     nimetus::TEXT,
                     library::TEXT                          AS lib,
                     (properties::JSONB -> 'module')::JSONB AS module,
-                    (properties::JSONB -> 'roles')::JSONB AS roles
+                    (properties::JSONB -> 'roles')::JSONB  AS roles
              FROM libs.library l
              WHERE l.library = 'DOK'
                AND status <> 3

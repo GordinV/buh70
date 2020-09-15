@@ -14,6 +14,7 @@ SELECT (exists(
                 SELECT 1
                 FROM ou.userid u
                 WHERE id = userId
+                    AND status <> 3
                     AND (((
                             (u.roles ->> 'is_kasutaja')::BOOLEAN OR
                             (u.roles ->> 'is_vaatleja')::BOOLEAN OR

@@ -1,39 +1,40 @@
-DROP VIEW if exists cur_asutuse_struktuur;
-drop function if exists get_asutuse_struktuur(integer);
+DROP VIEW IF EXISTS cur_asutuse_struktuur;
+DROP FUNCTION IF EXISTS get_asutuse_struktuur(INTEGER);
 
 CREATE FUNCTION get_asutuse_struktuur(INTEGER)
- returns table (rekv_id integer, parent_id integer ) AS $$
+    RETURNS TABLE (
+        rekv_id   INTEGER,
+        parent_id INTEGER
+    ) AS
+$$
 WITH RECURSIVE chield_rekv(id, parentid) AS (
-  SELECT
-    id,
-    parentid
-  FROM ou.rekv
-    where id = $1
-  UNION
-  SELECT
-    rekv.id,
-    rekv.parentid
-  FROM chield_rekv, ou.rekv rekv
-  WHERE rekv.parentid = chield_rekv.id
-
+    SELECT id,
+           parentid
+    FROM ou.rekv
+    WHERE id = $1
+    UNION
+    SELECT rekv.id,
+           rekv.parentid
+    FROM chield_rekv,
+         ou.rekv rekv
+    WHERE rekv.parentid = chield_rekv.id
 )
-SELECT
-  id,
-  parentid
+SELECT id,
+       parentid
 FROM chield_rekv;
 
-$$ LANGUAGE SQL;
+$$
+    LANGUAGE SQL;
 
 
-GRANT execute ON FUNCTION get_asutuse_struktuur(INTEGER) TO dbpeakasutaja;
-GRANT execute ON FUNCTION get_asutuse_struktuur(INTEGER) TO dbkasutaja;
-GRANT all ON FUNCTION get_asutuse_struktuur(INTEGER) TO dbadmin;
-GRANT execute ON FUNCTION get_asutuse_struktuur(INTEGER) TO dbvaatleja;
-GRANT execute ON FUNCTION get_asutuse_struktuur(INTEGER)  TO eelaktsepterja;
-GRANT execute ON FUNCTION get_asutuse_struktuur(INTEGER)  TO eelallkirjastaja;
-GRANT execute ON FUNCTION get_asutuse_struktuur(INTEGER) TO eelesitaja;
-GRANT execute ON FUNCTION get_asutuse_struktuur(INTEGER) TO eelkoostaja;
-
+GRANT EXECUTE ON FUNCTION get_asutuse_struktuur(INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION get_asutuse_struktuur(INTEGER) TO dbkasutaja;
+GRANT ALL ON FUNCTION get_asutuse_struktuur(INTEGER) TO dbadmin;
+GRANT EXECUTE ON FUNCTION get_asutuse_struktuur(INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION get_asutuse_struktuur(INTEGER) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION get_asutuse_struktuur(INTEGER) TO eelallkirjastaja;
+GRANT EXECUTE ON FUNCTION get_asutuse_struktuur(INTEGER) TO eelesitaja;
+GRANT EXECUTE ON FUNCTION get_asutuse_struktuur(INTEGER) TO eelkoostaja;
 
 
 /*

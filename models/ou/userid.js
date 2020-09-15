@@ -65,6 +65,7 @@ module.exports = {
                   FROM ou.userid u
                            INNER JOIN ou.rekv r ON r.id = u.rekvid
                   WHERE kasutaja = $1
+                    AND u.status <> 3
                     AND r.status <> 3`,
             query: null,
             multiple: true,
@@ -78,8 +79,8 @@ module.exports = {
                   WHERE ($1 = 0
                       OR u.id = $1)
                     AND r.status <> 3
-                      ORDER BY u.last_login DESC
-                      , u.id DESC;`,
+                  ORDER BY u.last_login DESC
+                         , u.id DESC;`,
             query: null,
             multiple: true,
             alias: 'get_all_users',
