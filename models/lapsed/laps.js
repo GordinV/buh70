@@ -73,14 +73,14 @@ module.exports = {
                          n.kood,
                          n.nimetus,
                          k.hind,
-                         gr.nimetus::TEXT                                                                           AS yksus,
-                         k.properties ->> 'all_yksus'                                                               AS all_yksus,
-                         CASE WHEN (k.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END                   AS inf3,
+                         gr.nimetus::TEXT                                                         AS yksus,
+                         k.properties ->> 'all_yksus'                                             AS all_yksus,
+                         CASE WHEN (k.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3,
                          n.uhik,
                          to_char(coalesce((k.properties ->> 'alg_kpv')::DATE, date(year(), 1, 1)), 'DD.MM.YYYY') ||
                          ' - ' ||
                          to_char(coalesce((k.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)),
-                                 'DD.MM.YYYY')                                                                      AS kehtivus
+                                 'DD.MM.YYYY')                                                    AS kehtivus
                   FROM lapsed.lapse_kaart k
                            INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
                            LEFT OUTER JOIN libs.library gr
@@ -154,7 +154,8 @@ module.exports = {
                             yksused,
                             lapsed.get_viitenumber($1, l.id) AS viitenumber,
                             $1::INTEGER                      AS rekvid,
-                            $2::INTEGER                      AS user_id
+                            $2::INTEGER                      AS user_id,
+                            count(*) OVER ()                 AS rows_total
                      FROM lapsed.cur_lapsed l
                      WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
             `,     //  $1 всегда ид учреждения, $2 - userId

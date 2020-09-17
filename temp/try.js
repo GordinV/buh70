@@ -1,4 +1,4 @@
-let teenus_ilma = 'EE123244545454';
-let tulemus = teenus_ilma.replace(/EUR/g,'');
+let read = 10;
+let filter = 20;
 
-console.log('', tulemus);
+console.log('', read + '/' + filter);

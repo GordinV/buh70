@@ -171,7 +171,8 @@ module.exports = {
                             to_char(v.sooduse_lopp, 'DD.MM.YYYY')                                          AS sooduse_lopp,
                             to_char(v.alg_kpv, 'DD.MM.YYYY')                                               AS alg_kpv,
                             to_char(v.lopp_kpv, 'DD.MM.YYYY')                                              AS lopp_kpv,
-                            v.yksuse_kood
+                            v.yksuse_kood,
+                            count(*) OVER ()                 AS rows_total       
                      FROM lapsed.cur_lapse_kaart v
                      WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
             params: '',

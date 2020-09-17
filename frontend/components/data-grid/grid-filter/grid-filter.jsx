@@ -110,7 +110,6 @@ class GridFilter extends React.PureComponent {
 
     // will update state if props changed
 
-
     static getDerivedStateFromProps(nextProps, prevState) {
 
         if (JSON.stringify(nextProps.gridConfig) !== JSON.stringify(prevState.gridConfig) ||
@@ -213,6 +212,7 @@ class GridFilter extends React.PureComponent {
             valueEnd = defaulValue.end;
         }
         let componentType = row.type ? row.type : 'text';
+//        console.log('valueStart, valueEnd', valueStart, valueEnd)
         if (valueStart && valueEnd) {
             // сохраним значение
             this.saveFilterContent(row.name, valueStart);
@@ -249,45 +249,6 @@ class GridFilter extends React.PureComponent {
 
 }
 
-/*
-function prepareData(gridConfig, docTypeId) {
-    let data = [];
-
-    if (!DocContext.filter) {
-        DocContext.filter = {};
-    }
-
-    if (!DocContext.filter[docTypeId]) {
-        DocContext.filter[docTypeId] = [];
-    }
-
-    // проверим, если фильтр уже сохранен, то вернем уже ранее сохжанный массив
-    if (docTypeId && DocContext.filter[docTypeId].length > 0) {
-        data = DocContext.filter[docTypeId];
-    } else {
-        gridConfig.map((row) => {
-            let defValue = getDefaultValues(row);
-            let start = defValue.start;
-            let end = defValue.end;
-
-            const field = {
-                value: row.value ? row.value : null,
-                name: row.id,
-                type: row.type ? row.type : 'text',
-                interval: !!row.interval,
-                start: row.value ? row.value : start,
-                end: row.value ? row.value : end
-            };
-
-            data.push(field);
-
-        });
-    }
-
-    return data;
-
-}
-*/
 
 /**
  * добавит ноль в месяц или день по необходимости

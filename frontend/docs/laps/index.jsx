@@ -4,7 +4,7 @@ const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const BtnArvesta = require('./../../components/button-register/button-task/index.jsx');
 const ButtonUpload = require('./../../components/upload_button/index.jsx');
-const InputNumber = require('../../components/input-number/input-number.jsx');
+const InputText = require('../../components/input-text/input-text.jsx');
 
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 
@@ -31,12 +31,14 @@ class Documents extends React.PureComponent {
         this.handleClick = this.handleClick.bind(this);
         this.renderer = this.renderer.bind(this);
         this.state = {
-            read: 0
+            read: 0,
+            filtri_read: 0
         };
 
     }
 
     render() {
+        console.log('this.state', this.state);
         return (
             <div>
                 <DocumentRegister initData={this.props.initData}
@@ -46,11 +48,11 @@ class Documents extends React.PureComponent {
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
                                   render={this.renderer}/>
-                <InputNumber title="Read kokku:"
+                <InputText title="Filtri all / read kokku:"
                              name='read_kokku'
                              style={styles.total}
                              ref="input-read"
-                             value={Number(this.state.read) || 0}
+                             value={String(this.state.filtri_read + '/' +  this.state.read)}
                              disabled={true}/>
             </div>
         );
@@ -67,7 +69,8 @@ class Documents extends React.PureComponent {
         });
 
         if (self.gridData) {
-            this.setState({read: self.gridData.length});
+            this.setState({read: self.gridData[0].rows_total,
+                filtri_read: self.gridData[0].filter_total ? self.gridData[0].filter_total: self.gridData[0].rows_total});
         }
 
         return (

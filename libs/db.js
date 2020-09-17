@@ -12,7 +12,7 @@ const db = {
         }; // return data in this form
 
         let prepairedSqlString = sqlString;
-        if (sortBy || sqlWhere) {
+        if (sortBy || sqlWhere || sqlLimit) {
             prepairedSqlString = createSqlString(prepairedSqlString, sortBy, sqlWhere, sqlLimit)
         }
 
@@ -101,8 +101,7 @@ function createSqlString(sql, sortBy, sqlWhere, sqlLimit) {
     if (sqlLimit) {
         rowsLimit = ` LIMIT ${sqlLimit}`;
     }
-
-    return `select * from (${sql}) qry 
+    return `select count(*) over() as filter_total, * from (${sql}) qry 
     ${sqlWhere}   ${sortByColumn}  ${sortByDirection} ${rowsLimit}`;
 }
 
