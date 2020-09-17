@@ -40,6 +40,12 @@ exports.post = async (req, res) => {
             subtotals: subtotals
         };
 
+        // усли указан конвертер, то отдаем данные туда на обработку
+        if (doc.config.grid && doc.config.grid.converter) {
+            data.result.data = doc.config.grid.converter(data.result.data);
+        }
+
+
         // вернуть данные
 
         res.status(200).send(data);

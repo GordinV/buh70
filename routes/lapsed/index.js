@@ -33,6 +33,12 @@ exports.get = async (req, res) => {
         subtotals: Document.config.grid.subtotals ? Document.config.grid.subtotals : []
     };
 
+    // усли указан конвертер, то отдаем данные туда на обработку
+    if (Document.config.grid && Document.config.grid.converter) {
+        sqlData.result.data = Document.config.grid.converter(sqlData.result.data);
+    }
+
+
     let storeInitialData = JSON.stringify(sqlData);
     let userData = JSON.stringify(user);
     let context = {};

@@ -4,6 +4,7 @@ const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const BtnArvesta = require('./../../components/button-register/button-task/index.jsx');
 const ButtonUpload = require('./../../components/upload_button/index.jsx');
+const InputNumber = require('../../components/input-number/input-number.jsx');
 
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 
@@ -29,21 +30,33 @@ class Documents extends React.PureComponent {
         this.onClickHandler = this.onClickHandler.bind(this);
         this.handleClick = this.handleClick.bind(this);
         this.renderer = this.renderer.bind(this);
+        this.state = {
+            read: 0
+        };
+
     }
 
     render() {
         return (
-            <DocumentRegister initData={this.props.initData}
-                              history={this.props.history ? this.props.history : null}
-                              module={this.props.module}
-                              ref='register'
-                              docTypeId={DOC_TYPE_ID}
-                              style={styles}
-                              render={this.renderer}/>
+            <div>
+                <DocumentRegister initData={this.props.initData}
+                                  history={this.props.history ? this.props.history : null}
+                                  module={this.props.module}
+                                  ref='register'
+                                  docTypeId={DOC_TYPE_ID}
+                                  style={styles}
+                                  render={this.renderer}/>
+                <InputNumber title="Read kokku:"
+                             name='read_kokku'
+                             style={styles.total}
+                             ref="input-read"
+                             value={Number(this.state.read) || 0}
+                             disabled={true}/>
+            </div>
         );
     }
 
-    renderer() {
+    renderer(self) {
         let docRights = DocRights['LAPS'] ? DocRights['LAPS'] : [];
         let userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
@@ -52,6 +65,10 @@ class Documents extends React.PureComponent {
             let kas_lubatud = checkRights(userRoles, docRights, event.method);
             return kas_lubatud;
         });
+
+        if (self.gridData) {
+            this.setState({read: self.gridData.length});
+        }
 
         return (
             <ToolbarContainer>
@@ -67,23 +84,23 @@ class Documents extends React.PureComponent {
                     )
                 })}
                 {checkRights(userRoles, docRights, 'importLapsed') ?
-                <ButtonUpload
-                    ref='btnUpload'
-                    docTypeId={DOC_TYPE_ID}
-                    onClick={this.handleClick}
-                    show={true}
-                    value={'Import lapsed'}
-                    mimeTypes={'.csv'}
-                /> : null}
-                {checkRights(userRoles, docRights, 'importViitenr')?
-                <ButtonUpload
-                    ref='btnUpload'
-                    docTypeId={'VIITENR'}
-                    onClick={this.handleClick}
-                    show={true}
-                    value={'Import viitenumbrid'}
-                    mimeTypes={'.csv'}
-                />: null}
+                    <ButtonUpload
+                        ref='btnUpload'
+                        docTypeId={DOC_TYPE_ID}
+                        onClick={this.handleClick}
+                        show={true}
+                        value={'Import lapsed'}
+                        mimeTypes={'.csv'}
+                    /> : null}
+                {checkRights(userRoles, docRights, 'importViitenr') ?
+                    <ButtonUpload
+                        ref='btnUpload'
+                        docTypeId={'VIITENR'}
+                        onClick={this.handleClick}
+                        show={true}
+                        value={'Import viitenumbrid'}
+                        mimeTypes={'.csv'}
+                    /> : null}
 
             </ToolbarContainer>
         )

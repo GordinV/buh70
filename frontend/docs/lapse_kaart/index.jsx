@@ -6,6 +6,7 @@ const BtnTask = require('./../../components/button-register/button-task/index.js
 
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 const ButtonUpload = require('./../../components/upload_button/index.jsx');
+const InputNumber = require('../../components/input-number/input-number.jsx');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'LAPSE_KAART';
@@ -26,21 +27,37 @@ class Documents extends React.PureComponent {
         this.onClickExport = this.onClickExport.bind(this);
         this.onClickTeenusteTahtaegHandler = this.onClickTeenusteTahtaegHandler.bind(this);
         this.renderer = this.renderer.bind(this);
+        this.state = {
+            read: 0
+        };
+
     }
 
     render() {
-        return <DocumentRegister initData={this.props.initData}
-                                 userData={this.props.userData}
-                                 history={this.props.history ? this.props.history : null}
-                                 module={this.props.module}
-                                 ref='register'
-                                 docTypeId={DOC_TYPE_ID}
-                                 style={styles}
-                                 render={this.renderer}/>;
+        return (<div><DocumentRegister initData={this.props.initData}
+                                       userData={this.props.userData}
+                                       history={this.props.history ? this.props.history : null}
+                                       module={this.props.module}
+                                       ref='register'
+                                       docTypeId={DOC_TYPE_ID}
+                                       style={styles}
+                                       render={this.renderer}/>
+                <InputNumber title="Read kokku:"
+                             name='read_kokku'
+                             style={styles.total}
+                             ref="input-read"
+                             value={Number(this.state.read) || 0}
+                             disabled={true}/>
+            </div>
+        )
     }
 
-    renderer() {
+    renderer(self) {
         let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+        if (self.gridData) {
+            this.setState({read: self.gridData.length});
+        }
+
         return (
             <ToolbarContainer>
                 {checkRights(userRoles, docRights, 'muudaTeenusteTahtaeg') ?
@@ -120,7 +137,7 @@ class Documents extends React.PureComponent {
             let url = `/reports/lapse_kaart/${DocContext.userData.uuid}`;
 
             let filter = encodeURIComponent(`${(JSON.stringify(Doc.filterData))}`);
-            let fullUrl = sqlWhere ? `${url}/${filter}/${params}`: `${url}/${filter}`;
+            let fullUrl = sqlWhere ? `${url}/${filter}/${params}` : `${url}/${filter}`;
 
             window.open(fullUrl);
 

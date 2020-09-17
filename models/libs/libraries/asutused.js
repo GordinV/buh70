@@ -54,7 +54,16 @@ module.exports = {
             alias: 'validate_asutus',
             data: []
 
+        },
+        {
+            sql: `SELECT rekl.get_luba_number($1,
+                                              (SELECT rekvid FROM ou.userid WHERE id = $2 LIMIT 1))::VARCHAR(20) AS number`, //$1 - id, $2 userId
+            query: null,
+            multiple: false,
+            alias: 'rekl_number',
+            data: []
         }
+
     ],
     selectAsLibs: `SELECT *
                    FROM com_asutused a

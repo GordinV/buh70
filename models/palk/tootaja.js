@@ -59,7 +59,7 @@ module.exports = {
         },
         {
             sql: `SELECT * from palk.cur_toolepingud t
-                WHERE t.parentid = $1`,
+                WHERE t.parentid = $1 and rekvid in (select rekvid from ou.userid where id = $2)`,
             query: null,
             multiple: true,
             alias: 'tooleping',

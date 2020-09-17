@@ -61,8 +61,8 @@ describe('dok. type Tootaja tests', function () {
     });
 
     it('should have copy in buh62 folder', (done) => {
-        let targetFile =  path.join('C:\\avpsoft\\buh62\\models\\', modelForExport + '.xml');
-        let copyFile =  path.join('C:\\avpsoft\\buh70\\models\\', modelForExport + '_copy.xml');
+        let targetFile =  path.join('C:\\development\\buh62\\models\\', modelForExport + '.xml');
+        let copyFile =  path.join('C:\\development\\buh70\\models\\', modelForExport + '_copy.xml');
         expect(fs.existsSync(sourceFile)).toBeTruthy();
         fs.copyFileSync(sourceFile, copyFile);
         expect(fs.existsSync(copyFile)).toBeTruthy();

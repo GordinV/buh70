@@ -124,6 +124,7 @@ module.exports = {
         {
             gridConfiguration: [
                 {id: "id", name: "id", width: "1%", show: false},
+                {id: "row_id", name: "Jrk", width: "3%", show: true, hideFilter: true},
                 {id: "isikukood", name: "Isikukood", width: "10%", show: true},
                 {id: "nimi", name: "Nimi", width: "15%", show: true},
                 {id: "viitenumber", name: "Viitenumber", width: "10%", show: true},
@@ -173,10 +174,17 @@ module.exports = {
                             v.yksuse_kood
                      FROM lapsed.cur_lapse_kaart v
                      WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
-            params:
-                '',
-            alias:
-                'curLapsed'
+            params: '',
+            alias:  'curLapsed',
+            converter: function (data) {
+                let row_id = 0;
+                return data.map(row => {
+                    row_id++;
+                    row.row_id = row_id;
+                    return row;
+                })
+            }
+
         },
     print: [
         {

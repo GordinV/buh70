@@ -267,7 +267,7 @@ class DataGrid extends React.Component {
      * @param name - наименование колонки
      */
     handleGridHeaderClick(name) {
-        if (name === 'valitud') {
+        if (name === 'valitud' || name === 'row_id') {
             // виртуальная колонка
             return;
         }

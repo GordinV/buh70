@@ -139,6 +139,7 @@ module.exports = {
         {
             gridConfiguration: [
                 {id: "id", name: "id", width: "10%", show: false},
+                {id: "row_id", name: "Jrk", width: "3%", show: true, hideFilter: true},
                 {id: "isikukood", name: "Isikukood", width: "30%"},
                 {id: "nimi", name: "Nimi", width: "40%"},
                 {id: "viitenumber", name: "Viitenumber", width: "20%"},
@@ -158,8 +159,16 @@ module.exports = {
                      WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
             `,     //  $1 всегда ид учреждения, $2 - userId
             params: ['rekvid', 'userid'],
-            alias:
-                'curLapsed'
+            alias: 'curLapsed',
+            converter: function (data) {
+                let row_id = 0;
+                return data.map(row => {
+                    row_id++;
+                    row.row_id = row_id;
+                    return row;
+                })
+            }
+
         },
     koostaArve: {
         command: `SELECT error_code, result, error_message, doc_type_id
