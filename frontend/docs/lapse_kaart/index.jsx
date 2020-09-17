@@ -43,7 +43,7 @@ class Documents extends React.PureComponent {
                                        docTypeId={DOC_TYPE_ID}
                                        style={styles}
                                        render={this.renderer}/>
-                <InputText title="Read kokku:"
+                <InputText title="Filtri all / read kokku:"
                            name='read_kokku'
                            style={styles.total}
                            ref="input-read"
