@@ -9,6 +9,7 @@ const InputText = require('../../components/input-text/input-text.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 
 const styles = require('./laps-register-styles');
+
 const DOC_TYPE_ID = 'LAPS';
 const EVENTS = [
     {name: 'Tabeli koostamine', method: 'arvestaTaabel', docTypeId: 'lapse_taabel'},
@@ -38,7 +39,6 @@ class Documents extends React.PureComponent {
     }
 
     render() {
-        console.log('this.state', this.state);
         return (
             <div>
                 <DocumentRegister initData={this.props.initData}
@@ -68,9 +68,9 @@ class Documents extends React.PureComponent {
             return kas_lubatud;
         });
 
-        if (self.gridData) {
+        if (self.gridData && self.gridData.length &&  self.gridData[0].rows_total) {
             this.setState({read: self.gridData[0].rows_total,
-                filtri_read: self.gridData[0].filter_total ? self.gridData[0].filter_total: self.gridData[0].rows_total});
+                filtri_read: self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total: self.gridData[0].rows_total});
         }
 
         return (

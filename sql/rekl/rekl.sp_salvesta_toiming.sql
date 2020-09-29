@@ -39,7 +39,7 @@ DECLARE
   a_docs_ids       INTEGER [];
 BEGIN
 
-  SELECT kasutaja
+    SELECT kasutaja
   INTO userName
   FROM ou.userid u
   WHERE u.rekvid = user_rekvid AND u.id = userId;

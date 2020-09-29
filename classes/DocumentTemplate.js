@@ -126,6 +126,8 @@ class Document {
 
             })
         }
+
+        console.log('sqlWhere', sqlWhere);
         return await db.queryDb(sql, params, sortBy, sqlWhere, limit);
     }
 

@@ -142,22 +142,25 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/lapse_kaart"
                        render={(props) => <LasteTeenustRegister history={props.history}
-                                                                initData={this.props.initData} module={MODULE}/>}/>
+                                                                initData={props.initData}
+                                                                module={MODULE}/>}
+                />
                 <Route exact path="/lapsed/lapse_kaart/:docId" component={LapseKaartDokument}/>
 
                 <Route exact path="/lapsed/lapse_taabel"
                        render={(props) => <LasteTaabelRegister history={props.history}
-                                                               initData={this.props.initData} module={MODULE}/>}/>
+                                                               initData={props.initData} module={MODULE}/>}/>
                 <Route exact path="/lapsed/lapse_taabel/:docId" component={LapseTaabelDokument}/>
 
                 <Route exact path="/lapsed/paeva_taabel"
                        render={(props) => <PaevaTaabelRegister history={props.history}
-                                                               initData={this.props.initData} module={MODULE}/>}/>
+                                                               initData={props.initData} module={MODULE}/>}/>
                 <Route exact path="/lapsed/paeva_taabel/:docId" component={PaevaTaabelDokument}/>
 
                 <Route exact path="/lapsed/arv"
                        render={(props) => <ArvedeRegister history={props.history}
-                                                          initData={this.props.initData} module={MODULE}/>}/>
+                                                          initData={props.initData} module={MODULE}/>}
+                />
                 <Route exact path="/lapsed/arv/:docId"
                        render={(props) => <ArveDocument {...props} history={props.history}/>}/>
 
@@ -168,14 +171,14 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/smk"
                        render={(props) => <SmkRegister history={props.history}
-                                                       initData={this.props.initData}
+                                                       initData={props.initData}
                                                        module={MODULE}/>}/>
                 <Route exact path="/lapsed/smk/:docId"
                        render={(props) => <SmkDocument {...props} history={props.history}/>}/>
 
                 <Route exact path="/lapsed/vmk"
                        render={(props) => <VmkRegister history={props.history}
-                                                       initData={this.props.initData}
+                                                       initData={props.initData}
                                                        module={MODULE}/>}/>
                 <Route exact path="/lapsed/vmk/:docId"
                        render={(props) => <VmkDocument {...props}
@@ -186,7 +189,7 @@ class App extends React.Component {
                        render={(props) =>
                            <SorderideRegister
                                history={props.history}
-                               initData={this.props.initData}
+                               initData={props.initData}
                                module={MODULE}/>}
                 />
                 <Route exact path="/lapsed/sorder/:docId"
@@ -195,7 +198,7 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/nomenclature"
                        render={(props) => <NomRegister history={props.history}
-                                                       initData={this.props.initData} module={MODULE}/>}/>
+                                                       initData={props.initData} module={MODULE}/>}/>
                 <Route exact path="/lapsed/nomenclature/:docId"
                        render={(props) => <NomDocument {...props}
                                                        module={MODULE}
@@ -207,14 +210,14 @@ class App extends React.Component {
                        render={(props) => <TunnusRegister
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
 
                 <Route exact path="/lapsed/teatis/:docId" component={TeatisDocument}/>
                 <Route exact path="/lapsed/teatis"
                        render={(props) => <TeatisRegister
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
 
                 <Route exact path="/lapsed/pank_vv"
                        render={(props) => <PankVVRegister
@@ -250,31 +253,31 @@ class App extends React.Component {
                        render={(props) => <Inf3Report
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
 
                 <Route exact path="/lapsed/laps_kokkuvotte"
                        render={(props) => <ChildSummaryReport
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
 
                 <Route exact path="/lapsed/arved_koodi_jargi"
                        render={(props) => <ArvedKoodiJargiReport
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
 
                 <Route exact path="/lapsed/saldo_ja_kaive"
                        render={(props) => <SaldoJaKaiveReport
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
 
                 <Route exact path="/lapsed/sent_docs"
                        render={(props) => <SentDocsReport
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
 
                 <Route exact path="/lapsed/child_age"
                        render={(props) => <ChildAgeReport
@@ -285,7 +288,7 @@ class App extends React.Component {
                        render={(props) => <SoodustusedReport
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
                 <Route exact path="/lapsed/statistika"
                        render={(props) => <StatistikaReport
                            module={MODULE}
@@ -295,17 +298,17 @@ class App extends React.Component {
                        render={(props) => <EbatoenaolisedReport
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
                 <Route exact path="/lapsed/kondarve"
                        render={(props) => <KondArveReport
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
                 <Route exact path="/lapsed/aasta_naitajad"
                        render={(props) => <AastaNaitajadReport
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
                 <Route exact path="/lapsed/kuu_taabel"
                        render={(props) => <KuuTaabel
                            module={MODULE}
@@ -320,13 +323,13 @@ class App extends React.Component {
                        render={(props) => <KohalolekuAruanne
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
 
                 <Route exact path="/lapsed/asutuse_liik"
                        render={(props) => <AsutuseLiikRegister
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
                 <Route exact path="/lapsed/asutuse_liik/:docId"
                        render={(props) => <AsutuseLiikDocument {...props}
                                                                module={MODULE}
@@ -336,7 +339,7 @@ class App extends React.Component {
                        render={(props) => <KoolituseTyypRegister
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
                 <Route exact path="/lapsed/koolituse_tyyp/:docId"
                        render={(props) => <KoolituseTyypDocument {...props}
                                                                  module={MODULE}
@@ -346,7 +349,7 @@ class App extends React.Component {
                        render={(props) => <KoolituseLiikRegister
                            module={MODULE}
                            history={props.history}
-                           initData={this.props.initData}/>}/>
+                           initData={props.initData}/>}/>
                 <Route exact path="/lapsed/koolituse_Liik/:docId"
                        render={(props) => <KoolituseLiikDocument {...props}
                                                                  module={MODULE}

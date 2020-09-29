@@ -31,6 +31,8 @@ BEGIN
                toopaev,
                (SELECT palk.get_work_days((SELECT row_to_json(row)
                                            FROM (SELECT day(p.kpv1) AS paev,
+                                                        month(p.kpv1) as kuu,
+                                                        year(p.kpv1) as aasta,
                                                         day(p.kpv2) AS lopp) row) :: JSON)) AS too_kpv
         FROM palk.cur_puudumine p
                  INNER JOIN palk.tooleping t ON t.id = p.lepingid
@@ -61,12 +63,13 @@ BEGIN
             END IF;
 
             -- arvestame tunnid
+            -- законментил отпуск за свой счет , Relika , 23.09.2020
 
-            IF (qryPuhkused.pohjus = 'PUHKUS' AND qryPuhkused.tyyp = 4)
-            THEN
+--            IF (qryPuhkused.pohjus = 'PUHKUS' AND qryPuhkused.tyyp in (4))
+--            THEN
                 -- except
-                RAISE NOTICE 'except';
-            ELSE
+--                RAISE NOTICE 'except';
+--            ELSE
                 l_result = l_result + CASE
                                           WHEN month(qryPuhkused.kpv1) = month(qryPuhkused.kpv2)
                                               THEN (qryPuhkused.kpv2 - qryPuhkused.kpv1) + 1
@@ -75,7 +78,7 @@ BEGIN
                                               THEN qryPuhkused.kpv2 - make_date(l_aasta, l_kuu, 1) + 1
                                           ELSE get_last_day(qryPuhkused.kpv1) - qryPuhkused.kpv1 + 1 END;
 
-            END IF;
+--            END IF;
 
             -- arvestame holidays in periood
             l_miinus_holidays = l_miinus_holidays + (SELECT count(*)

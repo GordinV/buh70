@@ -9,6 +9,7 @@ const ButtonUpload = require('./../../components/upload_button/index.jsx');
 const InputText = require('../../components/input-text/input-text.jsx');
 
 const styles = require('./styles');
+const gridConfig = require('./../../../models/lapsed/lapse_kaart').grid.gridConfiguration;
 const DOC_TYPE_ID = 'LAPSE_KAART';
 
 const DocRights = require('./../../../config/doc_rights');
@@ -36,6 +37,7 @@ class Documents extends React.PureComponent {
 
     render() {
         return (<div><DocumentRegister initData={this.props.initData}
+                                       gridConfig = {gridConfig}
                                        userData={this.props.userData}
                                        history={this.props.history ? this.props.history : null}
                                        module={this.props.module}
@@ -55,10 +57,11 @@ class Documents extends React.PureComponent {
 
     renderer(self) {
         let userRoles = DocContext.userData ? DocContext.userData.roles : [];
-        if (self.gridData) {
+        if (self && self.gridData )  {
+            let rows_total = self.gridData.length && self.gridData[0].rows_total ? self.gridData[0].rows_total: 0;
             this.setState({
-                read: self.gridData[0].rows_total,
-                filtri_read: self.gridData[0].filter_total ? self.gridData[0].filter_total : self.gridData[0].rows_total
+                read: rows_total,
+                filtri_read: self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : rows_total
             });
         }
 

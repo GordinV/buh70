@@ -27,8 +27,8 @@ BEGIN
   IF l_kpv >= v_luba.algkpv AND l_kpv <= v_luba.loppkpv
   THEN
     l_summa = v_luba.summa;
-  ELSE
-    RAISE EXCEPTION 'Vigane period %', l_kpv;
+--  ELSE
+--    RAISE EXCEPTION 'Vigane period %', l_kpv;
   END IF;
 
   IF v_luba.kord = 'PAEV'

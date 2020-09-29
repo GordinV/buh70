@@ -7,6 +7,8 @@ const DocContext = require('./../../doc-context.js');
 const Menu = require('./../../components/menu-toolbar/menu-toolbar.jsx');
 const DocRights = require('./../../../config/doc_rights');
 const checkRights = require('./../../../libs/checkRights');
+const getDefaultDates = require('./../../../libs/getDefaultDate');
+const prepareSqlWhereFromFilter = require('./../../../libs/prepareSqlWhereFromFilter');
 
 const
     DataGrid = require('./../../components/data-grid/data-grid.jsx'),
@@ -36,18 +38,18 @@ class Documents extends React.Component {
         super(props);
 
         this.gridData = [];
-        this.gridConfig = [];
+        this.gridConfig = props.gridConfig ? props.gridConfig: [];
         this.filterData = DocContext.filter && DocContext.filter[props.docTypeId] ? DocContext.filter[props.docTypeId] : [];
         this.startMenuData = []; // здесь будут данные для старт меню
 
         if (props.initData && props.initData.result) {
             this.gridData = props.initData.result.data || [];
-            this.gridConfig = props.initData.gridConfig || [];
+            this.gridConfig = !this.gridConfig.length ? props.initData.gridConfig: [];
             this.subtotals = props.initData.subtotals || [];
         } else if (props.initData && props.initData.gridData) {
 
             this.gridData = props.initData.gridData || [];
-            this.gridConfig = props.initData.gridConfig || [];
+            this.gridConfig = !this.gridConfig.length ? props.initData.gridConfig: [];
             this.subtotals = [];
         }
 
@@ -71,8 +73,8 @@ class Documents extends React.Component {
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
             'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick',
             'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
-            'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData', 'prepareSqlWhereFromFilter',
-            'handleInputChange', 'btnEmailClick');
+            'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData',
+            'handleInputChange', 'btnEmailClick', 'createEmptyFilterData');
 
     }
 
@@ -87,18 +89,21 @@ class Documents extends React.Component {
 
         let reload = false; // if reload === true then it will call to reload
 
-        if (this.props.initData.docTypeId && this.props.initData.docTypeId.toUpperCase() !== this.docTypeId.toUpperCase()) {
+        if (this.props.initData && this.props.initData.docTypeId && this.props.initData.docTypeId.toUpperCase() !== this.docTypeId.toUpperCase()) {
             reload = true;
         }
 
-        if (this.props.history && this.props.history.location.state) {
+        if (!reload && this.props.history && this.props.history.location.state) {
+            if (!this.filterData.length) {
+                this.filterData = this.createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
+            }
             this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
             reload = true;
 
         } else {
             // проверим сохраненный фильтр для этого типа
-            if (DocContext.filter[this.props.docTypeId] && DocContext.filter[this.props.docTypeId].length > 0) {
-                this.filterData = DocContext.filter[this.props.docTypeId];
+            if (DocContext.filter[this.docTypeId] && DocContext.filter[this.docTypeId].length > 0) {
+                this.filterData = DocContext.filter[this.docTypeId];
                 reload = true;
             }
         }
@@ -106,7 +111,7 @@ class Documents extends React.Component {
         if (reload || !this.props.initData || !this.gridData.length || !this.props.initData.docTypeId) {
 
             // проверим на фильтр
-            let sqlWhere = this.prepareSqlWhereFromFilter();
+            let sqlWhere = prepareSqlWhereFromFilter(this.filterData, this.docTypeId);
 
             //делаем запрос на получение данных
             this.setState({sqlWhere: sqlWhere}, () => {
@@ -116,13 +121,19 @@ class Documents extends React.Component {
         }
 
         // will save current docTypeid
-        DocContext['docTypeId'] = this.props.docTypeId;
+        DocContext['docTypeId'] = this.docTypeId;
 
         // if lastDocId available, will point it as selected
-        if (DocContext[(this.props.docTypeId).toLowerCase()]) {
-            let docId = DocContext[(this.props.docTypeId).toLowerCase()];
+        if (DocContext[(this.docTypeId).toLowerCase()]) {
+            let docId = DocContext[(this.docTypeId).toLowerCase()];
             this.setState({value: docId});
         }
+
+        if (reload || !this.props.initData || !this.gridData.length || !this.props.initData.docTypeId) {
+            //делаем запрос на получение данных
+            this.fetchData('selectDocs');
+        }
+
     }
 
     // присвоит фильтру значения переданные в параметре
@@ -130,13 +141,12 @@ class Documents extends React.Component {
         let keys = Object.keys(parameters);
         keys.forEach((key) => {
             // find row in filter array
-            let filterRowIndex = filter.findIndex(row => row.name === key);
+            let filterRowIndex = filter.findIndex(row => row.id === key);
 
             if (filterRowIndex >= 0 && parameters[key]) {
                 filter[filterRowIndex].value = parameters[key];
             }
         });
-
         return filter;
     }
 
@@ -197,7 +207,7 @@ class Documents extends React.Component {
                                    show={true}>
                             <GridFilter ref='gridFilter'
                                         focusElement={this.gridConfig[1].id}
-                                        docTypeId={this.props.docTypeId}
+                                        docTypeId={this.docTypeId}
                                         handler={this.filterDataHandler}
                                         gridConfig={this.gridConfig}
                                         data={this.filterData}/>
@@ -253,6 +263,9 @@ class Documents extends React.Component {
      * откроет модальное окно с полями для фильтрации
      */
     btnFilterClick() {
+        if (!this.filterData.length) {
+            this.filterData = this.createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
+        }
         this.setState({getFilter: true})
     }
 
@@ -316,10 +329,10 @@ class Documents extends React.Component {
         let filter = encodeURIComponent(`${JSON.stringify(this.filterData)}`);
 
         if (this.filterData.length) {
-            url = `/print/${this.props.docTypeId}/${DocContext.userData.uuid}/${filter}`;
+            url = `/print/${this.docTypeId}/${DocContext.userData.uuid}/${filter}`;
 
         } else {
-            url = `/print/${this.props.docTypeId}/${DocContext.userData.uuid}/0`;
+            url = `/print/${this.docTypeId}/${DocContext.userData.uuid}/0`;
         }
         window.open(`${url}/${params}`);
 
@@ -335,10 +348,10 @@ class Documents extends React.Component {
         let filter = encodeURIComponent(`${JSON.stringify(this.filterData)}`);
 
         if (this.filterData.length) {
-            url = `/pdf/${this.props.docTypeId}/${DocContext.userData.uuid}/${filter}`;
+            url = `/pdf/${this.docTypeId}/${DocContext.userData.uuid}/${filter}`;
 
         } else {
-            url = `/pdf/${this.props.docTypeId}/${DocContext.userData.uuid}/0`;
+            url = `/pdf/${this.docTypeId}/${DocContext.userData.uuid}/0`;
         }
         window.open(`${url}/${params}`);
 
@@ -355,7 +368,7 @@ class Documents extends React.Component {
         if (btnEvent === 'Ok') {
             // собираем данные
 
-            filterString = this.prepareSqlWhereFromFilter();
+            filterString = prepareSqlWhereFromFilter(this.filterData, this.docTypeId);
         } else {
             filterString = '';
 
@@ -391,7 +404,7 @@ class Documents extends React.Component {
                     } else {
                         this.fetchData('selectDocs');
                         // если есть в кеше , то чиcтим
-                        let lib = this.props.docTypeId.toLowerCase();
+                        let lib = this.docTypeId.toLowerCase();
                         if (DocContext.libs[lib] && DocContext.libs[lib].length > 0) {
                             DocContext.libs[lib] = []
                         }
@@ -399,63 +412,6 @@ class Documents extends React.Component {
                     }
                 });
         }
-    }
-
-    prepareSqlWhereFromFilter() {
-        let filterString = ''; // строка фильтра
-
-        this.filterData = this.filterData.map((row) => {
-            if (row.value) {
-                filterString = filterString + (filterString.length > 0 ? " and " : " where ");
-                switch (row.type) {
-
-                    case 'text':
-
-                        let prepairedParameter = row.value.split(',').map(str => `'${str.trim()}'`).join(',');
-
-                        // если параметры раздедены, то множественный параметр
-                        if (row.value.match(/,/)) {
-                            filterString = `${filterString} ${row.name} in (${prepairedParameter})`;
-                        } else {
-                            if (this.props.docTypeId == 'KUU_TAABEL') {
-                                filterString = `${filterString}  upper(${row.name})  like upper('%${row.value.trim()}%')`;
-                            } else {
-                                // обработка некорректной кодировки
-                                filterString = `${filterString}  upper(${row.name})  like upper('%${row.value.trim()}%')`;
-
-                            }
-                        }
-                        break;
-                    case 'string':
-                        filterString = `${filterString}  upper(${row.name}) like upper('%${row.value.trim()}%')`;
-                        break;
-                    case 'date':
-                        if ('start' in row) {
-                            filterString = `${filterString} format_date(${row.name}::text)  >=  format_date('${row.start}'::text) and format_date(${row.name}::text)  <=  format_date('${row.end}'::text)`;
-                        } else {
-                            filterString = filterString + row.name + " = '" + row.value + "'";
-                        }
-
-                        break;
-                    case 'number':
-                        if ('start' in row) {
-                            filterString = `${filterString} ${row.name}::numeric  >=  ${row.start} and ${row.name}::numeric  <=  ${row.end} `;
-                        } else {
-                            filterString = filterString + row.name + "::numeric = " + row.value;
-                        }
-                        break;
-                    case 'integer':
-                        if ('start' in row) {
-                            filterString = `${filterString} ${row.name}  >=  ${row.start} and ${row.name}  <=  ${row.end} `;
-                        } else {
-                            filterString = filterString + row.name + "::integer = " + row.value;
-                        }
-                        break;
-                }
-            }
-            return row;
-        }, this);
-        return filterString;
     }
 
     /**
@@ -470,12 +426,12 @@ class Documents extends React.Component {
             DocContext.filter = {};
         }
 
-        if (!DocContext.filter[this.props.docTypeId]) {
-            DocContext.filter[this.props.docTypeId] = [];
+        if (!DocContext.filter[this.docTypeId]) {
+            DocContext.filter[this.docTypeId] = [];
         }
 
         if (data && data.length > 0 && this.props.history.location && this.props.history.location.state) {
-            DocContext.filter[this.props.docTypeId] = this.filterData;
+            DocContext.filter[this.docTypeId] = this.filterData;
         }
 
     }
@@ -582,7 +538,7 @@ class Documents extends React.Component {
                         <BtnEmail onClick={this.btnEmailClick.bind(this)}
                                   show={toolbarParams['btnEmail'].show}
                                   value={'Email'}
-                                  docTypeId={this.props.docTypeId}
+                                  docTypeId={this.docTypeId}
                                   disable={toolbarParams['btnEmail'].disabled}/>
                         <BtnFilter onClick={this.btnFilterClick}/>
                         <BtnRefresh onClick={this.btnRefreshClick}/>
@@ -679,6 +635,7 @@ class Documents extends React.Component {
      */
     fetchData(method, additionalData) {
         let URL = `/newApi`;
+        let sqlWhere = this.state.sqlWhere;
         switch (method) {
             case 'delete':
                 URL = `/newApi/delete`;
@@ -688,6 +645,16 @@ class Documents extends React.Component {
                 break;
             case 'selectDocs':
                 URL = `/newApi`;
+                if (this.props.history && this.props.history.location.state) {
+                    if (!this.filterData.length) {
+                        this.filterData = this.createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
+                    }
+
+                    this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
+                    sqlWhere = prepareSqlWhereFromFilter(this.filterData, this.docTypeId);
+                    this.props.history.location.state = null;
+
+                }
                 break;
             default:
                 URL = `/${method}`;
@@ -700,7 +667,7 @@ class Documents extends React.Component {
             limit: this.state.limit, // row limit in query
             docId: this.state.value,
             method: method,
-            sqlWhere: this.state.sqlWhere, // динамический фильтр грида
+            sqlWhere: sqlWhere, // динамический фильтр грида
             filterData: this.filterData,
             lastDocId: null,
             module: this.props.module,
@@ -743,29 +710,21 @@ class Documents extends React.Component {
                             //refresh filterdata
                             if (!this.state.isEmptyFilter &&
                                 DocContext.filter &&
-                                DocContext.filter[this.props.docTypeId] &&
+                                DocContext.filter[this.docTypeId] &&
                                 this.filterData &&
                                 this.gridConfig.length === this.filterData.length) {
 
                                 // есть сохраненный фильтр
-                                this.filterData = DocContext.filter[this.props.docTypeId];
+                                this.filterData = DocContext.filter[this.docTypeId];
                             } else {
-                                this.setState({isEmptyFilter: false});
+                                // создать массив фильтра
+                                this.filterData = this.createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
 
-                                this.filterData = this.gridConfig.map((row) => {
-                                    // props.data пустое, создаем
-                                    let value = row.value ? row.value : null;
-                                    return {value: value, name: row.id, type: row.type ? row.type : 'text'};
-                                });
-                                DocContext.filter[this.props.docTypeId] = this.filterData;
+                                // создать строку фильтрации
+                                let sqlWhere = prepareSqlWhereFromFilter(this.filterData, this.docTypeId);
 
+                                this.setState({isEmptyFilter: false, sqlWhere: sqlWhere});
                             }
-                        }
-
-                        //apply filter
-                        if (this.props.history && this.props.history.location.state) {
-                            this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
-                            this.props.history.location.state = null;
                         }
 
                         // если задан триггер, вызовем его
@@ -794,13 +753,43 @@ class Documents extends React.Component {
     }
 
     /**
+     * создаст массив для создания фильтра
+     */
+    createEmptyFilterData(gridConfig, filterData, docTypeId) {
+        filterData = gridConfig.map((row) => {
+            // props.data пустое, создаем
+            let value = row.value ? row.value : null;
+
+            if (row.default) {
+
+                const defaultValue = getDefaultDates(row.default);
+                value = defaultValue.start;
+                if (row.interval) {
+                    row.start = defaultValue.start;
+                    row.end = defaultValue.end;
+                }
+            }
+
+            if (!row.type) {
+                row.type = 'text';
+            }
+            row.value = value;
+            return row;
+
+        });
+
+        DocContext.filter[docTypeId] = filterData;
+        return filterData;
+    }
+
+    /**
      * обработчик для кнопки отправки почты
      */
     btnEmailClick() {
         // сохраним параметры для формирования вложения в контексте
         DocContext['email-params'] = {
             docId: this.state.docId,
-            docTypeId: this.props.docTypeId,
+            docTypeId: this.docTypeId,
             queryType: 'sqlWhere', // ид - документ
             sqlWhere: this.state.sqlWhere,
             filterData: this.filterData
@@ -814,42 +803,6 @@ class Documents extends React.Component {
         methods.forEach((method) => this[method] = this[method].bind(this));
     }
 
-
-}
-
-
-function prepareData(gridConfig, docTypeId) {
-    let data = [];
-
-
-    if (!DocContext.filter) {
-        DocContext.filter = {};
-    }
-
-    if (!DocContext.filter[docTypeId]) {
-        DocContext.filter[docTypeId] = [];
-    }
-
-    // проверим, если фильтр уже сохранен, то вернем уже ранее сохжанный массив
-    if (docTypeId && DocContext.filter[docTypeId].length > 0) {
-        data = DocContext.filter[docTypeId];
-    } else {
-        gridConfig.map((row) => {
-            const field = {
-                value: row.value ? row.value : null,
-                name: row.id,
-                type: row.type ? row.type : 'text',
-                interval: !!row.interval,
-                start: row.value ? row.value : null,
-                end: row.value ? row.value : null
-            };
-
-            data.push(field);
-
-        });
-    }
-
-    return data;
 
 }
 
@@ -869,5 +822,4 @@ Documents.defaultProps = {
 
 
 module.exports = (Documents);
-
 

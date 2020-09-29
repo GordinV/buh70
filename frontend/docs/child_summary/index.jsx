@@ -6,6 +6,8 @@ const InputNumber = require('../../components/input-number/input-number.jsx');
 const getSum = require('./../../../libs/getSum');
 
 const styles = require('./styles');
+const gridConfig = require('./../../../models/aruanned/lapsed/laps_kokkuvotte').grid.gridConfiguration;
+
 const DOC_TYPE_ID = 'LAPS_KOKKUVOTTE';
 const TOOLBAR_PROPS = {
     add: false,
@@ -36,6 +38,7 @@ class Documents extends React.PureComponent {
         return (
             <div>
                 <DocumentRegister initData={this.props.initData}
+                                  gridConfig = {gridConfig}
                                   history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
                                   ref='register'

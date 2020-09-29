@@ -11,6 +11,8 @@ const InputNumber = require('../../components/input-number/input-number.jsx');
 const getSum = require('./../../../libs/getSum');
 
 const styles = require('./arv-register-styles');
+const gridConfig = require('./../../../models/lapsed/arv').grid.gridConfiguration;
+
 const DOC_TYPE_ID = 'ARV';
 const DocContext = require('./../../doc-context.js');
 const EVENTS = [
@@ -43,6 +45,7 @@ class Documents extends React.PureComponent {
         return (
             <div>
                 <DocumentRegister initData={this.props.initData}
+                                  gridConfig = {gridConfig}
                                   history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
                                   ref='register'

@@ -20,15 +20,19 @@ DECLARE
     l_tunnid           NUMERIC        = 0;
     l_toopaevad        INT            = 0;
     l_alg_paev         INTEGER        = 1;
-    l_maxdays          INTEGER        = DAY(GOMONTH(DATE(l_aasta, l_kuu, 1), 1) - 1);
-    l_lopp_paev        INTEGER        = l_maxdays;
+    l_maxdays          INTEGER;
+    l_lopp_paev        INTEGER;
 
-    l_kpv              DATE           = make_date(l_aasta, l_kuu, l_maxdays);
+    l_kpv              DATE;
     params             JSONB;
     l_tahtpaeva_tunnid NUMERIC(12, 4) = 0;
 
 BEGIN
-
+    RAISE NOTICE 'start';
+    l_maxdays = DAY(((make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month') - INTERVAL '1 day')::DATE);
+    l_kpv = make_date(l_aasta, l_kuu, l_maxdays);
+    l_lopp_paev = l_maxdays;
+    RAISE NOTICE 'l_kpv %, l_maxdays %',l_kpv,l_maxdays;
 
     SELECT t.* INTO v_tooleping
     FROM palk.tooleping t
@@ -46,6 +50,8 @@ BEGIN
         l_lopp_paev = day(v_Tooleping.lopp);
     END IF;
 
+    RAISE NOTICE 'l_alg_paev %, l_lopp_paev %', l_alg_paev, l_lopp_paev;
+
     -- check work table
     SELECT t.tund INTO l_hours
     FROM palk.Toograf t
@@ -59,7 +65,7 @@ BEGIN
     THEN
         -- calculate hours
 
-        -- arv puhkuse paevad
+          -- arv puhkuse paevad
         SELECT row_to_json(row) INTO params
         FROM (SELECT l_kuu      AS kuu,
                      l_aasta    AS aasta,
@@ -108,7 +114,7 @@ BEGIN
         FROM (SELECT l_kuu       AS kuu,
                      l_aasta     AS aasta,
                      l_kpv       AS kpv,
-                     null  AS lepingid,
+                     NULL        AS lepingid,
                      l_alg_paev  AS paev,
                      l_lopp_paev AS lopp) row;
 
@@ -120,7 +126,7 @@ BEGIN
 
         l_toopaevad = (SELECT palk.get_work_days(params::JSON));
 
-        l_hours = l_toopaevad *  v_Tooleping.toopaev - l_tahtpaeva_tunnid;
+        l_hours = l_toopaevad * v_Tooleping.toopaev - l_tahtpaeva_tunnid;
 
         IF l_hours < 0
         THEN
@@ -170,11 +176,17 @@ $$;
 GRANT EXECUTE ON FUNCTION palk.sp_calc_taabel1(JSONB) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION palk.sp_calc_taabel1(JSONB) TO dbpeakasutaja;
 
+SELECT palk.sp_calc_taabel1('{
+  "aasta": 2020,
+  "kuu": 9,
+  "lepingid": 24447
+}'::JSONB);
+-- -> 145 ?
+
 
 /*
 select palk.sp_calc_taabel1(null::JSONB); -- -> 0
 
-select palk.sp_calc_taabel1('{"aasta":2020,"kuu":3,"lepingid":19394}'::JSONB); -- -> 145 ?
 
 select * from palk.tooleping where parentid in (select id from libs.asutus where regkood = '46312213713')
 */

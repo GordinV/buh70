@@ -194,7 +194,6 @@ class Laps extends React.PureComponent {
                 DocContext.pageName = page.pageName;
             }
         }
-
         this.props.history.push({
             pathname: `/lapsed/${pageDocTypeId}`,
             state: {isikukood: isikukood, type: 'text'}

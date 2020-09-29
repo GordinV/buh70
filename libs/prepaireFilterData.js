@@ -12,8 +12,7 @@ const getDefaultValues = (row) => {
         value: null
     };
 
-    if (!!row.interval && !row.start && !row.end)
-    {
+    if (!!row.interval && !row.start && !row.end) {
         switch (row.type) {
             case 'date':
                 returnValue.start = getDefaulDate().start;
@@ -44,17 +43,14 @@ function prepareFilterData(gridConfig, docTypeId) {
         data = DocContext.filter[docTypeId];
     } else {
         gridConfig.map((row) => {
-            let defValue = getDefaultValues(row);
-            let start = defValue.start;
-            let end = defValue.end;
 
             const field = {
                 value: row.value ? row.value : null,
                 name: row.id,
                 type: row.type ? row.type : 'text',
                 interval: !!row.interval,
-                start: row.value ? row.value : start,
-                end: row.value ? row.value : end
+                start: row.value ? row.value : null,
+                end: row.value ? row.value : null
             };
 
             data.push(field);
@@ -64,8 +60,6 @@ function prepareFilterData(gridConfig, docTypeId) {
 
     return data;
 }
-
-
 
 
 module.exports = prepareFilterData;

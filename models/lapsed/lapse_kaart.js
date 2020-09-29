@@ -134,8 +134,8 @@ module.exports = {
                 {id: "soodustus", name: "Soodustus", width: "10%"},
                 {id: "uhik", name: "Ühik", width: "5%"},
                 {id: "yksus", name: "Üksus", width: "10%"},
-                {id: "alg_kpv", name: "Kpv-st", width: "7%", type: 'date', interval: true},
-                {id: "lopp_kpv", name: "Kpv-ni", width: "7%", type: 'date',interval: true},
+                {id: "alg_kpv", name: "Kpv-st", width: "7%", type: 'date', interval: true, default: 'KUU'},
+                {id: "lopp_kpv", name: "Kpv-ni", width: "7%", type: 'date', interval: true, default: 'AASTA'},
                 {id: "inf3", name: "INF3", width: "5%"},
                 {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean'}
             ],
@@ -172,11 +172,11 @@ module.exports = {
                             to_char(v.alg_kpv, 'DD.MM.YYYY')                                               AS alg_kpv,
                             to_char(v.lopp_kpv, 'DD.MM.YYYY')                                              AS lopp_kpv,
                             v.yksuse_kood,
-                            count(*) OVER ()                 AS rows_total       
+                            count(*) OVER ()                                                               AS rows_total
                      FROM lapsed.cur_lapse_kaart v
                      WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
             params: '',
-            alias:  'curLapsed',
+            alias: 'curLapsed',
             converter: function (data) {
                 let row_id = 0;
                 return data.map(row => {
@@ -227,7 +227,7 @@ module.exports = {
                   WHERE id IN (
                       SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
                   )
-                  and staatus <> 3`,//$1 docId, $2 - userId
+                    AND staatus <> 3`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'muudaTeenusteTahtaeg'
     },

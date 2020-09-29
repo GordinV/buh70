@@ -19,5 +19,6 @@ GROUP BY a.id, a.regkood, a.nimetus, l.rekvid;
 
 
 GRANT SELECT ON TABLE rekl.com_asutus_rekl TO dbvaatleja;
+GRANT SELECT ON TABLE rekl.com_asutus_rekl TO dbkasutaja;
 
 

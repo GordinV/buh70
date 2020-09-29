@@ -5,6 +5,8 @@ const React = require('react');
 const ReactServer = require('react-dom/server');
 const Moment = require('moment');
 let now = Moment().format('YYYY-MM-DD');
+const prepaireFilterData = require('./../libs/prepaireFilterData');
+const prepareSqlWhereFromFilter = require('./../libs/prepareSqlWhereFromFilter');
 
 exports.get = async (req, res) => {
     // рендер грида на сервере при первой загрузке странице
@@ -28,11 +30,19 @@ exports.get = async (req, res) => {
     const Document = new Doc(documentType, null, user.userId, user.asutusId);
 
     // делаем запрос , получаем первоначальные данные
-    let gridConfig = Document.config.grid.gridConfiguration;
-    // вызвать метод
+    const gridConfig = Document.config.grid.gridConfiguration;
 
+    // применить дефолты
+    let limit = 100;
+    let sortBy;
+    let sqlWhere;
+
+    const filterData = prepaireFilterData(gridConfig, documentType);
+    sqlWhere = prepareSqlWhereFromFilter(filterData, documentType);
+
+    // вызвать метод
     let data = {
-        result: await Document.selectDocs(),
+        result: await Document.selectDocs(sortBy, sqlWhere, limit),
         gridConfig: gridConfig,
         docTypeId: documentType,
         requiredFields: Document.config.requiredFields ? Document.config.requiredFields : []
@@ -137,9 +147,9 @@ exports.put = async (req, res) => {
 
         await automatTask.forEach(async (process) => {
             const bpmResult = await Document.executeTask(process.action);
-            if (bpmResult && bpmResult.error_code ) {
+            if (bpmResult && bpmResult.error_code) {
                 // raise error
-                l_error = l_error ? l_error: 'Lisa töö viga ' + bpmResult.error_message ? bpmResult.error_message: '';
+                l_error = l_error ? l_error : 'Lisa töö viga ' + bpmResult.error_message ? bpmResult.error_message : '';
                 console.error('BPM error', l_error);
             }
 
@@ -148,10 +158,10 @@ exports.put = async (req, res) => {
 
     if (!savedData.row || savedData.row.length < 1 || l_error.length > 1) {
         console.error('error in save', params, savedData);
-        l_error = l_error + (savedData && savedData.error_message ? savedData.error_message: null);
+        l_error = l_error + (savedData && savedData.error_message ? savedData.error_message : null);
         return res.send({
             action: 'save',
-            result: {error_code: 1, error_message: l_error ? l_error:  'Error in save ', docId: 0}
+            result: {error_code: 1, error_message: l_error ? l_error : 'Error in save ', docId: 0}
         });
     }
 
@@ -196,7 +206,12 @@ exports.delete = async (req, res) => {
     if (!data.result.error_code) {
         res.send({action: 'delete', error: 0, error_message: null, data: data});
     } else {
-        res.send({action: 'delete', error: data.result.error_code,  data: data, error_message: data.result.error_message});
+        res.send({
+            action: 'delete',
+            error: data.result.error_code,
+            data: data,
+            error_message: data.result.error_message
+        });
     }
 
 };
@@ -206,9 +221,9 @@ exports.executeTask = async (req, res) => {
     const taskName = req.params.taskName; // получим из параметра task
     const Doc = require('./../classes/DocumentTemplate');
     const params = req.body;
-    let module = (params.module ? params.module: 'lapsed').toLowerCase();
+    let module = (params.module ? params.module : 'lapsed').toLowerCase();
 
-    let seisuga = params.seisuga ? params.seisuga: now;
+    let seisuga = params.seisuga ? params.seisuga : now;
 
     const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, module);
 
@@ -216,9 +231,9 @@ exports.executeTask = async (req, res) => {
 
     if (params.docTypeId === 'LAPS' || params.docTypeId === 'PAEVA_TAABEL' || params.docTypeId === 'LAPSE_GRUPP') {
         //@TODO сделать универсальный набор параметров
-         taskParams = [params.docId, user.userId, seisuga];
+        taskParams = [params.docId, user.userId, seisuga];
     }
-    const data = await Document.executeTask(taskName, taskParams ? taskParams: null);
+    const data = await Document.executeTask(taskName, taskParams ? taskParams : null);
 
 
     const prepairedData = Object.assign({}, data);

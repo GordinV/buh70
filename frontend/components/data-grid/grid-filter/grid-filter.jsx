@@ -36,7 +36,6 @@ class GridFilter extends React.PureComponent {
      */
     saveFilterContent(name, value) {
         let data = this.props.data;
-        let row = data.find(item => item.name === name);
 
         // проверим на наличие полей для фильтрации
         if (!data.length || !row) {
@@ -44,6 +43,14 @@ class GridFilter extends React.PureComponent {
         } else {
             data = this.props.data;
         }
+
+        // сохраним значение фильтра
+        let row = data.map(row => {
+            if (row.id === name) {
+                row.value = value;
+                return row;
+            }
+        });
 
         let index,
             isIntervalStart = !!name.match(/_start/),
@@ -66,10 +73,11 @@ class GridFilter extends React.PureComponent {
                 fieldName = name.replace(/_end/i, '');
             }
 
-            if (data[i].name === (fieldName)) {
+            if (data[i].id === (fieldName)) {
                 index = i;
                 break;
             }
+
         }
 
         if (index > -1) {
@@ -130,6 +138,8 @@ class GridFilter extends React.PureComponent {
 
     prepareFilterFields() {
         let data = this.props.data;
+
+
         // проверим на наличие полей для фильтрации
         if (!data.length) {
             data = prepareData(this.props.gridConfig, this.props.docTypeId);
@@ -151,17 +161,18 @@ class GridFilter extends React.PureComponent {
             let value = row.value ? row.value : '';
 
             // ищем инициализированное значение
-            let obj = data.find(dataRow => dataRow.name == row.id);
+            let obj = data.find(dataRow => dataRow.id == row.id);
 
             if (obj && ('value' in obj)) {
                 if (!obj.value && value) {
                     // есть дефолтное значение
                     isStateUpdated = true;
-                    data = data[index][row.id] = value;
+                    value = data[index][row.id].value;
                 }
                 value = obj.value ? obj.value : value;
 
             }
+
             return <div style={styles.formWidget} key={'fieldSet-' + row.id}>
                 <div style={styles.formWidgetLabel}>
                     <span>{row.name}</span>
@@ -196,23 +207,16 @@ class GridFilter extends React.PureComponent {
         }
 
         const data = this.props.data;
-        let obj = data.find(dataRow => dataRow.name == row.id);
+        let obj = data.find(dataRow => dataRow.id == row.id);
 
         if (!obj) {
             return null;
         }
 
-        let defaulValue = getDefaultValues(row);
         let valueStart = row.interval ? obj[`start`] : obj.value;
-        if (!valueStart) {
-            valueStart = defaulValue.start;
-        }
         let valueEnd = row.interval ? obj[`end`] : obj.value;
-        if (!valueEnd) {
-            valueEnd = defaulValue.end;
-        }
+
         let componentType = row.type ? row.type : 'text';
-//        console.log('valueStart, valueEnd', valueStart, valueEnd)
         if (valueStart && valueEnd) {
             // сохраним значение
             this.saveFilterContent(row.name, valueStart);
@@ -249,51 +253,6 @@ class GridFilter extends React.PureComponent {
 
 }
 
-
-/**
- * добавит ноль в месяц или день по необходимости
- * @param value
- * @returns {string}
- */
-const getTwoDigits = (value) => value < 10 ? `0${value}` : value;
-
-
-/**
- * вернет дефолтные значения взависимости от типа
- * @param row
- */
-const getDefaultValues = (row) => {
-    let returnValue = {
-        start: null,
-        end: null,
-        value: null
-    };
-
-    Date.prototype.daysInMonth = function () {
-        return 33 - new Date(this.getFullYear(), this.getMonth(), 33).getDate();
-    };
-
-    let today = new Date();
-    let currentMonth = getTwoDigits(today.getMonth() + 1);
-    let currentYear = getTwoDigits(today.getFullYear());
-    let startMonth = `${currentYear}-${currentMonth}-01`;
-    let daysInMonth = getTwoDigits(new Date().daysInMonth());
-
-    let finishMonth = `${currentYear}-${currentMonth}-${daysInMonth}`;
-
-    if (!!row.interval && !row.start && !row.end) {
-        switch (row.type) {
-            case 'date':
-                returnValue.start = startMonth;
-                returnValue.end = finishMonth;
-                break;
-            default:
-                returnValue.start = null;
-                returnValue.end;
-        }
-    }
-    return returnValue;
-};
 
 GridFilter.propTypes = {
     gridConfig: PropTypes.array.isRequired,

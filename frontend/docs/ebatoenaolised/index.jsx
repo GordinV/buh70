@@ -11,6 +11,8 @@ const getSum = require('./../../../libs/getSum');
 const DocContext = require('./../../doc-context.js');
 
 const styles = require('./styles');
+const gridConfig = require('./../../../models/aruanned/lapsed/ebatoenaolised').grid.gridConfiguration;
+
 const DOC_TYPE_ID = 'EBATOENAOLISED';
 const TOOLBAR_PROPS = {
     add: false,
@@ -42,6 +44,7 @@ class Documents extends React.PureComponent {
         return (
             <div>
                 <DocumentRegister initData={this.props.initData}
+                                  gridConfig = {gridConfig}
                                   history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
                                   ref='register'
