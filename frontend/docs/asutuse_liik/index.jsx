@@ -3,7 +3,6 @@
 const React = require('react');
 const Documents = require('./../documents/documents.jsx');
 const styles = require('./styles');
-const gridConfig = require('./../../../models/libs/libraries/asutuse_liik').grid.gridConfiguration;
 
 const DOC_TYPE_ID = 'ASUTUSE_LIIK';
 
@@ -17,7 +16,7 @@ class AsutuseLiik extends React.PureComponent {
 
     render() {
         return <Documents initData={this.props.initData}
-                          gridConfig = {gridConfig}
+                          gridConfig = {this.props.gridConfig}
                           history={this.props.history ? this.props.history : null}
                           module={this.props.module}
                           ref='register'

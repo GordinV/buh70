@@ -21,15 +21,13 @@ DECLARE
     l_asutus_id     INTEGER = (SELECT asutusid
                                FROM lapsed.vanem_arveldus v
                                         INNER JOIN libs.asutus a ON a.id = v.asutusid
-                                   WHERE
-                                    v.parentid = l_laps_id
-                                        AND v.rekvid = l_rekvid
-                                        AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
-                                   ORDER BY
-                                    v.arveldus DESC,
-                                    v.id DESC
-                                   LIMIT
-                                    1);
+                               WHERE v.parentid = l_laps_id
+                                 AND v.rekvid = l_rekvid
+                                 AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
+                               ORDER BY v.arveldus DESC,
+                                        v.id DESC
+                               LIMIT
+                                   1);
     l_doklausend_id INTEGER;
     l_liik          INTEGER = 0;
     v_taabel        RECORD;
@@ -59,7 +57,8 @@ DECLARE
 
 BEGIN
 
-    if l_asutus_id is null THEN
+    IF l_asutus_id IS NULL
+    THEN
         -- контр-анет не найден, выходим
         result = 0;
         error_message = 'Puudub kontragent';
@@ -160,6 +159,7 @@ BEGIN
           AND lt.staatus <> 3
           AND lt.kuu = month(l_kpv)
           AND lt.aasta = year(l_kpv)
+          AND lk.rekvid = l_rekvid
         ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
 
 

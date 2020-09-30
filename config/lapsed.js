@@ -1,5 +1,4 @@
 module.exports = {
-    dok:'dok',
     arv:'/lapsed/arv',
     smk:'/lapsed/smk',
     vmk:'/lapsed/vmk',

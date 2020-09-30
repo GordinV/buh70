@@ -294,7 +294,7 @@ const Arv = {
             {id: "tasud", name: "Tasud", width: "100px", type: 'date', interval: true},
             {id: "nimi", name: "Nimi", width: "100px"},
             {id: "isikukood", name: "Isikukood", width: "100px"},
-            {id: "viitenr", name: "Viitenumber", width: "100px"},
+            {id: "viitenr", name: "Viitenr", width: "100px"},
             {id: "tyyp", name: "Tüüp", width: "100px"},
             {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean'}
 

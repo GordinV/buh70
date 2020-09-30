@@ -3,10 +3,12 @@
 
 const React = require('react');
 const ReactServer = require('react-dom/server');
+const path = require('path');
 const Moment = require('moment');
 let now = Moment().format('YYYY-MM-DD');
 const prepaireFilterData = require('./../libs/prepaireFilterData');
 const prepareSqlWhereFromFilter = require('./../libs/prepareSqlWhereFromFilter');
+const config = require('./../config/lapsed');
 
 exports.get = async (req, res) => {
     // рендер грида на сервере при первой загрузке странице
@@ -25,6 +27,16 @@ exports.get = async (req, res) => {
         //error 401, no user
         return res.status(401).redirect('/login');
     }
+
+    // готовим загрузку конфигурации регистров
+    let kataloog = './../models/';
+    const docConfig = [];
+
+    Object.keys(config).forEach(key => {
+        let folder = path.join(kataloog,config[key]);
+        docConfig.push({docTypeId: key.toUpperCase(), grid: require(folder).grid.gridConfiguration})
+    });
+
 
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, null, user.userId, user.asutusId);
@@ -45,6 +57,7 @@ exports.get = async (req, res) => {
         result: await Document.selectDocs(sortBy, sqlWhere, limit),
         gridConfig: gridConfig,
         docTypeId: documentType,
+        docsConfig: docConfig,
         requiredFields: Document.config.requiredFields ? Document.config.requiredFields : []
 
     };

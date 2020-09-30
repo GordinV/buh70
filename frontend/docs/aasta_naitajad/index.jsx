@@ -6,7 +6,6 @@ const InputNumber = require('../../components/input-number/input-number.jsx');
 const getSum = require('./../../../libs/getSum');
 
 const styles = require('./styles');
-const gridConfig = require('./../../../models/aruanned/lapsed/aasta_naitajad').grid.gridConfiguration;
 
 const DOC_TYPE_ID = 'AASTA_NAITAJAD';
 const TOOLBAR_PROPS = {
@@ -49,7 +48,7 @@ class Documents extends React.PureComponent {
         return (
             <div>
                 <DocumentRegister initData={this.props.initData}
-                                  gridConfig = {gridConfig}
+                                  gridConfig = {this.props.gridConfig}
                                   history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
                                   ref='register'

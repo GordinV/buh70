@@ -9,7 +9,6 @@ const ButtonUpload = require('./../../components/upload_button/index.jsx');
 const InputText = require('../../components/input-text/input-text.jsx');
 
 const styles = require('./styles');
-const gridConfig = require('./../../../models/lapsed/lapse_kaart').grid.gridConfiguration;
 const DOC_TYPE_ID = 'LAPSE_KAART';
 
 const DocRights = require('./../../../config/doc_rights');
@@ -37,7 +36,7 @@ class Documents extends React.PureComponent {
 
     render() {
         return (<div><DocumentRegister initData={this.props.initData}
-                                       gridConfig = {gridConfig}
+                                       gridConfig = {this.props.gridConfig}
                                        userData={this.props.userData}
                                        history={this.props.history ? this.props.history : null}
                                        module={this.props.module}

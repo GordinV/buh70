@@ -3,7 +3,7 @@
 const React = require('react');
 const Documents = require('./../documents/documents.jsx');
 const styles = require('./asutus-register-styles');
-const gridConfig = require('./../../../models/libs/libraries/asutused').grid.gridConfiguration;
+//const gridConfig = require('./../../../models/libs/libraries/asutused').grid.gridConfiguration;
 
 const DOC_TYPE_ID = 'ASUTUSED';
 const ButtonUpload = require('./../../components/upload_button/index.jsx');
@@ -22,8 +22,9 @@ class Asutused extends React.PureComponent {
     }
 
     render() {
+        console.log('this.props.gridConfig',this.props.gridConfig);
         return <Documents initData={this.props.initData}
-                          gridConfig = {gridConfig}
+                          gridConfig = {this.props.gridConfig}
                           history={this.props.history ? this.props.history : null}
                           module={this.props.module}
                           ref='register'

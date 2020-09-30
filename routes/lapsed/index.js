@@ -5,7 +5,10 @@ const ReactServer = require('react-dom/server');
 const getModule = require('./../../libs/getModule');
 
 const {StaticRouter} = require('react-router');
+const path = require('path');
+
 const App = require('./../../frontend/modules/lapsed.jsx');
+const config = require('./../../config/lapsed');
 const DocContext = require('./../../frontend/doc-context');
 
 exports.get = async (req, res) => {
@@ -19,6 +22,16 @@ exports.get = async (req, res) => {
         return res.status(401).redirect('/login');
     }
 
+    // готовим загрузку конфигурации регистров
+    let kataloog = './../../models/';
+    const docConfig = {};
+
+    Object.keys(config).forEach(key => {
+        let folder = path.join(kataloog,config[key]);
+        docConfig[key.toUpperCase()] = require(folder).grid.gridConfiguration;
+    });
+
+
     const Doc = require('./../../classes/DocumentTemplate');
     const Document = new Doc(documentType, null, user.userId, user.asutusId, 'lapsed');
     // делаем запрос , получаем первоначальные данные
@@ -29,6 +42,7 @@ exports.get = async (req, res) => {
         docTypeId: documentType,
         result: await Document.selectDocs(),
         gridConfig: gridConfig,
+        docConfig: docConfig,
         requiredFields: Document.requiredFields ? Document.requiredFields: [],
         subtotals: Document.config.grid.subtotals ? Document.config.grid.subtotals : []
     };
@@ -51,7 +65,7 @@ exports.get = async (req, res) => {
         StaticRouter,
         {context: context, location: req.url}, React.createElement(
             App,
-            {initData: sqlData, userData: user}));
+            {initData: sqlData, userData: user, docConfig: docConfig}));
 
     try {
         let html = ReactServer.renderToString(Component);

@@ -8,10 +8,18 @@ const start = require('./../BP/start'),
 
 
 const Luba = {
-    selectAsLibs: `SELECT *
+    selectAsLibs: `SELECT id,
+                          regkood,
+                          nimetus,
+                          rekvid,
+                          coalesce(summa, 0)::NUMERIC   AS summa,
+                          coalesce(jaak, 0)::NUMERIC    AS jaak,
+                          coalesce(volg, 0)::NUMERIC    AS volg,
+                          coalesce(intress, 0)::NUMERIC AS intress,
+                          ettemaks                      AS ettemaks,
+                          kas_arhiiv
                    FROM rekl.com_asutus_rekl
                    WHERE rekvid = $1
-                     AND summa IS NOT NULL
                    ORDER BY nimetus`,
     select: [
         {

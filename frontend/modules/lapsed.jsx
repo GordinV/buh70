@@ -93,6 +93,8 @@ class App extends React.Component {
 
     render() {
         let btnParams = this.prepareParamsForToolbar();
+        let docsConfig = this.props.initData.docConfig;
+
         return (
             <StyleRoot>
 
@@ -116,6 +118,7 @@ class App extends React.Component {
                        render={(props) =>
                            <AsutusRegister
                                history={props.history}
+                               gridConfig={docsConfig['ASUTUSED']}
                                initData={this.props.initData}
                                module={MODULE}/>}
                 />
@@ -127,6 +130,7 @@ class App extends React.Component {
                        render={(props) =>
                            <LapseGruppRegister
                                history={props.history}
+                               gridConfig={docsConfig['lapse_grupp'.toUpperCase()]}
                                initData={this.props.initData}
                                module={MODULE}/>}
                 />
@@ -136,12 +140,15 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/vanem"
                        render={(props) => <VanemateRegister history={props.history}
-                                                            initData={this.props.initData} module={MODULE}/>}/>
+                                                            gridConfig={docsConfig['VANEM']}
+                                                            initData={this.props.initData}
+                                                            module={MODULE}/>}/>
                 <Route exact path="/lapsed/vanem/:docId"
                        render={(props) => <VanemDokument {...props} history={props.history}/>}/>
 
                 <Route exact path="/lapsed/lapse_kaart"
                        render={(props) => <LasteTeenustRegister history={props.history}
+                                                                gridConfig={docsConfig['LAPSE_KAART']}
                                                                 initData={props.initData}
                                                                 module={MODULE}/>}
                 />
@@ -149,7 +156,8 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/lapse_taabel"
                        render={(props) => <LasteTaabelRegister history={props.history}
-                                                               initData={props.initData} module={MODULE}/>}/>
+                                                               initData={props.initData}
+                                                               module={MODULE}/>}/>
                 <Route exact path="/lapsed/lapse_taabel/:docId" component={LapseTaabelDokument}/>
 
                 <Route exact path="/lapsed/paeva_taabel"
@@ -159,7 +167,9 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/arv"
                        render={(props) => <ArvedeRegister history={props.history}
-                                                          initData={props.initData} module={MODULE}/>}
+                                                          gridConfig={docsConfig['ARV']}
+                                                          initData={props.initData}
+                                                          module={MODULE}/>}
                 />
                 <Route exact path="/lapsed/arv/:docId"
                        render={(props) => <ArveDocument {...props} history={props.history}/>}/>
@@ -264,6 +274,7 @@ class App extends React.Component {
                 <Route exact path="/lapsed/arved_koodi_jargi"
                        render={(props) => <ArvedKoodiJargiReport
                            module={MODULE}
+                           gridConfig={docsConfig['arved_koodi_jargi'.toUpperCase()]}
                            history={props.history}
                            initData={props.initData}/>}/>
 
@@ -328,6 +339,7 @@ class App extends React.Component {
                 <Route exact path="/lapsed/asutuse_liik"
                        render={(props) => <AsutuseLiikRegister
                            module={MODULE}
+                           gridConfig={docsConfig['asutuse_liik'.toUpperCase()]}
                            history={props.history}
                            initData={props.initData}/>}/>
                 <Route exact path="/lapsed/asutuse_liik/:docId"
