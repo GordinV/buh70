@@ -83,9 +83,11 @@ class GridFilter extends React.PureComponent {
         if (index > -1) {
             if (isIntervalStart) {
                 data[index].start = value;
+                data[index][`${fieldName}_start`] = value;
             }
             if (isIntervalEnd) {
                 data[index].end = value;
+                data[index][`${fieldName}_end`] = value;
             }
 
             data[index].value = value;

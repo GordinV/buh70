@@ -65,10 +65,10 @@ exports.post = function (req, res, next) {
                     let error;
 
                     if (!result) {
-                        error = new HttpError(403, 'Ошибка в пароле');
-                        errorMessage = 'Ошибка в пароле';
+                        error = new HttpError(403, 'Vale parool või kasutaja nimi');
+                        errorMessage = 'Vale parool või kasutaja nimi';
                         statusCode = 403;
-                        console.error('Ошибка в пароле');
+                        console.error('Vale parool või kasutaja nimi');
                         // return next(err);
                     }
                     return callback(error, result, kasutaja);

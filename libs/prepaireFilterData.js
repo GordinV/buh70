@@ -53,6 +53,11 @@ function prepareFilterData(gridConfig, docTypeId) {
                 end: row.value ? row.value : null
             };
 
+            if (row.interval) {
+                field[`${row.id}_start`] = row.value ? row.value : null;
+                field[`${row.id}_end`] = row.value ? row.value : null
+            }
+
             data.push(field);
 
         });

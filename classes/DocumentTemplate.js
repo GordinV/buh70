@@ -1,4 +1,6 @@
 const db = require('./../libs/db');
+const getParameterFromFilter = require('./../libs/getParameterFromFilter');
+
 const getModule = require('./../libs/getModule');
 const path = './../models/'; // путь к каталогу с моделями
 
@@ -121,13 +123,16 @@ class Document {
             }
         }
 
-        if (sqlParamsQantity > 2 && params.length == 2) {
-            params = params.map (parameter => {
 
-            })
+        if (sqlParamsQantity > 2 && params.length == 2) {
+
+            if (this.config.grid.params && typeof this.config.grid.params !== 'string') {
+                params = getParameterFromFilter(user.asutusId, user.userId, this.config.grid.params, params.filterData);
+            }
+
+
         }
 
-        console.log('sqlWhere', sqlWhere);
         return await db.queryDb(sql, params, sortBy, sqlWhere, limit);
     }
 

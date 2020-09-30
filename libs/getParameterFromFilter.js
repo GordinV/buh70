@@ -12,14 +12,13 @@ module.exports =  (rekvId, userId, params, receivedFilter)=> {
         let fieldValue;
         const result = receivedFilter.find(row=> {
             let fieldName = row.name;
-
             let parameterToSearch = parameter;
 
             if (!!parameter.match(/_start/) && !!row.start) {
-                fieldName = `${row.name}_start`;
+                fieldName = `${row.name.toLowerCase()}_start`;
                 fieldValue = row.start;
             } else if ((!!parameter.match(/_end/) && row.end)) {
-                fieldName = `${row.name}_end`;
+                fieldName = `${row.name.toLowerCase()}_end`;
                 fieldValue = row.end;
             } else {
                 fieldName = row.name;

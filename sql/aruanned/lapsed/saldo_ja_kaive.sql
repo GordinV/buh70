@@ -51,7 +51,9 @@ FROM (
                 coalesce(alg_saldo.jaak::NUMERIC(14, 2), 0)::NUMERIC(14, 2)
                                                                    AS alg_saldo,
                 CASE
-                    WHEN (a.properties ->> 'tyyp') IS NULL AND a.kpv >= kpv_start THEN a.summa::NUMERIC(14, 2)
+                    WHEN ((a.properties ->> 'tyyp') IS NULL OR empty(a.properties ->> 'tyyp'))
+                        AND a.kpv >= kpv_start
+                        THEN a.summa::NUMERIC(14, 2)
                     ELSE 0 END                                     AS arvestatud,
                 coalesce(a1.soodustus, 0)::NUMERIC(14, 2)          AS soodustus,
                 coalesce(laekumised.laekumised, 0)::NUMERIC(14, 2) AS laekumised,
