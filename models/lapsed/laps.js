@@ -188,7 +188,7 @@ module.exports = {
     },
     koostaEttemaksuArve: {
         command: `SELECT *
-                  FROM lapsed.koosta_ettemaksu_arve($2::INTEGER, id::INTEGER, $3::DATE)`,//$1 docId, $2 - userId
+                  FROM lapsed.koosta_ettemaksu_arve($2::INTEGER, $1::INTEGER, $3::DATE)`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'koostaEttemaksuArve'
     },
