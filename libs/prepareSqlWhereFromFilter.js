@@ -18,19 +18,19 @@ const prepareSqlWhereFromFilter = (filterData, docTypeId) => {
 
                     // если параметры раздедены, то множественный параметр
                     if (row.value.match(/,/)) {
-                        filterString = `${filterString} ${row.name} in (${prepairedParameter})`;
+                        filterString = `${filterString} ${row.id} in (${prepairedParameter})`;
                     } else {
                         if (docTypeId == 'KUU_TAABEL') {
-                            filterString = `${filterString}  upper(${row.name})  like upper('%${row.value.trim()}%')`;
+                            filterString = `${filterString}  upper(${row.id})  like upper('%${row.value.trim()}%')`;
                         } else {
                             // обработка некорректной кодировки
-                            filterString = `${filterString}  upper(${row.name})  like upper('%${row.value.trim()}%')`;
+                            filterString = `${filterString}  upper(${row.id})  like upper('%${row.value.trim()}%')`;
 
                         }
                     }
                     break;
                 case 'string':
-                    filterString = `${filterString}  upper(${row.name}) like upper('%${row.value.trim()}%')`;
+                    filterString = `${filterString}  upper(${row.id}) like upper('%${row.value.trim()}%')`;
                     break;
                 case 'date':
                     if ('start' in row) {
@@ -42,16 +42,16 @@ const prepareSqlWhereFromFilter = (filterData, docTypeId) => {
                     break;
                 case 'number':
                     if ('start' in row) {
-                        filterString = `${filterString} ${row.name}::numeric  >=  ${row.start} and ${row.name}::numeric  <=  ${row.end} `;
+                        filterString = `${filterString} ${row.id}::numeric  >=  ${row.start} and ${row.id}::numeric  <=  ${row.end} `;
                     } else {
-                        filterString = filterString + row.name + "::numeric = " + row.value;
+                        filterString = filterString + row.id + "::numeric = " + row.value;
                     }
                     break;
                 case 'integer':
                     if ('start' in row) {
-                        filterString = `${filterString} ${row.name}  >=  ${row.start} and ${row.name}  <=  ${row.end} `;
+                        filterString = `${filterString} ${row.id}  >=  ${row.start} and ${row.id}  <=  ${row.end} `;
                     } else {
-                        filterString = filterString + row.name + "::integer = " + row.value;
+                        filterString = filterString + row.id + "::integer = " + row.value;
                     }
                     break;
             }
