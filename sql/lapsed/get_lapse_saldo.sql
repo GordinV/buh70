@@ -12,27 +12,13 @@ CREATE OR REPLACE FUNCTION lapsed.lapse_saldod(l_kpv DATE DEFAULT now())
     ) AS
 $BODY$
 
-SELECT sum(jaak)          AS jaak,
+SELECT sum(jaak)::NUMERIC(14, 2)       AS jaak,
        laps_id,
        rekv_id,
-       array_agg(docs_id) AS docs_ids,
-       sum(laekumised)    AS laekumised,
-       sum(ettemaksud)    AS ettemaksud
+       array_agg(docs_id)              AS docs_ids,
+       sum(laekumised)::NUMERIC(14, 2) AS laekumised,
+       sum(ettemaksud)::NUMERIC(14, 2) AS ettemaksud
 FROM (
-         SELECT a.jaak::NUMERIC(14, 2) AS jaak,
-                l.parentid             AS laps_id,
-                a.rekvid               AS rekv_id,
-                d.id                   AS docs_id,
-                0                      AS laekumised,
-                0                      AS ettemaksud
-         FROM docs.doc d
-                  INNER JOIN docs.arv a ON a.parentid = d.id
-                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-         WHERE a.kpv < l_kpv
-           AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
-           AND a.jaak <> 0
-           AND d.status <> 3
-         UNION ALL
 -- ettemaksud
          SELECT -1 * mk1.summa::NUMERIC(14, 2) AS jaak,
                 l.parentid                     AS laps_id,
@@ -62,18 +48,32 @@ FROM (
                                                       month(make_date(year(l_kpv), month(l_kpv), 1)::DATE - 1)
            AND d.status <> 3
          UNION ALL
-         SELECT 0          AS jaak,
-                l.parentid AS laps_id,
-                d.rekvid   AS rekv_id,
-                d.id       AS docs_id,
-                0          AS laekumised,
-                mk1.summa  AS ettemaksud
+         -- jaak, maksed
+         SELECT -1 * mk1.summa AS jaak,
+                l.parentid     AS laps_id,
+                d.rekvid       AS rekv_id,
+                d.id           AS docs_id,
+                0              AS laekumised,
+                0              AS ettemaksud
          FROM docs.doc d
                   INNER JOIN docs.mk mk ON mk.parentid = d.id
                   INNER JOIN lapsed.liidestamine l ON l.docid = d.id
                   INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
          WHERE mk.kpv < l_kpv
-           AND (mk.arvid IS NULL OR mk.arvid = 0)
+           AND d.status <> 3
+         UNION ALL
+         --jaak, arved
+         SELECT a.summa::NUMERIC(14, 2) AS jaak,
+                l.parentid              AS laps_id,
+                a.rekvid                AS rekv_id,
+                d.id                    AS docs_id,
+                0                       AS laekumised,
+                0                       AS ettemaksud
+         FROM docs.doc d
+                  INNER JOIN docs.arv a ON a.parentid = d.id
+                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+         WHERE (a.kpv < l_kpv)
+           AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
            AND d.status <> 3
      ) qry
 GROUP BY qry.rekv_id, qry.laps_id
@@ -91,8 +91,8 @@ GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE) TO arvestaja;
 
 
 /*
-SELECT jaak
-FROM lapsed.lapse_saldod('2019-11-27'::date)
-where laps_id = 16
-and rekv_id = 63
+SELECT *
+FROM lapsed.lapse_saldod('2020-09-01'::date)
+where laps_id = 6636
+and rekv_id = 69
 */

@@ -62,7 +62,7 @@ BEGIN
     THEN
         -- контр-анет не найден, выходим
         result = 0;
-        error_message = 'Puudub kontragent';
+        error_message = 'Puudub kontragent,  laps_id = ' || l_laps_id::text;
         error_code = 1;
         RETURN;
 
@@ -231,7 +231,7 @@ BEGIN
     IF l_arve_summa <= 0
     THEN
         result = 0;
-        error_message = 'Dokumendi summa = 0';
+        error_message = 'Dokumendi summa = 0, laps_id = ' || l_laps_id::text;
         error_code = 1;
         RETURN;
 
@@ -282,12 +282,12 @@ BEGIN
 
         ELSE
             result = 0;
-            error_message = 'Tulu arvete koostamise viga';
+            error_message = 'Tulu arvete koostamise viga,  laps_id = ' || l_laps_id::text;
             error_code = 1;
         END IF;
     ELSE
         result = 0;
-        error_message = 'Dokumendi koostamise viga';
+        error_message = 'Dokumendi koostamise viga,  laps_id = ' || l_laps_id::text;
         error_code = 1;
     END IF;
     RETURN;

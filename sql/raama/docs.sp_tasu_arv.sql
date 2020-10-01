@@ -23,9 +23,10 @@ DECLARE
     l_tasu_summa     NUMERIC = 0;
     is_refund        BOOLEAN = FALSE;
 BEGIN
-
+    raise notice 'sp_tasu_arv';
     IF exists(SELECT 1 FROM docs.arv WHERE journalid = l_tasu_id)
     THEN
+        raise notice 'это не оплата, это проводка счета';
         -- это не оплата, это проводка счета
         RETURN 0;
     END IF;
@@ -45,7 +46,7 @@ BEGIN
                WHEN k.kpv IS NOT NULL THEN k.kpv
                WHEN j.kpv IS NOT NULL THEN j.kpv
                ELSE d.created::DATE
-               END AS kpv,
+               END AS maksepaev,
            l.kood  AS doc_type
            INTO v_tasu
     FROM docs.doc d
@@ -60,6 +61,7 @@ BEGIN
     IF l_tasu_id IS NULL
     THEN
         -- Документ не найден
+        raise notice 'Документ не найден';
         RETURN 0;
     END IF;
 
@@ -103,10 +105,13 @@ BEGIN
         LIMIT 1
     );
 
+    raise notice 'l_doc_tasu_id %, l_summa %', l_doc_tasu_id, l_summa;
+
+
     SELECT coalesce(l_doc_tasu_id, 0)                         AS id,
            v_tasu.rekvid                                      AS rekvid,
            l_arv_id                                           AS doc_arv_id,
-           v_tasu.kpv :: DATE                                 AS kpv,
+           v_tasu.maksepaev :: DATE                           AS kpv,
            l_tasu_type                                        AS pankkassa,
            -- 1 - mk, 2- kassa, 3 - lausend
            l_tasu_id                                          AS doc_tasu_id,
@@ -148,10 +153,11 @@ BEGIN
 
                 -- готовим параметры
                 l_tasu_summa = CASE WHEN v_tulu_arved.jaak > l_summa THEN l_summa ELSE v_tulu_arved.jaak END;
+                raise notice 'tasumine v_tulu_arved.jaak %, l_summa %, l_tasu_summa % ', v_tulu_arved.jaak, l_summa, l_tasu_summa;
                 SELECT coalesce(l_doc_tasu_id, 0) AS id,
                        v_tasu.rekvid              AS rekvid,
                        v_tulu_arved.id            AS doc_arv_id,
-                       v_tasu.created :: DATE     AS kpv,
+                       v_tasu.maksepaev :: DATE   AS kpv,
                        l_tasu_type                AS pankkassa,
                        -- 1 - mk, 2- kassa, 3 - lausend
                        l_tasu_id                  AS doc_tasu_id,
