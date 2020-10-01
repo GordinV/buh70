@@ -125,15 +125,15 @@ BEGIN
                      WHERE a.parentid = doc_id);
     END IF;
 
+    -- уберем ссылку на счет
+    UPDATE docs.mk SET arvid = NULL WHERE arvid = doc_id;
+    UPDATE docs.korder1 SET arvid = NULL WHERE arvid = doc_id;
 
 
     DELETE FROM docs.arv1 WHERE parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id);
     DELETE FROM docs.arv WHERE parentid = v_doc.id;
     --@todo констрейн на удаление
 
-    -- уберем ссылку на счет
-    UPDATE docs.mk SET arvid = NULL WHERE arvid = doc_id;
-    UPDATE docs.korder1 SET arvid = NULL WHERE arvid = doc_id;
 
     -- Установка статуса ("Удален")  и сохранение истории
 

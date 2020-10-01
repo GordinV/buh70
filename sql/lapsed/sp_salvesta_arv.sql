@@ -57,7 +57,9 @@ DECLARE
     is_import             BOOLEAN        = data ->> 'import';
 
     arv1_rea_json         JSONB;
-    l_jaak NUMERIC;
+    l_jaak                NUMERIC;
+
+    l_mk_id               INTEGER;
 BEGIN
 
     -- если есть ссылка на ребенка, то присвоим viitenumber
@@ -177,11 +179,15 @@ BEGIN
                                             kood3 TEXT,
                                             kood4 TEXT, kood5 TEXT,
                                             konto TEXT, tunnus TEXT, tp TEXT, proj TEXT, arve_id INTEGER, muud TEXT,
-                                            km TEXT, yksus TEXT, all_yksus TEXT, lapse_taabel_id INTEGER, soodustus NUMERIC);
+                                            km TEXT, yksus TEXT, all_yksus TEXT, lapse_taabel_id INTEGER,
+                                            soodustus NUMERIC);
 
 
             SELECT row_to_json(row) INTO arv1_rea_json
-            FROM (SELECT json_record.yksus, json_record.all_yksus, json_record.lapse_taabel_id, json_record.soodustus) row;
+            FROM (SELECT json_record.yksus,
+                         json_record.all_yksus,
+                         json_record.lapse_taabel_id,
+                         json_record.soodustus) row;
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
             THEN
@@ -335,8 +341,6 @@ BEGIN
 
     END IF;
 
-    PERFORM docs.sp_update_arv_jaak(doc_id);
-
     -- lapse module
 
     IF doc_lapsid IS NOT NULL
@@ -354,6 +358,45 @@ BEGIN
         -- проверить на наличие предоплат
         PERFORM docs.check_ettemaks(doc_id, user_id);
     END IF;
+
+    -- если это доходный счет, созданный на основе предоплатного
+    RAISE NOTICE 'checke ettemaks';
+    IF doc_ettemaksu_arve_id IS NULL AND doc_ettemaksu_period IS NOT NULL
+    THEN
+        doc_ettemaksu_arve_id = (SELECT d.id
+                                 FROM docs.doc d
+                                          INNER JOIN docs.arv a ON d.id = a.parentid
+                                 WHERE d.id IN (
+                                     SELECT unnest((SELECT d.docs_ids
+                                                    FROM docs.arv a
+                                                             INNER JOIN docs.doc d ON d.id = a.parentid
+                                                    WHERE parentid = doc_id)))
+                                   AND a.properties ->> 'tyyp' IS NOT NULL
+                                   AND a.properties ->> 'tyyp' = 'ETTEMAKS'
+                                 LIMIT 1
+        );
+
+    END IF;
+
+    RAISE NOTICE 'doc_ettemaksu_arve_id %', doc_ettemaksu_arve_id;
+    IF doc_ettemaksu_arve_id IS NOT NULL
+    THEN
+        -- проверим оплату счета
+        IF exists(SELECT id FROM docs.arv WHERE parentid = doc_ettemaksu_arve_id
+            --                                AND coalesce(jaak, summa) > 0
+            )
+        THEN
+            -- вызываем оплату
+
+            l_mk_id = (SELECT doc_tasu_id FROM docs.arvtasu WHERE doc_arv_id = doc_ettemaksu_arve_id);
+            raise notice 'call  sp_tasu_arv l_mk_id %', l_mk_id;
+            PERFORM docs.sp_tasu_arv(l_mk_id, doc_ettemaksu_arve_id, user_id);
+
+        END IF;
+    END IF;
+
+    PERFORM docs.sp_update_arv_jaak(doc_id);
+
     RETURN doc_id;
 END;
 $BODY$

@@ -172,8 +172,9 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 /*
 select * from (
 SELECT *
-FROM lapsed.saldo_ja_kaive(88, null, '2020-04-30')
+FROM lapsed.saldo_ja_kaive(69, '2020-09-01', '2020-09-30')
 ) qry
-where  period  >=  '2019-11-01' and period  <=  '2019-12-31'
+where  period  >=  '2020-09-01' and period  <=  '2020-09-30'
+and viitenumber like '0690066360%'
 
 */

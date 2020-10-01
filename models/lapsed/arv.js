@@ -61,12 +61,13 @@ const Arv = {
                          l.nimi::TEXT                                                  AS lapse_nimi,
                          lapsed.get_viitenumber(d.rekvid, l.id)                        AS viitenr,
                          a.properties ->> 'tyyp'::TEXT                                 AS tyyp,
-                         coalesce(saldod.jaak, a.jaak)::NUMERIC(12, 2)                 AS jaak,
+                         a.jaak::NUMERIC(12, 2)                                        AS jaak,
                          coalesce(saldod.laekumised, 0)::NUMERIC(12, 2)                AS laekumised,
                          coalesce(saldod.ettemaksud, 0)::NUMERIC(12, 2)                AS ettemaksud,
                          lpad(month(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT, 2, '0') || '.' ||
                          year(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT AS laekumise_period,
-                         (coalesce(saldod.jaak, 0) + a.summa)::NUMERIC(12, 2)          AS tasumisele
+                         (coalesce(saldod.jaak, 0) + a.summa)::NUMERIC(12, 2)          AS tasumisele,
+                         a.properties ->> 'ettemaksu_period'                           AS ettemaksu_period
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
@@ -128,7 +129,8 @@ const Arv = {
                               NULL :: VARCHAR(120)                                                   AS koostaja,
                               0 ::INTEGER                                                            AS is_show_journal,
                               ''::VARCHAR(120)                                                       AS viitenr,
-                              NULL::INTEGER                                                          AS lapsId
+                              NULL::INTEGER                                                          AS lapsId,
+                              NULL::INTEGER                                                          AS ettemaksu_period
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER`,
             query: null,
@@ -167,6 +169,7 @@ const Arv = {
                                   THEN coalesce((n.properties :: JSONB ->> 'vat'), '-') :: VARCHAR(20)
                               ELSE a1.kbm_maar END)::VARCHAR(20) AS km,
                          n.uhik,
+                         a1.properties ->> 'yksus'               AS yksus,
                          a1.muud
                   FROM docs.arv1 AS a1
                            INNER JOIN docs.arv a ON a.id = a1.parentId
