@@ -20,36 +20,6 @@ class Documents extends React.PureComponent {
         };
         this.renderer = this.renderer.bind(this);
 
-// инициализация фильтра
-        if (!DocContext.filter[DOC_TYPE_ID]) {
-            let defaultDates = getDefaultDates();
-            const filterData =
-                [
-                    {
-                        name: "id",
-                        type: "text",
-                        value: null,
-                    }, {
-                    name: "kpv",
-                    type: "date",
-                    value: defaultDates.start,
-                    start: defaultDates.start,
-                    end: defaultDates.end
-                },
-                    {
-                        name: "yksus",
-                        type: "text",
-                        value: null,
-                    },
-                    {
-                        name: "staatus",
-                        type: "text",
-                        value: null
-                    }
-                ];
-            DocContext.filter[DOC_TYPE_ID] = filterData;
-        }
-
     }
 
     render() {

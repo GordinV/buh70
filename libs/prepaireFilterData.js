@@ -45,6 +45,7 @@ function prepareFilterData(gridConfig, docTypeId) {
         gridConfig.map((row) => {
 
             const field = {
+                id: row.id,
                 value: row.value ? row.value : null,
                 name: row.id,
                 type: row.type ? row.type : 'text',
