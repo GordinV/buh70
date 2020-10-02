@@ -232,6 +232,9 @@ class Documents extends React.Component {
      * @param sortBy
      */
     headerClickHandler(sortBy) {
+        if (sortBy[0].column == 'select') {
+            return
+        }
         // ихем тип поля, если указан
         const row = this.gridConfig.find(row => row.id == sortBy[0].column);
         if (row && row.type) {
