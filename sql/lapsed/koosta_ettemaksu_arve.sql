@@ -62,7 +62,7 @@ BEGIN
     THEN
         -- контр-анет не найден, выходим
         result = 0;
-        error_message = 'Puudub kontragent,  laps_id = ' || l_laps_id::text;
+        error_message = 'Puudub kontragent,  laps_id = ' || l_laps_id::TEXT;
         error_code = 1;
         RETURN;
 
@@ -166,7 +166,7 @@ BEGIN
                                                ELSE '' END                  AS muud,
                lk.properties ->> 'yksus'                                    AS yksus,
                lk.properties ->> 'all_yksus'                                AS all_yksus,
-               coalesce((lk.properties ->> 'ettemaksu_period')::INTEGER, 1) AS ettemaksu_period,
+               coalesce((lk.properties ->> 'ettemaksu_period')::INTEGER, 0) AS ettemaksu_period,
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC      AS vat,
                l_kr_konto::VARCHAR(20)                                      AS konto,
                (n.properties::JSONB ->> 'projekt')::VARCHAR(20)             AS projekt,
@@ -178,11 +178,13 @@ BEGIN
 
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
-                 LEFT OUTER JOIN libs.library gr ON gr.library = 'LAPSE_GRUPP' AND gr.rekvid = lk.rekvid AND
-                                                    gr.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
+                 LEFT OUTER JOIN libs.library gr
+                                 ON gr.library = 'LAPSE_GRUPP' AND gr.status <> 3 AND gr.rekvid = lk.rekvid AND
+                                    gr.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
         WHERE lk.parentid = l_laps_id
           AND lk.staatus <> 3
           AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
+          AND coalesce((lk.properties ->> 'ettemaksu_period')::INTEGER, 0) > 0
           AND (lk.properties ->> 'alg_kpv' IS NULL OR
                (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
           AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
@@ -231,7 +233,7 @@ BEGIN
     IF l_arve_summa <= 0
     THEN
         result = 0;
-        error_message = 'Dokumendi summa = 0, laps_id = ' || l_laps_id::text;
+        error_message = 'Dokumendi summa = 0, laps_id = ' || l_laps_id::TEXT;
         error_code = 1;
         RETURN;
 
@@ -282,12 +284,12 @@ BEGIN
 
         ELSE
             result = 0;
-            error_message = 'Tulu arvete koostamise viga,  laps_id = ' || l_laps_id::text;
+            error_message = 'Tulu arvete koostamise viga,  laps_id = ' || l_laps_id::TEXT;
             error_code = 1;
         END IF;
     ELSE
         result = 0;
-        error_message = 'Dokumendi koostamise viga,  laps_id = ' || l_laps_id::text;
+        error_message = 'Dokumendi koostamise viga,  laps_id = ' || l_laps_id::TEXT;
         error_code = 1;
     END IF;
     RETURN;
@@ -314,7 +316,7 @@ REVOKE EXECUTE ON FUNCTION lapsed.koosta_ettemaksu_arve(INTEGER, INTEGER, DATE) 
 
 
 /*
-select lapsed.koosta_ettemaksu_arve(70, 38)
+select lapsed.koosta_ettemaksu_arve(28,11269,'2020-09-05')
 
 select * from lapsed.laps where staatus = 1
 

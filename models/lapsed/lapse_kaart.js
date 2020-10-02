@@ -134,8 +134,8 @@ module.exports = {
                 {id: "soodustus", name: "Soodustus", width: "10%"},
                 {id: "uhik", name: "Ühik", width: "5%"},
                 {id: "yksus", name: "Üksus", width: "10%"},
-                {id: "alg_kpv", name: "Kpv-st", width: "7%", type: 'date', interval: true, default: 'KUU'},
-                {id: "lopp_kpv", name: "Kpv-ni", width: "7%", type: 'date', interval: true, default: 'AASTA'},
+                {id: "alg_kpv", name: "Kpv-st", width: "7%", type: 'date', interval: true},
+                {id: "lopp_kpv", name: "Kpv-ni", width: "7%", type: 'date', interval: true},
                 {id: "inf3", name: "INF3", width: "5%"},
                 {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean'}
             ],
