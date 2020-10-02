@@ -59,6 +59,7 @@ class Documents extends React.PureComponent {
                                   history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
                                   ref='register'
+                                  gridConfig = {this.props.gridConfig}
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
                                   render={this.renderer}/>

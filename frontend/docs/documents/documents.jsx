@@ -326,8 +326,10 @@ class Documents extends React.Component {
         let sqlWhere = this.state.sqlWhere;
         let url;
         let params = encodeURIComponent(`${sqlWhere}`);
-        let filter = encodeURIComponent(`${JSON.stringify(this.filterData)}`);
-
+        const filterData = this.filterData.filter(row=>{
+            return !!row.value
+        });
+        let filter = encodeURIComponent(`${JSON.stringify(filterData)}`);
         if (this.filterData.length) {
             url = `/print/${this.docTypeId}/${DocContext.userData.uuid}/${filter}`;
 

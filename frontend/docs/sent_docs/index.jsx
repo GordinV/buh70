@@ -27,6 +27,7 @@ class Documents extends React.PureComponent {
                                  module={this.props.module}
                                  ref='register'
                                  toolbarProps={TOOLBAR_PROPS}
+                                 gridConfig = {this.props.gridConfig}
                                  docTypeId={DOC_TYPE_ID}
                                  style={styles}
                                  render={this.renderer}/>;

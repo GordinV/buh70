@@ -10,7 +10,6 @@ const InputNumber = require('../../components/input-number/input-number.jsx');
 const DocContext = require('./../../doc-context.js');
 
 const styles = require('./styles');
-const gridConfig = require('./../../../models/aruanned/lapsed/child_age').grid.gridConfiguration;
 
 const DOC_TYPE_ID = 'CHILD_AGE';
 const TOOLBAR_PROPS = {
@@ -39,7 +38,7 @@ class Documents extends React.PureComponent {
         return (
             <div>
                 <DocumentRegister initData={this.props.initData}
-                                  gridConfig = {gridConfig}
+                                  gridConfig = {this.props.gridConfig}
                                   history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
                                   ref='register'

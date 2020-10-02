@@ -18,6 +18,7 @@ class Project extends React.PureComponent {
                           history = {this.props.history ? this.props.history: null}
                           ref = 'register'
                           btnEditClick = {this.btnEditClick}
+                          gridConfig = {this.props.gridConfig}
                           docTypeId={DOC_TYPE_ID}
                           style={styles}
                           render={this.renderer}/>;

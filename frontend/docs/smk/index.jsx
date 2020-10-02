@@ -11,10 +11,10 @@ const InputNumber = require('../../components/input-number/input-number.jsx');
 const getSum = require('./../../../libs/getSum');
 
 
-const DocRights = require('./../../../config/doc_rights');
 const checkRights = require('./../../../libs/checkRights');
 const DocContext = require('./../../doc-context.js');
 
+const DocRights = require('./../../../config/doc_rights');
 const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
 const userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
@@ -41,6 +41,7 @@ class Documents extends React.PureComponent {
                                   module={this.props.module}
                                   ref='register'
                                   docTypeId={DOC_TYPE_ID}
+                                  gridConfig = {this.props.gridConfig}
                                   style={styles}
                                   render={this.renderer}/>
                 <InputNumber title="Read kokku:"

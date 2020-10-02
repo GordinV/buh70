@@ -40,6 +40,7 @@ class Documents extends React.PureComponent {
                                   ref='register'
                                   toolbarProps={TOOLBAR_PROPS}
                                   docTypeId={DOC_TYPE_ID}
+                                  gridConfig = {this.props.gridConfig}
                                   style={styles}
                                   render={this.renderer}/>
                 <InputNumber title="Read kokku:"

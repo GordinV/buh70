@@ -50,14 +50,13 @@ class Documents extends React.PureComponent {
             }
         };
 
-        console.log('toolbarParams', toolbarParams);
-
         return (
             <DocumentRegister initData={this.props.initData}
                               history={this.props.history ? this.props.history : null}
                               module={this.props.module}
                               ref='register'
                               docTypeId={DOC_TYPE_ID}
+                              gridConfig = {this.props.gridConfig}
                               style={styles}
                               toolbarParams={toolbarParams}
                               btnEditClick={this.btnEditClick}
