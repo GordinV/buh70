@@ -40,6 +40,7 @@ WITH qryEelarve AS (
                                  ELSE e.rekvid END)
                  AND e.rekvid IN (SELECT rekv_id
                                   FROM get_asutuse_struktuur(l_rekvid))
+             AND e.status <> 3           
            UNION ALL
            SELECT
              t.aasta,

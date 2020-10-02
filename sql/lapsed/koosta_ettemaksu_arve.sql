@@ -316,13 +316,13 @@ REVOKE EXECUTE ON FUNCTION lapsed.koosta_ettemaksu_arve(INTEGER, INTEGER, DATE) 
 
 
 /*
-select lapsed.koosta_ettemaksu_arve(28,11269,'2020-09-05')
+select lapsed.koosta_ettemaksu_arve(28,8692,'2020-09-05')
 
-select * from lapsed.laps where staatus = 1
+select * from lapsed.laps where id = 8692
 
 select * from lapsed.lapse_taabel
 
 update lapsed.lapse_taabel set staatus = 1 where id = 5
 
-select * from docs.
  */
+

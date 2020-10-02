@@ -109,6 +109,8 @@ BEGIN
                                 FROM get_asutuse_struktuur(l_rekvid))
                AND aasta = year($1)
                AND (e.kpv IS NULL) --  OR e.kpv <= $1
+               AND e.status <> 3
+
              UNION ALL
              -- eelarve taps
              SELECT e.rekvid
@@ -139,6 +141,8 @@ BEGIN
                                 FROM get_asutuse_struktuur(l_rekvid))
                AND aasta = year($1)
                AND (e.kpv IS NOT NULL AND e.kpv <= l_kpv)
+               AND e.status <> 3
+
              UNION ALL
              SELECT rekvid
                      ,

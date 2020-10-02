@@ -131,7 +131,6 @@ class Document {
 
 
         }
-
         return await db.queryDb(sql, params, sortBy, sqlWhere, limit);
     }
 

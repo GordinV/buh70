@@ -266,5 +266,5 @@ GRANT EXECUTE ON FUNCTION lapsed.yksuse_taabel(INTEGER, INTEGER, INTEGER) TO dbv
 
 
 /*
-select * from lapsed.yksuse_taabel(88, 1, 2020)
+select * from lapsed.yksuse_taabel(85, 9, 2020)
 */

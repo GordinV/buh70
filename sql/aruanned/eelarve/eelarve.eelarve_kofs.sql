@@ -29,6 +29,8 @@ WITH query AS (
                        FROM get_asutuse_struktuur(l_rekvid))
       AND (e.kuu <= month(l_kpv) OR e.kuu = 0)
       AND e.aasta = year(l_kpv)
+      AND e.status <> 3
+
     UNION ALL
       -- taitmine (kulud)
     SELECT

@@ -138,7 +138,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
                             t.staatus
                      FROM lapsed.cur_paeva_taabel t
                      WHERE rekv_id = $1::INTEGER
-                     ORDER BY kpv DESC, yksus
+                     ORDER BY (kpv::date) DESC, yksus
             `,     //  $1 всегда ид учреждения, $2 - userId
             params:
                 '',

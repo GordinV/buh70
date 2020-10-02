@@ -37,6 +37,7 @@ WITH qryReport AS (
                            FROM get_asutuse_struktuur(l_rekvid))
           AND aasta = l_aasta
           AND (empty(is_parandus) OR (e.kpv IS NULL OR e.kpv <= l_kpv2))
+          AND e.status <> 3
         UNION ALL
         -- tekke taitmine
         SELECT rekv_id,

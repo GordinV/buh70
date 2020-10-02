@@ -71,6 +71,7 @@ WITH cur_kulude_kassa_taitmine AS (
                     AND aasta = l_aasta
                     AND e.kpv IS NULL
                     AND kood5 NOT LIKE '3%'
+                    AND e.status <> 3
                   UNION ALL
                   SELECT rekvid,
                          0 :: NUMERIC                    AS eelarve_kinni,
@@ -101,6 +102,8 @@ WITH cur_kulude_kassa_taitmine AS (
                     AND aasta = l_aasta
                     AND kood5 NOT LIKE '3%'
                     AND (e.kpv IS NULL OR e.kpv <= COALESCE(l_kpv, CURRENT_DATE))
+                    AND e.status <> 3
+
                   UNION ALL
                   SELECT rekv_id          AS rekvid,
                          0 :: NUMERIC     AS eelarve_kinni,
