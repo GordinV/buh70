@@ -8,6 +8,7 @@ const Menu = require('./../../components/menu-toolbar/menu-toolbar.jsx');
 const DocRights = require('./../../../config/doc_rights');
 const checkRights = require('./../../../libs/checkRights');
 const getDefaultDates = require('./../../../libs/getDefaultDate');
+const createEmptyFilterData = require('./../../../libs/createEmptyFilterData');
 const prepareSqlWhereFromFilter = require('./../../../libs/prepareSqlWhereFromFilter');
 
 const
@@ -38,18 +39,18 @@ class Documents extends React.Component {
         super(props);
 
         this.gridData = [];
-        this.gridConfig = props.gridConfig ? props.gridConfig: [];
+        this.gridConfig = DocContext.gridConfig ? DocContext.gridConfig[props.docTypeId]: [];
         this.filterData = DocContext.filter && DocContext.filter[props.docTypeId] ? DocContext.filter[props.docTypeId] : [];
         this.startMenuData = []; // здесь будут данные для старт меню
 
         if (props.initData && props.initData.result) {
             this.gridData = props.initData.result.data || [];
-            this.gridConfig = !this.gridConfig.length ? props.initData.gridConfig: [];
+            this.gridConfig = !this.gridConfig.length ? props.initData.gridConfig: this.gridConfig;
             this.subtotals = props.initData.subtotals || [];
         } else if (props.initData && props.initData.gridData) {
 
             this.gridData = props.initData.gridData || [];
-            this.gridConfig = !this.gridConfig.length ? props.initData.gridConfig: [];
+            this.gridConfig = !this.gridConfig.length ? props.initData.gridConfig: this.gridConfi;
             this.subtotals = [];
         }
 
@@ -74,7 +75,7 @@ class Documents extends React.Component {
             'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick',
             'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData',
-            'handleInputChange', 'btnEmailClick', 'createEmptyFilterData');
+            'handleInputChange', 'btnEmailClick');
 
     }
 
@@ -95,9 +96,8 @@ class Documents extends React.Component {
 
         if (!reload && this.props.history && this.props.history.location.state) {
             if (!this.filterData.length) {
-                this.filterData = this.createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
+                this.filterData = createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
             }
-            this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
             reload = true;
 
         } else {
@@ -134,20 +134,6 @@ class Documents extends React.Component {
             this.fetchData('selectDocs');
         }
 
-    }
-
-    // присвоит фильтру значения переданные в параметре
-    mergeParametersWithFilter(filter, parameters) {
-        let keys = Object.keys(parameters);
-        keys.forEach((key) => {
-            // find row in filter array
-            let filterRowIndex = filter.findIndex(row => row.id === key);
-
-            if (filterRowIndex >= 0 && parameters[key]) {
-                filter[filterRowIndex].value = parameters[key];
-            }
-        });
-        return filter;
     }
 
     render() {
@@ -267,7 +253,7 @@ class Documents extends React.Component {
      */
     btnFilterClick() {
         if (!this.filterData.length) {
-            this.filterData = this.createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
+            this.filterData = createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
         }
         this.setState({getFilter: true})
     }
@@ -651,16 +637,6 @@ class Documents extends React.Component {
                 break;
             case 'selectDocs':
                 URL = `/newApi`;
-                if (this.props.history && this.props.history.location.state) {
-                    if (!this.filterData.length) {
-                        this.filterData = this.createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
-                    }
-
-                    this.filterData = this.mergeParametersWithFilter(this.filterData, this.props.history.location.state);
-                    sqlWhere = prepareSqlWhereFromFilter(this.filterData, this.docTypeId);
-                    this.props.history.location.state = null;
-
-                }
                 break;
             default:
                 URL = `/${method}`;
@@ -724,7 +700,7 @@ class Documents extends React.Component {
                                 this.filterData = DocContext.filter[this.docTypeId];
                             } else {
                                 // создать массив фильтра
-                                this.filterData = this.createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
+                                this.filterData = createEmptyFilterData(this.gridConfig, this.filterData, this.docTypeId);
 
                                 // создать строку фильтрации
                                 let sqlWhere = prepareSqlWhereFromFilter(this.filterData, this.docTypeId);
@@ -756,38 +732,6 @@ class Documents extends React.Component {
 
             });
         });
-    }
-
-    /**
-     * создаст массив для создания фильтра
-     */
-    createEmptyFilterData(gridConfig, filterData, docTypeId) {
-        filterData = gridConfig.map((row) => {
-            // props.data пустое, создаем
-            let value = row.value ? row.value : null;
-
-            if (row.default) {
-
-                const defaultValue = getDefaultDates(row.default);
-                value = defaultValue.start;
-                if (row.interval) {
-                    row.start = defaultValue.start;
-                    row[`${row.id}_start`] = defaultValue.start;
-                    row.end = defaultValue.end;
-                    row[`${row.id}_end`] = defaultValue.end;
-                }
-            }
-
-            if (!row.type) {
-                row.type = 'text';
-            }
-            row.value = value;
-            return row;
-
-        });
-
-        DocContext.filter[docTypeId] = filterData;
-        return filterData;
     }
 
     /**

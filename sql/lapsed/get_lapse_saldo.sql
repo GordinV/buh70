@@ -22,13 +22,13 @@ SELECT sum(jaak)::NUMERIC(14, 2)       AS jaak,
        sum(ettemaksud)::NUMERIC(14, 2) AS ettemaksud
 FROM (
 -- ettemaksud
-         SELECT 0::NUMERIC(14, 2)         AS jaak,
-                l.parentid                AS laps_id,
-                ymk.yksus                 AS yksus,
-                d.rekvid                  AS rekv_id,
-                d.id                      AS docs_id,
-                0                         AS laekumised,
-                ymk.summa::NUMERIC(14, 2) AS ettemaksud
+         SELECT -1 * ymk.summa::NUMERIC(14, 2) AS jaak, -- summa не связанных со счетами платежек (нач. сальдо или предоплата)
+                l.parentid                     AS laps_id,
+                ymk.yksus                      AS yksus,
+                d.rekvid                       AS rekv_id,
+                d.id                           AS docs_id,
+                0                              AS laekumised,
+                ymk.summa::NUMERIC(14, 2)      AS ettemaksud
          FROM docs.doc d,
               lapsed.get_group_part_from_mk(d.id, l_kpv) AS ymk,
               docs.mk mk,
@@ -39,6 +39,7 @@ FROM (
            AND (mk.arvid IS NULL OR mk.arvid = 0)
            AND d.status <> 3
          UNION ALL
+         -- laekumised
          SELECT 0          AS jaak,
                 l.parentid AS laps_id,
                 ymk.yksus  AS yksus,
@@ -59,7 +60,7 @@ FROM (
            AND d.status <> 3
          UNION ALL
          -- jaak, maksed
-         SELECT -1 * ymk.summa AS jaak,
+/*         SELECT -1 * ymk.summa AS jaak,
                 l.parentid     AS laps_id,
                 ymk.yksus      AS yksus,
                 d.rekvid       AS rekv_id,
@@ -74,6 +75,20 @@ FROM (
            AND mk.maksepaev < l_kpv
            AND l.docid = d.id
            AND d.status <> 3
+*/
+         SELECT -1 * ((a1.summa / a.summa) * at.summa) AS jaak,
+                l.parentid                             AS laps_id,
+                a1.properties ->> 'yksus'              AS yksus,
+                at.rekvid                              AS rekv_id,
+                at.doc_tasu_id                         AS docs_id,
+                0                                      AS laekumised,
+                0                                      AS ettemaksud
+         FROM docs.arvtasu at
+                  INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid
+                  INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
+                  INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
+         WHERE at.kpv < l_kpv::DATE
+           AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
          UNION ALL
          --jaak, arved
          SELECT a1.summa::NUMERIC(14, 2)    AS jaak,
@@ -91,6 +106,11 @@ FROM (
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
            AND d.status <> 3
      ) qry
+
+--WHERE (coalesce(jaak, 0) <> 0
+--    OR coalesce(laekumised, 0) <> 0
+--    OR coalesce(ettemaksud, 0) <> 0)
+
 GROUP BY qry.rekv_id, qry.laps_id, yksus
 
 $BODY$
@@ -107,7 +127,7 @@ GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE) TO arvestaja;
 
 /*
 SELECT *
-FROM lapsed.lapse_saldod('2020-09-01'::date)
-where laps_id = 11748
+FROM lapsed.lapse_saldod('2020-10-01'::date)
+where laps_id = 6636
 and rekv_id = 69
 */

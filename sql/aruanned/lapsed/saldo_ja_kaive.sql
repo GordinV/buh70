@@ -21,51 +21,44 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
         rekvid           INTEGER
     ) AS
 $BODY$
-SELECT period,
-       kulastatavus,
-       lapse_nimi,
-       lapse_isikukood,
-       maksja_nimi,
-       maksja_isikukood,
-       yksus,
-       viitenumber,
-       sum(alg_saldo)  AS alg_saldo,
-       sum(arvestatud) AS arvestatud,
-       sum(soodustus)  AS soodustus,
-       sum(laekumised) AS laekumised,
-       sum(tagastused) AS tagastused,
-       sum(jaak)       AS jaak,
-       rekvid
-FROM (
-         SELECT kpv_start                                                          AS period,
+WITH alg_saldo AS (
+    -- alg_saldo
+    SELECT alg_saldo.yksus::TEXT                                       AS yksus,
+           coalesce(alg_saldo.jaak::NUMERIC(14, 2), 0)::NUMERIC(14, 2) AS alg_saldo,
+           alg_saldo.rekv_id::INTEGER                                  AS rekvid,
+           l.id                                                        AS laps_id,
+           l.isikukood                                                 AS lapse_isikukood,
+           l.nimi                                                      AS lapse_nimi,
+           lapsed.get_viitenumber(alg_saldo.rekv_id, l.id)::TEXT       AS viitenumber
+    FROM lapsed.laps l
+             LEFT OUTER JOIN (SELECT jaak, laps_id, rekv_id, yksus
+                              FROM lapsed.lapse_saldod(kpv_start::DATE)) alg_saldo
+                             ON alg_saldo.laps_id = l.id
+    WHERE alg_saldo.rekv_id IN (SELECT rekv_id
+                                FROM get_asutuse_struktuur(69))
+),
+     kaibed AS (
+         SELECT l.id                                               AS laps_id,
+                kpv_start                                          AS period,
                 CASE
                     WHEN kulastavus.lopp_kpv >= kpv_end THEN 'Jah'
-                    ELSE 'Ei' END::TEXT                                            AS kulastatavus,
-                l.nimi::TEXT                                                       AS lapse_nimi,
-                l.isikukood::TEXT                                                  AS lapse_isikukood,
-                i.nimetus::TEXT                                                    AS maksja_nimi,
-                i.regkood::TEXT                                                    AS maksja_isikukood,
-                a1.yksus::TEXT                                                     AS yksus,
-                lapsed.get_viitenumber(d.rekvid, l.id)::TEXT                       AS viitenumber,
-                coalesce(alg_saldo.jaak::NUMERIC(14, 2), 0)::NUMERIC(14, 2)
-                                                                                   AS alg_saldo,
+                    ELSE 'Ei' END::TEXT                            AS kulastatavus,
+                l.nimi::TEXT                                       AS lapse_nimi,
+                l.isikukood::TEXT                                  AS lapse_isikukood,
+                i.nimetus::TEXT                                    AS maksja_nimi,
+                i.regkood::TEXT                                    AS maksja_isikukood,
+                a1.yksus::TEXT                                     AS yksus,
+                lapsed.get_viitenumber(d.rekvid, l.id)::TEXT       AS viitenumber,
                 CASE
                     WHEN ((a.properties ->> 'tyyp') IS NULL OR empty(a.properties ->> 'tyyp'))
                         AND a.kpv >= kpv_start
+                        AND a.kpv <= kpv_end
                         THEN a1.summa::NUMERIC(14, 2)
-                    ELSE 0 END                                                     AS arvestatud,
-                coalesce(a1.soodustus, 0)::NUMERIC(14, 2)                          AS soodustus,
-                coalesce(laekumised.laekumised, 0)::NUMERIC(14, 2)                 AS laekumised,
-                coalesce(laekumised.tagastus, 0)::NUMERIC(14, 2)                   AS tagastused,
-                (coalesce(alg_saldo.jaak::NUMERIC(14, 2), 0) +
-                 CASE
-                     WHEN ((a.properties ->> 'tyyp') IS NULL OR empty(a.properties ->> 'tyyp'))
-                         AND a.kpv >= kpv_start
-                         THEN a1.summa::NUMERIC(14, 2)
-                     ELSE 0 END -
-                 coalesce(laekumised.laekumised, 0)::NUMERIC(14, 2) +
-                 coalesce(laekumised.tagastus, 0)::NUMERIC(14, 2))::NUMERIC(14, 2) AS jaak,
-                d.rekvid::INTEGER                                                  AS rekvid
+                    ELSE 0 END                                     AS arvestatud,
+                coalesce(a1.soodustus, 0)::NUMERIC(14, 2)          AS soodustus,
+                coalesce(laekumised.laekumised, 0)::NUMERIC(14, 2) AS laekumised,
+                coalesce(laekumised.tagastus, 0)::NUMERIC(14, 2)   AS tagastused,
+                d.rekvid::INTEGER                                  AS rekvid
          FROM docs.doc d
                   INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
                   INNER JOIN lapsed.laps l ON l.id = ld.parentid
@@ -117,6 +110,42 @@ FROM (
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND (a.kpv >= kpv_start AND a.kpv <= kpv_end OR a.jaak > 0 OR a.tasud IS NULL OR a.tasud >= kpv_end)
+     )
+
+SELECT period,
+       kulastatavus,
+       lapse_nimi,
+       lapse_isikukood,
+       maksja_nimi,
+       maksja_isikukood,
+       yksus,
+       viitenumber,
+       sum(alg_saldo)  AS alg_saldo,
+       sum(arvestatud) AS arvestatud,
+       sum(soodustus)  AS soodustus,
+       sum(laekumised) AS laekumised,
+       sum(tagastused) AS tagastused,
+       sum(jaak)       AS jaak,
+       rekvid
+FROM (
+         SELECT k.period,
+                k.kulastatavus,
+                coalesce(k.lapse_nimi, a.lapse_nimi)           AS lapse_nimi,
+                coalesce(k.lapse_isikukood, a.lapse_isikukood) AS lapse_isikukood,
+                k.maksja_nimi,
+                k.maksja_isikukood,
+                coalesce(k.yksus, a.yksus)                     AS yksus,
+                coalesce(k.viitenumber, a.viitenumber)         AS viitenumber,
+                coalesce(a.alg_saldo, 0)                       AS alg_saldo,
+                coalesce(k.arvestatud, 0)                      AS arvestatud,
+                coalesce(k.soodustus, 0)                       AS soodustus,
+                coalesce(k.laekumised, 0)                      AS laekumised,
+                coalesce(k.tagastused, 0)                      AS tagastused,
+                coalesce(a.alg_saldo, 0) + coalesce(k.arvestatud, 0) - coalesce(k.laekumised, 0) +
+                coalesce(k.tagastused, 0)                      AS jaak,
+                coalesce(k.rekvid, a.rekvid)                   AS rekvid
+         FROM kaibed k
+                  FULL JOIN alg_saldo a ON a.laps_id = k.laps_id AND k.rekvid = a.rekvid AND k.yksus = a.yksus
      ) qry
 GROUP BY period,
          kulastatavus,
@@ -141,9 +170,8 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 /*
 select * from (
 SELECT *
-FROM lapsed.saldo_ja_kaive(69, '2020-09-01', '2020-09-30')
+FROM lapsed.saldo_ja_kaive(69, '2020-08-01', '2020-08-31')
 ) qry
-where  period  >=  '2020-09-01' and period  <=  '2020-09-30'
-and viitenumber like '0690117484%'
+where  viitenumber  = '0690066360'
 
 */

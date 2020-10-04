@@ -5,6 +5,7 @@ const DocContext = require('../../../doc-context');
 const PropTypes = require('prop-types');
 const React = require('react');
 const fetchData = require('./../../../../libs/fetchData');
+const createEmptyFilterData = require('./../../../../libs/createEmptyFilterData');
 
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
@@ -194,9 +195,23 @@ class Laps extends React.PureComponent {
                 DocContext.pageName = page.pageName;
             }
         }
+
+        // проверим наличие фильтра
+        if (!DocContext.filter[pageDocTypeId] || !DocContext.filter[pageDocTypeId].length) {
+            // создаем пустой фильтр для заданного типа
+            DocContext.filter[pageDocTypeId] = createEmptyFilterData(DocContext.gridConfig[pageDocTypeId],[],pageDocTypeId);
+        }
+
+        // накладываем фильтр
+        DocContext.filter[pageDocTypeId].forEach(row => {
+           if (row.id == 'isikukood') {
+               row.value = isikukood;
+           }
+        });
+
+        //
         this.props.history.push({
-            pathname: `/lapsed/${pageDocTypeId}`,
-            state: {isikukood: isikukood, type: 'text'}
+            pathname: `/lapsed/${pageDocTypeId}`
         });
     }
 

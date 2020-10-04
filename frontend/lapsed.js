@@ -8,10 +8,14 @@ import DocContext from './doc-context.js';
 initData = JSON.parse(initData);
 userData = JSON.parse(userData);
 
+// сохраним базовые данные в памети
+
 DocContext.initData = initData;
 DocContext.userData = userData;
 DocContext.module = 'lapsed';
 DocContext.pageName = 'Laste register';
+DocContext.gridConfig = initData.docConfig;
+
 
 ReactDOM.hydrate(
     <BrowserRouter>

@@ -40,7 +40,7 @@ exports.get = async (req, res) => {
 
     const sqlData = {
         docTypeId: documentType,
-        result: await Document.selectDocs(),
+        result: await Document.selectDocs([], '', 100),
         gridConfig: gridConfig,
         docConfig: docConfig,
         requiredFields: Document.requiredFields ? Document.requiredFields: [],
