@@ -19,6 +19,7 @@ DECLARE
                            FROM ou.userid u
                            WHERE id = user_id);
     new_history JSON;
+    v_rekv      RECORD;
 BEGIN
     SELECT *,
            (roles ->> 'is_peakasutaja')::BOOLEAN AS is_peakasutaja
@@ -33,72 +34,86 @@ BEGIN
                         ', userId:' ||
                         coalesce(user_id, 0) :: TEXT;
         result = 0;
-        raise notice 'error %', error_message;
+        RAISE NOTICE 'error %', error_message;
         RETURN;
 
     END IF;
 
-    IF l_aasta_id IS NULL OR l_aasta_id = 0
+    IF l_aasta_id IS NOT NULL
     THEN
-        l_aasta_id = (SELECT id
-                      FROM ou.aasta a
-                      WHERE rekvid = l_rekv_id
-                        AND kuu = l_kuu
-                        AND l_aasta = aasta);
+        SELECT kuu, aasta INTO l_kuu, l_aasta
+        FROM ou.aasta
+        WHERE id = l_aasta_id;
+
     END IF;
 
+    FOR v_rekv IN
+        SELECT *
+        FROM (
+                 SELECT rekv_id
+                 FROM get_asutuse_struktuur(l_rekv_id)
+             ) qry
+        WHERE CASE WHEN l_status = 1 THEN rekv_id = rekv_id ELSE rekv_id = l_rekv_id END
+        LOOP
+            l_aasta_id = (SELECT id
+                          FROM ou.aasta a
+                          WHERE rekvid = v_rekv.rekv_id
+                            AND kuu = l_kuu
+                            AND l_aasta = aasta);
 
-    -- ajalugu
-    SELECT row_to_json(row) INTO new_history
-    FROM (SELECT now()                        AS updated,
-                 ltrim(rtrim(v_user.ametnik)) AS user) row;
+            RAISE NOTICE 'rekvid %, l_status %, l_aasta_id %', v_rekv.rekv_id, l_status, l_aasta_id;
+
+            -- ajalugu
+            SELECT row_to_json(row) INTO new_history
+            FROM (SELECT now()                        AS updated,
+                         ltrim(rtrim(v_user.ametnik)) AS user) row;
 
 
-    IF (l_aasta_id IS NULL OR l_aasta_id = 0)
-    THEN
-        -- new perioa
-        IF l_kuu IS NULL OR l_aasta IS NULL
-        THEN
-            error_code = 6;
-            error_message = 'Puuduvad vajaliku andmed: ' :: TEXT;
-            result = 0;
-            RETURN;
+            IF (l_aasta_id IS NULL OR l_aasta_id = 0)
+            THEN
+                -- new perioa
+                IF l_kuu IS NULL OR l_aasta IS NULL
+                THEN
+                    error_code = 6;
+                    error_message = 'Puuduvad vajaliku andmed: ' :: TEXT;
+                    result = 0;
+                    RETURN;
 
-        END IF;
+                END IF;
 
-        l_aasta_id = (SELECT id
-                      FROM ou.aasta a
-                      WHERE rekvid = l_rekv_id
-                        AND kuu = l_kuu
-                        AND l_aasta = aasta);
+                l_aasta_id = (SELECT id
+                              FROM ou.aasta a
+                              WHERE rekvid = v_rekv.rekv_id
+                                AND kuu = l_kuu
+                                AND l_aasta = aasta);
 
-        IF l_aasta_id IS NULL OR l_aasta_id = 0
-        THEN
-            INSERT INTO ou.aasta (rekvid, ajalugu, kuu, aasta)
-            VALUES (l_rekv_id, '[]' :: JSONB || new_history:: JSONB, l_kuu, l_aasta) RETURNING id
-                INTO l_aasta_id;
+                IF l_aasta_id IS NULL OR l_aasta_id = 0
+                THEN
+                    INSERT INTO ou.aasta (rekvid, ajalugu, kuu, aasta)
+                    VALUES (v_rekv.rekv_id, '[]' :: JSONB || new_history:: JSONB, l_kuu, l_aasta) RETURNING id
+                        INTO l_aasta_id;
 
-        END IF;
-    ELSE
-        SELECT a.* INTO v_doc
-        FROM ou.aasta a
-        WHERE a.id = l_aasta_id;
+                END IF;
+            ELSE
+                SELECT a.* INTO v_doc
+                FROM ou.aasta a
+                WHERE a.id = l_aasta_id;
 
-        IF v_doc IS NULL
-        THEN
-            error_code = 6;
-            error_message = 'Dokument ei leitud, docId: ' || coalesce(l_aasta_id, 0) :: TEXT;
-            result = 0;
-            RETURN;
+                IF v_doc IS NULL
+                THEN
+                    error_code = 6;
+                    error_message = 'Dokument ei leitud, docId: ' || coalesce(l_aasta_id, 0) :: TEXT;
+                    result = 0;
+                    RETURN;
 
-        END IF;
-    END IF;
+                END IF;
+            END IF;
 
-    UPDATE ou.aasta
-    SET ajalugu = coalesce(ajalugu, '[]') :: JSONB || new_history:: JSONB,
-        kinni   = l_status
-    WHERE id = l_aasta_id;
-
+            UPDATE ou.aasta
+            SET ajalugu = coalesce(ajalugu, '[]') :: JSONB || new_history:: JSONB,
+                kinni   = l_status
+            WHERE id = l_aasta_id;
+        END LOOP;
     result = 1;
     RETURN;
 
@@ -118,9 +133,11 @@ $BODY$
 GRANT EXECUTE ON FUNCTION ou.sp_muuda_aasta_status(INTEGER, JSON) TO dbpeakasutaja;
 
 /*
-select ou.sp_muuda_aasta_status(2477,'{"id":0,"status":0, "kuu":1, "aasta":2020}')
+select ou.sp_muuda_aasta_status(2477,'{"id":8613,"status":1}')
 
 
 select * from ou.userid where rekvid = 63 and kasutaja = 'vlad'
+select * from ou.aasta where id = 8613
 
 */
+

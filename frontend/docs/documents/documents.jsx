@@ -400,6 +400,7 @@ class Documents extends React.Component {
                 })
                 .then((data) => {
                     if (data.error_message) {
+                        console.error('data.error_message',data);
                         this.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
                         if (data.status && data.status == 401) {
                             setTimeout(() => {
@@ -745,6 +746,7 @@ class Documents extends React.Component {
                 }
                 resolved(response.data);
             }).catch((error) => {
+                console.error('fetch error', error);
                 // Something happened in setting up the request that triggered an Error
                 this.setState({
                     warning: `Tekkis viga ${error}`,
@@ -752,7 +754,6 @@ class Documents extends React.Component {
                 });
                 rejected(error);
 
-                console.error('Error in fetch', error);
             });
         });
     }

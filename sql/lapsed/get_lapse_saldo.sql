@@ -24,47 +24,55 @@ FROM (
 -- ettemaksud
          SELECT 0::NUMERIC(14, 2)         AS jaak,
                 l.parentid                AS laps_id,
-                ''                        AS yksus,
+                ymk.yksus                 AS yksus,
                 d.rekvid                  AS rekv_id,
                 d.id                      AS docs_id,
                 0                         AS laekumised,
-                mk1.summa::NUMERIC(14, 2) AS ettemaksud
-         FROM docs.doc d
-                  INNER JOIN docs.mk mk ON mk.parentid = d.id
-                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-                  INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
-         WHERE mk.kpv < l_kpv
+                ymk.summa::NUMERIC(14, 2) AS ettemaksud
+         FROM docs.doc d,
+              lapsed.get_group_part_from_mk(d.id, l_kpv) AS ymk,
+              docs.mk mk,
+              lapsed.liidestamine l
+         WHERE mk.parentid = d.id
+           AND mk.maksepaev < l_kpv
+           AND l.docid = d.id
            AND (mk.arvid IS NULL OR mk.arvid = 0)
            AND d.status <> 3
          UNION ALL
          SELECT 0          AS jaak,
                 l.parentid AS laps_id,
-                ''         AS yksus,
+                ymk.yksus  AS yksus,
                 d.rekvid   AS rekv_id,
                 d.id       AS docs_id,
-                mk1.summa  AS laekumised,
+                ymk.summa  AS laekumised,
                 0          AS ettemaksud
-         FROM docs.doc d
-                  INNER JOIN docs.mk mk ON mk.parentid = d.id
-                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-                  INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
-         WHERE (year(mk.kpv) * 100 + month(mk.kpv)) = year(make_date(year(l_kpv), month(l_kpv), 1)::DATE - 1) * 100 +
-                                                      month(make_date(year(l_kpv), month(l_kpv), 1)::DATE - 1)
+         FROM docs.doc d,
+              lapsed.get_group_part_from_mk(d.id, l_kpv) AS ymk,
+              docs.mk mk,
+              lapsed.liidestamine l
+         WHERE mk.parentid = d.id
+           AND l.docid = d.id
+           AND d.status <> 3
+           AND (year(mk.maksepaev) * 100 + month(mk.maksepaev)) =
+               year(make_date(year(l_kpv), month(l_kpv), 1)::DATE - 1) * 100 +
+               month(make_date(year(l_kpv), month(l_kpv), 1)::DATE - 1)
            AND d.status <> 3
          UNION ALL
          -- jaak, maksed
-         SELECT -1 * mk1.summa AS jaak,
+         SELECT -1 * ymk.summa AS jaak,
                 l.parentid     AS laps_id,
-                ''             AS yksus,
+                ymk.yksus      AS yksus,
                 d.rekvid       AS rekv_id,
                 d.id           AS docs_id,
                 0              AS laekumised,
                 0              AS ettemaksud
-         FROM docs.doc d
-                  INNER JOIN docs.mk mk ON mk.parentid = d.id
-                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-                  INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
-         WHERE mk.kpv < l_kpv
+         FROM docs.doc d,
+              lapsed.get_group_part_from_mk(d.id, l_kpv) AS ymk,
+              docs.mk mk,
+              lapsed.liidestamine l
+         WHERE mk.parentid = d.id
+           AND mk.maksepaev < l_kpv
+           AND l.docid = d.id
            AND d.status <> 3
          UNION ALL
          --jaak, arved

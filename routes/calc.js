@@ -21,11 +21,13 @@ exports.post = async (req, res) => {
     const doc = new Doc(docTypeId, null, user.userId, user.asutusId, module);
 
     if (!ids || ids.length === 0) {
+        console.error('Valitud dokument ei leidnud', ids);
         return res.send({status: 200, result: null, error_message: `Valitud dokument ei leidnud`});
     }
 
     // ищем таску
     if (!taskName || !doc.config[taskName]) {
+        console.error ('task ei leidnud',taskName);
         return res.send({status: 500, result: null, error_message: `Task ${taskName ? taskName : ''} ei leidnud`});
     }
 
@@ -42,13 +44,15 @@ exports.post = async (req, res) => {
     let lastDocId = 0;
     let promiseResult = await Promise.all(promises).then((data, err) => {
         if (err) {
+            console.error('Promis error', err);
             return res.send({status: 500, result: null, error_message: err});
         }
 
         const replyWithDocs = data.filter(obj => {
-            if (!obj.error_code) {
+            if (obj.error_code) {
                 return res.send({status: 500, result: null, error_message: err});
             }
+            return obj;
         });
 
         result = replyWithDocs.length;
@@ -63,7 +67,6 @@ exports.post = async (req, res) => {
     });
 
     //ответ
-
     res.send({
         status: 200, result: result, data: {
             action: taskName,

@@ -45,9 +45,7 @@ FROM (
                 l.isikukood::TEXT                                                  AS lapse_isikukood,
                 i.nimetus::TEXT                                                    AS maksja_nimi,
                 i.regkood::TEXT                                                    AS maksja_isikukood,
---                array_to_string(a1.yksus, ',', '')::TEXT           AS yksus,
                 a1.yksus::TEXT                                                     AS yksus,
-                a.number::TEXT                                                     AS number,
                 lapsed.get_viitenumber(d.rekvid, l.id)::TEXT                       AS viitenumber,
                 coalesce(alg_saldo.jaak::NUMERIC(14, 2), 0)::NUMERIC(14, 2)
                                                                                    AS alg_saldo,
@@ -86,14 +84,21 @@ FROM (
                                   ON alg_saldo.laps_id = l.id
                                       AND alg_saldo.rekv_id = d.rekvid
                                       AND alg_saldo.yksus = a1.yksus
-                  LEFT OUTER JOIN (SELECT at.doc_arv_id                         AS arv_id,
-                                          sum(summa) FILTER ( WHERE summa < 0 ) AS tagastus,
-                                          sum(summa) FILTER ( WHERE summa > 0 ) AS laekumised,
-                                          sum(summa)                            AS summa
-                                   FROM docs.arvtasu at
-                                   WHERE at.kpv >= kpv_start
-                                     AND at.kpv <= kpv_end
-                                   GROUP BY at.doc_arv_id) laekumised ON laekumised.arv_id = d.id
+                  LEFT OUTER JOIN (
+             SELECT at.doc_arv_id                                                                        AS arv_id,
+                    a1.properties ->> 'yksus'                                                            AS yksus,
+                    sum(((a1.summa / a.summa) * at.summa)) FILTER ( WHERE at.summa < 0 )::NUMERIC(14, 2) AS tagastus,
+                    sum(((a1.summa / a.summa) * at.summa)) FILTER ( WHERE at.summa > 0 )::NUMERIC(14, 2) AS laekumised,
+                    sum((a1.summa / a.summa) * at.summa)                                                 AS summa
+             FROM docs.arvtasu at
+                      INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid
+                      INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
+             WHERE at.kpv >= kpv_start::DATE
+               AND at.kpv <= kpv_end::DATE
+               AND a.rekvid = l_rekvid
+             GROUP BY at.doc_arv_id, (a1.properties ->> 'yksus')) laekumised
+                                  ON laekumised.arv_id = d.id
+                                      AND laekumised.yksus = a1.yksus
                   LEFT OUTER JOIN (SELECT parentid, rekvid, min(alg_kpv) AS alg_kpv, max(lopp_kpv) AS lopp_kpv
                                    FROM (
                                             SELECT parentid,
@@ -112,54 +117,6 @@ FROM (
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND (a.kpv >= kpv_start AND a.kpv <= kpv_end OR a.jaak > 0 OR a.tasud IS NULL OR a.tasud >= kpv_end)
-         UNION ALL
--- Kui arved ei ole (alg.saldo)
-         SELECT coalesce(kpv_start, kpv_end)::DATE                    AS period,
-                CASE
-                    WHEN kulastavus.lopp_kpv >= kpv_end THEN 'Jah'
-                    ELSE 'Ei' END::TEXT                               AS kulastatavus,
-                l.nimi::TEXT                                          AS lapse_nimi,
-                l.isikukood::TEXT                                     AS lapse_isikukood,
-                NULL::TEXT                                            AS maksja_nimi,
-                NULL::TEXT                                            AS maksja_isikukood,
-                kulastavus.yksus::TEXT                                AS yksus,
-                NULL::TEXT                                            AS number,
-                lapsed.get_viitenumber(alg_saldo.rekv_id, l.id)::TEXT AS viitenumber,
-                alg_saldo.jaak::NUMERIC(14, 2)                        AS alg_saldo,
-                0                                                     AS arvestatud,
-                0::NUMERIC(14, 2)                                     AS soodustus,
-                0::NUMERIC(14, 2)                                     AS laekumised,
-                0::NUMERIC(14, 2)                                     AS tagastused,
-                alg_saldo.jaak::NUMERIC(14, 2)                        AS jaak,
-                alg_saldo.rekv_id::INTEGER                            AS rekvid
-         FROM lapsed.lapse_saldod(coalesce(kpv_start, kpv_end)::DATE) alg_saldo
-                  INNER JOIN lapsed.laps l ON l.id = alg_saldo.laps_id
-                  LEFT OUTER JOIN (SELECT parentid,
-                                          rekvid,
-                                          regexp_replace(array_agg(yksus)::TEXT, '[{}]', '', 'g') AS yksus,
-                                          min(alg_kpv)                                            AS alg_kpv,
-                                          max(lopp_kpv)                                           AS lopp_kpv
-                                   FROM (
-                                            SELECT parentid,
-                                                   rekvid,
-                                                   coalesce((lk.properties ->> 'alg_kpv')::DATE,
-                                                            date(year(current_date), 1, 1))::DATE   AS alg_kpv,
-                                                   coalesce((lk.properties ->> 'lopp_kpv')::DATE,
-                                                            date(year(current_date), 12, 31))::DATE AS lopp_kpv,
-                                                   lk.properties ->> 'yksus'::TEXT                  AS yksus
-                                            FROM lapsed.lapse_kaart lk
-                                            WHERE lk.staatus <> 3
-                                        ) qry
-                                   GROUP BY parentid,
-                                            rekvid) kulastavus
-                                  ON kulastavus.parentid = l.id AND kulastavus.rekvid = alg_saldo.rekv_id
-         WHERE alg_saldo.rekv_id IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid))
-           AND NOT exists(SELECT a.id
-                          FROM docs.arv a
-                                   INNER JOIN lapsed.liidestamine l
-                                              ON l.docid = a.parentid AND l.parentid = alg_saldo.laps_id AND
-                                                 a.rekvid = alg_saldo.rekv_id)
      ) qry
 GROUP BY period,
          kulastatavus,

@@ -15,6 +15,10 @@ module.exports = {
     },
     fetchDataPost(url, params) {
         return axios.post(url, params)
+            .catch(error => {
+                console.error('fetchData error', error.response.status, error);
+                return ({result: 'error', status: error.response.status});
+            })
     },
     fetchDataPut(url, params) {
         return axios.put(url, params)
