@@ -28,7 +28,6 @@ describe('test for newApi/document', () => {
         let result = JSON.parse(response.body);
  //       expect(result.data[0].length).toBe(1);
 //        setTimeout(()=> {
-            console.log('response:', result);
             done();
 //        },1000)
     });
@@ -47,7 +46,6 @@ describe('test for newApi/document', () => {
         expect(response.statusCode).toBeDefined();
         expect(response.statusCode).toBe(200);
         let result = JSON.parse(response.body).result;
-        console.log('result tunnus',result);
         expect(result.result.error_code).toBe(0);
         done();
     });

@@ -26,7 +26,9 @@ class Tree extends React.PureComponent {
     }
 
     render() {
-        //this.state.parentId
+        if (!this.props.data.length) {
+            return null;
+        }
         return (
             <div ref="tree">
                 {this.getTree('0')}

@@ -5,6 +5,7 @@ let validateForm = ((self, reqFields, data) => {
     let warning = null,
         requiredFields = reqFields || [],
         notRequiredFields = [],
+        expressionFields = [],
         notMinMaxRule = [];
 
         if (!data) {
@@ -43,6 +44,16 @@ let validateForm = ((self, reqFields, data) => {
             if (checkValue) {
                 notMinMaxRule.push(field.name);
             }
+
+            // проверка на выражение
+            if (field.expression) {
+                let expression = field.expression;
+                let result = eval(field.expression);
+                if (!result) {
+                    expressionFields.push(field.name);
+                }
+
+            }
         }
     });
 
@@ -52,6 +63,10 @@ let validateForm = ((self, reqFields, data) => {
 
     if (notMinMaxRule.length > 0) {
         warning = warning ? warning: '' + ' min/max on vale(' + notMinMaxRule.join(', ') + ') ';
+    }
+
+    if (expressionFields.length > 0) {
+        warning = warning ? warning: '' + ' vale andmed (' + expressionFields.join(', ') + ') ';
     }
 
     return warning; // вернем извещение об итогах валидации

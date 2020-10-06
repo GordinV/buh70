@@ -121,6 +121,7 @@ class DocumentTemplate extends React.Component {
         return (
             <div>
                 <Menu params={btnParams}
+                      ref="menu"
                       history={this.props.history}
                       rekvId={DocContext.userData ? DocContext.userData.asutusId : 0}
                       module={this.props.module}/>
@@ -396,6 +397,7 @@ class DocumentTemplate extends React.Component {
         if (this.props.handleInputChange) {
             this.props.handleInputChange(inputName, inputValue);
         }
+        console.log('handleInputChange', inputName,inputValue );
         this.validation();
         this.forceUpdate();
     }
@@ -423,11 +425,12 @@ class DocumentTemplate extends React.Component {
      * @returns {string}
      */
     validation() {
-
+console.log('validation', this.requiredFields);
         if (!this.state.edited) return '';
 
         let warning = '',
             notRequiredFields = [], // пишем в массив поля с отсутствующими данными
+            expressionFields = [], // пишем выражение
             notMinMaxRule = [];
 
         if (this.requiredFields) {
@@ -494,6 +497,19 @@ class DocumentTemplate extends React.Component {
                     if (checkValue) {
                         notMinMaxRule.push(field.name);
                     }
+
+                    // проверка на выражение
+                    if (field.expression) {
+                        let data = this.docData;
+                        let expression = field.expression;
+                        let result = eval(field.expression);
+                        if (!result) {
+                            expressionFields.push(field.name);
+                        }
+                        console.log('expressionFields, result', expressionFields, result);
+
+                    }
+
                 }
 
                 if (field.trigger) {
@@ -507,6 +523,10 @@ class DocumentTemplate extends React.Component {
 
             if (notMinMaxRule.length > 0) {
                 warning = warning ? warning : '' + ' min/max on vale(' + notMinMaxRule.join(', ') + ') ';
+            }
+
+            if (expressionFields.length > 0) {
+                warning = warning ? warning: '' + ' vale andmed (' + expressionFields.join(', ') + ') ';
             }
 
             this.setState({

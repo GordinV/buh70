@@ -204,7 +204,7 @@ BEGIN
                 EXIT;
             END IF;
 
-            l_kpv = l_kpv + 1;
+--            l_kpv = l_kpv + 1;
             l_dekl_number = l_dekl_number + 1;
 
             IF l_dekl_number > 5

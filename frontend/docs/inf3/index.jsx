@@ -37,7 +37,6 @@ class Documents extends React.PureComponent {
         return (
             <div>
                 <DocumentRegister initData={this.props.initData}
-                                  gridConfig = {this.props.gridConfig}
                                   history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
                                   ref='register'

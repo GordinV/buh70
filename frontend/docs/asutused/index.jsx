@@ -24,7 +24,6 @@ class Asutused extends React.PureComponent {
     render() {
         console.log('this.props.gridConfig',this.props.gridConfig);
         return <Documents initData={this.props.initData}
-                          gridConfig = {this.props.gridConfig}
                           history={this.props.history ? this.props.history : null}
                           module={this.props.module}
                           ref='register'

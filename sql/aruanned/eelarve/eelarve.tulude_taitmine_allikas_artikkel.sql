@@ -111,20 +111,20 @@ WITH cur_tulude_kassa_taitmine AS (
                          200          AS idx
                   FROM cur_tulude_taitmine ft
                   UNION ALL
-                  SELECT kt.rekv_id       AS rekvid,
-                         0 :: NUMERIC     AS eelarve_kinni,
-                         0 :: NUMERIC     AS eelarve_parandatud,
-                         0 :: NUMERIC     AS eelarve_kassa_kinni,
-                         0 :: NUMERIC     AS eelarve_kassa_parandatud,
-                         0 :: NUMERIC     AS tegelik,
-                         summa            AS kassa,
+                  SELECT kt.rekv_id   AS rekvid,
+                         0 :: NUMERIC AS eelarve_kinni,
+                         0 :: NUMERIC AS eelarve_parandatud,
+                         0 :: NUMERIC AS eelarve_kassa_kinni,
+                         0 :: NUMERIC AS eelarve_kassa_parandatud,
+                         0 :: NUMERIC AS tegelik,
+                         summa        AS kassa,
                          tegev,
                          allikas,
                          artikkel,
                          rahavoog,
                          COALESCE(tunnus,
-                                  '')     AS tunnus,
-                         200  AS idx
+                                  '') AS tunnus,
+                         200          AS idx
                   FROM cur_tulude_kassa_taitmine kt
                   WHERE kt.artikkel IS NOT NULL
                     AND NOT empty(kt.artikkel)
@@ -261,6 +261,14 @@ SELECT 999999,
        idx
 FROM qryReport
 WHERE l_kond > 0
+  AND (
+        eelarve_kinni <> 0
+        OR eelarve_parandatud <> 0
+        OR eelarve_kassa_kinni <> 0
+        OR eelarve_kassa_parandatud <> 0
+        OR tegelik <> 0
+        OR kassa <> 0
+    )
 GROUP BY tegev,
          allikas,
          artikkel,
@@ -281,5 +289,9 @@ GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE
 
 
 SELECT *
-FROM eelarve.tulude_taitmine_allikas_artikkel(2020::INTEGER, '2020-03-31'::DATE, 119, 1)
-
+FROM (
+         SELECT *
+         FROM eelarve.tulude_taitmine_allikas_artikkel(2019::INTEGER, '2019-12-31'::DATE, 28, 0)
+     ) qry
+WHERE artikkel = '3232'
+--and tunnus = '5004'

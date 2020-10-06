@@ -3,6 +3,7 @@ const createEmptyFilterData = require('./../libs/createEmptyFilterData');
 const DocContext = {
     filter: {},
     libs: {},
+    menu: [],
     docTypeId: 'LAPS',
     initFilter: (docTypeId) => {
         /**

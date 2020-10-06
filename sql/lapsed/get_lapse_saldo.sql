@@ -36,7 +36,13 @@ FROM (
          WHERE mk.parentid = d.id
            AND mk.maksepaev < l_kpv
            AND l.docid = d.id
-           AND (mk.arvid IS NULL OR mk.arvid = 0)
+--           AND (mk.arvid IS NULL OR mk.arvid = 0)
+           AND mk.parentid NOT IN (
+             SELECT doc_tasu_id
+             FROM docs.arvtasu at
+             WHERE at.kpv >= l_kpv
+         )
+
            AND d.status <> 3
          UNION ALL
          -- laekumised
@@ -88,6 +94,7 @@ FROM (
                   INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                   INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
          WHERE at.kpv < l_kpv::DATE
+           AND a.kpv < l_kpv::DATE
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
          UNION ALL
          --jaak, arved

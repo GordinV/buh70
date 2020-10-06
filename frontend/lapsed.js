@@ -15,7 +15,7 @@ DocContext.userData = userData;
 DocContext.module = 'lapsed';
 DocContext.pageName = 'Laste register';
 DocContext.gridConfig = initData.docConfig;
-
+DocContext.menu = initData.menu ? initData.menu.data : [];
 
 ReactDOM.hydrate(
     <BrowserRouter>

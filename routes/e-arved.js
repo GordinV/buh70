@@ -15,7 +15,6 @@ const getConfigData = async function (user) {
 };
 
 exports.swed = async (req, res) => {
-    console.log('swed');
     let ids = req.params.id || ''; // параметр id документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user = require('../middleware/userData')(req, uuid); // данные пользователя
@@ -92,7 +91,6 @@ exports.swed = async (req, res) => {
 };
 
 exports.seb = async (req, res) => {
-    console.log('seb');
     let ids = req.params.id || ''; // параметр id документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user = require('../middleware/userData')(req, uuid); // данные пользователя

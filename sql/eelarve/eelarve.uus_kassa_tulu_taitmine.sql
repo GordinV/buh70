@@ -122,6 +122,6 @@ GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_tulu_taitmine( DATE,DATE, INTEGER, I
 
 SELECT *
 FROM eelarve.uus_kassa_tulu_taitmine('2020-01-01', '2020-03-31', 63, 0)
-where artikkel = '3030'
+where artikkel = '6550'
 
 */

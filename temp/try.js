@@ -1,13 +1,6 @@
-const path = require('path');
-const config = require('./../config/lapsed');
-const kataloog = './../models/';
-const docConfig = [];
+let a = 10;
+let b = 20;
+let expression = 'a > b';
 
-
-Object.keys(config).forEach(key => {
-    let modelPath = config[key];
-    let folder = path.join(kataloog,config[key]);
-    const grid = require(folder).grid.gridConfiguration;
-    docConfig.push({docTypeId: key.toUpperCase(), grid: grid})
-});
-console.log(docConfig);
+let result = eval(expression);
+console.log('result', result);

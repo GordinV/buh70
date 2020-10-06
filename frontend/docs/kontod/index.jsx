@@ -16,7 +16,6 @@ class Kontod extends React.PureComponent {
     render() {
         return <Documents initData={this.props.initData}
                           history = {this.props.history ? this.props.history: null}
-                          gridConfig = {this.props.gridConfig}
                           ref = 'register'
                           docTypeId={DOC_TYPE_ID}
                           style={styles}

@@ -66,11 +66,7 @@ class StartMenu extends React.PureComponent {
 
         try {
             // will check in cache
-            if (!DocContext.libs) {
-                DocContext.libs = {};
-            }
-
-            if (!DocContext.libs['menu'] || DocContext.libs['menu'].length === 0) {
+            if (!DocContext['menu'] || DocContext['menu'].length === 0) {
                 fetchData.fetchDataPost(url, params)
                     .then(response => {
                         if (response.status && response.status == 401) {
@@ -81,7 +77,7 @@ class StartMenu extends React.PureComponent {
 
                             this.treeData = response.data.data;
                             // запомним содержимое
-                            DocContext.libs['menu'] = this.treeData;
+                            DocContext.menu = this.treeData;
                             this.forceUpdate();
                         }
                     })
@@ -92,7 +88,7 @@ class StartMenu extends React.PureComponent {
                         }
                     });
             } else {
-                this.treeData = DocContext.libs['menu'];
+                this.treeData = DocContext['menu'];
                 this.forceUpdate();
             }
 

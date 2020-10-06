@@ -3,6 +3,7 @@
 const React = require('react');
 const ReactServer = require('react-dom/server');
 const getModule = require('./../../libs/getModule');
+const menuModel = require('./../../models/ou/start-menu');
 
 const {StaticRouter} = require('react-router');
 const path = require('path');
@@ -10,6 +11,8 @@ const path = require('path');
 const App = require('./../../frontend/modules/lapsed.jsx');
 const config = require('./../../config/lapsed');
 const DocContext = require('./../../frontend/doc-context');
+const db = require('./../../libs/db');
+
 
 exports.get = async (req, res) => {
     let documentType = req.params.documentType ? req.params.documentType : 'laps';
@@ -41,6 +44,7 @@ exports.get = async (req, res) => {
     const sqlData = {
         docTypeId: documentType,
         result: await Document.selectDocs([], '', 100),
+        menu: await db.queryDb(menuModel.sqlString, ['lapsed']),
         gridConfig: gridConfig,
         docConfig: docConfig,
         requiredFields: Document.requiredFields ? Document.requiredFields: [],

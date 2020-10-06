@@ -9,6 +9,9 @@ let now = Moment().format('YYYY-MM-DD');
 const prepaireFilterData = require('./../libs/prepaireFilterData');
 const prepareSqlWhereFromFilter = require('./../libs/prepareSqlWhereFromFilter');
 const config = require('./../config/lapsed');
+const menuModel = require('./../models/ou/start-menu');
+
+const db = require('./../libs/db');
 
 exports.get = async (req, res) => {
     // рендер грида на сервере при первой загрузке странице
@@ -52,9 +55,15 @@ exports.get = async (req, res) => {
     const filterData = prepaireFilterData(gridConfig, documentType);
     sqlWhere = prepareSqlWhereFromFilter(filterData, documentType);
 
+
+    const sqlString = menuModel.sqlString,
+        params = [module];
+
+
     // вызвать метод
     let data = {
         result: await Document.selectDocs(sortBy, sqlWhere, limit),
+        menu: await db.queryDb(menuModel.sqlString, ['lapsed']),
         gridConfig: gridConfig,
         docTypeId: documentType,
         docsConfig: docConfig,
@@ -68,7 +77,6 @@ exports.get = async (req, res) => {
 
     try {
         let html = ReactServer.renderToString(Component);
-
         // передатим в хранилище данные
         let storeInitialData = JSON.stringify(data);
         let userData = JSON.stringify(user);

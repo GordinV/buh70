@@ -38,6 +38,14 @@ module.exports = {
                                          SELECT 999999, 0, '' AS regkood, 'Kond' AS nimetus) r
                                         ON r.id = qryReport.rekv_id
                              LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id
+                    WHERE (
+                                  eelarve_kinni <> 0
+                                  OR eelarve_parandatud <> 0
+                                  OR eelarve_kassa_kinni <> 0
+                                  OR eelarve_kassa_parandatud <> 0
+                                  OR tegelik <> 0
+                                  OR kassa <> 0
+                              )
         `,     // $1 - aasta $2 - kpv,  $3 - rekvid (svod), $4::integer  1 - kond, 0 - only asutus
         params: '',
         alias: 'tulud_report'

@@ -226,7 +226,7 @@ BEGIN
                     tegev,
                     allikas,
                     artikkel
-             FROM eelarve.uus_kassa_tulu_taitmine kt
+             FROM cur_tulude_kassa_taitmine kt
              WHERE kt.artikkel IS NOT NULL
                AND NOT empty(kt.artikkel)
 /*             SELECT rekvid
@@ -279,7 +279,8 @@ BEGIN
                   ) tt
              WHERE tt.artikkel IS NOT NULL
                AND NOT empty(tt.artikkel)
-*/             UNION ALL
+*/
+             UNION ALL
 
              -- kassatulud (art.jargi) miinus
              SELECT kassakulu.rekvid

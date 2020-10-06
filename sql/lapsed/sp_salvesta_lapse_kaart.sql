@@ -56,6 +56,12 @@ BEGIN
         RETURN 0;
     END IF;
 
+-- проверка на даты
+    IF (doc_alg_kpv > doc_lopp_kpv)
+    THEN
+        RAISE EXCEPTION 'Vale kuupäevad alg.kpv > lõpp kpv';
+    END IF;
+
     json_props = to_jsonb(row)
                  FROM (SELECT doc_yksus            AS yksus,
                               doc_all_yksus        AS all_yksus,

@@ -35,7 +35,7 @@ WITH qryMk AS (
 )
 SELECT qryMk.id                                                                AS mk_id,
        qryMk.yksus::TEXT,
-       ((qryMk.hind / qryMk.total_amount) * qryMk.makse_summa)::NUMERIC(14, 2) AS summa,
+       (coalesce((qryMk.hind / qryMk.total_amount),1)* qryMk.makse_summa )::NUMERIC(14, 2) AS summa,
        qryMk.laps_id
 FROM qryMK
 

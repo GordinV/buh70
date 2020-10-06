@@ -64,6 +64,7 @@ class MenuToolBar extends React.Component {
 
         let userAccessList = [];
 
+
         if (('userAccessList' in DocContext.userData)) {
             userAccessList = DocContext.userData.userAccessList.map((row) => {
                 let rowObject = JSON.parse(row);
@@ -81,7 +82,6 @@ class MenuToolBar extends React.Component {
             asutus = userAccessList.find(row => {
                 return row.id == rekvId
             }).name;
-
         return (
             <div style={style['container']}>
                 <p style={style['pageName']}> {DocContext.pageName ? DocContext.pageName : 'Laste register'} </p>
@@ -131,12 +131,15 @@ class MenuToolBar extends React.Component {
     }
 
     renderStartMenu() {
-        let component;
+        let component = null;
+        let data = [];
+/*
+        data = DocContext.menu;
+*/
         if (this.state.showStartMenu) {
             component = <StartMenu ref='startMenu'
-                                   module={DocContext.module}
                                    value={this.state.startMenuValue}
-                                   userData={DocContext.userData}
+                                   data={data}
                                    clickHandler={this.startMenuClickHandler}/>
         }
         return component
@@ -155,7 +158,7 @@ class MenuToolBar extends React.Component {
     startMenuClickHandler(value) {
         this.setState({showStartMenu: false});
 
-        let docType = DocContext.libs['menu'].find(row => row.kood === value);
+        let docType = DocContext['menu'].find(row => row.kood === value);
         if (docType) {
             DocContext.pageName = docType.name;
         }

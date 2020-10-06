@@ -112,7 +112,9 @@ module.exports = {
     requiredFields: [
         {name: 'parentid', type: 'I'},
         {name: 'nomid', type: 'I'},
-        {name: 'hind', type: 'I'}
+        {name: 'hind', type: 'I'},
+        {name:'alg_kpv', type: 'D', expression: 'data.alg_kpv < data.lopp_kpv'},
+        {name:'lopp_kpv', type: 'D', expression: 'data.lopp_kpv > data.alg_kpv'}
 
     ],
     saveDoc:

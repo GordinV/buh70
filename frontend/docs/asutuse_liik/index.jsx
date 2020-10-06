@@ -16,7 +16,6 @@ class AsutuseLiik extends React.PureComponent {
 
     render() {
         return <Documents initData={this.props.initData}
-                          gridConfig = {this.props.gridConfig}
                           history={this.props.history ? this.props.history : null}
                           module={this.props.module}
                           ref='register'

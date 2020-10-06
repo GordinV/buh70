@@ -123,6 +123,6 @@ $BODY$
 /*
 
 SELECT *
-FROM eelarve.lisa_2('2018-12-31', 63, 1)
+FROM eelarve.lisa_2('2019-12-31', 64, 0)
 
 */

@@ -28,7 +28,6 @@ const readCSV = async (csvContent, cb) => {
         output.forEach(row => {
             // проверим на заголовок
             if (isNumber(row[0])) {
-                console.log('insert', row[0]);
                 rows.push({
                     yksus: row[0],
                     laps_ik: row[1],

@@ -79,6 +79,7 @@ const YksuseTaabel = require('./../docs/yksuse_taabel/index.jsx');
 const KohalolekuAruanne = require('./../docs/kohaloleku_aruanne/index.jsx');
 
 const {Route, Redirect} = require('react-router-dom');
+
 const {StyleRoot} = require('radium');
 const MODULE = 'Lapsed';
 const DocContext = require('./../doc-context.js');
@@ -92,8 +93,7 @@ class App extends React.Component {
 
     }
 
-    render() {
-        let btnParams = this.prepareParamsForToolbar();
+    render(history) {
         return (
             <StyleRoot>
 
@@ -107,11 +107,14 @@ class App extends React.Component {
                 <Route exact path="/lapsed/laps"
                        render={(props) => <LasteRegister history={props.history}
                                                          initData={this.props.initData}
+                                                         handleRouting={this.handleRouting}
                                                          module={MODULE}/>}
                 />
 
                 <Route exact path="/lapsed/laps/:docId"
-                       render={(props) => <LapseDokument {...props} history={props.history}/>}/>
+                       render={(props) => <LapseDokument {...props}
+                                                         history={props.history}
+                       />}/>
 
                 <Route exact path="/lapsed/asutused"
                        render={(props) =>
@@ -366,6 +369,7 @@ class App extends React.Component {
             </StyleRoot>
         )
     }
+
 
     prepareParamsForToolbar() {
         return {

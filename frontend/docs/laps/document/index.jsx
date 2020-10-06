@@ -16,6 +16,8 @@ const
 
 const LIBRARIES = [];
 
+const DOCS = ['ARV','SMK','LAPSE_TAABEL'];
+
 class Laps extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -30,15 +32,12 @@ class Laps extends React.PureComponent {
         this.handlePageClick = this.handlePageClick.bind(this);
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
         this.fetchData = this.fetchData.bind(this);
+        this.setFilter = this.setFilter.bind(this);
 
         this.docId = props.docId ? props.docId : Number(props.match.params.docId);
 
         this.pages = [
             {pageName: 'Lapse kaart', docTypeId: 'LAPS'},
-            {pageName: 'Taabel', handlePageClick: this.handlePageClick, docTypeId: 'LAPSE_TAABEL'},
-            {pageName: 'Arved', handlePageClick: this.handlePageClick, docTypeId: 'ARV'},
-            {pageName: 'Maksekoraldused', handlePageClick: this.handlePageClick, docTypeId: 'SMK'},
-            {pageName: 'Kassaorderid', handlePageClick: this.handlePageClick, docTypeId: 'SORDER'}
         ];
     }
 
@@ -90,6 +89,9 @@ class Laps extends React.PureComponent {
         if (self.docData.id === 0) {
             //neew record
             self.docData.vanemid = this.state.vanemId;
+        } else {
+            // наложим фильтры
+            this.setFilter(self.docData.isikukood)
         }
 
         if (!this.docId && self.docData.id) {
@@ -178,14 +180,36 @@ class Laps extends React.PureComponent {
         );
     }
 
+    /**
+     * установим фильтр на документа
+     */
+    setFilter(isikukood) {
+
+        // проверим наличие фильтра
+        DOCS.forEach(doc => {
+            if (!DocContext.filter[doc] || !DocContext.filter[doc].length) {
+                // создаем пустой фильтр для заданного типа
+                DocContext.filter[doc] = createEmptyFilterData(DocContext.gridConfig[doc], [], doc);
+            }
+
+            // накладываем фильтр
+            DocContext.filter[doc].forEach(row => {
+                if (row.id == 'isikukood') {
+                    row.value = isikukood;
+                }
+            });
+
+        });
+
+    }
 
     handlePageClick(pageDocTypeId) {
         // данные для фильтра
         let isikukood = this.refs['document'].docData.isikukood;
 
         // register name
-        if (DocContext.libs && DocContext.libs['menu']) {
-            let docType = DocContext.libs['menu'].find(row => row.kood.toUpperCase() === pageDocTypeId.toUpperCase());
+        if (DocContext.menu) {
+            let docType = DocContext['menu'].find(row => row.kood.toUpperCase() === pageDocTypeId.toUpperCase());
             if (docType) {
                 DocContext.pageName = docType;
             }
@@ -199,20 +223,34 @@ class Laps extends React.PureComponent {
         // проверим наличие фильтра
         if (!DocContext.filter[pageDocTypeId] || !DocContext.filter[pageDocTypeId].length) {
             // создаем пустой фильтр для заданного типа
-            DocContext.filter[pageDocTypeId] = createEmptyFilterData(DocContext.gridConfig[pageDocTypeId],[],pageDocTypeId);
+            DocContext.filter[pageDocTypeId] = createEmptyFilterData(DocContext.gridConfig[pageDocTypeId], [], pageDocTypeId);
         }
+
 
         // накладываем фильтр
         DocContext.filter[pageDocTypeId].forEach(row => {
-           if (row.id == 'isikukood') {
-               row.value = isikukood;
-           }
+            if (row.id == 'isikukood') {
+                row.value = isikukood;
+            }
         });
 
-        //
-        this.props.history.push({
-            pathname: `/lapsed/${pageDocTypeId}`
+        let route = `/lapsed/${pageDocTypeId}`;
+        this.props.history.replace(`/reload`);
+        setTimeout(() => {
+            this.props.history.replace(route);
         });
+
+
+        /*
+                //route
+                this.props.history.push({
+                    pathname: `/lapsed/${pageDocTypeId}`,
+                    state: {
+                        module: this.state.module}
+                });
+        */
+
+
     }
 
 
@@ -264,8 +302,8 @@ class Laps extends React.PureComponent {
                             reloadData: true,
                             warning: 'Kiri kustutatud',
                             warningType: 'ok',
-                        }, ()=> {
-                            setTimeout(()=> {
+                        }, () => {
+                            setTimeout(() => {
                                 const current = this.props.location.pathname;
                                 this.props.history.replace(`/reload`);
                                 setTimeout(() => {
