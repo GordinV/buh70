@@ -6,6 +6,7 @@ const DocumentRegister = require('./../documents/documents.jsx');
 const styles = require('./styles');
 const ButtonUpload = require('./../../components/upload_button/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
+const InputText = require('../../components/input-text/input-text.jsx');
 
 const DOC_TYPE_ID = 'VANEM';
 const DocRights = require('./../../../config/doc_rights');
@@ -21,6 +22,10 @@ class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
         this.renderer = this.renderer.bind(this);
+        this.state = {
+            read: 0,
+            filtri_read: 0
+        };
 
     }
 
@@ -46,18 +51,37 @@ class Documents extends React.PureComponent {
             }
         };
 
-        return <DocumentRegister initData={this.props.initData}
-                                 userData={this.props.userData}
-                                 history={this.props.history ? this.props.history : null}
-                                 module={this.props.module}
-                                 ref='register'
-                                 docTypeId={DOC_TYPE_ID}
-                                 style={styles}
-                                 toolbarParams={toolbarParams}
-                                 render={this.renderer}/>;
+        return (
+            <div>
+                <DocumentRegister initData={this.props.initData}
+                                  userData={this.props.userData}
+                                  history={this.props.history ? this.props.history : null}
+                                  module={this.props.module}
+                                  ref='register'
+                                  docTypeId={DOC_TYPE_ID}
+                                  style={styles}
+                                  toolbarParams={toolbarParams}
+                                  render={this.renderer}/>
+                <InputText title="Filtri all / read kokku:"
+                           name='read_kokku'
+                           style={styles.total}
+                           ref="input-read"
+                           value={String(this.state.filtri_read + '/' + this.state.read)}
+                           disabled={true}/>
+
+            </div>
+        )
     }
 
-    renderer() {
+    renderer(self) {
+        if (self && self.gridData )  {
+            let rows_total = self.gridData.length && self.gridData[0].rows_total ? self.gridData[0].rows_total: 0;
+            this.setState({
+                read: rows_total,
+                filtri_read: self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : rows_total
+            });
+        }
+
         const userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
         return (

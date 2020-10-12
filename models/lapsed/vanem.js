@@ -107,9 +107,10 @@ module.exports = {
                 FROM lapsed.sp_delete_vanem($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
-            {id: "id", name: "id", width: "10%", show: false},
+            {id: "id", name: "id", width: "1%", show: false},
+            {id: "row_id", name: "Jrk", width: "3%", show: true, hideFilter: true},
             {id: "isikukood", name: "Isikukood", width: "20%"},
-            {id: "nimi", name: "Nimi", width: "40%"},
+            {id: "nimi", name: "Nimi", width: "25%"},
             {id: "email", name: "E-mail", width: "15%"},
             {id: "lapsed", name: "Lapsed", width: "25%"}
         ],
@@ -121,11 +122,21 @@ module.exports = {
                            email,
                            tel,
                            $1::INTEGER AS rekvid,
-                           $2::INTEGER AS user_id
+                           $2::INTEGER AS user_id,
+                           count(*) OVER ()                 AS rows_total
                     FROM lapsed.cur_vanemad v
                     WHERE rekv_ids @> ARRAY [$1::INTEGER] `,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
-        alias: 'curLapsed'
+        alias: 'curLapsed',
+        converter: function (data) {
+            let row_id = 0;
+            return data.map(row => {
+                row_id++;
+                row.row_id = row_id;
+                return row;
+            })
+        }
+
     },
     print: [
         {
