@@ -28,7 +28,9 @@ const LIB_OBJS = [
     {id: 'allikas', filter: ''},
     {id: 'tegev', filter: ''},
     {id: 'aa', filter: ''},
-    {id: 'nomenclature', filter: `where dok = 'ARV'`}
+    {id: 'nomenclature', filter: `where dok = 'ARV'`},
+    {id: 'lapse_grupp', filter: ``}
+
 ];
 
 class Arve extends React.PureComponent {
@@ -319,7 +321,21 @@ class Arve extends React.PureComponent {
                             <span>{self.state.gridWarning}</span>
                         </div>
                     ) : null}
-
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <Select title="Üksus:"
+                                    name='yksus'
+                                    libs="lapse_grupp"
+                                    data={self.libs['lapse_grupp']}
+                                    value={row.yksus || ''}
+                                    defaultValue={row.yksys || ''}
+                                    ref="select-lapse_grupp"
+                                    collId={'kood'}
+                                    onChange={self.handleGridRowChange}
+                                    readOnly={false}
+                            />
+                        </div>
+                    </div>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
                             <Select title="Teenus"

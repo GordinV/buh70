@@ -353,9 +353,10 @@ const Arv = {
                 dataSet: 'nomenclature',
                 valueFieldName: 'nomid'
             },
-            {id: 'nimetus', name: 'Nimetus', width: '300px', show: true, readOnly: true},
-            {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'number', readOnly: false},
-            {id: 'uhik', name: 'Ühik', width: '100px', show: true, readOnly: true},
+            {id: 'yksus', name: 'Üksus', width: '100px', show: true, readOnly: true},
+            {id: 'nimetus', name: 'Nimetus', width: '250px', show: true, readOnly: true},
+            {id: 'hind', name: 'Hind', width: '75px', show: true, type: 'number', readOnly: false},
+            {id: 'uhik', name: 'Ühik', width: '75px', show: true, readOnly: true},
             {id: 'kogus', name: 'kogus', width: '100px', show: true, type: 'number', readOnly: false},
             {id: 'kbm', name: 'Käibemaks', width: '100px', show: true, type: 'number', readOnly: false},
             {id: 'summa', name: 'Summa', width: '100px', show: true, type: 'number', readOnly: false}
