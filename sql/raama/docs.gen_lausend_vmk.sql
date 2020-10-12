@@ -123,13 +123,13 @@ BEGIN
         WHERE k1.parentid = v_vmk.Id
         LOOP
             l_jaak = v_vmk1.summa;
-            SELECT coalesce(v_vmk.journalid, 0) AS id,
-                   'JOURNAL'                    AS doc_type_id,
-                   v_vmk.kpv                    AS kpv,
-                   lcSelg                       AS selg,
-                   v_vmk.muud                   AS muud,
-                   'MK nr. ' || v_vmk.number    AS dok,
-                   v_vmk1.asutusid              AS asutusid
+            SELECT coalesce(v_vmk.journalid, 0)         AS id,
+                   'JOURNAL'                            AS doc_type_id,
+                   coalesce(v_vmk.maksepaev, v_vmk.kpv) AS kpv,
+                   lcSelg                               AS selg,
+                   v_vmk.muud                           AS muud,
+                   'MK nr. ' || v_vmk.number            AS dok,
+                   v_vmk1.asutusid                      AS asutusid
                    INTO v_journal;
 
             -- avans

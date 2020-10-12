@@ -471,33 +471,24 @@ BEGIN
                              ,
                               q.nimetus
                      UNION ALL
-                     SELECT '2.4.1'::VARCHAR(20)
-                             ,
-                            1                                                      AS is_e
-                             ,
-                            $2                                                     AS rekvid
-                             ,
-                            ''::VARCHAR(20)                                        AS tegev
-                             ,
-                            ''::VARCHAR(20)                                        AS allikas
-                             ,
-                            '15'::VARCHAR(20)                                      AS artikkel
-                             ,
-                            'Põhivara soetus (-)'                                  AS nimetus
-                             ,
-                            coalesce(sum(-1 * q.eelarve), 0)                       AS eelarve
-                             ,
-                            coalesce(sum(-1 * q.eelarve_kassa), 0)                 AS eelarve_kassa
-                             ,
-                            coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)       AS eelarve_taps,
-                            coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2) AS eelarve_kassa_taps,
-                            coalesce(sum(q.tegelik), 0)::NUMERIC(12, 2)            AS tegelik,
-                            coalesce(sum(q.kassa), 0)::NUMERIC(12, 2)              AS kassa,
-                            coalesce(get_saldo('KD', '154', '01', NULL) +
+                     SELECT '2.4.1'::VARCHAR(20),
+                            1                                                      AS is_e,
+                            $2                                                     AS rekvid,
+                            ''::VARCHAR(20)                                        AS tegev,
+                            ''::VARCHAR(20)                                        AS allikas,
+                            '15'::VARCHAR(20)                                      AS artikkel,
+                            'Põhivara soetus (-)'                                  AS nimetus,
+                            coalesce(sum(-1 * q.eelarve), 0)                       AS eelarve,
+                            coalesce(sum(-1 * q.eelarve_kassa), 0)                 AS eelarve_kassa,
+                            coalesce(sum(-1 * q.eelarve_taps), 0)::NUMERIC(12, 2)       AS eelarve_taps,
+                            coalesce(sum(-1 * q.eelarve_kassa_taps), 0)::NUMERIC(12, 2) AS eelarve_kassa_taps,
+                            coalesce(sum(-1 * q.tegelik), 0)::NUMERIC(12, 2)            AS tegelik,
+                            coalesce(sum(-1 * q.kassa), 0)::NUMERIC(12, 2)              AS kassa,
+                            (coalesce(get_saldo('KD', '154', '01', NULL) +
                                      get_saldo('KD', '155', '01', NULL) +
                                      get_saldo('KD', '156', '01', NULL) +
                                      get_saldo('KD', '157', '01', NULL) +
-                                     get_saldo('KD', '601002', NULL, NULL), 0)     AS saldoandmik
+                                     get_saldo('KD', '601002', NULL, NULL), 0))     AS saldoandmik
                      FROM tmp_andmik q
                      WHERE q.artikkel LIKE '15%'
                        AND q.artikkel NOT IN ('1501', '1502', '1532')

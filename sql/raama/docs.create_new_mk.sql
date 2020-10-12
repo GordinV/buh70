@@ -52,9 +52,13 @@ BEGIN
         );
     END IF;
 
-    SELECT a.*, coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120) AS viitenr INTO v_arv
+    SELECT dp.details ->> 'konto'                                         AS konto,
+           a.*,
+           coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120) AS viitenr
+           INTO v_arv
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
+             LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
     WHERE d.id = l_arv_id;
 
     -- maksepaev
@@ -181,7 +185,7 @@ BEGIN
                a1.kood3,
                a1.kood4,
                a1.kood5,
-               a1.konto,
+               coalesce(v_arv.konto, a1.konto)                            AS konto,
                a1.tp,
                a1.tunnus,
                a1.proj
