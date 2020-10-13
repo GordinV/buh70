@@ -30,6 +30,7 @@ ORDER BY nimi;
 GRANT SELECT ON TABLE lapsed.cur_lapsed TO arvestaja;
 GRANT SELECT ON TABLE lapsed.cur_lapsed TO dbvaatleja;
 GRANT SELECT ON TABLE lapsed.cur_lapsed TO dbpeakasutaja;
+GRANT SELECT ON TABLE lapsed.cur_lapsed TO dbkasutaja;
 
 /*
 

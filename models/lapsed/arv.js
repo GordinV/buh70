@@ -288,7 +288,7 @@ const Arv = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "25px", show: false},
-            {id: "number", name: "Number", width: "100px", type: "number"},
+            {id: "number", name: "Number", width: "100px", type: "text"},
             {id: "kpv", name: "Kuupaev", width: "100px", type: 'date', interval: true},
             {id: "asutus", name: "Maksja", width: "200px"},
             {id: "summa", name: "Summa", width: "75px", type: "number", interval: true},
@@ -303,7 +303,7 @@ const Arv = {
 
         ],
         sqlString: `SELECT id,
-                           number :: VARCHAR(20),
+                           number :: TEXT,
                            rekvid,
                            to_char(kpv, 'DD.MM.YYYY') :: TEXT   AS kpv,
                            summa,

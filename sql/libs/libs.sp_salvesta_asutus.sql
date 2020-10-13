@@ -56,6 +56,13 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
+    IF doc_id IS NOT NULL AND doc_id > 0 AND exists(
+            SELECT id FROM palk.tooleping WHERE parentid = doc_id AND status <> 3)
+    THEN
+        doc_is_tootaja = TRUE;
+
+    END IF;
+
     SELECT row_to_json(row) INTO new_properties
     FROM (SELECT doc_kehtivus           AS kehtivus,
                  doc_pank               AS pank,

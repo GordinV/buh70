@@ -23,6 +23,7 @@ CREATE TABLE lapsed.pank_vv (
     );
 
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE lapsed.pank_vv TO dbpeakasutaja;
+GRANT SELECT, UPDATE, INSERT, DELETE  ON TABLE lapsed.pank_vv TO dbkasutaja;
 GRANT SELECT, INSERT, UPDATE ON TABLE lapsed.pank_vv TO arvestaja;
 GRANT ALL ON TABLE lapsed.pank_vv TO dbadmin;
 GRANT SELECT ON TABLE lapsed.pank_vv TO dbvaatleja;
