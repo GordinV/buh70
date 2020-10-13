@@ -194,7 +194,7 @@ BEGIN
 
                 INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, kbmta, summa, kood1, kood2, kood3, kood4,
                                        kood5,
-                                       konto, tunnus, tp, proj, muud, kbm_maar, properties)
+                                       konto, tunnus, tp, proj, muud, kbm_maar, properties, soodus)
                 VALUES (arv_id, json_record.nomid,
                         coalesce(json_record.kogus, 1),
                         coalesce(json_record.hind, 0),
@@ -213,7 +213,8 @@ BEGIN
                         coalesce(json_record.proj, ''),
                         coalesce(json_record.muud, ''),
                         coalesce(json_record.km, ''),
-                        arv1_rea_json) RETURNING id
+                        arv1_rea_json,
+                        coalesce(json_record.soodustus, 0)) RETURNING id
                            INTO arv1_id;
 
                 -- add new id into array of ids
@@ -238,6 +239,7 @@ BEGIN
                     tp         = coalesce(json_record.tp, ''),
                     kbm_maar   = coalesce(json_record.km, ''),
                     muud       = json_record.muud,
+                    soodus     = coalesce(json_record.soodustus, 0),
                     properties = properties || arv1_rea_json
                 WHERE id = json_record.id :: INTEGER RETURNING id
                     INTO arv1_id;
@@ -389,7 +391,7 @@ BEGIN
             -- вызываем оплату
 
             l_mk_id = (SELECT doc_tasu_id FROM docs.arvtasu WHERE doc_arv_id = doc_ettemaksu_arve_id);
-            raise notice 'call  sp_tasu_arv l_mk_id %', l_mk_id;
+            RAISE NOTICE 'call  sp_tasu_arv l_mk_id %', l_mk_id;
             PERFORM docs.sp_tasu_arv(l_mk_id, doc_ettemaksu_arve_id, user_id);
 
         END IF;

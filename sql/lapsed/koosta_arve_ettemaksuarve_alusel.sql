@@ -20,8 +20,9 @@ DECLARE
     l_kpv           DATE;
     json_object     JSONB;
     l_json_arve     JSON;
-    json_arvread    JSONB = '[]';
-    l_db_konto      TEXT  = '203900';
+    json_arvread    JSONB   = '[]';
+    l_db_konto      TEXT    = '203900';
+    l_arv_summa     NUMERIC = 0;
 BEGIN
 
     -- will return docTypeid of new doc
@@ -77,6 +78,7 @@ BEGIN
                        a1.hind * 1                                                                     AS calc_kbmta,
                        a1.hind * 1 + (a1.hind *
                                       (coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC / 100)) AS calc_summa,
+                       a1.summa                                                                        AS rea_summa,
                        n.properties ->> 'konto'                                                        AS korr_konto,
                        coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0)::NUMERIC                  AS soodustus
                 FROM docs.arv1 a1
@@ -86,26 +88,27 @@ BEGIN
                     -- создаем параметры строки
                     -- формируем строку
                     json_arvread = json_arvread || (SELECT row_to_json(row)
-                                                    FROM (SELECT v_arvread.nomid                      AS nomid,
-                                                                 v_arvread.calc_kogus                 AS kogus,
-                                                                 v_arvread.calc_hind                  AS hind,
-                                                                 v_arvread.calc_kbmta                 AS kbmta,
-                                                                 v_arvread.calc_kbm                   AS kbm,
-                                                                 v_arvread.calc_summa                 AS summa,
-                                                                 v_arvread.kood1                      AS kood1,
-                                                                 v_arvread.kood2                      AS kood2,
-                                                                 v_arvread.kood3                      AS kood3,
-                                                                 v_arvread.kood5                      AS kood5,
-                                                                 v_arvread.korr_konto                 AS konto,
+                                                    FROM (SELECT v_arvread.nomid                                                        AS nomid,
+                                                                 v_arvread.calc_kogus                                                   AS kogus,
+                                                                 v_arvread.calc_hind                                                    AS hind,
+                                                                 v_arvread.calc_kbmta                                                   AS kbmta,
+                                                                 v_arvread.calc_kbm                                                     AS kbm,
+                                                                 CASE WHEN v_arvread.rea_summa = 0 THEN 0 ELSE v_arvread.calc_summa END AS summa,
+                                                                 v_arvread.kood1                                                        AS kood1,
+                                                                 v_arvread.kood2                                                        AS kood2,
+                                                                 v_arvread.kood3                                                        AS kood3,
+                                                                 v_arvread.kood5                                                        AS kood5,
+                                                                 v_arvread.korr_konto                                                   AS konto,
                                                                  v_arvread.tunnus,
-                                                                 v_arvread.proj                       AS projekt,
-                                                                 v_arvread.properties ->> 'yksus'     AS yksus,
-                                                                 v_arvread.properties ->> 'all_yksus' AS all_yksus,
-                                                                 v_arvread.muud                       AS muud,
-                                                                 v_arvread.soodustus                  AS soodustus,
-                                                                 v_arvread.tp                         AS tp) row) :: JSONB;
+                                                                 v_arvread.proj                                                         AS projekt,
+                                                                 v_arvread.properties ->> 'yksus'                                       AS yksus,
+                                                                 v_arvread.properties ->> 'all_yksus'                                   AS all_yksus,
+                                                                 v_arvread.muud                                                         AS muud,
+                                                                 v_arvread.soodustus                                                    AS soodustus,
+                                                                 v_arvread.tp                                                           AS tp) row) :: JSONB;
 
 
+                    l_arv_summa = l_arv_summa + CASE WHEN v_arvread.rea_summa = 0 THEN 0 ELSE v_arvread.calc_summa END;
                 END LOOP;
 
             -- создаем параметры
@@ -136,8 +139,11 @@ BEGIN
             SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, v_arv.rekvid) INTO l_arve_id;
             IF l_arve_id IS NOT NULL AND l_arve_id > 0
             THEN
-                -- контируем
-                PERFORM docs.gen_lausend_arv(l_arve_id, user_id);
+                IF (l_arv_summa > 0)
+                THEN
+                    -- контируем
+                    PERFORM docs.gen_lausend_arv(l_arve_id, user_id);
+                END IF;
 
                 result = coalesce(result, 0) + 1;
             END IF;
@@ -167,6 +173,6 @@ REVOKE EXECUTE ON FUNCTION lapsed.koosta_arve_ettemaksuarve_alusel(INTEGER, INTE
 
 
 /*
-select lapsed.koosta_arve_ettemaksuarve_alusel(70, 1616643)
+select lapsed.koosta_arve_ettemaksuarve_alusel(28, 2275708)
  */
 

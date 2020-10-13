@@ -302,7 +302,7 @@ BEGIN
 
 
     -- check for arve summa
-    IF l_arve_summa <= 0
+    IF l_arve_summa < 0
     THEN
         result = 0;
         error_message = 'Dokumendi summa = 0';
@@ -318,8 +318,11 @@ BEGIN
 
     IF l_arv_id IS NOT NULL AND l_arv_id > 0
     THEN
-        -- контируем
-        PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
+        IF l_arve_summa > 0
+        THEN
+            -- контируем
+            PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
+        END IF;
 
         result = l_arv_id;
     ELSE

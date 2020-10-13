@@ -198,8 +198,13 @@ BEGIN
             -- формируем строку
             json_arvread = json_arvread || (SELECT row_to_json(row)
                                             FROM (SELECT v_kaart.nomid                                        AS nomid,
-                                                         v_kaart.kogus                                        AS kogus,
-                                                         (v_kaart.hind - v_kaart.real_soodus)                 AS hind,
+                                                         CASE
+                                                             WHEN (v_kaart.hind - v_kaart.real_soodus) = 0 THEN 0
+                                                             ELSE v_kaart.kogus END                           AS kogus,
+                                                         CASE
+                                                             WHEN (v_kaart.hind - v_kaart.real_soodus) = 0
+                                                                 THEN v_kaart.hind
+                                                             ELSE (v_kaart.hind - v_kaart.real_soodus) END    AS hind,
                                                          (v_kaart.hind - v_kaart.real_soodus) * v_kaart.kogus AS kbmta,
                                                          ((v_kaart.hind - v_kaart.real_soodus) * v_kaart.kogus *
                                                           (v_kaart.vat / 100))                                AS kbm,
@@ -230,10 +235,10 @@ BEGIN
 
     -- check for arve summa
 
-    IF l_arve_summa <= 0
+    IF l_arve_summa < 0
     THEN
         result = 0;
-        error_message = 'Dokumendi summa = 0, laps_id = ' || l_laps_id::TEXT;
+        error_message = 'Dokumendi summa < 0, laps_id = ' || l_laps_id::TEXT;
         error_code = 1;
         RETURN;
 
@@ -273,9 +278,11 @@ BEGIN
 
     IF l_arv_id IS NOT NULL AND l_arv_id > 0
     THEN
-        -- контируем
-        PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
-
+        IF l_arve_summa > 0
+        THEN
+            -- контируем
+            PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
+        END IF;
         -- создаем дохожные счета
         l_tulu_arved = (SELECT fnc.result FROM lapsed.koosta_arve_ettemaksuarve_alusel(user_id, l_arv_id) fnc);
         IF l_tulu_arved IS NOT NULL OR l_tulu_arved = 0
@@ -316,7 +323,7 @@ REVOKE EXECUTE ON FUNCTION lapsed.koosta_ettemaksu_arve(INTEGER, INTEGER, DATE) 
 
 
 /*
-select lapsed.koosta_ettemaksu_arve(28,8692,'2020-09-05')
+select lapsed.koosta_ettemaksu_arve(28,10942,'2020-09-05')
 
 select * from lapsed.laps where id = 8692
 
