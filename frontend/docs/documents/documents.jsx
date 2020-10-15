@@ -74,7 +74,7 @@ class Documents extends React.Component {
             'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick',
             'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData',
-            'handleInputChange', 'btnEmailClick');
+            'handleInputChange', 'btnEmailClick','setRegisterName');
 
 
     }
@@ -118,6 +118,9 @@ class Documents extends React.Component {
             let docId = DocContext[(this.docTypeId).toLowerCase()];
             this.setState({value: docId});
         }
+
+        // задать имя реристра на страницу
+        this.setRegisterName();
 
     }
 
@@ -194,6 +197,14 @@ class Documents extends React.Component {
                 </div>
             </div>
         );
+    }
+
+    //поиск названия регистра
+    setRegisterName() {
+        let docType = DocContext['menu'].find(row => row.kood === this.props.docTypeId);
+        if (docType) {
+            DocContext.pageName = docType.name;
+        }
     }
 
     // обработчик изменений в инпут (лимит)

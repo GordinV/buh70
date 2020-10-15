@@ -210,8 +210,8 @@ COST 100;
 
 SELECT import_eelarve(e.id)
 from remote_eelarve e
-where rekvid in (130, 64)
-and aasta = 2019
+where rekvid in (28)
+and aasta >= 2019
 
 SELECT count(e.id)
 from remote_eelarve e

@@ -27,7 +27,7 @@ BEGIN
          t.tahtaeg,
          t.tyyp,
          t.muud,
-         rekl.get_deklstaatus(t.parentid, l_kpv) AS staatus,
+         'active' AS staatus,
          l_dokpropid as dokpropid,
          t.deklid,
          t.failid,
