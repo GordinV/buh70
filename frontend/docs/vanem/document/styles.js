@@ -50,6 +50,10 @@ module.exports = {
 
     btnEdit: {
         width: 'min-content'
+    },
+
+    pank: {
+        width: '30%'
     }
 
 

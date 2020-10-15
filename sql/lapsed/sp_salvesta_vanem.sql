@@ -16,6 +16,7 @@ DECLARE
     doc_kas_email    BOOLEAN = coalesce((doc_data ->> 'kas_email')::BOOLEAN, FALSE);
     doc_kas_earve    BOOLEAN = coalesce((doc_data ->> 'kas_earve')::BOOLEAN, FALSE);
     doc_pank         TEXT    = doc_data ->> 'pank';
+    doc_iban         TEXT    = doc_data ->> 'iban';
     doc_kas_esindaja BOOLEAN = coalesce((doc_data ->> 'kas_esindaja')::BOOLEAN, FALSE);
     doc_muud         TEXT    = doc_data ->> 'muud';
     json_props       JSONB;
@@ -45,6 +46,7 @@ BEGIN
                               doc_kas_email    AS kas_email,
                               doc_kas_esindaja AS kas_esindaja,
                               doc_pank         AS pank,
+                              doc_iban         AS iban,
                               doc_kas_earve    AS kas_earve) row;
 
     -- ищем ранее удаленные записи

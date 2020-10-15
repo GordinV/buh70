@@ -146,18 +146,6 @@ class Vanem extends React.PureComponent {
                                       readOnly={!isEditMode}
                             /> : null
                         }
-                        {self.docData.arved ?
-                            <Select title="Pank:"
-                                    name='pank'
-                                    data={[{id: 0, kood: '', nimetus: ''}, {id: 1, kood: 'SWED', nimetus: 'Swedpank'},{id:2, kood: 'SEB', nimetus: 'Seb pank'}]}
-                                    collId='kood'
-                                    value={self.docData.pank || ''}
-                                    defaultValue={self.docData.pank}
-                                    ref="select-pank"
-                                    btnDelete={isEditMode}
-                                    onChange={self.handleInputChange}
-                                    readOnly={!isEditMode}/>
-                            : null}
 
                         {self.docData.arved ?
                             <CheckBox title="Kas email ?"
@@ -175,9 +163,40 @@ class Vanem extends React.PureComponent {
                                   onChange={self.handleInputChange}
                                   readOnly={!isEditMode}
                         />
-
                     </div>
                 </div>
+
+                {self.docData.arved ?
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <Select title="Pank:"
+                                    name='pank'
+                                    data={[{id: 0, kood: '', nimetus: ''}, {
+                                        id: 1,
+                                        kood: 'SWED',
+                                        nimetus: 'Swedpank'
+                                    }, {id: 2, kood: 'SEB', nimetus: 'Seb pank'}]}
+                                    collId='kood'
+                                    value={self.docData.pank || ''}
+                                    defaultValue={self.docData.pank}
+                                    ref="select-pank"
+                                    btnDelete={isEditMode}
+                                    onChange={self.handleInputChange}
+                                    readOnly={!isEditMode}
+                                    style={styles.pank}
+                            />
+                        </div>
+                        <div style={styles.docColumn}>
+                            <InputText title='IBAN:'
+                                       name='iban'
+                                       value={self.docData.iban || ''}
+                                       ref='input-iban'
+                                       readOnly={!isEditMode}
+                                       onChange={self.handleInputChange}/>
+
+                        </div>
+                    </div>
+                    : null}
                 <div style={styles.docRow}>
                     <TextArea title="Märkused"
                               name='muud'
@@ -186,8 +205,10 @@ class Vanem extends React.PureComponent {
                               value={self.docData.muud || ''}
                               readOnly={!isEditMode}/>
                 </div>
-                <div style={styles.docRow}>
-                    <label ref="label">
+                < div
+                    style={styles.docRow}>
+                    < label
+                        ref="label">
                         {'Lapsed'}
                     </label>
                 </div>
