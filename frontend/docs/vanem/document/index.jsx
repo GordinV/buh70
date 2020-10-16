@@ -138,16 +138,6 @@ class Vanem extends React.PureComponent {
                             /> : null
                         }
                         {self.docData.arved ?
-                            <CheckBox title="E-arve ?"
-                                      name='kas_earve'
-                                      value={Boolean(self.docData.kas_earve)}
-                                      ref={'checkbox_kas_earve'}
-                                      onChange={self.handleInputChange}
-                                      readOnly={!isEditMode}
-                            /> : null
-                        }
-
-                        {self.docData.arved ?
                             <CheckBox title="Kas email ?"
                                       name='kas_email'
                                       value={Boolean(self.docData.kas_email)}
@@ -169,7 +159,19 @@ class Vanem extends React.PureComponent {
                 {self.docData.arved ?
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
-                            <Select title="Pank:"
+                            <CheckBox title="E-arve ?"
+                                      name='kas_earve'
+                                      value={Boolean(self.docData.kas_earve)}
+                                      ref={'checkbox_kas_earve'}
+                                      onChange={self.handleInputChange}
+                                      readOnly={!isEditMode}
+                            />
+                        </div>
+                    </div> : null}
+                {self.docData.arved && self.docData.kas_earve ?
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <Select title="E-arve pank:"
                                     name='pank'
                                     data={[{id: 0, kood: '', nimetus: ''}, {
                                         id: 1,
@@ -187,7 +189,7 @@ class Vanem extends React.PureComponent {
                             />
                         </div>
                         <div style={styles.docColumn}>
-                            <InputText title='IBAN:'
+                            <InputText title='E-arve IBAN:'
                                        name='iban'
                                        value={self.docData.iban || ''}
                                        ref='input-iban'

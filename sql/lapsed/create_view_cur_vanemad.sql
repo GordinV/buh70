@@ -9,7 +9,7 @@ SELECT a.id                                      AS vanem_id,
        a.aadress::TEXT,
        a.email::TEXT,
        a.tel::TEXT,
-       btrim(json_agg(l.nimi)::TEXT, '[]')::TEXT AS lapsed,
+       regexp_replace(btrim(json_agg(l.nimi)::TEXT, '[]'),'["]', '' , 'g')::TEXT AS lapsed,
        array_agg(lk.rekvid)                      AS rekv_ids
 FROM lapsed.vanemad v
          INNER JOIN libs.asutus a ON a.id = v.asutusid
