@@ -67,7 +67,9 @@ const Arv = {
                          lpad(month(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT, 2, '0') || '.' ||
                          year(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT AS laekumise_period,
                          (coalesce(saldod.jaak, 0) + a.summa)::NUMERIC(12, 2)          AS tasumisele,
-                         a.properties ->> 'ettemaksu_period'                           AS ettemaksu_period
+                         a.properties ->> 'ettemaksu_period'                           AS ettemaksu_period,
+                         v.properties ->> 'pank'                                       AS pank,
+                         v.properties ->> 'iban'                                       AS iban              
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
@@ -78,8 +80,11 @@ const Arv = {
                            LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
                            LEFT OUTER JOIN lapsed.laps l
                                            ON l.id = ll.parentid
+                           LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = asutus.id
+                                  AND v.parentid = l.id
+                      
                            LEFT OUTER JOIN (SELECT *
-                                            FROM lapsed.lapse_saldod((SELECT kpv FROM docs.arv WHERE parentid = $1))) saldod
+                                            FROM lapsed.lapse_saldod((SELECT a.kpv FROM docs.arv a WHERE a.parentid = $1))) saldod
                                            ON saldod.laps_id = l.id AND saldod.rekv_id = d.rekvid
 
                   WHERE D.id = $1`,
@@ -284,6 +289,7 @@ const Arv = {
             data: []
         },
 
+
     ],
     grid: {
         gridConfiguration: [
@@ -299,7 +305,7 @@ const Arv = {
             {id: "isikukood", name: "Isikukood", width: "100px"},
             {id: "viitenr", name: "Viitenr", width: "100px"},
             {id: "tyyp", name: "Tüüp", width: "100px"},
-            {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean'}
+            {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
 
         ],
         sqlString: `SELECT id,

@@ -24,7 +24,7 @@ const userData = function (req, _uuid) {
         lastLogin: userIndex > -1 ? req.session.users[userIndex].last_login : null,
         userAccessList: userIndex > -1 ? req.session.users[userIndex].userAllowedAsutused : [],
         userLibraryList: [],
-        parentid: req.session.users[userIndex].parentid,
+        parentid: req.session.users[userIndex].parentid ? req.session.users[userIndex].parentid: 0,
         parent_asutus: req.session.users[userIndex].parent_asutus,
         login: userIndex > -1 ? req.session.users[userIndex].kasutaja : null,
         roles: req.session.users[userIndex].roles

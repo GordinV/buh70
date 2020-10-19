@@ -93,6 +93,8 @@ exports.swed = async (req, res) => {
 exports.seb = async (req, res) => {
     let ids = req.params.id || ''; // параметр id документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
+console.log('req seb', req.params);
+
     const user = require('../middleware/userData')(req, uuid); // данные пользователя
 
     if (!user) {

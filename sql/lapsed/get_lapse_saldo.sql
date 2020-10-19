@@ -65,23 +65,6 @@ FROM (
                month(make_date(year(l_kpv), month(l_kpv), 1)::DATE - 1)
            AND d.status <> 3
          UNION ALL
-         -- jaak, maksed
-/*         SELECT -1 * ymk.summa AS jaak,
-                l.parentid     AS laps_id,
-                ymk.yksus      AS yksus,
-                d.rekvid       AS rekv_id,
-                d.id           AS docs_id,
-                0              AS laekumised,
-                0              AS ettemaksud
-         FROM docs.doc d,
-              lapsed.get_group_part_from_mk(d.id, l_kpv) AS ymk,
-              docs.mk mk,
-              lapsed.liidestamine l
-         WHERE mk.parentid = d.id
-           AND mk.maksepaev < l_kpv
-           AND l.docid = d.id
-           AND d.status <> 3
-*/
          SELECT -1 * ((a1.summa / a.summa) * at.summa) AS jaak,
                 l.parentid                             AS laps_id,
                 a1.properties ->> 'yksus'              AS yksus,
@@ -134,7 +117,7 @@ GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE) TO arvestaja;
 
 /*
 SELECT *
-FROM lapsed.lapse_saldod('2020-10-01'::date)
-where laps_id = 6636
+FROM lapsed.lapse_saldod('2020-09-01'::date)
+where laps_id = 6933
 and rekv_id = 69
 */

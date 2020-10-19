@@ -10,19 +10,16 @@ CREATE OR REPLACE FUNCTION lapsed.loe_panga_lepingud(IN data JSONB,
 $BODY$
 
 DECLARE
-    userName       TEXT;
-    json_object    JSON;
-    count          INTEGER = 0;
-    json_record    RECORD;
-    l_rekv_id      INTEGER;
-    l_laps_id      INTEGER;
-    l_vanem_id     INTEGER;
-    l_id           INTEGER;
-    l_viitenr      TEXT;
-    v_asutus       RECORD;
-    json_asutus_aa JSONB;
-    l_pank         TEXT    = 'SWED';
-    json_params    JSONB;
+    userName    TEXT;
+    json_object JSON;
+    count       INTEGER = 0;
+    json_record RECORD;
+    l_laps_id   INTEGER;
+    l_vanem_id  INTEGER;
+    l_id        INTEGER;
+    l_viitenr   TEXT;
+    l_pank      TEXT    = 'SWED';
+    v_vanem     RECORD;
 
 BEGIN
     SELECT kasutaja INTO userName
@@ -71,78 +68,55 @@ BEGIN
                     -- удаляем канал банк
                     UPDATE lapsed.vanemad
                     SET properties = properties || '{
-                      "pank": null
+                      "pank": null,
+                      "iban": null
                     }'::JSONB
                     WHERE parentid = l_laps_id
                       AND asutusid = l_vanem_id;
 
                     count = count + 1;
                 END IF;
+
                 IF upper(json_record.toiming) = 'LISA'
                 THEN
                     -- СОЗДАЕМ КАНАЛ БАНК,
                     IF json_record.kanal = 'HABAEE2X'
                     THEN
-                        UPDATE lapsed.vanemad
-                        SET properties = properties || '{
-                          "pank": "SWED"
-                        }'::JSONB
-                        WHERE parentid = l_laps_id
-                          AND asutusid = l_vanem_id;
-
                         l_pank = 'SWED';
+
                     ELSE
-                        UPDATE lapsed.vanemad
-                        SET properties = properties || '{
-                          "pank": "SEB"
-                        }'::JSONB
-                        WHERE parentid = l_laps_id
-                          AND asutusid = l_vanem_id;
                         l_pank = 'SEB';
 
                     END IF;
 
-                    --  пишем в карточку номер расчетного счета
-                    -- если нет расчетного счета
-                    IF coalesce(jsonb_array_length((SELECT (a.properties -> 'asutus_aa')::JSONB AS asutus_aa
-                                                    FROM libs.asutus a
-                                                    WHERE a.id = l_vanem_id
-                                                      AND properties ->> 'asutus_aa' IS NOT NULL
-                    )), 0) = 0
+                    SELECT id,
+                           parentid,
+                           asutusid,
+                           muud,
+                           TRUE                                    AS arved,
+                           (properties ->> 'suhtumine')            AS suhtumine,
+                           (properties ->> 'kas_paberil')::BOOLEAN AS suhtumine,
+                           (properties ->> 'kas_email')::BOOLEAN   AS suhtumine,
+                           l_pank                                  AS pank,
+                           TRUE                                    AS kas_earve,
+                           json_record.aa                          AS iban
+                           INTO v_vanem
+                    FROM lapsed.vanemad v
+                    WHERE asutusid = l_vanem_id
+                      AND parentid = l_laps_id
+                    LIMIT 1;
+
+                    -- подготавливаем параметры для сохранения
+                    SELECT row_to_json(row) INTO json_object
+                    FROM (SELECT v_vanem.id                   AS id,
+                                 (SELECT to_jsonb(v_vanem.*)) AS data) row;
+
+                    l_id = (SELECT lapsed.sp_salvesta_vanem(json_object :: JSONB, user_id, user_rekvid));
+
+                    IF (l_id IS NOT NULL AND l_id > 0)
                     THEN
-                        -- asutus_aa
-                        json_asutus_aa = array_to_json((SELECT array_agg(row_to_json(aa.*))
-                                                        FROM (SELECT json_record.aa AS aa,
-                                                                     l_pank         AS pank) AS aa
-                        ));
-                        -- сохранение
-                        SELECT a.id                          AS id,
-                               a.regkood                     AS regkood,
-                               a.nimetus                     AS nimetus,
-                               a.omvorm                      AS omvorm,
-                               a.kontakt                     AS kontakt,
-                               a.aadress                     AS aadress,
-                               a.tel                         AS tel,
-                               a.email                       AS email,
-                               a.mark                        AS mark,
-                               a.properties ->> 'kmkr'       AS kmkr,
-                               a.properties ->> 'kehtivus'   AS kehtivus,
-                               a.properties ->> 'is_tootaja' AS is_tootaja,
-                               a.muud                        AS muud,
-                               a.tp                          AS tp,
-                               json_asutus_aa                AS asutus_aa
-                               INTO v_asutus
-                        FROM libs.asutus a
-                        WHERE id = l_vanem_id;
-
-                        SELECT row_to_json(row) INTO json_params
-                        FROM (SELECT l_vanem_id AS id,
-                                     FALSE      AS import,
-                                     v_asutus   AS data) row;
-
-                        PERFORM libs.sp_salvesta_asutus(json_params :: JSON, user_id, user_rekvid);
+                        count = count + 1;
                     END IF;
-                    count = count + 1;
                 END IF;
             END IF;
 
@@ -170,4 +144,7 @@ GRANT EXECUTE ON FUNCTION lapsed.loe_panga_lepingud(JSONB, INTEGER, INTEGER) TO 
 GRANT EXECUTE ON FUNCTION lapsed.loe_panga_lepingud(JSONB, INTEGER, INTEGER) TO admin;
 
 
+/*
+select from lapsed.loe_panga_lepingud( '[{"kpv":"06.09.2020 08:49:20","viitenr":"9388642","aa":"EE432200221022308307","toiming":"Lisa","nimi":"ANDREI PETRIKOV","isikukood":"37701213739","kanal":"HABAEE2X"}]', 28, 69)
 
+ */

@@ -49,6 +49,8 @@ exports.post = function (req, res, next) {
                         lastLogin: kasutaja.last_login,
                         userAccessList: kasutaja.allowed_access,
                         login: kasutaja.kasutaja,
+                        parentid: kasutaja.parentid,
+                        parent_asutus: kasutaja.parent_asutus,
                         roles: kasutaja.roles
                     }, kasutaja);
 

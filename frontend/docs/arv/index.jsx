@@ -256,7 +256,7 @@ class Documents extends React.PureComponent {
 
                 // будет отправлено на почту  выбранные и только для эл.почты счета
                 Doc.gridData.forEach(row => {
-                    if (row.select && row.kas_earved) {
+                    if (row.select && row.kas_earved && Number(row.summa) > 0) {
                         // выбрано для печати
                         ids.add(row.id);
                     }
@@ -287,7 +287,7 @@ class Documents extends React.PureComponent {
 
                 // будет сформирован файл для отправки в банк СЕБ
                 Doc.gridData.forEach(row => {
-                    if (row.pank && row.pank == 'SEB' && row.select) {
+                    if (row.pank && row.pank == 'SEB' && row.select && Number(row.summa) > 0) {
                         // выбрано для печати
                         ids.add(row.id);
                     }
@@ -317,7 +317,7 @@ class Documents extends React.PureComponent {
 
                 // будет сформирован файл для отправки в банк SWED
                 Doc.gridData.forEach(row => {
-                    if (row.select && row.pank && row.pank == 'SWED' ) {
+                    if (row.select && row.pank && row.pank == 'SWED' && Number(row.summa) > 0) {
                         // && row.kas_swed
                         // выбрано для печати
                         ids.add(row.id);

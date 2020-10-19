@@ -74,6 +74,11 @@ class Vanem extends React.PureComponent {
      */
 
     renderer(self) {
+        if (!self.docData.parentid) {
+            // не загружены данные
+            return null;
+        }
+
         let isEditMode = self.state.edited,
             gridLasteData = self.docData.lapsed,
             gridLasteColumns = self.docData.gridConfig;
@@ -97,7 +102,6 @@ class Vanem extends React.PureComponent {
                                     boundToData='vanem_nimi'
                                     ref="select-asutusid"
                                     btnDelete={false}
-                                    userData={self.userData}
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditMode}/>
                     </div>
