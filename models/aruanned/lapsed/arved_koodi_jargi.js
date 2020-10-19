@@ -1,17 +1,18 @@
 module.exports = {
     grid: {
         gridConfiguration: [
-            {id: "kpv", name: "Kuupäev", width: "10%", type: "date", interval: true},
-            {id: "aasta", name: "Aasta", width: "10%", type: "integer"},
+            {id: "kpv", name: "Kuupäev", width: "7%", type: "date", interval: true},
+            {id: "aasta", name: "Aasta", width: "7%", type: "integer"},
             {id: "kuu", name: "Kuu", width: "5%", type: "integer", "interval": true},
-            {id: "number", name: "Arve nr", width: "10%"},
-            {id: "kood", name: "Kood", width: "10%"},
-            {id: "hind", name: "Hind", width: "10%", type: "number", "interval": true},
+            {id: "number", name: "Arve nr", width: "7%"},
+            {id: "kood", name: "Kood", width: "7%"},
+            {id: "hind", name: "Hind", width: "7%", type: "number", "interval": true},
             {id: "uhik", name: "Ühik", width: "5%"},
-            {id: "kogus", name: "Kogus", width: "10%", type: "number", "interval": true},
+            {id: "kogus", name: "Kogus", width: "7%", type: "number", "interval": true},
             {id: "summa", name: "Summa", width: "10%", type: "number", "interval": true},
             {id: "asutus", name: "Asutus", width: "20%"},
             {id: "pank", name: "E-arve kanal(SEB, SWED)", width: "5%"},
+            {id: "yksus", name: "Üksus", width: "10%"},
             {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean', hideFilter: true}
 
         ],
@@ -31,7 +32,8 @@ module.exports = {
                            v.properties ->> 'iban'      AS iban,
                            v.properties ->> 'e-arve'    AS earve,
                            TRUE                         AS select,
-                           d.id
+                           d.id,
+                           a1.properties->>'yksus' as yksus
                     FROM docs.doc d
                              INNER JOIN docs.arv a ON d.id = a.parentid
                              INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
@@ -44,6 +46,8 @@ module.exports = {
                     WHERE d.status <> 3
                       AND a.rekvid IN (SELECT rekv_id
                                        FROM get_asutuse_struktuur($1))
+                      AND ((a.properties ->> 'ettemaksu_period') IS NULL
+                        OR a.properties ->> 'tyyp' = 'ETTEMAKS')
                     ORDER BY aasta, kuu, a.number, r.nimetus
         `,     // $1 - rekvid, $3 - kond
         params: '',

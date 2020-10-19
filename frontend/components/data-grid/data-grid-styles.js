@@ -9,7 +9,7 @@ module.exports = {
     headerTable: {
         tableLayout: 'fixed',
         width: '100%',
-        borderCollapse: 'collapse'
+        borderCollapse: 'collapse',
     },
     footerTable: {
         tableLayout: 'fixed',
@@ -61,7 +61,8 @@ module.exports = {
 
     wrapper: {
         height: 'inherit',
-        overflow: 'overlay'
+        overflow: 'overlay',
+        minHeight: '60px'
     },
 
     main: {
