@@ -37,9 +37,9 @@ FROM libs.library g
              FROM lapsed.lapse_kaart lk
              WHERE staatus <> 3
                AND ((lk.properties ->> 'alg_kpv')::DATE IS NULL OR
-                    (lk.properties ->> 'alg_kpv')::DATE >= make_date(l_aasta, coalesce(l_kuu, month(current_date)), 1))
+                    (lk.properties ->> 'alg_kpv')::DATE <= get_last_day(make_date(l_aasta, coalesce(l_kuu, month(current_date)), 1)))
                AND ((lk.properties ->> 'lopp_kpv')::DATE IS NULL OR
-                    (lk.properties ->> 'lopp_kpv')::DATE >= get_last_day(
+                    (lk.properties ->> 'lopp_kpv')::DATE >= (
                             make_date(coalesce(l_aasta, year(current_date)), coalesce(l_kuu, month(current_date)), 1)))
          ) lk
     GROUP BY rekvid, yksus) lk ON lk.rekvid = g.rekvid AND lk.yksus::TEXT = g.kood::TEXT
