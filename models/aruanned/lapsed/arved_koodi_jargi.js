@@ -13,15 +13,12 @@ module.exports = {
             {id: "asutus", name: "Asutus", width: "20%"},
             {id: "pank", name: "E-arve kanal(SEB, SWED)", width: "5%"},
             {id: "yksus", name: "Üksus", width: "10%"},
-            {id: "koolituse_tyyp", name: "Koolituse tüüp", width: "10%"},
+            {id: "liik", name: "Asutuse liik", width: "10%"},
             {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean', hideFilter: true}
 
         ],
-        sqlString: `
-            SELECT l.nimetus AS koolituse_tyyp,
-                   arved.*
-            FROM (
-                     SELECT sum(a1.summa) OVER ()              AS summa_kokku,
+        sqlString: ` SELECT liik.nimetus                       AS liik,
+                            sum(a1.summa) OVER ()              AS summa_kokku,
                             to_char(a.kpv, 'DD.MM.YYYY')       AS kpv,
                             year(a.kpv)                        AS aasta,
                             month(a.kpv)                       AS kuu,
@@ -51,15 +48,16 @@ module.exports = {
                               LEFT OUTER JOIN libs.library yksus ON (a1.properties ->> 'yksus')::TEXT = yksus.kood::TEXT
                          AND yksus.rekvid = a.rekvid AND yksus.status <> 3
                          AND yksus.library = 'LAPSE_GRUPP'
+                              LEFT OUTER JOIN libs.library liik ON r.properties ->> 'liik' = liik.kood
+                         AND liik.library = 'ASUTUSE_LIIK'
+                         AND liik.status <> 3
+
                      WHERE d.status <> 3
                        AND a.rekvid IN (SELECT rekv_id
                                         FROM get_asutuse_struktuur($1))
                        AND ((a.properties ->> 'ettemaksu_period') IS NULL
                          OR a.properties ->> 'tyyp' = 'ETTEMAKS')
                      ORDER BY aasta, kuu, a.number, r.nimetus
-                 ) arved
-                     LEFT OUTER JOIN libs.library l
-                                     ON l.id = arved.tyyp::INTEGER
         `,     // $1 - rekvid, $3 - kond
         params: '',
         alias: 'arved_koodi_jargi_report'
