@@ -16,8 +16,8 @@ const
     styles = require('./styles');
 
 const LIBRARIES = [];
-
-const now = new Date();
+const DOCS = ['ARV','SMK'];
+const DocContext = require('./../../../doc-context.js');
 
 class Vanem extends React.PureComponent {
     constructor(props) {
@@ -30,15 +30,12 @@ class Vanem extends React.PureComponent {
         };
 
         this.renderer = this.renderer.bind(this);
-        this.handlePageClick = this.handlePageClick.bind(this);
         this.handleLasteGridBtnClick = this.handleLasteGridBtnClick.bind(this);
         this.btnEditAsutusClick = this.btnEditAsutusClick.bind(this);
+        this.setFilter = this.setFilter.bind(this);
 
         this.pages = [
             {pageName: 'Vanem kaart', docTypeId: 'VANEM'},
-            {pageName: 'Arved', handlePageClick: this.handlePageClick, docTypeId: 'ARV'},
-            {pageName: 'Maksekoraldused', handlePageClick: this.handlePageClick, docTypeId: 'SMK'},
-            {pageName: 'Kassaorderid', handlePageClick: this.handlePageClick, docTypeId: 'SORDER'}
         ];
     }
 
@@ -74,7 +71,8 @@ class Vanem extends React.PureComponent {
      */
 
     renderer(self) {
-        if (!self.docData.parentid) {
+
+        if (!self && !self.docData.parentid) {
             // не загружены данные
             return null;
         }
@@ -85,6 +83,11 @@ class Vanem extends React.PureComponent {
 
         if (this.state.lapsId) {
             self.docData.parentid = this.state.lapsId;
+        }
+
+        if (self.docData.vanem_nimi) {
+            // наложим фильтры
+            this.setFilter(self.docData.vanem_nimi)
         }
 
         return (
@@ -235,15 +238,6 @@ class Vanem extends React.PureComponent {
         );
     }
 
-    handlePageClick(pageDocTypeId) {
-        let nimi = this.refs['document'].docData.vanem_nimi;
-
-        this.props.history.push({
-            pathname: `/lapsed/${pageDocTypeId}`,
-            state: {asutus: nimi, type: 'text'}
-        });
-
-    }
 
     handleLasteGridBtnClick(btnName, activeRow, id, docTypeId) {
 
@@ -283,6 +277,29 @@ class Vanem extends React.PureComponent {
 
         // осуществит переход на карточку контр-агента
         this.props.history.push(`/lapsed/asutused/${docAsutusId}`);
+    }
+
+    /**
+     * установим фильтр на документа
+     */
+    setFilter(nimi) {
+
+        // проверим наличие фильтра
+        DOCS.forEach(doc => {
+            if (!DocContext.filter[doc] || !DocContext.filter[doc].length) {
+                // создаем пустой фильтр для заданного типа
+                DocContext.filter[doc] = createEmptyFilterData(DocContext.gridConfig[doc], [], doc);
+            }
+
+            // накладываем фильтр
+            DocContext.filter[doc].forEach(row => {
+                if (row.id == 'asutus') {
+                    row.value = nimi;
+                }
+            });
+
+        });
+
     }
 }
 
