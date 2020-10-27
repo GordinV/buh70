@@ -95,7 +95,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 '@channelAddress': asutusConfig.type ? arve.iban : null,
                 '@presentment': asutusConfig.type ? 'YES' : null,
                 '@invoiceGlobUniqId': asutusConfig.type ? arve.id : null,
-                'sellerContractId': asutusConfig.type && asutusConfig.type == 'swed' ? asutusConfig.swed : asutusConfig.type ? asutusConfig.seb : null,
+                '@sellerContractId': asutusConfig.type && asutusConfig.type == 'swed' ? asutusConfig.swed : asutusConfig.type ? asutusConfig.seb : null,
                 '@sellerRegnumber': asutusConfig.type ? arve.regkood.trim() : null,
 
                 InvoiceParties: {

@@ -302,16 +302,17 @@ BEGIN
 
 
     -- check for arve summa
-    IF l_arve_summa < 0
+/*    IF l_arve_summa < 0
     THEN
         result = 0;
         error_message = 'Dokumendi summa = 0';
         error_code = 1;
         RETURN;
     ELSE
-        SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
+*/
+    SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
 
-    END IF;
+    --    END IF;
 
 
     -- проверка

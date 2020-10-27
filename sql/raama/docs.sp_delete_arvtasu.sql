@@ -59,6 +59,9 @@ BEGIN
   -- update arv jaak
   PERFORM docs.sp_update_arv_jaak(v_doc.doc_arv_id);
 
+  -- сальдо платежа
+  PERFORM docs.sp_update_mk_jaak(v_doc.doc_tasu_id);
+
   result = 1;
 
   RETURN;

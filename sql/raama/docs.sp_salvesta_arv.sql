@@ -54,8 +54,6 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    RAISE NOTICE 'doc_id: %', doc_id;
-
     IF doc_number IS NULL OR doc_number = ''
     THEN
         -- присвоим новый номер

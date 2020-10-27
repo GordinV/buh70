@@ -23,13 +23,13 @@ DECLARE
     l_tasu_summa     NUMERIC = 0;
     is_refund        BOOLEAN = FALSE;
 BEGIN
-    raise notice 'sp_tasu_arv';
     IF exists(SELECT 1 FROM docs.arv WHERE journalid = l_tasu_id)
     THEN
-        raise notice 'это не оплата, это проводка счета';
+        RAISE NOTICE 'это не оплата, это проводка счета';
         -- это не оплата, это проводка счета
         RETURN 0;
     END IF;
+
 
     SELECT d.id,
            d.docs_ids,
@@ -61,7 +61,7 @@ BEGIN
     IF l_tasu_id IS NULL
     THEN
         -- Документ не найден
-        raise notice 'Документ не найден';
+        RAISE NOTICE 'Документ не найден';
         RETURN 0;
     END IF;
 
@@ -98,15 +98,11 @@ BEGIN
     l_doc_tasu_id = (
         SELECT a.id
         FROM docs.arvtasu a
-        WHERE rekvid = v_tasu.rekvid
-          AND doc_arv_id = l_arv_id
+        WHERE doc_arv_id = l_arv_id
           AND doc_tasu_id = l_tasu_id
         ORDER BY a.id DESC
         LIMIT 1
     );
-
-    raise notice 'l_doc_tasu_id %, l_summa %', l_doc_tasu_id, l_summa;
-
 
     SELECT coalesce(l_doc_tasu_id, 0)                         AS id,
            v_tasu.rekvid                                      AS rekvid,
@@ -136,6 +132,7 @@ BEGIN
             WHERE d.id IN (
                 SELECT unnest(v_arv.docs_ids)
             )
+              AND d.id <> l_arv_id
               AND a.jaak > 0
             ORDER BY kpv
             LOOP
@@ -144,8 +141,7 @@ BEGIN
                 l_doc_tasu_id = (
                     SELECT id
                     FROM docs.arvtasu
-                    WHERE rekvid = v_tasu.rekvid
-                      AND doc_arv_id = v_tulu_arved.id
+                    WHERE doc_arv_id = v_tulu_arved.id
                       AND doc_tasu_id = l_tasu_id
                     ORDER BY id DESC
                     LIMIT 1
@@ -153,7 +149,6 @@ BEGIN
 
                 -- готовим параметры
                 l_tasu_summa = CASE WHEN v_tulu_arved.jaak > l_summa THEN l_summa ELSE v_tulu_arved.jaak END;
-                raise notice 'tasumine v_tulu_arved.jaak %, l_summa %, l_tasu_summa % ', v_tulu_arved.jaak, l_summa, l_tasu_summa;
                 SELECT coalesce(l_doc_tasu_id, 0) AS id,
                        v_tasu.rekvid              AS rekvid,
                        v_tulu_arved.id            AS doc_arv_id,
@@ -165,8 +160,8 @@ BEGIN
                        INTO v_params;
 
                 SELECT row_to_json(row) INTO json_object
-                FROM (SELECT 0        AS id,
-                             v_params AS data) row;
+                FROM (SELECT coalesce(l_doc_tasu_id, 0) AS id,
+                             v_params                   AS data) row;
                 -- созранение
                 l_doc_id = docs.sp_salvesta_arvtasu(json_object :: JSON, l_user_id, v_tasu.rekvid);
 
@@ -180,6 +175,8 @@ BEGIN
             END LOOP;
 
     END IF;
+    -- сальдо платежа
+    PERFORM docs.sp_update_mk_jaak(l_tasu_id);
 
     RETURN l_doc_id;
 

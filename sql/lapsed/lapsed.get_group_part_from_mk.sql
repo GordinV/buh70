@@ -15,14 +15,14 @@ $BODY$
     -- возвращаем сумму по группам
 WITH qryMk AS (
     (
-        SELECT mk.parentid                                                      AS id,
-               l.parentid                                                       AS laps_id,
-               lk.properties ->> 'yksus'                                        AS yksus,
-               (lk.properties ->> 'alg_kpv')::DATE                              AS alg_kp,
-               (lk.properties ->> 'lopp_kpv')::DATE                             AS lopp_kp,
+        SELECT mk.parentid                          AS id,
+               l.parentid                           AS laps_id,
+               lk.properties ->> 'yksus'            AS yksus,
+               (lk.properties ->> 'alg_kpv')::DATE  AS alg_kp,
+               (lk.properties ->> 'lopp_kpv')::DATE AS lopp_kp,
                lk.hind,
-               sum(lk.hind) OVER ()                                             AS total_amount,
-               (SELECT sum(summa) FROM docs.mk1 mk1 WHERE mk1.parentid = mk.id) AS makse_summa
+               sum(lk.hind) OVER ()                 AS total_amount,
+               mk.jaak                              AS makse_summa
         FROM docs.mk mk
                  INNER JOIN lapsed.liidestamine l ON l.docid = mk.parentid
                  LEFT OUTER JOIN lapsed.lapse_kaart lk
@@ -33,9 +33,9 @@ WITH qryMk AS (
                                      AND lk.rekvid = mk.rekvid
         WHERE mk.parentid = l_mk_id)
 )
-SELECT qryMk.id                                                                AS mk_id,
+SELECT qryMk.id                                                                             AS mk_id,
        qryMk.yksus::TEXT,
-       (coalesce((qryMk.hind / qryMk.total_amount),1)* qryMk.makse_summa )::NUMERIC(14, 2) AS summa,
+       (coalesce((qryMk.hind / qryMk.total_amount), 1) * qryMk.makse_summa)::NUMERIC(14, 2) AS summa,
        qryMk.laps_id
 FROM qryMK
 
@@ -51,5 +51,5 @@ GRANT EXECUTE ON FUNCTION lapsed.get_group_part_from_mk(INTEGER, DATE) TO dbvaat
 /*
 
 
-select * from lapsed.get_group_part_from_mk(2078084, '2020-09-01'::DATE)
+select * from lapsed.get_group_part_from_mk(2078078, '2020-09-01'::DATE)
 */

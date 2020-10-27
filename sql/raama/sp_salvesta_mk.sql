@@ -256,6 +256,8 @@ BEGIN
 
     END IF;
 
+    -- сальдо платежа
+    PERFORM docs.sp_update_mk_jaak(doc_id);
 
     RETURN doc_id;
 

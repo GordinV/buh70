@@ -120,7 +120,7 @@ const Smk = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "0%", show: false},
-            {id: "kpv", name: "Maksepäev", width: "10%"},
+            {id: "kpv", name: "Maksepäev", width: "10%", type:"date", interval: true},
             {id: "number", name: "Number", width: "5%"},
             {id: "asutus", name: "Maksja", width: "20%"},
             {id: "deebet", name: "Summa", width: "10%"},
