@@ -48,7 +48,6 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
         totalAmount = totalAmount + Number(arve.summa);
     });
 
-    console.log('data', data);
     let Header = {
         Date: l_now,
         FileId: Date.now(),

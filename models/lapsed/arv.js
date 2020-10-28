@@ -85,8 +85,15 @@ const Arv = {
                            LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = asutus.id
                       AND v.parentid = l.id
 
-                           LEFT OUTER JOIN (SELECT *
-                                            FROM lapsed.lapse_saldod(docs.get_arve_period($1))) saldod
+                           LEFT OUTER JOIN (
+                      SELECT laps_id,
+                             rekv_id,
+                             sum(jaak)       AS jaak,
+                             sum(laekumised) AS laekumised,
+                             sum(ettemaksud) AS ettemaksud
+                      FROM lapsed.lapse_saldod(docs.get_arve_period($1))
+                      GROUP BY laps_id, rekv_id
+                  ) saldod
                                            ON saldod.laps_id = l.id AND saldod.rekv_id = d.rekvid
 
                   WHERE D.id = $1`,
