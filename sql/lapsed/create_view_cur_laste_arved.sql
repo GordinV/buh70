@@ -24,7 +24,9 @@ SELECT d.id                                                                     
        coalesce((a.properties ->> 'tyyp'), '') :: TEXT                                        AS tyyp,
        l.isikukood                                                                            AS isikukood,
        l.nimi                                                                                 AS nimi,
-       coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN                      AS kas_earved,
+       coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN
+           AND NOT ((a.properties ->> 'ettemaksu_period') IS NOT NULL
+           AND a.properties ->> 'tyyp' IS NULL)                                               AS kas_earved,
        coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN                      AS kas_email,
        coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN                    AS kas_paberil,
        (v.properties ->> 'pank'):: TEXT                                                       AS pank
@@ -47,6 +49,8 @@ GRANT ALL ON TABLE lapsed.cur_laste_arved TO dbadmin;
 
 /*
 select * from lapsed.cur_laste_arved
+--limit 10
+where asutus like 'KREEK%'
  */
 
 

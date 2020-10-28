@@ -41,6 +41,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
     const data = [];
 
     arved.forEach((arve, index) => {
+        //  подготовим данные
         data.push(Object.assign({}, arve.row[0], {details: arve.details}));
     });
 
@@ -91,8 +92,8 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
             let Balanse = {
                 BalanceDate: arve.period_alg,
                 BalanceBegin: arve.alg_jaak,
-                Inbound:arve.laekumised,
-                Outbound:arve.tagastused,
+                Inbound: arve.laekumised,
+                Outbound: arve.tagastused,
                 BalanceEnd: arve.tasumisele
             };
 
