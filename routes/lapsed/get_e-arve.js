@@ -48,6 +48,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
         totalAmount = totalAmount + Number(arve.summa);
     });
 
+    console.log('data', data);
     let Header = {
         Date: l_now,
         FileId: Date.now(),
@@ -88,6 +89,14 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 }
             });
 
+            let Balanse = {
+                BalanceDate: arve.period_alg,
+                BalanceBegin: arve.alg_jaak,
+                Inbound:arve.laekumised,
+                Outbound:arve.tagastused,
+                BalanceEnd: arve.tasumisele
+            };
+
             return {
                 '@invoiceId': arve.number,
                 '@regNumber': asutusConfig.regkood.trim(),
@@ -126,7 +135,8 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     Object.assign({InvoiceSum: Number(arve.summa).toFixed(2)},
                         {VAT: qryeArvedVat["0"]},
                         {TotalSum: Number(arve.summa).toFixed(2)},
-                        {Currency: 'EUR'}),
+                        {Currency: 'EUR'},
+                        {Balanse: Balanse}),
                 InvoiceItem: {
                     InvoiceItemGroup: {
                         ItemEntry: qryeArvedDet
