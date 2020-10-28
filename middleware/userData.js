@@ -30,6 +30,7 @@ const userData = function (req, _uuid) {
         roles: req.session.users[userIndex].roles
     }, userIndex > -1 ? req.session.users[userIndex] : {});
 
+    console.log('user', user);
     return user;
 };
 

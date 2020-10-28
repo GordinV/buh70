@@ -2,6 +2,7 @@
 
 const checkRights = (userRoles, docRights, action) => {
     let is_accepted = false;
+
     if (docRights[action]) {
         docRights[action].forEach(role => {
             // raamatupidajad

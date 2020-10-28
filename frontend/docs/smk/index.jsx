@@ -15,8 +15,6 @@ const checkRights = require('./../../../libs/checkRights');
 const DocContext = require('./../../doc-context.js');
 
 const DocRights = require('./../../../config/doc_rights');
-const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
-const userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
 /**
  * Класс реализует документ приходного платежного ордера.
@@ -60,11 +58,20 @@ class Documents extends React.PureComponent {
     }
 
     renderer(self) {
-        let summa = self.gridData ? getSum (self.gridData,'deebet') : 0;
+        if (!self) {
+            return null;
+        }
+
+        const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
+        const userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
+        let summa = self.gridData ? getSum(self.gridData, 'deebet') : 0;
         if (summa) {
             this.setState({summa: summa, read: self.gridData.length});
         }
 
+        let me = checkRights(userRoles, docRights, 'import');
+        console.log('me', me, userRoles, docRights);
         return (
             <ToolbarContainer>
                 {checkRights(userRoles, docRights, 'import') ?
