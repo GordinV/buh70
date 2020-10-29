@@ -152,15 +152,15 @@ BEGIN
                          l_oma_tp            AS oma_tp
                  ) row;
 
-/*            l_check_lausend = docs.sp_lausendikontrol(json_lausend::JSONB);
+            l_check_lausend = docs.sp_lausendikontrol(json_lausend::JSONB);
 
 
             IF is_import IS NULL AND NOT empty(l_check_lausend)
             THEN
---                RAISE EXCEPTION '%',l_check_lausend;
-                RAISE NOTICE 'lausendi kontrol %',l_check_lausend;
+                    RAISE EXCEPTION '%',l_check_lausend;
+--                RAISE NOTICE 'lausendi kontrol %',l_check_lausend;
             END IF;
-*/
+
 
             IF json_record.summa <> 0
             THEN
@@ -256,7 +256,6 @@ BEGIN
 
         PERFORM rekl.sp_koosta_ettemaks(userid, json_params);
     END IF;
-    RAISE NOTICE 'salvestan journal, saved, avans done, rekl done';
 
     -- arve tasumine
 
@@ -271,14 +270,12 @@ BEGIN
                        , a.kpv
                 LIMIT 1
     );
-    RAISE NOTICE 'salvestan journal, saved, avans done, rekl done, arv done';
 
     IF is_import IS NULL AND l_arv_id IS NOT NULL
     THEN
         PERFORM docs.sp_tasu_arv(
                         doc_id, l_arv_id, userid);
     END IF;
-    RAISE NOTICE 'salvestan journal, saved, avans done, rekl done, arv done, arv tasu';
 
 
 --avans
@@ -296,7 +293,6 @@ BEGIN
     THEN
         PERFORM docs.get_avans_jaak(l_avans_id);
     END IF;
-    RAISE NOTICE 'salvestan journal, saved, avans done, rekl done, arv done, arv tasu, avans again';
 
 
     RETURN doc_id;

@@ -61,10 +61,12 @@ BEGIN
              LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
     WHERE d.id = l_arv_id;
 
+    doc_type_id = CASE WHEN v_arv.liik = 0 OR v_arv.id IS NULL THEN 'SMK' ELSE 'VMK' END;
+
     -- maksepaev
     IF l_maksepaev IS NULL
     THEN
-        IF l_arv_id IS NOT NULL
+        IF l_arv_id IS NOT NULL AND doc_type_id = 'VMK'
         THEN
             l_maksepaev = v_arv.tahtaeg;
         ELSE
@@ -83,8 +85,6 @@ BEGIN
     THEN
         l_selg = 'Arve nr.' || ltrim(rtrim(v_arv.number))::TEXT;
     END IF;
-
-    doc_type_id = CASE WHEN v_arv.liik = 0 OR v_arv.id IS NULL THEN 'SMK' ELSE 'VMK' END;
 
     l_opt = (CASE
                  WHEN v_arv.liik = 0 OR v_arv.id IS NULL

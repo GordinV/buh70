@@ -26,7 +26,12 @@ module.exports = {
                      (u.properties ->> 'earved') :: TEXT                              AS earved_omniva,
                      (r.properties ->> 'liik') :: VARCHAR(20)                         AS liik,
                      (r.properties ->> 'swed') ::VARCHAR(254)                         AS swed,
-                     (r.properties ->> 'seb') ::VARCHAR(254)                          AS seb
+                     (r.properties ->> 'seb') ::VARCHAR(254)                          AS seb,
+                     (SELECT tp
+                      FROM ou.aa
+                      WHERE parentid = $1
+                        AND kassa = 2
+                      LIMIT 1)::VARCHAR(20)                                           AS oma_tp
 
               FROM ou.rekv r,
                    ou.userid u

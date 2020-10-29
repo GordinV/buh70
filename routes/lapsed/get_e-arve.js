@@ -89,7 +89,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 }
             });
 
-            let Balanse = {
+            let Balanсe = {
                 BalanceDate: arve.period_alg,
                 BalanceBegin: arve.alg_jaak,
                 Inbound: arve.laekumised,
@@ -136,7 +136,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                         {VAT: qryeArvedVat["0"]},
                         {TotalSum: Number(arve.summa).toFixed(2)},
                         {Currency: 'EUR'},
-                        {Balanse: Balanse}),
+                        {Balanсe: Balanсe}),
                 InvoiceItem: {
                     InvoiceItemGroup: {
                         ItemEntry: qryeArvedDet
@@ -148,7 +148,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     PaymentDescription: `Arve ${arve.number}`,
                     Payable: 'YES',
                     PayDueDate: arve.tahtaeg,
-                    PaymentTotalSum: Number(arve.summa).toFixed(2),
+                    PaymentTotalSum: Number(arve.tasumisele).toFixed(2),
                     PayerName: arve.asutus,
                     PaymentId: arve.number,
                     PayToAccount: arve.arve,

@@ -21,9 +21,11 @@ DECLARE
     doc_tun4       INTEGER = doc_data ->> 'tun4'; -- rahavoog
     doc_tun5       INTEGER = doc_data ->> 'tun5';
     doc_muud       TEXT    = doc_data ->> 'muud';
+    doc_valid      DATE    = CASE WHEN empty(doc_data ->> 'valid') THEN NULL::DATE ELSE (doc_data ->> 'valid')::DATE END;
     is_import      BOOLEAN = data ->> 'import';
     v_doc          RECORD;
     is_peakasutaja BOOLEAN = FALSE;
+    json_object    JSON;
 
 BEGIN
 
@@ -47,18 +49,23 @@ BEGIN
     END IF;
 
     -- проверка на тип справочника и роль
-    if  not is_peakasutaja and doc_library in ('ALLIKAD', 'TEGEV','TULUDEALLIKAD','RAHA') THEN
+    IF NOT is_peakasutaja AND doc_library IN ('ALLIKAD', 'TEGEV', 'TULUDEALLIKAD', 'RAHA')
+    THEN
         RAISE NOTICE 'Puudub õigused';
         RETURN 0;
     END IF;
+
+    SELECT row_to_json(row) INTO json_object
+    FROM (SELECT doc_valid AS valid) row;
+
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
-        INSERT INTO libs.library (rekvid, kood, nimetus, library, tun1, tun2, tun3, tun4, tun5, muud)
+        INSERT INTO libs.library (rekvid, kood, nimetus, library, tun1, tun2, tun3, tun4, tun5, muud, properties)
         VALUES (user_rekvid, doc_kood, doc_nimetus, doc_library, doc_tun1, doc_tun2, doc_tun3, doc_tun4, doc_tun5,
-                doc_muud) RETURNING id
+                doc_muud, json_object) RETURNING id
                    INTO lib_id;
     ELSE
         -- check is this code in use
@@ -77,15 +84,16 @@ BEGIN
 
 
         UPDATE libs.library
-        SET kood    = doc_kood,
-            nimetus = doc_nimetus,
-            library = doc_library,
-            tun1    = doc_tun1,
-            tun2    = doc_tun2,
-            tun3    = doc_tun3,
-            tun4    = doc_tun4,
-            tun5    = doc_tun5,
-            muud    = doc_muud
+        SET kood       = doc_kood,
+            nimetus    = doc_nimetus,
+            library    = doc_library,
+            tun1       = doc_tun1,
+            tun2       = doc_tun2,
+            tun3       = doc_tun3,
+            tun4       = doc_tun4,
+            tun5       = doc_tun5,
+            muud       = doc_muud,
+            properties = json_object
         WHERE id = doc_id RETURNING id
             INTO lib_id;
 

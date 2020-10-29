@@ -31,7 +31,15 @@
                      ((r.properties -&gt;&gt; 'reklftp')::JSONB -&gt;&gt; 'parool')::VARCHAR(120) AS parool,
                      (r.properties -&gt;&gt; 'earved') ::VARCHAR(254)                       AS earved,
                      (u.properties -&gt;&gt; 'earved') :: TEXT                              AS earved_omniva,
-                     (r.properties -&gt;&gt; 'liik') :: VARCHAR(20)                         AS liik
+                     (r.properties -&gt;&gt; 'liik') :: VARCHAR(20)                         AS liik,
+                     (r.properties -&gt;&gt; 'swed') ::VARCHAR(254)                         AS swed,
+                     (r.properties -&gt;&gt; 'seb') ::VARCHAR(254)                          AS seb,
+                     (SELECT tp
+                      FROM ou.aa
+                      WHERE parentid = $1
+                        AND kassa = 2
+                      LIMIT 1)::VARCHAR(20)                                           AS oma_tp
+
               FROM ou.rekv r,
                    ou.userid u
               WHERE r.id = $1

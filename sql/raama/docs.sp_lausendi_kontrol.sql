@@ -115,7 +115,7 @@ BEGIN
     IF v_konto_d.valid IS NOT NULL AND len(v_konto_d.valid::TEXT) = 8
     THEN
         ldKpv = make_date(val(left(v_konto_d.valid::TEXT, 4)), val(substr(v_konto_d.valid::TEXT, 5, 2)),
-                     val(substr(v_konto_d.valid::TEXT, 7, 2)));
+                          val(substr(v_konto_d.valid::TEXT, 7, 2)));
 
         IF l_kpv > ldKpv
         THEN
@@ -141,7 +141,7 @@ BEGIN
       AND l.kood::TEXT = l_kr::TEXT
     LIMIT 1;
 
-    IF v_konto_k.valid IS NOT NULL AND not empty(v_konto_k.valid) and len(v_konto_k.valid::TEXT) = 8
+    IF v_konto_k.valid IS NOT NULL AND NOT empty(v_konto_k.valid) AND len(v_konto_k.valid::TEXT) = 8
     THEN
         ldKpv = date(val(left(v_konto_k.valid::TEXT, 4)), val(substr(v_konto_k.valid::TEXT, 5, 2)),
                      val(substr(v_konto_k.valid, 7, 2)));
@@ -162,6 +162,7 @@ BEGIN
     THEN
         lnTPD = 1;
     END IF;
+
 
     IF v_konto_d.tegev::TEXT = '1' AND (empty(l_tt) OR empty(l_eelarve))
     THEN
@@ -471,6 +472,25 @@ BEGIN
         END IF;
     END IF;
 
+-- allikas, kehtivus
+    SELECT l.kood,
+           (l.properties::JSONB ->> 'valid')::DATE AS valid
+           INTO v_lib
+    FROM libs.library l
+    WHERE l.library = 'ALLIKAD'
+      AND l.kood::TEXT = l_allikas::TEXT
+      AND l.status <> 3
+    LIMIT 1;
+
+    IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
+    THEN
+        IF l_kpv > v_lib.valid
+        THEN
+            l_msg = l_msg + ', Allikas (' || l_allikas || '), Ei saa kasuta, sest kood ei ole kehtiv';
+        END IF;
+    END IF;
+
+
     IF NOT empty(l_msg::TEXT)
     THEN
         l_msg = 'Viga Db:' || coalesce(l_db::TEXT, '') || ' ' || 'Kr:' || coalesce(l_kr::TEXT, '') ||
@@ -493,5 +513,6 @@ SELECT docs.sp_lausendikontrol('{
   "tpd": "800401",
   "kr": "103000",
   "tpk": "18510101",
-  "oma_tp": "18510101"
+  "oma_tp": "18510101",
+  "allikas": "70"
 }'::JSONB);

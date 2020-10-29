@@ -107,7 +107,14 @@ const Journal = {
             multiple: false,
             alias: 'kooperi_journal',
             data: []
-        }
+        },
+        {
+            sql: `select docs.sp_lausendikontrol($1::JSONB) as result`,
+            query: null,
+            multiple: false,
+            alias: 'validate_journal',
+            data: []
+        },
 
     ],
     grid: {
