@@ -7,13 +7,15 @@ FROM (SELECT 0                AS id,
              '':: VARCHAR(20) AS kood,
              '':: VARCHAR(20) AS nimetus,
              NULL :: INTEGER  AS rekvId,
-             TRUE             AS is_kulud
+             TRUE             AS is_kulud,
+             NULL::DATE       AS valid
       UNION
       SELECT l.id,
              l.kood,
              l.nimetus,
              l.rekvId,
-             (CASE WHEN l.tun5 = 1 THEN FALSE ELSE TRUE END) AS is_kulud
+             (CASE WHEN l.tun5 = 1 THEN FALSE ELSE TRUE END) AS is_kulud,
+             (l.properties::JSONB ->> 'valid')::DATE
       FROM libs.library l
       WHERE l.library = 'TULUDEALLIKAD'
         AND l.status <> 3
@@ -22,19 +24,22 @@ FROM (SELECT 0                AS id,
              '3, 655'                                  AS kood,
              'Tulud (siirded eelarvesse, tagastamine)' AS nimetus,
              999999                                    AS rekvid,
-             FALSE                                     AS is_kulud
+             FALSE                                     AS is_kulud,
+             NULL::DATE       AS valid
       UNION ALL
       SELECT 152586456            AS id,
              '15,2586,4,5,6'      AS kood,
              'Põhitegevuse kulud' AS nimetus,
              999999               AS rekvid,
-             TRUE                 AS is_kulud
+             TRUE                 AS is_kulud,
+             NULL::DATE       AS valid
       UNION ALL
       SELECT 152586456            AS id,
              '3'                  AS kood,
              'Põhitegevuse tulud' AS nimetus,
              999999               AS rekvid,
-             FALSE                AS is_kulud
+             FALSE                AS is_kulud,
+             NULL::DATE       AS valid
      ) qry
 ORDER BY kood;
 

@@ -31,6 +31,7 @@ DECLARE
     is_error   INTEGER;
 BEGIN
 
+
     IF l_kpv <= make_date(2010, 12, 31)
     THEN
         RAISE NOTICE 'l_kpv <= make_date(2010, 12, 31)';
@@ -154,7 +155,7 @@ BEGIN
     -- deebet
     IF v_konto_d.kood IS NULL OR empty(l_db) OR len(l_db) < 6
     THEN
-        l_msg = l_msg + ' Deebet konto: puudub või vale konto ';
+        l_msg = l_msg + ' Deebet konto: puudub või vale konto (' || l_db || ')' ;
     END IF;
     RAISE NOTICE 'konto deebet %, l_msg %',v_konto_d.KOOD, l_msg;
 
@@ -487,6 +488,60 @@ BEGIN
         IF l_kpv > v_lib.valid
         THEN
             l_msg = l_msg + ', Allikas (' || l_allikas || '), Ei saa kasuta, sest kood ei ole kehtiv';
+        END IF;
+    END IF;
+
+-- artikkel, kehtivus
+    SELECT l.kood,
+           (l.properties::JSONB ->> 'valid')::DATE AS valid
+           INTO v_lib
+    FROM libs.library l
+    WHERE l.library = 'TULUDEALLIKAD'
+      AND l.kood::TEXT = l_eelarve::TEXT
+      AND l.status <> 3
+    LIMIT 1;
+
+    IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
+    THEN
+        IF l_kpv > v_lib.valid
+        THEN
+            l_msg = l_msg + ', Artikkel (' || l_eelarve || '), Ei saa kasuta, sest kood ei ole kehtiv';
+        END IF;
+    END IF;
+
+-- tegev, kehtivus
+    SELECT l.kood,
+           (l.properties::JSONB ->> 'valid')::DATE AS valid
+           INTO v_lib
+    FROM libs.library l
+    WHERE l.library = 'TEGEV'
+      AND l.kood::TEXT = l_tt::TEXT
+      AND l.status <> 3
+    LIMIT 1;
+
+    IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
+    THEN
+        IF l_kpv > v_lib.valid
+        THEN
+            l_msg = l_msg + ', Tegevusalla (' || l_tt || '), Ei saa kasuta, sest kood ei ole kehtiv';
+        END IF;
+    END IF;
+
+-- Rahavoog, kehtivus
+    SELECT l.kood,
+           (l.properties::JSONB ->> 'valid')::DATE AS valid
+           INTO v_lib
+    FROM libs.library l
+    WHERE l.library = 'RAHA'
+      AND l.kood::TEXT = l_rahavoog::TEXT
+      AND l.status <> 3
+    LIMIT 1;
+
+    IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
+    THEN
+        IF l_kpv > v_lib.valid
+        THEN
+            l_msg = l_msg + ', Rahavoog (' || l_rahavoog || '), Ei saa kasuta, sest kood ei ole kehtiv';
         END IF;
     END IF;
 

@@ -44,7 +44,7 @@ FROM (SELECT D.id,
              t.tyyp,
              t.journalid,
              COALESCE(jid.number, 0)                         AS lausend,
-             COALESCE(t.staatus :: TEXT, '')                 AS status,
+             COALESCE(t.staatus :: TEXT, '')::VARCHAR(20)    AS status,
              t.saadetud,
              t.failid,
              COALESCE(rekl.fnc_dekl_jaak(D.ID), 0)           AS jaak,
@@ -56,7 +56,7 @@ FROM (SELECT D.id,
                  VARCHAR(254)                                AS fail,
              ((t.lisa ->> 'failid') :: JSONB ->> 'tyyp') ::
                  VARCHAR(20)                                 AS storage_type,
-             t.staatus
+             t.staatus                                       AS staatus
       FROM docs.doc D
                INNER JOIN rekl.toiming t ON t.parentid = D.id
                INNER JOIN rekl.luba l ON t.lubaid = l.

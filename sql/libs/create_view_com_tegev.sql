@@ -1,4 +1,4 @@
-                DROP VIEW IF EXISTS com_tegev;
+DROP VIEW IF EXISTS com_tegev;
 
                 CREATE OR REPLACE VIEW com_tegev AS
 
@@ -7,13 +7,16 @@
                           0                 AS id,
                           '' :: VARCHAR(20) AS kood,
                           '' :: VARCHAR(20) AS nimetus,
-                          NULL :: INTEGER   AS rekvId
+                          NULL :: INTEGER   AS rekvId,
+                          NULL::DATE       AS valid
                         UNION
                         SELECT
                           l.id,
                           l.kood,
                           l.nimetus,
-                          l.rekvId
+                          l.rekvId,
+             (l.properties::JSONB ->> 'valid')::DATE
+
                         FROM libs.Library l
                         WHERE l.library = 'TEGEV'
                               AND l.status <> 3
@@ -23,4 +26,3 @@
                 GRANT SELECT ON TABLE com_tegev TO dbkasutaja;
                 GRANT SELECT ON TABLE com_tegev TO dbvaatleja;
                 GRANT SELECT ON TABLE com_tegev TO dbpeakasutaja;
-

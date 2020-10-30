@@ -46,7 +46,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
     });
 
     data.forEach(arve => {
-        totalAmount = totalAmount + Number(arve.summa);
+        totalAmount = totalAmount + Number(arve.tasumisele);
     });
 
     let Header = {
