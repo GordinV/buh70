@@ -33,6 +33,7 @@ DECLARE
     l_alus              NUMERIC;
 
     l_count             INTEGER;
+    l_tunnus            TEXT;
 BEGIN
     SELECT kasutaja,
            rekvid
@@ -112,7 +113,7 @@ BEGIN
 
 
             FOR V_lib IN
-                SELECT pk.libid            AS id,
+                SELECT pk.libid                     AS id,
                        pk.liik,
                        empty(pk.asutusest::INTEGER) AS is_asutusest,
                        pk.tululiik,
@@ -184,6 +185,7 @@ BEGIN
                                l.artikkel                                                    AS kood5,
                                l.uritus                                                      AS kood4,
                                l.konto                                                       AS konto,
+                               l.tunnusid                                                    AS tunnusid,
                                l.korrkonto                                                   AS korrkonto,
                                l.proj                                                        AS proj,
                                '800699' :: TEXT                                              AS tp,

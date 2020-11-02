@@ -2,7 +2,7 @@ import_ettemaksud();
 
 async function import_ettemaksud() {
     const fs = require('fs');
-    const path = 'c:/temp/csv/ettemaks_3.csv';
+    const path = 'c:/temp/csv/ettemaks_4.csv';
     const util = require('util');
 
 // Convert fs.readFile into Promise version of same

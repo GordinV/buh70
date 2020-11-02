@@ -50,10 +50,11 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
     });
 
     let Header = {
+        Test: 'NO',
         Date: l_now,
         FileId: Date.now(),
         AppId: 'EARVE',
-        Version: '1.1'
+        Version: '1.11'
     };
 
     if (asutusConfig.ReceiverId) {
@@ -89,17 +90,9 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 }
             });
 
-            let Balanсe = {
-                BalanceDate: arve.period_alg,
-                BalanceBegin: arve.alg_jaak,
-                Inbound: arve.laekumised,
-                Outbound: arve.tagastused,
-                BalanceEnd: arve.tasumisele
-            };
-
             return {
                 '@invoiceId': arve.number,
-                '@regNumber': asutusConfig.regkood.trim(),
+                '@regNumber': arve.regkood.trim(),
                 '@channelId': asutusConfig.type ? asutusConfig.channelId : null,
                 '@channelAddress': asutusConfig.type ? arve.iban : null,
                 '@presentment': asutusConfig.type ? 'YES' : null,
@@ -111,10 +104,33 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     SellerParty: {
                         Name: asutusConfig.asutus.trim(),
                         RegNumber: asutusConfig.regkood.trim(),
+                        ContactData: {
+                            LegalAddress: {
+                                PostalAddress1: 'Peetri pl. 1',
+                                City: 'Narva',
+                                PostalCode: '20308',
+                                Country: 'EE'
+                            },
+                            ContactInformation: {
+                                InformationContent: 'Klienditeenindus: tel 3599035, e-mail ostjad@narvakultuur.ee'
+                            }
+                        },
+                        AccountInfo: {
+                            AccountNumber: arve.aa,
+                            IBAN: arve.aa,
+                            BIC: asutusConfig.channelId
+                        }
+
                     },
                     BuyerParty: {
                         Name: arve.asutus,
                         RegNumber: arve.regkood.trim(),
+                        AccountInfo: {
+                            AccountNumber: arve.iban,
+                            IBAN: arve.iban,
+                            BIC: arve.pank == 'SWED' ? 'HABAEE2X' : 'EEUHEE2X',
+                            BankName: arve.pank == 'SWED' ? 'Swedbank' : 'SEB Pank'
+                        }
                     }
                 },
                 InvoiceInformation: {
@@ -124,19 +140,30 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     ContractNumber: arve.lisa,
                     DocumentName: 'Arve',
                     InvoiceNumber: arve.number,
-                    InvoiceContentText: arve.muud,
                     InvoiceDate: arve.kpv,
                     DueDate: arve.tahtaeg,
                     InvoiceDeliverer: {
                         ContactName: asutusConfig.userName
-                    }
+                    },
+                    Period: arve.laekumise_period
                 },
                 InvoiceSumGroup:
-                    Object.assign({InvoiceSum: Number(arve.summa).toFixed(2)},
-                        {VAT: qryeArvedVat["0"]},
+                    Object.assign(
+                        {
+                            Balanсe: {
+                                BalanceDate: arve.period_alg,
+                                BalanceBegin: arve.alg_jaak,
+                                Inbound: arve.laekumised,
+                                Outbound: arve.tagastused,
+                                BalanceEnd: arve.tasumisele
+                            }
+                        },
                         {TotalSum: Number(arve.summa).toFixed(2)},
+                        {TotalToPay: arve.tasumisele},
                         {Currency: 'EUR'},
-                        {Balanсe: Balanсe}),
+                        {InvoiceSum: Number(arve.summa).toFixed(2)},
+                        {VAT: qryeArvedVat["0"]},
+                    ),
                 InvoiceItem: {
                     InvoiceItemGroup: {
                         ItemEntry: qryeArvedDet
@@ -152,7 +179,8 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     PayerName: arve.asutus,
                     PaymentId: arve.number,
                     PayToAccount: arve.arve,
-                    PayToName: asutusConfig.asutus
+                    PayToName: asutusConfig.asutus,
+                    PayToBIC: asutusConfig.channelId
                 }
 
             }

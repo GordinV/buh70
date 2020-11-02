@@ -69,6 +69,7 @@ const Arv = {
                          lpad(month(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT, 2, '0') || '.' ||
                          year(make_date(year(a.kpv), month(a.kpv), 1)::DATE - 1)::TEXT AS laekumise_period,
                          (coalesce(saldod.jaak, 0) + a.summa)::NUMERIC(12, 2)          AS tasumisele,
+                         coalesce(laekumised.tagastused, 0)                            AS tagastused,
                          a.properties ->> 'ettemaksu_period'                           AS ettemaksu_period,
                          v.properties ->> 'pank'                                       AS pank,
                          v.properties ->> 'iban'                                       AS iban
@@ -95,6 +96,16 @@ const Arv = {
                       GROUP BY laps_id, rekv_id
                   ) saldod
                                            ON saldod.laps_id = l.id AND saldod.rekv_id = d.rekvid
+                           LEFT OUTER JOIN (
+                      SELECT at.doc_arv_id                                               AS arv_id,
+                             sum(at.summa) FILTER ( WHERE at.summa < 0 )::NUMERIC(14, 2) AS tagastused,
+                             sum(at.summa) FILTER ( WHERE at.summa > 0 )::NUMERIC(14, 2) AS laekumised,
+                             sum(at.summa)                                               AS summa
+                      FROM docs.arvtasu at
+                      WHERE at.doc_arv_id = $1
+                      GROUP BY at.doc_arv_id
+                  ) laekumised
+                                           ON laekumised.arv_id = d.id
 
                   WHERE D.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                                          AS id,
