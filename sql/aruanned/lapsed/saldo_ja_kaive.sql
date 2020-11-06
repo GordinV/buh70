@@ -29,12 +29,12 @@ SELECT coalesce(period, kpv_start)::DATE AS period,
        maksja_isikukood::TEXT,
        yksus::TEXT,
        viitenumber::TEXT,
-       sum(alg_saldo)::NUMERIC(14, 2),
-       sum(arvestatud)::NUMERIC(14, 2),
-       sum(soodustus)::NUMERIC(14, 2),
-       sum(laekumised)::NUMERIC(14, 2),
-       sum(tagastused)::NUMERIC(14, 2),
-       sum(jaak)::NUMERIC(14, 2),
+       sum(coalesce(alg_saldo,0))::NUMERIC(14, 2),
+       sum(coalesce(arvestatud,0))::NUMERIC(14, 2),
+       sum(coalesce(soodustus,0))::NUMERIC(14, 2),
+       sum(coalesce(laekumised,0))::NUMERIC(14, 2),
+       sum(coalesce(tagastused,0))::NUMERIC(14, 2),
+       sum(coalesce(jaak,0))::NUMERIC(14, 2),
        rekvid
 FROM (
          WITH kulastavus AS (

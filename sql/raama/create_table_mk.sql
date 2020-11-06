@@ -31,3 +31,5 @@ GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE docs.mk TO dbkasutaja;
 GRANT ALL ON TABLE docs.mk TO dbadmin;
 GRANT SELECT ON TABLE docs.mk TO dbvaatleja;
 
+ALTER TABLE docs.mk
+  ADD COLUMN jaak numeric(14, 2);

@@ -7,9 +7,10 @@ const DocContext = require('./../../doc-context.js');
 const Menu = require('./../../components/menu-toolbar/menu-toolbar.jsx');
 const DocRights = require('./../../../config/doc_rights');
 const checkRights = require('./../../../libs/checkRights');
-const getDefaultDates = require('./../../../libs/getDefaultDate');
 const createEmptyFilterData = require('./../../../libs/createEmptyFilterData');
 const prepareSqlWhereFromFilter = require('./../../../libs/prepareSqlWhereFromFilter');
+const Const = require('./../../../config/constants');
+const Liimit = Const.RECORDS_LIMIT;
 
 const
     DataGrid = require('./../../components/data-grid/data-grid.jsx'),
@@ -65,7 +66,7 @@ class Documents extends React.Component {
             startMenuValue: 'parentid',
             warning: '', // строка извещений
             warningType: '',
-            limit: 100, // default limit for query,
+            limit: Liimit, // default limit for query,
             isEmptyFilter: false, // если true то обнулит данные фильтра при перегрузке данных
             showSelectFields: false //will open or close column in grid to select rows
         };
@@ -209,7 +210,7 @@ class Documents extends React.Component {
 
     // обработчик изменений в инпут (лимит)
     handleInputChange(name, value) {
-        this.setState({limit: !value || value > 1000 ? 1000 : value});
+        this.setState({limit: !value || value > Liimit ? Liimit : value});
     }
 
     /**
@@ -502,7 +503,7 @@ class Documents extends React.Component {
                                title='Limiit:'
                                name='limit'
                                style={styles.limit}
-                               value={String(this.state.limit) || '100'}
+                               value={String(this.state.limit) || Liimit}
                                readOnly={false}
                                onChange={this.handleInputChange}/>
 

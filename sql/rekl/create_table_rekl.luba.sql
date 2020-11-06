@@ -25,3 +25,5 @@ GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE rekl.luba TO dbpeakasutaja;
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE rekl.luba TO dbadmin;
 GRANT SELECT ON TABLE rekl.luba TO dbvaatleja;
 GRANT SELECT, UPDATE, INSERT, DELETE, TRIGGER ON TABLE rekl.luba TO dbkasutaja;
+
+GRANT dbkasutaja, eelallkirjastaja, eelesitaja, eelkoostaja TO "natalja.akimova";

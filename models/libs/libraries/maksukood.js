@@ -11,9 +11,12 @@ module.exports = {
                      l.muud,
                      l.tun1,
                      l.tun2,
-                     l.tun3.l.tun4.l.tun5
+                     l.tun3,
+                     l.tun4,
+                     l.tun5,
+                     (l.properties::JSON ->> 'valid')::DATE AS valid
               FROM libs.library l
-                  WHERE l.id = $1`,
+              WHERE l.id = $1`,
         sqlAsNew: `select  $1::integer as id , 
             $2::integer as userid, 
             'MAKSUKOOD' as doc_type_id,
@@ -27,7 +30,7 @@ module.exports = {
             0 as tun3,
             0 as tun4,
             0 as tun5,
-            
+            null::date as valid,
             null::text as muud`,
         query: null,
         multiple: false,
@@ -51,8 +54,8 @@ module.exports = {
             {id: "kood", name: "Kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
-        sqlString: `SELECT $1::INTEGER AS rekv_id,
-                           $2::INTEGER AS userId,
+        sqlString: `SELECT $1::INTEGER                            AS rekv_id,
+                           $2::INTEGER                            AS userId,
                            l.id,
                            l.kood,
                            l.nimetus,
@@ -60,10 +63,11 @@ module.exports = {
                            l.tun2,
                            l.tun3,
                            l.tun4,
-                           l.tun5
+                           l.tun5,
+                           (l.properties::JSON ->> 'valid')::DATE AS valid
                     FROM libs.library l
-                        WHERE l.library = 'MAKSUKOOD'
-                             AND l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                    WHERE l.library = 'MAKSUKOOD'
+                      AND l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curMaksukood'
     },

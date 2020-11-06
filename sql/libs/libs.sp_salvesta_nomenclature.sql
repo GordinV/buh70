@@ -29,7 +29,6 @@ DECLARE
     doc_rahavoog  TEXT    = doc_data ->> 'rahavoog';
     doc_artikkel  TEXT    = doc_data ->> 'artikkel';
     doc_kalor     NUMERIC = doc_data ->> 'kalor';
-    doc_valid     DATE    = doc_data ->> 'valid';
     doc_sahharid  NUMERIC = doc_data ->> 'sahharid';
     doc_rasv      TEXT    = doc_data ->> 'rasv';
     doc_vailkaine NUMERIC = doc_data ->> 'vailkaine';
@@ -37,10 +36,10 @@ DECLARE
     doc_oppe_tyyp TEXT    = doc_data ->> 'oppe_tyyp';
     doc_luhi_nimi TEXT    = doc_data ->> 'luhi_nimi';
     doc_INF3      BOOLEAN = coalesce((doc_data ->> 'kas_inf3')::BOOLEAN, FALSE);
+    doc_valid     DATE    = CASE WHEN empty(doc_data ->> 'valid') THEN NULL::DATE ELSE (doc_data ->> 'valid')::DATE END;
     json_object   JSONB;
     new_history   JSONB;
     new_rights    JSONB;
-    a_dokvaluuta  TEXT[]  = enum_range(NULL :: DOK_VALUUTA);
 
 BEGIN
 

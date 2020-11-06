@@ -66,6 +66,7 @@ WITH cur_tulude_kassa_taitmine AS (
                                      FROM get_asutuse_struktuur(l_rekvid))
                     AND aasta = l_aasta
                     AND e.kpv IS NULL
+                  and e.status <> 3
                   UNION ALL
                   SELECT rekvid,
                          0 :: NUMERIC AS eelarve_kinni,
@@ -90,6 +91,8 @@ WITH cur_tulude_kassa_taitmine AS (
                     AND e.rekvid IN (SELECT rekv_id FROM get_asutuse_struktuur(l_rekvid))
                     AND aasta = l_aasta
                     AND (e.kpv IS NULL OR e.kpv <= COALESCE(l_kpv, CURRENT_DATE))
+                    and e.status <> 3
+
                   UNION ALL
                   SELECT rekv_id      AS rekvid,
                          0 :: NUMERIC AS eelarve_kinni,
@@ -142,9 +145,10 @@ WITH cur_tulude_kassa_taitmine AS (
                          '3'          AS artikkel,
                          ''           AS rahavoog,
                          ''           AS tunnus,
-                         200          AS idx
+                         000          AS idx
                   FROM cur_tulude_kassa_taitmine kt
                   WHERE kt.artikkel IS NOT NULL
+                    AND kt.allikas <> '80'
                   GROUP BY kt.rekv_id
                   UNION ALL
                   SELECT ft.rekv_id   AS rekvid,
@@ -159,8 +163,9 @@ WITH cur_tulude_kassa_taitmine AS (
                          '3'          AS artikkel,
                          ''           AS rahavoog,
                          ''           AS tunnus,
-                         200          AS idx
+                         000          AS idx
                   FROM cur_tulude_taitmine ft
+                  WHERE ft.allikas <> '80'
                   GROUP BY ft.rekv_id
                   UNION ALL
                   SELECT rekvid,
@@ -173,6 +178,104 @@ WITH cur_tulude_kassa_taitmine AS (
                          ''               AS tegev,
                          ''               AS allikas,
                          '3'              AS artikkel,
+                         ''               AS rahavoog,
+                         ''               AS tunnus,
+                         000              AS idx
+                  FROM eelarve.tulud e
+                  WHERE rekvid = (CASE
+                                      WHEN l_kond = 1
+                                          THEN rekvid
+                                      ELSE l_rekvid END
+                      )
+                    AND e.rekvid IN (
+                      SELECT rekv_id
+                      FROM get_asutuse_struktuur(l_rekvid
+                               ))
+                    AND aasta = l_aasta
+                    AND e.kpv IS NULL
+                    AND e.kood2 <> '80'
+                    and e.status <> 3
+
+                  GROUP BY e.rekvid
+                  UNION ALL
+                  SELECT rekvid,
+                         0 :: NUMERIC     AS eelarve_kinni,
+                         0 :: NUMERIC     AS eelarve_kassa_kinni,
+                         sum(summa)       AS eelarve_parandatud,
+                         sum(summa_kassa) AS eelarve_kassa_parandatud,
+                         0 :: NUMERIC     AS tegelik,
+                         0 :: NUMERIC     AS kassa,
+                         ''               AS tegev,
+                         ''               AS allikas,
+                         '3'              AS artikkel,
+                         ''               AS rahavoog,
+                         ''               AS tunnus,
+                         000              AS idx
+                  FROM eelarve.tulud e
+                  WHERE rekvid = (CASE
+                                      WHEN l_kond = 1
+                                          THEN rekvid
+                                      ELSE l_rekvid END
+                      )
+                    AND e.rekvid IN
+                        (SELECT rekv_id
+                         FROM get_asutuse_struktuur(l_rekvid))
+                    AND aasta = l_aasta
+                    AND (e.kpv IS NULL OR e.kpv <= COALESCE(l_kpv, CURRENT_DATE))
+                    AND e.kood2 <> '80'
+                    and e.status <> 3
+
+                  GROUP BY e.rekvid
+                  UNION ALL
+                  -- Art 2585 A80
+                  SELECT kt.rekv_id   AS rekvid,
+                         0 :: NUMERIC AS eelarve_kinni,
+                         0 :: NUMERIC AS eelarve_parandatud,
+                         0 :: NUMERIC AS eelarve_kassa_kinni,
+                         0 :: NUMERIC AS eelarve_kassa_parandatud,
+                         0 :: NUMERIC AS tegelik,
+                         sum(summa)   AS kassa,
+                         ''           AS tegev,
+                         '80'         AS allikas,
+                         '2585(A80)'  AS artikkel,
+                         ''           AS rahavoog,
+                         ''           AS tunnus,
+                         200          AS idx
+                  FROM cur_tulude_kassa_taitmine kt
+                  WHERE kt.artikkel IS NOT NULL
+                    AND kt.artikkel = '2585'
+                    AND allikas = '80'
+                  GROUP BY kt.rekv_id
+                  UNION ALL
+                  SELECT ft.rekv_id   AS rekvid,
+                         0 :: NUMERIC AS eelarve_kinni,
+                         0 :: NUMERIC AS eelarve_parandatud,
+                         0 :: NUMERIC AS eelarve_kassa_kinni,
+                         0 :: NUMERIC AS eelarve_kassa_parandatud,
+                         sum(summa)   AS tegelik,
+                         0 :: NUMERIC AS kassa,
+                         ''           AS tegev,
+                         '80'         AS allikas,
+                         '2585(A80)'  AS artikkel,
+                         ''           AS rahavoog,
+                         ''           AS tunnus,
+                         200          AS idx
+                  FROM cur_tulude_taitmine ft
+                  WHERE ft.artikkel = '2585'
+                    AND ft.allikas = '80'
+
+                  GROUP BY ft.rekv_id
+                  UNION ALL
+                  SELECT rekvid,
+                         sum(summa)       AS eelarve_kinni,
+                         sum(summa_kassa) AS eelarve_kassa_kinni,
+                         0:: NUMERIC      AS eelarve_parandatud,
+                         0:: NUMERIC      AS eelarve_kassa_parandatud,
+                         0 :: NUMERIC     AS tegelik,
+                         0 :: NUMERIC     AS kassa,
+                         ''               AS tegev,
+                         '80'             AS allikas,
+                         '2585(A80)'      AS artikkel,
                          ''               AS rahavoog,
                          ''               AS tunnus,
                          200              AS idx
@@ -188,6 +291,10 @@ WITH cur_tulude_kassa_taitmine AS (
                                ))
                     AND aasta = l_aasta
                     AND e.kpv IS NULL
+                    AND e.kood5 = '2585'
+                    AND e.kood2 = '80'
+                    and e.status <> 3
+
                   GROUP BY e.rekvid
                   UNION ALL
                   SELECT rekvid,
@@ -198,8 +305,8 @@ WITH cur_tulude_kassa_taitmine AS (
                          0 :: NUMERIC     AS tegelik,
                          0 :: NUMERIC     AS kassa,
                          ''               AS tegev,
-                         ''               AS allikas,
-                         '3'              AS artikkel,
+                         '80'             AS allikas,
+                         '2585(A80)'      AS artikkel,
                          ''               AS rahavoog,
                          ''               AS tunnus,
                          200              AS idx
@@ -214,6 +321,10 @@ WITH cur_tulude_kassa_taitmine AS (
                          FROM get_asutuse_struktuur(l_rekvid))
                     AND aasta = l_aasta
                     AND (e.kpv IS NULL OR e.kpv <= COALESCE(l_kpv, CURRENT_DATE))
+                    AND e.kood5 = '2585'
+                    AND e.kood2 = '80'
+                    and e.status <> 3
+
                   GROUP BY e.rekvid
               ) qry
          GROUP BY rekvid,
@@ -291,7 +402,7 @@ GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.tulude_taitmine_allikas_artikkel(2019::INTEGER, '2019-12-31'::DATE, 28, 0)
+         FROM eelarve.tulude_taitmine_allikas_artikkel(2020::INTEGER, '2020-12-31'::DATE, 63, 0)
      ) qry
-WHERE artikkel = '3232'
+WHERE artikkel LIKE '38250%'
 --and tunnus = '5004'

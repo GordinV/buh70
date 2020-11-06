@@ -104,7 +104,7 @@ $BODY$
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_tulud(2020, '2020-01-01', '2020-03-31', TRUE, 63, 0)
+         FROM eelarve.eelarve_tulud(2020, '2020-01-01', '2020-06-30', TRUE, 63, 0)
      ) qry
-WHERE artikkel LIKE '3030%'
+WHERE artikkel LIKE '2585%'
 

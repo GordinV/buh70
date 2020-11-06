@@ -67,6 +67,8 @@ FROM (
                               WHEN l_kond
                                   > 0 THEN j.rekvid
                               ELSE l_rekvid END
+           --строка art 1532 в доходах может быть только с rahavoog 02, соответственно с rahavoog 23  быть не далжно
+           AND (CASE WHEN j1.kood5 = '1532' AND j1.kood3 = '23' THEN FALSE ELSE TRUE END)
          UNION ALL
          -- востановление
          SELECT -1 * j1.summa  AS summa,
@@ -95,32 +97,8 @@ FROM (
                               WHEN l_kond
                                   > 0 THEN j.rekvid
                               ELSE l_rekvid END
-         UNION ALL
-         -- нужно снять 381010
-         SELECT -1 * j1.summa  AS summa,
-                j1.kood1::TEXT AS tegev,
-                j1.kood2::TEXT AS allikas,
-                j1.kood3::TEXT AS rahavoog,
-                '3810'::TEXT   AS artikkel,
-                j1.tunnus::TEXT,
-                j.rekvid,
-                FALSE          AS kas_kulud,
-                d.id           AS docs_ids,
-                month(j.kpv)   AS kuu,
-                year(j.kpv)    AS aasta
-
-         FROM docs.doc D
-                  INNER JOIN docs.journal j ON j.parentid = D.id
-                  INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-         WHERE j.kpv >= l_kpv1
-           AND j.kpv <= l_kpv2
-           AND j1.kreedit = '381010'
-           AND j.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
-           AND j.rekvid = CASE
-                              WHEN l_kond
-                                  > 0 THEN j.rekvid
-                              ELSE l_rekvid END
+           --строка art 1532 в доходах может быть только с rahavoog 02, соответственно с rahavoog 23  быть не далжно
+           AND (CASE WHEN j1.kood5 = '1532' AND j1.kood3 = '23' THEN FALSE ELSE TRUE END)
      ) qry
 WHERE NOT empty(artikkel)
   AND summa <> 0

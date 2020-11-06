@@ -1158,7 +1158,7 @@ FROM (
          SELECT *
          FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2020, 03, 31), 28, 10) qry
          WHERE (NOT empty(qry.tegev) OR NOT empty(qry.artikkel))
-           AND qry.artikkel LIKE '100%'
+           AND qry.artikkel LIKE '3810%'
      ) qry
 --test
 /*

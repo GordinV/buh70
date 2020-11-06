@@ -72,6 +72,7 @@ const db = {
  * @param sortBy
  * @param sqlWhere
  * @returns {string}
+ * @sqlLimit recors limit
  */
 function createSqlString(sql, sortBy, sqlWhere, sqlLimit) {
     let sortByColumn = '',

@@ -5,6 +5,7 @@ SELECT l.id,
        l.kood,
        l.nimetus,
        l.rekvid,
+       (l.properties::JSONB ->> 'valid')::DATE AS valid,
        l.muud
 FROM libs.library l
 WHERE ((l.library = 'TUNNUS'::BPCHAR) AND (l.status <> 3));

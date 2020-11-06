@@ -1,13 +1,15 @@
 'use strict';
 
 const getParameterFromFilter = require('./../libs/getParameterFromFilter');
+const Const = require('./../config/constants');
+const Liimit = Const.RECORDS_LIMIT;
 
 exports.post = async (req, res) => {
     const user = require('../middleware/userData')(req), // данные пользователя
         parameter = req.body.parameter || '',// параметры если переданы
         module = req.body.module || 'documents',
         sortBy = req.body.sortBy, //порядок сортировки
-        limit = req.body.limit ? req.body.limit: 100, //порядок сортировки
+        limit = req.body.limit ? req.body.limit: Liimit, //порядок сортировки
         method = req.body.method ? req.body.method: 'selectDocs', //порядок сортировки
         sqlWhere = req.body.sqlWhere, //динамический фильтр
         filterData = req.body.filterData || []; // параметры фильтры

@@ -24,7 +24,8 @@ FROM (SELECT 0                    AS id,
              'EUR' :: VARCHAR     AS valuuta,
              1                    AS kuurs,
              '':: VARCHAR(20)     AS tunnus,
-             FALSE                AS kas_inf3
+             FALSE                AS kas_inf3,
+             NULL::DATE           AS valid
       UNION
       SELECT n.id,
              n.rekvid,
@@ -47,8 +48,8 @@ FROM (SELECT 0                    AS id,
              'EUR' :: VARCHAR                                                    AS valuuta,
              1 :: NUMERIC                                                        AS kuurs,
              coalesce((n.properties :: JSONB ->> 'tunnus') :: VARCHAR(20), '')   AS tunnus,
-             coalesce((n.properties::JSONB ->> 'kas_inf3')::BOOLEAN, FALSE)      AS kas_inf3
-
+             coalesce((n.properties::JSONB ->> 'kas_inf3')::BOOLEAN, FALSE)      AS kas_inf3,
+             (n.properties::JSONB ->> 'valid')::DATE                             AS valid
       FROM libs.nomenklatuur n
       WHERE n.status <> 3
      ) qry

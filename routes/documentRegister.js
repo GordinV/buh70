@@ -10,6 +10,7 @@ const prepaireFilterData = require('./../libs/prepaireFilterData');
 const prepareSqlWhereFromFilter = require('./../libs/prepareSqlWhereFromFilter');
 const config = require('./../config/lapsed');
 const menuModel = require('./../models/ou/start-menu');
+const RECORDS_LIMIT = require('./../config/constants').RECORDS_LIMIT;
 
 const db = require('./../libs/db');
 
@@ -48,7 +49,6 @@ exports.get = async (req, res) => {
     const gridConfig = Document.config.grid.gridConfiguration;
 
     // применить дефолты
-    let limit = 100;
     let sortBy;
     let sqlWhere;
 
@@ -62,7 +62,7 @@ exports.get = async (req, res) => {
 
     // вызвать метод
     let data = {
-        result: await Document.selectDocs(sortBy, sqlWhere, limit),
+        result: await Document.selectDocs(sortBy, sqlWhere, RECORDS_LIMIT),
         menu: await db.queryDb(menuModel.sqlString, ['lapsed']),
         gridConfig: gridConfig,
         docTypeId: documentType,

@@ -20,7 +20,8 @@ module.exports = {
                      (n.properties::JSONB ->> 'allikas')::VARCHAR(20)               AS allikas,
                      (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)              AS rahavoog,
                      (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)              AS artikkel,
-                     coalesce((n.properties::JSONB ->> 'kas_inf3')::BOOLEAN, FALSE) AS kas_inf3
+                     coalesce((n.properties::JSONB ->> 'kas_inf3')::BOOLEAN, FALSE) AS kas_inf3,
+                     (n.properties::JSONB ->> 'valid')::DATE                        AS valid
               FROM libs.nomenklatuur n
               WHERE n.id = $1`,
         sqlAsNew: `select  $1::integer as id , $2::integer as userid, 'NOMENCLATURE' as doc_type_id,
@@ -45,7 +46,8 @@ module.exports = {
             null::varchar(20) as tegev,
             null::varchar(20) as allikas,
             null::varchar(20) as rahavoog,
-            null::varchar(20) as artikkel`,
+            null::varchar(20) as artikkel,
+            null::date as valid`,
         query: null,
         multiple: false,
         alias: 'row',
@@ -80,7 +82,8 @@ module.exports = {
                            n.dok,
                            (n.properties ->> 'konto')::TEXT    AS konto,
                            (n.properties ->> 'tunnus')::TEXT   AS tunnus,
-                           n.hind
+                           n.hind,
+                           (n.properties ->> 'valid')::DATE    AS valid
                     FROM libs.nomenklatuur n
                     WHERE (n.rekvId = $1 OR n.rekvid IS NULL)
                       AND n.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя

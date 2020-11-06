@@ -25,21 +25,28 @@ FROM (SELECT 0                AS id,
              'Tulud (siirded eelarvesse, tagastamine)' AS nimetus,
              999999                                    AS rekvid,
              FALSE                                     AS is_kulud,
-             NULL::DATE       AS valid
+             NULL::DATE                                AS valid
       UNION ALL
       SELECT 152586456            AS id,
              '15,2586,4,5,6'      AS kood,
              'Põhitegevuse kulud' AS nimetus,
              999999               AS rekvid,
              TRUE                 AS is_kulud,
-             NULL::DATE       AS valid
+             NULL::DATE           AS valid
       UNION ALL
       SELECT 152586456            AS id,
              '3'                  AS kood,
              'Põhitegevuse tulud' AS nimetus,
              999999               AS rekvid,
              FALSE                AS is_kulud,
-             NULL::DATE       AS valid
+             NULL::DATE           AS valid
+      UNION ALL
+      SELECT 152586457               AS id,
+             '2585(A80)'             AS kood,
+             'Kohustuse võtmine (Allikas 80)' AS nimetus,
+             999999                  AS rekvid,
+             FALSE                   AS is_kulud,
+             NULL::DATE              AS valid
      ) qry
 ORDER BY kood;
 

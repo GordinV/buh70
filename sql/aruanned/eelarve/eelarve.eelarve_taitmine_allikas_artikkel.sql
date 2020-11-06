@@ -500,6 +500,10 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DAT
 GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, INTEGER, INTEGER) TO dbvaatleja;
 
 
-SELECT *
-FROM eelarve.eelarve_taitmine_allikas_artikkel(2020::INTEGER, '2020-03-31'::DATE, 119, 1)
+select * from (
 
+SELECT *
+FROM eelarve.eelarve_taitmine_allikas_artikkel(2019::INTEGER, '2019-12-31'::DATE, 28, 1)
+              )
+qry
+where artikkel = '1501'

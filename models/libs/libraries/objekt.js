@@ -1,23 +1,31 @@
 module.exports = {
     select: [{
-        sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.muud, l.status, l.library, 
-                $2::integer as userid, 'OBJEKT' as doc_type_id,
-                (l.properties::jsonb->>'parentid')::integer as parentid,
-                (l.properties::jsonb->>'asutusid')::integer as asutusid,
-                (l.properties::jsonb->>'nait02')::numeric as nait02,
-                (l.properties::jsonb->>'nait03')::numeric as nait03,
-                (l.properties::jsonb->>'nait04')::numeric as nait04,
-                (l.properties::jsonb->>'nait05')::numeric as nait05,
-                (l.properties::jsonb->>'nait06')::numeric as nait06,
-                (l.properties::jsonb->>'nait07')::numeric as nait07,
-                (l.properties::jsonb->>'nait08')::numeric as nait08,
-                (l.properties::jsonb->>'nait09')::numeric as nait09,
-                (l.properties::jsonb->>'nait10')::numeric as nait10,
-                (l.properties::jsonb->>'nait11')::numeric as nait11,
-                (l.properties::jsonb->>'nait14')::numeric as nait14,
-                (l.properties::jsonb->>'nait15')::numeric as nait15
-                from libs.library l 
-                where l.id = $1`,
+        sql: `SELECT l.id,
+                     l.rekvid,
+                     l.kood,
+                     l.nimetus,
+                     l.muud,
+                     l.status,
+                     l.library,
+                     $2::INTEGER                                   AS userid,
+                     'OBJEKT'                                      AS doc_type_id,
+                     (l.properties::JSONB ->> 'parentid')::INTEGER AS parentid,
+                     (l.properties::JSONB ->> 'asutusid')::INTEGER AS asutusid,
+                     (l.properties::JSONB ->> 'nait02')::NUMERIC   AS nait02,
+                     (l.properties::JSONB ->> 'nait03')::NUMERIC   AS nait03,
+                     (l.properties::JSONB ->> 'nait04')::NUMERIC   AS nait04,
+                     (l.properties::JSONB ->> 'nait05')::NUMERIC   AS nait05,
+                     (l.properties::JSONB ->> 'nait06')::NUMERIC   AS nait06,
+                     (l.properties::JSONB ->> 'nait07')::NUMERIC   AS nait07,
+                     (l.properties::JSONB ->> 'nait08')::NUMERIC   AS nait08,
+                     (l.properties::JSONB ->> 'nait09')::NUMERIC   AS nait09,
+                     (l.properties::JSONB ->> 'nait10')::NUMERIC   AS nait10,
+                     (l.properties::JSONB ->> 'nait11')::NUMERIC   AS nait11,
+                     (l.properties::JSONB ->> 'nait14')::NUMERIC   AS nait14,
+                     (l.properties::JSONB ->> 'nait15')::NUMERIC   AS nait15,
+                     (l.properties::JSONB ->> 'valid')::DATE       AS valid
+              FROM libs.library l
+              WHERE l.id = $1`,
         sqlAsNew: `select  $1::integer as id , 
             $2::integer as userid, 
             'OBJEKT' as doc_type_id,
@@ -40,6 +48,7 @@ module.exports = {
             0::numeric as nait14,
             0::numeric as nait15,
             0::integer as status,
+            null::date as valid,
             null::text as muud`,
         query: null,
         multiple: false,
@@ -55,9 +64,12 @@ module.exports = {
         {name: 'library', type: 'C'}
     ],
     saveDoc: `select libs.sp_salvesta_objekt($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from libs.sp_delete_library($1::integer, $2::integer)`, // $1 - userId, $2 - docId
-    selectAsLibs: `select * from com_objekt l 
-        where (l.rekvId = $1 or l.rekvid is null) order by kood`,
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM libs.sp_delete_library($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
+    selectAsLibs: `SELECT *
+                   FROM com_objekt l
+                   WHERE (l.rekvId = $1 OR l.rekvid IS NULL)
+                   ORDER BY kood`,
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
@@ -65,10 +77,10 @@ module.exports = {
             {id: "nimetus", name: "Nimetus", width: "40%"},
             {id: "asutus", name: "Omanik", width: "40%"}
         ],
-        sqlString: `select $2::integer as userId,
-             o.*
-            FROM cur_objekt o 
-            WHERE o.rekvid = $1::integer`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT $2::INTEGER AS userId,
+                           o.*
+                    FROM cur_objekt o
+                    WHERE o.rekvid = $1::INTEGER`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curObjekt'
     }

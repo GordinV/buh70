@@ -14,10 +14,11 @@ module.exports = {
                      l.tun3,
                      l.tun4,
                      l.tun5,
-                     $2::INTEGER AS userid,
-                     'MAKSUKOOD' AS doc_type_id
+                     $2::INTEGER                            AS userid,
+                     (l.properties::JSON ->> 'valid')::DATE AS valid,
+                     'MAKSUKOOD'                            AS doc_type_id
               FROM libs.library l
-                  WHERE l.id = $1`,
+              WHERE l.id = $1`,
         sqlAsNew: `select  $1::integer as id , 
             null::integer as tun1,
             null::integer as tun2,
@@ -31,6 +32,7 @@ module.exports = {
             null::text as nimetus,
             'MAKSUKOOD'::text as library,
             0::integer as status,
+            null::date as valid,
             null::text as muud`,
         query: null,
         multiple: false,
@@ -57,16 +59,17 @@ module.exports = {
         sqlString: `SELECT id,
                            kood,
                            nimetus,
-                           $1::INTEGER AS rekvId,
-                           $2::INTEGER AS userId,
+                           $1::INTEGER                            AS rekvId,
+                           $2::INTEGER                            AS userId,
                            tun1,
                            tun2,
                            tun3,
                            tun4,
-                           tun5
+                           tun5,
+                           (l.properties::JSON ->> 'valid')::DATE AS valid
                     FROM libs.library l
-                        WHERE l.library = 'MAKSUKOOD'
-                             AND l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                    WHERE l.library = 'MAKSUKOOD'
+                      AND l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curMaksukoodid'
     },

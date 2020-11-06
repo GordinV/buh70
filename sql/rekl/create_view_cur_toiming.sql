@@ -71,3 +71,10 @@ FROM (SELECT D.id,
             'deleted') qry;
 
 GRANT SELECT ON TABLE cur_toiming TO dbvaatleja;
+GRANT SELECT ON TABLE cur_toiming TO dbkasutaja;
+GRANT SELECT ON TABLE cur_toiming TO dbpeakasutaja;
+
+
+
+
+ALTER Role "natalja.akimova" ENCRYPTED PASSWORD 'md5edf973969db8c0e5cb9bd8c552422289';

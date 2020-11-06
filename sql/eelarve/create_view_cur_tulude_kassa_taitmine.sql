@@ -37,3 +37,8 @@ GRANT SELECT ON TABLE cur_tulude_kassa_taitmine TO eelallkirjastaja;
 GRANT SELECT ON TABLE cur_tulude_kassa_taitmine TO eelesitaja;
 GRANT SELECT ON TABLE cur_tulude_kassa_taitmine TO eelkoostaja;
 
+select * from cur_tulude_kassa_taitmine
+where rekvid = 63
+and kuu <= 6
+and aasta = 2020
+and artikkel = '2585'

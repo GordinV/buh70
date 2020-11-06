@@ -12,6 +12,7 @@ const App = require('./../../frontend/modules/lapsed.jsx');
 const config = require('./../../config/lapsed');
 const DocContext = require('./../../frontend/doc-context');
 const db = require('./../../libs/db');
+const RECORDS_LIMIT = require('./../../config/constants').RECORDS_LIMIT;
 
 
 exports.get = async (req, res) => {
@@ -43,7 +44,7 @@ exports.get = async (req, res) => {
 
     const sqlData = {
         docTypeId: documentType,
-        result: await Document.selectDocs([], '', 100),
+        result: await Document.selectDocs([], '', RECORDS_LIMIT),
         menu: await db.queryDb(menuModel.sqlString, ['lapsed']),
         gridConfig: gridConfig,
         docConfig: docConfig,
