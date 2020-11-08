@@ -75,7 +75,7 @@ class Documents extends React.Component {
             'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick',
             'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData',
-            'handleInputChange', 'btnEmailClick','setRegisterName');
+            'handleInputChange', 'btnEmailClick', 'setRegisterName');
 
 
     }
@@ -640,6 +640,8 @@ class Documents extends React.Component {
             default:
                 URL = `/${method}`;
         }
+// ставим статус
+        this.setState({warning: 'Töötan...', warningType: 'notValid'});
 
         const params = {
             parameter: this.docTypeId, // параметры
@@ -686,10 +688,8 @@ class Documents extends React.Component {
                         }
 
                     }
-                    this.forceUpdate()
-
-                } else {
                     this.setState({warning: 'Edukalt', warningType: 'ok'})
+
                 }
                 resolved(response.data);
             }).catch((error) => {

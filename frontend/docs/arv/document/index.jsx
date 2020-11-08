@@ -18,20 +18,7 @@ const
     styles = require('./arve.styles');
 
 const DocContext = require('./../../../doc-context');
-const LIB_OBJS = [
-    {id: 'kontod', filter: ``},
-    {id: 'dokProps', filter: `where kood = 'ARV'`},
-    {id: 'users', filter: ''},
-    {id: 'tunnus', filter: ''},
-    {id: 'project', filter: ''},
-    {id: 'artikkel', filter: ''},
-    {id: 'allikas', filter: ''},
-    {id: 'tegev', filter: ''},
-    {id: 'aa', filter: ''},
-    {id: 'nomenclature', filter: `where dok = 'ARV'`},
-    {id: 'lapse_grupp', filter: ``}
-
-];
+const LIB_OBJS = require('./../../../../config/constants').ARV.LIB_OBJS;
 
 class Arve extends React.PureComponent {
     constructor(props) {

@@ -67,7 +67,7 @@ class DataGrid extends React.Component {
     }
 
     render() {
-        let tableStyle = Object.assign({}, styles.headerTable, this.props.style);
+        let tableStyle = Object.assign({}, styles.headerTable ? styles.headerTable : {}, this.props.style);
 
         let toolbarParams = Object.assign({
 
@@ -355,7 +355,7 @@ class DataGrid extends React.Component {
                         let boolValueNull = column.boolSumbolNull ? column.boolSumbolNull : styles.boolSumbol['null'] ? styles.boolSumbol['null'].value : null;
 
                         // приведем значение value к заданому типу для параметра hideEmptyValue
-                        let fixedValue =  column.type && column.type == "integer" ? Number(row[column.id]): row[column.id];
+                        let fixedValue = column.type && column.type == "integer" ? Number(row[column.id]) : row[column.id];
 
                         let cellIndex = 'td-' + rowIndex + '-' + columnIndex;
 
@@ -365,6 +365,7 @@ class DataGrid extends React.Component {
 
                         // проверим на заданный цвет
                         if (styles.boolColour && column.type && column.type === 'boolean') {
+
                             style = Object.assign(style,
                                 {backgroundColor: !!row[column.id] ? styles.boolColour.yes : styles.boolColour.no},
                                 {color: !!row[column.id] ? styles.boolSumbol['yes'].color : styles.boolSumbol['no'].color}
@@ -375,6 +376,7 @@ class DataGrid extends React.Component {
                         if (column.yesBackgroundColor && !!row[column.id]) {
                             style = {...style, backgroundColor: column.yesBackgroundColor};
                         }
+
 
                         if (column.noBackgroundColor && !row[column.id]) {
                             style = {...style, backgroundColor: column.noBackgroundColor};
@@ -398,7 +400,7 @@ class DataGrid extends React.Component {
 
                         // оберем для конкретного поля параметр hideEmptyValue
 
-                        let isHideEmptyValue = column.hideEmptyValue ?  column.hideEmptyValue: false;
+                        let isHideEmptyValue = column.hideEmptyValue ? column.hideEmptyValue : false;
 
                         if (column.hideEmptyValue && row['nom_id'] && row['nom_id'] == 999999999) {
                             isHideEmptyValue = false;

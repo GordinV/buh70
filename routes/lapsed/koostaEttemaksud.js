@@ -10,6 +10,7 @@ exports.post = async (req, res) => {
     const execDate = params.data && params.data.seisuga ? params.data.seisuga : getNow(); // доп параметр дата
     const user = require('./../../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
+    let tulemused;
 
     let result = 0;
 
@@ -63,7 +64,10 @@ exports.post = async (req, res) => {
     try {
 
         doc.setDocumentId(ids[0]);
-        let data = doc.executeTask(taskName, [ids.join(','), user.userId, execDate]);
+        let data = await doc.executeTask(taskName, [ids.join(','), user.userId, execDate]);
+        console.log('data', data);
+        tulemused = data;
+
     } catch (e) {
         console.log('catch', err);
         return res.send({status: 500, result: null, error_message: err});
@@ -79,6 +83,7 @@ exports.post = async (req, res) => {
                 doc_id: lastDocId,
                 error_code: 0,
                 error_message: null,
+                tulemused: tulemused
             },
             data: result
         }

@@ -310,7 +310,7 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 /*
 select * from (
 SELECT *
-FROM lapsed.saldo_ja_kaive(69, '2020-09-01', '2020-09-30')
+FROM lapsed.saldo_ja_kaive(69, '2020-10-01', '2020-10-30')
 ) qry
 where  viitenumber   IN ('0690069338', '0690071342','0690066360')
 

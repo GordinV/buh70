@@ -16,7 +16,7 @@ DECLARE
     l_rekvid           INTEGER = (SELECT rekvid
                                   FROM ou.userid u
                                   WHERE id = user_id
-                                  LIMIT 1);
+                                      LIMIT 1);
 
     l_asutus_id        INTEGER = (SELECT asutusid
                                   FROM lapsed.vanem_arveldus v
@@ -24,10 +24,10 @@ DECLARE
                                   WHERE v.parentid = l_laps_id
                                     AND v.rekvid = l_rekvid
                                     AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
-                                  ORDER BY v.arveldus DESC,
-                                           v.id DESC
-                                  LIMIT
-                                      1);
+                                      ORDER BY v.arveldus DESC
+                                      ,
+                                      v.id DESC
+                                      LIMIT 1);
 
     l_doklausend_id    INTEGER;
     l_liik             INTEGER = 0;
@@ -50,19 +50,25 @@ DECLARE
                                                      FROM ou.userid
                                                      WHERE id = user_id)
                                     AND kassa = 1
-                                  ORDER BY default_ DESC
-                                  LIMIT 1);
+                                      ORDER BY default_ DESC
+                                      LIMIT 1);
     l_ettemaksu_period INTEGER = 1;
     l_tulu_arved       INTEGER = 0; -- кол-во доходных счетов, должно быть = кол-ву периодов
     l_db_konto         TEXT    = '103000'; -- согдасно описанию отдела культуры
     l_kr_konto         TEXT    = '203900';
+    v_laps             RECORD;
+    l_teenuste_arv     INTEGER = 0;
 
 BEGIN
+    SELECT * INTO v_laps
+    FROM lapsed.laps l
+    WHERE id = l_laps_id;
+
     IF l_asutus_id IS NULL
     THEN
         -- контр-анет не найден, выходим
         result = 0;
-        error_message = 'Puudub kontragent,  laps_id = ' || l_laps_id::TEXT;
+        error_message = 'Puudub kontragent, Isikukood:' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
         error_code = 1;
         RETURN;
 
@@ -77,8 +83,8 @@ BEGIN
                        WHERE dp.rekvid = l_rekvid
                          AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
                          AND l.kood = 'ARV'
-                       ORDER BY dp.id DESC
-                       LIMIT 1
+                           ORDER BY dp.id DESC
+                           LIMIT 1
     );
 
 
@@ -131,8 +137,8 @@ BEGIN
       AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
       AND (a.properties ->> 'tyyp')::TEXT = 'ETTEMAKS'
       AND d.rekvid = l_rekvid
-    ORDER BY D.ID DESC
-    LIMIT 1;
+        ORDER BY D.ID DESC
+        LIMIT 1;
 
     IF l_arv_id IS NOT NULL AND l_status < 3
     THEN
@@ -140,11 +146,13 @@ BEGIN
         -- в этом периоде счет на предоплату уже авыписан
         error_code = 3;
         result = 0;
-        error_message = 'Sellect ajavahemikul ettemaksuarve juba olemas';
+        error_message = 'Sellel ajavahemikul ettemaksuarve juba olemas, Isikukood:' || v_laps.isikukood || ', Nimi:' ||
+                        v_laps.nimi;
         RETURN;
     END IF;
 
-
+    -- считаем кол-во услуг
+    l_teenuste_arv = 0;
     -- читаем карту услуг и создаем детали счета
     FOR v_kaart IN
         SELECT lk.nomid,
@@ -174,13 +182,16 @@ BEGIN
                (n.properties::JSONB ->> 'tegev')::VARCHAR(20)               AS tegev,
                (n.properties::JSONB ->> 'allikas')::VARCHAR(20)             AS allikas,
                (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)            AS rahavoog,
-               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)            AS artikkel
-
+               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)            AS artikkel,
+               l.isikukood,
+               l.nimi                                                       AS lapse_nimi
         FROM lapsed.lapse_kaart lk
+                 INNER JOIN lapsed.laps l ON l.id = lk.parentid
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                  LEFT OUTER JOIN libs.library gr
                                  ON gr.library = 'LAPSE_GRUPP' AND gr.status <> 3 AND gr.rekvid = lk.rekvid AND
                                     gr.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
+
         WHERE lk.parentid = l_laps_id
           AND lk.staatus <> 3
           AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
@@ -229,20 +240,23 @@ BEGIN
 
             -- calc arve summa
             l_arve_summa = l_arve_summa + (v_kaart.hind - v_kaart.real_soodus) * v_kaart.kogus;
+            l_teenuste_arv = l_teenuste_arv + 1;
 
         END LOOP;
 
 
     -- check for arve summa
 
-    IF l_arve_summa < 0
+    IF (l_teenuste_arv = 0)
     THEN
+        -- нет действующих услуг
         result = 0;
-        error_message = 'Dokumendi summa < 0, laps_id = ' || l_laps_id::TEXT;
+        error_message ='Arvete koostamise viga: puuduvad kehtiv teenused,  Isikukood:' || v_laps.isikukood || ', Nimi:' ||  v_laps.nimi;
         error_code = 1;
         RETURN;
 
     END IF;
+
 
     -- создаем параметры
     l_json_arve = (SELECT to_json(row)
@@ -288,15 +302,18 @@ BEGIN
         IF l_tulu_arved IS NOT NULL OR l_tulu_arved = 0
         THEN
             result = l_tulu_arved + 1;
+            error_message = 'Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi || ', arveId:' ||
+                            coalesce(l_arv_id, 0)::TEXT;
 
         ELSE
             result = 0;
-            error_message = 'Tulu arvete koostamise viga,  laps_id = ' || l_laps_id::TEXT;
+            error_message = 'Tulu arvete koostamise viga,  Isikukood:' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
             error_code = 1;
         END IF;
     ELSE
         result = 0;
-        error_message = 'Dokumendi koostamise viga,  laps_id = ' || l_laps_id::TEXT;
+        error_message =
+                    'Dokumendi koostamise viga,  Isikukood: ' || v_kaart.isikukood || ', Nimi:' || v_kaart.lapse_nimi;
         error_code = 1;
     END IF;
     RETURN;

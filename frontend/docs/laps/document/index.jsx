@@ -16,7 +16,7 @@ const
 
 const LIBRARIES = [];
 
-const DOCS = ['ARV','SMK','LAPSE_TAABEL'];
+const DOCS = ['ARV', 'SMK', 'LAPSE_TAABEL'];
 
 class Laps extends React.PureComponent {
     constructor(props) {
@@ -179,6 +179,7 @@ class Laps extends React.PureComponent {
             </div>
         );
     }
+
 
     /**
      * установим фильтр на документа

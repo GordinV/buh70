@@ -9,14 +9,7 @@ const React = require('react'),
     BtnInfo = require('./../button-register/button-info/index.jsx'),
     ModalPage = require('./../../components/modalpage/modalPage.jsx');
 
-const gridConfig = [
-    {id: "kasutaja", name: "Kasutaja", width: "20%", show: true},
-    {id: "koostatud", name: "Koostatud", width: "15%"},
-    {id: "muudatud", name: "Muudatud", width: "15%"},
-    {id: "prinditud", name: "Prinditud", width: "15%"},
-    {id: "email", name: "Meilitud", width: "15%"},
-    {id: "earve", name: "e-Arve", width: "15%"},
-    {id: "kustutatud", name: "Kustutatud", width: "15%"}];
+const GRID_CONFIG = require('./../../../config/constants').logs.gridConfig;
 
 class ShowLogs extends React.PureComponent {
     constructor(props) {
@@ -67,7 +60,7 @@ class ShowLogs extends React.PureComponent {
                 </div>
                 <div ref="grid-row-container">
                     <DataGrid gridData={this.props.data.data}
-                              gridColumns={gridConfig}
+                              gridColumns={GRID_CONFIG}
                               showToolBar={false}
                               ref="data-grid"/>
                 </div>

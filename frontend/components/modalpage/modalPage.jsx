@@ -31,14 +31,12 @@ class ModalPage extends React.PureComponent {
     }
 
 
-
-
     handleBtnClick(btnEvent) {
         // закрываем окно и если передан обработчик, отдаем туда данные
 
         this.changeVisibilityModalPage();
         if (this.props.modalPageBtnClick) {
-           let show =  this.props.modalPageBtnClick(btnEvent);
+            let show = this.props.modalPageBtnClick(btnEvent);
         }
 
     }
@@ -71,6 +69,7 @@ class ModalPage extends React.PureComponent {
             containerStyle = Object.assign({}, styles.container, {display: displayModal}, {justifyContent: pagePosition}),
             buttonOkStyle = Object.assign({}, styles.modalPageButtons, styles.defaultButton);
 
+        const Style = Object.assign({}, styles.modalPage, this.props.styles ? this.props.styles : {});
 
         return (
             <div
@@ -78,7 +77,7 @@ class ModalPage extends React.PureComponent {
                 style={containerStyle}
                 onKeyUp={this.onKeyUp}
             >
-                <div style={styles.modalPage} ref='modalPageContainer'>
+                <div style={Style} ref='modalPageContainer'>
                     <div style={styles.header} ref='modalPageHeader'>
                         <span ref='headerName' style={styles.headerName}> {this.props.modalPageName} </span>
                         <Button style={styles.buttonClose} ref="btnClose"

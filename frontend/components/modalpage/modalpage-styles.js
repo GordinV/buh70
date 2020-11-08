@@ -20,7 +20,9 @@ module.exports = {
         flexDirection: 'column',
         alignSelf: 'center',
         height: 'auto',
+        maxHeight: '75%',
         overflow: 'auto'
+
     },
     modalPageContent: {
         padding: '10px',

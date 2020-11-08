@@ -7,15 +7,12 @@ const ButtonUpload = require('./../../components/upload_button/index.jsx');
 const InputText = require('../../components/input-text/input-text.jsx');
 
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
+const ModalReport = require('./../../components/modalpage/modalpage-report/index.jsx');
 
 const styles = require('./laps-register-styles');
 
 const DOC_TYPE_ID = 'LAPS';
-const EVENTS = [
-    {name: 'Tabeli koostamine', method: 'arvestaTaabel', docTypeId: 'lapse_taabel'},
-    {name: 'Arve koostamine', method: 'koostaArve', docTypeId: 'arv'},
-    {name: 'Ettemaksuarve koostamine', method: 'koostaEttemaksuArved', docTypeId: 'arv'},
-];
+const EVENTS = require('./../../../config/constants').events[DOC_TYPE_ID];
 
 const DocRights = require('./../../../config/doc_rights');
 const checkRights = require('./../../../libs/checkRights');
@@ -31,14 +28,19 @@ class Documents extends React.PureComponent {
         this.onClickHandler = this.onClickHandler.bind(this);
         this.handleClick = this.handleClick.bind(this);
         this.renderer = this.renderer.bind(this);
+        this.modalReportePageBtnClick = this.modalReportePageBtnClick.bind(this);
+
         this.state = {
             read: 0,
-            filtri_read: 0
+            filtri_read: 0,
+            isReport: false,
+            txtReport:[]
         };
 
     }
 
     render() {
+        console.log('this.state', this.state);
         return (
             <div>
                 <DocumentRegister initData={this.props.initData}
@@ -49,17 +51,29 @@ class Documents extends React.PureComponent {
                                   style={styles}
                                   render={this.renderer}/>
                 <InputText title="Filtri all / read kokku:"
-                             name='read_kokku'
-                             style={styles.total}
-                             ref="input-read"
-                             value={String(this.state.filtri_read + '/' +  this.state.read)}
-                             disabled={true}/>
+                           name='read_kokku'
+                           style={styles.total}
+                           ref="input-read"
+                           value={String(this.state.filtri_read + '/' + this.state.read)}
+                           disabled={true}/>
+                <ModalReport
+                    show={this.state.isReport}
+                    report={this.state.txtReport}
+                    modalPageBtnClick={this.modalReportePageBtnClick}>
+                </ModalReport>
+
+
             </div>
         );
     }
 
     renderer(self) {
-        let docRights = DocRights['LAPS'] ? DocRights['LAPS'] : [];
+        if (!self) {
+            // не инициализировано
+            return null;
+        }
+
+        let docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
         let userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
         let events = EVENTS.filter(event => {
@@ -68,9 +82,11 @@ class Documents extends React.PureComponent {
             return kas_lubatud;
         });
 
-        if (self.gridData && self.gridData.length &&  self.gridData[0].rows_total) {
-            this.setState({read: self.gridData[0].rows_total,
-                filtri_read: self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total: self.gridData[0].rows_total});
+        if (self.gridData && self.gridData.length && self.gridData[0].rows_total) {
+            this.setState({
+                read: self.gridData[0].rows_total,
+                filtri_read: self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : self.gridData[0].rows_total
+            });
         }
 
         return (
@@ -133,13 +149,21 @@ class Documents extends React.PureComponent {
                 } else {
                     message = `Kokku arvestatud: ${data.result}, suunatamine...`;
                 }
+                Doc.setState({warning: `${message}`, warningType: 'ok'});
 
+                let tulemused = data.data.result.tulemused;
+
+                // открываем отчет
+                this.setState({isReport: true, txtReport: tulemused});
+
+/*
                 Doc.setState({warning: `${message}, suunatamine...`, warningType: 'ok'});
 
                 // ждем 10 сек и редайрект на табеля
                 setTimeout(() => {
                     this.props.history.push(`/lapsed/${task.docTypeId}`);
                 }, 1000 * 5);
+*/
             } else {
                 if (data.error_message) {
                     Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
@@ -154,6 +178,7 @@ class Documents extends React.PureComponent {
 
         });
     }
+
 
     /**
      * кастомный обработчик события клик на кнопку импорта
@@ -172,6 +197,16 @@ class Documents extends React.PureComponent {
             }, 10000);
         }
     }
+
+    /**
+     * уберет окно с отчетом
+     */
+    modalReportePageBtnClick(event) {
+        console.log('event', event);
+        let isReport = event && event == 'Ok' ? false: true;
+        this.setState({isReport: isReport})
+    }
+
 }
 
 

@@ -16,6 +16,7 @@ $BODY$
 WITH qryMk AS (
     (
         SELECT mk.parentid                          AS id,
+               mk.maksepaev                         AS kpv,
                l.parentid                           AS laps_id,
                lk.properties ->> 'yksus'            AS yksus,
                (lk.properties ->> 'alg_kpv')::DATE  AS alg_kp,
@@ -32,12 +33,36 @@ WITH qryMk AS (
                                      AND (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv::DATE
                                      AND lk.rekvid = mk.rekvid
         WHERE mk.parentid = l_mk_id)
-)
-SELECT qryMk.id                                                                             AS mk_id,
-       qryMk.yksus::TEXT,
-       (coalesce((qryMk.hind / qryMk.total_amount), 1) * qryMk.makse_summa)::NUMERIC(14, 2) AS summa,
-       qryMk.laps_id
-FROM qryMK
+),
+     -- Последняя действующая услуга
+     qryViimaneTeenus AS (
+         SELECT lk.properties ->> 'yksus' AS yksus,
+                lk.parentid               AS laps_id
+         FROM lapsed.lapse_kaart lk
+                  INNER JOIN qryMk ON lk.parentid = qryMk.laps_id
+         WHERE (lk.properties ->> 'lopp_kpv')::DATE <= qryMk.kpv
+           AND lk.staatus <> 3
+             ORDER BY lk.id DESC LIMIT 1
+     ),
+     -- Первая действующая услуга
+     qryEsimineTeenus AS (
+         SELECT lk.properties ->> 'yksus' AS yksus,
+                lk.parentid               AS laps_id
+         FROM lapsed.lapse_kaart lk
+                  INNER JOIN qryMk ON lk.parentid = qryMk.laps_id
+         WHERE (lk.properties ->> 'alg_kpv')::DATE >= qryMk.kpv
+           AND lk.staatus <> 3
+             ORDER BY lk.id LIMIT 1
+     )
+    SELECT
+     qryMk.id AS mk_id,
+     coalesce(qryMk.yksus, coalesce(qryViimaneTeenus.yksus, qryEsimineTeenus.yksus)) ::TEXT AS yksus,
+     (coalesce((qryMk.hind / qryMk.total_amount), 1) * qryMk.makse_summa)::NUMERIC(14, 2) AS summa,
+     qryMk.laps_id
+    FROM
+     qryMK
+         LEFT OUTER JOIN qryViimaneTeenus ON qryMk.laps_id = qryViimaneTeenus.laps_id
+         LEFT OUTER JOIN qryEsimineTeenus ON qryMk.laps_id = qryEsimineTeenus.laps_id
 
 
 $BODY$
@@ -51,5 +76,5 @@ GRANT EXECUTE ON FUNCTION lapsed.get_group_part_from_mk(INTEGER, DATE) TO dbvaat
 /*
 
 
-select * from lapsed.get_group_part_from_mk(2078078, '2020-09-01'::DATE)
+select * from lapsed.get_group_part_from_mk(2078098, '2020-09-01'::DATE)
 */

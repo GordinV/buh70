@@ -25,10 +25,27 @@ GRANT SELECT ON TABLE lapsed.lapse_kaart TO dbvaatleja;
 
 
 DROP INDEX IF EXISTS lapse_kaart_parentid_idx;
-CREATE INDEX IF NOT EXISTS lapse_kaart_parentid_idx ON lapsed.lapse_kaart (parentid);
+CREATE INDEX IF NOT EXISTS lapse_kaart_parentid_idx ON lapsed.lapse_kaart (parentid) where staatus <> 3;
 
 DROP INDEX IF EXISTS lapse_kaart_rekvid_idx;
 CREATE INDEX IF NOT EXISTS lapse_kaart_rekvid_idx ON lapsed.lapse_kaart (rekvid);
 
 DROP INDEX IF EXISTS lapse_kaart_nomid_idx;
 CREATE INDEX IF NOT EXISTS lapse_kaart_nomid_idx ON lapsed.lapse_kaart (nomid);
+
+
+drop INdex if exists lapsed.lapse_kaart_alg_kpv_idx;
+
+CREATE INDEX lapse_kaart_alg_kpv_idx
+    ON lapsed.lapse_kaart
+        USING btree
+        ((properties->>'alg_kpv'))
+    where staatus <> 3;
+
+drop INdex if exists lapsed.lapse_kaart_lopp_kpv_idx;
+
+CREATE INDEX lapse_kaart_lopp_kpv_idx
+    ON lapsed.lapse_kaart
+        USING btree
+        ((properties->>'lopp_kpv'))
+    where staatus <> 3;
