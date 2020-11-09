@@ -103,7 +103,7 @@ const Arv = {
                              sum(at.summa)                                               AS summa
                       FROM docs.arvtasu at
                       WHERE at.doc_arv_id = $1
-                      GROUP BY at.doc_arv_id
+                          GROUP BY at.doc_arv_id
                   ) laekumised
                                            ON laekumised.arv_id = d.id
 
@@ -120,7 +120,7 @@ const Arv = {
                                  AND NOT empty(default_::INTEGER)
                                  AND NOT empty(kassa::INTEGER)
                                  AND kassa = 1
-                               LIMIT 1)::VARCHAR(20)                                                 AS aa,
+                                   LIMIT 1)::VARCHAR(20)                                             AS aa,
 
                               docs.sp_get_number(u.rekvId, 'ARV', year(date()), NULL) :: VARCHAR(20) AS number,
                               0.00::NUMERIC(12, 2)                                                   AS summa,
@@ -166,16 +166,18 @@ const Arv = {
         },
         {
             sql: `SELECT a1.id,
-                         $2 :: INTEGER                           AS userid,
+                         $2 :: INTEGER                                                   AS userid,
                          a1.nomid,
                          a1.kogus,
-                         a1.hind::NUMERIC(12, 2),
+                         a1.hind::NUMERIC(12, 4),
                          a1.kbm::NUMERIC(12, 2),
                          a1.kbmta::NUMERIC(12, 2),
                          a1.summa::NUMERIC(12, 2),
-                         trim(n.kood) :: VARCHAR(20)             AS kood,
-                         trim(n.nimetus) :: VARCHAR(254)         AS nimetus,
-                         n.uhik :: TEXT                          AS uhik,
+                         trim(n.kood) :: VARCHAR(20)                                     AS kood,
+                         trim(n.nimetus) :: VARCHAR(254)                                 AS nimetus,
+                         n.uhik :: TEXT                                                  AS uhik,
+                         (a1.properties ->> 'soodustus')::NUMERIC                        AS soodustus,
+                         coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) + a1.hind AS tais_hind,
                          a1.soodus,
                          a1.kood1,
                          a1.kood2,
@@ -186,16 +188,16 @@ const Arv = {
                          a1.proj,
                          a1.konto,
                          a1.tp,
-                         NULL :: TEXT                            AS vastisik,
-                         NULL :: TEXT                            AS formula,
-                         'EUR' :: VARCHAR(20)                    AS valuuta,
-                         1 :: NUMERIC                            AS kuurs,
+                         NULL :: TEXT                                                    AS vastisik,
+                         NULL :: TEXT                                                    AS formula,
+                         'EUR' :: VARCHAR(20)                                            AS valuuta,
+                         1 :: NUMERIC                                                    AS kuurs,
                          (CASE
                               WHEN a1.kbm_maar IS NULL
                                   THEN coalesce((n.properties :: JSONB ->> 'vat'), '-') :: VARCHAR(20)
-                              ELSE a1.kbm_maar END)::VARCHAR(20) AS km,
+                              ELSE a1.kbm_maar END)::VARCHAR(20)                         AS km,
                          n.uhik,
-                         a1.properties ->> 'yksus'               AS yksus,
+                         a1.properties ->> 'yksus'                                       AS yksus,
                          a1.muud
                   FROM docs.arv1 AS a1
                            INNER JOIN docs.arv a ON a.id = a1.parentId
@@ -248,57 +250,83 @@ const Arv = {
                   WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
                     AND arvtasu.status <> 3
-                  UNION ALL
-                  SELECT Arvtasu.id,
-                         arvtasu.kpv,
-                         arvtasu.summa,
-                         'KASSAORDER' :: VARCHAR(20)   AS dok,
-                         'KASSA' :: VARCHAR            AS liik,
-                         pankkassa,
-                         korder1.journalid,
-                         doc_tasu_id,
-                         coalesce(journalid.number, 0) AS number,
-                         $2                            AS userid
-                  FROM docs.arvtasu arvtasu
-                           INNER JOIN docs.korder1 korder1
-                                      ON (arvtasu.doc_tasu_id = korder1.parentid AND arvtasu.pankkassa = 2)
-                           LEFT OUTER JOIN docs.journalid journalid ON korder1.journalId = journalId.journalId
-                  WHERE Arvtasu.doc_arv_id = $1
+                      UNION ALL
+                      SELECT Arvtasu.id
+                      ,
+                      arvtasu.kpv
+                      ,
+                      arvtasu.summa
+                      ,
+                      'KASSAORDER' :: VARCHAR(20) AS dok
+                      ,
+                      'KASSA' :: VARCHAR AS liik
+                      ,
+                      pankkassa
+                      ,
+                      korder1.journalid
+                      ,
+                      doc_tasu_id
+                      ,
+                      coalesce(journalid.number, 0) AS number
+                      ,
+                      $2 AS userid
+                      FROM docs.arvtasu arvtasu
+                      INNER JOIN docs.korder1 korder1
+                      ON (arvtasu.doc_tasu_id = korder1.parentid AND arvtasu.pankkassa = 2)
+                      LEFT OUTER JOIN docs.journalid journalid ON korder1.journalId = journalId.journalId
+                      WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
                     AND arvtasu.status <> 3
-                  UNION ALL
-                  SELECT Arvtasu.id,
-                         arvtasu.kpv,
-                         arvtasu.summa,
-                         'PAEVARAAMAT' :: VARCHAR(20)  AS dok,
-                         'JOURNAL' :: VARCHAR          AS liik,
-                         pankkassa,
-                         arvtasu.doc_tasu_id           AS journalid,
-                         doc_tasu_id,
-                         coalesce(journalid.number, 0) AS number,
-                         $2                            AS userid
-                  FROM docs.arvtasu arvtasu
-                           LEFT OUTER JOIN docs.journal journal
-                                           ON (arvtasu.doc_tasu_id = journal.parentId AND arvtasu.pankkassa = 3)
-                           LEFT OUTER JOIN docs.journalid journalid ON (journal.id = journalId.journalId)
-                  WHERE Arvtasu.doc_arv_id = $1
+                      UNION ALL
+                      SELECT Arvtasu.id
+                      ,
+                      arvtasu.kpv
+                      ,
+                      arvtasu.summa
+                      ,
+                      'PAEVARAAMAT' :: VARCHAR(20) AS dok
+                      ,
+                      'JOURNAL' :: VARCHAR AS liik
+                      ,
+                      pankkassa
+                      ,
+                      arvtasu.doc_tasu_id AS journalid
+                      ,
+                      doc_tasu_id
+                      ,
+                      coalesce(journalid.number, 0) AS number
+                      ,
+                      $2 AS userid
+                      FROM docs.arvtasu arvtasu
+                      LEFT OUTER JOIN docs.journal journal
+                      ON (arvtasu.doc_tasu_id = journal.parentId AND arvtasu.pankkassa = 3)
+                      LEFT OUTER JOIN docs.journalid journalid ON (journal.id = journalId.journalId)
+                      WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
                     AND arvtasu.status <> 3
                     AND arvtasu.pankkassa = 3
-                  UNION ALL
-                  SELECT Arvtasu.id,
-                         arvtasu.kpv,
-                         arvtasu.summa,
-                         '' :: VARCHAR(20) AS dok,
-                         'MUUD' :: VARCHAR AS liik,
-                         pankkassa,
-                         0                 AS journalid,
-                         NULL,
-                         0                 AS number,
-                         $2                AS userid
-
-                  FROM docs.arvtasu arvtasu
-                  WHERE Arvtasu.doc_arv_id = $1
+                      UNION ALL
+                      SELECT Arvtasu.id
+                      ,
+                      arvtasu.kpv
+                      ,
+                      arvtasu.summa
+                      ,
+                      '' :: VARCHAR(20) AS dok
+                      ,
+                      'MUUD' :: VARCHAR AS liik
+                      ,
+                      pankkassa
+                      ,
+                      0 AS journalid
+                      ,
+                      NULL
+                      ,
+                      0 AS number
+                      ,
+                      $2 AS userid
+                      FROM docs.arvtasu arvtasu
+                      WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
                     AND arvtasu.status <> 3
                     AND arvtasu.pankkassa IN (0, 4)

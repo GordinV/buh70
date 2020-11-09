@@ -29,6 +29,12 @@ style(type='text/css').
         width:70%;
     }
 
+    .subtotal {
+        padding-left:20%;
+        width:90%;
+        margin-left:5%;
+        font-weight: bold;
+    }
 extends report_header
 
 block content
@@ -85,43 +91,35 @@ block content
                 tr
                     th Teenuse nimetus
                     th Hind
+                    th Hind soodustusega
                     th Ühik
                     th Kogus
-                    th Käibemaks
                     th Rea summa
-                    th Märkused
 
             tbody
                 each row in data.details
                     tr
                         td=row.nimetus
-                        td=Number(row.hind).toFixed(2)
-                        td=row.uhik
-                        td=row.kogus
-                        td=Number(row.kbm).toFixed(2)
-                        td=Number(row.summa).toFixed(2)
-                        td=row.muud
-        div.row_wrapper
-            p.label_subtotal Summa käibemaksuta:
-            p.input #{`${Number(data[0].kbmta).toFixed(2)}`}
-        div.row_wrapper
-            p.label_subtotal Käibemaks:
-            p.input #{`${Number(data[0].kbm).toFixed(2)}`}
+                        td(align='center')=Number(row.tais_hind,2).toFixed(2)
+                        td(align='center')=Number(row.hind).toFixed(4)
+                        td(align='center')=row.uhik
+                        td(align='center')=row.kogus
+                        td(align='center')=Number(row.summa).toFixed(2)
         div.row_wrapper
             p.label_subtotal Kokku:
-            p.input #{`${Number(data[0].summa).toFixed(2)}`}
+            p.subtotal #{`${Number(data[0].summa).toFixed(2)}`}
         hr
         div.row_wrapper
             p.label_subtotal Teil on ettemaks:
-            p.input #{`${Number(data[0].ettemaksud).toFixed(2)}`}
+            p.subtotal #{`${Number(data[0].ettemaksud).toFixed(2)}`}
         div.row_wrapper
             p.label_subtotal Laekumised periodis: #{`${data[0].laekumise_period}`}
-            p.input #{`${Number(data[0].laekumised).toFixed(2)}`}
+            p.subtotal #{`${Number(data[0].laekumised).toFixed(2)}`}
         div.row_wrapper
             p.label_subtotal Seisuga #{`${data[0].kpv_print}`} on maksmata:
-            p.input #{`${Number(data[0].jaak).toFixed(2)}`}
+            p.subtotal #{`${Number(data[0].alg_jaak).toFixed(2)}`}
         div.row_wrapper
             p.label_subtotal Kuulub tasumisele:
-            p.input #{`${Number(data[0].tasumisele).toFixed(2)}`}
+            p.subtotal #{`${Number(data[0].tasumisele).toFixed(2)}`}
 
 
