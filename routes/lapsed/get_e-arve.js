@@ -74,18 +74,21 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
             const qryeArvedDet = arve.details.map(rea => {
                 return {
                     Description: `${rea.nimetus.trim()} ${rea.muud ? rea.muud.trim() : ''}`,
-                    ItemDetailInfo: {
-                        ItemUnit: rea.uhik.trim(),
-                        ItemAmount: rea.kogus,
-                        ItemPrice: Number(rea.hind).toFixed(2),
-                    },
-                    ItemSum: Number(rea.summa - rea.kbm).toFixed(2),
-                    VAT: {
-                        SumBeforeVAT: rea.summa - rea.kbm,
-                        VATRate: (!rea.km || rea.km == '-' || rea.km == '') ? '0' : rea.km,
-                        VATSum: Number(rea.kbm).toFixed(2),
-                        Currency: 'EUR',
-                    },
+                    /*
+                                        ItemDetailInfo: {
+                                            ItemUnit: rea.uhik.trim(),
+                                            ItemAmount: rea.kogus,
+                                            ItemPrice: Number(rea.hind).toFixed(2),
+                                        },
+
+                                        ItemSum: Number(rea.summa - rea.kbm).toFixed(2),
+                                        VAT: {
+                                            SumBeforeVAT: rea.summa - rea.kbm,
+                                            VATRate: (!rea.km || rea.km == '-' || rea.km == '') ? '0' : rea.km,
+                                            VATSum: Number(rea.kbm).toFixed(2),
+                                            Currency: 'EUR',
+                                        },
+                    */
                     ItemTotal: Number(rea.summa).toFixed(2)
                 }
             });
@@ -125,6 +128,14 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     BuyerParty: {
                         Name: arve.asutus,
                         RegNumber: arve.regkood.trim(),
+                        ContactData: {
+                            LegalAddress: {
+                                PostalAddress1: arve.aadress,
+                                City: 'Narva',
+                                PostalCode: '',
+                                Country: 'EE'
+                            }
+                        },
                         AccountInfo: {
                             AccountNumber: arve.iban,
                             IBAN: arve.iban,
@@ -142,28 +153,22 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     InvoiceNumber: arve.number,
                     InvoiceDate: arve.kpv,
                     DueDate: arve.tahtaeg,
-                    InvoiceDeliverer: {
-                        ContactName: asutusConfig.userName
-                    },
-                    Period: arve.laekumise_period
+                    Period: {
+                        PeriodName: arve.laekumise_period
+                    }
                 },
-                InvoiceSumGroup:
-                    Object.assign(
-                        {
-                            Balanсe: {
-                                BalanceDate: arve.period_alg,
-                                BalanceBegin: arve.alg_jaak,
-                                Inbound: arve.laekumised,
-                                Outbound: arve.tagastused,
-                                BalanceEnd: arve.tasumisele
-                            }
-                        },
-                        {TotalSum: Number(arve.summa).toFixed(2)},
-                        {TotalToPay: arve.tasumisele},
-                        {Currency: 'EUR'},
-                        {InvoiceSum: Number(arve.summa).toFixed(2)},
-                        {VAT: qryeArvedVat["0"]},
-                    ),
+                InvoiceSumGroup: {
+                    Balance: {
+                        BalanceDate: arve.period_alg,
+                        BalanceBegin: Number(arve.alg_jaak).toFixed(2),
+                        Inbound: Number(arve.laekumised).toFixed(2),
+                        Outbound: Number(arve.tagastused).toFixed(2),
+                        BalanceEnd: Number(arve.tasumisele).toFixed(2)
+                    },
+                    TotalSum: Number(arve.summa).toFixed(2),
+                    TotalToPay: Number(arve.tasumisele).toFixed(2),
+                    Currency: 'EUR'
+                },
                 InvoiceItem: {
                     InvoiceItemGroup: {
                         ItemEntry: qryeArvedDet
@@ -178,7 +183,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     PaymentTotalSum: Number(arve.tasumisele).toFixed(2),
                     PayerName: arve.asutus,
                     PaymentId: arve.number,
-                    PayToAccount: arve.arve,
+                    PayToAccount: arve.aa,
                     PayToName: asutusConfig.asutus,
                     PayToBIC: asutusConfig.channelId
                 }

@@ -20,7 +20,7 @@ module.exports = {
         flexDirection: 'column',
         alignSelf: 'center',
         height: 'auto',
-        maxHeight: '75%',
+        maxHeight: '95%',
         overflow: 'auto'
 
     },

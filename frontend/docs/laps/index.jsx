@@ -40,7 +40,6 @@ class Documents extends React.PureComponent {
     }
 
     render() {
-        console.log('this.state', this.state);
         return (
             <div>
                 <DocumentRegister initData={this.props.initData}
@@ -82,10 +81,10 @@ class Documents extends React.PureComponent {
             return kas_lubatud;
         });
 
-        if (self.gridData && self.gridData.length && self.gridData[0].rows_total) {
+        if (self.gridData) {
             this.setState({
-                read: self.gridData[0].rows_total,
-                filtri_read: self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : self.gridData[0].rows_total
+                read: self.gridData && self.gridData.length && self.gridData[0].rows_total ? self.gridData[0].rows_total: this.state.read,
+                filtri_read: self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : 0
             });
         }
 
