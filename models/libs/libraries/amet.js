@@ -65,7 +65,37 @@ module.exports = {
             multiple: true,
             alias: 'details',
             data: []
-        }],
+        },
+        {
+            sql: `SELECT *
+                  FROM jsonb_to_recordset(
+                               fnc_check_libs($2::JSON, $3::date, $1::INTEGER))
+                           AS x (error_message TEXT)
+                  WHERE error_message IS NOT NULL
+            `, //$1 rekvid, $2 tunnus, $3 kuupaev
+            query: null,
+            multiple: true,
+            alias: 'validate_libs',
+            data: []
+
+        },
+
+        {
+            sql: `SELECT *
+                  FROM jsonb_to_recordset(
+                               get_amet_kasutus($2::INTEGER, $3::DATE,
+                                                $1::INTEGER)
+                           ) AS x (error_message TEXT, error_code INTEGER)
+                  WHERE error_message IS NOT NULL
+            `, //$1 rekvid, $2 v_nom.kood
+            query: null,
+            multiple: true,
+            alias: 'validate_lib_usage',
+            data: []
+
+        }
+
+    ],
     returnData: {
         row: {},
         details: []

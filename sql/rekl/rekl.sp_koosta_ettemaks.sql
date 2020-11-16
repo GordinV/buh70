@@ -31,7 +31,7 @@ BEGIN
       SELECT coalesce(e.id, 0)
           INTO l_id FROM rekl.ettemaksud e WHERE journalid = v_journal.journal1Id;
 
-      SELECT l_id             AS id,
+      SELECT coalesce(l_id,0)             AS id,
              v_journal.number       AS number,
              v_journal.asutusId,
              v_journal.id           AS dokid,
@@ -44,7 +44,7 @@ BEGIN
           INTO v_ettemaks;
 
       SELECT row_to_json(row)
-          INTO json_params FROM (SELECT 0 AS id, row_to_json(v_ettemaks) AS data) row;
+          INTO json_params FROM (SELECT coalesce(l_id,0) AS id, row_to_json(v_ettemaks) AS data) row;
 
       result = rekl.sp_salvesta_ettemaksud(json_params, user_id, v_journal.rekvid);
 

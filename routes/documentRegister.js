@@ -254,6 +254,7 @@ exports.executeTask = async (req, res) => {
         //@TODO сделать универсальный набор параметров
         taskParams = [params.docId, user.userId, seisuga];
     }
+    console.log('taskParams',taskParams);
     const data = await Document.executeTask(taskName, taskParams ? taskParams : null);
 
 

@@ -62,6 +62,20 @@ module.exports = {
             multiple: false,
             alias: 'rekl_number',
             data: []
+        },
+        {
+            sql: `SELECT *
+                  FROM jsonb_to_recordset(
+                               get_asutus_kasutus($2::INTEGER, $3::DATE,
+                                                  $1::INTEGER)
+                           ) AS x (error_message TEXT, error_code INTEGER)
+                  WHERE error_message IS NOT NULL
+            `, //$1 rekvid, $2 v_nom.kood
+            query: null,
+            multiple: true,
+            alias: 'validate_lib_usage',
+            data: []
+
         }
 
     ],

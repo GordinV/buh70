@@ -72,7 +72,7 @@ class Vanem extends React.PureComponent {
 
     renderer(self) {
 
-        if (!self && !self.docData.parentid) {
+        if (!self || !self.docData.parentid || self.docData.vanem_nimi == 'undefined') {
             // не загружены данные
             return null;
         }

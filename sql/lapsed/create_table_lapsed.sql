@@ -22,5 +22,3 @@ GRANT SELECT ON TABLE lapsed.laps TO dbvaatleja;
 
 CREATE UNIQUE INDEX CONCURRENTLY laps_isikukood_idx ON lapsed.laps (isikukood);
 
-ALTER TABLE lapsed.laps ADD CONSTRAINT
-    unique_laps_isikukood UNIQUE USING INDEX laps_isikukood_idx;

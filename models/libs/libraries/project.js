@@ -29,7 +29,20 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    }],
+    },
+        {
+            sql: `SELECT $1 AS rekv_id, *
+                  FROM jsonb_to_recordset(
+                               get_proj_kasutus($2::INTEGER, $3::DATE)
+                           ) AS x (error_message TEXT, error_code INTEGER)
+                  WHERE error_message IS NOT NULL
+            `, //$1 rekvid, $2 v_nom.kood
+            query: null,
+            multiple: true,
+            alias: 'validate_lib_usage',
+            data: []
+        }
+    ],
     returnData: {
         row: {}
     },

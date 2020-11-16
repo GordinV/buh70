@@ -72,6 +72,14 @@ class Arve extends React.PureComponent {
      *Вернет кастомные компоненты документа
      */
     renderer(self) {
+        if (!self || !self.docData || !self.docData.kpv) {
+            return (<div style={styles.doc}>
+                <div style={styles.docRow}>
+                    Laadimine...
+                </div>
+            </div>);
+        }
+
         let isEditMode = self.state.edited,
             gridData = self.docData.gridData,
             gridColumns = self.docData.gridConfig;
@@ -85,6 +93,7 @@ class Arve extends React.PureComponent {
         if (this.state.lapsId && !self.docData.lapsid) {
             self.docData.lapsid = this.state.lapsId;
         }
+
         return (
             <div>
                 <div style={styles.doc}>

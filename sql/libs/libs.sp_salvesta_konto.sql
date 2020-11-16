@@ -20,7 +20,7 @@ DECLARE
     doc_tun3       INTEGER = doc_data ->> 'tun3'; -- allikas
     doc_tun4       INTEGER = doc_data ->> 'tun4'; -- rahavoog
     doc_tyyp       INTEGER = doc_data ->> 'tyyp';
-    doc_valid      TEXT    = doc_data ->> 'valid';
+    doc_valid      DATE    = CASE WHEN empty(doc_data ->> 'valid') THEN NULL::DATE ELSE (doc_data ->> 'valid')::DATE END;
     doc_muud       TEXT    = doc_data ->> 'muud';
     is_import      BOOLEAN = data ->> 'import';
     json_object    JSONB;

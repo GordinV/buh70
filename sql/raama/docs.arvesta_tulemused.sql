@@ -53,12 +53,14 @@ BEGIN
             FROM ou.userid
             WHERE rekvid = v_rekv.rekv_id
               AND kasutaja = v_user.kasutaja
-            LIMIT 1;
+                LIMIT 1;
 
             -- проверим есть ли у пользователя права в этом учреждении
             IF l_asutuse_kasutaja_id IS NOT NULL
             THEN
-
+                -- обнуляем переменные
+                l_json_details = '[]'::JSONB;
+                l_json = NULL;
                 -- доходы
                 FOR v_journal IN
                     SELECT *
@@ -75,19 +77,20 @@ BEGIN
                                           AND l.kood::TEXT = j1.deebet::TEXT
                                       WHERE j.rekvid = v_rekv.rekv_id
                                         AND j.kpv <= make_date(l_aasta, 12, 31)
-                                      GROUP BY deebet
-                                      UNION ALL
-                                      SELECT sum(summa) AS summa, kreedit AS konto
-                                      FROM docs.doc d
-                                               INNER JOIN docs.journal j ON j.parentid = d.id
-                                               INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-                                               INNER JOIN libs.library l ON l.library = 'KONTOD'
-                                          AND l.tun5 = 4 -- K
-                                          AND left(l.kood, 1) IN ('3', '6')
-                                          AND l.kood::TEXT = j1.kreedit::TEXT
-                                      WHERE j.rekvid = v_rekv.rekv_id
+                                          GROUP BY deebet
+                                          UNION ALL
+                                          SELECT sum(summa) AS summa
+                                          , kreedit AS konto
+                                          FROM docs.doc d
+                                          INNER JOIN docs.journal j ON j.parentid = d.id
+                                          INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                                          INNER JOIN libs.library l ON l.library = 'KONTOD'
+                                              AND l.tun5 = 4 -- K
+                                              AND left(l.kood, 1) IN ('3', '6')
+                                              AND l.kood::TEXT = j1.kreedit::TEXT
+                                          WHERE j.rekvid = v_rekv.rekv_id
                                         AND j.kpv <= make_date(l_aasta, 12, 31)
-                                      GROUP BY kreedit
+                                          GROUP BY kreedit
                                   ) qry
                              GROUP BY konto
                          ) tmp
@@ -128,8 +131,8 @@ BEGIN
                       AND j.muud IS NOT NULL
                       AND j.muud = 'TULEMUSED, TULUD'
                       AND d.status <> 3
-                    ORDER BY id DESC
-                    LIMIT 1;
+                        ORDER BY id DESC
+                        LIMIT 1;
 
                     --lausendi parametrid
 
@@ -184,19 +187,20 @@ BEGIN
                                           AND l.kood::TEXT = j1.deebet::TEXT
                                       WHERE j.rekvid = v_rekv.rekv_id
                                         AND j.kpv <= make_date(l_aasta, 12, 31)
-                                      GROUP BY deebet
-                                      UNION ALL
-                                      SELECT sum(-1 * summa) AS summa, kreedit AS konto
-                                      FROM docs.doc d
-                                               INNER JOIN docs.journal j ON j.parentid = d.id
-                                               INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-                                               INNER JOIN libs.library l ON l.library = 'KONTOD'
-                                          AND l.tun5 = 3 -- D
-                                          AND left(l.kood, 1) IN ('4', '5', '6')
-                                          AND l.kood::TEXT = j1.kreedit::TEXT
-                                      WHERE j.rekvid = v_rekv.rekv_id
+                                          GROUP BY deebet
+                                          UNION ALL
+                                          SELECT sum(-1 * summa) AS summa
+                                          , kreedit AS konto
+                                          FROM docs.doc d
+                                          INNER JOIN docs.journal j ON j.parentid = d.id
+                                          INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                                          INNER JOIN libs.library l ON l.library = 'KONTOD'
+                                              AND l.tun5 = 3 -- D
+                                              AND left(l.kood, 1) IN ('4', '5', '6')
+                                              AND l.kood::TEXT = j1.kreedit::TEXT
+                                          WHERE j.rekvid = v_rekv.rekv_id
                                         AND j.kpv <= make_date(l_aasta, 12, 31)
-                                      GROUP BY kreedit
+                                          GROUP BY kreedit
                                   ) qry
                              GROUP BY konto
                          ) tmp
@@ -237,8 +241,8 @@ BEGIN
                       AND j.muud IS NOT NULL
                       AND j.muud = 'TULEMUSED, KULUD'
                       AND d.status <> 3
-                    ORDER BY id DESC
-                    LIMIT 1;
+                        ORDER BY id DESC
+                        LIMIT 1;
 
                     --lausendi parametrid
 

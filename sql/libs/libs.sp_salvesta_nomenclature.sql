@@ -40,7 +40,7 @@ DECLARE
     json_object   JSONB;
     new_history   JSONB;
     new_rights    JSONB;
-
+    l_error       TEXT;
 BEGIN
 
     IF (doc_id IS NULL)
@@ -59,6 +59,24 @@ BEGIN
         RAISE NOTICE 'User not found %', user;
         RETURN 0;
     END IF;
+
+    -- контроль классификаторов
+    json_object = to_jsonb(row)
+                  FROM (SELECT doc_tunnus AS tunnus) row;
+
+    json_object = fnc_check_libs(json_object::JSON, current_date, user_rekvid);
+
+    IF (jsonb_array_length(json_object) > 0)
+    THEN
+        l_error = array_to_string(array_agg(value ->> 'error_message'),',')
+                  FROM (
+                           SELECT *
+                           FROM jsonb_array_elements(json_object)
+                       ) qry;
+
+        RAISE EXCEPTION 'Tekkis viga, %',l_error;
+    END IF;
+
 
     SELECT row_to_json(row) INTO json_object
     FROM (SELECT doc_vat                        AS vat,
@@ -102,8 +120,6 @@ BEGIN
 
     ELSE
         -- muuda
-
-        RAISE NOTICE 'doc_nimetus %', doc_nimetus;
 
         UPDATE libs.nomenklatuur
         SET rekvid     = CASE WHEN is_import IS NOT NULL THEN user_rekvid ELSE rekvid END,

@@ -4,13 +4,13 @@ DROP VIEW IF EXISTS cur_ametid;
 
 CREATE OR REPLACE VIEW cur_ametid AS
 SELECT a.id,
-       a.nimetus                                            AS amet,
-       o.nimetus                                            AS osakond,
+       a.nimetus                                                         AS amet,
+       o.nimetus                                                         AS osakond,
        a.rekvid,
-       (a.properties::JSONB ->> 'kogus'::TEXT)::NUMERIC     AS kogus,
-       (a.properties::JSONB ->> 'vaba'::TEXT)::NUMERIC      AS vaba,
-       (a.properties::JSONB ->> 'palgamaar'::TEXT)::INTEGER AS palgamaar,
-       (a.properties::JSONB ->> 'valid')::DATE              AS valid
+       coalesce((a.properties::JSONB ->> 'kogus'::TEXT)::NUMERIC, 0)     AS kogus,
+       coalesce((a.properties::JSONB ->> 'vaba'::TEXT)::NUMERIC, 0)      AS vaba,
+       coalesce((a.properties::JSONB ->> 'palgamaar'::TEXT)::INTEGER, 0) AS palgamaar,
+       (a.properties::JSONB ->> 'valid')::DATE                           AS valid
 FROM libs.library a
          JOIN libs.library o ON ((a.properties::JSONB ->> 'osakondid'::TEXT)::INTEGER) = o.id
 WHERE a.status <> 3;

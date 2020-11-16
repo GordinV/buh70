@@ -68,11 +68,34 @@
     <multiple>false</multiple>
     <alias>row</alias>
   </select>
+  <select>
+    <sql>SELECT *
+                  FROM jsonb_to_recordset(
+                               fnc_check_libs($2::JSON, $3::date, $1::INTEGER))
+                           AS x (error_message TEXT)
+                  WHERE error_message IS NOT NULL
+            </sql>
+    <query />
+    <multiple>true</multiple>
+    <alias>validate_libs</alias>
+  </select>
+  <select>
+    <sql>SELECT *
+                  FROM jsonb_to_recordset(
+                               get_nom_kasutus($2::INTEGER, $3::date,
+                                               $1::INTEGER)
+                           ) AS x (error_message TEXT, error_code INTEGER)
+                  WHERE error_message IS NOT NULL
+            </sql>
+    <query />
+    <multiple>true</multiple>
+    <alias>validate_lib_usage</alias>
+  </select>
   <selectAsLibs>
     <sql>SELECT *
                    FROM com_nomenclature
                    WHERE (rekvid = $1 OR rekvid IS NULL)
-                   ORDER BY kood</sql>
+                       ORDER BY kood</sql>
     <alias>selectAsLibs</alias>
   </selectAsLibs>
   <saveDoc>

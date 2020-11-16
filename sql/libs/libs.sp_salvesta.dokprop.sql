@@ -40,7 +40,7 @@ DECLARE
                                                     LIMIT 1));
     json_object   JSONB;
     is_import     BOOLEAN = data ->> 'import';
-
+    l_error       INTEGER = 0;
 BEGIN
 
     IF (doc_id IS NULL)
@@ -52,10 +52,34 @@ BEGIN
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
+
     IF is_import IS NULL AND userName IS NULL
     THEN
         RAISE NOTICE 'User not found %', user;
         RETURN 0;
+    END IF;
+
+    -- контроль классификаторов
+    json_object = to_jsonb(row)
+                  FROM (SELECT doc_konto    AS konto,
+                               doc_asutusid AS asutusid,
+                               doc_kood1    AS tegev,
+                               doc_kood2    AS allikas,
+                               doc_kood3    AS rahavoog,
+                               doc_kood5    AS artikkel
+                       ) row;
+
+    json_object = fnc_check_libs(json_object::JSON, current_date, user_rekvid);
+
+    IF (jsonb_array_length(json_object) > 0)
+    THEN
+        l_error = array_to_string(array_agg(value ->> 'error_message'), ',')
+                  FROM (
+                           SELECT *
+                           FROM jsonb_array_elements(json_object)
+                       ) qry;
+
+        RAISE EXCEPTION 'Tekkis viga, %',l_error;
     END IF;
 
 

@@ -23,7 +23,6 @@ DECLARE
                                         INNER JOIN libs.asutus a ON a.id = v.asutusid
                                WHERE v.parentid = l_laps_id
                                  AND v.rekvid = l_rekvid
-                                 AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
                                ORDER BY v.arveldus DESC,
                                         v.id DESC
                                LIMIT
@@ -230,9 +229,9 @@ BEGIN
                                                 l_asutus_id                                          AS asutusid,
                                                 l_aa                                                 AS aa,
                                                 l_laps_id                                            AS lapsid,
-                                                'Arve, taabeli alus ' || date_part('month', current_date)::TEXT ||
+                                                'Arve, taabeli alus ' || date_part('month', l_kpv)::TEXT ||
                                                 '/' ||
-                                                date_part('year', current_date)::TEXT || ' kuu eest' AS muud,
+                                                date_part('year', l_kpv)::TEXT || ' kuu eest' AS muud,
                                                 json_arvrea                                          AS "gridData") row);
 
                     -- подготавливаем параметры для создания счета
@@ -291,8 +290,8 @@ BEGIN
                                 l_asutus_id                                          AS asutusid,
                                 l_laps_id                                            AS lapsid,
                                 l_aa                                                 AS aa,
-                                'Arve, taabeli alus ' || date_part('month', current_date)::TEXT || '/' ||
-                                date_part('year', current_date)::TEXT || ' kuu eest' AS muud,
+                                'Arve, taabeli alus ' || date_part('month', l_kpv)::TEXT || '/' ||
+                                date_part('year', l_kpv)::TEXT || ' kuu eest' AS muud,
                                 jsonb_print                                          AS print,
                                 json_arvread                                         AS "gridData") row);
 

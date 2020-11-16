@@ -380,6 +380,7 @@ class Documents extends React.Component {
         this.setState({isDelete: false});
         if (btnEvent === 'Ok') {
             // delete document
+            this.setState({warning: 'Töötan...', warningType: 'notValid'});
             this.fetchData('delete')
                 .catch((err) => {
                     console.error('error in fetch-> ', err);

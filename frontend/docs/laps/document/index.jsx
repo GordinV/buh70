@@ -241,17 +241,6 @@ class Laps extends React.PureComponent {
             this.props.history.replace(route);
         });
 
-
-        /*
-                //route
-                this.props.history.push({
-                    pathname: `/lapsed/${pageDocTypeId}`,
-                    state: {
-                        module: this.state.module}
-                });
-        */
-
-
     }
 
 

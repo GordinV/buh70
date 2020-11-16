@@ -76,5 +76,26 @@ GRANT EXECUTE ON FUNCTION lapsed.get_group_part_from_mk(INTEGER, DATE) TO dbvaat
 /*
 
 
-select * from lapsed.get_group_part_from_mk(2078098, '2020-09-01'::DATE)
+select * from lapsed.get_group_part_from_mk(2283669, '2020-09-01'::DATE)
+
+
+
+        SELECT mk.parentid                          AS id,
+               mk.maksepaev                         AS kpv,
+               l.parentid                           AS laps_id,
+               lk.properties ->> 'yksus'            AS yksus,
+               (lk.properties ->> 'alg_kpv')::DATE  AS alg_kp,
+               (lk.properties ->> 'lopp_kpv')::DATE AS lopp_kp,
+               lk.hind,
+               sum(lk.hind) OVER ()                 AS total_amount,
+               mk.jaak                              AS makse_summa
+        FROM docs.mk mk
+                 INNER JOIN lapsed.liidestamine l ON l.docid = mk.parentid
+                 LEFT OUTER JOIN lapsed.lapse_kaart lk
+                                 ON lk.parentid = l.parentid
+                                     AND lk.staatus <> 3
+                                     AND (lk.properties ->> 'alg_kpv')::DATE <= '2020-09-01'::DATE
+                                     AND (lk.properties ->> 'lopp_kpv')::DATE >= '2020-09-01'::DATE
+                                     AND lk.rekvid = mk.rekvid
+        WHERE mk.parentid = 2283669
 */

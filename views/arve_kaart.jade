@@ -110,16 +110,16 @@ block content
             p.subtotal #{`${Number(data[0].summa).toFixed(2)}`}
         hr
         div.row_wrapper
-            p.label_subtotal Teil on ettemaks:
-            p.subtotal #{`${Number(data[0].ettemaksud).toFixed(2)}`}
+            p.label_subtotal Seisuga #{`${data[0].period_alg_print}`}
+            p.subtotal #{`${Number(data[0].alg_jaak).toFixed(2)}`}
         div.row_wrapper
             p.label_subtotal Laekumised periodis: #{`${data[0].laekumise_period}`}
             p.subtotal #{`${Number(data[0].laekumised).toFixed(2)}`}
         div.row_wrapper
-            p.label_subtotal Seisuga #{`${data[0].kpv_print}`} on maksmata:
-            p.subtotal #{`${Number(data[0].alg_jaak).toFixed(2)}`}
+            p.label_subtotal Seisuga #{`${data[0].kpv_print}`}:
+            p.subtotal #{`${Number(data[0].lopp_jaak).toFixed(2)}`}
         div.row_wrapper
-            p.label_subtotal Kuulub tasumisele:
+            p.label_subtotal #{`${data[0].tasumisele > 0 ? 'Kuulub tasumisele': 'Teil on ettemaks'}`} :
             p.subtotal #{`${Number(data[0].tasumisele).toFixed(2)}`}
 
 

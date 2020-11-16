@@ -80,6 +80,28 @@
     <multiple>false</multiple>
     <alias>row</alias>
   </select>
+  <select>
+    <sql>SELECT *
+                  FROM jsonb_to_recordset(
+                               fnc_check_libs($2::JSON, $3::DATE, $1::INTEGER))
+                           AS x (error_message TEXT)
+                  WHERE error_message IS NOT NULL
+            </sql>
+    <query />
+    <multiple>true</multiple>
+    <alias>validate_libs</alias>
+  </select>
+  <select>
+    <sql>SELECT *
+                  FROM jsonb_to_recordset(
+                               get_palk_lib_kasutus($1::INTEGER, $2::DATE)
+                           ) AS x (error_message TEXT, error_code INTEGER)
+                  WHERE error_message IS NOT NULL
+            </sql>
+    <query />
+    <multiple>true</multiple>
+    <alias>validate_lib_usage</alias>
+  </select>
   <selectAsLibs>
     <sql>SELECT *
                    FROM palk.com_palk_lib l

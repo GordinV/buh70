@@ -73,10 +73,16 @@ CREATE INDEX library_docs_modules
 where library = 'DOK';
 
 
-
 ALTER TABLE libs.library CLUSTER ON library_rekvid;
 
+CREATE INDEX library_idx_cluster_library
+  ON libs.library USING btree
+    (library ASC NULLS LAST)
+  INCLUDE(library)
+  TABLESPACE pg_default;
 
+ALTER TABLE libs.library
+  CLUSTER ON library_idx_cluster_library;
 
 ALTER TABLE libs.library
   ADD COLUMN "timestamp" timestamp without time zone NOT NULL DEFAULT LOCALTIMESTAMP;

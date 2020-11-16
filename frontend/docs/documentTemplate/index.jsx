@@ -397,7 +397,6 @@ class DocumentTemplate extends React.Component {
         if (this.props.handleInputChange) {
             this.props.handleInputChange(inputName, inputValue);
         }
-        console.log('handleInputChange', inputName,inputValue );
         this.validation();
         this.forceUpdate();
     }
@@ -425,7 +424,6 @@ class DocumentTemplate extends React.Component {
      * @returns {string}
      */
     validation() {
-console.log('validation', this.requiredFields);
         if (!this.state.edited) return '';
 
         let warning = '',

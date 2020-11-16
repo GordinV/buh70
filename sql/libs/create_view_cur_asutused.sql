@@ -8,7 +8,7 @@ SELECT
   a.omvorm,
   a.aadress,
   a.tp,
-  a.email,
+  coalesce(a.email,'')::varchar(254) as email,
   a.mark,
   coalesce((a.properties ->> 'kehtivus' :: TEXT)::date,current_date + INTERVAL '10 years') :: DATE AS kehtivus,
   a.staatus

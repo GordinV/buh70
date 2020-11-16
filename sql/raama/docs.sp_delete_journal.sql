@@ -83,7 +83,8 @@ BEGIN
     -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
 
     IF v_doc.docs_ids IS NOT NULL
-        AND NOT exists(SELECT 1 FROM docs.arvtasu WHERE doc_tasu_id = v_doc.id)
+        AND NOT exists(
+            SELECT 1 FROM docs.arvtasu WHERE doc_tasu_id = v_doc.id)
         AND exists(
                SELECT d.id
                FROM docs.doc d

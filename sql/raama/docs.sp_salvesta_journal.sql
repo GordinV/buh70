@@ -21,6 +21,7 @@ DECLARE
     doc_details      JSON    = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     doc_asutusid     INTEGER = doc_data ->> 'asutusid';
     doc_dok          TEXT    = doc_data ->> 'dok';
+    doc_objekt       TEXT    = doc_data ->> 'objekt';
     doc_kpv          DATE    = doc_data ->> 'kpv';
     doc_selg         TEXT    = doc_data ->> 'selg';
     doc_muud         TEXT    = doc_data ->> 'muud';
@@ -87,9 +88,10 @@ BEGIN
         VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, 1) RETURNING id
             INTO doc_id;
 
-        INSERT INTO docs.journal (parentid, rekvid, userid, kpv, asutusid, dok, selg, muud)
-        VALUES (doc_id, user_rekvid, userId, doc_kpv, doc_asutusid, doc_dok, doc_selg, doc_muud) RETURNING id
-            INTO journal_id;
+        INSERT INTO docs.journal (parentid, rekvid, userid, kpv, asutusid, dok, selg, muud, objekt)
+        VALUES (doc_id, user_rekvid, userId, doc_kpv, doc_asutusid, doc_dok, doc_selg, doc_muud,
+                doc_objekt) RETURNING id
+                   INTO journal_id;
 
         INSERT INTO docs.journalid (journalid, rekvid, aasta, number)
         VALUES (journal_id, user_rekvid, (date_part('year' :: TEXT, doc_kpv) :: INTEGER), l_number);
@@ -118,6 +120,7 @@ BEGIN
         SET kpv      = doc_kpv,
             asutusid = doc_asutusid,
             dok      = doc_dok,
+            objekt   = doc_objekt,
             muud     = doc_muud,
             selg     = doc_selg
         WHERE parentid = doc_id RETURNING id
@@ -157,7 +160,7 @@ BEGIN
 
             IF is_import IS NULL AND NOT empty(l_check_lausend)
             THEN
-                    RAISE EXCEPTION '%',l_check_lausend;
+                RAISE EXCEPTION '%',l_check_lausend;
 --                RAISE NOTICE 'lausendi kontrol %',l_check_lausend;
             END IF;
 

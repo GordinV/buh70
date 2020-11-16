@@ -24,7 +24,8 @@ DECLARE
     rows_fetched INTEGER = 0;
     json_mk1     JSONB;
     l_jaak       NUMERIC = 0;
-
+    l_dok        TEXT;
+    v_arv        RECORD;
 BEGIN
 
     SELECT d.docs_ids,
@@ -112,23 +113,34 @@ BEGIN
     END IF;
 
 
+    -- koostame dok rea
+    l_dok = 'MK nr. ' || v_vmk.number;
+    IF (v_vmk.arvid IS NOT NULL AND v_vmk.arvid > 0)
+    THEN
+        SELECT number FROM docs.arv a WHERE parentid = v_vmk.arvid INTO v_arv;
+        IF v_arv.number IS NOT NULL AND NOT empty(v_arv.number)
+        THEN
+            l_dok = 'Arve nr. ' || v_arv.number;
+        END IF;
+
+    END IF;
+
     FOR v_vmk1 IN
         SELECT k1.*,
-               coalesce(dokvaluuta1.valuuta, 'EUR') :: VARCHAR AS valuuta,
-               coalesce(dokvaluuta1.kuurs, 1) :: NUMERIC       AS kuurs,
+               'EUR' :: VARCHAR AS valuuta,
+               1 :: NUMERIC     AS kuurs,
                a.tp
         FROM docs.mk1 k1
-                 LEFT OUTER JOIN docs.dokvaluuta1 dokvaluuta1 ON (k1.id = dokvaluuta1.dokid AND dokvaluuta1.dokliik = 4)
                  INNER JOIN libs.asutus a ON a.id = k1.asutusid
         WHERE k1.parentid = v_vmk.Id
         LOOP
             l_jaak = v_vmk1.summa;
-            SELECT coalesce(v_vmk.journalid, 0)         AS id,
+            SELECT coalesce(v_vmk1.journalid, 0)         AS id,
                    'JOURNAL'                            AS doc_type_id,
                    coalesce(v_vmk.maksepaev, v_vmk.kpv) AS kpv,
                    lcSelg                               AS selg,
                    v_vmk.muud                           AS muud,
-                   'MK nr. ' || v_vmk.number            AS dok,
+                   l_dok                                AS dok,
                    v_vmk1.asutusid                      AS asutusid
                    INTO v_journal;
 
@@ -145,21 +157,21 @@ BEGIN
 
             IF (v_vmk.arvid IS NULL OR v_vmk.arvid = 0)
             THEN
-                SELECT 0                               AS id,
-                       coalesce(v_vmk1.summa, 0)       AS summa,
-                       coalesce(v_vmk1.valuuta, 'EUR') AS valuuta,
-                       coalesce(v_vmk1.kuurs, 1)       AS kuurs,
-                       ltrim(rtrim(v_vmk1.konto))      AS deebet,
-                       coalesce(v_vmk1.tp, '800599')   AS lisa_d,
-                       ltrim(rtrim(v_vmk.konto))       AS kreedit,
-                       coalesce(v_vmk.tp, '800401')    AS lisa_k,
-                       coalesce(v_vmk1.tunnus, '')     AS tunnus,
-                       coalesce(v_vmk1.proj, '')       AS proj,
-                       coalesce(v_vmk1.kood1, '')      AS kood1,
-                       coalesce(v_vmk1.kood2, '')      AS kood2,
-                       coalesce(v_vmk1.kood3, '')      AS kood3,
-                       coalesce(v_vmk1.kood4, '')      AS kood4,
-                       coalesce(v_vmk1.kood5, '')      AS kood5
+                SELECT 0                             AS id,
+                       coalesce(v_vmk1.summa, 0)     AS summa,
+                       'EUR'                         AS valuuta,
+                       1                             AS kuurs,
+                       ltrim(rtrim(v_vmk1.konto))    AS deebet,
+                       coalesce(v_vmk1.tp, '800599') AS lisa_d,
+                       ltrim(rtrim(v_vmk.konto))     AS kreedit,
+                       coalesce(v_vmk.tp, '800401')  AS lisa_k,
+                       coalesce(v_vmk1.tunnus, '')   AS tunnus,
+                       coalesce(v_vmk1.proj, '')     AS proj,
+                       coalesce(v_vmk1.kood1, '')    AS kood1,
+                       coalesce(v_vmk1.kood2, '')    AS kood2,
+                       coalesce(v_vmk1.kood3, '')    AS kood3,
+                       coalesce(v_vmk1.kood4, '')    AS kood4,
+                       coalesce(v_vmk1.kood5, '')    AS kood5
                        INTO v_journal1;
 
                 json_mk1 = coalesce(json_mk1, '[]'::JSONB) || to_jsonb(v_journal1);
@@ -168,8 +180,8 @@ BEGIN
                 FOR v_journal1 IN
                     SELECT 0                                                         AS id,
                            CASE WHEN l_jaak < a1.summa THEN l_jaak ELSE a1.summa END AS summa,
-                           coalesce(v_vmk1.valuuta, 'EUR')                           AS valuuta,
-                           coalesce(v_vmk1.kuurs, 1)                                 AS kuurs,
+                           'EUR'                                                     AS valuuta,
+                           1                                                         AS kuurs,
                            ltrim(rtrim(v_vmk1.konto))                                AS deebet,
                            coalesce(v_vmk1.tp, '800599')                             AS lisa_d,
                            ltrim(rtrim(v_vmk.konto))                                 AS kreedit,
@@ -195,21 +207,21 @@ BEGIN
                     END LOOP;
                 IF l_jaak > 0
                 THEN
-                    SELECT 0                               AS id,
-                           l_jaak                          AS summa,
-                           coalesce(v_vmk1.valuuta, 'EUR') AS valuuta,
-                           coalesce(v_vmk1.kuurs, 1)       AS kuurs,
-                           v_vmk1.konto                    AS deebet,
-                           coalesce(v_vmk1.tp, '800599')   AS lisa_d,
-                           v_vmk.konto                     AS kreedit,
-                           coalesce(v_vmk.tp, '800401')    AS lisa_k,
-                           coalesce(v_vmk1.tunnus, '')     AS tunnus,
-                           coalesce(v_vmk1.proj, '')       AS proj,
-                           coalesce(v_vmk1.kood1, '')      AS kood1,
-                           coalesce(v_vmk1.kood2, '')      AS kood2,
-                           coalesce(v_vmk1.kood3, '')      AS kood3,
-                           coalesce(v_vmk1.kood4, '')      AS kood4,
-                           coalesce(v_vmk1.kood5, '')      AS kood5
+                    SELECT 0                             AS id,
+                           l_jaak                        AS summa,
+                           'EUR'                         AS valuuta,
+                           1                             AS kuurs,
+                           v_vmk1.konto                  AS deebet,
+                           coalesce(v_vmk1.tp, '800599') AS lisa_d,
+                           v_vmk.konto                   AS kreedit,
+                           coalesce(v_vmk.tp, '800401')  AS lisa_k,
+                           coalesce(v_vmk1.tunnus, '')   AS tunnus,
+                           coalesce(v_vmk1.proj, '')     AS proj,
+                           coalesce(v_vmk1.kood1, '')    AS kood1,
+                           coalesce(v_vmk1.kood2, '')    AS kood2,
+                           coalesce(v_vmk1.kood3, '')    AS kood3,
+                           coalesce(v_vmk1.kood4, '')    AS kood4,
+                           coalesce(v_vmk1.kood5, '')    AS kood5
                            INTO v_journal1;
 
                     json_mk1 = coalesce(json_mk1, '[]'::JSONB) || to_jsonb(v_journal1);
@@ -232,8 +244,8 @@ BEGIN
                        INTO v_journal;
 
                 SELECT row_to_json(row) INTO l_json
-                FROM (SELECT 0         AS id,
-                             v_journal AS data) row;
+                FROM (SELECT coalesce(v_journal.id, 0) AS id,
+                             v_journal                 AS data) row;
 
                 result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_vmk.rekvId);
             ELSE
@@ -301,12 +313,15 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_vmk(INTEGER, INTEGER) TO dbpeakasutaj
 SELECT error_code,
        result,
        error_message
-FROM docs.gen_lausend_vmk(1616833, 70);
+FROM docs.gen_lausend_vmk(2277264, 70);
 
+select * from cur_pank where rekvid = 63
+--and journalid > 0
+order by id desc limit 10
 
+select * from cur_journal where id = 2283699
 
-
-
+-- MK nr. 203
 select * from libs.dokprop
 
 select * from libs.library where library = 'DOK'

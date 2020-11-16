@@ -128,7 +128,8 @@ FROM (
                                INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                       WHERE at.kpv >= kpv_start::DATE
                         AND at.kpv <= kpv_end::DATE
-                        AND a.rekvid = l_rekvid
+                        AND a.rekvid IN (SELECT rekv_id
+                                         FROM get_asutuse_struktuur(l_rekvid))
                       GROUP BY at.doc_arv_id, (a1.properties ->> 'yksus')
                   ) laekumised
                                            ON laekumised.arv_id = d.id
@@ -169,6 +170,8 @@ FROM (
                           ,
                        lapsed.get_group_part_from_mk(D.id, kpv_end) AS ymk
                   WHERE D.status <> 3
+                  and d.rekvid IN (SELECT rekv_id
+                                   FROM get_asutuse_struktuur(l_rekvid))
                   UNION ALL
                   -- распределенные авансовые платежи
                   SELECT kpv_start                                  AS period,
@@ -192,6 +195,8 @@ FROM (
                            INNER JOIN lapsed.laps laps ON laps.id = l.parentid
                   WHERE at.kpv >= kpv_start::DATE
                     AND at.kpv <= kpv_end::DATE
+                    and at.rekvid IN (SELECT rekv_id
+                                      FROM get_asutuse_struktuur(l_rekvid))
                     AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
               )
 

@@ -17,7 +17,7 @@ DECLARE
 BEGIN
 
     SELECT l.*,
-           u.ametnik::TEXT                      AS kasutaja,
+           u.ametnik::TEXT                       AS kasutaja,
            (u.roles ->> 'is_arvestaja')::BOOLEAN AS is_arvestaja
            INTO v_doc
     FROM lapsed.laps l
@@ -62,28 +62,28 @@ BEGIN
     END IF;
 
     -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя кроме проводки)
-/*
-            IF exists(
+
+    IF exists(
+            SELECT lk.id
+            FROM lapsed.lapse_kaart lk
+            WHERE lk.parentid = doc_id
+              AND staatus <> 3
+            UNION
             SELECT d.id
-            FROM docs.doc d
-                     INNER JOIN libs.library l ON l.id = d.doc_type_id
-            WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
-              AND l.kood IN (
-                SELECT kood
-                FROM libs.library
-                WHERE library = 'DOK'
-                  AND kood NOT IN ('JOURNAL')
-                  AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')
-            ))
+            FROM lapsed.liidestamine l
+                     INNER JOIN docs.doc d ON d.id = l.docid
+            WHERE l.parentid = doc_id
+              AND d.status <> 3
+        )
     THEN
 
         RAISE NOTICE 'Есть связанные доку менты. удалять нельзя';
         error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
-        error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
+        error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud teenused või dokumendid';
         result = 0;
         RETURN;
     END IF;
-*/
+
     -- Логгирование удаленного документа
 
     SELECT to_jsonb(row) INTO json_ajalugu
