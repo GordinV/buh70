@@ -16,6 +16,7 @@ const
     ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     styles = require('./arve.styles');
+const Loading = require('./../../../components/loading/index.jsx');
 
 const DocContext = require('./../../../doc-context');
 const LIB_OBJS = require('./../../../../config/constants').ARV.LIB_OBJS;
@@ -74,9 +75,7 @@ class Arve extends React.PureComponent {
     renderer(self) {
         if (!self || !self.docData || !self.docData.kpv) {
             return (<div style={styles.doc}>
-                <div style={styles.docRow}>
-                    Laadimine...
-                </div>
+                <Loading label={'Laadimine...'}/>
             </div>);
         }
 
