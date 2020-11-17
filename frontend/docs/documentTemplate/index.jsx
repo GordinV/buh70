@@ -56,7 +56,7 @@ class DocumentTemplate extends React.Component {
             'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs', 'hasLibInCache',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
             'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick', 'btnLogsClick',
-            'handleGridCellClick');
+            'handleGridCellClick','setDocumentName');
 
 
         this.gridRowData = {}; //будем хранить строку грида
@@ -89,6 +89,10 @@ class DocumentTemplate extends React.Component {
                 focusElement.focus()
             }
         }
+
+        // задать имя реристра на страницу
+        this.setDocumentName();
+
 
     }
 
@@ -1033,6 +1037,15 @@ class DocumentTemplate extends React.Component {
             this.forceUpdate();
         }
     }
+
+    //поиск названия регистра
+    setDocumentName() {
+        let docType = DocContext['menu'].find(row => row.kood === this.props.docTypeId);
+        if (docType) {
+            DocContext.pageName = docType.name;
+        }
+    }
+
 
 }
 
