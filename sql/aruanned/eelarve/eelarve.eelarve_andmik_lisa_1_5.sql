@@ -1181,9 +1181,9 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019, 12, 31), 28, 0) qry
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2020, 06, 30), 63, 1) qry
          WHERE (NOT empty(qry.tegev) OR NOT empty(qry.artikkel))
-           AND qry.artikkel LIKE '91%'
+           AND qry.tegev LIKE '018%'
      ) qry
 */
 --test

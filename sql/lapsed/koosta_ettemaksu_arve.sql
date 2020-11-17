@@ -16,7 +16,7 @@ DECLARE
     l_rekvid           INTEGER = (SELECT rekvid
                                   FROM ou.userid u
                                   WHERE id = user_id
-                                      LIMIT 1);
+                                  LIMIT 1);
 
     l_asutus_id        INTEGER = (SELECT asutusid
                                   FROM lapsed.vanem_arveldus v
@@ -24,10 +24,10 @@ DECLARE
                                   WHERE v.parentid = l_laps_id
                                     AND v.rekvid = l_rekvid
                                     AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
-                                      ORDER BY v.arveldus DESC
-                                      ,
-                                      v.id DESC
-                                      LIMIT 1);
+                                  ORDER BY v.arveldus DESC
+                                          ,
+                                           v.id DESC
+                                  LIMIT 1);
 
     l_doklausend_id    INTEGER;
     l_liik             INTEGER = 0;
@@ -50,8 +50,8 @@ DECLARE
                                                      FROM ou.userid
                                                      WHERE id = user_id)
                                     AND kassa = 1
-                                      ORDER BY default_ DESC
-                                      LIMIT 1);
+                                  ORDER BY default_ DESC
+                                  LIMIT 1);
     l_ettemaksu_period INTEGER = 1;
     l_tulu_arved       INTEGER = 0; -- кол-во доходных счетов, должно быть = кол-ву периодов
     l_db_konto         TEXT    = '103000'; -- согдасно описанию отдела культуры
@@ -83,8 +83,8 @@ BEGIN
                        WHERE dp.rekvid = l_rekvid
                          AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
                          AND l.kood = 'ARV'
-                           ORDER BY dp.id DESC
-                           LIMIT 1
+                       ORDER BY dp.id DESC
+                       LIMIT 1
     );
 
 
@@ -137,8 +137,8 @@ BEGIN
       AND (lk.properties ->> 'kas_ettemaks')::BOOLEAN
       AND (a.properties ->> 'tyyp')::TEXT = 'ETTEMAKS'
       AND d.rekvid = l_rekvid
-        ORDER BY D.ID DESC
-        LIMIT 1;
+    ORDER BY D.ID DESC
+    LIMIT 1;
 
     IF l_arv_id IS NOT NULL AND l_status < 3
     THEN
@@ -209,9 +209,7 @@ BEGIN
             -- формируем строку
             json_arvread = json_arvread || (SELECT row_to_json(row)
                                             FROM (SELECT v_kaart.nomid                                        AS nomid,
-                                                         CASE
-                                                             WHEN (v_kaart.hind - v_kaart.real_soodus) = 0 THEN 0
-                                                             ELSE v_kaart.kogus END                           AS kogus,
+                                                         v_kaart.kogus                                        AS kogus,
                                                          CASE
                                                              WHEN (v_kaart.hind - v_kaart.real_soodus) = 0
                                                                  THEN v_kaart.hind
@@ -251,7 +249,9 @@ BEGIN
     THEN
         -- нет действующих услуг
         result = 0;
-        error_message ='Arvete koostamise viga: puuduvad kehtiv teenused,  Isikukood:' || v_laps.isikukood || ', Nimi:' ||  v_laps.nimi;
+        error_message =
+                    'Arvete koostamise viga: puuduvad kehtiv teenused,  Isikukood:' || v_laps.isikukood || ', Nimi:' ||
+                    v_laps.nimi;
         error_code = 1;
         RETURN;
 
