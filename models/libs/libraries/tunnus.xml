@@ -43,6 +43,7 @@
     <query />
     <multiple>true</multiple>
     <alias>validate_lib_usage</alias>
+    <not_initial_load>true</not_initial_load>
   </select>
   <selectAsLibs>
     <sql>SELECT *

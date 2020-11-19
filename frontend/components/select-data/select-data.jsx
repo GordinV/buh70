@@ -4,6 +4,8 @@ const DocContext = require('../../doc-context');
 
 const PropTypes = require('prop-types');
 const fetchData = require('./../../../libs/fetchData');
+const POST_LOAD_LIBS_URL =  require('./../../../config/constants').LIBS.POST_LOAD_LIBS_URL;
+
 
 const React = require('react'),
     styles = require('./select-data-styles'),
@@ -147,7 +149,7 @@ class SelectData extends React.PureComponent {
     // обработчик события измения значения в текстовом (поисковом) поле
     handleInputChange(name, value) {
         if (this.props.readOnly) {
-            console.error ('readonly ');
+                console.error ('readonly ');
             return
         }
 
@@ -228,8 +230,7 @@ class SelectData extends React.PureComponent {
         this.setState({gridActiveRow: activeRow, value: value});
     }
 
-    loadLibs(fieldValue) {
-        const postUrl = '/newApi/loadLibs';
+    loadLibs(fieldValue, kpv) {
         let lib = this.props.libName;
         let sqlWhere = '';
         let limit = this.state.limit ? this.state.limit : 100;
@@ -249,14 +250,14 @@ class SelectData extends React.PureComponent {
 
         sqlWhere = `where ${sqlWhere}`;
 
-
         let libParams = Object.assign({uuid: DocContext.userData.uuid}, sqlWhere.length ? {
             sql: sqlWhere,
-            limit: limit
+            limit: limit,
+            kpv: kpv ? kpv: new Date().toISOString().slice(0,10)
         } : {});
 
         if (sqlWhere.length > 0) {
-            fetchData.fetchDataPost(`${postUrl}/${lib}`, libParams).then(response => {
+            fetchData.fetchDataPost(`${POST_LOAD_LIBS_URL}/${lib}`, libParams).then(response => {
                 let gridData = [],
                     gridConfig = [];
 

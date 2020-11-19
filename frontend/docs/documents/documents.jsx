@@ -29,6 +29,7 @@ const
     ModalPage = require('./../../components/modalpage/modalPage.jsx'),
     InputText = require('./../../components/input-text/input-text.jsx'),
     ModalPageDelete = require('./../../components/modalpage/modalpage-delete/modalPage-delete.jsx'),
+    ModalReport = require('./../../components/modalpage/modalpage-report/index.jsx'),
     styles = require('./documents-styles');
 
 
@@ -68,14 +69,16 @@ class Documents extends React.Component {
             warningType: '',
             limit: Liimit, // default limit for query,
             isEmptyFilter: false, // если true то обнулит данные фильтра при перегрузке данных
-            showSelectFields: false //will open or close column in grid to select rows
+            showSelectFields: false, //will open or close column in grid to select rows
+            isReport: false, // показ модального окна при проверке использования
+            txtReport: [] // данные использования
         };
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
             'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick',
             'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData',
-            'handleInputChange', 'btnEmailClick', 'setRegisterName');
+            'handleInputChange', 'btnEmailClick', 'setRegisterName','modalReportePageBtnClick');
 
 
     }
@@ -195,6 +198,12 @@ class Documents extends React.Component {
                         show={this.state.isDelete}
                         modalPageBtnClick={this.modalDeletePageBtnClick.bind(this)}>
                     </ModalPageDelete>
+                    <ModalReport
+                        show={this.state.isReport}
+                        report={this.state.txtReport}
+                        modalPageBtnClick={this.modalReportePageBtnClick}>
+                    </ModalReport>
+
                 </div>
             </div>
         );
@@ -691,6 +700,17 @@ class Documents extends React.Component {
                     }
                     this.setState({warning: 'Edukalt', warningType: 'ok'})
 
+                } else if (method == 'delete' && response.data && response.data.result && response.data.result.error_code) {
+    // проверка перед удалением
+                    let error = `Tekkis viga: kustutamine ebaõnnestus`;
+                    this.setState({
+                        warning: error,
+                        warningType: 'error',
+                        txtReport: response.data,
+                        isReport: !!(response.data.data && response.data.data.length)
+                    });
+                    return rejected(error);
+
                 }
                 resolved(response.data);
             }).catch((error) => {
@@ -700,7 +720,7 @@ class Documents extends React.Component {
                     warning: `Tekkis viga ${error}`,
                     warningType: 'error'
                 });
-                rejected(error);
+                return rejected(error);
 
             });
         });
@@ -722,6 +742,15 @@ class Documents extends React.Component {
 
         this.props.history.push(`/${this.props.module}/e-mail/0`);
     }
+
+    /**
+     * уберет окно с отчетом
+     */
+    modalReportePageBtnClick(event) {
+        let isReport = event && event == 'Ok' ? false : true;
+        this.setState({isReport: isReport})
+    }
+
 
     _bind(...methods) {
         methods.forEach((method) => this[method] = this[method].bind(this));

@@ -5,7 +5,6 @@ const DocumentRegister = require('./../documents/documents.jsx');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'PAEVA_TAABEL';
-const getDefaultDates = require('./../../../libs/getDefaultDate');
 const DocContext = require('./../../doc-context.js');
 
 

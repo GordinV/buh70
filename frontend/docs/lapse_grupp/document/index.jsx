@@ -13,10 +13,7 @@ const
     ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     styles = require('./styles');
 
-const LIBRARIES = [
-    {id: 'nomenclature', filter: `where dok = 'ARV'`},
-    {id: 'koolituse_tyyp', filter: ``}
-];
+const LIBRARIES = require('./../../../../config/constants').LAPSE_GRUPP.LIBRARIES;
 
 class LapseGrupp extends React.PureComponent {
     constructor(props) {

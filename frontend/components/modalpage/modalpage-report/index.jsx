@@ -4,7 +4,7 @@ const PropTypes = require('prop-types');
 
 const React = require('react'),
     ModalPage = require('../modalPage.jsx'),
-    styles = require('./styles');
+    styles = require('./styles.js');
 
 const GRID_CONFIG = require('./../../../../config/constants').tulemused.gridConfig;
 

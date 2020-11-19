@@ -3,7 +3,7 @@
 const React = require('react');
 const Documents = require('./../documents/documents.jsx');
 const styles = require('./tunnused-styles');
-const DOC_TYPE_ID = 'tunnus';
+const DOC_TYPE_ID = 'TUNNUS';
 
 /**
  * Класс реализует документ справочника признаков.

@@ -12,10 +12,7 @@ const DocumentTemplate = require('./../../documentTemplate/index.jsx'),
 
     styles = require('./styles');
 
-const LIB_OBJS = [
-    {id: 'kontod', filter: ``},
-    {id: 'asutuse_liik', filter: ''},
-];
+const LIB_OBJS = require('./../../../../config/constants').REKV.LIB_OBJS;
 
 
 /**

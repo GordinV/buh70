@@ -37,7 +37,7 @@ exports.get = async (req, res) => {
     const docConfig = [];
 
     Object.keys(config).forEach(key => {
-        let folder = path.join(kataloog,config[key]);
+        let folder = path.join(kataloog, config[key]);
         docConfig.push({docTypeId: key.toUpperCase(), grid: require(folder).grid.gridConfiguration})
     });
 
@@ -145,10 +145,11 @@ exports.put = async (req, res) => {
 
     if (!user) {
         console.error('No user', user);
-        const err = new HttpError(err);
-        if (err instanceof HttpError) {
-            return res.send({"message": 'No user'});
-        }
+            return res.send({
+                action: 'save',
+                result: {error_code: 4, error_message: 'Autentimise viga'},
+                data: []
+            });
     }
 
     const params = {
@@ -159,6 +160,36 @@ exports.put = async (req, res) => {
 
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, docId, user.userId, user.asutusId, module);
+
+    // валидация использование
+    let result = Document.config.select.find(row => {
+        if (row.alias && row.alias == 'validate_lib_usage') {
+            return row;
+        }
+    });
+
+    if (result && data.valid) {
+        // есть запрос для валидации
+        const tulemused = await db.queryDb(result.sql, [user.asutusId, docId, data.valid]);
+
+        if (tulemused && ((tulemused.result && tulemused.result > 0) || tulemused.error_code)) {
+            let raport = tulemused.data.map((row, index) => {
+                return {id: index, result: 0, kas_vigane: true, error_message: row.error_message};
+            });
+
+            if (tulemused.error_code && !tulemused.data.length) {
+                // одно сообщение не массив
+                raport = [{id: 1, result: 0, kas_vigane: true, error_message: tulemused.error_message}];
+            }
+
+            return res.send({
+                action: 'save',
+                result: {error_code: 1, error_message: 'Kood kasutusel'},
+                data: raport
+            })
+        }
+    }
+
     const savedData = await Document.save(params);
 
     let l_error = '';
@@ -223,6 +254,37 @@ exports.delete = async (req, res) => {
     const Document = new Doc(documentType, docId, userId, user.asutusId, module.toLowerCase());
     let data;
 
+    // валидация использование
+    let result = Document.config.select.find(row => {
+        if (row.alias && row.alias == 'validate_lib_usage') {
+            return row;
+        }
+    });
+
+    if (result) {
+        let valid = '2000-01-01'; // проверка всех документов
+        // есть запрос для валидации
+        const tulemused = await db.queryDb(result.sql, [user.asutusId, docId, valid]);
+
+        if (tulemused && ((tulemused.result && tulemused.result > 0) || tulemused.error_code)) {
+            let raport = tulemused.data.map((row, index) => {
+                return {id: index, result: 0, kas_vigane: true, error_message: row.error_message};
+            });
+
+            if (tulemused.error_code && !tulemused.data.length) {
+                // одно сообщение не массив
+                raport = [{id: 1, result: 0, kas_vigane: true, error_message: tulemused.error_message}];
+            }
+
+            return res.send({
+                action: 'delete',
+                result: {error_code: 1, error_message: 'Kood kasutusel'},
+                data: raport
+            })
+        }
+    }
+
+
     data = {result: await Document.delete()};
     if (!data.result.error_code) {
         res.send({action: 'delete', error: 0, error_message: null, data: data});
@@ -254,7 +316,7 @@ exports.executeTask = async (req, res) => {
         //@TODO сделать универсальный набор параметров
         taskParams = [params.docId, user.userId, seisuga];
     }
-    console.log('taskParams',taskParams);
+    console.log('taskParams', taskParams);
     const data = await Document.executeTask(taskName, taskParams ? taskParams : null);
 
 
@@ -295,6 +357,49 @@ exports.validate = async (req, res) => {
         data: prepairedData
     });
 };
+
+exports.validateLibs = async (req, res) => {
+    const user = require('../middleware/userData')(req); // данные пользователя
+    const Doc = require('./../classes/DocumentTemplate');
+    const params = req.body;
+    const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, params.module.toLowerCase());
+
+    let result = Document.find(row => {
+        if (row.alias && row.alias == 'validate_lib_usage') {
+            return row;
+        }
+    });
+
+    if (!result) {
+        return res.send({
+            action: 'validate',
+            result: {
+                error_code: 1,
+                error_message: 'validate_lib_usage not found',
+                docId: null
+            },
+            data: null
+        })
+    }
+
+
+    const sqlString = result.sql;
+
+    // вызвать метод
+    let data = {
+        data: await db.queryDb(sqlString, params),
+    };
+
+    res.send({
+        action: 'validateLibs',
+        result: {
+            error_code: 0,
+            error_message: null,
+        },
+        data: data
+    });
+};
+
 
 exports.getLogs = async (req, res) => {
     const user = require('../middleware/userData')(req); // данные пользователя

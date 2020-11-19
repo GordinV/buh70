@@ -21,12 +21,12 @@ const db = {
 
         try {
             const res = await client.query(prepairedSqlString, params);
-            if (res.rowCount && res.rowCount === 1 &&  res.rows && res.rows.length === 1 && ('error_code' in res.rows[0])) {
+            if (res.rowCount && res.rowCount === 1 && res.rows && res.rows.length === 1 && ('error_code' in res.rows[0])) {
                 // executed procedure
                 result = Object.assign(result, res.rows[0]);
             } else {
                 // usual query
-                result = Object.assign(result,{data: res.rows}, {result: res.rowCount});
+                result = Object.assign(result, {data: res.rows}, {result: res.rowCount});
             }
 
         } catch (e) {
@@ -53,11 +53,17 @@ const db = {
 
                 //если задан шаблон и параметр отдан объектом, то вернем результат в заданой форме
                 if (typeof sql === 'object' && returnData) {
-                    returnData[sql.alias] = data.rows;
+                    // если есть декоратор (триггер) , то пропустим данные через него
+                    if (sql.converter) {
+                        returnData[sql.alias] = sql.converter(data.rows)
+                    } else {
+                        returnData[sql.alias] = data.rows;
+                    }
                 }
+
             }));
         } catch (e) {
-            console.error('Error in query',sqlString, params, e);
+            console.error('Error in query', sqlString, params, e);
             result.push({error_code: 9, result: null, data: [], error_message: e.message});
         }
 
@@ -84,7 +90,7 @@ function createSqlString(sql, sortBy, sqlWhere, sqlLimit) {
         let column = sortBy[0].column;
         if (sortBy[0].type) {
             // задан тип, конвертируем
-            switch(sortBy[0].type) {
+            switch (sortBy[0].type) {
                 case 'date':
                     column = `format_date(${column}::text)`;
                     break;
@@ -95,14 +101,14 @@ function createSqlString(sql, sortBy, sqlWhere, sqlLimit) {
                 // code block
             }
         }
-        sortByColumn = ' order by ' +  ' ' + column;
+        sortByColumn = ' order by ' + ' ' + column;
         sortByDirection = sortBy[0].direction;
     }
 
     if (sqlLimit) {
         rowsLimit = ` LIMIT ${sqlLimit}`;
     }
-    return `select count(*) over() as filter_total, * from (${sql}) qry 
+    return `SELECT count(*) OVER() AS filter_total, * FROM (${sql}) qry 
     ${sqlWhere}   ${sortByColumn}  ${sortByDirection} ${rowsLimit}`;
 }
 

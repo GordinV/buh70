@@ -13,6 +13,7 @@ const
     CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     SelectData = require('../../../components/select-data/select-data.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
+    Loading = require('./../../../components/loading/index.jsx'),
     styles = require('./styles');
 
 const LIBRARIES = [
@@ -90,6 +91,13 @@ class LapseKaart extends React.PureComponent {
      */
 
     renderer(self) {
+        if (!self || !self.docData.lapse_nimi) {
+            // не загружены данные
+            return (<div style={styles.doc}>
+                <Loading label={'Laadimine...'}/>
+            </div>);
+        }
+
         let isEditMode = self.state.edited;
 
         if ((!Number(self.docData.id) || !self.docData.parentid) && this.state.lapsId) {

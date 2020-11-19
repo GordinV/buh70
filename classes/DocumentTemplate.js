@@ -63,8 +63,15 @@ class Document {
             throw new Error('No model configuration found');
         }
         const objectTemplate = Object.assign({}, _config.returnData);
-        const data =  await db.executeQueries(_config.select, [this.documentId, this.userId], objectTemplate);
-        return data;
+
+        // фильтр на initial load (при загрузке документа)
+        let initialLoad = _config.select.filter(row => {
+            if (!row.not_initial_load) {
+                return row;
+            }
+        });
+
+        return  await db.executeQueries(initialLoad, [this.documentId, this.userId], objectTemplate);
     }
 
     /**
@@ -137,7 +144,7 @@ class Document {
     /**
      * грузит гриды
      */
-    async selectLibs(sqlWhere, sqlLimit) {
+    async selectLibs(sqlWhere, sqlLimit, kpv) {
         let sql = this.config.selectAsLibs,
             params = [this.rekvId],
             libGridConfig = this.config.libGridConfig ? this.config.libGridConfig.grid : [],
@@ -146,6 +153,11 @@ class Document {
         if (!sql) {
             return [];
         }
+        if (sqlWhere && kpv) {
+            // огрничение на справочник
+            sqlWhere = ` ${sqlWhere} and (valid is null or valid >= '${kpv}'::date) `
+        }
+
         return Object.assign({},
             await db.queryDb(sql, params, '', sqlWhere, sqlLimit),
             {gridConfig: libGridConfig, searchFields: libSearchFields}

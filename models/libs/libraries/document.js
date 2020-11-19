@@ -1,11 +1,21 @@
 module.exports = {
-    selectAsLibs: "select id, trim(kood) as kood, trim(nimetus) as name, $1 as rekvid from libs.library where library = 'DOK' order by kood",
+    selectAsLibs: `SELECT id,
+                          trim(kood)                           AS kood,
+                          trim(nimetus)                        AS name,
+                          $1                                   AS rekvid,
+                          (properties::JSON ->> 'valid')::DATE AS valid
+                   FROM libs.library
+                   WHERE library = 'DOK'
+                     AND kood IN ('ARV', 'AVANS', 'DEKL', 'PV_OPER', 'SARV', 'SMK', 'SORDER', 'VARV', 'VMK', 'VORDER')
+                   ORDER BY kood`,
     select: [{
-        sql: `select l.*, $2::integer as userid, 'DOCUMENT' as doc_type_id,
-                (l.properties::jsonb ->>'type')::text as type,
-                (l.properties::jsonb ->>'module')::text as module
-                from libs.library l 
-                where l.id = $1`,
+        sql: `SELECT l.*,
+                     $2::INTEGER                              AS userid,
+                     'DOCUMENT'                               AS doc_type_id,
+                     (l.properties::JSONB ->> 'type')::TEXT   AS type,
+                     (l.properties::JSONB ->> 'module')::TEXT AS module
+              FROM libs.library l
+              WHERE l.id = $1`,
         sqlAsNew: `select  $1::integer as id , $2::integer as userid, 'DOCUMENT' as doc_type_id,
             null::text as  kood,
             null::integer as rekvid,
@@ -24,22 +34,23 @@ module.exports = {
         row: {}
     },
     requiredFields: [
-        {name: 'kood',type: 'C'},
-        {name: 'nimetus',type: 'C'},
-        {name: 'library',type: 'C'}
+        {name: 'kood', type: 'C'},
+        {name: 'nimetus', type: 'C'},
+        {name: 'library', type: 'C'}
     ],
     saveDoc: `select libs.sp_salvesta_library($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from libs.sp_delete_library($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM libs.sp_delete_library($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
             {id: "kood", name: "Kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"}
         ],
-        sqlString: `select id, kood, nimetus,  $2::integer as userId
-            from libs.library l
-            where l.library = 'DOK'
-            and (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT id, kood, nimetus, $2::INTEGER AS userId
+                    FROM libs.library l
+                    WHERE l.library = 'DOK'
+                      AND (l.rekvId = $1 OR l.rekvid IS NULL)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curDok'
     },

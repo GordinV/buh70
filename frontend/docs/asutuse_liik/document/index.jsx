@@ -4,6 +4,7 @@ const PropTypes = require('prop-types');
 
 const DocumentTemplate = require('./../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
+    InputDate = require('../../../components/input-date/input-date.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     styles = require('./styles');
 
@@ -64,6 +65,16 @@ class AsutuseLiik extends React.PureComponent {
                                    ref="input-nimetus"
                                    readOnly={!self.state.edited}
                                    value={self.docData.nimetus || ''}
+                                   onChange={self.handleInputChange}/>
+                    </div>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
+                        <InputDate title='Kehtiv kuni:'
+                                   name='valid'
+                                   value={self.docData.valid}
+                                   ref='input-valid'
+                                   readOnly={!self.state.edited}
                                    onChange={self.handleInputChange}/>
                     </div>
                 </div>

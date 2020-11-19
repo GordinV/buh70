@@ -6,6 +6,7 @@ module.exports = {
                      (properties ->> 'pank')::VARCHAR(20)            AS pank,
                      (properties ->> 'kmkr')::VARCHAR(20)            AS kmkr,
                      (properties ->> 'kehtivus')::DATE               AS kehtivus,
+                     (properties ->> 'kehtivus')::DATE               AS valid, 
                      (properties -> 'asutus_aa' -> 0 ->> 'aa')::TEXT AS aa
               FROM libs.asutus
               WHERE id = $1`,
@@ -52,7 +53,8 @@ module.exports = {
             query: null,
             multiple: false,
             alias: 'validate_asutus',
-            data: []
+            data: [],
+            not_initial_load: true
 
         },
         {
@@ -61,7 +63,9 @@ module.exports = {
             query: null,
             multiple: false,
             alias: 'rekl_number',
-            data: []
+            data: [],
+            not_initial_load: true
+
         },
         {
             sql: `SELECT *
@@ -74,12 +78,13 @@ module.exports = {
             query: null,
             multiple: true,
             alias: 'validate_lib_usage',
-            data: []
+            data: [],
+            not_initial_load: true
 
         }
 
     ],
-    selectAsLibs: `SELECT *
+    selectAsLibs: `SELECT *, kehtivus as valid
                    FROM com_asutused a
                    WHERE libs.check_asutus(a.id::INTEGER, $1::INTEGER)
                      AND (kehtivus IS NULL OR kehtivus >= date())
@@ -109,9 +114,10 @@ module.exports = {
             {id: "regkood", name: "Reg.kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "35%"},
             {id: "omvorm", name: "Om.vorm", width: "20%"},
-            {id: "aadress", name: "Aadress", width: "25%"}
+            {id: "aadress", name: "Aadress", width: "25%"},
+            {id: "valid", name: "Kehtivus", width: "10%", type: 'date', show: false},
         ],
-        sqlString: `SELECT a.*, $2::INTEGER AS userId
+        sqlString: `SELECT a.*, $2::INTEGER AS userId, a.kehtivus as valid
                     FROM cur_asutused a
                     WHERE libs.check_asutus(a.id::INTEGER, $1::INTEGER)`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',

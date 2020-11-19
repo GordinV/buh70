@@ -1,4 +1,5 @@
 module.exports = {
+
     selectAsLibs: `SELECT *
                    FROM (
                             SELECT 0                AS id,
@@ -40,7 +41,18 @@ module.exports = {
         query: null,
         multiple: false,
         alias: 'row',
-        data: []
+        data: [],
+        converter: function (data) {
+//преобразует дату к формату yyyy-mm-dd
+            data.map(row => {
+                if (row.valid) {
+                    console.log('valid', row.valid);
+                    row.valid = row.valid.toISOString().slice(0, 10);
+                }
+                return row;
+            });
+            return data;
+        }
     },
         {
             sql: `SELECT $1 AS rekv_id, *
@@ -52,7 +64,8 @@ module.exports = {
             query: null,
             multiple: true,
             alias: 'validate_lib_usage',
-            data: []
+            data: [],
+            not_initial_load: true
         }
 
     ],
@@ -73,7 +86,9 @@ module.exports = {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
             {id: "kood", name: "Kood", width: "25%"},
-            {id: "nimetus", name: "Nimetus", width: "35%"}
+            {id: "nimetus", name: "Nimetus", width: "35%"},
+            {id: "valid", name: "Kehtivus", width: "10%", type: 'date', show: false},
+
         ],
         sqlString: `SELECT l.*, $2::INTEGER AS userId
                     FROM cur_tunnus l
@@ -84,12 +99,33 @@ module.exports = {
     print: [
         {
             view: 'tunnus',
-            params: 'id'
+            params: 'id',
+            converter: function (data) {
+//преобразует дату к формату yyyy-mm-dd
+                data.map(row => {
+                    if (row.valid) {
+                        row.valid = row.valid.toISOString().slice(0, 10);
+                    }
+                    return row;
+                });
+                return data;
+            }
         },
         {
             view: 'tunnus',
-            params: 'sqlWhere'
+            params: 'sqlWhere',
+            converter: function (data) {
+//преобразует дату к формату yyyy-mm-dd
+                data.map(row => {
+                    if (row.valid) {
+                        row.valid = row.valid.toISOString().slice(0, 10);
+                    }
+                    return row;
+                });
+                return data;
+            }
         },
     ]
 
 };
+

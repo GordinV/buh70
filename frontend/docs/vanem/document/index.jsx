@@ -12,11 +12,12 @@ const
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
     CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
+    Loading = require('./../../../components/loading/index.jsx'),
 
     styles = require('./styles');
 
 const LIBRARIES = [];
-const DOCS = ['ARV','SMK'];
+const DOCS = ['ARV', 'SMK', 'VMK'];
 const DocContext = require('./../../../doc-context.js');
 
 class Vanem extends React.PureComponent {
@@ -71,10 +72,11 @@ class Vanem extends React.PureComponent {
      */
 
     renderer(self) {
-
-        if (!self || !self.docData.parentid || self.docData.vanem_nimi == 'undefined') {
+        if (!self || self.docData.vanem_nimi == 'undefined') {
             // не загружены данные
-            return null;
+            return (<div style={styles.doc}>
+                <Loading label={'Laadimine...'}/>
+            </div>);
         }
 
         let isEditMode = self.state.edited,

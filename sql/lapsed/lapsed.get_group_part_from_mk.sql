@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION lapsed.get_group_part_from_mk(l_mk_id INTEGER, l_kpv 
     RETURNS TABLE (
         mk_id   INTEGER,
         yksus   TEXT,
-        summa   NUMERIC(14, 2),
+        summa   NUMERIC(14, 4),
         laps_id INTEGER
     ) AS
 $BODY$
@@ -57,7 +57,7 @@ WITH qryMk AS (
     SELECT
      qryMk.id AS mk_id,
      coalesce(qryMk.yksus, coalesce(qryViimaneTeenus.yksus, qryEsimineTeenus.yksus)) ::TEXT AS yksus,
-     (coalesce((qryMk.hind / qryMk.total_amount), 1) * qryMk.makse_summa)::NUMERIC(14, 2) AS summa,
+     (coalesce((qryMk.hind / qryMk.total_amount), 1) * qryMk.makse_summa)::NUMERIC(14, 4) AS summa,
      qryMk.laps_id
     FROM
      qryMK

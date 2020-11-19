@@ -41,6 +41,7 @@ DECLARE
     new_history   JSONB;
     new_rights    JSONB;
     l_error       TEXT;
+
 BEGIN
 
     IF (doc_id IS NULL)
@@ -62,19 +63,28 @@ BEGIN
 
     -- контроль классификаторов
     json_object = to_jsonb(row)
-                  FROM (SELECT doc_tunnus AS tunnus) row;
+                  FROM (SELECT doc_tunnus    AS tunnus,
+                               doc_konto     AS konto,
+                               doc_projekt   AS projekt,
+                               doc_tegev     AS tegev,
+                               doc_allikas   AS allikas,
+                               doc_rahavoog  AS rahavoog,
+                               doc_artikkel  AS artikkel,
+                               doc_grupp     AS grupp,
+                               doc_oppe_tyyp AS oppe_tyyp
+                       ) row;
 
-    json_object = fnc_check_libs(json_object::JSON, current_date, user_rekvid);
+    json_object = fnc_check_libs(json_object::JSON, case when doc_valid is null then current_date else doc_valid end, user_rekvid);
 
     IF (jsonb_array_length(json_object) > 0)
     THEN
-        l_error = array_to_string(array_agg(value ->> 'error_message'),',')
+        l_error = array_to_string(array_agg(value ->> 'error_message'), ',')
                   FROM (
                            SELECT *
                            FROM jsonb_array_elements(json_object)
                        ) qry;
 
-        RAISE EXCEPTION 'Tekkis viga, %',l_error;
+        RAISE EXCEPTION '%',l_error;
     END IF;
 
 
@@ -137,13 +147,7 @@ BEGIN
             INTO nom_id;
     END IF;
 
-    RETURN nom_id;
-
-EXCEPTION
-    WHEN OTHERS
-        THEN
-            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-            RETURN 0;
+    RETURN coalesce(nom_id, 0);
 
 END;
 $BODY$

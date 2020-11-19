@@ -29,12 +29,12 @@ SELECT coalesce(period, kpv_start)::DATE AS period,
        maksja_isikukood::TEXT,
        yksus::TEXT,
        viitenumber::TEXT,
-       sum(coalesce(alg_saldo,0))::NUMERIC(14, 2),
-       sum(coalesce(arvestatud,0))::NUMERIC(14, 2),
-       sum(coalesce(soodustus,0))::NUMERIC(14, 2),
-       sum(coalesce(laekumised,0))::NUMERIC(14, 2),
-       sum(coalesce(tagastused,0))::NUMERIC(14, 2),
-       sum(coalesce(jaak,0))::NUMERIC(14, 2),
+       sum(coalesce(alg_saldo, 0))::NUMERIC(14, 2),
+       sum(coalesce(arvestatud, 0))::NUMERIC(14, 2),
+       sum(coalesce(soodustus, 0))::NUMERIC(14, 2),
+       sum(coalesce(laekumised, 0))::NUMERIC(14, 2),
+       sum(coalesce(tagastused, 0))::NUMERIC(14, 2),
+       sum(coalesce(jaak, 0))::NUMERIC(14, 2),
        rekvid
 FROM (
          WITH kulastavus AS (
@@ -100,7 +100,7 @@ FROM (
                          i.regkood::TEXT                                  AS maksja_isikukood,
                          coalesce(a1.yksus, '')::TEXT                     AS yksus,
                          lapsed.get_viitenumber(d.rekvid, l.id)::TEXT     AS viitenumber,
-                         coalesce(a1.summa, 0)::NUMERIC(14, 2)            AS arvestatud,
+                         a1.summa ::NUMERIC(14, 2)                        AS arvestatud,
                          coalesce(a1.soodustus, 0)::NUMERIC(14, 2)        AS soodustus,
                          0::NUMERIC(14, 2)                                AS laekumised,
                          coalesce(laekumised.tagastus, 0)::NUMERIC(14, 2) AS tagastused,
@@ -113,7 +113,11 @@ FROM (
                            INNER JOIN (SELECT parentid                    AS arv_id,
                                               sum(soodus)                 AS soodustus,
                                               (a1.properties ->> 'yksus') AS yksus,
-                                              sum(summa)                  AS summa
+                                              sum((CASE
+                                                       WHEN a1.summa > 0
+                                                           THEN coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0)
+                                                       ELSE 0 END::NUMERIC + a1.hind) *
+                                                  a1.kogus)               AS summa
                                        FROM docs.arv1 a1
                                        GROUP BY parentid, a1.properties ->> 'yksus') a1
                                       ON a1.arv_id = a.id
@@ -170,8 +174,8 @@ FROM (
                           ,
                        lapsed.get_group_part_from_mk(D.id, kpv_end) AS ymk
                   WHERE D.status <> 3
-                  and d.rekvid IN (SELECT rekv_id
-                                   FROM get_asutuse_struktuur(l_rekvid))
+                    AND d.rekvid IN (SELECT rekv_id
+                                     FROM get_asutuse_struktuur(l_rekvid))
                   UNION ALL
                   -- распределенные авансовые платежи
                   SELECT kpv_start                                  AS period,
@@ -195,7 +199,7 @@ FROM (
                            INNER JOIN lapsed.laps laps ON laps.id = l.parentid
                   WHERE at.kpv >= kpv_start::DATE
                     AND at.kpv <= kpv_end::DATE
-                    and at.rekvid IN (SELECT rekv_id
+                    AND at.rekvid IN (SELECT rekv_id
                                       FROM get_asutuse_struktuur(l_rekvid))
                     AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
               )
@@ -213,7 +217,7 @@ FROM (
                 (soodustus)               AS soodustus,
                 (laekumised)              AS laekumised,
                 (tagastused)              AS tagastused,
-                (coalesce(alg_saldo, 0) + coalesce(arvestatud, 0) - coalesce(laekumised, 0) +
+                (coalesce(alg_saldo, 0) + coalesce(arvestatud, 0) - coalesce(laekumised, 0) - coalesce(soodustus, 0) +
                  coalesce(tagastused, 0)) AS jaak,
                 rekvid
          FROM (
@@ -315,8 +319,8 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 /*
 select * from (
 SELECT *
-FROM lapsed.saldo_ja_kaive(69, '2020-10-01', '2020-10-30')
+FROM lapsed.saldo_ja_kaive(85, '2020-09-01', '2020-09-30')
 ) qry
-where  viitenumber   IN ('0690069338', '0690071342','0690066360')
+where  viitenumber   IN ('0850136823')
 
 */

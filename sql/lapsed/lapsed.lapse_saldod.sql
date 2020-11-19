@@ -28,14 +28,14 @@ SELECT sum(jaak)::NUMERIC(14, 2)       AS jaak,
 
 FROM (
 -- ettemaksud или не распределенные авансовые платежи
-         SELECT -1 * ymk.summa::NUMERIC(14, 2) AS jaak, -- summa не связанных со счетами платежек (нач. сальдо или предоплата)
+         SELECT -1 * ymk.summa::NUMERIC(14, 4) AS jaak, -- summa не связанных со счетами платежек (нач. сальдо или предоплата)
                 l.parentid                     AS laps_id,
                 ymk.yksus                      AS yksus,
                 d.rekvid                       AS rekv_id,
                 d.id                           AS docs_id,
                 0                              AS laekumised,
                 0                              AS arv_tasud,
-                ymk.summa::NUMERIC(14, 2)      AS ettemaksud,
+                ymk.summa::NUMERIC(14, 4)      AS ettemaksud,
                 0                              AS tagastused
          FROM docs.doc d
                   INNER JOIN (SELECT mk.parentid, opt
@@ -116,7 +116,7 @@ FROM (
 
          UNION ALL
          --jaak, arved, сумма счетов начисленных до периода
-         SELECT a1.summa::NUMERIC(14, 2)    AS jaak,
+         SELECT a1.summa::NUMERIC(14, 4)    AS jaak,
                 l.parentid                  AS laps_id,
                 (a1.properties ->> 'yksus') AS yksus,
                 a.rekvid                    AS rekv_id,

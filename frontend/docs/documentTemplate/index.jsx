@@ -7,15 +7,15 @@ const DocContext = require('./../../doc-context.js');
 const Menu = require('./../../components/menu-toolbar/menu-toolbar.jsx');
 const DocRights = require('./../../../config/doc_rights');
 const checkRights = require('./../../../libs/checkRights');
-
-
-const URL = 'newApi/document';
+let LIBS_URL = require('./../../../config/constants').LIBS.POST_LOAD_LIBS_URL;
+const URL = require('./../../../config/constants').DOCS.POST_LOAD_DOCS_URL;
 
 const
     Form = require('../../components/form/form.jsx'),
     ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx'),
     DocToolBar = require('./../../components/doc-toolbar/doc-toolbar.jsx'),
     ModalPage = require('./../../components/modalpage/modalPage.jsx'),
+    ModalReport = require('./../../components/modalpage/modalpage-report/index.jsx'),
     styles = require('./document-styles');
 
 
@@ -40,7 +40,9 @@ class DocumentTemplate extends React.Component {
             libParams: {},
             logs: [],
             isDisableSave: props.isDisableSave,
-            docData: {}
+            docData: {},
+            isReport: false,
+            txtReport: []
         };
 
         this.docData = Object.keys(props.initData).length ? props.initData : {id: props.docId};
@@ -56,7 +58,7 @@ class DocumentTemplate extends React.Component {
             'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs', 'hasLibInCache',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
             'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick', 'btnLogsClick',
-            'handleGridCellClick','setDocumentName');
+            'handleGridCellClick', 'setDocumentName', 'modalReportePageBtnClick');
 
 
         this.gridRowData = {}; //будем хранить строку грида
@@ -92,8 +94,6 @@ class DocumentTemplate extends React.Component {
 
         // задать имя реристра на страницу
         this.setDocumentName();
-
-
     }
 
 
@@ -101,7 +101,11 @@ class DocumentTemplate extends React.Component {
         let isInEditMode = this.state.edited;
 
         if (this.props.libs.length && !this.state.loadedLibs) {
-            this.loadLibs();
+            let kpv = new Date().toISOString().slice(0, 10);
+            if (this.docData && this.docData.kpv) {
+                kpv = this.docData.kpv;
+            }
+            this.loadLibs(null, kpv);
         }
 
         const warningStyle = styles[this.state.warningType] ? styles[this.state.warningType] : null;
@@ -153,8 +157,13 @@ class DocumentTemplate extends React.Component {
                         <img ref="image" src={styles.modalValidate.iconImage}/>
                         <span> {dialogString} </span>
                     </div>
-
                 </ModalPage>
+                <ModalReport
+                    show={this.state.isReport}
+                    report={this.state.txtReport}
+                    modalPageBtnClick={this.modalReportePageBtnClick}>
+                </ModalReport>
+
             </div>
         );
     }
@@ -254,6 +263,7 @@ class DocumentTemplate extends React.Component {
      * Обработчик для кнопки сохранить
      */
     btnSaveClick() {
+
         this.fetchData('Put').then((response) => {
             if (!response) return false;
             //call to save
@@ -424,7 +434,7 @@ class DocumentTemplate extends React.Component {
     }
 
     /**
-     * вызовет метод валидации и вернет результат проверки
+     * вызовет метод валидации данных справочника (кода) и вернет результат проверки
      * @returns {string}
      */
     validation() {
@@ -441,7 +451,7 @@ class DocumentTemplate extends React.Component {
                 if (field.name && field.name in this.docData) {
                     let value = this.docData[field.name];
 
-                    if (!value && field.type !=='B') {
+                    if (!value && field.type !== 'B') {
                         notRequiredFields.push(field.name);
                     } else {
                         if (field.serverValidation) {
@@ -528,7 +538,7 @@ class DocumentTemplate extends React.Component {
             }
 
             if (expressionFields.length > 0) {
-                warning = warning ? warning: '' + ' vale andmed (' + expressionFields.join(', ') + ') ';
+                warning = warning ? warning : '' + ' vale andmed (' + expressionFields.join(', ') + ') ';
             }
 
             this.setState({
@@ -664,10 +674,9 @@ class DocumentTemplate extends React.Component {
 
                                 // только доступные таски должны попасть в список
                                 this.bpm = response.data.data[0].bpm.filter(task => {
-                                            return checkRights(userRoles, docRights, task.task);
+                                    return checkRights(userRoles, docRights, task.task);
                                 });
                             }
-
 
 
                             //should return data and called for reload
@@ -677,10 +686,14 @@ class DocumentTemplate extends React.Component {
 
                         if (response.data.action && response.data.action === 'save' && response.data.result.error_code) {
                             // error in save
+
                             this.setState({
-                                warning: `Tekkis viga ${response.data.result.error_message}`,
-                                warningType: 'error'
+                                warning: `Tekkis viga: salvestamine ebaõnnestus`,
+                                warningType: 'error',
+                                txtReport: response.data,
+                                isReport: !!(response.data.data && response.data.data.length)
                             });
+
                             return rejected();
 
                         }
@@ -710,28 +723,32 @@ class DocumentTemplate extends React.Component {
 
     /**
      * Обеспечит загрузку данных для библиотек
+     * libName - код справочника
+     * kpv - дата, по умолчанию сегодня
      */
-    loadLibs(libName) {
+    loadLibs(libName, kpv) {
         let libsCount = this.props.libs.length;
 
-        let postUrl = '/newApi/loadLibs';
 
         let libsToLoad = libName ? [libName] : Object.keys(this.libs);
 
         libsToLoad.forEach((lib) => {
             let hasSqlWhere = (lib in this.state.libParams);
 
+            new Date().toISOString().slice(0, 10); //ajutiselt
+
             let params = Object.assign({
                 module: this.props.module,
                 userId: DocContext.userData.id,
                 uuid: DocContext.userData.uuid,
             }, hasSqlWhere ? {
-                sql: this.state.libParams[lib]
+                sql: this.state.libParams[lib],
+                kpv: kpv ? kpv : new Date().toISOString().slice(0, 10)
             } : {});
 
             if (!!this.state.libParams[lib] || !this.hasLibInCache(lib)) {
 
-                fetchData.fetchDataPost(`${postUrl}/${lib}`, params)
+                fetchData.fetchDataPost(`${LIBS_URL}/${lib}`, params)
                     .then(response => {
                         if (response && 'data' in response) {
                             this.libs[lib] = response.data.result.result.data;
@@ -754,7 +771,14 @@ class DocumentTemplate extends React.Component {
                         console.error('loadLibs error', error);
                     });
             } else {
-                this.libs[lib] = DocContext.libs[lib];
+                this.libs[lib] = DocContext.libs[lib].filter(row => {
+                    let kpv = this.docData.valid ? this.docData.valid : new Date().toISOString().slice(0, 10);
+                    kpv = this.docData.kpv ? this.docData.kpv : kpv;
+                    // есди в справочнике есть дата и она не пустая
+                    if (!row.valid || new Date(kpv) <= new Date(row.valid)) {
+                        return row;
+                    }
+                });
             }
         });
     }
@@ -1044,6 +1068,14 @@ class DocumentTemplate extends React.Component {
         if (docType) {
             DocContext.pageName = docType.name;
         }
+    }
+
+    /**
+     * уберет окно с отчетом
+     */
+    modalReportePageBtnClick(event) {
+        let isReport = event && event == 'Ok' ? false : true;
+        this.setState({isReport: isReport})
     }
 
 

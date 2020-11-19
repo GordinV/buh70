@@ -22,7 +22,10 @@ module.exports = {
                      (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)                      AS rahavoog,
                      (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)                      AS artikkel,
                      coalesce((n.properties::JSONB ->> 'kas_inf3')::BOOLEAN, FALSE)         AS kas_inf3,
-                     coalesce((n.properties::JSONB ->> 'oppe_tyyp')::TEXT, 'Põhiõpe')::TEXT AS oppe_tyyp
+                     coalesce((n.properties::JSONB ->> 'oppe_tyyp')::TEXT, 'Põhiõpe')::TEXT AS oppe_tyyp,
+                     to_char((n.properties::JSONB ->> 'valid')::DATE,
+                             'YYYY-MM-DD')                                                  AS VALID
+
               FROM libs.nomenklatuur n
               WHERE n.id = $1`,
         sqlAsNew: `select  $1::integer as id , $2::integer as userid, 'NOMENCLATURE' as doc_type_id,
@@ -50,12 +53,30 @@ module.exports = {
             null::varchar(20) as rahavoog,
             null::varchar(20) as artikkel,
             luhi_nimi::text as luhi_nimi,
-            'Põhiõpe'::TEXT AS oppe_tyyp`,
+            'Põhiõpe'::TEXT AS oppe_tyyp,
+            null::date as valid`,
         query: null,
         multiple: false,
         alias: 'row',
         data: []
-    }],
+    },
+        {
+            sql: `SELECT *
+                  FROM jsonb_to_recordset(
+                               get_nom_kasutus($2::INTEGER, $3::date,
+                                               $1::INTEGER)
+                           ) AS x (error_message TEXT, error_code INTEGER)
+                  WHERE error_message IS NOT NULL
+            `, //$1 rekvid, $2 v_nom.kood
+            query: null,
+            multiple: true,
+            alias: 'validate_lib_usage',
+            data: [],
+            not_initial_load: true
+        }
+
+
+    ],
     selectAsLibs: `SELECT id,
                           kood,
                           trim(nimetus) || ' (' || (hind::NUMERIC(12, 2))::TEXT || ') ' || uhik::TEXT AS nimetus,
@@ -91,7 +112,8 @@ module.exports = {
             {id: "nimetus", name: "Nimetus", width: "40%"},
             {id: "hind", name: "Hind", width: "20%", type: "number"},
             {id: "uhik", name: "Mõttühik", width: "10%"},
-            {id: "dok", name: "Dokument", width: "20%"}
+            {id: "dok", name: "Dokument", width: "20%"},
+            {id: "valid", name: "Kehtivus", width: "10%", type: 'date', show: false},
         ],
         sqlString: `SELECT id,
                            coalesce(kood, '')::VARCHAR(20)     AS kood,
@@ -101,7 +123,8 @@ module.exports = {
                            (n.properties ->> 'konto')::TEXT    AS konto,
                            (n.properties ->> 'tunnus')::TEXT   AS tunnus,
                            n.hind::NUMERIC(12, 2),
-                           n.uhik
+                           n.uhik,
+                           (n.properties::JSON ->> 'valid')::DATE as valid
                     FROM libs.nomenklatuur n
                     WHERE (n.rekvId = $1 OR n.rekvid IS NULL)
                       AND n.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя

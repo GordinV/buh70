@@ -9,7 +9,7 @@ exports.post = async (req, res) => {
     const module = req.body.module || 'lapsed';
     let sqlWhere = _.has(req.body,'sql') ? req.body.sql: null;
     let sqlLimit = _.has(req.body,'limit') ? req.body.limit: null;
-
+    let kpv = _.has(req.body,'kpv') ? req.body.kpv: null;
 
     if (!user) {
         const err = new HttpError(401, 'No user');
@@ -19,7 +19,7 @@ exports.post = async (req, res) => {
     const Doc = require('./../classes/DocumentTemplate');
     const Document = new Doc(documentType, null, user.userId, user.asutusId, module);
 
-    let data = await Document.selectLibs(sqlWhere, sqlLimit);
+    let data = await Document.selectLibs(sqlWhere, sqlLimit, kpv);
 
     let local_result = Object.assign({},{result: data});
 

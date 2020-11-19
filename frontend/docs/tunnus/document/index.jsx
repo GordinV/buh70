@@ -4,8 +4,11 @@ const PropTypes = require('prop-types');
 
 const DocumentTemplate = require('./../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
+    InputDate = require('../../../components/input-date/input-date.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
-    styles = require('./tunnus-styles');
+    Loading = require('./../../../components/loading/index.jsx');
+
+const styles = require('./tunnus-styles');
 
 /**
  * Класс реализует документ справочника признаков.
@@ -28,6 +31,7 @@ class Tunnus extends React.PureComponent {
                               docTypeId='TUNNUS'
                               module={this.props.module}
                               initData={this.props.initData}
+                              userData={this.props.userData}
                               renderer={this.renderer}
                               focusElement={'input-kood'}
                               history={this.props.history}
@@ -43,27 +47,40 @@ class Tunnus extends React.PureComponent {
      */
     renderer(self) {
         if (!self.docData) {
-            return null;
+            // не загружены данные
+            return (<div style={styles.doc}>
+                <Loading label={'Laadimine...'}/>
+            </div>);
         }
+
         return (
             <div style={styles.doc}>
-                <div style={styles.docRow}>
-                    <InputText title="Kood "
-                               name='kood'
-                               ref="input-kood"
-                               readOnly={!self.state.edited}
-                               value={self.docData.kood || ''}
-                               onChange={self.handleInputChange}/>
+                <div style={styles.docColumn}>
+                    <div style={styles.docRow}>
+                        <InputText title="Kood "
+                                   name='kood'
+                                   ref="input-kood"
+                                   readOnly={!self.state.edited}
+                                   value={self.docData.kood || ''}
+                                   onChange={self.handleInputChange}/>
+                    </div>
+                    <div style={styles.docRow}>
+                        <InputText title="Nimetus "
+                                   name='nimetus'
+                                   ref="input-nimetus"
+                                   readOnly={!self.state.edited}
+                                   value={self.docData.nimetus || ''}
+                                   onChange={self.handleInputChange}/>
+                    </div>
+                    <div style={styles.docRow}>
+                        <InputDate title='Kehtiv kuni:'
+                                   name='valid'
+                                   value={self.docData.valid}
+                                   ref='input-valid'
+                                   readOnly={!self.state.edited}
+                                   onChange={self.handleInputChange}/>
+                    </div>
                 </div>
-                <div style={styles.docRow}>
-                    <InputText title="Nimetus "
-                               name='nimetus'
-                               ref="input-nimetus"
-                               readOnly={!self.state.edited}
-                               value={self.docData.nimetus || ''}
-                               onChange={self.handleInputChange}/>
-                </div>
-
                 <div style={styles.docRow}>
                     <TextArea title="Muud"
                               name='muud'

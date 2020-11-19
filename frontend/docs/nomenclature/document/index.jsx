@@ -5,38 +5,15 @@ const PropTypes = require('prop-types');
 const
     DocumentTemplate = require('./../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
+    InputDate = require('../../../components/input-date/input-date.jsx'),
     Select = require('../../../components/select/select.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     InputNumber = require('../../../components/input-number/input-number.jsx'),
     CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
-    styles = require('./nomenclature-styles'),
-    LIBRARIES = [
-        {id: 'kontod', filter: ``},
-        {id: 'tunnus', filter: ``},
-        {id: 'project', filter: ``},
-        {id: 'document', filter: `where kood::TEXT = 'ARV'`},
-        {id: 'artikkel', filter: ``},
-        {id: 'allikas', filter: ``},
-        {id: 'tegev', filter: ``},
-        {id: 'koolituse_liik', filter: ``},
-    ];
+    styles = require('./nomenclature-styles');
 
-const TAXIES = [
-    {id: 1, kood: null, name: '-%'},
-    {id: 2, kood: '0', name: '0%'},
-    {id: 3, kood: '5', name: '5%'},
-    {id: 4, kood: '10', name: '10%'},
-    {id: 5, kood: '18', name: '18%'},
-    {id: 6, kood: '20', name: '20%'}
-];
+const {LIBRARIES, TAXIES, UHIK} = require('./../../../../config/constants').NOMENCLATURE;
 
-const UHIK = [
-    {id: 1, kood: 'muud', name: 'Muud'},
-    {id: 2, kood: 'tk', name: 'Tükk'},
-    {id: 3, kood: 'päev', name: 'Päev'},
-    {id: 4, kood: 'kuu', name: 'Kuu'},
-    {id: 5, kood: 'aasta', name: 'Aasta'}
-];
 
 class Nomenclature extends React.PureComponent {
     constructor(props) {
@@ -223,6 +200,18 @@ class Nomenclature extends React.PureComponent {
                             />
                         </div>
                     </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <InputDate title='Kehtiv kuni:'
+                                       name='valid'
+                                       value={self.docData.valid}
+                                       ref='input-valid'
+                                       readOnly={!isEditeMode}
+                                       onChange={self.handleInputChange}/>
+
+                        </div>
+                    </div>
+
                     <div style={styles.docRow}>
                         <TextArea title="Muud"
                                   name='muud'
