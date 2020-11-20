@@ -13,7 +13,7 @@ const
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
     CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     Loading = require('./../../../components/loading/index.jsx'),
-
+    createEmptyFilterData = require('./../../../../libs/createEmptyFilterData'),
     styles = require('./styles');
 
 const LIBRARIES = [];
