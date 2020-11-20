@@ -7,42 +7,48 @@ CREATE OR REPLACE FUNCTION ou.sp_salvesta_rekv(data JSON,
 $BODY$
 
 DECLARE
-    rekv_id      INTEGER;
-    userName     TEXT;
-    doc_id       INTEGER = data ->> 'id';
-    doc_data     JSON    = data ->> 'data';
-    doc_parentid INTEGER = doc_data ->> 'parentid';
-    doc_regkood  TEXT    = doc_data ->> 'regkood';
-    doc_nimetus  TEXT    = doc_data ->> 'nimetus';
-    doc_kbmkood  TEXT    = doc_data ->> 'kbmkood';
-    doc_aadress  TEXT    = doc_data ->> 'aadress';
-    doc_haldus   TEXT    = doc_data ->> 'haldus';
-    doc_tel      TEXT    = doc_data ->> 'tel';
-    doc_faks     TEXT    = doc_data ->> 'faks';
-    doc_email    TEXT    = doc_data ->> 'email';
-    doc_juht     TEXT    = doc_data ->> 'juht';
-    doc_raama    TEXT    = doc_data ->> 'raama';
-    doc_muud     TEXT    = doc_data ->> 'muud';
-    doc_ftp      TEXT    = doc_data ->> 'ftp';
-    doc_login    TEXT    = doc_data ->> 'login';
-    doc_parool   TEXT    = doc_data ->> 'parool';
-    doc_tahtpaev INTEGER = doc_data ->> 'tahtpaev';
-    doc_earved   TEXT    = doc_data ->> 'earved';
-    doc_liik     TEXT    = doc_data ->> 'liik';
+    rekv_id                INTEGER;
+    userName               TEXT;
+    doc_id                 INTEGER = data ->> 'id';
+    doc_data               JSON    = data ->> 'data';
+    doc_parentid           INTEGER = doc_data ->> 'parentid';
+    doc_regkood            TEXT    = doc_data ->> 'regkood';
+    doc_nimetus            TEXT    = doc_data ->> 'nimetus';
+    doc_kbmkood            TEXT    = doc_data ->> 'kbmkood';
+    doc_aadress            TEXT    = doc_data ->> 'aadress';
+    doc_haldus             TEXT    = doc_data ->> 'haldus';
+    doc_tel                TEXT    = doc_data ->> 'tel';
+    doc_faks               TEXT    = doc_data ->> 'faks';
+    doc_email              TEXT    = doc_data ->> 'email';
+    doc_juht               TEXT    = doc_data ->> 'juht';
+    doc_raama              TEXT    = doc_data ->> 'raama';
+    doc_muud               TEXT    = doc_data ->> 'muud';
+    doc_ftp                TEXT    = doc_data ->> 'ftp';
+    doc_login              TEXT    = doc_data ->> 'login';
+    doc_parool             TEXT    = doc_data ->> 'parool';
+    doc_tahtpaev           INTEGER = doc_data ->> 'tahtpaev';
+    doc_earved             TEXT    = doc_data ->> 'earved';
+    doc_liik               TEXT    = doc_data ->> 'liik';
+    doc_earve_regkood      TEXT    = doc_data ->> 'earve_regkood'; -- рег.код учреждения для эл. счетов
+    doc_earve_asutuse_nimi TEXT    = doc_data ->> 'earve_asutuse_nimi'; -- наименование учреждения для эл. счетов
+    doc_seb                TEXT    = doc_data ->> 'seb'; -- имя пользователя себ для эл. счетов
+    doc_seb_earve          TEXT    = doc_data ->> 'seb_earve'; -- расч. счет для отправки эл. счетов в банк
+    doc_swed               TEXT    = doc_data ->> 'swed'; -- имя пользователя свед для эл. счетов
+    doc_swed_earve         TEXT    = doc_data ->> 'swed_earve'; -- расч. счет для отправки эл. счетов в банк
 
-    doc_details  JSON    = doc_data ->> 'gridData';
-    detail_id    INTEGER;
-    json_object  JSONB;
-    json_arved   JSONB;
-    json_record  RECORD;
-    ids          INTEGER[];
+    doc_details            JSON    = doc_data ->> 'gridData';
+    detail_id              INTEGER;
+    json_object            JSONB;
+    json_arved             JSONB;
+    json_record            RECORD;
+    ids                    INTEGER[];
 
-    new_history  JSON;
-    aa_history   JSON;
-    user_json    JSON;
-    v_user       RECORD;
-    new_user_id  INTEGER;
-    is_import      BOOLEAN = data ->> 'import';
+    new_history            JSON;
+    aa_history             JSON;
+    user_json              JSON;
+    v_user                 RECORD;
+    new_user_id            INTEGER;
+    is_import              BOOLEAN = data ->> 'import';
 
 BEGIN
 
@@ -51,7 +57,7 @@ BEGIN
     WHERE u.rekvid = user_rekvid
       AND u.id = user_id;
 
-    IF  is_import IS NULL AND userName IS NULL
+    IF is_import IS NULL AND userName IS NULL
     THEN
         RAISE EXCEPTION 'User not found %', user;
         RETURN 0;
@@ -72,9 +78,16 @@ BEGIN
                   FROM (SELECT doc_tahtpaev AS tahtpaev) row);
 
     json_object = json_object || (SELECT to_jsonb(row)
-                                  FROM (SELECT json_arved :: JSONB AS arved,
-                                               doc_earved          AS earved,
-                                               doc_liik            AS liik) row);
+                                  FROM (SELECT json_arved :: JSONB    AS arved,
+                                               doc_earved             AS earved,
+                                               doc_liik               AS liik,
+                                               doc_earve_regkood      AS earve_regkood,
+                                               doc_earve_asutuse_nimi AS earve_asutuse_nimi,
+                                               doc_seb                AS seb,
+                                               doc_seb_earve          AS seb_earve,
+                                               doc_swed               AS swed,
+                                               doc_swed_earve         AS swed_earve
+                                       ) row);
 
 
     IF (doc_id IS NULL)
@@ -116,9 +129,9 @@ BEGIN
         WHERE id = user_id;
 
         SELECT row_to_json(row) INTO user_json
-        FROM (SELECT 0      AS id,
-                     is_import as import,
-                     v_user AS data) row;
+        FROM (SELECT 0         AS id,
+                     is_import AS import,
+                     v_user    AS data) row;
 
 /*        new_user_id = ou.sp_salvesta_userid(user_json, user_id, rekv_id);
 

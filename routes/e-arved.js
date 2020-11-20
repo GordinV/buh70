@@ -56,14 +56,15 @@ exports.swed = async (req, res) => {
         url: rekvData.row[0].earved_omniva, //'https://finance.omniva.eu/finance/erp/',
         secret: rekvData.row[0].earved, //'106549:elbevswsackajyafdoupavfwewuiafbeeiqatgvyqcqdqxairz',
         asutus: rekvData.row[0].muud ? rekvData.row[0].muud : rekvData.row[0].nimetus,
-        regkood: rekvData.row[0].regkood,
+        regkood: rekvData.row[0].earve_regkood ? rekvData.row[0].earve_regkood: rekvData.row[0].regkood ,
         swed: rekvData.row[0].swed ? rekvData.row[0].swed: '',
         seb: rekvData.row[0].seb ? rekvData.row[0].seb: '',
         user: user.userName,
         SenderId: 'NARVALVKO',
         ReceiverId: 'SWEDB',
         channelId: 'HABAEE2X',
-        type: 'swed'
+        type: 'swed',
+        payToAccount: rekvData.row[0].swed_earve
     };
 
     try {
@@ -93,7 +94,6 @@ exports.swed = async (req, res) => {
 exports.seb = async (req, res) => {
     let ids = req.params.id || ''; // параметр id документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
-console.log('req seb', req.params);
 
     const user = require('../middleware/userData')(req, uuid); // данные пользователя
 
@@ -134,14 +134,15 @@ console.log('req seb', req.params);
         url: rekvData.row[0].earved_omniva, //'https://finance.omniva.eu/finance/erp/',
         secret: rekvData.row[0].earved, //'106549:elbevswsackajyafdoupavfwewuiafbeeiqatgvyqcqdqxairz',
         asutus: rekvData.row[0].muud ? rekvData.row[0].muud : rekvData.row[0].nimetus,
-        regkood: rekvData.row[0].regkood,
+        regkood: rekvData.row[0].earve_regkood,
         swed: rekvData.row[0].swed ? rekvData.row[0].swed: '',
         seb: rekvData.row[0].seb ? rekvData.row[0].seb: '',
         user: user.userName,
         SenderId: 'NARVALVKO',
         ReceiverId: 'eyp',
         channelId: 'EEUHEE2X',
-        type: 'seb'
+        type: 'seb',
+        payToAccount: rekvData.row[0].seb_earve
     };
 
     try {

@@ -81,9 +81,7 @@ class Rekv extends React.PureComponent {
                         title="Nimetus: "
                         name='nimetus'
                         ref="input-nimetus"
-                        readOnly={
-                            !self.state.edited
-                        }
+                        readOnly={!self.state.edited}
                         value={self.docData.nimetus || ''}
                         onChange={self.handleInputChange}/>
                 </div>
@@ -144,13 +142,56 @@ class Rekv extends React.PureComponent {
                                onChange={self.handleInputChange}/>
                 </div>
                 <div style={styles.docRow}>
-
                     <InputText title="Omniva salasõna: "
                                name='earved'
                                ref="input-earved"
                                readOnly={!self.state.edited}
                                value={self.docData.earved || ''}
                                onChange={self.handleInputChange}/>
+                </div>
+                <div style={styles.docRow}>
+                    <InputText title="E-arve asutuse reg.kood: "
+                               name='earve_regkood'
+                               ref="input-earve_regkood"
+                               readOnly={!self.state.edited}
+                               value={self.docData.earve_regkood || ''}
+                               onChange={self.handleInputChange}/>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
+                        <InputText title="SEB e-arve aa: "
+                                   name='seb_earve'
+                                   ref="input-seb_earve"
+                                   readOnly={!self.state.edited}
+                                   value={self.docData.seb_earve || ''}
+                                   onChange={self.handleInputChange}/>
+                    </div>
+                    <div style={styles.docColumn}>
+                        <InputText title="SEB kasutaja tunnus: "
+                                   name='seb'
+                                   ref="input-seb_parool"
+                                   readOnly={!self.state.edited}
+                                   value={self.docData.seb || ''}
+                                   onChange={self.handleInputChange}/>
+                    </div>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
+                        <InputText title="SWED e-arve aa: "
+                                   name='swed_earve'
+                                   ref="input-swed-earve"
+                                   readOnly={!self.state.edited}
+                                   value={self.docData.swed_earve || ''}
+                                   onChange={self.handleInputChange}/>
+                    </div>
+                    <div style={styles.docColumn}>
+                        <InputText title="SWED kasutaja tunnus: "
+                                   name='swed'
+                                   ref="input-swed_parool"
+                                   readOnly={!self.state.edited}
+                                   value={self.docData.swed || ''}
+                                   onChange={self.handleInputChange}/>
+                    </div>
                 </div>
                 <div style={styles.docRow}>
                     <DataGrid source='details'
@@ -227,7 +268,7 @@ class Rekv extends React.PureComponent {
                     <div style={styles.docRow}>
                         <Select title="Tüüp: "
                                 name='kassapank'
-                                data={[{id:0, nimetus: 'Kassa'},{id:1, nimetus: 'Pank'}, {id:2, nimetus:'TP'}]}
+                                data={[{id: 0, nimetus: 'Kassa'}, {id: 1, nimetus: 'Pank'}, {id: 2, nimetus: 'TP'}]}
                                 value={row.kassapank || ''}
                                 ref='kassapank'
                                 collId="id"

@@ -95,6 +95,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
 
             return {
                 '@invoiceId': arve.number,
+                '@serviceId': arve.viitenr,
                 '@regNumber': arve.regkood.trim(),
                 '@channelId': asutusConfig.type ? asutusConfig.channelId : null,
                 '@channelAddress': asutusConfig.type ? arve.iban : null,
@@ -119,8 +120,8 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                             }
                         },
                         AccountInfo: {
-                            AccountNumber: arve.aa,
-                            IBAN: arve.aa,
+                            AccountNumber: asutusConfig.payToAccount,
+                            IBAN: asutusConfig.payToAccount,
                             BIC: asutusConfig.channelId
                         }
 
@@ -183,7 +184,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     PaymentTotalSum: Number(arve.tasumisele).toFixed(2),
                     PayerName: arve.asutus,
                     PaymentId: arve.number,
-                    PayToAccount: arve.aa,
+                    PayToAccount: asutusConfig.payToAccount,
                     PayToName: asutusConfig.asutus,
                     PayToBIC: asutusConfig.channelId
                 }
