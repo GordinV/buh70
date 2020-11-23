@@ -34,10 +34,27 @@ const getVat = (data) => {
     return vatTotals;
 };
 
+/**
+ * расчитает дату платежа исходя из даты
+ * @param kpv
+ * @returns {date}
+ */
+const getPayDueDate = (kpv) => {
+    let l_kpv = new Date(kpv);
+    let l_pay_dt = new Date(l_kpv.getFullYear(), l_kpv.getMonth(), 20);
+    // Не так.Если счет выставлен с 10-го числа этого месяца по 9-е число следующего месяца, то ставим 20 число следующего
+    if (l_kpv.getDate() > 10) {
+        l_pay_dt = new Date(l_pay_dt.setMonth(l_pay_dt.getMonth() + 1));
+    }
+    return l_pay_dt.toISOString().substring(0, 10);
+};
+
+
 const get_earve = (arved, asutusConfig, isOmniva = true) => {
     let totalAmount = 0;
 
     const data = [];
+
 
     arved.forEach((arve, index) => {
         //  подготовим данные
@@ -68,6 +85,10 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
         Invoice: data.map(arve => {
             // считаем налоги
             const qryeArvedVat = getVat(arve.details);
+
+            //  дата выплаты
+            let payDueDate = getPayDueDate(arve.kpv);
+            console.log('payDueDate', payDueDate);
 
             // детали счета
             const qryeArvedDet = arve.details.map(rea => {
@@ -179,7 +200,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     PaymentRefId: arve.viitenr,
                     PaymentDescription: `Arve ${arve.number}`,
                     Payable: 'YES',
-                    PayDueDate: arve.tahtaeg,
+                    PayDueDate: payDueDate,
                     PaymentTotalSum: Number(arve.tasumisele).toFixed(2),
                     PayerName: arve.asutus,
                     PaymentId: arve.number,

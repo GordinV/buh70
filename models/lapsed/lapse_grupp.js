@@ -5,13 +5,15 @@ module.exports = {
                                    ''::TEXT    AS kood,
                                    ''::TEXT    AS nimetus,
                                    '[]'::JSONB AS all_yksused,
-                                   '[]'::JSONB AS teenused
+                                   '[]'::JSONB AS teenused,
+                                   NULL::DATE  AS valid
                             UNION
                             SELECT id,
                                    kood::TEXT,
                                    nimetus::TEXT,
                                    all_yksused::JSONB,
-                                   teenused::JSONB
+                                   teenused::JSONB,
+                                   NULL::DATE AS valid
                             FROM lapsed.com_lapse_grupp lg
                             WHERE lg.rekvid = $1
                             ORDER BY kood

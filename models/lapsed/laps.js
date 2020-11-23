@@ -5,10 +5,11 @@ module.exports = {
                                   FROM lapsed.lapse_kaart lk
                                   WHERE lk.rekvid = $1
                                     AND lk.parentid = l.id
-                              ) AS is_exists
+                              )      AS is_exists,
+                          NULL::DATE AS valid
                    FROM lapsed.laps l
                    WHERE l.staatus < 3
-                       ORDER BY nimi`,
+                   ORDER BY nimi`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},

@@ -1,7 +1,10 @@
 module.exports = {
-    selectAsLibs: `select id, trim(arve) as kood, trim(nimetus) as name 
-    from ou.aa 
-    where parentid = 1 
-    and kassa = 1
-    order by default_ desc`
-}
+    selectAsLibs: `SELECT id,
+                          trim(arve)    AS kood,
+                          trim(nimetus) AS name,
+                          NULL::DATE    AS valid
+                   FROM ou.aa
+                   WHERE parentid = 1
+                     AND kassa = 1
+                   ORDER BY default_ DESC`
+};

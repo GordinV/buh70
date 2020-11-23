@@ -8,7 +8,8 @@ module.exports = {
                           lk.parentid                   AS lapsid,
                           lk.properties ->> 'yksus'     AS yksus,
                           lk.properties ->> 'all_yksus' AS all_yksus,
-                          lk.rekvid                     AS rekvid
+                          lk.rekvid                     AS rekvid,
+                          NULL::DATE AS valid
                    FROM lapsed.lapse_kaart lk
                             INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                    WHERE lk.staatus <> 3

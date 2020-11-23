@@ -1,13 +1,20 @@
 module.exports = {
-    selectAsLibs: `select * from com_ladu_oper l
-        where  (l.rekvId = $1 or l.rekvid is null)`,
+    selectAsLibs: `SELECT *, NULL::DATE AS valid
+                   FROM com_ladu_oper l
+                   WHERE (l.rekvId = $1 OR l.rekvid IS NULL)`,
     select: [{
-        sql: `select l.id, l.rekvid, l.kood, l.nimetus, l.status, l.library, 
-                tun1 as tun1,
-                $2::integer as userid, 'LADU_OPER' as doc_type_id,
-                l.muud                 
-                from libs.library l 
-                where l.id = $1`,
+        sql: `SELECT l.id,
+                     l.rekvid,
+                     l.kood,
+                     l.nimetus,
+                     l.status,
+                     l.library,
+                     tun1        AS tun1,
+                     $2::INTEGER AS userid,
+                     'LADU_OPER' AS doc_type_id,
+                     l.muud
+              FROM libs.library l
+              WHERE l.id = $1`,
         sqlAsNew: `select  $1::integer as id , 
             $2::integer as userid, 
             'LADU_OPER' as doc_type_id,
@@ -33,7 +40,8 @@ module.exports = {
         {name: 'library', type: 'C'}
     ],
     saveDoc: `select libs.sp_salvesta_library($1, $2, $3) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from libs.sp_delete_library($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM libs.sp_delete_library($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
@@ -41,13 +49,15 @@ module.exports = {
             {id: "nimetus", name: "Nimetus", width: "35%"},
             {id: "liik", name: "Liik", width: "25%"}
         ],
-        sqlString: `select l.id, l.kood, l.nimetus, 
-            (case when l.tun1 = 1 then '+' else '-' end)::text as liik,
-            $2::integer as userId
-            from libs.library l
-            where l.library = 'LADU_OPER'
-            and l.status <> 3
-            and (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT l.id,
+                           l.kood,
+                           l.nimetus,
+                           (CASE WHEN l.tun1 = 1 THEN '+' ELSE '-' END)::TEXT AS liik,
+                           $2::INTEGER                                        AS userId
+                    FROM libs.library l
+                    WHERE l.library = 'LADU_OPER'
+                      AND l.status <> 3
+                      AND (l.rekvId = $1 OR l.rekvid IS NULL)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curLaduOper'
     },

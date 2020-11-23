@@ -2,7 +2,8 @@ module.exports = {
     selectAsLibs: `SELECT DISTINCT a.id,
                                    a.nimetus   AS nimi,
                                    a.regkood   AS isikukood,
-                                   $1::INTEGER AS rekvid
+                                   $1::INTEGER AS rekvid,
+                                   NULL::DATE  AS valid
                    FROM lapsed.vanemad v
                             INNER JOIN libs.asutus a ON a.id = v.asutusId
                    WHERE v.staatus <> 3`,
@@ -22,7 +23,7 @@ module.exports = {
                      coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN  AS kas_paberil,
                      coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN    AS kas_earve,
                      (v.properties ->> 'pank')::TEXT                                      AS pank,
-                     (v.properties ->> 'iban')::TEXT                                      AS iban,       
+                     (v.properties ->> 'iban')::TEXT                                      AS iban,
                      coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN    AS kas_email,
                      coalesce((v.properties ->> 'kas_esindaja')::BOOLEAN, FALSE)::BOOLEAN AS kas_esindaja,
                      v.muud,
@@ -123,9 +124,9 @@ module.exports = {
                            aadress,
                            email,
                            tel,
-                           $1::INTEGER AS rekvid,
-                           $2::INTEGER AS user_id,
-                           count(*) OVER ()                 AS rows_total
+                           $1::INTEGER      AS rekvid,
+                           $2::INTEGER      AS user_id,
+                           count(*) OVER () AS rows_total
                     FROM lapsed.cur_vanemad v
                     WHERE rekv_ids @> ARRAY [$1::INTEGER] `,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
