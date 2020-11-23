@@ -161,6 +161,6 @@ GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arves
 
 
 /*
-select lapsed.arvesta_taabel(70, 16,'2019-03-30')
+select lapsed.arvesta_taabel(70, 5573,'2020-10-30')
 
  */

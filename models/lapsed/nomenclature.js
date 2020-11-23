@@ -90,7 +90,8 @@ module.exports = {
                           allikas,
                           artikkel,
                           tunnus,
-                          kas_inf3
+                          kas_inf3,
+                          valid
                    FROM com_nomenclature
                    WHERE (rekvid = $1 OR rekvid IS NULL)
                    ORDER BY kood`,

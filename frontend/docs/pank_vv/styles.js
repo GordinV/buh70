@@ -9,7 +9,7 @@ module.exports = {
             },
         },
         headerTable: {
-            width:'100%',
+            width: '100%',
         },
 
         gridContainer: {
@@ -17,4 +17,8 @@ module.exports = {
         }
 
     },
+    total: {
+        width: 'auto'
+    },
+
 };

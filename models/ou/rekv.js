@@ -82,7 +82,7 @@ module.exports = {
                          aa.default_,
                          aa.kassa,
                          aa.pank,
-                         aa.konto::TEXT,
+                         aa.konto::VARCHAR(20),
                          aa.tp,
                          kassa AS kassapank,
                          $2    AS userId

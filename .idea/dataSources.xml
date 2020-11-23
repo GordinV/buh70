@@ -67,5 +67,11 @@
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://dbarch.narva.ee:5436/test2</jdbc-url>
     </data-source>
+    <data-source source="LOCAL" name="narva_uus" uuid="8e25ddaa-dd29-4919-a031-3305254fb55f">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://80.235.127.119:5438/db</jdbc-url>
+    </data-source>
   </component>
 </project>

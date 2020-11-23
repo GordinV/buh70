@@ -1,6 +1,5 @@
 const builder = require('xmlbuilder');
-const l_now = require('./../../libs/getNow')();
-
+const getNow = require('./../../libs/getNow');
 /**
  *вернет массив сгруппированных по налогу сумм
  * @param data - детали счета с суммами
@@ -51,7 +50,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
 
     let Header = {
         Test: 'NO',
-        Date: l_now,
+        Date: getNow(),
         FileId: Date.now(),
         AppId: 'EARVE',
         Version: '1.11'

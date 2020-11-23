@@ -179,7 +179,12 @@ const Smk = {
             type: 'D',
             min: now.setFullYear(now.getFullYear() - 1),
             max: now.setFullYear(now.getFullYear() + 1)
+        },
+        {
+            name: 'aaid',
+            type: 'I',
         }
+
     ],
     bpm: [
         {
