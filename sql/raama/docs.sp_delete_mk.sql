@@ -23,9 +23,11 @@ DECLARE
 BEGIN
 
     SELECT d.*,
-           u.ametnik AS user_name
+           (m.properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER AS ebatoenaolised_tagastamine_id,
+           u.ametnik                                                   AS user_name
            INTO v_doc
     FROM docs.doc d
+             INNER JOIN docs.mk m ON m.parentid = d.id
              LEFT OUTER JOIN ou.userid u ON u.id = l_user_id
     WHERE d.id = doc_id;
 
@@ -138,6 +140,12 @@ BEGIN
     -- удаляем данные из выписки
     DELETE FROM lapsed.pank_vv WHERE lapsed.pank_vv.doc_id = v_doc.id;
 
+    -- удаляем возврат маловероятных , если есть
+    IF (v_doc.ebatoenaolised_tagastamine_id IS NOT NULL)
+    THEN
+        PERFORM docs.sp_delete_journal(l_user_id, v_doc.ebatoenaolised_tagastamine_id);
+    END IF;
+
     -- удаление связей
     UPDATE docs.doc
     SET docs_ids = array_remove(docs_ids, doc_id)
@@ -153,7 +161,7 @@ BEGIN
     THEN
         PERFORM docs.sp_delete_journal(l_user_id, parentid)
         FROM docs.journal
-        WHERE parentid IN (SELECT unnest(v_doc.docs_ids)); -- @todo процедура удаления
+        WHERE parentid IN (SELECT unnest(v_doc.docs_ids));
     END IF;
 
     -- Установка статуса ("Удален")  и сохранение истории

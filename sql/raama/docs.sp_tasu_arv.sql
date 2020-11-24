@@ -34,7 +34,9 @@ BEGIN
     SELECT d.id,
            d.docs_ids,
            a.properties ->> 'tyyp'                                AS tyyp,
-           CASE WHEN a.liik = 1 THEN 'KULU' ELSE 'TULU' END::TEXT AS arve_tyyp
+           CASE WHEN a.liik = 1 THEN 'KULU' ELSE 'TULU' END::TEXT AS arve_tyyp,
+           a.properties ->> 'ebatoenaolised_1_id'                 AS ebatoenaolised_1_id,
+           a.properties ->> 'ebatoenaolised_2_id'                 AS ebatoenaolised_2_id
            INTO v_arv
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
@@ -178,6 +180,12 @@ BEGIN
     -- сальдо платежа
     PERFORM docs.sp_update_mk_jaak(l_tasu_id);
 
+    -- оплата маловероятных
+    IF (v_arv.ebatoenaolised_1_id IS NOT NULL OR v_arv.ebatoenaolised_2_id IS NOT NULL) AND coalesce(v_arv.tyyp,'') <> 'ETTEMAKS'
+    THEN
+        PERFORM docs.tasumine_ebatoenaolised(l_tasu_id, l_arv_id, l_user_id);
+    END IF;
+
     RETURN l_doc_id;
 
 END;
@@ -192,5 +200,5 @@ GRANT EXECUTE ON FUNCTION docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER) TO arvesta
 
 /*
 SELECT *
-FROM docs.sp_tasu_arv(1616679::INTEGER, 1616591::INTEGER, 70::INTEGER);
+FROM docs.sp_tasu_arv(2289602::INTEGER, 2275674::INTEGER, 4941::INTEGER);
 */

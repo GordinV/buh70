@@ -143,16 +143,18 @@ BEGIN
 
             -- проверка проводки
             SELECT row_to_json(row) INTO json_lausend
-            FROM (SELECT json_record.deebet  AS db,
-                         json_record.kreedit AS kr,
-                         json_record.lisa_d  AS tpd,
-                         json_record.lisa_k  AS tpk,
-                         json_record.kood1   AS tt,
-                         json_record.kood2   AS allikas,
-                         json_record.kood3   AS rahavoog,
-                         json_record.kood5   AS eelarve,
-                         doc_kpv             AS kpv,
-                         l_oma_tp            AS oma_tp
+            FROM (SELECT json_record.deebet             AS db,
+                         json_record.kreedit            AS kr,
+                         json_record.lisa_d             AS tpd,
+                         json_record.lisa_k             AS tpk,
+                         json_record.kood1              AS tt,
+                         json_record.kood2              AS allikas,
+                         CASE
+                             WHEN ltrim(rtrim(json_record.kood3)) = 'null' THEN NULL::TEXT
+                             ELSE json_record.kood3 END AS rahavoog,
+                         json_record.kood5              AS eelarve,
+                         doc_kpv                        AS kpv,
+                         l_oma_tp                       AS oma_tp
                  ) row;
 
             l_check_lausend = docs.sp_lausendikontrol(json_lausend::JSONB);
@@ -178,7 +180,11 @@ BEGIN
                                                lisa_d, lisa_k, valuuta, kuurs, valsumma)
                     VALUES (journal_id, json_record.deebet, json_record.kreedit, json_record.summa, json_record.tunnus,
                             json_record.proj,
-                            json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4,
+                            json_record.kood1, json_record.kood2,
+                            CASE
+                                WHEN ltrim(rtrim(json_record.kood3)) = 'null' THEN NULL::TEXT
+                                ELSE json_record.kood3 END,
+                            json_record.kood4,
                             json_record.kood5,
                             json_record.lisa_d, json_record.lisa_k,
                             coalesce(json_record.valuuta, 'EUR'), coalesce(json_record.kuurs, 1),
@@ -198,7 +204,9 @@ BEGIN
                         proj     = json_record.proj,
                         kood1    = json_record.kood1,
                         kood2    = json_record.kood2,
-                        kood3    = json_record.kood3,
+                        kood3    = CASE
+                                       WHEN ltrim(rtrim(json_record.kood3)) = 'null' THEN NULL::TEXT
+                                       ELSE json_record.kood3 END,
                         kood4    = json_record.kood4,
                         kood5    = json_record.kood5,
                         lisa_d   = json_record.lisa_d,

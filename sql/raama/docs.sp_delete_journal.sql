@@ -16,6 +16,7 @@ DECLARE
     DOC_STATUS       INTEGER = 3; -- документ удален
     l_arvtasu_id     INTEGER; -- связанный счет (оплата)
     l_avans_id       INTEGER; -- связанная оплата авансового отчета
+    v_arv            RECORD; -- используем для поиска
 BEGIN
 
     SELECT d.*,
@@ -84,7 +85,7 @@ BEGIN
 
     IF v_doc.docs_ids IS NOT NULL
         AND NOT exists(
-            SELECT 1 FROM docs.arvtasu WHERE doc_tasu_id = v_doc.id)
+                SELECT 1 FROM docs.arvtasu WHERE doc_tasu_id = v_doc.id)
         AND exists(
                SELECT d.id
                FROM docs.doc d
@@ -102,6 +103,13 @@ BEGIN
         result = 0;
         RETURN;
     END IF;
+
+    -- проврека на связанного с проводкой счета (маловероятные)
+    IF exists(SELECT id FROM docs.doc WHERE docs_ids @> ARRAY [doc_id])
+    THEN
+
+    END IF;
+
 
     -- Логгирование удаленного документа
     -- docs.journal
@@ -176,6 +184,16 @@ BEGIN
         PERFORM docs.sp_delete_arvtasu(user_id, l_arvtasu_id);
     END IF;
 
+
+    -- если это маловероятные
+    IF exists(SELECT d.id
+              FROM docs.doc d
+                       INNER JOIN docs.arv a ON d.id = a.parentid
+              WHERE d.docs_ids @> ARRAY [doc_id]
+        )
+    THEN
+        PERFORM docs.kustuta_ebatoenaolised(doc_id, user_id);
+    END IF;
 
     -- удаление связей
     UPDATE docs.doc

@@ -33,3 +33,5 @@ GRANT SELECT ON TABLE docs.mk TO dbvaatleja;
 
 ALTER TABLE docs.mk
   ADD COLUMN jaak numeric(14, 2);
+
+ALTER TABLE docs.mk ADD properties JSONB NULL;
