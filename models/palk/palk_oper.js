@@ -5,62 +5,61 @@ let now = new Date();
 const PalkOper = {
     select: [
         {
-            sql: `SELECT
-                      d.id,
-                      d.docs_ids,
-                      (to_char(d.created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT    AS created,
-                      (to_char(d.lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT AS lastupdate,
-                      d.bpm,
-                      trim(l.nimetus)                                        AS doc,
-                      trim(l.kood)                                           AS doc_type_id,
-                      trim(s.nimetus)                                        AS status,
-                      p.kpv                                                  AS kpv,
-                      p.rekvid,
-                      p.libid,
-                      p.lepingid,
-                      p.summa,
-                      p.tululiik,
-                      p.journalid,
-                      p.muud,
-                      p.kood1,
-                      p.kood2,
-                      p.kood3,
-                      p.kood4,
-                      p.kood5,
-                      p.konto,
-                      p.tp,
-                      p.tunnus,
-                      p.proj,
-                      p.tulumaks,
-                      p.sotsmaks,
-                      p.tootumaks,
-                      p.pensmaks,
-                      p.tulubaas,
-                      p.tka,
-                      p.period,
-                      p.pohjus,
-                      coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20) AS korr_konto,
-                      dp.selg :: VARCHAR(120)                                AS dokprop,
-                      (case when empty(dp.registr::integer) then 0 else 1 end)::integer as kas_lausend,                      
-                      p.doklausid                                            AS dokpropid,
-                      coalesce(jid.number, 0) :: INTEGER                     AS lausend,
-                      t.parentid,
-                      (pl.properties::jsonb->>'liik')::integer as liik,
-                      (pl.properties::jsonb->>'asutusest')::integer as asutusest,
-                      (d.history->0->>'user')::varchar(120)                                          AS koostaja
-                    FROM docs.doc d
-                      INNER JOIN palk.palk_oper p ON p.parentId = d.id
-                      INNER JOIN palk.tooleping t ON t.id = p.lepingid
-                      INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                      INNER JOIN libs.asutus a ON a.id = t.parentid
-                      LEFT OUTER JOIN libs.library pl ON pl.id = p.libid
-                      LEFT OUTER JOIN libs.library l ON l.id = d.doc_type_id
-                      LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
-                      LEFT OUTER JOIN libs.dokprop dp ON dp.id = p.doklausid
-                      LEFT OUTER JOIN docs.doc dj ON p.journalid = dj.id
-                      LEFT OUTER JOIN docs.journal j ON j.parentid = dj.id
-                      LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
-                    WHERE d.id = $1`,
+            sql: `SELECT d.id,
+                         d.docs_ids,
+                         (to_char(d.created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT               AS created,
+                         (to_char(d.lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT            AS lastupdate,
+                         d.bpm,
+                         trim(l.nimetus)                                                   AS doc,
+                         trim(l.kood)                                                      AS doc_type_id,
+                         trim(s.nimetus)                                                   AS status,
+                         p.kpv                                                             AS kpv,
+                         p.rekvid,
+                         p.libid,
+                         p.lepingid,
+                         p.summa,
+                         p.tululiik,
+                         p.journalid,
+                         p.muud,
+                         p.kood1,
+                         p.kood2,
+                         p.kood3,
+                         p.kood4,
+                         p.kood5,
+                         p.konto,
+                         p.tp,
+                         p.tunnus,
+                         p.proj,
+                         p.tulumaks,
+                         p.sotsmaks,
+                         p.tootumaks,
+                         p.pensmaks,
+                         p.tulubaas,
+                         p.tka,
+                         p.period,
+                         p.pohjus,
+                         coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20)    AS korr_konto,
+                         dp.selg :: VARCHAR(120)                                           AS dokprop,
+                         (CASE WHEN empty(dp.registr::INTEGER) THEN 0 ELSE 1 END)::INTEGER AS kas_lausend,
+                         p.doklausid                                                       AS dokpropid,
+                         coalesce(jid.number, 0) :: INTEGER                                AS lausend,
+                         t.parentid,
+                         (pl.properties::JSONB ->> 'liik')::INTEGER                        AS liik,
+                         (pl.properties::JSONB ->> 'asutusest')::INTEGER                   AS asutusest,
+                         (d.history -> 0 ->> 'user')::VARCHAR(120)                         AS koostaja
+                  FROM docs.doc d
+                           INNER JOIN palk.palk_oper p ON p.parentId = d.id
+                           INNER JOIN palk.tooleping t ON t.id = p.lepingid
+                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                           INNER JOIN libs.asutus a ON a.id = t.parentid
+                           LEFT OUTER JOIN libs.library pl ON pl.id = p.libid
+                           LEFT OUTER JOIN libs.library l ON l.id = d.doc_type_id
+                           LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
+                           LEFT OUTER JOIN libs.dokprop dp ON dp.id = p.doklausid
+                           LEFT OUTER JOIN docs.doc dj ON p.journalid = dj.id
+                           LEFT OUTER JOIN docs.journal j ON j.parentid = dj.id
+                           LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
+                      WHERE d.id = $1`,
             sqlAsNew: `SELECT
                           $1 :: INTEGER                                 AS id,
                           $2 :: INTEGER                                 AS userid,
@@ -109,16 +108,15 @@ const PalkOper = {
             data: []
         },
         {
-            sql: `SELECT
-                      rd.id,
-                      $2 :: INTEGER   AS userid,
-                      trim(l.kood)    AS doc_type,
-                      trim(l.nimetus) AS name
-                    FROM docs.doc d
-                      LEFT OUTER JOIN docs.doc rd ON rd.id IN (SELECT unnest(d.docs_ids))
-                      LEFT OUTER JOIN libs.library l ON rd.doc_type_id = l.id
-                      INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                    WHERE d.id = $1`,
+            sql: `SELECT rd.id,
+                         $2 :: INTEGER   AS userid,
+                         trim(l.kood)    AS doc_type,
+                         trim(l.nimetus) AS name
+                  FROM docs.doc d
+                           LEFT OUTER JOIN docs.doc rd ON rd.id IN (SELECT unnest(d.docs_ids))
+                           LEFT OUTER JOIN libs.library l ON rd.doc_type_id = l.id
+                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                      WHERE d.id = $1`,
             query: null,
             multiple: true,
             alias: 'relations',
@@ -138,11 +136,10 @@ const PalkOper = {
             {id: "lastupdate", name: "Viimane parandus", width: "150px"},
             {id: "status", name: "Status", width: "100px"}
         ],
-        sqlString: `SELECT
-                          d.*
-                        FROM palk.cur_palkoper d
+        sqlString: `SELECT d.*
+                    FROM palk.cur_palkoper d
                         WHERE d.rekvId = $1
-                              AND coalesce(docs.usersRigths(d.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                             AND coalesce(docs.usersRigths(d.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curPalkOper'
     },
@@ -151,7 +148,8 @@ const PalkOper = {
         relations: []
     },
     saveDoc: `select palk.sp_salvesta_palk_oper($1::json, $2::INTEGER, $3::INTEGER) as id`,
-    deleteDoc: `select error_code, result, error_message from palk.sp_delete_palk_oper($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM palk.sp_delete_palk_oper($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',
@@ -174,14 +172,24 @@ const PalkOper = {
 
     ],
     generateJournal: {
-        command: `select error_code, result, error_message from docs.gen_lausend_avans($2::INTEGER, $1::INTEGER)`, // $1 - userId, $2 - docId
+        command: `SELECT error_code, result, error_message
+                  FROM docs.gen_lausend_avans($2::INTEGER, $1::INTEGER)`, // $1 - userId, $2 - docId
         type: "sql",
         alias: 'generateJournal'
     },
     executeCommand: {
-        command: `select result, error_code, error_message, data from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task
-        type:'sql',
-        alias:'executeTask'
+        command: `SELECT DISTINCT *
+                  FROM jsonb_to_recordset(
+                               (SELECT qry.data -> 'data'
+                                FROM (
+                                         SELECT *
+                                         FROM sp_execute_task($1::INTEGER, $2::JSON, $3::TEXT)
+                                     ) qry)
+                           ) AS x (error_message TEXT, error_code INTEGER, summa NUMERIC, selg TEXT, tki NUMERIC,
+                                   tka NUMERIC, tm NUMERIC, pm NUMERIC, sm NUMERIC, mvt NUMERIC)
+        `, //$1- userId, $2 - params, $3 - task
+        type: 'sql',
+        alias: 'executeTask'
     }
 };
 

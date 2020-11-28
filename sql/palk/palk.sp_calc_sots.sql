@@ -8,7 +8,8 @@ CREATE FUNCTION palk.sp_calc_sots(user_id INTEGER, params JSON,
                                   OUT selg TEXT,
                                   OUT error_code INTEGER,
                                   OUT result INTEGER,
-                                  OUT error_message TEXT)
+                                  OUT error_message TEXT,
+                                  OUT data JSONB)
     LANGUAGE plpgsql
 AS
 $$
@@ -49,7 +50,7 @@ BEGIN
                t.parentid
                INTO v_tooleping
         FROM palk.tooleping t
-        WHERE t.id = l_lepingid;
+            WHERE t.id = l_lepingid;
 
 
         SELECT pk.summa,
@@ -62,19 +63,19 @@ BEGIN
         FROM palk.palk_kaart pk
                  LEFT OUTER JOIN palk.palk_config pc ON pc.rekvid = v_tooleping.rekvid
                  INNER JOIN palk.com_palk_lib l ON pk.libid = l.id
-        WHERE pk.lepingid = l_lepingid
-          AND libId = l_libId;
+            WHERE pk.lepingid = l_lepingid
+                 AND libId = l_libId;
 
         SELECT sum(po.sotsmaks) AS sotsmaks,
                sum(po.summa)
                INTO summa, l_alus_summa
         FROM palk.cur_palkoper po
                  INNER JOIN libs.library l ON l.id = po.libid
-        WHERE po.kpv = l_kpv
-          AND po.rekvid = v_tooleping.rekvId
-          AND po.lepingId = l_lepingid
-          AND po.palk_liik = 'ARVESTUSED'
-          AND po.sotsmaks IS NOT NULL;
+            WHERE po.kpv = l_kpv
+                 AND po.rekvid = v_tooleping.rekvId
+                 AND po.lepingId = l_lepingid
+                 AND po.palk_liik = 'ARVESTUSED'
+                 AND po.sotsmaks IS NOT NULL;
 
         IF coalesce(l_min_sots, 0) > 0
         THEN
@@ -116,32 +117,32 @@ BEGIN
 
             SELECT sum(po.summa) INTO l_enne_arvestatud_sotsmaks
             FROM palk.cur_palkoper po
-            WHERE year(po.kpv) = year(l_kpv)
-              AND month(po.kpv) = month(l_kpv)
-              AND po.palk_liik :: TEXT = 'SOTSMAKS'
-              AND po.lepingid IN (SELECT t.id
-                                  FROM palk.tooleping t
-                                  WHERE t.parentid = v_tooleping.parentid
-                                    AND t.rekvid = v_tooleping.rekvId)
-              AND po.id NOT IN (SELECT p.id
-                                FROM palk.cur_palkoper p
-                                WHERE p.lepingId = l_lepingid
-                                  AND libId = l_libId
-                                  AND kpv = l_kpv);
+                WHERE year(po.kpv) = year(l_kpv)
+                     AND month(po.kpv) = month(l_kpv)
+                     AND po.palk_liik :: TEXT = 'SOTSMAKS'
+                     AND po.lepingid IN (SELECT t.id
+                                         FROM palk.tooleping t
+                                             WHERE t.parentid = v_tooleping.parentid
+                                                  AND t.rekvid = v_tooleping.rekvId)
+                     AND po.id NOT IN (SELECT p.id
+                                       FROM palk.cur_palkoper p
+                                           WHERE p.lepingId = l_lepingid
+                                                AND libId = l_libId
+                                                AND kpv = l_kpv);
 
             l_enne_arvestatud_sotsmaks = coalesce(l_enne_arvestatud_sotsmaks, 0);
 
             -- kontrollime enne koostatud sotsmaks (ilma kaesoaleva lepinguta)
             SELECT sum(sotsmaks) INTO l_enne_koostatud_sotsmaks
             FROM palk.cur_palkoper po
-            WHERE year(kpv) = year(l_kpv)
-              AND month(kpv) = month(l_kpv)
-              AND po.palk_liik :: TEXT = 'ARVESTUSED'
-              AND po.lepingid IN (SELECT t.id
-                                  FROM palk.tooleping t
-                                  WHERE t.parentid = v_tooleping.parentid
-                                    AND t.rekvid = v_tooleping.rekvId
-                                    AND t.id <> l_lepingid);
+                WHERE year(kpv) = year(l_kpv)
+                     AND month(kpv) = month(l_kpv)
+                     AND po.palk_liik :: TEXT = 'ARVESTUSED'
+                     AND po.lepingid IN (SELECT t.id
+                                         FROM palk.tooleping t
+                                             WHERE t.parentid = v_tooleping.parentid
+                                                  AND t.rekvid = v_tooleping.rekvId
+                                                  AND t.id <> l_lepingid);
 
             IF coalesce(l_enne_arvestatud_sotsmaks, 0) > l_enne_koostatud_sotsmaks
             THEN
@@ -207,6 +208,17 @@ BEGIN
 
     result = 1;
     summa = coalesce(f_round(summa, l_round), 0);
+    l_params = to_jsonb(row.*)
+               FROM (
+                        SELECT NULL         AS doc_id,
+                               'Õnnestus'   AS error_message,
+                               0::INTEGER   AS error_code,
+                               summa        AS summa,
+                               selg         AS selg,
+                               sm:: NUMERIC AS sm
+                    ) row;
+    data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
+
     RETURN;
 
 END;

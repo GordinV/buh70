@@ -42,9 +42,9 @@ BEGIN
 
     END IF;
 
-    IF NOT exists(SELECT id
+    IF NOT exists(SELECT u.id
                   FROM ou.userid u
-                  WHERE id = l_user_id
+                  WHERE u.id = l_user_id
                     AND u.rekvid = v_doc.rekvid
         )
     THEN
@@ -122,12 +122,12 @@ BEGIN
 
     DELETE
     FROM docs.mk1
-    WHERE parentid IN (SELECT id
-                       FROM docs.arv
-                       WHERE parentid = v_doc.id);
+    WHERE parentid IN (SELECT a.id
+                       FROM docs.arv a
+                       WHERE a.parentid = v_doc.id);
     DELETE
-    FROM docs.mk
-    WHERE parentid = v_doc.id;
+    FROM docs.mk mk
+    WHERE mk.parentid = v_doc.id;
     --@todo констрейн на удаление
 
     -- удаляем оплату
@@ -151,8 +151,8 @@ BEGIN
     SET docs_ids = array_remove(docs_ids, doc_id)
     WHERE id IN (
         SELECT unnest(docs_ids)
-        FROM docs.doc
-        WHERE id = doc_id
+        FROM docs.doc d
+        WHERE d.id = doc_id
     )
       AND status < DOC_STATUS;
 

@@ -13,7 +13,8 @@ CREATE OR
                                       OUT mvt NUMERIC,
                                       OUT error_code INTEGER,
                                       OUT result INTEGER,
-                                      OUT error_message TEXT)
+                                      OUT error_message TEXT,
+                                      OUT data JSONB)
     LANGUAGE plpgsql
 AS
 $$
@@ -93,7 +94,7 @@ BEGIN
                INTO l_toopaev, l_min_palk, l_rekvid, l_kuu_alg, l_kuu_lopp, l_tasuliik, l_koormus, l_palk_summa, l_isik_id
         FROM palk.com_toolepingud t
                  LEFT OUTER JOIN palk.palk_config pc ON pc.rekvid = t.rekvid
-        WHERE t.id = l_lepingid;
+            WHERE t.id = l_lepingid;
 
         -- parametrid puuduvad, võttame kõik andmebaasist
         -- palk kaart
@@ -106,8 +107,8 @@ BEGIN
                pk.liik
                INTO is_percent, l_pk_summa, is_alimentid, l_round, l_tund, l_tululiik
         FROM palk.cur_palk_kaart pk
-        WHERE pk.lepingid = l_lepingid
-          AND pk.libId = l_libId;
+            WHERE pk.lepingid = l_lepingid
+                 AND pk.libId = l_libId;
 
         SELECT CASE l_tund
                    WHEN 1 --'KÕIK'
@@ -126,9 +127,9 @@ BEGIN
                        THEN uleajatoo
                    END AS tunnid INTO l_tunnid_kokku
         FROM palk.cur_palk_taabel t
-        WHERE lepingId = l_lepingid
-          AND kuu = month(l_kpv)
-          AND aasta = year(l_kpv);
+            WHERE lepingId = l_lepingid
+                 AND kuu = month(l_kpv)
+                 AND aasta = year(l_kpv);
 
     END IF;
 
@@ -136,9 +137,9 @@ BEGIN
     IF NOT exists(SELECT 1
                   FROM palk.palk_kaart pk
                            INNER JOIN com_palklib l ON l.id = pk.libid
-                  WHERE pk.lepingid = l_lepingid
-                    AND pk.status = 1
-                    AND l.liik = 8)
+                      WHERE pk.lepingid = l_lepingid
+                           AND pk.status = 1
+                           AND l.liik = 8)
     THEN
         is_pm = 0;
     END IF;
@@ -147,10 +148,10 @@ BEGIN
     IF NOT exists(SELECT 1
                   FROM palk.palk_kaart pk
                            INNER JOIN com_palklib l ON l.id = pk.libid
-                  WHERE pk.lepingid = l_lepingid
-                    AND pk.status = 1
-                    AND l.liik = 7
-                    AND (l.asutusest IS NULL OR empty(l.asutusest) OR l.asutusest::TEXT = '0'))
+                      WHERE pk.lepingid = l_lepingid
+                           AND pk.status = 1
+                           AND l.liik = 7
+                           AND (l.asutusest IS NULL OR empty(l.asutusest) OR l.asutusest::TEXT = '0'))
     THEN
         is_tki = 0;
 --    l_TKA_maar = 0;
@@ -164,9 +165,9 @@ BEGIN
         l.tun5              AS pm_maksustav
         INTO l_TM_maar, l_SM_maksustav, l_TKI_maar, l_PM_maksustav
     FROM libs.library l
-    WHERE LIBRARY = 'MAKSUKOOD'
-      AND l.kood = l_tululiik
-      AND l.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
+        WHERE LIBRARY = 'MAKSUKOOD'
+             AND l.kood = l_tululiik
+             AND l.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted');
 
     IF l_TKI_maar = 0
     THEN
@@ -181,7 +182,7 @@ BEGIN
             -- prepaire parameters for hours calculation
 
             -- установим 1 день для получения часов в месяц
-            l_kuu_alg = make_date(year(l_kuu_alg), month(l_kuu_alg),1);
+            l_kuu_alg = make_date(year(l_kuu_alg), month(l_kuu_alg), 1);
 
             SELECT row_to_json(row) INTO l_params
             FROM (SELECT l_kpv           AS kpv,
@@ -287,11 +288,11 @@ BEGIN
         l_mvt_kokku = coalesce((SELECT sum(mvt.summa)
                                 FROM palk.taotlus_mvt mvt
                                          INNER JOIN palk.com_toolepingud t ON t.id = mvt.lepingId
-                                WHERE t.parentId = l_isik_id
-                                  AND mvt.status <> 'deleted'
-                                  AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
-                                  AND alg_kpv <= l_kpv
-                                  AND lopp_kpv >= l_kpv), 0);
+                                    WHERE t.parentId = l_isik_id
+                                         AND mvt.status <> 'deleted'
+                                         AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
+                                         AND alg_kpv <= l_kpv
+                                         AND lopp_kpv >= l_kpv), 0);
 
         SELECT sum(po.tulubaas)                                            AS isiku_tulubaas,
                sum(po.tulubaas)
@@ -300,20 +301,20 @@ BEGIN
                INTO l_isiku_mvt, l_kasutatud_mvt, l_tulud_kokku
         FROM palk.cur_palkoper po
                  INNER JOIN palk.com_toolepingud t ON t.id = po.lepingId
-        WHERE t.parentid = l_isik_id
-          AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
-          AND po.period IS NULL
-          AND po.palk_liik = 'ARVESTUSED'
-          AND (l_alus_summa IS NULL OR is_umardamine OR
-               po.tululiik :: TEXT = l_tululiik :: TEXT) -- если округления то считаем все виды дохода
-          -- calculate only 1 tululiik
-          AND year(po.kpv) = year(l_kpv)
-          AND month(po.kpv) = month(l_kpv)
-          AND (l_alus_summa IS NOT NULL OR po.id NOT IN (SELECT id
-                                                         FROM palk.palk_oper
-                                                         WHERE kpv = l_kpv
-                                                           AND lepingid = l_lepingid
-                                                           AND libid = l_libId));
+            WHERE t.parentid = l_isik_id
+                 AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
+                 AND po.period IS NULL
+                 AND po.palk_liik = 'ARVESTUSED'
+                 AND (l_alus_summa IS NULL OR is_umardamine OR
+                      po.tululiik :: TEXT = l_tululiik :: TEXT) -- если округления то считаем все виды дохода
+            -- calculate only 1 tululiik
+                 AND year(po.kpv) = year(l_kpv)
+                 AND month(po.kpv) = month(l_kpv)
+                 AND (l_alus_summa IS NOT NULL OR po.id NOT IN (SELECT id
+                                                                FROM palk.palk_oper
+                                                                    WHERE kpv = l_kpv
+                                                                         AND lepingid = l_lepingid
+                                                                         AND libid = l_libId));
 
     END IF;
 
@@ -365,6 +366,23 @@ BEGIN
     END IF;
 
     summa = coalesce(summa, 0);
+    -- empty result
+    l_params = to_jsonb(row.*)
+               FROM (
+                        SELECT NULL                    AS doc_id,
+                               'Kehtiv makseid ei ole' AS error_message,
+                               0::INTEGER              AS error_code,
+                               summa                   AS summa,
+                               selg                    AS selg,
+                               tki:: NUMERIC           AS tki,
+                               tka::NUMERIC            AS tka,
+                               tm:: NUMERIC            AS tm,
+                               pm::NUMERIC             AS pm,
+                               sm:: NUMERIC            AS sm,
+                               mvt::NUMERIC            AS mvt
+                    ) row;
+    data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
+
 
     RETURN;
 EXCEPTION

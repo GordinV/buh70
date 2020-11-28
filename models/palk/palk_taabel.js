@@ -1,26 +1,25 @@
 module.exports = {
     select: [{
-        sql: `SELECT
-                  $2 :: INTEGER            AS userid,
-                 'PALK_TAABEL' AS doc_type_id,
-                  p.id,
-                  p.lepingid,
-                  p.kuu,
-                  p.aasta,
-                  p.kokku,
-                  p.too,
-                  p.paev,
-                  p.ohtu,
-                  p.oo,
-                  p.tahtpaev,
-                  p.puhapaev,
-                  p.uleajatoo,
-                  p.status,
-                  p.muud,
-                  t.parentid
-                FROM palk.palk_taabel1 p
-                inner join palk.tooleping t on t.id = p.lepingid
-                WHERE p.id = $1`,
+        sql: `SELECT $2 :: INTEGER AS userid,
+                     'PALK_TAABEL' AS doc_type_id,
+                     p.id,
+                     p.lepingid,
+                     p.kuu,
+                     p.aasta,
+                     p.kokku,
+                     p.too,
+                     p.paev,
+                     p.ohtu,
+                     p.oo,
+                     p.tahtpaev,
+                     p.puhapaev,
+                     p.uleajatoo,
+                     p.status,
+                     p.muud,
+                     t.parentid
+              FROM palk.palk_taabel1 p
+                       INNER JOIN palk.tooleping t ON t.id = p.lepingid
+                  WHERE p.id = $1`,
         sqlAsNew: `SELECT
                       $1 :: INTEGER        AS id,
                       $2 :: INTEGER        AS userid,
@@ -54,7 +53,8 @@ module.exports = {
         {name: 'aasta', type: 'I'}
     ],
     saveDoc: `select palk.sp_salvesta_palk_taabel($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from palk.sp_delete_palk_taabel($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM palk.sp_delete_palk_taabel($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "1%", show: false},
@@ -67,14 +67,24 @@ module.exports = {
             {id: "kuu", name: "Kuu", width: "15%"},
             {id: "aasta", name: "Aasta", width: "15%"},
         ],
-        sqlString: `select t.*, $2::integer as userId
-            from palk.cur_palk_taabel t
-            where (t.rekvid = $1 or rekvid is null)`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT t.*, $2::INTEGER AS userId
+                    FROM palk.cur_palk_taabel t
+                        WHERE (t.rekvid = $1 OR rekvid IS NULL)`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curTaabel1'
     },
     executeCommand: {
-        command: `select error_code, result, error_message from palk.gen_taabel1($1::integer, $2::json)`, //$1 - user_id, $2 - params
+        command: `SELECT *
+                  FROM jsonb_to_recordset(
+                               (
+                                   SELECT qry.data
+                                   FROM (
+                                            SELECT *
+                                            FROM palk.gen_taabel1($1::INTEGER, $2::JSON)
+                                        ) qry
+                               )
+                           ) AS x (error_message TEXT, error_code INTEGER, result INTEGER)
+        `, //$1 - user_id, $2 - params
         type: 'sql',
         alias: 'genTaabel'
     },

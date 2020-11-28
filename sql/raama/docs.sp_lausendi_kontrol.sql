@@ -34,7 +34,6 @@ BEGIN
 
     IF l_kpv <= make_date(2010, 12, 31)
     THEN
-        RAISE NOTICE 'l_kpv <= make_date(2010, 12, 31)';
         RETURN l_msg;
     END IF;
 
@@ -97,7 +96,6 @@ BEGIN
 
 
 -- konto kehtivus (D)
-    RAISE NOTICE 'konto kehtivus (D)';
     SELECT l.kood,
            l.nimetus,
            l.muud,
@@ -157,7 +155,6 @@ BEGIN
     THEN
         l_msg = l_msg + ' Deebet konto: puudub või vale konto (' || l_db || ')' ;
     END IF;
-    RAISE NOTICE 'konto deebet %, l_msg %',v_konto_d.KOOD, l_msg;
 
     IF v_konto_d.tp::TEXT = '1' AND empty(l_tp_d)
     THEN
@@ -215,9 +212,15 @@ BEGIN
         END IF;
     END IF;
 
-    IF (left(l_db, 5) = '20200') AND (l_tp_d <> '800699' OR left(l_tp_d, 4) <> '9006')
+    IF left(l_db, 5) = '20200'
     THEN
-        l_msg = l_msg + ' Ei saa kasutada see TP kood: alati 800699 ' + left(l_tp_d, 4);
+        IF (l_tp_d::TEXT = '800699'::TEXT OR left(l_tp_d, 4)::TEXT = '9006'::TEXT)
+        THEN
+            -- ok
+        ELSE
+            l_msg = l_msg + ' Ei saa kasutada see TP kood: alati 800699 ' + left(l_tp_d, 4);
+
+        END IF;
     END IF;
 
     IF left(l_db, 5) = '10393' AND l_tp_d <> '800699'
@@ -232,9 +235,14 @@ BEGIN
     END IF;
 
 --palk
-    IF left(l_db, 3) = '500' AND (l_tp_d <> '800699' OR left(l_tp_d, 4) <> '9006')
+    IF left(l_db, 3) = '500'
     THEN
-        l_msg = l_msg + ' Ei saa kasutada see TP kood: alati 800699 ';
+        IF (l_tp_d::TEXT = '800699'::TEXT OR left(l_tp_d, 4)::TEXT = '9006'::TEXT)
+        THEN
+            --ok
+        ELSE
+            l_msg = l_msg + ' Ei saa kasutada see TP kood: alati 800699 ';
+        END IF;
     END IF;
 
 --omakapital
@@ -338,9 +346,15 @@ BEGIN
 
     --maksud
 
-    IF left(l_kr, 5) = '20200' AND (l_tp_k::TEXT <> '800699' OR left(l_tp_k::TEXT, 4) <> '9006')
+    IF left(l_kr, 5) = '20200'
     THEN
-        l_msg = l_msg + ' Ei saa kasutada see TP kood: TP kood alati 800699 (9006**)';
+        IF (l_tp_k::TEXT = '800699'::TEXT OR left(l_tp_k::TEXT, 4)::TEXT = '9006')
+        THEN
+            -- ok
+        ELSE
+            l_msg = l_msg + ' Ei saa kasutada see TP kood: TP kood alati 800699 (9006**)';
+        END IF;
+
     END IF;
 
     IF (left(l_kr, 5) = '10393') AND l_tp_k <> '800699'
@@ -352,13 +366,19 @@ BEGIN
 -- pank
     IF (left(l_kr, 4) = '1001' OR l_kr = '550012' OR l_kr = '655000') AND left(l_tp_k, 4) <> '8004'
     THEN
+
         l_msg = l_msg + 'Kreedit, ei saa kasutada see TP kood: alati 8004** ';
     END IF;
 
 --palk
-    IF left(l_kr, 3) = '500' AND (l_tp_k <> '800699' OR left(l_tp_k, 4) <> '9006')
+    IF left(l_kr, 3) = '500'
     THEN
-        l_msg = l_msg + ' Ei saa kasutada see TP kood: alati 800699 ';
+        IF (l_tp_k = '800699' OR left(l_tp_k, 4) = '9006')
+        THEN
+            -- OK
+        ELSE
+            l_msg = l_msg + ' Ei saa kasutada see TP kood: alati 800699 ';
+        END IF;
     END IF;
 
 --omakapital

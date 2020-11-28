@@ -128,7 +128,6 @@ class Documents extends React.Component {
 
     }
 
-
     render() {
         const _style = Object.assign({}, styles, this.props.style ? this.props.style : {});
         const warningStyle = this.state.warningType && styles[this.state.warningType] ? styles[this.state.warningType] : null;
@@ -371,7 +370,7 @@ class Documents extends React.Component {
             filterString = prepareSqlWhereFromFilter(this.filterData, this.docTypeId);
         } else {
             filterString = '';
-
+            this.filterData = [];
         }
 
         this.setState({

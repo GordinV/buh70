@@ -8,31 +8,24 @@ CREATE OR REPLACE FUNCTION docs.gen_lausend_smk(IN tnid INTEGER,
 AS
 $BODY$
 DECLARE
-    lcDbKonto         VARCHAR(20);
-    lcKrKonto         VARCHAR(20);
-    lcDbTp            VARCHAR(20);
-    lcKrTp            VARCHAR(20);
-    lcKood5           VARCHAR(20);
-    v_journal         RECORD;
-    v_journal1        RECORD;
-    v_smk             RECORD;
-    v_smk1            RECORD;
-    v_arv             RECORD;
-    v_dokprop         RECORD;
-    v_dokprop_details RECORD;
-    v_sorder1         RECORD;
-    lcAllikas         VARCHAR(20);
-    lcSelg            TEXT;
-    v_selg            RECORD;
-    l_json            TEXT;
-    l_json_details    TEXT;
-    l_json_row        TEXT;
-    l_row_count       INTEGER = 0;
-    new_history       JSONB;
-    userName          TEXT;
-    a_docs_ids        INTEGER[];
-    rows_fetched      INTEGER = 0;
-    l_dok             TEXT;
+    v_journal      RECORD;
+    v_journal1     RECORD;
+    v_smk          RECORD;
+    v_smk1         RECORD;
+    v_arv          RECORD;
+    v_dokprop      RECORD;
+    lcAllikas      VARCHAR(20);
+    lcSelg         TEXT;
+    v_selg         RECORD;
+    l_json         TEXT;
+    l_json_details TEXT;
+    l_json_row     TEXT;
+    l_row_count    INTEGER = 0;
+    new_history    JSONB;
+    userName       TEXT;
+    a_docs_ids     INTEGER[];
+    rows_fetched   INTEGER = 0;
+    l_dok          TEXT;
 
 BEGIN
 
@@ -135,7 +128,7 @@ BEGIN
         SELECT k1.*,
                'EUR' :: VARCHAR AS valuuta,
                1 :: NUMERIC     AS kuurs,
-               a.tp
+               CASE WHEN k1.tp IS NULL OR empty(k1.tp) THEN coalesce(a.tp, '800599') ELSE k1.tp END as tp
         FROM docs.mk1 k1
                  INNER JOIN libs.asutus a ON a.id = k1.asutusid
         WHERE k1.parentid = v_smk.Id

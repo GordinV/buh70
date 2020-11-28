@@ -1,15 +1,11 @@
 DROP FUNCTION IF EXISTS palk.gen_palkoper(INTEGER, JSON);
 --tnlepingid integer, tnlibid integer, tndoklausid integer, tdkpv date, tnavans integer, tnminpalk integer
 CREATE OR REPLACE FUNCTION palk.gen_palkoper(IN user_id INTEGER, IN params JSON, OUT result INTEGER,
-                                             OUT error_code INTEGER, OUT error_message TEXT)
+                                             OUT error_code INTEGER, OUT error_message TEXT, OUT data JSONB)
     RETURNS RECORD AS
 $BODY$
 DECLARE
-    l_sotsmaks_min_palk NUMERIC;
     v_lib               RECORD;
-    l_sotsmaks_min_id   INTEGER = 0;
-    l_lepingId_min_sots INTEGER;
-    l_libId_min_sots    INTEGER;
 
     l_leping_ids        JSON    = params -> 'leping_ids'; -- массив индентификаторов договоров
     l_lib_ids           JSON    = params -> 'lib_ids'; -- массив индентификаторов договоров
@@ -21,7 +17,6 @@ DECLARE
     is_calc_min_sots    BOOLEAN = params -> 'kas_arvesta_minsots'; -- расчет мин. соц. налога
 
     v_tooleping         RECORD;
-    l_last_paev         DATE    = (date(year(l_kpv), month(l_kpv), 1) + INTERVAL '1 month') :: DATE - 1;
     l_params            JSON;
     l_save_params       JSON;
     l_function          TEXT;
@@ -30,10 +25,8 @@ DECLARE
     v_palk_oper         RECORD; -- соберем все данные операции в строку
     l_tulemus_json      JSON;
     v_user              RECORD;
-    l_alus              NUMERIC;
+    v_tulemus           RECORD;
 
-    l_count             INTEGER;
-    l_tunnus            TEXT;
 BEGIN
     SELECT kasutaja,
            rekvid
@@ -47,6 +40,10 @@ BEGIN
         error_message = 'Kasutaja ei leitud,  userId:' ||
                         coalesce(user_id, 0) :: TEXT;
         result = 0;
+        select error_message, error_code into v_tulemus;
+        l_params = to_jsonb(v_tulemus);
+        data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
+
         RETURN;
     END IF;
 
@@ -56,6 +53,10 @@ BEGIN
         error_code = 6;
         error_message = 'Parametrid on vale või puuduvad';
         result = 0;
+        select error_message, error_code into v_tulemus;
+        l_params = to_jsonb(v_tulemus);
+        data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
+
         RETURN;
 
     END IF;
@@ -93,8 +94,10 @@ BEGIN
     FOR v_tooleping IN
         SELECT t.id,
                t.rekvid,
-               t.parentId
+               t.parentId,
+               ltrim(rtrim(a.nimetus)) AS nimi
         FROM palk.tooleping t
+                 INNER JOIN libs.asutus a ON a.id = t.parentid
         WHERE (t.id IN (SELECT value :: INTEGER
                         FROM json_array_elements_text(l_leping_ids))
             OR (t.parentid IN (SELECT value :: INTEGER
@@ -110,6 +113,11 @@ BEGIN
           AND t.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
         ORDER BY t.pohikoht DESC
         LOOP
+            -- инициализируем
+            SELECT NULL::INTEGER                  AS doc_id,
+                   ltrim(rtrim(v_tooleping.nimi)) AS error_message,
+                   NULL::INTEGER                  AS error_code
+                   INTO v_tulemus;
 
 
             FOR V_lib IN
@@ -209,89 +217,10 @@ BEGIN
                                 palk.sp_salvesta_palk_oper(('{"lausend":true,"data":' || l_save_params || '}') :: JSON,
                                                            user_id,
                                                            v_tooleping.rekvid);
-/*
-
-        -- мин. соц. налог
-        --if calculation of sots.maks, will check sor min.sotsmaks
-        IF v_lib.liik = 5
-           AND is_calc_min_sots IS NOT NULL
-           AND is_calc_min_sots
-           AND exists(SELECT 1
-                      FROM palk.cur_palk_kaart pk
-                      WHERE pk.lepingid = v_tooleping.id
-                            AND pk.liik = 5
-                            AND coalesce(pk.minsots, 0) = 1)
-        THEN
-
-          -- Ищем старый расчет
-          SELECT
-            po.id,
-            po.libid,
-            po.lepingId
-          INTO l_sotsmaks_min_id, l_lepingId_min_sots, l_libId_min_sots
-          FROM palk.cur_palkoper po
-          WHERE po.lepingid IN (SELECT t.id
-                                FROM palk.tooleping t
-                                WHERE t.parentid = v_tooleping.parentid
-                                      AND t.rekvid = v_tooleping.rekvid)
-                AND po.kpv = l_last_paev
-                AND po.libId = V_lib.id
-                AND po.id <> l_dok_id
-                AND po.sotsmaks <> 0
-          LIMIT 1;
-
-          -- arvestame sotsmaks minpalgast
-          SELECT
-            summa::numeric,
-            alus::text
-          INTO l_sotsmaks_min_palk, l_alus
-          FROM palk.sp_calc_min_sots(user_id, l_params);
-
-            -- if min.sotsmaks, then save
-          IF l_sotsmaks_min_palk IS NOT NULL
-          THEN
-            -- save min.sots parametrid
-            SELECT
-              coalesce(l_sotsmaks_min_id,0) :: INTEGER                      AS id,
-              l_kpv                                             AS kpv,
-              v_tooleping.id                                    AS lepingid,
-              V_lib.id                                          AS libid,
-              l_sotsmaks_min_palk                               AS summa,
-              l_dokprop_id                                      AS dokpropid,
-              l.tegev                                           AS kood1,
-              l.allikas                                         AS kood2,
-              l.artikkel                                        AS kood5,
-              l.uritus                                          AS kood4,
-              l.konto                                           AS konto,
-              l.korrkonto                                       AS korrkonto,
-              l.proj                                            AS proj,
-              '800699' :: TEXT                                  AS tp,
-              l_alus                                            AS sotsmaks,
-              ('SM min. palgast -> ' +
-               coalesce(l_sotsmaks_min_palk, 0) :: TEXT +
-               ' SM summast -> ' + coalesce(l_alus, 0) :: TEXT) AS selg
-
-            INTO v_palk_oper
-            FROM palk.com_palk_lib AS l
-            WHERE l.id = V_lib.id;
-
-            l_save_params = row_to_json(v_palk_oper);
-
-
-            -- save results
-            --l_sotsmaks_min_id = palk.sp_salvesta_palk_oper(('{"data":' || l_save_params || '}') :: JSON, user_id, v_tooleping.rekvid);
-
-          ELSE
-            IF coalesce(l_sotsmaks_min_id, 0) > 0
-            THEN
-              -- kustuta vana arvestus
-              PERFORM palk.sp_delete_palk_oper(user_id, vl_sotsmaks_min_id); -- $1 - userId, $2 - docId
-            END IF;
-
-          END IF;
-          --lopp mon sots
-        END IF;
-*/
+                        IF (coalesce(l_dok_id, 0) > 0)
+                        THEN
+                            result = coalesce(result, 0) + 1;
+                        END IF;
 
                     END IF;
 
@@ -318,11 +247,47 @@ BEGIN
                         PERFORM palk.sp_calc_umardamine(user_id, l_params);
                     END IF;
 
-                END LOOP; --libs loop
+                END LOOP;
+            --libs loop
+            -- report
+            l_params = to_jsonb(row.*)
+                       FROM (
+                                SELECT l_dok_id                AS doc_id,
+                                       ltrim(rtrim(v_tooleping.nimi)) AS error_message,
+                                       0::INTEGER              AS error_code
+                            ) row;
+            data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
 
         END LOOP; -- leping loop
+    IF (coalesce(result, 0)) = 0
+    THEN
+        -- empty result
+        l_params = to_jsonb(row.*)
+                   FROM (
+                            SELECT NULL                             AS doc_id,
+                                   'Kehtiv palga arveldused ei ole' AS error_message,
+                                   0::INTEGER                       AS error_code
+                        ) row;
+        data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
+
+    END IF;
+
     result = 1;
     RETURN;
+EXCEPTION
+    WHEN OTHERS
+        THEN
+            v_tulemus.error_message = v_tulemus.error_message || SQLERRM;
+            v_tulemus.error_code = 1;
+            l_params = to_jsonb(v_tulemus);
+            data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
+
+            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+            error_code = 1;
+            error_message = SQLERRM;
+            result = 0;
+            data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
+            RETURN;
 END;
 $BODY$
     LANGUAGE 'plpgsql'

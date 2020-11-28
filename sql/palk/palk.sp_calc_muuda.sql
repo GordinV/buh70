@@ -8,7 +8,8 @@ CREATE FUNCTION palk.sp_calc_muuda(user_id INTEGER, params JSON,
                                    OUT selg TEXT,
                                    OUT error_code INTEGER,
                                    OUT result INTEGER,
-                                   OUT error_message TEXT)
+                                   OUT error_message TEXT,
+                                   OUT data JSONB)
     LANGUAGE plpgsql
 AS
 $$
@@ -27,6 +28,7 @@ DECLARE
 
     v_tulemus    RECORD;
     l_enter      TEXT    = '(r)';
+    l_params     JSONB;
 BEGIN
 
     IF l_alus_summa IS NULL
@@ -41,8 +43,8 @@ BEGIN
                INTO l_pk_summa, l_asutusest, l_liik, l_round, is_percent
         FROM palk.com_palk_kaart p
                  INNER JOIN palk.com_palk_lib l ON p.libid = l.id
-        WHERE p.lepingid = l_lepingid
-          AND p.libId = l_libId;
+            WHERE p.lepingid = l_lepingid
+                 AND p.libId = l_libId;
 
     END IF;
 
@@ -55,9 +57,9 @@ BEGIN
                    sum(coalesce(pensmaks, 0))  AS pm
                    INTO v_tulemus
             FROM palk.cur_palkoper po
-            WHERE lepingid = l_lepingid
-              AND kpv = l_kpv
-              AND liik = '+';
+                WHERE lepingid = l_lepingid
+                     AND kpv = l_kpv
+                     AND liik = '+';
             CASE
                 WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'TÖÖTUSKINDLUSTUSMAKS')
                     AND empty(l_asutusest)
@@ -90,6 +92,16 @@ BEGIN
     END IF;
     summa = coalesce(summa, 0);
     result = 1;
+    l_params = to_jsonb(row.*)
+               FROM (
+                        SELECT NULL       AS doc_id,
+                               'Õnnestus' AS error_message,
+                               0::INTEGER AS error_code,
+                               summa      AS summa,
+                               selg       AS selg
+                    ) row;
+    data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
+
     RETURN;
 END;
 $$;

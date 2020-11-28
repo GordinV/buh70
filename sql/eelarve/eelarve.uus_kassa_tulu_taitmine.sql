@@ -18,7 +18,7 @@ $BODY$
 
     -- kontod
 WITH qryKontod AS (
-    SELECT l.kood, l.tun5 AS tyyp
+    SELECT DISTINCT l.kood, l.tun5 AS tyyp
     FROM libs.library l
              INNER JOIN eelarve.kassa_tulud kassatulud
                         ON ((ltrim(rtrim((l.kood) :: TEXT)) ~~ ltrim(rtrim((kassatulud.kood) :: TEXT))))
@@ -26,7 +26,7 @@ WITH qryKontod AS (
       AND L.status <> 3
 ),
      qryKassaKontod AS (
-         SELECT l.kood, l.tun5 AS tyyp
+         SELECT DISTINCT l.kood, l.tun5 AS tyyp
          FROM libs.library l
                   INNER JOIN
               eelarve.kassa_kontod kassakontod
@@ -63,7 +63,9 @@ FROM (
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                   INNER JOIN qryKontod k ON k.kood = j1.kreedit
                   INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.deebet
-                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 1 and l.library = 'TULUDEALLIKAD' --tulud
+                  INNER JOIN libs.library l ON l.kood = j1.kood5
+             AND l.tun5 = 1
+             AND l.library = 'TULUDEALLIKAD' --tulud
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
@@ -72,6 +74,7 @@ FROM (
                               WHEN l_kond
                                   > 0 THEN j.rekvid
                               ELSE l_rekvid END
+           AND l.status <> 3
          UNION ALL
          -- востановление
          SELECT -1 * j1.summa  AS summa,
@@ -91,7 +94,7 @@ FROM (
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                   INNER JOIN qryKontod k ON k.kood = j1.deebet
                   INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.kreedit
-                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 1 and l.library = 'TULUDEALLIKAD' --tulud
+                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 1 AND l.library = 'TULUDEALLIKAD' --tulud
 
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
@@ -101,6 +104,7 @@ FROM (
                               WHEN l_kond
                                   > 0 THEN j.rekvid
                               ELSE l_rekvid END
+           AND l.status <> 3
      ) qry
 WHERE NOT empty(artikkel)
   AND summa <> 0
@@ -121,7 +125,7 @@ GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_tulu_taitmine( DATE,DATE, INTEGER, I
 /*
 
 SELECT *
-FROM eelarve.uus_kassa_tulu_taitmine('2020-01-01', '2020-03-31', 63, 0)
-where artikkel = '6550'
+FROM eelarve.uus_kassa_tulu_taitmine('2020-01-01', '2020-03-31', 64, 0)
+where artikkel = '3501'
 
 */
