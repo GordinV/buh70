@@ -3,6 +3,7 @@
 const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
+const InputText = require('../../components/input-text/input-text.jsx');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'PANK_VV';
@@ -28,7 +29,9 @@ class Documents extends React.PureComponent {
         this.render = this.render.bind(this);
         this.state = {
             summa: 0,
-            read: 0
+            read: 0,
+            filtri_read: 0,
+
         };
 
     }
@@ -60,8 +63,7 @@ class Documents extends React.PureComponent {
         return (
             <div>
 
-                <DocumentRegister initData={this.props.initData}
-                                  history={this.props.history ? this.props.history : null}
+                <DocumentRegister history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
                                   ref='register'
                                   docTypeId={DOC_TYPE_ID}
@@ -69,12 +71,12 @@ class Documents extends React.PureComponent {
                                   toolbarParams={toolbarParams}
                                   btnEditClick={this.btnEditClick}
                                   render={this.renderer}/>
-                <InputNumber title="Read kokku:"
-                             name='read_kokku'
-                             style={styles.total}
-                             ref="input-read"
-                             value={Number(this.state.read) || 0}
-                             disabled={true}/>
+                <InputText title="Filtri all / read kokku:"
+                           name='read_kokku'
+                           style={styles.total}
+                           ref="input-read"
+                           value={String(this.state.filtri_read + '/' + this.state.read)}
+                           disabled={true}/>
                 <InputNumber title="Summa kokku:"
                              name='summa_kokku'
                              style={styles.total}
@@ -87,11 +89,21 @@ class Documents extends React.PureComponent {
     }
 
     renderer(self) {
-        this.Doc = self;
-        let summa = self.gridData ? getSum(self.gridData, 'summa') : 0;
-        if (summa) {
-            this.setState({summa: summa, read: self.gridData.length});
+        if (!self) {
+            // не инициализировано
+            return null;
         }
+
+        this.Doc = self;
+
+        // подсчет итогов
+        let summa = self.gridData ? getSum(self.gridData, 'summa') : 0;
+        this.setState({
+            summa: summa,
+            read: self.gridData && self.gridData.length && self.gridData[0].rows_total ? self.gridData[0].rows_total: this.state.read,
+            filtri_read: self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : 0
+        });
+
     }
 
     btnEditClick() {

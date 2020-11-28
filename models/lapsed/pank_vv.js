@@ -8,7 +8,7 @@ module.exports = {
     select: [{
         sql: `SELECT id, $2 AS userid
               FROM lapsed.pank_vv pank_vv
-              WHERE pank_vv.id = $1::INTEGER`,
+                  WHERE pank_vv.id = $1::INTEGER`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid`,
@@ -59,12 +59,13 @@ module.exports = {
                                 ELSE 'PUUDUB' END)::TEXT                       AS asutus,
                            v.pank                                              AS pank,
                            to_char(v.timestamp, 'DD.MM.YYYY HH.MM.SSSS')::TEXT AS timestamp,
-                           $1                                                  AS not_in_use
+                           $1                                                  AS not_in_use,
+                           count(*) OVER ()                                    AS rows_total
                     FROM lapsed.pank_vv v
                              LEFT OUTER JOIN lapsed.cur_lapsed_mk mk ON mk.id = v.doc_id
                              LEFT OUTER JOIN ou.rekv r ON r.id = mk.rekvid
                              LEFT OUTER JOIN ou.userid u ON u.id = $2
-                    ORDER BY timestamp DESC`,     //  $1 всегда ид учреждения, $2 - userId
+                        ORDER BY timestamp DESC`,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
         alias: 'curPankVV'
     },

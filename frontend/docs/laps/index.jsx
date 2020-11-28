@@ -155,14 +155,6 @@ class Documents extends React.PureComponent {
                 // открываем отчет
                 this.setState({isReport: true, txtReport: tulemused});
 
-/*
-                Doc.setState({warning: `${message}, suunatamine...`, warningType: 'ok'});
-
-                // ждем 10 сек и редайрект на табеля
-                setTimeout(() => {
-                    this.props.history.push(`/lapsed/${task.docTypeId}`);
-                }, 1000 * 5);
-*/
             } else {
                 if (data.error_message) {
                     Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
@@ -201,7 +193,6 @@ class Documents extends React.PureComponent {
      * уберет окно с отчетом
      */
     modalReportePageBtnClick(event) {
-        console.log('event', event);
         let isReport = event && event == 'Ok' ? false: true;
         this.setState({isReport: isReport})
     }
