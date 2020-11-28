@@ -60,8 +60,6 @@ class Documents extends React.PureComponent {
                     report={this.state.txtReport}
                     modalPageBtnClick={this.modalReportePageBtnClick}>
                 </ModalReport>
-
-
             </div>
         );
     }

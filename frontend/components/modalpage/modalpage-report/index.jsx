@@ -49,6 +49,7 @@ class ModalPageInfo extends React.PureComponent {
                 <span> {systemMessage} </span>
                 <div style={styles.docRow}>
                     <TextArea title="Report"
+                              style={styles.tulemus}
                               name='report'
                               ref="textarea-report"
                               value={report.kokkuVotte}
@@ -78,8 +79,8 @@ class ModalPageInfo extends React.PureComponent {
         // если один обьект
         if (data && data.data && typeof data.data == 'object' && !data.data.length) {
             report.data.push({
-                result: data.result ? 'Ok' : 'Viga',
-                kas_vigane: Boolean(data.kas_vigane),
+                result: row.result && !row.error_code ? 'Ok' : 'Viga',
+                kas_vigane: Boolean(data.kas_vigane ? !data.error_code : data.kas_vigane),
                 error_code: data.error_code,
                 error_message: data.error_message
             });
@@ -89,11 +90,11 @@ class ModalPageInfo extends React.PureComponent {
         }
 
         if (data && data.data && typeof data == 'object' && data.data.length) {
-            data.data.map((row) => {
+            data.data.map((row, index) => {
                 report.data.push({
-                    id: row.id,
-                    kas_vigane: Boolean(row.kas_vigane),
-                    result: row.result ? 'Ok' : 'Viga',
+                    id: row.id ? row.id: index ,
+                    kas_vigane: Boolean(row.kas_vigane ? row.kas_vigane: !!row.error_code ),
+                    result: row.result && !row.error_code ? 'Ok' : 'Viga',
                     error_code: row.error_code,
                     error_message: row.error_message
                 });

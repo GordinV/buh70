@@ -16,6 +16,8 @@ module.exports = async (file, mimeType, user) => {
     }
 
     let saved = 0;
+    let response = [];
+    let returnData;
     if (rows.length) {
         // сохраняем
 
@@ -24,19 +26,15 @@ module.exports = async (file, mimeType, user) => {
             userId: user.id,
             asutusId: user.asutusId
         };
-        const response = await Document.save(params, true);
+        response = await Document.save(params, true);
         saved = response.data && response.data.length > 0 ? response.data[0].result : 0;
-
-/*
-        timestamp = response.data && response.data.length > 0 ? response.data[0].stamp : null;
-        if (saved && timestamp) {
-            let mk_params = [timestamp, user.id];
-            const mkCount = await Document.executeTask('koostaMK', mk_params);
-        }
-*/
+        returnData = response.data && response.data.length  ? response.data[0]: [];
     }
-    return `Kokku leidsin ${rows.length} maksed, salvestatud kokku: ${saved}`;
-
+    return {
+        error_message: `Kokku leidsin ${rows.length} maksed, salvestatud kokku: ${saved}`,
+        result: saved,
+        data: returnData
+    };
 };
 
 const readXML = async (xmlContent) => {
@@ -57,7 +55,7 @@ const readXML = async (xmlContent) => {
         let Ntres = stmtes[0].Ntry;
 
         Ntres.forEach(ntry => {
-            let CdtDbtInd = ntry.CdtDbtInd && ntry.CdtDbtInd.isArray ? CdtDbtInd[0]: ntry.CdtDbtInd;
+            let CdtDbtInd = ntry.CdtDbtInd && ntry.CdtDbtInd.isArray ? CdtDbtInd[0] : ntry.CdtDbtInd;
             if (CdtDbtInd == 'CRDT') {
                 let summa = Number(ntry.Amt[0]);
                 let kpv = ntry.ValDt[0].Dt[0];

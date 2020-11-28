@@ -73,7 +73,7 @@ module.exports = {
             data: []
         },
         {
-            sql: `SELECT r.nimetus AS asutus, u.*
+            sql: `SELECT r.nimetus AS asutus, u.*, $2 as rekvid
                   FROM ou.userid u
                            INNER JOIN ou.rekv r ON r.id = u.rekvid
                   WHERE ($1 = 0
@@ -92,7 +92,9 @@ module.exports = {
             query: null,
             multiple: true,
             alias: 'get_last_login',
-            data: []
+            data: [],
+            not_initial_load: true
+
         },
     ],
     returnData: {

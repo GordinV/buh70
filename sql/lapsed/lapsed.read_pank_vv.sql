@@ -5,7 +5,8 @@ DROP FUNCTION IF EXISTS lapsed.read_pank_vv(IN user_id INTEGER, IN TEXT);
 CREATE OR REPLACE FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN l_timestamp TEXT,
                                                OUT error_code INTEGER,
                                                OUT result INTEGER,
-                                               OUT error_message TEXT)
+                                               OUT error_message TEXT,
+                                               OUT data JSONB)
     RETURNS RECORD AS
 $BODY$
 DECLARE
@@ -31,6 +32,9 @@ DECLARE
     v_vanem          RECORD;
     l_vanem          INTEGER;
     l_new_viitenr    TEXT;
+    l_mk_number      TEXT;
+    l_message        TEXT;
+    l_error_code     INTEGER        = 0;
 BEGIN
     -- ищем платежи
     FOR v_pank_vv IN
@@ -40,6 +44,10 @@ BEGIN
           AND (doc_id IS NULL OR doc_id = 0)
         ORDER BY kpv, id
         LOOP
+
+            l_message = 'Tehingu nr.: ' || ltrim(rtrim(v_pank_vv.pank_id)) ||
+                        ',Maksja:' || ltrim(rtrim(v_pank_vv.maksja));
+
             -- ишем плательшика
             SELECT row_to_json(row) INTO json_object
             FROM (SELECT v_pank_vv.isikukood AS regkood,
@@ -91,6 +99,15 @@ BEGIN
 
                 l_vanem = (SELECT lapsed.sp_salvesta_vanem(json_object :: JSONB, l_target_user_id, l_rekvid));
 
+                -- в лог о создании нового плательщика
+                IF (l_vanem IS NOT NULL AND l_vanem > 0)
+                THEN
+                    l_message = l_message || ',maksja puudub, uus maksja salvestatud';
+                ELSE
+                    l_error_code = 1;
+                    l_message = l_message || ',maksja puudub';
+                END IF;
+
             END IF;
 
             -- ищем ид конфигурации контировки
@@ -130,7 +147,7 @@ BEGIN
 
             -- запоминаем сумму платежа
             l_tasu_jaak = v_pank_vv.summa;
-            -- ищкм счет
+            -- ищем счет
 
             FOR v_arv IN
                 SELECT a.id, a.jaak, a.rekvid, a.asutusid, a.asutus AS maksja
@@ -169,6 +186,8 @@ BEGIN
                     IF upper(v_arv.maksja)::TEXT <> upper(v_pank_vv.maksja)::TEXT
                     THEN
                         l_error = l_error || ' ' || upper(v_arv.maksja)::TEXT || '<>' || upper(v_pank_vv.maksja);
+                        l_message = l_message || l_error;
+
                     END IF;
 
                     -- сохраняем пулученную информаци.
@@ -188,6 +207,7 @@ BEGIN
                     IF (l_tasu_jaak <= 0)
                     THEN
                         -- вся оплата списана
+                        l_message = l_message || ',kogu summa kasutatud';
                         EXIT;
                     END IF;
                 END LOOP;
@@ -228,17 +248,41 @@ BEGIN
 
                     -- lausend
                     PERFORM docs.gen_lausend_smk(l_mk_id, l_target_user_id);
+                    -- log
+                    l_message = l_message || ', koostatud ettemaks';
+                    l_count_kokku = l_count_kokku + 1;
                 END IF;
-
 
             END IF;
             IF l_count = 0
             THEN
                 UPDATE lapsed.pank_vv v SET markused = 'Arved ei leidnud' WHERE id = v_pank_vv.id;
+
+                --log
+                l_message = l_message || ',arved ei leidnud';
+            END IF;
+            -- report
+
+            -- get mk number
+
+            IF l_mk_id IS NOT NULL AND l_mk_id > 0
+            THEN
+                l_mk_number = (SELECT number FROM docs.mk WHERE parentid = l_mk_id);
+                l_message = l_message || ',mk nr.:' || ltrim(rtrim(l_mk_number));
+            ELSE
+                l_mk_number = '';
             END IF;
 
+            json_object = to_jsonb(row.*)
+                          FROM (
+                                   SELECT l_mk_id               AS doc_id,
+                                          l_message             AS error_message,
+                                          l_error_code::INTEGER AS error_code
+                               ) row;
+            data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
         END LOOP;
     result = l_count_kokku;
+    error_code = l_error_code;
     RETURN;
 EXCEPTION
     WHEN OTHERS
@@ -247,6 +291,15 @@ EXCEPTION
             error_code = 1;
             error_message = SQLERRM;
             result = 0;
+            json_object = to_jsonb(row.*)
+                          FROM (
+                                   SELECT NULL::INTEGER                     AS doc_id,
+                                          l_message || ',' || error_message AS error_message,
+                                          1::INTEGER                        AS error_code
+                               ) row;
+            data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
+
+            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
             RETURN;
 END;
 $BODY$

@@ -23,7 +23,7 @@ module.exports = {
 
 
     requiredFields: [],
-    saveDoc: `SELECT result AS id, result, stamp, error_message
+    saveDoc: `SELECT result AS id, result, stamp, error_message, data 
               FROM lapsed.sp_salvesta_pank_vv($1::JSONB, $2::INTEGER, $3::INTEGER)`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: ``, // $1 - userId, $2 - docId
     grid: {

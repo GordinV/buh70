@@ -39,7 +39,8 @@ class Input extends React.PureComponent {
         const inputPlaceHolder = this.props.placeholder || this.props.title,
             inputStyle = Object.assign({}, styles.input,
                 this.props.width ? {width: this.props.width} : {},
-                this.state.readOnly ? styles.readOnly : {}
+                this.state.readOnly ? styles.readOnly : {},
+                this.props.style ? this.props.style: {}
             );
 
         return (

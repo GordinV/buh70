@@ -8,6 +8,7 @@ const ButtonUpload = require('./../../components/upload_button/index.jsx');
 const BtnLogs = require('./../../components/button-register/button_logs/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
+
 const getSum = require('./../../../libs/getSum');
 
 
@@ -26,9 +27,11 @@ class Documents extends React.PureComponent {
         this.handleClick = this.handleClick.bind(this);
         this.state = {
             summa: 0,
-            read: 0
-        };
+            read: 0,
+            isReport: false,
+            txtReport:[]
 
+        };
     }
 
     render() {
@@ -70,8 +73,6 @@ class Documents extends React.PureComponent {
             this.setState({summa: summa, read: self.gridData.length});
         }
 
-        let me = checkRights(userRoles, docRights, 'import');
-        console.log('me', me, userRoles, docRights);
         return (
             <ToolbarContainer>
                 {checkRights(userRoles, docRights, 'import') ?
@@ -101,9 +102,8 @@ class Documents extends React.PureComponent {
 
         setTimeout(() => {
             Doc.fetchData('selectDocs');
-        }, 10000);
+        }, 1000);
     }
-
 }
 
 module.exports = (Documents);
