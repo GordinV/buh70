@@ -369,8 +369,17 @@ class Documents extends React.Component {
 
             filterString = prepareSqlWhereFromFilter(this.filterData, this.docTypeId);
         } else {
+            // чистим строку фильтрации и массив фильтров
             filterString = '';
-            this.filterData = [];
+            this.filterData.forEach(row=> {
+                row.value = null;
+                if (row.start) {
+                    row.start = null;
+                }
+                if (row.end) {
+                    row.end = null;
+                }
+            })
         }
 
         this.setState({
