@@ -53,14 +53,19 @@ DECLARE
                                LIMIT 1);
 
     l_db_konto      TEXT    = '103000'; -- согдасно описанию отдела культуры
+    v_laps          RECORD;
 
 BEGIN
+    SELECT * INTO v_laps
+    FROM lapsed.laps l
+    WHERE id = l_laps_id;
+
 
     IF l_asutus_id IS NULL
     THEN
         -- контр-анет не найден, выходим
         result = 0;
-        error_message = 'Puudub kontragent';
+        error_message = 'Puudub kontragent, Isikukood:' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
         error_code = 1;
         RETURN;
 
@@ -221,18 +226,18 @@ BEGIN
 
                     -- создаем параметры
                     l_json_arve = (SELECT to_json(row)
-                                   FROM (SELECT coalesce(l_arv_id, 0)                                AS id,
-                                                l_number                                             AS number,
-                                                l_doklausend_id                                      AS doklausid,
-                                                l_liik                                               AS liik,
-                                                l_kpv                                                AS kpv,
-                                                l_asutus_id                                          AS asutusid,
-                                                l_aa                                                 AS aa,
-                                                l_laps_id                                            AS lapsid,
+                                   FROM (SELECT coalesce(l_arv_id, 0)                         AS id,
+                                                l_number                                      AS number,
+                                                l_doklausend_id                               AS doklausid,
+                                                l_liik                                        AS liik,
+                                                l_kpv                                         AS kpv,
+                                                l_asutus_id                                   AS asutusid,
+                                                l_aa                                          AS aa,
+                                                l_laps_id                                     AS lapsid,
                                                 'Arve, taabeli alus ' || date_part('month', l_kpv)::TEXT ||
                                                 '/' ||
                                                 date_part('year', l_kpv)::TEXT || ' kuu eest' AS muud,
-                                                json_arvrea                                          AS "gridData") row);
+                                                json_arvrea                                   AS "gridData") row);
 
                     -- подготавливаем параметры для создания счета
                     SELECT row_to_json(row) INTO json_object
@@ -281,26 +286,30 @@ BEGIN
 
     -- создаем параметры
     l_json_arve = (SELECT to_json(row)
-                   FROM (SELECT coalesce(l_arv_id, 0)                                AS id,
-                                l_number                                             AS number,
-                                l_doklausend_id                                      AS doklausid,
-                                l_liik                                               AS liik,
-                                l_kpv                                                AS kpv,
-                                l_kpv + 15                                           AS tahtaeg,
-                                l_asutus_id                                          AS asutusid,
-                                l_laps_id                                            AS lapsid,
-                                l_aa                                                 AS aa,
+                   FROM (SELECT coalesce(l_arv_id, 0)                         AS id,
+                                l_number                                      AS number,
+                                l_doklausend_id                               AS doklausid,
+                                l_liik                                        AS liik,
+                                l_kpv                                         AS kpv,
+                                l_kpv + 15                                    AS tahtaeg,
+                                l_asutus_id                                   AS asutusid,
+                                l_laps_id                                     AS lapsid,
+                                l_aa                                          AS aa,
                                 'Arve, taabeli alus ' || date_part('month', l_kpv)::TEXT || '/' ||
                                 date_part('year', l_kpv)::TEXT || ' kuu eest' AS muud,
-                                jsonb_print                                          AS print,
-                                json_arvread                                         AS "gridData") row);
-
-    -- подготавливаем параметры для создания счета
-    SELECT row_to_json(row) INTO json_object
-    FROM (SELECT coalesce(l_arv_id, 0) AS id, l_json_arve AS data) row;
+                                jsonb_print                                   AS print,
+                                json_arvread                                  AS "gridData") row);
 
 
-    -- check for arve summa
+    IF (jsonb_array_length(json_arvread) > 0)
+    THEN
+
+        -- подготавливаем параметры для создания счета
+        SELECT row_to_json(row) INTO json_object
+        FROM (SELECT coalesce(l_arv_id, 0) AS id, l_json_arve AS data) row;
+
+
+        -- check for arve summa
 /*    IF l_arve_summa < 0
     THEN
         result = 0;
@@ -309,9 +318,15 @@ BEGIN
         RETURN;
     ELSE
 */
-    SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
-
-    --    END IF;
+        SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
+    ELSE
+        l_arv_id = NULL;
+        result = 0;
+        error_code = 1;
+        error_message =
+                    'Kehtiv teenused ei leidnud,  Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
+        RETURN;
+    END IF;
 
 
     -- проверка
@@ -323,12 +338,15 @@ BEGIN
             -- контируем
             PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
         END IF;
+        error_message = 'Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi || ', arveId:' ||
+                        coalesce(l_arv_id, 0)::TEXT;
 
         result = l_arv_id;
     ELSE
-        result = 0;
-        error_message = 'Dokumendi koostamise viga';
         error_code = 1;
+        error_message =
+                    'Dokumendi koostamise viga,  Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
+
     END IF;
     RETURN;
 

@@ -4,7 +4,7 @@ module.exports = {
     events: {
         LAPS: [
             {name: 'Tabeli koostamine', method: 'arvestaTaabel', docTypeId: 'lapse_taabel'},
-            {name: 'Arve koostamine', method: 'koostaArve', docTypeId: 'arv'},
+            {name: 'Arvete koostamine', method: 'koostaArved', docTypeId: 'arv'},
             {name: 'Ettemaksuarve koostamine', method: 'koostaEttemaksuArved', docTypeId: 'arv'},
         ]
     },

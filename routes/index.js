@@ -81,6 +81,7 @@ module.exports = function (app) {
     app.post('/calc/muuda_ettemaksu_period', checkAuth, require('./lapsed/muuda_ettemaksu_period').post); //checkAuth
     app.post('/calc/muuda_teenuste_tahtaeg', checkAuth, require('./lapsed/muuda_teenuste_tahtaeg').post); //checkAuth
     app.post('/calc/koostaEttemaksuArved', checkAuth, require('./lapsed/koostaEttemaksud').post); //checkAuth
+    app.post('/calc/koostaArved', checkAuth, require('./lapsed/koostaArved').post); //checkAuth
     app.post('/calc/arvestaTaabel', checkAuth, require('./lapsed/arvestaTaabel').post); //checkAuth
     app.post('/calc/:taskName', checkAuth, require('./calc').post); //checkAuth
 

@@ -437,17 +437,14 @@ BEGIN
                   ) kassakulu
          ) qry
              LEFT OUTER JOIN libs.library l ON l.kood = qry.artikkel
-                    AND l.library = 'TULUDEALLIKAD'
-                    AND l.status <> 3
+        AND l.library = 'TULUDEALLIKAD'
+        AND l.status <> 3
     GROUP BY qry.rekvid, qry.tegev, qry.allikas, qry.artikkel, l.nimetus, l.tun5;
 
     INSERT INTO tmp_andmik (idx, tyyp, rekvid, tegev, artikkel, rahavoog, nimetus, saldoandmik, db, kr, aasta, kuu)
     SELECT 2,
            2,
-           (CASE
-                WHEN $3 = 1 AND $2 = 63
-                    THEN 999
-                ELSE $2 END),
+           l_rekvid,
            tegev,
            konto,
            rahavoo,
@@ -466,7 +463,10 @@ BEGIN
                         WHEN $3 = 1 AND l_rekvid <> 63 THEN rekvid
                         ELSE l_rekvid END)
       AND rekvid IN (SELECT rekv_id
-                     FROM get_asutuse_struktuur(l_rekvid))
+                     FROM get_asutuse_struktuur(l_rekvid)
+                     UNION ALL
+                     SELECT 999 AS rekv_id
+    )
 
     GROUP BY tegev
            , konto
@@ -479,11 +479,7 @@ BEGIN
     INSERT INTO tmp_andmik (idx, tyyp, rekvid, tegev, artikkel, rahavoog, nimetus, saldoandmik, db, kr, aasta, kuu)
     SELECT 2,
            2,
-           (CASE
-                WHEN $3 = 1 AND l_rekvid = 63
-                    THEN 999
-                ELSE l_rekvid END),
-
+           l_rekvid,
            tegev,
            konto,
            rahavoo,
@@ -502,7 +498,10 @@ BEGIN
                         WHEN $3 = 1 AND l_rekvid <> 63 THEN rekvid
                         ELSE l_rekv_id END)
       AND rekvid IN (SELECT rekv_id
-                     FROM get_asutuse_struktuur(l_rekvid))
+                     FROM get_asutuse_struktuur(l_rekvid)
+                     UNION ALL
+                     SELECT 999 AS rekv_id
+    )
 
     GROUP BY tegev
            , allikas

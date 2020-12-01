@@ -23,7 +23,7 @@ SELECT to_char(d.created, 'DD.MM.YYYY HH:MM')                                   
        j1.kreedit,
        coalesce(j1.lisa_k, '') :: VARCHAR(20)                                                 AS lisa_k,
        j1.summa,
-       j1.valsumma,
+       j1.summa as valsumma,
        'EUR' :: VARCHAR(20)                                                                   AS valuuta,
        1 :: NUMERIC(12, 6)                                                                    AS kuurs,
        coalesce(j1.kood1, '') :: VARCHAR(20)                                                  AS kood1,

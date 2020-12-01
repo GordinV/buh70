@@ -13,10 +13,9 @@ SELECT lt.id,
        coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)::NUMERIC AS soodustus,
        (lk.properties ->> 'kas_protsent')::BOOLEAN                 AS kas_protsent,
        CASE
-           WHEN month((lk.properties ->> 'sooduse_alg')::DATE) <= lt.kuu AND
-                year((lk.properties ->> 'sooduse_alg')::DATE) <= lt.aasta
-               AND month((lk.properties ->> 'sooduse_lopp')::DATE) >= lt.kuu AND
-                year((lk.properties ->> 'sooduse_lopp')::DATE) >= lt.aasta THEN 1
+           WHEN (lk.properties ->> 'sooduse_alg')::DATE <= make_date(lt.aasta, lt.kuu, 28)
+               AND (lk.properties ->> 'sooduse_lopp')::DATE >= make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - interval '1 day'
+               THEN 1
            ELSE 0 END                                              AS sooduse_kehtivus,
        l.isikukood,
        l.nimi,
@@ -33,8 +32,9 @@ FROM lapsed.lapse_taabel lt
          INNER JOIN lapsed.laps l ON l.id = lt.parentid
          INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
          INNER JOIN lapsed.lapse_kaart lk ON lk.id = lt.lapse_kaart_id
-         INNER JOIN libs.library grupp ON grupp.library::TEXT = 'LAPSE_GRUPP'::TEXT AND grupp.rekvid = lk.rekvid AND grupp.status <> 3
-    AND grupp.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
+         INNER JOIN libs.library grupp
+                    ON grupp.library::TEXT = 'LAPSE_GRUPP'::TEXT AND grupp.rekvid = lk.rekvid AND grupp.status <> 3
+                        AND grupp.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
 WHERE lt.staatus <> 3
 ORDER BY aasta, kuu, nimi, kood;
 

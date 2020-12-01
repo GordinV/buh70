@@ -141,7 +141,7 @@ class Documents extends React.PureComponent {
         let message = `võib olla selles perioodil kõik arved juba väljastatud`;
         Doc.fetchData(`calc/${task.method}`, {docs: ids, seisuga: seisuga}).then((data) => {
             if (data.result) {
-                if (task.method == 'koostaEttemaksuArved') {
+                if (task.method == 'koostaEttemaksuArved' || task.method == 'koostaArved') {
                     message = `task saadetud täitmisele`;
                 } else {
                     message = `Kokku arvestatud: ${data.result}, suunatamine...`;

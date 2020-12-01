@@ -91,7 +91,7 @@ class LapseKaart extends React.PureComponent {
      */
 
     renderer(self) {
-        if (!self || !self.docData.lapse_nimi) {
+        if (!self || !self.docData.lapse_nimi || !self.libs['nomenclature'].length) {
             // не загружены данные
             return (<div style={styles.doc}>
                 <Loading label={'Laadimine...'}/>
@@ -133,6 +133,7 @@ class LapseKaart extends React.PureComponent {
 
             }
 
+             console.log('nomData', nomData, yksus)
         } catch (e) {
             console.error(e, nomData);
         }

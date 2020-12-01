@@ -4,7 +4,7 @@ const Doc = require('./../../classes/DocumentTemplate');
 
 exports.post = async (req, res) => {
     const params = req.body;
-    const taskName = 'koostaEttemaksuArved';
+    const taskName = 'koostaArved';
     const docTypeId = params.parameter ? params.parameter : params.data.docTypeId;
     let ids = params.data && params.data.docs ? params.data.docs : []; // параметр ids документа
     const execDate = params.data && params.data.seisuga ? params.data.seisuga : getNow(); // доп параметр дата

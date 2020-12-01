@@ -957,8 +957,8 @@ BEGIN
                                      AND (left(j.deebet, 6) <> '100080' OR left(j.kreedit, 6) <> '100080')
                                      AND j.kpv <= l_kpv
                            ) -
-                           (SELECT sum(CASE WHEN deebet LIKE '100%' THEN summa ELSE 0 END)
-                                       - sum(CASE WHEN kreedit LIKE '100%' THEN summa ELSE 0 END)
+                           (SELECT sum(CASE WHEN deebet LIKE '100%' AND deebet <> '100080' THEN summa ELSE 0 END)
+                                       - sum(CASE WHEN kreedit LIKE '100%' AND kreedit <> '100080' THEN summa ELSE 0 END)
                             FROM cur_journal j
                                 WHERE j.rekvid = (CASE
                                                       WHEN l_kond = 1
@@ -1280,9 +1280,9 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019, 12, 31), 130, 0) qry
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019, 12, 31), 63, 1) qry
          WHERE (NOT empty(qry.tegev) OR NOT empty(qry.artikkel))
-           AND qry.tegev LIKE '049%'
+           AND qry.artikkel LIKE '100%'
      ) qry
 --test
 /*
