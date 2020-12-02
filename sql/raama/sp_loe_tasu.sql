@@ -46,8 +46,7 @@ BEGIN
              INNER JOIN docs.arv arv ON a.id = arv.parentid
     WHERE a.rekvid = v_tasu.rekvid
       AND (regexp_replace(a.viitenr, '[^0-9]', ''))::TEXT = (regexp_replace(v_tasu.viitenr, '[^0-9]', ''))::TEXT
-      AND a.jaak
-        > 0
+      AND a.jaak > 0
       AND a.jaak >= v_tasu.summa
       AND (arv.properties ->> 'ettemaksu_period' IS NULL OR
         arv.properties ->> 'tyyp' = 'ETTEMAKS') -- только обычные счета или предоплаты

@@ -248,7 +248,7 @@ BEGIN
         END IF;
 
 
-        IF doc_arvid IS NOT NULL AND NOT exists(SELECT id FROM docs.arvtasu WHERE doc_tasu_id = doc_id AND status <> 3)
+        IF NOT exists(SELECT id FROM docs.arvtasu WHERE doc_tasu_id = doc_id AND status <> 3)
         THEN
             -- произведем поиск и оплату счета
             PERFORM docs.sp_loe_tasu(doc_id, user_id);

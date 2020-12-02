@@ -357,6 +357,19 @@ class Arve extends React.PureComponent {
                                          pattern="[0-9]{10}"
                                          onChange={self.handleGridRowInput}/>
                         </div>
+                    </div>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <InputNumber title='Soodustus '
+                                         name='soodustus'
+                                         value={Number(row.soodustus ? row.soodustus : 0)}
+                                         readOnly={false}
+                                         disabled={false}
+                                         bindData={false}
+                                         ref='hind'
+                                         pattern="[0-9]{10}"
+                                         onChange={self.handleGridRowInput}/>
+                        </div>
                         <div style={styles.docColumn}>
                             <InputNumber title='Hind '
                                          name='hind'

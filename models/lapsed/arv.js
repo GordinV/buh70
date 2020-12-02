@@ -247,24 +247,15 @@ const Arv = {
                     AND arvtasu.summa <> 0
                     AND arvtasu.status <> 3
                   UNION ALL
-                  SELECT Arvtasu.id
-                          ,
-                         arvtasu.kpv
-                          ,
-                         arvtasu.summa
-                          ,
-                         'KASSAORDER' :: VARCHAR(20)   AS dok
-                          ,
-                         'KASSA' :: VARCHAR            AS liik
-                          ,
-                         pankkassa
-                          ,
-                         korder1.journalid
-                          ,
-                         doc_tasu_id
-                          ,
-                         coalesce(journalid.number, 0) AS number
-                          ,
+                  SELECT Arvtasu.id,
+                         arvtasu.kpv,
+                         arvtasu.summa,
+                         'KASSAORDER' :: VARCHAR(20)   AS dok,
+                         'KASSA' :: VARCHAR            AS liik,
+                         pankkassa,
+                         korder1.journalid,
+                         doc_tasu_id,
+                         coalesce(journalid.number, 0) AS number,
                          $2                            AS userid
                   FROM docs.arvtasu arvtasu
                            INNER JOIN docs.korder1 korder1
@@ -274,24 +265,15 @@ const Arv = {
                     AND arvtasu.summa <> 0
                     AND arvtasu.status <> 3
                   UNION ALL
-                  SELECT Arvtasu.id
-                          ,
-                         arvtasu.kpv
-                          ,
-                         arvtasu.summa
-                          ,
-                         'PAEVARAAMAT' :: VARCHAR(20)  AS dok
-                          ,
-                         'JOURNAL' :: VARCHAR          AS liik
-                          ,
-                         pankkassa
-                          ,
-                         arvtasu.doc_tasu_id           AS journalid
-                          ,
-                         doc_tasu_id
-                          ,
-                         coalesce(journalid.number, 0) AS number
-                          ,
+                  SELECT Arvtasu.id,
+                         arvtasu.kpv,
+                         arvtasu.summa,
+                         'PAEVARAAMAT' :: VARCHAR(20)  AS dok,
+                         'JOURNAL' :: VARCHAR          AS liik,
+                         pankkassa,
+                         arvtasu.doc_tasu_id           AS journalid,
+                         doc_tasu_id,
+                         coalesce(journalid.number, 0) AS number,
                          $2                            AS userid
                   FROM docs.arvtasu arvtasu
                            LEFT OUTER JOIN docs.journal journal
@@ -302,24 +284,15 @@ const Arv = {
                     AND arvtasu.status <> 3
                     AND arvtasu.pankkassa = 3
                   UNION ALL
-                  SELECT Arvtasu.id
-                          ,
-                         arvtasu.kpv
-                          ,
-                         arvtasu.summa
-                          ,
-                         '' :: VARCHAR(20) AS dok
-                          ,
-                         'MUUD' :: VARCHAR AS liik
-                          ,
-                         pankkassa
-                          ,
-                         0                 AS journalid
-                          ,
-                         NULL
-                          ,
-                         0                 AS number
-                          ,
+                  SELECT Arvtasu.id,
+                         arvtasu.kpv,
+                         arvtasu.summa,
+                         '' :: VARCHAR(20) AS dok,
+                         'MUUD' :: VARCHAR AS liik,
+                         pankkassa,
+                         0                 AS journalid,
+                         NULL,
+                         0                 AS number,
                          $2                AS userid
                   FROM docs.arvtasu arvtasu
                   WHERE Arvtasu.doc_arv_id = $1
@@ -407,6 +380,7 @@ const Arv = {
             {id: 'yksus', name: 'Üksus', width: '100px', show: true, readOnly: true},
             {id: 'nimetus', name: 'Nimetus', width: '250px', show: true, readOnly: true},
             {id: 'hind', name: 'Hind', width: '75px', show: true, type: 'number', readOnly: false},
+            {id: 'soodustius', name: 'Soodustus', width: '75px', show: false, type: 'number', readOnly: false},
             {id: 'uhik', name: 'Ühik', width: '75px', show: true, readOnly: true},
             {id: 'kogus', name: 'kogus', width: '100px', show: true, type: 'number', readOnly: false},
             {id: 'kbm', name: 'Käibemaks', width: '100px', show: true, type: 'number', readOnly: false},

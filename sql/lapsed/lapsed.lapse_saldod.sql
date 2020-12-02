@@ -13,6 +13,7 @@ CREATE OR REPLACE FUNCTION lapsed.lapse_saldod(l_kpv DATE DEFAULT now(), l_laps_
         arv_tasud  NUMERIC(14, 2), -- всего оплат за прошлый период
         ettemaksud NUMERIC(14, 2), -- в.т. числе переплат
         tagastused NUMERIC(14, 2)  -- возвраты
+
     ) AS
 $BODY$
 
@@ -67,8 +68,8 @@ FROM (
          WHERE mk.parentid = d.id
            AND l.docid = d.id
            AND d.status <> 3
-           AND year(mk.maksepaev) = year(l_kpv)
-           AND month(mk.maksepaev) = month(l_kpv)
+           AND year(mk.maksepaev) = year(l_kpv - 1)
+           AND month(mk.maksepaev) = month(l_kpv - 1)
            AND d.status <> 3
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
            AND mk.opt = 2
@@ -89,8 +90,8 @@ FROM (
          WHERE mk.parentid = d.id
            AND l.docid = d.id
            AND d.status <> 3
-           AND year(mk.maksepaev) = year(l_kpv)
-           AND month(mk.maksepaev) = month(l_kpv)
+           AND year(mk.maksepaev) = year(l_kpv - 1)
+           AND month(mk.maksepaev) = month(l_kpv - 1)
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
            AND mk.opt = 1
 
@@ -109,8 +110,8 @@ FROM (
                   INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid
                   INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                   INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
-         WHERE year(at.kpv) = year(l_kpv)
-           AND month(at.kpv) = month(l_kpv)
+         WHERE year(at.kpv) = year(l_kpv - 1)
+           AND month(at.kpv) = month(l_kpv - 1)
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
 

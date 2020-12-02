@@ -64,23 +64,24 @@ FROM (
          ),
               alg_saldo AS (
                   -- alg_saldo
-                  SELECT kpv_start                                                   AS period,
-                         coalesce(k.kulastavus, 'Ei')::TEXT                          AS kulastatavus,
-                         coalesce(alg_saldo.yksus, '')::TEXT                         AS yksus,
-                         coalesce(alg_saldo.jaak::NUMERIC(14, 2), 0)::NUMERIC(14, 2) AS alg_saldo,
-                         alg_saldo.rekv_id::INTEGER                                  AS rekvid,
-                         l.id                                                        AS laps_id,
-                         l.isikukood                                                 AS lapse_isikukood,
-                         l.nimi                                                      AS lapse_nimi,
-                         a.nimetus ::TEXT                                            AS maksja_nimi,
-                         a.regkood::TEXT                                             AS maksja_isikukood,
-                         lapsed.get_viitenumber(alg_saldo.rekv_id, l.id)::TEXT       AS viitenumber
+                  SELECT kpv_start                                                     AS period,
+                         coalesce(k.kulastavus, 'Ei')::TEXT                            AS kulastatavus,
+                         coalesce(alg_saldo.yksus, '')::TEXT                           AS yksus,
+                         coalesce(alg_saldo.jaak::NUMERIC(14, 2), 0) :: NUMERIC(14, 2) AS alg_saldo,
+                         alg_saldo.rekv_id::INTEGER                                    AS rekvid,
+                         l.id                                                          AS laps_id,
+                         l.isikukood                                                   AS lapse_isikukood,
+                         l.nimi                                                        AS lapse_nimi,
+                         a.nimetus ::TEXT                                              AS maksja_nimi,
+                         a.regkood::TEXT                                               AS maksja_isikukood,
+                         lapsed.get_viitenumber(alg_saldo.rekv_id, l.id)::TEXT         AS viitenumber
                   FROM lapsed.laps l
-                           LEFT OUTER JOIN (SELECT jaak,
+                           LEFT OUTER JOIN (SELECT -1 * coalesce(arv_tasud, 0) + coalesce(jaak, 0) AS jaak,
+
                                                    laps_id,
                                                    rekv_id,
                                                    yksus,
-                                                   lapsed.get_last_maksja(docs_ids) AS asutus_id
+                                                   lapsed.get_last_maksja(docs_ids)           AS asutus_id
                                             FROM lapsed.lapse_saldod(kpv_start::DATE)) alg_saldo
                                            ON alg_saldo.laps_id = l.id
                            INNER JOIN libs.asutus a ON a.id = alg_saldo.asutus_id
@@ -149,22 +150,22 @@ FROM (
                     AND d.rekvid IN (SELECT rekv_id
                                      FROM get_asutuse_struktuur(l_rekvid))
                     AND a.kpv >= kpv_start
-                    AND a.kpv <= kpv_end
-              ),
+                    AND a.kpv <= kpv_end)
+                 ,
               ettemaksud AS (
-                  SELECT kpv_start         AS period,
-                         0::NUMERIC(14, 2) AS jaak, -- summa не связанных со счетами платежек (нач. сальдо или предоплата)
-                         l.parentid        AS laps_id,
-                         ymk.yksus         AS yksus,
-                         d.rekvid          AS rekv_id,
-                         d.id              AS docs_id,
-                         ymk.summa         AS laekumised,
-                         a.regkood         AS maksja_isikukood,
-                         a.nimetus         AS maksja_nimi,
-                         laps.isikukood    AS lapse_isikukood,
-                         laps.nimi         AS lapse_nimi,
-                         mk.viitenr        AS viitenumber
-                  FROM docs.doc d
+                  SELECT kpv_start      AS period,
+                         0::NUMERIC(14, 2)       AS jaak, -- summa не связанных со счетами платежек (нач. сальдо или предоплата)
+                         l.parentid     AS laps_id,
+                         ymk.yksus      AS yksus,
+                         D.rekvid       AS rekv_id,
+                         D.id           AS docs_id,
+                         ymk.summa      AS laekumised,
+                         a.regkood      AS maksja_isikukood,
+                         a.nimetus      AS maksja_nimi,
+                         laps.isikukood AS lapse_isikukood,
+                         laps.nimi      AS lapse_nimi,
+                         mk.viitenr     AS viitenumber
+                  FROM docs.doc D
                            INNER JOIN (SELECT mk.id, mk.parentid, mk.viitenr
                                        FROM docs.mk mk
                                        WHERE mk.maksepaev >= kpv_start
@@ -179,32 +180,31 @@ FROM (
                           ,
                        lapsed.get_group_part_from_mk(D.id, kpv_end) AS ymk
                   WHERE D.status <> 3
-                    AND d.rekvid IN (SELECT rekv_id
+                    AND D.rekvid IN (SELECT rekv_id
                                      FROM get_asutuse_struktuur(l_rekvid))
                   UNION ALL
                   -- распределенные авансовые платежи
-                  SELECT kpv_start                                  AS period,
-                         0                                          AS jaak,
-                         l.parentid                                 AS laps_id,
-                         a1.properties ->> 'yksus'                  AS yksus,
-                         at.rekvid                                  AS rekv_id,
-                         at.doc_tasu_id                             AS docs_id,
-                         ((a1.summa / a.summa) * at.summa)          AS laekumised,
-                         maksja.regkood                             AS maksja_isikukood,
-                         maksja.nimetus                             AS maksja_nimi,
-                         laps.isikukood                             AS lapse_isikukood,
-                         laps.nimi                                  AS lapse_nimi,
-                         lapsed.get_viitenumber(at.rekvid, laps.id) AS viitenumber
-
-                  FROM docs.arvtasu at
-                           INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid
+                  SELECT kpv_start                         AS period ,
+                         0                                 AS jaak,
+                         l.parentid                        AS laps_id,
+                         a1.properties ->> 'yksus'         AS yksus,
+                         AT.rekvid                         AS rekv_id,
+                         AT.doc_tasu_id                    AS docs_id,
+                         ((a1.summa / a.summa) * AT.summa) AS laekumised,
+                         maksja.regkood                    AS maksja_isikukood,
+                         maksja.nimetus                    AS maksja_nimi,
+                         laps.isikukood                    AS lapse_isikukood,
+                         laps.nimi                         AS lapse_nimi,
+                         lapsed.get_viitenumber(AT.rekvid, laps.id)                    AS viitenumber
+                  FROM docs.arvtasu AT
+                           INNER JOIN docs.arv a ON AT.doc_arv_id = a.parentid
                            INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                            INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
                            INNER JOIN libs.asutus maksja ON maksja.id = a.asutusid
                            INNER JOIN lapsed.laps laps ON laps.id = l.parentid
-                  WHERE at.kpv >= kpv_start::DATE
-                    AND at.kpv <= kpv_end::DATE
-                    AND at.rekvid IN (SELECT rekv_id
+                  WHERE AT.kpv >= kpv_start::DATE
+                    AND AT.kpv <= kpv_end::DATE
+                    AND AT.rekvid IN (SELECT rekv_id
                                       FROM get_asutuse_struktuur(l_rekvid))
                     AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
               )
@@ -299,7 +299,7 @@ WHERE alg_saldo <> 0
    OR soodustus <> 0
    OR laekumised <> 0
    OR tagastused <> 0
-GROUP BY coalesce(period, kpv_start)::DATE,
+GROUP BY COALESCE(period, kpv_start)::DATE,
          kulastatavus,
          lapse_nimi,
          lapse_isikukood,

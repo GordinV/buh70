@@ -76,7 +76,7 @@ GRANT EXECUTE ON FUNCTION lapsed.get_group_part_from_mk(INTEGER, DATE) TO dbvaat
 /*
 
 
-select * from lapsed.get_group_part_from_mk(2283669, '2020-09-01'::DATE)
+select * from lapsed.get_group_part_from_mk(2078275, '2020-09-01'::DATE)
 
 
 

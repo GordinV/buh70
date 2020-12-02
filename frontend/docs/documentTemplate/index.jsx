@@ -944,11 +944,12 @@ class DocumentTemplate extends React.Component {
      * @param value
      */
     handleGridRowInput(name, value) {
-        let columnType = this.docData.gridConfig.filter(row => {
+        const rea = this.docData.gridConfig.filter(row => {
             if (row.id === name) {
                 return row;
             }
-        })[0].type;
+        });
+        let columnType  = rea.length && rea[0].type ? rea[0].type: 'text';
 
         switch (columnType) {
             case 'text':
