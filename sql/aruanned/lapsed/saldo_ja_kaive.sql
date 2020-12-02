@@ -110,14 +110,19 @@ FROM (
                            INNER JOIN lapsed.laps l ON l.id = ld.parentid
                            INNER JOIN docs.arv a ON a.parentid = d.id
                            INNER JOIN libs.asutus i ON i.id = a.asutusid AND i.staatus <> 3
-                           INNER JOIN (SELECT parentid                    AS arv_id,
-                                              sum(soodus)                 AS soodustus,
-                                              (a1.properties ->> 'yksus') AS yksus,
-                                              sum((CASE
-                                                       WHEN a1.summa > 0
-                                                           THEN coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0)
-                                                       ELSE 0 END::NUMERIC + a1.hind) *
-                                                  a1.kogus)               AS summa
+                           INNER JOIN (SELECT parentid                              AS arv_id,
+                                              sum(
+                                                          (coalesce((a1.properties ->> 'soodustus')::NUMERIC(14, 2), 0)) *
+                                                          a1.kogus::NUMERIC(14, 2)) AS soodustus,
+                                              (a1.properties ->> 'yksus')           AS yksus,
+                                              sum(
+                                                          (CASE
+                                                               WHEN a1.summa > 0 AND
+                                                                    coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) > 0
+                                                                   THEN coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0)
+                                                               ELSE coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) END::NUMERIC +
+                                                           a1.hind) *
+                                                          a1.kogus)                 AS summa
                                        FROM docs.arv1 a1
                                        GROUP BY parentid, a1.properties ->> 'yksus') a1
                                       ON a1.arv_id = a.id
@@ -317,10 +322,10 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 
 
 /*
-select * from (
+select sum(arvestatud) from (
 SELECT *
 FROM lapsed.saldo_ja_kaive(85, '2020-09-01', '2020-09-30')
 ) qry
-where  viitenumber   IN ('0850136823')
+where  is   IN ('0850136823')
 
 */

@@ -403,6 +403,7 @@ class Documents extends React.Component {
                     console.error('error in fetch-> ', err);
                 })
                 .then((data) => {
+                    console.log('deleted', data);
                     if (data.error_message) {
                         console.error('data.error_message', data);
                         this.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});

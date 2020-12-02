@@ -180,7 +180,7 @@ BEGIN
                                             kood4 TEXT, kood5 TEXT,
                                             konto TEXT, tunnus TEXT, tp TEXT, proj TEXT, arve_id INTEGER, muud TEXT,
                                             km TEXT, yksus TEXT, all_yksus TEXT, lapse_taabel_id INTEGER,
-                                            soodustus NUMERIC);
+                                            soodustus NUMERIC(14, 2));
 
 
             SELECT row_to_json(row) INTO arv1_rea_json
@@ -214,7 +214,7 @@ BEGIN
                         coalesce(json_record.muud, ''),
                         coalesce(json_record.km, ''),
                         arv1_rea_json,
-                        coalesce(json_record.soodustus, 0)) RETURNING id
+                        coalesce(json_record.soodustus::NUMERIC(14, 2), 0)::NUMERIC(14, 2)) RETURNING id
                            INTO arv1_id;
 
                 -- add new id into array of ids
@@ -239,7 +239,7 @@ BEGIN
                     tp         = coalesce(json_record.tp, ''),
                     kbm_maar   = coalesce(json_record.km, ''),
                     muud       = json_record.muud,
-                    soodus     = coalesce(json_record.soodustus, 0),
+                    soodus     = coalesce(json_record.soodustus::NUMERIC(14, 2), 0)::NUMERIC(14, 2),
                     properties = properties || arv1_rea_json
                 WHERE id = json_record.id :: INTEGER RETURNING id
                     INTO arv1_id;
