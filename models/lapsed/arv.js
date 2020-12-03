@@ -172,33 +172,36 @@ const Arv = {
                          trim(n.nimetus) :: VARCHAR(254)                                              AS nimetus,
                          n.uhik :: TEXT                                                               AS uhik,
                          coalesce((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4) AS soodustus,
-                         CASE WHEN a1.summa > 0 THEN coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) ELSE 0 END +
-                         a1.hind::NUMERIC(12, 4)                                                      AS tais_hind,
-                         a1.soodus::NUMERIC(12, 4),
-                         a1.kood1,
-                         a1.kood2,
-                         a1.kood3,
-                         a1.kood4,
-                         a1.kood5,
-                         a1.tunnus,
-                         a1.proj,
-                         a1.konto,
-                         a1.tp,
-                         NULL :: TEXT                                                                 AS vastisik,
-                         NULL :: TEXT                                                                 AS formula,
-                         'EUR' :: VARCHAR(20)                                                         AS valuuta,
-                         1 :: NUMERIC                                                                 AS kuurs,
-                         (CASE
-                              WHEN a1.kbm_maar IS NULL
-                                  THEN coalesce((n.properties :: JSONB ->> 'vat'), '-') :: VARCHAR(20)
-                              ELSE a1.kbm_maar END)::VARCHAR(20)                                      AS km,
-                         n.uhik,
-                         a1.properties ->> 'yksus'                                                    AS yksus,
-                         a1.muud
-                  FROM docs.arv1 AS a1
-                           INNER JOIN docs.arv a ON a.id = a1.parentId
-                           INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
-                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                         coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) + a1.hind::NUMERIC (12, 4) AS tais_hind,
+                      a1.soodus::NUMERIC (12, 4),
+                      a1.kood1,
+                      a1.kood2,
+                      a1.kood3,
+                      a1.kood4,
+                      a1.kood5,
+                      a1.tunnus,
+                      a1.proj,
+                      a1.konto,
+                      a1.tp,
+                      NULL :: TEXT AS vastisik,
+                      NULL :: TEXT AS formula,
+                         'EUR' :: VARCHAR (20) AS valuuta,
+                      1 :: NUMERIC AS kuurs,
+                      (CASE
+                      WHEN a1.kbm_maar IS NULL
+                      THEN COALESCE ((n.properties :: JSONB ->>
+                         'vat'),
+                         '-') :: VARCHAR (20)
+                      ELSE a1.kbm_maar END)::VARCHAR (20) AS km,
+                      n.uhik,
+                      a1.properties ->>
+                         'yksus' AS yksus,
+                      a1.muud
+                  FROM docs.arv1 a1
+                      INNER JOIN docs.arv a
+                  ON a.id = a1.parentId
+                      INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
+                      INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                   WHERE a.parentid = $1 :: INTEGER`,
             query: null,
             multiple: true,
