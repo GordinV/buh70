@@ -93,7 +93,8 @@ module.exports = {
                           kood3,
                           kood5,
                           asutusid,
-                          rekvid
+                          rekvid,
+                          valid
                    FROM com_dokprop l
                    WHERE (l.rekvId = $1 OR l.rekvid IS NULL)`,
     grid: {

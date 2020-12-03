@@ -73,7 +73,7 @@ const Arv = {
                          year(a.kpv)::TEXT                                         AS laekumise_period,
                          (coalesce(saldod.jaak, 0) + a.summa)::NUMERIC(12, 2) -
                          coalesce(saldod.laekumised, 0)                            AS tasumisele,
-                         coalesce(saldod.tagastused, 0)                        AS tagastused,
+                         coalesce(saldod.tagastused, 0)                            AS tagastused,
                          a.properties ->> 'ettemaksu_period'                       AS ettemaksu_period,
                          v.properties ->> 'pank'                                   AS pank,
                          v.properties ->> 'iban'                                   AS iban
@@ -161,20 +161,20 @@ const Arv = {
         },
         {
             sql: `SELECT a1.id,
-                         $2 :: INTEGER                            AS userid,
+                         $2 :: INTEGER                                                                AS userid,
                          a1.nomid,
                          a1.kogus,
                          a1.hind::NUMERIC(12, 4),
                          a1.kbm::NUMERIC(12, 2),
                          a1.kbmta::NUMERIC(12, 2),
                          a1.summa::NUMERIC(12, 2),
-                         trim(n.kood) :: VARCHAR(20)              AS kood,
-                         trim(n.nimetus) :: VARCHAR(254)          AS nimetus,
-                         n.uhik :: TEXT                           AS uhik,
-                         (a1.properties ->> 'soodustus')::NUMERIC AS soodustus,
+                         trim(n.kood) :: VARCHAR(20)                                                  AS kood,
+                         trim(n.nimetus) :: VARCHAR(254)                                              AS nimetus,
+                         n.uhik :: TEXT                                                               AS uhik,
+                         coalesce((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4) AS soodustus,
                          CASE WHEN a1.summa > 0 THEN coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) ELSE 0 END +
-                         a1.hind                                  AS tais_hind,
-                         a1.soodus,
+                         a1.hind::NUMERIC(12, 4)                                                      AS tais_hind,
+                         a1.soodus::NUMERIC(12, 4),
                          a1.kood1,
                          a1.kood2,
                          a1.kood3,
@@ -184,16 +184,16 @@ const Arv = {
                          a1.proj,
                          a1.konto,
                          a1.tp,
-                         NULL :: TEXT                             AS vastisik,
-                         NULL :: TEXT                             AS formula,
-                         'EUR' :: VARCHAR(20)                     AS valuuta,
-                         1 :: NUMERIC                             AS kuurs,
+                         NULL :: TEXT                                                                 AS vastisik,
+                         NULL :: TEXT                                                                 AS formula,
+                         'EUR' :: VARCHAR(20)                                                         AS valuuta,
+                         1 :: NUMERIC                                                                 AS kuurs,
                          (CASE
                               WHEN a1.kbm_maar IS NULL
                                   THEN coalesce((n.properties :: JSONB ->> 'vat'), '-') :: VARCHAR(20)
-                              ELSE a1.kbm_maar END)::VARCHAR(20)  AS km,
+                              ELSE a1.kbm_maar END)::VARCHAR(20)                                      AS km,
                          n.uhik,
-                         a1.properties ->> 'yksus'                AS yksus,
+                         a1.properties ->> 'yksus'                                                    AS yksus,
                          a1.muud
                   FROM docs.arv1 AS a1
                            INNER JOIN docs.arv a ON a.id = a1.parentId
@@ -380,7 +380,7 @@ const Arv = {
             {id: 'yksus', name: 'Üksus', width: '100px', show: true, readOnly: true},
             {id: 'nimetus', name: 'Nimetus', width: '250px', show: true, readOnly: true},
             {id: 'hind', name: 'Hind', width: '75px', show: true, type: 'number', readOnly: false},
-            {id: 'soodustius', name: 'Soodustus', width: '75px', show: false, type: 'number', readOnly: false},
+            {id: 'soodustus', name: 'Soodustus', width: '75px', show: false, type: 'number', readOnly: false},
             {id: 'uhik', name: 'Ühik', width: '75px', show: true, readOnly: true},
             {id: 'kogus', name: 'kogus', width: '100px', show: true, type: 'number', readOnly: false},
             {id: 'kbm', name: 'Käibemaks', width: '100px', show: true, type: 'number', readOnly: false},

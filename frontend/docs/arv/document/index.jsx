@@ -16,6 +16,7 @@ const
     ModalPage = require('../../../components/modalpage/modalPage.jsx'),
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     styles = require('./arve.styles');
+const Round = require('./../../../../libs/round_to_2');
 const Loading = require('./../../../components/loading/index.jsx');
 
 const DocContext = require('./../../../doc-context');
@@ -542,7 +543,7 @@ class Arve extends React.PureComponent {
                 doc.gridRowData['hind'] = nomDataName.hind && !doc.gridRowData['hind'] ? nomDataName.hind : doc.gridRowData['hind'];
                 vat = nomDataName.vat ? Number(nomDataName.vat) / 100 : 0;
                 doc.gridRowData['kood'] = nomDataName.kood ? nomDataName.kood : null;
-                doc.gridRowData['nimetus'] = nomDataName.name ? nomDataName.name : null;
+                doc.gridRowData['nimetus'] = nomDataName.nimetus ? nomDataName.nimetus : null;
                 doc.gridRowData['uhik'] = nomDataName.uhik ? nomDataName.uhik : null;
                 doc.gridRowData['konto'] = nomDataName.konto ? nomDataName.konto : null;
                 doc.gridRowData['tunnus'] = nomDataName.tunnus ? nomDataName.tunnus : null;
@@ -553,11 +554,14 @@ class Arve extends React.PureComponent {
             }
         }
 
+
         doc.gridRowData['kogus'] = Number(doc.gridRowData.kogus);
+        doc.gridRowData['soodustus'] = doc.gridRowData['soodustus'] ? Number(doc.gridRowData.soodustus): 0;
         doc.gridRowData['hind'] = Number(doc.gridRowData.hind);
-        doc.gridRowData['kbmta'] = (Number(doc.gridRowData['kogus']) * Number(doc.gridRowData['hind'])).toFixed(2);
-        doc.gridRowData['kbm'] = (Number(doc.gridRowData['kbmta']) * vat).toFixed(2);
-        doc.gridRowData['summa'] = (Number(doc.gridRowData['kbmta']) + Number(doc.gridRowData['kbm'])).toFixed(2);
+        doc.gridRowData['kbmta'] = Round(Number(doc.gridRowData['kogus']) * Number(doc.gridRowData['hind']));
+        doc.gridRowData['kbm'] = Round(Number(doc.gridRowData['kbmta']) * vat);
+        doc.gridRowData['summa'] = Round(Number(doc.gridRowData['kbmta']) + Number(doc.gridRowData['kbm']));
+
     }
 
     /**
@@ -569,9 +573,12 @@ class Arve extends React.PureComponent {
         doc.docData['summa'] = 0;
         doc.docData['kbm'] = 0;
         doc.docData.gridData.forEach(row => {
-            doc.docData['summa'] += Number(row['summa']).toFixed(2);
-            doc.docData['kbm'] += Number(row['kbm']).toFixed(2);
+            doc.docData['summa'] = Number(doc.docData['summa']) + Number(row['summa']);
+            doc.docData['kbm'] = Number(doc.docData['kbm']) + Number(row['kbm']);
         });
+        doc.docData['summa'] = Round(doc.docData['summa']);
+        doc.docData['kbm'] = Round(doc.docData['kbm']);
+
     }
 
 

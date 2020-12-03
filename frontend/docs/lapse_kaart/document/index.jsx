@@ -97,7 +97,6 @@ class LapseKaart extends React.PureComponent {
                 <Loading label={'Laadimine...'}/>
             </div>);
         }
-console.log('self.libs[nomenclature]',self.libs['nomenclature']);
 
         let isEditMode = self.state.edited;
 
