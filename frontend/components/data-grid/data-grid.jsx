@@ -67,7 +67,8 @@ class DataGrid extends React.Component {
     }
 
     render() {
-        let tableStyle = Object.assign({}, styles.headerTable ? styles.headerTable : {}, this.props.style);
+        let tableHeaderStyle = Object.assign({}, styles.headerTable ? styles.headerTable : {}, this.props.style);
+        let tableMainStyle = Object.assign({}, styles.mainTable ? styles.mainTable : {}, this.props.style);
 
         let toolbarParams = Object.assign({
 
@@ -117,7 +118,7 @@ class DataGrid extends React.Component {
                     </ToolbarContainer> : null}
 
                 <div style={styles.header}>
-                    <table ref="dataGridTable" style={tableStyle} onKeyPress={this.handleKeyDown}>
+                    <table ref="dataGridTable" style={tableHeaderStyle} onKeyPress={this.handleKeyDown}>
                         <tbody>
                         <tr>
                             {this.prepareTableHeader()}
@@ -126,7 +127,7 @@ class DataGrid extends React.Component {
                     </table>
                 </div>
                 <div style={styles.wrapper}>
-                    <table style={tableStyle} tabIndex="1" onKeyDown={this.handleKeyDown}
+                    <table style={tableMainStyle} tabIndex="1" onKeyDown={this.handleKeyDown}
                            onKeyPress={this.handleKeyDown}>
                         <tbody>
                         <tr style={{visibility: 'collapse'}}>

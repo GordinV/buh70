@@ -41,7 +41,7 @@ module.exports = {
             marginBottom:'20px'
         },
         headerTable: {
-            tableLayout: 'fixed',
+            tableLayout: 'fixed'
         },
     },
     limit: {

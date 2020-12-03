@@ -3,7 +3,6 @@ module.exports = {
         tableLayout: 'fixed',
         width: '-webkit-calc(100% + 16px)',
         position: 'relative',
-        top: '-30px',
         borderCollapse: 'collapse',
         marginBottom:'20px'
     },
@@ -11,7 +10,6 @@ module.exports = {
         tableLayout: 'fixed',
         width: '100%',
         borderCollapse: 'collapse',
-        marginBottom: '20px'
     },
     footerTable: {
         tableLayout: 'fixed',
