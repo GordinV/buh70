@@ -319,5 +319,8 @@ GRANT EXECUTE ON FUNCTION eelarve.koosta_kond_saldoandmik(INTEGER, DATE) TO dbka
 
 
 /*
-select error_code, result, error_message from eelarve.koosta_kond_saldoandmik(70,'2020-03-31')
+select error_code, result, error_message from eelarve.koosta_kond_saldoandmik(2477,'2019-12-31')
 */
+
+
+select * from ou.userid where rekvid = 63 and kasutaja = 'vlad'

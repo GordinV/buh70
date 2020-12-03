@@ -8,6 +8,7 @@ module.exports = {
                 paddingLeft:'5px',
                 nullColour:'lightGrey'
             },
+            marginBottom:'20px'
         },
         headerTable: {
             width:'100%',

@@ -91,12 +91,13 @@ class LapseKaart extends React.PureComponent {
      */
 
     renderer(self) {
-        if (!self || !self.docData.lapse_nimi || !self.libs['nomenclature'].length) {
+        if (!self || !self.docData.lapse_nimi) {
             // не загружены данные
             return (<div style={styles.doc}>
                 <Loading label={'Laadimine...'}/>
             </div>);
         }
+console.log('self.libs[nomenclature]',self.libs['nomenclature']);
 
         let isEditMode = self.state.edited;
 

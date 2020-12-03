@@ -37,6 +37,8 @@ module.exports = {
                 display: 'table-cell',
                 paddingLeft: '5px',
             },
+            minHeight: '200px',
+            marginBottom:'20px'
         },
         headerTable: {
             tableLayout: 'fixed',

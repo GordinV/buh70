@@ -95,11 +95,11 @@ module.exports = {
                             (CASE
                                  WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
                                                            ((lt.soodustus * lt.sooduse_kehtivus) / 100)
-                                 ELSE lt.soodustus * lt.sooduse_kehtivus END)::NUMERIC(12, 2)     AS soodustus,
+                                 ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus END)::NUMERIC(12, 2)     AS soodustus,
                             ((lt.hind * lt.kogus - (CASE
                                              WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
                                                                        ((lt.soodustus * lt.sooduse_kehtivus) / 100)
-                                             ELSE lt.soodustus * lt.sooduse_kehtivus END)))::NUMERIC(12, 2)                                            AS summa,
+                                             ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus END)))::NUMERIC(12, 2)                                            AS summa,
                             lt.isikukood,
                             lt.nimi,
                             lt.kood,

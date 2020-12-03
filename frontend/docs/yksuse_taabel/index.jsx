@@ -30,8 +30,7 @@ class Documents extends React.PureComponent {
     }
 
     render() {
-        return <DocumentRegister initData={this.props.initData}
-                                 history={this.props.history ? this.props.history : null}
+        return <DocumentRegister history={this.props.history ? this.props.history : null}
                                  module={this.props.module}
                                  ref='register'
                                  toolbarProps={TOOLBAR_PROPS}

@@ -4,12 +4,14 @@ module.exports = {
         width: '-webkit-calc(100% + 16px)',
         position: 'relative',
         top: '-30px',
-        borderCollapse: 'collapse'
+        borderCollapse: 'collapse',
+        marginBottom:'20px'
     },
     headerTable: {
         tableLayout: 'fixed',
         width: '100%',
         borderCollapse: 'collapse',
+        marginBottom: '20px'
     },
     footerTable: {
         tableLayout: 'fixed',
@@ -62,7 +64,7 @@ module.exports = {
     wrapper: {
         height: 'inherit',
         overflow: 'overlay',
-        minHeight: '60px'
+        minHeight: '100px'
     },
 
     main: {
