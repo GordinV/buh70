@@ -112,7 +112,10 @@ GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER ) TO dbkasutaja;
 
 
 /*
-SELECT *
-FROM docs.kaibeandmik('2018-01-01', current_date :: DATE, 1)
-
+select * from (
+select *
+FROM docs.kaibeandmik('2020-01-01', current_date :: DATE, 63)
+) qry
+where konto like '100%'
+and rekv_id = 63
 */

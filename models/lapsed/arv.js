@@ -64,16 +64,16 @@ const Arv = {
                          a.jaak::NUMERIC(12, 2)                                    AS jaak,
                          to_char(docs.get_arve_period($1) - 1, 'YYYY-MM-DD')::TEXT AS period_alg,
                          to_char(docs.get_arve_period($1) - 1, 'DD.MM.YYYY')::TEXT AS period_alg_print,
-                         coalesce(saldod.laekumised, 0)::NUMERIC(12, 2)            AS laekumised,
+                         coalesce(kaibed.laekumised, 0)::NUMERIC(12, 2)            AS laekumised,
                          coalesce(saldod.jaak, 0)::NUMERIC(12, 2)                  AS alg_jaak,
                          coalesce(saldod.jaak, 0)::NUMERIC(12, 2) -
-                         coalesce(saldod.laekumised, 0)::NUMERIC(12, 2)            AS lopp_jaak,
-                         coalesce(saldod.ettemaksud, 0)::NUMERIC(12, 2)            AS ettemaksud,
+                         coalesce(kaibed.laekumised, 0)::NUMERIC(12, 2)            AS lopp_jaak,
+                         coalesce(kaibed.ettemaksud, 0)::NUMERIC(12, 2)            AS ettemaksud,
                          lpad(month(a.kpv)::TEXT, 2, '0') || '.' ||
                          year(a.kpv)::TEXT                                         AS laekumise_period,
                          (coalesce(saldod.jaak, 0) + a.summa)::NUMERIC(12, 2) -
-                         coalesce(saldod.laekumised, 0)                            AS tasumisele,
-                         coalesce(saldod.tagastused, 0)                            AS tagastused,
+                         coalesce(kaibed.laekumised, 0)                            AS tasumisele,
+                         coalesce(kaibed.tagastused, 0)                            AS tagastused,
                          a.properties ->> 'ettemaksu_period'                       AS ettemaksu_period,
                          v.properties ->> 'pank'                                   AS pank,
                          v.properties ->> 'iban'                                   AS iban
@@ -93,15 +93,24 @@ const Arv = {
                            LEFT OUTER JOIN (
                       SELECT laps_id,
                              rekv_id,
-                             sum(jaak)                   AS jaak,
-                             sum(laekumised + arv_tasud) AS laekumised,
-                             sum(ettemaksud)             AS ettemaksud,
-                             sum(tagastused)             AS tagastused
+                             sum(jaak) AS jaak
                       FROM lapsed.lapse_saldod(docs.get_arve_period($1),
                                                (SELECT parentid FROM lapsed.liidestamine WHERE docid = $1))
                       GROUP BY laps_id, rekv_id
                   ) saldod
                                            ON saldod.laps_id = l.id AND saldod.rekv_id = d.rekvid
+                           LEFT OUTER JOIN (
+                      SELECT laps_id,
+                             rekv_id,
+                             sum(laekumised + arv_tasud) AS laekumised,
+                             sum(ettemaksud)             AS ettemaksud,
+                             sum(tagastused)             AS tagastused
+                      FROM lapsed.lapse_saldod(gomonth(docs.get_arve_period($1),1) - 1,
+                                               (SELECT parentid FROM lapsed.liidestamine WHERE docid = $1))
+                      GROUP BY laps_id, rekv_id
+                  ) kaibed
+                                           ON kaibed.laps_id = l.id AND kaibed.rekv_id = d.rekvid
+
                   WHERE D.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                                          AS id,
                               $2 :: INTEGER                                                          AS userid,
@@ -161,47 +170,47 @@ const Arv = {
         },
         {
             sql: `SELECT a1.id,
-                         $2 :: INTEGER                                                                AS userid,
+                         $2 :: INTEGER                                                                   AS userid,
                          a1.nomid,
                          a1.kogus,
                          a1.hind::NUMERIC(12, 4),
                          a1.kbm::NUMERIC(12, 2),
                          a1.kbmta::NUMERIC(12, 2),
                          a1.summa::NUMERIC(12, 2),
-                         trim(n.kood) :: VARCHAR(20)                                                  AS kood,
-                         trim(n.nimetus) :: VARCHAR(254)                                              AS nimetus,
-                         n.uhik :: TEXT                                                               AS uhik,
-                         coalesce((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4) AS soodustus,
-                         coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) + a1.hind::NUMERIC (12, 4) AS tais_hind,
-                      a1.soodus::NUMERIC (12, 4),
-                      a1.kood1,
-                      a1.kood2,
-                      a1.kood3,
-                      a1.kood4,
-                      a1.kood5,
-                      a1.tunnus,
-                      a1.proj,
-                      a1.konto,
-                      a1.tp,
-                      NULL :: TEXT AS vastisik,
-                      NULL :: TEXT AS formula,
-                         'EUR' :: VARCHAR (20) AS valuuta,
-                      1 :: NUMERIC AS kuurs,
-                      (CASE
-                      WHEN a1.kbm_maar IS NULL
-                      THEN COALESCE ((n.properties :: JSONB ->>
-                         'vat'),
-                         '-') :: VARCHAR (20)
-                      ELSE a1.kbm_maar END)::VARCHAR (20) AS km,
-                      n.uhik,
-                      a1.properties ->>
-                         'yksus' AS yksus,
-                      a1.muud
+                         trim(n.kood) :: VARCHAR(20)                                                     AS kood,
+                         trim(n.nimetus) :: VARCHAR(254)                                                 AS nimetus,
+                         n.uhik :: TEXT                                                                  AS uhik,
+                         coalesce((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4)    AS soodustus,
+                         coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) + a1.hind::NUMERIC(12, 4) AS tais_hind,
+                         a1.soodus::NUMERIC(12, 4),
+                         a1.kood1,
+                         a1.kood2,
+                         a1.kood3,
+                         a1.kood4,
+                         a1.kood5,
+                         a1.tunnus,
+                         a1.proj,
+                         a1.konto,
+                         a1.tp,
+                         NULL :: TEXT                                                                    AS vastisik,
+                         NULL :: TEXT                                                                    AS formula,
+                         'EUR' :: VARCHAR(20)                                                            AS valuuta,
+                         1 :: NUMERIC                                                                    AS kuurs,
+                         (CASE
+                              WHEN a1.kbm_maar IS NULL
+                                  THEN COALESCE((n.properties :: JSONB ->>
+                                                 'vat'),
+                                                '-') :: VARCHAR(20)
+                              ELSE a1.kbm_maar END)::VARCHAR(20)                                         AS km,
+                         n.uhik,
+                         a1.properties ->>
+                         'yksus'                                                                         AS yksus,
+                         a1.muud
                   FROM docs.arv1 a1
-                      INNER JOIN docs.arv a
-                  ON a.id = a1.parentId
-                      INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
-                      INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                           INNER JOIN docs.arv a
+                                      ON a.id = a1.parentId
+                           INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
+                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                   WHERE a.parentid = $1 :: INTEGER`,
             query: null,
             multiple: true,
