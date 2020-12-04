@@ -48,11 +48,23 @@ const readXML = async (xmlContent) => {
             throw err;
         }
 
-        let stmtes = result.Document.BkToCstmrStmt[0].Stmt;
+        let Ntres;
+        let aa;
+        let Acct;
+        if (!result.Document.BkToCstmrStmt) {
+            // not statement, just report
+            let rpts = result.Document.BkToCstmrAcctRpt[0].Rpt;
 
-        let aa = stmtes[0].Acct[0].Id[0].IBAN[0];
-        let Acct = stmtes[0].Acct[0].Svcr[0].FinInstnId[0].BIC[0]; //banc code
-        let Ntres = stmtes[0].Ntry;
+            aa = rpts[0].Acct[0].Id[0].IBAN[0];
+            Acct = rpts[0].Acct[0].Svcr[0].FinInstnId[0].BIC[0]; //banc code
+            Ntres = rpts[0].Ntry;
+        } else  {
+            let stmtes = result.Document.BkToCstmrStmt[0].Stmt;
+
+            aa = stmtes[0].Acct[0].Id[0].IBAN[0];
+            Acct = stmtes[0].Acct[0].Svcr[0].FinInstnId[0].BIC[0]; //banc code
+            Ntres = stmtes[0].Ntry;
+        }
 
         Ntres.forEach(ntry => {
             let CdtDbtInd = ntry.CdtDbtInd && ntry.CdtDbtInd.isArray ? CdtDbtInd[0] : ntry.CdtDbtInd;
