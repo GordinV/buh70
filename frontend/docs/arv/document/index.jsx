@@ -536,12 +536,14 @@ class Arve extends React.PureComponent {
         //подставим наименование услогу
 
         let vat = 0;
+        let nomHind = 0;
         if (doc.gridRowData['nomid']) {
             let nomDataName = doc.libs['nomenclature'].find(lib => Number(lib.id) === Number(doc.gridRowData['nomid']));
 
             if (nomDataName) {
                 doc.gridRowData['hind'] = nomDataName.hind && !doc.gridRowData['hind'] ? nomDataName.hind : doc.gridRowData['hind'];
                 vat = nomDataName.vat ? Number(nomDataName.vat) / 100 : 0;
+                nomHind = nomDataName.hind;
                 doc.gridRowData['kood'] = nomDataName.kood ? nomDataName.kood : null;
                 doc.gridRowData['nimetus'] = nomDataName.nimetus ? nomDataName.nimetus : null;
                 doc.gridRowData['uhik'] = nomDataName.uhik ? nomDataName.uhik : null;
@@ -556,8 +558,8 @@ class Arve extends React.PureComponent {
 
 
         doc.gridRowData['kogus'] = Number(doc.gridRowData.kogus);
-        doc.gridRowData['soodustus'] = doc.gridRowData['soodustus'] ? Number(doc.gridRowData.soodustus): 0;
-        doc.gridRowData['hind'] = Number(doc.gridRowData.hind);
+        doc.gridRowData['soodustus'] = doc.gridRowData['soodustus'] ? Number(doc.gridRowData.soodustus) : 0;
+        doc.gridRowData['hind'] = nomHind && doc.gridRowData['soodustus'] ? Number(nomHind) - doc.gridRowData['soodustus'] : Number(doc.gridRowData.hind);
         doc.gridRowData['kbmta'] = Round(Number(doc.gridRowData['kogus']) * Number(doc.gridRowData['hind']));
         doc.gridRowData['kbm'] = Round(Number(doc.gridRowData['kbmta']) * vat);
         doc.gridRowData['summa'] = Round(Number(doc.gridRowData['kbmta']) + Number(doc.gridRowData['kbm']));
