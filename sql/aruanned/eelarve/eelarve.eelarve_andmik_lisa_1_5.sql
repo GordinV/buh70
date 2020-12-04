@@ -191,7 +191,7 @@ BEGIN
                          FROM
                           tmp_andmik q
                          WHERE
-                          q.artikkel = '35201'
+                          q.artikkel = '35200'
                               AND tyyp = 1
                          UNION ALL
                          SELECT
@@ -213,7 +213,7 @@ BEGIN
                          FROM
                           tmp_andmik q
                          WHERE
-                          q.artikkel = '35200'
+                          q.artikkel = '35201'
                               AND tyyp = 1
                          UNION ALL
                          SELECT
@@ -1282,7 +1282,7 @@ FROM (
          SELECT *
          FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019, 12, 31), 63, 1) qry
          WHERE (NOT empty(qry.tegev) OR NOT empty(qry.artikkel))
-           AND qry.artikkel LIKE '100%'
+           AND qry.artikkel LIKE '3520%'
      ) qry
 --test
 /*

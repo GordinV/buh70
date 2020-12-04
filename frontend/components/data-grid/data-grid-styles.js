@@ -2,7 +2,7 @@ module.exports = {
     mainTable: {
         tableLayout: 'fixed',
         width: '-webkit-calc(100% + 16px)',
-        position: 'relative',
+//        position: 'relative',
         borderCollapse: 'collapse',
         marginBottom:'20px'
     },
