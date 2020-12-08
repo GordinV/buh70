@@ -2,7 +2,6 @@ module.exports = {
     mainTable: {
         tableLayout: 'fixed',
         width: '-webkit-calc(100% + 16px)',
-//        position: 'relative',
         borderCollapse: 'collapse',
         marginBottom:'20px'
     },
@@ -61,7 +60,7 @@ module.exports = {
 
     wrapper: {
         height: 'inherit',
-        overflow: 'overlay',
+        overflow: 'auto',
         minHeight: '100px'
     },
 

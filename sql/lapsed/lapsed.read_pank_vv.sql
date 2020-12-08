@@ -210,6 +210,7 @@ BEGIN
                         l_message = l_message || ',kogu summa kasutatud';
                         EXIT;
                     END IF;
+
                 END LOOP;
             IF (l_tasu_jaak > 0)
             THEN
@@ -283,6 +284,8 @@ BEGIN
         END LOOP;
     result = l_count_kokku;
     error_code = l_error_code;
+    error_message = l_message;
+
     RETURN;
 EXCEPTION
     WHEN OTHERS

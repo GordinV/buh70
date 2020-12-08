@@ -26,10 +26,13 @@ module.exports = async (file, mimeType, user) => {
             userId: user.id,
             asutusId: user.asutusId
         };
+        console.log(params.data);
         response = await Document.save(params, true);
         saved = response.data && response.data.length > 0 ? response.data[0].result : 0;
         returnData = response.data && response.data.length  ? response.data[0]: [];
     }
+
+//    console.log(JSON.stringify(returnData));
     return {
         error_message: `Kokku leidsin ${rows.length} maksed, salvestatud kokku: ${saved}`,
         result: saved,
