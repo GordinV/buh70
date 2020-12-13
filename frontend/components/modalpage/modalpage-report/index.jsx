@@ -78,7 +78,6 @@ class ModalPageInfo extends React.PureComponent {
         let errors = 0;
         // если один обьект
         if (data && data.data && typeof data.data == 'object' && !data.data.length) {
-            console.log('data', data);
             report.data.push({
                 id: 1,
                 result: data.result && !data.error_code ? 'Ok' : 'Viga',
@@ -94,7 +93,6 @@ class ModalPageInfo extends React.PureComponent {
 
         if (data && data.data && typeof data == 'object' && data.data.length) {
             data.data.map((row, index) => {
-                 console.log('row', row);
                 report.data.push({
                     id: row.id ? row.id: index ,
                     kas_vigane: row.kas_vigane ? 'Viga': 'Ok',
