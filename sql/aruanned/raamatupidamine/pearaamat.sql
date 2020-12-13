@@ -27,7 +27,7 @@ WITH algsaldo AS (
                  -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                       LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
 
-             WHERE coalesce(a.kpv, j.kpv) < l_kpv1
+             WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2)  < l_kpv1
                AND D.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
              UNION ALL
@@ -40,7 +40,7 @@ WITH algsaldo AS (
                       INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                  -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                       LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-             WHERE coalesce(a.kpv, j.kpv) < l_kpv1
+             WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2)  < l_kpv1
                AND D.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
          ) qry
@@ -71,8 +71,8 @@ FROM (
              -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                   LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
 
-         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
-           AND coalesce(a.kpv, j.kpv) <= l_kpv2
+         WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2)  >= l_kpv1
+           AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2)  <= l_kpv2
            AND D.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
 
@@ -88,8 +88,8 @@ FROM (
              -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                   LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
 
-         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
-           AND coalesce(a.kpv, j.kpv) <= l_kpv2
+         WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2)  >= l_kpv1
+           AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2)  <= l_kpv2
            AND D.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
      ) qry

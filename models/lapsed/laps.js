@@ -183,9 +183,11 @@ module.exports = {
                          tulemus -> 'result'                                           AS result,
                          tulemus -> 'error_code'                                       AS error_code,
                          coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
-                         tulemus -> 'error_message'                                    AS error_message
+                         tulemus -> 'error_message'                                    AS error_message,
+                         tulemus ->> 'viitenr'                                          AS viitenr
                   FROM (
-                           SELECT to_jsonb(lapsed.koosta_arve_taabeli_alusel($2::INTEGER, id::INTEGER, $3::DATE)) tulemus
+                           SELECT to_jsonb(
+                                          lapsed.koosta_arve_taabeli_alusel($2::INTEGER, id::INTEGER, $3::DATE)) tulemus
                            FROM lapsed.laps
                            WHERE id IN (
                                SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
@@ -199,7 +201,8 @@ module.exports = {
                          tulemus -> 'result'                                           AS result,
                          tulemus -> 'error_code'                                       AS error_code,
                          coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
-                         tulemus -> 'error_message'                                    AS error_message
+                         tulemus -> 'error_message'                                    AS error_message,
+                         tulemus ->> 'viitenr'                                          AS viitenr
                   FROM (
                            SELECT to_jsonb(lapsed.koosta_ettemaksu_arve($2::INTEGER, id::INTEGER, $3::DATE)) tulemus
                            FROM lapsed.laps
@@ -216,11 +219,19 @@ module.exports = {
         alias: 'koostaEttemaksuArve'
     },
     arvestaTaabel: {
-        command: `SELECT lapsed.arvesta_taabel($2::INTEGER, id::INTEGER, $3::DATE)
-                  FROM lapsed.laps
-                  WHERE id IN (
-                      SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
-                  )`,//$1 docId, $2 - userId
+        command: `SELECT row_number() OVER ()                                          AS id,
+                         tulemus -> 'result'                                           AS result,
+                         tulemus -> 'error_code'                                       AS error_code,
+                         coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
+                         tulemus ->> 'error_message'                                    AS error_message,
+                         tulemus ->> 'viitenr'                                          AS viitenr
+                  FROM (
+                           SELECT to_jsonb(lapsed.arvesta_taabel($2::INTEGER, id::INTEGER, $3::DATE)) tulemus
+                           FROM lapsed.laps
+                           WHERE id IN (
+                               SELECT unnest(string_to_array($1::TEXT
+                                   , ','::TEXT))::INTEGER
+                           )) qry`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'arvestaTaabel'
     },

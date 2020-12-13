@@ -374,12 +374,12 @@ class DataGrid extends React.Component {
                         }
 
                         // если задан фон в конфиге грида
-                        if (column.yesBackgroundColor && !!row[column.id]) {
+                        if (column.yesBackgroundColor && (!!row[column.id] || row[column.id] == 'Viga')) {
                             style = {...style, backgroundColor: column.yesBackgroundColor};
                         }
 
-
-                        if (column.noBackgroundColor && !row[column.id]) {
+                        // Ок, Viga для  рапорта об исполнениее
+                        if (column.noBackgroundColor && (!row[column.id] || row[column.id] == 'Ok')) {
                             style = {...style, backgroundColor: column.noBackgroundColor};
                         }
 
@@ -467,7 +467,6 @@ class DataGrid extends React.Component {
      * @param isHidden - колонка будет скрыта
      */
     prepareTableHeader(isHidden) {
-
         // если есть опция выбор, то добавим в массив колонку с полем ticked
         const gridColumns = this.props.gridColumns.map(row => {
             if (row.id === 'select') {
@@ -477,12 +476,9 @@ class DataGrid extends React.Component {
         });
 
         return gridColumns.map((column, index) => {
-            let headerIndex = 'th-' + index;
+            let headerIndex = 'th-' + index + column.id;
 
-            let headerStyle = 'th';
-            if (isHidden) {
-                headerStyle = 'thHidden';
-            }
+            let headerStyle = isHidden ? 'thHidden' : 'th';
 
             // проверка на стиль заголовка, на фонт
             let fontColor = {

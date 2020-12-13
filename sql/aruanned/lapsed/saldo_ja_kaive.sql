@@ -8,8 +8,8 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
         kulastatavus     TEXT,
         lapse_nimi       TEXT,
         lapse_isikukood  TEXT,
-        maksja_nimi      TEXT,
-        maksja_isikukood TEXT,
+--        maksja_nimi      TEXT,
+--        maksja_isikukood TEXT,
         yksus            TEXT,
         viitenumber      TEXT,
         alg_saldo        NUMERIC(14, 2),
@@ -25,8 +25,8 @@ SELECT coalesce(period, kpv_start)::DATE AS period,
        kulastatavus::TEXT,
        lapse_nimi::TEXT,
        lapse_isikukood::TEXT,
-       maksja_nimi::TEXT,
-       maksja_isikukood::TEXT,
+--       maksja_nimi::TEXT,
+--       maksja_isikukood::TEXT,
        yksus::TEXT,
        viitenumber::TEXT,
        sum(coalesce(alg_saldo, 0))::NUMERIC(14, 2),
@@ -76,7 +76,7 @@ FROM (
                          a.regkood::TEXT                                               AS maksja_isikukood,
                          lapsed.get_viitenumber(alg_saldo.rekv_id, l.id)::TEXT         AS viitenumber
                   FROM lapsed.laps l
-                           LEFT OUTER JOIN (SELECT -1 * coalesce(arv_tasud, 0) + coalesce(jaak, 0) AS jaak,
+                           LEFT OUTER JOIN (SELECT  coalesce(jaak, 0) AS jaak,
 
                                                    laps_id,
                                                    rekv_id,
@@ -303,8 +303,8 @@ GROUP BY COALESCE(period, kpv_start)::DATE,
          kulastatavus,
          lapse_nimi,
          lapse_isikukood,
-         maksja_nimi,
-         maksja_isikukood,
+--         maksja_nimi,
+--         maksja_isikukood,
          yksus,
          viitenumber,
          rekvid
@@ -324,7 +324,11 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 /*
 select sum(arvestatud) from (
 SELECT *
-FROM lapsed.saldo_ja_kaive(85, '2020-09-01', '2020-09-30')
+FROM lapsed.saldo_ja_kaive(85, '2020-10-01', '2020-10-31') qry
+inner join (select sum()
+where qry.laekumised > 0
+
+
 ) qry
 where  is   IN ('0850136823')
 

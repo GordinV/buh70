@@ -8,7 +8,8 @@ CREATE OR REPLACE FUNCTION lapsed.koosta_arve_taabeli_alusel(IN user_id INTEGER,
                                                              OUT error_code INTEGER,
                                                              OUT result INTEGER,
                                                              OUT doc_type_id TEXT,
-                                                             OUT error_message TEXT)
+                                                             OUT error_message TEXT,
+                                                             OUT viitenr TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -56,10 +57,11 @@ DECLARE
     v_laps          RECORD;
 
 BEGIN
-    SELECT * INTO v_laps
+    SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr INTO v_laps
     FROM lapsed.laps l
     WHERE id = l_laps_id;
 
+    viitenr = v_laps.viitenr;
 
     IF l_asutus_id IS NULL
     THEN

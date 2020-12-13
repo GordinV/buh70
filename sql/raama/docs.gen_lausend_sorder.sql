@@ -102,7 +102,7 @@ BEGIN
   -- koostame selg rea
   lcSelg = trim(v_dokprop.selg) || ' ' || trim(v_sorder.alus);
   IF (SELECT count(id)
-      FROM rekv
+      FROM ou.rekv
       WHERE parentid = 119
          OR id = 119) > 0
   THEN -- Narva LV kultuuriosakond. @todo need flexible solution

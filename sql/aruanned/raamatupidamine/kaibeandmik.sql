@@ -25,7 +25,7 @@ WITH algsaldo AS (
                  -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                       LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
 
-             WHERE coalesce(a.kpv, j.kpv) < l_kpv1
+             WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
              UNION ALL
@@ -41,7 +41,7 @@ WITH algsaldo AS (
                       INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                  -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                       LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-             WHERE coalesce(a.kpv, j.kpv) < l_kpv1
+             WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
          ) qry
@@ -72,27 +72,23 @@ FROM (
              -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                   LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
 
-         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
-           AND coalesce(a.kpv, j.kpv) <= l_kpv2
+         WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) >= l_kpv1
+           AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) <= l_kpv2
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
          UNION ALL
-         SELECT d.rekvid
-                 ,
-                0 :: NUMERIC(14, 2)           AS alg_saldo
-                 ,
-                0 :: NUMERIC                  AS deebet
-                 ,
-                (j1.summa)                    AS kreedit
-                 ,
+         SELECT d.rekvid,
+                0 :: NUMERIC(14, 2)           AS alg_saldo,
+                0 :: NUMERIC                  AS deebet,
+                (j1.summa)                    AS kreedit,
                 trim(j1.kreedit)::VARCHAR(20) AS konto
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
              -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                   LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
-           AND coalesce(a.kpv, j.kpv) <= l_kpv2
+         WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) >= l_kpv1
+           AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) <= l_kpv2
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
      ) qry
@@ -100,6 +96,7 @@ FROM (
 
 WHERE NOT empty(qry.konto)
   AND left(konto, 2) NOT IN ('90', '91', '92', '93', '94', '95', '96', '97', '98')
+  AND qry.konto NOT IN (SELECT kood FROM com_kontoplaan WHERE kas_virtual > 0)
 GROUP BY konto, rekvid, r.nimetus;
 $BODY$
     LANGUAGE SQL

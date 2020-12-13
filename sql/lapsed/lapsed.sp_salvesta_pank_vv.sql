@@ -11,14 +11,16 @@ CREATE OR REPLACE FUNCTION lapsed.sp_salvesta_pank_vv(IN import_data JSONB,
 $BODY$
 
 DECLARE
-    userName    TEXT;
-    doc_data    JSON      = import_data ->> 'data';
-    json_object JSON;
-    count       INTEGER   = 0;
-    json_record RECORD;
-    l_timestamp TIMESTAMP = now();
-    v_tulemus   RECORD;
-    l_message   TEXT;
+    userName     TEXT;
+    doc_data     JSON      = import_data ->> 'data';
+    json_object  JSON;
+    count        INTEGER   = 0;
+    json_record  RECORD;
+    l_timestamp  TIMESTAMP = now();
+    v_tulemus    RECORD;
+    l_message    TEXT;
+    l_viitenr    TEXT;
+    l_kas_vigane BOOLEAN   = FALSE;
 BEGIN
 
     SELECT kasutaja INTO userName
@@ -33,6 +35,7 @@ BEGIN
                       FROM (
                                SELECT NULL::INTEGER AS doc_id,
                                       error_message AS error_message,
+                                      TRUE          AS kas_vigane,
                                       1::INTEGER    AS error_code
                            ) row;
         data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
@@ -68,9 +71,12 @@ BEGIN
                             ',Maksja:' || ltrim(rtrim(json_record.maksja)) ||
                             '- juba importeeritud';
 
+                l_viitenr = json_record.viitenr;
                 json_object = to_jsonb(row.*)
                               FROM (
                                        SELECT l_message  AS error_message,
+                                              l_viitenr  AS viitenr,
+                                              FALSE      AS kas_vigane,
                                               0::INTEGER AS error_code
                                    ) row;
                 data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
@@ -103,6 +109,7 @@ EXCEPTION
                           FROM (
                                    SELECT NULL::INTEGER                     AS doc_id,
                                           l_message || ',' || error_message AS error_message,
+
                                           1::INTEGER                        AS error_code
                                ) row;
             data = coalesce(data, '[]'::JSONB) || json_object::JSONB;

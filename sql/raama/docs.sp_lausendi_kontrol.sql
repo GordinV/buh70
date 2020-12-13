@@ -37,6 +37,12 @@ BEGIN
         RETURN l_msg;
     END IF;
 
+    -- убериаем из под контроля формирование нач. сальдо или итогов
+    IF (l_db = '299000' OR l_db = '298000' OR l_kr = '299000' OR l_kr = '298000' OR l_db = '999990')
+    THEN
+        RETURN l_msg;
+    END IF;
+
 -- kontrollin oma TP
     IF l_oma_tp IS NOT NULL AND NOT empty(l_oma_tp) AND (l_tp_d = l_oma_tp OR l_tp_k = l_oma_tp)
     THEN

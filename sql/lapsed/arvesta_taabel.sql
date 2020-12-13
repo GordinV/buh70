@@ -8,7 +8,8 @@ CREATE OR REPLACE FUNCTION lapsed.arvesta_taabel(IN user_id INTEGER,
                                                  OUT error_code INTEGER,
                                                  OUT result INTEGER,
                                                  OUT doc_type_id TEXT,
-                                                 OUT error_message TEXT)
+                                                 OUT error_message TEXT,
+                                                 OUT viitenr TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -29,10 +30,19 @@ DECLARE
     userName    TEXT    = (SELECT ametnik
                            FROM ou.userid
                            WHERE id = user_id);
+    l_message   TEXT;
+    v_laps      RECORD;
 BEGIN
     doc_type_id = 'LAPSE_TAABEL';
     -- will return docTypeid of new doc
 
+    -- логируем имя, кому считаем
+    SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr INTO v_laps
+    FROM lapsed.laps
+    WHERE id = l_laps_id;
+
+    l_message = 'Isikukood: ' || ltrim(rtrim(v_laps.isikukood)) || ', Nimi:' || ltrim(rtrim(v_laps.nimi));
+    viitenr = v_laps.viitenr;
     -- делаем выборку услуг, не предоплатных
 
     FOR v_kaart IN
@@ -40,6 +50,7 @@ BEGIN
                lk.id                                             AS lapse_kaart_id,
                lk.parentid,
                n.uhik,
+               ltrim(rtrim(n.kood))                              AS kood,
                coalesce((lk.properties ->> 'kogus')::NUMERIC, 0) AS kogus,
                date_part('month'::TEXT, l_kpv::DATE)             AS kuu,
                date_part('year'::TEXT, l_kpv::DATE)              AS aasta
@@ -53,11 +64,13 @@ BEGIN
           AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
           AND ((lk.properties ->> 'kas_ettemaks') IS NULL OR NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN)
         LOOP
+
             -- ищем аналогичный табель в периоде
             -- критерий
             -- 2. ребенок
             -- 3. период
             -- 4. услуги
+
 
             IF upper(v_kaart.uhik) IN ('PAEV', 'PÄEV')
             THEN
@@ -94,6 +107,7 @@ BEGIN
 
                 IF l_taabel_id > 0
                 THEN
+                    l_message = l_message || ',kood:' || ltrim(rtrim(v_kaart.kood)) || ' taabel koostatud';
                     l_count = l_count + 1;
                 END IF;
 
@@ -119,26 +133,22 @@ BEGIN
                       AND t1.laps_id = v_kaart.parentid
                 );
 
+            ELSE
+                l_message = l_message || ' taabel juba arvestatud ja kinni';
+
             END IF;
 
         END LOOP;
 
+    IF (l_count = 0)
+    THEN
+        l_message = l_message || ':teenused ei leidnud';
+    END IF;
 
     result = coalesce(l_taabel_id, 0);
-
+    error_message = l_message;
+    viitenr = v_laps.viitenr;
     -- проверка
-
-    /*
-IF l_count > 0
-THEN
-    result = l_taabel_id ;
-ELSE
-    result = 0;
-    error_message = 'Dokumendi koostamise viga';
-    error_code = 1;
-END IF;
-
-*/
     RETURN;
 
 EXCEPTION

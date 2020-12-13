@@ -28,38 +28,43 @@ $BODY$
 WITH alg_kaibed AS (
     SELECT j.rekvid,
            sum(CASE
-                   WHEN ltrim(rtrim(j.deebet))::TEXT = ltrim(rtrim(l_konto))::text
+                   WHEN ltrim(rtrim(j.deebet))::TEXT = ltrim(rtrim(l_konto))::TEXT
                        THEN j.summa
                    ELSE 0 :: NUMERIC(14, 2) END) -
            sum(CASE
-                   WHEN ltrim(rtrim(j.kreedit))::TEXT = ltrim(rtrim(l_konto))::text
+                   WHEN ltrim(rtrim(j.kreedit))::TEXT = ltrim(rtrim(l_konto))::TEXT
                        THEN j.summa
                    ELSE 0 :: NUMERIC(14, 2) END) AS alg_saldo
     FROM cur_journal j
              -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
              LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = j.id
 
-    WHERE (ltrim(rtrim(j.deebet))::TEXT = ltrim(rtrim(l_konto))::text OR ltrim(rtrim(j.kreedit))::TEXT = ltrim(rtrim(l_konto))::text)
-      AND coalesce(a.kpv, j.kpv) < l_kpv1
+    WHERE (ltrim(rtrim(j.deebet))::TEXT = ltrim(rtrim(l_konto))::TEXT OR
+           ltrim(rtrim(j.kreedit))::TEXT = ltrim(rtrim(l_konto))::TEXT)
+      AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
       AND j.rekvid IN (SELECT rekv_id
                        FROM get_asutuse_struktuur(l_rekvid))
     GROUP BY rekvid
 )
 
-SELECT coalesce(a.alg_saldo, 0)::NUMERIC(14, 2)                                                       AS alg_saldo,
-       sum(coalesce(CASE WHEN j.deebet::TEXT = ltrim(rtrim(l_konto))::text THEN summa ELSE 0 END, 0))
-           OVER (PARTITION BY j.rekvid) ::NUMERIC(14, 2)                                              AS db_kokku,
-       sum(coalesce(CASE WHEN j.kreedit::TEXT = ltrim(rtrim(l_konto))::text THEN summa ELSE 0 END, 0))
-           OVER (PARTITION BY j.rekvid)::NUMERIC(14, 2)                                               AS kr_kokku,
-       coalesce(j.rekvid, a.rekvid)                                                                   AS rekv_id,
-       coalesce(j.rekv_nimi, r.nimetus)::VARCHAR(254)                                                 AS rekv_nimi,
-       coalesce(j.kpv, l_kpv1)                                                                        AS kpv,
-       coalesce(CASE WHEN ltrim(rtrim(j.deebet))::TEXT = ltrim(rtrim(l_konto))::text THEN j.summa ELSE 0 END, 0)::NUMERIC(14, 2)        AS deebet,
-       coalesce(CASE WHEN ltrim(rtrim(j.kreedit))::TEXT = ltrim(rtrim(l_konto))::text THEN j.summa ELSE 0 END, 0)::NUMERIC(14, 2)       AS kreedit,
-       coalesce(CASE WHEN ltrim(rtrim(j.deebet))::TEXT = ltrim(rtrim(l_konto))::text THEN ltrim(rtrim(j.kreedit)) ELSE ltrim(rtrim(j.deebet)) END, '')::VARCHAR(20) AS konto,
-       coalesce(dok, '')::VARCHAR(120)                                                                AS dok,
-       coalesce(asutus, '')::VARCHAR(254)                                                             AS asutus,
-       coalesce(number, 0)::INTEGER                                                                   AS number,
+SELECT coalesce(a.alg_saldo, 0)::NUMERIC(14, 2)                       AS alg_saldo,
+       sum(coalesce(CASE WHEN j.deebet::TEXT = ltrim(rtrim(l_konto))::TEXT THEN summa ELSE 0 END, 0))
+           OVER (PARTITION BY j.rekvid) ::NUMERIC(14, 2)              AS db_kokku,
+       sum(coalesce(CASE WHEN j.kreedit::TEXT = ltrim(rtrim(l_konto))::TEXT THEN summa ELSE 0 END, 0))
+           OVER (PARTITION BY j.rekvid)::NUMERIC(14, 2)               AS kr_kokku,
+       coalesce(j.rekvid, a.rekvid)                                   AS rekv_id,
+       coalesce(j.rekv_nimi, r.nimetus)::VARCHAR(254)                 AS rekv_nimi,
+       coalesce(j.kpv, l_kpv1)                                        AS kpv,
+       coalesce(CASE WHEN ltrim(rtrim(j.deebet))::TEXT = ltrim(rtrim(l_konto))::TEXT THEN j.summa ELSE 0 END,
+                0)::NUMERIC(14, 2)                                    AS deebet,
+       coalesce(CASE WHEN ltrim(rtrim(j.kreedit))::TEXT = ltrim(rtrim(l_konto))::TEXT THEN j.summa ELSE 0 END,
+                0)::NUMERIC(14, 2)                                    AS kreedit,
+       coalesce(CASE
+                    WHEN ltrim(rtrim(j.deebet))::TEXT = ltrim(rtrim(l_konto))::TEXT THEN ltrim(rtrim(j.kreedit))
+                    ELSE ltrim(rtrim(j.deebet)) END, '')::VARCHAR(20) AS konto,
+       coalesce(dok, '')::VARCHAR(120)                                AS dok,
+       coalesce(asutus, '')::VARCHAR(254)                             AS asutus,
+       coalesce(number, 0)::INTEGER                                   AS number,
        coalesce(kood1, '')::VARCHAR(20),
        coalesce(kood2, '')::VARCHAR(20),
        coalesce(kood3, '')::VARCHAR(20),
@@ -67,7 +72,7 @@ SELECT coalesce(a.alg_saldo, 0)::NUMERIC(14, 2)                                 
        coalesce(kood5, '')::VARCHAR(20),
        coalesce(proj, '')::VARCHAR(20),
        coalesce(tunnus, '')::VARCHAR(20),
-       coalesce(selg, '')::TEXT                                                                       AS selg
+       coalesce(selg, '')::TEXT                                       AS selg
 FROM alg_kaibed a
          FULL OUTER JOIN
      (
@@ -93,9 +98,10 @@ FROM alg_kaibed a
                   INNER JOIN ou.rekv r ON j.rekvid = r.id
              -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                   LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = j.id
-         WHERE (ltrim(rtrim(j.deebet))::TEXT = ltrim(rtrim(l_konto))::text OR ltrim(rtrim(j.kreedit))::TEXT = ltrim(rtrim(l_konto))::text)
-           AND coalesce(a.kpv, j.kpv) >= l_kpv1
-           AND coalesce(a.kpv, j.kpv) <= l_kpv2
+         WHERE (ltrim(rtrim(j.deebet))::TEXT = ltrim(rtrim(l_konto))::TEXT OR
+                ltrim(rtrim(j.kreedit))::TEXT = ltrim(rtrim(l_konto))::TEXT)
+           AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) >= l_kpv1
+           AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
      ) j

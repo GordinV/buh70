@@ -23,17 +23,18 @@ module.exports = {
     // отчет об исполнении
     tulemused: {
         gridConfig: [
-            {id: "id", name: "id", width: "1%", show: false},
-            {id: "result", name: "Tulemus", width: "5%", show: false},
+            {id: "id", name: "id", width: "5%", show: false},
             {
-                id: "kas_vigane",
-                name: "Staatus",
-                width: "5%",
+                id: 'kas_vigane',
+                name: 'Staatus',
+                width: '5%',
                 show: true,
                 yesBackgroundColor: 'red',
                 noBackgroundColor: 'green'
             },
-            {id: "error_message", name: "Teatis", width: "75%", show: true}
+            {id: "result", name: "Tulemused", width: "10%", show: false},
+            {id: "error_message", name: "Teatis", width: "70%", show: true},
+            {id: "viitenr", name: "Viitenumber", width: "15%", show: true}
         ]
     },
     // счета

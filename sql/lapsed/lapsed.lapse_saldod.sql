@@ -51,6 +51,26 @@ FROM (
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
            AND mk.opt = 2
          UNION ALL
+         -- распределенные авансовые платежи
+         SELECT -1 * ((a1.summa / a.summa) * at.summa) AS jaak,
+                l.parentid                             AS laps_id,
+                a1.properties ->> 'yksus'              AS yksus,
+                at.rekvid                              AS rekv_id,
+                at.doc_tasu_id                         AS docs_id,
+                0                                      AS laekumised,
+                0                                      AS arv_tasud,
+                0                                      AS ettemaksud,
+                0                                      AS tagastused
+         FROM docs.arvtasu at
+                  INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid
+                  INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
+                  INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
+         WHERE at.kpv < l_kpv::DATE
+           AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+           AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
+         UNION ALL
+
+
          -- laekumised, поступления (не распределенные)
          SELECT 0          AS jaak,
                 l.parentid AS laps_id,

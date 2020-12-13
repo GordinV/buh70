@@ -8,7 +8,8 @@ CREATE OR REPLACE FUNCTION lapsed.koosta_ettemaksu_arve(IN user_id INTEGER,
                                                         OUT error_code INTEGER,
                                                         OUT result INTEGER,
                                                         OUT doc_type_id TEXT,
-                                                        OUT error_message TEXT)
+                                                        OUT error_message TEXT,
+                                                        OUT viitenr TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -24,9 +25,7 @@ DECLARE
                                   WHERE v.parentid = l_laps_id
                                     AND v.rekvid = l_rekvid
                                     AND libs.check_asutus(a.id::INTEGER, l_rekvid ::INTEGER)
-                                  ORDER BY v.arveldus DESC
-                                          ,
-                                           v.id DESC
+                                  ORDER BY v.arveldus DESC, v.id DESC
                                   LIMIT 1);
 
     l_doklausend_id    INTEGER;
@@ -60,9 +59,11 @@ DECLARE
     l_teenuste_arv     INTEGER = 0;
 
 BEGIN
-    SELECT * INTO v_laps
+    SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr INTO v_laps
     FROM lapsed.laps l
     WHERE id = l_laps_id;
+
+    viitenr = v_laps.viitenr;
 
     IF l_asutus_id IS NULL
     THEN
@@ -144,7 +145,6 @@ BEGIN
     THEN
 
         -- в этом периоде счет на предоплату уже авыписан
-        error_code = 3;
         result = 0;
         error_message = 'Sellel ajavahemikul ettemaksuarve juba olemas, Isikukood:' || v_laps.isikukood || ', Nimi:' ||
                         v_laps.nimi;

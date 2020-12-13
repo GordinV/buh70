@@ -35,7 +35,7 @@ DECLARE
     doc_asutus_aa  JSONB   = coalesce((doc_data ->> 'asutus_aa') :: JSONB, '[]':: JSONB);
     doc_aa         TEXT    = doc_data ->> 'aa';
     new_properties JSONB;
-    new_history    JSONB;
+    new_history    JSONB = '[]'::jsonb;
     new_rights     JSONB;
     new_aa         JSONB;
 BEGIN

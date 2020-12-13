@@ -76,7 +76,7 @@ BEGIN
     SET
       libid           = doc_libid,
       summa           = doc_summa,
-      ajalugu         = new_history,
+      ajalugu         = '[]'::jsonb || coalesce(ajalugu, '[]'::jsonb) || new_history,
       kpv1            = doc_kpv1,
       kpv2            = doc_kpv2,
       paevad          = doc_paevad,

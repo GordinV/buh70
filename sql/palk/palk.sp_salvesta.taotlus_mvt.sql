@@ -84,7 +84,7 @@ BEGIN
         THEN
             UPDATE palk.taotlus_mvt
             SET lopp_kpv = doc_lopp_kpv,
-                ajalugu  = new_history,
+                ajalugu  = '[]'::JSONB || coalesce(ajalugu, '[]'::JSONB) || new_history,
                 muud     = doc_muud
             WHERE id = doc_id RETURNING id
                 INTO taotlus_id;
@@ -93,7 +93,7 @@ BEGIN
             SET kpv      = doc_kpv,
                 lopp_kpv = doc_lopp_kpv,
                 summa    = doc_summa,
-                ajalugu  = new_history,
+                ajalugu  = '[]'::JSONB || coalesce(ajalugu, '[]'::JSONB) || new_history,
                 muud     = doc_muud
             WHERE id = doc_id RETURNING id
                 INTO taotlus_id;

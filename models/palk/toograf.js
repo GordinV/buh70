@@ -62,5 +62,30 @@ module.exports = {
         type: 'sql',
         alias: 'calcTaabel'
     },
+    getLog: {
+        command: `SELECT ROW_NUMBER() OVER ()                                                                        AS id,
+                         (qry.ajalugu ->> 'user')::VARCHAR(20)                                                           AS kasutaja,
+                         coalesce(to_char((qry.ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS koostatud,
+                         coalesce(to_char((qry.ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS muudatud,
+                         coalesce(to_char((qry.ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS prinditud,
+                         coalesce(to_char((qry.ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'), '')::VARCHAR(20) AS
+                                                                                                                        email,
+                         coalesce(to_char((qry.ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS earve,
+                         coalesce(to_char((qry.ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS kustutatud
+                  FROM (
+                           SELECT jsonb_array_elements('[]'::jsonb || d.ajalugu) AS ajalugu, d.id
+                           FROM palk.toograf d,
+                                ou.userid u
+                           WHERE d.id = $1
+                             AND u.id = $2
+                       ) qry where (qry.ajalugu ->> 'user') is not null`,
+        type: "sql",
+        alias: "getLogs"
+    },
 
 };

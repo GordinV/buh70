@@ -6,7 +6,6 @@ const React = require('react'),
     ModalPage = require('../modalPage.jsx'),
     styles = require('./styles.js');
 
-const GRID_CONFIG = require('./../../../../config/constants').tulemused.gridConfig;
 
 const TextArea = require('./../../text-area/text-area.jsx');
 const DataGrid = require('../../data-grid/data-grid.jsx');
@@ -30,6 +29,7 @@ class ModalPageInfo extends React.PureComponent {
 
 
     render() {
+        const GRID_CONFIG = require('./../../../../config/constants').tulemused.gridConfig;
 
         let systemMessage = this.props.systemMessage ? this.props.systemMessage : '',
             data = this.props.report ? this.props.report : '',
@@ -78,11 +78,14 @@ class ModalPageInfo extends React.PureComponent {
         let errors = 0;
         // если один обьект
         if (data && data.data && typeof data.data == 'object' && !data.data.length) {
+            console.log('data', data);
             report.data.push({
+                id: 1,
                 result: data.result && !data.error_code ? 'Ok' : 'Viga',
-                kas_vigane: Boolean(data.kas_vigane ? !data.error_code : data.kas_vigane),
+                kas_vigane: data.kas_vigane ? 'Viga' : 'Ok',
                 error_code: data.error_code,
-                error_message: data.error_message
+                error_message: data.error_message,
+                viitenr: data.viitenr ? data.viitenr: null
             });
             if (!data.result) {
                 errors++;
@@ -91,12 +94,14 @@ class ModalPageInfo extends React.PureComponent {
 
         if (data && data.data && typeof data == 'object' && data.data.length) {
             data.data.map((row, index) => {
+                 console.log('row', row);
                 report.data.push({
                     id: row.id ? row.id: index ,
-                    kas_vigane: Boolean(row.kas_vigane ? row.kas_vigane: !!row.error_code ),
+                    kas_vigane: row.kas_vigane ? 'Viga': 'Ok',
                     result: row.result && !row.error_code ? 'Ok' : 'Viga',
                     error_code: row.error_code,
-                    error_message: row.error_message
+                    error_message: row.error_message,
+                    viitenr: row.viitenr ? row.viitenr: null
                 });
                 if (!row.result) {
                     errors++;

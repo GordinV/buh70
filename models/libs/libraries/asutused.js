@@ -6,7 +6,7 @@ module.exports = {
                      (properties ->> 'pank')::VARCHAR(20)            AS pank,
                      (properties ->> 'kmkr')::VARCHAR(20)            AS kmkr,
                      (properties ->> 'kehtivus')::DATE               AS kehtivus,
-                     (properties ->> 'kehtivus')::DATE               AS valid, 
+                     (properties ->> 'kehtivus')::DATE               AS valid,
                      (properties -> 'asutus_aa' -> 0 ->> 'aa')::TEXT AS aa
               FROM libs.asutus
               WHERE id = $1`,
@@ -84,7 +84,7 @@ module.exports = {
         }
 
     ],
-    selectAsLibs: `SELECT *, kehtivus as valid
+    selectAsLibs: `SELECT *, kehtivus AS valid
                    FROM com_asutused a
                    WHERE libs.check_asutus(a.id::INTEGER, $1::INTEGER)
                      AND (kehtivus IS NULL OR kehtivus >= date())
@@ -117,7 +117,7 @@ module.exports = {
             {id: "aadress", name: "Aadress", width: "25%"},
             {id: "valid", name: "Kehtivus", width: "10%", type: 'date', show: false},
         ],
-        sqlString: `SELECT a.*, $2::INTEGER AS userId, a.kehtivus as valid
+        sqlString: `SELECT a.*, $2::INTEGER AS userId, a.kehtivus AS valid
                     FROM cur_asutused a
                     WHERE libs.check_asutus(a.id::INTEGER, $1::INTEGER)`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
@@ -150,20 +150,24 @@ module.exports = {
         },
     ],
     getLog: {
-        command: `SELECT ROW_NUMBER() OVER ()                                               AS id,
-                         (ajalugu ->> 'user')::TEXT                                         AS kasutaja,
-                         to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS koostatud,
-                         to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS muudatud,
-                         to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS')   AS prinditud,
-                         to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS kustutatud
+        command: `SELECT ROW_NUMBER() OVER ()                                                                        AS id,
+                         (ajalugu ->> 'user')::VARCHAR(20)                                                           AS kasutaja,
+                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS koostatud,
+                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS muudatud,
+                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS prinditud,
+                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS kustutatud
 
                   FROM (
-                           SELECT jsonb_array_elements(d.ajalugu) AS ajalugu, d.id
+                           SELECT jsonb_array_elements('[]'::jsonb || d.ajalugu::jsonb) AS ajalugu, d.id
                            FROM libs.asutus d,
                                 ou.userid u
                            WHERE d.id = $1
                              AND u.id = $2
-                       ) qry`,
+                       ) qry where (ajalugu ->> 'user') is not null`,
         type: "sql",
         alias: "getLogs"
     },

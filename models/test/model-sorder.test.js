@@ -15,9 +15,9 @@ const REKV_ID = 63;
 describe('dok. type SORDER tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../lapsed/sorder'),
+    const doc = require('../raamatupidamine/sorder'),
         docTypeId = 'SORDER'.toLowerCase(),
-        modelForExport = 'lapsed/sorder';
+        modelForExport = 'raamatupidamine/sorder';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -25,7 +25,7 @@ describe('dok. type SORDER tests', function () {
     let xml;
     let sourceFile;
 
-    it.skip(`${docTypeId} create XML model`, (done) => {
+    it(`${docTypeId} create XML model`, (done) => {
         //create model
         modelCreator(modelForExport, (err, xmlFile) => {
             sourceFile = xmlFile;
@@ -37,7 +37,7 @@ describe('dok. type SORDER tests', function () {
         })
     });
 
-    it.skip(`${docTypeId} must have fields in js model`, () => {
+    it(`${docTypeId} must have fields in js model`, () => {
         expect(doc.select).toBeDefined();
         expect(doc.returnData).toBeDefined();
         expect(doc.requiredFields).toBeDefined();
@@ -72,7 +72,7 @@ describe('dok. type SORDER tests', function () {
 
     });
 
-    it.skip('should have copy in buh62 folder', (done) => {
+    it('should have copy in buh62 folder', (done) => {
         let targetFile = path.join('C:\\development\\buh62\\models\\', modelForExport + '.xml');
         let copyFile = path.join('C:\\development\\buh70\\models\\', modelForExport + '_copy.xml');
         expect(fs.existsSync(sourceFile)).toBeTruthy();
@@ -129,7 +129,7 @@ describe('dok. type SORDER tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should succefully execute sql new query', async () => {
+    it.skip('should succefully execute sql new query', async () => {
         let sql = doc.select[0].sqlAsNew;
         let returnValue = await db.queryDb(sql, [0, 1]);
         expect(returnValue).toBeDefined();
@@ -137,7 +137,7 @@ describe('dok. type SORDER tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should save new row', async () => {
+    it.skip('should save new row', async () => {
         const l_asutus_data = await db.queryDb(`SELECT asutusid, parentid, a.nimetus::TEXT AS vanem_nimi
                                               FROM lapsed.vanemad v
                                                        INNER JOIN libs.asutus a ON a.id = v.asutusid
@@ -190,7 +190,7 @@ describe('dok. type SORDER tests', function () {
 
     });
 
-    it('should select saved row', async () => {
+    it.skip('should select saved row', async () => {
         let sql = doc.select[0].sql;
         let returnValue = await db.queryDb(sql, [globalDocId, USER_ID]);
         expect(returnValue).toBeDefined();
@@ -200,7 +200,7 @@ describe('dok. type SORDER tests', function () {
 
     });
 
-    it('should select grid query', async () => {
+    it.skip('should select grid query', async () => {
         let sql = doc.grid.sqlString;
         let returnValue = await db.queryDb(sql, [REKV_ID, USER_ID]);
         expect(returnValue).toBeDefined();

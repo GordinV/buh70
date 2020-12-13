@@ -47,7 +47,7 @@ const EelProj = {
             {id: "status", name: "Status", width: "100px"}
         ],
         sqlString: `SELECT
-                          d.
+                          d.*
                         FROM cur_eelproj d
                         WHERE d.rekvId in (select rekv_id from get_asutuse_struktuur($1))`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
@@ -90,6 +90,29 @@ const EelProj = {
         command: `select error_code, result, error_message from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task
         type:'sql',
         alias:'executeTask'
+    },
+
+    getLog: {
+        command: `SELECT ROW_NUMBER() OVER ()                                                                        AS id,
+                         (ajalugu ->> 'user')::VARCHAR(20)                                                           AS kasutaja,
+                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS koostatud,
+                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS muudatud,
+                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS prinditud,
+                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS kustutatud
+
+                  FROM (
+                           SELECT jsonb_array_elements('[]'::jsonb || d.ajalugu::jsonb) AS ajalugu, d.id
+                           FROM eelarve.eelproj d,
+                                ou.userid u
+                           WHERE d.id = $1
+                             AND u.id = $2
+                       ) qry where (ajalugu ->> 'user') is not null`,
+        type: "sql",
+        alias: "getLogs"
     },
 
 };

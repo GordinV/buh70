@@ -67,15 +67,14 @@ BEGIN
     INTO new_history
     FROM (SELECT
             now()     AS updated,
-            userName  AS user,
-            v_graafik AS toograafik) row;
+            userName  AS user) row;
 
     UPDATE palk.toograf
     SET
       kuu     = doc_kuu,
       aasta   = doc_aasta,
       tund    = doc_tund,
-      ajalugu = new_history,
+      ajalugu = '[]':: jsonb || coalesce(ajalugu,'[]'::jsonb) || new_history,
       muud    = doc_muud
     WHERE id = doc_id
     RETURNING id

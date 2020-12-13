@@ -35,6 +35,8 @@ DECLARE
     l_mk_number      TEXT;
     l_message        TEXT;
     l_error_code     INTEGER        = 0;
+    l_viitenr        TEXT;
+    l_kas_vigane     BOOLEAN        = TRUE;
 BEGIN
     -- ищем платежи
     FOR v_pank_vv IN
@@ -47,6 +49,7 @@ BEGIN
 
             l_message = 'Tehingu nr.: ' || ltrim(rtrim(v_pank_vv.pank_id)) ||
                         ',Maksja:' || ltrim(rtrim(v_pank_vv.maksja));
+            l_viitenr = v_pank_vv.viitenumber;
 
             -- ишем плательшика
             SELECT row_to_json(row) INTO json_object
@@ -105,6 +108,7 @@ BEGIN
                     l_message = l_message || ',maksja puudub, uus maksja salvestatud';
                 ELSE
                     l_error_code = 1;
+                    l_kas_vigane = TRUE;
                     l_message = l_message || ',maksja puudub';
                 END IF;
 
@@ -252,6 +256,7 @@ BEGIN
                     -- log
                     l_message = l_message || ', koostatud ettemaks';
                     l_count_kokku = l_count_kokku + 1;
+                    l_kas_vigane = FALSE;
                 END IF;
 
             END IF;
@@ -278,6 +283,8 @@ BEGIN
                           FROM (
                                    SELECT l_mk_id               AS doc_id,
                                           l_message             AS error_message,
+                                          l_viitenr             AS viitenr,
+                                          l_kas_vigane          AS kas_vigane,
                                           l_error_code::INTEGER AS error_code
                                ) row;
             data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
@@ -285,6 +292,7 @@ BEGIN
     result = l_count_kokku;
     error_code = l_error_code;
     error_message = l_message;
+
 
     RETURN;
 EXCEPTION
@@ -298,6 +306,8 @@ EXCEPTION
                           FROM (
                                    SELECT NULL::INTEGER                     AS doc_id,
                                           l_message || ',' || error_message AS error_message,
+                                          l_viitenr                         AS viitenr,
+                                          TRUE                              AS kas_vigane,
                                           1::INTEGER                        AS error_code
                                ) row;
             data = coalesce(data, '[]'::JSONB) || json_object::JSONB;

@@ -8,23 +8,26 @@ CREATE OR REPLACE FUNCTION libs.sp_salvesta_konto(data JSON,
 $BODY$
 
 DECLARE
-    lib_id         INTEGER;
-    userName       TEXT;
-    doc_id         INTEGER = data ->> 'id';
-    doc_data       JSON    = data ->> 'data';
-    doc_kood       TEXT    = doc_data ->> 'kood';
-    doc_nimetus    TEXT    = doc_data ->> 'nimetus';
-    doc_library    TEXT    = 'KONTOD';
-    doc_tun1       INTEGER = doc_data ->> 'tun1'; --liik
-    doc_tun2       INTEGER = doc_data ->> 'tun2'; -- tegev
-    doc_tun3       INTEGER = doc_data ->> 'tun3'; -- allikas
-    doc_tun4       INTEGER = doc_data ->> 'tun4'; -- rahavoog
-    doc_tyyp       INTEGER = doc_data ->> 'tyyp';
-    doc_valid      DATE    = CASE WHEN empty(doc_data ->> 'valid') THEN NULL::DATE ELSE (doc_data ->> 'valid')::DATE END;
-    doc_muud       TEXT    = doc_data ->> 'muud';
-    is_import      BOOLEAN = data ->> 'import';
-    json_object    JSONB;
-    is_peakasutaja BOOLEAN = FALSE;
+    lib_id          INTEGER;
+    userName        TEXT;
+    doc_id          INTEGER = data ->> 'id';
+    doc_data        JSON    = data ->> 'data';
+    doc_kood        TEXT    = doc_data ->> 'kood';
+    doc_nimetus     TEXT    = doc_data ->> 'nimetus';
+    doc_library     TEXT    = 'KONTOD';
+    doc_tun1        INTEGER = doc_data ->> 'tun1'; --liik
+    doc_tun2        INTEGER = doc_data ->> 'tun2'; -- tegev
+    doc_tun3        INTEGER = doc_data ->> 'tun3'; -- allikas
+    doc_tun4        INTEGER = doc_data ->> 'tun4'; -- rahavoog
+    doc_tyyp        INTEGER = doc_data ->> 'tyyp';
+    doc_valid       DATE    = CASE
+                                  WHEN empty(doc_data ->> 'valid') THEN NULL::DATE
+                                  ELSE (doc_data ->> 'valid')::DATE END;
+    doc_muud        TEXT    = doc_data ->> 'muud';
+    doc_kas_virtual INTEGER = doc_data ->> 'kas_virtual';
+    is_import       BOOLEAN = data ->> 'import';
+    json_object     JSONB;
+    is_peakasutaja  BOOLEAN = FALSE;
 BEGIN
 
     IF (doc_id IS NULL)
@@ -48,7 +51,8 @@ BEGIN
     END IF;
 
     SELECT row_to_json(row) INTO json_object
-    FROM (SELECT doc_valid AS valid) row;
+    FROM (SELECT doc_valid       AS valid,
+                 doc_kas_virtual AS kas_virtual) row;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0

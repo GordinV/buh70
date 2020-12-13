@@ -252,11 +252,36 @@ const Avans = {
     },
     endProcess: {command: `update docs.doc set status = 2 where id = $1`, type: "sql"},
     executeCommand: {
-        command: `select result, error_message from docs.fnc_avansijaak(?tnId::integer)`,
+        command: `select result, error_message from docs.fnc_avansijaak($1::integer)`,
         type:'sql',
         alias:'fncAvansiJaak'
     },
 
+    getLog: {
+        command: `SELECT ROW_NUMBER() OVER ()                                                                        AS id,
+                         (ajalugu ->> 'user')::VARCHAR(20)                                                           AS kasutaja,
+                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS koostatud,
+                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS muudatud,
+                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS prinditud,
+                         coalesce(to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'), '')::VARCHAR(20) AS
+                                                                                                                        email,
+                         coalesce(to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS earve,
+                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS kustutatud
+                  FROM (
+                           SELECT jsonb_array_elements( history) AS ajalugu, d.id, d.rekvid
+                           FROM docs.doc d,
+                                ou.userid u
+                           WHERE d.id = $1
+                             AND u.id = $2
+                       ) qry`,
+        type: "sql",
+        alias: "getLogs"
+    },
 
 };
 

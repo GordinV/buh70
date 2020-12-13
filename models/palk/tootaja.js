@@ -175,4 +175,27 @@ module.exports = {
         params: '',
         alias: 'curTootajad'
     },
+    getLog: {
+        command: `SELECT ROW_NUMBER() OVER ()                                                                        AS id,
+                         (ajalugu ->> 'user')::VARCHAR(20)                                                           AS kasutaja,
+                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS koostatud,
+                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS muudatud,
+                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS prinditud,
+                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                                  '')::VARCHAR(20)                                                                   AS kustutatud
+
+                  FROM (
+                           SELECT jsonb_array_elements('[]'::jsonb || d.ajalugu::jsonb) AS ajalugu, d.id
+                           FROM libs.asutus d,
+                                ou.userid u
+                           WHERE d.id = $1
+                             AND u.id = $2
+                       ) qry where (ajalugu ->> 'user') is not null`,
+        type: "sql",
+        alias: "getLogs"
+    },
+
 };
