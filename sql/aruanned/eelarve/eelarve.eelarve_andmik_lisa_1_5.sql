@@ -45,8 +45,8 @@ BEGIN
     PERFORM eelarve.eelarve_andmik_lisa_1_5_query(l_kpv, l_rekvid, l_kond);
 
 
-    l_2580 = get_saldo('MKD', '208', '00', NULL) +
-             get_saldo('MKD', '258', '00', NULL);
+    l_2580 = get_saldo('MKD', '208', NULL, NULL) +
+             get_saldo('MKD', '258', NULL, NULL);
 
     l_9100 = -1 * get_saldo('MKD', '910090', NULL, NULL);
     l_9100_periodis = -1 * get_saldo('KD', '910090', NULL, NULL);
@@ -859,21 +859,21 @@ BEGIN
                             -1 * coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)       AS eelarve_taps,
                             -1 * coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2) AS eelarve_kassa_taps,
                             -1 * coalesce(sum(q.tegelik), 0)                            AS tegelik,
-                            get_saldo('DK', '100', NULL, NULL) -
-                            get_saldo('DK', '100080', NULL, NULL) -
-                            get_saldo('MDK','100', NULL, NULL) -
-                            get_saldo('MDK','100080', NULL, NULL)                  AS kassa,
+                            (get_saldo('DK', '100', NULL, NULL) -
+                             get_saldo('DK', '100080', NULL, NULL)) -
+                            (get_saldo('MDK', '100', NULL, NULL) -
+                             get_saldo('MDK', '100080', NULL, NULL))                    AS kassa,
 --                            DK100-MDK100+DK101-MDK101-DK1019+MDK1019+DK151-MDK151-DK1519+MDK1519
                             get_saldo('DK', '100', NULL, NULL)
-                            - get_saldo('MDK','100', NULL, NULL) +
-                            get_saldo('DK','101', NULL, NULL) -
-                            get_saldo('MDK','101', NULL, NULL) -
-                            get_saldo('DK','1019', NULL, NULL) +
-                            get_saldo('MDK','1019', NULL, NULL) +
-                            get_saldo('DK','151', NULL, NULL) -
-                            get_saldo('MDK','151', NULL, NULL) -
-                            get_saldo('DK','1519', NULL, NULL) +
-                            get_saldo('MDK','1519', NULL, NULL)
+                                - get_saldo('MDK', '100', NULL, NULL) +
+                            get_saldo('DK', '101', NULL, NULL) -
+                            get_saldo('MDK', '101', NULL, NULL) -
+                            get_saldo('DK', '1019', NULL, NULL) +
+                            get_saldo('MDK', '1019', NULL, NULL) +
+                            get_saldo('DK', '151', NULL, NULL) -
+                            get_saldo('MDK', '151', NULL, NULL) -
+                            get_saldo('DK', '1519', NULL, NULL) +
+                            get_saldo('MDK', '1519', NULL, NULL)
                                                                                         AS saldoandmik
 -- DK100-MDK100+DK101-MDK101-DK1019+MDK1019+DK151-MDK151-DK1519+MDK1519
 
@@ -890,8 +890,8 @@ BEGIN
                             'Võlakohustused'    AS nimetus,
                             l_2580              AS eelarve,
                             l_2580              AS eelarve_kassa,
-                            l_2580              AS eelarve_taps,
-                            l_2580              AS eelarve_kassa_taps,
+                            0                   AS eelarve_taps,
+                            0                   AS eelarve_kassa_taps,
                             l_2580              AS tegelik,
                             l_2580              AS kassa,
                             l_2580              AS saldoandmik
@@ -915,33 +915,33 @@ BEGIN
 -- MKD910090
                      UNION ALL
                      SELECT '8.1',
-                            1                             AS is_e,
-                            $2                            AS rekvid,
-                            ''::VARCHAR(20)               AS tegev,
-                            ''::VARCHAR(20)               AS allikas,
-                            '1000'::VARCHAR(20)           AS artikkel,
-                            'Likviidsed varad'            AS nimetus,
-                            get_saldo('MDK','100', NULL, NULL) +
-                            get_saldo('MDK','101', NULL, NULL) -
-                            get_saldo('MDK','1019', NULL, NULL) +
-                            get_saldo('MDK','151', NULL, NULL) -
-                            get_saldo('MDK','1519', NULL, NULL)   AS eelarve,
-                            get_saldo('MDK','100', NULL, NULL) +
-                            get_saldo('MDK','101', NULL, NULL) -
-                            get_saldo('MDK','1019', NULL, NULL) +
-                            get_saldo('MDK','151', NULL, NULL) -
-                            get_saldo('MDK','1519', NULL, NULL)   AS eelarve_kassa,
-                            0                             AS eelarve_taps,
-                            0                             AS eelarve_kassa_taps,
-                            0                             AS tegelik,
-                            get_saldo('MDK','100', NULL, NULL) -
-                            get_saldo('MDK','100080', NULL, NULL) AS kassa,
-                            get_saldo('MDK','100', NULL, NULL) +
-                            get_saldo('MDK','101', NULL, NULL) -
-                            get_saldo('MDK','1019', NULL, NULL) +
-                            get_saldo('MDK','151', NULL, NULL) -
-                            get_saldo('MDK','1519', NULL, NULL)
-                                                          AS saldoandmik
+                            1                                      AS is_e,
+                            $2                                     AS rekvid,
+                            ''::VARCHAR(20)                        AS tegev,
+                            ''::VARCHAR(20)                        AS allikas,
+                            '1000'::VARCHAR(20)                    AS artikkel,
+                            'Likviidsed varad'                     AS nimetus,
+                            get_saldo('MDK', '100', NULL, NULL) +
+                            get_saldo('MDK', '101', NULL, NULL) -
+                            get_saldo('MDK', '1019', NULL, NULL) +
+                            get_saldo('MDK', '151', NULL, NULL) -
+                            get_saldo('MDK', '1519', NULL, NULL)   AS eelarve,
+                            get_saldo('MDK', '100', NULL, NULL) +
+                            get_saldo('MDK', '101', NULL, NULL) -
+                            get_saldo('MDK', '1019', NULL, NULL) +
+                            get_saldo('MDK', '151', NULL, NULL) -
+                            get_saldo('MDK', '1519', NULL, NULL)   AS eelarve_kassa,
+                            0                                      AS eelarve_taps,
+                            0                                      AS eelarve_kassa_taps,
+                            0                                      AS tegelik,
+                            get_saldo('MDK', '100', NULL, NULL) -
+                            get_saldo('MDK', '100080', NULL, NULL) AS kassa,
+                            get_saldo('MDK', '100', NULL, NULL) +
+                            get_saldo('MDK', '101', NULL, NULL) -
+                            get_saldo('MDK', '1019', NULL, NULL) +
+                            get_saldo('MDK', '151', NULL, NULL) -
+                            get_saldo('MDK', '1519', NULL, NULL)
+                                                                   AS saldoandmik
 -- MDK100+MDK101-MDK1019+MDK151-MDK1519
 -- KD208+KD258
                      UNION ALL
@@ -1284,16 +1284,15 @@ FROM (
          SELECT *
          FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019, 12, 31), 63, 1) qry
          WHERE (NOT empty(qry.tegev) OR NOT empty(qry.artikkel))
-           AND qry.artikkel LIKE '100%'
+           AND qry.artikkel LIKE '2580%'
      ) qry
 --test
 /*
 
-MKD208+MKD258 с RV0
-select get_saldo('MKD', '208', NULL, null),
-get_saldo('MKD', '208', '00', null),
-get_saldo('MKD', '258', null, null),
-get_saldo('MKD', '258', '00', null)
+select get_saldo('MKD', '208', '00', NULL) ,
+             get_saldo('MKD', '258', '00', NULL)
+
+
 
 
 

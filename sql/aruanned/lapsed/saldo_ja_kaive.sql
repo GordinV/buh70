@@ -4,21 +4,21 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
                                                  kpv_start DATE DEFAULT date(year(current_date), 1, 1),
                                                  kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
-        period           DATE,
-        kulastatavus     TEXT,
-        lapse_nimi       TEXT,
-        lapse_isikukood  TEXT,
+        period          DATE,
+        kulastatavus    TEXT,
+        lapse_nimi      TEXT,
+        lapse_isikukood TEXT,
 --        maksja_nimi      TEXT,
 --        maksja_isikukood TEXT,
-        yksus            TEXT,
-        viitenumber      TEXT,
-        alg_saldo        NUMERIC(14, 2),
-        arvestatud       NUMERIC(14, 2),
-        soodustus        NUMERIC(14, 2),
-        laekumised       NUMERIC(14, 2),
-        tagastused       NUMERIC(14, 2),
-        jaak             NUMERIC(14, 2),
-        rekvid           INTEGER
+        yksus           TEXT,
+        viitenumber     TEXT,
+        alg_saldo       NUMERIC(14, 2),
+        arvestatud      NUMERIC(14, 2),
+        soodustus       NUMERIC(14, 2),
+        laekumised      NUMERIC(14, 2),
+        tagastused      NUMERIC(14, 2),
+        jaak            NUMERIC(14, 2),
+        rekvid          INTEGER
     ) AS
 $BODY$
 SELECT coalesce(period, kpv_start)::DATE AS period,
@@ -76,12 +76,12 @@ FROM (
                          a.regkood::TEXT                                               AS maksja_isikukood,
                          lapsed.get_viitenumber(alg_saldo.rekv_id, l.id)::TEXT         AS viitenumber
                   FROM lapsed.laps l
-                           LEFT OUTER JOIN (SELECT  coalesce(jaak, 0) AS jaak,
+                           LEFT OUTER JOIN (SELECT coalesce(jaak, 0)                AS jaak,
 
                                                    laps_id,
                                                    rekv_id,
                                                    yksus,
-                                                   lapsed.get_last_maksja(docs_ids)           AS asutus_id
+                                                   lapsed.get_last_maksja(docs_ids) AS asutus_id
                                             FROM lapsed.lapse_saldod(kpv_start::DATE)) alg_saldo
                                            ON alg_saldo.laps_id = l.id
                            INNER JOIN libs.asutus a ON a.id = alg_saldo.asutus_id
@@ -111,7 +111,7 @@ FROM (
                            INNER JOIN lapsed.laps l ON l.id = ld.parentid
                            INNER JOIN docs.arv a ON a.parentid = d.id
                            INNER JOIN libs.asutus i ON i.id = a.asutusid AND i.staatus <> 3
-                           INNER JOIN (SELECT parentid                              AS arv_id,
+                           INNER JOIN (SELECT a1.parentid                           AS arv_id,
                                               sum(
                                                           (coalesce((a1.properties ->> 'soodustus')::NUMERIC(14, 2), 0)) *
                                                           a1.kogus::NUMERIC(14, 2)) AS soodustus,
@@ -122,11 +122,15 @@ FROM (
                                                                     coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) > 0
                                                                    THEN coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0)
                                                                ELSE coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) END::NUMERIC +
-                                                           a1.hind) *
+                                                           CASE WHEN a1.summa = 0 THEN 0 ELSE a1.hind END) *
                                                           a1.kogus)                 AS summa
                                        FROM docs.arv1 a1
-                                       GROUP BY parentid, a1.properties ->> 'yksus') a1
-                                      ON a1.arv_id = a.id
+                                                INNER JOIN docs.arv a ON a.id = a1.parentid AND
+                                                                         (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+                                       GROUP BY a1.parentid, a1.properties ->> 'yksus') a1
+                                      ON a1.arv_id = a.id AND
+                                         (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+
                            LEFT OUTER JOIN (
                       SELECT at.doc_arv_id                                                                        AS arv_id,
                              a1.properties ->> 'yksus'                                                            AS yksus,
@@ -153,24 +157,25 @@ FROM (
                     AND a.kpv <= kpv_end)
                  ,
               ettemaksud AS (
-                  SELECT kpv_start      AS period,
-                         0::NUMERIC(14, 2)       AS jaak, -- summa не связанных со счетами платежек (нач. сальдо или предоплата)
-                         l.parentid     AS laps_id,
-                         ymk.yksus      AS yksus,
-                         D.rekvid       AS rekv_id,
-                         D.id           AS docs_id,
-                         ymk.summa      AS laekumised,
-                         a.regkood      AS maksja_isikukood,
-                         a.nimetus      AS maksja_nimi,
-                         laps.isikukood AS lapse_isikukood,
-                         laps.nimi      AS lapse_nimi,
-                         mk.viitenr     AS viitenumber
+                  SELECT kpv_start                                              AS period,
+                         0::NUMERIC(14, 2)                                      AS jaak, -- summa не связанных со счетами платежек (нач. сальдо или предоплата)
+                         l.parentid                                             AS laps_id,
+                         ymk.yksus                                              AS yksus,
+                         D.rekvid                                               AS rekv_id,
+                         D.id                                                   AS docs_id,
+                         CASE WHEN ymk.summa > 0 THEN ymk.summa ELSE 0 END      AS laekumised,
+                         -1 * CASE WHEN ymk.summa < 0 THEN ymk.summa ELSE 0 END AS tagastus,
+                         a.regkood                                              AS maksja_isikukood,
+                         a.nimetus                                              AS maksja_nimi,
+                         laps.isikukood                                         AS lapse_isikukood,
+                         laps.nimi                                              AS lapse_nimi,
+                         mk.viitenr                                             AS viitenumber
                   FROM docs.doc D
                            INNER JOIN (SELECT mk.id, mk.parentid, mk.viitenr
                                        FROM docs.mk mk
                                        WHERE mk.maksepaev >= kpv_start
                                          AND mk.maksepaev <= kpv_end
-                                         AND mk.jaak > 0
+                                         AND mk.jaak <> 0
                   ) mk ON mk.parentid = D.id
                            INNER JOIN lapsed.liidestamine l
                                       ON l.docid = D.id
@@ -184,18 +189,19 @@ FROM (
                                      FROM get_asutuse_struktuur(l_rekvid))
                   UNION ALL
                   -- распределенные авансовые платежи
-                  SELECT kpv_start                         AS period ,
-                         0                                 AS jaak,
-                         l.parentid                        AS laps_id,
-                         a1.properties ->> 'yksus'         AS yksus,
-                         AT.rekvid                         AS rekv_id,
-                         AT.doc_tasu_id                    AS docs_id,
-                         ((a1.summa / a.summa) * AT.summa) AS laekumised,
-                         maksja.regkood                    AS maksja_isikukood,
-                         maksja.nimetus                    AS maksja_nimi,
-                         laps.isikukood                    AS lapse_isikukood,
-                         laps.nimi                         AS lapse_nimi,
-                         lapsed.get_viitenumber(AT.rekvid, laps.id)                    AS viitenumber
+                  SELECT kpv_start                                                                     AS period,
+                         0                                                                             AS jaak,
+                         l.parentid                                                                    AS laps_id,
+                         a1.properties ->> 'yksus'                                                     AS yksus,
+                         AT.rekvid                                                                     AS rekv_id,
+                         AT.doc_tasu_id                                                                AS docs_id,
+                         CASE WHEN at.summa > 0 THEN ((a1.summa / a.summa) * AT.summa) ELSE 0 END      AS laekumised,
+                         -1 * CASE WHEN at.summa < 0 THEN ((a1.summa / a.summa) * AT.summa) ELSE 0 END AS tagastus,
+                         maksja.regkood                                                                AS maksja_isikukood,
+                         maksja.nimetus                                                                AS maksja_nimi,
+                         laps.isikukood                                                                AS lapse_isikukood,
+                         laps.nimi                                                                     AS lapse_nimi,
+                         lapsed.get_viitenumber(AT.rekvid, laps.id)                                    AS viitenumber
                   FROM docs.arvtasu AT
                            INNER JOIN docs.arv a ON AT.doc_arv_id = a.parentid
                            INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
@@ -265,7 +271,7 @@ FROM (
                          0                                  AS arvestatud,
                          0                                  AS soodustus,
                          coalesce(a.laekumised, 0)          AS laekumised,
-                         0                                  AS tagastused,
+                         coalesce(a.tagastus, 0)            AS tagastused,
                          0                                  AS jaak,
                          a.rekv_id                          AS rekvid
                   FROM ettemaksud a

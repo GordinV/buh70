@@ -34,7 +34,15 @@ FROM (SELECT 0                AS id,
              TRUE                 AS is_kulud,
              NULL::DATE           AS valid
       UNION ALL
-      SELECT 152586456            AS id,
+      SELECT 152586454            AS id,
+             '1,2,3,6'                  AS kood,
+             'Tulud' AS nimetus,
+             999999               AS rekvid,
+             FALSE                AS is_kulud,
+             NULL::DATE           AS valid
+      UNION ALL
+
+      SELECT 152586455            AS id,
              '3'                  AS kood,
              'Põhitegevuse tulud' AS nimetus,
              999999               AS rekvid,

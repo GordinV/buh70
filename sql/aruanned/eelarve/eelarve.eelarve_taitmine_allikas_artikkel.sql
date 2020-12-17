@@ -503,7 +503,7 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DAT
 select * from (
 
 SELECT *
-FROM eelarve.eelarve_taitmine_allikas_artikkel(2019::INTEGER, '2019-12-31'::DATE, 28, 1)
+FROM eelarve.eelarve_taitmine_allikas_artikkel(2019::INTEGER, '2019-12-31'::DATE, 130, 1)
               )
 qry
-where artikkel = '1501'
+where artikkel = '1532'

@@ -917,6 +917,7 @@ class DocumentTemplate extends React.Component {
      */
     editRow() {
         this.gridRowData = this.docData.gridData[this.refs['data-grid'].state.activeRow];
+
         // откроем модальное окно для редактирования
         this.setState({gridRowEdit: true, gridRowEvent: 'edit'});
     }

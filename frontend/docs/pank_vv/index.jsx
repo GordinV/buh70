@@ -111,7 +111,8 @@ class Documents extends React.PureComponent {
         if (this.Doc && this.Doc.state) {
             const value = this.Doc.state.value;
             const gridData = this.Doc.gridData;
-            let doc_id = gridData.find(row => row.id = value).doc_id;
+            let doc_id = gridData.find(row => row.id == value).doc_id;
+
             if (doc_id) {
                 return this.props.history.push({
                     pathname: `/${this.props.module}/SMK/${doc_id}`,
