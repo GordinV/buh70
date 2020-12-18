@@ -107,7 +107,7 @@ BEGIN
         VALUES (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, doc_number, doc_muud,
                 coalesce(doc_arvid, 0),
                 coalesce(doc_doklausid, 0), coalesce(doc_maksepaev, doc_kpv), coalesce(doc_selg, ''),
-                coalesce(doc_viitenr, ''), coalesce(doc_dok_id,0)) RETURNING id
+                coalesce(doc_viitenr, ''), coalesce(doc_dok_id, 0)) RETURNING id
                    INTO mk_id;
 
     ELSE
@@ -144,7 +144,7 @@ BEGIN
             maksepaev = coalesce(doc_maksepaev, doc_kpv),
             selg      = coalesce(doc_selg, ''),
             viitenr   = coalesce(doc_viitenr, ''),
-            dokid     = coalesce(doc_dok_id,0)
+            dokid     = coalesce(doc_dok_id, 0)
         WHERE parentid = doc_id RETURNING id
             INTO mk_id;
 
@@ -223,24 +223,15 @@ BEGIN
 
     END IF;
 
-
-    IF doc_id IS NOT NULL AND doc_id > 0 AND doc_viitenr IS NOT NULL AND NOT empty(doc_viitenr) AND doc_lapsid IS NULL
-    THEN
-        -- пробуем найти ребенка по ссылке
-        SELECT id INTO doc_lapsid
-        FROM lapsed.cur_lapsed
-        WHERE id = val(substring(doc_viitenr FROM 4 FOR len(doc_viitenr) - 4));
-    END IF;
-
     -- lapse module
-    IF doc_viitenr IS NOT NULL AND NOT empty(doc_viitenr) AND doc_lapsid IS NULL
+    IF doc_viitenr IS NOT NULL AND NOT empty(doc_viitenr) AND (doc_lapsid IS NULL OR empty(doc_lapsid))
     THEN
         -- попробуем найти ребенка по ссылке
         doc_lapsid = lapsed.get_laps_from_viitenumber(doc_viitenr);
 
     END IF;
 
-    IF doc_lapsid IS NOT NULL
+    IF doc_lapsid IS NOT NULL AND NOT empty(doc_lapsid)
     THEN
         IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
         THEN

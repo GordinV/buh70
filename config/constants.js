@@ -96,6 +96,15 @@ module.exports = {
             {id: 'koolituse_tyyp', filter: ``}
         ],
     },
+
+    LAPSED_KAART: {
+        LIBRARIES: [
+            {id: 'tunnus', filter: ''},
+            {id: 'nomenclature', filter: `where dok = 'ARV'`},
+            {id: 'lapse_grupp', filter: ``}
+        ]
+
+    },
     // нода для справочников
     LIBS: {
         POST_LOAD_LIBS_URL: '/newApi/loadLibs'

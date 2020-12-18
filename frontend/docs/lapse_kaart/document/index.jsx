@@ -27,9 +27,8 @@ const LIBRARIES = [
     {
         id: 'lapse_grupp',
         filter: ``
-    }
+    }];
 
-];
 
 class LapseKaart extends React.PureComponent {
     constructor(props) {
@@ -91,7 +90,7 @@ class LapseKaart extends React.PureComponent {
      */
 
     renderer(self) {
-        if (!self || !self.docData.lapse_nimi) {
+        if (!self || !self.docData) {
             // не загружены данные
             return (<div style={styles.doc}>
                 <Loading label={'Laadimine...'}/>
@@ -133,11 +132,10 @@ class LapseKaart extends React.PureComponent {
 
             }
 
-             console.log('nomData', nomData, yksus)
         } catch (e) {
             console.error(e, nomData);
         }
-            // проверим стоит ли разрешить редактирование
+        // проверим стоит ли разрешить редактирование
         let isEditLapsid = !!self.docData.parentid;
 
         return (
