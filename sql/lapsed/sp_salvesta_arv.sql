@@ -117,8 +117,9 @@ BEGIN
 
 
         INSERT INTO docs.doc (doc_type_id, history, rigths, rekvId)
-        VALUES (doc_type_id, '[]' :: JSONB || new_history, new_rights, user_rekvid) RETURNING id
-            INTO doc_id;
+        VALUES (doc_type_id, '[]' :: JSONB || new_history, new_rights, user_rekvid);
+        -- RETURNING id             INTO doc_id;
+        SELECT currval('docs.doc_id_seq') INTO doc_id;
 
         ids = NULL;
 
@@ -349,6 +350,7 @@ BEGIN
     THEN
         IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
         THEN
+            raise notice 'insert doc_lapsid %, doc_id %', doc_lapsid, doc_id;
             INSERT INTO lapsed.liidestamine (parentid, docid) VALUES (doc_lapsid, doc_id);
         END IF;
 
@@ -362,7 +364,6 @@ BEGIN
     END IF;
 
     -- если это доходный счет, созданный на основе предоплатного
-    RAISE NOTICE 'checke ettemaks';
     IF doc_ettemaksu_arve_id IS NULL AND doc_ettemaksu_period IS NOT NULL
     THEN
         doc_ettemaksu_arve_id = (SELECT d.id

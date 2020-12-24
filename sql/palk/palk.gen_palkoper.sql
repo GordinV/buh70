@@ -40,7 +40,7 @@ BEGIN
         error_message = 'Kasutaja ei leitud,  userId:' ||
                         coalesce(user_id, 0) :: TEXT;
         result = 0;
-        select error_message, error_code into v_tulemus;
+        SELECT error_message, error_code INTO v_tulemus;
         l_params = to_jsonb(v_tulemus);
         data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
 
@@ -53,7 +53,7 @@ BEGIN
         error_code = 6;
         error_message = 'Parametrid on vale või puuduvad';
         result = 0;
-        select error_message, error_code into v_tulemus;
+        SELECT error_message, error_code INTO v_tulemus;
         l_params = to_jsonb(v_tulemus);
         data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
 
@@ -68,7 +68,7 @@ BEGIN
     THEN
 
         -- delete
-        PERFORM palk.sp_delete_palk_oper(user_id, id)
+        PERFORM palk.sp_delete_palk_oper(user_id, id, FALSE)
         FROM palk.cur_palkoper
         WHERE kpv = l_kpv
           AND lepingid IN (
@@ -205,7 +205,8 @@ BEGIN
                                coalesce((l_tulemus_json ->> 'mvt') :: NUMERIC, 0) :: NUMERIC AS tulubaas,
                                v_lib.tululiik                                                AS tululiik,
                                l_tulemus_json ->> 'selg' :: TEXT                             AS muud,
-                               TRUE                                                          AS kas_lausend
+                               TRUE                                                          AS kas_lausend,
+                               FALSE                                                         AS kas_kas_arvesta_saldo
                                INTO v_palk_oper
                         FROM palk.com_palk_lib AS l
                         WHERE l.id = V_lib.id;
@@ -252,11 +253,14 @@ BEGIN
             -- report
             l_params = to_jsonb(row.*)
                        FROM (
-                                SELECT l_dok_id                AS doc_id,
+                                SELECT l_dok_id                       AS doc_id,
                                        ltrim(rtrim(v_tooleping.nimi)) AS error_message,
-                                       0::INTEGER              AS error_code
+                                       0::INTEGER                     AS error_code
                             ) row;
             data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
+
+            -- расчет сальдо
+            PERFORM palk.sp_update_palk_jaak(l_kpv::DATE, v_tooleping.id::INTEGER);
 
         END LOOP; -- leping loop
     IF (coalesce(result, 0)) = 0

@@ -403,7 +403,6 @@ class Documents extends React.Component {
                     console.error('error in fetch-> ', err);
                 })
                 .then((data) => {
-                    console.log('deleted', data);
                     if (data.error_message) {
                         console.error('data.error_message', data);
                         this.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
@@ -584,7 +583,7 @@ class Documents extends React.Component {
      * @returns {{btnAdd: {show: boolean, disabled: boolean}, btnEdit: {show: boolean, disabled: boolean}, btnDelete: {show: boolean, disabled: boolean}, btnPrint: {show: boolean, disabled: boolean}}}
      */
     prepareParamsForToolbar() {
-        let docRights = DocRights[this.docTypeId] ? DocRights[this.docTypeId] : [];
+        let docRights = DocRights[this.docTypeId] ? DocRights[this.docTypeId] : {};
         let userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
         let toolbarProps = {
@@ -634,7 +633,7 @@ class Documents extends React.Component {
                 disabled: false
             },
             btnSelect: {
-                show: !!this.gridConfig.find(row => row.id === 'select'),
+                show: this.gridConfig && this.gridConfig.length ? !!this.gridConfig.find(row => row.id === 'select'): false,
                 disabled: false
             }
         }, (this.props.toolbarParams ? this.props.toolbarParams : {}),);

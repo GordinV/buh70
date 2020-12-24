@@ -43,7 +43,7 @@ DECLARE
     ids           INTEGER[];
     docs          INTEGER[];
     is_import     BOOLEAN = data ->> 'import';
-
+    l_jaak        NUMERIC = 0; -- tasu jääk
 BEGIN
 
     SELECT kasutaja INTO userName
@@ -99,8 +99,10 @@ BEGIN
 
 
         INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
-        VALUES (doc_typeId, '[]' :: JSONB || new_history, user_rekvid, 1) RETURNING id
-            INTO doc_id;
+        VALUES (doc_typeId, '[]' :: JSONB || new_history, user_rekvid, 1);
+        --RETURNING id             INTO doc_id;
+        SELECT currval('docs.doc_id_seq') INTO doc_id;
+
 
         INSERT INTO docs.mk (parentid, rekvid, kpv, opt, aaId, number, muud, arvid, doklausid, maksepaev, selg, viitenr,
                              dokid)
@@ -216,12 +218,15 @@ BEGIN
 
         END LOOP;
 
-    IF doc_arvid IS NOT NULL
+    IF doc_arvid IS NOT NULL and doc_arvid > 0
     THEN
         -- произведем оплату счета
         PERFORM docs.sp_tasu_arv(doc_id, doc_arvid, user_id);
 
     END IF;
+
+    -- сальдо платежа
+    l_jaak = docs.sp_update_mk_jaak(doc_id);
 
     -- lapse module
     IF doc_viitenr IS NOT NULL AND NOT empty(doc_viitenr) AND (doc_lapsid IS NULL OR empty(doc_lapsid))
@@ -237,18 +242,13 @@ BEGIN
         THEN
             INSERT INTO lapsed.liidestamine (parentid, docid) VALUES (doc_lapsid, doc_id);
         END IF;
-
-
-        IF NOT exists(SELECT id FROM docs.arvtasu WHERE doc_tasu_id = doc_id AND status <> 3)
-        THEN
-            -- произведем поиск и оплату счета
-            PERFORM docs.sp_loe_tasu(doc_id, user_id);
-        END IF;
-
     END IF;
 
-    -- сальдо платежа
-    PERFORM docs.sp_update_mk_jaak(doc_id);
+    IF l_jaak > 0
+    THEN
+        -- произведем поиск и оплату счета
+        PERFORM docs.sp_loe_tasu(doc_id, user_id);
+    END IF;
 
     RETURN doc_id;
 

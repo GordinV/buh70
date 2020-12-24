@@ -114,8 +114,9 @@ BEGIN
 
 
         INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
-        VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, DOC_STATUS_ACTIVE) RETURNING id
-            INTO doc_id;
+        VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, DOC_STATUS_ACTIVE); 
+--        RETURNING id    INTO doc_id;
+        SELECT currval('docs.doc_id_seq') into doc_id;
 
 
         INSERT INTO docs.korder1 (parentid, rekvid, userid, kpv, asutusid, tyyp, kassaId, number, dokument, nimi,

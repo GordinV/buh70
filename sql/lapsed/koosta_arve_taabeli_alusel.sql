@@ -55,6 +55,7 @@ DECLARE
 
     l_db_konto      TEXT    = '103000'; -- согдасно описанию отдела культуры
     v_laps          RECORD;
+    l_arve_kogus    NUMERIC = 0; -- для проверки кол-ва услуг в счете
 
 BEGIN
     SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr INTO v_laps
@@ -166,10 +167,12 @@ BEGIN
           AND lt.kuu = month(l_kpv)
           AND lt.aasta = year(l_kpv)
           AND lk.rekvid = l_rekvid
+          AND coalesce(lt.kogus, 0) <> 0
         ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
 
 
         LOOP
+            l_arve_kogus = l_arve_kogus + v_taabel.kogus;
             -- формируем строку
             json_arvrea = '[]'::JSONB || (SELECT row_to_json(row)
                                           FROM (SELECT v_taabel.nomid                                          AS nomid,
@@ -245,9 +248,11 @@ BEGIN
                     SELECT row_to_json(row) INTO json_object
                     FROM (SELECT coalesce(l_arv_id, 0) AS id, l_json_arve AS data) row;
 
-                    IF (v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus > 0
+                    IF (v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus > 0 OR l_arve_kogus <> 0
                     THEN
                         SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
+                    ELSE
+                        l_arve_kogus = 0; -- обнулим кол-во услуг
                     END IF;
                 END IF;
                 -- обнуляем строку
@@ -320,7 +325,10 @@ BEGIN
         RETURN;
     ELSE
 */
-        SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
+        IF l_arve_kogus <> 0
+        THEN
+            SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
+        END IF;
     ELSE
         l_arv_id = NULL;
         result = 0;

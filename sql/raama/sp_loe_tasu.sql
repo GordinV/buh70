@@ -35,55 +35,39 @@ BEGIN
 
     l_tasu_jaak = v_tasu.summa;
 
-    -- ищем неоплаченные счета (по аналогии с выпиской
-    SELECT a.id,
-           a.jaak,
-           a.rekvid,
-           a.asutusid,
-           a.asutus AS maksja
-           INTO v_arv
-    FROM lapsed.cur_laste_arved a
-             INNER JOIN docs.arv arv ON a.id = arv.parentid
-    WHERE a.rekvid = v_tasu.rekvid
-      AND (regexp_replace(a.viitenr, '[^0-9]', ''))::TEXT = (regexp_replace(v_tasu.viitenr, '[^0-9]', ''))::TEXT
-      AND a.jaak > 0
-      AND a.jaak >= v_tasu.summa
-      AND (arv.properties ->> 'ettemaksu_period' IS NULL OR
-        arv.properties ->> 'tyyp' = 'ETTEMAKS') -- только обычные счета или предоплаты
-    ORDER BY a.kpv, a.id
-    LIMIT 1;
+    -- ищем неоплаченные счета (по аналогии с выпиской)
+    FOR v_arv IN
+        SELECT a.id,
+               a.jaak,
+               a.rekvid,
+               a.asutusid,
+               a.asutus AS maksja
+        FROM lapsed.cur_laste_arved a
+                 INNER JOIN docs.arv arv ON a.id = arv.parentid
+        WHERE a.rekvid = v_tasu.rekvid
+          AND (regexp_replace(a.viitenr, '[^0-9]', ''))::TEXT = (regexp_replace(v_tasu.viitenr, '[^0-9]', ''))::TEXT
+          AND a.jaak > 0
+--      AND a.jaak = v_tasu.summa
+          AND (arv.properties ->> 'ettemaksu_period' IS NULL OR
+               arv.properties ->> 'tyyp' = 'ETTEMAKS') -- только обычные счета или предоплаты
+        ORDER BY a.kpv, a.id
+        LOOP
 
-    IF v_arv IS NOT NULL
-    THEN
-        -- вызывает оплату
-        result = docs.sp_tasu_arv(l_tasu_id, v_arv.id, l_user_id);
-        RETURN;
-    END IF;
+            IF l_tasu_jaak > 0
+            THEN
+                -- вызывает оплату
+                -- списываем в оплату сальдо счета
+                result = docs.sp_tasu_arv(l_tasu_id, v_arv.id, l_user_id, l_tasu_jaak);
+                IF result IS NOT NULL AND result > 0
+                THEN
+                    -- минусуем сумму оплаты
+                    l_tasu_jaak = l_tasu_jaak - v_arv.jaak;
+                    -- связываем счет
+                    UPDATE docs.mk SET arvid = v_arv.id WHERE parentid = l_tasu_id;
+                END IF;
+            END IF;
 
-    -- нет счетов с суммой равной или большей платежу
-    SELECT a.id,
-           a.jaak,
-           a.rekvid,
-           a.asutusid,
-           a.asutus AS maksja
-           INTO v_arv
-    FROM lapsed.cur_laste_arved a
-             INNER JOIN docs.arv arv ON a.id = arv.parentid
-    WHERE a.rekvid = v_tasu.rekvid
-      AND (regexp_replace(a.viitenr, '[^0-9]', ''))::TEXT = (regexp_replace(v_tasu.viitenr, '[^0-9]', ''))::TEXT
-      AND a.jaak > 0
-      AND (arv.properties ->> 'ettemaksu_period' IS NULL OR
-           arv.properties ->> 'tyyp' = 'ETTEMAKS') -- только обычные счета или предоплаты
-    ORDER BY a.jaak DESC
-    LIMIT 1;
-
-    IF v_arv IS NOT NULL
-    THEN
-        -- вызывает оплату
-        result =  docs.sp_tasu_arv(l_tasu_id, v_arv.id, l_user_id);
-        RETURN;
-    END IF;
-
+        END LOOP;
 END;
 $BODY$
     LANGUAGE plpgsql

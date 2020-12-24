@@ -134,7 +134,8 @@ BEGIN
         WHERE k1.parentid = v_smk.Id
         LOOP
 
-            SELECT coalesce(v_smk.journalid, 0) AS id,
+            raise notice 'v_smk1.journalid %',v_smk1.journalid;
+            SELECT coalesce(v_smk1.journalid, 0) AS id,
                    'JOURNAL'                    AS doc_type_id,
                    v_smk.kpv                    AS kpv,
                    lcSelg                       AS selg,

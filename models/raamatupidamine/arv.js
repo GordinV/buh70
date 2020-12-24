@@ -6,10 +6,9 @@ const start = require('./../BP/start'),
     endProcess = require('./../BP/endProcess');
 
 const Arv = {
-    selectAsLibs: `SELECT *
+    selectAsLibs: `SELECT *, $2 as rekvid
                    FROM com_arved a
-                   WHERE (a.rekvId = $1::INTEGER)
-                     AND docs.usersRigths(a.id, 'select', $2::INTEGER)`, //$1 - rekvid, $2 userid
+                   WHERE (a.rekvId = $1::INTEGER)`, //$1 - rekvid, $2 userid
     select: [
         {
             sql: `SELECT d.id,

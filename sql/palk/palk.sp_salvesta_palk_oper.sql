@@ -7,48 +7,49 @@ CREATE OR REPLACE FUNCTION palk.sp_salvesta_palk_oper(data JSON,
 $BODY$
 
 DECLARE
-    oper_id       INTEGER;
-    userName      TEXT;
-    doc_id        INTEGER = data ->> 'id';
-    doc_data      JSON    = data ->> 'data';
-    kas_lausend   BOOLEAN = coalesce((doc_data ->> 'kas_lausend') :: BOOLEAN, FALSE);
-    doc_type_kood TEXT    = 'PALK_OPER';
+    oper_id           INTEGER;
+    userName          TEXT;
+    doc_id            INTEGER = data ->> 'id';
+    doc_data          JSON    = data ->> 'data';
+    kas_lausend       BOOLEAN = coalesce((doc_data ->> 'kas_lausend') :: BOOLEAN, FALSE);
+    doc_type_kood     TEXT    = 'PALK_OPER';
 
-    doc_type_id   INTEGER = (SELECT id
-                             FROM libs.library
-                             WHERE ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood)))
-                               AND library = 'DOK'
-                             LIMIT 1);
-    doc_libid     INTEGER = doc_data ->> 'libid';
-    doc_lepingid  INTEGER = doc_data ->> 'lepingid';
-    doc_kpv       DATE    = doc_data ->> 'kpv';
-    doc_summa     NUMERIC = doc_data ->> 'summa';
-    doc_dokpropid INTEGER = doc_data ->> 'dokpropid';
-    doc_kood1     TEXT    = doc_data ->> 'kood1';
-    doc_kood2     TEXT    = doc_data ->> 'kood2';
-    doc_kood3     TEXT    = doc_data ->> 'kood3';
-    doc_kood4     TEXT    = doc_data ->> 'kood4';
-    doc_kood5     TEXT    = doc_data ->> 'kood5';
-    doc_konto     TEXT    = doc_data ->> 'konto';
-    doc_tp        TEXT    = doc_data ->> 'tp';
-    doc_tunnus    TEXT    = doc_data ->> 'tunnus';
-    doc_tunnus_id INTEGER = doc_data ->> 'tunnusid';
-    doc_proj      TEXT    = doc_data ->> 'proj';
-    doc_tulumaks  NUMERIC = doc_data ->> 'tulumaks';
-    doc_sotsmaks  NUMERIC = doc_data ->> 'sotsmaks';
-    doc_tootumaks NUMERIC = doc_data ->> 'tootumaks';
-    doc_pensmaks  NUMERIC = doc_data ->> 'pensmaks';
-    doc_tulubaas  NUMERIC = doc_data ->> 'tulubaas';
-    doc_tka       NUMERIC = doc_data ->> 'tka';
-    doc_period    DATE    = doc_data ->> 'period';
-    doc_pohjus    TEXT    = doc_data ->> 'pohjus';
-    doc_tululiik  TEXT    = doc_data ->> 'tululiik';
-    doc_muud      TEXT    = doc_data ->> 'muud';
-    new_history   JSONB;
-    docs          INTEGER[];
-    l_params      JSON;
-    l_result      INTEGER;
-    is_import     BOOLEAN = data ->> 'import';
+    doc_type_id       INTEGER = (SELECT id
+                                 FROM libs.library
+                                 WHERE ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood)))
+                                   AND library = 'DOK'
+                                 LIMIT 1);
+    doc_libid         INTEGER = doc_data ->> 'libid';
+    doc_lepingid      INTEGER = doc_data ->> 'lepingid';
+    doc_kpv           DATE    = doc_data ->> 'kpv';
+    doc_summa         NUMERIC = doc_data ->> 'summa';
+    doc_dokpropid     INTEGER = doc_data ->> 'dokpropid';
+    doc_kood1         TEXT    = doc_data ->> 'kood1';
+    doc_kood2         TEXT    = doc_data ->> 'kood2';
+    doc_kood3         TEXT    = doc_data ->> 'kood3';
+    doc_kood4         TEXT    = doc_data ->> 'kood4';
+    doc_kood5         TEXT    = doc_data ->> 'kood5';
+    doc_konto         TEXT    = doc_data ->> 'konto';
+    doc_tp            TEXT    = doc_data ->> 'tp';
+    doc_tunnus        TEXT    = doc_data ->> 'tunnus';
+    doc_tunnus_id     INTEGER = doc_data ->> 'tunnusid';
+    doc_proj          TEXT    = doc_data ->> 'proj';
+    doc_tulumaks      NUMERIC = doc_data ->> 'tulumaks';
+    doc_sotsmaks      NUMERIC = doc_data ->> 'sotsmaks';
+    doc_tootumaks     NUMERIC = doc_data ->> 'tootumaks';
+    doc_pensmaks      NUMERIC = doc_data ->> 'pensmaks';
+    doc_tulubaas      NUMERIC = doc_data ->> 'tulubaas';
+    doc_tka           NUMERIC = doc_data ->> 'tka';
+    doc_period        DATE    = doc_data ->> 'period';
+    doc_pohjus        TEXT    = doc_data ->> 'pohjus';
+    doc_tululiik      TEXT    = doc_data ->> 'tululiik';
+    doc_muud          TEXT    = doc_data ->> 'muud';
+    kas_arvesta_saldo BOOLEAN = doc_data ->> 'kas_arvesta_saldo';
+    new_history       JSONB;
+    docs              INTEGER[];
+    l_params          JSON;
+    l_result          INTEGER;
+    is_import         BOOLEAN = data ->> 'import';
 BEGIN
     SELECT kasutaja INTO userName
     FROM ou.userid u
@@ -89,8 +90,10 @@ BEGIN
                      userName AS user) row;
 
         INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
-        VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, 1) RETURNING id
-            INTO doc_id;
+        VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, 1);
+--        RETURNING id  INTO doc_id;
+
+        SELECT currval('docs.doc_id_seq') INTO doc_id;
 
         INSERT INTO palk.palk_oper (parentid, rekvid, libid, lepingid, kpv, summa, doklausid,
                                     kood1, kood2, kood3, kood4, kood5, konto, tp, tunnus, proj,
@@ -101,8 +104,8 @@ BEGIN
                 doc_kood1, doc_kood2, doc_kood3, doc_kood4, doc_kood5, doc_konto, doc_tp, doc_tunnus, doc_proj,
                 doc_tulumaks, doc_sotsmaks, doc_tootumaks, doc_pensmaks,
                 doc_tulubaas, doc_tka, doc_period, doc_pohjus, doc_tululiik,
-                new_history, doc_muud) RETURNING id
-                   INTO oper_id;
+                new_history, doc_muud);
+--                RETURNING id INTO oper_id;
 
     ELSE
         SELECT row_to_json(row) INTO new_history
@@ -148,9 +151,15 @@ BEGIN
             pohjus    = doc_period,
             ajalugu   = new_history,
             muud      = doc_muud
-        WHERE parentid = doc_id RETURNING id
-            INTO oper_id;
+        WHERE parentid = doc_id;
+        --RETURNING id             INTO oper_id;
 
+    END IF;
+
+    -- расчет сальдо
+    IF kas_arvesta_saldo IS NULL OR (kas_arvesta_saldo)
+    THEN
+        PERFORM palk.sp_update_palk_jaak(doc_kpv::DATE, doc_lepingid::INTEGER);
     END IF;
     -- вставка в таблицы документа
 

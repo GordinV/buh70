@@ -52,7 +52,7 @@ SELECT (exists(
                                  AND l.library = 'DOK'))
                    OR (SELECT (d.rigths -> command) @> to_jsonb(ARRAY [userId])
                        FROM docs.doc d
-                       WHERE id = docId)
+                       WHERE id = docId limit 1)
             )
            );
 $BODY$

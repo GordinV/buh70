@@ -85,13 +85,16 @@ BEGIN
 
 
         INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
-        VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, 1) RETURNING id
-            INTO doc_id;
+        VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid, 1);
+        --RETURNING id INTO doc_id;
+        SELECT currval('docs.doc_id_seq') INTO doc_id;
 
         INSERT INTO docs.journal (parentid, rekvid, userid, kpv, asutusid, dok, selg, muud, objekt)
         VALUES (doc_id, user_rekvid, userId, doc_kpv, doc_asutusid, doc_dok, doc_selg, doc_muud,
-                doc_objekt) RETURNING id
-                   INTO journal_id;
+                doc_objekt);
+--                RETURNING id INTO journal_id;
+        SELECT currval('docs.journal_id_seq') INTO journal_id;
+
 
         INSERT INTO docs.journalid (journalid, rekvid, aasta, number)
         VALUES (journal_id, user_rekvid, (date_part('year' :: TEXT, doc_kpv) :: INTEGER), l_number);
@@ -187,8 +190,10 @@ BEGIN
                             json_record.kood5,
                             json_record.lisa_d, json_record.lisa_k,
                             coalesce(json_record.valuuta, 'EUR'), coalesce(json_record.kuurs, 1),
-                            coalesce(json_record.kuurs, 1) * json_record.summa) RETURNING id
-                               INTO journal1_id;
+                            coalesce(json_record.kuurs, 1) * json_record.summa);
+--                            RETURNING id INTO journal1_id;
+                    SELECT currval('docs.journal1_id_seq') INTO journal1_id;
+
 
                     -- add new id into array of ids
                     ids = array_append(ids, journal1_id);

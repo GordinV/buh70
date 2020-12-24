@@ -14,7 +14,8 @@ SELECT lt.id,
        (lk.properties ->> 'kas_protsent')::BOOLEAN                 AS kas_protsent,
        CASE
            WHEN (lk.properties ->> 'sooduse_alg')::DATE <= make_date(lt.aasta, lt.kuu, 28)
-               AND (lk.properties ->> 'sooduse_lopp')::DATE >= make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - interval '1 day'
+               AND (lk.properties ->> 'sooduse_lopp')::DATE >=
+                   make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day'
                THEN 1
            ELSE 0 END                                              AS sooduse_kehtivus,
        l.isikukood,
@@ -36,6 +37,7 @@ FROM lapsed.lapse_taabel lt
                     ON grupp.library::TEXT = 'LAPSE_GRUPP'::TEXT AND grupp.rekvid = lk.rekvid AND grupp.status <> 3
                         AND grupp.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
 WHERE lt.staatus <> 3
+  AND lt.kogus <> 0
 ORDER BY aasta, kuu, nimi, kood;
 
 GRANT SELECT ON TABLE lapsed.cur_lapse_taabel TO arvestaja;

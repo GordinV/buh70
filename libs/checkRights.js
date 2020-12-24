@@ -2,8 +2,7 @@
 
 const checkRights = (userRoles, docRights, action) => {
     let is_accepted = false;
-
-    if (docRights[action]) {
+    if (docRights && docRights[action]) {
         docRights[action].forEach(role => {
             // raamatupidajad
             is_accepted = userRoles && userRoles.is_kasutaja && role == 'kasutaja' ? true : is_accepted;

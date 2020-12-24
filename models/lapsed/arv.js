@@ -105,7 +105,7 @@ const Arv = {
                              sum(laekumised + arv_tasud) AS laekumised,
                              sum(ettemaksud)             AS ettemaksud,
                              sum(tagastused)             AS tagastused
-                      FROM lapsed.lapse_saldod(gomonth(docs.get_arve_period($1),1) - 1,
+                      FROM lapsed.lapse_saldod(gomonth(docs.get_arve_period($1), 1) - 1,
                                                (SELECT parentid FROM lapsed.liidestamine WHERE docid = $1))
                       GROUP BY laps_id, rekv_id
                   ) kaibed
@@ -211,7 +211,8 @@ const Arv = {
                                       ON a.id = a1.parentId
                            INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                  WHERE a.parentid = $1 :: INTEGER`,
+                  WHERE a.parentid = $1 :: INTEGER
+                    AND a1.kogus <> 0`,
             query: null,
             multiple: true,
             alias: 'details',

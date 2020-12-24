@@ -65,9 +65,9 @@ BEGIN
 
     INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
     VALUES (doc_type_id, '[]' :: JSONB || new_history, user_rekvid,
-            array_position((enum_range(NULL :: DOK_STATUS)), 'active'))
-    RETURNING id
-      INTO doc_id;
+            array_position((enum_range(NULL :: DOK_STATUS)), 'active'));
+
+    SELECT currval('docs.doc_id_seq') into doc_id;
 
     INSERT INTO eelarve.taotlus (parentid, rekvid, kpv, number, koostajaid, ametnikId, aktseptid, allkiri, tunnus, muud, status, aasta)
     VALUES

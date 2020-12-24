@@ -2,8 +2,10 @@
 
 DROP FUNCTION IF EXISTS docs.sp_tasu_arv(INTEGER);
 DROP FUNCTION IF EXISTS docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER, NUMERIC);
 
-CREATE OR REPLACE FUNCTION docs.sp_tasu_arv(l_tasu_id INTEGER, l_arv_id INTEGER, l_user_id INTEGER)
+CREATE OR REPLACE FUNCTION docs.sp_tasu_arv(l_tasu_id INTEGER, l_arv_id INTEGER, l_user_id INTEGER,
+                                            tasu_summa NUMERIC DEFAULT 0)
     RETURNS INTEGER AS
 $BODY$
 
@@ -74,7 +76,9 @@ BEGIN
                            THEN TYPE_DOK_KORDER
                        ELSE TYPE_DOK_JOURNAL END);
 
-    l_summa = (
+    -- рассчитываем сумму оплаты, если платеж не задан
+
+    l_summa = case when empty(tasu_summa) THEN  (
         SELECT sum(summa) AS summa
         FROM (
                  SELECT summa * (CASE
@@ -95,7 +99,7 @@ BEGIN
                           INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
                  WHERE j.parentid = l_tasu_id
              ) tasud
-    );
+    ) else tasu_summa end;
 
     l_doc_tasu_id = (
         SELECT a.id
@@ -181,7 +185,8 @@ BEGIN
     PERFORM docs.sp_update_mk_jaak(l_tasu_id);
 
     -- оплата маловероятных
-    IF (v_arv.ebatoenaolised_1_id IS NOT NULL OR v_arv.ebatoenaolised_2_id IS NOT NULL) AND coalesce(v_arv.tyyp,'') <> 'ETTEMAKS'
+    IF (v_arv.ebatoenaolised_1_id IS NOT NULL OR v_arv.ebatoenaolised_2_id IS NOT NULL) AND
+       coalesce(v_arv.tyyp, '') <> 'ETTEMAKS'
     THEN
         PERFORM docs.tasumine_ebatoenaolised(l_tasu_id, l_arv_id, l_user_id);
     END IF;
@@ -194,9 +199,9 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER) TO arvestaja;
+GRANT EXECUTE ON FUNCTION docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER, NUMERIC) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER, NUMERIC) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.sp_tasu_arv(INTEGER, INTEGER, INTEGER, NUMERIC) TO arvestaja;
 
 /*
 SELECT *

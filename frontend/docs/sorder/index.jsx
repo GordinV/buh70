@@ -6,7 +6,10 @@ const InputNumber = require('../../components/input-number/input-number.jsx');
 const getSum = require('./../../../libs/getSum');
 
 const styles = require('./sorder-register-styles');
-const DOC_TYPE_ID = 'sorder';
+const DOC_TYPE_ID = 'SORDER';
+
+const DocContext = require('./../../doc-context.js');
+
 
 /**
  * Класс реализует документ справочника признаков.

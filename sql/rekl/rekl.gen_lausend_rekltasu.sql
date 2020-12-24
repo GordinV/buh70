@@ -143,7 +143,7 @@ BEGIN
     -- сохраним ссылку на
     UPDATE rekl.toiming
     SET journalId = result
-    WHERE parentid = v_toiming.id;
+    WHERE id = v_toiming.id;
   END IF;
   RETURN;
 END;
