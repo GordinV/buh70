@@ -1,8 +1,10 @@
 DROP FUNCTION IF EXISTS lapsed.lapse_saldod(l_laps_Id INTEGER, l_kpv DATE);
 DROP FUNCTION IF EXISTS lapsed.lapse_saldod(l_kpv DATE);
 DROP FUNCTION IF EXISTS lapsed.lapse_saldod(l_kpv DATE, INTEGER);
+DROP FUNCTION IF EXISTS lapsed.lapse_saldod(l_kpv DATE, INTEGER, INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION lapsed.lapse_saldod(l_kpv DATE DEFAULT now(), l_laps_id INTEGER DEFAULT NULL)
+CREATE OR REPLACE FUNCTION lapsed.lapse_saldod(l_kpv DATE DEFAULT now(), l_laps_id INTEGER DEFAULT NULL,
+                                               l_rekv_id INTEGER DEFAULT NULL, l_kond INTEGER DEFAULT 0)
     RETURNS TABLE (
         jaak       NUMERIC(14, 2),
         laps_id    INTEGER,
@@ -43,6 +45,8 @@ FROM (
                               FROM docs.mk mk
                               WHERE mk.maksepaev < l_kpv
                                 AND mk.jaak > 0
+                                AND (l_rekv_id IS NULL OR mk.rekvid IN (SELECT rekv_id
+                                                                        FROM get_asutuse_struktuur(l_rekv_id)))
          ) mk ON mk.parentid = D.id
                   INNER JOIN lapsed.liidestamine l
                              ON l.docid = D.id,
@@ -68,6 +72,8 @@ FROM (
          WHERE at.kpv < l_kpv::DATE
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
+           AND (l_rekv_id IS NULL OR a.rekvid IN (SELECT rekv_id
+                                                  FROM get_asutuse_struktuur(l_rekv_id)))
          UNION ALL
 
 
@@ -93,6 +99,8 @@ FROM (
            AND d.status <> 3
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
            AND mk.opt = 2
+           AND (l_rekv_id IS NULL OR mk.rekvid IN (SELECT rekv_id
+                                                   FROM get_asutuse_struktuur(l_rekv_id)))
          UNION ALL
          -- laekumised, поступления (не распределенные)
          SELECT 0                                                                AS jaak,
@@ -114,6 +122,8 @@ FROM (
            AND month(mk.maksepaev) = month(l_kpv - 1)
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
            AND mk.opt = 1
+           AND (l_rekv_id IS NULL OR mk.rekvid IN (SELECT rekv_id
+                                                  FROM get_asutuse_struktuur(l_rekv_id)))
 
          UNION ALL
          -- распределенные авансовые платежи
@@ -134,7 +144,8 @@ FROM (
            AND month(at.kpv) = month(l_kpv - 1)
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
-
+           AND (l_rekv_id IS NULL OR a.rekvid IN (SELECT rekv_id
+                                                  FROM get_asutuse_struktuur(l_rekv_id)))
          UNION ALL
          --jaak, arved, сумма счетов начисленных до периода
          SELECT a1.summa::NUMERIC(14, 4)    AS jaak,
@@ -155,6 +166,8 @@ FROM (
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
            AND d.status <> 3
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
+           AND (l_rekv_id IS NULL OR a.rekvid IN (SELECT rekv_id
+                                                  FROM get_asutuse_struktuur(l_rekv_id)))
      ) qry
 
 --WHERE (coalesce(jaak, 0) <> 0
@@ -169,10 +182,10 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE, INTEGER) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE, INTEGER) TO arvestaja;
+GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE, INTEGER, INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE, INTEGER, INTEGER, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE, INTEGER, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE, INTEGER, INTEGER, INTEGER) TO arvestaja;
 
 
 /*

@@ -82,7 +82,7 @@ FROM (
                                                    rekv_id,
                                                    yksus,
                                                    lapsed.get_last_maksja(docs_ids) AS asutus_id
-                                            FROM lapsed.lapse_saldod(kpv_start::DATE)) alg_saldo
+                                            FROM lapsed.lapse_saldod(kpv_start::DATE, null::integer, l_rekvid, 1 )) alg_saldo
                                            ON alg_saldo.laps_id = l.id
                            INNER JOIN libs.asutus a ON a.id = alg_saldo.asutus_id
                            LEFT OUTER JOIN kulastavus k ON k.parentid = l.id AND alg_saldo.rekv_id = k.rekvid
