@@ -530,7 +530,6 @@ module.exports = {
                               GROUP BY t.rekv_id, t.grupp_id, l.nimetus
                           ) qry
                  ) qry
-            where kogus > 0
             ORDER BY yksus,
                      is_row DESC,
                      nimi,
