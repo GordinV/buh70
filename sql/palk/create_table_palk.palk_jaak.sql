@@ -23,3 +23,9 @@ CREATE INDEX palk_jaak_lepingid
   ON palk.palk_jaak (lepingid);
 CREATE INDEX palk_jaak_period
   ON palk.palk_jaak (kuu, aasta);
+
+
+DROP RULE IF EXISTS palk_jaak_insert_2020 ON palk.palk_jaak;
+CREATE RULE palk_jaak_insert_2020 AS ON INSERT TO palk.palk_jaak
+  WHERE aasta <= 2020
+  DO INSTEAD NOTHING;

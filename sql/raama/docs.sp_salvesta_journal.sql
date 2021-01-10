@@ -144,33 +144,33 @@ BEGIN
                                             lisa_k TEXT,
                                             valuuta TEXT, kuurs NUMERIC(14, 8));
 
-            -- проверка проводки
-            SELECT row_to_json(row) INTO json_lausend
-            FROM (SELECT json_record.deebet             AS db,
-                         json_record.kreedit            AS kr,
-                         json_record.lisa_d             AS tpd,
-                         json_record.lisa_k             AS tpk,
-                         json_record.kood1              AS tt,
-                         json_record.kood2              AS allikas,
-                         CASE
-                             WHEN ltrim(rtrim(json_record.kood3)) = 'null' THEN NULL::TEXT
-                             ELSE json_record.kood3 END AS rahavoog,
-                         json_record.kood5              AS eelarve,
-                         doc_kpv                        AS kpv,
-                         l_oma_tp                       AS oma_tp
-                 ) row;
-
-            l_check_lausend = docs.sp_lausendikontrol(json_lausend::JSONB);
-
-
-            IF is_import IS NULL AND NOT empty(l_check_lausend)
-            THEN
-                RAISE EXCEPTION '%',l_check_lausend;
-            END IF;
-
-
             IF json_record.summa <> 0
             THEN
+
+                -- проверка проводки
+                SELECT row_to_json(row) INTO json_lausend
+                FROM (SELECT json_record.deebet             AS db,
+                             json_record.kreedit            AS kr,
+                             json_record.lisa_d             AS tpd,
+                             json_record.lisa_k             AS tpk,
+                             json_record.kood1              AS tt,
+                             json_record.kood2              AS allikas,
+                             CASE
+                                 WHEN ltrim(rtrim(json_record.kood3)) = 'null' THEN NULL::TEXT
+                                 ELSE json_record.kood3 END AS rahavoog,
+                             json_record.kood5              AS eelarve,
+                             doc_kpv                        AS kpv,
+                             l_oma_tp                       AS oma_tp
+                     ) row;
+
+                l_check_lausend = docs.sp_lausendikontrol(json_lausend::JSONB);
+
+
+                IF is_import IS NULL AND NOT empty(l_check_lausend)
+                THEN
+                    RAISE EXCEPTION '%',l_check_lausend;
+                END IF;
+
 
                 IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
                    NOT exists(SELECT id

@@ -131,7 +131,6 @@ BEGIN
                             coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)       AS eelarve_taps,
                             coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2) AS eelarve_kassa_taps,
                             coalesce(sum(q.tegelik), 0)                            AS tegelik,
---                            coalesce(sum(q.kassa), 0)                              AS kassa,
                             coalesce((SELECT sum(summa) AS summa
                                       FROM cur_journal j
                                       WHERE j.rekvid = (CASE
@@ -162,7 +161,7 @@ BEGIN
 -- KD352-KD352000-KD352010
                      FROM tmp_andmik q
                      WHERE q.artikkel LIKE '352%'
-                       AND q.artikkel NOT IN ('352000', '352001')
+                       AND q.artikkel NOT IN ('35200', '35201')
                        AND tyyp = 1
                      UNION ALL
                      SELECT '2.1'::VARCHAR(20),
@@ -1278,16 +1277,16 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER ) TO eelaktsepterja;
 GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER ) TO dbvaatleja;
 
-
+/*
 SELECT *
 FROM (
          SELECT *
          FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019, 12, 31), 63, 1) qry
-         WHERE (NOT empty(qry.tegev) OR NOT empty(qry.artikkel))
-           AND qry.artikkel LIKE '2580%'
+         where LEFT(artikkel,2) like  '352%'
+--                AND artikkel NOT in ('3502','352')
      ) qry
 --test
-/*
+
 
 select get_saldo('MKD', '208', '00', NULL) ,
              get_saldo('MKD', '258', '00', NULL)

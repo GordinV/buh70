@@ -110,8 +110,11 @@ begin
 		
 		if doc_type_id is not null then
 			insert into docs.doc ( doc_type_id)	
-				values (doc_type_id) returning id into new.parentId;
-		end if;	
+				values (doc_type_id);
+				--returning id into new.parentId;
+            SELECT currval('docs.doc_id_seq') into new.parentId;
+
+        end if;
 	end if;
 	
 	return new;

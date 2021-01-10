@@ -16,8 +16,8 @@ DECLARE
                             FROM ou.userid
                             WHERE rekvid = 132
                               AND kasutaja = 'vlad'
-                            LIMIT 1);
-
+                                LIMIT 1);
+    v_tootaja    RECORD;
 BEGIN
     -- выборка из "старого меню"
 
@@ -29,10 +29,10 @@ BEGIN
                  INNER JOIN library o ON o.id = t.osakondid
                  INNER JOIN library a ON a.id = t.ametid
         WHERE t.rekvid = 64
-            AND t.osakondid NOT IN (SELECT id FROM library WHERE rekvid = 64 AND library = 'OSAKOND' AND kood = 'SAA')
-            AND (t.lopp IS NULL
-           OR t.lopp > current_date)
-        LIMIT ALL
+          AND t.osakondid NOT IN (SELECT id FROM library WHERE rekvid = 64 AND library = 'OSAKOND' AND kood = 'SAA')
+          AND (t.lopp IS NULL
+            OR t.lopp > current_date)
+            LIMIT ALL
         LOOP
 
             l_osakond_id = (SELECT id
@@ -41,7 +41,7 @@ BEGIN
                               AND kood = v_leping.osakond
                               AND library = 'OSAKOND'
                               AND status <> 3
-                            LIMIT 1);
+                                LIMIT 1);
 
             l_amet_id = (SELECT id
                          FROM libs.library l
@@ -49,7 +49,7 @@ BEGIN
                            AND kood = v_leping.amet
                            AND library = 'AMET'
                            AND status <> 3
-                         LIMIT 1);
+                             LIMIT 1);
 
             l_asutus_id = (SELECT new_id
                            FROM import_log
@@ -62,34 +62,46 @@ BEGIN
             ELSE
                 -- преобразование и получение параметров
 
-                -- сохранение
-                SELECT 0             AS id,
-                       l_asutus_id   AS parentid,
-                       l_osakond_id  AS osakondid,
-                       l_amet_id     AS ametid,
-                       v_leping.algab,
-                       v_leping.lopp,
-                       v_leping.palk,
-                       v_leping.palgamaar,
-                       v_leping.resident,
-                       v_leping.riik,
-                       v_leping.toend,
-                       v_leping.koormus,
-                       v_leping.toopaev,
-                       v_leping.ametnik,
-                       v_leping.tasuliik,
-                       v_leping.muud AS muud
-                       INTO v_params;
+                SELECT id INTO leping_id
+                FROM palk.tooleping
+                WHERE parentid = l_asutus_id
+                  AND osakondid = l_osakond_id
+                  AND ametid = l_amet_id
+                  AND status <> 3
+                    LIMIT 1;
 
-                SELECT row_to_json(row) INTO json_object
-                FROM (SELECT 0        AS id,
-                             TRUE     AS import,
-                             v_params AS data) row;
+                IF leping_id IS NULL
+                THEN
 
-                SELECT palk.sp_salvesta_tooleping(json_object :: JSON, l_user_id, 132) INTO leping_id;
-                RAISE NOTICE 'leping_id %, l_count %', leping_id, l_count;
+                    -- сохранение
+                    SELECT 0             AS id,
+                           l_asutus_id   AS parentid,
+                           l_osakond_id  AS osakondid,
+                           l_amet_id     AS ametid,
+                           v_leping.algab,
+                           v_leping.lopp,
+                           v_leping.palk,
+                           v_leping.palgamaar,
+                           v_leping.resident,
+                           v_leping.riik,
+                           v_leping.toend,
+                           v_leping.koormus,
+                           v_leping.toopaev,
+                           v_leping.ametnik,
+                           v_leping.tasuliik,
+                           v_leping.muud AS muud
+                           INTO v_params;
 
-                l_count = l_count + 1;
+                    SELECT row_to_json(row) INTO json_object
+                    FROM (SELECT 0        AS id,
+                                 TRUE     AS import,
+                                 v_params AS data) row;
+
+                    SELECT palk.sp_salvesta_tooleping(json_object :: JSON, l_user_id, 132) INTO leping_id;
+                    RAISE NOTICE 'leping_id %, l_count %', leping_id, l_count;
+
+                    l_count = l_count + 1;
+                END IF;
             END IF;
 
         END LOOP;

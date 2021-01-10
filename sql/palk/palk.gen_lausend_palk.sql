@@ -63,8 +63,8 @@ BEGIN
     RETURN;
   END IF;
 
-  l_db_tp = v_palk_oper.tp;
-  l_kr_tp = v_palk_oper.tp;
+--  l_db_tp = v_palk_oper.tp;
+--  l_kr_tp = v_palk_oper.tp;
 
   CASE WHEN v_palk_oper.palk_liik = 'ARVESTUSED'
     THEN

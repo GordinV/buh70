@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS import_tooleping( INTEGER );
+DROP FUNCTION IF EXISTS import_tooleping(INTEGER);
 /*
 
 DROP FOREIGN TABLE IF EXISTS remote_tooleping;
@@ -33,134 +33,178 @@ CREATE FOREIGN TABLE remote_tooleping (
 
  */
 CREATE OR REPLACE FUNCTION import_tooleping(in_old_id INTEGER)
-  RETURNS INTEGER AS
+    RETURNS INTEGER AS
 $BODY$
 DECLARE
-  leping_id    INTEGER;
-  log_id       INTEGER;
-  v_leping     RECORD;
-  json_object  JSONB;
-  hist_object  JSONB;
-  v_params     RECORD;
-  l_count      INTEGER = 0;
-  l_osakond_id INTEGER;
-  l_amet_id    INTEGER;
-  l_asutus_id  INTEGER;
+    leping_id    INTEGER;
+    log_id       INTEGER;
+    v_leping     RECORD;
+    json_object  JSONB;
+    hist_object  JSONB;
+    v_params     RECORD;
+    l_count      INTEGER = 0;
+    l_osakond_id INTEGER;
+    l_amet_id    INTEGER;
+    l_asutus_id  INTEGER;
+    l_user_id    INTEGER;
 BEGIN
-  -- выборка из "старого меню"
+    -- выборка из "старого меню"
 
-  FOR v_leping IN
-  SELECT t.*
-  FROM tooleping t
-    INNER JOIN remote_rekv rekv ON rekv.id = t.rekvid AND rekv.parentid < 999 and rekvid not in (15)
-  WHERE (t.id = in_old_id OR in_old_id IS NULL)
-    and t.osakondid in (select id from remote_library where library = 'OSAKOND')
-    and t.ametid in (select id from remote_library where library = 'AMET')
+    FOR v_leping IN
+        SELECT t.*
+        FROM tooleping t
+                 INNER JOIN rekv rekv ON rekv.id = t.rekvid AND rekv.parentid < 999 AND rekvid NOT IN (15)
+        WHERE (t.id = in_old_id OR in_old_id IS NULL)
+          AND NOT empty(t.ametid)
+          AND t.osakondid IN (SELECT id FROM remote_library WHERE library = 'OSAKOND')
+          AND t.ametid IN (SELECT id FROM remote_library WHERE library = 'AMET')
+          AND rekv.id IN (SELECT id FROM rekv WHERE parentid < 999 AND id NOT IN (3, 63, 131))
+--          AND (t.lopp IS NULL OR t.lopp > '2020-12-31'::DATE)
+            LIMIT ALL
+        LOOP
 
-  LIMIT ALL
-  LOOP
+            -- поиск и проверка на ранее сделанный импорт
+            SELECT new_id,
+                   id
+                   INTO leping_id, log_id
+            FROM import_log
+            WHERE old_id = v_leping.id
+              AND upper(ltrim(rtrim(lib_name :: TEXT))) = 'TOOLEPING';
 
-    -- поиск и проверка на ранее сделанный импорт
-    SELECT
-      new_id,
-      id
-    INTO leping_id, log_id
-    FROM import_log
-    WHERE old_id = v_leping.id
-          AND upper(ltrim(rtrim(lib_name :: TEXT))) = 'TOOLEPING';
+            RAISE NOTICE 'check for lib.. v_lib.id -> %, found -> % log_id -> %', v_leping.id, leping_id, log_id;
 
-    RAISE NOTICE 'check for lib.. v_lib.id -> %, found -> % log_id -> %', v_leping.id, leping_id, log_id;
+            l_osakond_id = (SELECT new_id
+                            FROM import_log
+                            WHERE old_id = v_leping.osakondid
+                              AND lib_name = 'OSAKOND');
+            l_amet_id = (SELECT new_id
+                         FROM import_log
+                         WHERE old_id = v_leping.ametid
+                           AND lib_name = 'AMET');
 
-    l_osakond_id = (SELECT new_id
-                    FROM import_log
-                    WHERE old_id = v_leping.osakondid AND lib_name = 'OSAKOND');
-    l_amet_id = (SELECT new_id
-                 FROM import_log
-                 WHERE old_id = v_leping.ametid AND lib_name = 'AMET');
+            l_asutus_id = (SELECT new_id
+                           FROM import_log
+                           WHERE old_id = v_leping.parentid
+                             AND lib_name = 'ASUTUS');
 
-    l_asutus_id = (SELECT new_id
-                        FROM import_log
-                        WHERE old_id = v_leping.parentid AND lib_name = 'ASUTUS');
+            IF l_osakond_id IS NULL OR l_amet_id IS NULL OR l_asutus_id IS NULL or empty(l_amet_id)
+            THEN
+                RAISE EXCEPTION 'amet or osakond not found v_leping.osakondid %,l_osakond_id %, v_leping.ametid %, l_amet_id %, v_leping.parentid %,  l_asutus_id %', v_leping.osakondid, l_osakond_id, v_leping.ametid, l_amet_id, v_leping.parentid, l_asutus_id;
+            END IF;
+            -- преобразование и получение параметров
 
-    IF l_osakond_id IS NULL OR l_amet_id IS NULL or l_asutus_id is null
-    THEN
-      RAISE EXCEPTION 'amet or osakond not found v_leping.osakondid %,l_osakond_id %, v_leping.ametid %, l_amet_id %, v_leping.parentid %,  l_asutus_id %', v_leping.osakondid, l_osakond_id, v_leping.ametid, l_amet_id, v_leping.parentid,  l_asutus_id;
-    END IF;
-    -- преобразование и получение параметров
+            -- ищем договора
 
-    -- сохранение
-    SELECT
-      coalesce(leping_id, 0) AS id,
-      l_asutus_id as parentid,
-      l_osakond_id as osakondid,
-      l_amet_id as ametid,
-      v_leping.algab,
-      v_leping.lopp,
-      v_leping.palk,
-      v_leping.palgamaar,
-      v_leping.resident,
-      v_leping.riik,
-      v_leping.toend,
-      v_leping.koormus,
-      v_leping.toopaev,
-      v_leping.ametnik,
-      v_leping.tasuliik,
-      v_leping.muud          AS muud
-    INTO v_params;
+            IF leping_id IS NOT NULL AND NOT exists(SELECT id FROM palk.tooleping WHERE id = leping_id)
+            THEN
+                DELETE from import_log
+                WHERE id = log_id;
 
-    SELECT row_to_json(row)
-    INTO json_object
-    FROM (SELECT
-            coalesce(leping_id, 0) AS id,
-            TRUE                   AS import,
-            v_params               AS data) row;
+                leping_id = NULL;
+                log_id = null;
+                raise notice 'log info not found, cleaned %', log_id;
+            END IF;
 
-    SELECT palk.sp_salvesta_tooleping(json_object :: JSON, 1, v_leping.rekvid)
-    INTO leping_id;
-    RAISE NOTICE 'leping_id %, l_count %', leping_id, l_count;
+            l_user_id = (SELECT id FROM ou.userid WHERE kasutaja = 'vlad' AND rekvid = v_leping.rekvid LIMIT 1);
+            -- сохранение
+            SELECT coalesce(leping_id, 0) AS id,
+                   l_asutus_id            AS parentid,
+                   l_osakond_id           AS osakondid,
+                   l_amet_id              AS ametid,
+                   v_leping.algab,
+                   v_leping.lopp,
+                   v_leping.palk,
+                   v_leping.palgamaar,
+                   v_leping.resident,
+                   v_leping.riik,
+                   v_leping.toend,
+                   v_leping.koormus,
+                   v_leping.toopaev,
+                   v_leping.ametnik,
+                   v_leping.tasuliik,
+                   v_leping.muud          AS muud
+                   INTO v_params;
 
-    -- salvestame log info
-    SELECT row_to_json(row)
-    INTO hist_object
-    FROM (SELECT now() AS timestamp) row;
+            SELECT row_to_json(row) INTO json_object
+            FROM (SELECT coalesce(leping_id, 0) AS id,
+                         TRUE                   AS import,
+                         v_params               AS data) row;
 
-    IF log_id IS NULL
-    THEN
-      INSERT INTO import_log (new_id, old_id, lib_name, params, history)
-      VALUES (leping_id, v_leping.id, 'TOOLEPING', json_object :: JSON, hist_object :: JSON)
-      RETURNING id
-        INTO log_id;
+            IF v_leping.lopp IS NOT NULL AND v_leping.lopp <= '2020-12-31'
+            THEN
+                -- уволен, не актуально
+                IF leping_id IS NOT NULL
+                THEN
+                    UPDATE palk.tooleping SET lopp = v_leping.lopp WHERE id = leping_id;
+                    RAISE NOTICE 'loppetatud %, v_leping.lopp %', leping_id, v_leping.lopp;
+                END IF;
+            ELSE
 
-    ELSE
-      UPDATE import_log
-      SET
-        params  = json_object :: JSON,
-        history = (history :: JSONB || hist_object :: JSONB) :: JSON
-      WHERE id = log_id;
-    END IF;
-
-    IF empty(log_id)
-    THEN
-      RAISE EXCEPTION 'log save failed';
-    END IF;
-    l_count = l_count + 1;
-  END LOOP;
+                SELECT palk.sp_salvesta_tooleping(json_object :: JSON, l_user_id, v_leping.rekvid) INTO leping_id;
+                RAISE NOTICE 'leping_id %, l_count %', leping_id, l_count;
 
 
-  RETURN l_count;
+                -- salvestame log info
+                SELECT row_to_json(row) INTO hist_object
+                FROM (SELECT now() AS timestamp) row;
 
-  EXCEPTION WHEN OTHERS
-  THEN
-    RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-    RETURN 0;
+                IF log_id IS NULL and leping_id > 0
+                THEN
+                    INSERT INTO import_log (new_id, old_id, lib_name, params, history)
+                    VALUES (leping_id, v_leping.id, 'TOOLEPING', json_object :: JSON, hist_object :: JSON) RETURNING id
+                        INTO log_id;
 
-END;$BODY$
-LANGUAGE plpgsql VOLATILE
-COST 100;
+                ELSE
+                    UPDATE import_log
+                    SET params  = json_object :: JSON,
+                        history = (history :: JSONB || hist_object :: JSONB) :: JSON
+                    WHERE id = log_id;
+                END IF;
+
+                IF empty(log_id)
+                THEN
+                    RAISE EXCEPTION 'log save failed';
+                END IF;
+            END IF;
+
+            l_count = l_count + 1;
+        END LOOP;
+
+
+    RETURN l_count;
+
+EXCEPTION
+    WHEN OTHERS
+        THEN
+            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+            RETURN 0;
+
+END;
+$BODY$
+    LANGUAGE plpgsql
+    VOLATILE
+    COST 100;
 
 
 /*
-SELECT import_tooleping(id) from tooleping where rekvid = 63
+delete from palk.tooleping where rekvid in (select id from ou.rekv where parentid = 119 or id = 119) and lopp is not null
+
+delete from palk.tooleping where parentid in (select id from libs.asutus where regkood = '46410152219')
+
+
+SELECT import_tooleping(id) from tooleping
+where rekvid in (select id from rekv where id = 64)
+and lopp is null
+and rekvid <>  106
+
+select * from asutus where regkood = '46410152219'
+
+select import_tooleping(id)  from tooleping where parentid = 16782  and lopp is null
+
+select * from ou.rekv where nimetus ilike '%kesklin%'
+
+--and (tooleping.lopp is null or tooleping.lopp > '2020-12-31')
+--and id = 146020
 
 select * from palk.tooleping where id = 8
 
@@ -179,7 +223,11 @@ select old_id from import_log where lib_name = 'TOOLEPING'
 
 select * from remote_tooleping where id = 144767
 
-select * from library where id = 715237
+select * from library where id = 717841
+
+select * from import_log where old_id = 717841
+
+delete from import_log where new_id = 0 and lib_name = 'AMET'
 
 */
 

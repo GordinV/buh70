@@ -19,6 +19,7 @@ SELECT j.jaak,
        a.regkood                            AS isikukood,
        a.nimetus                            AS isik,
        o.kood                               AS osakond,
+       o.nimetus                            AS osakonna_nimetus,
        coalesce(p.status, 2)                AS status
 FROM palk.palk_jaak j
          LEFT OUTER JOIN (

@@ -28,91 +28,93 @@ BEGIN
           AND l.library = 'TUNNUS'
           AND (properties::JSON ->> 'valid')::DATE IS NOT NULL
           AND (properties::JSON ->> 'valid')::DATE <= l_kpv
-        UNION
-        SELECT id
-             , 'projekt' AS lib_name
-             , kood      AS kood
-        FROM libs.library l
-        WHERE rekvid = l_rekv_id
+            UNION
+            SELECT id
+            , 'projekt' AS lib_name
+            , kood AS kood
+            FROM libs.library l
+            WHERE rekvid = l_rekv_id
           AND ltrim(rtrim(kood)) = ltrim(rtrim(lib_projekt))
           AND l.status <> 3
           AND l.library = 'PROJEKT'
           AND (properties::JSON ->> 'valid')::DATE IS NOT NULL
           AND (properties::JSON ->> 'valid')::DATE <= l_kpv
-        UNION
-        SELECT id
-             , 'konto' AS lib_name
-             , kood
-        FROM libs.library l
-        WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_konto))
+            UNION
+            SELECT id
+            , 'konto' AS lib_name
+            , kood
+            FROM libs.library l
+            WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_konto))
           AND l.status <> 3
           AND l.library = 'KONTOD'
           AND (properties::JSON ->> 'valid')::DATE IS NOT NULL
           AND (properties::JSON ->> 'valid')::DATE <= l_kpv
-        UNION
-        SELECT id
-             , 'allikas' AS lib_name
-             , kood
-        FROM libs.library l
-        WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_allikas))
+            UNION
+            SELECT id
+            , 'allikas' AS lib_name
+            , kood
+            FROM libs.library l
+            WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_allikas))
           AND l.status <> 3
           AND l.library = 'ALLIKAD'
           AND (properties::JSON ->> 'valid')::DATE IS NOT NULL
           AND (properties::JSON ->> 'valid')::DATE <= l_kpv
-        UNION
-        SELECT DISTINCT id
-                      , 'tegevus' AS lib_name
-                      , kood
-        FROM libs.library l
-        WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_tegev))
+            UNION
+            SELECT DISTINCT id
+            , 'tegevus' AS lib_name
+            , kood
+            FROM libs.library l
+            WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_tegev))
           AND l.status <> 3
           AND l.library = 'TEGEV'
           AND (properties::JSON ->> 'valid')::DATE IS NOT NULL
           AND (properties::JSON ->> 'valid')::DATE <= l_kpv
-        UNION
-        SELECT DISTINCT id
-                      , 'artikkel' AS lib_name
-                      , kood
-        FROM libs.library l
-        WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_artikkel))
+            UNION
+            SELECT DISTINCT id
+            , 'artikkel' AS lib_name
+            , kood
+            FROM libs.library l
+            WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_artikkel))
           AND l.status <> 3
           AND l.library = 'TULUDEALLIKAD'
           AND (properties::JSON ->> 'valid')::DATE IS NOT NULL
           AND (properties::JSON ->> 'valid')::DATE <= l_kpv
-        UNION
-        SELECT DISTINCT id
-                      , 'rahavoog' AS lib_name
-                      , kood
-        FROM libs.library l
-        WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_rahavoog))
+            UNION
+            SELECT DISTINCT id
+            , 'rahavoog' AS lib_name
+            , kood
+            FROM libs.library l
+            WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_rahavoog))
           AND l.status <> 3
           AND l.library = 'RAHA'
           AND (properties::JSON ->> 'valid')::DATE IS NOT NULL
           AND (properties::JSON ->> 'valid')::DATE <= l_kpv
-        UNION
-        SELECT id
-             , 'nomenklatuur' AS lib_name
-             , kood
-        FROM libs.nomenklatuur n
-        WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_nom))
+            UNION
+            SELECT id
+            , 'nomenklatuur' AS lib_name
+            , kood
+            FROM libs.nomenklatuur n
+            WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_nom))
           AND n.status <> 3
           AND (properties::JSON ->> 'valid')::DATE IS NOT NULL
           AND (properties::JSON ->> 'valid')::DATE <= l_kpv
-        UNION
-        SELECT DISTINCT id
-                      , 'Osakond' AS lib_name
-                      , kood
-        FROM libs.library n
-        WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_osakond))
+            UNION
+            SELECT DISTINCT id
+            , 'Osakond' AS lib_name
+            , kood
+            FROM libs.library n
+            WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_osakond))
           AND rekvid = l_rekv_id
           AND n.status <> 3
           AND library = 'OSAKOND'
           AND (properties::JSON ->> 'valid')::DATE IS NOT NULL
           AND (properties::JSON ->> 'valid')::DATE <= l_kpv
-        UNION ALL
-        SELECT id, 'tululiik' AS lib_name, kood
-        FROM libs.library l
-        WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_tunnus))
+            UNION ALL
+            SELECT id
+            , 'tululiik' AS lib_name
+            , kood
+            FROM libs.library l
+            WHERE ltrim(rtrim(kood)) = ltrim(rtrim(lib_tunnus))
           AND l.status <> 3
           AND l.library = 'MAKSUKOOD'
           AND (properties::JSON ->> 'valid')::DATE IS NOT NULL
@@ -123,6 +125,7 @@ BEGIN
                       FROM (SELECT v_libs.lib_name || ' kood: ' || ltrim(rtrim(v_libs.kood)) ||
                                    ' ei kehti' AS error_message) row;
         END LOOP;
+    tulemus = NULL;
     RETURN tulemus;
 END;
 

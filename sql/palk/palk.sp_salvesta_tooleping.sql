@@ -81,6 +81,7 @@ BEGIN
                 doc_muud) RETURNING id
                    INTO leping_id;
 
+        raise notice 'saved %', leping_id;
 
     ELSE
         -- history

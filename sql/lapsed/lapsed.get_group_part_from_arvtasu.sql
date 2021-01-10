@@ -45,5 +45,9 @@ GRANT EXECUTE ON FUNCTION lapsed.get_group_part_from_arvtasu(INTEGER, DATE) TO d
 /*
 
 
-select * from lapsed.get_group_part_from_mk(2078084, '2020-09-01'::DATE)
+select * from lapsed.get_group_part_from_arvtasu(87857, '2020-09-01'::DATE)
+
+87857
+87858
+
 */

@@ -8,6 +8,7 @@ module.exports = {
                      r.id,
                      r.parentid,
                      r.nimetus::VARCHAR(254),
+                     coalesce(r.muud, nimetus)::VARCHAR(254)                          AS taisnimetus,
                      r.aadress,
                      r.email::VARCHAR(254),
                      r.faks::VARCHAR(254),
@@ -35,7 +36,7 @@ module.exports = {
                       FROM ou.aa
                       WHERE parentid = $1
                         AND kassa = 2
-                      LIMIT 1)::VARCHAR(20)                                           AS oma_tp
+                          LIMIT 1)::VARCHAR(20)                                       AS oma_tp
 
               FROM ou.rekv r,
                    ou.userid u

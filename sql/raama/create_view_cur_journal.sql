@@ -15,7 +15,7 @@ SELECT to_char(d.created, 'DD.MM.YYYY HH:MM')                                   
        month(j.kpv) :: INTEGER                                                                AS kuu,
        year(j.kpv) :: INTEGER                                                                 AS aasta,
        coalesce(regexp_replace(j.selg, '"', '`'), '') :: VARCHAR(254)                         AS selg,
-       COALESCE(j.dok, '') :: VARCHAR(20)                                                     AS dok,
+       COALESCE(j.dok, '') :: VARCHAR(50)                                                     AS dok,
        COALESCE(j.objekt, '') :: VARCHAR(20)                                                  AS objekt,
        j.muud :: CHARACTER VARYING(254)                                                       AS muud,
        j1.deebet,

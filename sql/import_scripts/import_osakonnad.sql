@@ -20,6 +20,7 @@ BEGIN
     INNER JOIN rekv ON rekv.id = l.rekvid AND rekv.parentid < 999
   WHERE (l.id = in_old_id OR in_old_id IS NULL)
     and l.library = 'OSAKOND'
+    and rekvid not in (3, 63, 131)
   LIMIT ALL
   LOOP
 

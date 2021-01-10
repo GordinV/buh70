@@ -24,6 +24,11 @@ OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'saldoandmik'
 )
 ;
 
+DELETE from eelarve.saldoandmik;
+DELETE from eelarve.saldoandmik
+where aasta < 2019;
+
+
 INSERT INTO eelarve.saldoandmik (rekvid, nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, omatp, tyyp, kuu)
   SELECT
     rekvid,
@@ -41,3 +46,15 @@ INSERT INTO eelarve.saldoandmik (rekvid, nimetus, db, kr, konto, tegev, tp, alli
     tyyp,
     kuu
   FROM remote_saldoandmik;
+
+DROP RULE IF EXISTS saldoandmik_2020_delete ON eelarve.saldoandmik;
+CREATE RULE saldoandmik_2020_delete AS ON DELETE TO eelarve.saldoandmik
+  WHERE aasta <= 2020
+  DO INSTEAD NOTHING;
+
+DROP RULE IF EXISTS saldoandmik_2020_insert ON eelarve.saldoandmik;
+CREATE RULE saldoandmik_2020_insert AS ON DELETE TO eelarve.saldoandmik
+  WHERE aasta <= 2020
+  DO INSTEAD NOTHING;
+
+

@@ -71,10 +71,6 @@ module.exports = {
             type: 'C'
         },
         {
-            name: 'dok',
-            type: 'C'
-        },
-        {
             name: 'parentid',
             type: 'I'
         },

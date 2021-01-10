@@ -1,19 +1,18 @@
-﻿drop table if exists docs.doc;
+﻿DROP TABLE IF EXISTS docs.doc;
 
-CREATE TABLE docs.doc
-(
-  id serial,
-  created timestamp default now(),
-  lastupdate timestamp default now(),
-  doc_type_id integer,
-  bpm jsonb,
-  history jsonb,
-  status integer default 0,	
-  CONSTRAINT docs_pkey PRIMARY KEY (id)
+CREATE TABLE docs.doc (
+    id          SERIAL,
+    created     TIMESTAMP DEFAULT now(),
+    lastupdate  TIMESTAMP DEFAULT now(),
+    doc_type_id INTEGER,
+    bpm         JSONB,
+    history     JSONB,
+    status      INTEGER   DEFAULT 0,
+    CONSTRAINT docs_pkey PRIMARY KEY (id)
 )
-WITH (
-  OIDS=TRUE
-);
+    WITH (
+        OIDS= TRUE
+    );
 
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE docs.doc TO dbpeakasutaja;
 GRANT SELECT, UPDATE, INSERT ON TABLE docs.doc TO dbkasutaja;
@@ -21,13 +20,15 @@ GRANT ALL ON TABLE docs.doc TO dbadmin;
 GRANT SELECT ON TABLE docs.doc TO dbvaatleja;
 
 
-COMMENT ON COLUMN docs.doc.doc_type_id  IS 'тип документа, из таблицы library.kood';
-COMMENT ON COLUMN docs.doc.bpm  IS 'бизнес процесс';
+COMMENT ON COLUMN docs.doc.doc_type_id IS 'тип документа, из таблицы library.kood';
+COMMENT ON COLUMN docs.doc.bpm IS 'бизнес процесс';
 
-ALTER TABLE docs.doc ADD COLUMN docs_ids integer[];
+ALTER TABLE docs.doc
+    ADD COLUMN docs_ids INTEGER[];
 COMMENT ON COLUMN docs.doc.docs_ids IS 'seotud dokumendide id';
 
-create index idx_doc_status on docs.doc USING btree (status);
+CREATE INDEX idx_doc_status ON docs.doc USING btree (status);
+
 
 /*
 

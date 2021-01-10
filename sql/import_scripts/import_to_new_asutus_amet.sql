@@ -34,7 +34,7 @@ DECLARE
                            FROM ou.userid
                            WHERE rekvid = 132
                              AND kasutaja = 'vlad'
-                           LIMIT 1);
+                               LIMIT 1);
 
 BEGIN
     -- выборка из "старого меню"
@@ -64,7 +64,7 @@ BEGIN
         WHERE l.library = 'AMET'
           AND l.rekvid = 64
           AND o.kood <> 'SAA'
-        LIMIT ALL
+            LIMIT ALL
         LOOP
 
             -- поиск osakond_id
@@ -73,11 +73,11 @@ BEGIN
             WHERE library = 'OSAKOND'
               AND rekvid = 132
               AND kood = v_lib.osakond
-            LIMIT 1;
+                LIMIT 1;
 
             IF l_osakondid IS NULL
             THEN
-                RAISE EXCEPTION 'Osakond not found osakondid-> %', v_lib.osakondid;
+                RAISE NOTICE 'Osakond not found osakondid-> %', v_lib.osakondid;
             END IF;
 
             -- amet_id
@@ -87,32 +87,37 @@ BEGIN
               AND rekvid = 132
               AND kood = v_lib.kood
               AND status <> 3
-            LIMIT 1;
+                LIMIT 1;
 
-            -- преобразование и получение параметров
 
-            -- сохранение
-            SELECT coalesce(lib_id, 0) AS id,
-                   v_lib.kood          AS kood,
-                   v_lib.nimetus       AS nimetus,
-                   l_osakondid         AS osakondid,
-                   NULL                AS tunnusid,
-                   v_lib.kogus         AS kogus,
-                   v_lib.palgamaar     AS palgamaar,
-                   v_lib.muud          AS muud
-                   INTO v_params;
-
-            SELECT row_to_json(row) INTO json_object
-            FROM (SELECT coalesce(lib_id, 0) AS id,
-                         TRUE                AS import,
-                         v_params            AS data) row;
-
-            SELECT libs.sp_salvesta_amet(json_object :: JSON, l_user_id, 132) INTO lib_id;
-            IF lib_id IS NOT NULL AND NOT empty(lib_id)
+            IF (l_osakondid IS NOT NULL)
             THEN
+                -- преобразование и получение параметров
 
-                l_count = l_count + 1;
+                -- сохранение
+                SELECT coalesce(lib_id, 0) AS id,
+                       v_lib.kood          AS kood,
+                       v_lib.nimetus       AS nimetus,
+                       l_osakondid         AS osakondid,
+                       NULL                AS tunnusid,
+                       v_lib.kogus         AS kogus,
+                       v_lib.palgamaar     AS palgamaar,
+                       v_lib.muud          AS muud
+                       INTO v_params;
+
+                SELECT row_to_json(row) INTO json_object
+                FROM (SELECT coalesce(lib_id, 0) AS id,
+                             TRUE                AS import,
+                             v_params            AS data) row;
+
+                SELECT libs.sp_salvesta_amet(json_object :: JSON, l_user_id, 132) INTO lib_id;
+                IF lib_id IS NOT NULL AND NOT empty(lib_id)
+                THEN
+
+                    l_count = l_count + 1;
+                END IF;
             END IF;
+
 
             RAISE NOTICE 'lib_id %, l_count %', lib_id, l_count;
 
@@ -137,4 +142,6 @@ $BODY$
 
 /*
 SELECT import_to_new_asutus_amet()
+
+select * from libs.library where id = 728093
 */

@@ -52,10 +52,8 @@ WITH cur_kulude_kassa_taitmine AS (
                          kood2                           AS allikas,
                          kood5                           AS artikkel,
                          CASE
-                             WHEN kood5 =
-                                  '2586' AND kood2 LIKE
-                                             'LE%' THEN
-                                 '06'
+                             WHEN kood5 = '2586'
+                                 AND kood2 LIKE 'LE%' THEN '06'
                              ELSE kood3 END::VARCHAR(20) AS rahavoog,
                          COALESCE(tunnus,
                                   '')                    AS tunnus,
@@ -167,11 +165,8 @@ WITH cur_kulude_kassa_taitmine AS (
                              ELSE 200 END AS idx
                   FROM cur_kulude_kassa_taitmine kt
                   WHERE kt.artikkel IS NOT NULL
-                    AND NOT empty(kt.artikkel
-                      )
-                    AND artikkel
-                      <>
-                        '2586'
+                    AND NOT empty(kt.artikkel)
+                    AND artikkel <> '2586'
                   UNION ALL
                   SELECT kt.rekv_id       AS rekvid,
                          0 :: NUMERIC     AS eelarve_kinni,
@@ -203,178 +198,6 @@ WITH cur_kulude_kassa_taitmine AS (
                   WHERE kt.artikkel IS NOT NULL
                     AND artikkel = '2586'
                     AND rahavoog = '06'
-                  UNION ALL
-                  SELECT kt.rekv_id   AS rekvid,
-                         0 :: NUMERIC AS eelarve_kinni,
-                         0 :: NUMERIC AS eelarve_parandatud,
-                         0 :: NUMERIC AS eelarve_kassa_kinni,
-                         0 :: NUMERIC AS eelarve_kassa_parandatud,
-                         0 :: NUMERIC AS tegelik,
-                         sum(summa)   AS kassa,
-                         ''           AS tegev,
-                         ''           AS allikas,
-                         '3, 655'     AS artikkel,
-                         ''           AS rahavoog,
-                         ''           AS tunnus,
-                         100          AS idx
-                  FROM cur_kulude_kassa_taitmine kt
-                  WHERE kt.artikkel IS NOT NULL
-                    AND (artikkel LIKE
-                         '3%' OR artikkel LIKE
-                                 '655%'
-                      )
-                  GROUP BY rekvid,
-                           tegev,
-                           allikas,
-                           artikkel,
-                           rahavoog,
-                           tunnus
-                  UNION ALL
-                  -- Põhitegevuse kulud                  (здесь  art 2586 с RV 06, 4*, 5*, 6 )
-                  SELECT kt.rekv_id      AS rekvid,
-                         0 :: NUMERIC    AS eelarve_kinni,
-                         0 :: NUMERIC    AS eelarve_parandatud,
-                         0 :: NUMERIC    AS eelarve_kassa_kinni,
-                         0 :: NUMERIC    AS eelarve_kassa_parandatud,
-                         0 :: NUMERIC    AS tegelik,
-                         sum(summa)      AS kassa,
-                         ''              AS tegev,
-                         ''              AS allikas,
-                         '15,2586,4,5,6' AS artikkel,
-                         ''              AS rahavoog,
-                         ''              AS tunnus,
-                         200             AS idx
-                  FROM cur_kulude_kassa_taitmine kt
-                  WHERE kt.artikkel IS NOT NULL
-                    AND ((artikkel LIKE
-                          '4%' OR artikkel LIKE
-                                  '5%' OR (artikkel LIKE
-                                           '6%' AND artikkel NOT LIKE
-                                                    '655%') OR
-                          artikkel LIKE
-                          '15%')
-                      OR (artikkel =
-                          '2586' AND rahavoog =
-                                     '06')
-                      )
-                  GROUP BY kt.rekv_id
-                  UNION ALL
-                  SELECT rekvid,
-                         0 :: NUMERIC    AS eelarve_kinni,
-                         0 :: NUMERIC    AS eelarve_parandatud,
-                         0 :: NUMERIC    AS eelarve_kassa_kinni,
-                         0 :: NUMERIC    AS eelarve_kassa_parandatud,
-                         sum(summa)      AS tegelik,
-                         0 :: NUMERIC    AS kassa,
-                         ''              AS tegev,
-                         ''              AS allikas,
-                         '15,2586,4,5,6' AS artikkel,
-                         ''              AS rahavoog,
-                         ''              AS tunnus,
-                         200             AS idx
-                  FROM (
-                           SELECT rekv_id AS rekvid, summa
-                           FROM cur_kulude_taitmine ft
-                           WHERE ((ft.artikkel LIKE
-                                   '4%' OR ft.artikkel LIKE
-                                           '5%' OR
-                                   (ft.artikkel LIKE
-                                    '6%' AND ft.artikkel NOT LIKE
-                                             '655%') OR
-                                   ft.artikkel LIKE
-                                   '15%'))
-                           UNION ALL
-                           SELECT rekvid,
-                                  summa AS summa
-                           FROM cur_journal j
-                           WHERE j.rekvid = (CASE
-                                                 WHEN l_kond = 1
-                                                     THEN rekvid
-                                                 ELSE l_rekvid END
-                               )
-                             AND j.rekvid IN (
-                               SELECT rekv_id
-                               FROM get_asutuse_struktuur(l_rekvid)
-                           )
-                             AND YEAR(j.kpv) = l_aasta
-                             AND MONTH(j.kpv) <= MONTH(l_kpv)
-                             AND j.kood5 IS NOT NULL
-                             AND NOT empty(j.kood5)
-                             AND ((LEFT(j.deebet, 3) = '208'
-                               AND j.kood3 = '06'
-                                      )
-                               OR
-                                  (LEFT(j.deebet, 3) = '258'
-                                      AND j.kood3 = '06'
-                                      )
---             OR (left(j.deebet, 6) IN ('203620', '203630'))
-                               )
-                       ) ft
-                  GROUP BY ft.rekvid
-                  UNION ALL
-                  SELECT rekvid,
-                         sum(summa)       AS eelarve_kinni,
-                         sum(summa_kassa) AS eelarve_kassa_kinni,
-                         0:: NUMERIC      AS eelarve_parandatud,
-                         0:: NUMERIC      AS eelarve_kassa_parandatud,
-                         0 :: NUMERIC     AS tegelik,
-                         0 :: NUMERIC     AS kassa,
-                         ''               AS tegev,
-                         ''               AS allikas,
-                         '15,2586,4,5,6'  AS artikkel,
-                         ''               AS rahavoog,
-                         ''               AS tunnus,
-                         200              AS idx
-                  FROM eelarve.kulud e
-                  WHERE rekvid = (CASE
-                                      WHEN l_kond = 1
-                                          THEN rekvid
-                                      ELSE l_rekvid END
-                      )
-                    AND e.rekvid IN (
-                      SELECT rekv_id
-                      FROM get_asutuse_struktuur(l_rekvid
-                               ))
-                    AND aasta = l_aasta
-                    AND e.kpv IS NULL
-                    AND (kood5 LIKE '4%'
-                      OR kood5 LIKE '5%'
-                      OR (kood5 LIKE '6%' AND kood5 NOT LIKE '655%')
-                      OR kood5 LIKE '15%'
-                      OR kood5 = '2586'
-                      )
-                  GROUP BY e.rekvid
-                  UNION ALL
-                  SELECT rekvid,
-                         0 :: NUMERIC     AS eelarve_kinni,
-                         0 :: NUMERIC     AS eelarve_kassa_kinni,
-                         sum(summa)       AS eelarve_parandatud,
-                         sum(summa_kassa) AS eelarve_kassa_parandatud,
-                         0 :: NUMERIC     AS tegelik,
-                         0 :: NUMERIC     AS kassa,
-                         ''               AS tegev,
-                         ''               AS allikas,
-                         '15,2586,4,5,6'  AS artikkel,
-                         ''               AS rahavoog,
-                         ''               AS tunnus,
-                         200              AS idx
-                  FROM eelarve.kulud e
-                  WHERE rekvid = (CASE
-                                      WHEN l_kond = 1
-                                          THEN rekvid
-                                      ELSE l_rekvid END
-                      )
-                    AND e.rekvid IN
-                        (SELECT rekv_id
-                         FROM get_asutuse_struktuur(l_rekvid))
-                    AND aasta = l_aasta
-                    AND (kood5 LIKE '4%' OR kood5 LIKE '5%'
-                      OR (kood5 LIKE '6%' AND kood5 NOT LIKE '655%')
-                      OR kood5 LIKE '15%'
-                      OR kood5 = '2586'
-                      )
-                    AND (e.kpv IS NULL OR e.kpv <= COALESCE(l_kpv, CURRENT_DATE))
-                  GROUP BY e.rekvid
                   UNION ALL
                   SELECT kt.rekv_id   AS rekvid,
                          0 :: NUMERIC AS eelarve_kinni,
@@ -436,57 +259,125 @@ WITH cur_kulude_kassa_taitmine AS (
                   rahavoog,
                   tunnus,
                   idx
+     ),
+
+     preReport AS (SELECT rekvid,
+                          sum(eelarve_kinni)                                AS eelarve_kinni,
+                          sum(eelarve_parandatud)                           AS eelarve_parandatud,
+                          sum(eelarve_kassa_kinni)                          AS eelarve_kassa_kinni,
+                          SUM(eelarve_kassa_parandatud)                     AS eelarve_kassa_parandatud,
+                          sum(tegelik)                                      AS tegelik,
+                          sum(kassa)                                        AS kassa,
+                          tegev,
+                          allikas,
+                          artikkel,
+                          rahavoog,
+                          tunnus,
+                          CASE WHEN artikkel = '1532' THEN 110 ELSE idx END AS idx
+                   FROM qryReport
+                   GROUP BY rekvid,
+                            tegev,
+                            allikas,
+                            artikkel,
+                            rahavoog,
+                            tunnus,
+                            idx
+                   UNION ALL
+-- 2586 свод
+                   SELECT rekvid,
+                          sum(eelarve_kinni)            AS eelarve_kinni,
+                          sum(eelarve_parandatud)       AS eelarve_parandatud,
+                          sum(eelarve_kassa_kinni)      AS eelarve_kassa_kinni,
+                          SUM(eelarve_kassa_parandatud) AS eelarve_kassa_parandatud,
+                          sum(tegelik)                  AS tegelik,
+                          sum(kassa)                    AS kassa,
+                          ''                            AS tegev,
+                          '80'                          AS allikas,
+                          '2586x'                       AS artikkel,
+                          ''                            AS rahavoog,
+                          ''                            AS tunnus,
+                          095                           AS idx
+                   FROM qryReport
+                   WHERE artikkel = '2586'
+                     AND allikas = '80'
+                   GROUP BY rekvid
+                   UNION ALL
+                   -- Põhitegevuse kulud                  (здесь  art 2586 с RV 06, 4*, 5*, 6 )
+                   SELECT rekvid,
+                          sum(eelarve_kinni)            AS eelarve_kinni,
+                          sum(eelarve_parandatud)       AS eelarve_parandatud,
+                          sum(eelarve_kassa_kinni)      AS eelarve_kassa_kinni,
+                          SUM(eelarve_kassa_parandatud) AS eelarve_kassa_parandatud,
+                          sum(tegelik)                  AS tegelik,
+                          sum(kassa)                    AS kassa,
+                          ''                            AS tegev,
+                          ''                            AS allikas,
+                          '15,2586,4,5,6'               AS artikkel,
+                          ''                            AS rahavoog,
+                          ''                            AS tunnus,
+                          200                           AS idx
+                   FROM qryReport
+                   WHERE
+                       /*((artikkel LIKE
+                               '4%' OR artikkel LIKE
+                                       '5%' OR (artikkel LIKE
+                                                '6%' AND artikkel NOT LIKE
+                                                         '655%') OR
+                               artikkel LIKE
+                               '15%')
+                           OR (artikkel =
+                               '2586' AND rahavoog =
+                                          '06')
+                           )
+                         AND artikkel <> '1532'*/
+                       idx >= 200
+                   GROUP BY rekvid
+                   UNION ALL
+                   SELECT kt.rekvid    AS rekvid,
+                          0 :: NUMERIC AS eelarve_kinni,
+                          0 :: NUMERIC AS eelarve_parandatud,
+                          0 :: NUMERIC AS eelarve_kassa_kinni,
+                          0 :: NUMERIC AS eelarve_kassa_parandatud,
+                          0 :: NUMERIC AS tegelik,
+                          sum(kassa)   AS kassa,
+                          ''           AS tegev,
+                          ''           AS allikas,
+                          '15, 3, 655' AS artikkel,
+                          ''           AS rahavoog,
+                          ''           AS tunnus,
+                          110          AS idx
+                   FROM qryReport kt
+                   WHERE kt.artikkel IS NOT NULL
+                     AND (artikkel LIKE '3%' OR artikkel LIKE '655%'
+                       OR artikkel = '1532'
+                       )
+                   GROUP BY rekvid
      )
-    SELECT
-     rekvid,
-     sum(eelarve_kinni) AS eelarve_kinni,
-     sum(eelarve_parandatud) AS eelarve_parandatud,
-     sum(eelarve_kassa_kinni) AS eelarve_kassa_kinni,
-     SUM(eelarve_kassa_parandatud) AS eelarve_kassa_parandatud,
-     sum(tegelik) AS tegelik,
-     sum(kassa) AS kassa,
-     tegev,
-     allikas,
-     artikkel,
-     rahavoog,
-     tunnus,
-     idx
-    FROM
-     qryReport
-    GROUP BY
-     rekvid,
-     tegev,
-     allikas,
-     artikkel,
-     rahavoog,
-     tunnus,
-     idx
-    UNION ALL
-    SELECT
-     999999,
-     sum(eelarve_kinni) AS eelarve_kinni,
-     sum(eelarve_parandatud) AS eelarve_parandatud,
-     sum(eelarve_kassa_kinni) AS eelarve_kassa_kinni,
-     SUM(eelarve_kassa_parandatud) AS eelarve_kassa_parandatud,
-     sum(tegelik) AS tegelik,
-     sum(kassa) AS kassa,
-     tegev,
-     allikas,
-     artikkel,
-     rahavoog,
-     tunnus,
-     idx
-    FROM
-     qryReport
-    WHERE
-     l_kond > 0
-    GROUP BY
-     tegev,
-     allikas,
-     artikkel,
-     rahavoog,
-     tunnus,
-     idx;
+SELECT *
+FROM preReport
+UNION ALL
+-- kond
+SELECT 999999,
+       sum(eelarve_kinni)            AS eelarve_kinni,
+       sum(eelarve_parandatud)       AS eelarve_parandatud,
+       sum(eelarve_kassa_kinni)      AS eelarve_kassa_kinni,
+       SUM(eelarve_kassa_parandatud) AS eelarve_kassa_parandatud,
+       sum(tegelik)                  AS tegelik,
+       sum(kassa)                    AS kassa,
+       tegev,
+       allikas,
+       artikkel,
+       rahavoog,
+       tunnus,
+       idx
+FROM preReport
+WHERE l_kond > 0
+GROUP BY tegev,
+         allikas,
+         artikkel,
+         rahavoog,
+         tunnus,
+         idx
 
 $BODY$
     LANGUAGE SQL
@@ -499,11 +390,12 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DAT
 GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, INTEGER, INTEGER) TO eelaktsepterja;
 GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, INTEGER, INTEGER) TO dbvaatleja;
 
-
-select * from (
-
+/*
 SELECT *
-FROM eelarve.eelarve_taitmine_allikas_artikkel(2019::INTEGER, '2019-12-31'::DATE, 130, 1)
-              )
-qry
-where artikkel = '1532'
+FROM (
+         SELECT *
+         FROM eelarve.eelarve_taitmine_allikas_artikkel(2019::INTEGER, '2019-12-31'::DATE, 63, 1)
+     ) qry
+WHERE artikkel like '15,2586,4,5,6%'
+order by idx, artikkel
+*/

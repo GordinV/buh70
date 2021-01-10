@@ -21,7 +21,8 @@ module.exports = {
                       g.nimetus as grupp,
                       g.id as grupp_id,
                       p.rekvid as rekv_id,
-                      p.properties::jsonb->>'konto' as konto
+                      p.properties::jsonb->>'konto' as konto,
+                      (p.properties::JSONB ->> 'vastisikid')::INTEGER                         AS vastisik_id       
                     FROM libs.library p
                       INNER JOIN cur_pv_oper po ON p.id = po.pv_kaart_id
                       INNER JOIN libs.library g ON g.id = (p.properties :: JSONB ->> 'gruppid') :: INTEGER

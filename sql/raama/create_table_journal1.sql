@@ -105,3 +105,5 @@ ALTER TABLE docs.journal1
 
 ALTER TABLE docs.journal1
    ALTER COLUMN valuuta SET DEFAULT 'EUR';
+
+create table IF NOT EXISTS docs.journal1_2021 (aasta integer) INHERITS  (docs.journal1);

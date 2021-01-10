@@ -162,9 +162,11 @@ BEGIN
                               FROM cur_tahtpaevad l
                               WHERE (l.rekvid = v_Tooleping.rekvid OR l.rekvid IS NULL)
                                 AND kuu = l_kuu
+                                and aasta = year(l_kpv)
                                 AND l.luhipaev = 1) * 3;
 
         l_hours := l_hours - l_tahtpaeva_tunnid;
+
     END IF;
 
     RETURN coalesce(l_hours, 0);
@@ -177,9 +179,9 @@ GRANT EXECUTE ON FUNCTION palk.sp_calc_taabel1(JSONB) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION palk.sp_calc_taabel1(JSONB) TO dbpeakasutaja;
 
 SELECT palk.sp_calc_taabel1('{
-  "aasta": 2020,
-  "kuu": 9,
-  "lepingid": 24447
+  "aasta": 2021,
+  "kuu": 1,
+  "lepingid": 30951
 }'::JSONB);
 -- -> 145 ?
 
@@ -188,5 +190,5 @@ SELECT palk.sp_calc_taabel1('{
 select palk.sp_calc_taabel1(null::JSONB); -- -> 0
 
 
-select * from palk.tooleping where parentid in (select id from libs.asutus where regkood = '46312213713')
+select * from palk.tooleping where parentid in (select id from libs.asutus where regkood = '47007223734  ')
 */

@@ -41,7 +41,7 @@ BEGIN
 
     GET DIAGNOSTICS rows_fetched = ROW_COUNT;
 
-    IF v_arv is null
+    IF v_arv IS NULL
     THEN
         RAISE NOTICE 'rows_fetched = 0';
         error_code = 4; -- No documents found
@@ -117,6 +117,7 @@ BEGIN
                 FROM docs.arv1 arv1
                          INNER JOIN libs.nomenklatuur nom ON arv1.nomid = nom.id
                 WHERE arv1.parentid = v_arv.id
+                  AND arv1.summa <> 0
                 LOOP
                     lcSelg = lcSelg || ', ' || trim(v_selg.nimetus);
                 END LOOP;
@@ -128,12 +129,12 @@ BEGIN
         lcKrTp = coalesce(v_arv.asutus_tp, '800599');
 
         SELECT v_arv.journalid,
-               'JOURNAL'    AS doc_type_id,
+               'JOURNAL'                       AS doc_type_id,
                v_arv.kpv,
-               lcSelg       AS selg,
+               lcSelg                          AS selg,
                v_arv.muud,
                v_arv.Asutusid,
-               'Arve nr' || v_arv.number::text AS dok
+               'Arve nr' || v_arv.number::TEXT AS dok
                INTO v_journal;
 
         l_json = row_to_json(v_journal);
@@ -145,6 +146,7 @@ BEGIN
                    1 :: NUMERIC     AS kuurs
             FROM docs.arv1 arv1
             WHERE arv1.parentid = v_arv.Id
+              AND arv1.summa <> 0
             LOOP
 
                 --      RAISE NOTICE 'v_arv1: %', v_arv1;
@@ -218,7 +220,6 @@ BEGIN
 
                     END IF;
 
-
                 ELSE
                     IF v_arv1.konto = '601000' OR v_arv1.konto = '203000' OR
                        left(ltrim(rtrim(v_arv1.konto)), 6) = '103701'
@@ -289,8 +290,13 @@ BEGIN
 
         /* salvestan lausend */
 
-        result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_arv.rekvId);
-
+        IF l_row_count > 0
+        THEN
+            result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_arv.rekvId);
+        ELSE
+            error_message = 'Puudub kehtiv read';
+            result = 0;
+        END IF;
 
         IF result IS NOT NULL AND result > 0
         THEN

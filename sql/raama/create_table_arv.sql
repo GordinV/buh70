@@ -52,3 +52,9 @@ ALTER TABLE docs.arv ADD properties JSONB NULL;
 insert into docs.arv
 	select * from arv
 */
+
+
+DROP RULE IF EXISTS arv_insert_2020 ON docs.arv;
+CREATE RULE arv_insert_2020 AS ON INSERT TO docs.arv
+  WHERE kpv <= '2020-12-31'
+  DO INSTEAD NOTHING;

@@ -76,3 +76,12 @@ $$;
 GRANT EXECUTE ON FUNCTION rekl.sp_recalc_rekl_jaak(INTEGER, JSON) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION rekl.sp_recalc_rekl_jaak(INTEGER, JSON) TO dbpeakasutaja;
 
+/*
+select rekl.sp_recalc_rekl_jaak(4862, '{"id":2284825}'::JSON)
+
+2275773
+2288031
+2284825
+2457994
+
+ */

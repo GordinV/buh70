@@ -106,6 +106,11 @@ BEGIN
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
+        if (doc_kpv <= '2020-12-31'::date) THEN
+            raise notice 'vale kpv';
+            RETURN 0;
+        END IF;
+
         SELECT row_to_json(row) INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;

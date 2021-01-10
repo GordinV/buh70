@@ -44,6 +44,10 @@ BEGIN
 
         END IF;
 
+        if l_rekvid is null THEN
+            l_rekvid = (select rekvid from palk.tooleping where id = l_lepingid);
+        END IF;
+
     END IF;
 
     IF l_maxdays > l_lopp_paev
@@ -91,6 +95,7 @@ SELECT sp_workdays('{"kuu":1,"aasta":2018,"lepingid":2}' :: JSON);
 
 SELECT sp_workdays('{"kuu":1,"aasta":2018,"lepingid":2}' :: JSON);
 
-SELECT sp_workdays('{"kuu":1,"aasta":2018,"lepingid":2, "paev":4, "lopp":20}' :: JSON);
+SELECT palk.get_work_days('{"kuu":1,"aasta":2021,"lepingid":30951}' :: JSON);
+
 
 */

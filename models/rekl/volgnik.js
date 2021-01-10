@@ -11,11 +11,10 @@ const Volgnik = {
             {id: "volg", name: "Võlg", width: "100px"},
             {id: "intress", name: "Intress", width: "100px"}
         ],
-        sqlString: `SELECT
+        sqlString: `SELECT $2 as user_id,
                           d.*
                         FROM cur_volgnik d
-                        WHERE d.rekvId = $1
-                              AND coalesce(docs.usersRigths(d.id, 'select', $2), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                        WHERE d.rekvId = $1`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curVolgnik'
     },

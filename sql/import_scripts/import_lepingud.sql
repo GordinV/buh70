@@ -1,5 +1,5 @@
 DROP FOREIGN TABLE IF EXISTS remote_leping1;
-
+/*
 CREATE FOREIGN TABLE remote_leping1 (
   id        SERIAL                               NOT NULL,
   asutusid  INTEGER DEFAULT 1                    NOT NULL,
@@ -38,6 +38,7 @@ CREATE FOREIGN TABLE remote_leping2 (
 SERVER db_narva_ee
 OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'leping2'
 );
+*/
 
 DROP FUNCTION IF EXISTS import_lepingud( INTEGER );
 
@@ -63,9 +64,9 @@ BEGIN
 
   FOR v_leping IN
   SELECT l1.*
-  FROM remote_leping1 l1
+  FROM leping1 l1
   WHERE (l1.id = in_old_id OR in_old_id IS NULL)
-        AND l1.tahtaeg IS NULL OR year(l1.tahtaeg) >= 2018
+        AND l1.tahtaeg IS NULL OR year(l1.tahtaeg) >= 2020
   LIMIT ALL
   LOOP
     -- поиск и проверка на ранее сделанный импорт
@@ -111,7 +112,7 @@ BEGIN
                                           status,
                                           kbm,
                                           muud
-                                        FROM remote_leping2 l2
+                                        FROM leping2 l2
                                         WHERE l2.parentid = v_leping.id) AS l2
                                  ));
 
@@ -216,23 +217,9 @@ END;$BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
 
-SELECT import_lepingud(1201)
 
 
 /*
-
-select * from remote_leping1 order by id desc limit 10
--- import_taotlus(id)
-SELECT count(id) from taotlus where year(kpv) = 2018
-and staatus = 3
-and id in (select parentid from taotlus1 where eelarveid = 0)
-
-order by kpv limit all
-
-select * from asutus where id = 42626
-
-select * from import_log where old_id = 42626
-
-select * from libs.asutus where id = 29288
+SELECT import_lepingud(id) from leping1 where
 
 */

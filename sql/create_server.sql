@@ -2,6 +2,9 @@ CREATE EXTENSION postgres_fdw;
 
 CREATE SERVER dbarch_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host '213.184.47.198', dbname 'narvalv', port '5436');
 
+CREATE SERVER test_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host '213.184.47.198', dbname 'narvalv', port '5436');
+
+
 CREATE USER MAPPING FOR vlad
 SERVER db_narva_ee
 OPTIONS (user 'vlad', password 'Vlad490710');

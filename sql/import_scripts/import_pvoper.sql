@@ -20,12 +20,13 @@ BEGIN
   -- выборка из "старого меню"
 
   FOR v_pv_oper IN
-  SELECT p.*, l.rekvid, coalesce(v.kuurs,1) as kuurs
-  FROM remote_pv_oper p
-    INNER JOIN library l ON l.id = p.parentid
+  SELECT p.*, l.rekvid, 1 as kuurs
+  FROM pv_oper p
+    INNER JOIN curPohivara l ON l.id = p.parentid
     INNER JOIN rekv ON rekv.id = l.rekvid AND rekv.parentid < 999
-    left outer join remote_dokvaluuta1 v on v.dokid = p.id and v.dokliik = 13
   WHERE (p.id = in_old_id OR in_old_id IS NULL)
+  and l.rekvid not in (3, 63, 131)
+  and (l.mahakantud is null or year(l.mahakantud) > 2020)
   order by p.parentid, p.id
   LIMIT ALL
   LOOP
@@ -186,6 +187,9 @@ COST 100;
 
 /*
 SELECT import_pvoper(519806)
-SELECT import_pvoper(id) from pv_oper where parentid in (select id from curPohivara where mahakantud is null or year(mahakantud) >= 2017)
+SELECT import_pvoper(id) from pv_oper where parentid in
+(select id from curPohivara where (mahakantud is null or year(mahakantud) > 2020)
+and rekvid not in (3, 63, 131)
+)
 
 */

@@ -72,7 +72,8 @@ const Journal = {
                          INNER JOIN docs.journal j ON j.id = j1.parentId
                          INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                   WHERE j.parentid = $1 
-                    and j1.summa <> 0`,
+                    and j1.summa <> 0
+                    order by j1.id desc`,
             query: null,
             multiple: true,
             alias: 'details',

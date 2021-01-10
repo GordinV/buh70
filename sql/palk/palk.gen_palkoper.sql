@@ -111,7 +111,7 @@ BEGIN
                            FROM ou.userid u
                            WHERE u.id = user_id)
           AND t.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
-        ORDER BY t.pohikoht DESC
+            ORDER BY t.pohikoht DESC
         LOOP
             -- инициализируем
             SELECT NULL::INTEGER                  AS doc_id,
@@ -125,16 +125,20 @@ BEGIN
                        pk.liik,
                        empty(pk.asutusest::INTEGER) AS is_asutusest,
                        pk.tululiik,
-                       empty(percent_::INTEGER)     AS is_percent
+                       empty(percent_::INTEGER)     AS is_percent,
+                       pk.tunnus
                 FROM palk.cur_palk_kaart pk
                 WHERE lepingid = v_tooleping.id
                   AND status = 1
                   AND pk.libid IN (SELECT value :: INTEGER
                                    FROM json_array_elements_text(l_lib_ids))
-                ORDER BY pk.liik, CASE
-                                      WHEN empty(pk.tululiik)
-                                          THEN 99 :: TEXT
-                                      ELSE pk.tululiik END, Pk.percent_ DESC, pk.summa DESC
+                    ORDER BY pk.liik
+                    , CASE
+                          WHEN empty(pk.tululiik)
+                              THEN 99 :: TEXT
+                          ELSE pk.tululiik END
+                    , Pk.percent_ DESC
+                    , pk.summa DESC
                 LOOP
                     -- Готовим параметры для расчета
                     SELECT row_to_json(row) INTO l_params
@@ -180,7 +184,7 @@ BEGIN
                         WHERE po.lepingid = v_tooleping.id
                           AND po.libid = V_lib.id
                           AND kpv = l_kpv
-                        LIMIT 1;
+                            LIMIT 1;
 
                         SELECT l_dok_id :: INTEGER                                           AS id,
                                l_kpv                                                         AS kpv,
@@ -194,6 +198,7 @@ BEGIN
                                l.uritus                                                      AS kood4,
                                l.konto                                                       AS konto,
                                l.tunnusid                                                    AS tunnusid,
+                               v_lib.tunnus                                                  AS tunnus,
                                l.korrkonto                                                   AS korrkonto,
                                l.proj                                                        AS proj,
                                '800699' :: TEXT                                              AS tp,

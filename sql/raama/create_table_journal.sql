@@ -62,4 +62,4 @@ ALTER TABLE docs.journal CLUSTER ON journal_rekvid_idx;
 CREATE INDEX journal_doc_parentid_idx
   ON docs.journal using btree (parentid);
 
-
+create table IF NOT EXISTS docs.journal_2021 (aasta integer) INHERITS  (docs.journal);

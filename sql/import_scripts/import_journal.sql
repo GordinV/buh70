@@ -89,11 +89,11 @@ BEGIN
       j.*,
       jid.number
     FROM journal j
-           INNER JOIN remote_rekv rekv ON j.rekvid = rekv.id AND rekv.parentid < 999
+--           INNER JOIN rekv rekv ON j.rekvid = rekv.id AND rekv.parentid < 999
            INNER JOIN (SELECT
                          max(number) AS number,
                          journalid
-                       FROM remote_journalid jid
+                       FROM journalid jid
                        GROUP BY journalid) jid ON jid.journalid = j.id
     WHERE exists(SELECT 1
                  FROM journal1
@@ -212,7 +212,7 @@ BEGIN
         RAISE EXCEPTION 'log save failed';
       END IF;
 
-      -- проверка на сумму проводки и кол-во записей
+/*      -- проверка на сумму проводки и кол-во записей
 
       SELECT
         count(id),
@@ -225,15 +225,15 @@ BEGIN
         count(j1.id),
         sum(j1.summa)
         INTO l_j_count, l_j_summa
-      FROM remote_journal j
-             INNER JOIN remote_journal1 j1 ON j.id = j1.parentid
+      FROM journal j
+             INNER JOIN journal1 j1 ON j.id = j1.parentid
       WHERE j.id = v_journal.id;
       IF (l_j_count) <> l_control_count OR
          (l_j_summa) <> l_control_summa
       THEN
         RAISE notice 'kontrol failed v_journal.id % , journal_id %, l_control_summa %, l_j_summa %,, l_control_count %, l_j_count %', v_journal.id,journal_id, l_control_summa,l_j_summa,l_control_count, l_j_count;
       END IF;
-      l_count = l_count + 1;
+*/      l_count = l_count + 1;
     END LOOP;
 
   -- control
@@ -265,7 +265,15 @@ $BODY$
 
 
 /*
-SELECT import_journal(id) from journal where kpv >= '2020-01-04' and kpv <= '2020-06-30'
+SELECT import_journal(id) from journal
+where rekvid = 132
+and kpv = '2020-12-31'
+
+delete from import_log where lib_name = 'JOURNAL' and
+old_id in (select id from journal where rekvid = 132)
+
+
+kpv >= '2020-01-04' and kpv <= '2020-06-30'
 and id in (9082550, 9155783, 9155784, 9155786, 9155787, 9155788, 9155790, 9155792, 9155793, 9155794, 9155796, 9155797, 9155799, 9155800, 9155801, 9155803, 9155806, 9155808)
 EXCEPT
 select j.id

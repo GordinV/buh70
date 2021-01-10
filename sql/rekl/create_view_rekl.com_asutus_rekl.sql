@@ -13,9 +13,12 @@ SELECT a.id,
        l_a.kas_arhiiv
 FROM ((libs.asutus a
     JOIN rekl.luba l ON ((l.asutusid = a.id)))
-    LEFT JOIN (SELECT e_1.asutusid, e_1.summa, e_1.rekvid
+    LEFT JOIN (SELECT e_1.asutusid, sum(e_1.summa) AS summa, e_1.rekvid
                FROM rekl.ettemaksud e_1
-               WHERE (e_1.staatus <> 'deleted' :: DOK_STATUS)) e ON (((e.asutusid = a.id) AND (l.rekvid = e.rekvid))))
+               WHERE (e_1.staatus <> 'deleted' :: DOK_STATUS)
+                   GROUP BY asutusid
+                   , rekvid
+    ) e ON (((e.asutusid = a.id) AND (l.rekvid = e.rekvid))))
          INNER JOIN (SELECT asutusid,
                             max(CASE
                                 -- только текущего года разрешения но нет долга и не полученных разрешений
@@ -43,4 +46,4 @@ GRANT SELECT ON TABLE rekl.com_asutus_rekl TO dbkasutaja;
 
 SELECT *
 FROM rekl.com_asutus_rekl
-WHERE regkood = '11435907'
+WHERE regkood = '11958746'

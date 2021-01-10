@@ -416,7 +416,7 @@ class LapseKaart extends React.PureComponent {
 
                 if (is_new) {
                     const row = Doc.libs['nomenclature'].find(lib => lib.id === Number(Doc.docData.nomid));
-                    if (row && row.kas_inf3) {
+                    if (row && row.hasOwnProperty('kas_inf3')) {
                         Doc.docData.kas_inf3 = row.kas_inf3;
                     }
                 }

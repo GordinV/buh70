@@ -115,9 +115,9 @@ BEGIN
     FROM libs.library l
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_db::TEXT
-    LIMIT 1;
+        LIMIT 1;
 
-    IF v_konto_d.valid IS NOT NULL AND len(v_konto_d.valid::TEXT) = 8
+    IF v_konto_d.valid IS NOT NULL AND len(v_konto_d.valid::TEXT) = 8 and not empty(v_konto_d.valid::TEXT)
     THEN
         ldKpv = make_date(val(left(v_konto_d.valid::TEXT, 4)), val(substr(v_konto_d.valid::TEXT, 5, 2)),
                           val(substr(v_konto_d.valid::TEXT, 7, 2)));
@@ -144,7 +144,7 @@ BEGIN
     FROM libs.library l
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_kr::TEXT
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_konto_k.valid IS NOT NULL AND NOT empty(v_konto_k.valid) AND len(v_konto_k.valid::TEXT) = 8
     THEN
@@ -270,7 +270,8 @@ BEGIN
     IF v_konto_d.rahavoog IS NOT NULL AND v_konto_d.rahavoog::TEXT = '1'
     THEN
         IF (left(l_db, 3) = '208' OR left(l_db, 3) = '258') AND
-           (l_rahavoog <> '36' AND l_rahavoog <> '35' AND l_rahavoog <> '05' AND l_rahavoog <> '06' AND
+           (l_rahavoog <> '00' AND l_rahavoog <> '36' AND l_rahavoog <> '35' AND l_rahavoog <> '05' AND
+            l_rahavoog <> '06' AND
             l_rahavoog <> '41' AND l_rahavoog <> '42' AND l_rahavoog <> '43')
         THEN
             l_msg = l_msg + ' Ei saa kasutada see RV kood ';
@@ -388,6 +389,7 @@ BEGIN
     END IF;
 
 --omakapital
+    RAISE NOTICE 'omakapital v_konto_k.rahavoog %, l_rahavoog %, l_kr %', v_konto_k.rahavoog, l_rahavoog, l_kr;
     IF v_konto_k.rahavoog IS NOT NULL AND v_konto_k.rahavoog::TEXT = '1'
     THEN
         IF left(l_kr, 3) = '298' AND
@@ -410,7 +412,8 @@ BEGIN
     IF v_konto_k.rahavoog IS NOT NULL AND v_konto_k.rahavoog::TEXT = '1'
     THEN
         IF (left(l_kr, 3) = '208' OR left(l_kr, 3) = '258') AND
-           (l_rahavoog <> '36' AND l_rahavoog <> '35' AND l_rahavoog <> '05' AND l_rahavoog <> '06' AND
+           (l_rahavoog <> '00' AND l_rahavoog <> '36' AND l_rahavoog <> '35' AND l_rahavoog <> '05' AND
+            l_rahavoog <> '06' AND
             l_rahavoog <> '41' AND l_rahavoog <> '42' AND l_rahavoog <> '43')
         THEN
             l_msg = l_msg + ' Ei saa kasutada see RV kood ';
@@ -507,7 +510,7 @@ BEGIN
     WHERE l.library = 'ALLIKAD'
       AND l.kood::TEXT = l_allikas::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
     THEN
@@ -525,7 +528,7 @@ BEGIN
     WHERE l.library = 'TULUDEALLIKAD'
       AND l.kood::TEXT = l_eelarve::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
     THEN
@@ -543,7 +546,7 @@ BEGIN
     WHERE l.library = 'TEGEV'
       AND l.kood::TEXT = l_tt::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
     THEN
@@ -561,7 +564,7 @@ BEGIN
     WHERE l.library = 'RAHA'
       AND l.kood::TEXT = l_rahavoog::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
     THEN
@@ -590,10 +593,11 @@ GRANT EXECUTE ON FUNCTION docs.sp_lausendikontrol(params JSONB) TO dbpeakasutaja
 
 
 SELECT docs.sp_lausendikontrol('{
-  "db": "100100",
-  "tpd": "800401",
-  "kr": "103000",
-  "tpk": "18510101",
+  "db": "999999",
+  "tpd": "",
+  "kr": "298001",
+  "tpk": "",
   "oma_tp": "18510101",
-  "allikas": "70"
+  "allikas": "",
+  "rahavoog": "00"
 }'::JSONB);

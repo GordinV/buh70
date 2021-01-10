@@ -32,8 +32,8 @@ BEGIN
                a.kood AS amet,
                t.algab,
                t.lopp
-        FROM remote_palk_kaart pk
-                 INNER JOIN remote_tooleping t ON t.id = pk.lepingid
+        FROM palk_kaart pk
+                 INNER JOIN tooleping t ON t.id = pk.lepingid
                  INNER JOIN library l ON pk.libid = l.id
                  INNER JOIN library o ON o.id = t.osakondid
                  INNER JOIN library a ON a.id = t.ametid

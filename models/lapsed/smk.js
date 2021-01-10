@@ -123,7 +123,7 @@ const Smk = {
             {id: "kpv", name: "Maksepäev", width: "10%", type:"date", interval: true},
             {id: "number", name: "Number", width: "5%"},
             {id: "asutus", name: "Maksja", width: "20%"},
-            {id: "deebet", name: "Summa", width: "10%"},
+            {id: "deebet", name: "Summa", width: "10%", type: "number", interval: true},
             {id: "aa", name: "Arveldus arve", width: "15%"},
             {id: "viitenr", name: "Viite number", width: "10%"},
             {id: "nimi", name: "Nimi", width: "20%"},

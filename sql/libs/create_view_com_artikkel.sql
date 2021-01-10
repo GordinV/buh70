@@ -21,7 +21,7 @@ FROM (SELECT 0                AS id,
         AND l.status <> 3
       UNION ALL
       SELECT 3655000                                   AS id,
-             '3, 655'                                  AS kood,
+             '15, 3, 655'                                  AS kood,
              'Tulud (siirded eelarvesse, tagastamine)' AS nimetus,
              999999                                    AS rekvid,
              FALSE                                     AS is_kulud,
@@ -29,7 +29,7 @@ FROM (SELECT 0                AS id,
       UNION ALL
       SELECT 152586456            AS id,
              '15,2586,4,5,6'      AS kood,
-             'Põhitegevuse kulud' AS nimetus,
+             'Kulud' AS nimetus,
              999999               AS rekvid,
              TRUE                 AS is_kulud,
              NULL::DATE           AS valid
@@ -54,6 +54,13 @@ FROM (SELECT 0                AS id,
              'Kohustuse võtmine (Allikas 80)' AS nimetus,
              999999                  AS rekvid,
              FALSE                   AS is_kulud,
+             NULL::DATE              AS valid
+      UNION ALL
+      SELECT 152586458               AS id,
+             '2586x'             AS kood,
+             'Kohustuste tasumine kokku' AS nimetus,
+             999999                  AS rekvid,
+             TRUE                   AS is_kulud,
              NULL::DATE              AS valid
      ) qry
 ORDER BY kood;
