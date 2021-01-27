@@ -48,7 +48,7 @@ BEGIN
         jaak  = coalesce(l_jaak, 0)
     WHERE parentid = l_arv_Id;
 
-
+raise notice 'l_jaak %', l_jaak;
     UPDATE docs.doc
     SET status = CASE
                      WHEN l_jaak = 0

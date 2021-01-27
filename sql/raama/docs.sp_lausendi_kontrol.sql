@@ -32,7 +32,7 @@ DECLARE
 BEGIN
 
 
-    IF l_kpv <= make_date(2010, 12, 31)
+    IF l_kpv <= make_date(2020, 12, 31)
     THEN
         RETURN l_msg;
     END IF;
@@ -593,11 +593,11 @@ GRANT EXECUTE ON FUNCTION docs.sp_lausendikontrol(params JSONB) TO dbpeakasutaja
 
 
 SELECT docs.sp_lausendikontrol('{
-  "db": "999999",
+  "db": "710010",
   "tpd": "",
-  "kr": "298001",
+  "kr": "155100",
   "tpk": "",
   "oma_tp": "18510101",
   "allikas": "",
-  "rahavoog": "00"
+  "rahavoog": ""
 }'::JSONB);

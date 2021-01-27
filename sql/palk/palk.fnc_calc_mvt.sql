@@ -20,6 +20,7 @@ DECLARE
   l_MVT                   NUMERIC = l_isiku_MVT - l_kokku_kasutatud_mvt;
 
 BEGIN
+
   IF l_MVT > (l_alus_summa - l_tki - l_pm)
   THEN
     l_MVT = l_alus_summa - l_tki - l_pm;

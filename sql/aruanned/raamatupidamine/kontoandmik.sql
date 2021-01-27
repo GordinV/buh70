@@ -1,7 +1,9 @@
 DROP FUNCTION IF EXISTS docs.kontoandmik(DATE, DATE, INTEGER);
 DROP FUNCTION IF EXISTS docs.kontoandmik(TEXT, DATE, DATE, INTEGER);
+DROP FUNCTION IF EXISTS docs.kontoandmik(TEXT, DATE, DATE, INTEGER, TEXT);
 
-CREATE OR REPLACE FUNCTION docs.kontoandmik(l_konto TEXT, l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER)
+CREATE OR REPLACE FUNCTION docs.kontoandmik(l_konto TEXT, l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER,
+                                            l_tunnus TEXT DEFAULT '%')
     RETURNS TABLE (
         alg_saldo NUMERIC(14, 2),
         db_kokku  NUMERIC(14, 2),
@@ -44,6 +46,8 @@ WITH alg_kaibed AS (
       AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
       AND j.rekvid IN (SELECT rekv_id
                        FROM get_asutuse_struktuur(l_rekvid))
+      AND coalesce(j.tunnus,'') ILIKE trim(l_tunnus) || '%'
+
     GROUP BY rekvid
 )
 
@@ -104,6 +108,7 @@ FROM alg_kaibed a
            AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
+           AND coalesce(j.tunnus,'') ILIKE trim(l_tunnus) || '%'
      ) j
      ON j.rekvid = a.rekvid
          INNER JOIN ou.rekv r ON r.id = coalesce(a.rekvid, j.rekvid)
@@ -113,17 +118,17 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER ) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER ) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER ) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER, TEXT ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER, TEXT ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER, TEXT ) TO dbkasutaja;
 
 /*
 select sum(deebet), sum(kreedit) from (
 SELECT qry.*, l.nimetus,
                         (qry.alg_saldo + db_kokku - kr_kokku) as lopp_saldo
-                        FROM docs.kontoandmik('100100'::text, '2020-10-01'::date, '2020-10-31'::date, 3::integer) qry
+                        FROM docs.kontoandmik('100100'::text, '2021-01-01'::date, '2021-01-31'::date, 3::integer, '%') qry
                         inner join com_kontoplaan l on l.kood = qry.konto
+
                         ) qry
 where rekv_id = 3
-
 */

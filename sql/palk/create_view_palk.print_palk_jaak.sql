@@ -46,6 +46,7 @@ FROM palk.palk_jaak j
              INNER JOIN palk.palk_oper p ON p.parentid = d.id
              INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
              INNER JOIN palk.tooleping t ON p.lepingid = t.id
+    WHERE p.lepingid IS NOT NULL
     GROUP BY month(p.kpv), year(p.kpv), p.lepingid, t.status) p
                          ON p.lepingid = j.lepingid AND p.kuu = j.kuu AND p.aasta = j.aasta
          INNER JOIN palk.tooleping t ON t.id = j.lepingid

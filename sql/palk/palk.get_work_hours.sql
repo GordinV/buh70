@@ -8,7 +8,7 @@ $$
 DECLARE
   l_lepingid   INTEGER = params ->> 'lepingid';
   l_kpv        DATE    = coalesce((params ->> 'kpv') :: DATE, current_date);
-  l_tund       INTEGER = params ->> 'tund';
+  l_tund       numeric = params ->> 'tund';
   l_start_paev INTEGER = coalesce((params ->> 'paev') :: INTEGER, 1);
   l_lopp_paev  INTEGER = coalesce((params ->> 'lopp') :: INTEGER, day(get_last_day(l_kpv)));
   l_toopaev    NUMERIC = params ->> 'toopaev';

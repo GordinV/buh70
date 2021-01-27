@@ -94,7 +94,7 @@ BEGIN
     IF l_summa IS NULL
     THEN
         l_summa = v_arv.jaak;
-        IF v_arv.jaak = 0 OR v_arv.jaak IS NULL
+        IF v_arv.jaak IS NULL or v_arv.jaak = 0
         THEN
             l_summa = v_arv.summa - (SELECT sum(summa) FROM docs.arvtasu WHERE doc_arv_id = l_arv_id AND status <> 3);
         END IF;

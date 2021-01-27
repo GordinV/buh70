@@ -45,7 +45,8 @@ BEGIN
                INTO l_pk_summa, l_asutusest, l_liik, l_round, is_percent
         FROM palk.com_palk_kaart p
                  INNER JOIN palk.com_palk_lib l ON p.libid = l.id
-            WHERE p.lepingid = l_lepingid AND p.libId = l_libId;
+        WHERE p.lepingid = l_lepingid
+          AND p.libId = l_libId;
 
         IF (NOT empty(l_asutusest)
             AND l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'TÖÖTUSKINDLUSTUSMAKS')) --tka
@@ -63,9 +64,10 @@ BEGIN
                    sum(pensmaks)  AS pm
                    INTO v_tulemus
             FROM palk.cur_palkoper po
-                WHERE po.lepingid = l_lepingid
-                     AND liik = '+'
-                     AND kpv = l_kpv;
+            WHERE po.lepingid = l_lepingid
+              AND po.period IS NULL
+              AND liik = '+'
+              AND kpv = l_kpv;
 
             l_alus_summa = v_tulemus.summa;
 
@@ -106,11 +108,11 @@ BEGIN
 
             SELECT sum(p.summa) INTO l_kulumaks
             FROM palk.cur_palkoper p
-                WHERE p.lepingId = l_lepingid
-                     AND YEAR(p.kpv) = YEAR(l_kpv)
-                     AND MONTH(p.kpv) = MONTH(l_kpv)
-                     AND p.libId = l_libId
-                     AND p.MUUD = 'AVANS';
+            WHERE p.lepingId = l_lepingid
+              AND YEAR(p.kpv) = YEAR(l_kpv)
+              AND MONTH(p.kpv) = MONTH(l_kpv)
+              AND p.libId = l_libId
+              AND p.MUUD = 'AVANS';
 
             IF l_kulumaks > 0
             THEN

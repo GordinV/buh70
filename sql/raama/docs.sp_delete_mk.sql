@@ -12,8 +12,6 @@ $BODY$
 
 DECLARE
     v_doc           RECORD;
-    v_dependid_docs RECORD;
-    ids             INTEGER[];
     mk_history      JSONB;
     mk1_history     JSONB;
     arvtasu_history JSONB;
@@ -111,6 +109,7 @@ BEGIN
                                                              INNER JOIN docs.mk k ON k.id = at.doc_tasu_id
                                                     WHERE k.parentid = doc_id) row));
 
+
     SELECT row_to_json(row) INTO new_history
     FROM (SELECT now()           AS deleted,
                  v_doc.user_name AS user,
@@ -137,8 +136,8 @@ BEGIN
     WHERE doc_tasu_id = v_doc.id;
 
 
-    -- удаляем данные из выписки
-    DELETE FROM lapsed.pank_vv WHERE lapsed.pank_vv.doc_id = v_doc.id;
+    -- удаляем ссылку на данные из выписки
+    UPDATE lapsed.pank_vv SET doc_id = NULL WHERE pank_vv.doc_id = v_doc.id;
 
     -- удаляем возврат маловероятных , если есть
     IF (v_doc.ebatoenaolised_tagastamine_id IS NOT NULL)

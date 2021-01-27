@@ -21,6 +21,8 @@ DECLARE
     doc_muud        TEXT           = doc_data ->> 'muud';
     v_tasu_dok      RECORD;
     is_import       BOOLEAN        = data ->> 'import';
+    l_arv_tasud     NUMERIC        = 0;
+    l_arv_summa     NUMERIC        = 0;
 
 BEGIN
 
@@ -55,6 +57,22 @@ BEGIN
         ) -- не удаляем связанные счета (предоплата)
           AND pankkassa = doc_pankkassa;
     END IF;
+
+    -- проверяем на сумму оплат. Если счет уже оплачен , то доп. платежи не цепляем
+    l_arv_tasud = coalesce((SELECT sum(summa) FROM docs.arvtasu WHERE doc_arv_id = doc_doc_arv_id AND status <> 3), 0);
+
+    l_arv_summa = coalesce((SELECT summa FROM docs.arv WHERE parentid = doc_doc_arv_id), 0);
+
+    IF l_arv_summa - l_arv_tasud <= 0 AND coalesce(doc_summa, 0) > 0
+    THEN
+        --  счет оплачен, новых платежей не надо
+
+        RAISE NOTICE 'Arve juba makstud %',doc_doc_arv_id;
+        -- update arv jaak
+        PERFORM docs.sp_update_arv_jaak(doc_doc_arv_id);
+        RETURN 0;
+    END IF;
+
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
@@ -69,8 +87,7 @@ BEGIN
             WHERE parentid = doc_doc_tasu_id;
 
             -- 2 find arv doc
-            SELECT d.id
-                   INTO doc_doc_arv_id
+            SELECT d.id INTO doc_doc_arv_id
             FROM docs.doc d
                      INNER JOIN docs.arv a ON a.parentid = d.id
             WHERE d.rekvid = v_tasu_dok.rekvid

@@ -31,12 +31,12 @@ DECLARE
         '3034','3041','3044','3045','3047','32','3500','3502','352','35200','35201','381','382','38250','38251',
         '38252','38254','3880','3882','3888','40','413','4500','4502','452','50','55','60','650','655'];
 
-    l_3888          NUMERIC(12, 4) = 0;
-    l_2580          NUMERIC(12, 4) = 0;
-    l_9100          NUMERIC(12, 4) = 0;
-    l_9100_periodis NUMERIC(12, 4) = 0;
-    l_9101          NUMERIC(12, 4) = 0;
-    l_9101_taps     NUMERIC(12, 4) = 0;
+    l_3888          NUMERIC(16, 4) = 0;
+    l_2580          NUMERIC(16, 4) = 0;
+    l_9100          NUMERIC(16, 4) = 0;
+    l_9100_periodis NUMERIC(16, 4) = 0;
+    l_9101          NUMERIC(16, 4) = 0;
+    l_9101_taps     NUMERIC(16, 4) = 0;
 
 BEGIN
     -- ,'9100','9101'
@@ -997,65 +997,23 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                             get_saldo(
                                     'KD', q.artikkel, NULL, NULL)  AS saldoandmik
                      FROM tmp_andmik q
-                     WHERE LEFT(q.artikkel
-                               , 2
-                               )
-                         NOT
-                             IN
-                           (
-                            '15',
-                            '40',
-                            '50',
-                            '55',
-                            '60',
-                            '91'
-                               )
-                       AND LEFT
-                               (
-                                   q
-                                       .
-                                       artikkel
-                               ,
-                                   4
-                               )
-                         NOT
-                             IN
-                           (
-                            '3200',
-                            '3201',
-                            '3203',
-                            '3209',
-                            '3502',
-                            '3823',
-                            '2585',
-                            '2586',
-                            '1001',
-                            '4500',
-                            '4502'
-                               )
-                       AND LEFT
-                               (
-                                   q
-                                       .
-                                       artikkel
-                               ,
-                                   3
-                               )
-                         NOT
-                             IN
-                           (
-                            '655',
-                            '650',
-                            '352',
-                            '381',
-                            '413',
-                            '452',
-                            '910',
-                            '382'
-                               )
-                       AND tyyp
-                         =
-                           1
+                     WHERE LEFT(q.artikkel, 2) NOT IN ('15', '40', '50', '55', '60', '91')
+                       AND LEFT(q.artikkel, 4) NOT IN (
+                                                       '3200',
+                                                       '3201',
+                                                       '3203',
+                                                       '3209',
+                                                       '3501',
+                                                       '3502',
+                                                       '3823',
+                                                       '2585',
+                                                       '2586',
+                                                       '1001',
+                                                       '4500',
+                                                       '4502')
+                       AND LEFT(q.artikkel, 3) NOT IN ('655', '650', '352', '381', '413', '452', '910',  '320')
+                       and trim(q.artikkel) <> '382'
+                       AND tyyp = 1
                      GROUP BY q.idx,
                               q.artikkel,
                               q.nimetus
@@ -1281,12 +1239,16 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2019, 12, 31), 63, 1) qry
-         where LEFT(artikkel,2) like  '352%'
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2021,01, 31), 63, 1) qry
+         where artikkel like  '382%'
 --                AND artikkel NOT in ('3502','352')
      ) qry
 --test
 
+
+select * from eelarve.saldoandmik
+where konto like '382%'
+and aasta = 2021
 
 select get_saldo('MKD', '208', '00', NULL) ,
              get_saldo('MKD', '258', '00', NULL)
@@ -1298,8 +1260,8 @@ select get_saldo('MKD', '208', '00', NULL) ,
 
 SELECT *
 FROM eelarve.eelarve
-WHERE eelarve.kood5 = '1001.'
-  AND aasta = 2019
+WHERE eelarve.kood5 = '320'
+  AND aasta = 2021
   AND id NOT IN (SELECT new_id FROM import_log WHERE lib_name = 'EELARVE')
 
 

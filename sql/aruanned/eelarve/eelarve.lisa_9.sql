@@ -16,7 +16,7 @@ $BODY$
 
 SELECT rekv_id,
        maksja_regkood,
-       saaja_nimi,
+       saaja_regkood,
        saaja_tp,
        saaja_nimi,
        kpv,
@@ -59,7 +59,7 @@ FROM (
                     AND j.kood5::TEXT = '2586'::TEXT AND j.kood3::TEXT = '06'::TEXT)
      ) qry
 
-GROUP BY rekv_id, maksja_regkood, saaja_nimi, saaja_tp, saaja_nimi, kpv, artikkel, tegev;
+GROUP BY rekv_id, maksja_regkood, saaja_regkood, saaja_tp, saaja_nimi, kpv, artikkel, tegev;
 
 
 $BODY$

@@ -11,8 +11,8 @@ module.exports = {
             {id: "lopp_kr", name: "Lõpp kreedit", width: "200px"}
         ],
         sqlString: `select qry.*
-                    FROM palk.palk_leht($1::date, $2::date, $3::integer, $4::integer,$5::integer) qry`,     //  $1 - kpv1, $2 - kpv2, $3 - rekvid, $4 svod (null), $5 osakond_id
+                    FROM palk.tsd_lisa_1b($1::date, $2::date, $3::integer, $4::integer) qry`,     //  $1 - kpv1, $2 - kpv2, $3 - rekvid, $4 svod (null)
         params: '',
-        alias: 'palk_leht'
+        alias: 'tsd_lisa1b'
     }
 };

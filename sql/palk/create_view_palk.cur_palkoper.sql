@@ -49,7 +49,7 @@ SELECT d.id,
        lib.tun1::INTEGER                                                                               AS is_ametiuhingu_liikme,
        (lib.properties :: JSONB ->> 'asutusest') :: BOOLEAN                                            AS is_asutusest,
        (lib.properties :: JSONB ->> 'maks') :: BOOLEAN                                                 AS is_maksustatav,
-       (lib.properties :: JSONB ->> 'sost') :: BOOLEAN                                                 AS is_sotsmaks,
+       (lib.properties :: JSONB ->> 'sots') :: BOOLEAN                                                 AS is_sotsmaks,
        (lib.properties :: JSONB ->> 'tululiik') :: TEXT                                                AS tululiik,
        p.konto
 FROM docs.doc d

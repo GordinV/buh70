@@ -9,41 +9,46 @@ CREATE FUNCTION palk.get_puudumine(params JSONB)
 AS
 $$
 DECLARE
-    l_lepingid        INTEGER = params ->> 'lepingid';
-    l_kuu             INTEGER = params ->> 'kuu';
-    l_aasta           INTEGER = params ->> 'aasta';
-    l_pohjus          TEXT    = (params ->> 'pohjus');
+    l_lepingid         INTEGER = params ->> 'lepingid';
+    l_kuu              INTEGER = params ->> 'kuu';
+    l_aasta            INTEGER = params ->> 'aasta';
+    l_pohjus           TEXT    = (params ->> 'pohjus');
+    l_pohjuse_tyyp     INTEGER = (params ->> 'tyyp');
+    kas_min_sots       BOOLEAN = coalesce((params ->> 'min_sots')::BOOLEAN, FALSE);
+    kas_kalendripaevad BOOLEAN = coalesce((params ->> 'kas_kalendripaevad')::BOOLEAN, FALSE);
+    kas_puudumised     BOOLEAN = (params ->> 'puudumised');
 
-    l_start_paev      INTEGER;
-    l_lopp_paev       INTEGER;
+    l_start_paev       INTEGER;
+    l_lopp_paev        INTEGER;
 
-    l_result          NUMERIC = 0;
-    qryPuhkused       RECORD;
-    l_puhkuse_tunnid  NUMERIC = 0;
-    l_paevad          NUMERIC = 0;
-    params            JSONB;
-    l_miinus_holidays INTEGER = 0; -- days with - holidays
-    l_miinus_weekends INTEGER = 0; -- days with - weekend
+    l_result           NUMERIC = 0;
+    qryPuhkused        RECORD;
+    l_puhkuse_tunnid   NUMERIC = 0;
+    l_paevad           NUMERIC = 0;
+    params             JSONB;
+    l_miinus_holidays  INTEGER = 0; -- days with - holidays
+    l_miinus_weekends  INTEGER = 0; -- days with - weekend
 BEGIN
     --selecting data
     FOR qryPuhkused IN
         SELECT p.*,
                toopaev,
                (SELECT palk.get_work_days((SELECT row_to_json(row)
-                                           FROM (SELECT day(p.kpv1) AS paev,
-                                                        month(p.kpv1) as kuu,
-                                                        year(p.kpv1) as aasta,
-                                                        day(p.kpv2) AS lopp) row) :: JSON)) AS too_kpv
+                                           FROM (SELECT day(p.kpv1)   AS paev,
+                                                        month(p.kpv1) AS kuu,
+                                                        year(p.kpv1)  AS aasta,
+                                                        day(p.kpv2)   AS lopp) row) :: JSON)) AS too_kpv
         FROM palk.cur_puudumine p
                  INNER JOIN palk.tooleping t ON t.id = p.lepingid
         WHERE p.lepingid = l_lepingid
           AND (month(p.kpv1) = l_kuu AND year(p.kpv1) = l_aasta
             OR (month(kpv2) = l_kuu AND year(kpv2) = l_aasta))
           AND (l_pohjus IS NULL OR p.pohjus = l_pohjus)
+          AND (l_pohjuse_tyyp IS NULL OR p.tyyp = l_pohjuse_tyyp)
+          AND (kas_puudumised IS NULL OR p.kas_muutab_kalendripäevad)
         LOOP
-            -- оюбнулим переменные
+            -- обнулим переменные
             l_paevad = 0;
-
 
             -- arvestame alg. päev
 
@@ -65,11 +70,11 @@ BEGIN
             -- arvestame tunnid
             -- законментил отпуск за свой счет , Relika , 23.09.2020
 
---            IF (qryPuhkused.pohjus = 'PUHKUS' AND qryPuhkused.tyyp in (4))
---            THEN
+            IF kas_min_sots AND (qryPuhkused.pohjus = 'PUHKUS' AND qryPuhkused.tyyp IN (4))
+            THEN
                 -- except
---                RAISE NOTICE 'except';
---            ELSE
+                RAISE NOTICE 'except';
+            ELSE
                 l_result = l_result + CASE
                                           WHEN month(qryPuhkused.kpv1) = month(qryPuhkused.kpv2)
                                               THEN (qryPuhkused.kpv2 - qryPuhkused.kpv1) + 1
@@ -78,21 +83,26 @@ BEGIN
                                               THEN qryPuhkused.kpv2 - make_date(l_aasta, l_kuu, 1) + 1
                                           ELSE get_last_day(qryPuhkused.kpv1) - qryPuhkused.kpv1 + 1 END;
 
---            END IF;
+            END IF;
 
-            -- arvestame holidays in periood
-            l_miinus_holidays = l_miinus_holidays + (SELECT count(*)
-                                                     FROM cur_calender(make_date(l_aasta, l_kuu, l_start_paev),
-                                                                       make_date(l_aasta, l_kuu, l_lopp_paev),
-                                                                       qryPuhkused.rekvid)
-                                                     WHERE is_tahtpaev and is_toopaev);
+            IF (NOT kas_kalendripaevad)
+            THEN
 
-            -- arvestame puhkepaevad perioodis
-            l_miinus_weekends = l_miinus_weekends + (SELECT count(*)
-                                                     FROM cur_calender(make_date(l_aasta, l_kuu, l_start_paev),
-                                                                       make_date(l_aasta, l_kuu, l_lopp_paev),
-                                                                       qryPuhkused.rekvid)
-                                                     WHERE NOT is_toopaev);
+                -- arvestame holidays in periood
+                l_miinus_holidays = l_miinus_holidays + (SELECT count(*)
+                                                         FROM cur_calender(make_date(l_aasta, l_kuu, l_start_paev),
+                                                                           make_date(l_aasta, l_kuu, l_lopp_paev),
+                                                                           qryPuhkused.rekvid)
+                                                         WHERE is_tahtpaev
+                                                           AND is_toopaev);
+
+                -- arvestame puhkepaevad perioodis
+                l_miinus_weekends = l_miinus_weekends + (SELECT count(*)
+                                                         FROM cur_calender(make_date(l_aasta, l_kuu, l_start_paev),
+                                                                           make_date(l_aasta, l_kuu, l_lopp_paev),
+                                                                           qryPuhkused.rekvid)
+                                                         WHERE NOT is_toopaev);
+            END IF;
         END LOOP;
 
     -- miinus
@@ -116,3 +126,5 @@ select palk.get_puudumine('{"lepingid":4}'::jsonb)  -- -> 0
 select palk.get_puudumine('{"lepingid":4, "kuu":4, "aasta":2018}'::jsonb)  -- -> 0
 select palk.get_puudumine('{"lepingid":4, "kuu":4, "aasta":2018, "pohjus":"PUHKUS"}'::jsonb)  -- -> 0
  */
+
+

@@ -1,13 +1,14 @@
 DROP FUNCTION IF EXISTS docs.kaibeandmik(DATE, DATE, INTEGER);
+DROP FUNCTION IF EXISTS docs.kaibeandmik(DATE, DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS docs.kaibeandmik(DATE, DATE, INTEGER, INTEGER, TEXT);
 
-CREATE OR REPLACE FUNCTION docs.kaibeandmik(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER)
+CREATE OR REPLACE FUNCTION docs.kaibeandmik(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER DEFAULT 0,
+                                            l_tunnus TEXT DEFAULT '%')
     RETURNS TABLE (
         alg_saldo NUMERIC(14, 2),
         deebet    NUMERIC(14, 2),
         kreedit   NUMERIC(14, 2),
-        konto     VARCHAR(20),
-        rekv_id   INTEGER,
-        rekv_nimi VARCHAR(254)
+        konto     VARCHAR(20)
     ) AS
 $BODY$
 WITH algsaldo AS (
@@ -24,10 +25,11 @@ WITH algsaldo AS (
                       INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                  -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                       LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-
              WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
+               AND (d.rekvid = l_rekvid OR l_kond = 1)
+               AND coalesce(j1.tunnus, '') ILIKE l_tunnus
              UNION ALL
              SELECT d.rekvid
                      ,
@@ -44,15 +46,16 @@ WITH algsaldo AS (
              WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
+               AND (d.rekvid = l_rekvid OR l_kond = 1)
+               AND coalesce(j1.tunnus, '') ILIKE l_tunnus
          ) qry
-    GROUP BY konto, rekvid)
+    GROUP BY konto,
+             rekvid)
 
-SELECT sum(qry.alg_saldo)      AS alg_saldo,
-       sum(qry.deebet)         AS deebet,
-       sum(qry.kreedit)        AS kreedit,
-       qry.konto,
-       qry.rekvid              AS rekv_id,
-       r.nimetus::VARCHAR(254) AS rekv_nimi
+SELECT sum(qry.alg_saldo) AS alg_saldo,
+       sum(qry.deebet)    AS deebet,
+       sum(qry.kreedit)   AS kreedit,
+       qry.konto
 FROM (
          SELECT algsaldo.rekvid,
                 algsaldo.alg_saldo,
@@ -71,11 +74,12 @@ FROM (
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
              -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                   LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-
          WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) >= l_kpv1
            AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) <= l_kpv2
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
+           AND (d.rekvid = l_rekvid OR l_kond = 1)
+           AND coalesce(j1.tunnus, '') ILIKE l_tunnus
          UNION ALL
          SELECT d.rekvid,
                 0 :: NUMERIC(14, 2)           AS alg_saldo,
@@ -91,21 +95,23 @@ FROM (
            AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) <= l_kpv2
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
+           AND (d.rekvid = l_rekvid OR l_kond = 1)
+           AND coalesce(j1.tunnus, '') ILIKE l_tunnus
      ) qry
-         INNER JOIN ou.rekv r ON r.id = qry.rekvid
-
 WHERE NOT empty(qry.konto)
   AND left(konto, 2) NOT IN ('90', '91', '92', '93', '94', '95', '96', '97', '98')
-  AND qry.konto NOT IN (SELECT kood FROM com_kontoplaan WHERE kas_virtual > 0)
-GROUP BY konto, rekvid, r.nimetus;
+  AND qry.konto NOT IN (SELECT kood
+                        FROM com_kontoplaan
+                        WHERE kas_virtual > 0)
+GROUP BY konto;
 $BODY$
     LANGUAGE SQL
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER ) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER ) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER ) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER,INTEGER , TEXT) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER, INTEGER, TEXT ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER,INTEGER, TEXT ) TO dbkasutaja;
 
 
 /*

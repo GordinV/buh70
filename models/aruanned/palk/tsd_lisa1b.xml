@@ -1,12 +1,9 @@
 <?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
 <VFPData>
   <grid>
-    <sql>SELECT qry.*, l.nimetus, 
-                        (qry.alg_saldo + db_kokku - kr_kokku) as lopp_saldo 
-                        FROM docs.kontoandmik($1::text, $2::date, $3::date, $4::integer, $5::text) qry
-                        inner join com_kontoplaan l on l.kood = qry.konto
-                        </sql>
-    <alias>kontoandmik_report</alias>
+    <sql>select qry.*
+                    FROM palk.tsd_lisa_1b($1::date, $2::date, $3::integer, $4::integer) qry</sql>
+    <alias>tsd_lisa1b</alias>
   </grid>
   <select></select>
   <selectAsLibs>

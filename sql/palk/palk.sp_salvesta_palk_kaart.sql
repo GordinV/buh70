@@ -113,10 +113,7 @@ BEGIN
             ajalugu   = coalesce(ajalugu, '[]'::JSONB) || new_history::JSONB,
             muud      = doc_muud,
             timestamp = now(),
-            status    = CASE
-                            WHEN is_import IS NOT NULL
-                                THEN doc_status
-                            ELSE status END
+            status    =  doc_status
         WHERE id = doc_id RETURNING id
             INTO kaart_id;
 

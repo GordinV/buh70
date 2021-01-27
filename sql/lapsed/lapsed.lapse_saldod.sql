@@ -44,7 +44,7 @@ FROM (
                   INNER JOIN (SELECT mk.parentid, opt
                               FROM docs.mk mk
                               WHERE mk.maksepaev < l_kpv
-                                AND mk.jaak > 0
+                                AND mk.jaak <> 0 --// поправил для оборотки 23.01.2021
                                 AND (l_rekv_id IS NULL OR mk.rekvid IN (SELECT rekv_id
                                                                         FROM get_asutuse_struktuur(l_rekv_id)))
          ) mk ON mk.parentid = D.id

@@ -78,34 +78,38 @@ BEGIN
 
     -- рассчитываем сумму оплаты, если платеж не задан
 
-    l_summa = case when empty(tasu_summa) THEN  (
-        SELECT sum(summa) AS summa
-        FROM (
-                 SELECT summa * (CASE
-                                     WHEN v_arv.arve_tyyp = 'TULU' AND m.opt = 2 THEN 1
-                                     WHEN v_arv.arve_tyyp = 'TULU' AND m.opt = 1 THEN -1
-                                     WHEN v_arv.arve_tyyp = 'KULU' AND m.opt = 1 THEN 1
-                                     WHEN v_arv.arve_tyyp = 'KULU' AND m.opt = 2 THEN -1 END)::INTEGER AS summa
-                 FROM docs.mk m
-                          INNER JOIN docs.mk1 m1 ON m.id = m1.parentid
-                 WHERE m.parentid = l_tasu_id
-                 UNION ALL
-                 SELECT summa
-                 FROM docs.korder1 k
-                 WHERE k.parentid = l_tasu_id
-                 UNION ALL
-                 SELECT summa
-                 FROM docs.journal j
-                          INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
-                 WHERE j.parentid = l_tasu_id
-             ) tasud
-    ) else tasu_summa end;
+    l_summa = CASE
+                  WHEN empty(tasu_summa) THEN (
+                      SELECT sum(summa) AS summa
+                      FROM (
+                               SELECT summa * (CASE
+                                                   WHEN v_arv.arve_tyyp = 'TULU' AND m.opt = 2 THEN 1
+                                                   WHEN v_arv.arve_tyyp = 'TULU' AND m.opt = 1 THEN -1
+                                                   WHEN v_arv.arve_tyyp = 'KULU' AND m.opt = 1 THEN 1
+                                                   WHEN v_arv.arve_tyyp = 'KULU' AND m.opt = 2
+                                                       THEN -1 END)::INTEGER AS summa
+                               FROM docs.mk m
+                                        INNER JOIN docs.mk1 m1 ON m.id = m1.parentid
+                               WHERE m.parentid = l_tasu_id
+                               UNION ALL
+                               SELECT summa
+                               FROM docs.korder1 k
+                               WHERE k.parentid = l_tasu_id
+                               UNION ALL
+                               SELECT summa
+                               FROM docs.journal j
+                                        INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
+                               WHERE j.parentid = l_tasu_id
+                           ) tasud
+                  )
+                  ELSE tasu_summa END;
 
     l_doc_tasu_id = (
         SELECT a.id
         FROM docs.arvtasu a
         WHERE doc_arv_id = l_arv_id
           AND doc_tasu_id = l_tasu_id
+          AND a.status <> 3
         ORDER BY a.id DESC
         LIMIT 1
     );
@@ -149,6 +153,7 @@ BEGIN
                     FROM docs.arvtasu
                     WHERE doc_arv_id = v_tulu_arved.id
                       AND doc_tasu_id = l_tasu_id
+                      AND status <> 3
                     ORDER BY id DESC
                     LIMIT 1
                 );

@@ -15,9 +15,9 @@ module.exports = {
         ],
         sqlString: `SELECT qry.*, l.nimetus, 
                         (qry.alg_saldo + db_kokku - kr_kokku) as lopp_saldo 
-                        FROM docs.kontoandmik($1::text, $2::date, $3::date, $4::integer) qry
+                        FROM docs.kontoandmik($1::text, $2::date, $3::date, $4::integer, $5::text) qry
                         inner join com_kontoplaan l on l.kood = qry.konto
-                        `,     //  $1 конто $2 - kpv1, $3 - kpv2, $4 - rekvid (svod)
+                        `,     //  $1 конто $2 - kpv1, $3 - kpv2, $4 - rekvid (svod), $4 - tunnus
         params: '',
         alias: 'kontoandmik_report'
     }

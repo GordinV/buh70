@@ -17,12 +17,12 @@ BEGIN
     FROM docs.arvtasu at
              INNER JOIN docs.arv a ON a.parentid = at.doc_arv_id
     WHERE at.doc_tasu_id = l_mk_Id
+      AND at.status <> 3
       AND (a.properties::JSONB ->> 'tyyp' IS NULL OR a.properties::JSONB ->> 'tyyp' <> 'ETTEMAKS');
 
     -- сальдо
     l_jaak = coalesce(l_mk_summa, 0) - coalesce(l_tasu_summa, 0);
 
-raise notice 'l_mk_summa %, l_tasu_summa %, l_jaak %', l_mk_summa, l_tasu_summa, l_jaak;
     -- сохраним
     UPDATE docs.mk SET jaak = l_jaak WHERE parentid = l_mk_id;
 

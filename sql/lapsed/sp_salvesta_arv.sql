@@ -60,6 +60,7 @@ DECLARE
     l_jaak                NUMERIC;
 
     l_mk_id               INTEGER;
+    l_km                  TEXT;
 BEGIN
 
     -- если есть ссылка на ребенка, то присвоим viitenumber
@@ -106,8 +107,9 @@ BEGIN
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
-        if (doc_kpv <= '2020-12-31'::date) THEN
-            raise notice 'vale kpv';
+        IF (doc_kpv <= '2020-12-31'::DATE)
+        THEN
+            RAISE NOTICE 'vale kpv';
             RETURN 0;
         END IF;
 
@@ -197,6 +199,15 @@ BEGIN
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
             THEN
+                IF empty(coalesce(json_record.km, ''))
+                THEN
+                    json_record.kbm = 0;
+                END IF;
+
+                IF coalesce(json_record.km, '') NOT IN ('0', '5', '10', '20')
+                THEN
+                    json_record.km = '0';
+                END IF;
 
                 INSERT INTO docs.arv1 (parentid, nomid, kogus, hind, kbm, kbmta, summa, kood1, kood2, kood3, kood4,
                                        kood5,
@@ -227,6 +238,16 @@ BEGIN
                 ids = array_append(ids, arv1_id);
 
             ELSE
+                IF coalesce(json_record.km, '') NOT IN ('0', '5', '10', '20')
+                THEN
+                    json_record.km = '0';
+                END IF;
+
+                IF empty(coalesce(json_record.km, ''))
+                THEN
+                    json_record.kbm = 0;
+                END IF;
+
                 UPDATE docs.arv1
                 SET parentid   = arv_id,
                     nomid      = json_record.nomid,
@@ -355,7 +376,7 @@ BEGIN
     THEN
         IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
         THEN
-            raise notice 'insert doc_lapsid %, doc_id %', doc_lapsid, doc_id;
+            RAISE NOTICE 'insert doc_lapsid %, doc_id %', doc_lapsid, doc_id;
             INSERT INTO lapsed.liidestamine (parentid, docid) VALUES (doc_lapsid, doc_id);
         END IF;
 

@@ -31,6 +31,7 @@ DECLARE
     l_count     INTEGER = 0;
     l_osakondid INTEGER;
     l_tunnusid  INTEGER;
+    l_user_id INTEGER;
 BEGIN
     -- выборка из "старого меню"
 
@@ -104,7 +105,7 @@ BEGIN
             RAISE NOTICE 'check for lib.. v_lib.id -> %, found -> % log_id -> %, l_osakondid -> %,  l_tunnusid -> %', v_lib.id, lib_id, log_id, l_osakondid, l_tunnusid;
 
             -- преобразование и получение параметров
-
+            l_user_id = (select id from ou.userid where rekvid = v_lib.rekvid and kasutaja = 'vlad');
             -- сохранение
             SELECT coalesce(lib_id, 0) AS id,
                    v_lib.kood          AS kood,
@@ -121,7 +122,7 @@ BEGIN
                          TRUE                AS import,
                          v_params            AS data) row;
 
-            SELECT libs.sp_salvesta_amet(json_object :: JSON, 1, 1) INTO lib_id;
+            SELECT libs.sp_salvesta_amet(json_object :: JSON, l_user_id, v_lib.rekvid) INTO lib_id;
             IF lib_id IS NOT NULL AND NOT empty(lib_id)
             THEN
 
@@ -171,8 +172,8 @@ $BODY$
 
 
 /*
-SELECT import_amet(id) from library where library in ('AMET','OSAKOND')
-  and rekvid in (select id from rekv where parentid > 200)
+SELECT import_amet(id) from library where library in ('AMET')
+  and rekvid in (select id from rekv where parentid = 119)
 and (id in (select osakondid from tooleping where rekvid in (select id from rekv where parentid < 999))
 or  id in (select ametid from tooleping where rekvid in (select id from rekv where parentid < 999)))
 
@@ -190,7 +191,7 @@ and rekvid in (select id from rekv where parentid = 119 or id = 119)
 select сщгтеid from remote_library where library = 'AMET'
 
 select * from remote_palk_asutus
-*/
+
 
 SELECT import_AMET(id)
          FROM library
@@ -199,3 +200,4 @@ SELECT import_AMET(id)
                           FROM rekv
                           WHERE parentid < 999 AND id NOT IN (3, 63, 131)
          )
+*/

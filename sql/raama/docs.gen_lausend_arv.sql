@@ -128,6 +128,12 @@ BEGIN
         v_arv.asutus_tp = coalesce(v_arv.asutus_tp, '800599');
         lcKrTp = coalesce(v_arv.asutus_tp, '800599');
 
+        -- majandusamet
+        IF v_arv.rekvid = 130 AND NOT empty(v_arv.lisa)
+        THEN
+            lcSelg = lcSelg || ', ' || ltrim(rtrim(v_arv.lisa));
+        END IF;
+
         SELECT v_arv.journalid,
                'JOURNAL'                       AS doc_type_id,
                v_arv.kpv,

@@ -49,11 +49,13 @@ BEGIN
                  INNER JOIN tooleping t ON t.id = pk.lepingid
                  INNER JOIN rekv ON rekv.id = t.rekvid AND rekv.parentid < 999
                  INNER JOIN import_log il ON il.old_id = t.id AND il.lib_name = 'TOOLEPING'
-        WHERE (pk.id = in_old_id OR in_old_id IS NULL)
-          AND exists(SELECT 1 FROM library WHERE id = pk.libid)
-          AND exists(SELECT 1 FROM asutus WHERE id = pk.parentid)
-          AND t.rekvid NOT IN (3, 63, 131)
-          AND (t.lopp IS NULL OR t.lopp > '2020-12-31')
+            WHERE (pk.id = in_old_id OR in_old_id IS NULL)
+                 AND exists(SELECT 1
+                            FROM library WHERE id = pk.libid)
+                 AND exists(SELECT 1
+                            FROM asutus WHERE id = pk.parentid)
+                 AND t.rekvid NOT IN (3, 63, 131)
+                 AND (t.lopp IS NULL OR t.lopp > '2020-12-31')
             LIMIT ALL
         LOOP
 
@@ -62,31 +64,38 @@ BEGIN
                    id
                    INTO pk_id, log_id
             FROM import_log
-            WHERE old_id = v_pk.id
-              AND upper(ltrim(rtrim(lib_name :: TEXT))) = 'PALK_KAART';
+                WHERE old_id = v_pk.id
+                     AND upper(ltrim(rtrim(lib_name :: TEXT))) = 'PALK_KAART';
 
             RAISE NOTICE 'check for lib.. v_pk.id -> %, found -> % log_id -> %', v_pk.id, pk_id, log_id;
 
             l_asutus_id = (SELECT new_id
                            FROM import_log
-                           WHERE lib_name = 'ASUTUS'
-                             AND old_id = v_pk.parentid);
+                               WHERE lib_name = 'ASUTUS'
+                                    AND old_id = v_pk.parentid);
 
             l_lib_id = (SELECT new_id
                         FROM import_log
-                        WHERE lib_name = 'PALK'
-                          AND old_id = v_pk.libid);
+                            WHERE lib_name = 'PALK'
+                                 AND old_id = v_pk.libid);
 
             l_tunnus = (SELECT kood
                         FROM library
-                        WHERE id = v_pk.tunnusid);
+                            WHERE id = v_pk.tunnusid);
 
             IF l_asutus_id IS NULL OR l_lib_id IS NULL
             THEN
                 RAISE EXCEPTION 'data not found v_pk.parentid %, l_asutus_id %, v_pk.libid %, l_lib_id %', v_pk.parentid, l_asutus_id, v_pk.libid, l_lib_id;
             END IF;
             -- преобразование и получение параметров
-            l_user_id = (SELECT id FROM ou.userid WHERE rekvid = v_pk.rekvid AND kasutaja = 'vlad' LIMIT 1);
+            l_user_id = (SELECT id
+                         FROM ou.userid WHERE rekvid = v_pk.rekvid AND kasutaja = 'vlad' LIMIT 1);
+
+            IF pk_id IS NOT NULL AND NOT exists(SELECT id
+                                                FROM palk.palk_kaart WHERE id = pk_id)
+            THEN
+                pk_id = NULL;
+            END IF;
 
             -- сохранение
             SELECT coalesce(pk_id, 0)                          AS id,
@@ -153,10 +162,22 @@ $BODY$
 
 
 /*
-SELECT import_palk_kaart(836675)
+SELECT import_palk_kaart(id)
+from palk_kaart where lepingid in (
+select id from tooleping where parentid in (select id from asutus where regkood in
+('48411083719'))
+and rekvid = 79
+and lopp is null
+)
 
-select * from asutus where regkood = '46012062234'
-select * from tooleping where parentid = 17226
+select * from rekv where nimetus ilike '%23601%'
+
+SELECT import_palk_kaart(id)
+from palk_kaart where lepingid in (select id from tooleping where parentid in (
+select id from asutus where regkood in ('46704273740','44702143710','48506013716','46104073710','46009192711','46310083729','37801213718','36804303721',
+'46204283721','48404082243','37208077014','48006173716')
+)
+and lopp is null)
 
 select import_palk_kaart(id) from palk_kaart where lepingid in (select id from tooleping where rekvid = 106 and lopp is null)
 

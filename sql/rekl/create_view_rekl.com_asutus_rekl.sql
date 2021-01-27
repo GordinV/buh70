@@ -9,7 +9,7 @@ SELECT a.id,
        sum(l.jaak) FILTER (WHERE (NOT empty(l.staatus)))    AS jaak,
        sum(l.volg) FILTER (WHERE (NOT empty(l.staatus)))    AS volg,
        sum(l.intress) FILTER (WHERE (NOT empty(l.staatus))) AS intress,
-       sum(COALESCE(e.summa, (0) :: NUMERIC))               AS ettemaks,
+       max(COALESCE(e.summa, (0) :: NUMERIC))               AS ettemaks,
        l_a.kas_arhiiv
 FROM ((libs.asutus a
     JOIN rekl.luba l ON ((l.asutusid = a.id)))

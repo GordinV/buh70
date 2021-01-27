@@ -10,35 +10,40 @@ const Journal = {
     select: [
         {
             sql: `SELECT d.id,
-                         $2 :: INTEGER                                                                  AS userid,
+                         $2 :: INTEGER                                                                      AS userid,
                          d.docs_ids,
-                         (to_char(created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                              AS created,
-                         (to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                           AS lastupdate,
+                         (to_char(created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                                  AS created,
+                         (to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                               AS lastupdate,
                          d.bpm,
-                         trim(l.nimetus)                                                                AS doc,
-                         trim(l.kood)                                                                   AS doc_type_id,
-                         trim(s.nimetus)                                                                AS status,
-                         d.status                                                                       AS doc_status,
-                         jid.number                                                                     AS number,
+                         trim(l.nimetus)                                                                    AS doc,
+                         trim(l.kood)                                                                       AS doc_type_id,
+                         trim(s.nimetus)                                                                    AS status,
+                         d.status                                                                           AS doc_status,
+                         jid.number                                                                         AS number,
                          j.rekvId,
-                         j.kpv                                                                          AS kpv,
+                         j.kpv                                                                              AS kpv,
                          j.asutusid,
-                         trim(j.dok) :: VARCHAR(120)                                                    AS dok,
+                         trim(j.dok) :: VARCHAR(120)                                                        AS dok,
                          j.selg,
                          j.muud,
                          j.objekt :: VARCHAR(254),
-                         (SELECT sum(j1.summa) AS summa FROM docs.journal1 AS j1 WHERE parentid = j.id) AS summa,
+                         (SELECT sum(j1.summa) AS summa
+                          FROM docs.journal1 AS j1
+                          WHERE parentid = j.id)                                                            AS summa,
                          asutus.regkood,
-                         trim(asutus.nimetus)                                                           AS asutus,
-                         u.ametnik                                                                      AS kasutaja,
-                         (d.history->0->>'user')::varchar(120)                                          AS koostaja
+                         trim(asutus.nimetus)                                                               AS asutus,
+                         u.ametnik                                                                          AS kasutaja,
+                         (SELECT ametnik
+                          FROM ou.userid
+                          WHERE rekvid = j.rekvid
+                            AND kasutaja = (d.history -> 0 ->> 'user')::VARCHAR(120) LIMIT 1)::VARCHAR(120) AS koostaja
                   FROM docs.doc d
-                         INNER JOIN libs.library l ON l.id = d.doc_type_id
-                         INNER JOIN docs.journal j ON j.parentId = d.id
-                         INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                         LEFT OUTER JOIN docs.journalid jid ON j.Id = jid.journalid
-                         LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
-                         LEFT OUTER JOIN libs.asutus AS asutus ON asutus.id = j.asutusId
+                           INNER JOIN libs.library l ON l.id = d.doc_type_id
+                           INNER JOIN docs.journal j ON j.parentId = d.id
+                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                           LEFT OUTER JOIN docs.journalid jid ON j.Id = jid.journalid
+                           LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
+                           LEFT OUTER JOIN libs.asutus AS asutus ON asutus.id = j.asutusId
                   WHERE d.id = $1`,
             sqlAsNew: `SELECT $1 :: INTEGER                                 AS id,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT AS created,
@@ -69,11 +74,11 @@ const Journal = {
         {
             sql: `SELECT j1.*, $2 :: INTEGER AS userid, 1 :: NUMERIC AS kuurs, 'EUR' :: VARCHAR(20) AS valuuta
                   FROM docs.journal1 AS j1
-                         INNER JOIN docs.journal j ON j.id = j1.parentId
-                         INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                  WHERE j.parentid = $1 
-                    and j1.summa <> 0
-                    order by j1.id desc`,
+                           INNER JOIN docs.journal j ON j.id = j1.parentId
+                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                  WHERE j.parentid = $1
+                    AND j1.summa <> 0
+                      ORDER BY j1.id DESC`,
             query: null,
             multiple: true,
             alias: 'details',
@@ -95,8 +100,8 @@ const Journal = {
             sql: `SELECT *
                   FROM libs.asutus
                   WHERE regkood = $1
-                  ORDER BY staatus
-                  LIMIT 1`,
+                      ORDER BY staatus
+                      LIMIT 1`,
             query: null,
             multiple: false,
             alias: 'validate_asutus',
@@ -134,8 +139,8 @@ const Journal = {
         ],
         sqlString: `SELECT j.*
                     FROM cur_journal j
-                    WHERE j.rekvId IN (SELECT rekv_id FROM get_asutuse_struktuur($1::integer))
-                      AND coalesce(docs.usersRigths(j.id, 'select', $2::integer), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
+                    WHERE j.rekvId IN (SELECT rekv_id FROM get_asutuse_struktuur($1::INTEGER))
+                      AND coalesce(docs.usersRigths(j.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curJournal'
     },
@@ -200,7 +205,7 @@ const Journal = {
     ],
     saveDoc: "select docs.sp_salvesta_journal($1::json, $2::integer, $3::integer) as id",
     deleteDoc: `SELECT error_code, result, error_message
-                FROM docs.sp_delete_journal($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+                FROM docs.sp_delete_journal($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     executeCommand: {
         command: `SELECT result, error_code, error_message, data
                   FROM sp_execute_task($1 :: INTEGER, $2 :: JSON, $3 :: TEXT)`, //$1- userId, $2 - params, $3 - task
@@ -234,7 +239,7 @@ const Journal = {
                          coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
                                   '')::VARCHAR(20)                                                                   AS kustutatud
                   FROM (
-                           SELECT jsonb_array_elements( history) AS ajalugu, d.id, d.rekvid
+                           SELECT jsonb_array_elements(history) AS ajalugu, d.id, d.rekvid
                            FROM docs.doc d,
                                 ou.userid u
                            WHERE d.id = $1

@@ -8,16 +8,15 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-describe('dok. type palk_config tests', function () {
+describe('dok. type TSD lisa 1b tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../palk/palk_config'),
-        docTypeId = 'PALK_CONFIG'.toLowerCase(),
-        modelForExport = 'palk/palk_config';
+    const doc = require('../aruanned/palk/tsd_lisa1b'),
+        docTypeId = 'TSD_LISA1'.toLowerCase(),
+        modelForExport = 'aruanned/palk/tsd_lisa1b';
 
     moduleLocator.register(docTypeId, doc);
 
-    let docData = doc.returnData;
     let xml;
     let sourceFile;
 
@@ -34,18 +33,14 @@ describe('dok. type palk_config tests', function () {
     });
 
     it (`${docTypeId} must have fields in js model`, ()=> {
-        expect(doc.select).toBeDefined();
-        expect(doc.returnData).toBeDefined();
-        expect(doc.requiredFields).toBeDefined();
-        expect(doc.saveDoc).toBeDefined();
+        expect(doc.grid).toBeDefined();
     });
 
     it (`${docTypeId} must have fields in xml model`,() => {
         let xmlModel = convertXml.xml2js(xml, {ignoreComment: true, alwaysChildren: true});
         expect(xmlModel).toBeDefined();
         let modelElements = xmlModel.elements[0];
-        expect(_.find(modelElements.elements, {name:'select'})).toBeDefined();
-        expect(_.find(modelElements.elements, {name:'saveDoc'})).toBeDefined();
+        expect(_.find(modelElements.elements, {name:'grid'})).toBeDefined();
     });
 
     it('should have copy in buh62 folder', (done) => {
@@ -62,8 +57,8 @@ describe('dok. type palk_config tests', function () {
         });
     });
 
-    it('doc type library should contain PALK_CONFIG doc.type', async()=> {
-        let sql = `select id from libs.library where kood = 'PALK_CONFIG' and  library = 'DOK' limit 1`;
+    it.skip('doc type library should contain TSD_LISA1 doc.type', async () => {
+        let sql = `select id from libs.library where kood = 'TSD_LISA1' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -71,9 +66,8 @@ describe('dok. type palk_config tests', function () {
 
     });
 
-
-    it.skip('should exists view cur_palk_taabel', async()=> {
-        let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palk_taabel'`;
+    it('should exists proc palk.tsd_lisa_1b', async () => {
+        let sql = `select 1 FROM pg_proc WHERE proname = 'tsd_lisa_1b'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -81,6 +75,15 @@ describe('dok. type palk_config tests', function () {
 
     });
 
+    it.skip('should select data from grid query', async()=> {
+        let sql = doc.grid.sqlString;
+        let returnValue = await db.queryDb(sql, ['2018-01-01','2018-01-31', 1, 1]);
+        expect(returnValue).toBeDefined();
+        let result = returnValue.result;
+        let err = returnValue.error_code;
+        expect(result).toBeGreaterThan(0);
+
+    });
 
 });
 

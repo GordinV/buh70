@@ -187,6 +187,11 @@ $BODY$
 
 
 /*
+SELECT import_tooleping(125529)
+125529
+140076
+
+
 delete from palk.tooleping where rekvid in (select id from ou.rekv where parentid = 119 or id = 119) and lopp is not null
 
 delete from palk.tooleping where parentid in (select id from libs.asutus where regkood = '46410152219')

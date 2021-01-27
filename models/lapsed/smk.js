@@ -251,8 +251,24 @@ const Smk = {
             action: 'generateJournal',
             type: 'automat',
             actualStep: false
-        }
+        },
+        {
+            name: 'Uuenda arv tasumine',
+            action: 'uuendaArveTasumine',
+            type: 'manual',
+            showDate: false,
+            actualStep: false
+        },
+
     ],
+
+    uuendaArveTasumine: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM docs.create_new_order($2::INTEGER, (SELECT to_jsonb(row.*) FROM (SELECT $1 AS arv_id) row))`, //$1 - docs.doc.id, $2 - userId
+        type: "sql",
+        alias: 'uuendaArveTasumine'
+    },
+
 
 };
 

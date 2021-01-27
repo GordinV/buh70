@@ -1,8 +1,9 @@
 DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER);
 DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER);
+DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, TEXT);
 
 
-CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER)
+CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, l_tunnus TEXT DEFAULT '%')
     RETURNS TABLE (
         rekv_id  INTEGER,
         konto    VARCHAR(20),
@@ -56,6 +57,8 @@ FROM (
                -- если свод, то оставим только учреждение, иначе все под
                AND d.rekvid = CASE WHEN l_kond IS NULL THEN l_rekvid ELSE d.rekvid END
                AND j.kpv <= l_kpv2
+               AND j1.tunnus ILIKE l_tunnus
+             
              UNION ALL
              SELECT coalesce(a.kpv, j.kpv),
                     j.rekvid,
@@ -88,6 +91,8 @@ FROM (
                -- если свод, то оставим только учреждение, иначе все под
                AND d.rekvid = CASE WHEN l_kond IS NULL THEN l_rekvid ELSE d.rekvid END
                AND j.kpv <= l_kpv2
+               AND j1.tunnus ILIKE l_tunnus
+             
          )
          SELECT rekv_id,
                 konto :: VARCHAR(20),
@@ -183,10 +188,10 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO dbvaatleja;
 
 
 /*

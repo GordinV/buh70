@@ -67,6 +67,7 @@ BEGIN
             nimetus    = doc_nimetus,
             library    = doc_library,
             properties = json_object,
+            rekvid = user_rekvid,
             muud       = doc_muud
         WHERE id = doc_id RETURNING id
             INTO lib_id;

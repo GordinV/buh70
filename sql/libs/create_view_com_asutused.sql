@@ -8,7 +8,9 @@ SELECT qry.id,
        qry.email,
        qry.kehtivus,
        qry.aadress,
+       qry.kontakt,
        qry.tel,
+       qry.omvorm,
        qry.pank
 FROM (SELECT 0                            AS id,
              ''::CHARACTER VARYING(20)    AS regkood,
@@ -17,7 +19,9 @@ FROM (SELECT 0                            AS id,
              ''::VARCHAR(254)             AS email,
              date() + INTERVAL '100 year' AS kehtivus,
              ''::TEXT                     AS aadress,
+             ''::TEXT                     AS kontakt,
              ''::VARCHAR(120)             AS tel,
+             ''::VARCHAR(20)              AS omvorm,
              ''::VARCHAR(20)              AS pank
 
       UNION
@@ -28,7 +32,9 @@ FROM (SELECT 0                            AS id,
              asutus.email,
              coalesce((asutus.properties ->> 'kehtivus'::TEXT)::DATE, date() + INTERVAL '10 year') AS kehtivus,
              asutus.aadress,
+             asutus.kontakt,
              asutus.tel,
+             asutus.omvorm,
              (properties -> 'asutus_aa' -> 0 ->> 'aa')::VARCHAR(20)                                AS pank
 
       FROM libs.asutus asutus

@@ -1,5 +1,6 @@
 DROP FUNCTION IF EXISTS sp_calc_taabel1(INTEGER, INTEGER, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS palk.sp_calc_taabel1(params JSONB);
+DROP FUNCTION IF EXISTS palk.sp_calc_taabel1_(params JSONB);
 
 CREATE FUNCTION palk.sp_calc_taabel1(params JSONB)
     RETURNS NUMERIC
@@ -28,11 +29,9 @@ DECLARE
     l_tahtpaeva_tunnid NUMERIC(12, 4) = 0;
 
 BEGIN
-    RAISE NOTICE 'start';
     l_maxdays = DAY(((make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month') - INTERVAL '1 day')::DATE);
     l_kpv = make_date(l_aasta, l_kuu, l_maxdays);
     l_lopp_paev = l_maxdays;
-    RAISE NOTICE 'l_kpv %, l_maxdays %',l_kpv,l_maxdays;
 
     SELECT t.* INTO v_tooleping
     FROM palk.tooleping t
@@ -50,7 +49,49 @@ BEGIN
         l_lopp_paev = day(v_Tooleping.lopp);
     END IF;
 
-    RAISE NOTICE 'l_alg_paev %, l_lopp_paev %', l_alg_paev, l_lopp_paev;
+    -- arv puhkuse paevad
+    SELECT row_to_json(row) INTO params
+    FROM (SELECT l_kuu      AS kuu,
+                 l_aasta    AS aasta,
+                 l_kpv      AS kpv,
+                 l_lepingid AS lepingid,
+                 'PUHKUS'   AS pohjus) row;
+
+    l_puhkus = palk.get_puudumine(params :: JSONB);
+
+    -- arv haiguse paevad
+    SELECT row_to_json(row) INTO params
+    FROM (SELECT l_kuu      AS kuu,
+                 l_aasta    AS aasta,
+                 l_kpv      AS kpv,
+                 l_lepingid AS lepingid,
+                 'HAIGUS'   AS pohjus) row;
+
+    -- arv haiguse paevad
+    l_haigus := palk.get_puudumine(params :: JSONB);
+
+    -- arv muu paevad
+    SELECT row_to_json(row) INTO params
+    FROM (SELECT l_kuu      AS kuu,
+                 l_aasta    AS aasta,
+                 l_kpv      AS kpv,
+                 l_lepingid AS lepingid,
+                 'MUU'      AS pohjus) row;
+
+    -- arv muud paevad
+    l_muud := palk.get_puudumine(params :: JSONB);
+
+    -- tunnid
+    l_tunnid = (l_muud - floor(l_muud)) * 10 ^ (position('.' IN l_muud :: TEXT) - 1);
+
+    l_muud = floor(l_muud);
+
+    IF l_tunnid > 0
+    THEN
+        -- vottame tunnid
+        l_muud = 0;
+    END IF;
+
 
     -- check work table
     SELECT t.tund INTO l_hours
@@ -60,53 +101,14 @@ BEGIN
       AND t.kuu = l_kuu
       AND t.aasta = l_aasta;
 
-
-    IF coalesce(l_toograf, 0) = 0 AND coalesce(l_hours, 0) = 0
+    RAISE NOTICE 'l_hours %, l_toograf %',l_hours, l_toograf;
+-- есть раб. график, считаем табель
+    IF coalesce(l_toograf, 0) = 0 AND coalesce(l_hours, 0) > 0
     THEN
         -- calculate hours
+        l_hours = (l_hours - (coalesce(l_puhkus, 0) + coalesce(l_haigus, 0) + l_muud) * v_Tooleping.toopaev -
+                   l_tunnid);
 
-          -- arv puhkuse paevad
-        SELECT row_to_json(row) INTO params
-        FROM (SELECT l_kuu      AS kuu,
-                     l_aasta    AS aasta,
-                     l_kpv      AS kpv,
-                     l_lepingid AS lepingid,
-                     'PUHKUS'   AS pohjus) row;
-
-        l_puhkus = palk.get_puudumine(params :: JSONB);
-
-        -- arv haiguse paevad
-        SELECT row_to_json(row) INTO params
-        FROM (SELECT l_kuu      AS kuu,
-                     l_aasta    AS aasta,
-                     l_kpv      AS kpv,
-                     l_lepingid AS lepingid,
-                     'HAIGUS'   AS pohjus) row;
-
-        -- arv haiguse paevad
-        l_haigus := palk.get_puudumine(params :: JSONB);
-
-        -- arv muu paevad
-        SELECT row_to_json(row) INTO params
-        FROM (SELECT l_kuu      AS kuu,
-                     l_aasta    AS aasta,
-                     l_kpv      AS kpv,
-                     l_lepingid AS lepingid,
-                     'MUU'      AS pohjus) row;
-
-        -- arv muud paevad
-        l_muud := palk.get_puudumine(params :: JSONB);
-
-        -- tunnid
-        l_tunnid = (l_muud - floor(l_muud)) * 10 ^ (position('.' IN l_muud :: TEXT) - 1);
-
-        l_muud = floor(l_muud);
-
-        IF l_tunnid > 0
-        THEN
-            -- vottame tunnid
-            l_muud = 0;
-        END IF;
     ELSE
         -- töögraafik
         -- график не установлен, считаем по календарным дням
@@ -118,7 +120,7 @@ BEGIN
                      l_alg_paev  AS paev,
                      l_lopp_paev AS lopp) row;
 
-        l_tahtpaeva_tunnid = (SELECT count(id)
+        l_tahtpaeva_tunnid = v_tooleping.pohikoht * (SELECT count(id)
                               FROM cur_tahtpaevad l
                               WHERE (l.rekvid = v_Tooleping.rekvid OR l.rekvid IS NULL)
                                 AND kuu = l_kuu
@@ -133,41 +135,27 @@ BEGIN
             l_hours = 0;
         END IF;
 
+        -- если не задан тип расчета для графика, то считаем табель
+        IF coalesce(l_toograf, 0) = 0
+        THEN
+            l_hours = (l_toopaevad - (coalesce(l_puhkus, 0) + coalesce(l_haigus, 0) + l_muud)) * v_Tooleping.toopaev -
+                      l_tunnid;
+
+            -- tähtpäeva parandus (lühipäev)
+            l_tahtpaeva_tunnid = (SELECT count(id)
+                                  FROM cur_tahtpaevad l
+                                  WHERE (l.rekvid = v_Tooleping.rekvid OR l.rekvid IS NULL)
+                                    AND kuu = l_kuu
+                                    AND aasta = year(l_kpv)
+                                    AND l.luhipaev = 1) * 3;
+
+            l_hours := l_hours - l_tahtpaeva_tunnid;
+
+        END IF;
+
 
     END IF;
 
-
-    IF l_hours IS NULL AND (l_toograf IS NULL OR l_toograf = 0)
-    THEN
-
-
-        -- график не установлен, считаем по календарным дням
-        SELECT row_to_json(row) INTO params
-        FROM (SELECT l_kuu       AS kuu,
-                     l_aasta     AS aasta,
-                     l_kpv       AS kpv,
-                     l_lepingid  AS lepingid,
-                     l_alg_paev  AS paev,
-                     l_lopp_paev AS lopp) row;
-
-
-        l_toopaevad = (SELECT palk.get_work_days(params::JSON));
-
-
-        l_hours = (l_toopaevad - (coalesce(l_puhkus, 0) + coalesce(l_haigus, 0) + l_muud)) * v_Tooleping.toopaev -
-                  l_tunnid;
-
-        -- tähtpäeva parandus (lühipäev)
-        l_tahtpaeva_tunnid = (SELECT count(id)
-                              FROM cur_tahtpaevad l
-                              WHERE (l.rekvid = v_Tooleping.rekvid OR l.rekvid IS NULL)
-                                AND kuu = l_kuu
-                                and aasta = year(l_kpv)
-                                AND l.luhipaev = 1) * 3;
-
-        l_hours := l_hours - l_tahtpaeva_tunnid;
-
-    END IF;
 
     RETURN coalesce(l_hours, 0);
 END;
@@ -178,17 +166,19 @@ $$;
 GRANT EXECUTE ON FUNCTION palk.sp_calc_taabel1(JSONB) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION palk.sp_calc_taabel1(JSONB) TO dbpeakasutaja;
 
-SELECT palk.sp_calc_taabel1('{
-  "aasta": 2021,
-  "kuu": 1,
-  "lepingid": 30951
-}'::JSONB);
--- -> 145 ?
-
 
 /*
+SELECT palk.sp_calc_taabel1('{
+  "aasta": 2021,
+  "kuu": 2,
+  "lepingid": 28609,
+  "toograf": 1
+}'::JSONB);
+-- -> 145 ?
+-- lep 35222, 28609, 20026 (GZ)
+
 select palk.sp_calc_taabel1(null::JSONB); -- -> 0
 
 
-select * from palk.tooleping where parentid in (select id from libs.asutus where regkood = '47007223734  ')
+select * from palk.tooleping where parentid in (select id from libs.asutus where regkood in ('48509243716'))
 */

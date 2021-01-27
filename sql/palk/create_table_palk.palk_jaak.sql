@@ -29,3 +29,10 @@ DROP RULE IF EXISTS palk_jaak_insert_2020 ON palk.palk_jaak;
 CREATE RULE palk_jaak_insert_2020 AS ON INSERT TO palk.palk_jaak
   WHERE aasta <= 2020
   DO INSTEAD NOTHING;
+
+DROP RULE IF EXISTS palk_jaak_2020 ON palk.palk_jaak;
+CREATE RULE palk_jaak_2020 AS ON DELETE TO palk.palk_jaak
+  WHERE aasta = 2020
+    AND kuu = 12
+  DO INSTEAD NOTHING;
+

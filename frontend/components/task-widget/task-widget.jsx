@@ -18,12 +18,13 @@ class TaskWidget extends React.PureComponent {
             actualTask: props.taskList[0].name,
             showList: false,
             showModal: false,
+            showDate: true,
             seisuga: getNow()
         };
         this.handleSelectTask = this.handleSelectTask.bind(this);
         this.handleButtonTask = this.handleButtonTask.bind(this);
         this.handleButtonOpenClick = this.handleButtonOpenClick.bind(this);
-        this.modalPageClick =  this.modalPageClick.bind(this);
+        this.modalPageClick = this.modalPageClick.bind(this);
         this.handleInputChange = this.handleInputChange.bind(this);
     }
 
@@ -66,14 +67,15 @@ class TaskWidget extends React.PureComponent {
                             modalObjects={['btnOk', 'btnCancel']}
                         >
                             {`Kas käivata ${this.state.actualTask} ?`}
-                            <InputDate title='Seisuga '
-                                       name='kpv'
-                                       value={this.state.seisuga}
-                                       ref='input-kpv'
-                                       readOnly={false}
-                                       onChange={this.handleInputChange}/>
 
-                        </ModalPage>: null
+                            {this.state.showDate ? <InputDate title='Seisuga '
+                                                              name='kpv'
+                                                              value={this.state.seisuga}
+                                                              ref='input-kpv'
+                                                              readOnly={false}
+                                                              onChange={this.handleInputChange}/> : null}
+
+                        </ModalPage> : null
                     }
                 </div>
             </div>
@@ -95,7 +97,12 @@ class TaskWidget extends React.PureComponent {
 
     handleSelectTask(name, value) {
         let isShow = !this.state.showList;
-        this.setState({showList: isShow, actualTask: value});
+        let task = this.state.taskList.find(task => task.name == name);
+        let isShowDate = true;
+        if (task.hasOwnProperty('showData') && task.showData == false) {
+            isShowDate = false;
+        }
+        this.setState({showList: isShow, actualTask: value, showDate: isShowDate});
     }
 
     handleButtonTask() {

@@ -23,7 +23,12 @@ CREATE FOREIGN TABLE remote_palk_jaak (
 */
 
 DELETE
-FROM palk.palk_jaak;
+FROM palk.palk_jaak
+    WHERE lepingid IN (
+    SELECT id
+    FROM palk.tooleping WHERE rekvid = 10 AND lopp IS NULL
+)
+;
 INSERT INTO palk.palk_jaak (lepingid, kuu, aasta, jaak, arvestatud, kinni, tki, tka, pm, tulumaks, sotsmaks, muud, g31)
 SELECT i.new_id AS lepingid,
        pj.kuu,
@@ -40,11 +45,16 @@ SELECT i.new_id AS lepingid,
        pj.g31
 FROM palk_jaak pj
          INNER JOIN import_log i ON i.old_id = pj.lepingid AND i.lib_name = 'TOOLEPING'
-    AND kuu = 12 AND aasta = 2020;
+    AND kuu = 12 AND aasta = 2020
+    AND pj.lepingid IN (
+        SELECT id
+        FROM tooleping WHERE rekvid = 10 AND lopp IS NULL
+    )
+;
 
 DROP RULE IF EXISTS palk_jaak_2020 ON palk.palk_jaak;
 CREATE RULE palk_jaak_2020 AS ON DELETE TO palk.palk_jaak
-       WHERE aasta = 2020
-              AND kuu = 12
-       DO INSTEAD NOTHING ;
+    WHERE aasta = 2020
+        AND kuu = 12
+    DO INSTEAD NOTHING;
 

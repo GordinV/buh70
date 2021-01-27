@@ -75,6 +75,12 @@ module.exports = {
         type: "sql",
         alias: 'koostaMK'
     },
+    loeMakse: {
+        command: `SELECT result, error_message
+                  FROM lapsed.loe_makse($2::INTEGER, $1::INTEGER)`, //$1 - pank_vv.id, $2 - userId
+        type: "sql",
+        alias: 'loeMakse'
+    },
     deleteDoc: `SELECT error_code, result, error_message
                 FROM lapsed.sp_delete_pank_vv($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
 
