@@ -331,6 +331,7 @@ WITH cur_kulude_kassa_taitmine AS (
                            )
                          AND artikkel <> '1532'*/
                        idx >= 200
+                       and qryReport.artikkel <> '1532'
                    GROUP BY rekvid
                    UNION ALL
                    SELECT kt.rekvid    AS rekvid,
@@ -394,8 +395,9 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DAT
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_taitmine_allikas_artikkel(2019::INTEGER, '2019-12-31'::DATE, 63, 1)
+         FROM eelarve.eelarve_taitmine_allikas_artikkel(2021::INTEGER, '2021-01-31'::DATE, 63, 1)
      ) qry
 WHERE artikkel like '15,2586,4,5,6%'
+or artikkel = '1532'
 order by idx, artikkel
 */

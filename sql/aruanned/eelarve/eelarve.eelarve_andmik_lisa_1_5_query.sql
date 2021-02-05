@@ -465,7 +465,7 @@ BEGIN
       AND rekvid IN (SELECT rekv_id
                      FROM get_asutuse_struktuur(l_rekvid)
                      UNION ALL
-                     SELECT 999 AS rekv_id
+                     SELECT CASE WHEN l_rekvid = 63 THEN 999 ELSE l_rekvid END AS rekv_id
     )
 
     GROUP BY tegev
@@ -500,7 +500,7 @@ BEGIN
       AND rekvid IN (SELECT rekv_id
                      FROM get_asutuse_struktuur(l_rekvid)
                      UNION ALL
-                     SELECT 999 AS rekv_id
+                     SELECT CASE WHEN l_rekvid = 63 THEN 999 ELSE l_rekvid END AS rekv_id
     )
 
     GROUP BY tegev

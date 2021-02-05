@@ -84,6 +84,8 @@ BEGIN
            coalesce(v_palk_jaak.tki, 0) - coalesce(v_palk_jaak.pm, 0) -
            coalesce(v_palk_jaak.tasu, 0) - coalesce(v_palk_jaak.tm, 0);
 
+
+raise notice 'v_palk_jaak.tka %', v_palk_jaak.tka;
   IF l_palk_jaak_id IS NULL
   THEN
     INSERT INTO palk.palk_jaak (lepingId, kuu, aasta, arvestatud, kinni, tulumaks, sotsmaks, tka, tki, pm, g31, jaak)
@@ -127,4 +129,4 @@ GRANT EXECUTE ON FUNCTION palk.sp_update_palk_jaak(DATE, INTEGER) TO dbpeakasuta
 GRANT EXECUTE ON FUNCTION palk.sp_update_palk_jaak(DATE, INTEGER) TO taabel;
 
 
-SELECT palk.sp_update_palk_jaak(DATE(), 4);
+SELECT palk.sp_update_palk_jaak('2021-01-31', 34873);

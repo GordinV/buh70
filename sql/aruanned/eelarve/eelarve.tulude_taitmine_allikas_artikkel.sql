@@ -27,7 +27,50 @@ WITH cur_tulude_kassa_taitmine AS (
      cur_tulude_taitmine AS (
          SELECT * FROM eelarve.tulu_taitmine(make_date(l_aasta, 01, 01), l_kpv, l_rekvid, l_kond)
      ),
-
+     laekumised_eelarvesse AS (
+         SELECT j.rekvid,
+                0            AS eelarve_kinni,
+                0            AS eelarve_parandatud,
+                0            AS eelarve_kassa_kinni,
+                0            AS eelarve_kassa_parandatud,
+                0            AS tegelik,
+                sum(j.summa) AS kassa,
+                j.kood1      AS tegev,
+                j.kood2      AS allikas,
+                j.kood5      AS artikkel,
+                j.kood3      AS rahavoog,
+                j.tunnus     AS tunnus,
+                200          AS idx
+         FROM (SELECT -1 * j1.summa AS summa,
+                      j1.kood1,
+                      j1.kood2,
+                      j1.kood3,
+                      j1.kood5,
+                      j1.tunnus,
+                      d.rekvid,
+                      d.id,
+                      j.kpv,
+                      j1.kreedit
+               FROM docs.doc D
+                        INNER JOIN docs.journal j ON j.parentid = D.id
+                        INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+               WHERE j.kpv >= make_date(year(l_kpv), 1, 1)
+                 AND j.kpv <= l_kpv
+                 AND left(j1.deebet, 6) IN ('100100', '999999') -- поступление доходов
+                 AND left(j1.kreedit, 6) = '700001'
+                 AND d.rekvid = 63                              -- только фин. департамент
+                 --строка art 1532 в доходах может быть только с rahavoog 02, соответственно с rahavoog 23  быть не далжно
+                 AND (CASE WHEN j1.kood5 = '1532' AND j1.kood3 = '23' THEN FALSE ELSE TRUE END)
+                 AND d.status <> 3
+              ) j
+                  INNER JOIN libs.library l ON l.kood = j.kood5
+             AND l.tun5 = 1 --tulud
+             AND l.status <> 3
+             AND l.library = 'TULUDEALLIKAD'
+         WHERE l_kond > 0
+           AND l_rekvid = 63 -- только если отчет для фин.департамента
+         GROUP BY j.rekvid, j.kood1, j.kood2, j.kood3, j.kood5, j.tunnus
+     ),
      qryReport AS (
          SELECT rekvid,
                 sum(eelarve_kinni)            AS eelarve_kinni,
@@ -44,21 +87,21 @@ WITH cur_tulude_kassa_taitmine AS (
                 idx
          FROM (
                   SELECT rekvid,
-                         summa            AS eelarve_kinni,
-                         summa_kassa      AS eelarve_kassa_kinni,
-                         0:: NUMERIC      AS eelarve_parandatud,
-                         0:: NUMERIC      AS eelarve_kassa_parandatud,
-                         0 :: NUMERIC     AS tegelik,
-                         0 :: NUMERIC     AS kassa,
-                         kood1            AS tegev,
-                         kood2            AS allikas,
-                         kood5            AS artikkel,
-                         kood3            AS rahavoog,
+                         summa               AS eelarve_kinni,
+                         summa_kassa         AS eelarve_kassa_kinni,
+                         0:: NUMERIC         AS eelarve_parandatud,
+                         0:: NUMERIC         AS eelarve_kassa_parandatud,
+                         0 :: NUMERIC        AS tegelik,
+                         0 :: NUMERIC        AS kassa,
+                         coalesce(kood1, '') AS tegev,
+                         coalesce(kood2, '') AS allikas,
+                         coalesce(kood5, '') AS artikkel,
+                         coalesce(kood3, '') AS rahavoog,
                          COALESCE(tunnus,
-                                  '')     AS tunnus,
+                                  '')        AS tunnus,
                          CASE
                              WHEN ltrim(rtrim(kood5)) = '2585' AND ltrim(rtrim(kood2)) = '80' THEN 120
-                             ELSE 200 END AS idx
+                             ELSE 200 END    AS idx
                   FROM eelarve.tulud e
                   WHERE rekvid = (CASE
                                       WHEN l_kond = 1
@@ -78,10 +121,10 @@ WITH cur_tulude_kassa_taitmine AS (
                          summa_kassa                                                     AS eelarve_kassa_parandatud,
                          0 :: NUMERIC                                                    AS tegelik,
                          0 :: NUMERIC                                                    AS kassa,
-                         kood1                                                           AS tegev,
-                         kood2                                                           AS allikas,
-                         kood5                                                           AS artikkel,
-                         kood3                                                           AS rahavoog,
+                         coalesce(kood1, '')                                             AS tegev,
+                         coalesce(kood2, '')                                             AS allikas,
+                         coalesce(kood5, '')                                             AS artikkel,
+                         coalesce(kood3, '')                                             AS rahavoog,
                          COALESCE(tunnus,
                                   '')                                                    AS tunnus,
                          CASE WHEN kood5 = '2585' AND kood2 = '80' THEN 120 ELSE 200 END AS idx
@@ -129,10 +172,10 @@ WITH cur_tulude_kassa_taitmine AS (
                          0 :: NUMERIC                                                         AS eelarve_kassa_parandatud,
                          0 :: NUMERIC                                                         AS tegelik,
                          summa                                                                AS kassa,
-                         tegev,
-                         allikas,
-                         artikkel,
-                         rahavoog,
+                         coalesce(tegev, ''),
+                         coalesce(allikas, ''),
+                         coalesce(artikkel, ''),
+                         coalesce(rahavoog, ''),
                          COALESCE(tunnus, '')                                                 AS tunnus,
                          CASE WHEN artikkel = '2585' AND allikas = '80' THEN 120 ELSE 200 END AS idx
                   FROM cur_tulude_kassa_taitmine kt
@@ -194,7 +237,34 @@ WITH cur_tulude_kassa_taitmine AS (
                          ''                                                                                    AS rahavoog,
                          ''                                                                                    AS tunnus,
                          150                                                                                   AS idx
-                  FROM qryReport
+                  FROM (SELECT rekvid,
+                               eelarve_kinni,
+                               eelarve_parandatud,
+                               eelarve_kassa_parandatud,
+                               eelarve_kassa_kinni,
+                               tegelik,
+                               kassa,
+                               tegev,
+                               allikas,
+                               artikkel,
+                               rahavoog,
+                               tunnus
+                        FROM qryReport
+                        UNION ALL
+                        SELECT rekvid,
+                               eelarve_kinni,
+                               eelarve_parandatud,
+                               eelarve_kassa_parandatud,
+                               eelarve_kassa_kinni,
+                               tegelik,
+                               kassa,
+                               tegev,
+                               allikas,
+                               artikkel,
+                               rahavoog,
+                               tunnus
+                        FROM laekumised_eelarvesse
+                       ) j
                   GROUP BY rekvid
                   UNION ALL
 -- Art 2585 A80
@@ -217,47 +287,20 @@ WITH cur_tulude_kassa_taitmine AS (
                   GROUP BY rekvid
                   UNION ALL
                   -- убрать из конда доходы фин.департамента от поступлений доходов из учреждений
-                  SELECT j.rekvid,
-                         0            AS eelarve_kinni,
-                         0            AS eelarve_parandatud,
-                         0            AS eelarve_kassa_kinni,
-                         0            AS eelarve_kassa_parandatud,
-                         0            AS tegelik,
-                         sum(j.summa) AS kassa,
-                         j.kood1      AS tegev,
-                         j.kood2      AS allikas,
-                         j.kood5      AS artikkel,
-                         j.kood3      AS rahavoog,
-                         j.tunnus     AS tunnus,
-                         200          AS idx
-                  FROM (SELECT -1 * j1.summa AS summa,
-                               j1.kood1,
-                               j1.kood2,
-                               j1.kood3,
-                               j1.kood5,
-                               j1.tunnus,
-                               d.rekvid,
-                               d.id,
-                               j.kpv,
-                               j1.kreedit
-                        FROM docs.doc D
-                                 INNER JOIN docs.journal j ON j.parentid = D.id
-                                 INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-                        WHERE j.kpv >= make_date(year(l_kpv), 1, 1)
-                          AND j.kpv <= l_kpv
-                          AND left(j1.deebet, 6) in ('100100','999999') -- поступление доходов
-                          AND left(j1.kreedit, 6) = '700001'
-                          AND d.rekvid = 63                 -- только фин. департамент
-                          --строка art 1532 в доходах может быть только с rahavoog 02, соответственно с rahavoog 23  быть не далжно
-                          AND (CASE WHEN j1.kood5 = '1532' AND j1.kood3 = '23' THEN FALSE ELSE TRUE END)
-                          AND d.status <> 3
-                       ) j
-                           INNER JOIN libs.library l ON l.kood = j.kood5
-                      AND l.tun5 = 1 --tulud
-                      AND l.status <> 3
-                      AND l.library = 'TULUDEALLIKAD'
-                  WHERE l_kond > 0 and l_rekvid = 63 -- только если отчет для фин.департамента
-                  GROUP BY j.rekvid, j.kood1, j.kood2, j.kood3, j.kood5, j.tunnus
+                  SELECT rekvid,
+                         eelarve_kinni,
+                         eelarve_parandatud,
+                         eelarve_kassa_kinni,
+                         eelarve_kassa_parandatud,
+                         tegelik,
+                         kassa,
+                         tegev,
+                         allikas,
+                         artikkel,
+                         rahavoog,
+                         tunnus,
+                         idx
+                  FROM laekumised_eelarvesse
               ) qry
      )
 -- pohi osa
@@ -310,7 +353,7 @@ GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.tulude_taitmine_allikas_artikkel(2019::INTEGER, '2019-12-31'::DATE, 63, 1)
+         FROM eelarve.tulude_taitmine_allikas_artikkel(2021::INTEGER, '2021-01-31'::DATE, 67, 0)
      ) qry
 WHERE left(artikkel, 4) IN ('3232')
 --and tegev = '04730'

@@ -2,8 +2,8 @@ var path = require('path');
 const webpack = require('webpack');
 
 //const NODE_ENV = process.env.NODE_ENV || 'development';
-const NODE_ENV = 'development';
-//const NODE_ENV = 'production';
+//const NODE_ENV = 'development';
+const NODE_ENV = 'production';
 
 /*
  if (!DEBUG) {

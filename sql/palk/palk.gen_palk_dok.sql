@@ -29,7 +29,7 @@ DECLARE
     l_rekv_id       INTEGER = (SELECT rekvid
                                FROM ou.userid
                                WHERE id = user_id
-                                   LIMIT 1);
+                               LIMIT 1);
     MK_TYYP         INTEGER = 1; -- VMK
     l_mk_number     INTEGER = docs.sp_get_number(l_rekv_id, 'VMK', year(l_kpv), NULL);
     l_vorder_number INTEGER = docs.sp_get_number(l_rekv_id, 'VORDER'::TEXT, year(l_kpv), NULL::INTEGER);
@@ -77,23 +77,22 @@ BEGIN
 
     IF kas_mmk
     THEN
-        RAISE NOTICE 'mmk';
-        SELECT 0             AS id,
-               'VMK'         AS doc_type_id,
-               l_mk_number   AS number,
-               0 :: INTEGER  AS id,
-               MK_TYYP       AS opt,
-               l_kpv         AS kpv,
-               l_kpv         AS maksepaev,
-               'PALK'        AS muud,
-               'Palk'        AS selg,
+        SELECT 0                  AS id,
+               'VMK'              AS doc_type_id,
+               l_mk_number        AS number,
+               0 :: INTEGER       AS id,
+               MK_TYYP            AS opt,
+               l_kpv              AS kpv,
+               l_kpv              AS maksepaev,
+               'Tasu töötamisest' AS muud,
+               'Tasu töötamisest' AS selg,
                (SELECT id
                 FROM ou.aa
                 WHERE parentid = v_user.rekvid
                   AND aa.kassa = 1
-                    ORDER BY default_ DESC
-                    LIMIT 1) AS aaid,
-               NULL::NUMERIC AS summa
+                ORDER BY default_ DESC
+                LIMIT 1)          AS aaid,
+               NULL::NUMERIC      AS summa
                INTO v_mk;
 
     END IF;
@@ -105,13 +104,6 @@ BEGIN
                isikid,
                sum(summa)           AS summa,
                tunnus,
-               proj,
-               konto,
-               kood1,
-               kood2,
-               kood3,
-               kood4,
-               kood5,
                asutus_aa,
                nimi,
                aadress,
@@ -124,7 +116,7 @@ BEGIN
         FROM (
                  SELECT d.id,
                         d.rekvid,
-                        t.parentid                                                          AS isikid,
+                        t.parentid                                  AS isikid,
                         po.summa,
                         po.tunnus,
                         po.proj,
@@ -135,18 +127,19 @@ BEGIN
                         po.kood4,
                         po.kood5,
                         po.journalid,
-                        l.properties :: JSON ->> 'konto'                                    AS korr_konto,
-                        (a.properties -> 'asutus_aa') -> 0 ->> 'aa'                         AS asutus_aa,
+                        l.properties :: JSON ->> 'konto'            AS korr_konto,
+                        (a.properties -> 'asutus_aa') -> 0 ->> 'aa' AS asutus_aa,
                         -- isiku pank arve
-                        a.regkood                                                           AS isikukood,
-                        a.nimetus                                                           AS nimi,
+                        a.regkood                                   AS isikukood,
+                        a.nimetus                                   AS nimi,
                         a.aadress,
                         a.tp,
                         coalesce((SELECT aa.kassa = 0
                                   FROM ou.aa aa
                                   WHERE aa.parentid = d.rekvid
-                                    AND konto = (l.properties :: JSON ->> 'konto')), FALSE) AS is_kassa,
-                        d.docs_ids                                                          AS docs_ids
+                                    AND konto = (l.properties :: JSON ->> 'konto')
+                                  LIMIT 1), FALSE)                  AS is_kassa,
+                        d.docs_ids                                  AS docs_ids
                  FROM palk.palk_oper po
                           INNER JOIN docs.doc d ON d.id = po.parentid
                           INNER JOIN palk.tooleping t ON t.id = po.lepingid
@@ -170,7 +163,7 @@ BEGIN
                                     AND l.kood IN
                                         ('VMK', 'VORDER')) -- только те выплаты, на которые не созданы платежные документы
              ) qry
-        GROUP BY rekvid, isikid, nimi, aadress, tunnus, proj, konto, kood1, kood2, kood3, kood4, kood5, asutus_aa, tp,
+        GROUP BY rekvid, isikid, nimi, aadress, tunnus, asutus_aa, tp,
                  is_kassa
 
         LOOP
@@ -191,22 +184,22 @@ BEGIN
                     -- для ммк параметры созданы выше
 --                    l_mk_number = docs.sp_get_number(l_rekv_id, 'VMK', year(l_kpv), NULL);
                     -- MK
-                    SELECT 0             AS id,
-                           'VMK'         AS doc_type_id,
-                           l_mk_number   AS number,
-                           0 :: INTEGER  AS id,
-                           MK_TYYP       AS opt,
-                           l_kpv         AS kpv,
-                           l_kpv         AS maksepaev,
-                           'PALK'        AS muud,
-                           'Palk.'        AS selg,
+                    SELECT 0                  AS id,
+                           'VMK'              AS doc_type_id,
+                           l_mk_number        AS number,
+                           0 :: INTEGER       AS id,
+                           MK_TYYP            AS opt,
+                           l_kpv              AS kpv,
+                           l_kpv              AS maksepaev,
+                           'Tasu töötamisest' AS muud,
+                           'Tasu töötamisest' AS selg,
                            (SELECT id
                             FROM ou.aa
                             WHERE parentid = v_po.rekvid
                               AND aa.kassa = 1
-                                ORDER BY default_ DESC
-                                LIMIT 1) AS aaid,
-                           v_po.summa    AS summa
+                            ORDER BY default_ DESC
+                            LIMIT 1)          AS aaid,
+                           v_po.summa         AS summa
                            INTO v_mk;
 
                 END IF;
@@ -217,17 +210,10 @@ BEGIN
                         WHERE dok = 'MK'
                           AND n.rekvid = v_po.rekvid
                           AND n.status < 3
-                            ORDER BY id DESC
-                            LIMIT 1)  AS nomid,
+                        ORDER BY id DESC
+                        LIMIT 1)      AS nomid,
                        v_po.asutus_aa AS aa,
                        v_po.tunnus,
-                       v_po.proj,
-                       v_po.konto,
-                       v_po.kood1,
-                       v_po.kood2,
-                       v_po.kood3,
-                       v_po.kood4,
-                       v_po.kood5,
                        v_po.tp,
                        v_po.summa     AS summa
                        INTO v_mk1;
@@ -265,30 +251,23 @@ BEGIN
                        v_po.isikid           AS asutusid,
                        v_po.nimi,
                        v_po.aadress,
-                       'PALK'                AS muud,
-                       'Palk'                AS alus,
+                       'Tasu töötamisest'    AS muud,
+                       'Tasu töötamisest'    AS alus,
                        v_po.summa            AS summa
                        INTO v_mk;
 
                 --MK1
-                SELECT v_po.isikid   AS asutusid,
+                SELECT v_po.isikid AS asutusid,
                        (SELECT id
                         FROM libs.nomenklatuur n
                         WHERE dok = 'VORDER'
                           AND n.rekvid = v_po.rekvid
                           AND n.status < 3
-                            ORDER BY id DESC
-                            LIMIT 1) AS nomid,
+                        ORDER BY id DESC
+                        LIMIT 1)   AS nomid,
                        v_po.tunnus,
-                       v_po.proj,
-                       v_po.konto,
-                       v_po.kood1,
-                       v_po.kood2,
-                       v_po.kood3,
-                       v_po.kood4,
-                       v_po.kood5,
                        v_po.tp,
-                       v_po.summa    AS summa
+                       v_po.summa  AS summa
                        INTO v_mk1;
 
                 l_grid_params = l_grid_params || to_jsonb(v_mk1);

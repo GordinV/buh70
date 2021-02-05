@@ -188,14 +188,17 @@ BEGIN
                                             kood4 TEXT, kood5 TEXT,
                                             konto TEXT, tunnus TEXT, tp TEXT, proj TEXT, arve_id INTEGER, muud TEXT,
                                             km TEXT, yksus TEXT, all_yksus TEXT, lapse_taabel_id INTEGER,
-                                            soodustus NUMERIC(14, 2));
+                                            soodustus NUMERIC(14, 4), soodus NUMERIC(14, 4));
 
 
             SELECT row_to_json(row) INTO arv1_rea_json
             FROM (SELECT json_record.yksus,
                          json_record.all_yksus,
                          json_record.lapse_taabel_id,
-                         json_record.soodustus) row;
+                         CASE
+                             WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
+                                 THEN coalesce(json_record.soodus, 0)
+                             ELSE json_record.soodustus END AS soodustus) row;
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
             THEN
@@ -231,7 +234,10 @@ BEGIN
                         coalesce(json_record.muud, ''),
                         coalesce(json_record.km, ''),
                         arv1_rea_json,
-                        coalesce(json_record.soodustus::NUMERIC(14, 2), 0)::NUMERIC(14, 2)) RETURNING id
+                        CASE
+                            WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
+                                THEN coalesce(json_record.soodus, 0)
+                            ELSE json_record.soodustus END ::NUMERIC(14, 4)) RETURNING id
                            INTO arv1_id;
 
                 -- add new id into array of ids
@@ -266,7 +272,10 @@ BEGIN
                     tp         = coalesce(json_record.tp, ''),
                     kbm_maar   = coalesce(json_record.km, ''),
                     muud       = json_record.muud,
-                    soodus     = coalesce(json_record.soodustus::NUMERIC(14, 2), 0)::NUMERIC(14, 2),
+                    soodus     = CASE
+                                     WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
+                                         THEN coalesce(json_record.soodus, 0)
+                                     ELSE json_record.soodustus END::NUMERIC(14, 4),
                     properties = properties || arv1_rea_json
                 WHERE id = json_record.id :: INTEGER RETURNING id
                     INTO arv1_id;
@@ -376,7 +385,6 @@ BEGIN
     THEN
         IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
         THEN
-            RAISE NOTICE 'insert doc_lapsid %, doc_id %', doc_lapsid, doc_id;
             INSERT INTO lapsed.liidestamine (parentid, docid) VALUES (doc_lapsid, doc_id);
         END IF;
 
@@ -407,7 +415,6 @@ BEGIN
 
     END IF;
 
-    RAISE NOTICE 'doc_ettemaksu_arve_id %', doc_ettemaksu_arve_id;
     IF doc_ettemaksu_arve_id IS NOT NULL
     THEN
         -- проверим оплату счета
@@ -418,7 +425,6 @@ BEGIN
             -- вызываем оплату
 
             l_mk_id = (SELECT doc_tasu_id FROM docs.arvtasu WHERE doc_arv_id = doc_ettemaksu_arve_id);
-            RAISE NOTICE 'call  sp_tasu_arv l_mk_id %', l_mk_id;
             PERFORM docs.sp_tasu_arv(l_mk_id, doc_ettemaksu_arve_id, user_id);
 
         END IF;
@@ -438,10 +444,14 @@ GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbkasu
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
-select docs.sp_salvesta_arv('{"id":1898296,"data": {"aa":"EE681010220037906015","aadress":"Ida-Viru maakond, Narva linn, Kalda tn 9, 20104","arvid":0,"asutus":"OÜ DATEL VIRU","asutusid":30224,"bpm":"{\"omniva\": [{\"kpv\": \"22.05.2020 14:11:48\", \"isik\": \"47608105226|Jelena Golubeva|VERIFIED|\", \"rolli\": \"Kinnitaja\"}, {\"kpv\": \"25.05.2020 09:44:02\", \"isik\": \"46610172217|Jelena TÅ¡ekanina|VERIFIED|\", \"rolli\": \"Kinnitaja\"}, {\"kpv\": \"\", \"isik\": \"48612183747|A","created":"26.05.2020 09:05:15","doc":"Arved","doc_status":1,"doc_type_id":"ARV","doklausid":1625,"dokprop":"arve","id":1898296,"is_show_journal":1,"jaak":5781,"journalid":1898297,"kbm":0,"kbmkonto":"601000","kbmta":5781,"kmkr":"","konto":"201000","koostaja":"jelena.tsekanina","kpv":"20200522","lastupdate":"02.06.2020 08:06:45","laus_nr":1350,"liik":1,"lisa":"","muud":"","number":"39","objekt":"","objektid":0,"operid":0,"regkood":"11047855","rekvid":63,"status":"Aktiivne","summa":5781,"tahtaeg":"20200605","tasud":null,"tasudok":null,"userid":2477,"viitenr":"12345","gridData":[{"formula":null,"hind":5781,"id":181643,"kbm":0,"kbmta":5781,"km":"0","kogus":1,"konto":"551485","kood":"OMNIVA","kood1":"01112","kood2":"LE-P","kood3":"","kood4":"","kood5":"5514","kuurs":1,"muud":"Tarkvara arendamine","nimetus":"Importeeritud e-arvete registrist teenused","nomid":17748,"proj":"OSAK","soodus":0,"summa":5781,"tp":"800599","tunnus":"OSAK","uhik":"","userid":2477,"valuuta":"EUR","vastisik":null}]}}'::json,
-957::integer,
-64::integer) as id;
+select docs.sp_salvesta_arv('{"id":0,"data": {"aa":"EE422200221027849353","aadress":null,"arvid":null,"asutus":null,"asutusid":29426,"bpm":null,"created":"02.02.2021 12:02:22","doc":"Arved","doc_status":0,"doc_type_id":"ARV","doklausid":null,"dokprop":"","id":0,"is_show_journal":0,"jaak":-75.0900,"journalid":null,"kbm":0.2000,"kbmkonto":"","kbmta":1,"kmkr":null,"konto":"","koostaja":null,"kpv":"20210202","lastupdate":"02.02.2021 12:02:22","laus_nr":null,"liik":0,"lisa":"","muud":null,"number":"95","objekt":null,"objektid":0,"operid":null,"regkood":null,"rekvid":null,"status":"Eelnõu","summa":1.2000,"tahtaeg":"20210216","tasud":null,"tasudok":null,"userid":3311,"viitenr":"","gridData":[{"formula":"","hind":1,"id":0,"kbm":0.2000,"kbmta":1,"km":"20","kogus":1,"konto":"323320","kood":"323320","kood1":"08102","kood2":"80","kood3":"","kood4":"","kood5":"3233","kuurs":0,"muud":"","nimetus":"","nomid":10056,"proj":"","soodus":0,"summa":1.2000,"tp":"","tunnus":"0810202","uhik":"","userid":0,"valuuta":"","vastisik":""}]}}'::json,
+3311::integer,
+125::integer) as id;
 
+
+
+select * from ou.rekv where id = 125
+select * from ou.userid where rekvid = 125 and kasutaja = 'vlad'
 
 select * from docs.arv where parentid = 1616296
 select * from docs.arv1 where parentid = 331

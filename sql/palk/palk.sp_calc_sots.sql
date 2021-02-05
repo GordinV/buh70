@@ -270,10 +270,16 @@ $$;
 
 SELECT *
 FROM palk.sp_calc_sots(1, '{
-  "lepingid": 32547,
-  "libid": 139796,
+  "lepingid": 35756,
+  "libid": 236702,
   "kpv": "2021-01-31"
 }'::JSON)
+
+
+    {"lepingid":35756,"libid":236702,"kpv":20210128}
+
+select * from palk.puudumine
+where lepingid = 35756
 
 /*
 
@@ -281,8 +287,8 @@ select * from ou.rekv where nimetus ilike '%paju%'
 
 
 
-select * from palk.tooleping where  parentid in (select id from libs.asutus where regkood = '46406282239')
-select * from palk.palk_oper where lepingid = 34935
+select * from palk.tooleping where  parentid in (select id from libs.asutus where regkood = '48211153720')
+select * from palk.palk_oper where lepingid = 35756
 
 select * from palk.sp_calc_sots(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":100, "summa":33}'::JSON)
 select * from palk.sp_calc_sots(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":0, "summa":50, "is_percent":false}'::JSON)

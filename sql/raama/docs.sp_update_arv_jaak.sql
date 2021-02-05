@@ -28,6 +28,7 @@ BEGIN
            INTO l_tasu_summa, l_kpv
     FROM docs.arvtasu arvtasu
     WHERE arvtasu.doc_arv_Id = l_arv_Id
+      and summa <> 0
       AND arvtasu.status < 3;
 
     IF l_arv_summa < 0

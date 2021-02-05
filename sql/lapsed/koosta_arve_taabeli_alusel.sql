@@ -119,7 +119,6 @@ BEGIN
     -- 3. период
     -- 4. услуги из списка табеля
 
-
     -- читаем табель и создаем детали счета
     FOR v_taabel IN
         SELECT lt.nomid,
@@ -172,6 +171,7 @@ BEGIN
 
 
         LOOP
+
             l_arve_kogus = l_arve_kogus + v_taabel.kogus;
             -- формируем строку
             json_arvrea = '[]'::JSONB || (SELECT row_to_json(row)
@@ -325,9 +325,11 @@ BEGIN
         RETURN;
     ELSE
 */
+
         IF l_arve_kogus <> 0
         THEN
             SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
+
         END IF;
     ELSE
         l_arv_id = NULL;

@@ -30,6 +30,7 @@ WITH algsaldo AS (
                                 FROM get_asutuse_struktuur(l_rekvid))
                AND (d.rekvid = l_rekvid OR l_kond = 1)
                AND coalesce(j1.tunnus, '') ILIKE l_tunnus
+               and d.status <> 3
              UNION ALL
              SELECT d.rekvid
                      ,
@@ -48,6 +49,7 @@ WITH algsaldo AS (
                                 FROM get_asutuse_struktuur(l_rekvid))
                AND (d.rekvid = l_rekvid OR l_kond = 1)
                AND coalesce(j1.tunnus, '') ILIKE l_tunnus
+               and d.status <> 3
          ) qry
     GROUP BY konto,
              rekvid)
@@ -79,6 +81,7 @@ FROM (
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND (d.rekvid = l_rekvid OR l_kond = 1)
+           and d.status <> 3
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
          UNION ALL
          SELECT d.rekvid,
@@ -96,6 +99,7 @@ FROM (
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND (d.rekvid = l_rekvid OR l_kond = 1)
+           and d.status <> 3
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
      ) qry
 WHERE NOT empty(qry.konto)

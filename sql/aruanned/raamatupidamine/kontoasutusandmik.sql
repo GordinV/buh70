@@ -38,6 +38,7 @@ WITH algsaldo AS (
                 INNER JOIN docs.journal j ON j.parentid = d.id
                 INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
          WHERE j.asutusid IS NOT NULL
+           and d.status <> 3
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
            AND j.kpv < l_kpv1
            AND j.rekvid IN (SELECT rekv_id
@@ -53,6 +54,7 @@ WITH algsaldo AS (
                 INNER JOIN docs.journal j ON j.parentid = d.id
                 INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
          WHERE j.asutusid IS NOT NULL
+           and d.status <> 3
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
            AND j.kpv < l_kpv1
            AND j.rekvid IN (SELECT rekv_id

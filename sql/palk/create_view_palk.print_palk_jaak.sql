@@ -1,4 +1,5 @@
 DROP VIEW IF EXISTS palk.print_palk_jaak;
+DROP VIEW IF EXISTS palk.print_palk_jaak_;
 
 CREATE VIEW palk.print_palk_jaak AS
 SELECT j.jaak,

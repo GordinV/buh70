@@ -5,8 +5,8 @@ CREATE OR REPLACE FUNCTION docs.sp_lausendikontrol(params JSONB)
 $BODY$
 
 DECLARE
-    l_db       TEXT = params ->> 'db';
-    l_kr       TEXT = params ->> 'kr';
+    l_db       TEXT = trim(params ->> 'db');
+    l_kr       TEXT = trim(params ->> 'kr');
     l_tp_d     TEXT = params ->> 'tpd';
     l_tp_k     TEXT = params ->> 'tpk';
     l_tt       TEXT = params ->> 'tt';

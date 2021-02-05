@@ -67,7 +67,6 @@ BEGIN
     THEN
         --  счет оплачен, новых платежей не надо
 
-        RAISE NOTICE 'Arve juba makstud %',doc_doc_arv_id;
         -- update arv jaak
         PERFORM docs.sp_update_arv_jaak(doc_doc_arv_id);
         RETURN 0;

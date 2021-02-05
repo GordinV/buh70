@@ -45,8 +45,9 @@ ALTER TABLE lapsed.lapse_taabel
     DROP CONSTRAINT IF EXISTS check_aasta;
 
 
+ALTER TABLE lapsed.lapse_taabel drop CONSTRAINT check_aasta;
 ALTER TABLE lapsed.lapse_taabel
-    ADD CONSTRAINT check_aasta CHECK (aasta >= date_part('year', now()) - 1 );
+    ADD CONSTRAINT check_aasta CHECK (aasta >= date_part('year', now()) - 10 );
 
 ALTER TABLE lapsed.lapse_taabel
     ADD COLUMN IF NOT EXISTS lapse_kaart_id INTEGER;

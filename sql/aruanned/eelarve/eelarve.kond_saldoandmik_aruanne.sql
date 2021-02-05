@@ -1,7 +1,8 @@
 DROP FUNCTION IF EXISTS eelarve.kond_saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER);
 DROP FUNCTION IF EXISTS eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER);
+DROP FUNCTION IF EXISTS eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER)
+CREATE OR REPLACE FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER DEFAULT 0)
     RETURNS TABLE (
         konto    VARCHAR(20),
         nimetus  VARCHAR(254),
@@ -30,7 +31,16 @@ FROM eelarve.saldoandmik s
          LEFT OUTER JOIN com_kontoplaan k ON k.kood = s.konto
 WHERE s.aasta = year(l_kpv)
   AND s.kuu = month(l_kpv)
-  AND s.rekvid = l_rekvid
+  AND s.rekvid = (CASE
+                      WHEN l_kond = 1
+                          THEN s.rekvid
+                      ELSE l_rekvid END
+    )
+  AND s.rekvid IN (SELECT rekv_id
+                   FROM get_asutuse_struktuur(l_rekvid)
+                   UNION ALL
+                   SELECT l_rekvid
+)
     GROUP BY s.konto
     , k.nimetus
     , left(s.tp, 6)
@@ -44,11 +54,10 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER) TO dbvaatleja;
 /*
 select * from (
 SELECT *

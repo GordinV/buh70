@@ -1,4 +1,5 @@
-DROP FUNCTION IF EXISTS palk.tsd_lisa_1(DATE, DATE, INTEGER, INTEGER);
+--DROP FUNCTION IF EXISTS palk.tsd_lisa_1(DATE, DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS palk.tsd_lisa_1_(DATE, DATE, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION palk.tsd_lisa_1(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER)
     RETURNS TABLE (
@@ -59,8 +60,7 @@ FROM (
                     a.nimetus :: VARCHAR(254)                  AS isik,
                     sum(koormus) :: NUMERIC                    AS koormus,
                     max(coalesce(qryMinSots.arv_min_sots, 0))  AS arv_min_sots,
-                    max(coalesce(qryMinSots.min_sots_alus, 0)) AS min_sots_alus,
-                    t.rekvid
+                    max(coalesce(qryMinSots.min_sots_alus, 0)) AS min_sots_alus
              FROM palk.tooleping t
                       INNER JOIN libs.asutus a ON a.id = t.parentId
                       INNER JOIN ou.rekv ON rekv.id = t.rekvId
@@ -84,7 +84,7 @@ FROM (
                AND algab <= l_kpv2
                AND (lopp IS NULL OR lopp >= l_kpv1)
                AND t.resident = 1
-             GROUP BY a.regkood, a.nimetus, t.rekvid
+             GROUP BY a.regkood, a.nimetus
          ),
               qryEriTM AS (
                   SELECT sum(summa) AS summa, asutusid
@@ -127,10 +127,10 @@ FROM (
                      ELSE qry.isik END) :: VARCHAR(253),
                 qry.tululiik,
                 qry.liik,
-                COALESCE(qry.minsots, 0) :: NUMERIC(14, 2)       AS minsots,
+                max(COALESCE(qry.minsots, 0) :: NUMERIC(14, 2))       AS minsots,
                 qry.sm_arv,
                 qry.tk_arv,
-                COALESCE(qry.minpalk, 0) :: NUMERIC(14, 2)       AS minpalk,
+                max(COALESCE(qry.minpalk, 0) :: NUMERIC(14, 2))       AS minpalk,
                 sum(qry.summa)                                   AS summa,
                 sum(qry.puhkused)                                AS puhkused,
                 sum(qry.haigused)                                AS haigused,
@@ -188,7 +188,6 @@ FROM (
                              LIMIT 1) * pc.sm / 100)                                       AS minsots,
                          pc.minpalk,
                          a.id,
-                         t.rekvId,
                          COALESCE(t.lopp, '2099-12-31' :: DATE)                            AS lopp,
                          COALESCE(qryMinSots.arv_min_sots, 0)                              AS arv_min_sots,
                          COALESCE(qryMinSots.min_sots_alus, 0)                             AS min_sots_alus,
@@ -199,10 +198,10 @@ FROM (
                            INNER JOIN libs.asutus a ON a.id = t.parentid
                            INNER JOIN palk.palk_oper po ON po.lepingid = t.id
                            INNER JOIN com_palklib pl ON pl.id = po.libId
-                           LEFT OUTER JOIN palk.palk_kaart pk ON pk.lepingId = t.id AND pk.libid = po.libid
-                           INNER JOIN ou.rekv ON rekv.id = po.rekvid
+--                           LEFT OUTER JOIN palk.palk_kaart pk ON pk.lepingId = t.id AND pk.libid = po.libid
+--                           INNER JOIN ou.rekv ON rekv.id = po.rekvid
                            LEFT OUTER JOIN libs.LIBRARY l ON l.kood = po.tululiik AND l.library = 'MAKSUKOOD'
-                           LEFT OUTER JOIN palk.palk_config pc ON pc.rekvid = rekv.id
+                           LEFT OUTER JOIN palk.palk_config pc ON pc.rekvid = t.rekvid
                            LEFT OUTER JOIN (SELECT po.lepingid,
                                                    po.rekvid,
                                                    po.summa    AS arv_min_sots,
@@ -211,25 +210,25 @@ FROM (
                                                      INNER JOIN com_palklib pl ON pl.id = po.libid AND pl.liik = 5 AND po.sotsmaks <> 0
                                             WHERE po.kpv >= l_kpv1
                                               AND po.kpv <= l_kpv2
-                  ) qryMinSots ON qryMinSots.lepingid = t.id AND qryMinSots.rekvid = rekv.id
+                  ) qryMinSots ON qryMinSots.lepingid = t.id AND qryMinSots.rekvid = t.rekvid
 
                   WHERE po.kpv >= l_kpv1
                     AND po.kpv <= l_kpv2
                     AND period IS NULL
                     AND pl.liik = 1
                     AND t.resident = 1
-                    AND rekv.id = (CASE
+                    AND t.rekvid = (CASE
                                        WHEN l_kond IS NOT NULL
                                            THEN l_rekvid
-                                       ELSE rekv.id END)
-                    AND rekv.Id IN (SELECT rekv_id
+                                       ELSE t.rekvid END)
+                    AND t.rekvId IN (SELECT rekv_id
                                     FROM get_asutuse_struktuur(l_rekvid))
               ) qry
                   FULL OUTER JOIN qryKoormus ON qryKoormus.isikukood = qry.isikukood
                   FULL OUTER JOIN qryEriTm ON qryEriTm.asutusid = qry.Id
                   FULL OUTER JOIN qryEriSm ON qryEriSm.asutusid = qry.Id
          GROUP BY qry.id, qry.isikukood, qryKoormus.isikukood, qry.isik, qryKoormus.isik,
-                  tululiik, liik, riik, period, minsots, sm_arv, tk_arv, minpalk
+                  tululiik, liik, riik, period,  sm_arv, tk_arv --, minsots, minpalk
      ) qry
 $BODY$
     LANGUAGE SQL

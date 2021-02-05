@@ -19,7 +19,8 @@ SELECT sum(qry.alg_saldo)     AS alg_saldo,
        sum(qry.kreedit)       AS kreedit,
        qry.konto::VARCHAR(20) AS konto,
        qry.asutus_id          AS asutus_id,
-       qry.rekv_id            AS rekv_id
+--       qry.rekv_id            AS rekv_id
+       l_rekvid               AS rekv_id
 FROM (
          SELECT D.rekvid                     AS rekv_id,
                 j.asutusid                   AS asutus_id,
@@ -31,6 +32,7 @@ FROM (
                   INNER JOIN docs.journal j ON j.parentid = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
          WHERE j.kpv < l_kpv1
+           AND d.status <> 3
            AND j.asutusid IS NOT NULL
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
            AND (empty(l_konto) OR j1.deebet LIKE ltrim(rtrim(l_konto)) || '%')
@@ -50,6 +52,7 @@ FROM (
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
          WHERE j.kpv < l_kpv1
+           AND d.status <> 3
            AND j.asutusid IS NOT NULL
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
            AND (empty(l_konto) OR j1.kreedit LIKE ltrim(rtrim(l_konto)) || '%')
@@ -70,6 +73,7 @@ FROM (
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
+           AND d.status <> 3
            AND j.asutusid IS NOT NULL
            AND (empty(l_konto) OR j1.deebet LIKE ltrim(rtrim(l_konto)) || '%')
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
@@ -90,6 +94,7 @@ FROM (
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
+           AND d.status <> 3
            AND j.asutusid IS NOT NULL
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
            AND (empty(l_konto) OR j1.kreedit LIKE ltrim(rtrim(l_konto)) || '%')
@@ -97,7 +102,7 @@ FROM (
                             FROM get_asutuse_struktuur(l_rekvid))
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
      ) qry
-GROUP BY konto, rekv_id, asutus_id;
+GROUP BY konto, asutus_id;
 $BODY$
     LANGUAGE SQL
     VOLATILE

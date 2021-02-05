@@ -1,4 +1,5 @@
 DROP VIEW IF EXISTS palk.cur_palk_jaak;
+DROP VIEW IF EXISTS palk.cur_palk_jaak_;
 
 CREATE VIEW palk.cur_palk_jaak
   AS
