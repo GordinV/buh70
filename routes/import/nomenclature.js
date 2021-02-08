@@ -61,7 +61,9 @@ const readCSV = async (csvContent) => {
                     artikkel: row[10],
                     inf3: row[11],
                     tunnus: row[12],
-                    proj: row[13]
+                    proj: row[13],
+                    luno: row[14]
+
                 });
             }
 

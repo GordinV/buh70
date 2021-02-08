@@ -39,7 +39,7 @@ BEGIN
             FROM json_to_record(
                          json_object) AS x (kood TEXT, nimetus TEXT, dok TEXT, maksumaar TEXT, hind NUMERIC, uhik TEXT,
                                             koolituse_liik TEXT, konto TEXT, tegev TEXT, allikas TEXT, artikkel TEXT,
-                                            inf3 TEXT, tunnus TEXT, proj TEXT);
+                                            inf3 TEXT, tunnus TEXT, proj TEXT, luno TEXT);
 
             -- проверяем уникальность записи по pank_id
             l_nom_id = (SELECT n.id
@@ -66,7 +66,8 @@ BEGIN
                        json_record.artikkel                                                        AS artikkel,
                        CASE WHEN upper(json_record.inf3) = 'YES' THEN TRUE ELSE FALSE END::BOOLEAN AS kas_inf3,
                        json_record.tunnus                                                          AS tunnus,
-                       json_record.proj                                                            AS proj
+                       json_record.proj                                                            AS proj,
+                       json_record.luno                                                            AS luno
                        INTO v_nom;
 
                 SELECT row_to_json(row) INTO json_save_params

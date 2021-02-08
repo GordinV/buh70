@@ -43,12 +43,13 @@ module.exports = {
                 let laekumised_kokku = 0;
                 let tagastused_kokku = 0;
                 let row_id = 0;
+                let groupedData = {};
                 data.forEach(row => {
-                    alg_saldo_kokku = alg_saldo_kokku + row.alg_saldo;
-                    arvestatud_kokku = arvestatud_kokku + row.arvestatud;
-                    soodustus_kokku = soodustus_kokku + row.soodustus;
-                    laekumised_kokku = laekumised_kokku + row.laekumised;
-                    tagastused_kokku = tagastused_kokku + row.tagastused;
+                    alg_saldo_kokku = Number(alg_saldo_kokku) + Number(row.alg_saldo);
+                    arvestatud_kokku = Number(arvestatud_kokku) + Number(row.arvestatud);
+                    soodustus_kokku = Number(soodustus_kokku) + Number(row.soodustus);
+                    laekumised_kokku = Number(laekumised_kokku) + Number(row.laekumised);
+                    tagastused_kokku = Number(tagastused_kokku) + Number(row.tagastused);
                 });
 
                 return data.map(row => {

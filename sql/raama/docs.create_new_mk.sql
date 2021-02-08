@@ -138,7 +138,7 @@ BEGIN
                      WHERE kassa = 1
                        AND parentid = l_rekvId
                        AND aa.arve::TEXT = l_asutus_aa::TEXT
-                     ORDER BY default_
+                     ORDER BY default_ desc
                      LIMIT 1);
 
     END IF;
@@ -148,7 +148,7 @@ BEGIN
                                                  FROM ou.aa
                                                  WHERE kassa = 1
                                                    AND parentid = l_rekvId
-                                                 ORDER BY default_
+                                                 ORDER BY default_ desc
                                                  LIMIT 1)
                     ELSE l_pank_id END;
 

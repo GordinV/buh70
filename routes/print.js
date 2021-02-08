@@ -76,7 +76,7 @@ exports.get = async (req, res) => {
             data = getGroupedData(data,templateObject.group);
         }
 
-
+        console.log('print data', JSON.stringify(data));
         // вернуть отчет
         res.render(template, {title: 'Tunnused', data: data, user: user, filter: filterData});
 

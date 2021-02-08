@@ -89,7 +89,7 @@ BEGIN
         WHERE dokprop.id = v_arv.doklausid
         LIMIT 1;
 
-        v_dokprop.kbmkonto = CASE WHEN v_dokprop.kbmkonto IS NULL OR v_dokprop.kbmkonto = '' THEN v_dokprop.konto END;
+--        v_dokprop.kbmkonto = CASE WHEN v_dokprop.kbmkonto IS NULL OR v_dokprop.kbmkonto = '' THEN v_dokprop.konto END;
 
         IF NOT Found OR v_dokprop.registr = 0
         THEN
