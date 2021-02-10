@@ -26,6 +26,7 @@ DECLARE
     l_jaak       NUMERIC = 0;
     l_dok        TEXT;
     v_arv        RECORD;
+    l_asutuse_tp TEXT    = '800599';
 BEGIN
 
     SELECT d.docs_ids,
@@ -82,7 +83,7 @@ BEGIN
             ,
          jsonb_to_record(dokprop.details) AS details(konto TEXT)
     WHERE dokprop.id = v_vmk.doklausid
-    LIMIT 1;
+        LIMIT 1;
 
 
     IF NOT Found OR v_dokprop.registr = 0
@@ -129,13 +130,13 @@ BEGIN
         SELECT k1.*,
                'EUR' :: VARCHAR AS valuuta,
                1 :: NUMERIC     AS kuurs,
-               a.tp
+               CASE WHEN k1.tp IS NULL OR empty(k1.tp) THEN coalesce(a.tp, '800599') ELSE k1.tp END as a_tp
         FROM docs.mk1 k1
                  INNER JOIN libs.asutus a ON a.id = k1.asutusid
         WHERE k1.parentid = v_vmk.Id
         LOOP
             l_jaak = v_vmk1.summa;
-            SELECT coalesce(v_vmk1.journalid, 0)         AS id,
+            SELECT coalesce(v_vmk1.journalid, 0)        AS id,
                    'JOURNAL'                            AS doc_type_id,
                    coalesce(v_vmk.maksepaev, v_vmk.kpv) AS kpv,
                    lcSelg                               AS selg,
@@ -162,7 +163,7 @@ BEGIN
                        'EUR'                         AS valuuta,
                        1                             AS kuurs,
                        ltrim(rtrim(v_vmk1.konto))    AS deebet,
-                       coalesce(v_vmk1.tp, '800599') AS lisa_d,
+                       coalesce(v_vmk1.a_tp, '800599') AS lisa_d,
                        ltrim(rtrim(v_vmk.konto))     AS kreedit,
                        coalesce(v_vmk.tp, '800401')  AS lisa_k,
                        coalesce(v_vmk1.tunnus, '')   AS tunnus,
@@ -183,7 +184,7 @@ BEGIN
                            'EUR'                                                     AS valuuta,
                            1                                                         AS kuurs,
                            ltrim(rtrim(v_vmk1.konto))                                AS deebet,
-                           coalesce(v_vmk1.tp, '800599')                             AS lisa_d,
+                           coalesce(v_vmk1.a_tp, '800599')                             AS lisa_d,
                            ltrim(rtrim(v_vmk.konto))                                 AS kreedit,
                            coalesce(v_vmk.tp, '800401')                              AS lisa_k,
                            coalesce(a1.tunnus, '')                                   AS tunnus,
@@ -196,7 +197,7 @@ BEGIN
                     FROM docs.arv1 a1
                              INNER JOIN docs.arv a ON a.id = a1.parentid
                     WHERE a.parentid = v_vmk.arvid
-                    ORDER BY a1.id
+                        ORDER BY a1.id
                     LOOP
                         l_jaak = l_jaak - v_journal1.summa;
                         json_mk1 = coalesce(json_mk1, '[]'::JSONB) || to_jsonb(v_journal1);
@@ -212,7 +213,7 @@ BEGIN
                            'EUR'                         AS valuuta,
                            1                             AS kuurs,
                            v_vmk1.konto                  AS deebet,
-                           coalesce(v_vmk1.tp, '800599') AS lisa_d,
+                           coalesce(v_vmk1.a_tp, '800599') AS lisa_d,
                            v_vmk.konto                   AS kreedit,
                            coalesce(v_vmk.tp, '800401')  AS lisa_k,
                            coalesce(v_vmk1.tunnus, '')   AS tunnus,

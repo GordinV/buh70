@@ -50,6 +50,7 @@ const readCSV = async (csvContent) => {
                     nimetus: row[2],
                     grupi_liik: row[3],
                     koolituse_tyyp: row[4],
+                    tyyp: row[4],
                     all_yksused_1: row[5],
                     all_yksused_2: row[6],
                     all_yksused_3: row[7],
