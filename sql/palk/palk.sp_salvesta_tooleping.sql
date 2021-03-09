@@ -81,7 +81,7 @@ BEGIN
                 doc_muud) RETURNING id
                    INTO leping_id;
 
-        raise notice 'saved %', leping_id;
+        RAISE NOTICE 'saved %', leping_id;
 
     ELSE
         -- history
@@ -120,6 +120,13 @@ BEGIN
             INTO leping_id;
 
     END IF;
+
+    -- поставить статус - работник
+    UPDATE libs.asutus
+    SET properties= properties::JSONB || '{
+      "is_tootaja": true
+    }'::JSONB
+    WHERE id = doc_parentid;
 
     RETURN leping_id;
 

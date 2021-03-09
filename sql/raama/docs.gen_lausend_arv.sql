@@ -87,7 +87,7 @@ BEGIN
                  INNER JOIN libs.library library ON library.id = dokprop.parentid
            , jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
         WHERE dokprop.id = v_arv.doklausid
-        LIMIT 1;
+            LIMIT 1;
 
 --        v_dokprop.kbmkonto = CASE WHEN v_dokprop.kbmkonto IS NULL OR v_dokprop.kbmkonto = '' THEN v_dokprop.konto END;
 
@@ -140,7 +140,7 @@ BEGIN
                lcSelg                          AS selg,
                v_arv.muud,
                v_arv.Asutusid,
-               'Arve nr' || v_arv.number::TEXT AS dok
+               'Arve nr. ' || v_arv.number::TEXT AS dok
                INTO v_journal;
 
         l_json = row_to_json(v_journal);
@@ -210,9 +210,9 @@ BEGIN
                                coalesce(v_arv1.valuuta, 'EUR')        AS valuuta,
                                coalesce(v_arv1.kuurs, 1)              AS kuurs,
                                coalesce(v_dokprop.konto, '601000')    AS deebet,
-                               coalesce(v_arv.asutus_tp, '800599')    AS lisa_d,
+                               '014001'                               AS lisa_d,
                                coalesce(v_dokprop.kbmkonto, '203010') AS kreedit,
-                               coalesce(v_arv.asutus_tp, '014001')    AS lisa_k,
+                               '014001'                               AS lisa_k,
                                coalesce(v_arv1.tunnus, '')            AS tunnus,
                                coalesce(v_arv1.proj, '')              AS proj,
                                coalesce(v_arv1.kood1, '')             AS kood1,

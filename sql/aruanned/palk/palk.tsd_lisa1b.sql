@@ -155,7 +155,7 @@ GRANT EXECUTE ON FUNCTION palk.tsd_lisa_1b( DATE, DATE, INTEGER, INTEGER ) TO db
 
 SELECT *
 FROM (
-         SELECT *
+         SELECT sum(c_1410)
          FROM palk.tsd_lisa_1b('2021-01-01', '2021-01-31', 106, 0 :: INTEGER)
      ) qry
 WHERE c_1300 = '46111203717'

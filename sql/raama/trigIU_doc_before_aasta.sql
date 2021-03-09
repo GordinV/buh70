@@ -11,12 +11,15 @@ $$
 DECLARE
 
 BEGIN
-
-    -- 0 = открыт
-    -- 1 закрыт
-    IF NOT docs.is_period_opened(new.id)
+    -- проверка на тип документа
+    IF NOT exists(SELECT doc_type_id FROM docs.doc WHERE id = new.id AND doc_type_id IN (46, 53, 39))
     THEN
-        RAISE EXCEPTION 'Period on suletatud';
+        -- 0 = открыт
+        -- 1 закрыт
+        IF NOT docs.is_period_opened(new.id)
+        THEN
+            RAISE EXCEPTION 'Period on suletatud';
+        END IF;
     END IF;
     RETURN new;
 END;

@@ -104,7 +104,7 @@ BEGIN
                INTO v_dekl
         FROM rekl.toiming t
         WHERE t.parentid IN (SELECT unnest(v_doc.docs_ids :: INTEGER[]))
-          AND t.tyyp IN ('DEKL', 'INTRESS')
+          AND t.tyyp IN ('DEKL', 'INTRESS','ALGSALDO')
           AND t.staatus = 'closed'
         LIMIT 1;
 

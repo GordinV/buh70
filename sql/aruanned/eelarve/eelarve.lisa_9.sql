@@ -1,4 +1,5 @@
 DROP FUNCTION IF EXISTS eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS eelarve.lisa_9_(DATE, DATE, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION eelarve.lisa_9(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER)
     RETURNS TABLE (
@@ -10,7 +11,8 @@ CREATE OR REPLACE FUNCTION eelarve.lisa_9(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INT
         kpv            DATE,
         summa          NUMERIC(14, 2),
         artikkel       VARCHAR(20),
-        tegev          VARCHAR(20)
+        tegev          VARCHAR(20),
+        docs_ids INTEGER[]
     ) AS
 $BODY$
 
@@ -22,7 +24,8 @@ SELECT rekv_id,
        kpv,
        sum(summa) AS summa,
        artikkel,
-       tegev
+       tegev,
+       array_agg(id) as docs_ids
 FROM (
          SELECT j.rekvid::INTEGER              AS rekv_id,
                 r.regkood::VARCHAR(20)         AS maksja_regkood,
@@ -38,7 +41,8 @@ FROM (
                         THEN '20'::BPCHAR
                     ELSE left(j.kood5, 2)
                     END::CHARACTER VARYING(20) AS artikkel,
-                j.kood1::VARCHAR(20)           AS tegev
+                j.kood1::VARCHAR(20)           AS tegev,
+                J.id
 
          FROM cur_journal j
                   INNER JOIN ou.rekv r ON r.id = j.rekvid
@@ -53,7 +57,7 @@ FROM (
            AND j.kpv <= l_kpv2
            AND (j.kreedit LIKE '100%'
                     AND left(j.kood5, 2) IN ('15', '20', '25', '41', '45', '50', '55', '65')
-                    AND left(j.lisa_d, 6) NOT IN ('185101', '800699', '014001', '185101')
+                    AND left(j.lisa_d, 6) NOT IN ('185101', '800699', '014001')
              OR (j.deebet::TEXT LIKE '208120%'::TEXT OR j.deebet::TEXT LIKE '20%'::TEXT) AND
                 j.kreedit::TEXT LIKE '100100%'::TEXT
                     AND j.kood5::TEXT = '2586'::TEXT AND j.kood3::TEXT = '06'::TEXT)
@@ -73,9 +77,17 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO dbpeak
 GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO eelaktsepterja;
 GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO dbvaatleja;
 /*
-selec
 
-SELECT *
-FROM eelarve.lisa_9('2020-06-01', '2020-12-31', 63,  1)
+select * from (
+                    SELECT *
+                    FROM eelarve.lisa_9('2021-01-01', '2021-01-31', 63,  1)
+                ) qry
+  where  saaja_nimi ilike  '%raud%'
+
+
+select * from cur_journal
+where id in (2527065,2527065)
+
+select * from libs.asutus where regkood = '10281796'
 
 */

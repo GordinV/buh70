@@ -17,7 +17,7 @@ DECLARE
                                             FROM libs.library
                                             WHERE kood = doc_type_kood
                                               AND library = 'DOK'
-                                            LIMIT 1);
+                                                LIMIT 1);
 
     doc_details           JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     doc_number            TEXT           = doc_data ->> 'number';
@@ -270,6 +270,7 @@ BEGIN
                     konto      = coalesce(json_record.konto, ''),
                     tunnus     = coalesce(json_record.tunnus, ''),
                     tp         = coalesce(json_record.tp, ''),
+                    proj       = coalesce(json_record.proj, ''),
                     kbm_maar   = coalesce(json_record.km, ''),
                     muud       = json_record.muud,
                     soodus     = CASE
@@ -410,7 +411,7 @@ BEGIN
                                                     WHERE parentid = doc_id)))
                                    AND a.properties ->> 'tyyp' IS NOT NULL
                                    AND a.properties ->> 'tyyp' = 'ETTEMAKS'
-                                 LIMIT 1
+                                     LIMIT 1
         );
 
     END IF;

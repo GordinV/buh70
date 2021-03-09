@@ -84,7 +84,7 @@ BEGIN
 
                 INSERT INTO eelarve.saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, kuu,
                                                  rekvid, omatp,
-                                                 tyyp)
+                                                 tyyp, docs_ids)
                 SELECT coalesce(l.nimetus, ''),
                        qry.deebet,
                        qry.kreedit,
@@ -98,7 +98,8 @@ BEGIN
                        month(l_kpv),
                        v_rekv.id,
                        l_asutuse_tp,
-                       0
+                       0,
+                       qry.docs_ids
                 FROM eelarve.saldoandmik_aruanne(l_kpv2, v_rekv.id, NULL) qry
                          LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(l.kood)) = ltrim(rtrim(qry.konto))
                 WHERE qry.rekv_id = v_rekv.id;
@@ -142,10 +143,26 @@ GRANT EXECUTE ON FUNCTION eelarve.sp_koosta_saldoandmik(INTEGER, JSON) TO dbpeak
 
 
 /*
-select error_code, result, error_message from eelarve.sp_koosta_saldoandmik(2477,'{"kpv":"2019-12-31","tyyp":1,"kond":1, "rekvid":63}'::json)
+select error_code, result, error_message from eelarve.sp_koosta_saldoandmik(2477,'{"kpv":"2021-01-31","tyyp":1,"kond":1, "rekvid":63}'::json)
 
 select * from eelarve.saldoandmik where rekvid = 63 and kuu = 9 and aasta = 2018
 
 select * from ou.userid where rekvid = 63
+
+select * from ou.rekv where id = 131
+
+
+insert into ou.aa (parentid, arve, nimetus, default_, kassa, pank, tp)
+select 131, 'TP', 'ARHIIV', 1, 2, 1 ,tp from ou.aa where arve = 'TP' AND  parentid = 3
+
+update ou.aa set kassa = 2 where id = 34
+
+                SELECT tp
+                FROM ou.aa
+                WHERE parentid = 131
+                  AND kassa = 2
+                LIMIT 1;
+
+
 
 */

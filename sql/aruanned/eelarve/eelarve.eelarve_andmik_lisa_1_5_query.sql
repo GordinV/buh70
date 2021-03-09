@@ -552,8 +552,7 @@ where artikkel = '352'
 
 SELECT *
 FROM tmp_andmik
-WHERE rekvid = 130
-and artikkel like '382%'
+WHERE tegev like '01800%'
   AND tyyp = 2;
 */
 --

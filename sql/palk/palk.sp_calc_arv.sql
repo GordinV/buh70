@@ -187,13 +187,17 @@ BEGIN
 
             SELECT row_to_json(row) INTO l_params
             FROM (SELECT l_kpv           AS kpv,
+                         month(l_kpv)    AS kuu,
+                         year(l_kpv)     AS aasta,
                          l_lepingid      AS lepingid,
+                         TRUE            AS kas_tahtpaevad,
                          l_toopaev       AS toopaev,
                          day(l_kuu_alg)  AS paev,
                          day(l_kuu_lopp) AS lopp) row;
 
 
             l_hours = palk.get_work_hours(l_params :: JSONB);
+            raise notice 'l_hours %', l_hours;
 
             selg = coalesce(selg, '') + 'Kokku tunnid kuues,:' + ltrim(rtrim(round(l_hours, 2) :: VARCHAR)) + ltEnter;
 
@@ -305,7 +309,7 @@ BEGIN
                    sum(po.tulubaas)
                        FILTER (WHERE po.tululiik :: TEXT = l_tululiik :: TEXT) AS kasutatud_mvt,
                    sum(po.summa)                                               AS tulud_kokku,
-                   array_agg( po.id)
+                   array_agg(po.id)
                    INTO l_isiku_mvt, l_kasutatud_mvt, l_tulud_kokku, doc_ids
             FROM palk.cur_palkoper po
                      INNER JOIN palk.com_toolepingud t ON t.id = po.lepingId
@@ -339,7 +343,8 @@ BEGIN
         IF (l_tulud_kokku < l_min_palk)
         THEN
             mvt = coalesce(l_tulud_kokku, 0) - coalesce(pm, 0) - coalesce(tki, 0);
-            if mvt > l_mvt_kokku THEN
+            IF mvt > l_mvt_kokku
+            THEN
                 mvt = l_mvt_kokku;
             END IF;
         END IF;

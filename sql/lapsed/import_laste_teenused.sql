@@ -49,8 +49,8 @@ BEGIN
             FROM lapsed.laps
             WHERE isikukood = json_record.isikukood
 --              AND staatus <> 3
-            ORDER BY id
-            LIMIT 1;
+                ORDER BY id
+                LIMIT 1;
 
             -- ищем услугу
             SELECT id INTO l_nom_id
@@ -58,8 +58,8 @@ BEGIN
             WHERE kood = json_record.kood
               AND rekvid = user_rekvid
               AND n.status <> 3
-            ORDER BY id
-            LIMIT 1;
+                ORDER BY id
+                LIMIT 1;
 
             IF l_laps_id IS NOT NULL AND l_nom_id IS NOT NULL
             THEN
@@ -77,6 +77,7 @@ BEGIN
                               FROM (SELECT coalesce(l_id, 0)                                 AS id,
                                            l_laps_id                                         AS parentid,
                                            l_nom_id                                          AS nomid,
+                                           json_record.tunnus                                AS tunnus,
                                            json_record.yksus                                 AS yksus,
                                            json_record.all_yksus                             AS all_yksus,
                                            CASE

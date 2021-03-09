@@ -1,9 +1,10 @@
 DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, INTEGER, DATE, DATE, INTEGER);
 DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, DATE, DATE, INTEGER);
 DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, DATE, DATE, INTEGER, TEXT);
+DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.kaibeasutusandmik(l_konto TEXT, l_asutus INTEGER, l_kpv1 DATE, l_kpv2 DATE,
-                                                  l_rekvid INTEGER, l_tunnus TEXT DEFAULT '%')
+                                                  l_rekvid INTEGER, l_tunnus TEXT DEFAULT '%', l_kond INTEGER DEFAULT 0)
     RETURNS TABLE (
         alg_saldo NUMERIC(14, 2),
         deebet    NUMERIC(14, 2),
@@ -38,6 +39,7 @@ FROM (
            AND (empty(l_konto) OR j1.deebet LIKE ltrim(rtrim(l_konto)) || '%')
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
+           AND (j.rekvid = l_rekvid OR l_kond = 1)
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
 
          UNION ALL
@@ -58,6 +60,7 @@ FROM (
            AND (empty(l_konto) OR j1.kreedit LIKE ltrim(rtrim(l_konto)) || '%')
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
+           AND (j.rekvid = l_rekvid OR l_kond = 1)
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
 
          UNION ALL
@@ -79,6 +82,7 @@ FROM (
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
+           AND (j.rekvid = l_rekvid OR l_kond = 1)
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
 
          UNION ALL
@@ -100,6 +104,7 @@ FROM (
            AND (empty(l_konto) OR j1.kreedit LIKE ltrim(rtrim(l_konto)) || '%')
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
+           AND (j.rekvid = l_rekvid OR l_kond = 1)
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
      ) qry
 GROUP BY konto, asutus_id;
@@ -109,9 +114,9 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT ) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT ) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT ) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER ) TO dbkasutaja;
 
 
 /*

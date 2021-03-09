@@ -115,9 +115,10 @@ BEGIN
     FROM libs.library l
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_db::TEXT
-        LIMIT 1;
+      AND status <> 3
+    LIMIT 1;
 
-    IF v_konto_d.valid IS NOT NULL AND len(v_konto_d.valid::TEXT) = 8 and not empty(v_konto_d.valid::TEXT)
+    IF v_konto_d.valid IS NOT NULL AND len(v_konto_d.valid::TEXT) = 8 AND NOT empty(v_konto_d.valid::TEXT)
     THEN
         ldKpv = make_date(val(left(v_konto_d.valid::TEXT, 4)), val(substr(v_konto_d.valid::TEXT, 5, 2)),
                           val(substr(v_konto_d.valid::TEXT, 7, 2)));
@@ -144,7 +145,8 @@ BEGIN
     FROM libs.library l
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_kr::TEXT
-        LIMIT 1;
+      AND status <> 3
+    LIMIT 1;
 
     IF v_konto_k.valid IS NOT NULL AND NOT empty(v_konto_k.valid) AND len(v_konto_k.valid::TEXT) = 8
     THEN
@@ -157,6 +159,8 @@ BEGIN
     END IF;
 
     -- deebet
+
+
     IF v_konto_d.kood IS NULL OR empty(l_db) OR len(l_db) < 6
     THEN
         l_msg = l_msg + ' Deebet konto: puudub või vale konto (' || l_db || ')' ;
@@ -217,6 +221,7 @@ BEGIN
             lnAllikas = 0;
         END IF;
     END IF;
+    raise notice 'lnTPK %', lnTPK;
 
     IF left(l_db, 5) = '20200'
     THEN
@@ -287,16 +292,13 @@ BEGIN
 
 
     -- Kreedit
+        raise notice 'kreedit %',  v_konto_k;
 
     IF v_konto_k.kood IS NULL OR empty(l_kr) OR len(l_kr) < 6
     THEN
         l_msg = l_msg + ' Kreedit konto: puudub või vale konto ';
     END IF;
 
-    IF v_konto_k.tp::TEXT = '1' AND empty(l_tp_k)
-    THEN
-        lnTPK = 1;
-    END IF;
 
     IF v_konto_k.tegev IS NOT NULL AND v_konto_k.tegev::TEXT = '1' AND (empty(l_tt) OR empty(l_eelarve)) AND lnTT = 0
     THEN
@@ -339,11 +341,10 @@ BEGIN
     END IF;
 
 
-    IF NOT empty(v_konto_k.muud) AND v_konto_d.muud = '*'
+    IF NOT empty(v_konto_k.muud) AND v_konto_k.muud = '*'
     THEN
         IF l_rahavoog <> '01'
         THEN
-            lnTPD = 0;
             lnTPK = 0;
             lnTT = 0;
             lnEelarve = 0;
@@ -510,7 +511,7 @@ BEGIN
     WHERE l.library = 'ALLIKAD'
       AND l.kood::TEXT = l_allikas::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
     THEN
@@ -528,7 +529,7 @@ BEGIN
     WHERE l.library = 'TULUDEALLIKAD'
       AND l.kood::TEXT = l_eelarve::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
     THEN
@@ -546,7 +547,7 @@ BEGIN
     WHERE l.library = 'TEGEV'
       AND l.kood::TEXT = l_tt::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
     THEN
@@ -564,7 +565,7 @@ BEGIN
     WHERE l.library = 'RAHA'
       AND l.kood::TEXT = l_rahavoog::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
     THEN
@@ -593,11 +594,13 @@ GRANT EXECUTE ON FUNCTION docs.sp_lausendikontrol(params JSONB) TO dbpeakasutaja
 
 
 SELECT docs.sp_lausendikontrol('{
-  "db": "710010",
-  "tpd": "",
-  "kr": "155100",
+  "db": "601000",
+  "tpd": "014001",
+  "kr": "155910",
   "tpk": "",
-  "oma_tp": "18510101",
-  "allikas": "",
-  "rahavoog": ""
+  "oma_tp": "18510130",
+  "allikas": "LE-P",
+  "rahavoog": "15",
+  "eelarve": "155",
+  "tt": "09110 "
 }'::JSONB);

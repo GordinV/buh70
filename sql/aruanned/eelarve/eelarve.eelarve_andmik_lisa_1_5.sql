@@ -33,6 +33,8 @@ DECLARE
 
     l_3888          NUMERIC(16, 4) = 0;
     l_2580          NUMERIC(16, 4) = 0;
+    l_2580_kassa          NUMERIC(16, 4) = 0;
+
     l_9100          NUMERIC(16, 4) = 0;
     l_9100_periodis NUMERIC(16, 4) = 0;
     l_9101          NUMERIC(16, 4) = 0;
@@ -46,7 +48,11 @@ BEGIN
 
 
     l_2580 = get_saldo('MKD', '208', NULL, NULL) +
-             get_saldo('MKD', '258', NULL, NULL);
+             get_saldo('MKD', '258', NULL, NULL) ;
+
+    l_2580_kassa = l_2580 + get_saldo('MKD', '203620', NULL, NULL) +
+             get_saldo('MKD', '203630', NULL, NULL);
+
 
     l_9100 = -1 * get_saldo('MKD', '910090', NULL, NULL);
     l_9100_periodis = -1 * get_saldo('KD', '910090', NULL, NULL);
@@ -1100,32 +1106,19 @@ BEGIN
                          WHERE q.artikkel LIKE '1001.%'
                        AND tyyp = 1
                          UNION ALL
-                         SELECT '8.1'
-                         ,
-                         1 AS is_e
-                         ,
-                         $2 AS rekvid
-                         ,
-                         ''::VARCHAR(20) AS tegev
-                         ,
-                         ''::VARCHAR(20) AS allikas
-                         ,
-                         '2580'::VARCHAR(20) AS artikkel
-                         ,
-                         'Võlakohustused' AS nimetus
-                         ,
-                         l_2580 AS eelarve
-                         ,
-                         l_2580 AS eelarve_kassa
-                         ,
-                         0 AS eelarve_taps
-                         ,
-                         0 AS eelarve_kassa_taps
-                         ,
-                         l_2580 AS tegelik
-                         ,
-                         l_2580 AS kassa
-                         ,
+                         SELECT '8.1' ,
+                         1 AS is_e,
+                         $2 AS rekvid,
+                         ''::VARCHAR(20) AS tegev,
+                         ''::VARCHAR(20) AS allikas ,
+                         '2580'::VARCHAR(20) AS artikkel,
+                         'Võlakohustused' AS nimetus,
+                         l_2580 AS eelarve,
+                         l_2580_kassa AS eelarve_kassa,
+                         0 AS eelarve_taps,
+                         l_2580_kassa AS eelarve_kassa_taps ,
+                         l_2580 AS tegelik,
+                         l_2580_kassa AS kassa,
                          l_2580 AS saldoandmik
 
 -- MKD208+MKD258
@@ -1351,8 +1344,8 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                           get_saldo('DK', '6', NULL, qry.tegev) +
                           get_saldo('DK', '15', '01', qry.tegev) -
                           get_saldo(
-                                 'DK',
-                                 '610', NULL, qry.tegev) -
+                                  'DK',
+                                  '610', NULL, qry.tegev) -
                           get_saldo(
                                   'DK',
                                   '611', NULL, qry.tegev) -
@@ -1391,16 +1384,10 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                             '613',
                             '655'
                                )
-                       AND qry
-                               .
-                               tegev
-                         NOT
-                             IN
-                           (
-                            '07230',
-                            '07240',
-                            '07320'
-                               )
+                       AND qry.tegev NOT IN (
+                                             '07230',
+                                             '07240',
+                                             '07320')
                          GROUP BY qry.tegev
                          ,
                          l.nimetus
@@ -1546,7 +1533,7 @@ SELECT *
 FROM (
          SELECT *
          FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2021,01, 31),63, 1) qry
-         where tegev like  '08102%'
+         where tegev like  '01800%'
 --                AND artikkel NOT in ('3502','352')
      ) qry
 --test

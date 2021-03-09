@@ -51,8 +51,8 @@ BEGIN
           AND kuu = month(l_kpv)
           AND left(omatp, 4) = left(l_oma_tp, 4)
         LOOP
-            RAISE NOTICE 'v_omatp %', v_omatp.omatp;
-            INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv, rekvid)
+            RAISE NOTICE 'v_omatp %, l_Oma_tp %', v_omatp.omatp, l_Oma_tp;
+            INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv, rekvid, docs_ids)
             SELECT coalesce(s.nimetus, ''),
                    CASE
                        WHEN kontod.tyyp IS NULL OR kontod.tyyp IN (1, 3)
@@ -69,7 +69,8 @@ BEGIN
                    s.rahavoo,
                    l_timestamp,
                    date(),
-                   l_rekvid
+                   l_rekvid,
+                   s.docs_ids
             FROM eelarve.saldoandmik s
                      LEFT OUTER JOIN com_kontoplaan kontod ON (ltrim(rtrim(kontod.kood)) = ltrim(rtrim(s.konto)))
             WHERE s.aasta = year(l_kpv)
@@ -84,13 +85,14 @@ BEGIN
                   AND ltrim(rtrim(omatp)) = ltrim(rtrim(v_omatp.omatp))
                   AND ltrim(rtrim(tp)) <> ltrim(rtrim(omatp))
                   AND left(ltrim(rtrim(tp)), 4) = left(ltrim(rtrim(l_Oma_tp)), 4)
+                  AND rekvid <> 999
                 LOOP
 
                     -- kirjutame miinus summad
                     -- deebet
 
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
-                                                 rekvid)
+                                                 rekvid, docs_ids)
                     SELECT coalesce(nimetus, ''),
                            kr,
                            db,
@@ -101,7 +103,8 @@ BEGIN
                            rahavoo,
                            l_timestamp,
                            date(),
-                           l_rekvid
+                           l_rekvid,
+                           docs_ids
                     FROM eelarve.saldoandmik
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
@@ -111,7 +114,7 @@ BEGIN
 
                     -- kreedit
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
-                                                 rekvid)
+                                                 rekvid, docs_ids)
                     SELECT coalesce(nimetus, ''),
                            kr,
                            db,
@@ -122,7 +125,8 @@ BEGIN
                            rahavoo,
                            l_timestamp,
                            date(),
-                           l_rekvId
+                           l_rekvId,
+                           docs_ids
                     FROM eelarve.saldoandmik
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
@@ -134,7 +138,7 @@ BEGIN
                     -- (võrreldava saldoandmik (kõik kontod algusega 4 kuni 6, mille esitaja kood on TP kood on aruande koostaja kood (deebet miinus kreedit,
                     --	välja arvatud kontod 601000 ja 601001, mida ei võeta üldse arvesse olenemata TP koodist)))
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
-                                                 rekvid)
+                                                 rekvid, docs_ids)
                     SELECT coalesce(nimetus, ''),
                            kr,
                            db,
@@ -145,7 +149,8 @@ BEGIN
                            rahavoo,
                            l_timestamp,
                            date(),
-                           l_rekvId
+                           l_rekvId,
+                           docs_ids
                     FROM eelarve.saldoandmik
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
@@ -157,7 +162,7 @@ BEGIN
                     --(esitaja saldoandmik sum (kõik kontod algusega 3, mille TP kood on võrreldava kood (kreedit miinus deebet)))
 
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
-                                                 rekvid)
+                                                 rekvid, docs_ids)
                     SELECT coalesce(nimetus, ''),
                            kr,
                            db,
@@ -168,7 +173,8 @@ BEGIN
                            rahavoo,
                            l_timestamp,
                            date(),
-                           l_rekvId
+                           l_rekvId,
+                           docs_ids
                     FROM eelarve.saldoandmik
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
@@ -177,9 +183,11 @@ BEGIN
                       AND ltrim(rtrim(tp)) = ltrim(rtrim(v_omatp.omatp))
                       AND left(konto, 1) = '3';
 
+
+                    raise notice '70 v_tp.tp %, v_omatp.OmaTp %', v_tp.tp , v_omatp.OmaTp;
                     --(esitaja saldoandmik sum (kõik kontod algusega 7, mille TP kood on võrreldava kood (deebet miinus kreedit)))
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
-                                                 rekvid)
+                                                 rekvid, docs_ids)
                     SELECT coalesce(nimetus, ''),
                            kr,
                            db,
@@ -190,7 +198,8 @@ BEGIN
                            rahavoo,
                            l_timestamp,
                            date(),
-                           l_rekvId
+                           l_rekvId,
+                           docs_ids
                     FROM eelarve.saldoandmik
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
@@ -200,7 +209,7 @@ BEGIN
 
                     --(võrreldava saldoandmik (kõik kontod algusega 7, mille TP kood on aruande koostaja kood (kreedit miinus deebet)))
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
-                                                 rekvid)
+                                                 rekvid, docs_ids)
                     SELECT coalesce(nimetus, ''),
                            kr,
                            db,
@@ -211,7 +220,8 @@ BEGIN
                            rahavoo,
                            l_timestamp,
                            date(),
-                           l_rekvId
+                           l_rekvId,
+                           docs_ids
                     FROM eelarve.saldoandmik
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
@@ -271,7 +281,8 @@ BEGIN
                     tegev,
                     tp,
                     allikas,
-                    rahavoo
+                    rahavoo,
+                    array_agg(docs_ids) as docs_ids
              FROM (
                       SELECT ltrim(rtrim(tmp_saldoandmik.nimetus))     AS nimetus,
                              CASE
@@ -286,7 +297,8 @@ BEGIN
                              ltrim(rtrim(tmp_saldoandmik.tegev))       AS tegev,
                              left(ltrim(rtrim(tmp_saldoandmik.tp)), 6) AS tp,
                              ltrim(rtrim(tmp_saldoandmik.allikas))     AS allikas,
-                             ltrim(rtrim(tmp_saldoandmik.rahavoo))     AS rahavoo
+                             ltrim(rtrim(tmp_saldoandmik.rahavoo))     AS rahavoo,
+                             coalesce(docs_ids,array[0]) as docs_ids
                       FROM tmp_saldoandmik
                                LEFT OUTER JOIN com_kontoplaan kontod
                                                ON (ltrim(rtrim(kontod.kood)) = ltrim(rtrim(tmp_saldoandmik.konto)))
@@ -319,8 +331,8 @@ GRANT EXECUTE ON FUNCTION eelarve.koosta_kond_saldoandmik(INTEGER, DATE) TO dbka
 
 
 /*
-select error_code, result, error_message from eelarve.koosta_kond_saldoandmik(2477,'2019-12-31')
+select error_code, result, error_message from eelarve.koosta_kond_saldoandmik(2477,'2021-01-31')
 */
 
 
-select * from ou.userid where rekvid = 63 and kasutaja = 'vlad'
+--select * from ou.userid where rekvid = 63 and kasutaja = 'vlad'

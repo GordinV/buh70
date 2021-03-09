@@ -40,12 +40,20 @@ BEGIN
               AND p.kuu = l_kuu
               AND p.aasta = l_aasta;
 
-            RETURN (coalesce(qrYtoograf.tuNd, 0) / coalesce(qrYtoograf.toOpaev, 8));
+            IF (qrYtoograf.toOpaev = 0)
+            THEN
+                l_result = 0;
+            ELSE
+                l_result = (coalesce(qrYtoograf.tuNd, 0) / coalesce(qrYtoograf.toOpaev, 8));
+
+            END IF;
+            RETURN l_result;
 
         END IF;
 
-        if l_rekvid is null THEN
-            l_rekvid = (select rekvid from palk.tooleping where id = l_lepingid);
+        IF l_rekvid IS NULL
+        THEN
+            l_rekvid = (SELECT rekvid FROM palk.tooleping WHERE id = l_lepingid);
         END IF;
 
     END IF;

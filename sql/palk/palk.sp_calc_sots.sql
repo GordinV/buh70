@@ -45,7 +45,7 @@ DECLARE
     l_min_sotsmaks_alus              NUMERIC(14, 4) = 0; -- основание для до расчет до мин. соц. налога
     l_lisa_sm                        NUMERIC(14, 4) = 0; -- до начисленные соц. налог
     l_1090_isik                      NUMERIC(14, 4) = 0; -- до начисленные соц. налог? итого по работнику
-    l_selg                           TEXT = '';
+    l_selg                           TEXT           = '';
 
 
 BEGIN
@@ -95,33 +95,11 @@ BEGIN
         THEN
             -- считает отсутствие на раб. месте
 
--- params
-            SELECT row_to_json(row) INTO l_params
-            FROM (SELECT month(l_kpv) AS kuu,
-                         year(l_kpv)  AS aasta,
-                         l_lepingid   AS lepingid) row;
-
-
-            l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
-
-
-            --parandame tööpäevad, kui töötaja töötas mitte täis kuu
-            l_too_paevad = CASE
-                               WHEN COALESCE(v_tooleping.lopp, l_last_paev) < l_last_paev
-                                   THEN v_tooleping.lopp
-                               ELSE l_last_paev END -
-                           CASE
-                               WHEN v_tooleping.algab > date(YEAR(l_kpv), MONTH(l_kpv), 1)
-                                   THEN v_tooleping.algab
-                               ELSE date(YEAR(l_kpv), MONTH(l_kpv), 1) END +
-                           1 - l_puudu_paevad;
-
-
             -- kontrollime enne arvestatud sotsmaks
 
             SELECT sum(po.summa) FILTER ( WHERE po.palk_liik :: TEXT = 'SOTSMAKS'),
                    sum(po.sotsmaks) FILTER ( WHERE po.palk_liik :: TEXT = 'SOTSMAKS'),
-                   sum(po.summa) FILTER ( WHERE po.palk_liik :: TEXT = 'ARVESTUSED' and po.is_sotsmaks AND
+                   sum(po.summa) FILTER ( WHERE po.palk_liik :: TEXT = 'ARVESTUSED' AND po.is_sotsmaks AND
                                                 right(rtrim(po.konto), 2) NOT IN ('21', '23', '24', '25'))
                    INTO l_enne_arvestatud_sotsmaks, l_enne_sotsmaks_min_palgast_alus, l_min_sotsmaks_alus
             FROM palk.cur_palkoper po
@@ -141,36 +119,70 @@ BEGIN
             l_enne_arvestatud_sotsmaks = coalesce(l_enne_arvestatud_sotsmaks, 0);
 
 
-        END IF;
-
-        -- считаем календарные дни
-        l_paevad_periodis =
-                palk.get_days_of_month_in_period(month(l_kpv), year(l_kpv), date(year(l_kpv), month(l_kpv), 01),
-                                                 l_kpv);
-
-        -- вычитаем отпуск в календарных днях
-        SELECT row_to_json(row) INTO l_params
-        FROM (SELECT month(l_kpv) AS kuu,
-                     year(l_kpv)  AS aasta,
-                     TRUE         AS kas_kalendripaevad,
-                     TRUE         AS puudumised,
-                     l_lepingid   AS lepingid) row;
+-- params
+            SELECT row_to_json(row) INTO l_params
+            FROM (SELECT month(l_kpv) AS kuu,
+                         year(l_kpv)  AS aasta,
+                         l_lepingid   AS lepingid) row;
 
 
-        l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
-
-        -- за вычитом отпуска и больничного
-        l_paevad_periodis = l_paevad_periodis - l_puudu_paevad;
+            l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
 
 
-        IF NOT empty(l_min_sots) AND NOT empty(l_min_palk) AND
-           (l_min_sotsmaks_alus * l_pk_summa * 0.01) <
-           (l_min_palk * l_min_sots * l_pk_summa * 0.01) --arvetsame sotsmaks min.palgast
-        THEN
+            IF coalesce(l_puudu_paevad, 0) > 0
+            THEN
+                --parandame tööpäevad, kui töötaja töötas mitte täis kuu
+                l_too_paevad = CASE
+                                   WHEN COALESCE(v_tooleping.lopp, l_last_paev) < l_last_paev
+                                       THEN v_tooleping.lopp
+                                   ELSE l_last_paev END -
+                               CASE
+                                   WHEN v_tooleping.algab > date(YEAR(l_kpv), MONTH(l_kpv), 1)
+                                       THEN v_tooleping.algab
+                                   ELSE date(YEAR(l_kpv), MONTH(l_kpv), 1) END +
+                               1 - l_puudu_paevad;
 
-            -- 584* 0.33 с поправкой на дни
-            l_sotsmaks_min_palgast = ((l_min_palk * l_min_sots * l_pk_summa * 0.01) / 30 * (l_paevad_periodis));
 
+            END IF;
+
+            -- считаем календарные дни
+            l_paevad_periodis =
+                    palk.get_days_of_month_in_period(month(l_kpv), year(l_kpv), date(year(l_kpv), month(l_kpv), 01),
+                                                     l_kpv);
+
+            -- вычитаем отпуск в календарных днях
+            SELECT row_to_json(row) INTO l_params
+            FROM (SELECT month(l_kpv) AS kuu,
+                         year(l_kpv)  AS aasta,
+                         TRUE         AS kas_kalendripaevad,
+                         TRUE         AS puudumised,
+                         l_lepingid   AS lepingid) row;
+
+
+            l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
+
+            -- за вычитом отпуска и больничного
+            l_paevad_periodis = l_paevad_periodis - l_puudu_paevad;
+
+
+            IF NOT empty(l_min_sots) AND NOT empty(l_min_palk) AND
+               (l_min_sotsmaks_alus * l_pk_summa * 0.01) <
+               (l_min_palk * l_min_sots * l_pk_summa * 0.01) --arvetsame sotsmaks min.palgast
+            THEN
+
+                -- 584* 0.33 с поправкой на дни
+                IF coalesce(l_puudu_paevad, 0) > 0
+                THEN
+                    l_sotsmaks_min_palgast = ((l_min_palk * l_min_sots * l_pk_summa * 0.01) / 30 * (l_paevad_periodis));
+                ELSE
+                    l_sotsmaks_min_palgast = ((l_min_palk * l_min_sots * l_pk_summa * 0.01));
+                END IF;
+
+            ELSE
+                -- отсутствий нет (Если работник не отсутствовал ни дня на работе, то не должно быть никаких расчетов по дням. Просто 192,72.)
+                l_sotsmaks_min_palgast = ((l_min_palk * l_min_sots * l_pk_summa * 0.01));
+
+            END IF;
 
             -- не может быть больше мин. соц. налога
             IF l_sotsmaks_min_palgast > (l_min_palk * l_min_sots * l_pk_summa * 0.01)
@@ -210,11 +222,18 @@ BEGIN
             -- 584/30*24=467.20-399,08=68,12 евро
             IF sm IS NULL OR empty(sm)
             THEN
-                sm = f_round(l_min_palk / 30 * l_paevad_periodis - l_min_sotsmaks_alus, l_round);
-                if l_min_palk < l_min_sotsmaks_alus and l_enne_sotsmaks_min_palgast_alus > 0 THEN
+                IF coalesce(l_puudu_paevad, 0) > 0
+                THEN
+                    sm = f_round(l_min_palk / 30 * l_paevad_periodis - l_min_sotsmaks_alus, l_round);
+                ELSE
+                    sm = f_round(l_min_palk  - l_min_sotsmaks_alus, l_round);
+                end if;
+
+                IF l_min_palk < l_min_sotsmaks_alus AND l_enne_sotsmaks_min_palgast_alus > 0
+                THEN
                     -- правим ранее расчитанный мин. соц. налог
                     sm = -1 * l_enne_sotsmaks_min_palgast_alus;
-                    l_selg = 'min. SM parandus -1 * ' || l_enne_sotsmaks_min_palgast_alus::text;
+                    l_selg = 'min. SM parandus -1 * ' || l_enne_sotsmaks_min_palgast_alus::TEXT;
                 END IF;
                 l_lisa_sm = f_round(sm * l_pk_summa * 0.01, l_round);
             END IF;
@@ -224,12 +243,15 @@ BEGIN
         ELSE
             l_sotsmaks_min_palgast = 0;
         END IF;
-raise notice 'l_min_sotsmaks_alus %', l_min_sotsmaks_alus;
+        RAISE NOTICE 'l_min_sotsmaks_alus %', l_min_sotsmaks_alus;
         IF sm IS NOT NULL
         THEN
 
-            l_selg = '(' || 'lisa SM (' + case when not empty(l_selg) then l_selg else l_min_palk::TEXT + '/30 * ' ||
-                     l_paevad_periodis::TEXT || '-' + l_min_sotsmaks_alus::TEXT  END + ') ' + coalesce(sm, 0)::TEXT ||
+            l_selg = '(' || 'lisa SM (' + CASE
+                                              WHEN NOT empty(l_selg) THEN l_selg
+                                              ELSE l_min_palk::TEXT + '/30 * ' ||
+                                                   l_paevad_periodis::TEXT || '-' + l_min_sotsmaks_alus::TEXT END +
+                            ') ' + coalesce(sm, 0)::TEXT ||
                      '* 0.33 = SM MIN.palgast ';
         ELSE
             l_selg = '';
@@ -267,21 +289,21 @@ END;
 
 $$;
 
-
+/*
 SELECT *
 FROM palk.sp_calc_sots(1, '{
   "lepingid": 35756,
   "libid": 236702,
   "kpv": "2021-01-31"
-}'::JSON)
+}'::JSON) {
+     "lepingid":35756,
+     "libid":236702,
+     "kpv":20210128}
 
+SELECT *
+FROM palk.puudumine
+WHERE lepingid = 35756
 
-    {"lepingid":35756,"libid":236702,"kpv":20210128}
-
-select * from palk.puudumine
-where lepingid = 35756
-
-/*
 
 select * from ou.rekv where nimetus ilike '%paju%'
 

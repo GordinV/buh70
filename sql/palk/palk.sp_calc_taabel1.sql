@@ -25,7 +25,7 @@ DECLARE
     l_lopp_paev        INTEGER;
 
     l_kpv              DATE;
-    params             JSONB;
+    l_params           JSONB;
     l_tahtpaeva_tunnid NUMERIC(12, 4) = 0;
 
 BEGIN
@@ -50,17 +50,17 @@ BEGIN
     END IF;
 
     -- arv puhkuse paevad
-    SELECT row_to_json(row) INTO params
+    SELECT row_to_json(row) INTO l_params
     FROM (SELECT l_kuu      AS kuu,
                  l_aasta    AS aasta,
                  l_kpv      AS kpv,
                  l_lepingid AS lepingid,
                  'PUHKUS'   AS pohjus) row;
 
-    l_puhkus = palk.get_puudumine(params :: JSONB);
+    l_puhkus = palk.get_puudumine(l_params :: JSONB);
 
     -- arv haiguse paevad
-    SELECT row_to_json(row) INTO params
+    SELECT row_to_json(row) INTO l_params
     FROM (SELECT l_kuu      AS kuu,
                  l_aasta    AS aasta,
                  l_kpv      AS kpv,
@@ -68,10 +68,10 @@ BEGIN
                  'HAIGUS'   AS pohjus) row;
 
     -- arv haiguse paevad
-    l_haigus := palk.get_puudumine(params :: JSONB);
+    l_haigus := palk.get_puudumine(l_params :: JSONB);
 
     -- arv muu paevad
-    SELECT row_to_json(row) INTO params
+    SELECT row_to_json(row) INTO l_params
     FROM (SELECT l_kuu      AS kuu,
                  l_aasta    AS aasta,
                  l_kpv      AS kpv,
@@ -79,7 +79,7 @@ BEGIN
                  'MUU'      AS pohjus) row;
 
     -- arv muud paevad
-    l_muud := palk.get_puudumine(params :: JSONB);
+    l_muud := palk.get_puudumine(l_params :: JSONB);
 
     -- tunnid
     l_tunnid = (l_muud - floor(l_muud)) * 10 ^ (position('.' IN l_muud :: TEXT) - 1);
@@ -101,7 +101,6 @@ BEGIN
       AND t.kuu = l_kuu
       AND t.aasta = l_aasta;
 
-    RAISE NOTICE 'l_hours %, l_toograf %',l_hours, l_toograf;
 -- есть раб. график, считаем табель
     IF coalesce(l_toograf, 0) = 0 AND coalesce(l_hours, 0) > 0
     THEN
@@ -112,7 +111,7 @@ BEGIN
     ELSE
         -- töögraafik
         -- график не установлен, считаем по календарным дням
-        SELECT row_to_json(row) INTO params
+        SELECT row_to_json(row) INTO l_params
         FROM (SELECT l_kuu       AS kuu,
                      l_aasta     AS aasta,
                      l_kpv       AS kpv,
@@ -121,12 +120,12 @@ BEGIN
                      l_lopp_paev AS lopp) row;
 
         l_tahtpaeva_tunnid = v_tooleping.pohikoht * (SELECT count(id)
-                              FROM cur_tahtpaevad l
-                              WHERE (l.rekvid = v_Tooleping.rekvid OR l.rekvid IS NULL)
-                                AND kuu = l_kuu
-                                AND l.luhipaev = 1) * 3;
+                                                     FROM cur_tahtpaevad l
+                                                     WHERE (l.rekvid = v_Tooleping.rekvid OR l.rekvid IS NULL)
+                                                       AND kuu = l_kuu
+                                                       AND l.luhipaev = 1) * 3;
 
-        l_toopaevad = (SELECT palk.get_work_days(params::JSON));
+        l_toopaevad = (SELECT palk.get_work_days(l_params::JSON));
 
         l_hours = l_toopaevad * v_Tooleping.toopaev - l_tahtpaeva_tunnid;
 

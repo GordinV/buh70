@@ -78,6 +78,21 @@ BEGIN
                               doc_kas_ettemaks     AS kas_ettemaks
                       ) row;
 
+    -- проверка на статус карты ребенка
+    IF (SELECT staatus FROM lapsed.laps WHERE id = doc_parentid LIMIT 1) = 3
+    THEN
+        -- логгирование
+
+        json_ajalugu = to_jsonb(row)
+                       FROM (SELECT now()    AS updated,
+                                    userName AS user) row;
+
+        UPDATE lapsed.laps
+        SET staatus = 1,
+            ajalugu = ajalugu::JSONB || json_ajalugu
+        WHERE id = doc_parentid;
+    END IF;
+
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN

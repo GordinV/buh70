@@ -242,9 +242,15 @@ GRANT EXECUTE ON FUNCTION palk.tsd_lisa_1( DATE, DATE, INTEGER, INTEGER ) TO dbk
 
 /*
 
-select * from (
-SELECT *
-FROM palk.tsd_lisa_1('2020-01-01', '2020-01-31', 3, 1 :: INTEGER)
-) qry where isikukood = '35908263723'
+select sum(sm) from (
+SELECT sum(sm) as sm
+FROM palk.tsd_lisa_1('2021-01-01', '2021-01-31', 96, 1 :: INTEGER)
+union all
+         SELECT -1 * sum(c_1410)
+         FROM palk.tsd_lisa_1b('2021-01-01', '2021-01-31', 96, 0 :: INTEGER)
+) qry
 
+--where isikukood = '35908263723'
+
+select * from ou.rekv where nimetus like '0911032 %'
 */

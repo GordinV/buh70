@@ -127,6 +127,7 @@ FROM (
                                        FROM docs.arv1 a1
                                                 INNER JOIN docs.arv a ON a.id = a1.parentid AND
                                                                          (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+                                                INNER JOIN docs.doc d ON d.id = a.parentid AND d.status <> 3
                                        GROUP BY a1.parentid, a1.properties ->> 'yksus') a1
                                       ON a1.arv_id = a.id AND
                                          (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
@@ -147,7 +148,8 @@ FROM (
                             AND at.kpv <= kpv_end::DATE
                             AND a.rekvid IN (SELECT rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid))
-                          GROUP BY at.doc_arv_id, (a1.properties ->> 'yksus')
+                              GROUP BY at.doc_arv_id
+                              , (a1.properties ->> 'yksus')
                       )
                       SELECT l.arv_id,
                              l.yksus,
@@ -370,20 +372,22 @@ FROM (
                          k.rekvid                  AS rekvid
                   FROM kaibed k
               ) qry) report
-WHERE alg_saldo <> 0
-   OR arvestatud <> 0
-   OR soodustus <> 0
-   OR laekumised <> 0
-   OR tagastused <> 0
-GROUP BY COALESCE(period, kpv_start)::DATE,
-         kulastatavus,
-         lapse_nimi,
-         lapse_isikukood,
+--WHERE alg_saldo <> 0 OR arvestatud <> 0 OR soodustus <> 0 OR laekumised <> 0  OR tagastused <> 0
+    GROUP BY COALESCE(period, kpv_start)::DATE
+    ,
+    kulastatavus
+    ,
+    lapse_nimi
+    ,
+    lapse_isikukood
+    ,
 --         maksja_nimi,
 --         maksja_isikukood,
-         yksus,
-         viitenumber,
-         rekvid
+    yksus
+    ,
+    viitenumber
+    ,
+    rekvid
 
 $BODY$
     LANGUAGE SQL
@@ -399,8 +403,15 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 
 /*
 select sum(arvestatud) from (
-SELECT *
-FROM lapsed.saldo_ja_kaive(85, '2020-10-01', '2020-10-31') qry
+
+SELECT qry.jaak, qry1.alg_saldo, qry.lapse_isikukood, qry1.lapse_isikukood
+FROM lapsed.saldo_ja_kaive(84, '2020-12-31', '2020-12-31') qry
+left outer join  lapsed.saldo_ja_kaive(84, '2021-01-01', '2021-01-31') qry1
+on qry1.lapse_isikukood =  qry.lapse_isikukood
+where qry.jaak <> qry1.alg_saldo
+
+
+where lapse_isikukood in ('51608190242')
 inner join (select sum()
 where qry.laekumised > 0
 

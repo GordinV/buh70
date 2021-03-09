@@ -39,5 +39,8 @@ GRANT EXECUTE ON FUNCTION docs.sp_update_mk_jaak(INTEGER) TO dbpeakasutaja;
 /*
 
 SELECT docs.sp_update_mk_jaak(parentid) from docs.mk
-where parentid = 2078084
+where rekvid = 80
 */
+
+
+0810077579

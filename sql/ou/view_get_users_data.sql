@@ -61,6 +61,7 @@ ALTER TABLE ou.view_get_users_data
 GRANT ALL ON TABLE ou.view_get_users_data TO dbadmin;
 GRANT SELECT ON TABLE ou.view_get_users_data TO dbpeakasutaja;
 GRANT SELECT ON TABLE ou.view_get_users_data TO dbkasutaja;
+GRANT SELECT ON TABLE ou.view_get_users_data TO dbvaatleja;
 
 
 /*

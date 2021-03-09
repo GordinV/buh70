@@ -45,7 +45,9 @@ INSERT INTO eelarve.saldoandmik (rekvid, nimetus, db, kr, konto, tegev, tp, alli
     omatp,
     tyyp,
     kuu
-  FROM remote_saldoandmik;
+  FROM remote_saldoandmik
+where aasta = 2020 and kuu = 12
+;
 
 DROP RULE IF EXISTS saldoandmik_2020_delete ON eelarve.saldoandmik;
 CREATE RULE saldoandmik_2020_delete AS ON DELETE TO eelarve.saldoandmik

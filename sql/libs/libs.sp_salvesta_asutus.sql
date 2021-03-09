@@ -35,7 +35,7 @@ DECLARE
     doc_asutus_aa  JSONB   = coalesce((doc_data ->> 'asutus_aa') :: JSONB, '[]':: JSONB);
     doc_aa         TEXT    = doc_data ->> 'aa';
     new_properties JSONB;
-    new_history    JSONB = '[]'::jsonb;
+    new_history    JSONB   = '[]'::JSONB;
     new_rights     JSONB;
     new_aa         JSONB;
 BEGIN
@@ -56,34 +56,23 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    IF exists(
-            SELECT id FROM palk.tooleping WHERE parentid = doc_id AND status <> 3)
-    THEN
-        doc_is_tootaja = TRUE;
-    END IF;
-
-    SELECT row_to_json(row) INTO new_properties
-    FROM (SELECT doc_kehtivus           AS kehtivus,
-                 doc_pank               AS pank,
-                 doc_is_tootaja         AS is_tootaja,
-                 doc_asutus_aa :: JSONB AS asutus_aa,
-                 doc_kmkr               AS kmkr) row;
-
-    -- если задан упрощенный расч. счет, то пишем его (для модуля дети)
-
     IF (doc_aa IS NOT NULL)
     THEN
+        -- если задан упрощенный расч. счет, то пишем его (для модуля дети)
+
         SELECT row_to_json(row) INTO new_aa
         FROM (SELECT doc_aa AS aa, '' AS pank) row;
 
-        SELECT row_to_json(row) INTO new_properties
-        FROM (SELECT doc_kehtivus                   AS kehtivus,
-                     doc_pank                       AS pank,
-                     doc_is_tootaja                 AS is_tootaja,
-                     '[]'::JSONB || new_aa :: JSONB AS asutus_aa,
-                     doc_kmkr                       AS kmkr) row;
-
     END IF;
+
+    SELECT row_to_json(row) INTO new_properties
+    FROM (SELECT doc_kehtivus                                                              AS kehtivus,
+                 doc_pank                                                                  AS pank,
+                 CASE WHEN doc_id IS NULL OR doc_id = 0 THEN FALSE ELSE doc_is_tootaja END AS is_tootaja,
+                 CASE
+                     WHEN doc_aa IS NOT NULL THEN '[]'::JSONB || new_aa :: JSONB
+                     ELSE doc_asutus_aa :: JSONB END                                       AS asutus_aa,
+                 doc_kmkr                                                                  AS kmkr) row;
 
     -- вставка или апдейт docs.doc
 

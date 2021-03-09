@@ -31,7 +31,7 @@ DECLARE
                                WHERE id = user_id
                                LIMIT 1);
     MK_TYYP         INTEGER = 1; -- VMK
-    l_mk_number     INTEGER = docs.sp_get_number(l_rekv_id, 'VMK', year(l_kpv), NULL);
+    l_mk_number     BIGINT = docs.sp_get_number(l_rekv_id, 'VMK', year(l_kpv), NULL);
     l_vorder_number INTEGER = docs.sp_get_number(l_rekv_id, 'VORDER'::TEXT, year(l_kpv), NULL::INTEGER);
     v_tulemus       RECORD;
     l_journal_ids   INTEGER[];
@@ -410,15 +410,9 @@ GRANT EXECUTE ON FUNCTION palk.gen_palk_dok(user_id INTEGER, params JSON) TO dbp
 
 /*
 
-select palk.gen_palk_dok_(3311, '{"isik_ids":[32163
-30866
-10758
-28947
-30865
-11453
-11841],
-		"osakond_ids":[42945],
-		"lib_ids":[136057,139482,143313,144137,149083,149084,149099,152343,153690,154489,247795],"kpv":20210129}')
+select palk.gen_palk_dok(2425, '{"isik_ids":[43598],
+		"osakond_ids":[214010],
+		"lib_ids":[135244,136071,136481,138433,138674,139368,139960,139981,140644,140726,142624,142742,143346,143658,144158,144350,145093,146055,146207,146240,146251,147391,147788,148441,150359,150362,151403,154211,244167,244296,245107,246078,246466,246476,246482,246489,246499,246508,246522,246532,247365],"kpv":20210212}'::json)
 
 
 

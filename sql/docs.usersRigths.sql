@@ -9,7 +9,8 @@ SELECT (exists(
                 SELECT 1
                 FROM docs.doc d
                 WHERE id = docId
-                  AND d.rigths -> command @> to_jsonb(userId)::JSONB)
+                  AND (d.rigths -> command @> to_jsonb(userId)::JSONB) or d.rigths is null)
+                
     OR exists(
                 SELECT 1
                 FROM ou.userid u

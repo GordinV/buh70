@@ -94,7 +94,7 @@ BEGIN
                          INNER JOIN lapsed.liidestamine l ON l.docid = m.parentid
                     WHERE m1.asutusid = l_asutus_id
                          AND l.parentid = l_laps_id
-                         AND m.kpv = '2019-12-31'
+                         AND m.kpv = '2020-12-31'
                     LIMIT 1
             );
             RAISE NOTICE 'l_mk_id %',l_mk_id;
@@ -186,8 +186,8 @@ BEGIN
                    2               AS opt,
                    l_viitenr       AS viitenr,
                    NULL            AS number,
-                   '2019-12-31'    AS maksepaev,
-                   '2019-12-31'    AS kpv,
+                   '2020-12-31'    AS maksepaev,
+                   '2020-12-31'    AS kpv,
                    'Alg.saldo'     AS selg,
                    NULL            AS muud,
                    json_mk1        AS "gridData",

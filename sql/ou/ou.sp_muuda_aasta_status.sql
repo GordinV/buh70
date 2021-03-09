@@ -55,13 +55,12 @@ BEGIN
              ) qry
         WHERE CASE WHEN l_status = 1 THEN rekv_id = rekv_id ELSE rekv_id = l_rekv_id END
         LOOP
+            raise notice 'v_rekv.id %', v_rekv.rekv_id;
             l_aasta_id = (SELECT id
                           FROM ou.aasta a
                           WHERE rekvid = v_rekv.rekv_id
                             AND kuu = l_kuu
                             AND l_aasta = aasta);
-
-            RAISE NOTICE 'rekvid %, l_status %, l_aasta_id %', v_rekv.rekv_id, l_status, l_aasta_id;
 
             -- ajalugu
             SELECT row_to_json(row) INTO new_history
@@ -85,7 +84,7 @@ BEGIN
                               FROM ou.aasta a
                               WHERE rekvid = v_rekv.rekv_id
                                 AND kuu = l_kuu
-                                AND l_aasta = aasta);
+                                AND l_aasta = aasta limit 1);
 
                 IF l_aasta_id IS NULL OR l_aasta_id = 0
                 THEN
@@ -133,7 +132,7 @@ $BODY$
 GRANT EXECUTE ON FUNCTION ou.sp_muuda_aasta_status(INTEGER, JSON) TO dbpeakasutaja;
 
 /*
-select ou.sp_muuda_aasta_status(2477,'{"id":8613,"status":1}')
+select ou.sp_muuda_aasta_status(2477,'{"id":8810,"status":1}')
 
 
 select * from ou.userid where rekvid = 63 and kasutaja = 'vlad'

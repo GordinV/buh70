@@ -17,17 +17,18 @@ SELECT *,
                 COALESCE(qry.tahtaeg, CURRENT_DATE) <
                 CURRENT_DATE :: DATE AND qry.jaak > 0
                THEN 'red' -- декларация отправленна , но не оплаченна
-           WHEN qry.tyyp = 'INTRESS' AND qry.staatus IS NULL
+           WHEN (qry.tyyp = 'INTRESS' OR qry.tyyp = 'DEKL') AND qry.staatus IS NULL
                THEN 'white' -- декларация отправленна , но не оплаченна
-
            WHEN qry.tyyp = 'INTRESS' AND qry.staatus IS NOT NULL
                AND COALESCE(qry.tahtaeg, CURRENT_DATE) <
                    CURRENT_DATE :: DATE AND qry.jaak > 0
                THEN 'red' -- декларация отправленна , но не оплаченна
            WHEN qry.tyyp = 'INTRESS' AND qry.staatus IS NOT NULL
-                    AND COALESCE(qry.tahtaeg, CURRENT_DATE) >
-                        CURRENT_DATE :: DATE OR qry.jaak <= 0
+                    AND (COALESCE(qry.tahtaeg, CURRENT_DATE) >
+                        CURRENT_DATE :: DATE OR qry.jaak <= 0)
                THEN 'green' -- декларация отправленна , но не оплаченна
+           WHEN qry.tyyp = 'TASU'
+               THEN 'white' -- декларация отправленна , но не оплаченна
            ELSE 'white' END :: VARCHAR(20) AS color
 FROM (SELECT D.id,
              D.rekvid,

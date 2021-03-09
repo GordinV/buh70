@@ -21,6 +21,7 @@ DECLARE
     l_group_id       INTEGER;
     details          JSONB   = '[]'::JSONB;
     v_kood           RECORD;
+    l_tyyp_id        INTEGER;
 BEGIN
 
 
@@ -46,6 +47,7 @@ BEGIN
                           all_yksus_4 TEXT,
                           all_yksus_5 TEXT,
                           koolituse_liik TEXT,
+                          tyyp TEXT,
                           teenus TEXT, kogus NUMERIC, hind NUMERIC)
         )
         SELECT DISTINCT kood
@@ -59,10 +61,10 @@ BEGIN
                             AND library = 'LAPSE_GRUPP'
                             AND l.rekvid = user_rekvid
                             AND l.status <> 3
-                          ORDER BY id ASC
-                          LIMIT 1);
+                              ORDER BY id ASC
+                              LIMIT 1);
 
-            details   = '[]'::JSONB;
+            details = '[]'::JSONB;
             FOR v_details IN
                 WITH qryJsons AS (
                     SELECT *
@@ -74,6 +76,7 @@ BEGIN
                                   all_yksus_4 TEXT,
                                   all_yksus_5 TEXT,
                                   koolituse_liik TEXT,
+                                  tyyp TEXT,
                                   teenus TEXT, kogus NUMERIC, hind NUMERIC)
                 )
                 SELECT DISTINCT *
@@ -91,8 +94,8 @@ BEGIN
                     WHERE n.rekvid = user_rekvid
                       AND kood = v_details.teenus
                       AND n.dok = 'ARV'
-                    ORDER BY id DESC
-                    LIMIT 1;
+                        ORDER BY id DESC
+                        LIMIT 1;
 
                     IF v_row IS NOT NULL
                     THEN
@@ -101,9 +104,18 @@ BEGIN
                 END LOOP;
 
 
+            -- ищем тип группы
+            l_tyyp_id = (SELECT id
+                         FROM libs.library
+                         WHERE library = 'KOOLITUSE_TYYP'
+                           AND kood = v_details.tyyp
+                           AND rekvid = user_rekvid
+                           AND status <> 3 LIMIT 1);
+
             SELECT coalesce(l_group_id, 0) AS id,
                    v_details.kood          AS kood,
                    v_details.nimetus       AS nimetus,
+                   l_tyyp_id               AS tyyp,
                    v_details.all_yksus_1   AS all_yksus_1,
                    v_details.all_yksus_2   AS all_yksus_2,
                    v_details.all_yksus_3   AS all_yksus_3,
@@ -153,7 +165,7 @@ GRANT EXECUTE ON FUNCTION lapsed.import_groups (JSONB, INTEGER, INTEGER) TO dbka
 
 
 SELECT error_code, result, error_message
-                  FROM lapsed.import_groups( '[{"asutus":"0810203 Narva Paemurru Spordikool T","kood":"SPOR-001-01","nimetus":"01 Jäähoki","grupi_liik":"Spordikool","koolituse_tyyp":"Jäähoki","all_yksused_1":"","all_yksused_2":"","all_yksused_3":"","all_yksused_4":"","all_yksused_5":"","teenus":"322210-002","kogus":"1","hind":"7"},{"asutus":"0810203 Narva Paemurru Spordikool T","kood":"SPOR-001-01","nimetus":"01 Jäähoki","grupi_liik":"Spordikool","koolituse_tyyp":"Jäähoki","all_yksused_1":"","all_yksused_2":"","all_yksused_3":"","all_yksused_4":"","all_yksused_5":"","teenus":"322210-006","kogus":"1","hind":"-7"},{"asutus":"0810203 Narva Paemurru Spordikool T","kood":"SPOR-001-01","nimetus":"01 Jäähoki","grupi_liik":"Spordikool","koolituse_tyyp":"Jäähoki","all_yksused_1":"","all_yksused_2":"","all_yksused_3":"","all_yksused_4":"","all_yksused_5":"","teenus":"322210-009","kogus":"1","hind":"0"}]' ::jsonb, 68::integer, 66::integer) as id
+                  FROM lapsed.import_groups( '[{"asutus":"0911027","kood":"LAED-004-K1","nimetus":"K1 Inglise keele ring","grupi_liik":"Lasteaed","koolituse_tyyp":"LAED-004","tyyp":"LAED-004","all_yksused_1":"","all_yksused_2":"","all_yksused_3":"","all_yksused_4":"","all_yksused_5":"","teenus":"322050-001","kogus":"1","hind":"20"}]' ::jsonb, 4796::integer, 92::integer) as id
 
 {"asutus":"0810203 Narva Paemurru Spordikool T",
 "kood":"SPOR-001-01",

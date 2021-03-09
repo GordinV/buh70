@@ -25,75 +25,90 @@ CREATE OR REPLACE FUNCTION palk.palk_leht(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INT
         tootunnid NUMERIC(12, 4)
     ) AS
 $BODY$
-SELECT isikid :: INTEGER                AS isik_id,
-       isikukood :: VARCHAR(20),
-       isik :: VARCHAR(254),
-       kuu :: INTEGER,
-       aasta :: INTEGER,
-       sum(deebet) :: NUMERIC(14, 2)    AS deebet,
-       sum(kreedit) :: NUMERIC(14, 2)   AS kreedit,
-       sum(sotsmaks) :: NUMERIC(14, 2)  AS sotsmaks,
-       sum(jaak) :: NUMERIC(14, 2)      AS jaak,
-       sum(mvt) :: NUMERIC(14, 2)       AS mvt,
-       nimetus :: VARCHAR(254),
-       sum(paev) :: NUMERIC(12, 4)      AS paev,
-       sum(ohtu) :: NUMERIC(12, 4)      AS ohtu,
-       sum(oo) :: NUMERIC(12, 4)        AS oo,
-       sum(puhapaev) :: NUMERIC(12, 4)  AS puhapaev,
-       sum(tahtpaev) :: NUMERIC(12, 4)  AS tahtpaev,
-       sum(uleajatoo) :: NUMERIC(12, 4) AS uleajatoo,
-       sum(kokku) :: NUMERIC(12, 4)     AS kokku,
-       sum(tootunnid) :: NUMERIC(12, 4) AS tootunnid
+WITH qry_taabel AS (
+    SELECT t.isik_id,
+           sum(paev)                                                                           AS paev,
+           sum(ohtu)                                                                           AS ohtu,
+           sum(oo)                                                                             AS oo,
+           sum(puhapaev)                                                                       AS puhapaev,
+           sum(tahtpaev)                                                                       AS tahtpaev,
+           sum(uleajatoo)                                                                      AS uleajatoo,
+           sum(kokku)                                                                          AS kokku,
+           sum(palk.get_work_hours((SELECT to_jsonb(qry)
+                                    FROM (SELECT t.lepingid AS lepingid, l_kpv2 AS kpv) qry))) AS tootunnid
+
+    FROM palk.cur_palk_taabel t
+    WHERE t.aasta = year(l_kpv2)
+      AND t.kuu = month(l_kpv2)
+      AND t.rekvid = l_rekvid
+        GROUP BY t.isik_id
+)
+
+SELECT qry.isikid :: INTEGER                AS isik_id,
+       qry.isikukood :: VARCHAR(20),
+       qry.isik :: VARCHAR(254),
+       qry.kuu :: INTEGER,
+       qry.aasta :: INTEGER,
+       sum(qry.deebet) :: NUMERIC(14, 2)    AS deebet,
+       sum(qry.kreedit) :: NUMERIC(14, 2)   AS kreedit,
+       sum(qry.sotsmaks) :: NUMERIC(14, 2)  AS sotsmaks,
+       sum(qry.jaak) :: NUMERIC(14, 2)      AS jaak,
+       qry.mvt :: NUMERIC(14, 2)            AS mvt,
+       qry.nimetus :: VARCHAR(254),
+       max(tbl.paev) :: NUMERIC(12, 4)      AS paev,
+       max(tbl.ohtu) :: NUMERIC(12, 4)      AS ohtu,
+       max(tbl.oo) :: NUMERIC(12, 4)        AS oo,
+       max(tbl.puhapaev) :: NUMERIC(12, 4)  AS puhapaev,
+       max(tbl.tahtpaev) :: NUMERIC(12, 4)  AS tahtpaev,
+       max(tbl.uleajatoo) :: NUMERIC(12, 4) AS uleajatoo,
+       max(tbl.kokku) :: NUMERIC(12, 4)     AS kokku,
+       max(tbl.tootunnid) :: NUMERIC(12, 4) AS tootunnid
 FROM (
+         WITH qry_mvt AS (
+             SELECT t.parentid AS isikid, sum(j.g31) AS mvt
+             FROM palk.palk_jaak j
+                      INNER JOIN palk.tooleping t ON j.lepingid = t.id
+             WHERE j.aasta = year(l_kpv2)
+               AND j.kuu = month(l_kpv2)
+               AND t.rekvid = l_rekvid
+                 GROUP BY t.parentid
+         )
          SELECT po.isikid,
                 po.isikukood,
                 po.isik,
-                month(kpv)                                                                      AS kuu,
-                year(kpv)                                                                       AS aasta,
+                month(kpv)       AS kuu,
+                year(kpv)        AS aasta,
                 (CASE
                      WHEN liik = '+'
                          THEN summa
-                     ELSE 0 END)                                                                AS deebet,
+                     ELSE 0 END) AS deebet,
                 (CASE
                      WHEN liik = '-'
                          THEN summa
-                     ELSE 0 END)                                                                AS kreedit,
+                     ELSE 0 END) AS kreedit,
                 (CASE
                      WHEN liik = '%'
                          THEN summa
-                     ELSE 0 END)                                                                AS sotsmaks,
+                     ELSE 0 END) AS sotsmaks,
                 j.jaak,
-                j.g31                                                                           AS mvt,
+                qry_mvt.mvt      AS mvt,
                 nimetus,
                 liik,
-                osakondid,
-                coalesce(tbl.ohtu, 0)                                                           AS ohtu,
-                coalesce(tbl.paev, 0)                                                           AS paev,
-                coalesce(tbl.puhapaev, 0)                                                       AS puhapaev,
-                coalesce(tbl.oo, 0)                                                             AS oo,
-                coalesce(tbl.tahtpaev, 0)                                                       AS tahtpaev,
-                coalesce(tbl.uleajatoo, 0)                                                      AS uleajatoo,
-                coalesce(tbl.kokku, 0)                                                          AS kokku,
-                palk.get_work_hours((SELECT to_jsonb(qry)
-                                     FROM (SELECT po.lepingid AS lepingid, l_kpv2 AS kpv) qry)) AS tootunnid
-
+                osakondid
          FROM palk.cur_palkoper po
                   LEFT OUTER JOIN palk.palk_jaak j
                                   ON j.lepingid = po.lepingid AND j.kuu = month(po.kpv) AND j.aasta = year(po.kpv)
-                  LEFT OUTER JOIN palk.cur_palk_taabel tbl
-                                  ON tbl.lepingid = po.lepingid AND tbl.kuu = month(po.kpv) AND tbl.aasta = year(po.kpv)
+                  LEFT JOIN qry_mvt ON qry_mvt.isikid = po.isikid
          WHERE po.kpv >= l_kpv1
            AND po.kpv <= l_kpv2
            AND po.rekvid = l_rekvid
            AND (l_osakond_id IS NULL OR empty(l_osakond_id) OR po.osakondid = l_osakond_id)
-         --             AND po.rekvid = (CASE WHEN l_kond IS NOT NULL AND NOT empty(l_kond)
-         --         THEN l_rekvid
-         --                              ELSE po.rekvid END)
-         --             AND po.rekvid IN (SELECT rekv_id
-         --                               FROM get_asutuse_struktuur(l_rekvid))
      ) qry
-GROUP BY isikid, isikukood, isik, nimetus, kuu, aasta
-$BODY$
+         LEFT OUTER JOIN qry_taabel tbl
+                         ON tbl.isik_id = qry.isikid
+
+GROUP BY isikid, isikukood, isik, mvt, nimetus, kuu, aasta
+    -- $BODY$
     LANGUAGE SQL
     VOLATILE
     COST 100;
@@ -107,6 +122,6 @@ GRANT EXECUTE ON FUNCTION palk.palk_leht( DATE, DATE, INTEGER, INTEGER, INTEGER 
 /*
 
 SELECT *
-FROM palk.palk_leht('2018-01-01', '2018-01-31', 63, 1 :: INTEGER);
+FROM palk.palk_leht('2021-02-01', '2021-02-28', 125, 1 :: INTEGER);
 
 */

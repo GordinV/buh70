@@ -154,9 +154,11 @@ $BODY$
 
 /*
 
-select * from curPohivara where id = 733119
+select import_pvkaart(id) from curPohivara where kood in ('MUU-80', 'MUU-81', 'MUU-82')
+and rekvid = 28
+and mahakantud is null
 
-select * from cur_pohivara where rekvid = 77 and kood = '155400-011-00'
+select * from cur_pohivara where rekvid = 28 and kood = 'MUU-80'
 
 SELECT import_pvkaart(733119)
 SELECT import_pvkaart(id)
@@ -166,3 +168,18 @@ where
 and rekvid not in (3, 63, 131)
 
 */
+
+UPDATE libs.library set status = 1 where id in (
+    SELECT new_id
+    FROM import_log
+    WHERE old_id IN (
+        SELECT id
+        FROM curPohivara
+        WHERE kood IN ('MUU-80', 'MUU-81', 'MUU-82')
+          AND rekvid = 28
+          AND mahakantud IS NULL
+    )
+      AND lib_name = 'POHIVARA'
+)
+
+select * from libs.library where id = 203303
