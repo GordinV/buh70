@@ -12,7 +12,7 @@ DECLARE
 
 BEGIN
     -- проверка на тип документа
-    IF NOT exists(SELECT doc_type_id FROM docs.doc WHERE id = new.id AND doc_type_id IN (46, 53, 39))
+    IF NOT exists(SELECT doc_type_id FROM docs.doc WHERE id = new.id AND doc_type_id IN (46, 53, 39, 17))
     THEN
         -- 0 = открыт
         -- 1 закрыт

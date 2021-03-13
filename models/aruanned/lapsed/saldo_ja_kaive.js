@@ -8,7 +8,7 @@ module.exports = {
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "0%", show: false},
             {id: "viitenumber", name: "Viitenumber", width: "10%", show: true},
             {id: "alg_saldo", name: "Alg.saldo", width: "8%", type: "number", interval: true},
-            {id: "arvestatud", name: "Arvestatud", width: "8%", type: "number",  interval: true},
+            {id: "arvestatud", name: "Arvestatud", width: "8%", type: "number", interval: true},
             {id: "soodustus", name: "Soodustus", width: "8%", type: "number", interval: true},
             {id: "laekumised", name: "Laekumised", width: "8%", type: "number", interval: true},
             {id: "tagastused", name: "Tagastused", width: "8%", type: "number", interval: true},
@@ -21,6 +21,7 @@ module.exports = {
                            sum(qryReport.laekumised) OVER (PARTITION BY rekvid) AS laekumised_group,
                            sum(qryReport.tagastused) OVER (PARTITION BY rekvid) AS tagastused_group,
                            sum(qryReport.jaak) OVER (PARTITION BY rekvid)       AS jaak_group,
+                           count(*) OVER ()                                     AS rows_total,
                            qryReport.*,
                            $2                                                   AS user_id,
                            r.nimetus::TEXT                                      AS asutus

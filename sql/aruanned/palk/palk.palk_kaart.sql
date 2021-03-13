@@ -339,8 +339,9 @@ FROM
       sum(summa12)               AS summa12,
       'Põhipalk' :: VARCHAR(254) AS NIMETUS
     FROM qryPalkOper po
-    WHERE po.konto IN (SELECT unnest('{50000001,50010001,50012001,50014001,	50015001,	50020001,	50021001,;
-						50024001,	50025001,	50026001,	50027001,	50028001,	50029001, 50024001}' :: TEXT [])
+    WHERE (po.konto IN (SELECT unnest('{50000001,50010001,50012001,50014001,50021001,;
+						50024001,	50025001,	50026001,	50027001,	50028001,	50029001, 50024001}' :: TEXT[]))
+      OR left(po.konto,6) in ('500150','500200')
     )
           AND po.liik = 1
     GROUP BY lepingid
@@ -362,9 +363,12 @@ FROM
       sum(summa12)                AS summa12,
       'Lisatasud' :: VARCHAR(254) AS NIMETUS
     FROM qryPalkOper po
-    WHERE po.konto IN (SELECT unnest(
-        '{5000001,5001001,5001201,5001401,5001501,5002001,5002101,5002401,5002501,5002701,5002801,5002601,5002901}' :: TEXT [])
-    )
+    WHERE (ltrim(rtrim(po.konto)) IN (SELECT unnest(
+        '{5000001,5001001,5001201,5001401,5002101,5002401,5002501,5002701,5002801,5002601,5002901}' :: TEXT []))
+        or left(po.konto,7) IN (SELECT unnest(
+                                               '{5000001,5001001,5001201,5001401,5002101,5002401,5002501,5002701,5002801,5002601,5002901}' :: TEXT[])
+      ))
+
           AND po.liik = 1
     GROUP BY lepingid
     UNION ALL
@@ -386,8 +390,8 @@ FROM
       'Preemiad, tulemuspalk' :: VARCHAR(254) AS NIMETUS
     FROM qryPalkOper po
     WHERE po.konto IN (SELECT unnest(
-        '{50000301,50000302,50010301,50010302,50012301,50012302,50014301,50014302,50015301,50015302,50020301,50020302,50021301,50021302,50024301,50024302,50025301,50025302,
-         50026301,50026302,50027301,50027302,50028301,50028302,50029301,50029302}' :: TEXT [])
+        '{50000301,50000302,50010301,50010302,50012301,50012302,50014301,50014302,50021301,50021302,50024301,50024302,50025301,50025302,
+         50026301,50026302,50027301,50027302,50028301,50028302,50029301,50029302,50027301,50027302}' :: TEXT [])
     )
           AND po.liik = 1
     GROUP BY lepingid
@@ -408,8 +412,10 @@ FROM
       sum(summa12)                        AS summa12,
       'Tööandja toetused' :: VARCHAR(254) AS NIMETUS
     FROM qryPalkOper po
-    WHERE po.konto IN (SELECT unnest(
-        '{50000303,50010303,50012303,50014303,50015303,50020303,	50021303,50024303,50025303,50026303,50027303,50028303,50029303}' :: TEXT [])
+    WHERE (po.konto IN (SELECT unnest(
+        '{50000303,50010303,50012303,50014303,50021303,50024303,50025303,50026303,50027303,50028303,50029303}' :: TEXT [])
+        )
+        or left(po.konto,6) in ('500153','500203')
     )
           AND po.liik = 1
     GROUP BY lepingid
@@ -431,12 +437,11 @@ FROM
       'Puhkusetasud,ja -hüvitised' :: VARCHAR(254) AS NIMETUS
     FROM qryPalkOper po
     WHERE (left(po.konto, 7) IN (SELECT unnest(
-        '{5002902,5001002,5001202,5001402,5001502,5002002,50020102,5002102,
+        '{5000002, 5002902,5001002,5001202,5001402,5002102,
            5002402,5002502,5002602,5002702,5002802}' :: TEXT [])
     )
-           OR left(po.konto, 8) IN (SELECT unnest(
-        '{50000021,50000022}' :: TEXT [])))
-          AND konto NOT IN (SELECT unnest('{50000023,50010023,50012023,50014023,50015023,50020023,50021023,50024023,50025023,
+        )
+          AND konto NOT IN (SELECT unnest('{50000023,50010023,50012023,50014023,50021023,50024023,50025023,
 						50026023,50027023,50028023,50029023}' :: TEXT [])
     )
           AND po.liik = 1
@@ -459,7 +464,7 @@ FROM
       'Õppepuhkusetasu' :: VARCHAR(254) AS NIMETUS
     FROM qryPalkOper po
     WHERE po.konto IN (SELECT unnest(
-        '{50000023,50010023,50012023,50014023,50015023,50020023,50021023,50024023,50025023,
+        '{50000023,50010023,50012023,50014023,50021023,50024023,50025023,
              50026023,50027023,50028023,50029023}' :: TEXT [])
     )
           AND po.liik = 1
@@ -499,11 +504,9 @@ FROM
       sum(summa10)               AS summa10,
       sum(summa11)               AS summa11,
       sum(summa12)               AS summa12,
-      'Toetused' :: VARCHAR(254) AS NIMETUS
+      'Hüvitised ja toetused' :: VARCHAR(254) AS NIMETUS
     FROM qryPalkOper po
-    WHERE po.konto IN (SELECT unnest('{413320,500005,500105,500145,500155,500215,500245,500255,500285,500265, 500205,
-					50000701,50010701,50012701,50014701,50015701,50020701,50021701,50024701,50025701,50026701,
-					50027701,	50028701,	50029701}' :: TEXT []))
+    WHERE left(po.konto,6) IN (SELECT unnest('{500007,500107,500127,500147,500217, 500147,500257,500267,500277,500287,500297,500157,500207}' :: TEXT []))
           AND po.liik = 1
     GROUP BY lepingid
     UNION ALL
@@ -544,7 +547,9 @@ FROM
       sum(summa12)                              AS summa12,
       'Võlaõiguslikud lepingud' :: VARCHAR(254) AS NIMETUS
     FROM qryPalkOper po
-    WHERE po.konto IN ('500500', '500298')
+    WHERE (po.konto IN ('50026801','50029801')
+               or left (po.konto,6) in ('500500')
+        )
           AND po.liik = 1
     GROUP BY lepingid
     UNION ALL
@@ -1000,6 +1005,6 @@ GRANT EXECUTE ON FUNCTION palk.palk_kaart( DATE, DATE, INTEGER, INTEGER ) TO dbk
 /*
 
 SELECT *
-FROM palk.palk_kaart('2018-01-01', '2018-12-31', 63, 1 :: INTEGER);
-
+FROM palk.palk_kaart('2021-01-01', '2021-01-31', 132, 0 :: INTEGER)
+where isikukood = '36903122245'
 */

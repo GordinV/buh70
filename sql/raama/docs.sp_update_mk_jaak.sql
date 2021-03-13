@@ -39,7 +39,7 @@ GRANT EXECUTE ON FUNCTION docs.sp_update_mk_jaak(INTEGER) TO dbpeakasutaja;
 /*
 
 SELECT docs.sp_update_mk_jaak(parentid) from docs.mk
-where rekvid = 80
+where rekvid = 69
 */
 
 

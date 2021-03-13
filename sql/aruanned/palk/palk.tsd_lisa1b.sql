@@ -152,6 +152,7 @@ GRANT EXECUTE ON FUNCTION palk.tsd_lisa_1b( DATE, DATE, INTEGER, INTEGER ) TO db
 GRANT EXECUTE ON FUNCTION palk.tsd_lisa_1b( DATE, DATE, INTEGER, INTEGER ) TO dbvaatleja;
 GRANT EXECUTE ON FUNCTION palk.tsd_lisa_1b( DATE, DATE, INTEGER, INTEGER ) TO dbkasutaja;
 
+/*
 
 SELECT *
 FROM (
@@ -160,7 +161,6 @@ FROM (
      ) qry
 WHERE c_1300 = '46111203717'
 
-/*
 
 select * from ou.rekv where regkood = '75008611  '
 

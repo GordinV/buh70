@@ -386,7 +386,7 @@ FROM (
     yksus
     ,
     viitenumber
-    ,
+    ,\\
     rekvid
 
 $BODY$

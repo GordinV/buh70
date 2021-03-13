@@ -5,6 +5,8 @@ const DocumentRegister = require('./../documents/documents.jsx');
 const BtnGetXml = require('./../../components/button-register/button-task/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
+const InputText = require('../../components/input-text/input-text.jsx');
+
 const getSum = require('./../../../libs/getSum');
 
 const styles = require('./styles');
@@ -34,7 +36,8 @@ class Documents extends React.PureComponent {
             laekumised: 0,
             tagastused: 0,
             jaak: 0,
-            read: 0
+            read: 0,
+            filtri_read: 0
         };
 
     }
@@ -50,11 +53,11 @@ class Documents extends React.PureComponent {
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
                                   render={this.renderer}/>
-                <InputNumber title="Read kokku:"
+                <InputText title="Filtri all / read kokku:"
                              name='read_kokku'
                              style={styles.total}
                              ref="input-read"
-                             value={Number(this.state.read) || 0}
+                             value={String(this.state.filtri_read + '/' + this.state.read) || 0}
                              disabled={true}/>
                 <InputNumber title="Alg.saldo kokku:"
                              name='alg_saldo_kokku'
@@ -103,7 +106,11 @@ class Documents extends React.PureComponent {
         let laekumised = self.gridData ? getSum(self.gridData, 'laekumised') : 0;
         let tagastused = self.gridData ? getSum(self.gridData, 'tagastused') : 0;
         let jaak = self.gridData ? getSum(self.gridData, 'jaak') : 0;
-        let read = self.gridData ? self.gridData.length : 0;
+        let read = self.gridData && self.gridData.length && self.gridData[0].rows_total ? self.gridData[0].rows_total : 0;
+        let filtri_read = self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : 0;
+
+
+
 
         if (self.gridData && self.gridData.length) {
             this.setState({
@@ -113,7 +120,8 @@ class Documents extends React.PureComponent {
                 laekumised: laekumised,
                 tagastused: tagastused,
                 jaak: jaak,
-                read: read
+                read: read,
+                filtri_read: filtri_read
             });
         }
 

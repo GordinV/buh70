@@ -21,7 +21,8 @@ module.exports = {
         height: '100%',
     },
     total: {
-        width: 'auto'
+        width: '100px',
+        margin: '0px 0px 0px 5px'
     },
 
 
