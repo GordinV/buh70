@@ -21,7 +21,9 @@ module.exports = {
         alignSelf: 'center',
         height: 'auto',
         maxHeight: '95%',
-        overflow: 'auto'
+        overflow: 'auto',
+        zIndex: 1
+
 
     },
     modalPageContent: {
