@@ -13,6 +13,7 @@ class Select extends React.PureComponent {
             value: props.value/* здесь по значению ИД */,
             readOnly: props.readOnly,
             disabled: props.disabled,
+            data: props.data,
             fieldValue: props.value /*здесь по значени поля collId */,
             btnDelete: props.btnDelete /* если истину, то рисуем рядом кнопку для очистки значения*/
         };
@@ -41,8 +42,8 @@ class Select extends React.PureComponent {
 
     // will update state if props changed
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.value !== prevState.value || nextProps.readOnly !== prevState.readOnly) {
-            return {value: nextProps.value, readOnly: nextProps.readOnly};
+        if (nextProps.value !== prevState.value || nextProps.readOnly !== prevState.readOnly || JSON.stringify(nextProps.data) !== JSON.stringify(prevState.data)) {
+            return {value: nextProps.value, readOnly: nextProps.readOnly, data: nextProps.data};
         } else return null;
     }
 

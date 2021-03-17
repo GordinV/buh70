@@ -81,8 +81,16 @@ module.exports = {
             data: [],
             not_initial_load: true
 
-        }
+        },
+        {
+            sql: `select d.* from docs.dokumendid($1) d`, //$1 asutus_id
+            query: null,
+            multiple: true,
+            alias: 'dokumenidid',
+            data: [],
+            not_initial_load: true
 
+        }
     ],
     selectAsLibs: `SELECT *, kehtivus AS valid
                    FROM com_asutused a

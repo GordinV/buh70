@@ -7,6 +7,7 @@ module.exports = {
                 display: 'table-cell',
                 paddingLeft: '5px',
             },
+            zIndex: '-1'
         },
         headerTable: {
             width:'100%',

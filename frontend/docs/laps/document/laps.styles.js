@@ -24,7 +24,8 @@ module.exports = {
 
     grid: {
         mainTable: {
-            width: '100%'
+            width: '100%',
+            zIndex: '-1'
         },
         headerTable: {
             width:'100%',

@@ -1,6 +1,6 @@
 -- View: public.cur_ladu_jaak
 
-DROP VIEW IF EXISTS cur_journal;
+DROP VIEW IF EXISTS cur_journal CASCADE ;
 
 CREATE OR REPLACE VIEW cur_journal AS
 SELECT to_char(d.created, 'DD.MM.YYYY HH:MM')                                                 AS created,
@@ -35,7 +35,7 @@ SELECT to_char(d.created, 'DD.MM.YYYY HH:MM')                                   
        COALESCE(ltrim(rtrim(a.nimetus)) || ' ' || ltrim(rtrim(a.omvorm)), '') :: VARCHAR(120) AS asutus,
        COALESCE(j1.tunnus, '') :: VARCHAR(20)                                                 AS tunnus,
        COALESCE(u.ametnik, '') :: VARCHAR(120)                                                AS kasutaja,
-       r.nimetus                                                                              AS rekvAsutus
+       ltrim(rtrim(r.nimetus)):: VARCHAR(254)                                                 AS rekvAsutus
 FROM docs.journal j
          INNER JOIN docs.doc D ON D.id = j.parentid
          INNER JOIN libs.library S ON S.kood = D.status :: TEXT AND S.library = 'STATUS'

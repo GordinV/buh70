@@ -130,6 +130,8 @@ class LapseKaart extends React.PureComponent {
                     return a.kood.localeCompare(b.kood)
                 });
 
+                // Обновить картинку
+                this.forceUpdate();
             }
 
         } catch (e) {
