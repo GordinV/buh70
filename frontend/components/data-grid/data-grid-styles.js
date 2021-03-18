@@ -3,8 +3,7 @@ module.exports = {
         tableLayout: 'fixed',
         width: '-webkit-calc(100% + 16px)',
         borderCollapse: 'collapse',
-        marginBottom:'20px',
-        zIndex: '-1'
+        marginBottom:'20px'
     },
     headerTable: {
         tableLayout: 'fixed',

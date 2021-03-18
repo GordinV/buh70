@@ -28,8 +28,7 @@ module.exports = {
             width:'-webkit-calc(100% + 16px)',
             position:'relative',
             borderCollapse:'collapse',
-            marginBottom:'10px',
-            zIndex:'-1'
+            marginBottom:'10px'
         },
         headerTable: {
             tableLayout: 'fixed',

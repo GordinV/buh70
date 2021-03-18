@@ -6,8 +6,7 @@ module.exports = {
                 border: '1px solid lightGrey',
                 display: 'table-cell',
                 paddingLeft: '5px',
-            },
-            zIndex: '-1'
+            }
         },
         headerTable: {
             width:'100%',
