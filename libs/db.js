@@ -2,7 +2,7 @@ const {Client} = require('pg'),
     config = require('../config/default');
 
 const db = {
-    queryDb: async (sqlString, params, sortBy, sqlWhere, sqlLimit) => {
+    queryDb: async (sqlString, params, sortBy, sqlWhere, sqlLimit, subTotals) => {
 
         let result = {
             error_code: 0,
@@ -12,9 +12,11 @@ const db = {
         }; // return data in this form
 
         let prepairedSqlString = sqlString;
-        if (sortBy || sqlWhere || sqlLimit) {
-            prepairedSqlString = createSqlString(prepairedSqlString, sortBy, sqlWhere, sqlLimit)
+        if (sortBy || sqlWhere || sqlLimit || subTotals) {
+            prepairedSqlString = createSqlString(prepairedSqlString, sortBy, sqlWhere, sqlLimit, subTotals)
         }
+
+        console.log(prepairedSqlString);
 
         const client = new Client(config.pg.connection);
         await client.connect();
@@ -80,10 +82,11 @@ const db = {
  * @returns {string}
  * @sqlLimit recors limit
  */
-function createSqlString(sql, sortBy, sqlWhere, sqlLimit) {
+function createSqlString(sql, sortBy, sqlWhere, sqlLimit, sqlSubtotals) {
     let sortByColumn = '',
         sortByDirection = '',
         rowsLimit = '';
+    totals = 'count(*) OVER() AS filter_total';
 
     if (sortBy.length) {
         // есть параметр для сортировки
@@ -108,7 +111,13 @@ function createSqlString(sql, sortBy, sqlWhere, sqlLimit) {
     if (sqlLimit) {
         rowsLimit = ` LIMIT ${sqlLimit}`;
     }
-    return `SELECT count(*) OVER() AS filter_total, * FROM (${sql}) qry 
+
+    if (sqlSubtotals) {
+        // есть доп. суммирование
+        totals = `${totals}, ${sqlSubtotals}`
+    }
+
+    return `SELECT ${totals}, * FROM (${sql}) qry 
     ${sqlWhere}   ${sortByColumn}  ${sortByDirection} ${rowsLimit}`;
 }
 

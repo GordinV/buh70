@@ -29,15 +29,18 @@ exports.post = async (req, res) => {
         let gridConfig = doc.config.grid.gridConfiguration;
         let gridParams;
         let subtotals = doc.config.grid.subtotals ? doc.config.grid.subtotals : [];
+        let filterTotals = doc.config.grid.totals ? doc.config.grid.totals : null;
+
 
         if (filterData.length > 0 && doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
             gridParams = getParameterFromFilter(user.asutusId,  user.userId, doc.config.grid.params , filterData);
         }
 
+
         // вызвать метод
         let data = {
             docTypeId: parameter,
-            result: await doc[method](sortBy, sqlWhere, limit, gridParams ),
+            result: await doc[method](sortBy, sqlWhere, limit, gridParams, filterTotals ),
             gridConfig: gridConfig,
             subtotals: subtotals
         };

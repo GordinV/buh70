@@ -142,10 +142,10 @@ FROM (
                 sum(qry.tulubaas)                                AS tulubaas,
                 sum(qry.puhkus)                                  AS puhkus,
 
-                sum(round(CASE
-                              WHEN qry.koormus IS NULL
-                                  THEN qryKoormus.koormus
-                              ELSE qry.koormus END / 100, 2))    AS v1040,
+                max(round(CASE
+                              WHEN qryKoormus.koormus IS NULL
+                                  THEN qry.koormus
+                              ELSE qryKoormus.koormus END / 100, 2))    AS v1040,
 
                 MAX(qry.lopp)                                    AS lopp,
                 max(qry.arv_min_sots)                            AS arv_min_sots,
@@ -244,7 +244,9 @@ GRANT EXECUTE ON FUNCTION palk.tsd_lisa_1( DATE, DATE, INTEGER, INTEGER ) TO dbk
 
 select sum(sm) from (
 SELECT sum(sm) as sm
-FROM palk.tsd_lisa_1('2021-01-01', '2021-01-31', 96, 1 :: INTEGER)
+FROM
+select * from
+palk.tsd_lisa_1('2021-03-01', '2021-03-31', 125, 1 :: INTEGER)
 union all
          SELECT -1 * sum(c_1410)
          FROM palk.tsd_lisa_1b('2021-01-01', '2021-01-31', 96, 0 :: INTEGER)

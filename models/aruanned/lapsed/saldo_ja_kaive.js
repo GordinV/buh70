@@ -30,6 +30,12 @@ module.exports = {
                     ORDER BY r.nimetus
         `,     // $1 - rekvid, $3 - alg_kpv, $4 - lopp_kpv
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
+        totals: ` sum(alg_saldo) over() as alg_saldo_total,
+                sum(arvestatud) over() as arvestatud_total,
+                sum(soodustus) over() as soodustus_total, 
+                sum(laekumised) over() as laekumised_total,
+                sum(tagastused) over() as tagastused_total,
+                sum(jaak) over() as jaak_total `,
         alias: 'saldo_ja_kaive_report'
     },
     print: [

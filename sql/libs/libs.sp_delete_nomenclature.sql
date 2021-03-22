@@ -22,7 +22,7 @@ BEGIN
            INTO v_doc
     FROM libs.nomenklatuur n
              LEFT OUTER JOIN ou.userid u ON u.id = userid
-        WHERE n.id = doc_id;
+    WHERE n.id = doc_id;
 
     IF v_doc IS NULL
     THEN
@@ -35,8 +35,8 @@ BEGIN
 
     IF NOT exists(SELECT id
                   FROM ou.userid u
-                      WHERE id = userid
-                           AND (u.rekvid = v_doc.rekvid OR v_doc.rekvid IS NULL OR v_doc.rekvid = 0)
+                  WHERE id = userid
+                    AND (u.rekvid = v_doc.rekvid OR v_doc.rekvid IS NULL OR v_doc.rekvid = 0)
         )
     THEN
 
@@ -53,36 +53,37 @@ BEGIN
             FROM (
                      SELECT id
                      FROM docs.arv1
-                         WHERE nomid = v_doc.id
-                         UNION
-                         SELECT id
-                         FROM docs.korder2
-                         WHERE nomid = v_doc.id
-                         UNION
-                         SELECT id
-                         FROM docs.leping2
-                         WHERE nomid = v_doc.id
-                         UNION
-                         SELECT id
-                         FROM lapsed.lapse_kaart
-                         WHERE nomid = v_doc.id
-                              AND staatus <> 3
-                         UNION
-                         SELECT id
-                         FROM docs.mk1
-                         WHERE nomid = v_doc.id
-                         UNION
-                         SELECT id
-                         FROM docs.pv_oper
-                         WHERE nomid = v_doc.id
-                         UNION ALL
+                     WHERE nomid = v_doc.id
+                     UNION
+                     SELECT id
+                     FROM docs.korder2
+                     WHERE nomid = v_doc.id
+                     UNION
+                     SELECT id
+                     FROM docs.leping2
+                     WHERE nomid = v_doc.id
+                     UNION
+                     SELECT id
+                     FROM lapsed.lapse_kaart
+                     WHERE nomid = v_doc.id
+                       AND staatus <> 3
+                     UNION
+                     SELECT id
+                     FROM docs.mk1
+                     WHERE nomid = v_doc.id
+                     UNION
+                     SELECT id
+                     FROM docs.pv_oper
+                     WHERE nomid = v_doc.id
+                     UNION ALL
 -- lapse_grupp
-                         SELECT id FROM libs.library l
-                         WHERE
-                          ('[]'::JSONB || jsonb_build_object('nomid', doc_id) <@ (l.properties::JSONB ->> 'teenused')::JSONB
-                              OR '[]'::JSONB || jsonb_build_object('nomid', doc_id::TEXT) <@
-                                 (l.properties::JSONB ->> 'teenused')::JSONB)
-                              AND l.library = 'LAPSE_GRUPP'
+                     SELECT id
+                     FROM libs.library l
+                     WHERE ('[]'::JSONB || jsonb_build_object('nomid', doc_id) <@ (l.properties::JSONB ->> 'teenused')::JSONB
+                         OR '[]'::JSONB || jsonb_build_object('nomid', doc_id::TEXT) <@
+                            (l.properties::JSONB ->> 'teenused')::JSONB)
+                       AND l.library = 'LAPSE_GRUPP'
+                       AND l.status <> 3
                  ) qry
         )
     THEN

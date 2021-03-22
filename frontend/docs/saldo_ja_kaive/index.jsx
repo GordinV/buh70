@@ -6,8 +6,7 @@ const BtnGetXml = require('./../../components/button-register/button-task/index.
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
 const InputText = require('../../components/input-text/input-text.jsx');
-
-const getSum = require('./../../../libs/getSum');
+const Loading = require('../../components/loading/index.jsx');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'SALDO_JA_KAIVE';
@@ -54,11 +53,11 @@ class Documents extends React.PureComponent {
                                   style={styles}
                                   render={this.renderer}/>
                 <InputText title="Filtri all / read kokku:"
-                             name='read_kokku'
-                             style={styles.total}
-                             ref="input-read"
-                             value={String(this.state.filtri_read + '/' + this.state.read) || 0}
-                             disabled={true}/>
+                           name='read_kokku'
+                           style={styles.total}
+                           ref="input-read"
+                           value={String(this.state.filtri_read + '/' + this.state.read) || 0}
+                           disabled={true}/>
                 <InputNumber title="Alg.saldo kokku:"
                              name='alg_saldo_kokku'
                              style={styles.total}
@@ -100,30 +99,33 @@ class Documents extends React.PureComponent {
     }
 
     renderer(self) {
-        let alg_saldo = self.gridData ? getSum(self.gridData, 'alg_saldo') : 0;
-        let arvestatud = self.gridData ? getSum(self.gridData, 'arvestatud') : 0;
-        let soodustus = self.gridData ? getSum(self.gridData, 'soodustus') : 0;
-        let laekumised = self.gridData ? getSum(self.gridData, 'laekumised') : 0;
-        let tagastused = self.gridData ? getSum(self.gridData, 'tagastused') : 0;
-        let jaak = self.gridData ? getSum(self.gridData, 'jaak') : 0;
+
+        if (!self || !self.gridData || !self.gridData.length) {
+            // пока нет данных
+            return null;
+        }
+
+        let alg_saldo = self.gridData ? self.gridData[0].alg_saldo_total : 0;
+        let arvestatud = self.gridData ? self.gridData[0].arvestatud_total : 0;
+        let soodustus = self.gridData ? self.gridData[0].soodustus_total : 0;
+        let laekumised = self.gridData ? self.gridData[0].laekumised_total : 0;
+        let tagastused = self.gridData ? self.gridData[0].tagastused_total : 0;
+        let jaak = self.gridData ? self.gridData[0].jaak_total : 0;
+
+
         let read = self.gridData && self.gridData.length && self.gridData[0].rows_total ? self.gridData[0].rows_total : 0;
         let filtri_read = self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : 0;
 
-
-
-
-        if (self.gridData && self.gridData.length) {
-            this.setState({
-                alg_saldo: alg_saldo,
-                arvestatud: arvestatud,
-                soodustus: soodustus,
-                laekumised: laekumised,
-                tagastused: tagastused,
-                jaak: jaak,
-                read: read,
-                filtri_read: filtri_read
-            });
-        }
+        this.setState({
+            alg_saldo: alg_saldo,
+            arvestatud: arvestatud,
+            soodustus: soodustus,
+            laekumised: laekumised,
+            tagastused: tagastused,
+            jaak: jaak,
+            read: read,
+            filtri_read: filtri_read
+        });
 
         return (<ToolbarContainer>
                 <BtnGetXml

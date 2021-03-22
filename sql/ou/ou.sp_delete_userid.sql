@@ -11,7 +11,9 @@ $BODY$
 DECLARE
     v_doc       RECORD;
     new_history JSON;
+    v_user      RECORD;
 BEGIN
+    SELECT * INTO v_user FROM ou.userid WHERE id = user_id;
 
     SELECT u.id,
            u.kasutaja,
@@ -48,7 +50,7 @@ BEGIN
     -- ajalugu
     SELECT row_to_json(row) INTO new_history
     FROM (SELECT now()                         AS deleted,
-                 ltrim(rtrim(v_doc.user_name)) AS user) row;
+                 ltrim(rtrim(v_user.ametnik)) AS user) row;
 
     UPDATE ou.userid
     SET status  = array_position((enum_range(NULL :: DOK_STATUS)), 'deleted'),
@@ -80,5 +82,7 @@ $BODY$
 GRANT EXECUTE ON FUNCTION ou.sp_delete_userid(INTEGER, INTEGER) TO dbadmin;
 
 /*
-select error_code, result, error_message from ou.sp_delete_userid(1, 5690)
+select error_code, result, error_message from ou.sp_delete_userid(4837, 4995)
+
+select * from ou.userid where kasutaja = 'vlad' and rekvid = 72
 */

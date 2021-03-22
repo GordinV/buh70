@@ -116,7 +116,7 @@ class Document {
     /**
      * грузит гриды
      */
-    async selectDocs(sortBy, sqlWhere, limit, params = [this.rekvId, this.userId]) {
+    async selectDocs(sortBy, sqlWhere, limit, params = [this.rekvId, this.userId], subTotals) {
         let sql = this.config.grid.sqlString;
         let sqlParamsQantity = (this.config.grid.params == '' ? 2: this.config.grid.params.length);
 
@@ -138,7 +138,8 @@ class Document {
 
 
         }
-        return await db.queryDb(sql, params, sortBy, sqlWhere, limit);
+
+        return await db.queryDb(sql, params, sortBy, sqlWhere, limit, subTotals);
     }
 
     /**

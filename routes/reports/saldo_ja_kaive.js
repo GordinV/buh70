@@ -7,6 +7,12 @@ exports.get = async (req, res) => {
     const filter = req.params.filter || [];// массив фильтров документов;
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user = require('../../middleware/userData')(req, uuid); // данные пользователя
+    let subTotals = ` sum(alg_saldo) over() as alg_saldo_total,
+                sum(arvestatud) over() as arvestatud_total,
+                sum(soodustus) over() as soodustus_total, 
+                sum(laekumised) over() as laekumised_total,
+                sum(tagastused) over() as tagastused_total,
+                sum(jaak) as jaak_total `;
 
     let filterData = JSON.parse(filter);
 
@@ -33,7 +39,8 @@ exports.get = async (req, res) => {
             gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
         }
 
-        const data = await doc.selectDocs('', sqlWhere, 10000, gridParams);
+        console.log('reports subTotals', subTotals);
+        const data = await doc.selectDocs('', sqlWhere, 10000, gridParams, subTotals);
 
 
         // get xml
