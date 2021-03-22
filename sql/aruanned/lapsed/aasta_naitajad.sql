@@ -66,7 +66,7 @@ FROM (
                                               l.kood,
                                               t.kood AS tyyp
                                        FROM libs.library l
-                                                LEFT OUTER JOIN libs.library t ON (l.properties::jsonb ->> 'tyyp')::INTEGER = t.id
+                                                LEFT OUTER JOIN libs.library t ON (l.properties::JSONB ->> 'tyyp')::INTEGER = t.id
                                        WHERE l.library = 'LAPSE_GRUPP'
                        ) lg ON lg.rekvid = d.rekvid AND lg.kood::TEXT = lk.properties ->> 'yksus'
                            INNER JOIN ou.rekv r ON r.id = a.rekvid
@@ -74,8 +74,11 @@ FROM (
                     AND a.kpv <= qryPeriod.kpv
                     AND (l_liik IS NULL OR coalesce(r.properties ->> 'liik', '') ILIKE l_liik || '%')
                     AND (l_tyyp IS NULL OR lg.tyyp ILIKE l_tyyp || '%')
-                      GROUP BY (n.properties ->> 'oppe_tyyp')
-                      , d.id
+                    AND r.id IN (SELECT rekv_id
+                                 FROM get_asutuse_struktuur(l_rekvid))
+
+                  GROUP BY (n.properties ->> 'oppe_tyyp')
+                         , d.id
               )
          SELECT DISTINCT l.parentid                             AS laps_id,
                          d.rekvid,
@@ -89,11 +92,13 @@ FROM (
                   INNER JOIN qry_liik ON qry_liik.id = d.id
          WHERE year(a.kpv) = year(qryPeriod.kpv)
            AND a.kpv <= qryPeriod.kpv
+           AND a.rekvid IN (SELECT rekv_id
+                            FROM get_asutuse_struktuur(l_rekvid))
      ) qry
 WHERE qry.rekvid IN (SELECT rekv_id
                      FROM get_asutuse_struktuur(l_rekvid))
-    GROUP BY liik
-    , rekvid
+GROUP BY liik
+       , rekvid
 
 $BODY$
     LANGUAGE SQL
@@ -109,6 +114,6 @@ GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT) TO db
 
 /*
 SELECT *
-FROM lapsed.aasta_naitajad(63, '2020-12-31')
+FROM lapsed.aasta_naitajad(85, '2021-03-31')
 
 */

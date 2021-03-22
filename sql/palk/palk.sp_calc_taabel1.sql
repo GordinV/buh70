@@ -20,27 +20,35 @@ DECLARE
     l_muud             NUMERIC(16, 8) = 0;
     l_tunnid           NUMERIC        = 0;
     l_toopaevad        INT            = 0;
-    l_alg_paev         INTEGER        = 1;
-    l_maxdays          INTEGER;
-    l_lopp_paev        INTEGER;
+    l_alg_paev         INTEGER        = coalesce((params ->> 'alg_paev')::INTEGER, 1);
+    l_lopp_paev        INTEGER        = params ->> 'lopp_paev';
+    l_maxdays          INTEGER        = l_lopp_paev;
 
     l_kpv              DATE;
     l_params           JSONB;
     l_tahtpaeva_tunnid NUMERIC(12, 4) = 0;
+    l_selg text = '';
 
 BEGIN
-    l_maxdays = DAY(((make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month') - INTERVAL '1 day')::DATE);
+
+    IF l_lopp_paev IS NULL
+    THEN
+        l_maxdays = DAY(((make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month') - INTERVAL '1 day')::DATE);
+        l_lopp_paev = l_maxdays;
+    END IF;
     l_kpv = make_date(l_aasta, l_kuu, l_maxdays);
-    l_lopp_paev = l_maxdays;
 
     SELECT t.* INTO v_tooleping
     FROM palk.tooleping t
     WHERE t.id = l_lepingid;
 
     -- calculate start day
-    IF month(v_Tooleping.algab) = l_kuu AND year(v_Tooleping.algab) = l_aasta
+    IF l_alg_paev IS NULL
     THEN
-        l_alg_paev = day(v_Tooleping.algab);
+        IF month(v_Tooleping.algab) = l_kuu AND year(v_Tooleping.algab) = l_aasta
+        THEN
+            l_alg_paev = day(v_Tooleping.algab);
+        END IF;
     END IF;
 
     -- calculate finish day
@@ -152,7 +160,6 @@ BEGIN
 
         END IF;
 
-
     END IF;
 
 
@@ -167,12 +174,7 @@ GRANT EXECUTE ON FUNCTION palk.sp_calc_taabel1(JSONB) TO dbpeakasutaja;
 
 
 /*
-SELECT palk.sp_calc_taabel1('{
-  "aasta": 2021,
-  "kuu": 2,
-  "lepingid": 28609,
-  "toograf": 1
-}'::JSONB);
+SELECT palk.sp_calc_taabel1('{"aasta":2021,"kuu":3,"lepingid":26416}'::JSONB);
 -- -> 145 ?
 -- lep 35222, 28609, 20026 (GZ)
 

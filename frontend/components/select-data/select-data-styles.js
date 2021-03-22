@@ -6,8 +6,8 @@ module.exports = {
 
     },
     input: {
-        width: '70%',
-        marginLeft: '5px',
+        width: '75%',
+        marginLeft: '15px',
         borderRadius:'3px'
 
 
@@ -17,13 +17,13 @@ module.exports = {
     },
     select: {
         width: '60%',
-        marginLeft: '5px'
+        marginLeft: '15px'
     },
     readOnly: {
         backgroundColor: '#F3EFEF'
     },
     label : {
-        width: '30%',
+        width: '40%',
         margin: '5px'
     },
     button: {

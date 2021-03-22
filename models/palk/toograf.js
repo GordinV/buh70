@@ -58,7 +58,7 @@ module.exports = {
         alias: 'curToograf'
     },
     executeCommand: {
-        command: `select palk.sp_calc_taabel1($1) as tunnid`, //$1 - params ("lepingid":4, "kuu":4, "aasta":2018)
+        command: `select palk.get_taabel($1::jsonb) as tunnid, palk.get_holidays($1::jsonb) as tahtpaevad`, //$1 - params ("lepingid":4, "kuu":4, "aasta":2018)
         type: 'sql',
         alias: 'calcTaabel'
     },

@@ -214,9 +214,9 @@ BEGIN
             -- был расчет с мин. соц. налогом
         END IF;
 
-        IF coalesce(summa, 0) < l_sotsmaks_min_palgast AND (l_alus_summa = 0 OR summa > 0) OR
+        IF coalesce(summa, 0) < l_sotsmaks_min_palgast AND (l_alus_summa = 0 OR summa > 0) AND
+           l_min_sotsmaks_alus < l_min_palk OR
            coalesce(l_enne_sotsmaks_min_palgast_alus, 0) > 0
-
         THEN
             -- расчет основания для миню соц. налога
             -- 584/30*24=467.20-399,08=68,12 евро
@@ -226,8 +226,8 @@ BEGIN
                 THEN
                     sm = f_round(l_min_palk / 30 * l_paevad_periodis - l_min_sotsmaks_alus, l_round);
                 ELSE
-                    sm = f_round(l_min_palk  - l_min_sotsmaks_alus, l_round);
-                end if;
+                    sm = f_round(l_min_palk - l_min_sotsmaks_alus, l_round);
+                END IF;
 
                 IF l_min_palk < l_min_sotsmaks_alus AND l_enne_sotsmaks_min_palgast_alus > 0
                 THEN
@@ -243,7 +243,7 @@ BEGIN
         ELSE
             l_sotsmaks_min_palgast = 0;
         END IF;
-        RAISE NOTICE 'l_min_sotsmaks_alus %', l_min_sotsmaks_alus;
+
         IF sm IS NOT NULL
         THEN
 
@@ -290,42 +290,8 @@ END;
 $$;
 
 /*
-SELECT *
-FROM palk.sp_calc_sots(1, '{
-  "lepingid": 35756,
-  "libid": 236702,
-  "kpv": "2021-01-31"
-}'::JSON) {
-     "lepingid":35756,
-     "libid":236702,
-     "kpv":20210128}
+select * from palk.sp_calc_sots(70, '{"lepingid":22818,"libid":149081,"kpv":20210331}'::JSON)
+select * from palk.sp_calc_sots(70, '{"lepingid":34860,"libid":149081,"kpv":20210331}'::JSON)
 
-SELECT *
-FROM palk.puudumine
-WHERE lepingid = 35756
-
-
-select * from ou.rekv where nimetus ilike '%paju%'
-
-
-
-select * from palk.tooleping where  parentid in (select id from libs.asutus where regkood = '48211153720')
-select * from palk.palk_oper where lepingid = 35756
-
-select * from palk.sp_calc_sots(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":100, "summa":33}'::JSON)
-select * from palk.sp_calc_sots(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":0, "summa":50, "is_percent":false}'::JSON)
-select * from  palk.sp_calc_sots(1, '{"lepingid":4, "libid":386, "kpv":"2018-04-09", "alus_summa":100, "summa":33, "is_percent":true,"minsots":1}'::JSON)
-select * from palk.sp_calc_sots(1, '{"alus_summa":100, "summa":33, "is_percent":true,"minsots":1}'::JSON)
-select * from palk.sp_calc_sots(1,'{"lepingid":4,"libid":524,"kpv":20180407}'::JSON)
-
-select * from libs.asutus where regkood = '45911143728'
--- 2947
-
-select * from palk.tooleping where parentid =  41923 and rekvid in (select id from ou.rekv where nimetus ilike '%keel%')
-32857
-
-select * from palk.palk_oper where lepingid = 35124 and kpv = '2021-01-31'
-
-select * from palk.sp_calc_sots(70, '{"lepingid":26028, "libid":149418, "kpv":"2019-11-20"}'::JSON)
 
  */

@@ -80,7 +80,7 @@ BEGIN
             FROM palk.tooleping t
             WHERE t.parentId = l_isikid
         )
-          and lepingid = l_lepingid -- поправка из-за ошибки на величину округдения
+          AND lepingid = l_lepingid -- поправка из-за ошибки на величину округдения
           AND kpv = l_kpv
           AND rekvId = l_rekvid
           AND summa = 0);
@@ -92,7 +92,7 @@ BEGIN
         FROM palk.tooleping t
         WHERE t.parentId = l_isikid
     )
-      and lepingid = l_lepingid -- поправка из-за ошибки на величину округдения
+      AND lepingid = l_lepingid -- поправка из-за ошибки на величину округдения
       AND kpv = l_kpv
       AND rekvId = l_rekvid
       AND summa = 0;
@@ -184,6 +184,12 @@ BEGIN
                   AND po.rekvId = l_rekvid
                   AND po.palk_liik = 'ARVESTUSED';
 
+                IF coalesce(v_arv.tm, 0) = 0 AND coalesce(v_arv.tm_kokku, 0) > 0
+                THEN
+                    -- если налог по виду дохода 0, но общий более нуля
+                    v_arv.tm = v_arv.tm_kokku;
+                END IF;
+
                 -- check if we need to round taxes
                 IF coalesce(v_arv.tm, 0) - round(coalesce(v_fakt_arv.tm, 0), 2) <> 0 OR
                    coalesce(v_arv.sm, 0) - round(coalesce(v_fakt_arv.sm, 0), 2) <> 0 OR
@@ -259,5 +265,5 @@ GRANT EXECUTE ON FUNCTION palk.sp_calc_umardamine(INTEGER, JSON) TO dbpeakasutaj
 
 /*
 
-SELECT * FROM palk.sp_calc_umardamine(1, '{"lepingid": 33369,"libid": 148689,"kpv": "2019-10-31"}')
+SELECT * FROM palk.sp_calc_umardamine(4827, '{"lepingid": 30998,"libid": 147583,"kpv": "2021-03-31"}')
  */

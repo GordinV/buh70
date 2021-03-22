@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION eelarve.lisa_9(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INT
         summa          NUMERIC(14, 2),
         artikkel       VARCHAR(20),
         tegev          VARCHAR(20),
-        docs_ids INTEGER[]
+        docs_ids       INTEGER[]
     ) AS
 $BODY$
 
@@ -22,10 +22,10 @@ SELECT rekv_id,
        saaja_tp,
        saaja_nimi,
        kpv,
-       sum(summa) AS summa,
+       sum(summa)    AS summa,
        artikkel,
        tegev,
-       array_agg(id) as docs_ids
+       array_agg(id) AS docs_ids
 FROM (
          SELECT j.rekvid::INTEGER              AS rekv_id,
                 r.regkood::VARCHAR(20)         AS maksja_regkood,
@@ -61,6 +61,8 @@ FROM (
              OR (j.deebet::TEXT LIKE '208120%'::TEXT OR j.deebet::TEXT LIKE '20%'::TEXT) AND
                 j.kreedit::TEXT LIKE '100100%'::TEXT
                     AND j.kood5::TEXT = '2586'::TEXT AND j.kood3::TEXT = '06'::TEXT)
+           AND j.deebet NOT LIKE '100%'
+           AND deebet NOT IN ('203620')
      ) qry
 
 GROUP BY rekv_id, maksja_regkood, saaja_regkood, saaja_tp, saaja_nimi, kpv, artikkel, tegev;
@@ -80,14 +82,12 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO dbvaat
 
 select * from (
                     SELECT *
-                    FROM eelarve.lisa_9('2021-01-01', '2021-01-31', 63,  1)
+                    FROM eelarve.lisa_9('2021-01-01', '2021-03-31', 132,  0)
                 ) qry
-  where  saaja_nimi ilike  '%raud%'
+  where  summa >= 100
 
 
-select * from cur_journal
-where id in (2527065,2527065)
-
-select * from libs.asutus where regkood = '10281796'
-
+select * from ou.rekv where parentid = 64
 */
+
+

@@ -7,6 +7,7 @@ CREATE OR
                                       OUT tki NUMERIC,
                                       OUT tka NUMERIC,
                                       OUT tm NUMERIC,
+                                      OUT tm_kokku NUMERIC,
                                       OUT pm NUMERIC,
                                       OUT sm NUMERIC,
                                       OUT summa NUMERIC,
@@ -197,7 +198,6 @@ BEGIN
 
 
             l_hours = palk.get_work_hours(l_params :: JSONB);
-            raise notice 'l_hours %', l_hours;
 
             selg = coalesce(selg, '') + 'Kokku tunnid kuues,:' + ltrim(rtrim(round(l_hours, 2) :: VARCHAR)) + ltEnter;
 
@@ -242,6 +242,7 @@ BEGIN
 
     tki = is_tki * f_round((SELECT qry.summa
                             FROM palk.sp_calc_kinni(user_id, l_params :: JSON) AS qry), l_round);
+
     selg = coalesce(selg, '') + 'TKI arvestus:' + round(summa, 2) :: TEXT + '*' + (0.01 * l_TKI_maar) :: TEXT + '*' +
            l_TKI_maar :: TEXT + '*' + is_tki::TEXT + ltEnter;
 
@@ -365,7 +366,7 @@ BEGIN
 
             mvt = palk.fnc_calc_mvt(l_params :: JSONB);
 
-            IF mvt > summa
+            IF mvt > 0 AND mvt > summa
             THEN
                 -- обработаем возможную ошибку
                 mvt = summa;
@@ -374,10 +375,10 @@ BEGIN
 
     END IF;
 
-
     -- TM arvestus
 
     tm = palk.fnc_calc_tm(summa, mvt, tki, pm, l_tululiik);
+    tm_kokku = palk.fnc_calc_tm(l_tulud_kokku, mvt, tki, pm, NULL::TEXT);
 
     selg = coalesce(selg, '') + 'TM arvestus:' + round(tm, 2) :: TEXT + ltEnter;
     IF summa IS NOT NULL
@@ -420,7 +421,10 @@ $$;
 
 /*
 SELECT *
-FROM palk.sp_calc_arv(1, '		{"lepingid":27341,"libid":154268,"kpv":20190131}' :: JSON)
+FROM palk.sp_calc_arv(1, '{"lepingid":31113,"libid":135748,"kpv":20210430}' :: JSON)
+
+select * from palk.l
+
 
 select * from palk.sp_calc_arv(1,'{"lepingid":4, "libid":386, "kpv":"2018-04-09"}'::JSON)
 SELECT * FROM palk.sp_calc_arv(1,'{ "alus_summa": 100,"kpv": "2018-04-09"}' :: JSON)

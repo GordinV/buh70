@@ -160,7 +160,8 @@ BEGIN
         new_history = new_history :: JSONB || aa_history :: JSONB;
 
         UPDATE ou.rekv
-        SET parentid   = doc_parentid,
+        SET 
+--            parentid   = doc_parentid,
             regkood    = doc_regkood,
             kbmkood    = doc_kbmkood,
             nimetus    = doc_nimetus,

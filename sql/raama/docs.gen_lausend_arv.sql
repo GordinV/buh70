@@ -129,7 +129,7 @@ BEGIN
         lcKrTp = coalesce(v_arv.asutus_tp, '800599');
 
         -- majandusamet
-        IF v_arv.rekvid = 130 AND NOT empty(v_arv.lisa)
+        IF (v_arv.rekvid = 130 or v_arv.rekvid = 29) AND NOT empty(v_arv.lisa)
         THEN
             lcSelg = lcSelg || ', ' || ltrim(rtrim(v_arv.lisa));
         END IF;
