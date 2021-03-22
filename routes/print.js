@@ -11,7 +11,7 @@ exports.get = async (req, res) => {
     const user = require('../middleware/userData')(req, uuid); // данные пользователя
     let filterData = []; // параметр filter документов;
     let template = docTypeId; // jade template
-    const limit = 1000;
+    const limit = 10000;
     let id;
 
     if (ids && !sqlWhere) {
@@ -76,7 +76,6 @@ exports.get = async (req, res) => {
             data = getGroupedData(data,templateObject.group);
         }
 
-        console.log('print data', JSON.stringify(data));
         // вернуть отчет
         res.render(template, {title: 'Tunnused', data: data, user: user, filter: filterData});
 
