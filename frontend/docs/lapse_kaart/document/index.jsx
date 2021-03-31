@@ -91,7 +91,7 @@ class LapseKaart extends React.PureComponent {
 
     renderer(self) {
         //|| !self.state.loadedLibs
-        if (!self || !self.docData ) {
+        if (!self || !self.docData || !self.state.loadedLibs) {
             // не загружены данные
             return (<div style={styles.doc}>
                 <Loading label={'Laadimine...'}/>
@@ -116,12 +116,11 @@ class LapseKaart extends React.PureComponent {
             return {id: index++, nimetus: item}
         });
 
-        // фильтр на номенклатуры
-        let nomData = [{id: 0, kood: '', nimetus: '', hind: 0, kogus: 0, kas_inf3: false}];
+        let nomData = [];
         // берем только услуги для группы, добавляяем цену и ед.измерения и сортируем
         try {
             if (yksus) {
-                if (DocContext.libs && DocContext.libs[yksus.id]) {
+                if (DocContext.libs && DocContext.libs[yksus.id] && DocContext.libs[yksus.id].length) {
                     // берем из кеша
                     nomData = DocContext.libs[yksus.id]
                 } else {
@@ -136,15 +135,24 @@ class LapseKaart extends React.PureComponent {
                         return a.kood.localeCompare(b.kood)
                     });
 
-                    DocContext.libs[yksus.id] = nomData;
-                    this.forceUpdate();                }
+                    if (nomData.length) {
+                        // сохраним в кеше
+                        DocContext.libs[yksus.id] = nomData;
+
+                        // на всякий, вызовем ре рендер страницы
+                        this.forceUpdate();
+                    }
+                }
+            } else {
+                // фильтр на номенклатуры
+                nomData = [{id: 0, kood: '', nimetus: '', hind: 0, kogus: 0, kas_inf3: false}];
             }
 
         } catch (e) {
             console.error(e, nomData);
         }
 
-
+console.log('nomData', nomData,self.docData.nomid );
         // проверим стоит ли разрешить редактирование
         let isEditLapsid = !!self.docData.parentid;
 
