@@ -137,7 +137,7 @@ class LapseKaart extends React.PureComponent {
                     });
 
                     DocContext.libs[yksus.id] = nomData;
-                }
+                    this.forceUpdate();                }
             }
 
         } catch (e) {

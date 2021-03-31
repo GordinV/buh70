@@ -2,6 +2,8 @@
 
 const PropTypes = require('prop-types');
 const React = require('react');
+const DocContext = require('../../../doc-context');
+
 
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
@@ -70,6 +72,12 @@ class LapseGrupp extends React.PureComponent {
         if (self.gridRowData) {
             gridValue = self.gridRowData.id ? self.gridRowData.id : null;
         }
+
+        // чистим кеш, чтобы информация при изменении была обновлена
+        if (self.docData && self.docData.id && DocContext.libs && DocContext.libs[self.docData.id]) {
+            delete DocContext.libs[self.docData.id];
+        }
+
 
         return (
             <div style={styles.doc}>
