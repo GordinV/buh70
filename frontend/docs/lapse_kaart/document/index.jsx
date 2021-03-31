@@ -34,7 +34,6 @@ class LapseKaart extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            loadedData: false,
             docId: props.docId ? props.docId : Number(props.match.params.docId),
             module: 'lapsed'
         };
@@ -52,6 +51,7 @@ class LapseKaart extends React.PureComponent {
         ];
 
         this.libs = {}; // libs cache
+
     }
 
     componentDidMount() {
@@ -110,6 +110,7 @@ class LapseKaart extends React.PureComponent {
         if (self.libs['lapse_grupp'] && self.docData.yksus) {
             yksus = self.libs['lapse_grupp'].find(yksus => yksus.kood === self.docData.yksus);
         }
+
         const all_yksused = (yksus ? yksus.all_yksused : []).map((item, index) => {
             return {id: index++, nimetus: item}
         });
@@ -129,14 +130,13 @@ class LapseKaart extends React.PureComponent {
                 }).sort((a, b) => {
                     return a.kood.localeCompare(b.kood)
                 });
-
-                // Обновить картинку
-                this.forceUpdate();
             }
 
         } catch (e) {
             console.error(e, nomData);
         }
+
+
         // проверим стоит ли разрешить редактирование
         let isEditLapsid = !!self.docData.parentid;
 
@@ -220,7 +220,7 @@ class LapseKaart extends React.PureComponent {
                                 name='nomid'
                                 libs="nomenclature"
                                 data={nomData}
-                                value={self.docData.nomid || 0}
+                                value={nomData.length && nomData[0].id && nomData[0].id > 0 ? self.docData.nomid: 0 || 0}
                                 defaultValue={self.docData.kood}
                                 ref="select-nomid"
                                 collId={'id'}

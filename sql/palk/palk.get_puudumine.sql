@@ -18,8 +18,8 @@ DECLARE
     kas_kalendripaevad BOOLEAN = coalesce((params ->> 'kas_kalendripaevad')::BOOLEAN, FALSE);
     kas_puudumised     BOOLEAN = (params ->> 'puudumised');
 
-    l_start_paev       INTEGER;
-    l_lopp_paev        INTEGER;
+    l_start_paev       INTEGER = coalesce((params ->> 'alg_paev')::INTEGER, 1);
+    l_lopp_paev        INTEGER = params ->> 'lopp_paev';
 
     l_result           NUMERIC = 0;
     qryPuhkused        RECORD;
@@ -46,6 +46,9 @@ BEGIN
           AND (l_pohjus IS NULL OR p.pohjus = l_pohjus)
           AND (l_pohjuse_tyyp IS NULL OR p.tyyp = l_pohjuse_tyyp)
           AND (kas_puudumised IS NULL OR p.kas_muutab_kalendripäevad)
+          AND (l_start_paev IS NULL OR day(p.kpv1) >= l_start_paev)
+          AND (l_lopp_paev IS NULL OR day(p.kpv2) <= l_lopp_paev)
+
         LOOP
             -- обнулим переменные
             l_paevad = 0;

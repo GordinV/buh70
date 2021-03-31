@@ -34,6 +34,7 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
+    raise notice 'doc_id %, doc_muud %', doc_id, doc_muud;
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN

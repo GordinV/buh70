@@ -16,8 +16,6 @@ const db = {
             prepairedSqlString = createSqlString(prepairedSqlString, sortBy, sqlWhere, sqlLimit, subTotals)
         }
 
-        console.log(prepairedSqlString);
-
         const client = new Client(config.pg.connection);
         await client.connect();
 

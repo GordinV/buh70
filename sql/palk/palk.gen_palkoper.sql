@@ -26,6 +26,8 @@ DECLARE
     l_tulemus_json      JSON;
     v_user              RECORD;
     v_tulemus           RECORD;
+    l_sm_lib            INTEGER; -- ид операции СН
+
 
 BEGIN
     SELECT kasutaja,
@@ -111,7 +113,7 @@ BEGIN
                            FROM ou.userid u
                            WHERE u.id = user_id)
           AND t.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
-        ORDER BY t.pohikoht DESC, t.koormus desc
+        ORDER BY t.pohikoht DESC, t.koormus DESC
         LOOP
             -- инициализируем
             SELECT NULL::INTEGER                  AS doc_id,
@@ -120,6 +122,10 @@ BEGIN
                    INTO v_tulemus;
 
 
+            l_sm_lib = null;
+
+            raise notice 'v_tooleping %', v_tooleping;
+
             FOR V_lib IN
                 SELECT pk.libid                     AS id,
                        pk.liik,
@@ -127,7 +133,8 @@ BEGIN
                        pk.tululiik,
                        empty(percent_::INTEGER)     AS is_percent,
                        pk.tunnus,
-                       pk.tunnusid::INTEGER         AS tunnusid
+                       pk.tunnusid::INTEGER         AS tunnusid,
+                       pk.minsots
                 FROM palk.cur_palk_kaart pk
                 WHERE lepingid = v_tooleping.id
                   AND status = 1
@@ -169,6 +176,11 @@ BEGIN
                                      WHEN v_lib.liik = 6
                                          THEN 'palk.sp_calc_tasu'
                         END;
+                    IF v_lib.liik = 5 and not empty(v_lib.minsots)
+                    THEN
+                        -- SM
+                        l_sm_lib = v_lib.id;
+                    END IF;
 
                     -- вызов процедура расчета
 
@@ -177,6 +189,8 @@ BEGIN
                         USING user_id, l_params;
 
                     l_tulemus_json = row_to_json(tulemus);
+
+                    raise notice 'tulemus %', tulemus;
 
                     IF tulemus.summa IS NOT NULL AND tulemus.summa <> 0
                     THEN
@@ -266,6 +280,99 @@ BEGIN
                             ) row;
             data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
 
+            -- дорасчет мин СН
+
+            IF (is_calc_min_sots) AND l_sm_lib IS NOT NULL
+            THEN
+                -- удаляем предыдущий расчет мин.СН
+                SELECT id INTO l_dok_id
+                FROM palk.cur_palkoper po
+                WHERE year(po.kpv) = year(l_kpv)
+                  AND month(po.kpv) = month(l_kpv)
+                  AND po.period IS NULL
+                  AND po.lepingid IN (SELECT t.id
+                                      FROM palk.tooleping t
+                                      WHERE t.parentid = v_tooleping.parentid
+                                        AND t.rekvid = v_tooleping.rekvId)
+                  AND po.palk_liik :: TEXT = 'SOTSMAKS'
+                  AND po.sotsmaks IS NOT NULL
+                  AND po.sotsmaks <> 0;
+
+                -- Готовим параметры для расчета
+                SELECT row_to_json(row) INTO l_params
+                FROM (SELECT l_kpv              AS kpv,
+                             v_tooleping.rekvid AS rekvid,
+                             v_tooleping.id     AS lepingid,
+                             l_sm_lib           AS libid,
+                             TRUE               AS kas_min_sots) row;
+
+                SELECT *
+                FROM palk.sp_calc_sots(user_id, l_params::JSON) INTO tulemus;
+
+                IF tulemus.summa > 0
+                THEN
+                    l_tulemus_json = row_to_json(tulemus);
+                    -- есть дорасчет с мин. соц.налога
+                    SELECT pk.libid             AS id,
+                           pk.liik,
+                           pk.tunnus,
+                           pk.tunnusid::INTEGER AS tunnusid
+                           INTO v_lib
+                    FROM palk.cur_palk_kaart pk
+                    WHERE lepingid = v_tooleping.id
+                      AND status = 1
+                      AND pk.libid = l_sm_lib;
+
+                    SELECT coalesce(l_dok_id, 0) :: INTEGER                             AS id,
+                           l_kpv                                                        AS kpv,
+                           v_tooleping.id                                               AS lepingid,
+                           v_lib.id                                                     AS libid,
+                           tulemus.summa                                                AS summa,
+                           l_dokprop_id                                                 AS dokpropid,
+                           l.tegev                                                      AS kood1,
+                           l.allikas                                                    AS kood2,
+                           l.artikkel                                                   AS kood5,
+                           l.uritus                                                     AS kood4,
+                           l.konto                                                      AS konto,
+                           v_lib.tunnus                                                 AS tunnus,
+                           v_lib.tunnusid                                               AS tunnusid,
+                           l.korrkonto                                                  AS korrkonto,
+                           l.proj                                                       AS proj,
+                           '800699' :: TEXT                                             AS tp,
+                           coalesce((l_tulemus_json ->> 'sm') :: NUMERIC, 0) :: NUMERIC AS sotsmaks,
+                           l_tulemus_json ->> 'selg' :: TEXT                            AS muud,
+                           TRUE                                                         AS kas_lausend,
+                           FALSE                                                        AS kas_kas_arvesta_saldo
+                           INTO v_palk_oper
+                    FROM palk.com_palk_lib AS l
+                    WHERE l.id = V_lib.id;
+
+                    l_save_params = row_to_json(v_palk_oper);
+
+                    -- save results
+                    l_dok_id =
+                            palk.sp_salvesta_palk_oper(
+                                    ('{"lausend":true,"data":' || l_save_params || '}') :: JSON,
+                                    user_id,
+                                    v_tooleping.rekvid);
+                    IF (coalesce(l_dok_id, 0) > 0)
+                    THEN
+                        result = coalesce(result, 0) + 1;
+                    END IF;
+                ELSE
+                    -- сумма доп. СН равна нулю
+                    IF l_dok_id IS NOT NULL
+                    THEN
+                        -- удаляем
+                        PERFORM palk.sp_delete_palk_oper(user_id, l_dok_id, FALSE);
+                    END IF;
+
+
+                END IF;
+
+            END IF;
+
+
             -- расчет сальдо
             PERFORM palk.sp_update_palk_jaak(l_kpv::DATE, v_tooleping.id::INTEGER);
 
@@ -314,13 +421,17 @@ SELECT * from palk.gen_palkoper(1, '{"kpv":20210131,"leping_ids": [20016,27828]}
 SELECT palk.gen_palkoper(1, '{"kpv":20180508,"leping_ids": [3,4],"lib_ids":[525, 526, 528, 529, 530, 531, 524]}')
 SELECT palk.gen_palkoper(1, '{"kpv":20180508,"isik_ids": [56,57],"osakond_ids":[374,377],"lib_ids":[525, 526, 528, 529, 530, 531, 524]}')
 
-SELECT palk.gen_palkoper(2477, '{"osakond_ids":[54836],
-				"isik_ids":[28820],
-				"lib_ids":[135395,135488,135560,136062,136064,136073,136074,136078,136079,136080,136081,136082,136085,136087,136216,136322,138226,138227,138228,138840,139557,139803,140137,140273,140340,140341,140699,140899,140900,140905,140907,140908,140909,140910,140911,140912,140913,140914,140915,140916,140917,140919,141125,141544,141545,141546,141556,141622,141738,141739,141740,141760,141885,141950,141973,141974,144631,145312,145403,145650,145899,145900,145903,145906,145909,145910,145911,145915,145916,145917,145918,146103,146104,146117,147959,148596,149253,149567,149605,149826,149896,149966,150139,150300,150432,150551,150554,150555,150558,150559,150560,150561,150562,150563,150564,150565,150610,151209,151223,151224,151225,151228,151275,151298,151301,151356,151439,152010,152161,154265,154267,154268,154269,154270,154271,230115,230116,230126,230238],
-				"kpv":20210228,
-				"kas_kustuta":true,
+
+select * from ou.userid where kasutaja = 'vlad'
+and rekvid in (select id from ou.rekv where nimetus ilike '%rugodiv%')
+
+SELECT palk.gen_palkoper(4895, '{"osakond_ids":[17485],
+				"isik_ids":[15189],
+				"lib_ids":[138270,138271,138272,139584,140323,142982,143316,148043,153750],
+				"kpv":20210331,
+				"kas_kustuta":false,
 				"kas_arvesta_minsots":true,
-				"dokprop":846
+				"dokprop":1608
 				}')
 
 select * from ou.userid where kasutaja = 'vlad' and rekvid  = 63

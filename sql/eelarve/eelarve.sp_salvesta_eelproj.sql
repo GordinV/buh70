@@ -20,11 +20,14 @@ DECLARE
   is_import     BOOLEAN = data ->> 'import';
 BEGIN
 
+
   SELECT kasutaja
          INTO userName
   FROM ou.userid u
-  WHERE u.rekvid = user_rekvid
+  WHERE u.rekvid = 63
+    and (u.roles ->> 'is_eel_aktsepterja')::boolean
     AND u.id = user_id;
+
 
   IF is_import IS NULL AND userName IS NULL
   THEN

@@ -1,6 +1,6 @@
 DROP FUNCTION IF EXISTS palk.sp_calc_sots(INTEGER, INTEGER, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS palk.sp_calc_sots(params JSONB);
---DROP FUNCTION IF EXISTS palk.sp_calc_sots(user_id INTEGER, params JSON);
+DROP FUNCTION IF EXISTS palk.sp_calc_sots(user_id INTEGER, params JSON);
 
 DROP FUNCTION IF EXISTS palk.sp_calc_sots_(user_id INTEGER, params JSON);
 
@@ -25,6 +25,7 @@ DECLARE
                                                                TRUE); -- kas pk summa percentis (33%)
     l_min_sots                       INTEGER        = ((coalesce((params ->> 'minsots') :: INTEGER, 0)) :: INTEGER);
     l_alus_summa                     NUMERIC(12, 4) = params ->> 'alus_summa'; -- tulud , milliest arvestame sots.maks
+    kas_arvesta_min_sots             BOOLEAN        = coalesce((params ->> 'kas_min_sots')::BOOLEAN, FALSE);
     l_round                          NUMERIC        = 0.01;
     l_params                         JSON;
 
@@ -78,30 +79,16 @@ BEGIN
         WHERE pk.lepingid = l_lepingid
           AND libId = l_libId;
 
-        SELECT sum(po.sotsmaks) AS sotsmaks,
-               sum(po.summa),
-               sum(po.summa) FILTER ( WHERE right(rtrim(po.konto), 2) NOT IN ('21', '23', '24', '25'))
-               INTO summa, l_alus_summa, l_min_sotsmaks_alus
-        FROM palk.cur_palkoper po
-                 INNER JOIN libs.library l ON l.id = po.libid
-        WHERE po.kpv = l_kpv
-          AND po.rekvid = v_tooleping.rekvId
-          AND po.lepingId = l_lepingid
-          AND po.palk_liik = 'ARVESTUSED'
-          AND po.period IS NULL
-          AND po.sotsmaks IS NOT NULL;
-
-        IF coalesce(l_min_sots, 0) > 0
+        IF coalesce(l_min_sots, 0) > 0 AND kas_arvesta_min_sots
         THEN
-            -- считает отсутствие на раб. месте
-
+            -- расчет СН с мин. ЗП
             -- kontrollime enne arvestatud sotsmaks
 
-            SELECT sum(po.summa) FILTER ( WHERE po.palk_liik :: TEXT = 'SOTSMAKS'),
-                   sum(po.sotsmaks) FILTER ( WHERE po.palk_liik :: TEXT = 'SOTSMAKS'),
+            SELECT sum(po.summa)
+                       FILTER ( WHERE po.palk_liik :: TEXT = 'SOTSMAKS' AND (po.sotsmaks IS NULL OR po.sotsmaks = 0)),
                    sum(po.summa) FILTER ( WHERE po.palk_liik :: TEXT = 'ARVESTUSED' AND po.is_sotsmaks AND
                                                 right(rtrim(po.konto), 2) NOT IN ('21', '23', '24', '25'))
-                   INTO l_enne_arvestatud_sotsmaks, l_enne_sotsmaks_min_palgast_alus, l_min_sotsmaks_alus
+                   INTO l_enne_arvestatud_sotsmaks, l_min_sotsmaks_alus
             FROM palk.cur_palkoper po
             WHERE year(po.kpv) = year(l_kpv)
               AND month(po.kpv) = month(l_kpv)
@@ -109,25 +96,18 @@ BEGIN
               AND po.lepingid IN (SELECT t.id
                                   FROM palk.tooleping t
                                   WHERE t.parentid = v_tooleping.parentid
-                                    AND t.rekvid = v_tooleping.rekvId)
-              AND po.id NOT IN (SELECT p.id
-                                FROM palk.cur_palkoper p
-                                WHERE p.lepingId = l_lepingid
-                                  AND libId = l_libId
-                                  AND kpv = l_kpv);
+                                    AND t.rekvid = v_tooleping.rekvId);
 
             l_enne_arvestatud_sotsmaks = coalesce(l_enne_arvestatud_sotsmaks, 0);
 
-
--- params
+            -- отсутствие на раб.месте
+            -- params
             SELECT row_to_json(row) INTO l_params
             FROM (SELECT month(l_kpv) AS kuu,
                          year(l_kpv)  AS aasta,
                          l_lepingid   AS lepingid) row;
 
-
             l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
-
 
             IF coalesce(l_puudu_paevad, 0) > 0
             THEN
@@ -158,11 +138,14 @@ BEGIN
                          TRUE         AS puudumised,
                          l_lepingid   AS lepingid) row;
 
-
             l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
 
             -- за вычитом отпуска и больничного
             l_paevad_periodis = l_paevad_periodis - l_puudu_paevad;
+            IF l_puudu_paevad = 0
+            THEN
+                l_paevad_periodis = 30;
+            END IF;
 
 
             IF NOT empty(l_min_sots) AND NOT empty(l_min_palk) AND
@@ -188,79 +171,50 @@ BEGIN
             IF l_sotsmaks_min_palgast > (l_min_palk * l_min_sots * l_pk_summa * 0.01)
             THEN
                 l_sotsmaks_min_palgast = (l_min_palk * l_min_sots * l_pk_summa * 0.01);
-
-                IF l_sotsmaks_min_palgast > coalesce(l_enne_arvestatud_sotsmaks, 0)
-                THEN
-                    l_sotsmaks_min_palgast = l_sotsmaks_min_palgast - coalesce(l_enne_arvestatud_sotsmaks, 0);
-                ELSE
-                    -- не используем см с мин. ЗП
-                    l_sotsmaks_min_palgast = 0;
-                END IF;
-
-                -- основа начисления соц. налога
-                sm = f_round(l_min_palk - l_min_sotsmaks_alus, l_round);
-
-
-                -- считаем доп. налог с поправленной суммы
-                l_lisa_sm = f_round(sm * l_pk_summa * 0.01, l_round);
-
             END IF;
 
-
-        END IF;
-
-        IF coalesce(l_enne_sotsmaks_min_palgast_alus, 0) > 0
-        THEN
-            -- был расчет с мин. соц. налогом
-        END IF;
-
-        IF coalesce(summa, 0) < l_sotsmaks_min_palgast AND (l_alus_summa = 0 OR summa > 0) AND
-           l_min_sotsmaks_alus < l_min_palk OR
-           coalesce(l_enne_sotsmaks_min_palgast_alus, 0) > 0
-        THEN
-            -- расчет основания для миню соц. налога
-            -- 584/30*24=467.20-399,08=68,12 евро
-            IF sm IS NULL OR empty(sm)
+            IF l_sotsmaks_min_palgast > coalesce(l_enne_arvestatud_sotsmaks, 0)
             THEN
+                -- считаем необходимую для до начисления сумму налога
+                summa = l_sotsmaks_min_palgast - coalesce(l_enne_arvestatud_sotsmaks, 0);
+                -- основа начисления соц. налога
+
                 IF coalesce(l_puudu_paevad, 0) > 0
                 THEN
-                    sm = f_round(l_min_palk / 30 * l_paevad_periodis - l_min_sotsmaks_alus, l_round);
+                    sm = f_round(l_min_palk / 30 * coalesce(l_paevad_periodis, 30) - l_min_sotsmaks_alus, l_round);
                 ELSE
                     sm = f_round(l_min_palk - l_min_sotsmaks_alus, l_round);
                 END IF;
 
-                IF l_min_palk < l_min_sotsmaks_alus AND l_enne_sotsmaks_min_palgast_alus > 0
-                THEN
-                    -- правим ранее расчитанный мин. соц. налог
-                    sm = -1 * l_enne_sotsmaks_min_palgast_alus;
-                    l_selg = 'min. SM parandus -1 * ' || l_enne_sotsmaks_min_palgast_alus::TEXT;
-                END IF;
-                l_lisa_sm = f_round(sm * l_pk_summa * 0.01, l_round);
+                selg = 'lisa SM (' + l_min_palk::TEXT + '/30 * ' ||
+                       coalesce(l_paevad_periodis, 30)::TEXT || '-' + coalesce(l_min_sotsmaks_alus, 0)::TEXT +
+                                                                ') = ' + coalesce(sm, 0)::TEXT ||
+                       '* 0.33 = ' || coalesce(summa, 0)::TEXT;
+
+            ELSE
+                -- не используем см с мин. ЗП
+                summa = 0;
+                sm = 0;
             END IF;
-            -- доп.ю соц. налог равен мин. соц минус начисленный
 
---            l_sotsmaks_min_palgast = l_sotsmaks_min_palgast - summa;
+
         ELSE
-            l_sotsmaks_min_palgast = 0;
+            -- обычный соц. налог
+            SELECT sum(po.sotsmaks) AS sotsmaks,
+                   sum(po.summa)
+                   INTO summa, l_alus_summa
+            FROM palk.cur_palkoper po
+                     INNER JOIN libs.library l ON l.id = po.libid
+            WHERE po.kpv = l_kpv
+              AND po.rekvid = v_tooleping.rekvId
+              AND po.lepingId = l_lepingid
+              AND po.palk_liik = 'ARVESTUSED'
+              AND po.period IS NULL
+              AND po.sotsmaks IS NOT NULL;
+
+            selg = 'Enne arvestatud SM ' || summa::TEXT || ', alus ' || l_alus_summa::TEXT;
+
         END IF;
-
-        IF sm IS NOT NULL
-        THEN
-
-            l_selg = '(' || 'lisa SM (' + CASE
-                                              WHEN NOT empty(l_selg) THEN l_selg
-                                              ELSE l_min_palk::TEXT + '/30 * ' ||
-                                                   l_paevad_periodis::TEXT || '-' + l_min_sotsmaks_alus::TEXT END +
-                            ') ' + coalesce(sm, 0)::TEXT ||
-                     '* 0.33 = SM MIN.palgast ';
-        ELSE
-            l_selg = '';
-        END IF;
-
-        selg = '(' + l_alus_summa::TEXT + ' * 0.33)' + coalesce(summa, 0) :: TEXT || l_selg || l_lisa_sm :: TEXT ||
-               ')' || CASE WHEN ln_umardamine <> 0 THEN ' +  (umardamine) ' || ln_umardamine :: TEXT ELSE '' END;
-
-        summa = f_round(coalesce(summa, 0) + l_lisa_sm + ln_umardamine, l_round);
 
     ELSE
         -- arvestus
@@ -289,8 +243,17 @@ END;
 
 $$;
 
+
 /*
-select * from palk.sp_calc_sots(70, '{"lepingid":22818,"libid":149081,"kpv":20210331}'::JSON)
+SELECT *
+FROM palk.sp_calc_sots_(70, '        {
+  "lepingid": 31001,
+  "libid": 146704,
+  "kpv": 20210531,
+  "kas_min_sots": true
+}'::JSON)
+
+
 select * from palk.sp_calc_sots(70, '{"lepingid":34860,"libid":149081,"kpv":20210331}'::JSON)
 
 

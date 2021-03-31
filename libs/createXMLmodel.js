@@ -71,7 +71,6 @@ function createXMLmodel(modelForExport, callback) {
 
     fs.writeFile(xmlFile, lcXml, (err) => {
         if (err) return (callback (err, null));
-        console.log('The file has been saved!', xmlFile);
         callback(null,xmlFile);
     });
 }

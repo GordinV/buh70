@@ -65,6 +65,13 @@ BEGIN
 
     END IF;
 
+    IF doc_id IS NOT NULL AND doc_id > 0 AND NOT coalesce((doc_data ->> 'is_tootaja') :: BOOLEAN, FALSE) AND
+       exists(SELECT id FROM palk.tooleping WHERE parentid = doc_id)
+    THEN
+        doc_is_tootaja = TRUE;
+    END IF;
+
+
     SELECT row_to_json(row) INTO new_properties
     FROM (SELECT doc_kehtivus                                                              AS kehtivus,
                  doc_pank                                                                  AS pank,
@@ -100,6 +107,7 @@ BEGIN
         SELECT row_to_json(row) INTO new_history
         FROM (SELECT now()    AS updated,
                      userName AS user) row;
+
 
         UPDATE libs.asutus
         SET regkood    = doc_regkood,

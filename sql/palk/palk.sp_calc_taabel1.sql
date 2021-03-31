@@ -27,9 +27,11 @@ DECLARE
     l_kpv              DATE;
     l_params           JSONB;
     l_tahtpaeva_tunnid NUMERIC(12, 4) = 0;
-    l_selg text = '';
+    l_selg             TEXT           = '';
 
 BEGIN
+
+    RAISE NOTICE 'taabel params %', params;
 
     IF l_lopp_paev IS NULL
     THEN
@@ -57,13 +59,18 @@ BEGIN
         l_lopp_paev = day(v_Tooleping.lopp);
     END IF;
 
+
+    RAISE NOTICE 'l_alg_paev %, l_lopp_paev %', l_alg_paev, l_lopp_paev;
+
     -- arv puhkuse paevad
     SELECT row_to_json(row) INTO l_params
-    FROM (SELECT l_kuu      AS kuu,
-                 l_aasta    AS aasta,
-                 l_kpv      AS kpv,
-                 l_lepingid AS lepingid,
-                 'PUHKUS'   AS pohjus) row;
+    FROM (SELECT l_kuu       AS kuu,
+                 l_aasta     AS aasta,
+                 l_kpv       AS kpv,
+                 l_lepingid  AS lepingid,
+                 l_alg_paev  AS alg_paev,
+                 l_lopp_paev AS lopp_paev,
+                 'PUHKUS'    AS pohjus) row;
 
     l_puhkus = palk.get_puudumine(l_params :: JSONB);
 
@@ -100,7 +107,6 @@ BEGIN
         l_muud = 0;
     END IF;
 
-
     -- check work table
     SELECT t.tund INTO l_hours
     FROM palk.Toograf t
@@ -112,6 +118,7 @@ BEGIN
 -- есть раб. график, считаем табель
     IF coalesce(l_toograf, 0) = 0 AND coalesce(l_hours, 0) > 0
     THEN
+
         -- calculate hours
         l_hours = (l_hours - (coalesce(l_puhkus, 0) + coalesce(l_haigus, 0) + l_muud) * v_Tooleping.toopaev -
                    l_tunnid);

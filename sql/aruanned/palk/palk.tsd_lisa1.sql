@@ -1,5 +1,6 @@
 --DROP FUNCTION IF EXISTS palk.tsd_lisa_1(DATE, DATE, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS palk.tsd_lisa_1_(DATE, DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS palk.tsd_lisa_1(DATE, DATE, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION palk.tsd_lisa_1(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER)
     RETURNS TABLE (
@@ -26,10 +27,26 @@ CREATE OR REPLACE FUNCTION palk.tsd_lisa_1(l_kpv1 DATE, l_kpv2 DATE, l_rekvid IN
         arv_min_sots  NUMERIC(14, 2),
         min_sots_alus NUMERIC(14, 2),
         eri_tm        NUMERIC(14, 2),
-        eri_sm        NUMERIC(14, 2)
+        eri_sm        NUMERIC(14, 2),
+        lisa_min_sots NUMERIC(14, 2),
+        lisa_sm_alus  NUMERIC(14, 2),
+        sm_kokku      NUMERIC(14, 2)
+
     ) AS
 $BODY$
-
+WITH qrySMKokku AS (
+    SELECT sum(summa) AS sm_kokku
+    FROM palk.cur_palkoper po
+    WHERE po.palk_liik = 'SOTSMAKS'
+      AND kpv >= l_kpv1
+      AND kpv <= l_kpv2
+      AND rekvid = (CASE
+                        WHEN l_kond IS NOT NULL
+                            THEN l_rekvid
+                        ELSE rekvid END)
+      AND rekvId IN (SELECT rekv_id
+                     FROM get_asutuse_struktuur(l_rekvid))
+)
 SELECT isikukood,
        isik,
        tululiik,
@@ -53,7 +70,10 @@ SELECT isikukood,
        coalesce(arv_min_sots, 0)::NUMERIC(14, 2),
        coalesce(min_sots_alus, 0)::NUMERIC(14, 2),
        coalesce(eri_tm, 0)::NUMERIC(14, 2),
-       coalesce(eri_sm, 0)::NUMERIC(14, 2)
+       coalesce(eri_sm, 0)::NUMERIC(14, 2),
+       arv_min_sots * sm_arv  AS lisa_min_sots,
+       min_sots_alus * sm_arv AS lisa_sm_alus,
+       qrySMKokku.sm_kokku    AS sm_kokku
 FROM (
          WITH qryKoormus AS (
              SELECT a.regkood :: VARCHAR(20)                   AS isikukood,
@@ -127,31 +147,31 @@ FROM (
                      ELSE qry.isik END) :: VARCHAR(253),
                 qry.tululiik,
                 qry.liik,
-                max(COALESCE(qry.minsots, 0) :: NUMERIC(14, 2))       AS minsots,
+                max(COALESCE(qry.minsots, 0) :: NUMERIC(14, 2))      AS minsots,
                 qry.sm_arv,
                 qry.tk_arv,
-                max(COALESCE(qry.minpalk, 0) :: NUMERIC(14, 2))       AS minpalk,
-                sum(qry.summa)                                   AS summa,
-                sum(qry.puhkused)                                AS puhkused,
-                sum(qry.haigused)                                AS haigused,
-                sum(qry.tm)                                      AS tm,
-                sum(qry.sm)                                      AS sm,
-                sum(qry.tki)                                     AS tki,
-                sum(qry.pm)                                      AS pm,
-                sum(qry.tka)                                     AS tka,
-                sum(qry.tulubaas)                                AS tulubaas,
-                sum(qry.puhkus)                                  AS puhkus,
+                max(COALESCE(qry.minpalk, 0) :: NUMERIC(14, 2))      AS minpalk,
+                sum(qry.summa)                                       AS summa,
+                sum(qry.puhkused)                                    AS puhkused,
+                sum(qry.haigused)                                    AS haigused,
+                sum(qry.tm)                                          AS tm,
+                sum(qry.sm)                                          AS sm,
+                sum(qry.tki)                                         AS tki,
+                sum(qry.pm)                                          AS pm,
+                sum(qry.tka)                                         AS tka,
+                sum(qry.tulubaas)                                    AS tulubaas,
+                sum(qry.puhkus)                                      AS puhkus,
 
                 max(round(CASE
                               WHEN qryKoormus.koormus IS NULL
                                   THEN qry.koormus
-                              ELSE qryKoormus.koormus END / 100, 2))    AS v1040,
+                              ELSE qryKoormus.koormus END / 100, 2)) AS v1040,
 
-                MAX(qry.lopp)                                    AS lopp,
-                max(qry.arv_min_sots)                            AS arv_min_sots,
-                max(qry.min_sots_alus)                           AS min_sots_alus,
-                sum(COALESCE(qryEriTm.summa, 0))::NUMERIC(14, 2) AS eri_tm,
-                sum(COALESCE(qryEriSm.summa, 0))::NUMERIC(14, 2) AS eri_sm
+                MAX(qry.lopp)                                        AS lopp,
+                max(qry.arv_min_sots)                                AS arv_min_sots,
+                max(qry.min_sots_alus)                               AS min_sots_alus,
+                sum(COALESCE(qryEriTm.summa, 0))::NUMERIC(14, 2)     AS eri_tm,
+                sum(COALESCE(qryEriSm.summa, 0))::NUMERIC(14, 2)     AS eri_sm
          FROM (
                   SELECT a.regkood                                                         AS isikukood,
                          a.nimetus                                                         AS isik,
@@ -198,7 +218,7 @@ FROM (
                            INNER JOIN libs.asutus a ON a.id = t.parentid
                            INNER JOIN palk.palk_oper po ON po.lepingid = t.id
                            INNER JOIN com_palklib pl ON pl.id = po.libId
---                           LEFT OUTER JOIN palk.palk_kaart pk ON pk.lepingId = t.id AND pk.libid = po.libid
+                      --                           LEFT OUTER JOIN palk.palk_kaart pk ON pk.lepingId = t.id AND pk.libid = po.libid
 --                           INNER JOIN ou.rekv ON rekv.id = po.rekvid
                            LEFT OUTER JOIN libs.LIBRARY l ON l.kood = po.tululiik AND l.library = 'MAKSUKOOD'
                            LEFT OUTER JOIN palk.palk_config pc ON pc.rekvid = t.rekvid
@@ -218,18 +238,19 @@ FROM (
                     AND pl.liik = 1
                     AND t.resident = 1
                     AND t.rekvid = (CASE
-                                       WHEN l_kond IS NOT NULL
-                                           THEN l_rekvid
-                                       ELSE t.rekvid END)
+                                        WHEN l_kond IS NOT NULL
+                                            THEN l_rekvid
+                                        ELSE t.rekvid END)
                     AND t.rekvId IN (SELECT rekv_id
-                                    FROM get_asutuse_struktuur(l_rekvid))
+                                     FROM get_asutuse_struktuur(l_rekvid))
               ) qry
                   FULL OUTER JOIN qryKoormus ON qryKoormus.isikukood = qry.isikukood
                   FULL OUTER JOIN qryEriTm ON qryEriTm.asutusid = qry.Id
                   FULL OUTER JOIN qryEriSm ON qryEriSm.asutusid = qry.Id
          GROUP BY qry.id, qry.isikukood, qryKoormus.isikukood, qry.isik, qryKoormus.isik,
-                  tululiik, liik, riik, period,  sm_arv, tk_arv --, minsots, minpalk
-     ) qry
+                  tululiik, liik, riik, period, sm_arv, tk_arv --, minsots, minpalk
+     ) qry,
+     qrySMKokku
 $BODY$
     LANGUAGE SQL
     VOLATILE
@@ -242,11 +263,16 @@ GRANT EXECUTE ON FUNCTION palk.tsd_lisa_1( DATE, DATE, INTEGER, INTEGER ) TO dbk
 
 /*
 
-select sum(sm) from (
-SELECT sum(sm) as sm
+SELECT sum(sm_kokku) as sm, sum(sm_kokku_1) as sm_1
 FROM
-select * from
-palk.tsd_lisa_1('2021-03-01', '2021-03-31', 125, 1 :: INTEGER)
+(
+select  * from
+palk.tsd_lisa_1('2021-03-01', '2021-03-31', 132, 1 :: INTEGER)
+
+
+) qry
+where isikukood = '47608283744'
+
 union all
          SELECT -1 * sum(c_1410)
          FROM palk.tsd_lisa_1b('2021-01-01', '2021-01-31', 96, 0 :: INTEGER)

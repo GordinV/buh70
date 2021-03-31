@@ -51,8 +51,10 @@ class DocumentTemplate extends React.Component {
         this.serverValidation = [];
         this.bpm = [];
         this.pages = props.pages;
+        this.loadingLibs =  {};
 
-        this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
+
+            this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick', 'btnEmailClick',
             'btnPdfClick',
             'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs', 'hasLibInCache',
@@ -518,7 +520,6 @@ class DocumentTemplate extends React.Component {
                         if (!result) {
                             expressionFields.push(field.name);
                         }
-                        console.log('expressionFields, result', expressionFields, result);
 
                     }
 
@@ -731,6 +732,14 @@ class DocumentTemplate extends React.Component {
 
 
         let libsToLoad = libName ? [libName] : Object.keys(this.libs);
+        // start loading
+        if (!this.loadingLibs[libName]) {
+            this.loadingLibs[libName] = true;
+        }
+        else {
+            // уже идет загрузка
+            return;
+        }
 
         libsToLoad.forEach((lib) => {
             let hasSqlWhere = (lib in this.state.libParams);
@@ -747,7 +756,6 @@ class DocumentTemplate extends React.Component {
             } : {});
 
             if (!!this.state.libParams[lib] || !this.hasLibInCache(lib)) {
-
                 fetchData.fetchDataPost(`${LIBS_URL}/${lib}`, params)
                     .then(response => {
                         if (response && 'data' in response) {
@@ -756,14 +764,20 @@ class DocumentTemplate extends React.Component {
                         }
                         // save lib in cache
                         DocContext.libs[lib] = this.libs[lib];
+                        // отметка что справочник загружен
+                        this.loadingLibs[lib] = false;
 
-                        if (libsCount === 0) {
+                        if (libsCount === 1 && !this.state.loadedLibs) {
                             //all libs loaded;
+                            this.setState({loadedLibs: true});
+
+/*
                             if (this.state.loadedLibs) {
                                 this.forceUpdate();
                             } else {
                                 this.setState({loadedLibs: true});
                             }
+*/
                         }
 
                     })
@@ -771,6 +785,7 @@ class DocumentTemplate extends React.Component {
                         console.error('loadLibs error', error);
                     });
             } else {
+
                 this.libs[lib] = DocContext.libs[lib].filter(row => {
                     let kpv = this.docData.valid ? this.docData.valid : new Date().toISOString().slice(0, 10);
                     kpv = this.docData.kpv ? this.docData.kpv : kpv;
@@ -779,6 +794,14 @@ class DocumentTemplate extends React.Component {
                         return row;
                     }
                 });
+                this.loadingLibs[lib] = false;
+
+                libsCount--;
+                if (libsCount === 1 && !this.state.loadedLibs) {
+                    //all libs loaded;
+                    this.setState({loadedLibs: true});
+                }
+
             }
         });
     }

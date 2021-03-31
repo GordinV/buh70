@@ -87,7 +87,7 @@ BEGIN
                  INNER JOIN libs.library library ON library.id = dokprop.parentid
            , jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
         WHERE dokprop.id = v_arv.doklausid
-            LIMIT 1;
+        LIMIT 1;
 
 --        v_dokprop.kbmkonto = CASE WHEN v_dokprop.kbmkonto IS NULL OR v_dokprop.kbmkonto = '' THEN v_dokprop.konto END;
 
@@ -129,15 +129,15 @@ BEGIN
         lcKrTp = coalesce(v_arv.asutus_tp, '800599');
 
         -- majandusamet
-        IF (v_arv.rekvid = 130 or v_arv.rekvid = 29) AND NOT empty(v_arv.lisa)
+        IF (v_arv.rekvid = 130 OR v_arv.rekvid = 29) AND NOT empty(v_arv.lisa)
         THEN
             lcSelg = lcSelg || ', ' || ltrim(rtrim(v_arv.lisa));
         END IF;
 
         SELECT v_arv.journalid,
-               'JOURNAL'                       AS doc_type_id,
+               'JOURNAL'                         AS doc_type_id,
                v_arv.kpv,
-               lcSelg                          AS selg,
+               lcSelg                            AS selg,
                v_arv.muud,
                v_arv.Asutusid,
                'Arve nr. ' || v_arv.number::TEXT AS dok
@@ -155,7 +155,6 @@ BEGIN
               AND arv1.summa <> 0
             LOOP
 
-                --      RAISE NOTICE 'v_arv1: %', v_arv1;
                 IF NOT empty(v_arv1.tp)
                 THEN
                     v_arv.asutus_tp := v_arv1.tp;
@@ -172,6 +171,8 @@ BEGIN
                 THEN
                     lcDbKonto = coalesce(v_dokprop.konto, '103000');
                     lcKrKonto = v_arv1.konto;
+
+                    RAISE NOTICE 'lcDbKonto %, lcKrKonto %, v_arv.asutus_tp %, v_dokprop.konto %', lcDbKonto, lcKrKonto, v_arv.asutus_tp, v_dokprop.konto;
 
                     SELECT 0                                   AS id,
                            CASE
@@ -205,21 +206,25 @@ BEGIN
                             v_arv.asutus_tp = '014001';
                         END IF;
 
-                        SELECT 0                                      AS id,
-                               coalesce(v_arv1.kbm, 0)                AS summa,
-                               coalesce(v_arv1.valuuta, 'EUR')        AS valuuta,
-                               coalesce(v_arv1.kuurs, 1)              AS kuurs,
-                               coalesce(v_dokprop.konto, '601000')    AS deebet,
-                               '014001'                               AS lisa_d,
-                               coalesce(v_dokprop.kbmkonto, '203010') AS kreedit,
-                               '014001'                               AS lisa_k,
-                               coalesce(v_arv1.tunnus, '')            AS tunnus,
-                               coalesce(v_arv1.proj, '')              AS proj,
-                               coalesce(v_arv1.kood1, '')             AS kood1,
-                               coalesce(v_arv1.kood2, '')             AS kood2,
-                               coalesce(v_arv1.kood3, '')             AS kood3,
-                               coalesce(v_arv1.kood4, '')             AS kood4,
-                               coalesce(v_arv1.kood5, '')             AS kood5
+                        lcDbKonto = coalesce(v_dokprop.konto, '601000');
+
+                        SELECT 0                                                AS id,
+                               coalesce(v_arv1.kbm, 0)                          AS summa,
+                               coalesce(v_arv1.valuuta, 'EUR')                  AS valuuta,
+                               coalesce(v_arv1.kuurs, 1)                        AS kuurs,
+                               coalesce(v_dokprop.konto, '601000')              AS deebet,
+                               CASE
+                                   WHEN lcDbKonto = '601000' THEN '014001'
+                                   ELSE coalesce(v_arv.asutus_tp, '800599') END AS lisa_d,
+                               coalesce(v_dokprop.kbmkonto, '203010')           AS kreedit,
+                               '014001'                                         AS lisa_k,
+                               coalesce(v_arv1.tunnus, '')                      AS tunnus,
+                               coalesce(v_arv1.proj, '')                        AS proj,
+                               coalesce(v_arv1.kood1, '')                       AS kood1,
+                               coalesce(v_arv1.kood2, '')                       AS kood2,
+                               coalesce(v_arv1.kood3, '')                       AS kood3,
+                               coalesce(v_arv1.kood4, '')                       AS kood4,
+                               coalesce(v_arv1.kood5, '')                       AS kood5
                                INTO v_journal;
 
                         l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);

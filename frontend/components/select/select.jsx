@@ -10,7 +10,7 @@ class Select extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            value: props.value/* здесь по значению ИД */,
+            value: this.getValueById(props.collId, props.value)/* здесь по значению ИД */,
             readOnly: props.readOnly,
             disabled: props.disabled,
             fieldValue: props.value /*здесь по значени поля collId */,
@@ -30,7 +30,7 @@ class Select extends React.PureComponent {
      */
     getValueById(collId, rowId) {
         // вернет значения поля по выбранному ИД
-        let fieldValue;
+        let fieldValue = 0;
         const foundRow = this.props.data.find(row => row[collId] === rowId);
         if (foundRow) {
             fieldValue = foundRow[collId];
@@ -78,6 +78,9 @@ class Select extends React.PureComponent {
         const selectStyle = Object.assign({}, styles.select,
                 this.props.style ? this.props.style : {});
 
+        // если не существует, то value = 0
+        let value = this.getValueById(this.props.collId, this.state.value);
+
         return (
             <div style={styles.wrapper} ref="wrapper">
                 {this.props.title ?
@@ -88,7 +91,7 @@ class Select extends React.PureComponent {
 
                 <select ref="select"
                         style={selectStyle}
-                        value={this.state.value || 0}
+                        value={value || 0}
                         id={this.props.name}
                         disabled={this.state.readOnly}
                         size={this.props.size ? this.props.size : 0}

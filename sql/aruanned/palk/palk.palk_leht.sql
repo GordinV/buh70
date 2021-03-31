@@ -41,7 +41,7 @@ WITH qry_taabel AS (
     WHERE t.aasta = year(l_kpv2)
       AND t.kuu = month(l_kpv2)
       AND t.rekvid = l_rekvid
-        GROUP BY t.isik_id
+    GROUP BY t.isik_id
 )
 
 SELECT qry.isikid :: INTEGER                AS isik_id,
@@ -52,7 +52,7 @@ SELECT qry.isikid :: INTEGER                AS isik_id,
        sum(qry.deebet) :: NUMERIC(14, 2)    AS deebet,
        sum(qry.kreedit) :: NUMERIC(14, 2)   AS kreedit,
        sum(qry.sotsmaks) :: NUMERIC(14, 2)  AS sotsmaks,
-       sum(qry.jaak) :: NUMERIC(14, 2)      AS jaak,
+       qry.jaak :: NUMERIC(14, 2)           AS jaak,
        qry.mvt :: NUMERIC(14, 2)            AS mvt,
        qry.nimetus :: VARCHAR(254),
        max(tbl.paev) :: NUMERIC(12, 4)      AS paev,
@@ -65,13 +65,13 @@ SELECT qry.isikid :: INTEGER                AS isik_id,
        max(tbl.tootunnid) :: NUMERIC(12, 4) AS tootunnid
 FROM (
          WITH qry_mvt AS (
-             SELECT t.parentid AS isikid, sum(j.g31) AS mvt
+             SELECT t.parentid AS isikid, sum(j.g31) AS mvt, sum(jaak) AS jaak
              FROM palk.palk_jaak j
                       INNER JOIN palk.tooleping t ON j.lepingid = t.id
              WHERE j.aasta = year(l_kpv2)
                AND j.kuu = month(l_kpv2)
                AND t.rekvid = l_rekvid
-                 GROUP BY t.parentid
+             GROUP BY t.parentid
          )
          SELECT po.isikid,
                 po.isikukood,
@@ -90,7 +90,7 @@ FROM (
                      WHEN liik = '%'
                          THEN summa
                      ELSE 0 END) AS sotsmaks,
-                j.jaak,
+                qry_mvt.jaak,
                 qry_mvt.mvt      AS mvt,
                 nimetus,
                 liik,
@@ -107,7 +107,7 @@ FROM (
          LEFT OUTER JOIN qry_taabel tbl
                          ON tbl.isik_id = qry.isikid
 
-GROUP BY isikid, isikukood, isik, mvt, nimetus, kuu, aasta
+GROUP BY isikid, isikukood, isik, mvt, jaak, nimetus, kuu, aasta
     -- $BODY$
     LANGUAGE SQL
     VOLATILE

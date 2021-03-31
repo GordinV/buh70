@@ -16,6 +16,4 @@ const xml = fs.readFileSync('C:\\development\\buh70\\temp\\zipCodeEnvelope.xml',
 (async () => {
     const { response } = await soapRequest(url, headers, xml, 5000); // Optional timeout parameter(milliseconds)
     const { body, statusCode } = response;
-    console.log(body);
-    console.log(statusCode);
 })();
