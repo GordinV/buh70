@@ -10,7 +10,8 @@ class Select extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            value: this.getValueById(props.collId, props.value)/* здесь по значению ИД */,
+            data: props.data,
+            value: 0/* здесь по значению ИД */,
             readOnly: props.readOnly,
             disabled: props.disabled,
             fieldValue: props.value /*здесь по значени поля collId */,
@@ -19,37 +20,21 @@ class Select extends React.PureComponent {
 
         this.onChange = this.onChange.bind(this);
         this.btnDelClick = this.btnDelClick.bind(this);
+        this.getValueById = this.getValueById.bind(this);
 
-    }
-
-    /**
-     *
-     * @param collId
-     * @param rowId
-     * @returns {*}
-     */
-    getValueById(collId, rowId) {
-        // вернет значения поля по выбранному ИД
-        let fieldValue = 0;
-        const foundRow = this.props.data.find(row => row[collId] === rowId);
-        if (foundRow) {
-            fieldValue = foundRow[collId];
-        }
-
-        return fieldValue;
     }
 
     // will update state if props changed
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.value !== prevState.value || nextProps.readOnly !== prevState.readOnly ) {
-            return {value: nextProps.value, readOnly: nextProps.readOnly};
+        if (nextProps.value !== prevState.value || nextProps.readOnly !== prevState.readOnly || JSON.stringify(nextProps.data) !== JSON.stringify(prevState.data)) {
+            return {value: nextProps.value, readOnly: nextProps.readOnly, data:nextProps.data};
         } else return null;
     }
 
     componentDidMount() {
         if (this.props.collId && this.props.collId !== 'id') {
             // ищем ИД по значению поля
-            this.getValueById(this.props.collId, this.props.value);
+            this.getValueById(this.state.data, this.props.collId, this.state.value);
         }
 
     }
@@ -63,7 +48,7 @@ class Select extends React.PureComponent {
 
         if (this.props.collId && this.props.collId !== 'id') {
             // найдем по ид значение поля в collId
-            fieldValue = this.getValueById(this.props.collId, fieldValue);
+            fieldValue = this.getValueById(this.state.data, this.props.collId, fieldValue);
         }
         // сохраним ид как value
         this.setState({fieldValue: fieldValue, value: e.target.value});
@@ -76,10 +61,7 @@ class Select extends React.PureComponent {
 
     render() {
         const selectStyle = Object.assign({}, styles.select,
-                this.props.style ? this.props.style : {});
-
-        // если не существует, то value = 0
-        let value = this.getValueById(this.props.collId, this.state.value);
+            this.props.style ? this.props.style : {});
 
         return (
             <div style={styles.wrapper} ref="wrapper">
@@ -91,7 +73,7 @@ class Select extends React.PureComponent {
 
                 <select ref="select"
                         style={selectStyle}
-                        value={value || 0}
+                        value={this.state.value || 0}
                         id={this.props.name}
                         disabled={this.state.readOnly}
                         size={this.props.size ? this.props.size : 0}
@@ -101,7 +83,26 @@ class Select extends React.PureComponent {
             </div>)
     }
 
-    btnDelClick(event) {
+
+    /**
+     *
+     * @param collId
+     * @param rowId
+     * @returns {*}
+     */
+    getValueById(data, collId, rowId) {
+        // вернет значения поля по выбранному ИД
+        let fieldValue = 0;
+        const foundRow = data.find(row => row[collId] === rowId);
+        if (foundRow) {
+            fieldValue = foundRow[collId];
+        }
+
+        return fieldValue;
+    }
+
+
+        btnDelClick(event) {
         // по вызову кнопку удалить, обнуляет значение
         this.setState({value: ''});
         this.onChange(event);
@@ -114,11 +115,10 @@ class Select extends React.PureComponent {
      */
     prepaireDataOptions() {
         let options;
-        let data = this.props.data.length ? this.props.data : [];
-
+        let data = this.state.data.length ? this.state.data : [];
 
         if (data.length) {
-            if (!this.state.value && !data.find(row =>row.id === 0)) {
+            if (!this.state.value && !data.find(row => row.id === 0)) {
                 // will add empty row
                 data.unshift({id: 0, kood: '', nimetus: ''});
             }
@@ -127,7 +127,7 @@ class Select extends React.PureComponent {
                 let key = 'option-' + index;
                 let separator = ' ';
                 let rowValue = `${item.kood ? item.kood : ''} ${separator} ${item.name ? item.name : item.nimetus}`;
-                return <option value={this.props.data.length ? item[this.props.collId] : 0} key={key}
+                return <option value={item[this.props.collId]} key={key}
                                ref={key}> {rowValue} </option>
             }, this);
 
@@ -174,3 +174,4 @@ Select.defaultProps = {
 };
 
 module.exports = radium(Select);
+

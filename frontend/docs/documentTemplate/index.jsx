@@ -771,13 +771,6 @@ class DocumentTemplate extends React.Component {
                             //all libs loaded;
                             this.setState({loadedLibs: true});
 
-/*
-                            if (this.state.loadedLibs) {
-                                this.forceUpdate();
-                            } else {
-                                this.setState({loadedLibs: true});
-                            }
-*/
                         }
 
                     })

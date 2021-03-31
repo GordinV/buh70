@@ -90,7 +90,8 @@ class LapseKaart extends React.PureComponent {
      */
 
     renderer(self) {
-        if (!self || !self.docData) {
+        //|| !self.state.loadedLibs
+        if (!self || !self.docData ) {
             // не загружены данные
             return (<div style={styles.doc}>
                 <Loading label={'Laadimine...'}/>
@@ -120,16 +121,23 @@ class LapseKaart extends React.PureComponent {
         // берем только услуги для группы, добавляяем цену и ед.измерения и сортируем
         try {
             if (yksus) {
-                nomData = (yksus.teenused && self.libs['nomenclature'].length > 0 ? yksus.teenused : []).map(nom => {
-                    const row = self.libs['nomenclature'].find(lib => lib.id === Number(nom.nomid));
+                if (DocContext.libs && DocContext.libs[yksus.id]) {
+                    // берем из кеша
+                    nomData = DocContext.libs[yksus.id]
+                } else {
+                    nomData = (yksus.teenused && self.libs['nomenclature'].length > 0 ? yksus.teenused : []).map(nom => {
+                        const row = self.libs['nomenclature'].find(lib => lib.id === Number(nom.nomid));
 
-                    if (row) {
-                        const teenuseNimetus = row.nimetus ? `${row.nimetus} (hind: ${Number(nom.hind).toFixed(2)}) ` : '';
-                        return {...row, nimetus: teenuseNimetus, id: Number(nom.nomid)}
-                    }
-                }).sort((a, b) => {
-                    return a.kood.localeCompare(b.kood)
-                });
+                        if (row) {
+                            const teenuseNimetus = row.nimetus ? `${row.nimetus} (hind: ${Number(nom.hind).toFixed(2)}) ` : '';
+                            return {...row, nimetus: teenuseNimetus, id: Number(nom.nomid)}
+                        }
+                    }).sort((a, b) => {
+                        return a.kood.localeCompare(b.kood)
+                    });
+
+                    DocContext.libs[yksus.id] = nomData;
+                }
             }
 
         } catch (e) {
@@ -220,7 +228,7 @@ class LapseKaart extends React.PureComponent {
                                 name='nomid'
                                 libs="nomenclature"
                                 data={nomData}
-                                value={nomData.length && nomData[0].id && nomData[0].id > 0 ? self.docData.nomid: 0 || 0}
+                                value={self.docData.nomid || 0}
                                 defaultValue={self.docData.kood}
                                 ref="select-nomid"
                                 collId={'id'}
