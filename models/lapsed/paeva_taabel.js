@@ -26,7 +26,10 @@ FROM lapsed.day_taabel t
       FROM jsonb_to_recordset((SELECT properties::JSONB ->> 'teenused'
                                FROM libs.library l
                                         INNER JOIN v_grupp ON v_grupp.grupp_id = l.id)::JSONB) AS x(nomid INTEGER)
-               LEFT OUTER JOIN libs.nomenklatuur n ON n.id = x.nomid AND lower(n.uhik) IN ('paev', 'päev')) n
+               LEFT OUTER JOIN libs.nomenklatuur n ON n.id = x.nomid AND lower(n.uhik) IN ('paev', 'päev')
+               order by coalesce((n.properties ->> 'luno')::TEXT,'')::TEXT
+               
+               ) n
 
 WHERE t.id = $1::INTEGER
 GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
@@ -138,7 +141,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
                             t.staatus
                      FROM lapsed.cur_paeva_taabel t
                      WHERE rekv_id = $1::INTEGER
-                     ORDER BY (kpv::date) DESC, yksus
+                     ORDER BY (kpv::DATE) DESC, yksus
             `,     //  $1 всегда ид учреждения, $2 - userId
             params:
                 '',

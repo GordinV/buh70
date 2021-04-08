@@ -31,8 +31,6 @@ DECLARE
 
 BEGIN
 
-    RAISE NOTICE 'taabel params %', params;
-
     IF l_lopp_paev IS NULL
     THEN
         l_maxdays = DAY(((make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month') - INTERVAL '1 day')::DATE);
@@ -59,8 +57,6 @@ BEGIN
         l_lopp_paev = day(v_Tooleping.lopp);
     END IF;
 
-
-    RAISE NOTICE 'l_alg_paev %, l_lopp_paev %', l_alg_paev, l_lopp_paev;
 
     -- arv puhkuse paevad
     SELECT row_to_json(row) INTO l_params
@@ -138,6 +134,8 @@ BEGIN
                                                      FROM cur_tahtpaevad l
                                                      WHERE (l.rekvid = v_Tooleping.rekvid OR l.rekvid IS NULL)
                                                        AND kuu = l_kuu
+                                                       and paev >= coalesce(l_alg_paev, 1)
+                                                       and paev <= coalesce(l_lopp_paev, 31)
                                                        AND l.luhipaev = 1) * 3;
 
         l_toopaevad = (SELECT palk.get_work_days(l_params::JSON));

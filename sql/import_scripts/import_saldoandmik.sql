@@ -26,7 +26,7 @@ OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'saldoandmik'
 
 DELETE from eelarve.saldoandmik;
 DELETE from eelarve.saldoandmik
-where aasta < 2019;
+where aasta = 2020 and kuu = 12;
 
 
 INSERT INTO eelarve.saldoandmik (rekvid, nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, omatp, tyyp, kuu)
@@ -60,3 +60,4 @@ CREATE RULE saldoandmik_2020_insert AS ON DELETE TO eelarve.saldoandmik
   DO INSTEAD NOTHING;
 
 
+select * from eelarve.saldoandmik where aasta = 2020 and kuu = 12

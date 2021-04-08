@@ -13,16 +13,21 @@ DECLARE
     i          INTEGER = 1;
     l_json     JSONB;
     l_tunnid   NUMERIC  = 0;
+    l_arv_lopp_kpv date = l_kpv_lopp;
 BEGIN
     result = 0;
 
     FOR i IN month(l_kpv_alg)..month(l_kpv_lopp)
         LOOP
-            raise notice 'i %, MONTH(l_kpv_alg) %, DAY(l_kpv_alg) %', i, MONTH(l_kpv_alg), DAY(l_kpv_alg);
+            l_arv_lopp_kpv = gomonth(make_date(yEAR(l_kpv_alg), i, 01), 1) - 1;
+            if l_arv_lopp_kpv > l_kpv_lopp THEN
+                l_arv_lopp_kpv = l_kpv_lopp;
+            END IF;
+
             l_json = JSONB_BUILD_OBJECT('kuu', i,
                                         'aasta', YEAR(l_kpv_lopp),
                                         'alg_paev', (CASE WHEN MONTH(l_kpv_alg) = i THEN DAY(l_kpv_alg) ELSE 1 END),
-                                        'lopp_paev', (CASE WHEN month(l_kpv_lopp) = i THEN day(l_kpv_lopp) ELSE 31 END),
+                                        'lopp_paev', day(l_arv_lopp_kpv),
                                         'lepingid', params ->> 'lepingid',
                                         'toograf', coalesce(l_toograf, 0)
                 );

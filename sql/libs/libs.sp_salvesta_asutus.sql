@@ -34,6 +34,7 @@ DECLARE
     doc_is_tootaja BOOLEAN = coalesce((doc_data ->> 'is_tootaja') :: BOOLEAN, FALSE);
     doc_asutus_aa  JSONB   = coalesce((doc_data ->> 'asutus_aa') :: JSONB, '[]':: JSONB);
     doc_aa         TEXT    = doc_data ->> 'aa';
+    doc_palk_email TEXT    = doc_data ->> 'palk_email';
     new_properties JSONB;
     new_history    JSONB   = '[]'::JSONB;
     new_rights     JSONB;
@@ -76,6 +77,7 @@ BEGIN
     FROM (SELECT doc_kehtivus                                                              AS kehtivus,
                  doc_pank                                                                  AS pank,
                  CASE WHEN doc_id IS NULL OR doc_id = 0 THEN FALSE ELSE doc_is_tootaja END AS is_tootaja,
+                 doc_palk_email                                                            AS palk_email,
                  CASE
                      WHEN doc_aa IS NOT NULL THEN '[]'::JSONB || new_aa :: JSONB
                      ELSE doc_asutus_aa :: JSONB END                                       AS asutus_aa,

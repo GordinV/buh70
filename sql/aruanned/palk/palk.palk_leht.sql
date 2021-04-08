@@ -1,8 +1,9 @@
 DROP FUNCTION IF EXISTS palk.palk_leht(DATE, DATE, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS palk.palk_leht(DATE, DATE, INTEGER, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS palk.palk_leht(DATE, DATE, INTEGER, INTEGER, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION palk.palk_leht(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER,
-                                          l_osakond_id INTEGER DEFAULT 0)
+                                          l_osakond_id INTEGER DEFAULT 0, l_isik_id INTEGER DEFAULT 0)
     RETURNS TABLE (
         isik_id   INTEGER,
         isikukood VARCHAR(20),
@@ -41,6 +42,7 @@ WITH qry_taabel AS (
     WHERE t.aasta = year(l_kpv2)
       AND t.kuu = month(l_kpv2)
       AND t.rekvid = l_rekvid
+      AND (t.isik_id = l_isik_id OR l_isik_id = 0)
     GROUP BY t.isik_id
 )
 
@@ -71,6 +73,7 @@ FROM (
              WHERE j.aasta = year(l_kpv2)
                AND j.kuu = month(l_kpv2)
                AND t.rekvid = l_rekvid
+               AND (t.parentid = l_isik_id OR l_isik_id = 0)
              GROUP BY t.parentid
          )
          SELECT po.isikid,
@@ -103,6 +106,7 @@ FROM (
            AND po.kpv <= l_kpv2
            AND po.rekvid = l_rekvid
            AND (l_osakond_id IS NULL OR empty(l_osakond_id) OR po.osakondid = l_osakond_id)
+           AND (po.isikid = l_isik_id OR l_isik_id = 0)
      ) qry
          LEFT OUTER JOIN qry_taabel tbl
                          ON tbl.isik_id = qry.isikid
@@ -114,9 +118,9 @@ GROUP BY isikid, isikukood, isik, mvt, jaak, nimetus, kuu, aasta
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION palk.palk_leht( DATE, DATE, INTEGER, INTEGER, INTEGER ) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION palk.palk_leht( DATE, DATE, INTEGER, INTEGER, INTEGER ) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION palk.palk_leht( DATE, DATE, INTEGER, INTEGER, INTEGER ) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION palk.palk_leht( DATE, DATE, INTEGER, INTEGER, INTEGER, INTEGER ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION palk.palk_leht( DATE, DATE, INTEGER, INTEGER, INTEGER, INTEGER ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION palk.palk_leht( DATE, DATE, INTEGER, INTEGER, INTEGER, INTEGER) TO dbkasutaja;
 
 
 /*
