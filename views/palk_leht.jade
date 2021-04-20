@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid black;
+        }
+
+        .td {
+            font-size: smaller;
+            border-bottom: 1px solid black;
+            border-left: 1px solid black;
+        }
+
+        .th {
+            border-bottom: 1px solid black;
+            border-left: 1px solid black;
+            font-size: smaller;
+        }
+        .table {
+            border-spacing: 0px
+        }
+
+        .pikkus {
+            width: auto
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .normal {
+            font-weight: normal;
+            margin-left: 10px;
+        }
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        br
+        p.pikkus.bold Isikukood:
+            label.normal #{data[0].isikukood}
+        p.pikkus.bold Perekonna- ja eesnimi:
+            label.normal #{data[0].isik}
+        br
+        p.pikkus.bold Period:
+            label.normal #{data[0].kuu} / #{data[0].aasta}
+        br
+        p.pikkus.bold Töötatud tunnid:
+            label.normal #{data[0].tootunnid}
+        p.pikkus.bold Rakendatud maksuvaba tulu:
+            label.normal #{data[0].mvt}
+        br
+
+        each lepings in groupData
+            p.pikkus.bold Amet:
+                label.normal #{lepings[Object.keys(lepings)][0].amet}
+            br
+
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th.th Nimetus
+                        th.th Arvestamised
+                        th.th Kinnipidamised
+
+                tbody
+
+                    each rea in lepings[Object.keys(lepings)].filter((row)=> (((row.deebet != 0) || (row.kreedit != 0)) && row.palk_liik != 'TASU') )
+                        tr
+                            td.td=rea.nimetus
+                            td.td(align='center')=rea.deebet
+                            td.td(align='center')=rea.kreedit
+                        br
+                    tr
+                        td.td.bold='Kokku'
+                        td.td.bold(align='center')=lepings[Object.keys(lepings)][0].deebet_kokku
+                        td.td.bold(align='center')=lepings[Object.keys(lepings)][0].kreedit_kokku
+
+                    each rea in lepings[Object.keys(lepings)].filter((row)=> (row.palk_liik == 'TASU' ))
+                        tr
+                            td.td.bold=rea.nimetus
+                            td.td.bold(align='center')
+                            td.td.bold(align='center')=rea.kreedit
+                        br
+
+                    each rea in lepings[Object.keys(lepings)].filter((row)=> (row.sotsmaks != 0))
+                        tr
+                            td.td=rea.nimetus
+                            td.td(align='center')=rea.sotsmaks
+                            td.td
+

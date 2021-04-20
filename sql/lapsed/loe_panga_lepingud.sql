@@ -33,13 +33,18 @@ BEGIN
     END IF;
 
     FOR json_object IN
+        WITH data AS (
+            SELECT *
+            FROM jsonb_array_elements(data)
+        )
         SELECT *
-        FROM jsonb_array_elements(data)
+        FROM data
+        ORDER BY value -> 'kehtiv'
         LOOP
             SELECT * INTO json_record
             FROM json_to_record(
                          json_object) AS x (kpv TEXT, viitenr TEXT, aa TEXT, toiming TEXT, nimi TEXT,
-                                            isikukood TEXT, kanal TEXT);
+                                            isikukood TEXT, kanal TEXT, kehtiv TEXT);
 
             -- ищем ребенка
             -- если длина ссылки меньше 9, то это старый  номер

@@ -123,6 +123,7 @@ BEGIN
 EXCEPTION
     WHEN OTHERS
         THEN
+            raise notice 'error %', SQLERRM;
             RETURN 0;
 END;
 $BODY$;

@@ -1335,6 +1335,21 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                        AND LEFT(qry.artikkel, 3) NOT IN ('610', '611', '613', '655')
                        AND qry.tegev NOT IN ('07230', '07240', '07320')
                      GROUP BY qry.tegev, l.nimetus
+                     UNION ALL
+                     SELECT '3.1'::VARCHAR(20)                    AS idx,
+                            1                                     AS is_e,
+                            l_rekvid                              AS rekvid,
+                            '01112'                               AS tegev,
+                            ''::VARCHAR(20)                       AS allikas,
+                            ''::VARCHAR(20)                       AS artikkel,
+                            'Valla- ja linnavalitsus'             AS nimetus,
+                            0                                     AS eelarve,
+                            0                                     AS eelarve_kassa,
+                            0                                     AS eelarve_taps,
+                            0                                     AS eelarve_kassa_taps,
+                            0                                     AS tegelik,
+                            0                                     AS kassa,
+                            get_saldo('DK', '608000', NULL, NULL) AS saldoandmik
                  ) qry
             WHERE qry.artikkel NOT IN ('3500.00', '3209')) -- VB, нет необходимости
         SELECT *
@@ -1445,19 +1460,19 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                                      ), 0) AS kassa
                  )
                  SELECT '2.1',
-                        1                   AS is_e,
-                        $2                  AS rekvid,
-                        ''::VARCHAR(20)     AS tegev,
-                        ''::VARCHAR(20)     AS allikas,
-                        '3501'::VARCHAR(20) AS artikkel,
-                        'Siirded eelarvest' AS nimetus,
-                        0                   AS eelarve,
-                        0                   AS eelarve_kassa,
-                        0                   AS eelarve_taps,
-                        0                   AS eelarve_kassa_taps,
-                        0                   AS tegelik,
-                        qryKassa.kassa      AS kassa,
-                        0                   AS saldoandmik
+                        1                           AS is_e,
+                        $2                          AS rekvid,
+                        ''::VARCHAR(20)             AS tegev,
+                        ''::VARCHAR(20)             AS allikas,
+                        '3501'::VARCHAR(20)         AS artikkel,
+                        'Siirded eelarvest'         AS nimetus,
+                        0                           AS eelarve,
+                        0                           AS eelarve_kassa,
+                        0                           AS eelarve_taps,
+                        0                           AS eelarve_kassa_taps,
+                        0                           AS tegelik,
+                        coalesce(qryKassa.kassa, 0) AS kassa,
+                        0                           AS saldoandmik
                  FROM qryKassa
                  WHERE l_linna_eelarve -- для городского свода оставлю все как было
              ) a
@@ -1512,7 +1527,7 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                        AND e.status <> 3
                  ),
                       qrySA AS (
-                          SELECT sum(s.kr - s.db) AS tekke_taitmine
+                          SELECT coalesce(sum(s.kr - s.db), 0) AS tekke_taitmine
                           FROM eelarve.saldoandmik s
                           WHERE s.rekvid = (CASE
                                                 WHEN l_kond = 1
@@ -1526,8 +1541,11 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                       ),
                       qryTaitm AS (
                           SELECT (
-                                         sum(j.summa) FILTER (WHERE left(j.deebet, 3) = '100' AND j.kood5 = '3501') -
-                                         sum(j.summa) FILTER (WHERE left(j.kreedit, 3) = '100' AND j.kood5 = '3501')
+                                         coalesce(sum(j.summa)
+                                                      FILTER (WHERE left(j.deebet, 3) = '100' AND j.kood5 = '3501'),
+                                                  0) -
+                                         coalesce(sum(j.summa)
+                                                      FILTER (WHERE left(j.kreedit, 3) = '100' AND j.kood5 = '3501'), 0)
                                      ) AS kassa_taitmine
                           FROM cur_journal j
                           WHERE j.rekvid = (CASE
@@ -1551,8 +1569,8 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                         qryEelarve.eelarve_taps + qryEelarve.eelarve_kinni             AS eelarve_taps,
                         qryEelarve.eelarve_kassa_taps + qryEelarve.eelarve_kassa_kinni AS eelarve_kassa_taps,
                         0                                                              AS tegelik,
-                        qryTaitm.kassa_taitmine                                        AS kassa,
-                        qrySA.tekke_taitmine                                           AS saldoandmik
+                        coalesce(qryTaitm.kassa_taitmine, 0)                           AS kassa,
+                        coalesce(qrySA.tekke_taitmine, 0)                              AS saldoandmik
                  FROM qryEelarve,
                       qrySA,
                       qryTaitm
@@ -1574,8 +1592,8 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2021,03, 31),63, 1) qry
-         where artikkel = '9101'
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2021,03, 31),119, 1) qry
+         where artikkel = '1000'
      ) qry
 --test
 -- 12330698.41
@@ -1598,5 +1616,10 @@ WHERE eelarve.kood5 = '320'
   AND aasta = 2021
   AND id NOT IN (SELECT new_id FROM import_log WHERE lib_name = 'EELARVE')
 
+
+select get_saldo('MDK', '100', NULL, NULL) as s_100,  get_saldo('MDK', '101', NULL, NULL) as s_101,
+                            get_saldo('MDK', '1019', NULL, NULL)  as s_1019,
+                            get_saldo('MDK', '151', NULL, NULL) as s_151,
+                            get_saldo('MDK', '1519', NULL, NULL) as s_1519
 
  */

@@ -65,7 +65,8 @@ const readCSV = async (csvContent) => {
                     toiming: row[10] === 'A' ? 'Lisa': 'Kustuta',
                     nimi: row[2],
                     isikukood: row[1],
-                    kanal: 'EYP'
+                    kanal: 'EYP',
+                    kehtiv: row[9]
                 });
             }
         });

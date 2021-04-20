@@ -19,6 +19,7 @@ module.exports = {
                     $2:: INTEGER AS userid,
                 'TOOTAJA' AS doc_type_id,
                 (properties->>'pank'):: TEXT AS pank,
+                (properties->>'palk_email'):: VARCHAR(254) AS palk_email,       
                 a.tp
                 FROM libs.asutus a 
                 where id = $1`,
@@ -38,6 +39,7 @@ module.exports = {
                   '800699' :: VARCHAR(20) AS tp,
                   0 :: INTEGER            AS staatus,
                   NULL :: TEXT            AS pank,
+                  NULL :: VARCHAR(254)    AS palk_email,
                   true::boolean           AS is_tootaja,
                   NULL :: TEXT            AS mark`,
         query: null,

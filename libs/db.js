@@ -1,8 +1,9 @@
-const {Client} = require('pg'),
-    config = require('../config/default');
+const {Client} = require('pg');
 
 const db = {
-    queryDb: async (sqlString, params, sortBy, sqlWhere, sqlLimit, subTotals) => {
+    queryDb: async (sqlString, params, sortBy, sqlWhere, sqlLimit, subTotals, dbConfig) => {
+        // если не задана конфигурация, используем дефолтный
+        let config = !dbConfig ? require('../config/default'): dbConfig;
 
         let result = {
             error_code: 0,
@@ -38,7 +39,8 @@ const db = {
         await client.end();
         return result;
     },
-    executeQueries: async (sqls, params, returnData) => {
+    executeQueries: async (sqls, params, returnData, dbConfig) => {
+        let config = !dbConfig ? require('../config/default'): dbConfig;
 
         const client = new Client(config.pg.connection);
         await client.connect();

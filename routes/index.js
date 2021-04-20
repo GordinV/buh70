@@ -4,6 +4,16 @@ const checkAuth = require('../middleware/checkAuth');
 
 module.exports = function (app) {
 
+    // arv.palk leht
+    app.get('/print/PALK_LEHT/', require('./palk/palk_leht').get); //checkAuth
+    // arv.palk leht
+    app.get('/print/PALK_LEHT/:id', require('./palk/palk_leht').get); //checkAuth
+    // arv.palk leht, pdf
+    app.get('/pdf/PALK_LEHT/:id', require('./palk/palk_leht').pdf); //checkAuth
+    // arv.palk leht, email
+    app.get('/email/PALK_LEHT/:id', require('./palk/palk_leht').email); //checkAuth
+
+
 
     // same as main
     app.get('/', require('./login').get);
@@ -21,6 +31,9 @@ module.exports = function (app) {
     app.get('/raama', require('./raama').get); // module raamatupidamine
     app.get('/raama/:documentType', checkAuth, require('./raama').get); // module raamatupidamine
     app.get('/raama/:documentType/:id', checkAuth, require('./raama/document').get); // module raamatupidamine
+
+    app.get('/palk/:documentType/', require('./palk').get); //checkAuth
+
 
     app.get('/lapsed', checkAuth, require('./lapsed').get); // module lapsed
     app.get('/lapsed/:documentType', checkAuth, require('./lapsed').get); // module lapsed
@@ -46,6 +59,9 @@ module.exports = function (app) {
     app.get('/print/:documentType/:uuid/:id/', require('./print').get); //checkAuth
     app.get('/multiple_print/teatis/:uuid/:id/', require('./multiple_print').teatis); //checkAuth
     app.get('/multiple_print/:documentType/:uuid/:id/', require('./multiple_print').get); //checkAuth
+
+
+
     app.get('/print/:documentType/:uuid/', require('./print').get); //checkAuth
 
     app.get('/help/:documentType?/', require('./help').get); //checkAuth

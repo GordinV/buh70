@@ -24,7 +24,7 @@ OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'saldoandmik'
 )
 ;
 
-DELETE from eelarve.saldoandmik;
+--DELETE from eelarve.saldoandmik;
 DELETE from eelarve.saldoandmik
 where aasta = 2020 and kuu = 12;
 

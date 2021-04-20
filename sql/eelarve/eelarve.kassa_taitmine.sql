@@ -13,10 +13,21 @@ CREATE OR REPLACE FUNCTION eelarve.kassa_taitmine(l_kpv DATE, l_rekvid INTEGER, 
 $BODY$
 WITH qryEelarve AS (
     --1000
+    SELECT l_rekvid                                                                       AS rekv_id,
+           NULL :: VARCHAR(20)                                                            AS tegev,
+           '1000' :: VARCHAR(20)                                                          AS artikkel,
+           'Saldo seisuga ' || make_date(year(l_kpv) - 1, 12, 31) :: TEXT :: VARCHAR(254) AS nimetus,
+
+           eelarve.get_saldo_full(l_kpv::DATE, l_rekvid::INTEGER, l_kond::INTEGER, 'MDK', '100',
+                                  NULL::TEXT, NULL::TEXT) :: NUMERIC(12, 2)               AS eelarve,
+           0                                                                              AS taitmine,
+           4                                                                              AS idx
+    UNION ALL
     SELECT rekvid                                                                         AS rekv_id,
            NULL :: VARCHAR(20)                                                            AS tegev,
            '1000' :: VARCHAR(20)                                                          AS artikkel,
            'Saldo seisuga ' || make_date(year(l_kpv) - 1, 12, 31) :: TEXT :: VARCHAR(254) AS nimetus,
+
            0 :: NUMERIC(12, 2)                                                            AS eelarve,
            sum(summa)                                                                     AS taitmine,
            4                                                                              AS idx
@@ -53,6 +64,30 @@ WITH qryEelarve AS (
     GROUP BY rekvid, tegev, artikkel, nimetus, idx
     UNION ALL
     --1001
+    SELECT l_rekvid                                          AS rekv_id,
+           NULL :: VARCHAR(20)                               AS tegev,
+           '1001' :: VARCHAR(20)                             AS artikkel,
+           'Saldo seisuga ' || l_kpv :: TEXT :: VARCHAR(254) AS nimetus,
+           eelarve.get_saldo_full(l_kpv::DATE, l_rekvid::INTEGER, l_kond::INTEGER, 'MDK', '100',
+                                  NULL::TEXT, NULL::TEXT) + (
+               --eelarve 100
+                   -1 * coalesce((SELECT sum(summa)
+                                  FROM eelarve.eelarve e
+                                  WHERE aasta = year(l_kpv)
+                                    AND e.rekvid = (CASE
+                                                        WHEN l_kond = 1
+                                                            THEN e.rekvid
+                                                        ELSE l_rekvid END)
+                                    AND e.rekvid IN (SELECT rekv_id
+                                                     FROM get_asutuse_struktuur(l_rekvid))
+                                    AND kood5 = '100'
+                                    AND (kpv IS NULL OR kpv <= l_kpv)
+                                    AND status <> 3), 0)
+                   :: NUMERIC(12, 2))                        AS eelarve,
+           0                                                 AS taitmine,
+           4                                                 AS idx
+
+    UNION ALL
     SELECT rekvid                                            AS rekv_id,
            NULL :: VARCHAR(20)                               AS tegev,
            '1001' :: VARCHAR(20)                             AS artikkel,
@@ -276,6 +311,7 @@ WITH qryEelarve AS (
                           ELSE l_rekvid END)
       AND e.rekvid IN (SELECT rekv_id
                        FROM get_asutuse_struktuur(l_rekvid))
+      AND (kpv IS NULL OR kpv <= l_kpv)
     GROUP BY e.rekvid, a.is_kulud, e.kood1, e.kood5, a.nimetus
     UNION ALL
     --kulud, taitmine
@@ -337,18 +373,17 @@ UNION ALL
 --100
 --Likviidsete varade muutus (+ suurenemine, - vahenemine)
 SELECT rekv_id,
-       NULL :: VARCHAR(20)                                                                                       AS tegev,
-       '100' :: VARCHAR(20)                                                                                      AS artikkel,
+       NULL :: VARCHAR(20)                                                                      AS tegev,
+       '100' :: VARCHAR(20)                                                                     AS artikkel,
        'Likviidsete varade muutus (+ suurenemine, - vahenemine) Saldo seisuga ' ||
-       l_kpv :: TEXT :: VARCHAR(254)                                                                             AS nimetus,
-       sum(eelarve)
-           FILTER (WHERE artikkel LIKE '100%')                                                                   AS eelarve,
-       sum(taitmine)
-           FILTER (WHERE artikkel = '1001') - sum(taitmine)
-                                                  FILTER (WHERE artikkel = '1000')                               AS taitmine,
-       4                                                                                                         AS idx
+       l_kpv :: TEXT :: VARCHAR(254)                                                            AS nimetus,
+       -1 * coalesce(sum(eelarve)
+                         FILTER (WHERE ltrim(rtrim(artikkel)) = '100'), 0)                      AS eelarve,
+       coalesce(sum(taitmine)
+                    FILTER (WHERE artikkel = '1001') - sum(taitmine)
+                                                           FILTER (WHERE artikkel = '1000'), 0) AS taitmine,
+       4                                                                                        AS idx
 FROM qryEelarve
-WHERE artikkel IN ('1000', '1001')
 GROUP BY rekv_id
 UNION ALL
 SELECT rekv_id,
@@ -582,7 +617,7 @@ SELECT rekv_id,
        sum(-1 * taitmine)                AS taitmine,
        3                                 AS idx
 FROM qryEelarve
-WHERE artikkel IN ('1550', '1551', '1554', '1555', '1556', '1557', '156', '157', '158', '1553', '1559', '154')
+WHERE artikkel IN ('1550', '1551', '1554', '1555', '1556', '1557', '156', '157', '158', '1553', '1559', '154', '155')
   AND artikkel <> '15'
 GROUP BY rekv_id
 
@@ -652,8 +687,8 @@ SELECT rekv_id,
        NULL :: VARCHAR(20)                                       AS tegev,
        '1532' :: VARCHAR(20)                                     AS artikkel,
        'Laenu- ja liisingnõuete pikaajaline osa' :: VARCHAR(254) AS nimetus,
-       sum(-1 * eelarve)                                         AS eelarve,
-       sum(-1 * taitmine)                                        AS taitmine,
+       sum(eelarve)                                              AS eelarve,
+       sum(taitmine)                                             AS taitmine,
        3                                                         AS idx
 FROM qryEelarve
 WHERE artikkel LIKE '1532%'
@@ -712,6 +747,25 @@ WHERE artikkel = '2586'
 GROUP BY rekv_id, idx, artikkel, nimetus
 
 UNION ALL
+--9101
+SELECT id                                             AS rekv_id,
+       NULL :: VARCHAR(20)                            AS tegev,
+       '9101' :: VARCHAR(20)                          AS artikkel,
+       'Sild finanseerimine' :: VARCHAR(254)          AS nimetus,
+       0                                              AS eelarve,
+       eelarve.get_saldo_full(l_kpv::DATE, id::INTEGER, 0::INTEGER, 'KD', '910090',
+                              NULL::TEXT, NULL::TEXT) AS taitmine,
+       4                                              AS idx
+FROM ou.rekv
+WHERE id IN (SELECT rekv_id
+             FROM get_asutuse_struktuur(l_rekvid))
+  AND id = (CASE
+                WHEN l_kond = 1
+                    THEN id
+                ELSE l_rekvid END)
+
+UNION ALL
+
 --teised
 SELECT rekv_id,
        NULL :: VARCHAR(20) AS tegev,
@@ -723,9 +777,9 @@ SELECT rekv_id,
 FROM qryEelarve
 WHERE artikkel IS NOT NULL
   AND NOT empty(artikkel)
-  AND artikkel NOT IN ('40', '41', '4500', '452')
+  AND artikkel NOT IN ('40', '41', '4500', '452', '155', '156', '100')
   AND left(artikkel, 4) NOT IN
-      ('1501', '1502', '1511', '1512', '1531', '1532', '4500', '4502', '3880', '3888', '1001', '2586', '2585')
+      ('1501', '1502', '1511', '1512', '1531', '1532', '4500', '4502', '3880', '3888', '1001', '2586', '2585', '9101')
   -- eraldi
   AND (artikkel NOT LIKE '382%' OR artikkel IN ('38250', '38251', '38252', '38254')) -- eraldi
   AND left(artikkel, 3) NOT IN ('413', '452', '381', '650', '655')                   -- eraldi
@@ -744,10 +798,12 @@ FROM qryEelarve e
          LEFT OUTER JOIN com_tegev t ON t.kood = e.tegev
 WHERE e.tegev IS NOT NULL
   AND NOT empty(tegev)
-  AND e.artikkel NOT IN ('2585', '2586')
+  AND e.artikkel NOT IN ('2585', '2586','3502')
   AND idx IS NOT NULL
+  AND idx > 1
 
 GROUP BY rekv_id, idx, tegev, t.nimetus
+
 
 $BODY$
     LANGUAGE SQL
@@ -760,7 +816,13 @@ GRANT EXECUTE ON FUNCTION eelarve.kassa_taitmine(DATE, INTEGER, INTEGER) TO dbpe
 GRANT EXECUTE ON FUNCTION eelarve.kassa_taitmine(DATE, INTEGER, INTEGER) TO eelaktsepterja;
 GRANT EXECUTE ON FUNCTION eelarve.kassa_taitmine(DATE, INTEGER, INTEGER) TO dbvaatleja;
 
-SELECT *
-FROM eelarve.kassa_taitmine('2020-03-31', 64, 0)
-WHERE artikkel = '4133'
-and tegev is not null;
+/*
+SELECT sum(eelarve)
+FROM (
+         SELECT *
+         FROM eelarve.kassa_taitmine('2021-03-31', 63, 1)
+         WHERE artikkel = '100'
+     ) qry;
+--  AND tegev IS NOT NULL;
+
+*/

@@ -20,7 +20,7 @@ module.exports = {
                       (SELECT eluiga FROM libs.get_pv_kaart_jaak(p.id::INTEGER, $1::DATE))::NUMERIC(12,4) AS eluiga,
                       p.*
                     FROM cur_pohivara p
-                    WHERE (p.mahakantud IS NULL or p.mahakantud < $1)
+                    WHERE (p.mahakantud IS NULL or p.mahakantud > $1)
                       and p.rekvid = $2`,     // $1 - kpv, $2 - rekvid (svod)
         params: '',
         alias: 'pv_inventuur_report'

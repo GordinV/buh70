@@ -8,6 +8,9 @@ CREATE OR REPLACE FUNCTION palk.palk_leht(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INT
         isik_id   INTEGER,
         isikukood VARCHAR(20),
         isik      VARCHAR(254),
+        amet      VARCHAR(254),
+        amet_id   INTEGER,
+        leping_id INTEGER,
         kuu       INTEGER,
         aasta     INTEGER,
         deebet    NUMERIC(14, 2),
@@ -23,7 +26,8 @@ CREATE OR REPLACE FUNCTION palk.palk_leht(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INT
         tahtpaev  NUMERIC(12, 4),
         uleajatoo NUMERIC(12, 4),
         kokku     NUMERIC(12, 4),
-        tootunnid NUMERIC(12, 4)
+        tootunnid NUMERIC(12, 4),
+        palk_liik text
     ) AS
 $BODY$
 WITH qry_taabel AS (
@@ -49,6 +53,9 @@ WITH qry_taabel AS (
 SELECT qry.isikid :: INTEGER                AS isik_id,
        qry.isikukood :: VARCHAR(20),
        qry.isik :: VARCHAR(254),
+       qry.amet :: VARCHAR(254),
+       qry.amet_id,
+       qry.lepingid as lepind_id,
        qry.kuu :: INTEGER,
        qry.aasta :: INTEGER,
        sum(qry.deebet) :: NUMERIC(14, 2)    AS deebet,
@@ -64,7 +71,8 @@ SELECT qry.isikid :: INTEGER                AS isik_id,
        max(tbl.tahtpaev) :: NUMERIC(12, 4)  AS tahtpaev,
        max(tbl.uleajatoo) :: NUMERIC(12, 4) AS uleajatoo,
        max(tbl.kokku) :: NUMERIC(12, 4)     AS kokku,
-       max(tbl.tootunnid) :: NUMERIC(12, 4) AS tootunnid
+       max(tbl.tootunnid) :: NUMERIC(12, 4) AS tootunnid,
+       qry.palk_liik
 FROM (
          WITH qry_mvt AS (
              SELECT t.parentid AS isikid, sum(j.g31) AS mvt, sum(jaak) AS jaak
@@ -82,36 +90,81 @@ FROM (
                 month(kpv)       AS kuu,
                 year(kpv)        AS aasta,
                 (CASE
-                     WHEN liik = '+'
-                         THEN summa
+                     WHEN po.liik = '+'
+                         THEN po.summa
                      ELSE 0 END) AS deebet,
                 (CASE
-                     WHEN liik = '-'
-                         THEN summa
+                     WHEN po.liik = '-'
+                         THEN po.summa
                      ELSE 0 END) AS kreedit,
                 (CASE
-                     WHEN liik = '%'
-                         THEN summa
+                     WHEN po.liik = '%'
+                         THEN po.summa
                      ELSE 0 END) AS sotsmaks,
                 qry_mvt.jaak,
                 qry_mvt.mvt      AS mvt,
-                nimetus,
-                liik,
-                osakondid
-         FROM palk.cur_palkoper po
+                po.nimetus       AS nimetus,
+                po.liik,
+                po.palk_liik,
+                po.osakondid,
+                amet.nimetus     AS amet,
+                amet.id          AS amet_id,
+                po.lepingid
+         FROM (
+                  SELECT a.id                                                                                            AS isikid,
+                         a.regkood                                                                                       AS isikukood,
+                         a.nimetus                                                                                       AS isik,
+                         t.osakondid,
+                         o.kood                                                                                          AS osakond,
+                         lib.kood,
+                         lib.nimetus,
+                         ((enum_range(NULL :: PALK_OPER_LIIK))[CASE ((lib.properties :: JSONB ->> 'liik') ||
+                                                                     (lib.properties :: JSONB ->> 'asutusest')) :: TEXT
+                                                                   WHEN '10'
+                                                                       THEN 1
+                                                                   WHEN '20'
+                                                                       THEN 2
+                                                                   WHEN '40'
+                                                                       THEN 2
+                                                                   WHEN '70'
+                                                                       THEN 2
+                                                                   WHEN '71'
+                                                                       THEN 3
+                                                                   WHEN '80'
+                                                                       THEN 2
+                                                                   WHEN '60'
+                                                                       THEN 2
+                                                                   ELSE 3 END]) :: VARCHAR(20)                           AS liik,
+                         ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT      AS palk_liik,
+                         ((enum_range(NULL :: PALK_TUND_LIIK))[(lib.properties :: JSONB ->> 'tund') :: INTEGER]) :: TEXT AS tund,
+                         p.kpv,
+                         p.summa,
+                         t.ametid,
+                         p.lepingid,
+                         p.rekvid
+                  FROM docs.doc d
+                           INNER JOIN palk.palk_oper p ON p.parentid = d.id
+                           INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
+                           INNER JOIN palk.tooleping t ON p.lepingid = t.id
+                           INNER JOIN libs.asutus a ON t.parentid = a.id
+                           LEFT OUTER JOIN libs.library o ON o.id = t.osakondid
+                  WHERE d.status <> 3
+                    AND (l_osakond_id IS NULL OR empty(l_osakond_id) OR t.osakondid = l_osakond_id)
+                    AND p.kpv >= l_kpv1
+                    AND p.kpv <= l_kpv2
+                    AND p.rekvid = l_rekvid
+                    AND (t.parentid = l_isik_id OR l_isik_id IS NULL OR l_isik_id = 0)
+              ) po
+                  LEFT OUTER JOIN libs.library amet ON amet.id = po.ametid
                   LEFT OUTER JOIN palk.palk_jaak j
                                   ON j.lepingid = po.lepingid AND j.kuu = month(po.kpv) AND j.aasta = year(po.kpv)
+
                   LEFT JOIN qry_mvt ON qry_mvt.isikid = po.isikid
-         WHERE po.kpv >= l_kpv1
-           AND po.kpv <= l_kpv2
-           AND po.rekvid = l_rekvid
-           AND (l_osakond_id IS NULL OR empty(l_osakond_id) OR po.osakondid = l_osakond_id)
-           AND (po.isikid = l_isik_id OR l_isik_id = 0)
      ) qry
          LEFT OUTER JOIN qry_taabel tbl
                          ON tbl.isik_id = qry.isikid
 
-GROUP BY isikid, isikukood, isik, mvt, jaak, nimetus, kuu, aasta
+GROUP BY isikid, isikukood, isik, amet, amet_id, lepingid, mvt, jaak, qry.nimetus, kuu, aasta, palk_liik
     -- $BODY$
     LANGUAGE SQL
     VOLATILE

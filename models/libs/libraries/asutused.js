@@ -7,7 +7,8 @@ module.exports = {
                      (properties ->> 'kmkr')::VARCHAR(20)            AS kmkr,
                      (properties ->> 'kehtivus')::DATE               AS kehtivus,
                      (properties ->> 'kehtivus')::DATE               AS valid,
-                     (properties -> 'asutus_aa' -> 0 ->> 'aa')::TEXT AS aa
+                     (properties -> 'asutus_aa' -> 0 ->> 'aa')::TEXT AS aa,
+                     (properties ->> 'palk_email'):: VARCHAR(254)    AS palk_email
               FROM libs.asutus
               WHERE id = $1`,
         sqlAsNew: `select $1::integer as id , $2::integer as userid, 'ASUTUSED' as doc_type_id,
@@ -23,6 +24,7 @@ module.exports = {
             ''::text as tp,
             0::integer as staatus,
             ''::varchar(20) as pank,
+            '' :: VARCHAR(254)    AS palk_email,            
             ''::varchar(20) as kmkr,
             ''::text as mark,
             ''::TEXT AS aa`,
@@ -83,7 +85,8 @@ module.exports = {
 
         },
         {
-            sql: `select d.* from docs.dokumendid($1) d`, //$1 asutus_id
+            sql: `SELECT d.*
+                  FROM docs.dokumendid($1) d`, //$1 asutus_id
             query: null,
             multiple: true,
             alias: 'dokumenidid',
@@ -158,24 +161,25 @@ module.exports = {
         },
     ],
     getLog: {
-        command: `SELECT ROW_NUMBER() OVER ()                                                                        AS id,
-                         (ajalugu ->> 'user')::VARCHAR(20)                                                           AS kasutaja,
+        command: `SELECT ROW_NUMBER() OVER ()              AS id,
+                         (ajalugu ->> 'user')::VARCHAR(20) AS kasutaja,
                          coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
-                                  '')::VARCHAR(20)                                                                   AS koostatud,
+                                  '')::VARCHAR(20)         AS koostatud,
                          coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
-                                  '')::VARCHAR(20)                                                                   AS muudatud,
+                                  '')::VARCHAR(20)         AS muudatud,
                          coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
-                                  '')::VARCHAR(20)                                                                   AS prinditud,
+                                  '')::VARCHAR(20)         AS prinditud,
                          coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
-                                  '')::VARCHAR(20)                                                                   AS kustutatud
+                                  '')::VARCHAR(20)         AS kustutatud
 
                   FROM (
-                           SELECT jsonb_array_elements('[]'::jsonb || d.ajalugu::jsonb) AS ajalugu, d.id
+                           SELECT jsonb_array_elements('[]'::JSONB || d.ajalugu::JSONB) AS ajalugu, d.id
                            FROM libs.asutus d,
                                 ou.userid u
                            WHERE d.id = $1
                              AND u.id = $2
-                       ) qry where (ajalugu ->> 'user') is not null`,
+                       ) qry
+                  WHERE (ajalugu ->> 'user') IS NOT NULL`,
         type: "sql",
         alias: "getLogs"
     },

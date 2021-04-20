@@ -1,0 +1,21 @@
+{
+  "port": 3000,
+  "https": 443,
+  "pg": {
+    "host": "80.235.127.119",
+    "port": "5438",
+    "database":"db",
+    "connection": "postgres://vlad:Vlad490710@80.235.127.119:5438/db"
+  },
+  "session": {
+    "secret": "SecretsOfÕuna",
+    "key": "vlad",
+    "cookie": {
+      "paxˇxth": "/",
+      "httpOnly": true,
+      "secure": true,
+      "maxAge":  3600000
+    }
+  }
+
+}

@@ -69,7 +69,7 @@ BEGIN
                                   a1.kood3,
                                   a1.tunnus,
                                   a1.konto,
-                                  a1.kood5,
+                                  '608',
                                   a1.tp        AS lisa_d,
                                   a1.tp        AS lisa_k
                            FROM docs.arv1 a1
