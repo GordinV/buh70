@@ -60,7 +60,8 @@ const readCSV = async (csvContent) => {
                     toiming: row[3],
                     nimi: row[5],
                     isikukood: row[6],
-                    kanal: row[9]
+                    kanal: row[9],
+                    kehtiv: row[0]
                 });
             }
         });

@@ -129,31 +129,20 @@ WITH qryEelarve AS (
          ) qry_100
     GROUP BY rekvid, tegev, artikkel, nimetus, idx
     UNION ALL
-    --2580
-    SELECT rekvid                                   AS rekv_id,
-           NULL :: VARCHAR(20)                      AS tegev,
-           '2580' :: VARCHAR(20)                    AS artikkel,
-           'Emiteeritud võlakirjad' :: VARCHAR(254) AS nimetus,
-           sum(summa) :: NUMERIC(12, 2)             AS eelarve,
-           sum(summa)                               AS taitmine,
-           4                                        AS idx
-    FROM (
-             SELECT j.rekvid,
-                    j1.summa
-             FROM docs.journal j
-                      INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
-             WHERE j.rekvid = (CASE
-                                   WHEN l_kond = 1
-                                       THEN j.rekvid
-                                   ELSE l_rekvid END)
-               AND j.rekvid IN (SELECT rekv_id
-                                FROM get_asutuse_struktuur(l_rekvid))
-
-               AND (kreedit LIKE '208%' OR kreedit LIKE '258%' OR kreedit LIKE '20362%' OR
-                    (kreedit LIKE '20363%' AND kood5 = '2580'))
-               AND j.kpv < make_date(year(l_kpv), 1, 1)
-         ) qry_100
-    GROUP BY rekvid, tegev, artikkel, nimetus, idx
+    --2580 MKD208+MKD258
+    SELECT l_rekvid                                                                           AS rekv_id,
+           NULL :: VARCHAR(20)                                                                AS tegev,
+           '2580' :: VARCHAR(20)                                                              AS artikkel,
+           'Emiteeritud võlakirjad' :: VARCHAR(254)                                           AS nimetus,
+           eelarve.get_saldo_full(l_kpv::DATE, l_rekvid::INTEGER, l_kond::INTEGER, 'MKD', '208',
+                                  NULL::TEXT, NULL::TEXT) +
+           eelarve.get_saldo_full(l_kpv::DATE, l_rekvid::INTEGER, l_kond::INTEGER, 'MKD', '258',
+                                  NULL::TEXT, NULL::TEXT) :: NUMERIC(12, 2) :: NUMERIC(12, 2) AS eelarve,
+           eelarve.get_saldo_full(l_kpv::DATE, l_rekvid::INTEGER, l_kond::INTEGER, 'MKD', '208',
+                                  NULL::TEXT, NULL::TEXT) +
+           eelarve.get_saldo_full(l_kpv::DATE, l_rekvid::INTEGER, l_kond::INTEGER, 'MKD', '258',
+                                  NULL::TEXT, NULL::TEXT) :: NUMERIC(12, 2) :: NUMERIC(12, 2) AS taitmine,
+           4                                                                                  AS idx
     UNION ALL
     --3500
     SELECT rekvid                                                     AS rekv_id,
@@ -357,6 +346,25 @@ WITH qryEelarve AS (
       AND kt.artikkel NOT LIKE ('350%')
 
     GROUP BY kt.rekvid, kt.tegev, kt.artikkel, a.nimetus
+    UNION ALL
+-- 9101
+    SELECT l_rekvid                              AS rekv_id,
+           NULL :: VARCHAR(20)                   AS tegev,
+           '9101' :: VARCHAR(20)                 AS artikkel,
+           'Sild finanseerimine' :: VARCHAR(254) AS nimetus,
+           sum(summa)                            AS eelarve,
+           0                                     AS taitmine,
+           4                                     AS idx
+    FROM eelarve.kulud e
+    WHERE kood2 = 'LE-LASF'
+      AND e.aasta = year(l_kpv)
+      AND (kpv IS NULL OR kpv <= l_kpv)
+      AND e.rekvid = (CASE
+                          WHEN l_kond = 1
+                              THEN e.rekvid
+                          ELSE l_rekvid END)
+      AND e.rekvid IN (SELECT rekv_id
+                       FROM get_asutuse_struktuur(l_rekvid))
 )
 -- Põhitegevusts tulud kokku
 SELECT rekv_id,
@@ -708,16 +716,12 @@ GROUP BY rekv_id
 UNION ALL
 --2581
 SELECT rekv_id,
-       NULL :: VARCHAR(20)                                                          AS tegev,
-       '2581' :: VARCHAR(20)                                                        AS artikkel,
-       'Laenud' :: VARCHAR(254)                                                     AS nimetus,
-       sum(eelarve)
-           FILTER (WHERE artikkel <> '2586') - sum(eelarve)
-                                                   FILTER (WHERE artikkel = '2586') AS eelarve,
-       sum(taitmine)
-           FILTER (WHERE artikkel <> '2586') - sum(taitmine)
-                                                   FILTER (WHERE artikkel = '2586') AS taitmine,
-       3                                                                            AS idx
+       NULL :: VARCHAR(20)                                              AS tegev,
+       '2581' :: VARCHAR(20)                                            AS artikkel,
+       'Laenud' :: VARCHAR(254)                                         AS nimetus,
+       sum((CASE WHEN artikkel = '2586' THEN -1 ELSE 1 END) * eelarve)  AS eelarve,
+       sum((CASE WHEN artikkel = '2586' THEN -1 ELSE 1 END) * taitmine) AS taitmine,
+       3                                                                AS idx
 FROM qryEelarve
 WHERE artikkel IN ('2580', '2585', '2586')
 GROUP BY rekv_id
@@ -748,24 +752,32 @@ GROUP BY rekv_id, idx, artikkel, nimetus
 
 UNION ALL
 --9101
-SELECT id                                             AS rekv_id,
-       NULL :: VARCHAR(20)                            AS tegev,
-       '9101' :: VARCHAR(20)                          AS artikkel,
-       'Sild finanseerimine' :: VARCHAR(254)          AS nimetus,
-       0                                              AS eelarve,
-       eelarve.get_saldo_full(l_kpv::DATE, id::INTEGER, 0::INTEGER, 'KD', '910090',
-                              NULL::TEXT, NULL::TEXT) AS taitmine,
-       4                                              AS idx
-FROM ou.rekv
-WHERE id IN (SELECT rekv_id
-             FROM get_asutuse_struktuur(l_rekvid))
-  AND id = (CASE
-                WHEN l_kond = 1
-                    THEN id
-                ELSE l_rekvid END)
-
+-- 9100=MKD 9100090
+-- 9101=KD 910090
+--    l_9100 = -1 * get_saldo('MKD', '910090', NULL, NULL);
+--     l_9100_periodis = -1 * get_saldo('KD', '910090', NULL, NULL);
+--
+--     l_9101 = -1 * get_saldo('KD', '910090', NULL, NULL);
+SELECT l_rekvid                                            AS rekv_id,
+       NULL :: VARCHAR(20)                                 AS tegev,
+       '9101' :: VARCHAR(20)                               AS artikkel,
+       'Sild finanseerimine' :: VARCHAR(254)               AS nimetus,
+       0                                                   AS eelarve,
+       -1 * eelarve.get_saldo_full(l_kpv::DATE, l_rekvid::INTEGER, l_kond::INTEGER, 'KD', '910090',
+                                   NULL::TEXT, NULL::TEXT) AS taitmine,
+       4                                                   AS idx
 UNION ALL
-
+-- 9100=MKD 9100090
+SELECT l_rekvid                                            AS rekv_id,
+       NULL :: VARCHAR(20)                                 AS tegev,
+       '9100' :: VARCHAR(20)                               AS artikkel,
+       'Sildfinantseering' :: VARCHAR(254)                 AS nimetus,
+       -1 * eelarve.get_saldo_full(l_kpv::DATE, l_rekvid::INTEGER, l_kond::INTEGER, 'MKD', '910090',
+                                   NULL::TEXT, NULL::TEXT) AS eelarve,
+       -1 * eelarve.get_saldo_full(l_kpv::DATE, l_rekvid::INTEGER, l_kond::INTEGER, 'MKD', '910090',
+                                   NULL::TEXT, NULL::TEXT) AS taitmine,
+       4                                                   AS idx
+UNION ALL
 --teised
 SELECT rekv_id,
        NULL :: VARCHAR(20) AS tegev,
@@ -779,7 +791,7 @@ WHERE artikkel IS NOT NULL
   AND NOT empty(artikkel)
   AND artikkel NOT IN ('40', '41', '4500', '452', '155', '156', '100')
   AND left(artikkel, 4) NOT IN
-      ('1501', '1502', '1511', '1512', '1531', '1532', '4500', '4502', '3880', '3888', '1001', '2586', '2585', '9101')
+      ('1501', '1502', '1511', '1512', '1531', '1532', '4500', '4502', '3880', '3888', '1001', '2586', '2585')
   -- eraldi
   AND (artikkel NOT LIKE '382%' OR artikkel IN ('38250', '38251', '38252', '38254')) -- eraldi
   AND left(artikkel, 3) NOT IN ('413', '452', '381', '650', '655')                   -- eraldi
@@ -798,7 +810,7 @@ FROM qryEelarve e
          LEFT OUTER JOIN com_tegev t ON t.kood = e.tegev
 WHERE e.tegev IS NOT NULL
   AND NOT empty(tegev)
-  AND e.artikkel NOT IN ('2585', '2586','3502')
+  AND e.artikkel NOT IN ('2585', '2586', '3502')
   AND idx IS NOT NULL
   AND idx > 1
 

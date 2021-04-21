@@ -60,7 +60,7 @@ WITH cur_tulude_kassa_taitmine AS (
                  AND left(j1.kreedit, 6) = '700001'
                  AND d.rekvid = 63                              -- только фин. департамент
                  --строка art 1532 в доходах может быть только с rahavoog 02, соответственно с rahavoog 23  быть не далжно
-                 AND (CASE WHEN j1.kood5 = '1532' AND j1.kood3 = '23' THEN FALSE ELSE TRUE END)
+                 AND (CASE WHEN j1.kood5 = '1532' AND j1.kood3 in ('23' , '21') THEN FALSE ELSE TRUE END)
                  AND d.status <> 3
               ) j
                   INNER JOIN libs.library l ON l.kood = j.kood5
