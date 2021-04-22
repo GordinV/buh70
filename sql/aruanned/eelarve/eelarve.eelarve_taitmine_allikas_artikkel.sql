@@ -1,10 +1,12 @@
-DROP FUNCTION IF EXISTS eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, BOOLEAN, INTEGER, INTEGER);
-DROP FUNCTION IF EXISTS eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, INTEGER, INTEGER);
+--DROP FUNCTION IF EXISTS eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, BOOLEAN, INTEGER, INTEGER);
+--DROP FUNCTION IF EXISTS eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, DATE, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(l_aasta INTEGER,
-                                                                     l_kpv DATE,
-                                                                     l_rekvid INTEGER,
-                                                                     l_kond INTEGER)
+                                                                      l_kpv_1 DATE,
+                                                                      l_kpv_2 DATE,
+                                                                      l_rekvid INTEGER,
+                                                                      l_kond INTEGER)
     RETURNS TABLE (
         rekv_id                  INTEGER,
         eelarve_kinni            NUMERIC(14, 2),
@@ -22,10 +24,10 @@ CREATE OR REPLACE FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(l_aasta INT
     ) AS
 $BODY$
 WITH cur_kulude_kassa_taitmine AS (
-    SELECT * FROM eelarve.uus_kassa_taitmine(make_date(l_aasta, 01, 01), l_kpv, l_rekvid, l_kond)
+    SELECT * FROM eelarve.uus_kassa_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond)
 ),
      cur_kulude_taitmine AS (SELECT *
-                             FROM eelarve.tekke_taitmine(make_date(l_aasta, 01, 01), l_kpv, l_rekvid, l_kond)),
+                             FROM eelarve.tekke_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond)),
      qryReport AS (
          SELECT rekvid,
                 sum(eelarve_kinni)            AS eelarve_kinni,
@@ -99,7 +101,7 @@ WITH cur_kulude_kassa_taitmine AS (
                     AND e.rekvid IN (SELECT rekv_id FROM get_asutuse_struktuur(l_rekvid))
                     AND aasta = l_aasta
                     AND kood5 NOT LIKE '3%'
-                    AND (e.kpv IS NULL OR e.kpv <= COALESCE(l_kpv, CURRENT_DATE))
+                    AND (e.kpv IS NULL OR e.kpv <= COALESCE(l_kpv_2, CURRENT_DATE))
                     AND e.status <> 3
 
                   UNION ALL
@@ -244,7 +246,7 @@ WITH cur_kulude_kassa_taitmine AS (
                                         ELSE l_rekvid END)
                     AND j.rekvid IN (SELECT rekv_id FROM get_asutuse_struktuur(l_rekvid))
                     AND YEAR(j.kpv) = l_aasta
-                    AND MONTH(j.kpv) <= MONTH(l_kpv)
+                    AND MONTH(j.kpv) <= MONTH(l_kpv_2)
                     AND j.kood5 IS NOT NULL
                     AND NOT empty(j.kood5)
                     AND ((LEFT(j.deebet, 3) = '208' AND j.kood3 = '06')
@@ -331,7 +333,7 @@ WITH cur_kulude_kassa_taitmine AS (
                            )
                          AND artikkel <> '1532'*/
                        idx >= 200
-                       and qryReport.artikkel <> '1532'
+                     AND qryReport.artikkel <> '1532'
                    GROUP BY rekvid
                    UNION ALL
                    SELECT kt.rekvid    AS rekvid,
@@ -386,10 +388,10 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, INTEGER, INTEGER) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, INTEGER, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, DATE, INTEGER, INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, DATE, INTEGER, INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, DATE, INTEGER, INTEGER) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, DATE, INTEGER, INTEGER) TO dbvaatleja;
 
 /*
 SELECT *

@@ -1082,7 +1082,7 @@ BEGIN
                      WHERE (q.artikkel LIKE '1001.%' OR q.artikkel = '100')
                        AND tyyp = 1
                      UNION ALL
-                     SELECT '8.1',
+                     SELECT '8.11',
                             1                     AS is_e,
                             $2                    AS rekvid,
                             ''::VARCHAR(20)       AS tegev,
@@ -1099,7 +1099,7 @@ BEGIN
 
 -- MKD208+MKD258
                      UNION ALL
-                     SELECT '8.1'
+                     SELECT '8.11'
                              ,
                             1                      AS is_e
                              ,
@@ -1128,7 +1128,7 @@ BEGIN
                             l_9100                 AS saldoandmik
 -- MKD910090
                      UNION ALL
-                     SELECT '8.1'
+                     SELECT '8.11'
                              ,
                             1                                      AS is_e
                              ,

@@ -44,10 +44,8 @@ BEGIN
                               doc_arved        AS arved,
                               doc_kas_paberil  AS kas_paberil,
                               doc_kas_email    AS kas_email,
-                              doc_kas_esindaja AS kas_esindaja,
-                              doc_pank         AS pank,
-                              doc_iban         AS iban,
-                              doc_kas_earve    AS kas_earve) row;
+                              doc_kas_esindaja AS kas_esindaja
+                      ) row;
 
     -- ищем ранее удаленные записи
     IF doc_id IS NULL OR doc_id = 0
@@ -119,13 +117,15 @@ BEGIN
     THEN
 
         UPDATE lapsed.vanem_arveldus
-        SET arveldus = doc_arved
+        SET arveldus   = doc_arved,
+            properties = json_build_object('kas_earve', doc_kas_earve, 'pank', doc_pank, 'iban', doc_iban)
         WHERE parentid = doc_parentid
           AND asutusid = doc_asutusid
           AND rekvid = user_rekvid;
     ELSE
-        INSERT INTO lapsed.vanem_arveldus (parentid, asutusid, rekvid, arveldus)
-        VALUES (doc_parentid, doc_asutusid, user_rekvid, doc_arved);
+        INSERT INTO lapsed.vanem_arveldus (parentid, asutusid, rekvid, arveldus, properties)
+        VALUES (doc_parentid, doc_asutusid, user_rekvid, doc_arved,
+                json_build_object('kas_earve', doc_kas_earve, 'pank', doc_pank, 'iban', doc_iban));
 
     END IF;
 

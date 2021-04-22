@@ -28,8 +28,8 @@ module.exports = {
                            coalesce(p.regkood, '')::VARCHAR(20)  AS parregkood,
                            coalesce(p.nimetus, '')::VARCHAR(254) AS parasutus,
                            idx
-                    FROM eelarve.tulude_taitmine_allikas_artikkel($1::INTEGER, $2::DATE, $3::INTEGER,
-                                                                  $4::INTEGER) qryReport
+                    FROM eelarve.tulude_taitmine_allikas_artikkel($1::INTEGER, $2::DATE, $3::DATE, $4::INTEGER,
+                                                                  $5::INTEGER) qryReport
                              LEFT OUTER JOIN com_artikkel a ON ltrim(rtrim(a.kood)) = ltrim(rtrim(qryReport.artikkel))
                              INNER JOIN (SELECT id, parentid, regkood, nimetus
                                          FROM ou.rekv

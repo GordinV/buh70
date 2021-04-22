@@ -82,6 +82,13 @@ BEGIN
                     count = count + 1;
                 END IF;
 
+                -- удаляем из vanem_arveldus (новый интерфейс)
+                UPDATE lapsed.vanem_arveldus
+                SET properties = json_build_object('kas_earve', FALSE)
+                WHERE parentid = l_laps_id
+                  AND asutusid = l_vanem_id
+                  AND rekvid = user_rekvid;
+
                 IF upper(json_record.toiming) = 'LISA'
                 THEN
                     -- СОЗДАЕМ КАНАЛ БАНК,
@@ -107,8 +114,8 @@ BEGIN
                            json_record.aa                          AS iban
                            INTO v_vanem
                     FROM lapsed.vanemad v
-                    WHERE asutusid = l_vanem_id
-                      AND parentid = l_laps_id
+                    WHERE v.asutusid = l_vanem_id
+                      AND v.parentid = l_laps_id
                     LIMIT 1;
 
                     -- подготавливаем параметры для сохранения

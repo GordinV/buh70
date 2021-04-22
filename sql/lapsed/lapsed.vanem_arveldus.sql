@@ -1,11 +1,11 @@
 DROP TABLE IF EXISTS lapsed.vanem_arveldus;
 
 CREATE TABLE lapsed.vanem_arveldus (
-    id         SERIAL,
-    parentid   INTEGER NOT NULL REFERENCES lapsed.laps (id) ON DELETE CASCADE ON UPDATE CASCADE,
-    asutusid   INTEGER NOT NULL REFERENCES libs.asutus (id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    rekvid     INTEGER NOT NULL REFERENCES ou.rekv (id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    arveldus   BOOL             DEFAULT FALSE,
+    id       SERIAL,
+    parentid INTEGER NOT NULL REFERENCES lapsed.laps (id) ON DELETE CASCADE ON UPDATE CASCADE,
+    asutusid INTEGER NOT NULL REFERENCES libs.asutus (id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    rekvid   INTEGER NOT NULL REFERENCES ou.rekv (id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    arveldus BOOL DEFAULT FALSE,
     CONSTRAINT vanem_arveldus_pkey PRIMARY KEY (id)
 )
     WITH (
@@ -32,3 +32,7 @@ CREATE INDEX IF NOT EXISTS vanem_arveldus_rekvid_idx ON lapsed.vanem_arveldus (r
 
 ALTER TABLE lapsed.vanem_arveldus
     ADD UNIQUE (asutusid, parentid, rekvid);
+
+
+ALTER TABLE lapsed.vanem_arveldus
+    ADD COLUMN properties JSONB;

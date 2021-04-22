@@ -432,7 +432,7 @@ WHERE artikkel LIKE '32%'
 GROUP BY rekv_id
 UNION ALL
 --352
-SELECT rekv_id,
+/*SELECT rekv_id,
        NULL :: VARCHAR(20)                               AS tegev,
        '352' :: VARCHAR(20)                              AS artikkel,
        'Mittesihtotstarbelised toetused' :: VARCHAR(254) AS nimetus,
@@ -444,7 +444,9 @@ WHERE artikkel LIKE '352%'
   AND artikkel <> '352'
 GROUP BY rekv_id
 UNION ALL
+*/
 --  381
+
 SELECT rekv_id,
        NULL :: VARCHAR(20)             AS tegev,
        '381' :: VARCHAR(20)            AS artikkel,

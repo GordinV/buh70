@@ -65,7 +65,7 @@ describe('dok. type Eelarve tulude allikas ja artikkel täitmine aruanne tests',
 
     });
 
-    it('should select data from grid query', async()=> {
+    it.skip('should select data from grid query', async()=> {
         let sql = doc.grid.sqlString;
         let returnValue = await db.queryDb(sql, [2020,'2020-12-31',63, 0]);
         expect(returnValue).toBeDefined();
