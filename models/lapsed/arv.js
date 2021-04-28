@@ -75,8 +75,8 @@ const Arv = {
                          coalesce(kaibed.laekumised, 0)                            AS tasumisele,
                          coalesce(kaibed.tagastused, 0)                            AS tagastused,
                          a.properties ->> 'ettemaksu_period'                       AS ettemaksu_period,
-                         v.properties ->> 'pank'                                   AS pank,
-                         v.properties ->> 'iban'                                   AS iban
+                         va.properties ->> 'pank'                                  AS pank,
+                         va.properties ->> 'iban'                                  AS iban
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
@@ -88,7 +88,9 @@ const Arv = {
                            LEFT OUTER JOIN lapsed.laps l
                                            ON l.id = ll.parentid
                            LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = asutus.id
-                      AND v.parentid = l.id
+                           LEFT OUTER JOIN lapsed.vanem_arveldus va
+                                           ON va.asutusid = a.asutusid AND va.rekvid = d.rekvid AND va.parentid = l.id
+                                               AND v.parentid = l.id
 
                            LEFT OUTER JOIN (
                       SELECT laps_id,

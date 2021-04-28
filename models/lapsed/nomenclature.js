@@ -2,7 +2,7 @@ module.exports = {
     select: [{
         sql: `SELECT n.kood::TEXT,
                      n.id,
-                     n.nimetus::TEXT || ' ' || n.uhik::TEXT                                 AS nimetus,
+                     n.nimetus::TEXT                                                        AS nimetus,
                      n.dok::TEXT,
                      n.muud,
                      n.rekvid,
@@ -63,7 +63,7 @@ module.exports = {
         {
             sql: `SELECT *
                   FROM jsonb_to_recordset(
-                               get_nom_kasutus($2::INTEGER, $3::date,
+                               get_nom_kasutus($2::INTEGER, $3::DATE,
                                                $1::INTEGER)
                            ) AS x (error_message TEXT, error_code INTEGER)
                   WHERE error_message IS NOT NULL
@@ -117,15 +117,15 @@ module.exports = {
             {id: "valid", name: "Kehtivus", width: "10%", type: 'date', show: false},
         ],
         sqlString: `SELECT id,
-                           coalesce(kood, '')::VARCHAR(20)     AS kood,
-                           coalesce(nimetus, '')::VARCHAR(254) AS nimetus,
-                           $2::INTEGER                         AS userId,
+                           coalesce(kood, '')::VARCHAR(20)        AS kood,
+                           coalesce(nimetus, '')::VARCHAR(254)    AS nimetus,
+                           $2::INTEGER                            AS userId,
                            n.dok,
-                           (n.properties ->> 'konto')::TEXT    AS konto,
-                           (n.properties ->> 'tunnus')::TEXT   AS tunnus,
+                           (n.properties ->> 'konto')::TEXT       AS konto,
+                           (n.properties ->> 'tunnus')::TEXT      AS tunnus,
                            n.hind::NUMERIC(12, 2),
                            n.uhik,
-                           (n.properties::JSON ->> 'valid')::DATE as valid
+                           (n.properties::JSON ->> 'valid')::DATE AS valid
                     FROM libs.nomenklatuur n
                     WHERE (n.rekvId = $1 OR n.rekvid IS NULL)
                       AND n.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя

@@ -88,7 +88,6 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
 
             //  дата выплаты
             let payDueDate = getPayDueDate(arve.kpv);
-            console.log('payDueDate', payDueDate);
 
             // детали счета
             const qryeArvedDet = arve.details.map(rea => {

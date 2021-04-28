@@ -27,7 +27,8 @@ block content
             font-size: smaller;
         }
         .table {
-            border-spacing: 0px
+            border-spacing: 0px;
+            margin-top: -50px;
         }
 
         .pikkus {
@@ -43,28 +44,29 @@ block content
             margin-left: 10px;
         }
 
+        .dline {
+            line-height: 0.75;
+        }
+
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
         br
-        p.pikkus.bold Isikukood:
+        p.pikkus.bold.dline Isikukood:
             label.normal #{data[0].isikukood}
-        p.pikkus.bold Perekonna- ja eesnimi:
+        p.pikkus.bold.dline Perekonna- ja eesnimi:
             label.normal #{data[0].isik}
         br
-        p.pikkus.bold Period:
+        p.pikkus.bold.dline Period:
             label.normal #{data[0].kuu} / #{data[0].aasta}
-        br
-        p.pikkus.bold Töötatud tunnid:
+        p.pikkus.bold.dline Töötatud tunnid:
             label.normal #{data[0].tootunnid}
-        p.pikkus.bold Rakendatud maksuvaba tulu:
+        p.pikkus.bold.dline Rakendatud maksuvaba tulu:
             label.normal #{data[0].mvt}
-        br
 
         each lepings in groupData
-            p.pikkus.bold Amet:
-                label.normal #{lepings[Object.keys(lepings)][0].amet}
-            br
+            p.pikkus.bold.dline Amet:
+                label.normal.dline #{lepings[Object.keys(lepings)][0].amet}
 
             table.table.table-hover.grid_data
                 thead.grid_head
@@ -78,8 +80,8 @@ block content
                     each rea in lepings[Object.keys(lepings)].filter((row)=> (((row.deebet != 0) || (row.kreedit != 0)) && row.palk_liik != 'TASU') )
                         tr
                             td.td=rea.nimetus
-                            td.td(align='center')=rea.deebet
-                            td.td(align='center')=rea.kreedit
+                            td.td(align='center')=(Number(rea.deebet) !== 0 ? rea.deebet: null)
+                            td.td(align='center')=(Number(rea.kreedit) !== 0 ? rea.kreedit: null)
                         br
                     tr
                         td.td.bold='Kokku'

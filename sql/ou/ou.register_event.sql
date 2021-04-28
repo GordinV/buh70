@@ -6,16 +6,18 @@ CREATE OR REPLACE FUNCTION ou.register_events(data JSON,
 $BODY$
 
 DECLARE
-    doc_dokument TEXT  = data ->> 'dokument';
-    doc_event    TEXT  = data ->> 'event';
-    doc_status   TEXT  = data ->> 'status';
-    doc_content  TEXT  = data ->> 'content';
-    doc_isik_id  INTEGER  = data ->> 'isik_id';
-    l_rekvid     INTEGER;
-    l_doc_id     INTEGER;
+    doc_dokument  TEXT    = data ->> 'dokument';
+    doc_event     TEXT    = data ->> 'event';
+    doc_status    TEXT    = data ->> 'status';
+    doc_content   TEXT    = data ->> 'content';
+    doc_isik_id   INTEGER = data ->> 'isik_id';
+    doc_mail_info TEXT    = data ->> 'mail_info';
+    l_rekvid      INTEGER;
+    l_doc_id      INTEGER;
 
-    log_data     JSONB = jsonb_build_object('event', doc_event, 'status', doc_status, 'content', doc_content, 'isik_id', doc_isik_id);
-    l_result     INTEGER;
+    log_data      JSONB   = jsonb_build_object('event', doc_event, 'status', doc_status, 'content', doc_content,
+                                               'isik_id', doc_isik_id, 'mail_info', doc_mail_info);
+    l_result      INTEGER;
 
 BEGIN
     l_rekvid = (SELECT rekvid FROM ou.userid WHERE id = user_id LIMIT 1);

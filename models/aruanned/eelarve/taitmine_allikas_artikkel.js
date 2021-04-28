@@ -25,7 +25,11 @@ module.exports = {
                                          UNION ALL
                                          SELECT 999999, 0, '' AS regkood, 'Kond' AS nimetus) r
                                         ON r.id = qryReport.rekv_id
-                             LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id                    `,     // $1 - aasta $2 - kpv_alg, $3 - kpv_lopp, $4 - rekvid (svod), $5::integer  1 - kond, 0 - only asutus
+                             LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id
+                    WHERE (qryReport.idx <= (CASE WHEN $4 = 63 AND $5 = 1 THEN 100 ELSE 0 END) OR
+                           qryReport.idx >= CASE WHEN $4 = 63 AND $5 = 1 THEN 200 ELSE 0 END)
+
+        `,     // $1 - aasta $2 - kpv_alg, $3 - kpv_lopp, $4 - rekvid (svod), $5::integer  1 - kond, 0 - only asutus
         params: '',
         alias: 'kulud_report'
     }

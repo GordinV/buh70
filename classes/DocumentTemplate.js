@@ -55,7 +55,7 @@ class Document {
     /**
      * Вернет промис с данными документа
      */
-    async select(config) {
+    async select(config, dbConfig) {
         const _config = config ? config : this.config;
 
         if (!_config) {
@@ -71,7 +71,7 @@ class Document {
             }
         });
 
-        return  await db.executeQueries(initialLoad, [this.documentId, this.userId], objectTemplate);
+        return  await db.executeQueries(initialLoad, [this.documentId, this.userId], objectTemplate, dbConfig);
     }
 
     /**

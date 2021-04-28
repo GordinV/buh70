@@ -57,7 +57,7 @@ WITH qryMk AS (
     SELECT
      qryMk.id AS mk_id,
      coalesce(qryMk.yksus, coalesce(qryViimaneTeenus.yksus, qryEsimineTeenus.yksus)) ::TEXT AS yksus,
-     (coalesce((qryMk.hind / qryMk.total_amount), 1) * qryMk.makse_summa)::NUMERIC(14, 4) AS summa,
+     (coalesce((qryMk.hind / case when qryMk.total_amount = 0 then null else qryMk.total_amount end), 1) * qryMk.makse_summa)::NUMERIC(14, 4) AS summa,
      qryMk.laps_id
     FROM
      qryMK

@@ -26,14 +26,40 @@ module.exports = {
                          ''::VARCHAR(20)                AS muudatud,
                          (case when (coalesce((l.propertis->>'event'),'no') = 'print') then to_char(l.timestamp, 'DD.MM.YYYY HH.MM.SS') else '' end)::VARCHAR(20) as  prinditud,
                          (case when (coalesce((l.propertis->>'event'),'no') = 'email') then to_char(l.timestamp, 'DD.MM.YYYY HH.MM.SS') else '' end)::VARCHAR(20) as  email,
-                         'Status:' || (l.propertis->>'status')::text as muud       
+                         (l.propertis->>'mail_info')::text as muud       
                   FROM ou.logs l
                            INNER JOIN ou.userid u ON l.user_id = u.id
                   WHERE coalesce((l.propertis ->> 'isik_id')::INTEGER, 0) = $1::INTEGER
                     AND l.rekvid = u.rekvid
+                    ORDER BY l.id DESC 
         `,
         type: "sql",
         alias: "getLogs"
     },
+    print: [
+        {
+            view: 'palk_leht',
+            params: 'id',
+            register: `UPDATE docs.doc
+                       SET history = history ||
+                                     (SELECT row_to_json(row)
+                                      FROM (SELECT now()                                                AS print,
+                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                       WHERE id = $1`
+        }
+    ],
+    email: [
+        {
+            view: 'arve_email',
+            params: 'id',
+            register: `UPDATE docs.doc
+                       SET history = history ||
+                                     (SELECT row_to_json(row)
+                                      FROM (SELECT now()                                                AS email,
+                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                       WHERE id = $1`
+        }
+    ],
+
 
 };
