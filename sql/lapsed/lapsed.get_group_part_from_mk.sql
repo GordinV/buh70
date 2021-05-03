@@ -6,6 +6,7 @@ CREATE OR REPLACE FUNCTION lapsed.get_group_part_from_mk(l_mk_id INTEGER, l_kpv 
         yksus   TEXT,
         summa   NUMERIC(14, 4),
         laps_id INTEGER
+
     ) AS
 $BODY$
     -- на входе платеж
@@ -23,7 +24,8 @@ WITH qryMk AS (
                (lk.properties ->> 'lopp_kpv')::DATE AS lopp_kp,
                lk.hind,
                sum(lk.hind) OVER ()                 AS total_amount,
-               mk.jaak                              AS makse_summa
+               mk.jaak                              AS makse_summa,
+               mk.rekvid
         FROM docs.mk mk
                  INNER JOIN lapsed.liidestamine l ON l.docid = mk.parentid
                  LEFT OUTER JOIN lapsed.lapse_kaart lk
@@ -40,9 +42,11 @@ WITH qryMk AS (
                 lk.parentid               AS laps_id
          FROM lapsed.lapse_kaart lk
                   INNER JOIN qryMk ON lk.parentid = qryMk.laps_id
+             AND lk.rekvid = qryMk.rekvid
          WHERE (lk.properties ->> 'lopp_kpv')::DATE <= qryMk.kpv
            AND lk.staatus <> 3
-             ORDER BY lk.id DESC LIMIT 1
+         ORDER BY lk.id DESC
+         LIMIT 1
      ),
      -- Первая действующая услуга
      qryEsimineTeenus AS (
@@ -52,15 +56,16 @@ WITH qryMk AS (
                   INNER JOIN qryMk ON lk.parentid = qryMk.laps_id
          WHERE (lk.properties ->> 'alg_kpv')::DATE >= qryMk.kpv
            AND lk.staatus <> 3
-             ORDER BY lk.id LIMIT 1
+           AND lk.rekvid = qryMk.rekvid
+         ORDER BY lk.id
+         LIMIT 1
      )
-    SELECT
-     qryMk.id AS mk_id,
-     coalesce(qryMk.yksus, coalesce(qryViimaneTeenus.yksus, qryEsimineTeenus.yksus)) ::TEXT AS yksus,
-     (coalesce((qryMk.hind / case when qryMk.total_amount = 0 then null else qryMk.total_amount end), 1) * qryMk.makse_summa)::NUMERIC(14, 4) AS summa,
-     qryMk.laps_id
-    FROM
-     qryMK
+SELECT qryMk.id                                                                               AS mk_id,
+       coalesce(qryMk.yksus, coalesce(qryViimaneTeenus.yksus, qryEsimineTeenus.yksus)) ::TEXT AS yksus,
+       (coalesce((qryMk.hind / CASE WHEN qryMk.total_amount = 0 THEN NULL ELSE qryMk.total_amount END), 1) *
+        qryMk.makse_summa)::NUMERIC(14, 4)                                                    AS summa,
+       qryMk.laps_id
+FROM qryMK
          LEFT OUTER JOIN qryViimaneTeenus ON qryMk.laps_id = qryViimaneTeenus.laps_id
          LEFT OUTER JOIN qryEsimineTeenus ON qryMk.laps_id = qryEsimineTeenus.laps_id
 

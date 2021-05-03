@@ -346,7 +346,7 @@ class DocumentTemplate extends React.Component {
 
             if (docId && docTypeId) {
                 this.setState({
-                    warning: `Edukalt`,
+                    warning: `Edukalt ${dataMessage}`,
                     warningType: 'ok'
                 }, () => {
 

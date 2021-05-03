@@ -308,7 +308,6 @@ class Smk extends React.PureComponent {
         }
 
         if (!row) return <div/>;
-console.log('self.libs', self.libs);
         return (<div className='.modalPage'>
                 <ModalPage
                     modalObjects={modalObjects}

@@ -3,10 +3,10 @@
 DROP FUNCTION IF EXISTS eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, DATE, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(l_aasta INTEGER,
-                                                                      l_kpv_1 DATE,
-                                                                      l_kpv_2 DATE,
-                                                                      l_rekvid INTEGER,
-                                                                      l_kond INTEGER)
+                                                                     l_kpv_1 DATE,
+                                                                     l_kpv_2 DATE,
+                                                                     l_rekvid INTEGER,
+                                                                     l_kond INTEGER)
     RETURNS TABLE (
         rekv_id                  INTEGER,
         eelarve_kinni            NUMERIC(14, 2),
@@ -155,7 +155,7 @@ WITH cur_kulude_kassa_taitmine AS (
                          CASE
                              WHEN (artikkel LIKE
                                    '3%' OR artikkel LIKE
-                                           '655%') THEN 110
+                                           '655%' OR ltrim(rtrim(artikkel)) = '2585') THEN 110
                              WHEN artikkel LIKE
                                   '4%' OR artikkel LIKE
                                           '5%' OR
@@ -186,7 +186,7 @@ WITH cur_kulude_kassa_taitmine AS (
                          CASE
                              WHEN (artikkel LIKE
                                    '3%' OR artikkel LIKE
-                                           '655%') THEN 110
+                                           '655%' OR ltrim(rtrim(artikkel)) = '2585') THEN 110
                              WHEN artikkel LIKE
                                   '4%' OR artikkel LIKE
                                           '5%' OR
@@ -333,7 +333,7 @@ WITH cur_kulude_kassa_taitmine AS (
                            )
                          AND artikkel <> '1532'*/
                        idx >= 200
-                     AND qryReport.artikkel <> '1532'
+                     AND qryReport.artikkel NOT IN ('2585', '1532')
                    GROUP BY rekvid
                    UNION ALL
                    SELECT kt.rekvid    AS rekvid,

@@ -277,7 +277,6 @@ BEGIN
                                   AND status = 1
                                 LIMIT 1);
 
-                    RAISE NOTICE 'l_lib_id %', l_lib_id;
                     IF l_lib_id IS NOT NULL
                     THEN
                         l_lib_ids = array_append(l_lib_ids, l_lib_id);

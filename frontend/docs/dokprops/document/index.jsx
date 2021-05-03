@@ -9,7 +9,7 @@ const
     TextArea = require('../../../components/text-area/text-area.jsx'),
     Select = require('../../../components/select/select.jsx'),
     styles = require('./styles');
-const  LIBRARIES = [{id:'kontod',filter:'where len(kood::text) >= 6'}];
+const  LIBRARIES = [{id: 'kontod', filter: ''}];
 
 class Project extends React.PureComponent {
     constructor(props) {
@@ -56,13 +56,14 @@ class Project extends React.PureComponent {
                                    readOnly={true}
                                    value={self.docData.dok}
                         />
+
                         <Select title="Korr. konto: "
                                 name='konto'
                                 libs="kontod"
                                 data={self.libs['kontod']}
-                                value={self.docData.konto}
+                                value={self.docData['konto'] || ''}
                                 readOnly={!self.state.edited}
-                                ref='konto'
+                                ref='select_konto'
                                 collId="kood"
                                 onChange={self.handleInputChange}/>
 
@@ -75,9 +76,7 @@ class Project extends React.PureComponent {
                                 ref='kbmkonto'
                                 collId="kood"
                                 onChange={self.handleInputChange}/>
-
                     </div>
-
                 </div>
                 <div style={styles.docRow}>
                     <TextArea title="Selgitus"

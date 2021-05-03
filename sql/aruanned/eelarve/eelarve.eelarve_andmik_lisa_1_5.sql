@@ -35,6 +35,9 @@ DECLARE
     l_2580          NUMERIC(16, 4) = 0;
     l_2580_kassa    NUMERIC(16, 4) = 0;
 
+    l_2581          NUMERIC(16, 4) = 0;
+    l_2581_kassa    NUMERIC(16, 4) = 0;
+
     l_9100          NUMERIC(16, 4) = 0;
     l_9100_periodis NUMERIC(16, 4) = 0;
     l_9101          NUMERIC(16, 4) = 0;
@@ -48,11 +51,36 @@ BEGIN
     PERFORM eelarve.eelarve_andmik_lisa_1_5_query(l_kpv, l_rekvid, l_kond);
 
 
-    l_2580 = get_saldo('MKD', '208', NULL, NULL) +
-             get_saldo('MKD', '258', NULL, NULL);
+    SELECT sum((kr - db)) INTO l_2580
+    FROM tmp_andmik s,
+         (SELECT min(aasta) AS eelmine_aasta, max(aasta) AS aasta, min(kuu) AS eelmine_kuu, max(kuu) AS kuu
+          FROM tmp_andmik) aasta
+    WHERE s.tyyp = 2
+      AND s.aasta = aasta.eelmine_aasta
+      AND (left(s.artikkel, 4) IN ('1535', '2035', '2038', '2530', '2535', '2536')
+        OR left(s.artikkel, 3) IN ('208', '250', '256', '258')
+        OR left(s.artikkel, 6) IN ('203650', '203655', '203670', '913100')
+        OR val(ltrim(rtrim(s.artikkel))) >= 913010 AND val(ltrim(rtrim(s.artikkel))) <= 913090);
+
+    l_2580 = coalesce(l_2580, 0);
 
     l_2580_kassa = get_saldo('MKD', '203620', NULL, NULL) +
                    get_saldo('MKD', '203630', NULL, NULL);
+
+
+    SELECT sum((kr - db)) INTO l_2581
+    FROM tmp_andmik s,
+         (SELECT min(aasta) AS eelmine_aasta, max(aasta) AS aasta, min(kuu) AS eelmine_kuu, max(kuu) AS kuu
+          FROM tmp_andmik) aasta
+    WHERE s.tyyp = 2
+      AND s.aasta = aasta.aasta
+      AND (left(s.artikkel, 4) IN ('1535', '2035', '2038', '2530', '2535', '2536')
+        OR left(s.artikkel, 3) IN ('208', '250', '256', '258')
+        OR left(s.artikkel, 6) IN ('203650', '203655', '203670', '913100')
+        OR val(ltrim(rtrim(s.artikkel))) >= 913010 AND val(ltrim(rtrim(s.artikkel))) <= 913090);
+
+    l_2581 = coalesce(l_2581, 0);
+
 
     l_9100 = -1 * get_saldo('MKD', '910090', NULL, NULL);
     l_9100_periodis = -1 * get_saldo('KD', '910090', NULL, NULL);
@@ -1393,33 +1421,20 @@ Tekke eelarve täps - это сумма из уточненного бюджет
         FROM tmp_report t
         WHERE t.artikkel IN ('1000', '100')
         UNION ALL
-        SELECT '8.2'
-                ,
-               1                         AS is_e
-                ,
-               $2                        AS rekvid
-                ,
-               ''::VARCHAR(20)           AS tegev
-                ,
-               ''::VARCHAR(20)           AS allikas
-                ,
-               '2581'::VARCHAR(20)       AS artikkel
-                ,
-               'Võlakohustused'          AS nimetus
-                ,
-               SUM(t.eelarve)            AS eelarve
-                ,
-               sum(t.eelarve_kassa)      AS eelarve_kassa
-                ,
-               sum(t.eelarve_taps)       AS eelarve_taps
-                ,
-               sum(t.eelarve_kassa_taps) AS eelarve_kassa_taps
-                ,
-               sum(t.tegelik)            AS tegelik
-                ,
-               sum(t.kassa)              AS kassa
-                ,
-               sum(t.saldoandmik)        AS saldoandmik
+        SELECT '8.2',
+               1                         AS is_e,
+               $2                        AS rekvid,
+               ''::VARCHAR(20)           AS tegev,
+               ''::VARCHAR(20)           AS allikas,
+               '2581'::VARCHAR(20)       AS artikkel,
+               'Võlakohustused'          AS nimetus,
+               SUM(t.eelarve)            AS eelarve,
+               sum(t.eelarve_kassa)      AS eelarve_kassa,
+               sum(t.eelarve_taps)       AS eelarve_taps,
+               sum(t.eelarve_kassa_taps) AS eelarve_kassa_taps ,
+               l_2581                    AS tegelik,
+               l_2581 + l_2581_kassa     AS kassa,
+               l_2581                    AS saldoandmik
         FROM tmp_report t
         WHERE t.artikkel IN ('2580', '2585', '2586')
         UNION ALL

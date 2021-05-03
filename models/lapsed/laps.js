@@ -254,6 +254,12 @@ module.exports = {
         type: 'sql',
         alias: 'validateIsikukood'
     },
+    lopetaKoikTeenused: {
+        command: `SELECT *
+                  FROM lapsed.lopeta_koik_teenused($2::INTEGER, $1::INTEGER, $3::DATE)`,//$1 docId, $2 - userId
+        type: 'sql',
+        alias: 'lopetaKoikTeenused'
+    },
 
     bpm: [
         {
@@ -273,7 +279,14 @@ module.exports = {
             task: 'koostaEttemaksuArve',
             type: 'manual',
             action: 'generateJournal',
+        },
+        {
+            name: 'Lõpeta kõik teenused',
+            task: 'lopetaKoikTeenused',
+            type: 'manual',
+            action: 'lopetaKoikTeenused',
         }
+
     ],
     print: [
         {

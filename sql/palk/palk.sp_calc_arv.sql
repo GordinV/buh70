@@ -11,7 +11,7 @@ CREATE OR
                                       OUT pm NUMERIC,
                                       OUT sm NUMERIC,
                                       OUT summa NUMERIC,
-                                      OUT mvt NUMERIC,
+                                      OUT mvt NUMERIC(14,4),
                                       OUT error_code INTEGER,
                                       OUT result INTEGER,
                                       OUT error_message TEXT,
@@ -73,7 +73,6 @@ DECLARE
     doc_ids         INTEGER[];
 
 BEGIN
-
     IF l_lepingid IS NOT NULL
     THEN
         SELECT t.toopaev,
@@ -305,7 +304,6 @@ BEGIN
 
         IF (l_mvt_kokku > 0)
         THEN
-
             SELECT sum(po.tulubaas)                                            AS isiku_tulubaas,
                    sum(po.tulubaas)
                        FILTER (WHERE po.tululiik :: TEXT = l_tululiik :: TEXT) AS kasutatud_mvt,
@@ -371,6 +369,7 @@ BEGIN
                 -- обработаем возможную ошибку
                 mvt = summa;
             END IF;
+
         END IF;
 
     END IF;

@@ -3,10 +3,10 @@ DROP FUNCTION IF EXISTS eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, 
 DROP FUNCTION IF EXISTS eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION eelarve.tulude_taitmine_allikas_artikkel(l_aasta INTEGER,
-                                                                     l_kpv_1 DATE,
-                                                                     l_kpv_2 DATE,
-                                                                     l_rekvid INTEGER,
-                                                                     l_kond INTEGER)
+                                                                    l_kpv_1 DATE,
+                                                                    l_kpv_2 DATE,
+                                                                    l_rekvid INTEGER,
+                                                                    l_kond INTEGER)
     RETURNS TABLE (
         rekv_id                  INTEGER,
         eelarve_kinni            NUMERIC(14, 2),
@@ -43,7 +43,11 @@ WITH cur_tulude_kassa_taitmine AS (
                 j.kood3      AS rahavoog,
                 j.tunnus     AS tunnus,
                 200          AS idx
-         FROM (SELECT -1 * j1.summa AS summa,
+         FROM (SELECT -1 * CASE
+                               WHEN (ltrim(rtrim(j1.kood5)) = '3502'
+                                   AND (ltrim(rtrim(kood3)) IN ('01', '05', '')
+                                       OR kood3 IS NULL)) THEN 0
+                               ELSE j1.summa END AS summa,
                       j1.kood1,
                       j1.kood2,
                       j1.kood3,
@@ -192,6 +196,31 @@ WITH cur_tulude_kassa_taitmine AS (
                   tunnus,
                   idx
      ),
+     qry3502 AS (
+         SELECT rekvid,
+                sum(eelarve_kinni)            AS eelarve_kinni,
+                sum(eelarve_parandatud)       AS eelarve_parandatud,
+                sum(eelarve_kassa_kinni)      AS eelarve_kassa_kinni,
+                SUM(eelarve_kassa_parandatud) AS eelarve_kassa_parandatud,
+                sum(tegelik)                  AS tegelik,
+                sum(kassa)                    AS kassa,
+                tegev,
+                allikas,
+                artikkel,
+                rahavoog,
+                tunnus,
+                220                           AS idx
+         FROM qryReport
+         WHERE ltrim(rtrim(artikkel)) = '3502'
+           AND (rahavoog IS NULL OR ltrim(rtrim(rahavoog)) IN ('01', '05', ''))
+         GROUP BY rekvid,
+                  tegev,
+                  allikas,
+                  artikkel,
+                  rahavoog,
+                  tunnus,
+                  idx
+     ),
      qryPreReport AS (
          SELECT *
          FROM (
@@ -209,6 +238,7 @@ WITH cur_tulude_kassa_taitmine AS (
                          tunnus,
                          idx
                   FROM qryReport
+                  WHERE ltrim(rtrim(artikkel)) NOT IN ('3502')
                   GROUP BY rekvid,
                            tegev,
                            allikas,
@@ -252,6 +282,7 @@ WITH cur_tulude_kassa_taitmine AS (
                                rahavoog,
                                tunnus
                         FROM qryReport
+                        WHERE ltrim(rtrim(artikkel)) NOT IN ('3502')
                         UNION ALL
                         SELECT rekvid,
                                eelarve_kinni,
@@ -266,6 +297,20 @@ WITH cur_tulude_kassa_taitmine AS (
                                rahavoog,
                                tunnus
                         FROM laekumised_eelarvesse
+                        UNION ALL
+                        SELECT rekvid,
+                               eelarve_kinni,
+                               eelarve_parandatud,
+                               eelarve_kassa_parandatud,
+                               eelarve_kassa_kinni,
+                               tegelik,
+                               kassa,
+                               tegev,
+                               allikas,
+                               artikkel,
+                               rahavoog,
+                               tunnus
+                        FROM qry3502
                        ) j
                   GROUP BY rekvid
                   UNION ALL
@@ -303,6 +348,21 @@ WITH cur_tulude_kassa_taitmine AS (
                          tunnus,
                          idx
                   FROM laekumised_eelarvesse
+                  UNION ALL
+                  SELECT rekvid,
+                         eelarve_kinni,
+                         eelarve_parandatud,
+                         eelarve_kassa_kinni,
+                         eelarve_kassa_parandatud,
+                         tegelik,
+                         kassa,
+                         tegev,
+                         allikas,
+                         artikkel,
+                         rahavoog,
+                         tunnus,
+                         idx
+                  FROM qry3502
               ) qry
      )
 -- pohi osa
@@ -339,6 +399,7 @@ GROUP BY tegev,
          rahavoog,
          tunnus,
          idx;
+
 
 $BODY$
     LANGUAGE SQL

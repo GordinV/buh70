@@ -99,9 +99,11 @@ class TaskWidget extends React.PureComponent {
         let isShow = !this.state.showList;
         let task = this.state.taskList.find(task => task.name == name);
         let isShowDate = true;
+/*
         if (task.hasOwnProperty('showData') && task.showData == false) {
             isShowDate = false;
         }
+*/
         this.setState({showList: isShow, actualTask: value, showDate: isShowDate});
     }
 

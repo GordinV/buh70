@@ -6,6 +6,7 @@ module.exports = {
             {name: 'Tabeli koostamine', method: 'arvestaTaabel', docTypeId: 'lapse_taabel'},
             {name: 'Arvete koostamine', method: 'koostaArved', docTypeId: 'arv'},
             {name: 'Ettemaksuarve koostamine', method: 'koostaEttemaksuArved', docTypeId: 'arv'},
+//            {name: 'Lõpeta kõik teenused', method: 'lopetaKoikTeenused', docTypeId: 'laps'},
         ]
     },
     // логи

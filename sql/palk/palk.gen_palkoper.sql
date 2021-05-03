@@ -5,28 +5,32 @@ CREATE OR REPLACE FUNCTION palk.gen_palkoper(IN user_id INTEGER, IN params JSON,
     RETURNS RECORD AS
 $BODY$
 DECLARE
-    v_lib               RECORD;
+    v_lib                  RECORD;
 
-    l_leping_ids        JSON    = params -> 'leping_ids'; -- массив индентификаторов договоров
-    l_lib_ids           JSON    = params -> 'lib_ids'; -- массив индентификаторов договоров
-    l_kpv               DATE    = coalesce((params ->> 'kpv') :: DATE, current_date);
-    l_osakond_ids       JSON    = params -> 'osakond_ids'; -- массив индентификаторов договоров
-    l_isik_ids          JSON    = params -> 'isik_ids'; -- массив индентификаторов договоров
-    l_dokprop_id        INTEGER = params -> 'dokprop'; -- индентификатор профиля для контировки
-    is_delete_prev_oper BOOLEAN = params -> 'kas_kustuta'; -- предварительное удаление прежнего расчета
-    is_calc_min_sots    BOOLEAN = params -> 'kas_arvesta_minsots'; -- расчет мин. соц. налога
+    l_leping_ids           JSON    = params -> 'leping_ids'; -- массив индентификаторов договоров
+    l_lib_ids              JSON    = params -> 'lib_ids'; -- массив индентификаторов договоров
+    l_kpv                  DATE    = coalesce((params ->> 'kpv') :: DATE, current_date);
+    l_osakond_ids          JSON    = params -> 'osakond_ids'; -- массив индентификаторов договоров
+    l_isik_ids             JSON    = params -> 'isik_ids'; -- массив индентификаторов договоров
+    l_dokprop_id           INTEGER = params -> 'dokprop'; -- индентификатор профиля для контировки
+    is_delete_prev_oper    BOOLEAN = params -> 'kas_kustuta'; -- предварительное удаление прежнего расчета
+    is_calc_min_sots       BOOLEAN = params -> 'kas_arvesta_minsots'; -- расчет мин. соц. налога
 
-    v_tooleping         RECORD;
-    l_params            JSON;
-    l_save_params       JSON;
-    l_function          TEXT;
-    tulemus             RECORD;
-    l_dok_id            INTEGER; -- ИД сформированной проводки
-    v_palk_oper         RECORD; -- соберем все данные операции в строку
-    l_tulemus_json      JSON;
-    v_user              RECORD;
-    v_tulemus           RECORD;
-    l_sm_lib            INTEGER; -- ид операции СН
+    v_tooleping            RECORD;
+    l_params               JSON;
+    l_save_params          JSON;
+    l_function             TEXT;
+    tulemus                RECORD;
+    l_dok_id               INTEGER; -- ИД сформированной проводки
+    v_palk_oper            RECORD; -- соберем все данные операции в строку
+    l_tulemus_json         JSON;
+    v_user                 RECORD;
+    v_tulemus              RECORD;
+    l_sm_lib               INTEGER; -- ид операции СН
+    l_viimane_summa        NUMERIC;
+    l_arv_kogus            INTEGER = 0;
+    l_viimane_params       JSON;
+    l_kasutatud_umardamine BOOLEAN = FALSE;
 
 
 BEGIN
@@ -89,7 +93,8 @@ BEGIN
                                FROM ou.userid u
                                WHERE u.id = user_id)
               AND t.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
-        );
+        )
+          AND palk_liik NOT IN ('TASU');
 
     END IF;
 
@@ -116,15 +121,17 @@ BEGIN
         ORDER BY t.pohikoht DESC, t.koormus DESC
         LOOP
             -- инициализируем
+            l_arv_kogus = 0;
+            l_kasutatud_umardamine = FALSE;
+
+
             SELECT NULL::INTEGER                  AS doc_id,
                    ltrim(rtrim(v_tooleping.nimi)) AS error_message,
                    NULL::INTEGER                  AS error_code
                    INTO v_tulemus;
 
 
-            l_sm_lib = null;
-
-            raise notice 'v_tooleping %', v_tooleping;
+            l_sm_lib = NULL;
 
             FOR V_lib IN
                 SELECT pk.libid                     AS id,
@@ -148,6 +155,19 @@ BEGIN
                        , Pk.percent_ DESC
                        , pk.summa DESC
                 LOOP
+
+                    -- umardamine
+                    IF v_lib.liik > 1 AND l_viimane_summa <> 0
+                        AND -- tulud rohkem kui 1
+                       l_arv_kogus > 1 AND NOT l_kasutatud_umardamine
+
+                    THEN
+                        -- отчечаем об использованном округлении
+                        l_kasutatud_umardamine = TRUE;
+                        -- umardamine
+                        PERFORM palk.sp_calc_umardamine(user_id, l_viimane_params);
+                    END IF;
+
                     -- Готовим параметры для расчета
                     SELECT row_to_json(row) INTO l_params
                     FROM (SELECT l_kpv              AS kpv,
@@ -176,7 +196,8 @@ BEGIN
                                      WHEN v_lib.liik = 6
                                          THEN 'palk.sp_calc_tasu'
                         END;
-                    IF v_lib.liik = 5 and not empty(v_lib.minsots)
+
+                    IF v_lib.liik = 5 AND NOT empty(v_lib.minsots)
                     THEN
                         -- SM
                         l_sm_lib = v_lib.id;
@@ -190,7 +211,13 @@ BEGIN
 
                     l_tulemus_json = row_to_json(tulemus);
 
-                    raise notice 'tulemus %', tulemus;
+                    IF v_lib.liik = 1 AND tulemus.summa IS NOT NULL AND tulemus.summa <> 0
+                    THEN
+                        l_viimane_summa = tulemus.summa;
+                        l_arv_kogus = l_arv_kogus + 1;
+                        l_viimane_params = l_params;
+                    END IF;
+
 
                     IF tulemus.summa IS NOT NULL AND tulemus.summa <> 0
                     THEN
@@ -246,30 +273,22 @@ BEGIN
 
                     END IF;
 
-                    -- umardamine
-                    IF v_lib.liik = 1 AND tulemus.summa <> 0
-                        AND -- tulud rohkem kui 1
-                       (
-                           SELECT count(po.id)
-                           FROM palk.cur_palkoper po
-                           WHERE po.lepingId IN (SELECT id
-                                                 FROM palk.tooleping t
-                                                 WHERE t.parentId = v_tooleping.parentid
-                           )
-                             AND po.rekvId = v_tooleping.rekvid
-                             AND po.summa <> 0
-                             AND po.palk_liik = 'ARVESTUSED'
-                             AND year(kpv) = year(l_kpv)
-                             AND month(kpv) = month(l_kpv)
-                       ) > 1
-
-
-                    THEN
-                        -- umardamine
-                        PERFORM palk.sp_calc_umardamine(user_id, l_params);
-                    END IF;
 
                 END LOOP;
+            -- umardamine kontrol
+            -- umardamine
+            IF l_viimane_summa <> 0
+                AND -- tulud rohkem kui 1
+               l_arv_kogus > 1 AND NOT l_kasutatud_umardamine
+
+            THEN
+                l_kasutatud_umardamine = TRUE;
+                -- вызываем округление так как его еще нет
+                -- umardamine
+                PERFORM palk.sp_calc_umardamine(user_id, l_viimane_params);
+            END IF;
+
+
             --libs loop
             -- report
             l_params = to_jsonb(row.*)

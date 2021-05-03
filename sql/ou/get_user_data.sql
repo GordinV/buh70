@@ -53,7 +53,7 @@ SELECT u.id,
        u.roles
 
 FROM ou.userid u
-         JOIN ou.rekv r ON r.id = u.rekvid AND rtrim(ltrim(u.kasutaja))::TEXT = ltrim(rtrim(l_kasutaja))
+         JOIN ou.rekv r ON r.id = u.rekvid AND rtrim(ltrim(u.kasutaja))::TEXT = ltrim(rtrim(l_kasutaja)) and parentid < 999
          LEFT OUTER JOIN ou.rekv parent_r ON parent_r.id = r.parentid
          JOIN (
     SELECT array_agg('{"id":'::TEXT || r.id::TEXT || ',"nimetus":"'::TEXT || r.nimetus || '"}') AS a

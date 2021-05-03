@@ -228,6 +228,7 @@ class DocToolBar extends React.PureComponent {
 
     handleSelectTask(e) {
         // метод вызывается при выборе задачи
+        console.log('doc-toolbar', e.target.value);
         const taskValue = e.target.value;
         if (this.props.btnTaskClick) {
             return this.props.btnTaskClick(taskValue)

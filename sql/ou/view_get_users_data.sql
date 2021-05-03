@@ -21,7 +21,7 @@ SELECT u.id,
        parent_r.nimetus::TEXT                                             AS parent_asutus,
        u.roles
 FROM ou.userid u
-         JOIN ou.rekv r ON r.id = u.rekvid AND r.status <> 3
+         JOIN ou.rekv r ON r.id = u.rekvid AND r.status <> 3 and r.parentid < 999
          LEFT OUTER JOIN ou.rekv parent_r ON parent_r.id = r.parentid
          JOIN (SELECT u_1.kasutaja,
                       array_agg(((('{"id":'::TEXT || u_1.rekvid::TEXT) || ',"nimetus":"'::TEXT) ||

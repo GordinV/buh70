@@ -373,20 +373,14 @@ FROM (
                   FROM kaibed k
               ) qry) report
 --WHERE alg_saldo <> 0 OR arvestatud <> 0 OR soodustus <> 0 OR laekumised <> 0  OR tagastused <> 0
-    GROUP BY COALESCE(period, kpv_start)::DATE
-    ,
-    kulastatavus
-    ,
-    lapse_nimi
-    ,
-    lapse_isikukood
-    ,
+    GROUP BY COALESCE(period, kpv_start)::DATE,
+    kulastatavus,
+    lapse_nimi,
+    lapse_isikukood,
 --         maksja_nimi,
 --         maksja_isikukood,
-    yksus
-    ,
-    viitenumber
-    ,\\
+    yksus,
+    viitenumber,
     rekvid
 
 $BODY$
