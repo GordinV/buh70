@@ -14,7 +14,7 @@ const
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
     styles = require('./laps.styles');
 
-const LIBRARIES = [];
+const LIBRARIES = [{id: 'lapse_grupp', filter: ``}];
 
 const DOCS = ['ARV', 'SMK', 'LAPSE_TAABEL'];
 

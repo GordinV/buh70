@@ -28,12 +28,7 @@ class ButtonRegisterStart extends React.PureComponent{
             <img ref="image" src={styles.icons[ICON]}/>
         </Button>
     }
-};
-/*
-ButtonRegisterStart.propTypes = {
-    onClick: PropTypes.func.isRequired
 }
-*/
 
 ButtonRegisterStart.defaultProps = {
     disabled: false,

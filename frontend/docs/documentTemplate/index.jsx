@@ -333,11 +333,11 @@ class DocumentTemplate extends React.Component {
     /**
      *
      */
-    btnTaskClick(taskName, kpv) {
+    btnTaskClick(taskName, kpv, gruppId) {
         const task = this.bpm.find(task => task.name === taskName);
         let api = `/newApi/task/${task.task}`;
 
-        this.fetchData('Post', api, kpv ? {seisuga: kpv} : null).then((response) => {
+        this.fetchData('Post', api, kpv || gruppId ? {seisuga: kpv, gruppId: gruppId} : null).then((response) => {
             const dataRow = response.result;
             const dataMessage = response.data.error_message ? response.data.error_message : '';
 

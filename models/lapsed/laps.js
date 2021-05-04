@@ -260,6 +260,12 @@ module.exports = {
         type: 'sql',
         alias: 'lopetaKoikTeenused'
     },
+    SaamaYksuseTeenused: {
+        command: `SELECT *
+                  FROM lapsed.saama_yksuse_teenused($2::INTEGER, $1::INTEGER, $3::INTEGER)`,//$1 docId, $2 - userId
+        type: 'sql',
+        alias: 'SaamaYksuseTeenused'
+    },
 
     bpm: [
         {
@@ -285,7 +291,16 @@ module.exports = {
             task: 'lopetaKoikTeenused',
             type: 'manual',
             action: 'lopetaKoikTeenused',
+        },
+        {
+            name: 'Saama üksuse teenused',
+            task: 'SaamaYksuseTeenused',
+            type: 'manual',
+            hideDate: true,
+            showYksus: true,
+            action: 'SaamaYksuseTeenused',
         }
+
 
     ],
     print: [

@@ -307,16 +307,23 @@ exports.executeTask = async (req, res) => {
     let module = (params.module ? params.module : 'lapsed').toLowerCase();
 
     let seisuga = params.seisuga ? params.seisuga : now;
+    let gruppId = params.gruppId ? params.gruppId : null;
 
     const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, module);
 
     let taskParams;
 
-    if (params.docTypeId === 'LAPS' || params.docTypeId === 'PAEVA_TAABEL' || params.docTypeId === 'LAPSE_GRUPP') {
+    if ((params.docTypeId === 'LAPS' || params.docTypeId === 'PAEVA_TAABEL' || params.docTypeId === 'LAPSE_GRUPP'))  {
         //@TODO сделать универсальный набор параметров
         taskParams = [params.docId, user.userId, seisuga];
     }
-    console.log('taskParams', taskParams);
+
+    if (params.docTypeId === 'LAPS' &&  gruppId) {
+        // задача с параметром gruppId
+
+        taskParams = [params.docId, user.userId, gruppId];
+    }
+
     const data = await Document.executeTask(taskName, taskParams ? taskParams : null);
 
 
