@@ -1,10 +1,12 @@
 -- Function: docs.sp_delete_mk(integer, integer)
 
 DROP FUNCTION IF EXISTS lapsed.saama_yksuse_teenused(INTEGER, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS lapsed.saama_yksuse_teenused(INTEGER, INTEGER, INTEGER, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.saama_yksuse_teenused(IN user_id INTEGER,
                                                         IN l_id INTEGER,
                                                         IN l_grupp_id INTEGER,
+                                                        IN l_alates DATE DEFAULT current_date,
                                                         OUT error_code INTEGER,
                                                         OUT result INTEGER,
                                                         OUT doc_type_id TEXT,
@@ -36,7 +38,7 @@ BEGIN
                n.uhik::TEXT,
                n.properties ->> 'tunnus'              AS tunnus,
                (n.properties ->> 'kas_inf3')::BOOLEAN AS kas_inf3,
-               l.kood                                 AS yksus
+               ltrim(rtrim(l.kood))                                 AS yksus
 
         FROM jsonb_to_recordset((SELECT properties::JSONB -> 'teenused'
                                  FROM libs.library
@@ -66,8 +68,8 @@ BEGIN
                                             'yksus', v_kaart.yksus,
                                             'hind', v_kaart.hind,
                                             'kas_inf3', v_kaart.kas_inf3,
-                                            'alg_kpv', make_date(year(current_date), month(current_date), 1),
-                                            'lopp_kpv', make_date(year(current_date) + 3, 12, 31),
+                                            'alg_kpv', l_alates,
+                                            'lopp_kpv', make_date(year(current_date) + 10, 12, 31),
                                             'kogus', v_kaart.kogus
                     );
 
@@ -113,7 +115,7 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION lapsed.saama_yksuse_teenused(INTEGER, INTEGER, INTEGER) TO arvestaja;
+GRANT EXECUTE ON FUNCTION lapsed.saama_yksuse_teenused(INTEGER, INTEGER, INTEGER, DATE) TO arvestaja;
 
 
 /*

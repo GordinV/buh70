@@ -320,10 +320,8 @@ exports.executeTask = async (req, res) => {
 
     if (params.docTypeId === 'LAPS' &&  gruppId) {
         // задача с параметром gruppId
-
-        taskParams = [params.docId, user.userId, gruppId];
+        taskParams.push(gruppId);
     }
-
     const data = await Document.executeTask(taskName, taskParams ? taskParams : null);
 
 

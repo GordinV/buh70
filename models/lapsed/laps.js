@@ -262,7 +262,7 @@ module.exports = {
     },
     SaamaYksuseTeenused: {
         command: `SELECT *
-                  FROM lapsed.saama_yksuse_teenused($2::INTEGER, $1::INTEGER, $3::INTEGER)`,//$1 docId, $2 - userId
+                  FROM lapsed.saama_yksuse_teenused($2::INTEGER, $1::INTEGER, $4::INTEGER,  $3::DATE)`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'SaamaYksuseTeenused'
     },
@@ -296,7 +296,7 @@ module.exports = {
             name: 'Saama üksuse teenused',
             task: 'SaamaYksuseTeenused',
             type: 'manual',
-            hideDate: true,
+            hideDate: false,
             showYksus: true,
             action: 'SaamaYksuseTeenused',
         }

@@ -73,7 +73,7 @@ class TaskWidget extends React.PureComponent {
                             {`Kas käivata ${this.state.actualTask} ?`}
 
                             {this.state.showDate ? <InputDate title='Seisuga '
-                                                              name='kpv'
+                                                              name='seisuga'
                                                               value={this.state.seisuga}
                                                               ref='input-kpv'
                                                               readOnly={false}

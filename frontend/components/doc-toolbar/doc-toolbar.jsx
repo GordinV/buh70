@@ -42,7 +42,7 @@ class DocToolBar extends React.PureComponent {
 
     render() {
         let isEditMode = this.props.edited,
-            isDocDisabled = this.state.docStatus === 2 ,
+            isDocDisabled = this.state.docStatus === 2,
             docId = this.docId;
 
         // кнопки режима редактирования должны пропасть если редактирование и показывать если разрешено
@@ -55,32 +55,32 @@ class DocToolBar extends React.PureComponent {
             kas_edit = false;
         }
 
-        let   toolbarParams =   {
-                btnAdd: {
-                    show: kas_add,
-                    disabled: isEditMode
-                },
-                btnEdit: {
-                    show: kas_edit,
-                    disabled: isDocDisabled
-                },
-                btnPrint: {
-                    show: true,
-                    disabled: false
-                },
-                btnEmail: {
-                    show: true,
-                    disabled: false
-                },
-                btnSave: {
-                    show: isEditMode && !isDocDisabled,
-                    disabled: this.props.toolbarParams && this.props.toolbarParams['btnSave'] ? this.props.toolbarParams['btnSave'].disabled: false
-                },
-                btnCancel: {
-                    show: isEditMode && docId !== 0,
-                    disabled: false
-                }
-            };
+        let toolbarParams = {
+            btnAdd: {
+                show: kas_add,
+                disabled: isEditMode
+            },
+            btnEdit: {
+                show: kas_edit,
+                disabled: isDocDisabled
+            },
+            btnPrint: {
+                show: true,
+                disabled: false
+            },
+            btnEmail: {
+                show: true,
+                disabled: false
+            },
+            btnSave: {
+                show: isEditMode && !isDocDisabled,
+                disabled: this.props.toolbarParams && this.props.toolbarParams['btnSave'] ? this.props.toolbarParams['btnSave'].disabled : false
+            },
+            btnCancel: {
+                show: isEditMode && docId !== 0,
+                disabled: false
+            }
+        };
 
         return <ToolbarContainer ref='toolbarContainer'>
             <BtnAdd ref='btnAdd'
@@ -117,9 +117,9 @@ class DocToolBar extends React.PureComponent {
                      onClick={this.btnLogsClick}
                      show={!isEditMode}/>
             {(this.props.bpm.length && !isDocDisabled && !isEditMode) ? <TaskWidget ref='taskWidget'
-                                                                     taskList={this.props.bpm}
-                                                                     handleSelectTask={this.handleSelectTask}
-                                                                     handleButtonTask={this.handleButtonTask}
+                                                                                    taskList={this.props.bpm}
+                                                                                    handleSelectTask={this.handleSelectTask}
+                                                                                    handleButtonTask={this.handleButtonTask}
             /> : null}
         </ToolbarContainer>
     }
@@ -166,6 +166,7 @@ class DocToolBar extends React.PureComponent {
             this.props.btnPdfClick();
         }
     }
+
     /**
      * обработчик для кнопки email
      */
@@ -218,11 +219,7 @@ class DocToolBar extends React.PureComponent {
 
         if (task) {
             // метод вызывается при выборе задачи
-            if (this.props.btnTaskClick && gruppId) {
-                return this.props.btnTaskClick(task.name, null, gruppId);
-            } else {
-                return this.props.btnTaskClick(task.name, kpv, null);
-            }
+            return this.props.btnTaskClick(task.name, kpv, gruppId);
 
         }
 
