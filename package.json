@@ -63,7 +63,7 @@
     "request": "^2.88.0",
     "serve-favicon": "^2.5.0",
     "should": "^11.2.0",
-    "underscore": "^1.9.1",
+    "underscore": "^1.12.1",
     "uuid": "^3.3.3",
     "webpack": "^1.14.0",
     "winston": "^2.4.4",
