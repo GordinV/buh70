@@ -27,7 +27,7 @@ module.exports = {
                     FROM lapsed.child_summary($1::INTEGER, 1) qryReport
                              INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
                     ORDER BY lapse_nimi, r.nimetus, (kpv::date)
-        `,     // $1 - rekvid, $3 - kond
+        `,     // $1 - rekvid, $3 - kond? removed jaak = 0
         params: '',
         alias: 'child_summary_report',
         subtotals: ['summa', 'jaak','tasutud']
