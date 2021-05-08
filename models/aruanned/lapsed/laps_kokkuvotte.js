@@ -26,8 +26,7 @@ module.exports = {
                            to_char(current_date, 'DD.MM.YYYY')::TEXT AS print_date
                     FROM lapsed.child_summary($1::INTEGER, 1) qryReport
                              INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
-                    WHERE qryReport.jaak <> 0
-                    ORDER BY lapse_nimi, r.nimetus, kpv
+                    ORDER BY lapse_nimi, r.nimetus, (kpv::date)
         `,     // $1 - rekvid, $3 - kond
         params: '',
         alias: 'child_summary_report',

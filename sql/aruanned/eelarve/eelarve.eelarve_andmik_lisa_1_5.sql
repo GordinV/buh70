@@ -34,6 +34,7 @@ DECLARE
     l_3888          NUMERIC(16, 4) = 0;
     l_2580          NUMERIC(16, 4) = 0;
     l_2580_kassa    NUMERIC(16, 4) = 0;
+    l_2580_eelarve  NUMERIC(16, 4) = 0;
 
     l_2581          NUMERIC(16, 4) = 0;
     l_2581_kassa    NUMERIC(16, 4) = 0;
@@ -67,6 +68,9 @@ BEGIN
     l_2580_kassa = get_saldo('MKD', '203620', NULL, NULL) +
                    get_saldo('MKD', '203630', NULL, NULL);
 
+    l_2580_eelarve = get_saldo('MKD', '208', NULL, NULL) +
+                     get_saldo('MKD', '258', NULL, NULL); -- MKD208+MKD258
+
 
     SELECT sum((kr - db)) INTO l_2581
     FROM tmp_andmik s,
@@ -80,6 +84,8 @@ BEGIN
         OR val(ltrim(rtrim(s.artikkel))) >= 913010 AND val(ltrim(rtrim(s.artikkel))) <= 913090);
 
     l_2581 = coalesce(l_2581, 0);
+    l_2581_kassa = get_saldo('KD', '203620', NULL, NULL) +
+                   get_saldo('KD', '203630', NULL, NULL);
 
 
     l_9100 = -1 * get_saldo('MKD', '910090', NULL, NULL);
@@ -1101,19 +1107,19 @@ BEGIN
                        AND tyyp = 1
                      UNION ALL
                      SELECT '8.11',
-                            1                     AS is_e,
-                            $2                    AS rekvid,
-                            ''::VARCHAR(20)       AS tegev,
-                            ''::VARCHAR(20)       AS allikas,
-                            '2580'::VARCHAR(20)   AS artikkel,
-                            'Võlakohustused'      AS nimetus,
-                            l_2580                AS eelarve,
-                            l_2580 + l_2580_kassa AS eelarve_kassa,
-                            0                     AS eelarve_taps,
-                            0                     AS eelarve_kassa_taps,
-                            l_2580                AS tegelik,
-                            l_2580 + l_2580_kassa AS kassa,
-                            l_2580                AS saldoandmik
+                            1                             AS is_e,
+                            $2                            AS rekvid,
+                            ''::VARCHAR(20)               AS tegev,
+                            ''::VARCHAR(20)               AS allikas,
+                            '2580'::VARCHAR(20)           AS artikkel,
+                            'Võlakohustused'              AS nimetus,
+                            l_2580_eelarve                AS eelarve,
+                            l_2580_eelarve + l_2580_kassa AS eelarve_kassa,
+                            0                             AS eelarve_taps,
+                            0                             AS eelarve_kassa_taps,
+                            l_2580                        AS tegelik,
+                            l_2580 + l_2580_kassa         AS kassa,
+                            l_2580                        AS saldoandmik
 
 -- MKD208+MKD258
                      UNION ALL
@@ -1431,7 +1437,7 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                SUM(t.eelarve)            AS eelarve,
                sum(t.eelarve_kassa)      AS eelarve_kassa,
                sum(t.eelarve_taps)       AS eelarve_taps,
-               sum(t.eelarve_kassa_taps) AS eelarve_kassa_taps ,
+               sum(t.eelarve_kassa_taps) AS eelarve_kassa_taps,
                l_2581                    AS tegelik,
                l_2581 + l_2581_kassa     AS kassa,
                l_2581                    AS saldoandmik
