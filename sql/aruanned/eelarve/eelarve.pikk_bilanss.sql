@@ -39,8 +39,8 @@ WITH qrySaldo AS (
     --Saldoandmikust (Sum: Kontod 3*kuni 6* Kreedit) - (Sum: Kontod 3* kuni 6* Deebet)
     SELECT s.rekvid                AS rekv_id,
            '299000' :: VARCHAR(20) AS konto,
-           sum(kr) - sum(db)       AS db,
-           0 :: NUMERIC(14, 2)     AS kr
+           0 :: NUMERIC(14, 2)     AS db,
+           sum(kr) - sum(db)       AS kr
     FROM eelarve.saldoandmik s
     WHERE s.aasta = year(l_kpv)
       AND s.kuu = month(l_kpv)
@@ -185,6 +185,15 @@ FROM (
          WHERE konto LIKE '1032%'
          GROUP BY q.rekvid
          UNION ALL
+         --1033
+         SELECT q.rekvid                              AS rekv_id,
+                '1033' :: VARCHAR(20)                 AS konto,
+                'Tuletisinstrumendid' :: VARCHAR(254) AS nimetus,
+                sum(db) - sum(kr)                     AS summa
+         FROM qrySaldo q
+         WHERE konto LIKE '1033%'
+         GROUP BY q.rekvid
+         UNION ALL
          --1035
          -- Saldoandmikust (Sum: Kontod 1035* Deebet) - (Sum: Kontod 1035* Kreedit) - konto 103500 deebet + konto 103500 kreedit
          SELECT q.rekvid                                          AS rekv_id,
@@ -235,6 +244,15 @@ FROM (
                 sum(db) - sum(kr)                                        AS summa
          FROM qrySaldo q
          WHERE konto LIKE '1039%'
+         GROUP BY q.rekvid
+         UNION ALL
+         --107
+         SELECT q.rekvid                              AS rekv_id,
+                '107' :: VARCHAR(20)                  AS konto,
+                'BIOLOOGILISED VARAD' :: VARCHAR(254) AS nimetus,
+                sum(db) - sum(kr)                     AS summa
+         FROM qrySaldo q
+         WHERE konto LIKE '107%'
          GROUP BY q.rekvid
          UNION ALL
          --108
@@ -289,6 +307,15 @@ FROM (
                 sum(db) - sum(kr)                                           AS summa
          FROM qrySaldo q
          WHERE konto LIKE '150%'
+         GROUP BY q.rekvid
+         UNION ALL
+         --1500
+         SELECT q.rekvid                                                           AS rekv_id,
+                '1500' :: VARCHAR(20)                                              AS konto,
+                'Osalused sihtasutustes ja mittetulundusühingutes' :: VARCHAR(254) AS nimetus,
+                sum(db) - sum(kr)                                                  AS summa
+         FROM qrySaldo q
+         WHERE konto LIKE '1500%'
          GROUP BY q.rekvid
          UNION ALL
          --1502
@@ -516,6 +543,15 @@ FROM (
          WHERE konto LIKE '1556%'
          GROUP BY q.rekvid
          UNION ALL
+         --1557
+         SELECT q.rekvid                                                 AS rekv_id,
+                '1557' :: VARCHAR(20)                                    AS konto,
+                'Mitteamortiseeruv materiaalne põhivara' :: VARCHAR(254) AS nimetus,
+                sum(db) - sum(kr)                                        AS summa
+         FROM qrySaldo q
+         WHERE konto LIKE '1557%'
+         GROUP BY q.rekvid
+         UNION ALL
          --1559
          SELECT q.rekvid                                                 AS rekv_id,
                 '1559' :: VARCHAR(20)                                    AS konto,
@@ -615,15 +651,11 @@ FROM (
          GROUP BY q.rekvid
          UNION ALL
          --20
+         -- e,hfk dsxbn 2035 08.05
          SELECT q.rekvid                                  AS rekv_id,
                 '20' :: VARCHAR(20)                       AS konto,
                 'Luhiajalised kohustused' :: VARCHAR(254) AS nimetus,
-                sum(kr) - sum(db) -
-                coalesce(sum(kr)
-                             FILTER (WHERE konto LIKE '2035%'), 0) +
-                coalesce(sum(db)
-                             FILTER (WHERE konto LIKE '2035%'), 0)
-                                                          AS summa
+                sum(kr) - sum(db)                         AS summa
          FROM qrySaldo q
          WHERE konto LIKE '20%'
          GROUP BY q.rekvid
@@ -745,6 +777,15 @@ FROM (
          WHERE konto LIKE '2081%'
          GROUP BY q.rekvid
          UNION ALL
+         --2082
+         SELECT q.rekvid                                  AS rekv_id,
+                '2082' :: VARCHAR(20)                     AS konto,
+                'Kapitalirendikohustused' :: VARCHAR(254) AS nimetus,
+                sum(kr) - sum(db)                         AS summa
+         FROM qrySaldo q
+         WHERE konto LIKE '2082%'
+         GROUP BY q.rekvid
+         UNION ALL
          --2083
          SELECT q.rekvid                               AS rekv_id,
                 '2083' :: VARCHAR(20)                  AS konto,
@@ -752,6 +793,15 @@ FROM (
                 sum(kr) - sum(db)                      AS summa
          FROM qrySaldo q
          WHERE konto LIKE '2083%'
+         GROUP BY q.rekvid
+         UNION ALL
+         --2086
+         SELECT q.rekvid                                                              AS rekv_id,
+                '2086' :: VARCHAR(20)                                                 AS konto,
+                'Kohustused teenuste kontsessioonikokkulepete alusel' :: VARCHAR(254) AS nimetus,
+                sum(kr) - sum(db)                                                     AS summa
+         FROM qrySaldo q
+         WHERE konto LIKE '2086%'
          GROUP BY q.rekvid
          UNION ALL
          --25
@@ -884,7 +934,7 @@ FROM (
          SELECT q.rekvid                                            AS rekv_id,
                 '29' :: VARCHAR(20)                                 AS konto,
                 'Netovara' :: VARCHAR(254)                          AS nimetus,
-                sum(db)
+                sum(kr - db)
                     FILTER (WHERE left(konto, 3) IN ('298', '299')) AS summa
          FROM qrySaldo q
          GROUP BY q.rekvid
@@ -907,6 +957,46 @@ FROM (
          GROUP BY q.rekvid
 
          UNION ALL
+         -- Eelarvesse kuuluv netovara
+         -- Konto 103500 kreedit - konto 103500 deebet + konto 203500 kreedit - konto 203500 deebet
+         SELECT q.rekvid                                     AS rekv_id,
+                '`*' :: VARCHAR(20)                          AS konto,
+                'Eelarvesse kuuluv netovara' :: VARCHAR(254) AS nimetus,
+                coalesce(sum(kr)
+                             FILTER (WHERE konto LIKE '103500%'), 0) -
+                coalesce(sum(db)
+                             FILTER (WHERE konto LIKE '103500%'), 0) +
+                coalesce(sum(kr)
+                             FILTER (WHERE konto LIKE '203500%'), 0) -
+                coalesce(sum(db)
+                             FILTER (WHERE konto LIKE '203500%'), 0)
+                                                             AS summa
+         FROM qrySaldo q
+         GROUP BY q.rekvid
+
+         UNION ALL
+-- 103500	Tekkepõhised siirded	Saldoandmikust (Sum: Konto 103500 kreedit) - (Sum: Konto 103500 deebet)
+         SELECT q.rekvid                               AS rekv_id,
+                '`103500' :: VARCHAR(20)               AS konto,
+                'Tekkepõhised siirded' :: VARCHAR(254) AS nimetus,
+                sum(kr) - sum(db)                      AS summa
+         FROM qrySaldo q
+         WHERE konto LIKE '103500%'
+         GROUP BY q.rekvid
+
+         UNION ALL
+-- 203500	Tekkepõhised siirded	Saldoandmikust (Sum: Konto 203500 Kreedit) - (Sum: Konto 203500 Deebet)
+         SELECT q.rekvid                               AS rekv_id,
+                '`203500' :: VARCHAR(20)               AS konto,
+                'Tekkepõhised siirded' :: VARCHAR(254) AS nimetus,
+                sum(kr) - sum(db)                      AS summa
+         FROM qrySaldo q
+         WHERE konto LIKE '203500%'
+         GROUP BY q.rekvid
+
+         UNION ALL
+
+
          -- põhiosa
          SELECT q.rekvid                               AS rekv_id,
                 q.konto,
@@ -918,8 +1008,18 @@ FROM (
          FROM qrySaldo q
                   LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(l.kood)) = ltrim(rtrim(q.konto))
          WHERE val(left(ltrim(rtrim(q.konto)), 1)) < 3
+           AND ltrim(rtrim(konto)) NOT IN ('103500', '203500')
      ) qry
-         LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(l.kood)) = ltrim(rtrim(qry.konto))
+         LEFT OUTER JOIN (
+    SELECT kood, nimetus
+    FROM com_kontoplaan
+    UNION ALL
+    SELECT '`*', 'Eelarvesse kuuluv netovara'
+    UNION ALL
+    SELECT '`103500', 'Tekkepõhised siirded'
+    UNION ALL
+    SELECT '`203500', 'Tekkepõhised siirded'
+) l ON ltrim(rtrim(l.kood)) = ltrim(rtrim(qry.konto))
 
 GROUP BY rekv_id, konto, l.nimetus
 $BODY$
@@ -933,11 +1033,9 @@ GRANT EXECUTE ON FUNCTION eelarve.pikk_bilanss(l_kpv DATE, l_rekvid INTEGER, l_k
 GRANT EXECUTE ON FUNCTION eelarve.pikk_bilanss(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER) TO dbvaatleja;
 
 /*
-SELECT
-  sum(summa),
-  konto,
-  nimetus
-FROM eelarve.pikk_bilanss('2018-06-30' :: DATE, 63, 1)
+SELECT *
+FROM eelarve.pikk_bilanss('2020-12-31' :: DATE, 63, 1)
+where konto in ('2', '299000')
 GROUP BY konto, nimetus
 ORDER BY konto
 */
