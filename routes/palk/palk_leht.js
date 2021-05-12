@@ -204,7 +204,7 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
 
             // sending email
             // send mail with defined transport object
-        console.log('sending mail', l_user_mail, l_user, l_pass, l_smtp, l_port, UserConfig);
+//        console.log('sending mail', l_user_mail, l_user, l_smtp, l_port, UserConfig);
             return transporter.sendMail({
                 from: `"${l_user}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
                 to: `${row.email}`, // (, baz@example.com) list of receivers
