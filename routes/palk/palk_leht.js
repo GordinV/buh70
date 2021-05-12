@@ -185,7 +185,6 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
 
         }
     ).then(async () => {
-            l_smtp = '213.184.47.202';
             // create reusable transporter object using the default SMTP transport
             const transporter = await nodemailer.createTransport({
                 host: l_smtp,
@@ -204,7 +203,7 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
 
             // sending email
             // send mail with defined transport object
-//        console.log('sending mail', l_user_mail, l_user, l_smtp, l_port, UserConfig);
+        console.log('sending mail', row.email);
             return transporter.sendMail({
                 from: `"${l_user}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
                 to: `${row.email}`, // (, baz@example.com) list of receivers
