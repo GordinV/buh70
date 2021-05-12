@@ -38,6 +38,7 @@ FROM lapsed.lapse_taabel lt
                         AND grupp.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
 WHERE lt.staatus <> 3
   AND lt.kogus <> 0
+  AND n.status <> 3
 ORDER BY aasta, kuu, nimi, kood;
 
 GRANT SELECT ON TABLE lapsed.cur_lapse_taabel TO arvestaja;
