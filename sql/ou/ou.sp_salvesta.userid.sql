@@ -56,6 +56,7 @@ DECLARE
     l_string     TEXT;
 BEGIN
 
+    raise notice 'start';
     SELECT kasutaja INTO userName
     FROM ou.userid u
     WHERE u.id = user_id
@@ -92,11 +93,11 @@ BEGIN
                 l_string = 'CREATE USER "' || doc_kasutaja ||
                            '" WITH PASSWORD ' || quote_literal(doc_parool) ||
                            ' NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION ';
-                RAISE NOTICE '%', l_string;
+                RAISE NOTICE 'create user %', l_string;
                 EXECUTE (l_string);
                 IF roles_json ->> 'is_kasutaja'
                 THEN
-                    EXECUTE 'GRANT dbkasutaja TO ' || doc_kasutaja;
+                    EXECUTE 'GRANT dbkasutaja TO "' || doc_kasutaja || '"';
                 END IF;
 
             ELSE

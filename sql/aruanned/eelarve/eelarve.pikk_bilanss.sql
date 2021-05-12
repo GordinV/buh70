@@ -471,24 +471,6 @@ FROM (
          WHERE konto LIKE '1551%'
          GROUP BY q.rekvid
          UNION ALL
-         --15510
-         SELECT q.rekvid                                               AS rekv_id,
-                '15510' :: VARCHAR(20)                                 AS konto,
-                'Hooned ja rajatised soetusmaksumuses' :: VARCHAR(254) AS nimetus,
-                sum(db) - sum(kr)                                      AS summa
-         FROM qrySaldo q
-         WHERE konto LIKE '15510%'
-         GROUP BY q.rekvid
-         UNION ALL
-         --15511
-         SELECT q.rekvid                                               AS rekv_id,
-                '15511' :: VARCHAR(20)                                 AS konto,
-                'Hoonete ja rajatiste kogunenud kulum' :: VARCHAR(254) AS nimetus,
-                sum(db) - sum(kr)                                      AS summa
-         FROM qrySaldo q
-         WHERE konto LIKE '15511%'
-         GROUP BY q.rekvid
-         UNION ALL
          --1553
          SELECT q.rekvid                                      AS rekv_id,
                 '1553' :: VARCHAR(20)                         AS konto,
@@ -505,24 +487,6 @@ FROM (
                 sum(db) - sum(kr)                    AS summa
          FROM qrySaldo q
          WHERE konto LIKE '1554%'
-         GROUP BY q.rekvid
-         UNION ALL
-         --15540
-         SELECT q.rekvid                                              AS rekv_id,
-                '15540' :: VARCHAR(20)                                AS konto,
-                'Masinad ja seadmed soetusmaksumuses' :: VARCHAR(254) AS nimetus,
-                sum(db) - sum(kr)                                     AS summa
-         FROM qrySaldo q
-         WHERE konto LIKE '15540%'
-         GROUP BY q.rekvid
-         UNION ALL
-         --15541
-         SELECT q.rekvid                                               AS rekv_id,
-                '15541' :: VARCHAR(20)                                 AS konto,
-                'Masinate ja seadmete kogunenud kulum' :: VARCHAR(254) AS nimetus,
-                sum(db) - sum(kr)                                      AS summa
-         FROM qrySaldo q
-         WHERE konto LIKE '15541%'
          GROUP BY q.rekvid
          UNION ALL
          --1555
@@ -751,12 +715,21 @@ FROM (
          GROUP BY q.rekvid
          UNION ALL
          --206
+         SELECT q.rekvid                    AS rekv_id,
+                '206' :: VARCHAR(20)        AS konto,
+                'Eraldised' :: VARCHAR(254) AS nimetus,
+                sum(kr) - sum(db)           AS summa
+         FROM qrySaldo q
+         WHERE konto LIKE '206%'
+         GROUP BY q.rekvid
+         UNION ALL
+         --208
          SELECT q.rekvid                          AS rekv_id,
-                '206' :: VARCHAR(20)              AS konto,
+                '208' :: VARCHAR(20)              AS konto,
                 'Laenukohustused' :: VARCHAR(254) AS nimetus,
                 sum(kr) - sum(db)                 AS summa
          FROM qrySaldo q
-         WHERE konto LIKE '206%'
+         WHERE konto LIKE '208%'
          GROUP BY q.rekvid
          UNION ALL
          --2080
@@ -935,7 +908,7 @@ FROM (
                 '29' :: VARCHAR(20)                                 AS konto,
                 'Netovara' :: VARCHAR(254)                          AS nimetus,
                 sum(kr - db)
-                    FILTER (WHERE left(konto, 3) IN ('298', '299')) AS summa
+                    FILTER (WHERE (left(konto, 3) IN ('298', '299') or konto = '290400' )) AS summa
          FROM qrySaldo q
          GROUP BY q.rekvid
          UNION ALL
