@@ -24,7 +24,7 @@ const getConfigData = async function (user) {
 };
 const UserConfig = {};
 var l_smtp;
-var l_port;
+var l_port = 465;
 var l_user = 'palk';
 var l_user_name = 'Palk';
 var l_user_mail = 'palk@narva.ee';
@@ -41,7 +41,6 @@ let promise = new Promise((resolve, reject) => {
                         INNER JOIN ou.userid u ON u.rekvid = r.id AND kasutaja = '${l_user}'
                WHERE (lopp IS NULL OR lopp >= current_date)
                AND (t.email IS NOT NULL AND NOT empty(t.email) AND t.email LIKE '%@%')
-                 and t.id = 30978
                 AND t.id NOT IN (
                     SELECT (propertis ->> 'isik_id')::INTEGER
                     FROM ou.logs
@@ -186,7 +185,7 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
 
         }
     ).then(async () => {
-
+            l_smtp = '213.184.47.202';
             // create reusable transporter object using the default SMTP transport
             const transporter = await nodemailer.createTransport({
                 host: l_smtp,
