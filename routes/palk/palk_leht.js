@@ -58,7 +58,7 @@ let promise = new Promise((resolve, reject) => {
     // массив задач
     let tasks = [];
 
-
+    console.log('got data');
     data.data.map(row => {
         tasks.push(function (callback) {
                 l_smtp = row.smtp;
