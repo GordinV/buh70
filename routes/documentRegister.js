@@ -209,7 +209,6 @@ exports.put = async (req, res) => {
     }
 
     if (!savedData.row || savedData.row.length < 1 || l_error.length > 1) {
-        console.error('error in save', params, savedData);
         l_error = l_error + (savedData && savedData.error_message ? savedData.error_message : null);
         return res.send({
             action: 'save',

@@ -686,10 +686,11 @@ class DocumentTemplate extends React.Component {
                         }
 
                         if (response.data.action && response.data.action === 'save' && response.data.result.error_code) {
-                            // error in save
 
+                            let error_teatis = response.data.result && response.data.result.error_message ? response.data.result.error_message: '';
+                            // error in save
                             this.setState({
-                                warning: `Tekkis viga: salvestamine ebaõnnestus`,
+                                warning: `Tekkis viga: salvestamine ebaõnnestus ${error_teatis}`,
                                 warningType: 'error',
                                 txtReport: response.data,
                                 isReport: !!(response.data.data && response.data.data.length)

@@ -3,10 +3,10 @@
 DROP FUNCTION IF EXISTS lapsed.sp_delete_lapse_kaart(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION lapsed.sp_delete_lapse_kaart(IN user_id INTEGER,
-                                                  IN doc_id INTEGER,
-                                                  OUT error_code INTEGER,
-                                                  OUT result INTEGER,
-                                                  OUT error_message TEXT)
+                                                        IN doc_id INTEGER,
+                                                        OUT error_code INTEGER,
+                                                        OUT result INTEGER,
+                                                        OUT error_message TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -17,8 +17,11 @@ DECLARE
 BEGIN
 
     SELECT lk.*,
-           u.ametnik::TEXT                      AS kasutaja,
-           (u.roles ->> 'is_arvestaja')::BOOLEAN AS is_arvestaja
+           u.ametnik::TEXT                       AS kasutaja,
+           (u.roles ->> 'is_arvestaja')::BOOLEAN AS is_arvestaja,
+           (lk.properties ->> 'lopp_kpv')::DATE  AS lopp_kpv,
+           (lk.properties ->> 'alg_kpv')::DATE   AS alg_kpv,
+           (lk.properties ->> 'yksus')           AS yksus
            INTO v_doc
     FROM lapsed.lapse_kaart lk
              JOIN ou.userid u ON u.id = user_id
@@ -56,6 +59,26 @@ BEGIN
         RAISE NOTICE 'У пользователя нет прав на удаление';
         error_code = 4;
         error_message = 'Ei saa kustuta dokument. Puudub õigused';
+        result = 0;
+        RETURN;
+
+    END IF;
+
+    --удаление - нельзя удалять услугу, если на нее оформлены дневные табеля
+
+    IF exists((SELECT dt.id
+               FROM lapsed.day_taabel dt
+                        INNER JOIN lapsed.day_taabel1 dt1 ON dt.id = dt1.parent_id
+                        INNER JOIN libs.library l ON l.id = dt.grupp_id
+               WHERE dt1.laps_id = v_doc.parentid
+                 AND dt1.nom_id = v_doc.nomid
+                 AND ltrim(rtrim(v_doc.yksus)) = ltrim(rtrim(l.kood))
+                 AND dt.staatus < 3))
+    THEN
+
+        RAISE NOTICE 'нельзя удалять услугу, если на нее оформлены дневные табеля';
+        error_code = 4;
+        error_message = 'Ei saa kustuta teenus, enne kustuta ära kõik päevatabelid';
         result = 0;
         RETURN;
 

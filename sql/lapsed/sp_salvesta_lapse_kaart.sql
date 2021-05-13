@@ -40,11 +40,14 @@ DECLARE
     doc_ettemaksu_period INTEGER = doc_data ->> 'ettemaksu_period';
     json_props           JSONB;
     json_ajalugu         JSONB;
+    doc_row              RECORD;
 BEGIN
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
     END IF;
+
+    SELECT * INTO doc_row FROM lapsed.lapse_kaart WHERE id = doc_id;
 
     SELECT kasutaja INTO userName
     FROM ou.userid u
@@ -61,6 +64,35 @@ BEGIN
     THEN
         RAISE EXCEPTION 'Vale kuupäevad alg.kpv > lõpp kpv';
     END IF;
+
+    -- проверка на табеля
+--    По нач. дате - не должно оставлять вне периода дневные табеля , которые оформлены ранее даты нач. срока действия услуги
+    IF exists(SELECT dt.id
+              FROM lapsed.day_taabel dt
+                       INNER JOIN lapsed.day_taabel1 dt1 ON dt.id = dt1.parent_id
+              WHERE dt1.laps_id = doc_parentid
+                AND dt.kpv < doc_alg_kpv
+                AND dt1.nom_id = doc_nomid
+                AND dt.staatus < 3
+        )
+    THEN
+        RAISE EXCEPTION 'Vale alg.kuupäev. Päevatabelid leidnud koostatud  varem kui alg. kpv';
+
+    END IF;
+
+    -- по дате окончания срока действия услуги - не должны оставаться табеля позже срока окончания действия услуги
+    IF exists(SELECT dt.id
+              FROM lapsed.day_taabel dt
+                       INNER JOIN lapsed.day_taabel1 dt1 ON dt.id = dt1.parent_id
+              WHERE dt1.laps_id = doc_parentid
+                AND dt.kpv > doc_lopp_kpv
+                AND dt1.nom_id = doc_nomid
+                AND dt.staatus < 3
+        )
+    THEN
+        RAISE EXCEPTION 'Vale lõpp.kuupäev. Päevatabelid leidnud koostatud  hiljem kui lõpp. kpv';
+    END IF;
+
 
     json_props = to_jsonb(row)
                  FROM (SELECT doc_yksus            AS yksus,
@@ -79,7 +111,10 @@ BEGIN
                       ) row;
 
     -- проверка на статус карты ребенка
-    IF (SELECT staatus FROM lapsed.laps WHERE id = doc_parentid LIMIT 1) = 3
+    IF (SELECT staatus
+        FROM lapsed.laps
+        WHERE id = doc_parentid
+        LIMIT 1) = 3
     THEN
         -- логгирование
 
@@ -135,12 +170,12 @@ BEGIN
 
     RETURN doc_id;
 
-EXCEPTION
+/*EXCEPTION
     WHEN OTHERS
         THEN
             RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
             RETURN 0;
-
+*/
 
 END;
 $BODY$
