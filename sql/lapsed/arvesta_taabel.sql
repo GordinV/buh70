@@ -61,7 +61,8 @@ BEGIN
           AND lk.staatus = DOC_STATUS
           AND (lk.properties ->> 'alg_kpv' IS NULL OR
                (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
-          AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
+--          AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
+          AND (lk.properties ->> 'lopp_kpv' IS NULL OR make_date(year((lk.properties ->> 'lopp_kpv')::date), month((lk.properties ->> 'lopp_kpv')::date),1) + interval '1 month' >= l_kpv)          
           AND ((lk.properties ->> 'kas_ettemaks') IS NULL OR NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN)
         LOOP
 

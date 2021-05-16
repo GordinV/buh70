@@ -56,7 +56,7 @@ BEGIN
         WHERE t.grupp_id = doc_id
           AND year(t.kpv) = year(l_kpv)
           AND month(t.kpv) = month(l_kpv)
-          AND t.kpv <= l_kpv
+--          AND t.kpv <= l_kpv
           AND t.staatus <> 3
         GROUP BY lk.id, t1.laps_id, t1.nom_id
         LOOP

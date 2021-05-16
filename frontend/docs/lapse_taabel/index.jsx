@@ -15,7 +15,8 @@ class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            summa: 0
+            summa: 0,
+            soodustus: 0
         };
         this.renderer = this.renderer.bind(this);
 
@@ -36,6 +37,12 @@ class Documents extends React.PureComponent {
                              style={styles.total}
                              ref="input-summa"
                              value={Number(this.state.summa).toFixed(2) || 0}
+                             disabled={true}/>
+                <InputNumber title="Soodustus kokku:"
+                             name='soodustus_kokku'
+                             style={styles.total}
+                             ref="input-soodustus"
+                             value={Number(this.state.soodustus).toFixed(2) || 0}
                              disabled={true}
 
                 />
@@ -46,10 +53,13 @@ class Documents extends React.PureComponent {
 
     // custom render
     renderer(self) {
-        let summa = getSum(self.gridData || [],'summa');
-        if (summa) {
-            this.setState({summa: summa});
+        let summa = self.gridData && self.gridData.length ? self.gridData[0].summa_kokku : 0;
+        let soodustus = self.gridData  && self.gridData.length ? self.gridData[0].soodustus_kokku : 0;
+
+        if (summa || soodustus) {
+            this.setState({summa: summa, read: self.gridData.length, soodustus: soodustus});
         }
+
         return null;
     }
 

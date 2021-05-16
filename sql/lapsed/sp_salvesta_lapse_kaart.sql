@@ -41,7 +41,20 @@ DECLARE
     json_props           JSONB;
     json_ajalugu         JSONB;
     doc_row              RECORD;
+    l_grupp_id           INTEGER = (SELECT id
+                                    FROM libs.library
+                                    WHERE kood = doc_yksus
+                                      AND library.library = 'LAPSE_GRUPP'
+                                      AND status <> 3
+                                      AND rekvid = user_rekvid);
+    l_noms               INTEGER = (SELECT count(id)
+                                    FROM lapsed.lapse_kaart
+                                    WHERE parentid = doc_parentid
+                                      AND nomid = doc_nomid
+                                      AND staatus <> 3);
+
 BEGIN
+
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
@@ -73,6 +86,8 @@ BEGIN
               WHERE dt1.laps_id = doc_parentid
                 AND dt.kpv < doc_alg_kpv
                 AND dt1.nom_id = doc_nomid
+                AND dt.grupp_id = l_grupp_id
+                AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
                 AND dt.staatus < 3
         )
     THEN
@@ -87,12 +102,42 @@ BEGIN
               WHERE dt1.laps_id = doc_parentid
                 AND dt.kpv > doc_lopp_kpv
                 AND dt1.nom_id = doc_nomid
+                AND dt.grupp_id = l_grupp_id
                 AND dt.staatus < 3
+                AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
+                AND dt.grupp_id = l_grupp_id
         )
     THEN
         RAISE EXCEPTION 'Vale lõpp.kuupäev. Päevatabelid leidnud koostatud  hiljem kui lõpp. kpv';
     END IF;
 
+
+    -- дата нач. услуги - нельзя ставить позже , чем есть табель
+    IF exists(SELECT lt.id
+              FROM lapsed.lapse_taabel lt
+              WHERE lt.parentid = doc_parentid
+                AND make_date(lt.aasta, lt.kuu, 01) < doc_alg_kpv
+                AND lt.nomid = doc_nomid
+                AND lt.staatus < 3
+                AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
+        )
+    THEN
+        RAISE EXCEPTION 'Vale alg.kuupäev. Leidnud tabel varem kui alg. kpv';
+    END IF;
+
+    -- дата конц. услуги - нельзя ставить раньше , чем есть табель
+    IF exists(SELECT lt.id
+              FROM lapsed.lapse_taabel lt
+              WHERE lt.parentid = doc_parentid
+                AND make_date(lt.aasta, lt.kuu, 01) > doc_lopp_kpv
+                AND lt.nomid = doc_nomid
+                AND lt.staatus < 3
+                AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
+
+        )
+    THEN
+        RAISE EXCEPTION 'Vale lõpp kuupäev. Leidnud tabel hiljem kui lõpp kpv';
+    END IF;
 
     json_props = to_jsonb(row)
                  FROM (SELECT doc_yksus            AS yksus,

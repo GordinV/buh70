@@ -18,7 +18,7 @@ module.exports = {
                      l.nimi,
                      $2                            AS userid,
                      n.kood,
-                     n.nimetus                     AS teenus       
+                     n.nimetus                     AS teenus
               FROM lapsed.lapse_taabel lt
                        INNER JOIN lapsed.laps l ON l.id = lt.parentid
                        INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
@@ -74,16 +74,16 @@ module.exports = {
                 {id: "nimi", name: "Nimi", width: "30%"},
                 {id: "teenus", name: "Teenus", width: "30%"},
                 {id: "yksus", name: "Üksus", width: "20%"},
-                {id: "kuu", name: "Kuu", width: "10%", type: "integer", interval:true},
+                {id: "kuu", name: "Kuu", width: "10%", type: "integer", interval: true},
                 {id: "aasta", name: "Aasta", width: "10%", type: "integer"},
-                {id: "kogus", name: "Kogus", width: "10%", type:"number", interval:true},
-                {id: "hind", name: "Hind", width: "10%",type:"number", interval:true},
+                {id: "kogus", name: "Kogus", width: "10%", type: "number", interval: true},
+                {id: "hind", name: "Hind", width: "10%", type: "number", interval: true},
                 {id: "uhik", name: "Ühik", width: "5%"},
-                {id: "soodustus", name: "Soodustus", width: "10%",type:"number"},
-                {id: "summa", name: "Summa", width: "15%", type: "number", interval:true},
+                {id: "soodustus", name: "Soodustus", width: "10%", type: "number"},
+                {id: "summa", name: "Summa", width: "15%", type: "number", interval: true},
             ],
             sqlString:
-                    `with qryNoms as 
+                `with qryNoms as 
                         (SELECT lt.id,
                             lt.parentid,
                             lt.rekvid,
@@ -113,10 +113,10 @@ module.exports = {
                      )
                      select * from qryNoms
                      ORDER BY aasta DESC, kuu DESC, nimi`,     //  $1 всегда ид учреждения, $2 - userId
-            params:
-                '',
-            alias:
-                'curLapseTaabel'
+            params: '',
+            alias: 'curLapseTaabel',
+            totals: ` sum(soodustus) over() as soodustus_kokku,  
+                   sum(summa) over() as summa_kokku `
         },
     print: [
         {
