@@ -289,9 +289,12 @@ class SelectData extends React.PureComponent {
     handleGridBtnClick(btnName, activeRow, id, docTypeId) {
         // закрываем модальное окно поиска и переходим на новую запись справочника
         this.setState({show: false});
+        let docId = this.state.gridData[activeRow]['id'];
         switch (btnName) {
+            case "Muuda":
+                this.props.history.push(`/${DocContext.module}/${this.props.libName}/${docId}`);
+                break;
             case "edit":
-                let docId = this.state.gridData[activeRow]['id'];
                 this.props.history.push(`/${DocContext.module}/${this.props.libName}/${docId}`);
                 break;
             case "add":
