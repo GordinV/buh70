@@ -59,15 +59,20 @@ WITH qryMk AS (
            AND lk.rekvid = qryMk.rekvid
          ORDER BY lk.id
          LIMIT 1
+     ),
+     qryLaekumised AS (
+         SELECT qryMk.id                                                                               AS mk_id,
+                coalesce(qryMk.yksus, coalesce(qryViimaneTeenus.yksus, qryEsimineTeenus.yksus)) ::TEXT AS yksus,
+                ((coalesce((qryMk.hind / CASE WHEN qryMk.total_amount = 0 THEN NULL ELSE qryMk.total_amount END), 1) *
+                  qryMk.makse_summa))::NUMERIC(14, 4)                                                  AS summa,
+                qryMk.laps_id
+         FROM qryMK
+                  LEFT OUTER JOIN qryViimaneTeenus ON qryMk.laps_id = qryViimaneTeenus.laps_id
+                  LEFT OUTER JOIN qryEsimineTeenus ON qryMk.laps_id = qryEsimineTeenus.laps_id
      )
-SELECT qryMk.id                                                                               AS mk_id,
-       coalesce(qryMk.yksus, coalesce(qryViimaneTeenus.yksus, qryEsimineTeenus.yksus)) ::TEXT AS yksus,
-       (coalesce((qryMk.hind / CASE WHEN qryMk.total_amount = 0 THEN NULL ELSE qryMk.total_amount END), 1) *
-        qryMk.makse_summa)::NUMERIC(14, 4)                                                    AS summa,
-       qryMk.laps_id
-FROM qryMK
-         LEFT OUTER JOIN qryViimaneTeenus ON qryMk.laps_id = qryViimaneTeenus.laps_id
-         LEFT OUTER JOIN qryEsimineTeenus ON qryMk.laps_id = qryEsimineTeenus.laps_id
+SELECT mk_id, yksus, sum(summa) AS summa, laps_id
+FROM qryLaekumised
+GROUP BY yksus, laps_id, mk_id
 
 
 $BODY$

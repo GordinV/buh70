@@ -99,6 +99,7 @@ class Vanem extends React.PureComponent {
                         <SelectData title="Vanem:"
                                     name='asutusid'
                                     libName="asutused"
+                                    history = {this.props.history}
                                     sqlFields={['nimetus', 'regkood']}
                                     data={[]}
                                     value={self.docData.asutusid || 0}

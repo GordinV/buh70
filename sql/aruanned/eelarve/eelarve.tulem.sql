@@ -14,9 +14,10 @@ WITH qryPreReport AS (
     SELECT *
     FROM eelarve.pikk_tulem(l_kpv :: DATE, l_rekvid, l_kond)
     WHERE konto IN
-          ('3', '30', '300', '302', '303', '304', '305', '32', '320', '322', '35', '38', '381', '382', '3880', '3882',
+          ('3', '30', '300', '302', '303', '304', '305', '32', '320', '322', '323', '35', '38', '381', '382', '3880',
+           '3882',
            '3888',
-           '4', '41', '45', '50', '55', '60', '61',
+           '41', '45', '50', '55', '60', '61',
            '65', '650', '652', '655', '658', '680000', '690000',
            '7')),
      qryTegevusKulud AS (
@@ -166,55 +167,67 @@ WITH qryPreReport AS (
          GROUP BY s.konto, s.rekvid
      )
 
+select rekv_id, konto, nimetus, sum(summa) as summa, idx
+    from (
+             SELECT rekv_id,
+                    konto            AS konto,
+                    nimetus,
+                    summa            AS summa,
+                    CASE
+                        WHEN left(konto, 1) IN ('3') THEN 100
+                        WHEN left(konto, 1) IN ('4', '5') THEN 200
+                        WHEN left(konto, 2) IN ('60', '61') THEN 200
+                        WHEN left(konto, 2) IN ('65', '68', '69') THEN 300
+                        WHEN left(konto, 1) IN ('7') THEN 400
+                        ELSE 100 END AS idx
+             FROM qryPreReport
+             WHERE konto NOT IN ('322', '323')
+             UNION ALL
+             SELECT l_rekvid,
+                    '322,323'                  AS konto,
+                    'Tulud majandustegevusest' AS nimetus,
+                    sum(summa)                 AS summa,
+                    100                        AS idx
+             FROM qryPreReport
+             WHERE konto IN ('322', '323')
 
-SELECT rekv_id,
-       konto            AS konto,
-       nimetus,
-       summa            AS summa,
-       CASE
-           WHEN left(konto, 1) IN ('3') THEN 100
-           WHEN left(konto, 1) IN ('4', '5') THEN 200
-           WHEN left(konto, 2) IN ('60', '61') THEN 200
-           WHEN left(konto, 2) IN ('65', '68', '69') THEN 300
-           WHEN left(konto, 1) IN ('7') THEN 400
-           ELSE 100 END AS idx
-FROM qryPreReport
-
-UNION ALL
-SELECT l_rekvid,
-       '4'                                         AS konto,
-       'Tegevuskulud'                              AS nimetus,
-       sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
-       190                                         AS idx
-FROM qryTegevusKulud
-UNION ALL
-SELECT l_rekvid,
-       ''                                          AS konto,
-       'Aruandeperioodi tegevustulem'              AS nimetus,
-       sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
-       300                                         AS idx
-FROM qryTegevusTulem
-UNION ALL
-SELECT l_rekvid,
-       ''                                          AS konto,
-       'Aruandeperioodi tulem'                     AS nimetus,
-       sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
-       310                                         AS idx
-FROM qryTulem
-UNION ALL
-SELECT l_rekvid,
-       ''                                          AS konto,
-       'Aruandeperioodi tulem ja siirded kokku'    AS nimetus,
-       sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
-       420                                         AS idx
-FROM qryTulemKokku
-UNION ALL
-SELECT l_rekvid,
-       ''                                          AS konto,
-       'Netofinantseerimine eelarvest'             AS nimetus,
-       sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
-       410                                         AS idx
-FROM qryNetto
+             UNION ALL
+             SELECT l_rekvid,
+                    '4'                                         AS konto,
+                    'Tegevuskulud'                              AS nimetus,
+                    sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
+                    190                                         AS idx
+             FROM qryTegevusKulud
+             UNION ALL
+             SELECT l_rekvid,
+                    ''                                          AS konto,
+                    'Aruandeperioodi tegevustulem'              AS nimetus,
+                    sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
+                    300                                         AS idx
+             FROM qryTegevusTulem
+             UNION ALL
+             SELECT l_rekvid,
+                    ''                                          AS konto,
+                    'Aruandeperioodi tulem'                     AS nimetus,
+                    sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
+                    310                                         AS idx
+             FROM qryTulem
+             UNION ALL
+             SELECT l_rekvid,
+                    ''                                          AS konto,
+                    'Aruandeperioodi tulem ja siirded kokku'    AS nimetus,
+                    sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
+                    420                                         AS idx
+             FROM qryTulemKokku
+             UNION ALL
+             SELECT l_rekvid,
+                    ''                                          AS konto,
+                    'Netofinantseerimine eelarvest'             AS nimetus,
+                    sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
+                    410                                         AS idx
+             FROM qryNetto
+         ) qry
+    group by rekv_id, konto, nimetus, idx
 
 
 $BODY$

@@ -23,6 +23,7 @@ BEGIN
     -- сальдо
     l_jaak = coalesce(l_mk_summa, 0) - coalesce(l_tasu_summa, 0);
 
+    raise notice 'l_tasu_summa %, l_mk_summa %, l_jaak %', l_tasu_summa, l_mk_summa, l_jaak;
     -- сохраним
     UPDATE docs.mk SET jaak = l_jaak WHERE parentid = l_mk_id;
 

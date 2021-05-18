@@ -15,6 +15,7 @@ DECLARE
     v_tasud   RECORD;
     v_tulemus RECORD;
 BEGIN
+    result = 0;
     SELECT * INTO v_user FROM ou.userid WHERE id = l_user_id LIMIT 1;
     IF v_user IS NULL
     THEN
@@ -40,17 +41,18 @@ BEGIN
         WHERE status <> 3
           AND doc_tasu_id = l_tasu_id
         LOOP
-            SELECT error_code, result, error_message INTO v_tulemus
-            FROM docs.sp_delete_arvtasu(l_user_id, v_tasud.doc_tasu_id);
+            SELECT qry.error_code, qry.result, qry.error_message INTO v_tulemus
+            FROM docs.sp_delete_arvtasu(l_user_id, v_tasud.doc_tasu_id) qry;
             IF coalesce(v_tulemus.error_code, 0) > 0
             THEN
                 -- error
                 EXIT;
             END IF;
+            error_message = v_tulemus.error_message;
+            error_code = v_tulemus.error_code;
+            result = v_tulemus.result;
+
         END LOOP;
-    error_message = v_tulemus.error_message;
-    error_code = v_tulemus.error_code;
-    result = v_tulemus.result;
     RETURN;
 
 END;

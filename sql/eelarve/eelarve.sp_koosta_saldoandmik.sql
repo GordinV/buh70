@@ -84,7 +84,7 @@ BEGIN
 
                 INSERT INTO eelarve.saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, kuu,
                                                  rekvid, omatp,
-                                                 tyyp, docs_ids)
+                                                 tyyp)
                 SELECT coalesce(l.nimetus, ''),
                        qry.deebet,
                        qry.kreedit,
@@ -98,8 +98,7 @@ BEGIN
                        month(l_kpv),
                        v_rekv.id,
                        l_asutuse_tp,
-                       0,
-                       qry.docs_ids
+                       0
                 FROM eelarve.saldoandmik_aruanne(l_kpv2, v_rekv.id, NULL) qry
                          LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(l.kood)) = ltrim(rtrim(qry.konto))
                 WHERE qry.rekv_id = v_rekv.id;

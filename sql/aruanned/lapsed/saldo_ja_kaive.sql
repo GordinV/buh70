@@ -148,8 +148,8 @@ FROM (
                             AND at.kpv <= kpv_end::DATE
                             AND a.rekvid IN (SELECT rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid))
-                              GROUP BY at.doc_arv_id
-                              , (a1.properties ->> 'yksus')
+                          GROUP BY at.doc_arv_id
+                                 , (a1.properties ->> 'yksus')
                       )
                       SELECT l.arv_id,
                              l.yksus,
@@ -321,13 +321,14 @@ FROM (
                          0                                  AS jaak,
                          a.rekvid                           AS rekvid
                   FROM alg_saldo a
-                           INNER JOIN (SELECT laps_id, ltrim(rtrim(yksus)) AS yksus, rekvid
+/*                           INNER JOIN (SELECT laps_id, ltrim(rtrim(yksus)) AS yksus, rekvid
                                        FROM alg_saldo
                                            EXCEPT
                                        SELECT laps_id, ltrim(rtrim(yksus)), rekvid
                                        FROM kaibed) clean_saldo ON
                           a.laps_id = clean_saldo.laps_id AND a.yksus = clean_saldo.yksus AND
                           a.rekvid = clean_saldo.rekvid
+*/
                            LEFT OUTER JOIN kulastavus k ON k.parentid = a.laps_id AND k.rekvid = a.rekvid
                   UNION ALL
                   -- ettemaksud
@@ -359,11 +360,12 @@ FROM (
                          k.maksja_isikukood,
                          k.yksus                   AS yksus,
                          k.viitenumber             AS viitenumber,
-                         (SELECT sum(coalesce(a.alg_saldo, 0))
-                          FROM alg_saldo a
-                          WHERE a.rekvid = k.rekvid
-                            AND a.laps_id = k.laps_id
-                            AND a.yksus = k.yksus) AS alg_saldo,
+                      /*(SELECT sum(coalesce(a.alg_saldo, 0))
+                       FROM alg_saldo a
+                       WHERE a.rekvid = k.rekvid
+                         AND a.laps_id = k.laps_id
+                         AND a.yksus = k.yksus) AS alg_saldo,*/
+                         0                         AS alg_saldo,
                          COALESCE(k.arvestatud, 0) AS arvestatud,
                          COALESCE(k.soodustus, 0)  AS soodustus,
                          0                         AS laekumised,
@@ -373,15 +375,15 @@ FROM (
                   FROM kaibed k
               ) qry) report
 --WHERE alg_saldo <> 0 OR arvestatud <> 0 OR soodustus <> 0 OR laekumised <> 0  OR tagastused <> 0
-    GROUP BY COALESCE(period, kpv_start)::DATE,
-    kulastatavus,
-    lapse_nimi,
-    lapse_isikukood,
+GROUP BY COALESCE(period, kpv_start)::DATE,
+         kulastatavus,
+         lapse_nimi,
+         lapse_isikukood,
 --         maksja_nimi,
 --         maksja_isikukood,
-    yksus,
-    viitenumber,
-    rekvid
+         yksus,
+         viitenumber,
+         rekvid
 
 $BODY$
     LANGUAGE SQL

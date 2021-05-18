@@ -60,6 +60,12 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
+    IF doc_id IS NULL OR doc_id = 0
+    THEN
+        -- если бобавляем услугу, то пропускаем проверку
+        l_noms = l_noms + 1;
+    END IF;
+
     SELECT * INTO doc_row FROM lapsed.lapse_kaart WHERE id = doc_id;
 
     SELECT kasutaja INTO userName

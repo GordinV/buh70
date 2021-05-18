@@ -29,17 +29,17 @@ module.exports = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "1%", show: false},
-            {id: "maksja", name: "Maksja", width: "15%"},
+            {id: "maksja", name: "Maksja", width: "10%"},
             {id: "viitenumber", name: "Viitenr", width: "10%"},
-            {id: "iban", name: "Arveldus arve", width: "15%"},
+            {id: "iban", name: "Arveldus arve", width: "10%"},
             {id: "pank", name: "Pank", width: "10%"},
             {id: "kpv", name: "Maksepäev", width: "10%", show: true, type: 'date', interval: true},
             {id: "summa", name: "Summa", width: "7%"},
-            {id: "pank_id", name: "Tehingu nr.", width: "15%"},
-            {id: "selg", name: "Makse selgitus", width: "25%"},
+            {id: "pank_id", name: "Tehingu nr.", width: "10%"},
+            {id: "selg", name: "Makse selgitus", width: "20%"},
             {id: "markused", name: "Impordi märkused", width: "5%"},
             {id: "number", name: "MK number", width: "5%"},
-            {id: "asutus", name: "Asutus", width: "15%"}
+            {id: "asutus", name: "Asutus", width: "10%"}
         ],
         sqlString: `SELECT v.id                                                AS id,
                            v.doc_id                                            AS doc_id,
