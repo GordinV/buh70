@@ -6,28 +6,28 @@ DROP FUNCTION IF EXISTS lapsed.lapse_saldod(l_kpv DATE, INTEGER, INTEGER, INTEGE
 CREATE OR REPLACE FUNCTION lapsed.lapse_saldod(l_kpv DATE DEFAULT now(), l_laps_id INTEGER DEFAULT NULL,
                                                l_rekv_id INTEGER DEFAULT NULL, l_kond INTEGER DEFAULT 0)
     RETURNS TABLE (
-        jaak       NUMERIC(14, 2),
+        jaak       NUMERIC(14, 4),
         laps_id    INTEGER,
         yksus      TEXT,
         rekv_id    INTEGER,
         docs_ids   INTEGER[],
-        laekumised NUMERIC(14, 2), -- всего оплат за прошлый период
-        arv_tasud  NUMERIC(14, 2), -- всего оплат за прошлый период
-        ettemaksud NUMERIC(14, 2), -- в.т. числе переплат
-        tagastused NUMERIC(14, 2)  -- возвраты
+        laekumised NUMERIC(14, 4), -- всего оплат за прошлый период
+        arv_tasud  NUMERIC(14, 4), -- всего оплат за прошлый период
+        ettemaksud NUMERIC(14, 4), -- в.т. числе переплат
+        tagastused NUMERIC(14, 4)  -- возвраты
 
     ) AS
 $BODY$
 
-SELECT sum(jaak)::NUMERIC(14, 2)       AS jaak,
+SELECT sum(jaak)::NUMERIC(14, 4)       AS jaak,
        laps_id,
        yksus,
        rekv_id,
        array_agg(docs_id)              AS docs_ids,
-       sum(laekumised)::NUMERIC(14, 2) AS laekumised,
-       sum(arv_tasud)::NUMERIC(14, 2)  AS arv_tasud,
-       sum(ettemaksud)::NUMERIC(14, 2) AS ettemaksud,
-       sum(tagastused)::NUMERIC(14, 2) AS tagastused
+       sum(laekumised)::NUMERIC(14, 4) AS laekumised,
+       sum(arv_tasud)::NUMERIC(14, 4)  AS arv_tasud,
+       sum(ettemaksud)::NUMERIC(14, 4) AS ettemaksud,
+       sum(tagastused)::NUMERIC(14, 4) AS tagastused
 
 FROM (
 -- ettemaksud или не распределенные авансовые платежи
@@ -190,8 +190,8 @@ GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE, INTEGER, INTEGER, INTE
 
 /*
 SELECT sum(jaak) over(), *
-FROM lapsed.lapse_saldod('2020-09-01'::date)
+FROM lapsed.lapse_saldod('2020-10-14'::date)
 where 1=1
-and laps_id = 8013
+and laps_id = 6370
 and rekv_id = 69
 */

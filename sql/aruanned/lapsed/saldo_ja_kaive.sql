@@ -1,8 +1,9 @@
+--DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaive(INTEGER, DATE, DATE);
 DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaive(INTEGER, DATE, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
-                                                 kpv_start DATE DEFAULT date(year(current_date), 1, 1),
-                                                 kpv_end DATE DEFAULT current_date)
+                                                  kpv_start DATE DEFAULT date(year(current_date), 1, 1),
+                                                  kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
         period          DATE,
         kulastatavus    TEXT,
@@ -12,12 +13,12 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
 --        maksja_isikukood TEXT,
         yksus           TEXT,
         viitenumber     TEXT,
-        alg_saldo       NUMERIC(14, 2),
-        arvestatud      NUMERIC(14, 2),
-        soodustus       NUMERIC(14, 2),
-        laekumised      NUMERIC(14, 2),
-        tagastused      NUMERIC(14, 2),
-        jaak            NUMERIC(14, 2),
+        alg_saldo       NUMERIC(14, 4),
+        arvestatud      NUMERIC(14, 4),
+        soodustus       NUMERIC(14, 4),
+        laekumised      NUMERIC(14, 4),
+        tagastused      NUMERIC(14, 4),
+        jaak            NUMERIC(14, 4),
         rekvid          INTEGER
     ) AS
 $BODY$
@@ -29,12 +30,12 @@ SELECT coalesce(period, kpv_start)::DATE AS period,
 --       maksja_isikukood::TEXT,
        yksus::TEXT,
        viitenumber::TEXT,
-       sum(coalesce(alg_saldo, 0))::NUMERIC(14, 2),
-       sum(coalesce(arvestatud, 0))::NUMERIC(14, 2),
-       sum(coalesce(soodustus, 0))::NUMERIC(14, 2),
-       sum(coalesce(laekumised, 0))::NUMERIC(14, 2),
-       sum(coalesce(tagastused, 0))::NUMERIC(14, 2),
-       sum(coalesce(jaak, 0))::NUMERIC(14, 2),
+       sum(coalesce(alg_saldo, 0))::NUMERIC(14, 4),
+       sum(coalesce(arvestatud, 0))::NUMERIC(14, 4),
+       sum(coalesce(soodustus, 0))::NUMERIC(14, 4),
+       sum(coalesce(laekumised, 0))::NUMERIC(14, 4),
+       sum(coalesce(tagastused, 0))::NUMERIC(14, 4),
+       sum(coalesce(jaak, 0))::NUMERIC(14, 4),
        rekvid
 FROM (
          WITH kulastavus AS (
@@ -67,7 +68,7 @@ FROM (
                   SELECT kpv_start                                                     AS period,
                          coalesce(k.kulastavus, 'Ei')::TEXT                            AS kulastatavus,
                          coalesce(alg_saldo.yksus, '')::TEXT                           AS yksus,
-                         coalesce(alg_saldo.jaak::NUMERIC(14, 2), 0) :: NUMERIC(14, 2) AS alg_saldo,
+                         coalesce(alg_saldo.jaak::NUMERIC(14, 4), 0) :: NUMERIC(14, 4) AS alg_saldo,
                          alg_saldo.rekv_id::INTEGER                                    AS rekvid,
                          l.id                                                          AS laps_id,
                          l.isikukood                                                   AS lapse_isikukood,
@@ -101,9 +102,9 @@ FROM (
                          i.regkood::TEXT                                  AS maksja_isikukood,
                          coalesce(a1.yksus, '')::TEXT                     AS yksus,
                          lapsed.get_viitenumber(d.rekvid, l.id)::TEXT     AS viitenumber,
-                         a1.summa ::NUMERIC(14, 2)                        AS arvestatud,
+                         a1.summa ::NUMERIC(14, 4)                        AS arvestatud,
                          coalesce(a1.soodustus, 0)::NUMERIC(14, 2)        AS soodustus,
-                         0::NUMERIC(14, 2)                                AS laekumised,
+                         0::NUMERIC(14, 4)                                AS laekumised,
                          coalesce(laekumised.tagastus, 0)::NUMERIC(14, 2) AS tagastused,
                          d.rekvid::INTEGER                                AS rekvid
                   FROM docs.doc d
@@ -136,8 +137,8 @@ FROM (
                       WITH qryLaekumised AS (
                           SELECT at.doc_arv_id                                                                        AS arv_id,
                                  a1.properties ->> 'yksus'                                                            AS yksus,
-                                 sum(((a1.summa / a.summa) * at.summa)) FILTER ( WHERE at.summa < 0 )::NUMERIC(14, 2) AS tagastus,
-                                 sum(((a1.summa / a.summa) * at.summa)) FILTER ( WHERE at.summa > 0 )::NUMERIC(14, 2) AS laekumised,
+                                 sum(((a1.summa / a.summa) * at.summa)) FILTER ( WHERE at.summa < 0 )::NUMERIC(14, 4) AS tagastus,
+                                 sum(((a1.summa / a.summa) * at.summa)) FILTER ( WHERE at.summa > 0 )::NUMERIC(14, 4) AS laekumised,
                                  sum((a1.summa / a.summa) * at.summa)                                                 AS summa,
                                  sum(at.summa)                                                                        AS summa_total,
                                  row_number() OVER (PARTITION BY at.doc_arv_id )                                      AS row_id
@@ -174,74 +175,26 @@ FROM (
                  ,
               ettemaksud AS (
                   WITH qryLaekumised AS (
-                      SELECT kpv_start                                                              AS period,
-                             0::NUMERIC(14, 2)                                                      AS jaak, -- summa не связанных со счетами платежек (нач. сальдо или предоплата)
-                             l.parentid                                                             AS laps_id,
-                             ymk.yksus                                                              AS yksus,
-                             D.rekvid                                                               AS rekv_id,
-                             D.id                                                                   AS docs_id,
-                             CASE WHEN ymk.summa > 0 THEN ymk.summa ELSE 0 END::NUMERIC(14, 2)      AS laekumised,
-                             -1 * CASE WHEN ymk.summa < 0 THEN ymk.summa ELSE 0 END::NUMERIC(14, 2) AS tagastused,
-                             a.regkood                                                              AS maksja_isikukood,
-                             a.nimetus                                                              AS maksja_nimi,
-                             laps.isikukood                                                         AS lapse_isikukood,
-                             laps.nimi                                                              AS lapse_nimi,
-                             mk.viitenr                                                             AS viitenumber,
-                             mk.jaak                                                                AS total_summa,
+                      SELECT kpv_start                                                          AS period,
+                             0::NUMERIC(14, 4)                                                  AS jaak, -- summa не связанных со счетами платежек (нач. сальдо или предоплата)
+                             l.laps_id                                                          AS laps_id,
+                             l.yksus                                                            AS yksus,
+                             l.rekv_id                                                          AS rekv_id,
+                             CASE WHEN l.summa > 0 THEN l.summa ELSE 0 END::NUMERIC(14, 4)      AS laekumised,
+                             -1 * CASE WHEN l.summa < 0 THEN l.summa ELSE 0 END::NUMERIC(14, 4) AS tagastused,
+                             a.regkood                                                          AS maksja_isikukood,
+                             a.nimetus                                                          AS maksja_nimi,
+                             mk.isikukood                                                       AS lapse_isikukood,
+                             mk.nimi                                                            AS lapse_nimi,
+                             mk.viitenr                                                         AS viitenumber,
+                             mk.jaak                                                            AS total_summa,
                              -- номер строки в платеже
-                             row_number() OVER (PARTITION BY d.id)                                  AS row_id
-
-                      FROM docs.doc D
-                               INNER JOIN (SELECT mk.id, mk.parentid, mk.viitenr, mk.jaak
-                                           FROM docs.mk mk
-                                           WHERE mk.maksepaev >= kpv_start
-                                             AND mk.maksepaev <= kpv_end
-                                             AND mk.jaak <> 0
-                      ) mk ON mk.parentid = D.id
-                               INNER JOIN lapsed.liidestamine l
-                                          ON l.docid = D.id
-                               INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
-                               INNER JOIN libs.asutus a ON a.id = mk1.asutusid
-                               INNER JOIN lapsed.laps laps ON laps.id = l.parentid
-                              ,
-                           lapsed.get_group_part_from_mk(D.id, kpv_end) AS ymk
-                      WHERE D.status <> 3
-                        AND D.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekvid))
-                  ),
-                       qryTasud AS (
-                           SELECT kpv_start                                       AS period,
-                                  0                                               AS jaak,
-                                  l.parentid                                      AS laps_id,
-                                  a1.properties ->> 'yksus'                       AS yksus,
-                                  AT.rekvid                                       AS rekv_id,
-                                  AT.doc_tasu_id                                  AS docs_id,
-                                  CASE
-                                      WHEN at.summa > 0 THEN ((a1.summa / a.summa) * AT.summa)
-                                      ELSE 0 END::NUMERIC(14, 2)                  AS laekumised,
-                                  -1 * CASE
-                                           WHEN at.summa < 0 THEN ((a1.summa / a.summa) * AT.summa)
-                                           ELSE 0 END ::NUMERIC(14, 2)            AS tagastused,
-                                  maksja.regkood                                  AS maksja_isikukood,
-                                  maksja.nimetus                                  AS maksja_nimi,
-                                  laps.isikukood                                  AS lapse_isikukood,
-                                  laps.nimi                                       AS lapse_nimi,
-                                  lapsed.get_viitenumber(AT.rekvid, laps.id)      AS viitenumber,
-                                  at.summa                                        AS total_summa,
-                                  -- номер строки в платеже
-                                  row_number() OVER (PARTITION BY AT.doc_tasu_id) AS row_id
-                           FROM docs.arvtasu AT
-                                    INNER JOIN docs.arv a ON AT.doc_arv_id = a.parentid
-                                    INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
-                                    INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
-                                    INNER JOIN libs.asutus maksja ON maksja.id = a.asutusid
-                                    INNER JOIN lapsed.laps laps ON laps.id = l.parentid
-                           WHERE AT.kpv >= kpv_start::DATE
-                             AND AT.kpv <= kpv_end::DATE
-                             AND AT.rekvid IN (SELECT rekv_id
-                                               FROM get_asutuse_struktuur(l_rekvid))
-                             AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
-                       )
+                             row_number() OVER (PARTITION BY mk.id)                             AS row_id,
+                             mk.id                                                              AS docs_id
+                      FROM lapsed.cur_lapsed_mk mk
+                               INNER JOIN lapsed.laekumised(l_rekvid, kpv_start, kpv_end) l ON l.doc_id = mk.id
+                               INNER JOIN libs.asutus a ON a.id = mk.maksja_id
+                  )
                   SELECT period,
                          rekv_id,
                          laps_id,
@@ -251,40 +204,9 @@ FROM (
                          maksja_isikukood,
                          yksus,
                          viitenumber,
-                         laekumised + CASE
-                                          WHEN total_summa > 0 THEN (
-                                                  (total_summa - sum(laekumised) OVER (PARTITION BY docs_id)) *
-                                                  CASE WHEN row_id = 1 THEN 1 ELSE 0 END)
-                                          ELSE 0 END laekumised,
-                         tagastused + CASE
-                                          WHEN total_summa < 0 THEN (
-                                                  (-1 * total_summa - sum(tagastused) OVER (PARTITION BY docs_id)) *
-                                                  CASE WHEN row_id = 1 THEN 1 ELSE 0 END)
-                                          ELSE 0 END tagastused
-
+                         laekumised ,
+                         tagastused
                   FROM qryLaekumised
-                  UNION ALL
-                  -- распределенные авансовые платежи
-                  SELECT period,
-                         rekv_id,
-                         laps_id,
-                         lapse_nimi,
-                         lapse_isikukood,
-                         maksja_nimi,
-                         maksja_isikukood,
-                         yksus,
-                         viitenumber,
-                         laekumised + CASE
-                                          WHEN total_summa > 0 THEN (
-                                                  (total_summa - sum(laekumised) OVER (PARTITION BY docs_id)) *
-                                                  CASE WHEN row_id = 1 THEN 1 ELSE 0 END)
-                                          ELSE 0 END laekumised,
-                         tagastused + CASE
-                                          WHEN total_summa < 0 THEN (
-                                                  (-1 * total_summa - sum(tagastused) OVER (PARTITION BY docs_id)) *
-                                                  CASE WHEN row_id = 1 THEN 1 ELSE 0 END)
-                                          ELSE 0 END tagastused
-                  FROM qryTasud
               )
 
          SELECT period,
