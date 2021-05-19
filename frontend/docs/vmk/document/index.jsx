@@ -284,7 +284,7 @@ class Vmk extends React.Component {
                         <div style={styles.docRow}>
                             <Select title="Partner"
                                     name='asutusid'
-                                    data={self.libs['asutused']}
+                                    data={data}
                                     value={row.asutusid}
                                     defaultValue={row.asutus || ''}
                                     collId='id'
