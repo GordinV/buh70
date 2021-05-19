@@ -25,6 +25,7 @@ const LIBRARIES = [
     {id: 'project', filter: ''},
     {id: 'nomenclature', filter: `where dok in ('MK','SMK')`},
     {id: 'asutused', filter: `where id in (select asutusid from lapsed.vanemad)`},
+    {id: 'vanem', filter: ``},
     {id: 'aa', filter: ''}
 ];
 
@@ -308,6 +309,20 @@ class Smk extends React.PureComponent {
         }
 
         if (!row) return <div/>;
+
+        // наложить фильтр на список плательщиков, если указан витенумбер
+        let data = self.libs['asutused'];
+        if (self.docData.viitenr && self.libs['vanem'] && self.libs['vanem'].length && self.libs['asutused'] && self.libs['asutused'].length) {
+
+            // найти родителя
+            let vanem = self.libs['vanem'].filter(row => row.viitenr === self.docData.viitenr);
+
+            if (vanem && vanem.length) {
+                // нашли родителя, ставим фильтр
+                data = data.filter(row => !!vanem.find(kiri => kiri.id === row.id));
+            }
+        }
+
         return (<div className='.modalPage'>
                 <ModalPage
                     modalObjects={modalObjects}
@@ -329,7 +344,7 @@ class Smk extends React.PureComponent {
                         <div style={styles.docRow}>
                             <Select title="Partner"
                                     name='asutusid'
-                                    data={self.libs['asutused']}
+                                    data={data}
                                     value={row.asutusid}
                                     defaultValue={row.asutus || ''}
                                     collId='id'

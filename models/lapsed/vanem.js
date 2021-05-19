@@ -1,12 +1,18 @@
 module.exports = {
-    selectAsLibs: `SELECT DISTINCT a.id,
-                                   a.nimetus   AS nimi,
-                                   a.regkood   AS isikukood,
-                                   $1::INTEGER AS rekvid,
-                                   NULL::DATE  AS valid
-                   FROM lapsed.vanemad v
-                            INNER JOIN libs.asutus a ON a.id = v.asutusId
-                   WHERE v.staatus <> 3`,
+    selectAsLibs: `
+        SELECT DISTINCT a.id,
+                        a.nimetus                               AS nimi,
+                        a.regkood                               AS isikukood,
+                        $1::INTEGER                             AS rekvid,
+                        NULL::DATE                              AS valid,
+                        lk.parentid,
+                        lapsed.get_viitenumber($1, lk.parentid) AS viitenr
+        FROM lapsed.vanemad v
+                 INNER JOIN libs.asutus a ON a.id = v.asutusid
+                 INNER JOIN (SELECT DISTINCT parentid, rekvid
+                             FROM lapsed.lapse_kaart lk
+                             WHERE rekvid = $1 AND staatus <> 3) lk ON lk.parentid = v.parentid
+        WHERE a.staatus <> 3`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},
@@ -21,9 +27,9 @@ module.exports = {
                      coalesce((va.arveldus)::BOOLEAN, FALSE)::BOOLEAN                     AS arved,
                      v.properties ->> 'suhtumine'                                         AS suhtumine,
                      coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN  AS kas_paberil,
-                     coalesce((va.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN    AS kas_earve,
-                     (va.properties ->> 'pank')::TEXT                                      AS pank,
-                     (va.properties ->> 'iban')::TEXT                                      AS iban,
+                     coalesce((va.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN   AS kas_earve,
+                     (va.properties ->> 'pank')::TEXT                                     AS pank,
+                     (va.properties ->> 'iban')::TEXT                                     AS iban,
                      coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN    AS kas_email,
                      coalesce((v.properties ->> 'kas_esindaja')::BOOLEAN, FALSE)::BOOLEAN AS kas_esindaja,
                      v.muud,

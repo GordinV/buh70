@@ -28,6 +28,7 @@ const LIBRARIES = [
     {id: 'tegev', filter: ''},
     {id: 'aa', filter: ''},
     {id: 'asutused', filter: `where id in (select asutusid from lapsed.vanemad)`},
+    {id: 'vanem', filter: ``},
     {id: 'nomenclature', filter: `where dok in ('VMK','MK')`}
 ];
 
@@ -247,6 +248,20 @@ class Vmk extends React.Component {
                 return row;
             }
         });
+
+        // наложить фильтр на список плательщиков, если указан витенумбер
+        let data = self.libs['asutused'];
+        if (self.docData.viitenr && self.libs['vanem'] && self.libs['vanem'].length && self.libs['asutused'] && self.libs['asutused'].length) {
+
+            // найти родителя
+            let vanem = self.libs['vanem'].filter(row => row.viitenr === self.docData.viitenr);
+
+            if (vanem && vanem.length) {
+                // нашли родителя, ставим фильтр
+                data = data.filter(row => !!vanem.find(kiri => kiri.id === row.id));
+            }
+        }
+
 
         return (<div className='.modalPage'>
                 <ModalPage
