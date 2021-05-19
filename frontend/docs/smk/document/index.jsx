@@ -445,9 +445,13 @@ class Smk extends React.PureComponent {
 
             if (asutusDataName) {
                 doc.gridRowData['asutus'] = asutusDataName.nimetus;
+                doc.gridRowData['aa'] = asutusDataName.pank;
+
             }
 
         }
+
+
     }
 
 
