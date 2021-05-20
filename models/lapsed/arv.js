@@ -66,13 +66,11 @@ const Arv = {
                          to_char(docs.get_arve_period($1) - 1, 'DD.MM.YYYY')::TEXT AS period_alg_print,
                          coalesce(kaibed.laekumised, 0)::NUMERIC(12, 2)            AS laekumised,
                          coalesce(saldod.jaak, 0)::NUMERIC(12, 2)                  AS alg_jaak,
-                         coalesce(saldod.jaak, 0)::NUMERIC(12, 2) -
-                         coalesce(kaibed.laekumised, 0)::NUMERIC(12, 2)            AS lopp_jaak,
+                         coalesce(kaibed.jaak, 0)::NUMERIC(12, 2)                  AS lopp_jaak,
                          coalesce(kaibed.ettemaksud, 0)::NUMERIC(12, 2)            AS ettemaksud,
                          lpad(month(a.kpv)::TEXT, 2, '0') || '.' ||
                          year(a.kpv)::TEXT                                         AS laekumise_period,
-                         (coalesce(saldod.jaak, 0) + a.summa)::NUMERIC(12, 2) -
-                         coalesce(kaibed.laekumised, 0)                            AS tasumisele,
+                         coalesce(kaibed.jaak, 0)::NUMERIC(12, 2)                  AS tasumisele,
                          coalesce(kaibed.tagastused, 0)                            AS tagastused,
                          a.properties ->> 'ettemaksu_period'                       AS ettemaksu_period,
                          va.properties ->> 'pank'                                  AS pank,
@@ -106,8 +104,9 @@ const Arv = {
                              rekv_id,
                              sum(laekumised + arv_tasud) AS laekumised,
                              sum(ettemaksud)             AS ettemaksud,
-                             sum(tagastused)             AS tagastused
-                      FROM lapsed.lapse_saldod(gomonth(docs.get_arve_period($1), 1) - 1,
+                             sum(tagastused)             AS tagastused,
+                             sum(jaak) as jaak                             
+                      FROM lapsed.lapse_saldod(gomonth(docs.get_arve_period($1), 1),
                                                (SELECT parentid FROM lapsed.liidestamine WHERE docid = $1))
                       GROUP BY laps_id, rekv_id
                   ) kaibed
@@ -419,8 +418,7 @@ const Arv = {
             max: now.setFullYear(now.getFullYear() + 1)
         },
         {name: 'asutusid', type: 'N', min: null, max: null},
-        {name: 'lapsid', type: 'N', min: null, max: null},
-        {name: 'summa', type: 'N', min: -9999999, max: 999999}
+        {name: 'lapsid', type: 'N', min: null, max: null}
     ],
     executeCommand: {
         command: `select docs.sp_kooperi_arv($1::integer, $2::integer) as result`,

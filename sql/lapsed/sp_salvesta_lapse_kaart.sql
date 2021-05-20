@@ -46,7 +46,7 @@ DECLARE
                                     WHERE kood = doc_yksus
                                       AND library.library = 'LAPSE_GRUPP'
                                       AND status <> 3
-                                      AND rekvid = user_rekvid);
+                                      AND rekvid = user_rekvid order by id desc limit 1);
     l_noms               INTEGER = (SELECT count(id)
                                     FROM lapsed.lapse_kaart
                                     WHERE parentid = doc_parentid
@@ -66,7 +66,7 @@ BEGIN
         l_noms = l_noms + 1;
     END IF;
 
-    SELECT * INTO doc_row FROM lapsed.lapse_kaart WHERE id = doc_id;
+    SELECT * INTO doc_row FROM lapsed.lapse_kaart WHERE id = doc_id limit 1;
 
     SELECT kasutaja INTO userName
     FROM ou.userid u
@@ -95,6 +95,7 @@ BEGIN
                 AND dt.grupp_id = l_grupp_id
                 AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
                 AND dt.staatus < 3
+                limit 1
         )
     THEN
         RAISE EXCEPTION 'Vale alg.kuupäev. Päevatabelid leidnud koostatud  varem kui alg. kpv';
@@ -112,6 +113,7 @@ BEGIN
                 AND dt.staatus < 3
                 AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
                 AND dt.grupp_id = l_grupp_id
+        limit 1
         )
     THEN
         RAISE EXCEPTION 'Vale lõpp.kuupäev. Päevatabelid leidnud koostatud  hiljem kui lõpp. kpv';
@@ -126,6 +128,7 @@ BEGIN
                 AND lt.nomid = doc_nomid
                 AND lt.staatus < 3
                 AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
+                limit 1
         )
     THEN
         RAISE EXCEPTION 'Vale alg.kuupäev. Leidnud tabel varem kui alg. kpv';
