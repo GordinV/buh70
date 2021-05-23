@@ -35,7 +35,8 @@ const Smk = {
                          dp.selg::VARCHAR(120)                                AS dokprop,
                          k.doklausid,
                          (D.history -> 0 ->>
-                          'user')::VARCHAR(120)                               AS koostaja
+                          'user')::VARCHAR(120)                               AS koostaja,
+                         k.jaak
 
                   FROM docs.doc D
                            INNER JOIN docs.mk k
@@ -69,7 +70,8 @@ const Smk = {
                               NULL::VARCHAR(120)                                           AS dokprop,
                               NULL::VARCHAR(20)                                            AS konto,
                               0                                                            AS doklausid,
-                              NULL::INTEGER                                                AS lapsId
+                              NULL::INTEGER                                                AS lapsId,
+                              0                                                            AS jaak
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER
             `,
@@ -119,17 +121,17 @@ const Smk = {
             sql: `SELECT t.id,
                          t.kpv,
                          to_char(a.kpv, 'DD.MM.YYYY') AS print_kpv,
-                         t.summa as tasu_summa,
-                         a.summa as arv_summa,
+                         t.summa                      AS tasu_summa,
+                         a.summa                      AS arv_summa,
                          a.number,
                          a.asutus,
                          a.tyyp,
                          a.jaak,
                          $2                           AS user_id
                   FROM lapsed.cur_laste_arved a
-                    INNER JOIN docs.arvtasu t on t.doc_arv_id = a.id and t.status <> 3
+                           INNER JOIN docs.arvtasu t ON t.doc_arv_id = a.id AND t.status <> 3
                   WHERE t.doc_tasu_id = $1
-                  order by t.kpv, t.id`,
+                  ORDER BY t.kpv, t.id`,
             query: null,
             multiple: true,
             alias: 'queryArvTasu',

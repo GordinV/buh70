@@ -218,15 +218,19 @@ BEGIN
 
         END LOOP;
 
-    IF doc_arvid IS NOT NULL and doc_arvid > 0
+    -- сальдо платежа
+    l_jaak = docs.sp_update_mk_jaak(doc_id);
+
+
+    IF doc_arvid IS NOT NULL and doc_arvid > 0 and l_jaak > 0
     THEN
+        raise notice 'doc_arvid IS NOT NULL doc_arvid % ', doc_arvid;
+
         -- произведем оплату счета
         PERFORM docs.sp_tasu_arv(doc_id, doc_arvid, user_id);
 
     END IF;
 
-    -- сальдо платежа
-    l_jaak = docs.sp_update_mk_jaak(doc_id);
 
     -- lapse module
     IF doc_viitenr IS NOT NULL AND NOT empty(doc_viitenr) AND (doc_lapsid IS NULL OR empty(doc_lapsid))

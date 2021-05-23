@@ -17,7 +17,7 @@ DECLARE
                                             FROM libs.library
                                             WHERE kood = doc_type_kood
                                               AND library = 'DOK'
-                                                LIMIT 1);
+                                            LIMIT 1);
 
     doc_details           JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     doc_number            TEXT           = doc_data ->> 'number';
@@ -391,11 +391,14 @@ BEGIN
 
     END IF;
 
-    l_jaak = (SELECT jaak FROM docs.arv WHERE parentid = doc_id);
+    -- расчет сальдо счета
+    l_jaak = docs.sp_update_arv_jaak(doc_id);
+
     IF doc_id IS NOT NULL AND doc_id > 0 AND l_jaak > 0
     THEN
         -- проверить на наличие предоплат
-        PERFORM docs.check_ettemaks(doc_id, user_id);
+--        PERFORM docs.check_ettemaks(doc_id, user_id);
+        PERFORM docs.sp_loe_arv(doc_id);
     END IF;
 
     -- если это доходный счет, созданный на основе предоплатного
@@ -411,7 +414,7 @@ BEGIN
                                                     WHERE parentid = doc_id)))
                                    AND a.properties ->> 'tyyp' IS NOT NULL
                                    AND a.properties ->> 'tyyp' = 'ETTEMAKS'
-                                     LIMIT 1
+                                 LIMIT 1
         );
 
     END IF;
@@ -431,7 +434,7 @@ BEGIN
         END IF;
     END IF;
 
-    PERFORM docs.sp_update_arv_jaak(doc_id);
+--    PERFORM docs.sp_update_arv_jaak(doc_id);
 
     RETURN doc_id;
 END;

@@ -16,17 +16,15 @@ DECLARE
     v_pank_vv        RECORD;
     l_rekvid         INTEGER;
     l_error          TEXT; -- извещение о том, что пошло не так
-    l_count          INTEGER        = 0;
-    l_count_kokku    INTEGER        = 0;
-    l_makse_summa    NUMERIC(12, 2) = 0;
-    l_tasu_jaak      NUMERIC(12, 2) = 0;
-    l_db_konto       TEXT           = '100100'; -- дебетовая (банк) сторона
+    l_count          INTEGER = 0;
+    l_count_kokku    INTEGER = 0;
+    l_db_konto       TEXT    = '100100'; -- дебетовая (банк) сторона
     l_dokprop_id     INTEGER;
-    l_target_user_id INTEGER        = user_id;
-    l_user_kood      TEXT           = (SELECT kasutaja
-                                       FROM ou.userid
-                                       WHERE id = user_id
-                                       LIMIT 1);
+    l_target_user_id INTEGER = user_id;
+    l_user_kood      TEXT    = (SELECT kasutaja
+                                FROM ou.userid
+                                WHERE id = user_id
+                                LIMIT 1);
     l_maksja_id      INTEGER;
     l_laps_id        INTEGER;
     v_vanem          RECORD;
@@ -34,9 +32,9 @@ DECLARE
     l_new_viitenr    TEXT;
     l_mk_number      TEXT;
     l_message        TEXT;
-    l_error_code     INTEGER        = 0;
+    l_error_code     INTEGER = 0;
     l_viitenr        TEXT;
-    l_kas_vigane     BOOLEAN        = TRUE;
+    l_kas_vigane     BOOLEAN = FALSE;
 BEGIN
     -- ищем платежи
     FOR v_pank_vv IN
@@ -46,10 +44,10 @@ BEGIN
           AND (doc_id IS NULL OR doc_id = 0)
         ORDER BY kpv, id
         LOOP
-
             l_message = 'Tehingu nr.: ' || ltrim(rtrim(v_pank_vv.pank_id)) ||
                         ',Maksja:' || ltrim(rtrim(v_pank_vv.maksja));
             l_viitenr = v_pank_vv.viitenumber;
+
 
             -- ишем плательшика
             SELECT row_to_json(row) INTO json_object
@@ -105,11 +103,11 @@ BEGIN
                 -- в лог о создании нового плательщика
                 IF (l_vanem IS NOT NULL AND l_vanem > 0)
                 THEN
-                    l_message = l_message || ',maksja puudub, uus maksja salvestatud';
+                    l_message = coalesce(l_message, '') || ',maksja puudub, uus maksja salvestatud';
                 ELSE
                     l_error_code = 1;
                     l_kas_vigane = TRUE;
-                    l_message = l_message || ',maksja puudub';
+                    l_message = coalesce(l_message, '') || ',maksja puudub';
                 END IF;
 
             END IF;
@@ -147,138 +145,44 @@ BEGIN
 
             -- обнуляем счетчик найденных счетов
             l_count = 0;
-            l_makse_summa = 0;
 
-            -- запоминаем сумму платежа
-            l_tasu_jaak = v_pank_vv.summa;
-            -- ищем счет
+            -- создаем параметры для расчета платежкм
+            SELECT row_to_json(row) INTO json_object
+            FROM (SELECT l_maksja_id      AS maksja_id,
+                         l_dokprop_id     AS dokprop_id,
+                         l_new_viitenr    AS viitenumber,
+                         v_pank_vv.selg   AS selg,
+                         v_pank_vv.number AS number,
+                         v_pank_vv.kpv    AS kpv,
+                         v_pank_vv.aa     AS aa,
+                         v_pank_vv.iban   AS maksja_arve,
+                         v_pank_vv.summa  AS summa) row;
 
-            FOR v_arv IN
-                SELECT a.id, a.jaak, a.rekvid, a.asutusid, a.asutus AS maksja
-                FROM lapsed.cur_laste_arved a
-                         INNER JOIN docs.arv arv ON a.id = arv.parentid
-                WHERE a.rekvid = l_rekvid
-                  AND (a.viitenr = l_new_viitenr OR a.viitenr::TEXT = '0'::TEXT || l_new_viitenr::TEXT)
-                  AND a.jaak > 0
-                  AND (arv.properties ->> 'ettemaksu_period' IS NULL OR
-                       arv.properties ->> 'tyyp' = 'ETTEMAKS') -- только обычные счета или предоплаты
-                ORDER BY a.kpv, a.id
-                LOOP
-                    -- считаем остаток не списанной суммы
-                    l_makse_summa = CASE
-                                        WHEN l_tasu_jaak > v_arv.jaak THEN v_arv.jaak
-                                        ELSE l_tasu_jaak END;
-
-                    -- создаем параметры для расчета платежкм
-                    SELECT row_to_json(row) INTO json_object
-                    FROM (SELECT v_arv.id         AS arv_id,
-                                 l_maksja_id      AS maksja_id,
-                                 l_dokprop_id     AS dokprop_id,
-                                 l_new_viitenr    AS viitenumber,
-                                 v_pank_vv.selg   AS selg,
-                                 v_pank_vv.number AS number,
-                                 v_pank_vv.kpv    AS kpv,
-                                 v_pank_vv.aa     AS aa,
-                                 v_pank_vv.iban   AS maksja_arve,
-                                 l_makse_summa    AS summa) row;
-
-                    -- создаем платежку
-                    SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
-                    FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
-
-                    -- проверим на соответствие платильщика
-                    IF upper(v_arv.maksja)::TEXT <> upper(v_pank_vv.maksja)::TEXT
-                    THEN
-                        l_error = l_error || ' ' || upper(v_arv.maksja)::TEXT || '<>' || upper(v_pank_vv.maksja);
-                        l_message = l_message || l_error;
-
-                    END IF;
-
-                    -- сохраняем пулученную информаци.
-                    UPDATE lapsed.pank_vv v SET doc_id = l_mk_id, markused = l_error WHERE id = v_pank_vv.id;
-
-                    IF l_mk_id IS NOT NULL AND l_mk_id > 0
-                    THEN
-                        l_count = l_count + 1;
-                        l_count_kokku = l_count_kokku + 1;
-                        -- считаем остаток средств
-                        l_tasu_jaak = l_tasu_jaak - l_makse_summa;
-
-                        -- lausend
-                        PERFORM docs.gen_lausend_smk(l_mk_id, l_target_user_id);
-                    END IF;
-
-                    IF (l_tasu_jaak <= 0)
-                    THEN
-                        -- вся оплата списана
-                        l_message = l_message || ',kogu summa kasutatud';
-                        EXIT;
-                    END IF;
-
-                END LOOP;
-            IF (l_tasu_jaak > 0)
-            THEN
-                -- оплата не списана
-                -- создаем поручение с суммой равной остатку, без привязки к счету
-
-                -- создаем параметры для расчета платежкм
-                SELECT row_to_json(row) INTO json_object
-                FROM (SELECT NULL             AS arv_id,
-                             l_maksja_id      AS maksja_id,
-                             l_dokprop_id     AS dokprop_id,
-                             l_new_viitenr    AS viitenumber,
-                             v_pank_vv.selg   AS selg,
-                             v_pank_vv.number AS number,
-                             v_pank_vv.kpv    AS kpv,
-                             v_pank_vv.kpv    AS maksepaev,
-                             v_pank_vv.aa     AS aa,
-                             v_pank_vv.iban   AS maksja_arve,
-                             l_tasu_jaak      AS summa) row;
-
-                -- создаем платежку
-
-                SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
-                FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
-
-                -- сохраняем пулученную информаци.
-                UPDATE lapsed.pank_vv v
-                SET doc_id   = l_mk_id,
-                    markused = 'Koostatud eetemaks ' || coalesce(l_error, '')
-                WHERE id = v_pank_vv.id;
-
-                IF l_mk_id IS NOT NULL AND l_mk_id > 0
-                THEN
-                    -- считаем остаток средств
-                    l_tasu_jaak = 0;
-
-                    -- lausend
-                    PERFORM docs.gen_lausend_smk(l_mk_id, l_target_user_id);
-                    -- log
-                    l_message = l_message || ', koostatud ettemaks';
-                    l_count_kokku = l_count_kokku + 1;
-                    l_kas_vigane = FALSE;
-                END IF;
-
-            END IF;
-            IF l_count = 0
-            THEN
-                UPDATE lapsed.pank_vv v SET markused = 'Arved ei leidnud' WHERE id = v_pank_vv.id;
-
-                --log
-                l_message = l_message || ',arved ei leidnud';
-            END IF;
-            -- report
-
-            -- get mk number
+            -- создаем платежку
+            SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
+            FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
 
             IF l_mk_id IS NOT NULL AND l_mk_id > 0
             THEN
-                l_mk_number = (SELECT number FROM docs.mk WHERE parentid = l_mk_id);
-                l_message = l_message || ',mk nr.:' || ltrim(rtrim(l_mk_number));
+                l_count = l_count + 1;
+                l_count_kokku = l_count_kokku + 1;
+                l_kas_vigane = FALSE;
+                l_message = coalesce(l_message, '') || ', MK ' || ltrim(rtrim(v_pank_vv.number)) || ' koostatud';
+
+                -- lausend
+                PERFORM docs.gen_lausend_smk(l_mk_id, l_target_user_id);
+
+                -- сохраняем полученную информаци.
+                UPDATE lapsed.pank_vv v
+                SET doc_id   = l_mk_id,
+                    markused = l_error
+                WHERE id = v_pank_vv.id;
+
             ELSE
                 l_mk_number = '';
             END IF;
 
+            -- report
             json_object = to_jsonb(row.*)
                           FROM (
                                    SELECT l_mk_id               AS doc_id,
@@ -292,7 +196,6 @@ BEGIN
     result = l_count_kokku;
     error_code = l_error_code;
     error_message = l_message;
-
 
     RETURN;
 EXCEPTION
@@ -312,7 +215,6 @@ EXCEPTION
                                ) row;
             data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
 
-            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
             RETURN;
 END;
 $BODY$

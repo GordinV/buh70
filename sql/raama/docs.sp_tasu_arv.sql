@@ -27,7 +27,6 @@ DECLARE
 BEGIN
     IF exists(SELECT 1 FROM docs.arv WHERE journalid = l_tasu_id)
     THEN
-        RAISE NOTICE 'это не оплата, это проводка счета';
         -- это не оплата, это проводка счета
         RETURN 0;
     END IF;

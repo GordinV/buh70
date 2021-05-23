@@ -58,7 +58,7 @@ BEGIN
     -- проверка на права. Предполагает наличие прописанных прав на удаление для данного пользователя в поле rigths
 
 
-    --	ids =  v_doc.rigths->'delete';
+/*    --	ids =  v_doc.rigths->'delete';
     IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(l_user_id)
     THEN
         RAISE NOTICE 'У пользователя нет прав на удаление';
@@ -68,7 +68,7 @@ BEGIN
         RETURN;
 
     END IF;
-
+*/
     -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
 
     IF exists(
@@ -167,6 +167,7 @@ BEGIN
 
     UPDATE docs.doc
     SET lastupdate = now(),
+        docs_ids   = NULL,
         history    = coalesce(history, '[]') :: JSONB || new_history,
         rekvid     = v_doc.rekvid,
         status     = DOC_STATUS

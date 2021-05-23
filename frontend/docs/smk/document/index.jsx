@@ -141,29 +141,6 @@ class Smk extends React.PureComponent {
                                     ref="select-aaId"
                                     readOnly={!isEditeMode}/>
 
-                            {!isNewDoc ?
-                                <InputText title="Arve nr."
-                                           name='_arvnr'
-                                           value={self.docData.arvnr || ''}
-                                           ref="input-arvnr"
-                                           show={!isNewDoc}
-                                           onChange={self.handleInputChange}
-                                           readOnly={true}/>
-                                : null
-                            }
-                            {isNewDoc ? <SelectData title="Arve nr."
-                                                    name='arvid'
-                                                    libName="arv"
-                                                    sqlFields={['number', 'kpv', 'asutus']}
-                                                    data={[]}
-                                                    value={self.docData.arvid || ''}
-                                                    ref="select-arve"
-                                                    btnDelete={false}
-                                                    userData={self.userData}
-                                                    onChange={self.handleInputChange}
-                                                    readOnly={!isEditeMode}/> : null}
-
-
                             <InputDate title='Maksepäev '
                                        name='maksepaev'
                                        value={self.docData.maksepaev || ''}
@@ -211,54 +188,65 @@ class Smk extends React.PureComponent {
                                   ref="data-grid"/>
                     </div>
                     <div style={styles.docRow}>
-                        <InputText title="Kokku: "
-                                   name='summa'
-                                   ref="input-summa"
-                                   value={String(self.docData.summa) || '0.00'}
-                                   width='auto'
-                                   disabled={true}/>
+                        <div style={styles.docColumn}>
+
+                            <InputText title="Kokku: "
+                                       name='summa'
+                                       ref="input-summa"
+                                       value={String(self.docData.summa) || '0.00'}
+                                       width='auto'
+                                       disabled={true}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <InputText title="Määramata summa: "
+                                       name='mk_jaak'
+                                       ref="input-jaak"
+                                       value={String(self.docData.jaak) || '0.00'}
+                                       width='auto'
+                                       disabled={true}/>
+                        </div>
                     </div>
-                    <div style={styles.docRow}>
-                        <TextArea title="Märkused"
-                                  name='muud'
-                                  ref="textarea-muud"
-                                  value={self.docData.muud || ''}
-                                  onChange={self.handleInputChange}
-                                  readOnly={!isEditeMode}/>
-                    </div>
-
-                    {self.state.gridRowEdit ?
-                        this.createGridRow(self)
-                        : null}
-
-                    <ModalPage ref='modalpageCreateOrder'
-                               modalPageBtnClick={this.modalPageBtnClick}
-                               modalPageName='Kas koosta SMK'
-                               show={this.state.getSMK}>
-                        Kas koosta SMK?
-                    </ModalPage>
-
-                    <br/>
-                    <div style={styles.docRow}>
-                        <label ref="label">
-                            {'Arved'}
-                        </label>
-                    </div>
-                    <div style={styles.docRow}>
-                        <DataGrid source='arved'
-                                  gridData={gridArvData}
-                                  gridColumns={gridArvColumns}
-                                  showToolBar={false}
-                                  handleGridBtnClick={self.handleGridBtnClick}
-                                  docTypeId={'arv'}
-                                  readOnly={true}
-                                  style={styles.grid.headerTable}
-                                  ref="arved-data-grid"/>
-                    </div>
-
-
 
                 </div>
+                <div style={styles.docRow}>
+                    <TextArea title="Märkused"
+                              name='muud'
+                              ref="textarea-muud"
+                              value={self.docData.muud || ''}
+                              onChange={self.handleInputChange}
+                              readOnly={!isEditeMode}/>
+                </div>
+
+                {self.state.gridRowEdit ?
+                    this.createGridRow(self)
+                    : null}
+
+                <ModalPage ref='modalpageCreateOrder'
+                           modalPageBtnClick={this.modalPageBtnClick}
+                           modalPageName='Kas koosta SMK'
+                           show={this.state.getSMK}>
+                    Kas koosta SMK?
+                </ModalPage>
+
+                <br/>
+                <div style={styles.docRow}>
+                    <label ref="label">
+                        {'Arved'}
+                    </label>
+                </div>
+                <div style={styles.docRow}>
+                    <DataGrid source='arved'
+                              gridData={gridArvData}
+                              gridColumns={gridArvColumns}
+                              showToolBar={false}
+                              handleGridBtnClick={self.handleGridBtnClick}
+                              docTypeId={'arv'}
+                              readOnly={true}
+                              style={styles.grid.headerTable}
+                              ref="arved-data-grid"/>
+                </div>
+
+
             </div>
         );
     }

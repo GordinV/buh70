@@ -18,7 +18,7 @@ SELECT d.id,
            WHEN mk.opt = 1 OR coalesce(mk.opt, 0) = 0
                THEN Mk1.summa
            ELSE 0 :: NUMERIC(14, 2) END     AS kreedit,
-       a.id as maksja_id,
+       a.id                                 AS maksja_id,
        A.regkood::VARCHAR(20)               AS vanem_isikukood,
        A.nimetus::VARCHAR(254)              AS asutus,
        coalesce(N.kood, '')::VARCHAR(20)    AS kood,
@@ -26,6 +26,7 @@ SELECT d.id,
        coalesce(jid.number, 0) :: INTEGER   AS journalnr,
        l.isikukood                          AS isikukood,
        l.nimi                               AS nimi,
+       l.id                                 AS laps_id,
        mk.viitenr,
        mk.jaak
 FROM docs.doc d
