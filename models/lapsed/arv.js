@@ -105,7 +105,7 @@ const Arv = {
                              sum(laekumised + arv_tasud) AS laekumised,
                              sum(ettemaksud)             AS ettemaksud,
                              sum(tagastused)             AS tagastused,
-                             sum(jaak) as jaak                             
+                             sum(jaak)                   AS jaak
                       FROM lapsed.lapse_saldod(gomonth(docs.get_arve_period($1), 1),
                                                (SELECT parentid FROM lapsed.liidestamine WHERE docid = $1))
                       GROUP BY laps_id, rekv_id
@@ -245,9 +245,11 @@ const Arv = {
         {
             sql: `SELECT Arvtasu.id,
                          arvtasu.kpv,
+                         to_char(arvtasu.kpv,'DD.MM.YYYY') as print_kpv,
                          arvtasu.summa,
                          'MK' :: VARCHAR(20)           AS dok,
                          'PANK' :: VARCHAR             AS liik,
+                         mk.number                     AS dok_nr,
                          pankkassa,
                          mk1.journalid,
                          doc_tasu_id,
@@ -263,9 +265,11 @@ const Arv = {
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
+                         to_char(arvtasu.kpv,'DD.MM.YYYY') as print_kpv,
                          arvtasu.summa,
                          'KASSAORDER' :: VARCHAR(20)   AS dok,
                          'KASSA' :: VARCHAR            AS liik,
+                         korder1.number                AS dok_nr,
                          pankkassa,
                          korder1.journalid,
                          doc_tasu_id,
@@ -281,9 +285,11 @@ const Arv = {
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
+                         to_char(arvtasu.kpv,'DD.MM.YYYY') as print_kpv,
                          arvtasu.summa,
                          'PAEVARAAMAT' :: VARCHAR(20)  AS dok,
                          'JOURNAL' :: VARCHAR          AS liik,
+                         NULL::TEXT                    AS dok_nr,
                          pankkassa,
                          arvtasu.doc_tasu_id           AS journalid,
                          doc_tasu_id,
@@ -300,9 +306,11 @@ const Arv = {
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
+                         to_char(arvtasu.kpv,'DD.MM.YYYY') as print_kpv,
                          arvtasu.summa,
                          '' :: VARCHAR(20) AS dok,
                          'MUUD' :: VARCHAR AS liik,
+                         null::text as dok_nr,
                          pankkassa,
                          0                 AS journalid,
                          NULL,
@@ -399,7 +407,17 @@ const Arv = {
             {id: 'kogus', name: 'kogus', width: '100px', show: true, type: 'number', readOnly: false},
             {id: 'kbm', name: 'Käibemaks', width: '100px', show: true, type: 'number', readOnly: false},
             {id: 'summa', name: 'Summa', width: '100px', show: true, type: 'number', readOnly: false}
-        ]
+        ],
+        gridTasudConfig:
+            [
+                {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
+                {id: 'dok', name: 'Dokument', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'dok_nr', name: 'Dok.nr', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'print_kpv', name: 'Kuupäev', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'summa', name: 'Summa', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'number', name: 'Lausend', width: '10%', show: true, type: 'text', readOnly: true},
+            ]
+
     },
     saveDoc: `select docs.sp_salvesta_arv($1::json, $2::integer, $3::integer) as id`,
     deleteDoc: `SELECT error_code, result, error_message

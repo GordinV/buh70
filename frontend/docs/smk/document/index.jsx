@@ -13,7 +13,9 @@ const DocumentTemplate = require('../../documentTemplate/index.jsx'),
     DokProp = require('../../../components/docprop/docprop.jsx'),
     relatedDocuments = require('../../../mixin/relatedDocuments.jsx'),
     ModalPage = require('./../../../components/modalpage/modalPage.jsx'),
+    Loading = require('./../../../components/loading/index.jsx'),
     styles = require('./smk-style');
+
 const DOC_TYPE_ID = 'SMK';
 const DocContext = require('./../../../doc-context.js');
 
@@ -89,6 +91,12 @@ class Smk extends React.PureComponent {
      * @returns {XML}
      */
     renderer(self) {
+        if (!self || !self.docData || !self.docData.kpv) {
+            return (<div style={styles.doc}>
+                <Loading label={'Laadimine...'}/>
+            </div>);
+        }
+
         let isEditeMode = self.state.edited;
 
         // формируем зависимости
@@ -96,10 +104,16 @@ class Smk extends React.PureComponent {
             relatedDocuments(self);
         }
 
-        let isNewDoc = !self.docData.id || self.docData.id == 0;
-        if ((!self.docData.id || self.docData.id == 0) && self.docData.arvid && this.state.isAskToCreateFromArv) {
+        let isNewDoc = !self.docData.id || self.docData.id === 0;
+        if ((!self.docData.id || self.docData.id === 0) && self.docData.arvid && this.state.isAskToCreateFromArv) {
             this.setState({getSMK: true, isAskToCreateFromArv: false, arvId: self.docData.arvid});
         }
+
+        // queryArvTasu
+        let gridArvData = self.docData.queryArvTasu,
+            gridArvColumns = self.docData.gridArvConfig;
+
+
         return (
             <div>
                 <div className='div-doc'>
@@ -223,6 +237,25 @@ class Smk extends React.PureComponent {
                                show={this.state.getSMK}>
                         Kas koosta SMK?
                     </ModalPage>
+
+                    <br/>
+                    <div style={styles.docRow}>
+                        <label ref="label">
+                            {'Arved'}
+                        </label>
+                    </div>
+                    <div style={styles.docRow}>
+                        <DataGrid source='arved'
+                                  gridData={gridArvData}
+                                  gridColumns={gridArvColumns}
+                                  showToolBar={false}
+                                  handleGridBtnClick={self.handleGridBtnClick}
+                                  docTypeId={'arv'}
+                                  readOnly={true}
+                                  style={styles.grid.headerTable}
+                                  ref="arved-data-grid"/>
+                    </div>
+
 
 
                 </div>

@@ -135,8 +135,21 @@ BEGIN
                    ELSE coalesce((lk.properties ->> 'soodus')::NUMERIC, 0) END *
                CASE
                    WHEN (lk.properties ->> 'sooduse_alg')::DATE <= l_kpv
-                       AND (lk.properties ->> 'sooduse_lopp')::DATE >= l_kpv
+                            -- если услуга месячная
+                       AND (lk.properties ->> 'sooduse_lopp')::DATE >=
+                           (CASE
+                                WHEN upper(n.uhik) = ('KUU') THEN make_date(year(l_kpv), month(l_kpv), 1)
+                                ELSE l_kpv END)
                        THEN 1
+                   WHEN
+                       -- если льгота завершена в текущем месяце вместе с усгой
+                       (lk.properties ->> 'sooduse_alg')::DATE <= l_kpv AND
+                        (lk.properties ->> 'sooduse_lopp')::DATE < l_kpv AND
+                        month((lk.properties ->> 'sooduse_lopp')::DATE) = month(l_kpv) AND
+                        year((lk.properties ->> 'sooduse_lopp')::DATE) = year(l_kpv) AND
+                        (lk.properties ->> 'lopp_kpv')::DATE = (lk.properties ->> 'sooduse_lopp')::DATE
+                       THEN 1
+
                    ELSE 0 END                                                        AS real_soodus,
                (gr.nimetus::TEXT)::TEXT || CASE
                                                WHEN (lk.properties ->> 'all_yksus')::TEXT IS NOT NULL

@@ -15,7 +15,13 @@ SELECT lt.id,
        CASE
            WHEN (lk.properties ->> 'sooduse_alg')::DATE <= make_date(lt.aasta, lt.kuu, 28)
                AND (lk.properties ->> 'sooduse_lopp')::DATE >=
-                   make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day'
+                   CASE
+                       WHEN upper(n.uhik) = ('KUU') THEN make_date(lt.aasta, lt.kuu, 1)
+                       WHEN (lk.properties ->> 'sooduse_lopp')::DATE <
+                            make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' AND
+                            (lk.properties ->> 'lopp_kpv')::DATE = (lk.properties ->> 'sooduse_lopp')::DATE
+                           THEN make_date(lt.aasta, lt.kuu, 1)
+                       ELSE make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' END
                THEN 1
            ELSE 0 END                                              AS sooduse_kehtivus,
        l.isikukood,

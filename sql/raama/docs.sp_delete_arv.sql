@@ -18,6 +18,7 @@ DECLARE
     arvtasu_history JSONB;
     new_history     JSONB;
     DOC_STATUS      INTEGER = 3; -- документ удален
+    v_mk            RECORD;
 BEGIN
 
     SELECT d.*,
@@ -47,7 +48,7 @@ BEGIN
 
     --	ids =  v_doc.rigths->'delete';
 
-    IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
+/*    IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
     THEN
         RAISE NOTICE 'У пользователя нет прав на удаление';
         error_code = 4;
@@ -56,7 +57,7 @@ BEGIN
 --      RETURN;
 
     END IF;
-
+*/
     -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
 
     IF exists(
@@ -75,7 +76,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Логгирование удаленного документа
+ -- Логгирование удаленного документа
     -- docs.arv
 
     arv_history = row_to_json(row.*)
@@ -104,6 +105,19 @@ BEGIN
                  arv_history     AS arv,
                  arv1_history    AS arv1,
                  arvtasu_history AS arvtasu) row;
+
+    -- удаление оплат
+    FOR v_mk IN
+        SELECT DISTINCT mk.parentid AS mk_id
+        FROM docs.doc d
+                 INNER JOIN docs.mk mk ON mk.parentid = d.id
+                 INNER JOIN docs.arvtasu tasu ON tasu.doc_arv_id = v_doc.id
+        LOOP
+            -- удаление оплат
+            DELETE FROM docs.arvtasu WHERE doc_arv_id = doc_id;
+            -- перерасчет сальдо платежа
+            PERFORM docs.sp_update_mk_jaak(v_mk.mk_id);
+        END LOOP;
 
     -- удаление связей
     UPDATE docs.doc

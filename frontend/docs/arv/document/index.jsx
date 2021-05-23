@@ -82,7 +82,10 @@ class Arve extends React.PureComponent {
 
         let isEditMode = self.state.edited,
             gridData = self.docData.gridData,
-            gridColumns = self.docData.gridConfig;
+            gridColumns = self.docData.gridConfig,
+            gridArvTasuData = self.docData.queryArvTasu,
+            gridTasudColumns = self.docData.gridTasudConfig;
+
 
         // формируем зависимости
         if (self.docData.relations) {
@@ -279,6 +282,23 @@ class Arve extends React.PureComponent {
                     {self.state.gridRowEdit ?
                         this.createGridRow(self)
                         : null}
+                    <br/>
+                    <div style={styles.docRow}>
+                        <label ref="label">
+                            {'Tasud'}
+                        </label>
+                    </div>
+                    <div style={styles.docRow}>
+                        <DataGrid source='tasud'
+                                  gridData={gridArvTasuData}
+                                  gridColumns={gridTasudColumns}
+                                  showToolBar={false}
+                                  handleGridBtnClick={self.handleGridBtnClick}
+                                  docTypeId={'smk'}
+                                  readOnly={true}
+                                  style={styles.grid.headerTable}
+                                  ref="tasud-data-grid"/>
+                    </div>
                 </div>
             </div>
         );

@@ -46,7 +46,9 @@ DECLARE
                                     WHERE kood = doc_yksus
                                       AND library.library = 'LAPSE_GRUPP'
                                       AND status <> 3
-                                      AND rekvid = user_rekvid order by id desc limit 1);
+                                      AND rekvid = user_rekvid
+                                    ORDER BY id DESC
+                                    LIMIT 1);
     l_noms               INTEGER = (SELECT count(id)
                                     FROM lapsed.lapse_kaart
                                     WHERE parentid = doc_parentid
@@ -66,7 +68,7 @@ BEGIN
         l_noms = l_noms + 1;
     END IF;
 
-    SELECT * INTO doc_row FROM lapsed.lapse_kaart WHERE id = doc_id limit 1;
+    SELECT * INTO doc_row FROM lapsed.lapse_kaart WHERE id = doc_id LIMIT 1;
 
     SELECT kasutaja INTO userName
     FROM ou.userid u
@@ -95,7 +97,7 @@ BEGIN
                 AND dt.grupp_id = l_grupp_id
                 AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
                 AND dt.staatus < 3
-                limit 1
+              LIMIT 1
         )
     THEN
         RAISE EXCEPTION 'Vale alg.kuupäev. Päevatabelid leidnud koostatud  varem kui alg. kpv';
@@ -113,7 +115,7 @@ BEGIN
                 AND dt.staatus < 3
                 AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
                 AND dt.grupp_id = l_grupp_id
-        limit 1
+              LIMIT 1
         )
     THEN
         RAISE EXCEPTION 'Vale lõpp.kuupäev. Päevatabelid leidnud koostatud  hiljem kui lõpp. kpv';
@@ -128,7 +130,7 @@ BEGIN
                 AND lt.nomid = doc_nomid
                 AND lt.staatus < 3
                 AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
-                limit 1
+              LIMIT 1
         )
     THEN
         RAISE EXCEPTION 'Vale alg.kuupäev. Leidnud tabel varem kui alg. kpv';
@@ -146,6 +148,16 @@ BEGIN
         )
     THEN
         RAISE EXCEPTION 'Vale lõpp kuupäev. Leidnud tabel hiljem kui lõpp kpv';
+    END IF;
+
+    -- проверка на дату льготы, если дата не конец мнесяца и не равна дате окончания услуги
+    IF (doc_sooduse_lopp IS NOT NULL
+        AND doc_sooduse_lopp <
+            (make_date(year(doc_sooduse_lopp), month(doc_sooduse_lopp), 1) + INTERVAL '1 month')::DATE - 1)
+        AND doc_sooduse_lopp < doc_lopp_kpv
+    THEN
+        RAISE EXCEPTION 'Vale soodustuse lõpp kuupäev. peaks olla kuu lõpp või teenuse lõpp kuupäev';
+
     END IF;
 
     json_props = to_jsonb(row)

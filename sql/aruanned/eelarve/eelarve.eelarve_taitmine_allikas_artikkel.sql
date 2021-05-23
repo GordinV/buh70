@@ -295,7 +295,7 @@ WITH cur_kulude_kassa_taitmine AS (
                           sum(kassa)                    AS kassa,
                           ''                            AS tegev,
                           '80'                          AS allikas,
-                          '2586x'                       AS artikkel,
+                          '2586(A80)'                   AS artikkel,
                           ''                            AS rahavoog,
                           ''                            AS tunnus,
                           095                           AS idx
