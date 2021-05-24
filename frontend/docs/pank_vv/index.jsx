@@ -25,11 +25,9 @@ const getSum = require('./../../../libs/getSum');
 class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.btnEditClick = this.btnEditClick.bind(this);
         this.Doc = null; //ссылка на страницу
         this.renderer = this.renderer.bind(this);
         this.render = this.render.bind(this);
-        this.onClickHandler = this.onClickHandler.bind(this);
         this.state = {
             summa: 0,
             read: 0,
@@ -53,10 +51,10 @@ class Documents extends React.PureComponent {
                 show: false
             },
             btnEdit: {
-                show: state && state.value && checkRights(userRoles, docRights, 'edit')
+                show: true
             },
             btnDelete: {
-                show: checkRights(userRoles, docRights, 'delete')
+                show: false
             },
             btnPrint: {
                 show: false
@@ -75,7 +73,6 @@ class Documents extends React.PureComponent {
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
                                   toolbarParams={toolbarParams}
-                                  btnEditClick={this.btnEditClick}
                                   render={this.renderer}/>
                 <InputText title="Filtri all / read kokku:"
                            name='read_kokku'
@@ -150,16 +147,17 @@ class Documents extends React.PureComponent {
                 } else {
                     if (data.result.data[0].error_message) {
                         // error
-                        Doc.setState({warning: `Tekkis viga: ${data.result.data[0].error_message}`, warningType: 'error'});
+                        Doc.setState({
+                            warning: `Tekkis viga: ${data.result.data[0].error_message}`,
+                            warningType: 'error'
+                        });
                     } else {
-                        Doc.setState({warning: `${message}`, warningType: 'ok'}, ()=>
+                        Doc.setState({warning: `${message}`, warningType: 'ok'}, () =>
                             Doc.fetchData('selectDocs'));
                     }
                 }
 
- //               let tulemused = data.data.result.tulemused;
                 // открываем отчет
-//                this.setState({isReport: true, txtReport: tulemused});
 
             } else {
                 if (data.error_message) {
@@ -175,65 +173,8 @@ class Documents extends React.PureComponent {
 
         });
 
-        /*
-                const task = EVENTS.find(task => task.name === event);
-                if (!task) {
-                    return Doc.setState({warning: `Task: ${event} ei leidnud`, warningType: 'error'});
-                }
-
-                // отправляем запрос на выполнение
-                let message = `võib olla selles perioodil kõik arved juba väljastatud`;
-                Doc.fetchData(`calc/${task.method}`, {docs: ids, seisuga: seisuga}).then((data) => {
-                    if (data.result) {
-                        message = `task saadetud täitmisele`;
-                        Doc.setState({warning: `${message}`, warningType: 'ok'});
-
-                        let tulemused = data.data.result.tulemused;
-                        // открываем отчет
-                        this.setState({isReport: true, txtReport: tulemused});
-
-                    } else {
-                        if (data.error_message) {
-                            Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
-                        } else {
-                            Doc.setState({
-                                warning: `Kokku arvestatud : ${data.result}, ${message}`,
-                                warningType: 'notValid'
-                            });
-                        }
-
-                    }
-
-                });
-
-         */
     }
 
-
-    btnEditClick() {
-        // кастомный обработчик события
-        if (this.Doc && this.Doc.state) {
-            const value = this.Doc.state.value;
-            const gridData = this.Doc.gridData;
-            let doc_id = gridData.find(row => row.id == value).doc_id;
-
-            if (doc_id) {
-                return this.props.history.push({
-                    pathname: `/${this.props.module}/SMK/${doc_id}`,
-                    state: {module: this.props.module}
-                });
-
-            } else {
-                this.Doc.setState({
-                    warning: 'Maksekorraldus ei leidnud',
-                    warningType: 'error'
-                });
-
-            }
-
-        }
-
-    }
 
 }
 

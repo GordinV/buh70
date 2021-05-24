@@ -71,23 +71,27 @@ class Document {
             }
         });
 
-        return  await db.executeQueries(initialLoad, [this.documentId, this.userId], objectTemplate, dbConfig);
+        return await db.executeQueries(initialLoad, [this.documentId, this.userId], objectTemplate, dbConfig);
     }
 
     /**
      * Метод сохранения документа
      * @params = {data: {}, userId: // user, asutusId: rekvId}
      */
-    async save(params, isNotSelect) {
+    async save(params, isNotSelect, sqlParam) {
         // {data, user.userId, user.asutusId}
         if (!params.data || !params.userId || !params.asutusId) {
             throw new Error('Wrong params structure');
         }
 
-        let sql = this.config.saveDoc;
+        let sql = sqlParam;
+        if (!sql) {
+            sql = this.config.saveDoc;
+        }
+
         let data = await db.queryDb(sql, [params.data, params.userId, params.asutusId]);
 
-        if (data && data.error_code ) {
+        if (data && data.error_code) {
             console.error('Viga', data.error_message, data);
             return data;
         }
@@ -106,7 +110,6 @@ class Document {
     async executeTask(task, params) {
         let sql = this.config[task].command;
         let _params = params ? params : [this.documentId, this.userId];
-
         if (!sql) {
             return {error: 'No task found'}
         }
@@ -118,13 +121,13 @@ class Document {
      */
     async selectDocs(sortBy, sqlWhere, limit, params = [this.rekvId, this.userId], subTotals) {
         let sql = this.config.grid.sqlString;
-        let sqlParamsQantity = (this.config.grid.params == '' ? 2: this.config.grid.params.length);
+        let sqlParamsQantity = (this.config.grid.params == '' ? 2 : this.config.grid.params.length);
 
 // добавим при необходимости кол-во параметром
         let paramsToAdd = sqlParamsQantity - params.length;
 
         if (sqlParamsQantity > 2 && params.length == 2) {
-            for (let i = 0; i < paramsToAdd; i++ ) {
+            for (let i = 0; i < paramsToAdd; i++) {
                 params.push(null)
             }
         }

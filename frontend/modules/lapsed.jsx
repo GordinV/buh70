@@ -57,6 +57,7 @@ const KoolituseLiikRegister = require('./../docs/koolituse_liik/index.jsx'),
     KoolituseLiikDocument = require('./../docs/koolituse_liik/document/index.jsx');
 
 const PankVVRegister = require('./../docs/pank_vv/index.jsx');
+const PankVVDocument = require('./../docs/pank_vv/document/index.jsx');
 const ConfigDocument = require('./../docs/config/document/index.jsx');
 const RekvDocument = require('./../docs/rekv/document/index.jsx');
 const DokpropsDocument = require('./../docs/dokprops/document/index.jsx');
@@ -228,6 +229,7 @@ class App extends React.Component {
                            history={props.history}
                            initData={props.initData}/>}/>
 
+                <Route exact path="/lapsed/pank_vv/:docId" component={PankVVDocument}/>
                 <Route exact path="/lapsed/pank_vv"
                        render={(props) => <PankVVRegister
                            module={MODULE}

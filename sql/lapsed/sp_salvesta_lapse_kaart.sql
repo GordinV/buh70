@@ -18,7 +18,9 @@ DECLARE
     doc_hind             NUMERIC = doc_data ->> 'hind';
     doc_yksus            TEXT    = doc_data ->> 'yksus';
     doc_all_yksus        TEXT    = doc_data ->> 'all_yksus';
-    doc_soodus           NUMERIC = doc_data ->> 'soodus';
+    doc_soodus           NUMERIC = CASE
+                                       WHEN coalesce((doc_data ->> 'soodus')::TEXT, '') = '' THEN 0
+                                       ELSE (doc_data ->> 'soodus')::NUMERIC END;
     doc_kas_protsent     BOOLEAN = doc_data ->> 'kas_protsent';
     doc_kas_eraldi       BOOLEAN = doc_data ->> 'kas_eraldi';
     doc_kas_ettemaks     BOOLEAN = doc_data ->> 'kas_ettemaks';

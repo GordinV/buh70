@@ -6,9 +6,22 @@ module.exports = {
         ]
     },
     select: [{
-        sql: `SELECT id, $2 AS userid
+        sql: `SELECT $2                                       AS userid,
+                     pank_vv.id,
+                     to_char(pank_vv.kpv, 'YYYY-MM-DD')::TEXT AS kpv,
+                     pank_vv.pank_id,
+                     pank_vv.viitenumber,
+                     pank_vv.maksja,
+                     pank_vv.isikukood,
+                     pank_vv.selg,
+                     pank_vv.doc_id,
+                     pank_vv.summa,
+                     pank_vv.iban,
+                     pank_vv.pank,
+                     mk.number
               FROM lapsed.pank_vv pank_vv
-                  WHERE pank_vv.id = $1::INTEGER`,
+                       LEFT OUTER JOIN docs.mk mk ON mk.parentid = pank_vv.doc_id
+              WHERE pank_vv.id = $1::INTEGER`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid`,
@@ -23,8 +36,7 @@ module.exports = {
 
 
     requiredFields: [],
-    saveDoc: `SELECT result AS id, result, stamp, error_message, data 
-              FROM lapsed.sp_salvesta_pank_vv($1::JSONB, $2::INTEGER, $3::INTEGER)`, // $1 - data json, $2 - userid, $3 - rekvid
+    saveDoc: `SELECT lapsed.muuda_pank_vv($1::JSONB, $2::INTEGER, $3::INTEGER) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: ``, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
@@ -45,7 +57,7 @@ module.exports = {
         sqlString: `SELECT v.id                                                AS id,
                            v.doc_id                                            AS doc_id,
                            v.maksja,
-                           v.isikukood as maksja_ik,
+                           v.isikukood                                         AS maksja_ik,
                            v.viitenumber,
                            v.iban,
                            to_char(v.kpv, 'DD.MM.YYYY')::TEXT                  AS kpv,
@@ -67,7 +79,7 @@ module.exports = {
                              LEFT OUTER JOIN lapsed.cur_lapsed_mk mk ON mk.id = v.doc_id
                              LEFT OUTER JOIN ou.rekv r ON r.id = mk.rekvid
                              LEFT OUTER JOIN ou.userid u ON u.id = $2
-                        ORDER BY timestamp DESC`,     //  $1 всегда ид учреждения, $2 - userId
+                    ORDER BY id DESC`,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
         alias: 'curPankVV'
     },
@@ -85,6 +97,14 @@ module.exports = {
     },
     deleteDoc: `SELECT error_code, result, error_message
                 FROM lapsed.sp_delete_pank_vv($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
+    importDoc: {
+        command: `SELECT result AS id, result, stamp, error_message, data
+              FROM lapsed.sp_salvesta_pank_vv($1::JSONB, $2::INTEGER, $3::INTEGER)`, // $1 - data json, $2 - userid, $3 - rekvid
+        type: 'sql',
+        alias: 'importVV'
+    }
+
+
 
 
 };

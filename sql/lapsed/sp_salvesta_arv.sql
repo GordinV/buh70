@@ -398,7 +398,7 @@ BEGIN
     THEN
         -- проверить на наличие предоплат
 --        PERFORM docs.check_ettemaks(doc_id, user_id);
-        PERFORM docs.sp_loe_arv(doc_id);
+        PERFORM docs.sp_loe_arv(doc_id, user_id);
     END IF;
 
     -- если это доходный счет, созданный на основе предоплатного

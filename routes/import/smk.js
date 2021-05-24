@@ -27,12 +27,14 @@ module.exports = async (file, mimeType, user) => {
             asutusId: user.asutusId
         };
 
-        response = await Document.save(params, true);
+        let sql = Document.config.importDoc.command;
+
+
+        response = await Document.save(params, true, sql);
         saved = response.data && response.data.length > 0 ? response.data[0].result : 0;
         returnData = response.data && response.data.length  ? response.data[0]: [];
-}
+    }
 
-    console.log(JSON.stringify(returnData));
     return {
         error_message: `Kokku leidsin ${rows.length} maksed, salvestatud kokku: ${saved}`,
         result: saved,
