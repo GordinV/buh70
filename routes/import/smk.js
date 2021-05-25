@@ -84,6 +84,7 @@ const readXML = async (xmlContent) => {
                 let selg = RmtInf.Ustrd ? RmtInf.Ustrd[0] : null;
                 let maksja = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Nm[0] : null;
                 let isikukood = NtryDtls.RltdPties[0].Dbtr && NtryDtls.RltdPties[0].Dbtr[0].Id && NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId && NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0] ? NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0].Id[0] : null;
+                let regkood = NtryDtls.RltdPties[0].Dbtr && NtryDtls.RltdPties[0].Dbtr[0].Id && NtryDtls.RltdPties[0].Dbtr[0].Id[0].OrgId && NtryDtls.RltdPties[0].Dbtr[0].Id[0].OrgId[0].Othr[0] ? NtryDtls.RltdPties[0].Dbtr[0].Id[0].OrgId[0].Othr[0].Id[0] : null;
                 let eban = NtryDtls.RltdPties[0].DbtrAcct ? NtryDtls.RltdPties[0].DbtrAcct[0].Id[0].IBAN[0] : null;
 
                 rows.push({
@@ -96,7 +97,7 @@ const readXML = async (xmlContent) => {
                     iban: eban,
                     pank: Acct,
                     number: number,
-                    isikukood: isikukood,
+                    isikukood: isikukood ? isikukood: regkood,
                     aa: aa
                 });
 
