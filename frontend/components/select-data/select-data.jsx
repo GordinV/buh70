@@ -160,7 +160,7 @@ class SelectData extends React.PureComponent {
                     //выполним запрос
                     setTimeout(() => {
                         this.loadLibs(value);
-                    }, 1000);
+                    }, 500);
                 }
 
             });
@@ -173,7 +173,7 @@ class SelectData extends React.PureComponent {
                     //выполним запрос
                     setTimeout(() => {
                         this.loadLibs(value);
-                    }, 1000);
+                    }, 500);
                 }
 
             });

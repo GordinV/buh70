@@ -28,6 +28,7 @@ class Documents extends React.PureComponent {
         this.Doc = null; //ссылка на страницу
         this.renderer = this.renderer.bind(this);
         this.render = this.render.bind(this);
+        this.onClickHandler = this.onClickHandler.bind(this);
         this.state = {
             summa: 0,
             read: 0,

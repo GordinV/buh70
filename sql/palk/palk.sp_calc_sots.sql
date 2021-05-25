@@ -79,6 +79,7 @@ BEGIN
         WHERE pk.lepingid = l_lepingid
           AND libId = l_libId;
 
+
         IF coalesce(l_min_sots, 0) > 0 AND kas_arvesta_min_sots
         THEN
             -- расчет СН с мин. ЗП
@@ -105,9 +106,12 @@ BEGIN
             SELECT row_to_json(row) INTO l_params
             FROM (SELECT month(l_kpv) AS kuu,
                          year(l_kpv)  AS aasta,
+                         true as kas_kalendripaevad,
+                         TRUE         AS puudumised,
                          l_lepingid   AS lepingid) row;
 
             l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
+
 
             IF coalesce(l_puudu_paevad, 0) > 0
             THEN
@@ -129,7 +133,7 @@ BEGIN
             l_paevad_periodis =
                     palk.get_days_of_month_in_period(month(l_kpv), year(l_kpv), date(year(l_kpv), month(l_kpv), 01),
                                                      l_kpv);
-
+/*
             -- вычитаем отпуск в календарных днях
             SELECT row_to_json(row) INTO l_params
             FROM (SELECT month(l_kpv) AS kuu,
@@ -139,7 +143,7 @@ BEGIN
                          l_lepingid   AS lepingid) row;
 
             l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
-
+*/
             -- за вычитом отпуска и больничного
             l_paevad_periodis = l_paevad_periodis - l_puudu_paevad;
             IF l_puudu_paevad = 0
@@ -147,9 +151,8 @@ BEGIN
                 l_paevad_periodis = 30;
             END IF;
 
-
             IF NOT empty(l_min_sots) AND NOT empty(l_min_palk) AND
-               (l_min_sotsmaks_alus * l_pk_summa * 0.01) <
+               (coalesce(l_min_sotsmaks_alus,0) * l_pk_summa * 0.01) <
                (l_min_palk * l_min_sots * l_pk_summa * 0.01) --arvetsame sotsmaks min.palgast
             THEN
 
@@ -172,6 +175,9 @@ BEGIN
             THEN
                 l_sotsmaks_min_palgast = (l_min_palk * l_min_sots * l_pk_summa * 0.01);
             END IF;
+
+            raise notice 'l_sotsmaks_min_palgast %, l_enne_arvestatud_sotsmaks %',l_sotsmaks_min_palgast, l_enne_arvestatud_sotsmaks;
+
 
             IF l_sotsmaks_min_palgast > coalesce(l_enne_arvestatud_sotsmaks, 0)
             THEN

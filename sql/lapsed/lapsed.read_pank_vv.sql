@@ -146,21 +146,26 @@ BEGIN
             -- обнуляем счетчик найденных счетов
             l_count = 0;
 
-            -- создаем параметры для расчета платежкм
-            SELECT row_to_json(row) INTO json_object
-            FROM (SELECT l_maksja_id      AS maksja_id,
-                         l_dokprop_id     AS dokprop_id,
-                         l_new_viitenr    AS viitenumber,
-                         v_pank_vv.selg   AS selg,
-                         v_pank_vv.number AS number,
-                         v_pank_vv.kpv    AS kpv,
-                         v_pank_vv.aa     AS aa,
-                         v_pank_vv.iban   AS maksja_arve,
-                         v_pank_vv.summa  AS summa) row;
+            l_mk_id = NULL;
+            IF coalesce(l_maksja_id, 0) > 0
+            THEN
 
-            -- создаем платежку
-            SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
-            FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
+                -- создаем параметры для расчета платежкм
+                SELECT row_to_json(row) INTO json_object
+                FROM (SELECT l_maksja_id      AS maksja_id,
+                             l_dokprop_id     AS dokprop_id,
+                             l_new_viitenr    AS viitenumber,
+                             v_pank_vv.selg   AS selg,
+                             v_pank_vv.number AS number,
+                             v_pank_vv.kpv    AS kpv,
+                             v_pank_vv.aa     AS aa,
+                             v_pank_vv.iban   AS maksja_arve,
+                             v_pank_vv.summa  AS summa) row;
+
+                -- создаем платежку
+                SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
+                FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
+            END IF;
 
             IF l_mk_id IS NOT NULL AND l_mk_id > 0
             THEN
