@@ -35,12 +35,18 @@ WITH arvtasu AS (
                AND at.kpv >= kpv_start
                AND at.kpv <= kpv_end
                AND d.status <> 3
+               AND a.liik = 0
                AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
          ) at
     GROUP BY doc_tasu_id, kpv, yksus, laps_id, rekv_id
 ),
      ettemaksud AS (
-         SELECT mk.id AS doc_tasu_id, ymk.summa, mk.kpv, ymk.yksus, ymk.laps_id, mk.rekvid
+         SELECT mk.id                                                 AS doc_tasu_id,
+                (CASE WHEN mk.opt = 1 THEN -1 ELSE 1 END) * ymk.summa AS summa,
+                mk.kpv,
+                ymk.yksus,
+                ymk.laps_id,
+                mk.rekvid
          FROM lapsed.cur_lapsed_mk mk
                   INNER JOIN lapsed.get_group_part_from_mk(mk.id, '2020-12-31') ymk ON ymk.mk_id = mk.id
 

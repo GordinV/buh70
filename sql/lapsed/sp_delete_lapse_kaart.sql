@@ -14,6 +14,7 @@ DECLARE
     v_doc        RECORD;
     json_ajalugu JSONB;
     DOC_STATUS   INTEGER = 3; -- документ удален
+    l_count      INTEGER;
 BEGIN
 
     SELECT lk.*,
@@ -65,8 +66,15 @@ BEGIN
     END IF;
 
     --удаление - нельзя удалять услугу, если на нее оформлены дневные табеля
+    SELECT count(id) INTO l_count
+    FROM lapsed.lapse_kaart lk
+    WHERE lk.parentid = v_doc.parentid
+      AND lk.nomid = v_doc.nomid
+      AND lk.properties ->> 'yksus' = v_doc.yksus
+      AND lk.staatus < 3 ;
 
-    IF exists((SELECT dt.id
+-- если услуг более 1, проверка не осуществляется
+    IF coalesce (l_count,0) < 2 and exists((SELECT dt.id
                FROM lapsed.day_taabel dt
                         INNER JOIN lapsed.day_taabel1 dt1 ON dt.id = dt1.parent_id
                         INNER JOIN libs.library l ON l.id = dt.grupp_id

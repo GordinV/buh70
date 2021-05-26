@@ -248,7 +248,7 @@ BEGIN
         END IF;
     END IF;
 
-    IF l_jaak > 0
+    IF l_jaak > 0 and doc_opt = 1 -- smk
     THEN
         -- произведем поиск и оплату счета
         PERFORM docs.sp_loe_tasu(doc_id, user_id);

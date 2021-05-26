@@ -21,7 +21,8 @@ module.exports = {
                      (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)              AS rahavoog,
                      (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)              AS artikkel,
                      coalesce((n.properties::JSONB ->> 'kas_inf3')::BOOLEAN, FALSE) AS kas_inf3,
-                     (n.properties::JSONB ->> 'valid')::DATE                        AS valid
+                     (n.properties::JSONB ->> 'valid')::DATE                        AS valid,
+                     (n.properties::JSONB ->> 'tyyp')::TEXT                         AS tyyp
               FROM libs.nomenklatuur n
               WHERE n.id = $1`,
         sqlAsNew: `select  $1::integer as id , $2::integer as userid, 'NOMENCLATURE' as doc_type_id,
@@ -47,7 +48,8 @@ module.exports = {
             null::varchar(20) as allikas,
             null::varchar(20) as rahavoog,
             null::varchar(20) as artikkel,
-            null::date as valid`,
+            null::date as valid,
+            null::text as tyyp`,
         query: null,
         multiple: false,
         alias: 'row',
@@ -56,7 +58,7 @@ module.exports = {
         {
             sql: `SELECT *
                   FROM jsonb_to_recordset(
-                               fnc_check_libs($2::JSON, $3::date, $1::INTEGER))
+                               fnc_check_libs($2::JSON, $3::DATE, $1::INTEGER))
                            AS x (error_message TEXT)
                   WHERE error_message IS NOT NULL
             `, //$1 rekvid, $2 tunnus, $3 kuupaev
@@ -69,7 +71,7 @@ module.exports = {
         {
             sql: `SELECT *
                   FROM jsonb_to_recordset(
-                               get_nom_kasutus($2::INTEGER, $3::date,
+                               get_nom_kasutus($2::INTEGER, $3::DATE,
                                                $1::INTEGER)
                            ) AS x (error_message TEXT, error_code INTEGER)
                   WHERE error_message IS NOT NULL
@@ -85,7 +87,7 @@ module.exports = {
     selectAsLibs: `SELECT *
                    FROM com_nomenclature
                    WHERE (rekvid = $1 OR rekvid IS NULL)
-                       ORDER BY kood`,
+                   ORDER BY kood`,
     returnData: {
         row: {}
     },
@@ -99,10 +101,11 @@ module.exports = {
                 FROM libs.sp_delete_nomenclature($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
-            {id: "id", name: "id", width: "10%", show: false},
+            {id: "id", name: "id", width: "0%", show: false},
             {id: "kood", name: "Kood", width: "25%"},
-            {id: "nimetus", name: "Nimetus", width: "35%"},
-            {id: "dok", name: "Dokument", width: "30%"}
+            {id: "nimetus", name: "Nimetus", width: "40%"},
+            {id: "dok", name: "Dokument", width: "25%"},
+            {id: "tyyp", name: "Tüüp", width: "10%"}
         ],
         sqlString: `SELECT id,
                            coalesce(kood, '')::VARCHAR(20)     AS kood,
@@ -112,6 +115,7 @@ module.exports = {
                            (n.properties ->> 'konto')::TEXT    AS konto,
                            (n.properties ->> 'tunnus')::TEXT   AS tunnus,
                            n.hind,
+                           (n.properties ->> 'tyyp')::TEXT     AS tyyp,
                            (n.properties ->> 'valid')::DATE    AS valid
                     FROM libs.nomenklatuur n
                     WHERE (n.rekvId = $1 OR n.rekvid IS NULL)

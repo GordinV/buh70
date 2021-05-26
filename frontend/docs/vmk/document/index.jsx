@@ -15,6 +15,7 @@ const DocumentTemplate = require('../../documentTemplate/index.jsx'),
     DokProp = require('../../../components/docprop/docprop.jsx'),
     relatedDocuments = require('../../../mixin/relatedDocuments.jsx'),
     ModalPage = require('./../../../components/modalpage/modalPage.jsx'),
+    Loading = require('./../../../components/loading/index.jsx'),
     styles = require('./vmk-style');
 
 const LIBRARIES = [
@@ -79,9 +80,13 @@ class Vmk extends React.Component {
      */
     renderer(self) {
         let isEditeMode = self.state.edited;
-        if (!self.docData) {
-            return
+
+        if (!self || !self.docData || !self.docData.kpv) {
+            return (<div style={styles.doc}>
+                <Loading label={'Laadimine...'}/>
+            </div>);
         }
+
 
         // формируем зависимости
         if (self.docData.relations) {
@@ -297,7 +302,6 @@ class Vmk extends React.Component {
                                        value={row.aa || ''}
                                        bindData={false}
                                        ref='aa'
-                                       readOnly={false}
                                        onChange={self.handleGridRowInput}/>
                         </div>
                         <div style={styles.docRow}>
@@ -386,7 +390,10 @@ class Vmk extends React.Component {
 
             if (asutusDataName) {
                 doc.gridRowData['asutus'] = asutusDataName.nimetus;
-                doc.gridRowData['aa'] = asutusDataName.pank;
+                // если не указан расч. счет и есть в карточке, то копируем
+                if (!doc.gridRowData['aa'] && asutusDataName.pank) {
+                    doc.gridRowData['aa'] = asutusDataName.pank;
+                }
             }
 
         }

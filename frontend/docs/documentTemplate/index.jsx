@@ -51,10 +51,10 @@ class DocumentTemplate extends React.Component {
         this.serverValidation = [];
         this.bpm = [];
         this.pages = props.pages;
-        this.loadingLibs =  {};
+        this.loadingLibs = {};
 
 
-            this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
+        this._bind('btnAddClick', 'btnEditClick', 'btnLogoutClick', 'validation',
             'handleInputChange', 'prepareParamsForToolbar', 'btnDeleteClick', 'btnPrintClick', 'btnEmailClick',
             'btnPdfClick',
             'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs', 'hasLibInCache',
@@ -334,8 +334,22 @@ class DocumentTemplate extends React.Component {
      *
      */
     btnTaskClick(taskName, kpv, gruppId) {
-        const task = this.bpm.find(task => task.name === taskName);
+        const task = this.bpm.find(task => {
+            console.log('task', task, taskName);
+            return task.name === taskName
+        });
+        if (!task) {
+            this.setState({
+                warning: `Viga, task ${taskName} ei leidnud`,
+                warningType: 'error'
+
+            });
+            return;
+        }
+
         let api = `/newApi/task/${task.task}`;
+
+        this.setState({warning: 'Töötan...', warningType: 'notValid'});
 
         this.fetchData('Post', api, kpv || gruppId ? {seisuga: kpv, gruppId: gruppId} : null).then((response) => {
             const dataRow = response.result;
@@ -353,12 +367,19 @@ class DocumentTemplate extends React.Component {
                     setTimeout(() => {
                         // koostatud uus dok, teeme reload
                         const current = `/${this.props.module}/${this.props.docTypeId}/${this.state.docId}`;
-                        this.props.history.replace(`/reload`);
-                        setTimeout(() => {
-                            this.props.history.replace(current);
-                        });
-                    }, 2000);
+                        if (task.task == 'KoostaTagasimakse') {
+                            // осуществит переход на карточку контр-агента
+                            this.props.history.push(`/lapsed/${docTypeId}/${docId}`);
+                        } else {
+                            this.props.history.replace(`/reload`);
+                            setTimeout(() => {
+                                this.props.history.replace(current);
+                            });
+                        }
+
+                    }, 2000)
                 });
+
             } else if (dataMessage) {
                 this.setState({
                     warning: `Viga, ${dataMessage}`,
@@ -687,7 +708,7 @@ class DocumentTemplate extends React.Component {
 
                         if (response.data.action && response.data.action === 'save' && response.data.result.error_code) {
 
-                            let error_teatis = response.data.result && response.data.result.error_message ? response.data.result.error_message: '';
+                            let error_teatis = response.data.result && response.data.result.error_message ? response.data.result.error_message : '';
                             // error in save
                             this.setState({
                                 warning: `Tekkis viga: salvestamine ebaõnnestus ${error_teatis}`,
@@ -736,8 +757,7 @@ class DocumentTemplate extends React.Component {
         // start loading
         if (!this.loadingLibs[libName]) {
             this.loadingLibs[libName] = true;
-        }
-        else {
+        } else {
             // уже идет загрузка
             return;
         }
@@ -967,7 +987,9 @@ class DocumentTemplate extends React.Component {
                 return row;
             }
         });
-        let columnType  = rea.length && rea[0].type ? rea[0].type: 'text';
+
+
+        let columnType = rea.length && rea[0].type ? rea[0].type : 'text';
 
         switch (columnType) {
             case 'text':

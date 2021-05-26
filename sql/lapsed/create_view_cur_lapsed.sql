@@ -7,12 +7,14 @@ SELECT l.id,
        l.nimi,
        l.properties,
        array_to_string(lk.yksused,','::text)::TEXT AS yksused,
-       lk.rekv_ids
+       lk.rekv_ids,
+       lk.lopp_kpv
 FROM lapsed.laps l
-         JOIN (SELECT parentid, array_agg(rekvid) AS rekv_ids, array_agg(yksused) AS yksused
+         JOIN (SELECT parentid, array_agg(rekvid) AS rekv_ids, array_agg(yksused) AS yksused, max(lopp_kpv) as lopp_kpv
                FROM (
                         SELECT parentid,
                                rekvid,
+                               (k.properties->>'lopp_kpv')::date as lopp_kpv,
                                (get_unique_value_from_json(json_agg((k.properties ->> 'yksus')::TEXT || CASE
                                                                                                             WHEN (k.properties ->> 'all_yksus') IS NOT NULL
                                                                                                                 THEN
@@ -21,7 +23,7 @@ FROM lapsed.laps l
                                                                                                             ELSE '' END)::JSONB)) AS yksused
                         FROM lapsed.lapse_kaart k
                         WHERE k.staatus <> 3
-                        GROUP BY parentid, rekvid
+                        GROUP BY parentid, rekvid, (k.properties->>'lopp_kpv')
                     ) qry
                GROUP BY parentid) lk ON lk.parentid = l.id
 WHERE l.staatus <> 3

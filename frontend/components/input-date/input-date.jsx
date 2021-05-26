@@ -59,7 +59,8 @@ class InputDate extends React.PureComponent {
         let inputPlaceHolder = this.props.placeholder || this.props.title,
             inputStyle = Object.assign({}, styles.input,
                 this.props.width ? {width: this.props.width} : {},
-                this.state.readOnly ? styles.readOnly : {}
+                this.state.readOnly ? styles.readOnly : {},
+                this.props.styles ? this.props.styles: {}
             );
 
         return (

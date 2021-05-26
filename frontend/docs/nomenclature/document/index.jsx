@@ -12,7 +12,7 @@ const
     CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     styles = require('./nomenclature-styles');
 
-const {LIBRARIES, TAXIES, UHIK} = require('./../../../../config/constants').NOMENCLATURE;
+const {LIBRARIES, TAXIES, UHIK, TYYP} = require('./../../../../config/constants').NOMENCLATURE;
 
 
 class Nomenclature extends React.PureComponent {
@@ -116,6 +116,17 @@ class Nomenclature extends React.PureComponent {
                                     btnDelete={isEditeMode}
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditeMode}/>
+                            <Select title="Tüüp:"
+                                    name='tyyp'
+                                    data={TYYP}
+                                    collId='kood'
+                                    value={self.docData.tyyp || ''}
+                                    defaultValue={self.docData.tyyp}
+                                    ref="select-tyyp"
+                                    btnDelete={isEditeMode}
+                                    onChange={self.handleInputChange}
+                                    readOnly={!isEditeMode}/>
+
                         </div>
                     </div>
                     <div style={styles.docRow}>

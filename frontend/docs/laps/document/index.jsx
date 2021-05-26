@@ -6,26 +6,31 @@ const PropTypes = require('prop-types');
 const React = require('react');
 const fetchData = require('./../../../../libs/fetchData');
 const createEmptyFilterData = require('./../../../../libs/createEmptyFilterData');
+const compareDate = require('./../../../../libs/compareDates');
 
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
+    InputDate = require('../../../components/input-date/input-date.jsx'),
     styles = require('./laps.styles');
 
 const LIBRARIES = [{id: 'lapse_grupp', filter: ``}];
 
 const DOCS = ['ARV', 'SMK', 'LAPSE_TAABEL'];
 
+
 class Laps extends React.PureComponent {
     constructor(props) {
         super(props);
+
         this.state = {
             loadedData: false,
             docId: props.docId ? props.docId : Number(props.match.params.docId),
             vanemId: null,
-            module: 'lapsed'
+            module: 'lapsed',
+            kehtiv: new Date().toISOString().substring(0, 10)
         };
 
         this.renderer = this.renderer.bind(this);
@@ -33,6 +38,7 @@ class Laps extends React.PureComponent {
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
         this.fetchData = this.fetchData.bind(this);
         this.setFilter = this.setFilter.bind(this);
+        this.handleInputChange = this.handleInputChange.bind(this);
 
         this.docId = props.docId ? props.docId : Number(props.match.params.docId);
 
@@ -98,6 +104,13 @@ class Laps extends React.PureComponent {
             this.docId = self.docData.id;
         }
 
+        // наложить фильтр на действующие услуги
+        if (gridTeenusteData && gridTeenusteData.length) {
+            gridTeenusteData = gridTeenusteData.filter(row => {
+                return compareDate (row.lopp_kpv,this.state.kehtiv);
+            });
+        }
+console.log('this.state.kehtiv',this.state.kehtiv);
 
         return (
             <div style={styles.doc}>
@@ -160,9 +173,21 @@ class Laps extends React.PureComponent {
                 </div>
 
                 <div style={styles.docRow}>
-                    <label ref="label">
-                        {'Teenused'}
-                    </label>
+                    <div style={styles.docColumn}>
+
+                        <label ref="label">
+                            {'Teenused'}
+                        </label>
+                    </div>
+                    <div style={styles.docColumn}>
+                        <InputDate title='Kehtiv seisuga: '
+                                   name='kehtivSeisuga'
+                                   value={this.state.kehtiv}
+                                   ref='input-kehtiv'
+                                   readOnly={false}
+                                   styles={styles.kehtivSeisuga}
+                                   onChange={this.handleInputChange}/>
+                    </div>
                 </div>
                 <div style={styles.docRow}>
 
@@ -358,6 +383,15 @@ class Laps extends React.PureComponent {
         };
 
         return fetchData['fetchDataPost'](url, params)
+    }
+
+    /**
+     * отработает фильтр на данные услуг
+     */
+    handleInputChange(inputName, inputValue) {
+        // обработчик изменений
+        this.setState({kehtiv: inputValue});
+
     }
 }
 

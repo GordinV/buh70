@@ -25,6 +25,8 @@ const DocContext = require('./../../doc-context.js');
 class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
+        let today = new Date;
+
         this.onClickHandler = this.onClickHandler.bind(this);
         this.handleClick = this.handleClick.bind(this);
         this.renderer = this.renderer.bind(this);
@@ -34,7 +36,8 @@ class Documents extends React.PureComponent {
             read: 0,
             filtri_read: 0,
             isReport: false,
-            txtReport:[]
+            txtReport:[],
+            kehtivus: today
         };
 
     }

@@ -11,7 +11,7 @@ CREATE OR
                                       OUT pm NUMERIC,
                                       OUT sm NUMERIC,
                                       OUT summa NUMERIC,
-                                      OUT mvt NUMERIC(14,4),
+                                      OUT mvt NUMERIC(14, 4),
                                       OUT error_code INTEGER,
                                       OUT result INTEGER,
                                       OUT error_message TEXT,
@@ -24,6 +24,7 @@ DECLARE
     l_libid         INTEGER         = params ->> 'libid';
     l_kpv           DATE            = coalesce((params ->> 'kpv') :: DATE, current_date);
     l_alus_summa    NUMERIC         = params ->> 'alus_summa'; -- для расчета налогов
+    l_used_mvt      NUMERIC         = params ->> 'mvt'; -- для учета применненого необлагаемого
     is_umardamine   BOOLEAN         = coalesce((params ->> 'umardamine')::BOOLEAN, FALSE); -- если истина, то это округление
     is_percent      BOOLEAN         = coalesce((params ->> 'is_percent') :: BOOLEAN,
                                                TRUE); -- kas pk summa percentis (100%)
@@ -336,7 +337,9 @@ BEGIN
     THEN
 
         -- не будем считать MVT, а используем уже примененный
-        mvt = coalesce(l_isiku_mvt, 0);
+        mvt = CASE WHEN l_used_mvt IS NULL THEN coalesce(l_isiku_mvt, 0) ELSE l_used_mvt END;
+
+        raise notice 'umardamine tm mvt %, l_used_mvt %, l_tulud_kokku %, summa %, l_tululiik %', mvt, l_used_mvt, l_tulud_kokku, summa, l_tululiik;
 
         -- но если доход менее 500 (минимального оклада)
         IF (l_tulud_kokku < l_min_palk)
@@ -378,6 +381,9 @@ BEGIN
 
     tm = palk.fnc_calc_tm(summa, mvt, tki, pm, l_tululiik);
     tm_kokku = palk.fnc_calc_tm(l_tulud_kokku, mvt, tki, pm, NULL::TEXT);
+
+    raise notice 'umardamine tm %, tm_kokku %', tm, tm_kokku;
+
 
     selg = coalesce(selg, '') + 'TM arvestus:' + round(tm, 2) :: TEXT + ltEnter;
     IF summa IS NOT NULL

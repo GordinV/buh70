@@ -47,6 +47,9 @@ module.exports = {
         width: 'auto',
         opacity: '1',
         top: '100px'
+    },
+    kehtivSeisuga: {
+        width: 'min-content'
     }
 
 };

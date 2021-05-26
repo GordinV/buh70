@@ -602,83 +602,89 @@ WITH qrySaldoAndmik AS (
            AND konto <> '206030'
          GROUP BY rekvid
          UNION ALL
+         SELECT s.rekvid,
 
-
-         --25.05.2012
+                --25.05.2012
 --Materiaalse ja immateriaalse põhivara soetus
 --         Jooksva per saldoandmikust (Konto 155* kreedit (RV 01)) - (Sum: Konto 155* deebet (RV 01)) +(Sum: Konto 156* kreedit (RV 01)) -
-             --         (Sum: Konto 156* deebet (RV 01)) +( 601002 Kreedit miinus deebet)+(650990 kreedit - deebet) + (sum: konto 2082* kreedit (RV 01; RV 05)) -
-             --         (sum: konto 2082* deebet (RV 01; RV 05)) + (sum: konto 2582* kreedit (RV 01; RV 05)) -
-             --         (sum: konto 2582* deebet (RV 01; RV 05)) + (sum: konto 350200 kreedit (RV 01)) - (sum: konto 350200 deebet (RV 01)) +
-             --         (sum: konto 350220 kreedit (RV 01)) - (sum: konto 350220 deebet (RV 01)) + (sum: konto 350240 kreedit (RV 01)) -
-             --         (sum: konto 350240 deebet RV 01)) + (sum 257* kreedit (RV 01)) - (sum 257* kreedit RV 01)) +
-             --         (sum: konto 2086* kreedit (RV 01; RV 05)) - (sum: konto 2086* deebet (RV 01; RV 05)) +
-             --         (sum: konto 2586* kreedit (RV 01; RV 05)) - (sum: konto 2586* deebet (RV 01; RV 05))  +
-             --         (Jooksva per saldoandmikust (sum: konto 201010 kreedit + konto 25001* kreedit) - (sum konto 201010 deebet + konto 25001* deebet))
-             --         - (Eelmise per saldoandmikust (sum kontod 201010 kreedit + konto 25001* kreedit) - (sum kontod 201010 deebet + konto 25001* deebet))
-             --         SELECT S.rekvid,
+                --         (Sum: Konto 156* deebet (RV 01)) +( 601002 Kreedit miinus deebet)+(650990 kreedit - deebet) + (sum: konto 2082* kreedit (RV 01; RV 05)) -
+                --         (sum: konto 2082* deebet (RV 01; RV 05)) + (sum: konto 2582* kreedit (RV 01; RV 05)) -
+                --         (sum: konto 2582* deebet (RV 01; RV 05)) + (sum: konto 350200 kreedit (RV 01)) - (sum: konto 350200 deebet (RV 01)) +
+                --         (sum: konto 350220 kreedit (RV 01)) - (sum: konto 350220 deebet (RV 01)) + (sum: konto 350240 kreedit (RV 01)) -
+                --         (sum: konto 350240 deebet RV 01)) + (sum 257* kreedit (RV 01)) - (sum 257* kreedit RV 01)) +
+                --         (sum: konto 2086* kreedit (RV 01; RV 05)) - (sum: konto 2086* deebet (RV 01; RV 05)) +
+                --         (sum: konto 2586* kreedit (RV 01; RV 05)) - (sum: konto 2586* deebet (RV 01; RV 05))  +
+                --         (Jooksva per saldoandmikust (sum: konto 201010 kreedit + konto 25001* kreedit) - (sum konto 201010 deebet + konto 25001* deebet))
+                --         - (Eelmise per saldoandmikust (sum kontod 201010 kreedit + konto 25001* kreedit) - (sum kontod 201010 deebet + konto 25001* deebet))
+                --         SELECT S.rekvid,
                 '71'                                                             AS konto,
                 'Rahavood investeerimistegevusest'                               AS grupp,
                 'Tasutud põhivara eest (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
                 'Materiaalse ja immateriaalse põhivara soetus'                   AS nimetus,
-                sum(kr - db)  AS summa
+                sum(kr - db)                                                     AS summa
          FROM qrySaldoAndmik S
          WHERE ((left(konto, 3) IN ('155', '156', '257') AND rahavoo = '01')
-             OR (left(konto,6) IN ('601002', '650990'))
+             OR (left(konto, 6) IN ('601002', '650990'))
              OR (left(konto, 4) IN ('2082', '2582', '2086', '2586') AND
-             rahavoo IN ('01', '05'))
-             OR (left(konto,6) IN ('350200', '350220', '350240') AND rahavoo = '01')
-             OR (left(konto,6) = '201010'
-             OR left(konto, 5) = '25001')
-         )
+                 rahavoo IN ('01', '05'))
+             OR (left(konto, 6) IN ('350200', '350220', '350240') AND rahavoo = '01')
+             OR (left(konto, 6) = '201010'
+                 OR left(konto, 5) = '25001')
+                   )
          GROUP BY rekvid
          UNION ALL
-        select                 '71'                                                             AS konto,
-                       'Rahavood investeerimistegevusest'                               AS grupp,
-                       'Tasutud põhivara eest (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
-                       'Materiaalse ja immateriaalse põhivara soetus'                   AS nimetus,
-             sum(kr - db)  AS summa
-         FROM eelmiseSaldoAndmik s
-         where
-
-
-
--- -Jooksva per saldoandmikust (Sum: Konto 154* kreedit (RV 01)) - (Sum: Konto 154* deebet (RV 01))
-         SELECT S.rekvid,
-                '71'                                                             AS konto,
+         SELECT '71'                                                             AS konto,
                 'Rahavood investeerimistegevusest'                               AS grupp,
                 'Tasutud põhivara eest (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
-                'Kinnisvarainvesteeringute soetus'                               AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE (left(konto, 3) IN ('154') AND rahavoo = '01')
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0)              AS summa
+                'Materiaalse ja immateriaalse põhivara soetus'                   AS nimetus,
+                sum(kr - db)                                                     AS summa
+         FROM eelmiseSaldoAndmik s
+         WHERE left(konto,6) in ('201010')
+
+            union all
+-- -Jooksva per saldoandmikust (Sum: Konto 154* kreedit (RV 01)) - (Sum: Konto 154* deebet (RV 01))
+         SELECT S.rekvid,
+             '71' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Tasutud põhivara eest (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Kinnisvarainvesteeringute soetus' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE (LEFT (konto, 3) IN (
+             '154') AND rahavoo =
+             '01')
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (Sum: Konto 157* kreedit (RV 01)) - (Sum: Konto 157* deebet (RV 01))
          SELECT S.rekvid,
-                '71'                                                             AS konto,
-                'Rahavood investeerimistegevusest'                               AS grupp,
-                'Tasutud põhivara eest (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
-                'Bioloogiliste varade soetus'                                    AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE (left(konto, 3) IN ('157') AND rahavoo = '01')
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0)              AS summa
+             '71' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Tasutud põhivara eest (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Bioloogiliste varade soetus' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE (LEFT (konto, 3) IN (
+             '157') AND rahavoo =
+             '01')
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0)         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
          -- Jooksva per saldoandmikust (Sum: Konto 157* kreedit (RV 01)) - (Sum: Konto 157* deebet (RV 01))
          SELECT S.rekvid,
-                '71'                                                             AS konto,
-                'Rahavood investeerimistegevusest'                               AS grupp,
-                'Tasutud põhivara eest (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
-                'Bioloogiliste varade soetus'                                    AS nimetus,
-                sum(kr - db)                                                     AS summa
+             '71' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Tasutud põhivara eest (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Bioloogiliste varade soetus' AS nimetus,
+             sum(kr - db ) AS summa
          FROM qrySaldoAndmik S
-         WHERE left(konto, 3) IN ('157')
-           AND rahavoo = '01'
+         WHERE LEFT (konto, 3) IN  ('157') AND rahavoo = '01'
          GROUP BY rekvid
          UNION ALL
          --Jooksva per Saldoandmikust (Sum: Kontod 381000+381001+381100+381101+381110+381111+381115+381116+381120+381121+381125+381126+381130+381131+381140+381141+381145+381146+
@@ -686,132 +692,298 @@ WITH qrySaldoAndmik AS (
 -- - (Sum: 381000+381001+381100+381101+381110+381111+381115+381116+381120+381121+381125+381126+381130+381131+381140+381141+381145+381146+381150+381151+381160+
 --381161+381170+381171+381180+381181+381300+381301+381320+381321+381360+381361+381400+381401+381410+381411+381420+381421 deebet)
          SELECT S.rekvid,
-                '72'                                                                 AS konto,
-                'Rahavood investeerimistegevusest'                                   AS grupp,
-                'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
-                'Müügist saadud tulu'                                                AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto IN
-                                           ('381000', '381001', '381100', '381101', '381110', '381111',
-                                            '381115',
-                                            '381116', '381120', '381121', '381125',
-                                            '381126', '381130', '381131', '381140', '381141', '381145',
-                                            '381146',
-                                            '381150', '381151', '381160', '381161',
-                                            '381170', '381171', '381180', '381181', '381300', '381301',
-                                            '381320',
-                                            '381321', '381360', '381361', '381400',
-                                            '381401', '381410', '381411', '381420', '381421')
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0)                  AS summa
+             '72' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Müügist saadud tulu' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE konto IN
+             (
+             '381000',
+             '381001',
+             '381100',
+             '381101',
+             '381110',
+             '381111',
+             '381115',
+             '381116',
+             '381120',
+             '381121',
+             '381125',
+             '381126',
+             '381130',
+             '381131',
+             '381140',
+             '381141',
+             '381145',
+             '381146',
+             '381150',
+             '381151',
+             '381160',
+             '381161',
+             '381170',
+             '381171',
+             '381180',
+             '381181',
+             '381300',
+             '381301',
+             '381320',
+             '381321',
+             '381360',
+             '381361',
+             '381400',
+             '381401',
+             '381410',
+             '381411',
+             '381420',
+             '381421')
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
          --(Eelmise aruandeper saldoandmikust (sum: kontod 10301* deebet + konto 15301* deebet) - (sum kontod 10301* kreedit + konto 15301* kreedit)) -
 --(Jooksva per saldoandmikust (sum: kontod 10301* deebet + konto 15301* deebet) - (sum kontod 10301* kreedit + konto 15301* kreedit))
          SELECT S.rekvid,
-                '72'                                                                 AS konto,
-                'Rahavood investeerimistegevusest'                                   AS grupp,
-                'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
-                'Korrigeerimine laekumata nõuete muutusega'                          AS nimetus,
-                coalesce(sum(db - kr)
-                             FILTER (WHERE left(konto, 5) IN ('10301', '15301')
-                                 AND kuu = 12 AND
-                                           aasta = year(l_kpv) - 1), 0) -
-                coalesce(sum(db - kr)
-                             FILTER (WHERE left(konto, 5) IN ('10301', '15301')
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0)                  AS summa
+             '72' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Korrigeerimine laekumata nõuete muutusega' AS nimetus,
+             COALESCE (sum(db - kr)
+             FILTER (WHERE LEFT (konto, 5) IN (
+             '10301',
+             '15301')
+             AND kuu = 12 AND
+             aasta = YEAR (l_kpv) - 1), 0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE LEFT (konto, 5
+         )
+         IN
+         (
+         '10301'
+         ,
+         '15301'
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --(Jooksva per saldoandmikust (sum: konto 203910 kreedit) - (sum konto 203910 deebet)) - (Eelmise per saldoandmikust (sum kontod 203910 kreedit) - (sum kontod 203910 deebet))
          SELECT S.rekvid,
-                '72'                                                                 AS konto,
-                'Rahavood investeerimistegevusest'                                   AS grupp,
-                'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
-                'Korrigeerimine laekunud ettemaksete muutusega'                      AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto = '203910'
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0) -
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto = '203910'
-                                 AND kuu = 12 AND
-                                           aasta = year(l_kpv) - 1), 0)              AS summa
+             '72' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Korrigeerimine laekunud ettemaksete muutusega' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE konto =
+             '203910'
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto = '203910'
+             AND kuu = 12 AND
+             aasta = YEAR (l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --(Eelmise aruandeper saldoandmikust (sum: kontod 10325* deebet + konto 15325* deebet) - (sum kontod 10325* kreedit + konto 15325* kreedit)) - (Jooksva per saldoandmikust (sum: kontod 10325* deebet + konto 15325* deebet) - (sum kontod 10325* kreedit + konto 15325* kreedit))
          SELECT S.rekvid,
-                '72'                                                                 AS konto,
-                'Rahavood investeerimistegevusest'                                   AS grupp,
-                'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
-                'Korrigeerimine laekunud ettemaksete muutusega'                      AS nimetus,
-                coalesce(sum(db - kr)
-                             FILTER (WHERE left(konto, 5) IN ('10325', '15325')
-                                 AND kuu = 12 AND
-                                           aasta = year(l_kpv) - 1), 0) -
-                coalesce(sum(db - kr)
-                             FILTER (WHERE left(konto, 5) IN ('10325', '15325')
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0)                  AS summa
+             '72' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Korrigeerimine laekunud ettemaksete muutusega' AS nimetus,
+             COALESCE (sum(db - kr)
+             FILTER (WHERE LEFT (konto, 5) IN (
+             '10325',
+             '15325')
+             AND kuu = 12 AND
+             aasta = YEAR (l_kpv) - 1), 0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE LEFT (konto, 5
+         )
+         IN
+         (
+         '10325'
+         ,
+         '15325'
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per Saldoandmikust (Sum: Konto 605020 kreedit) - (Sum: Konto 605020 deebet)
          SELECT S.rekvid,
-                '72'                                                                  AS konto,
-                'Rahavood investeerimistegevusest'                                    AS grupp,
-                'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)'  AS all_grupp,
-                'Korrigeerimine ebatõenäoliselt laekuvaks arvatud järelmaksunõuetega' AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto = '605020'
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0)                   AS summa
+             '72' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Korrigeerimine ebatõenäoliselt laekuvaks arvatud järelmaksunõuetega' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE konto =
+             '605020'
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --(Jooksva per saldoandmikust (sum: konto 206030 kreedit) - (sum konto 206030 deebet)) - (Eelmise per saldoandmikust (sum kontod 206030 kreedit) - (sum kontod 206030 deebet)) + (jooksva per saldoandmikust (konto 700030 kreedit + konto 710030 kreedit - konto 700030 deebet - konto 710030 deebet)
          SELECT S.rekvid,
-                '72'                                                                 AS konto,
-                'Rahavood investeerimistegevusest'                                   AS grupp,
-                'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
-                'Korrigeerimine kustutatud EVP-de jäägi muutusega'                   AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto = '206030'
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0) -
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto = '206030'
-                                 AND kuu = 12 AND
-                                           aasta = year(l_kpv) - 1), 0)              AS summa
+             '72' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Korrigeerimine kustutatud EVP-de jäägi muutusega' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE konto =
+             '206030'
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto = '206030'
+             AND kuu = 12 AND
+             aasta = YEAR (l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (Sum: Konto 1032* kreedit (RV 01) + sum konto 1532* kreedit (RV 01)) - (Sum: Konto 1032* deebet (RV 01)+ sum konto 1532* deebet (RV 01))
          SELECT S.rekvid,
-                '7'                                                                  AS konto,
-                'Rahavood investeerimistegevusest'                                   AS grupp,
-                'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
-                'Antud laenud'                                                       AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 4) IN ('1032', '1532') AND rahavoo = '01'
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0)                  AS summa
+             '7' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Antud laenud' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 4) IN (
+             '1032',
+             '1532') AND rahavoo =
+             '01'
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (Sum: Konto 1032* kreedit (RV 02) + sum konto 1532* kreedit (RV 02)) - (Sum: Konto 1032* deebet (RV 02)+ sum konto 1532* deebet (RV 02))
          SELECT S.rekvid,
-                '7'                                                                  AS konto,
-                'Rahavood investeerimistegevusest'                                   AS grupp,
-                'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
-                'Tagasi makstud laenud'                                              AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 4) IN ('1032', '1532') AND rahavoo = '02'
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0)                  AS summa
+             '7' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Tagasi makstud laenud' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 4) IN (
+             '1032',
+             '1532') AND rahavoo =
+             '02'
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
@@ -822,113 +994,285 @@ WITH qrySaldoAndmik AS (
 --(konto 203540 kreedt) + (konto 203540 deebet) -
 --(konto 257800 kreedit) + (konto 257800 deebet))
          SELECT S.rekvid,
-                '7'                                                                    AS konto,
-                'Rahavood investeerimistegevusest'                                     AS grupp,
-                'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)'   AS all_grupp,
-                'Korrigeerimine laenutegevuseks saadud sihtfinantseerimise muutusega'  AS nimetus,
-                (coalesce(sum(db - kr)
-                              FILTER (WHERE konto = '103540'
-                                  AND kuu = 12 AND
-                                            aasta = year(l_kpv) - 1), 0) -
-                 coalesce(sum(kr)
-                              FILTER (WHERE konto = '203540'
-                                  AND kuu = month(l_kpv) AND
-                                            aasta = year(l_kpv)), 0) +
-                 coalesce(sum(db)
-                              FILTER (WHERE konto = '203540'
-                                  AND kuu = month(l_kpv) AND
-                                            aasta = year(l_kpv)), 0) -
-                 coalesce(sum(kr)
-                              FILTER (WHERE konto = '257800'
-                                  AND kuu = 12 AND
-                                            aasta = year(l_kpv) - 1), 0) +
-                 coalesce(sum(db)
-                              FILTER (WHERE konto = '257800'
-                                  AND kuu = 12 AND
-                                            aasta = year(l_kpv) - 1), 0)) -
-                (coalesce(sum(db - kr)
-                              FILTER (WHERE konto = '103540'
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                 coalesce(sum(kr)
-                              FILTER (WHERE konto = '203540 '
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                 coalesce(sum(db)
-                              FILTER (WHERE konto = '203540'
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                 coalesce(sum(kr)
-                              FILTER (WHERE konto = '257800'
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                 coalesce(sum(db)
-                              FILTER (WHERE konto = '257800'
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0)) AS summa
+             '7' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             'Laekunud põhivara müügist (v.a. finantsinvesteeringud ja osalused)' AS all_grupp,
+             'Korrigeerimine laenutegevuseks saadud sihtfinantseerimise muutusega' AS nimetus,
+             (COALESCE (sum(db - kr)
+             FILTER (WHERE konto =
+             '103540'
+             AND kuu = 12 AND
+             aasta = YEAR (l_kpv) - 1), 0) -
+             COALESCE (sum(kr)
+             FILTER (WHERE konto =
+             '203540'
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0) +
+             COALESCE (sum(db)
+             FILTER (WHERE konto =
+             '203540'
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0) -
+             COALESCE (sum(kr)
+             FILTER (WHERE konto =
+             '257800'
+             AND kuu = 12 AND
+             aasta = YEAR (l_kpv) - 1), 0) +
+             COALESCE (sum(db)
+             FILTER (WHERE konto =
+             '257800'
+             AND kuu = 12 AND
+             aasta = YEAR (l_kpv) - 1), 0)
+         )
+         -
+         (
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE konto = '103540'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         )
+         FILTER
+         (
+         WHERE konto = '203540 '
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         db
+         )
+         FILTER
+         (
+         WHERE konto = '203540'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         )
+         FILTER
+         (
+         WHERE konto = '257800'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         db
+         )
+         FILTER
+         (
+         WHERE konto = '257800'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 -- --Jooksva per saldoandmikust (Sum: Konto 101* kreedit (RV 01) + sum konto 151* kreedit (RV 01)) - (Sum: Konto 101* deebet (RV 01)+ sum konto 151* deebet (RV 01))
          SELECT S.rekvid,
-                '7'                                                 AS konto,
-                'Rahavood investeerimistegevusest'                  AS grupp,
-                ''                                                  AS all_grupp,
-                'Tasutud finantsinvesteeringute soetamisel'         AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 3) IN ('101', '151') AND rahavoo = '01'
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0) AS summa
+             '7' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Tasutud finantsinvesteeringute soetamisel' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 3) IN (
+             '101',
+             '151') AND rahavoo =
+             '01'
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 -- --Jooksva per saldoandmikust (Sum: Konto 101* kreedit (RV 02) + sum konto 151* kreedit (RV 02)) - (Sum: Konto 101* deebet (RV 02)+ sum konto 151* deebet (RV 02))
          SELECT S.rekvid,
-                '7'                                                 AS konto,
-                'Rahavood investeerimistegevusest'                  AS grupp,
-                ''                                                  AS all_grupp,
-                'Laekunud finantsinvesteeringute müügist'           AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 3) IN ('101', '151') AND rahavoo = '02'
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0) AS summa
+             '7' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Laekunud finantsinvesteeringute müügist' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 3) IN (
+             '101',
+             '151') AND rahavoo =
+             '02'
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 -- --Jooksva per saldoandmikust (Sum: Konto 150* kreedit (RV 01)) - (Sum: Konto 150* deebet (RV 01))
          SELECT S.rekvid,
-                '7'                                                 AS konto,
-                'Rahavood investeerimistegevusest'                  AS grupp,
-                ''                                                  AS all_grupp,
-                'Tasutud osaluste soetamisel'                       AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 3) IN ('150') AND rahavoo = '01'
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0) AS summa
+             '7' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Tasutud osaluste soetamisel' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 3) IN (
+             '150') AND rahavoo =
+             '01'
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 -- --Jooksva per saldoandmikust (Sum: Konto 150* kreedit (RV 02)) - (Sum: Konto 150* deebet (RV 02))
          SELECT S.rekvid,
-                '7'                                                 AS konto,
-                'Rahavood investeerimistegevusest'                  AS grupp,
-                ''                                                  AS all_grupp,
-                'Laekunud osaluste müügist'                         AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 3) IN ('150') AND rahavoo = '02'
-                                 AND kuu = month(l_kpv) AND
-                                           aasta = year(l_kpv)), 0) AS summa
+             '7' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Laekunud osaluste müügist' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 3) IN (
+             '150') AND rahavoo =
+             '02'
+             AND kuu = MONTH (l_kpv) AND
+             aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
          --(Jooksva per saldoandmikust (Sum: Konto 655500 kreedit+ konto 652010 kreedit) - (sum konto 655500  deebet + konto 652010 deebet) +
 --(sum 103110 kreedit RV 02 - Sum Konto 10311 0 deebet RV 02))
          SELECT S.rekvid,
-                '7'                                                                  AS konto,
-                'Rahavood investeerimistegevusest'                                   AS grupp,
-                ''                                                                   AS all_grupp,
-                'Laekunud dividendid'                                                AS nimetus,
-                coalesce(sum(db - kr)
-                             FILTER (WHERE konto IN ('655500', '652010') AND rahavoo = '02'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto IN ('103110') AND rahavoo = '02'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '7' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Laekunud dividendid' AS nimetus,
+             COALESCE (sum(db - kr)
+             FILTER (WHERE konto IN (
+             '655500',
+             '652010') AND rahavoo =
+             '02'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto IN ('103110'
+         )
+         AND
+         rahavoo
+         =
+         '02'
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
@@ -942,142 +1286,449 @@ WITH qrySaldoAndmik AS (
 --((sum 1032* deebet RV 22 - sum 1032* kreedit RV 22 + sum 1532* deebet RV 22 - sum 1532* kreedit RV 22)) +
 --((konto 101900 deebet RV 21 - konto 101900 kreedit RV 21))
          SELECT S.rekvid,
-                '7'                                                                  AS konto,
-                'Rahavood investeerimistegevusest'                                   AS grupp,
-                ''                                                                   AS all_grupp,
-                'Laekunud intressid ja muu finantstulu'                              AS nimetus,
-                coalesce(sum(db - kr)
-                             FILTER (WHERE konto LIKE '10310%'
-                                 AND kuu = 12 AND aasta = year(l_kpv) - 1), 0) +
-                (coalesce(sum(kr - db)
-                              FILTER (WHERE konto LIKE '6580%'
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                 coalesce(sum(kr - db)
-                              FILTER (WHERE konto = '658910'
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                 coalesce(sum(kr - db)
-                              FILTER (WHERE konto LIKE '10310%'
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0)) +
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto LIKE '655%'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                coalesce(sum(db - kr)
-                             FILTER (WHERE konto LIKE '101%' AND rahavoo IN ('21', '29', '22')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                coalesce(sum(db - kr)
-                             FILTER (WHERE konto LIKE '151%' AND rahavoo IN ('21', '29', '22')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto = '655500'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                (coalesce(sum(db - kr)
-                              FILTER (WHERE konto LIKE '1032%' AND rahavoo = '22'
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                 coalesce(sum(db - kr)
-                              FILTER (WHERE konto LIKE '1532%' AND rahavoo = '22'
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0)) +
-                coalesce(sum(db - kr)
-                             FILTER (WHERE konto = '101900' AND rahavoo = '21'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '7' AS konto,
+             'Rahavood investeerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Laekunud intressid ja muu finantstulu' AS nimetus,
+             COALESCE (sum(db - kr)
+             FILTER (WHERE konto LIKE
+             '10310%'
+             AND kuu = 12 AND aasta = YEAR (l_kpv) - 1), 0
+         )
+         +
+         (
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto LIKE '6580%'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto = '658910'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto LIKE '10310%'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto LIKE '655%'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE konto LIKE '101%' AND rahavoo IN ('21'
+             , '29'
+             , '22'
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE konto LIKE '151%' AND rahavoo IN ('21'
+             , '29'
+             , '22'
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto = '655500'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         -
+         (
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE konto LIKE '1032%' AND rahavoo = '22'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE konto LIKE '1532%' AND rahavoo = '22'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE konto = '101900' AND rahavoo = '21'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 -- --Jooksva per saldoandmikust (Sum konto 2080* kreedit (RV 05) - konto 2080* deebet (RV 05) + sum konto 2580* kreedit (RV 05) - konto 2580* deebet (RV 05)
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Laekunud võlakirjade emiteerimisest'                                AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 4) IN ('2080', '2580') AND rahavoo = '05'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Laekunud võlakirjade emiteerimisest' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 4) IN (
+             '2080',
+             '2580') AND rahavoo =
+             '05'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (Sum konto 2080* kreedit (RV 06) - konto 2080* deebet (RV 06) + sum konto 2580* kreedit (RV 06) - konto 2580* deebet (RV 06)
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Lunastatud võlakirjad'                                              AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 4) IN ('2080', '2580') AND rahavoo = '06'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Lunastatud võlakirjad' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 4) IN (
+             '2080',
+             '2580') AND rahavoo =
+             '06'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (Sum konto 2081* kreedit (RV 05) - konto 2081* deebet (RV 05) + sum konto 2581* kreedit (RV 05) - konto 2581* deebet (RV 05)
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Laekunud laenud'                                                    AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 4) IN ('2081', '2581') AND rahavoo = '05'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Laekunud laenud' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 4) IN (
+             '2081',
+             '2581') AND rahavoo =
+             '05'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (Sum konto 2081* kreedit (RV 06) - konto 2081* deebet (RV 06) + sum konto 2581* kreedit (RV 06) - konto 2581* deebet (RV 06)
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Tagasi makstud laenud'                                              AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 4) IN ('2081', '2581') AND rahavoo = '06'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Tagasi makstud laenud' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 4) IN (
+             '2081',
+             '2581') AND rahavoo =
+             '06'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --(Jooksva per saldoandmikust (Sum konto 208100 kreedit - konto 208100 deebet)) - (eelmise per saldoandmikust (sum konto 208100 kreedit- konto 208100 deebet))
          SELECT S.rekvid,
-                '8'                                                            AS konto,
-                'Rahavood finantseerimistegevusest'                            AS grupp,
-                ''                                                             AS all_grupp,
-                'Arvelduskrediidi muutus'                                      AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto = '208100'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto = '208100'
-                                 AND kuu = 12 AND aasta = year(l_kpv) - 1), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Arvelduskrediidi muutus' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE konto =
+             '208100'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto = '208100'
+             AND kuu = 12 AND aasta = YEAR (l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (Sum konto 2082* kreedit (RV 06) - konto 2082* deebet (RV 06) + sum konto 2582* kreedit (RV 06) - konto 2582* deebet (RV 06)
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Tagasi makstud kapitalirendikohustused'                             AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 4) IN ('2082', '2582') AND rahavoo = '06'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Tagasi makstud kapitalirendikohustused' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 4) IN (
+             '2082',
+             '2582') AND rahavoo =
+             '06'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (Sum konto 2083* kreedit (RV 05) - konto 2083* deebet (RV 05) + sum konto 2583* kreedit (RV 05) - konto 2583* deebet (RV 05)
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Laekunud faktooringlepingute alusel'                                AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 4) IN ('2083', '2583') AND rahavoo = '05'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Laekunud faktooringlepingute alusel' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 4) IN (
+             '2083',
+             '2583') AND rahavoo =
+             '05'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (Sum konto 2083* kreedit (RV 06) - konto 2083* deebet (RV 06) + sum konto 2583* kreedit (RV 06) - konto 2583* deebet (RV 06)
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Tagasi makstud faktooringlepingute alusel'                          AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE left(konto, 4) IN ('2083', '2583') AND rahavoo = '06'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Tagasi makstud faktooringlepingute alusel' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE LEFT (konto, 4) IN (
+             '2083',
+             '2583') AND rahavoo =
+             '06'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
@@ -1089,31 +1740,131 @@ WITH qrySaldoAndmik AS (
 
 --konto 153556 deebet) - (sum konto 103556 kreedit + konto 103557 kreedit + konto 153556 kreedit))
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Laekunud sihtfinanteerimine põhivara soetuseks'                     AS nimetus,
-                (coalesce(sum(kr - db)
-                              FILTER (WHERE konto LIKE '257%' AND rahavoo = '05'
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                 coalesce(sum(kr - db)
-                              FILTER (WHERE konto LIKE '3502%'
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                 coalesce(sum(kr - db)
-                              FILTER (WHERE konto LIKE '3502%' AND rahavoo IN ('19', '01')
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                 coalesce(sum(kr - db)
-                              FILTER (WHERE konto IN ('203856', '203857')
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0)) -
-                (coalesce(sum(kr - db)
-                              FILTER (WHERE konto IN ('203856', '203857')
-                                  AND kuu = 12 AND aasta = year(l_kpv) - 1), 0) +
-                 coalesce(sum(db - kr)
-                              FILTER (WHERE konto IN ('103556', '103557', '153556')
-                                  AND kuu = 12 AND aasta = year(l_kpv) - 1), 0)) -
-                coalesce(sum(db - kr)
-                             FILTER (WHERE konto IN ('103556', '103557', '153556')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Laekunud sihtfinanteerimine põhivara soetuseks' AS nimetus,
+             (COALESCE (sum(kr - db)
+             FILTER (WHERE konto LIKE
+             '257%' AND rahavoo =
+             '05'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0) +
+             COALESCE (sum(kr - db)
+             FILTER (WHERE konto LIKE
+             '3502%'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0) -
+             COALESCE (sum(kr - db)
+             FILTER (WHERE konto LIKE
+             '3502%' AND rahavoo IN (
+             '19',
+             '01')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0) +
+             COALESCE (sum(kr - db)
+             FILTER (WHERE konto IN (
+             '203856',
+             '203857')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0)
+         )
+         -
+         (
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto IN ('203856'
+             , '203857'
+         )
+         AND
+         kuu
+         =
+         12
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE konto IN ('103556'
+             , '103557'
+             , '153556'
+         )
+         AND
+         kuu
+         =
+         12
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE konto IN ('103556'
+             , '103557'
+             , '153556'
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
@@ -1122,24 +1873,120 @@ WITH qrySaldoAndmik AS (
 --(sum konto 103856, 103857, 1537 deebet miinus kreedit) - (Eelmise per saldoandmikust (sum kontod 203556, 203557, 253550 kreedit miinus deebet) +
 --(Eelmise per saldoandmikust (konto 103856, 103857, 1537 deebet miinus kreedit)
          SELECT S.rekvid,
-                '8'                                                            AS konto,
-                'Rahavood finantseerimistegevusest'                            AS grupp,
-                ''                                                             AS all_grupp,
-                'Makstud sihtfinantseerimine põhivara soetuseks'               AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE
-                                     (left(konto, 4) IN ('4502') OR konto IN ('203556', '203557', '253550') OR
-                                      left(konto, 1) = '1' AND rahavoo = '24')
-                                     AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                coalesce(sum(kr - db)
-                             FILTER (WHERE (left(konto, 4) IN ('1537') OR konto IN ('103856', '103857'))
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto IN ('203556', '203557', '253550')
-                                 AND kuu = 12 AND aasta = year(l_kpv) - 1), 0) +
-                COALESCE(sum(db - kr)
-                             FILTER (WHERE (konto IN ('103856', '103857') OR konto LIKE '1537%')
-                                 AND kuu = 12 AND aasta = YEAR(l_kpv) - 1), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Makstud sihtfinantseerimine põhivara soetuseks' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE
+             (LEFT (konto, 4) IN (
+             '4502') OR konto IN (
+             '203556',
+             '203557',
+             '253550') OR
+             LEFT (konto, 1) =
+             '1' AND rahavoo =
+             '24')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE (LEFT (konto
+             , 4) IN ('1537') OR konto IN ('103856'
+             , '103857')
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto IN ('203556'
+             , '203557'
+             , '253550'
+         )
+         AND
+         kuu
+         =
+         12
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE (konto IN ('103856'
+             , '103857') OR konto LIKE '1537%'
+         )
+         AND
+         kuu
+         =
+         12
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
@@ -1147,16 +1994,49 @@ WITH qrySaldoAndmik AS (
 --(Jooksva per saldoandmikust (sum: konto 253800 kreedit + konto 323880 kreedit) - (sum konto 253800 deebet + konto 323880 deebet)) -
 --(Eelmise per saldoandmikust (sum konto 253800 kreedit) - (sum kontod 253800 deebet))
          SELECT S.rekvid,
-                '8'                                                            AS konto,
-                'Rahavood finantseerimistegevusest'                            AS grupp,
-                ''                                                             AS all_grupp,
-                'Laekunud liitumistasud'                                       AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto IN ('253800', '323880')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto IN ('253800', '323880')
-                                 AND kuu = 12 AND aasta = year(l_kpv) - 1), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Laekunud liitumistasud' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE konto IN (
+             '253800',
+             '323880')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto IN ('253800'
+             , '323880'
+         )
+         AND
+         kuu
+         =
+         12
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
@@ -1167,32 +2047,176 @@ WITH qrySaldoAndmik AS (
 --jooksva per saldoandmikust (konto 208* kreedit (RV 42) - konto 208* deebet (RV 42)) + jooksva per saldoandmikust (konto 258* kreedit (RV 42) - konto 258* deebet (RV 42))
 
          SELECT S.rekvid,
-                '8'                                                                      AS konto,
-                'Rahavood finantseerimistegevusest'                                      AS grupp,
-                ''                                                                       AS all_grupp,
-                'Makstud intressid'                                                      AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE (konto LIKE '650%' OR konto = '203200')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto IN ('203200')
-                                 AND kuu = 12 AND aasta = year(l_kpv) - 1), 0) +
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto = '209000'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto = '209000'
-                                 AND kuu = 12 AND aasta = year(l_kpv) - 1), 0) +
-                coalesce(sum(db - kr)
-                             FILTER (WHERE konto = '103300'
-                                 AND kuu = 12 AND aasta = year(l_kpv) - 1), 0) -
-                coalesce(sum(db - kr)
-                             FILTER (WHERE (konto = '103300' OR konto LIKE '256%' AND rahavoo = '42')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                coalesce(sum(kr - db)
-                             FILTER (WHERE
-                                     (konto LIKE '208%' AND rahavoo = '42' OR konto LIKE '258%' AND rahavoo = '42')
-                                     AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Makstud intressid' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE (konto LIKE
+             '650%' OR konto =
+             '203200')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto IN ('203200'
+         )
+         AND
+         kuu
+         =
+         12
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto = '209000'
+             AND kuu = MONTH (l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto = '209000'
+             AND kuu = 12 AND aasta = YEAR (l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE konto = '103300'
+             AND kuu = 12 AND aasta = YEAR (l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE (konto = '103300' OR konto LIKE '256%' AND rahavoo = '42'
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE
+             (konto LIKE '208%' AND rahavoo = '42' OR konto LIKE '258%' AND rahavoo = '42'
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
@@ -1201,85 +2225,173 @@ WITH qrySaldoAndmik AS (
 
 --jooksva per saldoandmikust (konto 258* kreedit (RV 41*) - konto 258* deebet (RV 41*))
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Makstud muud finantskulud'                                          AS nimetus,
-                (coalesce(sum(kr - db)
-                              FILTER (WHERE (konto LIKE '6589%')
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                 coalesce(sum(kr)
-                              FILTER (WHERE konto IN ('658910')
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                 coalesce(sum(db)
-                              FILTER (WHERE konto IN ('658910')
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0)) +
-                coalesce(sum(db - kr)
-                             FILTER (WHERE (konto LIKE '258%' OR konto LIKE '208%') AND rahavoo = '41'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Makstud muud finantskulud' AS nimetus,
+             (COALESCE (sum(kr - db)
+             FILTER (WHERE (konto LIKE
+             '6589%')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0) -
+             COALESCE (sum(kr)
+             FILTER (WHERE konto IN (
+             '658910')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0) +
+             COALESCE (sum(db)
+             FILTER (WHERE konto IN (
+             '658910')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0)
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE (konto LIKE '258%' OR konto LIKE '208%'
+         )
+         AND
+         rahavoo
+         =
+         '41'
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --(Jooksva per saldoandmikust (Sum konto 297* kreedit - konto 297* deebet)) - (eelmise per saldoandmikust (Sum konto 297* kreedit - konto 297* deebet))
          SELECT S.rekvid,
-                '8'                                                            AS konto,
-                'Rahavood finantseerimistegevusest'                            AS grupp,
-                ''                                                             AS all_grupp,
-                'Riskimaandamise reservi muutus'                               AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE (konto LIKE '297%')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                coalesce(sum(kr)
-                             FILTER (WHERE konto IN ('658910')
-                                 AND kuu = 12 AND aasta = year(l_kpv) - 1), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Riskimaandamise reservi muutus' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE (konto LIKE
+             '297%')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         -
+         COALESCE
+         (
+         sum
+         (
+         kr
+         )
+         FILTER
+         (
+         WHERE konto IN ('658910'
+         )
+         AND
+         kuu
+         =
+         12
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --(Jooksva per saldoandmikust (konto 203210 kreedit RV 06 miinus konto 203210 deebet RV 06)
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Makstud dividendid'                                                 AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE (konto = '203210' AND rahavoo = '06')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Makstud dividendid' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE (konto =
+             '203210' AND rahavoo =
+             '06')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (Sum (konto 29* RV 05 kreedit - konto 29* RV 05 deebet)) + (sum konto 289000 kreedit RV 05 - sum konto 289000 deebet RV 05))
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Laekunud sissemaksed omakapitali'                                   AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE (konto LIKE '29%' OR konto = '289000') AND rahavoo = '05'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Laekunud sissemaksed omakapitali' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE (konto LIKE
+             '29%' OR konto =
+             '289000') AND rahavoo =
+             '05'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (Sum (konto 29* RV 06 kreedit - konto 29* RV 06 deebet)) + (sum konto 289000 kreedit RV 06 - sum konto 289000 deebet RV 06))
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Tasutud väljamaksed omakapitalist'                                  AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE (konto LIKE '29%' OR konto = '289000') AND rahavoo = '06'
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Tasutud väljamaksed omakapitalist' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE (konto LIKE
+             '29%' OR konto =
+             '289000') AND rahavoo =
+             '06'
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --(Jooksva per saldoandmikust (Sum konto 68* kreedit - konto 68* deebet))
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Dividendidelt makstud tulumaks'                                     AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE (konto LIKE '68%')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Dividendidelt makstud tulumaks' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE (konto LIKE
+             '68%')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
@@ -1287,55 +2399,242 @@ WITH qrySaldoAndmik AS (
 --konto 700002 deebet + konto 710002 deebet + konto 700030 deebet + konto 710030 deebet) + kontod 1* kreedit (RV 15 + RV 16) - kontod 1* deebet (RV 15 + RV 16) +
 --kontod 2* kreedit (RV 15 + RV 16 + RV 35 + RV 36) - kontod 2* deebet (RV 15 + RV 16 + RV 35 + RV 36)
          SELECT S.rekvid,
-                '8'                                                                  AS konto,
-                'Rahavood finantseerimistegevusest'                                  AS grupp,
-                ''                                                                   AS all_grupp,
-                'Netofinantseerimine eelavest'                                       AS nimetus,
-                coalesce(sum(kr - db)
-                             FILTER (WHERE (konto LIKE '7%')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) -
-                (coalesce(sum(kr)
-                              FILTER (WHERE (konto IN ('700002', '710002', '700030', '710030'))
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                 coalesce(sum(db)
-                              FILTER (WHERE (konto IN ('700002', '710002', '700030', '710030'))
-                                  AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0)) +
-                coalesce(sum(kr - db)
-                             FILTER (WHERE (konto LIKE '1%' AND rahavoo IN ('15', '16'))
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                coalesce(sum(kr - db)
-                             FILTER (WHERE konto LIKE '2%' AND rahavoo IN ('15', '16', '35', '36')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '8' AS konto,
+             'Rahavood finantseerimistegevusest' AS grupp,
+             '' AS all_grupp,
+             'Netofinantseerimine eelavest' AS nimetus,
+             COALESCE (sum(kr - db)
+             FILTER (WHERE (konto LIKE
+             '7%')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         -
+         (
+         COALESCE
+         (
+         sum
+         (
+         kr
+         )
+         FILTER
+         (
+         WHERE (konto IN ('700002'
+             , '710002'
+             , '700030'
+             , '710030')
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         db
+         )
+         FILTER
+         (
+         WHERE (konto IN ('700002'
+             , '710002'
+             , '700030'
+             , '710030')
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE (konto LIKE '1%' AND rahavoo IN ('15'
+             , '16')
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         kr
+         -
+         db
+         )
+         FILTER
+         (
+         WHERE konto LIKE '2%' AND rahavoo IN ('15'
+             , '16'
+             , '35'
+             , '36'
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Eelmise per saldoandmikust (sum konto 100* deebet - konto 100* kreedit) + (sum konto 101100 deebet - konto 101100 kreedit)
          SELECT S.rekvid,
-                '91'                                                           AS konto,
-                ''                                                             AS grupp,
-                ''                                                             AS all_grupp,
-                'Raha ja selle ekvivalendid perioodi alguses'                  AS nimetus,
-                coalesce(sum(db - kr)
-                             FILTER (WHERE (konto LIKE '100%')
-                                 AND kuu = 12 AND aasta = year(l_kpv) - 1), 0) +
-                coalesce(sum(db - kr)
-                             FILTER (WHERE (konto = '101100')
-                                 AND kuu = 12 AND aasta = year(l_kpv) - 1), 0) AS summa
+             '91' AS konto,
+             '' AS grupp,
+             '' AS all_grupp,
+             'Raha ja selle ekvivalendid perioodi alguses' AS nimetus,
+             COALESCE (sum(db - kr)
+             FILTER (WHERE (konto LIKE
+             '100%')
+             AND kuu = 12 AND aasta = YEAR (l_kpv) - 1), 0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE (konto = '101100'
+         )
+         AND
+         kuu
+         =
+         12
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         -
+         1
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid
          UNION ALL
 --Jooksva per saldoandmikust (sum konto 100* deebet - konto 100* kreedit) + (sum konto 101100 deebet - konto 101100 kreedit)
          SELECT S.rekvid,
-                '92'                                                                 AS konto,
-                ''                                                                   AS grupp,
-                ''                                                                   AS all_grupp,
-                'Raha ja selle ekvivalendid perioodi lõpus'                          AS nimetus,
-                coalesce(sum(db - kr)
-                             FILTER (WHERE (konto LIKE '100%')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) +
-                coalesce(sum(db - kr)
-                             FILTER (WHERE (konto = '101100')
-                                 AND kuu = month(l_kpv) AND aasta = year(l_kpv)), 0) AS summa
+             '92' AS konto,
+             '' AS grupp,
+             '' AS all_grupp,
+             'Raha ja selle ekvivalendid perioodi lõpus' AS nimetus,
+             COALESCE (sum(db - kr)
+             FILTER (WHERE (konto LIKE
+             '100%')
+             AND kuu = MONTH (l_kpv) AND aasta = YEAR (l_kpv)), 0
+         )
+         +
+         COALESCE
+         (
+         sum
+         (
+         db
+         -
+         kr
+         )
+         FILTER
+         (
+         WHERE (konto = '101100'
+         )
+         AND
+         kuu
+         =
+         MONTH
+         (
+         l_kpv
+         )
+         AND
+         aasta
+         =
+         YEAR
+         (
+         l_kpv
+         )
+         )
+         ,
+         0
+         )
+         AS
+         summa
          FROM qrySaldoAndmik S
          GROUP BY rekvid)
 SELECT rekvid AS rekv_id,

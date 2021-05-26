@@ -87,7 +87,13 @@ const Smk = {
                          trim(a.nimetus)    AS asutus,
                          trim(a.aadress)    AS aadress,
                          k.parentid         AS parent_id,
-                         k1.*,
+                         k1.aa::TEXT        AS aa,
+                         k1.asutusid,
+                         k1.konto,
+                         k1.nomid,
+                         k1.proj,
+                         k1.summa,
+                         k1.tunnus,
                          'EUR'::VARCHAR(20) AS valuuta,
                          1::NUMERIC(12, 4)  AS kuurs,
                          jid.number         AS lausnr
@@ -287,20 +293,24 @@ const Smk = {
             actualStep: false
         },
         {
-            name: 'Uuenda arv tasumine',
-            action: 'uuendaArveTasumine',
+            name: 'Koosta tagasimakse',
+            task: 'KoostaTagasimakse',
+            action: 'KoostaTagasimakse',
             type: 'manual',
-            showDate: false,
-            actualStep: false
+            showDate: true,
+            actualStep: false,
+
         },
+
 
     ],
 
-    uuendaArveTasumine: {
+    KoostaTagasimakse: {
         command: `SELECT error_code, result, error_message, doc_type_id
-                  FROM docs.create_new_order($2::INTEGER, (SELECT to_jsonb(row.*) FROM (SELECT $1 AS arv_id) row))`, //$1 - docs.doc.id, $2 - userId
+                  FROM docs.create_return_mk($2::INTEGER, (SELECT to_jsonb(row.*)
+                                                           FROM (SELECT $1 AS mk_id, $3::DATE AS maksepaev) row))`, //$1 - docs.doc.id, $2 - userId, $3 - maksepaev
         type: "sql",
-        alias: 'uuendaArveTasumine'
+        alias: 'KoostaTagasimakse'
     },
 
 

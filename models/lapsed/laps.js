@@ -30,9 +30,9 @@ module.exports = {
                      coalesce(ll.jaak, 0)::NUMERIC                 AS jaak
               FROM lapsed.laps l
                        LEFT OUTER JOIN lapsed.lapse_saldod(current_date, $1) ll ON ll.laps_id = l.id AND
-                                                                   ll.rekv_id IN (SELECT rekvid
-                                                                                  FROM ou.userid u
-                                                                                  WHERE u.id = $2)
+                                                                                   ll.rekv_id IN (SELECT rekvid
+                                                                                                  FROM ou.userid u
+                                                                                                  WHERE u.id = $2)
               WHERE l.id = $1::INTEGER`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
@@ -81,7 +81,8 @@ module.exports = {
                          to_char(coalesce((k.properties ->> 'alg_kpv')::DATE, date(year(), 1, 1)), 'DD.MM.YYYY') ||
                          ' - ' ||
                          to_char(coalesce((k.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)),
-                                 'DD.MM.YYYY')                                                    AS kehtivus
+                                 'DD.MM.YYYY')                                                    AS kehtivus,
+                         coalesce((k.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31))      AS lopp_kpv
                   FROM lapsed.lapse_kaart k
                            INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
                            LEFT OUTER JOIN libs.library gr
@@ -141,10 +142,11 @@ module.exports = {
             gridConfiguration: [
                 {id: "id", name: "id", width: "10%", show: false},
                 {id: "row_id", name: "Jrk", width: "3%", show: true, hideFilter: true},
-                {id: "isikukood", name: "Isikukood", width: "30%"},
-                {id: "nimi", name: "Nimi", width: "40%"},
+                {id: "isikukood", name: "Isikukood", width: "20%"},
+                {id: "nimi", name: "Nimi", width: "30%"},
                 {id: "viitenumber", name: "Viitenumber", width: "20%"},
                 {id: "yksused", name: "Üksused", width: "30%"},
+                {id: "lopp_kpv", name: "Kehtivus", width: "20%",  type: 'date', interval: true},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean'}
             ],
             sqlString:
@@ -156,7 +158,8 @@ module.exports = {
                             lapsed.get_viitenumber($1, l.id) AS viitenumber,
                             $1::INTEGER                      AS rekvid,
                             $2::INTEGER                      AS user_id,
-                            count(*) OVER ()                 AS rows_total
+                            count(*) OVER ()                 AS rows_total,
+                            to_char(lopp_kpv,'DD.MM.YYYY')::text as lopp_kpv
                      FROM lapsed.cur_lapsed l
                      WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
             `,     //  $1 всегда ид учреждения, $2 - userId
@@ -184,7 +187,7 @@ module.exports = {
                          tulemus -> 'error_code'                                       AS error_code,
                          coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
                          tulemus -> 'error_message'                                    AS error_message,
-                         tulemus ->> 'viitenr'                                          AS viitenr
+                         tulemus ->> 'viitenr'                                         AS viitenr
                   FROM (
                            SELECT to_jsonb(
                                           lapsed.koosta_arve_taabeli_alusel($2::INTEGER, id::INTEGER, $3::DATE)) tulemus
@@ -202,7 +205,7 @@ module.exports = {
                          tulemus -> 'error_code'                                       AS error_code,
                          coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
                          tulemus -> 'error_message'                                    AS error_message,
-                         tulemus ->> 'viitenr'                                          AS viitenr
+                         tulemus ->> 'viitenr'                                         AS viitenr
                   FROM (
                            SELECT to_jsonb(lapsed.koosta_ettemaksu_arve($2::INTEGER, id::INTEGER, $3::DATE)) tulemus
                            FROM lapsed.laps
@@ -223,8 +226,8 @@ module.exports = {
                          tulemus -> 'result'                                           AS result,
                          tulemus -> 'error_code'                                       AS error_code,
                          coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
-                         tulemus ->> 'error_message'                                    AS error_message,
-                         tulemus ->> 'viitenr'                                          AS viitenr
+                         tulemus ->> 'error_message'                                   AS error_message,
+                         tulemus ->> 'viitenr'                                         AS viitenr
                   FROM (
                            SELECT to_jsonb(lapsed.arvesta_taabel($2::INTEGER, id::INTEGER, $3::DATE)) tulemus
                            FROM lapsed.laps
@@ -262,7 +265,7 @@ module.exports = {
     },
     SaamaYksuseTeenused: {
         command: `SELECT *
-                  FROM lapsed.saama_yksuse_teenused($2::INTEGER, $1::INTEGER, $4::INTEGER,  $3::DATE)`,//$1 docId, $2 - userId
+                  FROM lapsed.saama_yksuse_teenused($2::INTEGER, $1::INTEGER, $4::INTEGER, $3::DATE)`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'SaamaYksuseTeenused'
     },

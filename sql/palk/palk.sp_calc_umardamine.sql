@@ -122,12 +122,13 @@ BEGIN
         GROUP BY po.tululiik, po.palk_liik
         ORDER BY po.palk_liik
         LOOP
-
+            RAISE NOTICE 'tululiik % arv_count % summa %', v_tululiik.tululiik, v_tululiik.arv_count, v_tululiik.summa;
             IF v_tululiik.arv_count > 1
             THEN
                 -- есть необходимость в округлении
-                SELECT po.*,
-                       po.tululiik
+                SELECT sum(summa) OVER () AS summa,
+                       lepingid,
+                       libid
                        INTO v_leping
                 FROM palk.cur_palkoper po
                          INNER JOIN palk.tooleping t ON t.id = po.lepingId
@@ -148,12 +149,15 @@ BEGIN
                              v_leping.lepingId AS lepingid,
                              v_leping.libId    AS libid,
                              v_tululiik.summa  AS alus_summa,
+                             v_tululiik.mvt    AS mvt,
                              TRUE              AS umardamine
                      ) row;
 
                 -- вызов процедура расчета
                 SELECT *
                 FROM palk.sp_calc_arv(user_id, l_params) INTO STRICT v_arv;
+
+                RAISE NOTICE 'arvestatud v_arv.tm %', v_arv.tm;
 
                 -- get fact summa done before
                 SELECT sum(po.tulubaas)                                     AS mvt,
@@ -184,19 +188,21 @@ BEGIN
                   AND po.rekvId = l_rekvid
                   AND po.palk_liik = 'ARVESTUSED';
 
-                IF coalesce(v_arv.tm, 0) = 0 AND coalesce(v_arv.tm_kokku, 0) > 0
+
+                IF coalesce(v_arv.tm, 0) = 0 AND coalesce(v_arv.tm_kokku, 0) > 0 AND v_tululiik.tululiik = '10'
                 THEN
                     -- если налог по виду дохода 0, но общий более нуля
                     v_arv.tm = v_arv.tm_kokku;
                 END IF;
-
                 -- check if we need to round taxes
                 IF coalesce(v_arv.tm, 0) - round(coalesce(v_fakt_arv.tm, 0), 2) <> 0 OR
                    coalesce(v_arv.sm, 0) - round(coalesce(v_fakt_arv.sm, 0), 2) <> 0 OR
                    coalesce(v_arv.tki, 0) - round(coalesce(v_fakt_arv.tki, 0), 2) <> 0 OR
                    coalesce(v_arv.tka, 0) - round(coalesce(v_fakt_arv.tka, 0), 2) <> 0 OR
                    coalesce(v_arv.pm, 0) - round(coalesce(v_fakt_arv.pm, 0), 2) <> 0 OR
-                   coalesce(v_arv.mvt, 0) - round(coalesce(v_fakt_arv.mvt, 0), 2) <> 0
+                   (CASE WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1 ELSE 0 END) * coalesce(v_arv.mvt, 0) -
+                   (CASE WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1 ELSE 0 END) *
+                   round(coalesce(v_fakt_arv.mvt, 0), 2) <> 0
                 THEN
                     --saving diff
                     -- will find last arvestus
@@ -234,6 +240,8 @@ BEGIN
                            coalesce(v_arv.tki - round(v_fakt_arv.tki, 2), 0) :: NUMERIC AS tootumaks,
                            coalesce(v_arv.tka - round(v_fakt_arv.tka, 2), 0) :: NUMERIC AS tka,
                            coalesce(v_arv.pm - round(v_fakt_arv.pm, 2), 0) :: NUMERIC   AS pensmaks,
+                           (CASE WHEN v_tululiik.tululiik = '10' THEN 1 ELSE 0 END) *
+                           CASE WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1 ELSE 0 END *
                            coalesce(v_arv.mvt - round(v_fakt_arv.mvt, 2), 0) :: NUMERIC AS tulubaas,
                            v_tululiik.tululiik                                          AS tululiik,
                            'Umardamine' :: TEXT || v_arv.selg                           AS selg

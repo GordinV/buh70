@@ -312,7 +312,7 @@ exports.executeTask = async (req, res) => {
 
     let taskParams;
 
-    if ((params.docTypeId === 'LAPS' || params.docTypeId === 'PAEVA_TAABEL' || params.docTypeId === 'LAPSE_GRUPP'))  {
+    if ((params.docTypeId === 'LAPS' || params.docTypeId === 'PAEVA_TAABEL' || params.docTypeId === 'LAPSE_GRUPP' || params.docTypeId === 'SMK'))  {
         //@TODO сделать универсальный набор параметров
         taskParams = [params.docId, user.userId, seisuga];
     }

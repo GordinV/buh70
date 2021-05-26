@@ -82,6 +82,10 @@ module.exports = {
             {id: 3, kood: 'päev', name: 'Päev'},
             {id: 4, kood: 'kuu', name: 'Kuu'},
             {id: 5, kood: 'aasta', name: 'Aasta'}
+        ],
+
+        TYYP: [
+            {id: 2, kood: 'SOODUSTUS', name: ''}
         ]
 
     },

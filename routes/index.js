@@ -101,6 +101,7 @@ module.exports = function (app) {
     app.post('/calc/koostaEttemaksuArved', checkAuth, require('./lapsed/koostaEttemaksud').post); //checkAuth
     app.post('/calc/koostaArved', checkAuth, require('./lapsed/koostaArved').post); //checkAuth
     app.post('/calc/arvestaTaabel', checkAuth, require('./lapsed/arvestaTaabel').post); //checkAuth
+    app.post('/calc/koostaTagasimakse', checkAuth, require('./raama/koostaTagasimakse').post); //checkAuth
     app.post('/calc/loe_makse', checkAuth, require('./lapsed/loe_makse').post); //checkAuth
     app.post('/calc/:taskName', checkAuth, require('./calc').post); //checkAuth
 

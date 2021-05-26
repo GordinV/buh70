@@ -35,6 +35,9 @@ DECLARE
     doc_grupp     TEXT    = doc_data ->> 'grupp';
     doc_oppe_tyyp TEXT    = doc_data ->> 'oppe_tyyp';
     doc_luhi_nimi TEXT    = doc_data ->> 'luhi_nimi';
+    doc_tyyp      TEXT    = CASE
+                                WHEN doc_data ->> 'tyyp' = '0' THEN NULL::TEXT
+                                ELSE doc_data ->> 'tyyp' END; -- тип услуги, нул - простая, soodustus - льгота
     doc_INF3      BOOLEAN = coalesce((doc_data ->> 'kas_inf3')::BOOLEAN, FALSE);
     doc_valid     DATE    = CASE WHEN empty(doc_data ->> 'valid') THEN NULL::DATE ELSE (doc_data ->> 'valid')::DATE END;
     json_object   JSONB;
@@ -74,7 +77,8 @@ BEGIN
                                doc_oppe_tyyp AS oppe_tyyp
                        ) row;
 
-    json_object = fnc_check_libs(json_object::JSON, case when doc_valid is null then current_date else doc_valid end, user_rekvid);
+    json_object = fnc_check_libs(json_object::JSON, CASE WHEN doc_valid IS NULL THEN current_date ELSE doc_valid END,
+                                 user_rekvid);
 
     IF (jsonb_array_length(json_object) > 0)
     THEN
@@ -105,7 +109,8 @@ BEGIN
                  doc_vailkaine                  AS vailkaine,
                  doc_grupp                      AS grupp,
                  doc_INF3                       AS kas_inf3,
-                 doc_oppe_tyyp                  AS oppe_tyyp
+                 doc_oppe_tyyp                  AS oppe_tyyp,
+                 doc_tyyp                       AS tyyp
          ) row;
 
     IF doc_id IS NULL OR doc_id = 0
