@@ -5,7 +5,8 @@ CREATE OR REPLACE FUNCTION lapsed.get_group_part_from_mk(l_mk_id INTEGER, l_kpv 
         mk_id   INTEGER,
         yksus   TEXT,
         summa   NUMERIC(14, 4),
-        laps_id INTEGER
+        laps_id INTEGER,
+        opt     INTEGER
 
     ) AS
 $BODY$
@@ -15,26 +16,26 @@ $BODY$
     -- считаем пропорцию
     -- возвращаем сумму по группам
 WITH qryMk AS (
-    (
-        SELECT mk.parentid                          AS id,
-               mk.maksepaev                         AS kpv,
-               l.parentid                           AS laps_id,
-               lk.properties ->> 'yksus'            AS yksus,
-               (lk.properties ->> 'alg_kpv')::DATE  AS alg_kp,
-               (lk.properties ->> 'lopp_kpv')::DATE AS lopp_kp,
-               lk.hind,
-               sum(lk.hind) OVER ()                 AS total_amount,
-               mk.jaak                              AS makse_summa,
-               mk.rekvid
-        FROM docs.mk mk
-                 INNER JOIN lapsed.liidestamine l ON l.docid = mk.parentid
-                 LEFT OUTER JOIN lapsed.lapse_kaart lk
-                                 ON lk.parentid = l.parentid
-                                     AND lk.staatus <> 3
-                                     AND (lk.properties ->> 'alg_kpv')::DATE <= l_kpv::DATE
-                                     AND (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv::DATE
-                                     AND lk.rekvid = mk.rekvid
-        WHERE mk.parentid = l_mk_id)
+    SELECT mk.parentid                          AS id,
+           mk.maksepaev                         AS kpv,
+           l.parentid                           AS laps_id,
+           lk.properties ->> 'yksus'            AS yksus,
+           (lk.properties ->> 'alg_kpv')::DATE  AS alg_kp,
+           (lk.properties ->> 'lopp_kpv')::DATE AS lopp_kp,
+           lk.hind,
+           sum(lk.hind) OVER ()                 AS total_amount,
+           mk.jaak                              AS makse_summa,
+           mk.rekvid,
+           mk.opt
+    FROM docs.mk mk
+             INNER JOIN lapsed.liidestamine l ON l.docid = mk.parentid
+             LEFT OUTER JOIN lapsed.lapse_kaart lk
+                             ON lk.parentid = l.parentid
+                                 AND lk.staatus <> 3
+                                 AND (lk.properties ->> 'alg_kpv')::DATE <= l_kpv::DATE
+                                 AND (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv::DATE
+                                 AND lk.rekvid = mk.rekvid
+    WHERE mk.parentid = l_mk_id
 ),
      -- Последняя действующая услуга
      qryViimaneTeenus AS (
@@ -42,10 +43,9 @@ WITH qryMk AS (
                 lk.parentid               AS laps_id
          FROM lapsed.lapse_kaart lk
                   INNER JOIN qryMk ON lk.parentid = qryMk.laps_id
-             AND lk.rekvid = qryMk.rekvid
-         WHERE (lk.properties ->> 'lopp_kpv')::DATE <= qryMk.kpv
-           AND lk.staatus <> 3
-         ORDER BY lk.id DESC
+         WHERE lk.staatus <> 3
+           AND lk.rekvid = qryMk.rekvid
+         ORDER BY (lk.properties ->> 'lopp_kpv')::DATE DESC
          LIMIT 1
      ),
      -- Первая действующая услуга
@@ -54,10 +54,9 @@ WITH qryMk AS (
                 lk.parentid               AS laps_id
          FROM lapsed.lapse_kaart lk
                   INNER JOIN qryMk ON lk.parentid = qryMk.laps_id
-         WHERE (lk.properties ->> 'alg_kpv')::DATE >= qryMk.kpv
-           AND lk.staatus <> 3
+         WHERE lk.staatus <> 3
            AND lk.rekvid = qryMk.rekvid
-         ORDER BY lk.id
+         ORDER BY (lk.properties ->> 'alg_kpv')::DATE
          LIMIT 1
      ),
      qryLaekumised AS (
@@ -65,14 +64,15 @@ WITH qryMk AS (
                 coalesce(qryMk.yksus, coalesce(qryViimaneTeenus.yksus, qryEsimineTeenus.yksus)) ::TEXT AS yksus,
                 ((coalesce((qryMk.hind / CASE WHEN qryMk.total_amount = 0 THEN NULL ELSE qryMk.total_amount END), 1) *
                   qryMk.makse_summa))::NUMERIC(14, 4)                                                  AS summa,
-                qryMk.laps_id
+                qryMk.laps_id,
+                qryMk.opt
          FROM qryMK
                   LEFT OUTER JOIN qryViimaneTeenus ON qryMk.laps_id = qryViimaneTeenus.laps_id
                   LEFT OUTER JOIN qryEsimineTeenus ON qryMk.laps_id = qryEsimineTeenus.laps_id
      )
-SELECT mk_id, yksus, sum(summa) AS summa, laps_id
+SELECT mk_id, yksus, sum(summa) AS summa, laps_id, opt
 FROM qryLaekumised
-GROUP BY yksus, laps_id, mk_id
+GROUP BY yksus, laps_id, mk_id, opt
 
 
 $BODY$
@@ -86,7 +86,7 @@ GRANT EXECUTE ON FUNCTION lapsed.get_group_part_from_mk(INTEGER, DATE) TO dbvaat
 /*
 
 
-select * from lapsed.get_group_part_from_mk(2290533, '2020-10-15'::DATE)
+select * from lapsed.get_group_part_from_mk(2336289, '2021-01-29'::DATE)
 
 
 

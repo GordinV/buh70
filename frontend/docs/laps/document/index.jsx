@@ -18,7 +18,7 @@ const
 
 const LIBRARIES = [{id: 'lapse_grupp', filter: ``}];
 
-const DOCS = ['ARV', 'SMK', 'LAPSE_TAABEL'];
+const DOCS = ['ARV', 'SMK','VMK', 'LAPSE_TAABEL'];
 
 
 class Laps extends React.PureComponent {

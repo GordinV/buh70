@@ -152,7 +152,6 @@ class LapseKaart extends React.PureComponent {
             console.error(e, nomData);
         }
 
-console.log('nomData', nomData,self.docData.nomid );
         // проверим стоит ли разрешить редактирование
         let isEditLapsid = !!self.docData.parentid;
 

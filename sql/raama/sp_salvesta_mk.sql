@@ -150,6 +150,9 @@ BEGIN
         WHERE parentid = doc_id RETURNING id
             INTO mk_id;
 
+        -- если есть оплата счетов и меняется дата, правим
+        UPDATE docs.arvtasu SET kpv = doc_kpv WHERE doc_tasu_id = doc_id;
+
     END IF;
     -- вставка в таблицы документа
 
@@ -222,10 +225,8 @@ BEGIN
     l_jaak = docs.sp_update_mk_jaak(doc_id);
 
 
-    IF doc_arvid IS NOT NULL and doc_arvid > 0 and l_jaak > 0
+    IF doc_arvid IS NOT NULL AND doc_arvid > 0 AND l_jaak > 0
     THEN
-        raise notice 'doc_arvid IS NOT NULL doc_arvid % ', doc_arvid;
-
         -- произведем оплату счета
         PERFORM docs.sp_tasu_arv(doc_id, doc_arvid, user_id);
 
@@ -248,7 +249,7 @@ BEGIN
         END IF;
     END IF;
 
-    IF l_jaak > 0 and doc_opt = 1 -- smk
+    IF l_jaak > 0 AND doc_opt::INTEGER = 2 -- smk
     THEN
         -- произведем поиск и оплату счета
         PERFORM docs.sp_loe_tasu(doc_id, user_id);

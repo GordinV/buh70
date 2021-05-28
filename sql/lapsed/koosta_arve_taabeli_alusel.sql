@@ -169,13 +169,15 @@ BEGIN
                (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)                     AS artikkel
 
         FROM lapsed.lapse_taabel lt
-                 INNER JOIN lapsed.lapse_kaart lk ON lk.id = lt.lapse_kaart_id
+                 INNER JOIN lapsed.lapse_kaart lk ON lk.id = lt.lapse_kaart_id  and lt.nomid = lk.nomid and lt.rekvid = lk.rekvid
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                  LEFT OUTER JOIN libs.library gr ON gr.library = 'LAPSE_GRUPP' AND gr.rekvid = lt.rekvid AND
                                                     gr.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
 
         WHERE lt.parentid = l_laps_id
           AND lt.staatus <> 3
+          and lk.staatus <> 3
+          and gr.status <> 3
           AND lt.kuu = month(l_kpv)
           AND lt.aasta = year(l_kpv)
           AND lk.rekvid = l_rekvid

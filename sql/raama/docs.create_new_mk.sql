@@ -104,7 +104,6 @@ BEGIN
     IF v_arv.id IS NOT NULL AND v_arv.jaak < 0
     THEN
         l_opt = CASE WHEN l_opt = 1 THEN 2 ELSE 1 END;
-        doc_type_id = CASE WHEN v_arv.liik = 0 THEN 'VMK' ELSE 'SMK' END;
         l_summa = coalesce(l_summa, -1 * v_arv.jaak);
     END IF;
 
@@ -228,6 +227,8 @@ BEGIN
     SELECT row_to_json(row) INTO json_object
     FROM (SELECT 0        AS id,
                  v_params AS data) row;
+
+    raise notice 'salvesta mk, json_object %', json_object;
 
     SELECT docs.sp_salvesta_mk(json_object :: JSON, user_id, l_rekvId) INTO mk_id;
 

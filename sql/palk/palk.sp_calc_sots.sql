@@ -133,17 +133,6 @@ BEGIN
             l_paevad_periodis =
                     palk.get_days_of_month_in_period(month(l_kpv), year(l_kpv), date(year(l_kpv), month(l_kpv), 01),
                                                      l_kpv);
-/*
-            -- вычитаем отпуск в календарных днях
-            SELECT row_to_json(row) INTO l_params
-            FROM (SELECT month(l_kpv) AS kuu,
-                         year(l_kpv)  AS aasta,
-                         TRUE         AS kas_kalendripaevad,
-                         TRUE         AS puudumised,
-                         l_lepingid   AS lepingid) row;
-
-            l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
-*/
             -- за вычитом отпуска и больничного
             l_paevad_periodis = l_paevad_periodis - l_puudu_paevad;
             IF l_puudu_paevad = 0
@@ -176,20 +165,18 @@ BEGIN
                 l_sotsmaks_min_palgast = (l_min_palk * l_min_sots * l_pk_summa * 0.01);
             END IF;
 
-            raise notice 'l_sotsmaks_min_palgast %, l_enne_arvestatud_sotsmaks %',l_sotsmaks_min_palgast, l_enne_arvestatud_sotsmaks;
-
-
             IF l_sotsmaks_min_palgast > coalesce(l_enne_arvestatud_sotsmaks, 0)
             THEN
+
                 -- считаем необходимую для до начисления сумму налога
                 summa = l_sotsmaks_min_palgast - coalesce(l_enne_arvestatud_sotsmaks, 0);
                 -- основа начисления соц. налога
 
                 IF coalesce(l_puudu_paevad, 0) > 0
                 THEN
-                    sm = f_round(l_min_palk / 30 * coalesce(l_paevad_periodis, 30) - l_min_sotsmaks_alus, l_round);
+                    sm = f_round(l_min_palk / 30 * coalesce(l_paevad_periodis, 30) - coalesce(l_min_sotsmaks_alus,0), l_round);
                 ELSE
-                    sm = f_round(l_min_palk - l_min_sotsmaks_alus, l_round);
+                    sm = f_round(l_min_palk - coalesce(l_min_sotsmaks_alus,0), l_round);
                 END IF;
 
                 selg = 'lisa SM (' + l_min_palk::TEXT + '/30 * ' ||

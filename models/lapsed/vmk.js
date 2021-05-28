@@ -135,10 +135,10 @@ const Vmk = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "25px", show: false},
-            {id: "kpv", name: "Kuupäev", width: "100px"},
+            {id: "kpv", name: "Kuupäev", width: "100px", type: "date", interval: true},
             {id: "number", name: "Number", width: "100px"},
             {id: "asutus", name: "Maksja", width: "200px"},
-            {id: "kreedit", name: "Summa", width: "100px"},
+            {id: "kreedit", name: "Summa", width: "100px", type: "number", interval: true},
             {id: "asutusid", name: "asutusid", width: "200px", show: false},
             {id: "nomid", name: "nomid", width: "200px", show: false},
             {id: "aa", name: "Arveldus arve", width: "100px"},

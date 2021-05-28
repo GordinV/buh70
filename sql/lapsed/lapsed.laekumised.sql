@@ -4,21 +4,23 @@ CREATE OR REPLACE FUNCTION lapsed.laekumised(l_rekvid INTEGER,
                                              kpv_start DATE DEFAULT date(year(current_date), 1, 1),
                                              kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
-        doc_id  INTEGER,
-        summa   NUMERIC(14, 4),
-        kpv     DATE,
-        yksus   TEXT,
-        laps_id INTEGER,
-        rekv_id INTEGER
+        doc_id     INTEGER,
+        summa      NUMERIC(14, 4),
+        tagastused NUMERIC(14, 4),
+        kpv        DATE,
+        yksus      TEXT,
+        laps_id    INTEGER,
+        rekv_id    INTEGER
     ) AS
 $BODY$
 
 -- распределенные платежи
 WITH arvtasu AS (
-    SELECT at.doc_tasu_id, sum(summa) AS summa, kpv, yksus, laps_id, rekv_id
+    SELECT at.doc_tasu_id, sum(summa) AS summa, 0 as tagastused, kpv, yksus, laps_id, rekv_id
     FROM (
              SELECT at.doc_tasu_id,
                     ((a1.summa / a.summa) * AT.summa) AS summa,
+                    0::NUMERIC(14, 4)                 AS tagastused,
                     at.kpv,
                     a1.properties ->> 'yksus'         AS yksus,
                     laps.id                           AS laps_id,
@@ -41,14 +43,18 @@ WITH arvtasu AS (
     GROUP BY doc_tasu_id, kpv, yksus, laps_id, rekv_id
 ),
      ettemaksud AS (
-         SELECT mk.id                                                 AS doc_tasu_id,
-                (CASE WHEN mk.opt = 1 THEN -1 ELSE 1 END) * ymk.summa AS summa,
-                mk.kpv,
-                ymk.yksus,
-                ymk.laps_id,
-                mk.rekvid
+         SELECT DISTINCT mk.id                                                                               AS doc_tasu_id,
+                         (CASE WHEN ymk.opt = 2 AND ymk.summa > 0 THEN ymk.summa ELSE 0 END)::NUMERIC(14, 4) AS summa,
+                         (CASE
+                              WHEN ymk.opt = 1 OR ymk.summa < 0
+                                  THEN (CASE WHEN ymk.opt = 2 THEN -1 ELSE 1 END) * ymk.summa
+                              ELSE 0 END)::NUMERIC(14, 4)                                                    AS tagastused,
+                         mk.kpv,
+                         ymk.yksus,
+                         ymk.laps_id,
+                         mk.rekvid
          FROM lapsed.cur_lapsed_mk mk
-                  INNER JOIN lapsed.get_group_part_from_mk(mk.id, '2020-12-31') ymk ON ymk.mk_id = mk.id
+                  INNER JOIN lapsed.get_group_part_from_mk(mk.id, kpv_start) ymk ON ymk.mk_id = mk.id
 
          WHERE mk.rekvid IN (SELECT rekv_id
                              FROM get_asutuse_struktuur(l_rekvid))
@@ -56,7 +62,7 @@ WITH arvtasu AS (
            AND mk.maksepaev <= kpv_end
            AND mk.jaak <> 0
      )
-SELECT qry.doc_tasu_id, sum(summa) AS summa, kpv, yksus, laps_id, rekv_id
+SELECT qry.doc_tasu_id, sum(summa) AS summa, sum(tagastused) as tagastused, kpv, yksus, laps_id, rekv_id
 FROM (
          SELECT *
          FROM arvtasu

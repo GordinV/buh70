@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS docs.sp_update_arv_jaak(INTEGER);
+--DROP FUNCTION IF EXISTS docs.sp_update_arv_jaak(INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.sp_update_mk_jaak(l_mk_Id INTEGER)
     RETURNS NUMERIC AS

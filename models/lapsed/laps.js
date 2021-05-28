@@ -68,31 +68,38 @@ module.exports = {
             data: []
         },
         {
-            sql: `SELECT k.id,
-                         k.parentid,
-                         k.nomid,
-                         n.kood,
-                         n.nimetus,
-                         k.hind,
-                         gr.nimetus::TEXT                                                         AS yksus,
-                         k.properties ->> 'all_yksus'                                             AS all_yksus,
-                         CASE WHEN (k.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3,
-                         n.uhik,
-                         to_char(coalesce((k.properties ->> 'alg_kpv')::DATE, date(year(), 1, 1)), 'DD.MM.YYYY') ||
-                         ' - ' ||
-                         to_char(coalesce((k.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)),
-                                 'DD.MM.YYYY')                                                    AS kehtivus,
-                         coalesce((k.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31))      AS lopp_kpv
-                  FROM lapsed.lapse_kaart k
-                           INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
-                           LEFT OUTER JOIN libs.library gr
-                                           ON gr.library = 'LAPSE_GRUPP' AND gr.status <> 3 AND gr.rekvid = k.rekvid
-                                               AND gr.kood::TEXT = (k.properties ->> 'yksus')::TEXT
-                  WHERE k.parentid = $1
-                    AND k.staatus <> 3
-                    AND k.rekvid IN (SELECT rekvid
-                                     FROM ou.userid
-                                     WHERE id = $2)`,
+            sql: `SELECT *
+                  FROM (
+                           SELECT k.id,
+                                  k.parentid,
+                                  k.nomid,
+                                  n.kood,
+                                  n.nimetus,
+                                  k.hind,
+                                  gr.nimetus::TEXT                                                         AS yksus,
+                                  k.properties ->> 'all_yksus'                                             AS all_yksus,
+                                  CASE WHEN (k.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3,
+                                  n.uhik,
+                                  to_char(coalesce((k.properties ->> 'alg_kpv')::DATE, date(year(), 1, 1)),
+                                          'DD.MM.YYYY') ||
+                                  ' - ' ||
+                                  to_char(coalesce((k.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)),
+                                          'DD.MM.YYYY')                                                    AS kehtivus,
+                                  coalesce((k.properties ->> 'lopp_kpv')::DATE,
+                                           date(year(), 12, 31))                                           AS lopp_kpv
+                           FROM lapsed.lapse_kaart k
+                                    INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
+                                    LEFT OUTER JOIN libs.library gr
+                                                    ON gr.library = 'LAPSE_GRUPP' AND gr.status <> 3 AND
+                                                       gr.rekvid = k.rekvid
+                                                        AND gr.kood::TEXT = (k.properties ->> 'yksus')::TEXT
+                           WHERE k.parentid = $1
+                             AND k.staatus <> 3
+                             AND k.rekvid IN (SELECT rekvid
+                                              FROM ou.userid
+                                              WHERE id = $2)
+                       ) qry
+                  ORDER BY lopp_kpv, kehtivus, yksus, kood`,
             query: null,
             multiple: true,
             alias: 'teenused',
@@ -146,20 +153,20 @@ module.exports = {
                 {id: "nimi", name: "Nimi", width: "30%"},
                 {id: "viitenumber", name: "Viitenumber", width: "20%"},
                 {id: "yksused", name: "Üksused", width: "30%"},
-                {id: "lopp_kpv", name: "Kehtivus", width: "20%",  type: 'date', interval: true},
+                {id: "lopp_kpv", name: "Kehtivus", width: "20%", type: 'date', interval: true},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean'}
             ],
             sqlString:
-                    `SELECT TRUE                             AS select,
+                    `SELECT TRUE                                  AS select,
                             id,
                             isikukood,
                             nimi,
                             yksused,
-                            lapsed.get_viitenumber($1, l.id) AS viitenumber,
-                            $1::INTEGER                      AS rekvid,
-                            $2::INTEGER                      AS user_id,
-                            count(*) OVER ()                 AS rows_total,
-                            to_char(lopp_kpv,'DD.MM.YYYY')::text as lopp_kpv
+                            lapsed.get_viitenumber($1, l.id)      AS viitenumber,
+                            $1::INTEGER                           AS rekvid,
+                            $2::INTEGER                           AS user_id,
+                            count(*) OVER ()                      AS rows_total,
+                            to_char(lopp_kpv, 'DD.MM.YYYY')::TEXT AS lopp_kpv
                      FROM lapsed.cur_lapsed l
                      WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
             `,     //  $1 всегда ид учреждения, $2 - userId
