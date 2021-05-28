@@ -17,29 +17,6 @@ exports.get = async (req, res) => {
         const doc = new Doc('lapse_kaart', null, user.userId, user.asutusId, 'lapsed');
         const data =  await doc.selectDocs('', sqlWhere, 10000);
 
-/*
-                rows.push({
-                    isikukood: row[0],
-                    yksus: row[1],
-                    all_yksus: row[2],
-                    kood: row[3],
-                    hind: row[4],
-                    kogus: row[5],
-                    tunnus: row[6],
-                    alg_kpv: row[7],
-                    lopp_kpv: row[8],
-                    kas_ettemaks: row[9],
-                    ettemaksu_period: row[10],
-                    kas_eraldi: row[11],
-                    kas_inf3: row[12],
-                    soodus: row[13],
-                    sooduse_alg: row[14],
-                    sooduse_lopp:row[15],
-                    kas_protsent:row[16]
-                });
-
- */
-
         // get csv
         const csvData = data.data.map(row => {
             let yksus = get_yksus(row.yksus);
@@ -60,7 +37,10 @@ exports.get = async (req, res) => {
                 soodustus: row.soodustuse_summa,
                 soodustuse_alg:row.sooduse_alg,
                 soodustuse_lopp: row.sooduse_lopp,
-                kas_protsent: row.kas_protsent && row.kas_protsent == '%' ? 'yes' : null
+                kas_protsent: row.kas_protsent && row.kas_protsent == '%' ? 'yes' : null,
+                nimi: row.nimi,
+                viitenumber: row.viitenumber
+
             }
         });
 
