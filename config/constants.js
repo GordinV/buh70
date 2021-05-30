@@ -85,7 +85,7 @@ module.exports = {
         ],
 
         TYYP: [
-            {id: 2, kood: 'SOODUSTUS', name: ''}
+            {id: 2, kood: 'SOODUSTUS', name: ' '}
         ]
 
     },

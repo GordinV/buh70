@@ -80,6 +80,7 @@ module.exports = {
                                   k.properties ->> 'all_yksus'                                             AS all_yksus,
                                   CASE WHEN (k.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3,
                                   n.uhik,
+                                  n.properties->>'tyyp' as tyyp,
                                   to_char(coalesce((k.properties ->> 'alg_kpv')::DATE, date(year(), 1, 1)),
                                           'DD.MM.YYYY') ||
                                   ' - ' ||

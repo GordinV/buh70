@@ -35,7 +35,8 @@ class LapseKaart extends React.PureComponent {
         super(props);
         this.state = {
             docId: props.docId ? props.docId : Number(props.match.params.docId),
-            module: 'lapsed'
+            module: 'lapsed',
+            kas_soodustus: false
         };
 
         this.renderer = this.renderer.bind(this);
@@ -154,6 +155,12 @@ class LapseKaart extends React.PureComponent {
 
         // проверим стоит ли разрешить редактирование
         let isEditLapsid = !!self.docData.parentid;
+
+        // если услуга имеет тип - льгота, то отметим это
+        let kas_soodustus = false;
+        if (self && self.docData && nomData && nomData.length && self.docData.nomid) {
+            kas_soodustus = !!nomData.find(row => row.nomid === self.docData.nomid && row.tyyp === 'SOODUSTUS');
+        }
 
         return (
             <div style={styles.doc}>
@@ -350,42 +357,43 @@ class LapseKaart extends React.PureComponent {
                                   readOnly={!isEditMode}
                         />
                     </div>
-                    < div style={styles.docColumn}>
-                        < InputNumber
-                            ref="input-soodus"
-                            title='Soodustus:'
-                            name='soodus'
-                            value={Number(self.docData.soodus) || 0}
-                            readOnly={!isEditMode}
-                            onChange={self.handleInputChange}
-                        />
+                    {kas_soodustus ?
+                        < div style={styles.docColumn}>
+                            < InputNumber
+                                ref="input-soodus"
+                                title='Soodustus:'
+                                name='soodus'
+                                value={Number(self.docData.soodus) || 0}
+                                readOnly={!isEditMode}
+                                onChange={self.handleInputChange}
+                            />
 
-                        <InputDate title='Kehtib alates:'
-                                   name='sooduse_alg'
-                                   value={self.docData.sooduse_alg || ''}
-                                   ref='input-soodus_alg'
-                                   readOnly={!isEditMode}
-                                   onChange={self.handleInputChange}/>
+                            <InputDate title='Kehtib alates:'
+                                       name='sooduse_alg'
+                                       value={self.docData.sooduse_alg || ''}
+                                       ref='input-soodus_alg'
+                                       readOnly={!isEditMode}
+                                       onChange={self.handleInputChange}/>
 
-                        < InputDate
-                            title='Kehtib kuni:'
-                            name='sooduse_lopp'
-                            value={self.docData.sooduse_lopp || ''}
-                            ref='input-soodus_lopp'
-                            readOnly={
-                                !isEditMode
-                            }
-                            onChange={self.handleInputChange}
-                        />
+                            < InputDate
+                                title='Kehtib kuni:'
+                                name='sooduse_lopp'
+                                value={self.docData.sooduse_lopp || ''}
+                                ref='input-soodus_lopp'
+                                readOnly={
+                                    !isEditMode
+                                }
+                                onChange={self.handleInputChange}
+                            />
 
-                        <CheckBox title="Kas soodustus protsentides?"
-                                  name='kas_protsent'
-                                  value={Boolean(self.docData.kas_protsent)}
-                                  ref={'checkbox_kas_protsent'}
-                                  onChange={self.handleInputChange}
-                                  readOnly={!isEditMode}
-                        />
-                    </div>
+                            <CheckBox title="Kas soodustus protsentides?"
+                                      name='kas_protsent'
+                                      value={Boolean(self.docData.kas_protsent)}
+                                      ref={'checkbox_kas_protsent'}
+                                      onChange={self.handleInputChange}
+                                      readOnly={!isEditMode}
+                            />
+                        </div> : null}
 
                 </div>
                 <div style={styles.docRow}>

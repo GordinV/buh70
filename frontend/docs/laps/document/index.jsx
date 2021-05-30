@@ -18,7 +18,7 @@ const
 
 const LIBRARIES = [{id: 'lapse_grupp', filter: ``}];
 
-const DOCS = ['ARV', 'SMK','VMK', 'LAPSE_TAABEL'];
+const DOCS = ['ARV', 'SMK', 'VMK', 'LAPSE_TAABEL'];
 
 
 class Laps extends React.PureComponent {
@@ -90,6 +90,7 @@ class Laps extends React.PureComponent {
             gridVanemadColumns = self.docData.gridConfig,
             gridTeenusteData = self.docData.teenused,
             gridTeenusteColumns = self.docData.gridTeenusteConfig;
+        let gridSoodustusteData = [];
 
 
         if (self.docData.id === 0) {
@@ -106,11 +107,18 @@ class Laps extends React.PureComponent {
 
         // наложить фильтр на действующие услуги
         if (gridTeenusteData && gridTeenusteData.length) {
-            gridTeenusteData = gridTeenusteData.filter(row => {
-                return compareDate (row.lopp_kpv,this.state.kehtiv);
+
+            // фильтруем льготы
+            gridSoodustusteData = gridTeenusteData.filter(row => {
+                return compareDate(row.lopp_kpv, this.state.kehtiv) && row.tyyp && row.tyyp === 'SOODUSTUS';
             });
+
+            //услуги без льгот
+            gridTeenusteData = gridTeenusteData.filter(row => {
+                return compareDate(row.lopp_kpv, this.state.kehtiv) && (!row.tyyp || row.tyyp === '');
+            });
+
         }
-console.log('this.state.kehtiv',this.state.kehtiv);
 
         return (
             <div style={styles.doc}>
@@ -200,6 +208,23 @@ console.log('this.state.kehtiv',this.state.kehtiv);
                               readOnly={!isEditMode}
                               style={styles.grid.headerTable}
                               ref="teenuste-data-grid"/>
+                </div>
+                <div style={styles.docRow}>
+                    <label ref="label">
+                        {'Soodustused'}
+                    </label>
+                </div>
+                <div style={styles.docRow}>
+
+                    <DataGrid source='soodustused'
+                              gridData={gridSoodustusteData}
+                              gridColumns={gridTeenusteColumns}
+                              showToolBar={!isEditMode}
+                              handleGridBtnClick={self.handleGridBtnClick}
+                              docTypeId={'lapse_kaart'}
+                              readOnly={!isEditMode}
+                              style={styles.grid.headerTable}
+                              ref="soodustused-data-grid"/>
                 </div>
             </div>
         );
