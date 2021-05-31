@@ -266,5 +266,24 @@ GRANT EXECUTE ON FUNCTION lapsed.yksuse_taabel(INTEGER, INTEGER, INTEGER) TO dbv
 
 
 /*
-select * from lapsed.yksuse_taabel(85, 9, 2020)
+select * from lapsed.yksuse_taabel(83, 1, 2021)
+where yksus like '02%'
+and nom_id < 999999
+order by nom_id
 */
+
+
+select * from libs.nomenklatuur
+where id in (18824,18828 )
+
+    322040-004 -- kustuta
+    322040-008
+
+select t.kpv, t.grupp_id, t1.*
+from lapsed.day_taabel1 t1
+         INNER JOIN lapsed.day_taabel t on t.id = t1.parent_id
+where nom_id = 18824
+
+
+select * from lapsed.lapse_kaart
+where rekvid = 83 and nomid in (18824,18828 )

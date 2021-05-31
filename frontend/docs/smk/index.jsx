@@ -68,10 +68,8 @@ class Documents extends React.PureComponent {
         const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
         const userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
-        let summa = self.gridData ? getSum(self.gridData, 'deebet') : 0;
-        if (summa) {
-            this.setState({summa: summa, read: self.gridData.length});
-        }
+        let deebet = self.gridData && self.gridData.length ? self.gridData[0].deebet_total : 0;
+        this.setState({summa: deebet, read: self.gridData.length});
 
         return (
             <ToolbarContainer>

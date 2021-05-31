@@ -183,6 +183,8 @@ const Smk = {
                       AND mk.rekvId = $1`,
 //                      AND coalesce(docs.usersRigths(mk.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
+        totals: `sum(deebet) over() as deebet_total,
+                sum(kreedit) over() as kreedit_total`,
         alias: 'curLasteMk'
     },
 
