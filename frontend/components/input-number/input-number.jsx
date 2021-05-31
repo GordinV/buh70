@@ -44,7 +44,6 @@ class Input extends React.PureComponent {
             inputMinValue = this.props.min,
             inputMaxValue = this.props.max;
 
-
         return (
             <div style={styles.wrapper}>
                 <label style={styles.label} htmlFor={this.props.name} ref="label">
@@ -58,11 +57,11 @@ class Input extends React.PureComponent {
                        value={this.state.value}
                        readOnly={this.state.readOnly}
                        title={this.props.title}
-                       pattern="\d+(\.\d{2})?"
                        placeholder={inputPlaceHolder}
                        onChange={this.onChange}
                        min={inputMinValue}
                        max={inputMaxValue}
+                       pattern="\d+(\.\d{2})?"
                        step="0.01"
 
                        disabled={this.props.disabled}

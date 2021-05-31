@@ -157,9 +157,14 @@ class LapseKaart extends React.PureComponent {
         let isEditLapsid = !!self.docData.parentid;
 
         // если услуга имеет тип - льгота, то отметим это
-        let kas_soodustus = false;
+        let kas_naida_soodustus = true;
         if (self && self.docData && nomData && nomData.length && self.docData.nomid) {
-            kas_soodustus = !!nomData.find(row => row.nomid === self.docData.nomid && row.tyyp === 'SOODUSTUS');
+            let teenus = nomData.find(row => {
+                return row.id === self.docData.nomid && row.tyyp === 'SOODUSTUS'
+            });
+            if (teenus) {
+                kas_naida_soodustus = false;
+            }
         }
 
         return (
@@ -357,7 +362,7 @@ class LapseKaart extends React.PureComponent {
                                   readOnly={!isEditMode}
                         />
                     </div>
-                    {kas_soodustus ?
+                    {kas_naida_soodustus ?
                         < div style={styles.docColumn}>
                             < InputNumber
                                 ref="input-soodus"

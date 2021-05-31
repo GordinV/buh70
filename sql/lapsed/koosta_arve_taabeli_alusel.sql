@@ -129,13 +129,16 @@ BEGIN
                coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE)::BOOLEAN   AS kas_eraldi,
                (lk.properties ->> 'sooduse_alg')::DATE                               AS sooduse_alg,
                (lk.properties ->> 'sooduse_lopp')::DATE                              AS sooduse_lopp,
+               coalesce(n.properties ->> 'tyyp', '')                                 AS tyyp,
                CASE
+                   WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN lk.hind
                    WHEN coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN
                        THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0) / 100 * lk.hind
                    ELSE coalesce((lk.properties ->> 'soodus')::NUMERIC, 0) END *
                CASE
+                   WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN -1
                    WHEN (lk.properties ->> 'sooduse_alg')::DATE <= l_kpv
-                            -- если услуга месячная
+                       -- если услуга месячная
                        AND (lk.properties ->> 'sooduse_lopp')::DATE >=
                            (CASE
                                 WHEN upper(n.uhik) = ('KUU') THEN make_date(year(l_kpv), month(l_kpv), 1)
@@ -143,11 +146,11 @@ BEGIN
                        THEN 1
                    WHEN
                        -- если льгота завершена в текущем месяце вместе с усгой
-                       (lk.properties ->> 'sooduse_alg')::DATE <= l_kpv AND
-                        (lk.properties ->> 'sooduse_lopp')::DATE < l_kpv AND
-                        month((lk.properties ->> 'sooduse_lopp')::DATE) = month(l_kpv) AND
-                        year((lk.properties ->> 'sooduse_lopp')::DATE) = year(l_kpv) AND
-                        (lk.properties ->> 'lopp_kpv')::DATE = (lk.properties ->> 'sooduse_lopp')::DATE
+                           (lk.properties ->> 'sooduse_alg')::DATE <= l_kpv AND
+                           (lk.properties ->> 'sooduse_lopp')::DATE < l_kpv AND
+                           month((lk.properties ->> 'sooduse_lopp')::DATE) = month(l_kpv) AND
+                           year((lk.properties ->> 'sooduse_lopp')::DATE) = year(l_kpv) AND
+                           (lk.properties ->> 'lopp_kpv')::DATE = (lk.properties ->> 'sooduse_lopp')::DATE
                        THEN 1
 
                    ELSE 0 END                                                        AS real_soodus,
@@ -169,15 +172,16 @@ BEGIN
                (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)                     AS artikkel
 
         FROM lapsed.lapse_taabel lt
-                 INNER JOIN lapsed.lapse_kaart lk ON lk.id = lt.lapse_kaart_id  and lt.nomid = lk.nomid and lt.rekvid = lk.rekvid
+                 INNER JOIN lapsed.lapse_kaart lk
+                            ON lk.id = lt.lapse_kaart_id AND lt.nomid = lk.nomid AND lt.rekvid = lk.rekvid
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                  LEFT OUTER JOIN libs.library gr ON gr.library = 'LAPSE_GRUPP' AND gr.rekvid = lt.rekvid AND
                                                     gr.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
 
         WHERE lt.parentid = l_laps_id
           AND lt.staatus <> 3
-          and lk.staatus <> 3
-          and gr.status <> 3
+          AND lk.staatus <> 3
+          AND gr.status <> 3
           AND lt.kuu = month(l_kpv)
           AND lt.aasta = year(l_kpv)
           AND lk.rekvid = l_rekvid
@@ -190,32 +194,36 @@ BEGIN
             l_arve_kogus = l_arve_kogus + v_taabel.kogus;
             -- формируем строку
             json_arvrea = '[]'::JSONB || (SELECT row_to_json(row)
-                                          FROM (SELECT v_taabel.nomid                                          AS nomid,
-                                                       v_taabel.kogus                                          AS kogus,
-                                                       v_taabel.hind - v_taabel.real_soodus                    AS hind,
-                                                       (v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus AS kbmta,
-                                                       ((v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus *
-                                                        (v_taabel.vat / 100))                                  AS kbm,
+                                          FROM (SELECT v_taabel.nomid                          AS nomid,
+                                                       v_taabel.kogus                          AS kogus,
+                                                       CASE WHEN v_taabel.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END * v_taabel.hind -
+                                                       v_taabel.real_soodus                    AS hind,
+                                                       (CASE WHEN v_taabel.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END * v_taabel.hind -
+                                                        v_taabel.real_soodus) * v_taabel.kogus AS kbmta,
+                                                       ((CASE WHEN v_taabel.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END * v_taabel.hind -
+                                                         v_taabel.real_soodus) * v_taabel.kogus *
+                                                        (v_taabel.vat / 100))                  AS kbm,
                                                        ((v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus *
                                                         (v_taabel.vat / 100)) +
-                                                       (v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus AS summa,
-                                                       v_taabel.tegev                                          AS kood1,
-                                                       v_taabel.allikas                                        AS kood2,
-                                                       v_taabel.rahavoog                                       AS kood3,
-                                                       v_taabel.artikkel                                       AS kood5,
-                                                       v_taabel.konto                                          AS konto,
+                                                       (CASE WHEN v_taabel.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END * v_taabel.hind -
+                                                        v_taabel.real_soodus) * v_taabel.kogus AS summa,
+                                                       v_taabel.tegev                          AS kood1,
+                                                       v_taabel.allikas                        AS kood2,
+                                                       v_taabel.rahavoog                       AS kood3,
+                                                       v_taabel.artikkel                       AS kood5,
+                                                       v_taabel.konto                          AS konto,
                                                        v_taabel.tunnus,
                                                        v_taabel.projekt,
                                                        v_taabel.yksus,
                                                        v_taabel.all_yksus,
                                                        v_taabel.lapse_taabel_id,
-                                                       v_taabel.real_soodus                                    AS soodustus,
+                                                       v_taabel.real_soodus                    AS soodustus,
                                                        v_taabel.muud || CASE
                                                                             WHEN v_taabel.real_soodus > 0
                                                                                 THEN ' kasutatud soodustus summas ' ||
                                                                                      round(v_taabel.real_soodus::NUMERIC, 2)::TEXT
-                                                                            ELSE '' END                        AS muud,
-                                                       l_tp                                                    AS tp) row) :: JSONB;
+                                                                            ELSE '' END        AS muud,
+                                                       l_tp                                    AS tp) row) :: JSONB;
 
 
             IF v_taabel.kas_eraldi
