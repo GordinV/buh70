@@ -110,8 +110,9 @@ class Vmk extends React.Component {
                                        ref='input-kpv'
                                        onChange={self.handleInputChange}
                                        readOnly={!isEditeMode}/>
+
                             <Select title="Arveldus arve"
-                                    name='aaid'
+                                    name='aa_id'
                                     libs="aa"
                                     value={Number(self.docData.aa_id) || 0}
                                     data={self.libs['aa']}

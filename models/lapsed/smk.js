@@ -304,7 +304,7 @@ const Smk = {
 
         },
         {
-            name: 'Koosta ülekannemakse',
+            name: 'Koosta ulekannemakse',
             task: 'KoostaUlekanneMakse',
             action: 'KoostaUlekanneMakse',
             type: 'manual',
