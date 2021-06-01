@@ -213,13 +213,13 @@ class DocToolBar extends React.PureComponent {
         }
     }
 
-    handleButtonTask(taskName, kpv, gruppId) {
+    handleButtonTask(taskName, kpv, gruppId, tekst) {
         // ишем таску
         const task = this.props.bpm.find(row => row.name === taskName);
 
         if (task) {
             // метод вызывается при выборе задачи
-            return this.props.btnTaskClick(task.name, kpv, gruppId);
+            return this.props.btnTaskClick(task.name, kpv, gruppId, tekst);
 
         }
 

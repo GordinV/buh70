@@ -307,6 +307,7 @@ exports.executeTask = async (req, res) => {
 
     let seisuga = params.seisuga ? params.seisuga : now;
     let gruppId = params.gruppId ? params.gruppId : null;
+    let viitenumber = params.viitenumber ? params.viitenumber: null;
 
     const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, module);
 
@@ -315,6 +316,11 @@ exports.executeTask = async (req, res) => {
     if ((params.docTypeId === 'LAPS' || params.docTypeId === 'PAEVA_TAABEL' || params.docTypeId === 'LAPSE_GRUPP' || params.docTypeId === 'SMK'))  {
         //@TODO сделать универсальный набор параметров
         taskParams = [params.docId, user.userId, seisuga];
+        if (viitenumber) {
+            // есть 4 параметр, добавим
+            taskParams.push(viitenumber);
+        }
+
     }
 
     if (params.docTypeId === 'LAPS' &&  gruppId) {

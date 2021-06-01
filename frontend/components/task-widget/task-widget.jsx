@@ -7,6 +7,7 @@ const React = require('react'),
     ButtonOpen = require('../button-register/button-register.jsx'),
     Select = require('../../components/select/select.jsx'),
     InputDate = require('../../components/input-date/input-date.jsx'),
+    InputText = require('../../components/input-text/input-text.jsx'),
     ModalPage = require('./../../components/modalpage/modalPage.jsx'),
     styles = require('./task-widget-styles');
 const DocContext = require('./../../doc-context.js');
@@ -21,7 +22,9 @@ class TaskWidget extends React.PureComponent {
             showList: false,
             showModal: false,
             showDate: true,
+            showViitenumber: false,
             showYksus: props.kasShowYksus,
+            viitenumber: null,
             yksus: 0,
             seisuga: getNow()
         };
@@ -90,6 +93,13 @@ class TaskWidget extends React.PureComponent {
                                                             disabled={false}
                                                             readOnly={false}
                             /> : null}
+                            {this.state.showViitenumber ? <InputText title="Viitenumber:"
+                                                            name='viitenumber'
+                                                            ref="input-viitenumber"
+                                                            onChange={this.handleInputChange}
+                                                            value={this.state.viitenumber}
+                                                            readOnly={false}
+                            /> : null}
 
                         </ModalPage> : null
                     }
@@ -102,7 +112,7 @@ class TaskWidget extends React.PureComponent {
     modalPageClick(btnEvent) {
         this.setState({showModal: false});
         if (btnEvent === 'Ok') {
-            this.props.handleButtonTask(this.state.actualTask, this.state.seisuga, this.state.yksus);
+            this.props.handleButtonTask(this.state.actualTask, this.state.seisuga, this.state.yksus, this.state.viitenumber);
         }
     }
 
@@ -116,25 +126,29 @@ class TaskWidget extends React.PureComponent {
         let task = this.state.taskList.find(task => task.name == value);
         let isShowDate = task && task.hasOwnProperty('hideDate') ? !task.hideDate : true;
         let showYksus = task && task.hasOwnProperty('showYksus') ? task.showYksus : false;
+        let showViitenumber = task && task.hasOwnProperty('showViitenumber') ? task.showViitenumber : false;
 
-        this.setState({showList: isShow, actualTask: value, showDate: isShowDate, showYksus: showYksus});
+        this.setState({showList: isShow, actualTask: value, showDate: isShowDate, showYksus: showYksus, showViitenumber: showViitenumber});
     }
 
     handleButtonTask() {
         let showYksus = this.state.showYksus;
+        let showViitenumber = this.state.showViitenumber;
         let task = this.state.taskList.find(task => task.name == this.state.actualTask);
         let isShowDate = task && task.hasOwnProperty('hideDate') ? !task.hideDate : true;
+        let isShowViitenumber = task && task.hasOwnProperty('showViitenumber') ? task.showViitenumber : false;
 
         showYksus = task && task.hasOwnProperty('showYksus') ? task.showYksus : false;
 
-        this.setState({showModal: true, showYksus: showYksus, showDate: isShowDate});
+        this.setState({showModal: true, showYksus: showYksus, showDate: isShowDate, showViitenumber: isShowViitenumber});
     }
 
     //will save value
     handleInputChange(name, value) {
         let stateValue = {
             seisuga: this.state.seisuga,
-            yksus: this.state.yksus
+            yksus: this.state.yksus,
+            viitenumber: this.state.viitenumber
         };
         stateValue[name] = value;
         this.setState(stateValue);
@@ -147,12 +161,14 @@ TaskWidget.propTypes = {
     taskList: PropTypes.array,
     handleButtonTask: PropTypes.func.isRequired,
     handleSelectTask: PropTypes.func.isRequired,
-    kasShowYksus: PropTypes.bool
+    kasShowYksus: PropTypes.bool,
+    kasShowViitenumber: PropTypes.bool
 };
 
 
 TaskWidget.defaultProps = {
     taskList: [],
-    kasShowYksus: false
+    kasShowYksus: false,
+    kasShowViitenumber: false
 };
 module.exports = TaskWidget;

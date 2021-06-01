@@ -303,6 +303,16 @@ const Smk = {
             actualStep: false,
 
         },
+        {
+            name: 'Koosta ülekannemakse',
+            task: 'KoostaUlekanneMakse',
+            action: 'KoostaUlekanneMakse',
+            type: 'manual',
+            showDate: true,
+            showViitenumber: true,
+            actualStep: false,
+
+        },
 
 
     ],
@@ -315,6 +325,13 @@ const Smk = {
         alias: 'KoostaTagasimakse'
     },
 
+    KoostaUlekanneMakse: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM docs.ulekanne_makse($2::INTEGER, (SELECT to_jsonb(row.*)
+                                                           FROM (SELECT $1 AS mk_id, $3::DATE AS maksepaev, $4::TEXT as viitenumber) row))`, //$1 - docs.doc.id, $2 - userId, $3 - maksepaev
+        type: "sql",
+        alias: 'KoostaUlekanneMakse'
+    },
 
 };
 

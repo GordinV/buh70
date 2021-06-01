@@ -333,9 +333,8 @@ class DocumentTemplate extends React.Component {
     /**
      *
      */
-    btnTaskClick(taskName, kpv, gruppId) {
+    btnTaskClick(taskName, kpv, gruppId, tekst) {
         const task = this.bpm.find(task => {
-            console.log('task', task, taskName);
             return task.name === taskName
         });
         if (!task) {
@@ -351,7 +350,7 @@ class DocumentTemplate extends React.Component {
 
         this.setState({warning: 'Töötan...', warningType: 'notValid'});
 
-        this.fetchData('Post', api, kpv || gruppId ? {seisuga: kpv, gruppId: gruppId} : null).then((response) => {
+        this.fetchData('Post', api, kpv || gruppId || tekst ? {seisuga: kpv, gruppId: gruppId, viitenumber: tekst} : null).then((response) => {
             const dataRow = response.result;
             const dataMessage = response.data.error_message ? response.data.error_message : '';
 
@@ -367,7 +366,8 @@ class DocumentTemplate extends React.Component {
                     setTimeout(() => {
                         // koostatud uus dok, teeme reload
                         const current = `/${this.props.module}/${this.props.docTypeId}/${this.state.docId}`;
-                        if (task.task == 'KoostaTagasimakse') {
+                        if (task.task == 'KoostaTagasimakse' || task.task == 'KoostaUlekanneMakse') {
+
                             // осуществит переход на карточку контр-агента
                             this.props.history.push(`/lapsed/${docTypeId}/${docId}`);
                         } else {
