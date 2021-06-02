@@ -65,7 +65,6 @@ class TaskWidget extends React.PureComponent {
                                     defaultValue={this.state.actualTask}
                                     ref="select-name"
                                     onChange={this.handleSelectTask}
-                                    size={this.state.taskList.length}
                                     readOnly={false}/>
                         : null}
                     {this.state.showModal ?
