@@ -59,12 +59,14 @@ class TaskWidget extends React.PureComponent {
                     </div>
                     {this.state.showList ?
                             <Select name='name'
+                                    style={styles.select}
                                     data={tasks}
                                     collId='kood'
                                     value={this.state.actualTask || ''}
                                     defaultValue={this.state.actualTask}
                                     ref="select-name"
                                     onChange={this.handleSelectTask}
+                                    onClick={this.handleSelectClick}
                                     readOnly={false}/>
                         : null}
                     {this.state.showModal ?

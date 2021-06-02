@@ -7,6 +7,7 @@ module.exports = {
     },
     select: {
         width: 'auto',
-        position: 'absolute'
+        position: 'absolute',
+        height: '30px'
     }
 };
