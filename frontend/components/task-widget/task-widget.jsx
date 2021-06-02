@@ -39,7 +39,7 @@ class TaskWidget extends React.PureComponent {
         if (!this.state.taskList) return <div></div>;
 
         const tasks = this.state.taskList.map((task, index) => {
-            return {id: index++, name: '', kood: task.name}
+            return {id: index++, name: ' ', kood: task.name}
         });
 
         let taskId = tasks.findIndex(task => task.name == this.state.actualTask);
