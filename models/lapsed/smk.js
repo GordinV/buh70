@@ -289,12 +289,14 @@ const Smk = {
     },
     bpm: [
         {
+            id: 0,
             name: 'Контировка',
             action: 'generateJournal',
             type: 'automat',
             actualStep: false
         },
         {
+            id: 1,
             name: 'Koosta tagasimakse',
             task: 'KoostaTagasimakse',
             action: 'KoostaTagasimakse',
@@ -304,6 +306,7 @@ const Smk = {
 
         },
         {
+            id: 2,
             name: 'Koosta ulekannemakse',
             task: 'KoostaUlekanneMakse',
             action: 'KoostaUlekanneMakse',

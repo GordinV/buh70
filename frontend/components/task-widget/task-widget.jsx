@@ -39,8 +39,10 @@ class TaskWidget extends React.PureComponent {
         if (!this.state.taskList) return <div></div>;
 
         const tasks = this.state.taskList.map((task, index) => {
-            return {id: index++, name: task.name}
+            return {id: index++, name: '', kood: task.name}
         });
+
+        let taskId = tasks.findIndex(task => task.name == this.state.actualTask);
 
         return (<div style={styles.wrapper}>
                 <div>
@@ -56,15 +58,15 @@ class TaskWidget extends React.PureComponent {
                             value='v'/>
                     </div>
                     {this.state.showList ?
-                        <Select name='name'
-                                style={styles.select}
-                                data={tasks}
-                                readOnly={false}
-                                value={this.state.actualTask}
-                                collId='name'
-                                ref='task_widjet'
-                                size={this.state.taskList.length}
-                                onChange={this.handleSelectTask}/>
+                            <Select name='name'
+                                    data={tasks}
+                                    collId='kood'
+                                    value={this.state.actualTask || ''}
+                                    defaultValue={this.state.actualTask}
+                                    ref="select-name"
+                                    onChange={this.handleSelectTask}
+                                    size={this.state.taskList.length}
+                                    readOnly={false}/>
                         : null}
                     {this.state.showModal ?
                         <ModalPage
@@ -94,11 +96,11 @@ class TaskWidget extends React.PureComponent {
                                                             readOnly={false}
                             /> : null}
                             {this.state.showViitenumber ? <InputText title="Viitenumber:"
-                                                            name='viitenumber'
-                                                            ref="input-viitenumber"
-                                                            onChange={this.handleInputChange}
-                                                            value={this.state.viitenumber}
-                                                            readOnly={false}
+                                                                     name='viitenumber'
+                                                                     ref="input-viitenumber"
+                                                                     onChange={this.handleInputChange}
+                                                                     value={this.state.viitenumber}
+                                                                     readOnly={false}
                             /> : null}
 
                         </ModalPage> : null
@@ -128,7 +130,13 @@ class TaskWidget extends React.PureComponent {
         let showYksus = task && task.hasOwnProperty('showYksus') ? task.showYksus : false;
         let showViitenumber = task && task.hasOwnProperty('showViitenumber') ? task.showViitenumber : false;
 
-        this.setState({showList: isShow, actualTask: value, showDate: isShowDate, showYksus: showYksus, showViitenumber: showViitenumber});
+        this.setState({
+            showList: isShow,
+            actualTask: value,
+            showDate: isShowDate,
+            showYksus: showYksus,
+            showViitenumber: showViitenumber
+        });
     }
 
     handleButtonTask() {
@@ -140,7 +148,12 @@ class TaskWidget extends React.PureComponent {
 
         showYksus = task && task.hasOwnProperty('showYksus') ? task.showYksus : false;
 
-        this.setState({showModal: true, showYksus: showYksus, showDate: isShowDate, showViitenumber: isShowViitenumber});
+        this.setState({
+            showModal: true,
+            showYksus: showYksus,
+            showDate: isShowDate,
+            showViitenumber: isShowViitenumber
+        });
     }
 
     //will save value
