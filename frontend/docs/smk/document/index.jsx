@@ -14,6 +14,7 @@ const DocumentTemplate = require('../../documentTemplate/index.jsx'),
     relatedDocuments = require('../../../mixin/relatedDocuments.jsx'),
     ModalPage = require('./../../../components/modalpage/modalPage.jsx'),
     Loading = require('./../../../components/loading/index.jsx'),
+    ButtonUuendaLib = require('../../../components/button-register/button-uuenda-lib/index.jsx'),
     styles = require('./smk-style');
 
 const DOC_TYPE_ID = 'SMK';
@@ -344,6 +345,11 @@ class Smk extends React.PureComponent {
             }
         }
 
+        // сортировка по ид коду
+        data = data.sort((a, b) => {
+            return a.kood.localeCompare(b.kood, 'en', {sensitivity: 'base'})
+        });
+
         return (<div className='.modalPage'>
                 <ModalPage
                     modalObjects={modalObjects}
@@ -371,6 +377,11 @@ class Smk extends React.PureComponent {
                                     collId='id'
                                     ref='asutusid'
                                     onChange={self.handleGridRowChange}/>
+                            <ButtonUuendaLib
+                                self={self}
+                                lib={'asutused'}
+                            />
+
                         </div>
                         <div style={styles.docRow}>
                             <InputText title='Arveldus arve: '

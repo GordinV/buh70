@@ -6,7 +6,8 @@ module.exports = {
         ':focus': {
             backgroundColor: 'lightpink'
         },
-        border: '1px solid gray'
+        border: '1px solid gray',
+        height: '30px'
     },
     readOnly: {
         backgroundColor: '#F3EFEF'

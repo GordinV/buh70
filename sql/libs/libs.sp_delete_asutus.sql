@@ -33,20 +33,6 @@ BEGIN
 
     END IF;
 
-    IF NOT exists(SELECT id
-                  FROM ou.userid u
-                  WHERE id = userid
-                    AND (u.rekvid = v_doc.rekvid OR v_doc.rekvid IS NULL OR v_doc.rekvid = 0)
-        )
-    THEN
-
-        error_code = 5;
-        error_message = 'Kasutaja ei leitud, rekvId: ' || coalesce(v_doc.rekvid, 0)::TEXT || ', userId:' ||
-                        coalesce(userid, 0)::TEXT;
-        result = 0;
-        RETURN;
-
-    END IF;
 
     -- проверка на права. Предполагает наличие прописанных прав на удаление для данного пользователя в поле rigths
 

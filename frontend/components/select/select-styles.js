@@ -7,7 +7,7 @@ module.exports = {
     },
     input: {
         width: '70%',
-        marginLeft: '5px',
+        margin: '5px 2px',
         borderRadius:'5px'
 
 
@@ -24,8 +24,8 @@ module.exports = {
     },
     select: {
         width: '70%',
-        heigth: '100%',
-        marginLeft: '5px',
+        height: '30px',
+        margin: '5px 2px',
         borderRadius:'5px',
         ':focus': {
             backgroundColor: 'lightpink'

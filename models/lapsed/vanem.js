@@ -12,7 +12,7 @@ module.exports = {
                  INNER JOIN (SELECT DISTINCT parentid, rekvid
                              FROM lapsed.lapse_kaart lk
                              WHERE rekvid = $1 AND staatus <> 3) lk ON lk.parentid = v.parentid
-        WHERE a.staatus <> 3`,
+        WHERE a.staatus <> 3 and v.staatus <> 3`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},

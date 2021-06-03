@@ -16,6 +16,7 @@ const DocumentTemplate = require('../../documentTemplate/index.jsx'),
     relatedDocuments = require('../../../mixin/relatedDocuments.jsx'),
     ModalPage = require('./../../../components/modalpage/modalPage.jsx'),
     Loading = require('./../../../components/loading/index.jsx'),
+    ButtonUuendaLib = require('../../../components/button-register/button-uuenda-lib/index.jsx'),
     styles = require('./vmk-style');
 
 const LIBRARIES = [
@@ -268,6 +269,12 @@ class Vmk extends React.Component {
             }
         }
 
+        // сортировка по ид коду
+        data = data.sort((a, b) => {
+            return a.kood.localeCompare(b.kood, 'en', {sensitivity: 'base'})
+        });
+
+
 
         return (<div className='.modalPage'>
                 <ModalPage
@@ -288,6 +295,7 @@ class Vmk extends React.Component {
                                     onChange={self.handleGridRowChange}/>
                         </div>
                         <div style={styles.docRow}>
+
                             <Select title="Partner"
                                     name='asutusid'
                                     data={data}
@@ -296,6 +304,10 @@ class Vmk extends React.Component {
                                     collId='id'
                                     ref='asutusid'
                                     onChange={self.handleGridRowChange}/>
+                            <ButtonUuendaLib
+                                self={self}
+                                lib={'asutused'}
+                            />
                         </div>
                         <div style={styles.docRow}>
                             <InputText title='Arveldus arve: '

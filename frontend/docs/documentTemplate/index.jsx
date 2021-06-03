@@ -107,6 +107,7 @@ class DocumentTemplate extends React.Component {
             if (this.docData && this.docData.kpv) {
                 kpv = this.docData.kpv;
             }
+            // грузим справочники
             this.loadLibs(null, kpv);
         }
 
@@ -285,6 +286,12 @@ class DocumentTemplate extends React.Component {
                 let docTypeId = this.props.docTypeId,
                     docId = this.docData.id;
 
+                // обновим справочник
+                if (DocContext.libs[this.props.docTypeId.toLowerCase()]) {
+                    this.loadLibs(this.props.docTypeId.toLowerCase());
+                }
+
+
                 if (docTypeId.toUpperCase() === 'LAPS' && this.props.docId === 0) {
                     // делаем редайрект на карту услуг
                     docTypeId = 'LAPSE_KAART';
@@ -350,7 +357,11 @@ class DocumentTemplate extends React.Component {
 
         this.setState({warning: 'Töötan...', warningType: 'notValid'});
 
-        this.fetchData('Post', api, kpv || gruppId || tekst ? {seisuga: kpv, gruppId: gruppId, viitenumber: tekst} : null).then((response) => {
+        this.fetchData('Post', api, kpv || gruppId || tekst ? {
+            seisuga: kpv,
+            gruppId: gruppId,
+            viitenumber: tekst
+        } : null).then((response) => {
             const dataRow = response.result;
             const dataMessage = response.data.error_message ? response.data.error_message : '';
 
@@ -750,8 +761,7 @@ class DocumentTemplate extends React.Component {
      * kpv - дата, по умолчанию сегодня
      */
     loadLibs(libName, kpv) {
-        let libsCount = this.props.libs.length;
-
+        let libsCount = libName ? 1: this.props.libs.length;
 
         let libsToLoad = libName ? [libName] : Object.keys(this.libs);
         // start loading
@@ -763,6 +773,7 @@ class DocumentTemplate extends React.Component {
         }
 
         libsToLoad.forEach((lib) => {
+
             let hasSqlWhere = (lib in this.state.libParams);
 
             new Date().toISOString().slice(0, 10); //ajutiselt
@@ -776,21 +787,29 @@ class DocumentTemplate extends React.Component {
                 kpv: kpv ? kpv : new Date().toISOString().slice(0, 10)
             } : {});
 
+            // проверим наличие данных в кеше, если нет, то грузим
             if (!!this.state.libParams[lib] || !this.hasLibInCache(lib)) {
                 fetchData.fetchDataPost(`${LIBS_URL}/${lib}`, params)
                     .then(response => {
                         if (response && 'data' in response) {
                             this.libs[lib] = response.data.result.result.data;
-                            libsCount--;
-                        }
-                        // save lib in cache
-                        DocContext.libs[lib] = this.libs[lib];
-                        // отметка что справочник загружен
-                        this.loadingLibs[lib] = false;
 
-                        if (libsCount === 1 && !this.state.loadedLibs) {
-                            //all libs loaded;
-                            this.setState({loadedLibs: true});
+                            // save lib in cache
+                            DocContext.libs[lib] = this.libs[lib];
+
+                            libsCount--;
+                            // отметка что справочник загружен
+                            this.loadingLibs[lib] = false;
+
+                            if (!libsCount  && !this.state.loadedLibs) {
+                                //all libs loaded;
+                                this.setState({
+                                    loadedLibs: true,
+                                    warning: 'Kõik püsiandmed laaditud õnnestus',
+                                    warningType: 'ok'
+                                });
+
+                            }
 
                         }
 
@@ -799,7 +818,7 @@ class DocumentTemplate extends React.Component {
                         console.error('loadLibs error', error);
                     });
             } else {
-
+                // берем данные из кеша
                 this.libs[lib] = DocContext.libs[lib].filter(row => {
                     let kpv = this.docData.valid ? this.docData.valid : new Date().toISOString().slice(0, 10);
                     kpv = this.docData.kpv ? this.docData.kpv : kpv;
@@ -811,12 +830,29 @@ class DocumentTemplate extends React.Component {
                 this.loadingLibs[lib] = false;
 
                 libsCount--;
-                if (libsCount === 1 && !this.state.loadedLibs) {
+
+                if (!libsCount && !this.state.loadedLibs) {
                     //all libs loaded;
-                    this.setState({loadedLibs: true});
+                    this.setState({
+                        loadedLibs: true,
+                        warning: 'Kõik püsiandmed laaditud õnnestus',
+                        warningType: 'ok'
+                    });
+
                 }
 
             }
+
+            if (libsCount <= 1 && !this.state.loadedLibs) {
+                //all libs loaded;
+                this.setState({
+                    loadedLibs: true,
+                    warning: 'Kõik püsiandmed laaditud õnnestus',
+                    warningType: 'ok'
+                });
+
+            }
+
         });
     }
 

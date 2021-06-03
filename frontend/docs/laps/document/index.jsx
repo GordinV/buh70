@@ -336,7 +336,11 @@ class Laps extends React.PureComponent {
                         errorMessage = response.data.error_message;
                     }
                     const Doc = this.refs['document'];
+                    // обновим справочник
+                    Doc.loadLibs('vanem');
+
                     if (isTrue === 'Ok') {
+
 
                         Doc.setState({
                             reloadData: true,
@@ -370,6 +374,10 @@ class Laps extends React.PureComponent {
                     const Doc = this.refs['document'];
                     if (isTrue === 'Ok') {
 
+                        // обновим справочник
+                        Doc.loadLibs('vanem');
+
+                        // извещение
                         Doc.setState({
                             reloadData: true,
                             warning: 'Kiri kustutatud',
