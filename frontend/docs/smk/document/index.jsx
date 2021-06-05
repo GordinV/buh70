@@ -43,7 +43,8 @@ class Smk extends React.PureComponent {
             module: this.props.module,
             isAskToCreateFromArv: true, // если указан счет, а док.ид = 0 , то можно создпть ордер по счету
             getSMK: false,
-            arvId: 0
+            arvId: 0,
+            kas_aa_kasitsi: false
         };
 
         this.createGridRow = this.createGridRow.bind(this);
@@ -477,7 +478,10 @@ class Smk extends React.PureComponent {
 
             if (asutusDataName) {
                 doc.gridRowData['asutus'] = asutusDataName.nimetus;
-                doc.gridRowData['aa'] = asutusDataName.pank;
+
+                if (!doc.gridRowData['aa']) {
+                    doc.gridRowData['aa'] = asutusDataName.pank;
+                }
 
             }
 

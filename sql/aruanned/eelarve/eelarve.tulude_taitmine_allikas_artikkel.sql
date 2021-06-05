@@ -24,10 +24,14 @@ CREATE OR REPLACE FUNCTION eelarve.tulude_taitmine_allikas_artikkel(l_aasta INTE
     ) AS
 $BODY$
 WITH cur_tulude_kassa_taitmine AS (
-    SELECT * FROM eelarve.uus_kassa_tulu_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond)
+    SELECT *
+    FROM eelarve.uus_kassa_tulu_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond)
+    WHERE artikkel <> '3501' -- Убери, пожалуйста во всех отчетах Tulude eelarve täitmine ХХХХХ строку 3501 - это не доходы от деятельности, а внутренние переводы
 ),
      cur_tulude_taitmine AS (
-         SELECT * FROM eelarve.tulu_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond)
+         SELECT *
+         FROM eelarve.tulu_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond)
+         WHERE artikkel <> '3501'
      ),
      laekumised_eelarvesse AS (
          SELECT j.rekvid,
@@ -68,6 +72,7 @@ WITH cur_tulude_kassa_taitmine AS (
                  --строка art 1532 в доходах может быть только с rahavoog 02, соответственно с rahavoog 23  быть не далжно
                  AND (CASE WHEN j1.kood5 = '1532' AND j1.kood3 IN ('23', '21') THEN FALSE ELSE TRUE END)
                  AND d.status <> 3
+                 AND j1.kood5 <> '3501'
               ) j
                   INNER JOIN libs.library l ON l.kood = j.kood5
              AND l.tun5 = 1 --tulud
