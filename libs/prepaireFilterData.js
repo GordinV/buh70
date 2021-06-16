@@ -42,6 +42,7 @@ function prepareFilterData(gridConfig, docTypeId) {
     if (docTypeId && DocContext.filter[docTypeId].length > 0) {
         data = DocContext.filter[docTypeId];
     } else {
+        console.log('prepData', gridConfig);
         gridConfig.map((row) => {
 
             const field = {
@@ -53,6 +54,7 @@ function prepareFilterData(gridConfig, docTypeId) {
                 start: row.value ? row.value : null,
                 end: row.value ? row.value : null
             };
+
 
             if (row.interval) {
                 field[`${row.id}_start`] = row.value ? row.value : null;

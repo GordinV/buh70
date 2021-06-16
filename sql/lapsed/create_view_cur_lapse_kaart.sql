@@ -32,8 +32,9 @@ SELECT l.id                                                                     
        lk.properties ->> 'ettemaksu_period'                                      AS ettemaksu_period,
        (lk.properties ->> 'kas_eraldi')::BOOLEAN                                 AS kas_eraldi,
        (lk.properties ->> 'sooduse_alg')::DATE                                   AS sooduse_alg,
-       (lk.properties ->> 'sooduse_lopp')::DATE                                  AS sooduse_lopp
-
+       (lk.properties ->> 'sooduse_lopp')::DATE                                  AS sooduse_lopp,
+       r.nimetus::TEXT                                                           AS asutus,
+       v.viitenumber                                                             AS vana_viitenumber
 
 FROM lapsed.laps l
          INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.id
@@ -42,7 +43,8 @@ FROM lapsed.laps l
     AND grupp.rekvid = lk.rekvid
     AND grupp.status <> 3
     AND grupp.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
-
+         INNER JOIN ou.rekv r ON r.id = lk.rekvid
+         LEFT OUTER JOIN lapsed.viitenr v ON v.rekv_id = r.id AND v.isikukood = l.isikukood
 WHERE lk.staatus <> 3;
 
 GRANT SELECT ON TABLE lapsed.cur_lapse_kaart TO arvestaja;
@@ -52,7 +54,7 @@ GRANT SELECT ON TABLE lapsed.cur_lapse_kaart TO dbpeakasutaja;
 
 SELECT *
 FROM lapsed.cur_lapse_kaart
-where kas_ettemaks
+WHERE kas_ettemaks
 LIMIT 10;
 
 /*

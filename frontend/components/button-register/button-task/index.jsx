@@ -20,7 +20,8 @@ class ButtonTask extends React.PureComponent {
         this.state = {
             showModal: false,
             seisuga: getNow(),
-            kogus: 0
+            kogus: 0,
+            kas_kond: false
         };
         this.handleClick = this.handleClick.bind(this);
         this.modalPageClick = this.modalPageClick.bind(this);
@@ -60,12 +61,11 @@ class ButtonTask extends React.PureComponent {
                                                           onChange={this.handleInputChange}/> : null}
 
                         {this.props.showKogus ? <InputNumber title={this.props.title ? this.props.title : 'Väärtus'}
-                                                           name='kogus'
-                                                           value={Number(this.state.kogus)}
-                                                           ref='input-kogus'
-                                                           readOnly={false}
-                                                           onChange={this.handleInputChange}/> : null}
-
+                                                             name='kogus'
+                                                             value={Number(this.state.kogus)}
+                                                             ref='input-kogus'
+                                                             readOnly={false}
+                                                             onChange={this.handleInputChange}/> : null}
                     </ModalPage> : null
                 }
             </div>
@@ -75,7 +75,7 @@ class ButtonTask extends React.PureComponent {
     modalPageClick(btnEvent) {
         this.setState({showModal: false});
         if (btnEvent === 'Ok') {
-            this.props.onClick(this.props.value, this.props.showKogus ? this.state.kogus:  this.state.seisuga);
+            this.props.onClick(this.props.value, this.props.showKogus ? this.state.kogus : this.state.seisuga, this.state.kas_kond);
         }
     }
 
@@ -88,6 +88,9 @@ class ButtonTask extends React.PureComponent {
             case 'kogus':
                 this.setState({kogus: value});
                 break;
+            case 'kas_kond':
+                this.setState({kas_kond: value});
+                break;
 
         }
     }
@@ -98,7 +101,8 @@ ButtonTask.defaultProps = {
     disabled: false,
     show: true,
     showDate: true,
-    showKogus: false
+    showKogus: false,
+    showKond: false
 };
 
 module.exports = ButtonTask;

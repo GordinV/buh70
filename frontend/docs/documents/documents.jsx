@@ -11,6 +11,8 @@ const createEmptyFilterData = require('./../../../libs/createEmptyFilterData');
 const prepareSqlWhereFromFilter = require('./../../../libs/prepareSqlWhereFromFilter');
 const Const = require('./../../../config/constants');
 const Liimit = Const.RECORDS_LIMIT;
+const prepareData = require('./../../../libs/prepaireFilterData');
+
 
 const
     DataGrid = require('./../../components/data-grid/data-grid.jsx'),
@@ -78,7 +80,7 @@ class Documents extends React.Component {
             'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick',
             'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData',
-            'handleInputChange', 'btnEmailClick', 'setRegisterName','modalReportePageBtnClick');
+            'handleInputChange', 'btnEmailClick', 'setRegisterName', 'modalReportePageBtnClick');
 
 
     }
@@ -99,6 +101,38 @@ class Documents extends React.Component {
         if (this.props.initData && this.props.initData.docTypeId && this.props.initData.docTypeId.toUpperCase() !== this.docTypeId.toUpperCase()) {
             reload = true;
         }
+
+        // дефолтные значения
+        if (!DocContext.filter[this.docTypeId] && DocContext.gridConfig[this.docTypeId]) {
+            let config = DocContext.gridConfig[this.docTypeId];
+            let filter = prepareData(config, this.docTypeId);
+
+            // ищем дефолтные значения
+            config.forEach(row => {
+                if (row.default) {
+                    let value;
+                    try {
+                        value = eval(row.default);
+                    } catch (e) {
+                        console.error('No default value')
+                    }
+
+                    if (value) {
+                        // ищем и присваеваем значение
+                        let idx = filter.findIndex(data => data.id == row.id);
+                        if (idx) {
+                            filter[idx].value = value;
+                        }
+                    }
+                }
+            });
+
+            if (filter.length) {
+                DocContext.filter[this.docTypeId] = filter;
+            }
+
+        }
+
 
         // проверим сохраненный фильтр для этого типа
         if (DocContext.filter[this.docTypeId] && DocContext.filter[this.docTypeId].length > 0) {
@@ -371,7 +405,7 @@ class Documents extends React.Component {
         } else {
             // чистим строку фильтрации и массив фильтров
             filterString = '';
-            this.filterData.forEach(row=> {
+            this.filterData.forEach(row => {
                 row.value = null;
                 if (row.start) {
                     row.start = null;
@@ -633,7 +667,7 @@ class Documents extends React.Component {
                 disabled: false
             },
             btnSelect: {
-                show: this.gridConfig && this.gridConfig.length ? !!this.gridConfig.find(row => row.id === 'select'): false,
+                show: this.gridConfig && this.gridConfig.length ? !!this.gridConfig.find(row => row.id === 'select') : false,
                 disabled: false
             }
         }, (this.props.toolbarParams ? this.props.toolbarParams : {}),);
@@ -709,7 +743,7 @@ class Documents extends React.Component {
                     this.setState({warning: 'Edukalt', warningType: 'ok'})
 
                 } else if (method == 'delete' && response.data && response.data.result && response.data.result.error_code) {
-    // проверка перед удалением
+                    // проверка перед удалением
                     let error = `Tekkis viga: kustutamine ebaõnnestus`;
                     this.setState({
                         warning: error,

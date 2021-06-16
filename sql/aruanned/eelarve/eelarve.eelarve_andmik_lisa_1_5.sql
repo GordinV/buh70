@@ -1287,10 +1287,8 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                        AND LEFT(q.artikkel, 3) NOT IN ('655', '650', '352', '381', '413', '452', '910', '320')
                        AND trim(q.artikkel) NOT IN ('382', '100')
                        AND tyyp = 1
-                     GROUP BY q.idx
-                             ,
-                              q.artikkel
-                             ,
+                     GROUP BY q.idx,
+                              q.artikkel ,
                               q.nimetus
                      UNION ALL
                      SELECT qry.idx,

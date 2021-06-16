@@ -227,24 +227,15 @@ BEGIN
                  WHERE kt.artikkel IS NOT NULL
                AND NOT empty(kt.artikkel)
                  UNION ALL
-                 SELECT rekv_id AS rekvid
-                 ,
-                 0 :: NUMERIC AS eelarve
-                 ,
-                 0 :: NUMERIC AS eelarve_kassa
-                 ,
-                 0 :: NUMERIC AS eelarve_taps
-                 ,
-                 0 :: NUMERIC AS eelarve_kassa_taps
-                 ,
-                 0 :: NUMERIC AS tegelik
-                 ,
-                 summa AS kassa
-                 ,
-                 tegev
-                 ,
-                 allikas
-                 ,
+                 SELECT rekv_id AS rekvid,
+                 0 :: NUMERIC AS eelarve,
+                 0 :: NUMERIC AS eelarve_kassa,
+                 0 :: NUMERIC AS eelarve_taps,
+                 0 :: NUMERIC AS eelarve_kassa_taps,
+                 0 :: NUMERIC AS tegelik,
+                 summa AS kassa,
+                 tegev,
+                 allikas,
                  artikkel
                  FROM cur_tulude_kassa_taitmine kt
                  WHERE kt.artikkel IS NOT NULL
@@ -543,16 +534,16 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5_query(DATE, INTEGER, I
 
 /*
 select * from (
-    SELECT eelarve.eelarve_andmik_lisa_1_5_query(DATE(2021, 01, 31), 63, 1)
+    SELECT eelarve.eelarve_andmik_lisa_1_5_query(DATE(2021, 03, 31), 63, 1)
     ) qry
-where artikkel = '352'
+where artikkel = '655'
 
 
 
 
 SELECT *
 FROM tmp_andmik
-WHERE tegev like '01800%'
+WHERE artikkel = '655'
   AND tyyp = 2;
 */
 --

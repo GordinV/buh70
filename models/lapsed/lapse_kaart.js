@@ -9,7 +9,7 @@ module.exports = {
                           lk.properties ->> 'yksus'     AS yksus,
                           lk.properties ->> 'all_yksus' AS all_yksus,
                           lk.rekvid                     AS rekvid,
-                          NULL::DATE AS valid
+                          NULL::DATE                    AS valid
                    FROM lapsed.lapse_kaart lk
                             INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                    WHERE lk.staatus <> 3
@@ -114,8 +114,8 @@ module.exports = {
         {name: 'parentid', type: 'I'},
         {name: 'nomid', type: 'I'},
         {name: 'hind', type: 'I'},
-        {name:'alg_kpv', type: 'D', expression: 'data.alg_kpv < data.lopp_kpv'},
-        {name:'lopp_kpv', type: 'D', expression: 'data.lopp_kpv > data.alg_kpv'}
+        {name: 'alg_kpv', type: 'D', expression: 'data.alg_kpv < data.lopp_kpv'},
+        {name: 'lopp_kpv', type: 'D', expression: 'data.lopp_kpv > data.alg_kpv'}
 
     ],
     saveDoc:
@@ -131,8 +131,8 @@ module.exports = {
                 {id: "isikukood", name: "Isikukood", width: "10%", show: true},
                 {id: "nimi", name: "Nimi", width: "15%", show: true},
                 {id: "viitenumber", name: "Viitenumber", width: "10%", show: true},
-                {id: "kood", name: "Kood", width: "10%"},
-                {id: "nimetus", name: "Nimetus", width: "15%"},
+                {id: "kood", name: "Kood", width: "7%"},
+                {id: "nimetus", name: "Nimetus", width: "12%"},
                 {id: "hind", name: "Hind", width: "10%", type: "number"},
                 {id: "soodustus", name: "Soodustus", width: "10%"},
                 {id: "uhik", name: "Ühik", width: "5%"},
@@ -140,7 +140,8 @@ module.exports = {
                 {id: "alg_kpv", name: "Kpv-st", width: "7%", type: 'date', interval: true},
                 {id: "lopp_kpv", name: "Kpv-ni", width: "7%", type: 'date', interval: true},
                 {id: "inf3", name: "INF3", width: "5%"},
-                {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean'}
+                {id: "asutus", name: "Asutus", width: "10%", default: `DocContext.userData.asutus`},
+                {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean',hideFilter: true}
             ],
             sqlString:
                     `SELECT id,
@@ -154,7 +155,7 @@ module.exports = {
                             hind,
                             uhik,
                             lapsed.get_viitenumber($1, lapsid)                                             AS viitenumber,
-                            $1::INTEGER                                                                    AS rekvid,
+                            v.rekvid::INTEGER                                                              AS rekvid,
                             $2::INTEGER                                                                    AS user_id,
                             to_char(alg_kpv, 'DD.MM.YYYY') || ' - ' || to_char(lopp_kpv, 'DD.MM.YYYY')     AS kehtivus,
                             v.inf3                                                                         AS inf3,
@@ -175,9 +176,12 @@ module.exports = {
                             to_char(v.alg_kpv, 'DD.MM.YYYY')                                               AS alg_kpv,
                             to_char(v.lopp_kpv, 'DD.MM.YYYY')                                              AS lopp_kpv,
                             v.yksuse_kood,
-                            count(*) OVER ()                                                               AS rows_total
+                            count(*) OVER ()                                                               AS rows_total,
+                            v.asutus,
+                            v.vana_viitenumber
                      FROM lapsed.cur_lapse_kaart v
-                     WHERE rekvid = $1::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
+                     WHERE  rekvid IN (SELECT rekv_id
+                                      FROM get_asutuse_struktuur($1::INTEGER))`,     //  $1 всегда ид учреждения, $2 - userId
             params: '',
             alias: 'curLapsed',
             converter: function (data) {
@@ -241,7 +245,6 @@ module.exports = {
         type: 'sql',
         alias: 'importTeenused'
     },
-
 
 
 };

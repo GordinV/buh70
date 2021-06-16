@@ -34,6 +34,7 @@ class Documents extends React.PureComponent {
 
     }
 
+
     render() {
         return (<div><DocumentRegister initData={this.props.initData}
                                        userData={this.props.userData}
@@ -95,7 +96,8 @@ class Documents extends React.PureComponent {
                     onClick={this.onClickExport}
                     showDate={false}
                     showKogus={false}
-                    ref={`btn-ettemaksu_period`}
+                    showKond={true}
+                    ref={`btn-sama_csv`}
                 />
             </ToolbarContainer>
         )
@@ -129,7 +131,7 @@ class Documents extends React.PureComponent {
         });
     }
 
-    onClickExport(event) {
+    onClickExport(event, value, kond) {
         const Doc = this.refs['register'];
 
         if (Doc.gridData && Doc.gridData.length) {
@@ -139,7 +141,7 @@ class Documents extends React.PureComponent {
 
             let sqlWhere = Doc.state.sqlWhere;
             let params = encodeURIComponent(`${sqlWhere}`);
-            let url = `/reports/lapse_kaart/${DocContext.userData.uuid}`;
+            let url = `/reports/lapse_kaart/${DocContext.userData.uuid}/${kond}`;
 
             let filter = encodeURIComponent(`${(JSON.stringify(Doc.filterData))}`);
             let fullUrl = sqlWhere ? `${url}/${filter}/${params}` : `${url}/${filter}`;

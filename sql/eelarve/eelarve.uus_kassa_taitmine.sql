@@ -75,17 +75,17 @@ FROM (
                               ELSE l_rekvid END
          UNION ALL
          -- востановление расходов
-         SELECT -1 * j1.summa  AS summa,
-                j1.kood1::TEXT AS tegev,
-                j1.kood2::TEXT AS allikas,
-                j1.kood3::TEXT AS rahavoog,
-                j1.kood5::TEXT AS artikkel,
-                j1.tunnus::TEXT,
-                j.rekvid,
-                TRUE           AS kas_kulud,
-                d.id           AS docs_ids,
-                month(j.kpv)   AS kuu,
-                year(j.kpv)    AS aasta
+         SELECT DISTINCT -1 * j1.summa  AS summa,
+                         j1.kood1::TEXT AS tegev,
+                         j1.kood2::TEXT AS allikas,
+                         j1.kood3::TEXT AS rahavoog,
+                         j1.kood5::TEXT AS artikkel,
+                         j1.tunnus::TEXT,
+                         j.rekvid,
+                         TRUE           AS kas_kulud,
+                         d.id           AS docs_ids,
+                         month(j.kpv)   AS kuu,
+                         year(j.kpv)    AS aasta
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -149,6 +149,7 @@ FROM (
                               ELSE l_rekvid END
 */ ) qry
 WHERE NOT empty(artikkel)
+  and artikkel not in ('655')
   AND summa <> 0
 GROUP BY rekvid, tegev, allikas, artikkel, tunnus, rahavoog, kuu, aasta
 HAVING sum(summa) <> 0;
@@ -166,7 +167,9 @@ GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_taitmine( DATE,DATE, INTEGER, INTEGE
 /*
 
 SELECT *
-FROM eelarve.uus_kassa_taitmine('2020-01-01', '2020-03-31', 130, 0)
-where artikkel = '3237'
+FROM eelarve.uus_kassa_taitmine('2021-01-01', '2021-03-31', 130, 0)
+where artikkel = '5503'
+
+select *
 
 */
