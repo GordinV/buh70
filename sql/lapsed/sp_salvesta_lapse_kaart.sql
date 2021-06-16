@@ -128,7 +128,7 @@ BEGIN
     IF exists(SELECT lt.id
               FROM lapsed.lapse_taabel lt
               WHERE lt.parentid = doc_parentid
-                AND make_date(lt.aasta, lt.kuu, 01) < doc_alg_kpv
+                AND (make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - interval '1 day')::date < doc_alg_kpv
                 AND lt.nomid = doc_nomid
                 AND lt.staatus < 3
                 AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
@@ -142,7 +142,7 @@ BEGIN
     IF exists(SELECT lt.id
               FROM lapsed.lapse_taabel lt
               WHERE lt.parentid = doc_parentid
-                AND make_date(lt.aasta, lt.kuu, 01) > doc_lopp_kpv
+                AND make_date(lt.aasta, lt.kuu, 1) > doc_lopp_kpv
                 AND lt.nomid = doc_nomid
                 AND lt.staatus < 3
                 AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
@@ -155,7 +155,8 @@ BEGIN
     -- проверка на дату льготы, если дата не конец мнесяца и не равна дате окончания услуги
     IF (doc_sooduse_lopp IS NOT NULL
         AND doc_sooduse_lopp <
-            (make_date(year(doc_sooduse_lopp), month(doc_sooduse_lopp), 1) + INTERVAL '1 month')::DATE - 1)
+            (make_date(year(doc_sooduse_lopp), month(doc_sooduse_lopp), 1) + INTERVAL '1 month' -
+             INTERVAL '1 day')::DATE)
         AND doc_sooduse_lopp < doc_lopp_kpv
     THEN
         RAISE EXCEPTION 'Vale soodustuse lõpp kuupäev. peaks olla kuu lõpp või teenuse lõpp kuupäev';

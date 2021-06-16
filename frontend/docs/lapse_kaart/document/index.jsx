@@ -354,13 +354,6 @@ class LapseKaart extends React.PureComponent {
                                   readOnly={!isEditMode}
                         />
 
-                        <CheckBox title="Kas INF3?"
-                                  name='kas_inf3'
-                                  value={Boolean(self.docData.kas_inf3)}
-                                  ref={'checkbox_kas_inf3'}
-                                  onChange={self.handleInputChange}
-                                  readOnly={!isEditMode}
-                        />
                     </div>
                     {kas_naida_soodustus ?
                         < div style={styles.docColumn}>

@@ -150,7 +150,20 @@ BEGIN
             properties = json_object
         WHERE id = doc_id RETURNING id
             INTO nom_id;
+
+        -- проставим значение inf3 по карточкам
+        IF exists(SELECT 1
+                  FROM pg_class
+                  WHERE relname = 'lapse_kaart')
+        THEN
+            UPDATE lapsed.lapse_kaart
+            SET properties = properties::JSONB || jsonb_build_object('kas_inf3', doc_INF3)
+            WHERE nom_id = doc_id;
+        END IF;
+
+
     END IF;
+
 
     RETURN coalesce(nom_id, 0);
 

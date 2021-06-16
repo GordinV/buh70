@@ -20,7 +20,8 @@ BEGIN
         THEN
             RAISE EXCEPTION 'Period on suletatud';
         END IF;
-    END IF;
+
+        END IF;
     RETURN new;
 END;
 $$;
