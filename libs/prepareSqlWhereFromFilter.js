@@ -33,8 +33,8 @@ const prepareSqlWhereFromFilter = (filterData, docTypeId) => {
                     filterString = `${filterString}  upper(${row.id}) like upper('%${row.value.trim()}%')`;
                     break;
                 case 'date':
-                    if ('start' in row) {
-                        filterString = `${filterString} format_date(${row.id}::text)  >=  format_date('${row.start}'::text) and format_date(${row.id}::text)  <=  format_date('${row.end}'::text)`;
+                    if ('start' in row && row.start) {
+                        filterString = `${filterString} format_date(${row.id}::text)  >=  format_date('${row.start}'::text) and (format_date(${row.id}::text)  <=  format_date('${row.end}'::text) or ${row.end} is null)`;
                     } else if (row.id == 'valid') {
                         // для этого поля ставим фильтр на контект действует до
                         filterString = `${filterString} (format_date(${row.id}::text)  >=  format_date('${row.value}'::text) or ${row.id} is null)`;
@@ -45,15 +45,15 @@ const prepareSqlWhereFromFilter = (filterData, docTypeId) => {
 
                     break;
                 case 'number':
-                    if ('start' in row) {
-                        filterString = `${filterString} ${row.id}::numeric  >=  ${row.start} and ${row.id}::numeric  <=  ${row.end} `;
+                    if ('start' in row && row.start) {
+                        filterString = `${filterString} ${row.id}::numeric  >=  ${row.start} and (${row.id}::numeric  <=  ${row.end} or ${row.end} is null)`;
                     } else {
                         filterString = filterString + row.id + "::numeric = " + row.value;
                     }
                     break;
                 case 'integer':
-                    if ('start' in row) {
-                        filterString = `${filterString} ${row.id}  >=  ${row.start} and ${row.id}  <=  ${row.end} `;
+                    if ('start' in row && row.start) {
+                        filterString = `${filterString} ${row.id}  >=  ${row.start} and (${row.id}  <=  ${row.end} or ${row.end} is null)`;
                     } else {
                         filterString = filterString + row.id + "::integer = " + row.value;
                     }
