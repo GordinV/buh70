@@ -141,7 +141,7 @@ module.exports = {
                 {id: "lopp_kpv", name: "Kpv-ni", width: "7%", type: 'date', interval: true},
                 {id: "inf3", name: "INF3", width: "5%"},
                 {id: "asutus", name: "Asutus", width: "10%", default: `DocContext.userData.asutus`},
-                {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean',hideFilter: true}
+                {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString:
                     `SELECT id,
@@ -154,7 +154,7 @@ module.exports = {
                             CASE WHEN all_yksus IS NOT NULL THEN '(' || all_yksus::TEXT || ')' ELSE '' END AS yksus,
                             hind,
                             uhik,
-                            lapsed.get_viitenumber($1, lapsid)                                             AS viitenumber,
+                            lapsed.get_viitenumber(v.rekvid, lapsid)                                       AS viitenumber,
                             v.rekvid::INTEGER                                                              AS rekvid,
                             $2::INTEGER                                                                    AS user_id,
                             to_char(alg_kpv, 'DD.MM.YYYY') || ' - ' || to_char(lopp_kpv, 'DD.MM.YYYY')     AS kehtivus,
@@ -180,7 +180,7 @@ module.exports = {
                             v.asutus,
                             v.vana_viitenumber
                      FROM lapsed.cur_lapse_kaart v
-                     WHERE  rekvid IN (SELECT rekv_id
+                     WHERE rekvid IN (SELECT rekv_id
                                       FROM get_asutuse_struktuur($1::INTEGER))`,     //  $1 всегда ид учреждения, $2 - userId
             params: '',
             alias: 'curLapsed',
