@@ -529,11 +529,12 @@ class Documents extends React.Component {
         let string = '';
 
         this.filterData.map(row => {
+            let kas_sisaldab = row.sqlNo && row.sqlNo == 0 ? '<>':  '=';
             if (row.start) {
                 string = `${string} ${row.name}>=${row.start},${row.name}<=${row.end};`;
             } else {
                 if (row.value) {
-                    string = string + row.name + ':' + row.value + '; ';
+                    string = string + row.name +  ':' + kas_sisaldab + ' ' + row.value + '; ';
                 }
             }
         });

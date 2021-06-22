@@ -42,13 +42,13 @@ function prepareFilterData(gridConfig, docTypeId) {
     if (docTypeId && DocContext.filter[docTypeId].length > 0) {
         data = DocContext.filter[docTypeId];
     } else {
-        console.log('prepData', gridConfig);
         gridConfig.map((row) => {
 
             const field = {
                 id: row.id,
                 value: row.value ? row.value : null,
                 name: row.id,
+                sqlNo: 1,
                 type: row.type ? row.type : 'text',
                 interval: !!row.interval,
                 start: row.value ? row.value : null,

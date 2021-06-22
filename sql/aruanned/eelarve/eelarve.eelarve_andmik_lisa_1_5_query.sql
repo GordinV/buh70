@@ -204,24 +204,15 @@ BEGIN
                AND tt.artikkel IS NOT NULL
                AND NOT empty(tt.artikkel)
                  UNION ALL
-                 SELECT rekv_id AS rekvid
-                 ,
-                 0 :: NUMERIC AS eelarve
-                 ,
-                 0 :: NUMERIC AS eelarve_kassa
-                 ,
-                 0 :: NUMERIC AS eelarve_taps
-                 ,
-                 0 :: NUMERIC AS eelarve_kassa_taps
-                 ,
-                 0 :: NUMERIC AS tegelik
-                 ,
-                 summa AS kassa
-                 ,
-                 tegev
-                 ,
-                 allikas
-                 ,
+                 SELECT rekv_id AS rekvid,
+                 0 :: NUMERIC AS eelarve,
+                 0 :: NUMERIC AS eelarve_kassa,
+                 0 :: NUMERIC AS eelarve_taps,
+                 0 :: NUMERIC AS eelarve_kassa_taps,
+                 0 :: NUMERIC AS tegelik,
+                 summa AS kassa,
+                 tegev,
+                 allikas,
                  artikkel
                  FROM cur_kulude_kassa_taitmine kt
                  WHERE kt.artikkel IS NOT NULL
@@ -243,24 +234,15 @@ BEGIN
                  UNION ALL
 
                -- kassatulud (art.jargi) miinus
-                 SELECT kassakulu.rekvid
-                 ,
-                 0::NUMERIC AS eelarve
-                 ,
-                 0::NUMERIC AS eelarve_kassa
-                 ,
-                 0 :: NUMERIC AS eelarve_taps
-                 ,
-                 0 :: NUMERIC AS eelarve_kassa_taps
-                 ,
-                 0::NUMERIC AS tegelik
-                 ,
-                 -1 * (summa) AS kassa
-                 ,
-                 kassakulu.tegev::VARCHAR(20)
-                 ,
-                 kassakulu.allikas::VARCHAR(20)
-                 ,
+                 SELECT kassakulu.rekvid,
+                 0::NUMERIC AS eelarve,
+                 0::NUMERIC AS eelarve_kassa,
+                 0 :: NUMERIC AS eelarve_taps,
+                 0 :: NUMERIC AS eelarve_kassa_taps ,
+                 0::NUMERIC AS tegelik,
+                 -1 * (summa) AS kassa,
+                 kassakulu.tegev::VARCHAR(20),
+                 kassakulu.allikas::VARCHAR(20),
                  kassakulu.artikkel::VARCHAR(20)
                  FROM (
                  SELECT j.rekvid,
@@ -297,6 +279,7 @@ BEGIN
                      , j1.kood2
                      , j1.kood5
              ) kassakulu
+             where artikkel <> '655'
                  UNION ALL
 
                -- kassatulud (art.jargi), kulud

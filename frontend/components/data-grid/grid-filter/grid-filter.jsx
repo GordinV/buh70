@@ -19,38 +19,61 @@ class GridFilter extends React.PureComponent {
         this.handleChange = this.handleChange.bind(this);
         this.prepareFilterFields = this.prepareFilterFields.bind(this);
         this.returnInterval = this.returnInterval.bind(this);
+        this.returnTextComponent = this.returnTextComponent.bind(this);
+        this.handleSelectChange = this.handleSelectChange.bind(this);
     }
 
     /**
      * Обработчик на изменения инпутов
      */
     handleChange(e) {
-        this.saveFilterContent(e.target.name, e.target.value);
+        this.saveFilterContent(e.target.name, e.target.value, null);
         this.forceUpdate();
     }
+
+    /**
+     * Обработчик на изменения выбора селекта
+     */
+    handleSelectChange(e) {
+        this.saveFilterContent(e.target.name, null, e.target.value);
+        this.forceUpdate();
+    }
+
 
     /**
      * сохранит значение фильтра
      * @param name
      * @param value
+     * @param sqlNo - исключение на фильтр
      */
-    saveFilterContent(name, value) {
+    saveFilterContent(name, value, sqlNo) {
         let data = this.props.data;
 
         // проверим на наличие полей для фильтрации
-        if (!data.length || !row) {
+        if (!data.length) {
             data = prepareData(this.props.gridConfig, this.props.docTypeId);
         } else {
             data = this.props.data;
         }
 
-        // сохраним значение фильтра
-        let row = data.map(row => {
-            if (row.id === name) {
-                row.value = value;
-                return row;
+        let kas_sisaldab = 1;
+        // ищем значение sqlNo
+        if (DocContext.filter[this.props.docTypeId]) {
+            let idx = DocContext.filter[this.props.docTypeId].findIndex((row) => row.id === name);
+            if (idx >= 0 ) {
+                kas_sisaldab = DocContext.filter[this.props.docTypeId][idx].sqlNo;
             }
+        }
+
+        // сохраним значение фильтра
+        data = data.map(row => {
+            if (row.id === name) {
+                row.value = value ? value : row.value;
+                row.sqlNo = value ?  kas_sisaldab: sqlNo ;
+            }
+            return row;
         });
+
 
         let index,
             isIntervalStart = !!name.match(/_start/),
@@ -82,15 +105,15 @@ class GridFilter extends React.PureComponent {
 
         if (index > -1) {
             if (isIntervalStart) {
-                data[index].start = value;
-                data[index][`${fieldName}_start`] = value;
+                data[index].start = data[index].value;
+                data[index][`${fieldName}_start`] = data[index].value;
             }
             if (isIntervalEnd) {
-                data[index].end = value;
-                data[index][`${fieldName}_end`] = value;
+                data[index].end = data[index].value;
+                data[index][`${fieldName}_end`] = data[index].value;
             }
 
-            data[index].value = value;
+            data[index].sqlNo = sqlNo ? sqlNo : 1;
         }
 
         // сохраним фильтр
@@ -139,15 +162,7 @@ class GridFilter extends React.PureComponent {
     }
 
     prepareFilterFields() {
-        let data = this.props.data;
 
-
-        // проверим на наличие полей для фильтрации
-        if (!data.length) {
-            data = prepareData(this.props.gridConfig, this.props.docTypeId);
-        }
-
-        let isStateUpdated = false; // if true then will call setState
 
         // только поля, которые отмечаны как show:true или явно ка указаны и те, у котоых нету hideFilter
         const filterFields = this.props.gridConfig.filter(field => {
@@ -157,23 +172,6 @@ class GridFilter extends React.PureComponent {
         });
 
         return filterFields.map((row, index) => {
-            let componentType = row.type ? row.type : 'text';
-
-            // ишем дефолтное значение
-            let value = row.value ? row.value : '';
-
-            // ищем инициализированное значение
-            let obj = data.find(dataRow => dataRow.id == row.id);
-
-            if (obj && ('value' in obj)) {
-                if (!obj.value && value) {
-                    // есть дефолтное значение
-                    isStateUpdated = true;
-                    value = data[index][row.id].value;
-                }
-                value = obj.value ? obj.value : value;
-
-            }
 
             return <div style={styles.formWidget} key={'fieldSet-' + row.id}>
                 <div style={styles.formWidgetLabel}>
@@ -181,22 +179,62 @@ class GridFilter extends React.PureComponent {
                 </div>
                 <div style={styles.formWidgetInput}>
                     {row.interval ? this.returnInterval(row)
-                        : <input style={styles.input}
-                                 type={componentType}
-                                 title={row.name}
-                                 name={row.id}
-                                 placeholder={row.toolTip ? row.toolTip : row.name}
-                                 ref={row.id}
-                                 value={value || ''}
-                                 onChange={this.handleChange}
-                                 defaultValue={this.props.data[row.id]}/>
+                        : this.returnTextComponent(row)
                     }
-
                 </div>
             </div>
-        });
-
+        })
     }
+
+    returnTextComponent(row) {
+        let data = this.props.data;
+
+        // проверим на наличие полей для фильтрации
+        if (!data.length) {
+            data = prepareData(this.props.gridConfig, this.props.docTypeId);
+        }
+
+        let componentType = row.type ? row.type : 'text';
+
+        // ишем дефолтное значение
+        let value = row.value ? row.value : '';
+        let kas_sisaldab = 1;
+
+        // ищем инициализированное значение
+        let obj = data.find(dataRow => dataRow.id == row.id);
+
+        if (obj && ('value' in obj)) {
+            if (!obj.value && value) {
+                // есть дефолтное значение
+                value = data[index][row.id].value;
+            }
+            value = obj.value ? obj.value : value;
+            kas_sisaldab = obj.sqlNo ? obj.sqlNo : 1;
+        }
+
+        return (<div style={styles.wrapper}>
+                <select style={styles.select}
+                        value={kas_sisaldab || 1}
+                        name={row.id}
+                        disabled={!value}
+                        id='sqlNo'
+                        onChange={this.handleSelectChange}>
+                    <option value={1}>{'SISALDAB'}</option>
+                    <option value={0}>{'EI SISALDA'}</option>
+                </select>
+                <input style={styles.input}
+                       type={componentType}
+                       title={row.name}
+                       name={row.id}
+                       placeholder={row.toolTip ? row.toolTip : row.name}
+                       ref={row.id}
+                       value={value || ''}
+                       onChange={this.handleChange}
+                       defaultValue={this.props.data[row.id]}/>
+            </div>
+        )
+    }
+
 
     /**
      * вернет два инпута, где будут хранится значения для сначала и конца диапазона

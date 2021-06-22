@@ -24,6 +24,24 @@ module.exports = {
 
     },
 
+    select: {
+        borderRadius: '2px',
+        padding: '5px',
+        display: 'inline-block',
+        width: 'auto',
+        display: 'flex',
+        marginRight: '5px'
+
+    },
+
+    wrapper: {
+        margin: '5px',
+        display: 'flex',
+        width: '95%'
+
+    },
+
+
     fieldSet: {
         borderRadius: '2px',
         margin: '10px'

@@ -155,7 +155,7 @@ module.exports = {
                 {id: "viitenumber", name: "Viitenumber", width: "20%"},
                 {id: "yksused", name: "Üksused", width: "30%"},
                 {id: "lopp_kpv", name: "Kehtivus", width: "20%", type: 'date', interval: true},
-                {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean'}
+                {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString:
                     `SELECT TRUE                                  AS select,
