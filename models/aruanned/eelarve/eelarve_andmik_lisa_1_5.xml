@@ -2,13 +2,21 @@
 <VFPData>
   <grid>
     <sql>SELECT *
-                FROM eelarve.eelarve_andmik_lisa_1_5($1::date, $2::integer, $3::integer)
-                where (not empty(tegev) or not empty(artikkel))
-                and not (tegev in ('01800', '09800') and EMPTY(saldoandmik))
-                order by tegev, artikkel</sql>
+                    FROM eelarve.eelarve_andmik_lisa_1_5($1::DATE, $2::INTEGER,
+                                                         $3::INTEGER) where (not EMPTY(tegev) OR NOT empty(artikkel))
+                        AND NOT (tegev IN (
+                         '01800',
+                         '09800') AND EMPTY(saldoandmik))
+                    ORDER BY tegev, artikkel</sql>
     <alias>eelarve_andmik_lisa_1_5_report</alias>
   </grid>
-  <select></select>
+  <select>
+    <sql>SELECT eelarve::text, eelarve_taps::text, selg::text
+                  FROM eelarve.lisa1_lisa5_kontrol($1::TEXT, $2::JSON, $3::JSON)</sql>
+    <query />
+    <multiple>true</multiple>
+    <alias>kontrol</alias>
+  </select>
   <selectAsLibs>
     <sql></sql>
     <alias>selectAsLibs</alias>
@@ -45,4 +53,8 @@
     <alias />
   </generateJournal>
   <print></print>
+  <getLog>
+    <sql />
+    <alias />
+  </getLog>
 </VFPData>

@@ -66,9 +66,11 @@ class GridFilter extends React.PureComponent {
         }
 
         // сохраним значение фильтра
+
         data = data.map(row => {
             if (row.id === name) {
-                row.value = value ? value : row.value;
+
+                row.value = !sqlNo ? value : row.value;
                 row.sqlNo = value ?  kas_sisaldab: sqlNo ;
             }
             return row;
@@ -105,14 +107,15 @@ class GridFilter extends React.PureComponent {
 
         if (index > -1) {
             if (isIntervalStart) {
-                data[index].start = data[index].value;
-                data[index][`${fieldName}_start`] = data[index].value;
+                data[index].start = value;
+                data[index][`${fieldName}_start`] = value;
+                data[index].value = value;
             }
             if (isIntervalEnd) {
-                data[index].end = data[index].value;
-                data[index][`${fieldName}_end`] = data[index].value;
+                data[index].end = value;
+                data[index][`${fieldName}_end`] = value;
+                data[index].value = value;
             }
-
             data[index].sqlNo = sqlNo ? sqlNo : 1;
         }
 
