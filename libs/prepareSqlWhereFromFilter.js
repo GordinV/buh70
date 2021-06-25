@@ -42,7 +42,7 @@ const prepareSqlWhereFromFilter = (filterData, docTypeId) => {
                         // для этого поля ставим фильтр на контект действует до
                         filterString = `${filterString} (format_date(${row.id}::text)  >=  format_date('${row.value}'::text) or ${row.id} is null)`;
                     } else {
-                        filterString = filterString + row.id + (kas_sisaldab && kas_sisaldab == 'NOT' ? "'<>'" : "'='") + "'" + row.value + "'";
+                        filterString = filterString + row.id + (kas_sisaldab && kas_sisaldab == 'NOT' ? "<>" : "=") + "'" + row.value + "'";
                     }
 
 
@@ -51,14 +51,14 @@ const prepareSqlWhereFromFilter = (filterData, docTypeId) => {
                     if ('start' in row && row.start) {
                         filterString = `${filterString} ${row.id}::numeric  >=  ${row.start} and (${row.id}::numeric  <=  ${row.end} or ${row.end} is null)`;
                     } else {
-                        filterString = filterString + row.id + "::numeric  " + (kas_sisaldab && kas_sisaldab == 'NOT' ? "'<>'" : "'='") + row.value;
+                        filterString = filterString + row.id + "::numeric  " + (kas_sisaldab && kas_sisaldab == 'NOT' ? "<>" : "=") + row.value;
                     }
                     break;
                 case 'integer':
                     if ('start' in row && row.start) {
                         filterString = `${filterString} ${row.id}  >=  ${row.start} and (${row.id}  <=  ${row.end} or ${row.end} is null)`;
                     } else {
-                        filterString = filterString + row.id + "::integer  " + (kas_sisaldab && kas_sisaldab == 'NOT' ? "'<>'" : "'='") + row.value;
+                        filterString = filterString + row.id + "::integer  " + (kas_sisaldab && kas_sisaldab == 'NOT' ? "<>" : "=") + row.value;
                     }
                     break;
             }
