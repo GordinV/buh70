@@ -123,7 +123,7 @@ BEGIN
     FOR v_taabel IN
         SELECT lt.nomid,
                coalesce(lt.kogus, 0)                                                 AS kogus,
-               coalesce(lk.hind, 0)                                                  AS hind,
+               coalesce(lt.hind, lk.hind)                                            AS hind,
                coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)::NUMERIC           AS soodus,
                coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN AS kas_protsent,
                coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE)::BOOLEAN   AS kas_eraldi,

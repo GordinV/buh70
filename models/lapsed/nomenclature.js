@@ -26,7 +26,8 @@ module.exports = {
                      (n.properties ->> 'tyyp')::TEXT                                        AS tyyp,
                      to_char((n.properties::JSONB ->> 'valid')::DATE,
                              'YYYY-MM-DD')                                                  AS VALID,
-                     (n.properties::JSONB ->> 'tyyp')::TEXT                         AS tyyp
+                     (n.properties::JSONB ->> 'tyyp')::TEXT                         AS tyyp,
+                     (n.properties::JSONB ->> 'algoritm')::TEXT                         AS algoritm       
               FROM libs.nomenklatuur n
               WHERE n.id = $1`,
         sqlAsNew: `select  $1::integer as id , $2::integer as userid, 'NOMENCLATURE' as doc_type_id,
@@ -55,7 +56,8 @@ module.exports = {
             null::varchar(20) as artikkel,
             luhi_nimi::text as luhi_nimi,
             'Põhiõpe'::TEXT AS oppe_tyyp,
-            null::text as tyyp,            
+            null::text as tyyp,  
+            'konstantne'::text as algoritm,          
             null::date as valid`,
         query: null,
         multiple: false,

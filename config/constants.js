@@ -84,6 +84,12 @@ module.exports = {
             {id: 5, kood: 'aasta', name: 'Aasta'}
         ],
 
+        ALGORITMID:[
+            {id: 1, kood: 'päev', name: 'Päev'},
+            {id: 2, kood: 'konstantne', name: 'Konstantne'},
+            {id: 3, kood: 'külastamine', name: 'Külastamine'},
+        ],
+
         TYYP: [
             {id: 2, kood: 'SOODUSTUS', name: ' '}
         ]

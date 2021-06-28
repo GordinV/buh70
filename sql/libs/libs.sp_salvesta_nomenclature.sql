@@ -35,6 +35,7 @@ DECLARE
     doc_grupp     TEXT    = doc_data ->> 'grupp';
     doc_oppe_tyyp TEXT    = doc_data ->> 'oppe_tyyp';
     doc_luhi_nimi TEXT    = doc_data ->> 'luhi_nimi';
+    doc_algoritm  TEXT    = doc_data ->> 'algoritm';
     doc_tyyp      TEXT    = CASE
                                 WHEN doc_data ->> 'tyyp' = '0' THEN NULL::TEXT
                                 ELSE doc_data ->> 'tyyp' END; -- тип услуги, нул - простая, soodustus - льгота
@@ -110,7 +111,9 @@ BEGIN
                  doc_grupp                      AS grupp,
                  doc_INF3                       AS kas_inf3,
                  doc_oppe_tyyp                  AS oppe_tyyp,
-                 doc_tyyp                       AS tyyp
+                 doc_tyyp                       AS tyyp,
+                 doc_algoritm                   AS algoritm,
+                 doc_luhi_nimi                  AS luhi_nimi
          ) row;
 
     IF doc_id IS NULL OR doc_id = 0

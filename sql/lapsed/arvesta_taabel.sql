@@ -14,24 +14,26 @@ CREATE OR REPLACE FUNCTION lapsed.arvesta_taabel(IN user_id INTEGER,
 $BODY$
 
 DECLARE
-    l_rekvid    INTEGER = (SELECT rekvid
-                           FROM ou.userid u
-                           WHERE id = user_id
-                           LIMIT 1);
+    l_rekvid     INTEGER = (SELECT rekvid
+                            FROM ou.userid u
+                            WHERE id = user_id
+                            LIMIT 1);
 
-    v_kaart     RECORD;
-    json_object JSONB;
+    v_kaart      RECORD;
+    json_object  JSONB;
 
-    l_status    INTEGER;
-    DOC_STATUS  INTEGER = 1; -- только активные услуги
-    l_taabel_id INTEGER;
-    l_count     INTEGER = 0;
-    l_kogus     NUMERIC = 0;
-    userName    TEXT    = (SELECT ametnik
-                           FROM ou.userid
-                           WHERE id = user_id);
-    l_message   TEXT;
-    v_laps      RECORD;
+    l_status     INTEGER;
+    DOC_STATUS   INTEGER = 1; -- только активные услуги
+    l_taabel_id  INTEGER;
+    l_count      INTEGER = 0;
+    l_kogus      NUMERIC = 0;
+    userName     TEXT    = (SELECT ametnik
+                            FROM ou.userid
+                            WHERE id = user_id);
+    l_message    TEXT;
+    v_laps       RECORD;
+    l_too_paevad INTEGER;
+    l_kulastused INTEGER = 0;
 BEGIN
     doc_type_id = 'LAPSE_TAABEL';
     -- will return docTypeid of new doc
@@ -43,17 +45,30 @@ BEGIN
 
     l_message = 'Isikukood: ' || ltrim(rtrim(v_laps.isikukood)) || ', Nimi:' || ltrim(rtrim(v_laps.nimi));
     viitenr = v_laps.viitenr;
+
+    -- удаляем табель
+    PERFORM lapsed.sp_delete_lapse_taabel(user_id, t.id)
+    FROM lapsed.lapse_taabel t
+    WHERE t.parentid = l_laps_id
+      AND kuu = month(l_kpv)
+      AND aasta = year(l_kpv)
+      AND rekvid = l_rekvid
+      AND staatus < 2;
+
     -- делаем выборку услуг, не предоплатных
 
     FOR v_kaart IN
         SELECT lk.nomid,
-               lk.id                                             AS lapse_kaart_id,
+               lk.id                                                     AS lapse_kaart_id,
                lk.parentid,
                n.uhik,
-               ltrim(rtrim(n.kood))                              AS kood,
-               coalesce((lk.properties ->> 'kogus')::NUMERIC, 0) AS kogus,
-               date_part('month'::TEXT, l_kpv::DATE)             AS kuu,
-               date_part('year'::TEXT, l_kpv::DATE)              AS aasta
+               coalesce(n.properties ->> 'algoritm', 'konstantne')::TEXT AS algoritm,
+               ltrim(rtrim(n.kood))                                      AS kood,
+               coalesce((lk.properties ->> 'kogus')::NUMERIC, 0)         AS kogus,
+               date_part('month'::TEXT, l_kpv::DATE)                     AS kuu,
+               date_part('year'::TEXT, l_kpv::DATE)                      AS aasta,
+               lk.hind,
+               NULL::TEXT                                                AS muud
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.parentid = l_laps_id
@@ -86,7 +101,42 @@ BEGIN
                   AND t1.nom_id = v_kaart.nomid
                   AND month(t.kpv) = month(l_kpv::DATE)
                   AND year(t.kpv) = year(l_kpv::DATE);
+
+                v_kaart.hind = NULL; -- нет расчета цены
+
+            ELSIF lower(v_kaart.algoritm) IN ('külastamine')
+            THEN
+                -- на основании табеля посещений
+                --  за основу берется кол-во рабочих дней в месяце и кол-во посещений. Указанная цена в карточке умножается на расчётный коэффициент посещений.
+                --  коэффициент посещений. = цена / раб. дни в месяце * кол-во посещений
+
+                l_too_paevad = (SELECT palk.get_work_days(
+                                               (SELECT json_build_object('kuu', MONTH(l_kpv), 'aasta', YEAR(l_kpv)))::JSON));
+
+                l_kulastused = (SELECT count(*) AS kulastavus
+                                FROM (
+                                         SELECT DISTINCT dt.id, dt1.laps_id, dt.rekv_id, dt.kpv
+                                         FROM lapsed.day_taabel dt
+                                                  INNER JOIN lapsed.day_taabel1 dt1 ON dt.id = dt1.parent_id
+                                         WHERE dt1.laps_id = 3
+                                           AND month(dt.kpv) = 4
+                                           AND year(dt.kpv) = 2021
+                                           AND dt.staatus < 3
+                                           AND coalesce(dt1.osalemine, 0) = 1
+                                     ) qry);
+                IF (coalesce(l_kulastused, 0)) > 0
+                THEN
+                    v_kaart.muud = 'Hinna arvestuse selgitus: ' || v_kaart.hind::text  || '/' || l_too_paevad::text || '*' || l_kulastused::text;
+                    v_kaart.hind = v_kaart.hind / l_too_paevad * l_kulastused;
+                ELSE
+                    v_kaart.muud = 'Hinna arvestuse selgitus: ' || v_kaart.hind:: text || '/' || l_too_paevad::text || '*' || l_kulastused::text;
+                    v_kaart.hind = 0; -- нет посещений
+                END IF;
+            ELSE
+                v_kaart.hind = NULL; -- нет расчета цены
+
             END IF;
+
 
             SELECT lt.id,
                    lt.staatus

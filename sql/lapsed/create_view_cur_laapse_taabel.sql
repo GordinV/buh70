@@ -9,7 +9,7 @@ SELECT lt.id,
        lt.kuu,
        lt.aasta,
        lt.kogus,
-       lk.hind::NUMERIC(12, 2),
+       coalesce(lt.hind, lk.hind)::NUMERIC(12, 2) as hind,
        coalesce(n.properties ->> 'tyyp', '')       AS tyyp,
        CASE
            WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN lk.hind

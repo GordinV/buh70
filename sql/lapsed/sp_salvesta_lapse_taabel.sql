@@ -16,6 +16,7 @@ DECLARE
                                   FROM lapsed.lapse_kaart
                                   WHERE id = doc_lapse_kaart_id);
     doc_kogus          NUMERIC = doc_data ->> 'kogus';
+    doc_hind           NUMERIC = doc_data ->> 'hind';
     doc_kuu            INTEGER = doc_data ->> 'kuu';
     doc_aasta          INTEGER = doc_data ->> 'aasta';
     doc_muud           TEXT    = doc_data ->> 'muud';
@@ -90,8 +91,10 @@ BEGIN
                        FROM (SELECT now()    AS created,
                                     userName AS user) row;
 
-        INSERT INTO lapsed.lapse_taabel (parentid, lapse_kaart_id, nomid, rekvid, kogus, kuu, aasta, muud, ajalugu)
-        VALUES (doc_parentid, doc_lapse_kaart_id, doc_nomid, user_rekvid, doc_kogus, doc_kuu, doc_aasta, doc_muud,
+        INSERT INTO lapsed.lapse_taabel (parentid, lapse_kaart_id, nomid, rekvid, hind, kogus, kuu, aasta, muud,
+                                         ajalugu)
+        VALUES (doc_parentid, doc_lapse_kaart_id, doc_nomid, user_rekvid, doc_hind, doc_kogus, doc_kuu, doc_aasta,
+                doc_muud,
                 '[]' :: JSONB || json_ajalugu) RETURNING id
                    INTO doc_id;
 
@@ -109,6 +112,7 @@ BEGIN
         UPDATE lapsed.lapse_taabel
         SET nomid          = doc_nomid,
             lapse_kaart_id = doc_lapse_kaart_id,
+            hind           = doc_hind,
             kogus          = doc_kogus,
             kuu            = doc_kuu,
             aasta          = doc_aasta,

@@ -12,7 +12,7 @@ const
     CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     styles = require('./nomenclature-styles');
 
-const {LIBRARIES, TAXIES, UHIK, TYYP} = require('./../../../../config/constants').NOMENCLATURE;
+const {LIBRARIES, TAXIES, UHIK, TYYP, ALGORITMID} = require('./../../../../config/constants').NOMENCLATURE;
 
 
 class Nomenclature extends React.PureComponent {
@@ -106,26 +106,40 @@ class Nomenclature extends React.PureComponent {
                                     btnDelete={isEditeMode}
                                     onChange={self.handleInputChange}
                                     readOnly={!isEditeMode}/>
-                            <Select title="Koolituse liigid:"
-                                    name='oppe_tyyp'
-                                    data={self.libs['koolituse_liik']}
-                                    collId='kood'
-                                    value={self.docData.oppe_tyyp || ''}
-                                    defaultValue={self.docData.oppe_tyyp}
-                                    ref="select-oppe_tyyp"
-                                    btnDelete={isEditeMode}
-                                    onChange={self.handleInputChange}
-                                    readOnly={!isEditeMode}/>
-                            <Select title="Tüüp:"
-                                    name='tyyp'
-                                    data={TYYP}
-                                    collId='kood'
-                                    value={self.docData.tyyp || ''}
-                                    defaultValue={self.docData.tyyp}
-                                    ref="select-tyyp"
-                                    btnDelete={isEditeMode}
-                                    onChange={self.handleInputChange}
-                                    readOnly={!isEditeMode}/>
+                            {self.docData.dok == 'ARV' ?
+                                <Select title="Hinna algoritm:"
+                                        name='algoritm'
+                                        data={ALGORITMID}
+                                        collId='kood'
+                                        value={self.docData.algoritm || ''}
+                                        defaultValue={self.docData.algoritm}
+                                        ref="select-algoritm"
+                                        btnDelete={isEditeMode}
+                                        onChange={self.handleInputChange}
+                                        readOnly={!isEditeMode}/> : null}
+                            {self.docData.dok == 'ARV' ?
+
+                                <Select title="Koolituse liigid:"
+                                        name='oppe_tyyp'
+                                        data={self.libs['koolituse_liik']}
+                                        collId='kood'
+                                        value={self.docData.oppe_tyyp || ''}
+                                        defaultValue={self.docData.oppe_tyyp}
+                                        ref="select-oppe_tyyp"
+                                        btnDelete={isEditeMode}
+                                        onChange={self.handleInputChange}
+                                        readOnly={!isEditeMode}/> : null}
+                            {self.docData.dok == 'ARV' ?
+                                <Select title="Tüüp:"
+                                        name='tyyp'
+                                        data={TYYP}
+                                        collId='kood'
+                                        value={self.docData.tyyp || ''}
+                                        defaultValue={self.docData.tyyp}
+                                        ref="select-tyyp"
+                                        btnDelete={isEditeMode}
+                                        onChange={self.handleInputChange}
+                                        readOnly={!isEditeMode}/> : null}
 
                         </div>
                     </div>
