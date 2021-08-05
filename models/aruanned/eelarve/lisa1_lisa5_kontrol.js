@@ -10,18 +10,10 @@ module.exports = {
             {id: "lopp_db", name: "Lõpp deebet", width: "100px"},
             {id: "lopp_kr", name: "Lõpp kreedit", width: "200px"}
         ],
-        sqlString: ` SELECT idx, konto, nimetus, summa, eelmise_summa
-                     FROM eelarve.bilanss($1::DATE, $2::INTEGER, $3::INTEGER)
-                     WHERE summa IS NOT NULL
-                     ORDER BY idx, konto`,     // $1 - kpv , $2 - rekvid (svod), $3 - kond
+        sqlString: `SELECT *
+                    FROM eelarve.lisa1_lisa5_kontrol($1::date, $2::integer, $3::integer) qryReport
+                    `,     // $1 - kpv $2 - rekvid, $3 - kond
         params: '',
-        alias: 'luhike_bilanss'
-    },
-    executeCommand: {
-        command: `SELECT error_code, result, error_message
-                  FROM eelarve.sp_koosta_saldoandmik($1::INTEGER, $2::JSON)`, //$1- userId, $2 - params, $3 - task
-        type: 'sql',
-        alias: 'koosta_saldoandmik'
-    },
-
+        alias: 'lisa1_lisa5_kontrol'
+    }
 };

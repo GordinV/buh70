@@ -71,7 +71,7 @@ GRANT EXECUTE ON FUNCTION docs.sp_recalc_pv_jaak(INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_recalc_pv_jaak(INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.sp_recalc_pv_jaak(213051);
+SELECT docs.sp_recalc_pv_jaak(252845);
 
 select * from libs.library order by id desc limit 1
 */

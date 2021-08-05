@@ -66,7 +66,8 @@ BEGIN
         INTO l_viivis_kokku, l_json
     FROM docs.fnc_calc_viivised(
            (SELECT to_jsonb(row)
-            FROM (SELECT l_kpv                      AS kpv,
+            FROM (SELECT v_arved.number,
+                         l_kpv                      AS kpv,
                          l_viivise_maar             AS viivise_maar,
                          v_arved.summa              AS summa,
                          CASE
@@ -80,9 +81,10 @@ BEGIN
 
     FOR v_viivis IN
     SELECT *
-    FROM jsonb_to_recordset(l_json) AS x (kpv DATE, volg NUMERIC(14, 2), paevad INTEGER, viivis NUMERIC(14, 2))
+    FROM jsonb_to_recordset(l_json) AS x (number TEXT, kpv DATE, volg NUMERIC(14, 2), paevad INTEGER, viivis NUMERIC(14, 2))
     LOOP
-      l_selg = 'Kuupäev:' || v_viivis.kpv :: TEXT || ', võlg:' || v_viivis.volg :: TEXT || ', päevad:' ||
+      l_selg = 'Arve nr.:' || coalesce(v_arved.number,'')::text ||
+          ',Kuupäev:' || v_viivis.kpv :: TEXT || ', võlg:' || v_viivis.volg :: TEXT || ', päevad:' ||
                v_viivis.paevad :: TEXT || ', intress:' || l_viivise_maar :: TEXT || ', viivis:' || v_viivis.viivis ||
                chr(13);
     END LOOP;

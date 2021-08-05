@@ -55,7 +55,7 @@ BEGIN
           AND staatus <> 3
         LOOP
             -- проверка на срок действия
-            IF v_kaart.vana_lopp_kpv IS NULL
+/*            IF v_kaart.vana_lopp_kpv IS NULL
                    OR empty(v_kaart.vana_lopp_kpv)
                    OR v_kaart.vana_lopp_kpv::DATE < l_kpv
                    OR v_kaart.alg_kpv::DATE > l_kpv
@@ -64,7 +64,7 @@ BEGIN
                 result = 0;
                 RETURN;
             END IF;
-
+*/
             -- salvestame kaart
             SELECT row_to_json(row) INTO json_object
             FROM (SELECT v_kaart.id                   AS id,

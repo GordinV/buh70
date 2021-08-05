@@ -22,7 +22,7 @@ BEGIN
     to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT AS lastupdate,
     d.rekvid,
     j.asutusid,
-    j.dok,
+    '' as dok,
     current_date                                       AS kpv,
     j.selg,
     j.muud

@@ -22,12 +22,134 @@ module.exports = {
     },
     select: [
         {
-            sql: `SELECT eelarve::text, eelarve_taps::text, selg::text
-                  FROM eelarve.lisa1_lisa5_kontrol($1::TEXT, $2::JSON, $3::JSON)`,
+            sql: `SELECT eelarve::CHAR(20),
+                         eelarve_taps::CHAR(20),
+                         eelarve_kassa::CHAR(20),
+                         eelarve_kassa_taps::CHAR(20),
+                         saldoandmik::CHAR(20),
+                         kassa::CHAR(20),
+                         selg::TEXT
+                  FROM eelarve.lisa1_lisa5_kontrol_pohitegevuse_tulud($1::TEXT, $2::JSON, $3::JSON)
+                  WHERE (eelarve <> 0
+                    AND eelarve_taps <> 0
+                    AND eelarve_kassa <> 0
+                    AND eelarve_kassa_taps <> 0
+                    AND saldoandmik <> 0
+                    AND kassa <> 0) 
+                    or coalesce(selg,'') = 'test'`,
             query: null,
             multiple: true,
-            alias: 'kontrol',
+            alias: 'kontrol_pohitegevuse_tulud',
             data: []
 
-        }]
+        },
+        {
+            sql: `SELECT eelarve::CHAR(20),
+                         eelarve_taps::CHAR(20),
+                         eelarve_kassa::CHAR(20),
+                         eelarve_kassa_taps::CHAR(20),
+                         saldoandmik::CHAR(20),
+                         kassa::CHAR(20),
+                         selg::TEXT
+                  FROM eelarve.lisa1_lisa5_kontrol_30($1::TEXT, $2::JSON, $3::JSON)
+                where (eelarve <> 0
+                    AND eelarve_taps <> 0
+                    AND eelarve_kassa <> 0
+                    AND eelarve_kassa_taps <> 0
+                    AND saldoandmik <> 0
+                    AND kassa <> 0)
+                or coalesce(selg,'') = 'test'`,
+            query: null,
+            multiple: true,
+            alias: 'kontrol_30',
+            data: []
+
+        },
+        {
+            sql: `SELECT eelarve::CHAR(20),
+                         eelarve_taps::CHAR(20),
+                         eelarve_kassa::CHAR(20),
+                         eelarve_kassa_taps::CHAR(20),
+                         saldoandmik::CHAR(20),
+                         kassa::CHAR(20),
+                         selg::TEXT
+                  FROM eelarve.lisa1_lisa5_kontrol_3000($1::TEXT, $2::JSON, $3::JSON)
+                where (eelarve <> 0
+                    AND eelarve_taps <> 0
+                    AND eelarve_kassa <> 0
+                    AND eelarve_kassa_taps <> 0
+                    AND saldoandmik <> 0
+                    AND kassa <> 0)
+                or coalesce(selg,'') = 'test'`,
+            query: null,
+            multiple: true,
+            alias: 'kontrol_3000',
+            data: []
+        },
+        {
+            sql: `SELECT eelarve::CHAR(20),
+                         eelarve_taps::CHAR(20),
+                         eelarve_kassa::CHAR(20),
+                         eelarve_kassa_taps::CHAR(20),
+                         saldoandmik::CHAR(20),
+                         kassa::CHAR(20),
+                         selg::TEXT
+                  FROM eelarve.lisa1_lisa5_kontrol_3030($1::TEXT, $2::JSON, $3::JSON)
+                where (eelarve <> 0
+                    AND eelarve_taps <> 0
+                    AND eelarve_kassa <> 0
+                    AND eelarve_kassa_taps <> 0
+                    AND saldoandmik <> 0
+                    AND kassa <> 0)
+                or coalesce(selg,'') = 'test'`,
+            query: null,
+            multiple: true,
+            alias: 'kontrol_3030',
+            data: []
+        },
+        {
+            sql: `SELECT eelarve::CHAR(20),
+                         eelarve_taps::CHAR(20),
+                         eelarve_kassa::CHAR(20),
+                         eelarve_kassa_taps::CHAR(20),
+                         saldoandmik::CHAR(20),
+                         kassa::CHAR(20),
+                         selg::TEXT
+                  FROM eelarve.lisa1_lisa5_kontrol_3044($1::TEXT, $2::JSON, $3::JSON)
+                where (eelarve <> 0
+                    AND eelarve_taps <> 0
+                    AND eelarve_kassa <> 0
+                    AND eelarve_kassa_taps <> 0
+                    AND saldoandmik <> 0
+                    AND kassa <> 0)
+                or coalesce(selg,'') = 'test'`,
+            query: null,
+            multiple: true,
+            alias: 'kontrol_3044',
+            data: []
+        },
+        {
+            sql: `SELECT eelarve::CHAR(20),
+                         eelarve_taps::CHAR(20),
+                         eelarve_kassa::CHAR(20),
+                         eelarve_kassa_taps::CHAR(20),
+                         saldoandmik::CHAR(20),
+                         kassa::CHAR(20),
+                         selg::TEXT
+                  FROM eelarve.lisa1_lisa5_kontrol_art($1::TEXT, $2::JSON, $3::JSON)
+                where (eelarve <> 0
+                    AND eelarve_taps <> 0
+                    AND eelarve_kassa <> 0
+                    AND eelarve_kassa_taps <> 0
+                    AND saldoandmik <> 0
+                    AND kassa <> 0)
+                or coalesce(selg,'') = 'test'`,
+            query: null,
+            multiple: true,
+            alias: 'kontrol_art',
+            data: []
+        }
+
+
+    ]
 };

@@ -30,7 +30,7 @@ DECLARE
     v_lib      RECORD;
     is_error   INTEGER;
 BEGIN
-
+    raise notice 'kontrol %', params;
 
     IF l_kpv <= make_date(2020, 12, 31)
     THEN

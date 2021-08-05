@@ -6,16 +6,16 @@ CREATE OR REPLACE FUNCTION eelarve.pikk_tulem(l_kpv DATE, l_rekvid INTEGER, l_ko
         konto   VARCHAR(20),
         nimetus VARCHAR(254),
         summa   NUMERIC(14, 2),
-        idx INTEGER
+        idx     INTEGER
     ) AS
 $BODY$
 
 WITH qrySaldo AS (
     SELECT s.rekvid,
            s.konto,
-           sum(coalesce(s.db, 0)) AS db,
-           sum(coalesce(s.kr, 0)) AS kr,
-           left(s.konto,2)::INTEGER * 100 AS  idx
+           sum(coalesce(s.db, 0))          AS db,
+           sum(coalesce(s.kr, 0))          AS kr,
+           left(s.konto, 2)::INTEGER * 100 AS idx
     FROM eelarve.saldoandmik s
     WHERE s.aasta = year(l_kpv)
       AND s.kuu = month(l_kpv)
@@ -91,14 +91,15 @@ FROM (
          WHERE val(left(konto, 2)) >= 93
          UNION ALL
          -- 3
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                            AS rekv_id,
                 '3',
                 'Tegevustulud',
-                coalesce(kr) - coalesce(db, 0) AS summa,
-                idx
+                sum(coalesce(kr) - coalesce(db, 0)) AS summa,
+                3000                                AS idx
          FROM qrySaldo q
                   LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE left(konto, 1) = '3'
+         GROUP BY rekv_id
          UNION ALL
          -- 30
          SELECT q.rekvid                       AS rekv_id,
@@ -1532,7 +1533,7 @@ FROM (
                 '9999',
                 'Aruandeperioodi tegevustulem',
                 coalesce(kr) - coalesce(db, 0) AS summa,
-                6500 as idx
+                6500                           AS idx
          FROM qrySaldo q
          WHERE val(left(konto, 1)) >= 3
            AND val(left(konto, 2)) <= 64
@@ -1632,7 +1633,7 @@ FROM (
                 '99999',
                 'Aruandeperioodi tulem',
                 coalesce(kr) - coalesce(db, 0) AS summa,
-                7000 as idx
+                7000                           AS idx
          FROM qrySaldo q
          WHERE val(left(konto, 1)) >= 3
            AND val(left(konto, 1)) <= 6
@@ -1642,7 +1643,7 @@ FROM (
                 '9999999',
                 'Aruandeperioodi tulem ja siirded kokku',
                 coalesce(kr) - coalesce(db, 0) AS summa,
-                9000 as idx
+                9000                           AS idx
          FROM qrySaldo q
          WHERE val(left(konto, 1)) >= 3
            AND val(left(konto, 1)) <= 7
@@ -1840,7 +1841,7 @@ GRANT EXECUTE ON FUNCTION eelarve.pikk_tulem(l_kpv DATE, l_rekvid INTEGER, l_kon
 SELECT sum(summa),
        konto,
        nimetus
-FROM eelarve.pikk_tulem('2021-03-31' :: DATE, 63, 1)
+FROM eelarve.pikk_tulem('2021-05-31' :: DATE, 63, 1)
 GROUP BY konto, nimetus
 ORDER BY konto
 

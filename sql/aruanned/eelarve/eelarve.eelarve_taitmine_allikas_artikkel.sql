@@ -36,10 +36,10 @@ WITH cur_kulude_kassa_taitmine AS (
                 sum(eelarve_kassa_parandatud) AS eelarve_kassa_parandatud,
                 sum(tegelik)                  AS tegelik,
                 sum(kassa)                    AS kassa,
-                tegev,
-                allikas,
-                artikkel,
-                rahavoog,
+                COALESCE(tegev, '')           AS tegev,
+                coalesce(allikas, '')         AS allikas,
+                coalesce(artikkel, '')        AS artikkel,
+                coalesce(rahavoog, '')        AS rahavoog,
                 tunnus,
                 idx
          FROM (

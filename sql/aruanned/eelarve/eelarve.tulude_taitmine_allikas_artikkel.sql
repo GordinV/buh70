@@ -21,6 +21,7 @@ CREATE OR REPLACE FUNCTION eelarve.tulude_taitmine_allikas_artikkel(l_aasta INTE
         rahavoog                 VARCHAR(20),
         tunnus                   VARCHAR(20),
         idx                      INTEGER
+
     ) AS
 $BODY$
 WITH cur_tulude_kassa_taitmine AS (

@@ -1288,7 +1288,7 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                        AND trim(q.artikkel) NOT IN ('382', '100')
                        AND tyyp = 1
                      GROUP BY q.idx,
-                              q.artikkel ,
+                              q.artikkel,
                               q.nimetus
                      UNION ALL
                      SELECT qry.idx,
@@ -1450,8 +1450,7 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                      SELECT coalesce((
                                          SELECT sum(summa) AS summa
                                          FROM (
-                                                  SELECT (
-                                                             (CASE WHEN left(j1.deebet, 3) = '100' THEN 1 ELSE -1 END) * j1.summa) AS summa
+                                                  SELECT j1.summa
                                                   FROM docs.doc d
                                                            INNER JOIN docs.journal j ON j.parentid = d.id
                                                            INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -1462,9 +1461,10 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                                                     AND j.rekvid IN (SELECT rekv_id
                                                                      FROM get_asutuse_struktuur(l_rekvid))
                                                     AND j.kpv <= l_kpv
-                                                    AND (j1.deebet LIKE '100%')
+                                                    AND (j1.deebet LIKE '100%' OR left(j1.deebet, 6) = '999999')
                                                     AND j1.kood5 = '3501'
                                                     AND d.status <> 3
+/**/
                                                   UNION ALL
                                                   SELECT (
                                                              (CASE WHEN left(j1.deebet, 3) = '100' THEN 1 ELSE -1 END) * j1.summa) AS summa
@@ -1580,6 +1580,48 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                             AND j.rekvid IN (SELECT rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid))
                             AND kpv <= l_kpv
+                      ),
+                      qryKassa AS (
+                          -- Из Päevaraamat: дебет 100 art 3501 минус кредит 100 art 3501
+                          SELECT coalesce((
+                                              SELECT sum(summa) AS summa
+                                              FROM (
+                                                       SELECT j1.summa
+                                                       FROM docs.doc d
+                                                                INNER JOIN docs.journal j ON j.parentid = d.id
+                                                                INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                                                       WHERE j.rekvid = (CASE
+                                                                             WHEN l_kond = 1
+                                                                                 THEN j.rekvid
+                                                                             ELSE l_rekvid END)
+                                                         AND j.rekvid IN (SELECT rekv_id
+                                                                          FROM get_asutuse_struktuur(l_rekvid))
+                                                         AND j.kpv <= l_kpv
+                                                         AND (j1.deebet LIKE '100%' OR left(j1.deebet, 6) = '999999')
+                                                         AND j1.kood5 = '3501'
+                                                         AND d.status <> 3
+                                                         AND l_rekvid = 63
+                                                         AND NOT l_linna_eelarve
+                                                       UNION ALL
+                                                       SELECT (
+                                                                  (CASE WHEN left(j1.deebet, 3) = '100' THEN 1 ELSE -1 END) * j1.summa) AS summa
+                                                       FROM docs.doc d
+                                                                INNER JOIN docs.journal j ON j.parentid = d.id
+                                                                INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                                                       WHERE j.rekvid = (CASE
+                                                                             WHEN l_kond = 1
+                                                                                 THEN j.rekvid
+                                                                             ELSE l_rekvid END)
+                                                         AND j.rekvid IN (SELECT rekv_id
+                                                                          FROM get_asutuse_struktuur(l_rekvid))
+                                                         AND j.kpv <= l_kpv
+                                                         AND (j1.kreedit LIKE '100%')
+                                                         AND j1.kood5 = '3501'
+                                                         AND d.status <> 3
+                                                         AND l_rekvid = 63
+                                                         AND NOT l_linna_eelarve
+                                                   ) qry
+                                          ), 0) AS kassa
                       )
 
                  SELECT '2.1',
@@ -1594,11 +1636,14 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                         qryEelarve.eelarve_taps + qryEelarve.eelarve_kinni             AS eelarve_taps,
                         qryEelarve.eelarve_kassa_taps + qryEelarve.eelarve_kassa_kinni AS eelarve_kassa_taps,
                         0                                                              AS tegelik,
-                        coalesce(qryTaitm.kassa_taitmine, 0)                           AS kassa,
+                        CASE
+                            WHEN l_rekvid <> 63 THEN coalesce(qryTaitm.kassa_taitmine, 0)
+                            ELSE coalesce(qryKassa.kassa, 0) END                       AS kassa,
                         coalesce(qrySA.tekke_taitmine, 0)                              AS saldoandmik
                  FROM qryEelarve,
                       qrySA,
-                      qryTaitm
+                      qryTaitm,
+                      qryKassa
                  WHERE NOT l_linna_eelarve
              ) a;
 END;

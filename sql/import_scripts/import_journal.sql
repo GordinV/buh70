@@ -4,7 +4,7 @@ DROP FOREIGN TABLE IF EXISTS remote_journal1;
 DROP FOREIGN TABLE IF EXISTS remote_journalid;
 
 drop SERVER if exists dbarch_narva_ee CASCADE ;
-CREATE SERVER dbarch_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'dbarch.narva.ee', dbname 'narvalv2019', port '5432');
+CREATE SERVER dbarch_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'dbarh.narva.ee', dbname 'narvalv2019', port '5432');
 
 CREATE USER MAPPING FOR vlad
   SERVER dbarch_narva_ee

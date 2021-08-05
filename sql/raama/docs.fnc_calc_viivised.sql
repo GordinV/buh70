@@ -1,84 +1,85 @@
 DROP FUNCTION IF EXISTS docs.fnc_calc_viivised(INTEGER, params JSON);
 DROP FUNCTION IF EXISTS docs.fnc_calc_viivised(params JSON);
 
-CREATE FUNCTION docs.fnc_calc_viivised(IN  params JSON,
-                                       OUT selg   JSON,
-                                       OUT summa  NUMERIC)
-LANGUAGE plpgsql
-AS $$
+CREATE FUNCTION docs.fnc_calc_viivised(IN params JSON,
+                                       OUT selg JSON,
+                                       OUT summa NUMERIC)
+    LANGUAGE plpgsql
+AS
+$$
 DECLARE
-  l_viivise_maar NUMERIC = COALESCE((params ->> 'viivise_maar') :: NUMERIC, 6); -- 6% в год
-  l_kpv          DATE = coalesce((params ->> 'kpv') :: DATE, current_date); -- расчет на дату
-  l_volg         NUMERIC = params ->> 'summa'; -- сумма долга
-  l_tahtaeg      DATE = params ->> 'tahtaeg'; -- срок оплаты
-
-  l_jaak         NUMERIC = l_volg;
-  l_paevad       INTEGER = l_kpv - l_tahtaeg;
-  l_viivis_kokku NUMERIC = 0; --l_jaak * l_paevad * l_viivise_maar * 0.01;
-  l_json         JSONB = '[]';
-  v_tasud        RECORD;
-  l_viivis       NUMERIC = 0;
+    l_viivise_maar NUMERIC = COALESCE((params ->> 'viivise_maar') :: NUMERIC, 6); -- 6% в год
+    l_kpv          DATE    = coalesce((params ->> 'kpv') :: DATE, current_date); -- расчет на дату
+    l_volg         NUMERIC = params ->> 'summa'; -- сумма долга
+    l_tahtaeg      DATE    = params ->> 'tahtaeg'; -- срок оплаты
+    l_number       TEXT    = params ->> 'number'; -- номер счета
+    l_jaak         NUMERIC = l_volg;
+    l_paevad       INTEGER = l_kpv - l_tahtaeg;
+    l_viivis_kokku NUMERIC = 0; --l_jaak * l_paevad * l_viivise_maar * 0.01;
+    l_json         JSONB   = '[]';
+    v_tasud        RECORD;
+    l_viivis       NUMERIC = 0;
 BEGIN
-  IF l_tahtaeg > l_kpv
-  THEN
-    -- срок оплаты не наступил, долг = 0
-    summa = 0;
-    RETURN;
-  END IF;
+    IF l_tahtaeg > l_kpv
+    THEN
+        -- срок оплаты не наступил, долг = 0
+        summa = 0;
+        RETURN;
+    END IF;
 
-  RAISE NOTICE 'fnc l_jaak %, params %', l_jaak, params;
+    IF (params :: JSON ->> 'tasud') IS NOT NULL
+    THEN
 
-  IF (params :: JSON ->> 'tasud') IS NOT NULL
-  THEN
+        -- если оплаты
+        FOR v_tasud IN
+            SELECT *
+            FROM json_to_recordset(params :: JSON -> 'tasud')
+                     AS x (summa NUMERIC, kpv DATE)
+            LOOP
+                -- проверяем дату оплаты и считаем дни
+                IF v_tasud.kpv < l_tahtaeg
+                THEN
+                    -- оплата произведена в срок, считаем сальдо
+                    l_jaak = l_jaak - v_tasud.summa;
+                    CONTINUE;
+                END IF;
+                l_paevad = v_tasud.kpv - l_tahtaeg;
 
-    -- если оплаты
-    FOR v_tasud IN
-    SELECT * FROM json_to_recordset(params :: JSON -> 'tasud')
-                      AS x (summa NUMERIC, kpv DATE)
-    LOOP
-      -- проверяем дату оплаты и считаем дни
-      IF v_tasud.kpv < l_tahtaeg
-      THEN
-        -- оплата произведена в срок, считаем сальдо
-        l_jaak = l_jaak - v_tasud.summa;
-        CONTINUE;
-      END IF;
-      l_paevad = v_tasud.kpv - l_tahtaeg;
+                IF l_jaak > 0
+                THEN
+                    l_viivis = l_jaak * l_paevad * l_viivise_maar * 0.01;
+                    l_json = (l_json || (SELECT to_jsonb(row)
+                                         FROM (SELECT l_viivis AS viivis,
+                                                      l_kpv    AS kpv,
+                                                      l_number AS number,
+                                                      l_jaak   AS volg,
+                                                      l_paevad AS paevad) row)) :: JSON;
+                    summa = round(coalesce(summa, 0) + l_viivis, 2);
+                END IF;
+                -- считаем остаток на день оплаты
+                l_jaak = l_jaak - v_tasud.summa;
+            END LOOP;
+    END IF;
 
-      IF l_jaak > 0
-      THEN
+    IF l_jaak > 0
+    THEN
+        -- оплат нет, считаем интрес с полной суммы
+        l_paevad = l_kpv - l_tahtaeg;
+
         l_viivis = l_jaak * l_paevad * l_viivise_maar * 0.01;
         l_json = (l_json || (SELECT to_jsonb(row)
-                             FROM (SELECT l_viivis AS viivis,
-                                          l_kpv    AS kpv,
-                                          l_jaak   AS volg,
-                                          l_paevad AS paevad) row)) :: JSON;
+                             FROM (SELECT l_viivis  AS viivis,
+                                          l_kpv     AS kpv,
+                                          l_jaak    AS volg,
+                                          l_tahtaeg AS tahtaeg,
+                                          l_paevad  AS paevad) row)) :: JSON;
+
+        -- возврат результатов
         summa = round(coalesce(summa, 0) + l_viivis, 2);
-      END IF;
-      -- считаем остаток на день оплаты
-      l_jaak = l_jaak - v_tasud.summa;
-    END LOOP;
-  END IF;
+        selg = l_json;
+    END IF;
 
-  IF l_jaak > 0
-  THEN
-    -- оплат нет, считаем интрес с полной суммы
-    l_paevad = l_kpv - l_tahtaeg;
-
-    l_viivis = l_jaak * l_paevad * l_viivise_maar * 0.01;
-    l_json = (l_json || (SELECT to_jsonb(row)
-                         FROM (SELECT l_viivis  AS viivis,
-                                      l_kpv     AS kpv,
-                                      l_jaak    AS volg,
-                                      l_tahtaeg AS tahtaeg,
-                                      l_paevad  AS paevad) row)) :: JSON;
-
-    -- возврат результатов
-    summa = round(coalesce(summa, 0) + l_viivis, 2);
-    selg = l_json;
-  END IF;
-
-  RETURN;
+    RETURN;
 END;
 $$;
 

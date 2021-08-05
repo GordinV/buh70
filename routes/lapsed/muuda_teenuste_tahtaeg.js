@@ -32,13 +32,12 @@ exports.post = async (req, res) => {
     try {
 
         doc.setDocumentId(ids[0]);
-        let data = doc.executeTask(taskName, [ids.join(','), user.userId, teenusteTahtaeg]);
+        let data = await doc.executeTask(taskName, [ids.join(','), user.userId, teenusteTahtaeg]);
     } catch (e) {
-        console.log('catch', err);
+        console.error('catch', err);
         return res.send({status: 500, result: null, error_message: err});
 
     }
-
 
     //ответ
 

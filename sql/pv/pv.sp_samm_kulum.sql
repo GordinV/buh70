@@ -55,6 +55,7 @@ BEGIN
                                 WHERE pv_kaart_id = v_pv_kaards.id :: INTEGER
                                   AND month(kpv) = month(l_kpv)
                                   AND year(kpv) = year(l_kpv)
+                                  AND po.liik = 2
                                 ORDER BY id DESC
                                 LIMIT 1);
 
