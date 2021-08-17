@@ -79,6 +79,7 @@ module.exports = {
                   FROM lapsed.laps l
                            INNER JOIN lapsed.vanemad v ON l.id = v.parentid
                   WHERE l.staatus < 3
+                    and v.staatus < 3
                     AND v.asutusid IN (SELECT asutusid
                                        FROM lapsed.vanemad
                                        WHERE id = $1)`,

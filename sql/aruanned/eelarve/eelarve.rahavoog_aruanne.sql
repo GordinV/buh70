@@ -1028,26 +1028,60 @@ WITH qrySaldoAndmik AS (
                   GROUP BY rekvid
               ) qry
          UNION ALL
-
-         /*--(Jooksva per saldoandmikust (sum: konto 203290 kreedit) - (sum konto 203290 deebet)) - (Eelmise per saldoandmikust (sum kontod 203290 kreedit) - (sum kontod 203290 deebet))
-                      SELECT
-                       S.rekvid,
-                       '5' AS konto,
-                       'Rahavood põhitegevusest' AS grupp,
-                       'Põhitegevusega seotud kohustuste netomuutus' AS all_grupp,
-                       'Muutus viitvõlgades' AS nimetus,
-                       coalesce(sum(kr - db)
-                                    FILTER (WHERE konto LIKE '203290%' AND kuu = month(l_kpv) AND
-                                                  aasta = year(l_kpv)), 0) -
-                       coalesce(sum(kr - db)
-                                    FILTER (WHERE konto LIKE '203290%' AND kuu = 12 AND
-                                                  aasta = year(l_kpv) - 1), 0) AS summa
-                      FROM
-                       qrySaldoAndmik S
-                      GROUP BY
-                       rekvid
-                      UNION ALL
-         */ --Muutus toetuste ja siirete kohustustes
+         --(Jooksva per saldoandmikust (sum: konto 203290 kreedit) - (sum konto 203290 deebet)) -
+         -- (Eelmise per saldoandmikust (sum kontod 203290 kreedit) - (sum kontod 203290 deebet))
+         SELECT *
+         FROM (
+                  SELECT S.rekvid,
+                         '5'                                           AS konto,
+                         'Rahavood põhitegevusest'                     AS grupp,
+                         'Põhitegevusega seotud kohustuste netomuutus' AS all_grupp,
+                         'Muutus viitvõlgades'                         AS nimetus,
+                         sum(kr - db)                                  AS summa,
+                         0                                             AS eelmise_summa,
+                         1245                                          AS idx
+                  FROM qrySaldoAndmik S
+                  WHERE left(konto, 6) = '203290'
+                  GROUP BY rekvid
+                  UNION ALL
+                  SELECT S.rekvid,
+                         '5'                                           AS konto,
+                         'Rahavood põhitegevusest'                     AS grupp,
+                         'Põhitegevusega seotud kohustuste netomuutus' AS all_grupp,
+                         'Muutus viitvõlgades'                         AS nimetus,
+                         -1 * sum(kr - db)                             AS summa,
+                         0                                             AS eelmise_summa,
+                         1245                                          AS idx
+                  FROM eelmiseSaldoAndmik S
+                  WHERE left(konto, 6) = '203290'
+                  GROUP BY rekvid
+                  UNION ALL
+                  SELECT S.rekvid,
+                         '5'                                           AS konto,
+                         'Rahavood põhitegevusest'                     AS grupp,
+                         'Põhitegevusega seotud kohustuste netomuutus' AS all_grupp,
+                         'Muutus viitvõlgades'                         AS nimetus,
+                         0                                             AS summa,
+                         sum(kr - db)                                  AS eelmise_summa,
+                         1245                                          AS idx
+                  FROM eelmiseSaldoAndmik S
+                  WHERE left(konto, 6) = '203290'
+                  GROUP BY rekvid
+                  UNION ALL
+                  SELECT S.rekvid,
+                         '5'                                           AS konto,
+                         'Rahavood põhitegevusest'                     AS grupp,
+                         'Põhitegevusega seotud kohustuste netomuutus' AS all_grupp,
+                         'Muutus viitvõlgades'                         AS nimetus,
+                         0                                             AS summa,
+                         -1 * sum(kr - db)                             AS eelmise_summa,
+                         1245                                          AS idx
+                  FROM vanaSaldoAndmik S
+                  WHERE left(konto, 6) = '203290'
+                  GROUP BY rekvid
+              ) qry
+         UNION ALL
+         --Muutus toetuste ja siirete kohustustes
 --(Jooksva per saldoandmikust (sum: konto 2035* kreedit miinus deebet- konto 203500, 203540, 203556, 203557 kreedit miinus deebet) -
 --(Eelmise per saldoandmikust (sum kontod 2035* kreedit miinus deebet - konto 203500, 203540, 203556, 203557 kreedit miinus de
 --Muutus toetuste ja siirete kohustustes
@@ -1235,29 +1269,57 @@ WITH qrySaldoAndmik AS (
 
          --(Jooksva per saldoandmikust (sum: konto 203900 kreedit + konto 203990 kreedit + konto 253890 kreedit) - (sum konto 203900 deebet + konto 203990 deebet + konto 253890 deebet)) -
          -- (Eelmise per saldoandmikust (sum kontod 203900 kreedit + konto 203990 kreedit + konto 253890 kreedit) - (sum kontod 203900 deebet + konto 203990 deebet + konto 253890 deebet))
-         SELECT S.rekvid,
-                '5'                                           AS konto,
-                'Rahavood põhitegevusest'                     AS grupp,
-                'Põhitegevusega seotud kohustiste netomuutus' AS all_grupp,
-                'Muutus muudes saadud ettemaksetes'           AS nimetus,
-                sum(kr - db)                                  AS summa,
-                0::NUMERIC(14, 2)                             AS eelmise_summa,
-                1280                                          AS idx
-         FROM qrySaldoAndmik S
-         WHERE konto IN ('203900', '203990', '253890')
-         GROUP BY rekvid
-         UNION ALL
-         SELECT S.rekvid,
-                '5'                                           AS konto,
-                'Rahavood põhitegevusest'                     AS grupp,
-                'Põhitegevusega seotud kohustiste netomuutus' AS all_grupp,
-                'Muutus muudes saadud ettemaksetes'           AS nimetus,
-                -1 * sum(kr - db)                             AS summa,
-                0::NUMERIC(14, 2)                             AS eelmise_summa,
-                1280                                          AS idx
-         FROM eelmiseSaldoAndmik S
-         WHERE konto IN ('203900', '203990', '253890')
-         GROUP BY rekvid
+         SELECT *
+         FROM (
+                  SELECT S.rekvid,
+                         '5'                                           AS konto,
+                         'Rahavood põhitegevusest'                     AS grupp,
+                         'Põhitegevusega seotud kohustiste netomuutus' AS all_grupp,
+                         'Muutus muudes saadud ettemaksetes'           AS nimetus,
+                         sum(kr - db)                                  AS summa,
+                         0::NUMERIC(14, 2)                             AS eelmise_summa,
+                         1280                                          AS idx
+                  FROM qrySaldoAndmik S
+                  WHERE konto IN ('203900', '203990', '253890')
+                  GROUP BY rekvid
+                  UNION ALL
+                  SELECT S.rekvid,
+                         '5'                                           AS konto,
+                         'Rahavood põhitegevusest'                     AS grupp,
+                         'Põhitegevusega seotud kohustiste netomuutus' AS all_grupp,
+                         'Muutus muudes saadud ettemaksetes'           AS nimetus,
+                         -1 * sum(kr - db)                             AS summa,
+                         0::NUMERIC(14, 2)                             AS eelmise_summa,
+                         1280                                          AS idx
+                  FROM eelmiseSaldoAndmik S
+                  WHERE konto IN ('203900', '203990', '253890')
+                  GROUP BY rekvid
+                  UNION ALL
+-- 2019
+                  SELECT S.rekvid,
+                         '5'                                           AS konto,
+                         'Rahavood põhitegevusest'                     AS grupp,
+                         'Põhitegevusega seotud kohustiste netomuutus' AS all_grupp,
+                         'Muutus muudes saadud ettemaksetes'           AS nimetus,
+                         0                                             AS summa,
+                         sum(kr - db)::NUMERIC(14, 2)                  AS eelmise_summa,
+                         1280                                          AS idx
+                  FROM eelmiseSaldoAndmik S
+                  WHERE konto IN ('203900', '203990', '253890')
+                  GROUP BY rekvid
+                  UNION ALL
+                  SELECT S.rekvid,
+                         '5'                                           AS konto,
+                         'Rahavood põhitegevusest'                     AS grupp,
+                         'Põhitegevusega seotud kohustiste netomuutus' AS all_grupp,
+                         'Muutus muudes saadud ettemaksetes'           AS nimetus,
+                         0                                             AS summa,
+                         -1 * sum(kr - db)::NUMERIC(14, 2)             AS eelmise_summa,
+                         1280                                          AS idx
+                  FROM vanaSaldoAndmik S
+                  WHERE konto IN ('203900', '203990', '253890')
+                  GROUP BY rekvid
+              ) qry
          UNION ALL
          --Jooksva per saldoandmikust (sum: ((konto 206* kreedit RV 41, 49, 05, 06) - (konto 206030 kreedit RV 41, 49, 05, 06))+ (konto 256* kreedit RV 41, 49, 05, 06) -
 --((sum konto 206* deebet RV 41, 49, 05, 06) - (konto 206030 deebet RV 41, 49, 05, 06)) - (konto 256* deebet RV 41, 49, 06, 05))
@@ -1754,6 +1816,68 @@ WITH qrySaldoAndmik AS (
            AND rahavoo = '02'
          GROUP BY rekvid
          UNION ALL
+         -- --Jooksva per saldoandmikust (Sum: Konto 150* kreedit (RV 01)) - (Sum: Konto 150* deebet (RV 01))
+         SELECT *
+         FROM (
+                  SELECT S.rekvid,
+                         '7'                                AS konto,
+                         'Rahavood investeerimistegevusest' AS grupp,
+                         'Tasutud osaluste soetamisel'      AS all_grupp,
+                         ''                                 AS nimetus,
+                         sum(kr - db)                       AS summa,
+                         0                                  AS eelmise_summa,
+                         1345                               AS idx
+                  FROM qrySaldoAndmik S
+                  WHERE left(konto, 3) = '150'
+                    AND rahavoo = '01'
+                  GROUP BY rekvid
+                  UNION ALL
+                  SELECT S.rekvid,
+                         '7'                                AS konto,
+                         'Rahavood investeerimistegevusest' AS grupp,
+                         'Tasutud osaluste soetamisel'      AS all_grupp,
+                         ''                                 AS nimetus,
+                         0                                  AS summa,
+                         sum(kr - db)                       AS eelmise_summa,
+                         1345                               AS idx
+                  FROM eelmiseSaldoAndmik S
+                  WHERE left(konto, 3) = '150'
+                    AND rahavoo = '01'
+                  GROUP BY rekvid
+              ) qry
+         UNION ALL
+         -- (Jooksva per saldoandmikust (Sum: Konto 655500 kreedit+ konto 652010 kreedit) - (sum konto 655500  deebet + konto 652010 deebet) +
+         -- (sum 103110 kreedit RV 02 - Sum Konto 103110 deebet RV 02))
+         SELECT *
+         FROM (
+                  SELECT S.rekvid,
+                         '7'                                AS konto,
+                         'Rahavood investeerimistegevusest' AS grupp,
+                         'Laekunud dividendid'              AS all_grupp,
+                         ''                                 AS nimetus,
+                         sum(kr - db)                       AS summa,
+                         0                                  AS eelmise_summa,
+                         1345                               AS idx
+                  FROM qrySaldoAndmik S
+                  WHERE konto IN ('655500', '652010')
+                     OR (konto = '103110' AND rahavoo = '02')
+                  GROUP BY rekvid
+                  UNION ALL
+                  SELECT S.rekvid,
+                         '7'                                AS konto,
+                         'Rahavood investeerimistegevusest' AS grupp,
+                         'Laekunud dividendid'              AS all_grupp,
+                         ''                                 AS nimetus,
+                         0                                  AS summa,
+                         sum(kr - db)                       AS eelmise_summa,
+                         1345                               AS idx
+                  FROM eelmiseSaldoAndmik S
+                  WHERE konto IN ('655500', '652010')
+                     OR (konto = '103110' AND rahavoo = '02')
+                  GROUP BY rekvid
+              ) qry
+         UNION ALL
+
 
          --(Eelmise per saldoandmikust (Sum konto 103540 deebet) - (sum konto 103540 kreedit) - (sum konto 203540 kreedit) + (sum konto 203540 deebet))
 -- - (sum konto 257800 kreedit) +
@@ -2017,27 +2141,8 @@ WITH qrySaldoAndmik AS (
              GROUP BY
               rekvid
              UNION ALL
-*/-- --Jooksva per saldoandmikust (Sum: Konto 150* kreedit (RV 01)) - (Sum: Konto 150* deebet (RV 01))
-/*             SELECT
-              S.rekvid,
-              '7' AS konto,
-              'Rahavood investeerimistegevusest' AS grupp,
-              '' AS all_grupp,
-              'Tasutud osaluste soetamisel' AS nimetus,
-              COALESCE(sum(kr - db)
-                           FILTER (WHERE LEFT(konto, 3) IN (
-                               '150') AND rahavoo =
-                                          '01'
-                               AND kuu = MONTH(l_kpv) AND
-                                         aasta = YEAR(l_kpv)), 0
-                  )
-                  AS summa
-             FROM
-              qrySaldoAndmik S
-             GROUP BY
-              rekvid
-             UNION ALL
-*/-- --Jooksva per saldoandmikust (Sum: Konto 150* kreedit (RV 02)) - (Sum: Konto 150* deebet (RV 02))
+*/--
+-- --Jooksva per saldoandmikust (Sum: Konto 150* kreedit (RV 02)) - (Sum: Konto 150* deebet (RV 02))
 /*             SELECT
               S.rekvid,
               '7' AS konto,
@@ -2050,62 +2155,6 @@ WITH qrySaldoAndmik AS (
                                           '02'
                                AND kuu = MONTH(l_kpv) AND
                                          aasta = YEAR(l_kpv)), 0
-                  )
-                  AS summa
-             FROM
-              qrySaldoAndmik S
-             GROUP BY
-              rekvid
-             UNION ALL
-*/ --(Jooksva per saldoandmikust (Sum: Konto 655500 kreedit+ konto 652010 kreedit) - (sum konto 655500  deebet + konto 652010 deebet) +
---(sum 103110 kreedit RV 02 - Sum Konto 10311 0 deebet RV 02))
-/*             SELECT
-              S.rekvid,
-              '7' AS konto,
-              'Rahavood investeerimistegevusest' AS grupp,
-              '' AS all_grupp,
-              'Laekunud dividendid' AS nimetus,
-              COALESCE(sum(db - kr)
-                           FILTER (WHERE konto IN (
-                                                   '655500',
-                                                   '652010') AND rahavoo =
-                                                                 '02'
-                               AND kuu = MONTH(l_kpv) AND aasta = YEAR(l_kpv)), 0
-                  )
-                  +
-              COALESCE
-                  (
-                      sum
-                          (
-                                  kr
-                                  -
-                                  db
-                          )
-                                  FILTER
-                                      (
-                                      WHERE konto IN ('103110'
-                                      )
-                                      AND
-                                            rahavoo
-                                                =
-                                            '02'
-                                      AND
-                                            kuu
-                                                =
-                                            MONTH
-                                                (
-                                                    l_kpv
-                                                )
-                                      AND
-                                            aasta
-                                                =
-                                            YEAR
-                                                (
-                                                    l_kpv
-                                                )
-                                      )
-                  ,
-                      0
                   )
                   AS summa
              FROM
@@ -2412,113 +2461,6 @@ WITH qrySaldoAndmik AS (
          GROUP BY rekvid
          UNION ALL
 
-         --Jooksva per saldoandmikust (Sum konto 2083* kreedit (RV 05) - konto 2083* deebet (RV 05) + sum konto 2583* kreedit (RV 05) - konto 2583* deebet (RV 05)
-
---konto 153556 deebet) - (sum konto 103556 kreedit + konto 103557 kreedit + konto 153556 kreedit))
-         SELECT *
-         FROM (
-                  WITH osa_1 AS
-                           (SELECT kr - db AS summa
-                            FROM qrySaldoAndmik
-                            WHERE ((konto LIKE '257%' AND rahavoo = '05')
-                                OR konto LIKE '3502%')),
-                       osa_2 AS
-                           (
-                               SELECT kr - db AS summa
-                               FROM qrySaldoAndmik
-                               WHERE (konto LIKE '3502%'
-                                   AND rahavoo IN ('19', '01')
-                                         )
-                           ),
-                       osa_3 AS (
-                           SELECT kr - db AS summa
-                           FROM qrySaldoAndmik
-                           WHERE konto IN ('203856', '203857')
-                       ),
-                       osa_4 AS (
-                           SELECT kr - db AS summa
-                           FROM eelmiseSaldoAndmik
-                           WHERE konto IN ('203856', '203857')
-                       ),
-                       osa_5 AS (SELECT db - kr AS summa
-                                 FROM eelmiseSaldoAndmik
-                                 WHERE konto IN ('103556', '103557', '153556')
-                       ),
-                       osa_6 AS (
-                           SELECT db - kr AS summa
-                           FROM qrySaldoAndmik
-                           WHERE konto IN ('103556', '103557', '153556')
-                       )
-                  SELECT S.rekvid,
-                         '8'                                              AS konto,
-                         'Rahavood investeerimistegevusest'               AS grupp,
-                         'Laekunud sihtfinanteerimine põhivara soetuseks' AS all_grupp,
-                         ''                                               AS nimetus,
-                         (SELECT sum(summa) FROM osa_1) -
-                         (SELECT sum(summa) FROM osa_2) +
-                         (SELECT sum(summa) FROM osa_3) -
-                         (SELECT sum(summa) FROM osa_4) +
-                         (SELECT sum(summa) FROM osa_5) -
-                         (SELECT sum(summa) FROM osa_6)                   AS summa,
-                         0::NUMERIC(14, 2)                                AS eelmise_summa,
-                         1320                                             AS idx
-                  FROM qrySaldoAndmik S
-                  GROUP BY S.rekvid
-              ) qry
-         UNION ALL
--- 2019
-         SELECT *
-         FROM (
-                  WITH osa_1 AS
-                           (SELECT kr - db AS summa
-                            FROM eelmiseSaldoAndmik
-                            WHERE ((konto LIKE '257%' AND rahavoo = '05')
-                                OR konto LIKE '3502%')),
-                       osa_2 AS
-                           (
-                               SELECT kr - db AS summa
-                               FROM eelmiseSaldoAndmik
-                               WHERE (konto LIKE '3502%'
-                                   AND rahavoo IN ('19', '01')
-                                         )
-                           ),
-                       osa_3 AS (
-                           SELECT kr - db AS summa
-                           FROM eelmiseSaldoAndmik
-                           WHERE konto IN ('203856', '203857')
-                       ),
-                       osa_4 AS (
-                           SELECT kr - db AS summa
-                           FROM vanaSaldoAndmik
-                           WHERE konto IN ('203856', '203857')
-                       ),
-                       osa_5 AS (SELECT db - kr AS summa
-                                 FROM vanaSaldoAndmik
-                                 WHERE konto IN ('103556', '103557', '153556')
-                       ),
-                       osa_6 AS (
-                           SELECT db - kr AS summa
-                           FROM eelmiseSaldoAndmik
-                           WHERE konto IN ('103556', '103557', '153556')
-                       )
-                  SELECT S.rekvid,
-                         '8'                                              AS konto,
-                         'Rahavood investeerimistegevusest'               AS grupp,
-                         'Laekunud sihtfinanteerimine põhivara soetuseks' AS all_grupp,
-                         ''                                               AS nimetus,
-                         0                                                AS summa,
-                         (SELECT sum(summa) FROM osa_1) -
-                         (SELECT sum(summa) FROM osa_2) +
-                         (SELECT sum(summa) FROM osa_3) -
-                         (SELECT sum(summa) FROM osa_4) +
-                         (SELECT sum(summa) FROM osa_5) -
-                         (SELECT sum(summa) FROM osa_6)                   AS eelmise_summa,
-                         1320                                             AS idx
-                  FROM eelmiseSaldoAndmik S
-                  GROUP BY S.rekvid
-              ) qry
-         UNION ALL
-
          --Tasutud sihtfinantseerimine põhivara soetuseks
 --Jooksva per saldoandmikust (Konto 4502* kreedit-deebet) + 1KDRV24+
 -- (Jooksva per saldoandmikust (konto 203556, 203557, 253550 kreedit miinus deebet) -
@@ -2604,6 +2546,92 @@ WITH qrySaldoAndmik AS (
                          LEFT(konto, 4) = '1537')) qry
          GROUP BY rekvid
          UNION ALL
+         -- Laekunud sihtfinanteerimine põhivara soetuseks
+-- Jooksva per saldoandmikust (Sum: Konto 257* kreedit-deebet (RV 05) + (konto 3502* kreedit miinus deebet) - (konto 3502 RV 19, RV 01 kreedit miinus deebet)+
+         -- (Jooksva per saldoandmikust (sum: konto 203856 kreedit + konto 203857 kreedit) - (sum konto 203856 deebet + konto 203857 deebet)) -
+         -- (Eelmise per saldoandmikust (sum kontod 203856 kreedit + konto 203857 kreedit) - (sum kontod 203856 deebet + konto 203857 deebet)) +
+         -- (Eelmise per saldoandmikust (sum konto 103556 deebet + konto 103557 deebet + 153556 deebet) - (sum konto 103556 kreedit + konto 103557 kreedit + konto 153556 kreedit)) -
+
+         -- (Jooksva per saldoandmikust (sum konto 103556 deebet + konto 103557 deebet + konto 153556 deebet) -
+         -- (sum konto 103556 kreedit + konto 103557 kreedit + konto 153556 kreedit))
+         SELECT rekvid,
+                '8'                                              AS konto,
+                'Rahavood investeerimistegevusest'               AS grupp,
+                'Laekunud sihtfinanteerimine põhivara soetuseks' AS all_grupp,
+                ''                                               AS nimetus,
+                sum(summa)                                       AS summa,
+                0::NUMERIC(14, 2)                                AS eelmise_summa,
+                1340                                             AS idx
+         FROM (
+                  SELECT rekvid,
+                         (kr - db) AS summa
+                  FROM qrySaldoAndmik S
+                  WHERE (LEFT(konto, 3) IN ('257') AND rahavoo = '05')
+                     OR (left(konto, 4) = '3502')
+                     OR konto IN ('203856', '203857')
+                  UNION ALL
+                  SELECT rekvid,
+                         -1 * (kr - db) AS summa
+                  FROM qrySaldoAndmik S
+                  WHERE (LEFT(konto, 4) = '3502' AND rahavoo IN ('19', '01'))
+                  UNION ALL
+                  SELECT rekvid,
+                         -1 * (kr - db) AS summa
+                  FROM eelmiseSaldoAndmik S
+                  WHERE konto IN ('203856', '203857')
+                  UNION ALL
+                  SELECT rekvid,
+                         (db - kr) AS summa
+                  FROM eelmiseSaldoAndmik S
+                  WHERE konto IN ('103556', '103557', '153556')
+                  UNION ALL
+                  SELECT rekvid,
+                         -1 * (db - kr) AS summa
+                  FROM qrySaldoAndmik S
+                  WHERE konto IN ('103556', '103557', '153556')
+              ) qry
+         GROUP BY rekvid
+         UNION ALL
+-- 2019
+         SELECT rekvid,
+                '8'                                              AS konto,
+                'Rahavood investeerimistegevusest'               AS grupp,
+                'Laekunud sihtfinanteerimine põhivara soetuseks' AS all_grupp,
+                ''                                               AS nimetus,
+                0                                                AS summa,
+                sum(summa)::NUMERIC(14, 2)                       AS eelmise_summa,
+                1340                                             AS idx
+         FROM (
+                  SELECT rekvid,
+                         (kr - db) AS summa
+                  FROM eelmiseSaldoAndmik S
+                  WHERE (LEFT(konto, 3) IN ('257') AND rahavoo = '05')
+                     OR (left(konto, 4) = '3502')
+                     OR konto IN ('203856', '203857')
+                  UNION ALL
+                  SELECT rekvid,
+                         -1 * (kr - db) AS summa
+                  FROM eelmiseSaldoAndmik S
+                  WHERE (LEFT(konto, 4) = '3502' AND rahavoo IN ('19', '01'))
+                  UNION ALL
+                  SELECT rekvid,
+                         -1 * (kr - db) AS summa
+                  FROM vanaSaldoAndmik S
+                  WHERE konto IN ('203856', '203857')
+                  UNION ALL
+                  SELECT rekvid,
+                         (db - kr) AS summa
+                  FROM vanaSaldoAndmik S
+                  WHERE konto IN ('103556', '103557', '153556')
+                  UNION ALL
+                  SELECT rekvid,
+                         -1 * (db - kr) AS summa
+                  FROM eelmiseSaldoAndmik S
+                  WHERE konto IN ('103556', '103557', '153556')
+              ) qry
+         GROUP BY rekvid
+         UNION ALL
+
 
          --Laekunud liitumistasud
 --(Jooksva per saldoandmikust (sum: konto 253800 kreedit + konto 323880 kreedit) - (sum konto 253800 deebet + konto 323880 deebet)) -
@@ -2939,14 +2967,15 @@ FROM ( --     = korrigeeritud tegevustulem (3) + käibevarade muutus (4) + kohus
          GROUP BY rekvid
          UNION ALL
          SELECT rekvid,
-                'Raha ja selle ekvivalentide muutus'                AS grupp,
-                ''                                                  AS all_grupp,
-                '93'                                                AS konto,
-                ''                                                  AS nimetus,
+                'Raha ja selle ekvivalentide muutus'                        AS grupp,
+                ''                                                          AS all_grupp,
+                '93'                                                        AS konto,
+                ''                                                          AS nimetus,
                 COALESCE(sum(summa) FILTER (WHERE konto = '92'), 0) -
-                COALESCE(sum(summa) FILTER (WHERE konto = '91'), 0) AS summa,
-                sum(eelmise_summa)                                  AS eelmise_summa,
-                1540                                                AS idx
+                COALESCE(sum(summa) FILTER (WHERE konto = '91'), 0)         AS summa,
+                COALESCE(sum(eelmise_summa) FILTER (WHERE konto = '92'), 0) -
+                COALESCE(sum(eelmise_summa) FILTER (WHERE konto = '91'), 0) AS eelmise_summa,
+                1540                                                        AS idx
          FROM qrySaldo S
          GROUP BY rekvid
      ) qry
@@ -2975,7 +3004,7 @@ SELECT rekv_id,
        konto,
        nimetus
 FROM eelarve.rahavoog_aruanne('2021-06-30' :: DATE, 63, 1)
-WHERE eelmise_summa <> 0
+--WHERE eelmise_summa <> 0
 ORDER BY idx
 ;
 
