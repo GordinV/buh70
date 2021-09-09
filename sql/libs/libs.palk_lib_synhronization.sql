@@ -35,7 +35,8 @@ BEGIN
          l.properties::JSON ->> 'tegev'     AS tegev,
          l.properties::JSON ->> 'allikas'   AS allikas,
          l.properties::JSON ->> 'artikkel'  AS artikkel,
-         l.properties::JSON ->> 'tululiik'  AS tululiik
+         l.properties::JSON ->> 'tululiik'  AS tululiik,
+         l.tun5
          INTO v_lib
   FROM libs.library l
   WHERE id = l_lib_id;
@@ -51,8 +52,6 @@ BEGIN
                       WHERE rekvid = v_all_asutus.childid
                         AND l.kood = v_lib.kood
                         AND l.library = v_lib.library);
-
-      RAISE NOTICE 'l_all_lib_id %, all asutus %', l_all_lib_id, v_all_asutus;
 
       SELECT coalesce(l_all_lib_id, 0)::INTEGER AS id,
              v_lib.kood,
@@ -74,7 +73,8 @@ BEGIN
              v_lib.tegev,
              v_lib.allikas,
              v_lib.artikkel,
-             v_lib.tululiik
+             v_lib.tululiik,
+             v_lib.tun5
              INTO v_params;
 
       -- готовим параметры
@@ -89,8 +89,6 @@ BEGIN
 
       SELECT libs.sp_salvesta_palk_lib(json_object :: JSON, l_user_id, v_all_asutus.childid)
              INTO l_all_lib_id;
-
-      RAISE NOTICE 'saved %', l_all_lib_id;
 
     END LOOP;
 

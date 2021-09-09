@@ -23,6 +23,30 @@ CREATE OR REPLACE FUNCTION palk.palk_kaart(l_kpv1 DATE, l_kpv2 DATE, l_rekvid IN
         summa10   NUMERIC,
         summa11   NUMERIC,
         summa12   NUMERIC,
+        arv_1     NUMERIC,
+        arv_2     NUMERIC,
+        arv_3     NUMERIC,
+        arv_4     NUMERIC,
+        arv_5     NUMERIC,
+        arv_6     NUMERIC,
+        arv_7     NUMERIC,
+        arv_8     NUMERIC,
+        arv_9     NUMERIC,
+        arv_10    NUMERIC,
+        arv_11    NUMERIC,
+        arv_12    NUMERIC,
+        kinni_1   NUMERIC,
+        kinni_2   NUMERIC,
+        kinni_3   NUMERIC,
+        kinni_4   NUMERIC,
+        kinni_5   NUMERIC,
+        kinni_6   NUMERIC,
+        kinni_7   NUMERIC,
+        kinni_8   NUMERIC,
+        kinni_9   NUMERIC,
+        kinni_10  NUMERIC,
+        kinni_11  NUMERIC,
+        kinni_12  NUMERIC,
         nimetus   VARCHAR(254),
         haig_1    INTEGER,
         haig_2    INTEGER,
@@ -96,6 +120,18 @@ CREATE OR REPLACE FUNCTION palk.palk_kaart(l_kpv1 DATE, l_kpv2 DATE, l_rekvid IN
         puhk5_10  INTEGER,
         puhk5_11  INTEGER,
         puhk5_12  INTEGER,
+        puhk6_1   INTEGER,
+        puhk6_2   INTEGER,
+        puhk6_3   INTEGER,
+        puhk6_4   INTEGER,
+        puhk6_5   INTEGER,
+        puhk6_6   INTEGER,
+        puhk6_7   INTEGER,
+        puhk6_8   INTEGER,
+        puhk6_9   INTEGER,
+        puhk6_10  INTEGER,
+        puhk6_11  INTEGER,
+        puhk6_12  INTEGER,
         kom_1     INTEGER,
         kom_2     INTEGER,
         kom_3     INTEGER,
@@ -121,7 +157,8 @@ CREATE OR REPLACE FUNCTION palk.palk_kaart(l_kpv1 DATE, l_kpv2 DATE, l_rekvid IN
         muu_11    INTEGER,
         muu_12    INTEGER
 
-    ) AS
+    )
+AS
 $BODY$
 WITH qryPalkOper AS (
     -- предварительно выберем операции с ЗП суммированные по месяцам в разрезе договоров
@@ -234,6 +271,30 @@ SELECT a.regkood :: VARCHAR(20)                  AS isikukood,
        po.summa10,
        po.summa11,
        po.summa12,
+       coalesce(po.arv_1, 0)                     AS arv_1,
+       coalesce(po.arv_2, 0)                     AS arv_2,
+       coalesce(po.arv_3, 0)                     AS arv_3,
+       coalesce(po.arv_4, 0)                     AS arv_4,
+       coalesce(po.arv_5, 0)                     AS arv_5,
+       coalesce(po.arv_6, 0)                     AS arv_6,
+       coalesce(po.arv_7, 0)                     AS arv_7,
+       coalesce(po.arv_8, 0)                     AS arv_8,
+       coalesce(po.arv_9, 0)                     AS arv_9,
+       coalesce(po.arv_10, 0)                    AS arv_10,
+       coalesce(po.arv_11, 0)                    AS arv_11,
+       coalesce(po.arv_12, 0)                    AS arv_12,
+       coalesce(po.kinni_1, 0)                   AS kinni_1,
+       coalesce(po.kinni_2, 0)                   AS kinni_2,
+       coalesce(po.kinni_3, 0)                   AS kinni_3,
+       coalesce(po.kinni_4, 0)                   AS kinni_4,
+       coalesce(po.kinni_5, 0)                   AS kinni_5,
+       coalesce(po.kinni_6, 0)                   AS kinni_6,
+       coalesce(po.kinni_7, 0)                   AS kinni_7,
+       coalesce(po.kinni_8, 0)                   AS kinni_8,
+       coalesce(po.kinni_9, 0)                   AS kinni_9,
+       coalesce(po.kinni_10, 0)                  AS kinni_10,
+       coalesce(po.kinni_11, 0)                  AS kinni_11,
+       coalesce(po.kinni_12, 0)                  AS kinni_12,
        po.nimetus,
        coalesce(qryPuudu.haig_1, 0) :: INTEGER   AS haig_1,
        coalesce(qryPuudu.haig_2, 0) :: INTEGER   AS haig_2,
@@ -307,6 +368,18 @@ SELECT a.regkood :: VARCHAR(20)                  AS isikukood,
        coalesce(qryPuudu.puhk5_10, 0) :: INTEGER AS Puhk5_10,
        coalesce(qryPuudu.puhk5_11, 0) :: INTEGER AS Puhk5_11,
        coalesce(qryPuudu.puhk5_12, 0) :: INTEGER AS Puhk5_12,
+       coalesce(qryPuudu.puhk6_1, 0) :: INTEGER  AS Puhk6_1,
+       coalesce(qryPuudu.puhk6_2, 0) :: INTEGER  AS Puhk6_2,
+       coalesce(qryPuudu.puhk6_3, 0) :: INTEGER  AS Puhk6_3,
+       coalesce(qryPuudu.puhk6_4, 0) :: INTEGER  AS Puhk6_4,
+       coalesce(qryPuudu.puhk6_5, 0) :: INTEGER  AS Puhk6_5,
+       coalesce(qryPuudu.puhk6_6, 0) :: INTEGER  AS Puhk6_6,
+       coalesce(qryPuudu.puhk6_7, 0) :: INTEGER  AS Puhk6_7,
+       coalesce(qryPuudu.puhk6_8, 0) :: INTEGER  AS Puhk6_8,
+       coalesce(qryPuudu.puhk6_9, 0) :: INTEGER  AS Puhk6_9,
+       coalesce(qryPuudu.puhk6_10, 0) :: INTEGER AS Puhk6_10,
+       coalesce(qryPuudu.puhk6_11, 0) :: INTEGER AS Puhk6_11,
+       coalesce(qryPuudu.puhk6_12, 0) :: INTEGER AS Puhk6_12,
        coalesce(qryPuudu.kom_1, 0) :: INTEGER    AS kom_1,
        coalesce(qryPuudu.kom_2, 0) :: INTEGER    AS kom_2,
        coalesce(qryPuudu.kom_3, 0) :: INTEGER    AS kom_3,
@@ -332,377 +405,470 @@ SELECT a.regkood :: VARCHAR(20)                  AS isikukood,
        coalesce(qryPuudu.muu_11, 0) :: INTEGER   AS muu_11,
        coalesce(qryPuudu.muu_12, 0) :: INTEGER   AS muu_12
 FROM (
-         -- Основная ЗП
-         SELECT po.lepingid,
-                sum(summa1)                AS summa1,
-                sum(summa2)                AS summa2,
-                sum(summa3)                AS summa3,
-                sum(summa4)                AS summa4,
-                sum(summa5)                AS summa5,
-                sum(summa6)                AS summa6,
-                sum(summa7)                AS summa7,
-                sum(summa8)                AS summa8,
-                sum(summa9)                AS summa9,
-                sum(summa10)               AS summa10,
-                sum(summa11)               AS summa11,
-                sum(summa12)               AS summa12,
-                'Põhipalk' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE (po.konto IN (SELECT unnest('{50000001,50010001,50012001,50014001,50021001,;
+         WITH preArv AS (
+             -- Основная ЗП
+             SELECT po.lepingid,
+                    sum(summa1)                AS summa1,
+                    sum(summa2)                AS summa2,
+                    sum(summa3)                AS summa3,
+                    sum(summa4)                AS summa4,
+                    sum(summa5)                AS summa5,
+                    sum(summa6)                AS summa6,
+                    sum(summa7)                AS summa7,
+                    sum(summa8)                AS summa8,
+                    sum(summa9)                AS summa9,
+                    sum(summa10)               AS summa10,
+                    sum(summa11)               AS summa11,
+                    sum(summa12)               AS summa12,
+                    'Põhipalk' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE (po.konto IN (SELECT unnest('{50000001,50010001,50012001,50014001,50021001,;
 						50024001,	50025001,	50026001,	50027001,	50028001,	50029001, 50024001}' :: TEXT[]))
-             OR left(po.konto, 6) IN ('500150', '500200')
-             )
-           AND po.liik = 1
-         GROUP BY lepingid
-         UNION ALL
-         -- Доп. плата
-         SELECT po.lepingid,
-                sum(summa1)                 AS summa1,
-                sum(summa2)                 AS summa2,
-                sum(summa3)                 AS summa3,
-                sum(summa4)                 AS summa4,
-                sum(summa5)                 AS summa5,
-                sum(summa6)                 AS summa6,
-                sum(summa7)                 AS summa7,
-                sum(summa8)                 AS summa8,
-                sum(summa9)                 AS summa9,
-                sum(summa10)                AS summa10,
-                sum(summa11)                AS summa11,
-                sum(summa12)                AS summa12,
-                'Lisatasud' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE (ltrim(rtrim(po.konto)) IN (SELECT unnest(
-                                                          '{5000001,5001001,5001201,5001401,5002101,5002401,5002501,5002701,5002801,5002601,5002901}' :: TEXT[]))
-             OR left(po.konto, 7) IN (SELECT unnest(
-                                                     '{5000001,5001001,5001201,5001401,5002101,5002401,5002501,5002701,5002801,5002601,5002901}' :: TEXT[])
-             ))
+                 OR left(po.konto, 6) IN ('500150', '500200')
+                 )
+               AND po.liik = 1
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             -- Доп. плата
+             SELECT po.lepingid,
+                    sum(summa1)                 AS summa1,
+                    sum(summa2)                 AS summa2,
+                    sum(summa3)                 AS summa3,
+                    sum(summa4)                 AS summa4,
+                    sum(summa5)                 AS summa5,
+                    sum(summa6)                 AS summa6,
+                    sum(summa7)                 AS summa7,
+                    sum(summa8)                 AS summa8,
+                    sum(summa9)                 AS summa9,
+                    sum(summa10)                AS summa10,
+                    sum(summa11)                AS summa11,
+                    sum(summa12)                AS summa12,
+                    'Lisatasud' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE (ltrim(rtrim(po.konto)) IN (SELECT unnest(
+                                                              '{5000001,5001001,5001201,5001401,5002101,5002401,5002501,5002701,5002801,5002601,5002901}' :: TEXT[]))
+                 OR left(po.konto, 7) IN (SELECT unnest(
+                                                         '{5000001,5001001,5001201,5001401,5002101,5002401,5002501,5002701,5002801,5002601,5002901}' :: TEXT[])
+                 ))
 
-           AND po.liik = 1
-         GROUP BY lepingid
-         UNION ALL
-         --Премии
-         SELECT po.lepingid,
-                sum(summa1)                             AS summa1,
-                sum(summa2)                             AS summa2,
-                sum(summa3)                             AS summa3,
-                sum(summa4)                             AS summa4,
-                sum(summa5)                             AS summa5,
-                sum(summa6)                             AS summa6,
-                sum(summa7)                             AS summa7,
-                sum(summa8)                             AS summa8,
-                sum(summa9)                             AS summa9,
-                sum(summa10)                            AS summa10,
-                sum(summa11)                            AS summa11,
-                sum(summa12)                            AS summa12,
-                'Preemiad, tulemuspalk' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE po.konto IN (SELECT unnest(
-                                           '{50000301,50000302,50010301,50010302,50012301,50012302,50014301,50014302,50021301,50021302,50024301,50024302,50025301,50025302,
-                                            50026301,50026302,50027301,50027302,50028301,50028302,50029301,50029302,50027301,50027302}' :: TEXT[])
-         )
-           AND po.liik = 1
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                         AS summa1,
-                sum(summa2)                         AS summa2,
-                sum(summa3)                         AS summa3,
-                sum(summa4)                         AS summa4,
-                sum(summa5)                         AS summa5,
-                sum(summa6)                         AS summa6,
-                sum(summa7)                         AS summa7,
-                sum(summa8)                         AS summa8,
-                sum(summa9)                         AS summa9,
-                sum(summa10)                        AS summa10,
-                sum(summa11)                        AS summa11,
-                sum(summa12)                        AS summa12,
-                'Tööandja toetused' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE (po.konto IN (SELECT unnest(
-                                            '{50000303,50010303,50012303,50014303,50021303,50024303,50025303,50026303,50027303,50028303,50029303}' :: TEXT[])
-         )
-             OR left(po.konto, 6) IN ('500153', '500203')
+               AND po.liik = 1
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             --Премии
+             SELECT po.lepingid,
+                    sum(summa1)                             AS summa1,
+                    sum(summa2)                             AS summa2,
+                    sum(summa3)                             AS summa3,
+                    sum(summa4)                             AS summa4,
+                    sum(summa5)                             AS summa5,
+                    sum(summa6)                             AS summa6,
+                    sum(summa7)                             AS summa7,
+                    sum(summa8)                             AS summa8,
+                    sum(summa9)                             AS summa9,
+                    sum(summa10)                            AS summa10,
+                    sum(summa11)                            AS summa11,
+                    sum(summa12)                            AS summa12,
+                    'Preemiad, tulemuspalk' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE po.konto IN (SELECT unnest(
+                                               '{50000301,50000302,50010301,50010302,50012301,50012302,50014301,50014302,50021301,50021302,50024301,50024302,50025301,50025302,
+                                                50026301,50026302,50027301,50027302,50028301,50028302,50029301,50029302,50027301,50027302}' :: TEXT[])
              )
-           AND po.liik = 1
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                                  AS summa1,
-                sum(summa2)                                  AS summa2,
-                sum(summa3)                                  AS summa3,
-                sum(summa4)                                  AS summa4,
-                sum(summa5)                                  AS summa5,
-                sum(summa6)                                  AS summa6,
-                sum(summa7)                                  AS summa7,
-                sum(summa8)                                  AS summa8,
-                sum(summa9)                                  AS summa9,
-                sum(summa10)                                 AS summa10,
-                sum(summa11)                                 AS summa11,
-                sum(summa12)                                 AS summa12,
-                'Puhkusetasud,ja -hüvitised' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE (left(po.konto, 7) IN (SELECT unnest(
-                                                     '{5000002, 5002902,5001002,5001202,5001402,5002102,
-                                                        5002402,5002502,5002602,5002702,5002802}' :: TEXT[])
-         )
+               AND po.liik = 1
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                         AS summa1,
+                    sum(summa2)                         AS summa2,
+                    sum(summa3)                         AS summa3,
+                    sum(summa4)                         AS summa4,
+                    sum(summa5)                         AS summa5,
+                    sum(summa6)                         AS summa6,
+                    sum(summa7)                         AS summa7,
+                    sum(summa8)                         AS summa8,
+                    sum(summa9)                         AS summa9,
+                    sum(summa10)                        AS summa10,
+                    sum(summa11)                        AS summa11,
+                    sum(summa12)                        AS summa12,
+                    'Tööandja toetused' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE (po.konto IN (SELECT unnest(
+                                                '{50000303,50010303,50012303,50014303,50021303,50024303,50025303,50026303,50027303,50028303,50029303}' :: TEXT[])
              )
-           AND konto NOT IN (SELECT unnest('{50000023,50010023,50012023,50014023,50021023,50024023,50025023,
+                 OR left(po.konto, 6) IN ('500153', '500203')
+                 )
+               AND po.liik = 1
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                                  AS summa1,
+                    sum(summa2)                                  AS summa2,
+                    sum(summa3)                                  AS summa3,
+                    sum(summa4)                                  AS summa4,
+                    sum(summa5)                                  AS summa5,
+                    sum(summa6)                                  AS summa6,
+                    sum(summa7)                                  AS summa7,
+                    sum(summa8)                                  AS summa8,
+                    sum(summa9)                                  AS summa9,
+                    sum(summa10)                                 AS summa10,
+                    sum(summa11)                                 AS summa11,
+                    sum(summa12)                                 AS summa12,
+                    'Puhkusetasud,ja -hüvitised' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE (left(po.konto, 7) IN (SELECT unnest(
+                                                         '{5000002, 5002902,5001002,5001202,5001402,5002102,
+                                                            5002402,5002502,5002602,5002702,5002802}' :: TEXT[])
+             )
+                 )
+               AND konto NOT IN (SELECT unnest('{50000023,50010023,50012023,50014023,50021023,50024023,50025023,
 						50026023,50027023,50028023,50029023}' :: TEXT[])
-         )
-           AND po.liik = 1
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                       AS summa1,
-                sum(summa2)                       AS summa2,
-                sum(summa3)                       AS summa3,
-                sum(summa4)                       AS summa4,
-                sum(summa5)                       AS summa5,
-                sum(summa6)                       AS summa6,
-                sum(summa7)                       AS summa7,
-                sum(summa8)                       AS summa8,
-                sum(summa9)                       AS summa9,
-                sum(summa10)                      AS summa10,
-                sum(summa11)                      AS summa11,
-                sum(summa12)                      AS summa12,
-                'Õppepuhkusetasu' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE po.konto IN (SELECT unnest(
-                                           '{50000023,50010023,50012023,50014023,50021023,50024023,50025023,
-                                                50026023,50027023,50028023,50029023}' :: TEXT[])
-         )
-           AND po.liik = 1
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                           AS summa1,
-                sum(summa2)                           AS summa2,
-                sum(summa3)                           AS summa3,
-                sum(summa4)                           AS summa4,
-                sum(summa5)                           AS summa5,
-                sum(summa6)                           AS summa6,
-                sum(summa7)                           AS summa7,
-                sum(summa8)                           AS summa8,
-                sum(summa9)                           AS summa9,
-                sum(summa10)                          AS summa10,
-                sum(summa11)                          AS summa11,
-                sum(summa12)                          AS summa12,
-                'Täiendavad puhkused' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE left(po.konto, 6) IN ('103560')
-           AND po.liik = 1
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                             AS summa1,
-                sum(summa2)                             AS summa2,
-                sum(summa3)                             AS summa3,
-                sum(summa4)                             AS summa4,
-                sum(summa5)                             AS summa5,
-                sum(summa6)                             AS summa6,
-                sum(summa7)                             AS summa7,
-                sum(summa8)                             AS summa8,
-                sum(summa9)                             AS summa9,
-                sum(summa10)                            AS summa10,
-                sum(summa11)                            AS summa11,
-                sum(summa12)                            AS summa12,
-                'Hüvitised ja toetused' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE left(po.konto, 6) IN (SELECT unnest(
-                                                    '{500007,500107,500127,500147,500217, 500147,500257,500267,500277,500287,500297,500157,500207}' :: TEXT[]))
-           AND po.liik = 1
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                 AS summa1,
-                sum(summa2)                 AS summa2,
-                sum(summa3)                 AS summa3,
-                sum(summa4)                 AS summa4,
-                sum(summa5)                 AS summa5,
-                sum(summa6)                 AS summa6,
-                sum(summa7)                 AS summa7,
-                sum(summa8)                 AS summa8,
-                sum(summa9)                 AS summa9,
-                sum(summa10)                AS summa10,
-                sum(summa11)                AS summa11,
-                sum(summa12)                AS summa12,
-                'Hüvitised' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE po.konto IN (SELECT unnest(
-                                           '{500007,50029701,50000701,500107,500147,500157,500217,500247,500257,500287, 500267, 500207}' :: TEXT[]))
-           AND po.liik = 1
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                               AS summa1,
-                sum(summa2)                               AS summa2,
-                sum(summa3)                               AS summa3,
-                sum(summa4)                               AS summa4,
-                sum(summa5)                               AS summa5,
-                sum(summa6)                               AS summa6,
-                sum(summa7)                               AS summa7,
-                sum(summa8)                               AS summa8,
-                sum(summa9)                               AS summa9,
-                sum(summa10)                              AS summa10,
-                sum(summa11)                              AS summa11,
-                sum(summa12)                              AS summa12,
-                'Võlaõiguslikud lepingud' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE (po.konto IN ('50026801', '50029801')
-             OR left(po.konto, 6) IN ('500500')
              )
-           AND po.liik = 1
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                        AS summa1,
-                sum(summa2)                        AS summa2,
-                sum(summa3)                        AS summa3,
-                sum(summa4)                        AS summa4,
-                sum(summa5)                        AS summa5,
-                sum(summa6)                        AS summa6,
-                sum(summa7)                        AS summa7,
-                sum(summa8)                        AS summa8,
-                sum(summa9)                        AS summa9,
-                sum(summa10)                       AS summa10,
-                sum(summa11)                       AS summa11,
-                sum(summa12)                       AS summa12,
-                'Tootasu ettemaks' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE po.konto IN ('103930')
-           AND po.liik = 1
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                    AS summa1,
-                sum(summa2)                    AS summa2,
-                sum(summa3)                    AS summa3,
-                sum(summa4)                    AS summa4,
-                sum(summa5)                    AS summa5,
-                sum(summa6)                    AS summa6,
-                sum(summa7)                    AS summa7,
-                sum(summa8)                    AS summa8,
-                sum(summa9)                    AS summa9,
-                sum(summa10)                   AS summa10,
-                sum(summa11)                   AS summa11,
-                sum(summa12)                   AS summa12,
-                'Sotsiaalmaks' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE po.konto IN ('506000', '103931')
-           AND po.liik = 5
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                             AS summa1,
-                sum(summa2)                             AS summa2,
-                sum(summa3)                             AS summa3,
-                sum(summa4)                             AS summa4,
-                sum(summa5)                             AS summa5,
-                sum(summa6)                             AS summa6,
-                sum(summa7)                             AS summa7,
-                sum(summa8)                             AS summa8,
-                sum(summa9)                             AS summa9,
-                sum(summa10)                            AS summa10,
-                sum(summa11)                            AS summa11,
-                sum(summa12)                            AS summa12,
-                'TÖÖTUSKINDLUSTUSMAKS ' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE po.liik = 7
-           AND empty(po.asutusest)
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                            AS summa1,
-                sum(summa2)                            AS summa2,
-                sum(summa3)                            AS summa3,
-                sum(summa4)                            AS summa4,
-                sum(summa5)                            AS summa5,
-                sum(summa6)                            AS summa6,
-                sum(summa7)                            AS summa7,
-                sum(summa8)                            AS summa8,
-                sum(summa9)                            AS summa9,
-                sum(summa10)                           AS summa10,
-                sum(summa11)                           AS summa11,
-                sum(summa12)                           AS summa12,
-                'TÖÖTUSKINDLUSTUSMAKS' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE po.liik = 7
-           AND NOT empty(po.asutusest)
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                     AS summa1,
-                sum(summa2)                     AS summa2,
-                sum(summa3)                     AS summa3,
-                sum(summa4)                     AS summa4,
-                sum(summa5)                     AS summa5,
-                sum(summa6)                     AS summa6,
-                sum(summa7)                     AS summa7,
-                sum(summa8)                     AS summa8,
-                sum(summa9)                     AS summa9,
-                sum(summa10)                    AS summa10,
-                sum(summa11)                    AS summa11,
-                sum(summa12)                    AS summa12,
-                'Pensioonimaks' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE po.liik = 8
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)            AS summa1,
-                sum(summa2)            AS summa2,
-                sum(summa3)            AS summa3,
-                sum(summa4)            AS summa4,
-                sum(summa5)            AS summa5,
-                sum(summa6)            AS summa6,
-                sum(summa7)            AS summa7,
-                sum(summa8)            AS summa8,
-                sum(summa9)            AS summa9,
-                sum(summa10)           AS summa10,
-                sum(summa11)           AS summa11,
-                sum(summa12)           AS summa12,
-                'Tasu' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE po.liik = 6
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)                AS summa1,
-                sum(summa2)                AS summa2,
-                sum(summa3)                AS summa3,
-                sum(summa4)                AS summa4,
-                sum(summa5)                AS summa5,
-                sum(summa6)                AS summa6,
-                sum(summa7)                AS summa7,
-                sum(summa8)                AS summa8,
-                sum(summa9)                AS summa9,
-                sum(summa10)               AS summa10,
-                sum(summa11)               AS summa11,
-                sum(summa12)               AS summa12,
-                'Tulumaks' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE po.liik = 4
-         GROUP BY lepingid
-         UNION ALL
-         SELECT po.lepingid,
-                sum(summa1)            AS summa1,
-                sum(summa2)            AS summa2,
-                sum(summa3)            AS summa3,
-                sum(summa4)            AS summa4,
-                sum(summa5)            AS summa5,
-                sum(summa6)            AS summa6,
-                sum(summa7)            AS summa7,
-                sum(summa8)            AS summa8,
-                sum(summa9)            AS summa9,
-                sum(summa10)           AS summa10,
-                sum(summa11)           AS summa11,
-                sum(summa12)           AS summa12,
-                'Muud' :: VARCHAR(254) AS NIMETUS
-         FROM qryPalkOper po
-         WHERE po.liik = 2
-         GROUP BY lepingid
-     ) po
+               AND po.liik = 1
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                       AS summa1,
+                    sum(summa2)                       AS summa2,
+                    sum(summa3)                       AS summa3,
+                    sum(summa4)                       AS summa4,
+                    sum(summa5)                       AS summa5,
+                    sum(summa6)                       AS summa6,
+                    sum(summa7)                       AS summa7,
+                    sum(summa8)                       AS summa8,
+                    sum(summa9)                       AS summa9,
+                    sum(summa10)                      AS summa10,
+                    sum(summa11)                      AS summa11,
+                    sum(summa12)                      AS summa12,
+                    'Õppepuhkusetasu' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE po.konto IN (SELECT unnest(
+                                               '{50000023,50010023,50012023,50014023,50021023,50024023,50025023,
+                                                    50026023,50027023,50028023,50029023}' :: TEXT[])
+             )
+               AND po.liik = 1
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                           AS summa1,
+                    sum(summa2)                           AS summa2,
+                    sum(summa3)                           AS summa3,
+                    sum(summa4)                           AS summa4,
+                    sum(summa5)                           AS summa5,
+                    sum(summa6)                           AS summa6,
+                    sum(summa7)                           AS summa7,
+                    sum(summa8)                           AS summa8,
+                    sum(summa9)                           AS summa9,
+                    sum(summa10)                          AS summa10,
+                    sum(summa11)                          AS summa11,
+                    sum(summa12)                          AS summa12,
+                    'Täiendavad puhkused' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE left(po.konto, 6) IN ('103560')
+               AND po.liik = 1
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                             AS summa1,
+                    sum(summa2)                             AS summa2,
+                    sum(summa3)                             AS summa3,
+                    sum(summa4)                             AS summa4,
+                    sum(summa5)                             AS summa5,
+                    sum(summa6)                             AS summa6,
+                    sum(summa7)                             AS summa7,
+                    sum(summa8)                             AS summa8,
+                    sum(summa9)                             AS summa9,
+                    sum(summa10)                            AS summa10,
+                    sum(summa11)                            AS summa11,
+                    sum(summa12)                            AS summa12,
+                    'Hüvitised ja toetused' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
 
+             FROM qryPalkOper po
+             WHERE left(po.konto, 6) IN (SELECT unnest(
+                                                        '{500007,500107,500127,500147,500217, 500147,500257,500267,500277,500287,500297,500157,500207}' :: TEXT[]))
+               AND po.liik = 1
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                 AS summa1,
+                    sum(summa2)                 AS summa2,
+                    sum(summa3)                 AS summa3,
+                    sum(summa4)                 AS summa4,
+                    sum(summa5)                 AS summa5,
+                    sum(summa6)                 AS summa6,
+                    sum(summa7)                 AS summa7,
+                    sum(summa8)                 AS summa8,
+                    sum(summa9)                 AS summa9,
+                    sum(summa10)                AS summa10,
+                    sum(summa11)                AS summa11,
+                    sum(summa12)                AS summa12,
+                    'Hüvitised' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+
+             FROM qryPalkOper po
+             WHERE po.konto IN (SELECT unnest(
+                                               '{500007,50029701,50000701,500107,500147,500157,500217,500247,500257,500287, 500267, 500207}' :: TEXT[]))
+               AND po.liik = 1
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                               AS summa1,
+                    sum(summa2)                               AS summa2,
+                    sum(summa3)                               AS summa3,
+                    sum(summa4)                               AS summa4,
+                    sum(summa5)                               AS summa5,
+                    sum(summa6)                               AS summa6,
+                    sum(summa7)                               AS summa7,
+                    sum(summa8)                               AS summa8,
+                    sum(summa9)                               AS summa9,
+                    sum(summa10)                              AS summa10,
+                    sum(summa11)                              AS summa11,
+                    sum(summa12)                              AS summa12,
+                    'Võlaõiguslikud lepingud' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+
+             FROM qryPalkOper po
+             WHERE (po.konto IN ('50026801', '50029801')
+                 OR left(po.konto, 6) IN ('500500')
+                 )
+               AND po.liik = 1
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                        AS summa1,
+                    sum(summa2)                        AS summa2,
+                    sum(summa3)                        AS summa3,
+                    sum(summa4)                        AS summa4,
+                    sum(summa5)                        AS summa5,
+                    sum(summa6)                        AS summa6,
+                    sum(summa7)                        AS summa7,
+                    sum(summa8)                        AS summa8,
+                    sum(summa9)                        AS summa9,
+                    sum(summa10)                       AS summa10,
+                    sum(summa11)                       AS summa11,
+                    sum(summa12)                       AS summa12,
+                    'Tootasu ettemaks' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE po.konto IN ('103930')
+               AND po.liik = 1
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                    AS summa1,
+                    sum(summa2)                    AS summa2,
+                    sum(summa3)                    AS summa3,
+                    sum(summa4)                    AS summa4,
+                    sum(summa5)                    AS summa5,
+                    sum(summa6)                    AS summa6,
+                    sum(summa7)                    AS summa7,
+                    sum(summa8)                    AS summa8,
+                    sum(summa9)                    AS summa9,
+                    sum(summa10)                   AS summa10,
+                    sum(summa11)                   AS summa11,
+                    sum(summa12)                   AS summa12,
+                    'Sotsiaalmaks' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE po.konto IN ('506000', '103931')
+               AND po.liik = 5
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                             AS summa1,
+                    sum(summa2)                             AS summa2,
+                    sum(summa3)                             AS summa3,
+                    sum(summa4)                             AS summa4,
+                    sum(summa5)                             AS summa5,
+                    sum(summa6)                             AS summa6,
+                    sum(summa7)                             AS summa7,
+                    sum(summa8)                             AS summa8,
+                    sum(summa9)                             AS summa9,
+                    sum(summa10)                            AS summa10,
+                    sum(summa11)                            AS summa11,
+                    sum(summa12)                            AS summa12,
+                    'TÖÖTUSKINDLUSTUSMAKS ' :: VARCHAR(254) AS NIMETUS,
+                    70                                      AS liik
+             FROM qryPalkOper po
+             WHERE po.liik = 7
+               AND empty(po.asutusest)
+             GROUP BY lepingid
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                            AS summa1,
+                    sum(summa2)                            AS summa2,
+                    sum(summa3)                            AS summa3,
+                    sum(summa4)                            AS summa4,
+                    sum(summa5)                            AS summa5,
+                    sum(summa6)                            AS summa6,
+                    sum(summa7)                            AS summa7,
+                    sum(summa8)                            AS summa8,
+                    sum(summa9)                            AS summa9,
+                    sum(summa10)                           AS summa10,
+                    sum(summa11)                           AS summa11,
+                    sum(summa12)                           AS summa12,
+                    'TÖÖTUSKINDLUSTUSMAKS' :: VARCHAR(254) AS NIMETUS,
+                    71                                     AS liik
+             FROM qryPalkOper po
+             WHERE po.liik = 7
+               AND NOT empty(po.asutusest)
+             GROUP BY lepingid
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                     AS summa1,
+                    sum(summa2)                     AS summa2,
+                    sum(summa3)                     AS summa3,
+                    sum(summa4)                     AS summa4,
+                    sum(summa5)                     AS summa5,
+                    sum(summa6)                     AS summa6,
+                    sum(summa7)                     AS summa7,
+                    sum(summa8)                     AS summa8,
+                    sum(summa9)                     AS summa9,
+                    sum(summa10)                    AS summa10,
+                    sum(summa11)                    AS summa11,
+                    sum(summa12)                    AS summa12,
+                    'Pensioonimaks' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE po.liik = 8
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)            AS summa1,
+                    sum(summa2)            AS summa2,
+                    sum(summa3)            AS summa3,
+                    sum(summa4)            AS summa4,
+                    sum(summa5)            AS summa5,
+                    sum(summa6)            AS summa6,
+                    sum(summa7)            AS summa7,
+                    sum(summa8)            AS summa8,
+                    sum(summa9)            AS summa9,
+                    sum(summa10)           AS summa10,
+                    sum(summa11)           AS summa11,
+                    sum(summa12)           AS summa12,
+                    'Tasu' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE po.liik = 6
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)                AS summa1,
+                    sum(summa2)                AS summa2,
+                    sum(summa3)                AS summa3,
+                    sum(summa4)                AS summa4,
+                    sum(summa5)                AS summa5,
+                    sum(summa6)                AS summa6,
+                    sum(summa7)                AS summa7,
+                    sum(summa8)                AS summa8,
+                    sum(summa9)                AS summa9,
+                    sum(summa10)               AS summa10,
+                    sum(summa11)               AS summa11,
+                    sum(summa12)               AS summa12,
+                    'Tulumaks' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE po.liik = 4
+             GROUP BY lepingid, po.liik
+             UNION ALL
+             SELECT po.lepingid,
+                    sum(summa1)            AS summa1,
+                    sum(summa2)            AS summa2,
+                    sum(summa3)            AS summa3,
+                    sum(summa4)            AS summa4,
+                    sum(summa5)            AS summa5,
+                    sum(summa6)            AS summa6,
+                    sum(summa7)            AS summa7,
+                    sum(summa8)            AS summa8,
+                    sum(summa9)            AS summa9,
+                    sum(summa10)           AS summa10,
+                    sum(summa11)           AS summa11,
+                    sum(summa12)           AS summa12,
+                    'Muud' :: VARCHAR(254) AS NIMETUS,
+                    po.liik
+             FROM qryPalkOper po
+             WHERE po.liik = 2
+             GROUP BY lepingid, po.liik
+         ),
+              qryKokku AS (
+                  SELECT lepingid,
+                         sum(summa1) FILTER (WHERE liik = 1)                  AS arv1,
+                         sum(summa2) FILTER (WHERE liik = 1)                  AS arv2,
+                         sum(summa3) FILTER (WHERE liik = 1)                  AS arv3,
+                         sum(summa4) FILTER (WHERE liik = 1)                  AS arv4,
+                         sum(summa5) FILTER (WHERE liik = 1)                  AS arv5,
+                         sum(summa6) FILTER (WHERE liik = 1)                  AS arv6,
+                         sum(summa7) FILTER (WHERE liik = 1)                  AS arv7,
+                         sum(summa8) FILTER (WHERE liik = 1)                  AS arv8,
+                         sum(summa9) FILTER (WHERE liik = 1)                  AS arv9,
+                         sum(summa10) FILTER (WHERE liik = 1)                 AS arv10,
+                         sum(summa11) FILTER (WHERE liik = 1)                 AS arv11,
+                         sum(summa12) FILTER (WHERE liik = 1)                 AS arv12,
+                         sum(summa1) FILTER (WHERE liik IN (2, 3, 4, 8, 70))  AS kinni_1,
+                         sum(summa2) FILTER (WHERE liik IN (2, 3, 4, 8, 70))  AS kinni_2,
+                         sum(summa3) FILTER (WHERE liik IN (2, 3, 4, 8, 70))  AS kinni_3,
+                         sum(summa4) FILTER (WHERE liik IN (2, 3, 4, 8, 70))  AS kinni_4,
+                         sum(summa5) FILTER (WHERE liik IN (2, 3, 4, 8, 70))  AS kinni_5,
+                         sum(summa6) FILTER (WHERE liik IN (2, 3, 4, 8, 70))  AS kinni_6,
+                         sum(summa7) FILTER (WHERE liik IN (2, 3, 4, 8, 70))  AS kinni_7,
+                         sum(summa8) FILTER (WHERE liik IN (2, 3, 4, 8, 70))  AS kinni_8,
+                         sum(summa9) FILTER (WHERE liik IN (2, 3, 4, 8, 70))  AS kinni_9,
+                         sum(summa10) FILTER (WHERE liik IN (2, 3, 4, 8, 70)) AS kinni_10,
+                         sum(summa11) FILTER (WHERE liik IN (2, 3, 4, 8, 70)) AS kinni_11,
+                         sum(summa12) FILTER (WHERE liik IN (2, 3, 4, 8, 70)) AS kinni_12
+                  FROM preArv
+                  GROUP BY lepingid
+              )
+         SELECT preArv.lepingid,
+                nimetus,
+                sum(summa1)            AS summa1,
+                sum(summa2)            AS summa2,
+                sum(summa3)            AS summa3,
+                sum(summa4)            AS summa4,
+                sum(summa5)            AS summa5,
+                sum(summa6)            AS summa6,
+                sum(summa7)            AS summa7,
+                sum(summa8)            AS summa8,
+                sum(summa9)            AS summa9,
+                sum(summa10)           AS summa10,
+                sum(summa11)           AS summa11,
+                sum(summa12)           AS summa12,
+                sum(qryKokku.arv1)     AS arv_1,
+                sum(qryKokku.arv2)     AS arv_2,
+                sum(qryKokku.arv3)     AS arv_3,
+                sum(qryKokku.arv4)     AS arv_4,
+                sum(qryKokku.arv5)     AS arv_5,
+                sum(qryKokku.arv6)     AS arv_6,
+                sum(qryKokku.arv7)     AS arv_7,
+                sum(qryKokku.arv8)     AS arv_8,
+                sum(qryKokku.arv9)     AS arv_9,
+                sum(qryKokku.arv10)    AS arv_10,
+                sum(qryKokku.arv11)    AS arv_11,
+                sum(qryKokku.arv12)    AS arv_12,
+                sum(qryKokku.kinni_1)  AS kinni_1,
+                sum(qryKokku.kinni_2)  AS kinni_2,
+                sum(qryKokku.kinni_3)  AS kinni_3,
+                sum(qryKokku.kinni_4)  AS kinni_4,
+                sum(qryKokku.kinni_5)  AS kinni_5,
+                sum(qryKokku.kinni_6)  AS kinni_6,
+                sum(qryKokku.kinni_7)  AS kinni_7,
+                sum(qryKokku.kinni_8)  AS kinni_8,
+                sum(qryKokku.kinni_9)  AS kinni_9,
+                sum(qryKokku.kinni_10) AS kinni_10,
+                sum(qryKokku.kinni_11) AS kinni_11,
+                sum(qryKokku.kinni_12) AS kinni_12
+
+         FROM preArv
+                  LEFT OUTER JOIN qryKokku ON preArv.lepingid = qryKokku.lepingid
+         GROUP BY preArv.lepingid, qryKokku.lepingid, nimetus
+     ) po
          LEFT OUTER JOIN (
     WITH qryPuudumine AS (
         -- собираем здесь данные о пропусках раб. места, сгруппированные по договорам , по месяцам
@@ -772,7 +938,7 @@ FROM (
                  SELECT qryPeriods.kuu,
                         qryPeriods.aasta,
                         palk.get_days_of_month_in_period(qryPeriods.kuu, qryPeriods.aasta, p.kpv1,
-                                                         p.kpv2) AS paevad,
+                                                         p.kpv2, p.puudumiste_liik = 'PUHKUS') AS paevad,
                         p.puudumiste_liik,
                         p.tyyp,
                         p.lepingid
@@ -793,204 +959,231 @@ FROM (
          -- выбираем больничные
     SELECT lepingid,
            sum(paevad1)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_1,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_1,
            sum(paevad2)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_2,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_2,
            sum(paevad3)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_3,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_3,
            sum(paevad4)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_4,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_4,
            sum(paevad5)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_5,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_5,
            sum(paevad6)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_6,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_6,
            sum(paevad7)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_7,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_7,
            sum(paevad8)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_8,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_8,
            sum(paevad9)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_9,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_9,
            sum(paevad10)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_10,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_10,
            sum(paevad11)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_11,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_11,
            sum(paevad12)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_12,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'HAIGUS')              AS haig_12,
            sum(paevad1)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_1,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_1,
            -- pohipuhkus
            sum(paevad2)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_2,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_2,
            sum(paevad3)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_3,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_3,
            sum(paevad4)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_4,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_4,
            sum(paevad5)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_5,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_5,
            sum(paevad6)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_6,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_6,
            sum(paevad7)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_7,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_7,
            sum(paevad8)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_8,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_8,
            sum(paevad9)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_9,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_9,
            sum(paevad10)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_10,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_10,
            sum(paevad11)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_11,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_11,
            sum(paevad12)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_12,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 1) AS puhk1_12,
            sum(paevad1)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_1,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_1,
            -- lisa staaz
            sum(paevad2)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_2,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_2,
            sum(paevad3)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_3,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_3,
            sum(paevad4)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_4,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_4,
            sum(paevad5)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_5,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_5,
            sum(paevad6)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_6,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_6,
            sum(paevad7)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_7,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_7,
            sum(paevad8)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_8,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_8,
            sum(paevad9)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_9,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_9,
            sum(paevad10)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_10,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_10,
            sum(paevad11)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_11,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_11,
            sum(paevad12)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_12,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 2) AS puhk2_12,
            sum(paevad1)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_1,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_1,
            sum(paevad2)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_2,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_2,
            -- lapsepuhkus
            sum(paevad3)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_3,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_3,
            sum(paevad4)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_4,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_4,
            sum(paevad5)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_5,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_5,
            sum(paevad6)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_6,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_6,
            sum(paevad7)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_7,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_7,
            sum(paevad8)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_8,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_8,
            sum(paevad9)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_9,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_9,
            sum(paevad10)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_10,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_10,
            sum(paevad11)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_11,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_11,
            sum(paevad12)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_12,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 3) AS puhk3_12,
            sum(paevad1)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_1,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_1,
            sum(paevad2)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_2,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_2,
            -- oma arvelt
            sum(paevad3)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_3,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_3,
            sum(paevad4)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_4,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_4,
            sum(paevad5)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_5,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_5,
            sum(paevad6)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_6,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_6,
            sum(paevad7)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_7,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_7,
            sum(paevad8)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_8,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_8,
            sum(paevad9)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_9,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_9,
            sum(paevad10)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_10,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_10,
            sum(paevad11)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_11,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_11,
            sum(paevad12)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_12,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 4) AS puhk4_12,
+           -- lisa puhkus
            sum(paevad1)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_1,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_1,
            sum(paevad2)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_2,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_2,
+           sum(paevad3)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_3,
+           sum(paevad4)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_4,
+           sum(paevad5)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_5,
+           sum(paevad6)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_6,
+           sum(paevad7)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_7,
+           sum(paevad8)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_8,
+           sum(paevad9)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_9,
+           sum(paevad10)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_10,
+           sum(paevad11)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_11,
+           sum(paevad12)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 6) AS puhk6_12,
+
+-- oppe puhkus
+           sum(paevad1)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_1,
+           sum(paevad2)
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_2,
            -- õppepuhkus
            sum(paevad3)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_3,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_3,
            sum(paevad4)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_4,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_4,
            sum(paevad5)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_5,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_5,
            sum(paevad6)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_6,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_6,
            sum(paevad7)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_7,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_7,
            sum(paevad8)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_8,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_8,
            sum(paevad9)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_9,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_9,
            sum(paevad10)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_10,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_10,
            sum(paevad11)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_11,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_11,
            sum(paevad12)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_12,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'PUHKUS' AND tyyp = 5) AS puhk5_12,
            sum(paevad1)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_1,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_1,
            sum(paevad2)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_2,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_2,
            -- komandeeringud
            sum(paevad3)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_3,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_3,
            sum(paevad4)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_4,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_4,
            sum(paevad5)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_5,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_5,
            sum(paevad6)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_6,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_6,
            sum(paevad7)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_7,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_7,
            sum(paevad8)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_8,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_8,
            sum(paevad9)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_9,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_9,
            sum(paevad10)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_10,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_10,
            sum(paevad11)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_11,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_11,
            sum(paevad12)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_12,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'KOMANDEERING')        AS kom_12,
            sum(paevad1)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_1,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_1,
            sum(paevad2)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_2,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_2,
            -- komandeeringud
            sum(paevad3)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_3,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_3,
            sum(paevad4)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_4,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_4,
            sum(paevad5)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_5,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_5,
            sum(paevad6)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_6,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_6,
            sum(paevad7)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_7,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_7,
            sum(paevad8)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_8,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_8,
            sum(paevad9)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_9,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_9,
            sum(paevad10)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_10,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_10,
            sum(paevad11)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_11,
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_11,
            sum(paevad12)
-               FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_12
+           FILTER (WHERE qryPuudumine.puudumiste_liik = 'MUU')                 AS muu_12
     FROM qryPuudumine
     GROUP BY lepingid
 ) qryPuudu ON qryPuudu.lepingid = po.lepingid
@@ -1012,6 +1205,6 @@ GRANT EXECUTE ON FUNCTION palk.palk_kaart( DATE, DATE, INTEGER, INTEGER ) TO dbk
 /*
 
 SELECT *
-FROM palk.palk_kaart('2021-01-01', '2021-01-31', 132, 0 :: INTEGER)
-where isikukood = '36903122245'
+FROM palk.palk_kaart('2021-01-01', '2021-07-31',132, 0 :: INTEGER)
+where isikukood = '47510062247'
 */

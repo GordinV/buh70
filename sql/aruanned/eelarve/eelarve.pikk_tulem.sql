@@ -37,7 +37,6 @@ WITH qrySaldo AS (
     )
       AND tp NOT LIKE
           CASE WHEN l_kond = 1 AND l_rekvid = 63 THEN '185101%' ELSE '999999%' END -- буз внутренних Тп кодов
-
     GROUP BY s.konto, s.rekvid
 )
 SELECT rekv_id,
@@ -569,16 +568,6 @@ FROM (
                   LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '38113%'
          UNION ALL
-         -- 38114
-         SELECT q.rekvid                       AS rekv_id,
-                '38114',
-                'Kasum/kahjum masinate ja seadmete müügist',
-                coalesce(kr) - coalesce(db, 0) AS summa,
-                idx
-         FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
-         WHERE konto LIKE '38114%'
-         UNION ALL
          -- 38115
          SELECT q.rekvid                       AS rekv_id,
                 '38115',
@@ -730,7 +719,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '3882%'
          UNION ALL
          -- 3888
@@ -755,12 +743,11 @@ FROM (
          -- 4
          SELECT q.rekvid                       AS rekv_id,
                 '4',
-                'Antud toetused',
+                'ANTUD TOETUSED',
                 coalesce(kr) - coalesce(db, 0) AS summa,
-                idx
+                4100
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
-         WHERE konto LIKE '4%'
+         WHERE left(konto, 1) = '4'
          UNION ALL
          -- 40
          SELECT q.rekvid                       AS rekv_id,
@@ -769,7 +756,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '40%'
          UNION ALL
          -- 41
@@ -779,7 +765,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '41%'
          UNION ALL
          -- 410
@@ -799,7 +784,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '4100%'
          UNION ALL
          -- 4102
@@ -828,7 +812,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '4108%'
          UNION ALL
          -- 413
@@ -838,7 +821,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '413%'
          UNION ALL
          -- 4130
@@ -848,7 +830,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '4130%'
          UNION ALL
          -- 4132
@@ -858,7 +839,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '4132%'
          UNION ALL
          -- 4133
@@ -868,7 +848,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '4133%'
          UNION ALL
          -- 4134
@@ -878,7 +857,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '4134%'
          UNION ALL
          -- 4137
@@ -888,7 +866,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '4137%'
          UNION ALL
          -- 4138
@@ -916,7 +893,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '414%'
          UNION ALL
          -- 45
@@ -926,7 +902,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '45%'
          UNION ALL
          -- 450
@@ -936,7 +911,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '450%'
          UNION ALL
          -- 4500
@@ -956,7 +930,6 @@ FROM (
                 coalesce(kr) - coalesce(db, 0) AS summa,
                 idx
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
          WHERE konto LIKE '4502%'
          UNION ALL
          -- 452
@@ -1389,10 +1362,9 @@ FROM (
                 '6',
                 'Muud kulud',
                 coalesce(kr) - coalesce(db, 0) AS summa,
-                idx
+                6000
          FROM qrySaldo q
-                  LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(q.konto)) = ltrim(rtrim(l.kood))
-         WHERE konto LIKE '6%'
+         WHERE left(konto, 1) = '6'
          UNION ALL
          -- 60
          SELECT q.rekvid                       AS rekv_id,
@@ -1681,7 +1653,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '900',
                 'Töötajate arv',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                (coalesce(db, 0) - coalesce(kr)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '900%'
@@ -1690,7 +1662,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '9001',
                 'Avaliku teenistuse ametnikud',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                abs(coalesce(db) - coalesce(kr, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '9001%'
@@ -1699,7 +1671,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '9002',
                 'Töötajad',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                abs(coalesce(kr) - coalesce(db, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '9002%'
@@ -1708,7 +1680,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '91',
                 'Kohustised ja nõuded',
-                coalesce(db) - coalesce(kr, 0) AS summa,
+                abs(coalesce(db) - coalesce(kr, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '91%'
@@ -1717,7 +1689,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '910',
                 'Võetud pikaajaliste laenukohustiste jaotus järelejäänud tähtaja järgi',
-                coalesce(db) - coalesce(kr, 0) AS summa,
+                abs(coalesce(db) - coalesce(kr, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '910%'
@@ -1726,7 +1698,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '911',
                 'Bilansivälised kohustised',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                abs(coalesce(kr) - coalesce(db, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '911%'
@@ -1735,7 +1707,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '912',
                 'Bilansivälised kohustised',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                abs(coalesce(kr) - coalesce(db, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '912%'
@@ -1744,7 +1716,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '921',
                 'Kapitalirendi tingimustel rendile võetud varad',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                (coalesce(db) - coalesce(kr, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '921%'
@@ -1753,7 +1725,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '9211',
                 'Hooned ja rajatised',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                (coalesce(db) - coalesce(kr, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '9211%'
@@ -1762,7 +1734,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '9214',
                 'Masinad ja seadmed',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                (coalesce(db) - coalesce(kr, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '9214%'
@@ -1771,7 +1743,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '922',
                 'Kasutusrendile antud varad',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                (coalesce(db) - coalesce(kr, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '922%'
@@ -1780,16 +1752,25 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '9220',
                 'Kinnisvarainvesteeringud',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                (coalesce(db) - coalesce(kr, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '9220%'
+         UNION ALL
+         -- 9221
+         SELECT q.rekvid                       AS rekv_id,
+                '9221',
+                'Kinnisvarainvesteeringud',
+                (coalesce(db) - coalesce(kr, 0)) AS summa,
+                idx
+         FROM qrySaldo q
+         WHERE konto LIKE '9221%'
          UNION ALL
          -- 9222
          SELECT q.rekvid                       AS rekv_id,
                 '9222',
                 'Hooned ja rajatised',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                (coalesce(db) - coalesce(kr, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '9222%'
@@ -1798,7 +1779,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '9224',
                 'Masinad ja seadmed',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                (coalesce(db) - coalesce(kr, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '9224%'
@@ -1807,7 +1788,7 @@ FROM (
          SELECT q.rekvid                       AS rekv_id,
                 '9226',
                 'Muu amortiseeruv materiaalne põhivara',
-                coalesce(kr) - coalesce(db, 0) AS summa,
+                (coalesce(db) - coalesce(kr, 0)) AS summa,
                 idx
          FROM qrySaldo q
          WHERE konto LIKE '9226%'
@@ -1823,6 +1804,8 @@ FROM (
     SELECT '9999', 'Aruandeperioodi tegevustulem'
     UNION ALL
     SELECT '9999999', 'Aruandeperioodi tulem ja siirded kokku'
+    UNION ALL
+    SELECT '900', 'Töötajate arv'
 ) l ON ltrim(rtrim(qry.konto)) = ltrim(rtrim(l.kood))
 
 GROUP BY rekv_id, konto, l.nimetus, idx
@@ -1837,13 +1820,13 @@ GRANT EXECUTE ON FUNCTION eelarve.pikk_tulem(l_kpv DATE, l_rekvid INTEGER, l_kon
 GRANT EXECUTE ON FUNCTION eelarve.pikk_tulem(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER) TO eelaktsepterja;
 GRANT EXECUTE ON FUNCTION eelarve.pikk_tulem(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER) TO dbvaatleja;
 
-/*
+
 SELECT sum(summa),
        konto,
-       nimetus
-FROM eelarve.pikk_tulem('2021-05-31' :: DATE, 63, 1)
-GROUP BY konto, nimetus
-ORDER BY konto
+       nimetus,
+       idx
+FROM eelarve.pikk_tulem('2020-12-31' :: DATE, 63, 1)
+GROUP BY konto, nimetus, idx
+ORDER BY konto, idx
 
 
- */

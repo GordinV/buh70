@@ -44,8 +44,8 @@ describe('dok. type MenuPohi tests', function () {
     });
 
     it('should have copy in buh62 folder', (done) => {
-        let targetFile =  path.join('C:\\avpsoft\\buh62\\models\\', modelForExport + '.xml');
-        let copyFile =  path.join('C:\\avpsoft\\buh70\\models\\', modelForExport + '_copy.xml');
+        let targetFile =  path.join('C:\\development\\buh62\\models\\', modelForExport + '.xml');
+        let copyFile =  path.join('C:\\development\\buh70\\models\\', modelForExport + '_copy.xml');
         expect(fs.existsSync(sourceFile)).toBeTruthy();
         fs.copyFileSync(sourceFile, copyFile);
         expect(fs.existsSync(copyFile)).toBeTruthy();
@@ -57,7 +57,7 @@ describe('dok. type MenuPohi tests', function () {
         });
     });
 
-    it('doc type library should contain MENU doc.type', async () => {
+    it.skip('doc type library should contain MENU doc.type', async () => {
         let sql = `select id from libs.library where kood = 'MENU' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -66,7 +66,7 @@ describe('dok. type MenuPohi tests', function () {
 
     });
 
-    it('should exists view cur_menu', async () => {
+    it.skip('should exists view cur_menu', async () => {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_menu'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -75,7 +75,7 @@ describe('dok. type MenuPohi tests', function () {
 
     });
 
-    it('should succefully execute sql new query', async()=> {
+    it.skip('should succefully execute sql new query', async()=> {
         let sql = doc.select[0].sqlAsNew;
         let returnValue = await db.queryDb(sql, [0,1]);
         expect(returnValue).toBeDefined();
@@ -83,7 +83,7 @@ describe('dok. type MenuPohi tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should exists proc ou.sp_salvesta_menupohi', async () => {
+    it.skip('should exists proc ou.sp_salvesta_menupohi', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_menupohi'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -92,7 +92,7 @@ describe('dok. type MenuPohi tests', function () {
 
     });
 
-    it('should exists proc ou.sp_delete_menupohi', async () => {
+    it.skip('should exists proc ou.sp_delete_menupohi', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_menupohi'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -101,7 +101,7 @@ describe('dok. type MenuPohi tests', function () {
 
     });
 
-    it('should save new row',async()=>{
+    it.skip('should save new row',async()=>{
         let data = {
             id: 0,
             data: {
@@ -130,7 +130,7 @@ describe('dok. type MenuPohi tests', function () {
         expect(returnValue.result).toBeGreaterThan(0);
     });
 
-    it('should select saved row', async()=>{
+    it.skip('should select saved row', async()=>{
        let sql = doc.select[0].sql;
         let returnValue = await db.queryDb(sql, [globalDocId,1]);
         expect(returnValue).toBeDefined();
@@ -149,7 +149,7 @@ describe('dok. type MenuPohi tests', function () {
 
     });
 
-    it('should delete menu', async () => {
+    it.skip('should delete menu', async () => {
         let sql = doc.deleteDoc;
         let returnValue = await db.queryDb(sql, [1, globalDocId]);
         expect(returnValue).toBeDefined();

@@ -7,19 +7,22 @@ CREATE OR REPLACE FUNCTION cur_calender(l_alg_kpv DATE, l_lopp_kpv DATE, l_rekv 
         dow         INTEGER,
         is_toopaev  BOOLEAN,
         is_tahtpaev BOOLEAN
-    ) AS
+    )
+AS
 $BODY$
 
-SELECT day                                                                     AS paev,
-       make_date(year(l_alg_kpv), month(l_alg_kpv),day)                                                   AS kpv,
-       DOW(make_date(year(l_alg_kpv), month(l_alg_kpv),day))                                              AS dow,
-       CASE WHEN DOW(make_date(year(l_alg_kpv), month(l_alg_kpv),day)) IN (0, 6) THEN FALSE ELSE TRUE END AS is_toopaev,
+SELECT day                                                                                                 AS paev,
+       make_date(year(l_alg_kpv), month(l_alg_kpv), day)                                                   AS kpv,
+       DOW(make_date(year(l_alg_kpv), month(l_alg_kpv), day))                                              AS dow,
+       CASE
+           WHEN DOW(make_date(year(l_alg_kpv), month(l_alg_kpv), day)) IN (0, 6) THEN FALSE
+           ELSE TRUE END                                                                                   AS is_toopaev,
        (exists(SELECT id
                FROM cur_tahtpaevad
-               WHERE aasta = year(make_date(year(l_alg_kpv), month(l_alg_kpv),day))
-                 AND kuu = month(make_date(year(l_alg_kpv), month(l_alg_kpv),day))
-                 AND paev = day(make_date(year(l_alg_kpv), month(l_alg_kpv),day))
-           ))                                                                  AS is_tahtpaev
+               WHERE aasta = year(make_date(year(l_alg_kpv), month(l_alg_kpv), day))
+                 AND kuu = month(make_date(year(l_alg_kpv), month(l_alg_kpv), day))
+                 AND paev = day(make_date(year(l_alg_kpv), month(l_alg_kpv), day))
+           ))                                                                                              AS is_tahtpaev
 FROM (
          SELECT extract(DAY FROM dt)::INTEGER AS day
          FROM generate_series(l_alg_kpv::DATE, l_lopp_kpv::DATE, INTERVAL '1' DAY) AS g(dt)

@@ -377,7 +377,7 @@ FROM (
          WHERE konto IN ('322', '323')
          UNION ALL
          SELECT l_rekvid,
-                '4'                                         AS konto,
+                ''                                          AS konto,
                 'Tegevuskulud'                              AS nimetus,
                 sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
                 0::NUMERIC(14, 2)                           AS eelaasta_summa,
@@ -386,13 +386,33 @@ FROM (
          FROM qryTegevusKulud
          UNION ALL
          SELECT l_rekvid,
-                '4'                                                         AS konto,
+                ''                                                          AS konto,
                 'Tegevuskulud'                                              AS nimetus,
                 0                                                           AS summa,
                 sum(coalesce(kr, 0)) - sum(coalesce(db, 0))::NUMERIC(14, 2) AS eelaasta_summa,
                 190                                                         AS idx
          FROM qryEelTegevusKulud
          UNION ALL
+         SELECT l_rekvid,
+                '4'                                         AS konto,
+                'Antud toetused'                            AS nimetus,
+                sum(coalesce(kr, 0)) - sum(coalesce(db, 0)) AS summa,
+                0::NUMERIC(14, 2)                           AS eelaasta_summa,
+
+                190                                         AS idx
+         FROM qryTegevusKulud
+         WHERE left(konto, 1) = '4'
+         UNION ALL
+         SELECT l_rekvid,
+                '4'                                                         AS konto,
+                'Antud toetused'                                            AS nimetus,
+                0                                                           AS summa,
+                sum(coalesce(kr, 0)) - sum(coalesce(db, 0))::NUMERIC(14, 2) AS eelaasta_summa,
+                190                                                         AS idx
+         FROM qryEelTegevusKulud
+         WHERE left(konto, 1) = '4'
+         UNION ALL
+
          SELECT l_rekvid,
                 ''                                          AS konto,
                 'Aruandeperioodi tegevustulem'              AS nimetus,
@@ -472,5 +492,5 @@ GRANT EXECUTE ON FUNCTION eelarve.tulem(l_kpv DATE, l_rekvid INTEGER, l_kond INT
 
 
 SELECT *
-FROM eelarve.tulem('2021-05-31' :: DATE, 63, 1)
+FROM eelarve.tulem('2020-12-31' :: DATE, 63, 1)
 ORDER BY idx, konto

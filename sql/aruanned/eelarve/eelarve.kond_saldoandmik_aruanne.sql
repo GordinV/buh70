@@ -70,7 +70,7 @@ FROM (
                 kreedit:: NUMERIC(14, 2),
                 tyyp::INTEGER
          FROM andmik
-         WHERE ltrim(rtrim(konto)) IN ('155000', '155101','154000')
+         WHERE ltrim(rtrim(konto)) IN ('155000','155100', '155101','154000')
          UNION ALL
          SELECT konto:: VARCHAR(20),
                 nimetus:: VARCHAR(254),
@@ -82,7 +82,7 @@ FROM (
                 kreedit:: NUMERIC(14, 2),
                 tyyp::INTEGER
          FROM andmik
-         WHERE ltrim(rtrim(konto)) NOT IN ('155000', '155101','154000')
+         WHERE ltrim(rtrim(konto)) NOT IN ('155000','155100', '155101','154000')
      ) qry
 GROUP BY konto, nimetus, tp, tegev, allikas, rahavoo, tyyp;
 
@@ -98,8 +98,8 @@ GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid 
 /*
 select * from (
 SELECT *
-FROM eelarve.kond_saldoandmik_aruanne('2021-03-31' :: DATE, 999 :: INTEGER)
+FROM eelarve.kond_saldoandmik_aruanne('2021-07-31' :: DATE, 999 :: INTEGER)
 ) qry
-where konto like '15400%'
+where konto like '155100%'
 
 */

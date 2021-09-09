@@ -41,7 +41,7 @@ CREATE OR REPLACE VIEW cur_arvtasud AS
     1 :: NUMERIC                     AS kuurs,
     arvtasu.status
   FROM docs.arvtasu arvtasu
-    JOIN docs.arv arv ON arvtasu.doc_arv_id = arv.id
+    JOIN docs.arv arv ON arvtasu.doc_arv_id = arv.parentid
     JOIN libs.asutus asutus ON asutus.id = arv.asutusid
     LEFT OUTER JOIN docs.journal j ON j.parentid = arvtasu.doc_tasu_id
     LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id

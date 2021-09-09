@@ -23,11 +23,11 @@ DECLARE
     l_params      JSON;
     l_save_params JSON;
     v_user        RECORD;
-    l_po_id       INTEGER;
+    l_mvt_kokku   NUMERIC;
 BEGIN
     SELECT kasutaja,
            rekvid
-           INTO v_user
+    INTO v_user
     FROM ou.userid u
     WHERE u.id = user_Id;
 
@@ -106,7 +106,8 @@ BEGIN
                sum(po.tulubaas)  AS mvt,
                sum(po.tootumaks) AS tki,
                sum(po.pensmaks)  AS pm,
-               sum(po.tulumaks)  AS tm
+               sum(po.tulumaks)  AS tm,
+               count(*) OVER ()  AS tululiigi_arv
         FROM palk.cur_palkoper po
         WHERE po.lepingId IN (
             SELECT t.id
@@ -129,7 +130,7 @@ BEGIN
                 SELECT sum(summa) OVER () AS summa,
                        lepingid,
                        libid
-                       INTO v_leping
+                INTO v_leping
                 FROM palk.cur_palkoper po
                          INNER JOIN palk.tooleping t ON t.id = po.lepingId
                 WHERE t.parentId = l_isikid
@@ -144,7 +145,8 @@ BEGIN
                 --calculate full summa for this tululiik
                 -- Готовим параметры для расчета
 
-                SELECT row_to_json(row) INTO l_params
+                SELECT row_to_json(row)
+                INTO l_params
                 FROM (SELECT l_kpv             AS kpv,
                              v_leping.lepingId AS lepingid,
                              v_leping.libId    AS libid,
@@ -155,26 +157,37 @@ BEGIN
 
                 -- вызов процедура расчета
                 SELECT *
-                FROM palk.sp_calc_arv(user_id, l_params) INTO STRICT v_arv;
+                FROM palk.sp_calc_arv(user_id, l_params)
+                INTO STRICT v_arv;
 
-                RAISE NOTICE 'arvestatud v_arv.tm %', v_arv.tm;
+
+-- get mvt from taotlus
+                l_mvt_kokku = coalesce((SELECT sum(mvt.summa)
+                                        FROM palk.taotlus_mvt mvt
+                                                 INNER JOIN palk.com_toolepingud t ON t.id = mvt.lepingId
+                                        WHERE t.parentId = l_isikid
+                                          AND mvt.status <> 'deleted'
+                                          AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
+                                          AND alg_kpv <= l_kpv
+                                          AND lopp_kpv >= l_kpv), 0);
+
 
                 -- get fact summa done before
-                SELECT sum(po.tulubaas)                                     AS mvt,
+                SELECT sum(po.tulubaas)                                 AS mvt,
                        sum(po.summa)
-                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS arv,
+                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS arv,
                        sum(po.tulumaks)
-                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tm,
+                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tm,
                        sum(po.sotsmaks)
-                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS sm,
+                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS sm,
                        sum(po.tootumaks)
-                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tki,
+                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tki,
                        sum(po.pensmaks)
-                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS pm,
+                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS pm,
                        sum(po.tka)
-                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tka
+                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tka
 
-                       INTO v_fakt_arv
+                INTO v_fakt_arv
                 FROM palk.cur_palkoper po
                 WHERE po.lepingId IN (
                     SELECT t.id
@@ -189,6 +202,9 @@ BEGIN
                   AND po.palk_liik = 'ARVESTUSED';
 
 
+                RAISE NOTICE 'v_arv.mvt %, v_fakt_arv.mvt %', v_arv.mvt,v_fakt_arv.mvt;
+
+
                 IF coalesce(v_arv.tm, 0) = 0 AND coalesce(v_arv.tm_kokku, 0) > 0 AND v_tululiik.tululiik = '10'
                 THEN
                     -- если налог по виду дохода 0, но общий более нуля
@@ -200,8 +216,14 @@ BEGIN
                    coalesce(v_arv.tki, 0) - round(coalesce(v_fakt_arv.tki, 0), 2) <> 0 OR
                    coalesce(v_arv.tka, 0) - round(coalesce(v_fakt_arv.tka, 0), 2) <> 0 OR
                    coalesce(v_arv.pm, 0) - round(coalesce(v_fakt_arv.pm, 0), 2) <> 0 OR
-                   (CASE WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1 ELSE 0 END) * coalesce(v_arv.mvt, 0) -
-                   (CASE WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1 ELSE 0 END) *
+                   (CASE
+                        WHEN v_tululiik.tululiigi_arv > 1 THEN 0
+                        WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1
+                        ELSE 0 END) * coalesce(v_arv.mvt, 0) -
+                   (CASE
+                        WHEN v_tululiik.tululiigi_arv > 1 THEN 0
+                        WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1
+                        ELSE 0 END) *
                    round(coalesce(v_fakt_arv.mvt, 0), 2) <> 0
                 THEN
                     --saving diff
@@ -213,7 +235,7 @@ BEGIN
 
                         SELECT libid,
                                lepingid
-                               INTO l_libId, l_lepingId
+                        INTO l_libId, l_lepingId
                         FROM palk.cur_palkoper po
                         WHERE po.lepingid IN (SELECT t.id
                                               FROM palk.tooleping t
@@ -240,12 +262,18 @@ BEGIN
                            coalesce(v_arv.tki - round(v_fakt_arv.tki, 2), 0) :: NUMERIC AS tootumaks,
                            coalesce(v_arv.tka - round(v_fakt_arv.tka, 2), 0) :: NUMERIC AS tka,
                            coalesce(v_arv.pm - round(v_fakt_arv.pm, 2), 0) :: NUMERIC   AS pensmaks,
-                           (CASE WHEN v_tululiik.tululiik = '10' THEN 1 ELSE 0 END) *
-                           CASE WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1 ELSE 0 END *
+                           (CASE
+                                WHEN v_tululiik.tululiigi_arv > 1 THEN 0
+                                WHEN v_tululiik.tululiik ::INTEGER < 20 THEN 1
+                                ELSE 0 END) *
+                           CASE
+                               WHEN v_tululiik.tululiigi_arv > 1 THEN 0
+                               WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1
+                               ELSE 0 END *
                            coalesce(v_arv.mvt - round(v_fakt_arv.mvt, 2), 0) :: NUMERIC AS tulubaas,
                            v_tululiik.tululiik                                          AS tululiik,
                            'Umardamine' :: TEXT || v_arv.selg                           AS selg
-                           INTO v_palk_oper;
+                    INTO v_palk_oper;
 
                     l_save_params = row_to_json(v_palk_oper);
 

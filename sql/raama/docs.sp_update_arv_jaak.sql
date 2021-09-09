@@ -44,6 +44,7 @@ BEGIN
         l_jaak := l_arv_summa - l_tasu_summa;
     END IF;
 
+    raise notice 'l_arv_summa %, l_tasu_summa %', l_arv_summa, l_tasu_summa;
     UPDATE docs.arv
     SET tasud = l_kpv,
         jaak  = coalesce(l_jaak, 0)

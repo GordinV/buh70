@@ -1,12 +1,14 @@
 DROP FUNCTION IF EXISTS eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, BOOLEAN, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE, INTEGER, INTEGER, JSONB);
 
 CREATE OR REPLACE FUNCTION eelarve.tulude_taitmine_allikas_artikkel(l_aasta INTEGER,
-                                                                    l_kpv_1 DATE,
-                                                                    l_kpv_2 DATE,
-                                                                    l_rekvid INTEGER,
-                                                                    l_kond INTEGER)
+                                                                     l_kpv_1 DATE,
+                                                                     l_kpv_2 DATE,
+                                                                     l_rekvid INTEGER,
+                                                                     l_kond INTEGER,
+                                                                     l_params JSONB DEFAULT NULL)
     RETURNS TABLE (
         rekv_id                  INTEGER,
         eelarve_kinni            NUMERIC(14, 2),
@@ -22,17 +24,30 @@ CREATE OR REPLACE FUNCTION eelarve.tulude_taitmine_allikas_artikkel(l_aasta INTE
         tunnus                   VARCHAR(20),
         idx                      INTEGER
 
-    ) AS
+    )
+AS
 $BODY$
 WITH cur_tulude_kassa_taitmine AS (
     SELECT *
-    FROM eelarve.uus_kassa_tulu_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond)
+    FROM eelarve.uus_kassa_tulu_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond) qry
     WHERE artikkel <> '3501' -- Убери, пожалуйста во всех отчетах Tulude eelarve täitmine ХХХХХ строку 3501 - это не доходы от деятельности, а внутренние переводы
+      AND (l_params IS NULL OR coalesce(qry.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus')::TEXT, '') + '%')
+      AND (l_params IS NULL OR coalesce(qry.tegev, '') ILIKE coalesce((l_params ->> 'tegev')::TEXT, '') + '%')
+      AND (l_params IS NULL OR coalesce(qry.artikkel, '') ILIKE coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
+      AND (l_params IS NULL OR coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
+      AND (l_params IS NULL OR coalesce(qry.rahavoog, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
 ),
      cur_tulude_taitmine AS (
          SELECT *
-         FROM eelarve.tulu_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond)
+         FROM eelarve.tulu_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond) qry
          WHERE artikkel <> '3501'
+           AND (l_params IS NULL OR coalesce(qry.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus')::TEXT, '') + '%')
+           AND (l_params IS NULL OR coalesce(qry.tegev, '') ILIKE coalesce((l_params ->> 'tegev')::TEXT, '') + '%')
+           AND (l_params IS NULL OR
+                coalesce(qry.artikkel, '') ILIKE coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
+           AND (l_params IS NULL OR coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
+           AND (l_params IS NULL OR
+                coalesce(qry.rahavoog, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
      ),
      laekumised_eelarvesse AS (
          SELECT j.rekvid,
@@ -74,6 +89,15 @@ WITH cur_tulude_kassa_taitmine AS (
                  AND (CASE WHEN j1.kood5 = '1532' AND j1.kood3 IN ('23', '21') THEN FALSE ELSE TRUE END)
                  AND d.status <> 3
                  AND j1.kood5 <> '3501'
+                 AND (l_params IS NULL OR
+                      coalesce(j1.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus')::TEXT, '') + '%')
+                 AND (l_params IS NULL OR coalesce(j1.kood1, '') ILIKE coalesce((l_params ->> 'tegev')::TEXT, '') + '%')
+                 AND (l_params IS NULL OR
+                      coalesce(j1.kood5, '') ILIKE coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
+                 AND (l_params IS NULL OR
+                      coalesce(j1.kood2, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
+                 AND (l_params IS NULL OR
+                      coalesce(j1.kood3, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
               ) j
                   INNER JOIN libs.library l ON l.kood = j.kood5
              AND l.tun5 = 1 --tulud
@@ -125,6 +149,17 @@ WITH cur_tulude_kassa_taitmine AS (
                     AND aasta = l_aasta
                     AND e.kpv IS NULL
                     AND e.status <> 3
+                    AND (l_params IS NULL OR
+                         coalesce(e.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus')::TEXT, '') + '%')
+                    AND (l_params IS NULL OR
+                         coalesce(e.kood1, '') ILIKE coalesce((l_params ->> 'tegev')::TEXT, '') + '%')
+                    AND (l_params IS NULL OR
+                         coalesce(e.kood5, '') ILIKE coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
+                    AND (l_params IS NULL OR
+                         coalesce(e.kood2, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
+                    AND (l_params IS NULL OR
+                         coalesce(e.kood3, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
+
                   UNION ALL
                   SELECT rekvid,
                          0 :: NUMERIC                                                    AS eelarve_kinni,
@@ -150,6 +185,16 @@ WITH cur_tulude_kassa_taitmine AS (
                     AND aasta = l_aasta
                     AND (e.kpv IS NULL OR e.kpv <= COALESCE(l_kpv_2, CURRENT_DATE))
                     AND e.status <> 3
+                    AND (l_params IS NULL OR
+                         coalesce(e.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus')::TEXT, '') + '%')
+                    AND (l_params IS NULL OR
+                         coalesce(e.kood1, '') ILIKE coalesce((l_params ->> 'tegev')::TEXT, '') + '%')
+                    AND (l_params IS NULL OR
+                         coalesce(e.kood5, '') ILIKE coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
+                    AND (l_params IS NULL OR
+                         coalesce(e.kood2, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
+                    AND (l_params IS NULL OR
+                         coalesce(e.kood3, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
 
                   UNION ALL
                   SELECT rekv_id          AS rekvid,
@@ -413,16 +458,16 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE,INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE,INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE,INTEGER, INTEGER) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE,INTEGER, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE,INTEGER, INTEGER, JSONB) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE,INTEGER, INTEGER, JSONB) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE,INTEGER, INTEGER, JSONB) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE,INTEGER, INTEGER, JSONB) TO dbvaatleja;
 
 /*
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.tulude_taitmine_allikas_artikkel_(2021::INTEGER, '2021-03-01'::DATE, '2021-03-31', 119, 0)
+         FROM eelarve.tulude_taitmine_allikas_artikkel_(2021::INTEGER, '2021-03-01'::DATE, '2021-06-30', 64, 1,'{"tunnus":"2101"}')
      ) qry
 WHERE left(artikkel, 3) IN ('655')
 --and tegev = '04730'

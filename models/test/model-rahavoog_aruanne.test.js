@@ -43,8 +43,8 @@ describe('dok. type Rahavoog aruanne tests', function () {
     });
 
     it('should have copy in buh62 folder', (done) => {
-        let targetFile =  path.join('C:\\avpsoft\\buh62\\models\\', modelForExport + '.xml');
-        let copyFile =  path.join('C:\\avpsoft\\buh70\\models\\', modelForExport + '_copy.xml');
+        let targetFile =  path.join('C:\\development\\buh62\\models\\', modelForExport + '.xml');
+        let copyFile =  path.join('C:\\development\\buh70\\models\\', modelForExport + '_copy.xml');
         expect(fs.existsSync(sourceFile)).toBeTruthy();
         fs.copyFileSync(sourceFile, copyFile);
         expect(fs.existsSync(copyFile)).toBeTruthy();
@@ -56,7 +56,7 @@ describe('dok. type Rahavoog aruanne tests', function () {
         });
     });
 
-    it('doc type library should contain RAHAVOOG_ARUANNE doc.type', async () => {
+    it.skip('doc type library should contain RAHAVOOG_ARUANNE doc.type', async () => {
         let sql = `select id from libs.library where kood = 'RAHAVOOG_ARUANNE' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -65,7 +65,7 @@ describe('dok. type Rahavoog aruanne tests', function () {
 
     });
 
-    it('should select data from grid query', async()=> {
+    it.skip('should select data from grid query', async()=> {
         let sql = doc.grid.sqlString;
         let returnValue = await db.queryDb(sql, ['2018-01-01', 0, 0]);
         expect(returnValue).toBeDefined();

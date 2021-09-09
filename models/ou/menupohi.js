@@ -1,5 +1,6 @@
 module.exports = {
     selectAsLibs: `SELECT menu.id,
+       submenu::varchar(120),
        pad::varchar(120), bar::varchar(120), idx, name::varchar(120), eesti::varchar(120), vene::varchar(120),proc, groups, modules, level, message::varchar(254), keyshortcut::varchar(254)
                    FROM get_menu($1 :: TEXT [], $2 :: TEXT []) menu
                    ORDER BY idx`, // $1 - modules array, like '{"EELARVE","RAAMA"}', $2 array, like '{"KASUTAJA","ADMIN"}'
@@ -33,6 +34,7 @@ module.exports = {
                 (m.properties ->> 'vene')::VARCHAR(120)                               AS vene,
                 (m.properties ->> 'level') :: INTEGER                                 AS level,
                 (m.properties ->> 'keyshortcut')::VARCHAR(120)                        AS keyshortcut,
+                (m.properties ->> 'submenu')::VARCHAR(120)                        AS submenu,
                 m.status,
                 m.pad::VARCHAR(120),
                 m.bar::VARCHAR(120),
@@ -72,6 +74,7 @@ module.exports = {
                     null::varchar(120) as pad,
                     null::varchar(120) as bar,
                     null::varchar(120) as keyshortcut,
+                    null::varchar(120) as submenu,
                     0 as idx,
                     'active' as status`,
         query: null,

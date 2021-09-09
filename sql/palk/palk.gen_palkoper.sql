@@ -36,7 +36,7 @@ DECLARE
 BEGIN
     SELECT kasutaja,
            rekvid
-           INTO v_user
+    INTO v_user
     FROM ou.userid u
     WHERE u.id = user_Id;
 
@@ -128,7 +128,7 @@ BEGIN
             SELECT NULL::INTEGER                  AS doc_id,
                    ltrim(rtrim(v_tooleping.nimi)) AS error_message,
                    NULL::INTEGER                  AS error_code
-                   INTO v_tulemus;
+            INTO v_tulemus;
 
 
             l_sm_lib = NULL;
@@ -148,12 +148,12 @@ BEGIN
                   AND pk.libid IN (SELECT value :: INTEGER
                                    FROM json_array_elements_text(l_lib_ids))
                 ORDER BY pk.liik
-                       , CASE
-                             WHEN empty(pk.tululiik)
-                                 THEN 99 :: TEXT
-                             ELSE pk.tululiik END
-                       , Pk.percent_ DESC
-                       , pk.summa DESC
+                        , CASE
+                              WHEN empty(pk.tululiik)
+                                  THEN 99 :: TEXT
+                              ELSE pk.tululiik END
+                        , Pk.percent_ DESC
+                        , pk.summa DESC
                 LOOP
 
                     -- umardamine
@@ -169,7 +169,8 @@ BEGIN
                     END IF;
 
                     -- Готовим параметры для расчета
-                    SELECT row_to_json(row) INTO l_params
+                    SELECT row_to_json(row)
+                    INTO l_params
                     FROM (SELECT l_kpv              AS kpv,
                                  v_tooleping.rekvid AS rekvid,
                                  v_tooleping.id     AS lepingid,
@@ -222,7 +223,8 @@ BEGIN
                     IF tulemus.summa IS NOT NULL AND tulemus.summa <> 0
                     THEN
                         -- поиск аналогичной операции
-                        SELECT parentid INTO l_dok_id
+                        SELECT parentid
+                        INTO l_dok_id
                         FROM palk.palk_oper po
                         WHERE po.lepingid = v_tooleping.id
                           AND po.libid = V_lib.id
@@ -255,7 +257,7 @@ BEGIN
                                l_tulemus_json ->> 'selg' :: TEXT                             AS muud,
                                TRUE                                                          AS kas_lausend,
                                FALSE                                                         AS kas_kas_arvesta_saldo
-                               INTO v_palk_oper
+                        INTO v_palk_oper
                         FROM palk.com_palk_lib AS l
                         WHERE l.id = V_lib.id;
 
@@ -301,10 +303,12 @@ BEGIN
 
             -- дорасчет мин СН
 
+            RAISE NOTICE 'calc min sm is_calc_min_sots %, l_sm_lib %', is_calc_min_sots, l_sm_lib;
             IF (is_calc_min_sots) AND l_sm_lib IS NOT NULL
             THEN
                 -- удаляем предыдущий расчет мин.СН
-                SELECT id INTO l_dok_id
+                SELECT id
+                INTO l_dok_id
                 FROM palk.cur_palkoper po
                 WHERE year(po.kpv) = year(l_kpv)
                   AND month(po.kpv) = month(l_kpv)
@@ -318,7 +322,8 @@ BEGIN
                   AND po.sotsmaks <> 0;
 
                 -- Готовим параметры для расчета
-                SELECT row_to_json(row) INTO l_params
+                SELECT row_to_json(row)
+                INTO l_params
                 FROM (SELECT l_kpv              AS kpv,
                              v_tooleping.rekvid AS rekvid,
                              v_tooleping.id     AS lepingid,
@@ -326,7 +331,10 @@ BEGIN
                              TRUE               AS kas_min_sots) row;
 
                 SELECT *
-                FROM palk.sp_calc_sots(user_id, l_params::JSON) INTO tulemus;
+                FROM palk.sp_calc_min_sots(user_id, l_params::JSON)
+                INTO tulemus;
+
+                RAISE NOTICE 'done tulemus.summa %, tulemus %', tulemus.summa ,tulemus;
 
                 IF tulemus.summa > 0
                 THEN
@@ -336,33 +344,33 @@ BEGIN
                            pk.liik,
                            pk.tunnus,
                            pk.tunnusid::INTEGER AS tunnusid
-                           INTO v_lib
+                    INTO v_lib
                     FROM palk.cur_palk_kaart pk
                     WHERE lepingid = v_tooleping.id
                       AND status = 1
                       AND pk.libid = l_sm_lib;
 
-                    SELECT coalesce(l_dok_id, 0) :: INTEGER                             AS id,
-                           l_kpv                                                        AS kpv,
-                           v_tooleping.id                                               AS lepingid,
-                           v_lib.id                                                     AS libid,
-                           tulemus.summa                                                AS summa,
-                           l_dokprop_id                                                 AS dokpropid,
-                           l.tegev                                                      AS kood1,
-                           l.allikas                                                    AS kood2,
-                           l.artikkel                                                   AS kood5,
-                           l.uritus                                                     AS kood4,
-                           l.konto                                                      AS konto,
-                           v_lib.tunnus                                                 AS tunnus,
-                           v_lib.tunnusid                                               AS tunnusid,
-                           l.korrkonto                                                  AS korrkonto,
-                           l.proj                                                       AS proj,
-                           '800699' :: TEXT                                             AS tp,
-                           coalesce((l_tulemus_json ->> 'sm') :: NUMERIC, 0) :: NUMERIC AS sotsmaks,
-                           l_tulemus_json ->> 'selg' :: TEXT                            AS muud,
-                           TRUE                                                         AS kas_lausend,
-                           FALSE                                                        AS kas_kas_arvesta_saldo
-                           INTO v_palk_oper
+                    SELECT coalesce(l_dok_id, 0) :: INTEGER                                        AS id,
+                           l_kpv                                                                   AS kpv,
+                           v_tooleping.id                                                          AS lepingid,
+                           v_lib.id                                                                AS libid,
+                           tulemus.summa                                                           AS summa,
+                           l_dokprop_id                                                            AS dokpropid,
+                           l.tegev                                                                 AS kood1,
+                           l.allikas                                                               AS kood2,
+                           l.artikkel                                                              AS kood5,
+                           l.uritus                                                                AS kood4,
+                           l.konto                                                                 AS konto,
+                           v_lib.tunnus                                                            AS tunnus,
+                           v_lib.tunnusid                                                          AS tunnusid,
+                           l.korrkonto                                                             AS korrkonto,
+                           l.proj                                                                  AS proj,
+                           '800699' :: TEXT                                                        AS tp,
+                           coalesce((l_tulemus_json ->> 'sm') :: NUMERIC, tulemus.alus) :: NUMERIC AS sotsmaks,
+                           l_tulemus_json ->> 'selg' :: TEXT                                       AS muud,
+                           TRUE                                                                    AS kas_lausend,
+                           FALSE                                                                   AS kas_kas_arvesta_saldo
+                    INTO v_palk_oper
                     FROM palk.com_palk_lib AS l
                     WHERE l.id = V_lib.id;
 

@@ -267,7 +267,7 @@ SELECT sum(sm_kokku) as sm, sum(sm_kokku_1) as sm_1
 FROM
 (
 select  * from
-palk.tsd_lisa_1('2021-03-01', '2021-03-31', 132, 1 :: INTEGER)
+palk.tsd_lisa_1('2021-08-01', '2021-08-31', 119, 1 :: INTEGER)
 
 
 ) qry

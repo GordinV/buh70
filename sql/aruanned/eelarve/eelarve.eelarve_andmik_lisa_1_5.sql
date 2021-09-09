@@ -52,7 +52,8 @@ BEGIN
     PERFORM eelarve.eelarve_andmik_lisa_1_5_query(l_kpv, l_rekvid, l_kond);
 
 
-    SELECT sum((kr - db)) INTO l_2580
+    SELECT sum((kr - db))
+    INTO l_2580
     FROM tmp_andmik s,
          (SELECT min(aasta) AS eelmine_aasta, max(aasta) AS aasta, min(kuu) AS eelmine_kuu, max(kuu) AS kuu
           FROM tmp_andmik) aasta
@@ -72,7 +73,8 @@ BEGIN
                      get_saldo('MKD', '258', NULL, NULL); -- MKD208+MKD258
 
 
-    SELECT sum((kr - db)) INTO l_2581
+    SELECT sum((kr - db))
+    INTO l_2581
     FROM tmp_andmik s,
          (SELECT min(aasta) AS eelmine_aasta, max(aasta) AS aasta, min(kuu) AS eelmine_kuu, max(kuu) AS kuu
           FROM tmp_andmik) aasta
@@ -473,32 +475,32 @@ BEGIN
 -- Строка 55 - Tekke täitmine – добавляем к уже имеющейся формуле KD 55 налог с оборота KD601 минус KD 601002.
                      SELECT '2.12'
                              ,
-                            1                                                           AS is_e
+                            1                                                                             AS is_e
                              ,
-                            $2                                                          AS rekvid
+                            $2                                                                            AS rekvid
                              ,
-                            ''::VARCHAR(20)                                             AS tegev
+                            ''::VARCHAR(20)                                                               AS tegev
                              ,
-                            ''::VARCHAR(20)                                             AS allikas
+                            ''::VARCHAR(20)                                                               AS allikas
                              ,
-                            '55'::VARCHAR(20)                                           AS artikkel
+                            '55'::VARCHAR(20)                                                             AS artikkel
                              ,
-                            'Majandamiskulud'                                           AS nimetus
+                            'Majandamiskulud'                                                             AS nimetus
                              ,
-                            -1 * coalesce(sum(q.eelarve), 0)                            AS eelarve
+                            -1 * coalesce(sum(q.eelarve), 0)                                              AS eelarve
                              ,
-                            -1 * coalesce(sum(q.eelarve_kassa), 0)                      AS eelarve_kassa
+                            -1 * coalesce(sum(q.eelarve_kassa), 0)                                        AS eelarve_kassa
                              ,
-                            -1 * coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)       AS eelarve_taps
+                            -1 * coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)                         AS eelarve_taps
                              ,
-                            -1 * coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2) AS eelarve_kassa_taps
+                            -1 * coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2)                   AS eelarve_kassa_taps
                              ,
-                            -1 * coalesce(sum(q.tegelik), 0)                            AS tegelik
+                            -1 * coalesce(sum(q.tegelik), 0)                                              AS tegelik
                              ,
-                            -1 * coalesce(sum(q.kassa), 0)                              AS kassa
+                            -1 * coalesce(sum(q.kassa), 0)                                                AS kassa
                              ,
                             get_saldo('KD', '55', NULL, NULL) +
-                            get_saldo('KD', '601000', NULL, NULL)                       AS saldoandmik
+                            get_saldo('KD', '601000', NULL, NULL) + get_saldo('KD', '601001', NULL, NULL) AS saldoandmik
                      FROM tmp_andmik q
                      WHERE q.artikkel LIKE '55%'
                        AND tyyp = 1
@@ -532,7 +534,8 @@ BEGIN
                              ,
                             get_saldo('KD', '60', NULL, NULL) -
                             get_saldo('KD', '601000', NULL, NULL) -
-                            get_saldo('KD', '601002', NULL, NULL)                       AS saldoandmik
+                            get_saldo('KD', '601002', NULL, NULL) -
+                            get_saldo('KD', '601001', NULL, NULL)                       AS saldoandmik
                      FROM tmp_andmik q
                      WHERE q.artikkel LIKE '60%'
                        AND tyyp = 1
@@ -1512,33 +1515,33 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                          (
                                  coalesce(sum(e.summa) FILTER (WHERE e.is_kulud > 0 AND e.kpv IS NULL), 0)
                                  - coalesce(sum(e.summa)
-                                                FILTER (WHERE e.is_kulud = 0 AND e.kpv IS NULL AND e.kood5 IN ('3500', '352', '3502')),
+                                            FILTER (WHERE e.is_kulud = 0 AND e.kpv IS NULL AND e.kood5 IN ('3500', '352', '3502')),
                                             0)
                              ) AS eelarve_kinni,
                          (
                                  coalesce(sum(e.summa_kassa) FILTER (WHERE e.is_kulud > 0 AND e.kpv IS NULL), 0)
                                  - coalesce(sum(e.summa_kassa)
-                                                FILTER (WHERE e.is_kulud = 0 AND e.kpv IS NULL AND e.kood5 IN ('3500', '352', '3502')),
+                                            FILTER (WHERE e.is_kulud = 0 AND e.kpv IS NULL AND e.kood5 IN ('3500', '352', '3502')),
                                             0)
                              ) AS eelarve_kassa_kinni,
 
                          --  Берем из блока Eelarve, закладка Kulud,  Summa kokku  - колонка tekkepõhine  уточненная и вычитаем уточненные бюджеты  доходов 3500, бюджет 352, бюджет 3502 колонка tekkepõhine
                          (
                                  coalesce(sum(e.summa)
-                                              FILTER (WHERE e.is_kulud > 0 AND e.kpv IS NOT NULL AND e.kpv <= l_kpv), 0)
+                                          FILTER (WHERE e.is_kulud > 0 AND e.kpv IS NOT NULL AND e.kpv <= l_kpv), 0)
                                  - coalesce(sum(e.summa)
-                                                FILTER (WHERE e.is_kulud = 0
-                                                    AND e.kpv IS NOT NULL
-                                                    AND e.kpv <= l_kpv
-                                                    AND e.kood5 IN ('3500', '352', '3502')), 0)
+                                            FILTER (WHERE e.is_kulud = 0
+                                                AND e.kpv IS NOT NULL
+                                                AND e.kpv <= l_kpv
+                                                AND e.kood5 IN ('3500', '352', '3502')), 0)
                              ) AS eelarve_taps,
                          (
                                  coalesce(sum(e.summa_kassa)
-                                              FILTER (WHERE e.is_kulud > 0 AND e.kpv IS NOT NULL AND e.kpv <= l_kpv), 0)
+                                          FILTER (WHERE e.is_kulud > 0 AND e.kpv IS NOT NULL AND e.kpv <= l_kpv), 0)
                                  - coalesce(sum(e.summa_kassa)
-                                                FILTER (WHERE e.is_kulud = 0 AND e.kpv IS NOT NULL AND
-                                                              e.kpv <= l_kpv AND
-                                                              e.kood5 IN ('3500', '352', '3502')), 0)
+                                            FILTER (WHERE e.is_kulud = 0 AND e.kpv IS NOT NULL AND
+                                                          e.kpv <= l_kpv AND
+                                                          e.kood5 IN ('3500', '352', '3502')), 0)
                              ) AS eelarve_kassa_taps
 
                      FROM eelarve.eelarve e
@@ -1567,10 +1570,10 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                       qryTaitm AS (
                           SELECT (
                                          coalesce(sum(j.summa)
-                                                      FILTER (WHERE left(j.deebet, 3) = '100' AND j.kood5 = '3501'),
+                                                  FILTER (WHERE left(j.deebet, 3) = '100' AND j.kood5 = '3501'),
                                                   0) -
                                          coalesce(sum(j.summa)
-                                                      FILTER (WHERE left(j.kreedit, 3) = '100' AND j.kood5 = '3501'), 0)
+                                                  FILTER (WHERE left(j.kreedit, 3) = '100' AND j.kood5 = '3501'), 0)
                                      ) AS kassa_taitmine
                           FROM cur_journal j
                           WHERE j.rekvid = (CASE
