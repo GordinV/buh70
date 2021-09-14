@@ -13,7 +13,8 @@ CREATE OR REPLACE FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid
         deebet   NUMERIC(14, 2),
         kreedit  NUMERIC(14, 2),
         tyyp     INTEGER
-    ) AS
+    )
+AS
 $BODY$
 
 -- rekvid  = 999 (kond)
@@ -42,12 +43,12 @@ WITH andmik AS (
                        SELECT l_rekvid
     )
     GROUP BY s.konto
-           , k.nimetus
-           , left(s.tp, 6)
-           , s.tegev
-           , left(s.allikas, 2)
-           , s.rahavoo
-           , s.tyyp
+            , k.nimetus
+            , left(s.tp, 6)
+            , s.tegev
+            , left(s.allikas, 2)
+            , s.rahavoo
+            , s.tyyp
 )
 SELECT konto:: VARCHAR(20),
        nimetus:: VARCHAR(254),
@@ -63,14 +64,14 @@ FROM (
          SELECT konto:: VARCHAR(20),
                 nimetus:: VARCHAR(254),
                 tp:: VARCHAR(20),
-                '':: VARCHAR(20) as tegev,
+                CASE WHEN rahavoo = '01' THEN tegev ELSE '' END:: VARCHAR(20) AS tegev,
                 allikas:: VARCHAR(20),
                 rahavoo:: VARCHAR(20),
                 deebet:: NUMERIC(14, 2),
                 kreedit:: NUMERIC(14, 2),
                 tyyp::INTEGER
          FROM andmik
-         WHERE ltrim(rtrim(konto)) IN ('155000','155100', '155101','154000')
+         WHERE ltrim(rtrim(konto)) IN ('155000', '155100', '155101', '154000')
          UNION ALL
          SELECT konto:: VARCHAR(20),
                 nimetus:: VARCHAR(254),
@@ -82,7 +83,7 @@ FROM (
                 kreedit:: NUMERIC(14, 2),
                 tyyp::INTEGER
          FROM andmik
-         WHERE ltrim(rtrim(konto)) NOT IN ('155000','155100', '155101','154000')
+         WHERE ltrim(rtrim(konto)) NOT IN ('155000', '155100', '155101', '154000')
      ) qry
 GROUP BY konto, nimetus, tp, tegev, allikas, rahavoo, tyyp;
 

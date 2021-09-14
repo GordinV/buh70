@@ -52,7 +52,8 @@ BEGIN
     IF v_smk.doklausid = 0
     THEN
         error_code = 1; -- Konteerimine pole vajalik
-        error_message = 'Konteerimine pole vajalik';
+        error_message = 'Konteerimine pole vajalik ';
+        raise notice 'v_smk.doklausid = 0a, tnid %',tnid;
         result = 0;
         RETURN;
     END IF;
@@ -90,6 +91,7 @@ BEGIN
         error_code = 1; -- Konteerimine pole vajalik
         result = 0;
         error_message = 'Konteerimine pole vajalik';
+        raise notice 'pole vaja, rekv_id %',v_smk.rekvId;
         RETURN;
     END IF;
 
@@ -134,7 +136,6 @@ BEGIN
         WHERE k1.parentid = v_smk.Id
         LOOP
 
-            raise notice 'v_smk1.journalid %',v_smk1.journalid;
             SELECT coalesce(v_smk1.journalid, 0) AS id,
                    'JOURNAL'                    AS doc_type_id,
                    v_smk.kpv                    AS kpv,

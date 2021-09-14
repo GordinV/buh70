@@ -7,7 +7,8 @@ CREATE OR REPLACE FUNCTION eelarve.pikk_bilanss(l_kpv DATE, l_rekvid INTEGER, l_
         nimetus       VARCHAR(254),
         summa         NUMERIC(14, 2),
         eelmise_summa NUMERIC(14, 2)
-    ) AS
+    )
+AS
 $BODY$
 
 WITH qrySaldo AS (
@@ -37,7 +38,7 @@ WITH qrySaldo AS (
     GROUP BY s.konto, s.rekvid
     UNION ALL
     -- 299000
-    --Saldoandmikust (Sum: Kontod 3*kuni 6* Kreedit) - (Sum: Kontod 3* kuni 6* Deebet)
+    --Saldoandmikust (Sum: Kontod 3*kuni 6* Kreedit) - (Sum: Kontod 3* kuni 7* Deebet)
     SELECT s.rekvid                AS rekv_id,
            '299000' :: VARCHAR(20) AS konto,
            0 :: NUMERIC(14, 2)     AS db,
@@ -61,7 +62,7 @@ WITH qrySaldo AS (
                                       THEN 999
                                   ELSE l_rekvid END
     )
-      AND left(konto, 1) IN ('3', '4', '5', '6')
+      AND left(konto, 1) IN ('3', '4', '5', '6', '7')
     GROUP BY s.rekvid
 ),
      eelmiseSaldoAndmik AS (
@@ -92,7 +93,7 @@ WITH qrySaldo AS (
 
          UNION ALL
          -- 299000
-         --Saldoandmikust (Sum: Kontod 3*kuni 6* Kreedit) - (Sum: Kontod 3* kuni 6* Deebet)
+         --Saldoandmikust (Sum: Kontod 3*kuni 6* Kreedit) - (Sum: Kontod 3* kuni 7* Deebet)
          SELECT s.rekvid                AS rekv_id,
                 '299000' :: VARCHAR(20) AS konto,
                 0 :: NUMERIC(14, 2)     AS db,
@@ -116,6 +117,7 @@ WITH qrySaldo AS (
                                            THEN 999
                                        ELSE l_rekvid END
          )
+           AND left(konto, 1) IN ('3', '4', '5', '6', '7')
          GROUP BY s.konto, s.rekvid
      )
 
@@ -451,27 +453,27 @@ FROM (
                          '1035' :: VARCHAR(20)                             AS konto,
                          'Nõuded toetuste ja siirete eest' :: VARCHAR(254) AS nimetus,
                          coalesce(sum(db)
-                                      FILTER (WHERE left(konto, 4) = '1035'), 0) -
+                                  FILTER (WHERE left(konto, 4) = '1035'), 0) -
                          coalesce(sum(kr)
-                                      FILTER (WHERE left(konto, 4) = '1035'), 0) -
+                                  FILTER (WHERE left(konto, 4) = '1035'), 0) -
                          coalesce(sum(db + kr)
-                                      FILTER (WHERE konto LIKE '103500%'), 0)
+                                  FILTER (WHERE konto LIKE '103500%'), 0)
                                                                            AS summa,
                          0::NUMERIC(14, 2)                                 AS eelmise_summa
                   FROM qrySaldo q
                   WHERE konto LIKE '1035%'
                   GROUP BY q.rekvid
                   UNION ALL
-                  SELECT q.rekvid                                                             AS rekv_id,
-                         '1035' :: VARCHAR(20)                                                AS konto,
-                         'Nõuded toetuste ja siirete eest' :: VARCHAR(254)                    AS nimetus,
-                         0                                                                    AS summa,
+                  SELECT q.rekvid                                                         AS rekv_id,
+                         '1035' :: VARCHAR(20)                                            AS konto,
+                         'Nõuded toetuste ja siirete eest' :: VARCHAR(254)                AS nimetus,
+                         0                                                                AS summa,
                          coalesce(sum(db)
-                                      FILTER (WHERE left(konto, 4) = '1035'), 0) -
+                                  FILTER (WHERE left(konto, 4) = '1035'), 0) -
                          coalesce(sum(kr)
-                                      FILTER (WHERE left(konto, 4) = '1035'), 0) -
+                                  FILTER (WHERE left(konto, 4) = '1035'), 0) -
                          coalesce(sum(db + kr)
-                                      FILTER (WHERE konto LIKE '103500%'), 0)::NUMERIC(14, 2) AS eelmise_summa
+                                  FILTER (WHERE konto LIKE '103500%'), 0)::NUMERIC(14, 2) AS eelmise_summa
                   FROM eelmiseSaldoAndmik q
                   WHERE konto LIKE '1035%'
                   GROUP BY q.rekvid
@@ -1433,30 +1435,30 @@ FROM (
                          '2' :: VARCHAR(20)                       AS konto,
                          'Kohustused ja netovara' :: VARCHAR(254) AS nimetus,
                          coalesce(sum(kr)
-                                      FILTER (WHERE konto LIKE '2%'), 0) -
+                                  FILTER (WHERE konto LIKE '2%'), 0) -
                          coalesce(sum(db)
-                                      FILTER (WHERE konto LIKE '2%'), 0) +
+                                  FILTER (WHERE konto LIKE '2%'), 0) +
                          coalesce(sum(kr)
-                                      FILTER (WHERE konto LIKE '103500%'), 0) -
+                                  FILTER (WHERE konto LIKE '103500%'), 0) -
                          coalesce(sum(db)
-                                      FILTER (WHERE konto LIKE '103500%'), 0)
+                                  FILTER (WHERE konto LIKE '103500%'), 0)
                                                                   AS summa,
                          0::NUMERIC(14, 2)                        AS eelmise_summa
                   FROM qrySaldo q
                   GROUP BY q.rekvid
                   UNION ALL
-                  SELECT q.rekvid                                                             AS rekv_id,
-                         '2' :: VARCHAR(20)                                                   AS konto,
-                         'Kohustused ja netovara' :: VARCHAR(254)                             AS nimetus,
-                         0                                                                    AS summa,
+                  SELECT q.rekvid                                                         AS rekv_id,
+                         '2' :: VARCHAR(20)                                               AS konto,
+                         'Kohustused ja netovara' :: VARCHAR(254)                         AS nimetus,
+                         0                                                                AS summa,
                          coalesce(sum(kr)
-                                      FILTER (WHERE konto LIKE '2%'), 0) -
+                                  FILTER (WHERE konto LIKE '2%'), 0) -
                          coalesce(sum(db)
-                                      FILTER (WHERE konto LIKE '2%'), 0) +
+                                  FILTER (WHERE konto LIKE '2%'), 0) +
                          coalesce(sum(kr)
-                                      FILTER (WHERE konto LIKE '103500%'), 0) -
+                                  FILTER (WHERE konto LIKE '103500%'), 0) -
                          coalesce(sum(db)
-                                      FILTER (WHERE konto LIKE '103500%'), 0)::NUMERIC(14, 2) AS eelmise_summa
+                                  FILTER (WHERE konto LIKE '103500%'), 0)::NUMERIC(14, 2) AS eelmise_summa
                   FROM eelmiseSaldoAndmik q
                   GROUP BY q.rekvid
               ) qry
@@ -2169,21 +2171,21 @@ FROM (
          --29
          SELECT *
          FROM (
-                  SELECT q.rekvid                                                                  AS rekv_id,
-                         '29' :: VARCHAR(20)                                                       AS konto,
-                         'Netovara' :: VARCHAR(254)                                                AS nimetus,
+                  SELECT q.rekvid                                                              AS rekv_id,
+                         '29' :: VARCHAR(20)                                                   AS konto,
+                         'Netovara' :: VARCHAR(254)                                            AS nimetus,
                          sum(kr - db)
-                             FILTER (WHERE (left(konto, 3) IN ('298', '299') OR konto = '290400')) AS summa,
-                         0::NUMERIC(14, 2)                                                         AS eelmise_summa
+                         FILTER (WHERE (left(konto, 3) IN ('298', '299') OR konto = '290400')) AS summa,
+                         0::NUMERIC(14, 2)                                                     AS eelmise_summa
                   FROM qrySaldo q
                   GROUP BY q.rekvid
                   UNION ALL
-                  SELECT q.rekvid                                                                                  AS rekv_id,
-                         '29' :: VARCHAR(20)                                                                       AS konto,
-                         'Netovara' :: VARCHAR(254)                                                                AS nimetus,
-                         0                                                                                         AS summa,
+                  SELECT q.rekvid                                                                              AS rekv_id,
+                         '29' :: VARCHAR(20)                                                                   AS konto,
+                         'Netovara' :: VARCHAR(254)                                                            AS nimetus,
+                         0                                                                                     AS summa,
                          sum(kr - db)
-                             FILTER (WHERE (left(konto, 3) IN ('298', '299') OR konto = '290400'))::NUMERIC(14, 2) AS eelmise_summa
+                         FILTER (WHERE (left(konto, 3) IN ('298', '299') OR konto = '290400'))::NUMERIC(14, 2) AS eelmise_summa
                   FROM eelmiseSaldoAndmik q
                   GROUP BY q.rekvid
               ) qry
@@ -2192,33 +2194,33 @@ FROM (
          --Saldoandmikust (Sum: Kontod 1* Deebet) - (Sum: Kontod 1* Kreedit) - konto 103500 deebet + konto 103500 kreedit
          SELECT *
          FROM (
-                  SELECT q.rekvid                                                               AS rekv_id,
-                         '1' :: VARCHAR(20)                                                     AS konto,
-                         'Varad' :: VARCHAR(254)                                                AS nimetus,
+                  SELECT q.rekvid                                                           AS rekv_id,
+                         '1' :: VARCHAR(20)                                                 AS konto,
+                         'Varad' :: VARCHAR(254)                                            AS nimetus,
                          (coalesce(sum(db)
-                                       FILTER (WHERE konto LIKE '1%'), 0) -
+                                   FILTER (WHERE konto LIKE '1%'), 0) -
                           coalesce(sum(kr)
-                                       FILTER (WHERE konto LIKE '1%'), 0) -
+                                   FILTER (WHERE konto LIKE '1%'), 0) -
                           coalesce(sum(db)
-                                       FILTER (WHERE konto LIKE '103500%'), 0) +
+                                   FILTER (WHERE konto LIKE '103500%'), 0) +
                           coalesce(sum(kr)
-                                       FILTER (WHERE konto LIKE '103500%'), 0))::NUMERIC(14, 2) AS summa,
-                         0::NUMERIC(14, 2)                                                      AS eelmise_summa
+                                   FILTER (WHERE konto LIKE '103500%'), 0))::NUMERIC(14, 2) AS summa,
+                         0::NUMERIC(14, 2)                                                  AS eelmise_summa
                   FROM qrySaldo q
                   GROUP BY q.rekvid
                   UNION ALL
-                  SELECT q.rekvid                                                               AS rekv_id,
-                         '1' :: VARCHAR(20)                                                     AS konto,
-                         'Varad' :: VARCHAR(254)                                                AS nimetus,
-                         0                                                                      AS summa,
+                  SELECT q.rekvid                                                           AS rekv_id,
+                         '1' :: VARCHAR(20)                                                 AS konto,
+                         'Varad' :: VARCHAR(254)                                            AS nimetus,
+                         0                                                                  AS summa,
                          (coalesce(sum(db)
-                                       FILTER (WHERE konto LIKE '1%'), 0) -
+                                   FILTER (WHERE konto LIKE '1%'), 0) -
                           coalesce(sum(kr)
-                                       FILTER (WHERE konto LIKE '1%'), 0) -
+                                   FILTER (WHERE konto LIKE '1%'), 0) -
                           coalesce(sum(db)
-                                       FILTER (WHERE konto LIKE '103500%'), 0) +
+                                   FILTER (WHERE konto LIKE '103500%'), 0) +
                           coalesce(sum(kr)
-                                       FILTER (WHERE konto LIKE '103500%'), 0))::NUMERIC(14, 2) AS eelmise_summa
+                                   FILTER (WHERE konto LIKE '103500%'), 0))::NUMERIC(14, 2) AS eelmise_summa
 
                   FROM eelmiseSaldoAndmik q
                   GROUP BY q.rekvid
@@ -2232,30 +2234,30 @@ FROM (
                          '`*' :: VARCHAR(20)                          AS konto,
                          'Eelarvesse kuuluv netovara' :: VARCHAR(254) AS nimetus,
                          coalesce(sum(kr)
-                                      FILTER (WHERE konto LIKE '103500%'), 0) -
+                                  FILTER (WHERE konto LIKE '103500%'), 0) -
                          coalesce(sum(db)
-                                      FILTER (WHERE konto LIKE '103500%'), 0) +
+                                  FILTER (WHERE konto LIKE '103500%'), 0) +
                          coalesce(sum(kr)
-                                      FILTER (WHERE konto LIKE '203500%'), 0) -
+                                  FILTER (WHERE konto LIKE '203500%'), 0) -
                          coalesce(sum(db)
-                                      FILTER (WHERE konto LIKE '203500%'), 0)
+                                  FILTER (WHERE konto LIKE '203500%'), 0)
                                                                       AS summa,
                          0::NUMERIC(14, 2)                            AS eelmise_summa
                   FROM qrySaldo q
                   GROUP BY q.rekvid
                   UNION ALL
-                  SELECT q.rekvid                                                             AS rekv_id,
-                         '`*' :: VARCHAR(20)                                                  AS konto,
-                         'Eelarvesse kuuluv netovara' :: VARCHAR(254)                         AS nimetus,
-                         0                                                                    AS summa,
+                  SELECT q.rekvid                                                         AS rekv_id,
+                         '`*' :: VARCHAR(20)                                              AS konto,
+                         'Eelarvesse kuuluv netovara' :: VARCHAR(254)                     AS nimetus,
+                         0                                                                AS summa,
                          coalesce(sum(kr)
-                                      FILTER (WHERE konto LIKE '103500%'), 0) -
+                                  FILTER (WHERE konto LIKE '103500%'), 0) -
                          coalesce(sum(db)
-                                      FILTER (WHERE konto LIKE '103500%'), 0) +
+                                  FILTER (WHERE konto LIKE '103500%'), 0) +
                          coalesce(sum(kr)
-                                      FILTER (WHERE konto LIKE '203500%'), 0) -
+                                  FILTER (WHERE konto LIKE '203500%'), 0) -
                          coalesce(sum(db)
-                                      FILTER (WHERE konto LIKE '203500%'), 0)::NUMERIC(14, 2) AS eelmise_summa
+                                  FILTER (WHERE konto LIKE '203500%'), 0)::NUMERIC(14, 2) AS eelmise_summa
                   FROM eelmiseSaldoAndmik q
                   GROUP BY q.rekvid
               ) qry
@@ -2357,8 +2359,8 @@ GRANT EXECUTE ON FUNCTION eelarve.pikk_bilanss(l_kpv DATE, l_rekvid INTEGER, l_k
 GRANT EXECUTE ON FUNCTION eelarve.pikk_bilanss(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER) TO dbvaatleja;
 
 SELECT *
-FROM eelarve.pikk_bilanss('2021-06-30' :: DATE, 63, 1)
---where konto in ('2', '299000')
+FROM eelarve.pikk_bilanss('2021-06-30' :: DATE, 29, 1)
+WHERE konto IN ('2', '299000')
 --GROUP BY konto, nimetus, rekv_id
 ORDER BY konto;
 

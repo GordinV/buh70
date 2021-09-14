@@ -90,12 +90,13 @@ BEGIN
     END IF;
 
     -- D
-    SELECT l.tun5 AS valid INTO v_lib FROM libs.library l WHERE kood = l_tp_d AND library = 'TP' LIMIT 1;
+    SELECT l.tun5 AS valid, l.kood INTO v_lib FROM libs.library l WHERE kood = l_tp_d AND library = 'TP' LIMIT 1;
 
     IF v_lib IS NOT NULL AND v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
         AND l_kpv > make_date(val(left(v_lib.valid::TEXT, 4)), val(substr(v_lib.valid::TEXT, 5, 2)),
                               val(substr(v_lib.valid::TEXT, 7, 2)))
     THEN
+        raise notice 'TP-D %', l_tp_d;
         lcMsg1 = 'TP-D,Ei saa kasuta, sest TP kood ei ole kehtiv';
         l_msg = l_msg + lcMsg1;
     END IF;

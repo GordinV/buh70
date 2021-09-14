@@ -76,6 +76,12 @@ class Documents extends React.PureComponent {
                              ref="input-soodustus"
                              value={Number(this.state.soodustus) || 0}
                              disabled={true}/>
+                <InputNumber title="Arvestatud ja Soodustus kokku:"
+                             name='arv_ja_soodustus_kokku'
+                             style={styles.total}
+                             ref="input-arv_ja_soodustus"
+                             value={Number(this.state.arv_ja_soodustus) || 0}
+                             disabled={true}/>
                 <InputNumber title="Laekumised kokku:"
                              name='laekumised_kokku'
                              style={styles.total}
@@ -108,6 +114,7 @@ class Documents extends React.PureComponent {
         let alg_saldo = self.gridData ? self.gridData[0].alg_saldo_total : 0;
         let arvestatud = self.gridData ? self.gridData[0].arvestatud_total : 0;
         let soodustus = self.gridData ? self.gridData[0].soodustus_total : 0;
+        let arv_ja_soodustus = self.gridData ? self.gridData[0].arv_ja_soodustus_total : 0;
         let laekumised = self.gridData ? self.gridData[0].laekumised_total : 0;
         let tagastused = self.gridData ? self.gridData[0].tagastused_total : 0;
         let jaak = self.gridData ? self.gridData[0].jaak_total : 0;
@@ -120,6 +127,7 @@ class Documents extends React.PureComponent {
             alg_saldo: alg_saldo,
             arvestatud: arvestatud,
             soodustus: soodustus,
+            arv_ja_soodustus: arv_ja_soodustus,
             laekumised: laekumised,
             tagastused: tagastused,
             jaak: jaak,
