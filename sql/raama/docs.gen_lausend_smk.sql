@@ -14,6 +14,7 @@ DECLARE
     v_smk1         RECORD;
     v_arv          RECORD;
     v_dokprop      RECORD;
+    v_aa           RECORD;
     lcAllikas      VARCHAR(20);
     lcSelg         TEXT;
     v_selg         RECORD;
@@ -29,15 +30,31 @@ DECLARE
 
 BEGIN
 
+    RAISE NOTICE 'start gen_lausend %',tnid;
     SELECT d.docs_ids,
            k.*,
            aa.tp,
            aa.konto
-           INTO v_smk
+    INTO v_smk
     FROM docs.mk k
              INNER JOIN docs.doc d ON d.id = k.parentId
              LEFT OUTER JOIN ou.aa aa ON aa.id = k.aaid
     WHERE d.id = tnId;
+
+    IF v_smk.konto IS NULL
+    THEN
+        SELECT *
+        INTO v_aa
+        FROM ou.aa
+        WHERE parentid = v_smk.rekvid
+          AND default_ = 1
+          AND kassa = 1
+            ORDER BY id DESC
+            LIMIT 1;
+        v_smk.konto = v_aa.konto;
+        v_smk.tp = v_aa.tp;
+
+    END IF;
 
     GET DIAGNOSTICS rows_fetched = ROW_COUNT;
 
@@ -46,6 +63,7 @@ BEGIN
         error_code = 4; -- No documents found
         error_message = 'No documents found ' || tnid::TEXT;
         result = 0;
+        RAISE NOTICE 'No documents found ';
         RETURN;
     END IF;
 
@@ -53,12 +71,13 @@ BEGIN
     THEN
         error_code = 1; -- Konteerimine pole vajalik
         error_message = 'Konteerimine pole vajalik ';
-        raise notice 'v_smk.doklausid = 0a, tnid %',tnid;
+        RAISE NOTICE 'v_smk.doklausid = 0a, tnid %',tnid;
         result = 0;
         RETURN;
     END IF;
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = v_smk.rekvId
       AND u.id = userId;
@@ -67,6 +86,8 @@ BEGIN
     THEN
         error_message = 'User not found';
         error_code = 3;
+        RAISE NOTICE 'User not found %', userId;
+
         RETURN;
     END IF;
 
@@ -78,20 +99,20 @@ BEGIN
     SELECT library.kood,
            dokprop.*,
            details.*
-           INTO v_dokprop
+    INTO v_dokprop
     FROM libs.dokprop dokprop
              INNER JOIN libs.library library ON library.id = dokprop.parentid
             ,
          jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
     WHERE dokprop.id = v_smk.doklausid
-    LIMIT 1;
+        LIMIT 1;
 
     IF NOT Found OR v_dokprop.registr = 0
     THEN
         error_code = 1; -- Konteerimine pole vajalik
         result = 0;
         error_message = 'Konteerimine pole vajalik';
-        raise notice 'pole vaja, rekv_id %',v_smk.rekvId;
+        RAISE NOTICE 'pole vaja, rekv_id %',v_smk.rekvId;
         RETURN;
     END IF;
 
@@ -128,22 +149,22 @@ BEGIN
 
     FOR v_smk1 IN
         SELECT k1.*,
-               'EUR' :: VARCHAR AS valuuta,
-               1 :: NUMERIC     AS kuurs,
-               CASE WHEN k1.tp IS NULL OR empty(k1.tp) THEN coalesce(a.tp, '800599') ELSE k1.tp END as tp
+               'EUR' :: VARCHAR                                                                     AS valuuta,
+               1 :: NUMERIC                                                                         AS kuurs,
+               CASE WHEN k1.tp IS NULL OR empty(k1.tp) THEN coalesce(a.tp, '800599') ELSE k1.tp END AS tp
         FROM docs.mk1 k1
                  INNER JOIN libs.asutus a ON a.id = k1.asutusid
         WHERE k1.parentid = v_smk.Id
         LOOP
 
             SELECT coalesce(v_smk1.journalid, 0) AS id,
-                   'JOURNAL'                    AS doc_type_id,
-                   v_smk.kpv                    AS kpv,
-                   lcSelg                       AS selg,
-                   v_smk.muud                   AS muud,
-                   l_dok                        AS dok,
-                   v_smk1.asutusid              AS asutusid
-                   INTO v_journal;
+                   'JOURNAL'                     AS doc_type_id,
+                   v_smk.kpv                     AS kpv,
+                   lcSelg                        AS selg,
+                   v_smk.muud                    AS muud,
+                   l_dok                         AS dok,
+                   v_smk1.asutusid               AS asutusid
+            INTO v_journal;
 
 
             IF NOT empty(v_smk1.kood2)
@@ -166,7 +187,7 @@ BEGIN
                    coalesce(v_smk1.kood3, '')      AS kood3,
                    coalesce(v_smk1.kood4, '')      AS kood4,
                    coalesce(v_smk1.kood5, '')      AS kood5
-                   INTO v_journal1;
+            INTO v_journal1;
 
             l_json_details = row_to_json(v_journal1);
             l_json = row_to_json(v_journal);
@@ -182,7 +203,8 @@ BEGIN
                 ajalugu
                 */
 
-                SELECT row_to_json(row) INTO new_history
+                SELECT row_to_json(row)
+                INTO new_history
                 FROM (SELECT now()    AS updated,
                              userName AS user) row;
 
@@ -196,7 +218,8 @@ BEGIN
                 WHERE id = v_smk.parentId;
 
                 -- lausend
-                SELECT docs_ids INTO a_docs_ids
+                SELECT docs_ids
+                INTO a_docs_ids
                 FROM docs.doc
                 WHERE id = result;
 
@@ -218,6 +241,7 @@ BEGIN
             END IF;
 
         END LOOP;
+    RAISE NOTICE 'result %',result;
     RETURN;
 END;
 $BODY$

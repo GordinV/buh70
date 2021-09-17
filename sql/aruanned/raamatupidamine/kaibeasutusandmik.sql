@@ -121,6 +121,24 @@ GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INT
 
 /*
 SELECT *
-FROM docs.kaibeasutusandmik('113',null,'2018-01-01', current_date :: DATE, 1)
+FROM docs.kaibeasutusandmik('',null,'2021-01-01','2021-01-31', 80)
+
+SELECT
+                      qry.rekv_id,
+                      qry.asutus_id,
+                      qry.konto,
+                      l.nimetus,
+                      qry.alg_saldo,
+                      qry.deebet,
+                      qry.kreedit,
+                      (qry.alg_saldo + qry.deebet - qry.kreedit) as lopp_saldo,
+                      a.regkood,
+                      a.nimetus as asutus,
+                      a.tp
+FROM docs.kaibeasutusandmik('',null,'2021-01-01','2021-01-31', 80) qry
+                      INNER JOIN com_asutused a on a.id = qry.asutus_id
+                      INNER JOIN com_kontoplaan l ON l.kood = qry.konto
+                      WHERE (qry.alg_saldo <> 0 or qry.deebet <> 0 or qry.kreedit <> 0)
+                      ORDER BY a.nimetus, qry.konto
 
 */

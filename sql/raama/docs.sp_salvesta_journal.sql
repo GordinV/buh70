@@ -16,7 +16,7 @@ DECLARE
                                 FROM libs.library
                                 WHERE kood = doc_type_kood
                                   AND library = 'DOK'
-                                LIMIT 1);
+                                    LIMIT 1);
     doc_data         JSON    = data ->> 'data';
     doc_details      JSON    = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     doc_asutusid     INTEGER = doc_data ->> 'asutusid';
@@ -45,7 +45,7 @@ DECLARE
                                 FROM ou.aa
                                 WHERE parentid = user_rekvid
                                   AND kassa = 2
-                                LIMIT 1);
+                                    LIMIT 1);
 
     l_check_lausend  TEXT;
     l_avans_id       INTEGER;
@@ -53,7 +53,7 @@ BEGIN
 
     SELECT kasutaja,
            rekvid
-           INTO userName
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -79,7 +79,8 @@ BEGIN
                                                   WHERE id = doc_id)
     THEN
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;
 
@@ -110,7 +111,8 @@ BEGIN
         END IF;
 
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS updated,
                      userName AS user) row;
 
@@ -136,7 +138,8 @@ BEGIN
         SELECT *
         FROM json_array_elements(doc_details)
         LOOP
-            SELECT * INTO json_record
+            SELECT *
+            INTO json_record
             FROM json_to_record(
                          json_object) AS x (id TEXT, summa NUMERIC(14, 4), deebet TEXT, kreedit TEXT,
                                             tunnus TEXT, proj TEXT,
@@ -148,7 +151,8 @@ BEGIN
             THEN
 
                 -- проверка проводки
-                SELECT row_to_json(row) INTO json_lausend
+                SELECT row_to_json(row)
+                INTO json_lausend
                 FROM (SELECT json_record.deebet             AS db,
                              json_record.kreedit            AS kr,
                              json_record.lisa_d             AS tpd,
@@ -183,9 +187,9 @@ BEGIN
                     VALUES (journal_id, json_record.deebet, json_record.kreedit, json_record.summa, json_record.tunnus,
                             json_record.proj,
                             json_record.kood1, json_record.kood2,
-                            CASE
-                                WHEN ltrim(rtrim(json_record.kood3)) = 'null' THEN NULL::TEXT
-                                ELSE json_record.kood3 END,
+                            coalesce(CASE
+                                         WHEN ltrim(rtrim(json_record.kood3)) = 'null' THEN NULL::TEXT
+                                         ELSE json_record.kood3 END, ''),
                             json_record.kood4,
                             json_record.kood5,
                             json_record.lisa_d, json_record.lisa_k,
@@ -208,9 +212,9 @@ BEGIN
                         proj     = json_record.proj,
                         kood1    = json_record.kood1,
                         kood2    = json_record.kood2,
-                        kood3    = CASE
-                                       WHEN ltrim(rtrim(json_record.kood3)) = 'null' THEN NULL::TEXT
-                                       ELSE json_record.kood3 END,
+                        kood3    = coalesce(CASE
+                                                WHEN ltrim(rtrim(json_record.kood3)) = 'null' THEN NULL::TEXT
+                                                ELSE json_record.kood3 END, ''),
                         kood4    = json_record.kood4,
                         kood5    = json_record.kood5,
                         lisa_d   = json_record.lisa_d,
@@ -229,7 +233,8 @@ BEGIN
             END IF;
 
             -- avans
-            SELECT a1.parentid INTO lnId
+            SELECT a1.parentid
+            INTO lnId
             FROM docs.avans1 a1
                      INNER JOIN libs.dokprop d ON d.id = a1.dokpropid
             WHERE ltrim(rtrim(a1.number::TEXT)) = ltrim(rtrim(doc_dok::TEXT))
@@ -237,9 +242,9 @@ BEGIN
               AND a1.asutusId = doc_asutusid
               AND (ltrim(rtrim((d.details :: JSONB ->> 'konto')::TEXT)) = ltrim(rtrim(json_record.deebet)) OR
                    ltrim(rtrim((d.details :: JSONB ->> 'konto')::TEXT)) = ltrim(rtrim(json_record.kreedit)))
-            ORDER BY a1.kpv
+                ORDER BY a1.kpv
                 DESC
-            LIMIT 1;
+                LIMIT 1;
 
             IF lnId IS NOT NULL
             THEN
@@ -265,7 +270,8 @@ BEGIN
 
     IF is_rekl_ettemaks
     THEN
-        SELECT row_to_json(row) INTO json_params
+        SELECT row_to_json(row)
+        INTO json_params
         FROM (SELECT doc_id AS id,
                      1      AS liik) row;
 
@@ -281,9 +287,9 @@ BEGIN
                   AND number = doc_dok
                   AND a.rekvid = user_rekvid
                   AND a.journalid <> doc_id
-                ORDER BY a.jaak DESC
-                       , a.kpv
-                LIMIT 1
+                    ORDER BY a.jaak DESC
+                    , a.kpv
+                    LIMIT 1
     );
 
     IF is_import IS NULL AND l_arv_id IS NOT NULL
@@ -294,15 +300,16 @@ BEGIN
 
 
 --avans
-    SELECT a1.parentid INTO l_avans_id
+    SELECT a1.parentid
+    INTO l_avans_id
     FROM docs.avans1 a1
              INNER JOIN libs.dokprop d ON d.id = a1.dokpropid
     WHERE ltrim(rtrim(number::TEXT)) = ltrim(rtrim(doc_dok::TEXT))
       AND a1.rekvid = user_rekvid
       AND a1.asutusId = doc_asutusid
       AND ltrim(rtrim(coalesce((d.details :: JSONB ->> 'konto'), '') :: TEXT)) IN ('202050')
-    ORDER BY a1.kpv DESC
-    LIMIT 1;
+        ORDER BY a1.kpv DESC
+        LIMIT 1;
 
     IF l_avans_id IS NOT NULL
     THEN

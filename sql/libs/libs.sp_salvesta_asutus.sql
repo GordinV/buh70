@@ -42,7 +42,8 @@ DECLARE
 BEGIN
 
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -61,7 +62,8 @@ BEGIN
     THEN
         -- если задан упрощенный расч. счет, то пишем его (для модуля дети)
 
-        SELECT row_to_json(row) INTO new_aa
+        SELECT row_to_json(row)
+        INTO new_aa
         FROM (SELECT doc_aa AS aa, '' AS pank) row;
 
     END IF;
@@ -73,7 +75,8 @@ BEGIN
     END IF;
 
 
-    SELECT row_to_json(row) INTO new_properties
+    SELECT row_to_json(row)
+    INTO new_properties
     FROM (SELECT doc_kehtivus                                                              AS kehtivus,
                  doc_pank                                                                  AS pank,
                  CASE WHEN doc_id IS NULL OR doc_id = 0 THEN FALSE ELSE doc_is_tootaja END AS is_tootaja,
@@ -88,10 +91,12 @@ BEGIN
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;
-        SELECT row_to_json(row) INTO new_rights
+        SELECT row_to_json(row)
+        INTO new_rights
         FROM (SELECT ARRAY [userId] AS "select",
                      ARRAY [userId] AS "update",
                      ARRAY [userId] AS "delete") row;
@@ -100,13 +105,14 @@ BEGIN
                                  tp, ajalugu)
         VALUES (user_rekvid, doc_regkood, doc_nimetus, doc_omvorm, doc_kontakt, doc_aadress, doc_tel, doc_email,
                 doc_mark,
-                doc_muud, new_properties, doc_tp, new_history) RETURNING id
+                doc_muud, new_properties, coalesce(doc_tp, '800699'), new_history) RETURNING id
                    INTO asutus_id;
 
 
     ELSE
         -- history
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS updated,
                      userName AS user) row;
 
@@ -121,7 +127,7 @@ BEGIN
             email      = doc_email,
             mark       = doc_mark,
             muud       = doc_muud,
-            tp         = doc_tp,
+            tp         = coalesce(doc_tp, '800699'),
             properties = new_properties,
             ajalugu    = coalesce(ajalugu, '[]') :: JSONB || new_history::JSONB,
             staatus    = CASE WHEN staatus = 3 THEN 1 ELSE staatus END

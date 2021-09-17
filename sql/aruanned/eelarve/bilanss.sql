@@ -450,9 +450,10 @@ GRANT EXECUTE ON FUNCTION eelarve.bilanss(l_kpv DATE, l_rekvid INTEGER, l_kond I
 GRANT EXECUTE ON FUNCTION eelarve.bilanss(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER) TO dbvaatleja;
 
 
+/*
 SELECT *
 FROM eelarve.bilanss('2021-06-30' :: DATE, 63, 1)
-/*
+
 SELECT *
 FROM eelarve.pikk_bilanss('2020-12-31' :: DATE, 63, 1)
 where konto in ('2', '299000')

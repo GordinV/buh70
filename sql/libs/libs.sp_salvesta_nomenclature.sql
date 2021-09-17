@@ -39,7 +39,7 @@ DECLARE
     doc_tyyp      TEXT    = CASE
                                 WHEN doc_data ->> 'tyyp' = '0' THEN NULL::TEXT
                                 ELSE doc_data ->> 'tyyp' END; -- тип услуги, нул - простая, soodustus - льгота
-    doc_INF3      BOOLEAN = coalesce((doc_data ->> 'kas_inf3')::BOOLEAN, FALSE);
+    doc_INF3      BOOLEAN = doc_data ->> 'kas_inf3';
     doc_valid     DATE    = CASE WHEN empty(doc_data ->> 'valid') THEN NULL::DATE ELSE (doc_data ->> 'valid')::DATE END;
     json_object   JSONB;
     new_history   JSONB;
@@ -54,7 +54,8 @@ BEGIN
     END IF;
 
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -92,8 +93,18 @@ BEGIN
         RAISE EXCEPTION '%',l_error;
     END IF;
 
+    IF doc_INF3 IS NULL AND doc_id IS NOT NULL AND doc_id > 0
+    THEN
+        -- оставляем параметр без изменения
+        doc_INF3 = (SELECT coalesce((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE)
+                    FROM libs.nomenklatuur n
+                    WHERE id = doc_id);
 
-    SELECT row_to_json(row) INTO json_object
+    END IF;
+
+
+    SELECT row_to_json(row)
+    INTO json_object
     FROM (SELECT doc_vat                        AS vat,
                  doc_luno                       AS luno,
                  coalesce(doc_konto, 'null')    AS konto,
@@ -119,10 +130,12 @@ BEGIN
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;
-        SELECT row_to_json(row) INTO new_rights
+        SELECT row_to_json(row)
+        INTO new_rights
         FROM (SELECT ARRAY [userId] AS "select",
                      ARRAY [userId] AS "update",
                      ARRAY [userId] AS "delete") row;

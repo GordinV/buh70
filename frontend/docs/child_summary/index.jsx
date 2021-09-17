@@ -56,17 +56,18 @@ class Documents extends React.PureComponent {
                              ref="input-summa"
                              value={Number(this.state.summa).toFixed(2) || 0}
                              disabled={true}/>
-                <InputNumber title="Jääk kokku:"
-                             name='jaak_kokku'
-                             style={styles.total}
-                             ref="input-jaak"
-                             value={Number(this.state.jaak).toFixed(2) || 0}
-                             disabled={true}/>
                 <InputNumber title="Tasutud kokku:"
                              name='tasutud_kokku'
                              style={styles.total}
                              ref="input-tasutud"
                              value={Number(this.state.tasutud).toFixed(2) || 0}
+                             disabled={true}/>
+
+                <InputNumber title="Jääk kokku:"
+                             name='jaak_kokku'
+                             style={styles.total}
+                             ref="input-jaak"
+                             value={Number(this.state.jaak).toFixed(2) || 0}
                              disabled={true}/>
             </div>
         )

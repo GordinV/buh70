@@ -139,6 +139,15 @@ FROM (
                   WHERE konto LIKE '10%'
                   GROUP BY q.rekvid
                   UNION ALL
+                  SELECT q.rekvid                    AS rekv_id,
+                         '10' :: VARCHAR(20)         AS konto,
+                         'Käibevara' :: VARCHAR(254) AS nimetus,
+                         -1 * sum(db) - sum(kr)      AS summa,
+                         0::NUMERIC(14, 2)           AS eelmise_summa
+                  FROM qrySaldo q
+                  WHERE konto LIKE '103500%'
+                  GROUP BY q.rekvid
+                  UNION ALL
                   SELECT q.rekvid                          AS rekv_id,
                          '10' :: VARCHAR(20)               AS konto,
                          'Käibevara' :: VARCHAR(254)       AS nimetus,
@@ -146,6 +155,15 @@ FROM (
                          sum(db) - sum(kr)::NUMERIC(14, 2) AS eelmise_summa
                   FROM eelmiseSaldoAndmik q
                   WHERE konto LIKE '10%'
+                  GROUP BY q.rekvid
+                  UNION ALL
+                  SELECT q.rekvid                               AS rekv_id,
+                         '10' :: VARCHAR(20)                    AS konto,
+                         'Käibevara' :: VARCHAR(254)            AS nimetus,
+                         0::NUMERIC(14, 2)                      AS summa,
+                         -1 * sum(db) - sum(kr)::NUMERIC(14, 2) AS eelmise_summa
+                  FROM eelmiseSaldoAndmik q
+                  WHERE konto LIKE '103500%'
                   GROUP BY q.rekvid
               ) qry
          UNION ALL
@@ -164,10 +182,29 @@ FROM (
                   SELECT q.rekvid                                    AS rekv_id,
                          '103' :: VARCHAR(20)                        AS konto,
                          'Muud nouded ja ettemaksed' :: VARCHAR(254) AS nimetus,
+                         -1 * sum(db) - sum(kr)                      AS summa,
+                         0::NUMERIC(14, 2)                           AS eelmise_summa
+                  FROM qrySaldo q
+                  WHERE konto LIKE '103500%'
+                  GROUP BY q.rekvid
+                  UNION ALL
+
+                  SELECT q.rekvid                                    AS rekv_id,
+                         '103' :: VARCHAR(20)                        AS konto,
+                         'Muud nouded ja ettemaksed' :: VARCHAR(254) AS nimetus,
                          0                                           AS summa,
                          sum(db) - sum(kr)::NUMERIC(14, 2)           AS eelmise_summa
                   FROM eelmiseSaldoAndmik q
                   WHERE konto LIKE '103%'
+                  GROUP BY q.rekvid
+                  UNION ALL
+                  SELECT q.rekvid                                    AS rekv_id,
+                         '103' :: VARCHAR(20)                        AS konto,
+                         'Muud nouded ja ettemaksed' :: VARCHAR(254) AS nimetus,
+                         0                                           AS summa,
+                         -1 * sum(db) - sum(kr)::NUMERIC(14, 2)      AS eelmise_summa
+                  FROM eelmiseSaldoAndmik q
+                  WHERE konto LIKE '103500%'
                   GROUP BY q.rekvid
               ) qry
          UNION ALL
@@ -1479,10 +1516,28 @@ FROM (
                   SELECT q.rekvid                                  AS rekv_id,
                          '20' :: VARCHAR(20)                       AS konto,
                          'Luhiajalised kohustused' :: VARCHAR(254) AS nimetus,
+                         -1 * sum(kr) - sum(db)                    AS summa,
+                         0::NUMERIC(14, 2)                         AS eelmise_summa
+                  FROM qrySaldo q
+                  WHERE konto LIKE '203500%'
+                  GROUP BY q.rekvid
+                  UNION ALL
+                  SELECT q.rekvid                                  AS rekv_id,
+                         '20' :: VARCHAR(20)                       AS konto,
+                         'Luhiajalised kohustused' :: VARCHAR(254) AS nimetus,
                          0                                         AS summa,
                          sum(kr) - sum(db)::NUMERIC(14, 2)         AS eelmise_summa
                   FROM eelmiseSaldoAndmik q
                   WHERE konto LIKE '20%'
+                  GROUP BY q.rekvid
+                  UNION ALL
+                  SELECT q.rekvid                                  AS rekv_id,
+                         '20' :: VARCHAR(20)                       AS konto,
+                         'Luhiajalised kohustused' :: VARCHAR(254) AS nimetus,
+                         0                                         AS summa,
+                         -1 * sum(kr) - sum(db)::NUMERIC(14, 2)    AS eelmise_summa
+                  FROM eelmiseSaldoAndmik q
+                  WHERE konto LIKE '203500%'
                   GROUP BY q.rekvid
               ) qry
          UNION ALL
@@ -2359,8 +2414,8 @@ GRANT EXECUTE ON FUNCTION eelarve.pikk_bilanss(l_kpv DATE, l_rekvid INTEGER, l_k
 GRANT EXECUTE ON FUNCTION eelarve.pikk_bilanss(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER) TO dbvaatleja;
 
 SELECT *
-FROM eelarve.pikk_bilanss('2021-06-30' :: DATE, 29, 1)
-WHERE konto IN ('2', '299000')
+FROM eelarve.pikk_bilanss('2021-06-30' :: DATE, 130, 1)
+WHERE konto like '10%'
 --GROUP BY konto, nimetus, rekv_id
 ORDER BY konto;
 

@@ -23,6 +23,8 @@ module.exports = {
                      coalesce((n.properties::JSONB ->> 'kas_inf3')::BOOLEAN, FALSE)           AS kas_inf3,
                      (n.properties::JSONB ->> 'valid')::DATE                                  AS valid,
                      (n.properties::JSONB ->> 'tyyp')::TEXT                                   AS tyyp,
+                     coalesce((n.properties::JSONB ->> 'kas_inf3')::BOOLEAN, FALSE)         AS kas_inf3,
+                     coalesce((n.properties::JSONB ->> 'oppe_tyyp')::TEXT, 'Põhiõpe')::TEXT AS oppe_tyyp,
                      coalesce((n.properties::JSONB ->> 'algoritm')::TEXT, 'konstantne')::TEXT AS algoritm
 
               FROM libs.nomenklatuur n
