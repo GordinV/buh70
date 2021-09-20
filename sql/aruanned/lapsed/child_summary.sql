@@ -12,7 +12,8 @@ CREATE OR REPLACE FUNCTION lapsed.child_summary(l_rekvid INTEGER, l_kond INTEGER
         tasutud          NUMERIC(12, 2),
         jaak             NUMERIC(12, 2),
         rekvid           INTEGER
-    ) AS
+    )
+AS
 $BODY$
 WITH qryArved AS (
     SELECT c.nimetus::TEXT                      AS maksja_nimi,
@@ -37,18 +38,23 @@ WITH qryArved AS (
       AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
 ),
      qrytasud AS (
-         SELECT a.nimetus::TEXT                AS maksja_nimi,
-                a.regkood::TEXT                AS maksja_isikukood,
-                laps.nimi::TEXT                AS lapse_nimi,
-                laps.isikukood::TEXT           AS lapse_isikukood,
-                NULL::TEXT                     AS number,
-                mk.maksepaev                   AS kpv,
-                0                              AS summa,
-                ymk.summa::NUMERIC(12, 2)      AS tasutud,
-                -1 * ymk.summa::NUMERIC(12, 2) AS jaak,
-                d.rekvid                       AS rekvid
+         SELECT a.nimetus::TEXT                          AS maksja_nimi,
+                a.regkood::TEXT                          AS maksja_isikukood,
+                laps.nimi::TEXT                          AS lapse_nimi,
+                laps.isikukood::TEXT                     AS lapse_isikukood,
+                NULL::TEXT                               AS number,
+                mk.maksepaev                             AS kpv,
+                0                                        AS summa,
+                mk_tyyp * ymk.summa::NUMERIC(12, 2)      AS tasutud,
+                -1 * mk_tyyp * ymk.summa::NUMERIC(12, 2) AS jaak,
+                d.rekvid                                 AS rekvid
          FROM docs.doc D
-                  INNER JOIN (SELECT mk.id, mk.parentid, mk.viitenr, mk.jaak, mk.maksepaev
+                  INNER JOIN (SELECT mk.id,
+                                     mk.parentid,
+                                     mk.viitenr,
+                                     mk.jaak,
+                                     mk.maksepaev,
+                                     CASE WHEN mk.opt = 1 THEN -1 ELSE 1 END AS mk_tyyp
                               FROM docs.mk mk
                               WHERE mk.jaak <> 0
          ) mk ON mk.parentid = D.id

@@ -42,6 +42,8 @@ exports.get = async (req, res) => {
                 kulastatavus: row.kpv,
                 yksus: row.yksus,
                 lapse_nimi: row.lapse_nimi,
+                lapse_isikukood: row.lapse_isikukood,
+                viitenumber: row.viitenumber,
                 number: row.number,
                 alg_saldo: row.alg_saldo,
                 arvestatud: row.arvestatud,

@@ -44,10 +44,11 @@ BEGIN
           AND (month(p.kpv1) = l_kuu AND year(p.kpv1) = l_aasta
             OR (month(kpv2) = l_kuu AND year(kpv2) = l_aasta))
           AND (l_pohjus IS NULL OR p.pohjus = l_pohjus)
+          AND CASE WHEN l_pohjus IS NOT NULL AND l_pohjus = 'PUHKUS' THEN p.tyyp <> 4 ELSE TRUE END -- убрал для расчета мин. соц.налога
           AND (l_pohjuse_tyyp IS NULL OR p.tyyp = l_pohjuse_tyyp)
           AND (kas_puudumised IS NULL OR p.kas_muutab_kalendripäevad)
-          AND (l_start_paev IS NULL OR day(p.kpv1) >= l_start_paev)
-          AND (l_lopp_paev IS NULL OR day(p.kpv2) <= l_lopp_paev)
+          AND (l_start_paev IS NULL OR DAY(p.kpv1) >= l_start_paev)
+          AND (l_lopp_paev IS NULL OR DAY(p.kpv2) <= l_lopp_paev)
 
         LOOP
             -- обнулим переменные
