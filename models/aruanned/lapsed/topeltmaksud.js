@@ -10,7 +10,7 @@ module.exports = {
             {id: "viitenumber", name: "Viitenumber", width: "10%", show: true},
             {id: "kood", name: "Operatsiooni kood", width: "10%", show: true},
             {id: "nimetus", name: "Operatsiooni nimetus", width: "20%", show: true},
-            {id: "summa", name: "Tabeli andmed", width: "10%", show: true},
+            {id: "summa", name: "Tabeli andmed", width: "10%", show: true, type: "number", interval: true},
         ],
         sqlString: `SELECT row_number() OVER ()                     AS id,
                            sum(summa) OVER (PARTITION BY isikukood) AS kogus_group,
