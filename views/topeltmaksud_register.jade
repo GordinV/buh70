@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h2.doc_header TOPELT ARVUTUSED
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        each isikukood in data
+            p Isikukood: #{Object.keys(isikukood)[0]}, Nimi #{isikukood[Object.keys(isikukood)[0]][0]['nimi']}
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th.th Asutus
+                        th.th Viitenumber
+                        th.th Operatsiooni kood
+                        th.th Operatsiooni nimetus
+                        th.th Tabeli andmed
+
+                tbody
+                    each rea in isikukood[Object.keys(isikukood)[0]]
+                        tr
+                            td.td=rea.asutus
+                            td.td=rea.viitenumber
+                            td.td=rea.kood
+                            td.td=rea.nimetus
+                            td.td=rea.summa
+

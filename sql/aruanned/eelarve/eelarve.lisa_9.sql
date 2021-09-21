@@ -13,19 +13,20 @@ CREATE OR REPLACE FUNCTION eelarve.lisa_9(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INT
         artikkel       VARCHAR(20),
         tegev          VARCHAR(20),
         docs_ids       INTEGER[]
-    ) AS
+    )
+AS
 $BODY$
 
 SELECT rekv_id,
        maksja_regkood,
        saaja_regkood,
        saaja_tp,
-       saaja_nimi,
+       left(ltrim(rtrim(saaja_nimi)), 98)::text AS saaja_nimi,
        kpv,
-       sum(summa)    AS summa,
+       sum(summa)                         AS summa,
        artikkel,
        tegev,
-       array_agg(id) AS docs_ids
+       array_agg(id)                      AS docs_ids
 FROM (
          SELECT j.rekvid::INTEGER              AS rekv_id,
                 r.regkood::VARCHAR(20)         AS maksja_regkood,
@@ -82,7 +83,7 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO dbvaat
 
 select * from (
                     SELECT *
-                    FROM eelarve.lisa_9('2021-01-01', '2021-03-31', 132,  0)
+                    FROM eelarve.lisa_9('2021-08-01', '2021-08-31', 130,  0)
                 ) qry
   where  summa >= 100
 

@@ -78,6 +78,7 @@ const AastaNaitajadReport = require('./../docs/aasta_naitajad/index.jsx');
 const KuuTaabel = require('./../docs/kuu_taabel/index.jsx');
 const YksuseTaabel = require('./../docs/yksuse_taabel/index.jsx');
 const KohalolekuAruanne = require('./../docs/kohaloleku_aruanne/index.jsx');
+const Topeltmaksud = require('./../docs/topeltmaksud/index.jsx');
 
 const {Route, Redirect} = require('react-router-dom');
 
@@ -332,6 +333,11 @@ class App extends React.Component {
                            initData={this.props.initData}/>}/>
                 <Route exact path="/lapsed/kohaloleku_aruanne"
                        render={(props) => <KohalolekuAruanne
+                           module={MODULE}
+                           history={props.history}
+                           initData={props.initData}/>}/>
+                <Route exact path="/lapsed/topeltmaksud"
+                       render={(props) => <Topeltmaksud
                            module={MODULE}
                            history={props.history}
                            initData={props.initData}/>}/>

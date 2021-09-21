@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS lapsed.get_viitenumber(INTEGER, INTEGER);
+--DROP FUNCTION IF EXISTS lapsed.get_viitenumber(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION lapsed.get_viitenumber(IN rekv_id INTEGER, IN laps_id INTEGER, OUT viitenumber TEXT)
 AS

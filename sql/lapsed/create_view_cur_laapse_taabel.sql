@@ -9,7 +9,7 @@ SELECT lt.id,
        lt.kuu,
        lt.aasta,
        lt.kogus,
-       coalesce(lt.hind, lk.hind)::NUMERIC(12, 2) as hind,
+       coalesce(lt.hind, lk.hind)::NUMERIC(12, 2)  AS hind,
        coalesce(n.properties ->> 'tyyp', '')       AS tyyp,
        CASE
            WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN lk.hind
@@ -38,8 +38,8 @@ SELECT lt.id,
        lk.properties ->> 'all_yksus'               AS all_yksus,
        lt.lapse_kaart_id,
        (lk.properties ->> 'sooduse_alg')::DATE     AS sooduse_alg,
-       (lk.properties ->> 'sooduse_lopp')::DATE    AS sooduse_lopp
-
+       (lk.properties ->> 'sooduse_lopp')::DATE    AS sooduse_lopp,
+       (n.properties ->> 'kas_inf3')::BOOLEAN as kas_inf3
 FROM lapsed.lapse_taabel lt
          INNER JOIN lapsed.laps l ON l.id = lt.parentid
          INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
@@ -58,6 +58,6 @@ GRANT SELECT ON TABLE lapsed.cur_lapse_taabel TO dbpeakasutaja;
 
 /*
 
-select * from lapsed.cur_lapsed
+select * from lapsed.cur_lapse_taabel
 select * from lapsed.laps
  */

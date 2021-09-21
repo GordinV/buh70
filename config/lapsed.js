@@ -46,4 +46,6 @@ module.exports = {
     kuu_taabel: '/aruanned/lapsed/kuu_taabel',
     yksuse_taabel: '/aruanned/lapsed/yksuse_taabel',
     kohaloleku_aruanne: '/aruanned/lapsed/kohaloleku_aruanne',
+    topeltmaksud: '/aruanned/lapsed/topeltmaksud',
+
 };

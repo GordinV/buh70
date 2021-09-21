@@ -7,7 +7,8 @@ CREATE OR REPLACE FUNCTION eelarve.pikk_tulem(l_kpv DATE, l_rekvid INTEGER, l_ko
         nimetus VARCHAR(254),
         summa   NUMERIC(14, 2),
         idx     INTEGER
-    ) AS
+    )
+AS
 $BODY$
 
 WITH qrySaldo AS (
@@ -39,7 +40,7 @@ WITH qrySaldo AS (
           CASE WHEN l_kond = 1 AND l_rekvid = 63 THEN '185101%' ELSE '999999%' END -- буз внутренних Тп кодов
     GROUP BY s.konto, s.rekvid
 )
-SELECT rekv_id,
+SELECT l_rekvid                               AS rekv_id,
        konto,
        coalesce(l.nimetus, ''):: VARCHAR(254) AS nimetus,
        sum(summa)                             AS summa,
@@ -1650,7 +1651,7 @@ FROM (
          UNION ALL
          -- 9
          -- 900
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                         AS rekv_id,
                 '900',
                 'Töötajate arv',
                 (coalesce(db, 0) - coalesce(kr)) AS summa,
@@ -1659,7 +1660,7 @@ FROM (
          WHERE konto LIKE '900%'
          UNION ALL
          -- 9001
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                            AS rekv_id,
                 '9001',
                 'Avaliku teenistuse ametnikud',
                 abs(coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1668,7 +1669,7 @@ FROM (
          WHERE konto LIKE '9001%'
          UNION ALL
          -- 9002
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                            AS rekv_id,
                 '9002',
                 'Töötajad',
                 abs(coalesce(kr) - coalesce(db, 0)) AS summa,
@@ -1677,7 +1678,7 @@ FROM (
          WHERE konto LIKE '9002%'
          UNION ALL
          -- 91
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                            AS rekv_id,
                 '91',
                 'Kohustised ja nõuded',
                 abs(coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1686,7 +1687,7 @@ FROM (
          WHERE konto LIKE '91%'
          UNION ALL
          -- 910
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                            AS rekv_id,
                 '910',
                 'Võetud pikaajaliste laenukohustiste jaotus järelejäänud tähtaja järgi',
                 abs(coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1695,7 +1696,7 @@ FROM (
          WHERE konto LIKE '910%'
          UNION ALL
          -- 911
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                            AS rekv_id,
                 '911',
                 'Bilansivälised kohustised',
                 abs(coalesce(kr) - coalesce(db, 0)) AS summa,
@@ -1704,7 +1705,7 @@ FROM (
          WHERE konto LIKE '911%'
          UNION ALL
          -- 912
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                            AS rekv_id,
                 '912',
                 'Bilansivälised kohustised',
                 abs(coalesce(kr) - coalesce(db, 0)) AS summa,
@@ -1713,7 +1714,7 @@ FROM (
          WHERE konto LIKE '912%'
          UNION ALL
          -- 921
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                         AS rekv_id,
                 '921',
                 'Kapitalirendi tingimustel rendile võetud varad',
                 (coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1722,7 +1723,7 @@ FROM (
          WHERE konto LIKE '921%'
          UNION ALL
          -- 9211
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                         AS rekv_id,
                 '9211',
                 'Hooned ja rajatised',
                 (coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1731,7 +1732,7 @@ FROM (
          WHERE konto LIKE '9211%'
          UNION ALL
          -- 9214
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                         AS rekv_id,
                 '9214',
                 'Masinad ja seadmed',
                 (coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1740,7 +1741,7 @@ FROM (
          WHERE konto LIKE '9214%'
          UNION ALL
          -- 922
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                         AS rekv_id,
                 '922',
                 'Kasutusrendile antud varad',
                 (coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1749,7 +1750,7 @@ FROM (
          WHERE konto LIKE '922%'
          UNION ALL
          -- 9220
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                         AS rekv_id,
                 '9220',
                 'Kinnisvarainvesteeringud',
                 (coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1758,7 +1759,7 @@ FROM (
          WHERE konto LIKE '9220%'
          UNION ALL
          -- 9221
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                         AS rekv_id,
                 '9221',
                 'Kinnisvarainvesteeringud',
                 (coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1767,7 +1768,7 @@ FROM (
          WHERE konto LIKE '9221%'
          UNION ALL
          -- 9222
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                         AS rekv_id,
                 '9222',
                 'Hooned ja rajatised',
                 (coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1776,7 +1777,7 @@ FROM (
          WHERE konto LIKE '9222%'
          UNION ALL
          -- 9224
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                         AS rekv_id,
                 '9224',
                 'Masinad ja seadmed',
                 (coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1785,7 +1786,7 @@ FROM (
          WHERE konto LIKE '9224%'
          UNION ALL
          -- 9226
-         SELECT q.rekvid                       AS rekv_id,
+         SELECT q.rekvid                         AS rekv_id,
                 '9226',
                 'Muu amortiseeruv materiaalne põhivara',
                 (coalesce(db) - coalesce(kr, 0)) AS summa,
@@ -1808,7 +1809,7 @@ FROM (
     SELECT '900', 'Töötajate arv'
 ) l ON ltrim(rtrim(qry.konto)) = ltrim(rtrim(l.kood))
 
-GROUP BY rekv_id, konto, l.nimetus, idx
+GROUP BY konto, l.nimetus, idx
 
 $BODY$
     LANGUAGE SQL

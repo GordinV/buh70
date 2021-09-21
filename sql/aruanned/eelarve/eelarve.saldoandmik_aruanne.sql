@@ -225,7 +225,7 @@ GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne_(DATE, INTEGER, INTEGER, T
 /*
 
 SELECT *
-FROM eelarve.saldoandmik_aruanne_('2021-04-30' :: DATE, 119 :: INTEGER, 1 ::integer, '%')
+FROM eelarve.saldoandmik_aruanne_('2021-08-31' :: DATE, 119 :: INTEGER, 1 ::integer, '%')
 WHERE konto = '202000'
 GROUP BY konto, tp
 */

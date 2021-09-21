@@ -8,7 +8,8 @@ CREATE OR REPLACE FUNCTION eelarve.tulem(l_kpv DATE, l_rekvid INTEGER, l_kond IN
         summa          NUMERIC(14, 2),
         eelaasta_summa NUMERIC(14, 2),
         idx            INTEGER
-    ) AS
+    )
+AS
 $BODY$
 
 WITH qryPreReport AS (
@@ -325,7 +326,12 @@ WITH qryPreReport AS (
          GROUP BY s.konto, s.rekvid
      )
 
-SELECT rekv_id, konto, nimetus, sum(summa) AS summa, sum(eelaasta_summa)::NUMERIC(14, 2) AS eelaasta_summa, idx
+SELECT l_rekvid                            AS rekv_id,
+       konto,
+       nimetus,
+       sum(summa)                          AS summa,
+       sum(eelaasta_summa)::NUMERIC(14, 2) AS eelaasta_summa,
+       idx
 FROM (
          SELECT rekv_id,
                 konto             AS konto,
@@ -477,7 +483,7 @@ FROM (
                 410                                         AS idx
          FROM qryEelNetto
      ) qry
-GROUP BY rekv_id, konto, nimetus, idx
+GROUP BY konto, nimetus, idx
 
 
 $BODY$

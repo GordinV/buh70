@@ -318,7 +318,7 @@ WITH qryPreReport AS (
      )
 
 
-SELECT rekv_id,
+SELECT l_rekvid as rekv_id,
        CASE WHEN konto = '`*' THEN '' ELSE konto END AS konto,
        nimetus,
        sum(summa)                                    AS summa,
@@ -437,7 +437,7 @@ FROM (
                   FROM qryEelmiseTulem
               ) qry
      ) report
-GROUP BY rekv_id, CASE WHEN konto = '`*' THEN '' ELSE konto END, nimetus, idx
+GROUP BY  CASE WHEN konto = '`*' THEN '' ELSE konto END, nimetus, idx
 
 $BODY$
     LANGUAGE SQL
