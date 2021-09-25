@@ -185,7 +185,7 @@ BEGIN
                    coalesce(v_sorder1.valuuta, 'EUR')     AS valuuta,
                    coalesce(v_sorder1.kuurs, 1)           AS kuurs,
                    lcDbKonto                              AS deebet,
-                   coalesce(v_sorder.asutus_tp, '800599') AS lisa_d,
+                   '' AS lisa_d,
                    lcKrKonto                              AS kreedit,
                    coalesce(v_sorder.asutus_tp, '800599') AS lisa_k,
                    coalesce(v_sorder1.tunnus, '')         AS tunnus,

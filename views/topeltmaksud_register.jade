@@ -22,10 +22,12 @@ block content
             p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
 
         each isikukood in data
-            p Isikukood: #{Object.keys(isikukood)[0]}, Nimi #{isikukood[Object.keys(isikukood)[0]][0]['nimi']}
+            p Isikukood: #{Object.keys(isikukood)[0]}
             table.table.table-hover.grid_data
                 thead.grid_head
                     tr
+                        th.th Isikukood
+                        th.th Nimi
                         th.th Asutus
                         th.th Viitenumber
                         th.th Operatsiooni kood
@@ -35,6 +37,8 @@ block content
                 tbody
                     each rea in isikukood[Object.keys(isikukood)[0]]
                         tr
+                            td.td=rea.isikukood
+                            td.td=rea.nimi
                             td.td=rea.asutus
                             td.td=rea.viitenumber
                             td.td=rea.kood

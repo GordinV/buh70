@@ -30,7 +30,7 @@ class Laps extends React.PureComponent {
             docId: props.docId ? props.docId : Number(props.match.params.docId),
             vanemId: null,
             module: 'lapsed',
-            kehtiv: new Date().toISOString().substring(0, 10)
+            kehtiv: '2019-12-31'
         };
 
         this.renderer = this.renderer.bind(this);
