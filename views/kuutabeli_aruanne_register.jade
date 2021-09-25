@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h2.doc_header KUUTABELI ARUANNE
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th.th Isikukood
+                    th.th Nimi
+                    th.th Viitenumber
+                    th.th Arvestatud
+                    th.th Soodustuss
+                    th.th Arvestatud ja Soodustus
+
+            tbody
+                each rea in data
+                    tr
+                        td.td=rea.isikukood
+                        td.td=rea.nimi
+                        td.td=rea.viitenumber
+                        td.td=rea.arvestatud
+                        td.td=rea.soodustus
+                        td.td=rea.summa
+
+            tr
+                td
+                td
+                td Kokku:
+                td=Number(data[0].arvestatud_total).toFixed(2)
+                td=Number(data[0].soodustus_total).toFixed(2)
+                td=Number(data[0].summa_total).toFixed(2)

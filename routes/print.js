@@ -61,7 +61,8 @@ exports.get = async (req, res) => {
             gridParams = getParameterFromFilter(user.asutusId,  user.userId, doc.config.grid.params , filterData);
         }
 
-        let result = await doc[method]('', sqlWhere, limit, gridParams);
+        let filterTotals = doc.config.grid.totals ? doc.config.grid.totals : null;
+        let result = await doc[method]('', sqlWhere, limit, gridParams, filterTotals);
 
         let data = id ? {...result.row, ...result} : result.data;
 

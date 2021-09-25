@@ -47,5 +47,5 @@ module.exports = {
     yksuse_taabel: '/aruanned/lapsed/yksuse_taabel',
     kohaloleku_aruanne: '/aruanned/lapsed/kohaloleku_aruanne',
     topeltmaksud: '/aruanned/lapsed/topeltmaksud',
-
+    kuutabeli_aruanne: '/aruanned/lapsed/kuutabeli_aruanne',
 };

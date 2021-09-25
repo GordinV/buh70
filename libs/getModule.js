@@ -15,7 +15,6 @@ module.exports = (docTypeId, params, modelPath, module) => {
                 doc = docTypeId.toLowerCase();
 
             folder = path.join(modelPath, config[doc]);
-
             //module exist, we can register it
             moduleLocator.register(docTypeId, require(folder));
             moduleInstance = moduleLocator.get(docTypeId)
@@ -23,7 +22,7 @@ module.exports = (docTypeId, params, modelPath, module) => {
 
     }
     catch (e) {
-//        console.error('Error',e);
+        console.error('Error',e);
         return null;
     }
 

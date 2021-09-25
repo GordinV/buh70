@@ -26,6 +26,7 @@ exports.post = async (req, res) => {
         // создать объект
         const Doc = require('./../classes/DocumentTemplate');
         const doc = new Doc(parameter, null, user.userId, user.asutusId, module);
+
         let gridConfig = doc.config.grid.gridConfiguration;
         let gridParams;
         let subtotals = doc.config.grid.subtotals ? doc.config.grid.subtotals : [];
