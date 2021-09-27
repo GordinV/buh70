@@ -35,3 +35,15 @@ ALTER TABLE docs.mk
   ADD COLUMN jaak numeric(14, 2);
 
 ALTER TABLE docs.mk ADD properties JSONB NULL;
+
+DROP INDEX IF EXISTS mk_parentid_idx;
+CREATE INDEX IF NOT EXISTS mk_parentid_idx ON docs.mk (parentid);
+
+DROP INDEX IF EXISTS mk_maksepaev_idx;
+CREATE INDEX IF NOT EXISTS mk_maksepaev_idx ON docs.mk (maksepaev);
+
+DROP INDEX IF EXISTS mk_rekvid_idx;
+CREATE INDEX IF NOT EXISTS mk_rekvid_idx ON docs.mk (rekvid);
+
+DROP INDEX IF EXISTS mk_opt_idx;
+CREATE INDEX IF NOT EXISTS mk_opt_idx ON docs.mk (opt);

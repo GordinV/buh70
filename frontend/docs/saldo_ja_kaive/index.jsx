@@ -64,7 +64,7 @@ class Documents extends React.PureComponent {
                              ref="input-read"
                              value={Number(this.state.alg_saldo) || 0}
                              disabled={true}/>
-                <InputNumber title="Arvestatud kokku:"
+                <InputNumber title="Arvestatud (sh ümberarvestus) kokku:"
                              name='arvestatud_kokku'
                              style={styles.total}
                              ref="input-arvestatud"

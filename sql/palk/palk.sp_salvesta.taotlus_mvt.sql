@@ -59,7 +59,7 @@ BEGIN
         -- Если в текущем месяце внесено новое заявление с суммой, то сумму можно менять только первый месяц подачи заявления
         -- - текущий месяц (работник может предоставить заявление в начале месяца и в середине месяца с разными суммами)
         IF current_date > v_taotlus_mvt.kpv
-            AND date(year(current_date), month(current_date), 1) + INTERVAL '1 month' > v_taotlus_mvt.kpv
+            AND current_date > date(year(v_taotlus_mvt.kpv), month(v_taotlus_mvt.kpv), 1) + INTERVAL '1 month'
         THEN
             l_error_message = 'Taotlus juba kinni';
             -- lubatud ainult lopp kpv
