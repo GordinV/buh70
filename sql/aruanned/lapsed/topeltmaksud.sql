@@ -14,7 +14,8 @@ CREATE OR REPLACE FUNCTION lapsed.topeltmaksud(l_rekvid INTEGER,
         kogus       NUMERIC(14, 4),
         summa       NUMERIC(14, 4),
         kuu         INTEGER,
-        aasta       INTEGER
+        aasta       INTEGER,
+        koht text
 
     )
 AS
@@ -35,7 +36,8 @@ SELECT lt.nimi::TEXT,
            END)))::NUMERIC(12, 2)
                                                      AS summa,
        lt.kuu::INTEGER,
-       lt.aasta::INTEGER
+       lt.aasta::INTEGER,
+       'KUUTABEL' as koht
 FROM lapsed.cur_lapse_taabel lt
          INNER JOIN lapsed.laps l ON l.id = lt.parentid
          INNER JOIN (
