@@ -33,6 +33,7 @@ block content
                         th.th Operatsiooni kood
                         th.th Operatsiooni nimetus
                         th.th Tabeli andmed
+                        th.th Andmete koht
 
                 tbody
                     each rea in isikukood[Object.keys(isikukood)[0]]
@@ -44,4 +45,5 @@ block content
                             td.td=rea.kood
                             td.td=rea.nimetus
                             td.td=rea.summa
+                            td.td=rea.koht
 
