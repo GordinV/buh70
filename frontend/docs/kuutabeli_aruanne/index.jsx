@@ -4,9 +4,11 @@ const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
 const InputText = require('../../components/input-text/input-text.jsx');
+const BtnGetXml = require('./../../components/button-register/button-task/index.jsx');
+const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 
 const styles = require('./styles');
-
+const DocContext = require('./../../doc-context.js');
 const DOC_TYPE_ID = 'KUUTABELI_ARUANNE';
 const TOOLBAR_PROPS = {
     add: false,
@@ -25,6 +27,7 @@ class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
         this.renderer = this.renderer.bind(this);
+        this.onClickHandler = this.onClickHandler.bind(this);
 
         this.state = {
             read: 0,
@@ -94,8 +97,39 @@ class Documents extends React.PureComponent {
                 filtri_read: filtri_read
             });
         }
+        return (<ToolbarContainer>
+                <BtnGetXml
+                    value={'Saama CSV fail'}
+                    onClick={this.onClickHandler}
+                    showDate={false}
+                    ref={`btn-getCsv`}
+                />
+            </ToolbarContainer>
+        );
 
         return null;
+    }
+
+    //handler для события клик на кнопках панели
+    onClickHandler() {
+        const Doc = this.refs['register'];
+
+        if (Doc.gridData && Doc.gridData.length) {
+            //делаем редайрект на конфигурацию
+            let sqlWhere = Doc.state.sqlWhere;
+            let url = `/reports/kuutabeli_aruanne/${DocContext.userData.uuid}`;
+            let params = encodeURIComponent(`${sqlWhere}`);
+            let filter = encodeURIComponent(`${(JSON.stringify(Doc.filterData))}`);
+            let fullUrl = sqlWhere ? `${url}/${filter}/${params}` : `${url}/${filter}`;
+            window.open(fullUrl);
+
+        } else {
+            Doc.setState({
+                warning: 'Mitte ühtegi kirjed leidnud', // строка извещений
+                warningType: 'notValid',
+
+            });
+        }
     }
 
 
