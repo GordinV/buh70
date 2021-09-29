@@ -45,12 +45,12 @@ exports.get = async (req, res) => {
                 lapse_isikukood: row.lapse_isikukood,
                 viitenumber: row.viitenumber,
                 number: row.number,
-                alg_saldo: row.alg_saldo,
-                arvestatud: row.arvestatud,
-                soodustus: row.soodustus,
-                arv_ja_soodustus_group: row.arvestatud - row.soodustus,
-                laekumised: row.laekumised,
-                tagastatud: row.tagastatud,
+                alg_saldo: (row.alg_saldo),
+                arvestatud: (row.arvestatud),
+                soodustus: (row.soodustus),
+                arv_ja_soodustus: row.arv_ja_soodustus,
+                laekumised: (row.laekumised),
+                tagastatud: (row.tagastused),
                 jaak: row.jaak
 
             }

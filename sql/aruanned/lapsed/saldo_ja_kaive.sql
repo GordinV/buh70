@@ -264,4 +264,7 @@ where qry.laekumised > 0
 ) qry
 where  is   IN ('0850136823')
 
+select *
+FROM lapsed.saldo_ja_kaive(69, '2021-01-01', '2021-12-31') qry
+
 */
