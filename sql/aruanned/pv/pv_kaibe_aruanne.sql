@@ -59,23 +59,17 @@ WITH qryKaibed AS (
                AND (l.properties :: JSONB ->> 'soetkpv') :: DATE < l_kpv2
              UNION ALL
              -- обороты в периоде
-             SELECT po.pv_kaart_id                                AS pv_kaart_id
-                     ,
-                    0::NUMERIC(12, 2)                             AS alg_soetmaks
-                     ,
-                    0::NUMERIC(12, 2)                             AS alg_kulum
-                     ,
-                    sum(summa) FILTER ( WHERE po.liik IN (1, 3) ) AS db_soetmaks
-                     ,
+             SELECT po.pv_kaart_id                                AS pv_kaart_id,
+                    0::NUMERIC(12, 2)                             AS alg_soetmaks,
+                    0::NUMERIC(12, 2)                             AS alg_kulum,
+                    sum(summa) FILTER ( WHERE po.liik IN (3) ) AS db_soetmaks,
                     (sum(summa) FILTER ( WHERE po.liik = 2)) +
                     sum(CASE
                             WHEN (l.properties :: JSONB ->> 'soetkpv') :: DATE >= l_kpv1 AND
                                  (l.properties :: JSONB ->> 'soetkpv') :: DATE <= l_kpv2
                                 THEN coalesce((l.properties :: JSONB ->> 'algkulum') :: NUMERIC(12, 4), 0)
-                            ELSE 0 END)                           AS db_kulum
-                     ,
-                    0::NUMERIC(12, 2)                             AS kr_soetmaks
-                     ,
+                            ELSE 0 END)                           AS db_kulum,
+                    0::NUMERIC(12, 2)                             AS kr_soetmak,
                     0::NUMERIC(12, 2)                             AS kr_kulum
              FROM docs.doc d
                       INNER JOIN docs.pv_oper po ON po.parentid = d.id
@@ -87,19 +81,14 @@ WITH qryKaibed AS (
                  OR (l.properties :: JSONB ->> 'mahakantud')::DATE > l_kpv2)
              GROUP BY po.pv_kaart_id
              UNION ALL
-             SELECT l.id                                                        AS pv_kaart_id
-                     ,
-                    0::NUMERIC(12, 2)                                           AS alg_soetmaks
-                     ,
-                    0::NUMERIC(12, 2)                                           AS alg_kulum
-                     ,
-                    0::NUMERIC(12, 2)                                           AS db_soetmaks
-                     ,
-                    0::NUMERIC(12, 2)                                           AS db_kulum
-                     ,
-                    (SELECT soetmaks FROM libs.get_pv_kaart_jaak(l.id, l_kpv2)) AS kr_soetmaks
-                     ,
-                    (SELECT kulum FROM libs.get_pv_kaart_jaak(l.id, l_kpv2))    AS kr_kulum
+             SELECT l.id                                                        AS pv_kaart_id,
+                    0::NUMERIC(12, 2)                                           AS alg_soetmaks,
+                    0::NUMERIC(12, 2)                                           AS alg_kulum,
+                    0::NUMERIC(12, 2)                                           AS db_soetmaks,
+                    0::NUMERIC(12, 2)                                           AS db_kulum,
+                    (SELECT soetmaks FROM libs.get_pv_kaart_jaak(l.id, l_kpv2)) AS kr_soetmaks,
+                    0
+              --      (SELECT kulum FROM libs.get_pv_kaart_jaak(l.id, l_kpv2))    AS kr_kulum
              FROM libs.library l
              WHERE l.library = 'POHIVARA'
                AND l.rekvid = l_rekvid
@@ -171,7 +160,8 @@ GRANT EXECUTE ON FUNCTION docs.pv_kaibe_aruanne( DATE, DATE, INTEGER ) TO dbkasu
 
 /*
 SELECT *
-FROM docs.pv_kaibe_aruanne('2018-01-01', current_date :: DATE, 63)
+FROM docs.pv_kaibe_aruanne('2021-01-01', current_date :: DATE, 130)
+where kood = '01365-14'
 
 		SELECT (row_number() over())::INTEGER as jrnr, *  from (SELECT                      *
 		FROM docs.pv_kaibe_aruanne('2019-01-01', current_date :: DATE, 63::integer) qry

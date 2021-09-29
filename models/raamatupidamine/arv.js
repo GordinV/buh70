@@ -332,7 +332,19 @@ const Arv = {
             alias: 'arvesta_ebatoenaolised',
             data: [],
             not_initial_load: true
-        }
+        },
+        {
+            sql: `SELECT *
+                  FROM libs.asutus
+                  WHERE regkood = $1
+                      ORDER BY staatus
+                      LIMIT 1`,
+            query: null,
+            multiple: false,
+            alias: 'validate_asutus',
+            data: []
+        },
+
 
     ],
     grid: {

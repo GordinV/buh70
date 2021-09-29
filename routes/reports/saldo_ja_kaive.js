@@ -48,6 +48,7 @@ exports.get = async (req, res) => {
                 alg_saldo: row.alg_saldo,
                 arvestatud: row.arvestatud,
                 soodustus: row.soodustus,
+                arv_ja_soodustus_group: row.arvestatud - row.soodustus,
                 laekumised: row.laekumised,
                 tagastatud: row.tagastatud,
                 jaak: row.jaak

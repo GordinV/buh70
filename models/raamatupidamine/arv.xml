@@ -351,6 +351,16 @@
     <alias>arvesta_ebatoenaolised</alias>
     <not_initial_load>true</not_initial_load>
   </select>
+  <select>
+    <sql>SELECT *
+                  FROM libs.asutus
+                  WHERE regkood = $1
+                      ORDER BY staatus
+                      LIMIT 1</sql>
+    <query />
+    <multiple>false</multiple>
+    <alias>validate_asutus</alias>
+  </select>
   <selectAsLibs>
     <sql>SELECT *, $2 as rekvid
                    FROM com_arved a

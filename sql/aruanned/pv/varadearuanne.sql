@@ -18,7 +18,8 @@ CREATE OR REPLACE FUNCTION docs.varadearuanne(l_kpv1 DATE, l_kpv2 DATE, l_rekvid
         mahakantud  NUMERIC(14, 2),
         jaak        NUMERIC(14, 2),
         grupp_id    INTEGER
-    ) AS
+    )
+AS
 $BODY$
 SELECT rekv_id,
        kood :: VARCHAR(20),
@@ -76,16 +77,27 @@ FROM (
                             AND liik = 5
                             AND kpv < l_kpv2),
                          0)                                    AS umberhindamine,
-                coalesce((SELECT sum(summa)
+                (SELECT sum(summa)
+                 FROM (
+                          SELECT summa
                           FROM docs.pv_oper po
                           WHERE pv_kaart_id = p.id
-                            AND liik IN (1, 3)
-                            AND kpv < l_kpv1), 0)              AS soetmaks
+                            AND liik = 1
+                          UNION ALL
+                          SELECT summa
+                          FROM docs.pv_oper po
+                          WHERE pv_kaart_id = p.id
+                            AND liik = 3
+                            AND kpv < l_kpv1
+                      ) qry
+                )
+                                                               AS soetmaks
          FROM cur_pohivara p
          WHERE (p.mahakantud IS NULL OR p.mahakantud > l_kpv1)
            AND p.rekvid = l_rekvid
      ) qry
-         LEFT OUTER JOIN libs.asutus a ON a.id = qry.vastisikid
+         LEFT OUTER JOIN libs.asutus a
+                         ON a.id = qry.vastisikid
     ;
 
 $BODY$
@@ -100,6 +112,7 @@ GRANT EXECUTE ON FUNCTION docs.varadearuanne( DATE, DATE, INTEGER ) TO dbkasutaj
 
 /*
 SELECT *
-FROM docs.varadearuanne('2018-01-01', current_date :: DATE, 1)
+FROM docs.varadearuanne('2021-01-01', '2021-08-31' :: DATE, 130)
+where kood = '01365-14'
 
 */

@@ -62,8 +62,7 @@ FROM (
                 coalesce((SELECT sum(summa)
                           FROM docs.pv_oper po
                           WHERE pv_kaart_id = p.id
-                            AND liik IN (1)
-                            AND kpv <= l_kpv), 0)              AS soetmaks,
+                            AND liik IN (1)), 0)              AS soetmaks,
                 coalesce((SELECT sum(summa)
                           FROM docs.pv_oper po
                           WHERE pv_kaart_id = p.id
@@ -99,7 +98,7 @@ GRANT EXECUTE ON FUNCTION libs.get_pv_kaart_jaak(l_id INTEGER, l_kpv DATE) TO db
 
 
 /*
-SELECT * from libs.library where kood = 'test' and library = 'POHIVARA'
+SELECT * from libs.library where kood = '01365-14' and library = 'POHIVARA'
 
-select * from libs.get_pv_kaart_jaak(209554)
+select * from libs.get_pv_kaart_jaak(252949)
 */
