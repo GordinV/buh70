@@ -38,9 +38,10 @@ exports.get = async (req, res) => {
 // Кроме этого, как и отчет по сальдо-обороту, необходим экспорт в CSV файл полями:
 // Rühm    Lapse nimi    Isikukood        Viitenumber    Arvestatud    Soodustus    Arvestatud ja Soodustus Like2:16 pm
         // get xml
-        const csv = getCSV(data.data.map(row => {
+        let header;
+        let csv = getCSV(data.data.map(row => {
             //поправить если структура меняется
-            return {
+            const obj =  {
                 ruhm: row.ruhm,
                 nimi: row.nimi,
                 isikukood: row.isikukood,
@@ -48,8 +49,17 @@ exports.get = async (req, res) => {
                 arvestatud: row.arvestatud,
                 soodustus: row.soodustus,
                 summa: row.summa
+            };
+
+            // will add header to file
+            if (!header) {
+                header = Object.keys(obj).join(';') + '\n';
             }
+
+            return obj;
+
         }));
+        csv = header + csv;
         if (csv) {
             res.attachment('report.csv');
             res.type('csv');

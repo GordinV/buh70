@@ -105,12 +105,12 @@ class Documents extends React.PureComponent {
             let url = `/reports/yksuse_taabel/${DocContext.userData.uuid}`;
             let params = encodeURIComponent(`${sqlWhere}`);
             let notEmptyFilter = Doc.filterData.filter(row => {
-                return !row.hideFilter;
+                return row.value;
             });
             let filter = encodeURIComponent(`${(JSON.stringify(notEmptyFilter))}`);
 
-            let fullUrl = sqlWhere ? `${url}/${filter}/${params}`: `${url}/${filter}`;
 
+            let fullUrl = sqlWhere ? `${url}/${filter}/${params}`: `${url}/${filter}`;
             window.open(fullUrl);
 
         } else {

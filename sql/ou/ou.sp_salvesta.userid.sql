@@ -48,7 +48,11 @@ DECLARE
                                          coalesce((doc_data ->> 'is_ladu_kasutaja') :: BOOLEAN,
                                                   FALSE)                                              AS is_ladu_kasutaja,
                                       coalesce((doc_data ->> 'is_arvestaja') :: BOOLEAN,
-                                               FALSE)                                              AS is_arvestaja
+                                               FALSE)                                              AS is_arvestaja,
+                                      coalesce((doc_data ->> 'is_palga_kasutaja') :: BOOLEAN,
+                                               FALSE)                                              AS is_palga_kasutaja,
+                                      coalesce((doc_data ->> 'is_pohivara_kasutaja') :: BOOLEAN,
+                                               FALSE)                                              AS is_pohivara_kasutaja
                                  ) row);
 
     is_import    BOOLEAN = data ->> 'import';
@@ -95,7 +99,7 @@ BEGIN
                            ' NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION ';
                 RAISE NOTICE 'create user %', l_string;
                 EXECUTE (l_string);
-                IF roles_json ->> 'is_kasutaja'
+                IF roles_json ->> 'is_kasutaja' or roles_json ->> 'is_palga_kasutaja' or roles_json ->> 'is_pohivara_kasutaja'
                 THEN
                     EXECUTE 'GRANT dbkasutaja TO "' || doc_kasutaja || '"';
                 END IF;

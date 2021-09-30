@@ -40,9 +40,10 @@ exports.get = async (req, res) => {
         const data = await doc.selectDocs('', sqlWhere, 10000, gridParams);
 
         // get xml
-        const csv = getCSV(data.data.map(row => {
+        let header;
+        let csv = getCSV(data.data.map(row => {
             //поправить если структура меняется
-            return {
+            const obj = {
                 yksus: row.yksus,
                 teenus: row.teenus,
                 kuu: row.kuu,
@@ -50,7 +51,7 @@ exports.get = async (req, res) => {
                 paev_01: row.day_1,
                 paev_02: row.day_2,
                 paev_03: row.day_3,
-                paev_04:row.day_4,
+                paev_04: row.day_4,
                 paev_05: row.day_5,
                 paev_06: row.day_6,
                 paev_07: row.day_7,
@@ -80,8 +81,18 @@ exports.get = async (req, res) => {
                 paev_31: row.day_31,
                 kokku: row.kogus
 
+            };
+
+            // will add header to file
+            if (!header) {
+                header = Object.keys(obj).join(';') + '\n';
             }
+
+            return obj;
+
         }));
+
+        csv = header + csv;
         if (csv) {
             res.attachment('report.csv');
             res.type('csv');

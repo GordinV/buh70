@@ -12,8 +12,6 @@ exports.get = async (req, res) => {
         return res.status(401).end();
     }
 
-    console.log('kasKond',kasKond);
-
     try {
         // создать объект
         const Doc = require('./../../classes/DocumentTemplate');
@@ -21,6 +19,7 @@ exports.get = async (req, res) => {
         const data = await doc.selectDocs('', sqlWhere, 100000);
 
         // get csv
+
         const csvData = data.data.map(row => {
             let yksus = get_yksus(row.yksus);
             return {

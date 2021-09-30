@@ -1,41 +1,24 @@
-const util = require('util');
-const fs = require('fs');
-const conversionFactory = require('html-to-xlsx');
-const puppeteer = require('puppeteer');
-const chromeEval = require('chrome-page-eval')({ puppeteer });
-const writeFileAsync = util.promisify(fs.writeFile);
+const data = [{
+    id: 1,
+    name: 'name value',
+    lisa: 'lisa value',
+    hideFilter: true
+},
+    {
+        id: 2,
+        name: 'name value 2',
+        lisa: 'lisa value 2',
+        hideFilter: false    },
+    {
+        id: 3,
+        name: 'name value 3',
+        lisa: 'lisa value 3'}
+];
 
-const conversion = conversionFactory({
-    extract: async ({ html, ...restOptions }) => {
-        const tmpHtmlPath = 'c:/temp/temp.html';
-
-        await writeFileAsync(tmpHtmlPath, html);
-
-        const result = await chromeEval({
-            ...restOptions,
-            html: tmpHtmlPath,
-            scriptFn: conversionFactory.getScriptFn()
-        });
-
-        const tables = Array.isArray(result) ? result : [result];
-
-        return tables.map((table) => ({
-            name: table.name,
-            getRows: async (rowCb) => {
-                table.rows.forEach((row) => {
-                    rowCb(row)
-                })
-            },
-            rowsCount: table.rows.length
-        }))
-    }
+// head
+let notEmptyFilter = data.filter(row => {
+    console.log('!row.hideFilter',!row.hideFilter);
+    return !row.hideFilter;
 });
 
-async function run () {
-    let html = fs.readFileSync('c:/temp/test.html', 'utf8');
-    const stream = await conversion(`html`);
-
-    stream.pipe(fs.createWriteStream('output.xlsx'))
-}
-
-run();
+console.log(notEmptyFilter);

@@ -36,9 +36,10 @@ exports.get = async (req, res) => {
 
 
         // get xml
-        const csv = getCSV(data.data.map(row => {
+        let header;
+        let csv = getCSV(data.data.map(row => {
             //поправить если структура меняется
-            return {
+            const obj = {
                 kulastatavus: row.kpv,
                 yksus: row.yksus,
                 lapse_nimi: row.lapse_nimi,
@@ -53,8 +54,15 @@ exports.get = async (req, res) => {
                 tagastatud: (row.tagastused),
                 jaak: row.jaak
 
+            };
+            if (!header) {
+                header = Object.keys(obj).join(';') + '\n';
             }
+
+            return obj;
         }));
+        csv = header + csv;
+
         if (csv) {
             res.attachment('report.csv');
             res.type('csv');

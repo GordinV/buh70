@@ -40,16 +40,28 @@ exports.get = async (req, res) => {
         const data = await doc.selectDocs('', sqlWhere, 10000, gridParams);
 
         // get xml
-        const csv = getCSV(data.data.map(row => {
+        let header;
+        let csv = getCSV(data.data.map(row => {
             //поправить если структура меняется
-            return {
+            const obj =  {
                 reanr: row.row_id,
                 kood: row.kood,
                 nimetus: row.asutus,
                 konto: row.konto,
                 summa: row.summa
+            };
+
+            // will add header to file
+            if (!header) {
+                header = Object.keys(obj).join(';') + '\n';
             }
+
+            return obj;
+
         }));
+
+        csv = header + csv;
+
         if (csv) {
             res.attachment('report.csv');
             res.type('csv');

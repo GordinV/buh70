@@ -39,6 +39,8 @@ DECLARE
     doc_is_rekl_maksuhaldur    INTEGER = doc_data ->> 'is_rekl_maksuhaldur';
     doc_is_rekl_administraator INTEGER = doc_data ->> 'is_rekl_administraator';
     doc_is_ladu_kasutaja       INTEGER = doc_data ->> 'is_ladu_kasutaja';
+    doc_is_palga_kasutaja      INTEGER = doc_data ->> 'is_palga_kasutaja';
+    doc_is_pohivara_kasutaja   INTEGER = doc_data ->> 'is_pohivara_kasutaja';
     doc_keyshortcut            TEXT    = doc_data ->> 'keyshortcut';
     doc_submenu                TEXT    = doc_data ->> 'submenu';
     json_object                JSONB;
@@ -58,6 +60,16 @@ BEGIN
     THEN
         RAISE NOTICE 'User not found %', user;
         RETURN 0;
+    END IF;
+
+    IF doc_is_palga_kasutaja
+    THEN
+        doc_groups = doc_groups || to_jsonb('PALK_KASUTAJA' :: TEXT);
+    END IF;
+
+    IF doc_is_pohivara_kasutaja
+    THEN
+        doc_groups = doc_groups || to_jsonb('POHIVARA_KASUTAJA' :: TEXT);
     END IF;
 
     IF doc_is_rekl_administraator
@@ -113,6 +125,11 @@ BEGIN
     IF doc_is_kasutaja
     THEN
         doc_groups = doc_groups || to_jsonb('KASUTAJA' :: TEXT);
+    END IF;
+
+    IF doc_is_peakasutaja
+    THEN
+        doc_groups = doc_groups || to_jsonb('PEAKASUTAJA' :: TEXT);
     END IF;
 
     IF doc_is_peakasutaja

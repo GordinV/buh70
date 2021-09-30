@@ -24,6 +24,8 @@ module.exports = {
                          coalesce((u.roles ->> 'is_rekl_maksuhaldur') :: BOOLEAN, FALSE) :: INTEGER    AS is_rekl_maksuhaldur,
                          coalesce((u.roles ->> 'is_ladu_kasutaja') :: BOOLEAN, FALSE) :: INTEGER       AS is_ladu_kasutaja,
                          coalesce((u.roles ->> 'is_arvestaja') :: BOOLEAN, FALSE) :: INTEGER           AS is_arvestaja,
+                         coalesce((u.roles ->> 'is_palga_kasutaja') :: BOOLEAN, FALSE) :: INTEGER      AS is_palga_kasutaja,
+                         coalesce((u.roles ->> 'is_pohivara_kasutaja') :: BOOLEAN, FALSE) :: INTEGER   AS is_pohivara_kasutaja,
                          (u.properties ->> 'email') :: VARCHAR(254)                                    AS email,
                          (u.properties ->> 'port') :: TEXT                                             AS port,
                          (u.properties ->> 'user') :: TEXT                                             AS user,
@@ -54,6 +56,8 @@ module.exports = {
                       0 :: INTEGER     AS is_ladu_kasutaja,
                       0 :: INTEGER     AS is_kasutaja,
                       0:: integer as is_arvestaja,
+                      0:: integer as is_palga_kasutaja,
+                      0:: integer as is_pohivara_kasutaja,
                       '' :: VARCHAR(254) AS email`,
             query: null,
             multiple: false,
@@ -73,14 +77,14 @@ module.exports = {
             data: []
         },
         {
-            sql: `SELECT r.nimetus AS asutus, u.*, $2 as rekvid
+            sql: `SELECT r.nimetus AS asutus, u.*, $2 AS rekvid
                   FROM ou.userid u
                            INNER JOIN ou.rekv r ON r.id = u.rekvid
                   WHERE ($1 = 0
                       OR u.id = $1)
                     AND r.status <> 3
                   ORDER BY u.last_login DESC
-                         , u.id DESC;`,
+                          , u.id DESC;`,
             query: null,
             multiple: true,
             alias: 'get_all_users',

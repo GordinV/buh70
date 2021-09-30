@@ -3,6 +3,7 @@ const getCSV = require('./../lapsed/get_csv');
 const getParameterFromFilter = require('./../../libs/getParameterFromFilter');
 
 exports.get = async (req, res) => {
+
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const filter = req.params.filter || [];// массив фильтров документов;
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
@@ -40,9 +41,10 @@ exports.get = async (req, res) => {
         const data = await doc.selectDocs('', sqlWhere, 10000, gridParams);
 
         // get xml
-        const csv = getCSV(data.data.map(row => {
+        let header;
+        let csv = getCSV(data.data.map(row => {
             //поправить если структура меняется
-            return {
+            const obj =  {
                 yksus: row.yksus,
                 viitenr: row.viitenr,
                 nimi: row.nimi,
@@ -82,8 +84,19 @@ exports.get = async (req, res) => {
                 paev_31: row.day_31,
                 kokku: row.kogus
 
+            };
+
+            // will add header to file
+            if (!header) {
+                header = Object.keys(obj).join(';') + '\n';
             }
+
+            return obj;
+
         }));
+
+        csv = header + csv;
+
         if (csv) {
             res.attachment('report.csv');
             res.type('csv');

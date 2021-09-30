@@ -15,12 +15,13 @@ exports.get = async (req, res) => {
         // создать объект
         const Doc = require('./../../classes/DocumentTemplate');
         const doc = new Doc('arved_koodi_jargi', null, user.userId, user.asutusId, 'lapsed');
-        const data =  await doc.selectDocs('', sqlWhere, 10000);
+        const data = await doc.selectDocs('', sqlWhere, 10000);
 
 
         // get xml
-        const csv = getCSV(data.data.map(row => {
-            return {
+        let header;
+        let csv = getCSV(data.data.map(row => {
+            const obj = {
                 kpv: row.kpv,
                 aasta: row.aasta,
                 kuu: row.kuu,
@@ -29,8 +30,17 @@ exports.get = async (req, res) => {
                 hind: row.hind,
                 kogus: row.kogus,
                 summa: row.summa
+            };
+
+            if (!header) {
+                header = Object.keys(obj).join(';') + '\n';
             }
+
+            return obj;
         }));
+
+        csv = header + csv;
+
         if (csv) {
             res.attachment('report.csv');
             res.type('csv');
