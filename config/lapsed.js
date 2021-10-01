@@ -5,7 +5,7 @@ module.exports = {
     journal:'/lapsed/journal',
     sorder:'/lapsed/sorder',
     vorder:'/lapsed/vorder',
-    asutused:'/libs/libraries/asutused',
+    asutused:'/lapsed/asutused',
     kontod:'/libs/libraries/kontod',
     dokprops: '/libs/libraries/dokprops',
     userid: '/ou/userid',
