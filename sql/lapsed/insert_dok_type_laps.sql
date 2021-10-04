@@ -95,6 +95,13 @@ SELECT 1::INTEGER,
        '{"type":"aruanne", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'SALDO_JA_KAIVE');
 
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
+       'KAIVE_ARUANNE'                          AS kood,
+       'Saldo ja käive (rühmainfota) aruanne'                  AS nimetus,
+       'DOK'                                     AS library,
+       '{"type":"aruanne", "module":["Lapsed"]}' AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'KAIVE_ARUANNE');
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+        .kulastavus {
+            width: 100px
+        }
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 SALDO JA KÄIVE (rühmainfota) ARUANNE
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        each asutus in data
+            p #{Object.keys(asutus)[0]}
+
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th.kulastavus Külastatavus
+                        th Lapse ees- ja perekonnanimi
+                        th Viitenumber
+                        th Alg.saldo
+                        th Arvestatud
+                        th Soodustus
+                        th Kokku arvestatud
+                        th Laekumised
+                        th Tagastatud
+                        th Võlg
+
+                tbody
+                    each rea in asutus[Object.keys(asutus)[0]]
+                        tr
+                            td.kulastavus=rea.kulastatavus
+                            td=rea.lapse_nimi
+                            td=rea.viitenumber
+                            td=rea.alg_saldo
+                            td=rea.arvestatud
+                            td=rea.soodustus
+                            td=((Number(rea.arvestatud) - Number(rea.soodustus)).toFixed(2))
+                            td=rea.laekumised
+                            td=rea.tagastatud
+                            td=rea.jaak
+                    tr.group
+                        td.group=Object.keys(asutus)[0] + ' Read kokku:'
+                        td.group=Number(asutus[Object.keys(asutus)[0]].length)
+                        td.group='Kokku:'
+                        td.group=asutus[Object.keys(asutus)[0]][0].alg_saldo_group
+                        td.group=asutus[Object.keys(asutus)[0]][0].arvestatud_group
+                        td.group=asutus[Object.keys(asutus)[0]][0].soodustus_group
+                        td.group=((Number(asutus[Object.keys(asutus)[0]][0].arvestatud_group) - Number(asutus[Object.keys(asutus)[0]][0].soodustus_group)).toFixed(2))
+                        td.group=asutus[Object.keys(asutus)[0]][0].laekumised_group
+                        td.group=asutus[Object.keys(asutus)[0]][0].tagastatud_group
+                        td.group=asutus[Object.keys(asutus)[0]][0].jaak_group
+
