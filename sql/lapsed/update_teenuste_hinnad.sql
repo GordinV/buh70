@@ -43,10 +43,10 @@ BEGIN
                (properties::JSONB -> 'all_yksused' ->> 5)::TEXT AS all_yksus_5,
                (SELECT json_agg(to_jsonb(qry.*)) AS gridData
                 FROM (
-                         SELECT nomid AS id, x.nomid, x.kogus, n.hind, n.kood::text, n.nimetus::text
+                         SELECT nomid AS id, x.nomid, x.kogus, n.hind, n.kood::TEXT, n.nimetus::TEXT
                          FROM jsonb_to_recordset(
                                       (properties::JSONB -> 'teenused')::JSONB
-                                  ) AS x(nomid INTEGER, hind NUMERIC, kogus NUMERIC, kood TEXT, nimetus TEXT)
+                                  ) AS x(nomid INTEGER, hind TEXT, kogus TEXT, kood TEXT, nimetus TEXT)
                                   INNER JOIN libs.nomenklatuur n ON n.id = x.nomid
                      ) qry
                )::TEXT                                          AS gridData
@@ -56,13 +56,15 @@ BEGIN
             SELECT qry.nomid
             FROM (
                      SELECT nomid, hind
-                     FROM jsonb_to_recordset(properties::JSONB -> 'teenused') AS x(nomid INTEGER, hind NUMERIC)) qry
+                     FROM jsonb_to_recordset(properties::JSONB -> 'teenused') AS x(nomid INTEGER, hind TEXT)) qry
                      INNER JOIN libs.nomenklatuur n ON n.id = qry.nomid
-            WHERE qry.hind <> n.hind
+            WHERE (CASE WHEN qry.hind = '' THEN '0' ELSE qry.hind END)::NUMERIC <>
+                  (CASE WHEN n.hind::TEXT = '' THEN '0' ELSE n.hind::TEXT END)::NUMERIC
         )
         LOOP
             -- salvestame grupp
-            SELECT row_to_json(row) INTO json_object
+            SELECT row_to_json(row)
+            INTO json_object
             FROM (SELECT v_groups.id                   AS id,
                          (SELECT to_jsonb(v_groups.*)) AS data) row;
 
@@ -107,8 +109,10 @@ BEGIN
                (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
           AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
         LOOP
+
             -- salvestame kaart
-            SELECT row_to_json(row) INTO json_object
+            SELECT row_to_json(row)
+            INTO json_object
             FROM (SELECT v_kaart.id                   AS id,
                          (SELECT to_jsonb(v_kaart.*)) AS data) row;
 

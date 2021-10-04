@@ -159,7 +159,7 @@ module.exports = {
     ],
     uuendaHinnad: {
         command: `SELECT error_code, result, error_message, doc_type_id
-                  FROM lapsed.update_teenuste_hinnad($2::INTEGER, $1::INTEGER)`,//$1 docId, $2 - userId
+                  FROM lapsed.update_teenuste_hinnad($2::INTEGER, $1::INTEGER, $3::DATE)`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'uuendaHinnad'
     },

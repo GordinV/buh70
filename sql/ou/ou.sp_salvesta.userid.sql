@@ -99,7 +99,7 @@ BEGIN
                            ' NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION ';
                 RAISE NOTICE 'create user %', l_string;
                 EXECUTE (l_string);
-                IF roles_json ->> 'is_kasutaja' or roles_json ->> 'is_palga_kasutaja' or roles_json ->> 'is_pohivara_kasutaja'
+                IF (roles_json ->> 'is_kasutaja')::boolean or (roles_json ->> 'is_palga_kasutaja')::boolean or (roles_json ->> 'is_pohivara_kasutaja')::boolean
                 THEN
                     EXECUTE 'GRANT dbkasutaja TO "' || doc_kasutaja || '"';
                 END IF;
