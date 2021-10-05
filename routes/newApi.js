@@ -37,6 +37,8 @@ exports.post = async (req, res) => {
             gridParams = getParameterFromFilter(user.asutusId,  user.userId, doc.config.grid.params , filterData);
         }
 
+        // установим таймаут для ожидания тяжелых отчетов
+        res.setTimeout(400000);
 
         // вызвать метод
         let data = {

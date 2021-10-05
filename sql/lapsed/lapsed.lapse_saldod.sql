@@ -165,8 +165,8 @@ GRANT EXECUTE ON FUNCTION lapsed.lapse_saldod(l_kpv DATE, INTEGER, INTEGER, INTE
 
 /*
 SELECT sum(jaak) over(), *
-FROM lapsed.lapse_saldod('2020-10-14'::date)
+FROM lapsed.lapse_saldod('2021-01--1'::date, 4742)
 where 1=1
-and laps_id = 6370
+and laps_id = 4742
 and rekv_id = 69
 */

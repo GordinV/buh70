@@ -8,7 +8,8 @@ CREATE OR REPLACE FUNCTION lapsed.get_group_part_from_mk(l_mk_id INTEGER, l_kpv 
         laps_id INTEGER,
         opt     INTEGER
 
-    ) AS
+    )
+AS
 $BODY$
     -- на входе платеж
     -- ищем по карте действующие на момент платежа услуги
@@ -16,25 +17,33 @@ $BODY$
     -- считаем пропорцию
     -- возвращаем сумму по группам
 WITH qryMk AS (
-    SELECT mk.parentid                          AS id,
-           mk.maksepaev                         AS kpv,
-           l.parentid                           AS laps_id,
-           lk.properties ->> 'yksus'            AS yksus,
-           (lk.properties ->> 'alg_kpv')::DATE  AS alg_kp,
-           (lk.properties ->> 'lopp_kpv')::DATE AS lopp_kp,
+    SELECT mk.parentid          AS id,
+           mk.maksepaev         AS kpv,
+           l.parentid           AS laps_id,
+           yksus,
            lk.hind,
-           sum(lk.hind) OVER ()                 AS total_amount,
-           mk.jaak                              AS makse_summa,
+           sum(lk.hind) OVER () AS total_amount,
+           lk.count,
+           mk.jaak              AS makse_summa,
            mk.rekvid,
            mk.opt
     FROM docs.mk mk
              INNER JOIN lapsed.liidestamine l ON l.docid = mk.parentid
-             LEFT OUTER JOIN lapsed.lapse_kaart lk
+
+             LEFT OUTER JOIN (SELECT lk.parentid,
+                                     lk.rekvid,
+                                     lk.properties ->> 'yksus' AS yksus,
+                                     sum(lk.hind)              AS hind,
+                                     count(*) over(PARTITION BY (parentid::text || '-' || lk.rekvid::text )) as count
+                              FROM lapsed.lapse_kaart lk
+                              WHERE lk.staatus <> 3
+                                AND (lk.properties ->> 'alg_kpv')::DATE <= l_kpv::DATE
+                                AND (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv::DATE
+                              GROUP BY lk.parentid, lk.rekvid, (lk.properties ->> 'yksus')
+    ) lk
                              ON lk.parentid = l.parentid
-                                 AND lk.staatus <> 3
-                                 AND (lk.properties ->> 'alg_kpv')::DATE <= l_kpv::DATE
-                                 AND (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv::DATE
                                  AND lk.rekvid = mk.rekvid
+
     WHERE mk.parentid = l_mk_id
 ),
      -- Последняя действующая услуга
@@ -62,8 +71,11 @@ WITH qryMk AS (
      qryLaekumised AS (
          SELECT qryMk.id                                                                               AS mk_id,
                 coalesce(qryMk.yksus, coalesce(qryViimaneTeenus.yksus, qryEsimineTeenus.yksus)) ::TEXT AS yksus,
-                ((coalesce((qryMk.hind / CASE WHEN qryMk.total_amount = 0 THEN NULL ELSE qryMk.total_amount END), 1) *
-                  qryMk.makse_summa))::NUMERIC(14, 4)                                                  AS summa,
+                CASE
+                    WHEN qryMk.total_amount = 0 THEN qryMk.makse_summa / qryMk.count
+                    ELSE ((coalesce((qryMk.hind /
+                                     CASE WHEN qryMk.total_amount = 0 THEN NULL ELSE qryMk.total_amount END), 1) *
+                           qryMk.makse_summa)) END::NUMERIC(14, 4)                                     AS summa,
                 qryMk.laps_id,
                 qryMk.opt
          FROM qryMK
@@ -86,7 +98,7 @@ GRANT EXECUTE ON FUNCTION lapsed.get_group_part_from_mk(INTEGER, DATE) TO dbvaat
 /*
 
 
-select * from lapsed.get_group_part_from_mk(2336289, '2021-01-29'::DATE)
+select * from lapsed.get_group_part_from_mk(2329755, '2021-01-01'::DATE)
 
 
 

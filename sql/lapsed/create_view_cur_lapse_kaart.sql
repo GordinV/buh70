@@ -44,7 +44,7 @@ FROM lapsed.laps l
     AND grupp.status <> 3
     AND grupp.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
          INNER JOIN ou.rekv r ON r.id = lk.rekvid
-         LEFT OUTER JOIN lapsed.viitenr v ON v.rekv_id = r.id AND v.isikukood = l.isikukood
+         LEFT OUTER JOIN (select rekv_id, array_to_string(array_agg(viitenumber),',') as viitenumber, isikukood from lapsed.viitenr v group by rekv_id, isikukood) v  ON v.rekv_id = r.id AND v.isikukood = l.isikukood
 WHERE lk.staatus <> 3;
 
 GRANT SELECT ON TABLE lapsed.cur_lapse_kaart TO arvestaja;
