@@ -115,6 +115,9 @@ class Smk extends React.PureComponent {
         let gridArvData = self.docData.queryArvTasu,
             gridArvColumns = self.docData.gridArvConfig;
 
+        if (self.docData.jaak) {
+            DocContext.mkJaak = self.docData.jaak;
+        }
 
         return (
             <div>

@@ -308,6 +308,7 @@ exports.executeTask = async (req, res) => {
     let seisuga = params.seisuga ? params.seisuga : now;
     let gruppId = params.gruppId ? params.gruppId : null;
     let viitenumber = params.viitenumber ? params.viitenumber: null;
+    let kogus = params.kogus ? params.kogus: null;
 
     const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, module);
 
@@ -320,8 +321,13 @@ exports.executeTask = async (req, res) => {
             // есть 4 параметр, добавим
             taskParams.push(viitenumber);
         }
+        if (kogus && taskName == 'KoostaUlekanneMakse') {
+            // есть 5 параметр, добавим
+            taskParams.push(kogus);
+        }
 
     }
+
 
     if (params.docTypeId === 'LAPS' &&  gruppId) {
         // задача с параметром gruppId

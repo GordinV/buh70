@@ -9,44 +9,50 @@ CREATE OR REPLACE FUNCTION docs.sp_salvesta_mk(data JSON,
 $BODY$
 
 DECLARE
-    mk_id         INTEGER;
-    mk1_id        INTEGER;
-    userName      TEXT;
-    doc_id        INTEGER = data ->> 'id';
-    doc_data      JSON    = data ->> 'data';
-    doc_details   JSON    = doc_data ->> 'gridData';
-    doc_opt       TEXT    = coalesce((doc_data ->> 'opt'), '1'); -- 2 -> smk, 1 -> vmk
-    doc_type_kood TEXT    = coalesce((doc_data ->> 'doc_type_id'), CASE
-                                                                       WHEN doc_opt = '2'
-                                                                           THEN 'SMK'
-                                                                       ELSE 'VMK' END);
-    doc_typeId    INTEGER = (SELECT id
-                             FROM libs.library
-                             WHERE ltrim(rtrim(kood)) = ltrim(rtrim(upper(doc_type_kood)))
-                               AND library = 'DOK'
-                             LIMIT 1);
-    doc_number    TEXT    = doc_data ->> 'number';
-    doc_kpv       DATE    = coalesce((doc_data ->> 'kpv')::DATE, current_date);
-    doc_aa_id     INTEGER = coalesce((doc_data ->> 'aa_id')::INTEGER, (doc_data ->> 'aaid')::INTEGER);
-    doc_arvid     INTEGER = doc_data ->> 'arvid';
-    doc_muud      TEXT    = doc_data ->> 'muud';
-    doc_doklausid INTEGER = doc_data ->> 'doklausid';
-    doc_maksepaev DATE    = coalesce((doc_data ->> 'maksepaev')::DATE, current_date);
-    doc_selg      TEXT    = doc_data ->> 'selg';
-    doc_viitenr   TEXT    = doc_data ->> 'viitenr';
-    doc_lapsid    INTEGER = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
-    doc_dok_id    INTEGER = doc_data ->> 'dokid'; -- kui mk salvestatud avansiaruanne alusel
+    mk_id             INTEGER;
+    mk1_id            INTEGER;
+    userName          TEXT;
+    doc_id            INTEGER = data ->> 'id';
+    doc_data          JSON    = data ->> 'data';
+    doc_details       JSON    = doc_data ->> 'gridData';
+    doc_opt           TEXT    = coalesce((doc_data ->> 'opt'), '1'); -- 2 -> smk, 1 -> vmk
+    doc_type_kood     TEXT    = coalesce((doc_data ->> 'doc_type_id'), CASE
+                                                                           WHEN doc_opt = '2'
+                                                                               THEN 'SMK'
+                                                                           ELSE 'VMK' END);
+    doc_typeId        INTEGER = (SELECT id
+                                 FROM libs.library
+                                 WHERE ltrim(rtrim(kood)) = ltrim(rtrim(upper(doc_type_kood)))
+                                   AND library = 'DOK'
+                                 LIMIT 1);
+    doc_number        TEXT    = doc_data ->> 'number';
+    doc_kpv           DATE    = coalesce((doc_data ->> 'kpv')::DATE, current_date);
+    doc_aa_id         INTEGER = coalesce((doc_data ->> 'aa_id')::INTEGER, (doc_data ->> 'aaid')::INTEGER);
+    doc_arvid         INTEGER = doc_data ->> 'arvid';
+    doc_muud          TEXT    = doc_data ->> 'muud';
+    doc_doklausid     INTEGER = doc_data ->> 'doklausid';
+    doc_maksepaev     DATE    = coalesce((doc_data ->> 'maksepaev')::DATE, current_date);
+    doc_selg          TEXT    = doc_data ->> 'selg';
+    doc_viitenr       TEXT    = doc_data ->> 'viitenr';
+    doc_lapsid        INTEGER = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
+    doc_dok_id        INTEGER = doc_data ->> 'dokid'; -- kui mk salvestatud avansiaruanne alusel
 
-    json_object   JSON;
-    json_record   RECORD;
-    new_history   JSONB;
-    ids           INTEGER[];
-    docs          INTEGER[];
-    is_import     BOOLEAN = data ->> 'import';
-    l_jaak        NUMERIC = 0; -- tasu jääk
+    json_object       JSON;
+    json_record       RECORD;
+    new_history       JSONB;
+    ids               INTEGER[];
+    docs              INTEGER[];
+    is_import         BOOLEAN = data ->> 'import';
+    l_jaak            NUMERIC = 0; -- tasu jääk
+
+    l_vana_tasu_summa NUMERIC = 0; -- vana tasu summa
+    l_uus_tasu_summa  NUMERIC = 0; -- uus tasu summa
+    kas_muudatus      BOOLEAN = FALSE; -- если апдейт, то тру
+    v_arvtasu         RECORD;
 BEGIN
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = user_id;
@@ -75,7 +81,8 @@ BEGIN
                                          AND id = doc_aa_id
                                        ORDER BY default_ DESC)
     THEN
-        SELECT id INTO doc_aa_id
+        SELECT id
+        INTO doc_aa_id
         FROM ou.aa
         WHERE parentId = user_rekvid
           AND kassa = 1
@@ -93,7 +100,8 @@ BEGIN
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;
 
@@ -113,14 +121,17 @@ BEGIN
                    INTO mk_id;
 
     ELSE
-        SELECT row_to_json(row) INTO new_history
+        kas_muudatus = TRUE;
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS updated,
                      userName AS user) row;
 
         -- устанавливаем связи с документами
 
         -- получим связи документа
-        SELECT docs_ids INTO docs
+        SELECT docs_ids
+        INTO docs
         FROM docs.doc
         WHERE id = doc_id;
 
@@ -153,6 +164,11 @@ BEGIN
         -- если есть оплата счетов и меняется дата, правим
         UPDATE docs.arvtasu SET kpv = doc_kpv WHERE doc_tasu_id = doc_id;
 
+
+        -- кешируем старую сумму оплаты
+        SELECT sum(summa) INTO l_vana_tasu_summa FROM docs.mk1 WHERE parentid = mk_id;
+
+
     END IF;
     -- вставка в таблицы документа
 
@@ -160,7 +176,8 @@ BEGIN
         SELECT *
         FROM json_array_elements(doc_details)
         LOOP
-            SELECT * INTO json_record
+            SELECT *
+            INTO json_record
             FROM json_to_record(
                          json_object) AS x(id TEXT, asutusid INTEGER, nomid INTEGER, summa NUMERIC(14, 4), aa TEXT,
                                            pank TEXT,
@@ -218,8 +235,38 @@ BEGIN
             WHERE parentid = mk_id
               AND id NOT IN (SELECT unnest(ids));
 
+            l_uus_tasu_summa = l_uus_tasu_summa + json_record.summa;
 
         END LOOP;
+
+    -- правим сумму оплаты
+    IF (kas_muudatus)
+    THEN
+
+        IF l_uus_tasu_summa <> l_vana_tasu_summa
+        THEN
+            -- кешируем старую сумму оплаты
+            SELECT *
+            INTO v_arvtasu
+            FROM docs.arvtasu
+            WHERE doc_tasu_id = doc_id
+              AND status <> 3
+            ORDER BY summa DESC
+            LIMIT 1;
+            -- если сумма оплаты уменьшилась
+            IF l_uus_tasu_summa < l_vana_tasu_summa AND v_arvtasu.summa > l_uus_tasu_summa
+            THEN
+                -- просто меняем сумму оплаты
+                UPDATE docs.arvtasu SET summa = l_uus_tasu_summa WHERE id = v_arvtasu.id;
+            ELSE
+                -- удаляем оплату и распределяем счета по новой
+                PERFORM docs.sp_delete_arvtasu(
+                                user_id,
+                                v_arvtasu.id);
+            END IF;
+        END IF;
+
+    END IF;
 
     -- сальдо платежа
     l_jaak = docs.sp_update_mk_jaak(doc_id);

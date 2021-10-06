@@ -19,7 +19,8 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
         tagastused      NUMERIC(14, 4),
         jaak            NUMERIC(14, 4),
         rekvid          INTEGER
-    ) AS
+    )
+AS
 $BODY$
 WITH kulastavus AS (
     SELECT parentid,
@@ -93,6 +94,7 @@ FROM (
                         FROM docs.arvtasu
                         WHERE kpv >= kpv_start::DATE
                           AND kpv <= kpv_end::DATE
+                          AND status <> 3
                         GROUP BY doc_arv_id
                        ) at
                            INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid AND

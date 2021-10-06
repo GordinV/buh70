@@ -12,6 +12,7 @@ DECLARE
     l_mk_id       INTEGER = params ->> 'mk_id';
     l_maksepaev   DATE    = params ->> 'maksepaev';
     l_viitenumber TEXT    = params ->> 'viitenumber';
+    l_summa       NUMERIC = coalesce((params ->> 'kogus')::NUMERIC, 0);
     mk_id         INTEGER;
     l_dok         TEXT    = 'SMK';
     l_dokprop_id  INTEGER;
@@ -44,7 +45,8 @@ BEGIN
     END IF;
 
     -- ищем нового пользователя в новом учреждении
-    SELECT id INTO l_user_id
+    SELECT id
+    INTO l_user_id
     FROM ou.userid
     WHERE rekvid = l_rekvid
       AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_id)
@@ -64,14 +66,16 @@ BEGIN
 
 
     -- копия исходного документа
-    SELECT mk.*, l.parentid AS laps_id INTO v_mk
+    SELECT mk.*, l.parentid AS laps_id
+    INTO v_mk
     FROM docs.mk mk
              INNER JOIN lapsed.liidestamine l ON l.docid = mk.parentid
     WHERE mk.parentid = l_mk_id
     LIMIT 1;
 
     -- ищем расч. счет в новом учреждении
-    SELECT id INTO l_aa_id
+    SELECT id
+    INTO l_aa_id
     FROM ou.aa
     WHERE parentid = l_rekvid
       AND kassa = 1
@@ -85,21 +89,21 @@ BEGIN
     END IF;
 
 
-    SELECT 0          AS id,
-           nomid      AS nomid,
-           asutusid   AS asutusid,
-           -1 * summa AS summa,
-           aa :: TEXT AS aa,
+    SELECT 0                            AS id,
+           nomid                        AS nomid,
+           asutusid                     AS asutusid,
+           -1 * CASE WHEN l_summa = 0 then summa else l_summa end AS summa,
+           aa :: TEXT                   AS aa,
            kood1,
            kood2,
            kood3,
            kood4,
            kood5,
-           konto      AS konto,
+           konto                        AS konto,
            tp,
            tunnus,
            proj
-           INTO v_mk1
+    INTO v_mk1
     FROM docs.mk1
     WHERE parentid = v_mk.id
     LIMIT 1;
@@ -139,9 +143,10 @@ BEGIN
            NULL                                      AS muud,
            json_mk1                                  AS "gridData",
            v_mk.laps_id                              AS lapsid
-           INTO v_params;
+    INTO v_params;
 
-    SELECT row_to_json(row) INTO json_object
+    SELECT row_to_json(row)
+    INTO json_object
     FROM (SELECT 0        AS id,
                  v_params AS data) row;
 
@@ -182,14 +187,16 @@ BEGIN
            NULL                                        AS muud,
            json_mk1                                    AS "gridData",
            l_laps_id                                   AS lapsid
-           INTO v_params;
+    INTO v_params;
 
-    SELECT row_to_json(row) INTO json_object
+    SELECT row_to_json(row)
+    INTO json_object
     FROM (SELECT 0        AS id,
                  v_params AS data) row;
 
 
-    SELECT row_to_json(row) INTO json_object
+    SELECT row_to_json(row)
+    INTO json_object
     FROM (SELECT 0        AS id,
                  v_params AS data) row;
 
@@ -227,6 +234,6 @@ GRANT EXECUTE ON FUNCTION docs.ulekanne_makse(INTEGER, JSONB) TO dbpeakasutaja;
 
 
 /*
-SELECT docs.ulekanne_makse(70, '{"mk_id":2336317, "maksepaev":"20210615", "viitenumber":"0630000030"}')
+SELECT docs.ulekanne_makse(70, '{"mk_id":2336336, "maksepaev":"20211006", "viitenumber":"0630055739","kogus":20}')
 
 */

@@ -80,15 +80,15 @@ const Smk = {
             data: []
         },
         {
-            sql: `SELECT $2 :: INTEGER      AS userid,
-                         trim(n.kood)       AS kood,
-                         trim(n.nimetus)    AS nimetus,
-                         trim(a.nimetus)    AS asutus,
-                         trim(a.aadress)    AS aadress,
-                         k.parentid         AS parent_id,
+            sql: `SELECT $2 :: INTEGER           AS userid,
+                         trim(n.kood)            AS kood,
+                         trim(n.nimetus)         AS nimetus,
+                         trim(a.nimetus)         AS asutus,
+                         trim(a.aadress)         AS aadress,
+                         k.parentid              AS parent_id,
                          k1.*,
-                         coalesce(l.number,0) AS lausnr,
-                         coalesce(l.lausend,'') as lausend
+                         coalesce(l.number, 0)   AS lausnr,
+                         coalesce(l.lausend, '') AS lausend
                   FROM docs.mk1 AS k1
                            INNER JOIN docs.mk k ON k.id = k1.parentId
                            INNER JOIN libs.nomenklatuur n ON n.id = k1.nomid
@@ -107,7 +107,8 @@ const Smk = {
                            LEFT OUTER JOIN docs.doc rd ON rd.id IN (SELECT unnest(d.docs_ids))
                            LEFT OUTER JOIN libs.library l ON rd.doc_type_id = l.id
                            INNER JOIN ou.userid u ON u.id = $2::INTEGER
-                  WHERE d.id = $1`,
+                  WHERE d.id = $1
+                    AND d.status <> 3`,
             query: null,
             multiple: true,
             alias: 'relations',

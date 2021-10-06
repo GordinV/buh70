@@ -340,7 +340,7 @@ class DocumentTemplate extends React.Component {
     /**
      *
      */
-    btnTaskClick(taskName, kpv, gruppId, tekst) {
+    btnTaskClick(taskName, kpv, gruppId, tekst, kogus) {
         const task = this.bpm.find(task => {
             return task.name === taskName
         });
@@ -357,10 +357,11 @@ class DocumentTemplate extends React.Component {
 
         this.setState({warning: 'Töötan...', warningType: 'notValid'});
 
-        this.fetchData('Post', api, kpv || gruppId || tekst ? {
+        this.fetchData('Post', api, kpv || gruppId || tekst || kogus ? {
             seisuga: kpv,
             gruppId: gruppId,
-            viitenumber: tekst
+            viitenumber: tekst,
+            kogus: kogus
         } : null).then((response) => {
             const dataRow = response.result;
             const dataMessage = response.data.error_message ? response.data.error_message : '';
@@ -761,7 +762,7 @@ class DocumentTemplate extends React.Component {
      * kpv - дата, по умолчанию сегодня
      */
     loadLibs(libName, kpv) {
-        let libsCount = libName ? 1: this.props.libs.length;
+        let libsCount = libName ? 1 : this.props.libs.length;
 
         let libsToLoad = libName ? [libName] : Object.keys(this.libs);
         // start loading
@@ -801,7 +802,7 @@ class DocumentTemplate extends React.Component {
                             // отметка что справочник загружен
                             this.loadingLibs[lib] = false;
 
-                            if (!libsCount  && !this.state.loadedLibs) {
+                            if (!libsCount && !this.state.loadedLibs) {
                                 //all libs loaded;
                                 this.setState({
                                     loadedLibs: true,
