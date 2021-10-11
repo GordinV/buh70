@@ -105,21 +105,25 @@ const Journal = {
             query: null,
             multiple: false,
             alias: 'validate_asutus',
-            data: []
+            data: [],
+            not_initial_load: true
         },
         {
             sql: `select docs.sp_kooperi_journal($1::integer, $2::integer) as result`,
             query: null,
             multiple: false,
             alias: 'kooperi_journal',
-            data: []
+            data: [],
+            not_initial_load: true
         },
         {
             sql: `select docs.sp_lausendikontrol($1::JSONB) as result`,
             query: null,
             multiple: false,
             alias: 'validate_journal',
-            data: []
+            data: [],
+            not_initial_load: true
+
         },
 
     ],

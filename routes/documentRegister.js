@@ -325,9 +325,12 @@ exports.executeTask = async (req, res) => {
             // есть 5 параметр, добавим
             taskParams.push(kogus);
         }
-
     }
 
+    if (taskName == 'ebatoenaolised') {
+        taskParams = [params.docId, user.userId, seisuga];
+        console.log('taskname', taskName)
+    }
 
     if (params.docTypeId === 'LAPS' &&  gruppId) {
         // задача с параметром gruppId

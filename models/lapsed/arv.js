@@ -245,16 +245,16 @@ const Arv = {
         {
             sql: `SELECT Arvtasu.id,
                          arvtasu.kpv,
-                         to_char(arvtasu.kpv,'DD.MM.YYYY') as print_kpv,
+                         to_char(arvtasu.kpv, 'DD.MM.YYYY') AS print_kpv,
                          arvtasu.summa,
-                         'MK' :: VARCHAR(20)           AS dok,
-                         'PANK' :: VARCHAR             AS liik,
-                         mk.number                     AS dok_nr,
+                         'MK' :: VARCHAR(20)                AS dok,
+                         'PANK' :: VARCHAR                  AS liik,
+                         mk.number                          AS dok_nr,
                          pankkassa,
                          mk1.journalid,
                          doc_tasu_id,
-                         coalesce(journalid.number, 0) AS number,
-                         $2                            AS userid
+                         coalesce(journalid.number, 0)      AS number,
+                         $2                                 AS userid
                   FROM docs.arvtasu arvtasu
                            INNER JOIN docs.mk mk ON (arvtasu.doc_tasu_id = mk.parentid AND arvtasu.pankkassa = 1)
                            INNER JOIN docs.mk1 mk1 ON (mk.id = mk1.parentid)
@@ -265,16 +265,16 @@ const Arv = {
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
-                         to_char(arvtasu.kpv,'DD.MM.YYYY') as print_kpv,
+                         to_char(arvtasu.kpv, 'DD.MM.YYYY') AS print_kpv,
                          arvtasu.summa,
-                         'KASSAORDER' :: VARCHAR(20)   AS dok,
-                         'KASSA' :: VARCHAR            AS liik,
-                         korder1.number                AS dok_nr,
+                         'KASSAORDER' :: VARCHAR(20)        AS dok,
+                         'KASSA' :: VARCHAR                 AS liik,
+                         korder1.number                     AS dok_nr,
                          pankkassa,
                          korder1.journalid,
                          doc_tasu_id,
-                         coalesce(journalid.number, 0) AS number,
-                         $2                            AS userid
+                         coalesce(journalid.number, 0)      AS number,
+                         $2                                 AS userid
                   FROM docs.arvtasu arvtasu
                            INNER JOIN docs.korder1 korder1
                                       ON (arvtasu.doc_tasu_id = korder1.parentid AND arvtasu.pankkassa = 2)
@@ -285,16 +285,16 @@ const Arv = {
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
-                         to_char(arvtasu.kpv,'DD.MM.YYYY') as print_kpv,
+                         to_char(arvtasu.kpv, 'DD.MM.YYYY') AS print_kpv,
                          arvtasu.summa,
-                         'PAEVARAAMAT' :: VARCHAR(20)  AS dok,
-                         'JOURNAL' :: VARCHAR          AS liik,
-                         NULL::TEXT                    AS dok_nr,
+                         'PAEVARAAMAT' :: VARCHAR(20)       AS dok,
+                         'JOURNAL' :: VARCHAR               AS liik,
+                         NULL::TEXT                         AS dok_nr,
                          pankkassa,
-                         arvtasu.doc_tasu_id           AS journalid,
+                         arvtasu.doc_tasu_id                AS journalid,
                          doc_tasu_id,
-                         coalesce(journalid.number, 0) AS number,
-                         $2                            AS userid
+                         coalesce(journalid.number, 0)      AS number,
+                         $2                                 AS userid
                   FROM docs.arvtasu arvtasu
                            LEFT OUTER JOIN docs.journal journal
                                            ON (arvtasu.doc_tasu_id = journal.parentId AND arvtasu.pankkassa = 3)
@@ -306,16 +306,16 @@ const Arv = {
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
-                         to_char(arvtasu.kpv,'DD.MM.YYYY') as print_kpv,
+                         to_char(arvtasu.kpv, 'DD.MM.YYYY') AS print_kpv,
                          arvtasu.summa,
-                         '' :: VARCHAR(20) AS dok,
-                         'MUUD' :: VARCHAR AS liik,
-                         null::text as dok_nr,
+                         '' :: VARCHAR(20)                  AS dok,
+                         'MUUD' :: VARCHAR                  AS liik,
+                         NULL::TEXT                         AS dok_nr,
                          pankkassa,
-                         0                 AS journalid,
+                         0                                  AS journalid,
                          NULL,
-                         0                 AS number,
-                         $2                AS userid
+                         0                                  AS number,
+                         $2                                 AS userid
                   FROM docs.arvtasu arvtasu
                   WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
@@ -345,6 +345,7 @@ const Arv = {
             {id: "isikukood", name: "Isikukood", width: "100px"},
             {id: "viitenr", name: "Viitenr", width: "100px"},
             {id: "tyyp", name: "Tüüp", width: "100px"},
+            {id: "ebatoenaolised", name: "Ebatõenaolised", width: "20px"},
             {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
 
         ],
@@ -376,7 +377,8 @@ const Arv = {
                            kas_paberil::BOOLEAN                 AS kas_paberil,
                            kas_email::BOOLEAN                   AS kas_email,
                            kas_earved::BOOLEAN                  AS kas_earved,
-                           pank::TEXT
+                           pank::TEXT,
+                           ebatoenaolised
                     FROM lapsed.cur_laste_arved a
                     WHERE a.rekvId = $1::INTEGER`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
@@ -461,6 +463,13 @@ const Arv = {
             task: 'generateCashOrder',
             type: 'manual',
             action: 'generateCashOrder',
+        },
+        {
+            name: 'Ebatõenäoliste nõuete mahakandmine',
+            task: 'ebatoenaolised',
+            type: 'manual',
+            hideDate: false,
+            action: 'ebatoenaolised',
         }
 
     ],
@@ -481,6 +490,28 @@ const Arv = {
         type: "sql",
         alias: 'generateCashOrder'
     },
+    ebatoenaolised: {
+        command: `SELECT error_code, result, error_message, 'ARV' AS doc_type_id
+                  FROM docs.ebatoenaolised_mahakandmine($2::INTEGER, $1::INTEGER, $3::DATE)`, //$1 - docs.doc.id, $2 - userId, $3 - kpv
+        type: "sql",
+        alias: 'ebatoenaolised'
+    },
+    ebatoenaolisedMass: {
+        command: `SELECT row_number() OVER ()                                          AS id,
+                         tulemus -> 'result'                                           AS result,
+                         tulemus -> 'error_code'                                       AS error_code,
+                         coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
+                         tulemus -> 'error_message'                                    AS error_message
+                  FROM (
+                           SELECT to_jsonb(docs.ebatoenaolised_mahakandmine($2::INTEGER, id::INTEGER, $3::DATE)) tulemus
+                           FROM cur_arved
+                           WHERE id IN (
+                               SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
+                           )) qry`, //$1 - docs ids, $2 - userId, $3 - kpv
+        type: "sql",
+        alias: 'ebatoenaolised'
+    },
+
     getLog: {
         command: `SELECT ROW_NUMBER() OVER ()                                               AS id,
                          (ajalugu ->> 'user')::TEXT                                         AS kasutaja,

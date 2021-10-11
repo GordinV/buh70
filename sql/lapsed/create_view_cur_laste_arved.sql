@@ -1,35 +1,39 @@
 DROP VIEW IF EXISTS lapsed.cur_laste_arved;
 
 CREATE OR REPLACE VIEW lapsed.cur_laste_arved AS
-SELECT d.id                                                                                   AS id,
+SELECT d.id                                                                                                  AS id,
        d.docs_ids,
-       trim(a.number)                                                                         AS number,
+       trim(a.number)                                                                                        AS number,
        a.rekvid,
-       a.kpv                                                                                  AS kpv,
+       a.kpv                                                                                                 AS kpv,
        a.summa,
-       a.tahtaeg                                                                              AS tahtaeg,
+       a.tahtaeg                                                                                             AS tahtaeg,
        a.jaak,
-       a.tasud :: DATE                                                                        AS tasud,
+       a.tasud :: DATE                                                                                       AS tasud,
        a.tasudok,
        a.userid,
        a.asutusid,
        a.journalid,
        a.lisa,
-       trim(asutus.nimetus)                                                                   AS asutus,
-       trim(asutus.regkood)                                                                   AS vanem_isikukood,
-       jid.number                                                                             AS lausnr,
-       a.muud                                                                                 AS markused,
-       (a.properties ->> 'aa') :: VARCHAR(120)                                                AS arve,
-       coalesce((a.properties ->> 'viitenr'), lapsed.get_viitenumber(d.rekvid, l.id)) :: TEXT AS viitenr,
-       coalesce((a.properties ->> 'tyyp'), '') :: TEXT                                        AS tyyp,
-       l.isikukood                                                                            AS isikukood,
-       l.nimi                                                                                 AS nimi,
+       trim(asutus.nimetus)                                                                                  AS asutus,
+       trim(asutus.regkood)                                                                                  AS vanem_isikukood,
+       jid.number                                                                                            AS lausnr,
+       a.muud                                                                                                AS markused,
+       (a.properties ->> 'aa') :: VARCHAR(120)                                                               AS arve,
+       coalesce((a.properties ->> 'viitenr'), lapsed.get_viitenumber(d.rekvid, l.id)) :: TEXT                AS viitenr,
+       coalesce((a.properties ->> 'tyyp'), '') :: TEXT                                                       AS tyyp,
+       l.isikukood                                                                                           AS isikukood,
+       l.nimi                                                                                                AS nimi,
        coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN
            AND NOT ((a.properties ->> 'ettemaksu_period') IS NOT NULL
-           AND a.properties ->> 'tyyp' IS NULL)                                               AS kas_earved,
-       coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN                      AS kas_email,
-       coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN                    AS kas_paberil,
-       (v.properties ->> 'pank'):: TEXT                                                       AS pank
+           AND
+                    a.properties ->> 'tyyp' IS NULL)                                                         AS kas_earved,
+       coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN                                     AS kas_email,
+       coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN                                   AS kas_paberil,
+       (v.properties ->> 'pank'):: TEXT                                                                      AS pank,
+       CASE
+           WHEN coalesce((a.properties ->> 'ebatoenaolised_2_id')::INTEGER, 0) > 0 THEN 'Jah'
+           ELSE 'Ei' END                                                                                     AS ebatoenaolised
 FROM docs.doc d
          INNER JOIN docs.arv a ON a.parentId = d.id
          INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id

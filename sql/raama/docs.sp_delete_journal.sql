@@ -25,8 +25,9 @@ BEGIN
            j.kpv,
            j.id      AS parentid,
            u.ametnik AS user_name,
-           j.kpv
-           INTO v_doc
+           j.kpv,
+           j.selg
+    INTO v_doc
     FROM docs.doc d
              INNER JOIN docs.journal j ON j.parentid = d.id
              LEFT OUTER JOIN ou.userid u ON u.id = user_id
@@ -96,6 +97,8 @@ BEGIN
                                 FROM libs.library
                                 WHERE library = 'DOK'
                                   AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')))
+        AND v_doc.selg NOT LIKE '%Ebatõenäoliste nõuete mahakandmine%'
+
     THEN
 
         error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
@@ -127,7 +130,8 @@ BEGIN
                                                               INNER JOIN docs.journal k ON k.id = k1.parentid
                                                      WHERE k.parentid = doc_id) row));
 
-    SELECT row_to_json(row) INTO new_history
+    SELECT row_to_json(row)
+    INTO new_history
     FROM (SELECT now()            AS deleted,
                  v_doc.user_name  AS user,
                  journal_history  AS journal,

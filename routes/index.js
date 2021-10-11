@@ -104,6 +104,7 @@ module.exports = function (app) {
     app.post('/calc/arvestaTaabel', checkAuth, require('./lapsed/arvestaTaabel').post); //checkAuth
     app.post('/calc/koostaTagasimakse', checkAuth, require('./raama/koostaTagasimakse').post); //checkAuth
     app.post('/calc/loe_makse', checkAuth, require('./lapsed/loe_makse').post); //checkAuth
+    app.post('/calc/ebatoenaolised', checkAuth, require('./raama/ebatoenaolised').post); //checkAuth
     app.post('/calc/:taskName', checkAuth, require('./calc').post); //checkAuth
 
     app.delete('/newApi/:documentType/:id', checkAuth, require('./documentRegister').delete); //апи для обмена даты по протоколу delete с моделью документа

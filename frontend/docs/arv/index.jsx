@@ -8,6 +8,8 @@ const BtnPrint = require('./../../components/button-register/button-register-pri
 const BtnEmail = require('./../../components/button-register/button-email/index.jsx');
 const BtnEarve = require('./../../components/button-register/button-earve/index.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
+const BtnArvesta = require('./../../components/button-register/button-task/index.jsx');
+
 const getSum = require('./../../../libs/getSum');
 
 const styles = require('./arv-register-styles');
@@ -22,6 +24,7 @@ const EVENTS = [
     {name: 'Saama XML e-arved kõik valitud arved', method: null, docTypeId: null},
     {name: 'Saama XML e-arved (SEB) kõik valitud arved', method: null, docTypeId: null},
     {name: 'Saama XML e-arved (SWED) kõik valitud arved', method: null, docTypeId: null},
+    {name: 'Nõuete mahakanne', method: null, docTypeId: null},
 ];
 
 /**
@@ -120,6 +123,13 @@ class Documents extends React.PureComponent {
                 ref='btnPrint'
                 value={EVENTS[1].name}
             />
+            <BtnArvesta
+                value={EVENTS[7].name}
+                onClick={this.onClickHandler}
+                ref={`btn-${EVENTS[7].name}`}
+                key={`key-${EVENTS[7].name}`}
+            />
+
             <BtnSettings
                 history={self.props.history ? self.props.history : null}
                 docTypeId={DOC_TYPE_ID}
@@ -131,7 +141,7 @@ class Documents extends React.PureComponent {
     }
 
     //handler для события клик на кнопках панели
-    onClickHandler(event) {
+    onClickHandler(event, seisuga) {
         let ids = new Set; // сюда пишем ид счетом, которые под обработку
 
         const Doc = this.refs['register'];
@@ -341,6 +351,50 @@ class Documents extends React.PureComponent {
                     let url = `/e-arved/swed/${DocContext.userData.uuid}/${ids}`;
                     window.open(`${url}`);
 
+                }
+                break;
+            case EVENTS[7].name:
+                //списание маловероятных
+                let message = '';
+                // будет сформирован файл для отправки в банк SWED
+                Doc.gridData.forEach(row => {
+                    if (row.ebatoenaolised == 'Jah' && Number(row.jaak) > 0) {
+                        // && row.kas_swed
+                        // выбрано для печати
+                        ids.add(row.id);
+                    }
+                });
+                // конвертация в массив
+                ids = Array.from(ids);
+
+                if (!ids.length) {
+                    Doc.setState({
+                        warning: 'Mitte ühtegi arve leidnum', // строка извещений
+                        warningType: 'notValid',
+                    });
+                } else {
+                    Doc.fetchData(`calc/ebatoenaolised`, {docs: ids, seisuga: seisuga}).then((data) => {
+                        if (data.result) {
+                            message = `task saadetud täitmisele`;
+                            Doc.setState({warning: `${message}`, warningType: 'ok'});
+
+                            let tulemused = data.data.result.tulemused;
+                            // открываем отчет
+                            this.setState({isReport: true, txtReport: tulemused});
+
+                        } else {
+                            if (data.error_message) {
+                                Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
+                            } else {
+                                Doc.setState({
+                                    warning: `Kokku arvestatud : ${data.result}, ${message}`,
+                                    warningType: 'notValid'
+                                });
+                            }
+
+                        }
+
+                    });
                 }
                 break;
 

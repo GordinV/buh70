@@ -38,7 +38,7 @@ BEGIN
            CASE WHEN a.liik = 1 THEN 'KULU' ELSE 'TULU' END::TEXT AS arve_tyyp,
            a.properties ->> 'ebatoenaolised_1_id'                 AS ebatoenaolised_1_id,
            a.properties ->> 'ebatoenaolised_2_id'                 AS ebatoenaolised_2_id
-           INTO v_arv
+    INTO v_arv
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
     WHERE d.id = l_arv_id;
@@ -51,7 +51,7 @@ BEGIN
                ELSE d.created::DATE
                END AS maksepaev,
            l.kood  AS doc_type
-           INTO v_tasu
+    INTO v_tasu
     FROM docs.doc d
              INNER JOIN libs.library l ON l.id = d.doc_type_id
              LEFT OUTER JOIN docs.mk m ON m.parentid = d.id
@@ -121,9 +121,10 @@ BEGIN
            -- 1 - mk, 2- kassa, 3 - lausend
            l_tasu_id                                          AS doc_tasu_id,
            l_summa * (CASE WHEN is_refund THEN -1 ELSE 1 END) AS summa
-           INTO v_params;
+    INTO v_params;
 
-    SELECT row_to_json(row) INTO json_object
+    SELECT row_to_json(row)
+    INTO json_object
     FROM (SELECT coalesce(l_doc_tasu_id, 0) AS id,
                  v_params                   AS data) row;
 
@@ -167,9 +168,10 @@ BEGIN
                        -- 1 - mk, 2- kassa, 3 - lausend
                        l_tasu_id                  AS doc_tasu_id,
                        l_tasu_summa               AS summa
-                       INTO v_params;
+                INTO v_params;
 
-                SELECT row_to_json(row) INTO json_object
+                SELECT row_to_json(row)
+                INTO json_object
                 FROM (SELECT coalesce(l_doc_tasu_id, 0) AS id,
                              v_params                   AS data) row;
                 -- созранение
@@ -186,14 +188,23 @@ BEGIN
 
     END IF;
     -- сальдо платежа
-    PERFORM docs.sp_update_mk_jaak(l_tasu_id);
-
+    IF l_tasu_type = 1
+    THEN
+        PERFORM docs.sp_update_mk_jaak(l_tasu_id);
+    END IF;
     -- оплата маловероятных
-    IF (v_arv.ebatoenaolised_1_id IS NOT NULL OR v_arv.ebatoenaolised_2_id IS NOT NULL) AND
-       coalesce(v_arv.tyyp, '') <> 'ETTEMAKS'
+
+    IF NOT exists(SELECT 1
+                  FROM docs.journal j
+                           INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
+                  WHERE j.parentid = l_tasu_id
+                    AND left(deebet, 6) = '103009')
+        AND ((v_arv.ebatoenaolised_1_id IS NOT NULL OR v_arv.ebatoenaolised_2_id IS NOT NULL) AND
+             coalesce(v_arv.tyyp, '') <> 'ETTEMAKS')
     THEN
         PERFORM docs.tasumine_ebatoenaolised(l_tasu_id, l_arv_id, l_user_id);
     END IF;
+
 
     RETURN l_doc_id;
 

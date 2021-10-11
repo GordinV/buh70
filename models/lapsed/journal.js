@@ -99,6 +99,7 @@ const Journal = {
             query: null,
             multiple: false,
             alias: 'validate_asutus',
+            not_initial_load: true,
             data: []
         },
         {
@@ -106,6 +107,7 @@ const Journal = {
             query: null,
             multiple: false,
             alias: 'kooperi_journal',
+            not_initial_load: true,
             data: []
         }
 

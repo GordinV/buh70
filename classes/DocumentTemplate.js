@@ -113,7 +113,6 @@ class Document {
         if (!sql) {
             return {error: 'No task found'}
         }
-
         return await db.queryDb(sql, _params);
     }
 
