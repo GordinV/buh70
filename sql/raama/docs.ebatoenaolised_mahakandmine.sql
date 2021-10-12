@@ -107,7 +107,7 @@ BEGIN
 
     l_row_count = l_row_count + 1;
 
-    l_json = ('{"id": ' || coalesce(v_arv.journalid, 0)::TEXT || ',"data":' ||
+    l_json = ('{"id": 0' || ',"data":' ||
               trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":' || l_json_details::TEXT || '}}');
     --    RAISE NOTICE 'l_json 2 %', l_json :: JSON;
 
@@ -153,11 +153,6 @@ BEGIN
         UPDATE docs.doc
         SET docs_ids = a_docs_ids
         WHERE id = result;
-
-        -- direct ref to journal
-        UPDATE docs.arv
-        SET journalId = result
-        WHERE id = v_arv.id;
 
 
         error_code = 0;

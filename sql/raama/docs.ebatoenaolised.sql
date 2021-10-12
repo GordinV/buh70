@@ -58,7 +58,7 @@ BEGIN
 
             -- расчет суммы
             l_summa = (v_arv.jaak * 0.5)::NUMERIC(14, 2);
-            IF v_arv.ebatoenaolised_1_id IS NOT NULL AND v_arv.ebatoenaolised_1_id > 0
+            IF v_arv.ebatoenaolised_1_id IS NOT NULL AND v_arv.ebatoenaolised_1_id > 0 and exists(select id from cur_journal where id = v_arv.ebatoenaolised_1_id)
             THEN
                 -- расчет суммы
                 l_summa = v_arv.jaak - coalesce((SELECT sum(j1.summa)

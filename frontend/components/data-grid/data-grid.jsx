@@ -269,8 +269,17 @@ class DataGrid extends React.Component {
      * @param name - наименование колонки
      */
     handleGridHeaderClick(name) {
-        if (name === 'valitud' || name === 'row_id') {
+        if (name === 'select' || name === 'row_id') {
             // виртуальная колонка
+            // меняем значение выбрано на наоборот
+
+            if (this.state.gridData.length > 0 && name === 'select') {
+                let data = this.state.gridData;
+                data.forEach(row => {
+                   row.select =  !row.select;
+                });
+                this.setState({gridData: data});
+            }
             return;
         }
 

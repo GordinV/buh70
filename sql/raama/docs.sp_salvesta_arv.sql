@@ -156,7 +156,7 @@ BEGIN
             objektid   = doc_objektid,
             objekt     = doc_objekt,
             doklausid  = tnDokLausId,
-            properties = dok_props
+            properties = properties::jsonb || dok_props::jsonb
         WHERE parentid = doc_id RETURNING id
             INTO arv_id;
 
