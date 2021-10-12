@@ -15,6 +15,7 @@ CREATE OR REPLACE FUNCTION lapsed.kaive_aruanne(l_rekvid INTEGER,
         arvestatud      NUMERIC(14, 4),
         soodustus       NUMERIC(14, 4),
         laekumised      NUMERIC(14, 4),
+        mahakantud      NUMERIC(14, 4),
         tagastused      NUMERIC(14, 4),
         jaak            NUMERIC(14, 4),
         rekvid          INTEGER
@@ -59,8 +60,9 @@ SELECT count(*) OVER (PARTITION BY report.laps_id)                  AS id,
        arvestatud::NUMERIC(14, 4),
        soodustus::NUMERIC(14, 4),
        laekumised::NUMERIC(14, 4),
+       mahakantud::NUMERIC(14, 4),
        tagastused::NUMERIC(14, 4),
-       (alg_saldo + arvestatud - soodustus - laekumised + tagastused)::NUMERIC(14, 4),
+       (alg_saldo + arvestatud - soodustus - laekumised - mahakantud + tagastused)::NUMERIC(14, 4),
        report.rekv_id
 FROM (
          WITH alg_saldo AS (
@@ -92,9 +94,44 @@ FROM (
                                          FROM get_asutuse_struktuur(l_rekvid))
                         AND a.liik = 0 -- только счета исходящие
                         AND a.kpv < kpv_start
+-- mahakandmine
+                      UNION ALL
+                      SELECT -1 * a.summa AS summa,
+                             l.parentid   AS laps_id,
+                             a.rekvid     AS rekv_id
+                      FROM docs.arvtasu a
+                               INNER JOIN lapsed.liidestamine l ON l.docid = a.doc_arv_id
+                               INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
+
+                      WHERE a.pankkassa = 3 -- только проводки
+                        AND a.rekvid IN (SELECT rekv_id
+                                         FROM get_asutuse_struktuur(l_rekvid))
+                        AND a.kpv < kpv_start
+                        AND a.status <> 3
+                        AND (arv.properties ->> 'tyyp' IS NULL OR
+                             arv.properties ->> 'tyyp' <> 'ETTEMAKS') -- уберем предоплаты
+
                   ) alg_saldo
              GROUP BY laps_id, rekv_id
          ),
+              mahakandmine AS (
+                  SELECT sum(a.summa) AS summa,
+                         l.parentid   AS laps_id,
+                         a.rekvid     AS rekv_id
+                  FROM docs.arvtasu a
+                           INNER JOIN lapsed.liidestamine l ON l.docid = a.doc_arv_id
+                           INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
+                  WHERE a.status <> 3
+                    AND a.pankkassa = 3
+                    AND a.rekvid IN (SELECT rekv_id
+                                     FROM get_asutuse_struktuur(l_rekvid))
+                    AND a.kpv >= kpv_start
+                    AND a.kpv <= kpv_end
+                    AND (arv.properties ->> 'tyyp' IS NULL OR
+                         arv.properties ->> 'tyyp' <> 'ETTEMAKS') -- уберем предоплаты
+                  GROUP BY l.parentid, a.rekvid
+              ),
+
               laekumised AS (
                   SELECT sum(mk1.summa) AS summa,
                          l.id           AS laps_id,
@@ -171,6 +208,7 @@ FROM (
                 sum(arvestatud) AS arvestatud,
                 sum(soodustus)  AS soodustus,
                 sum(laekumised) AS laekumised,
+                sum(mahakantud) AS mahakantud,
                 sum(tagastused) AS tagastused,
                 qry.rekv_id,
                 qry.laps_id
@@ -180,6 +218,7 @@ FROM (
                          0         AS arvestatud,
                          0         AS soodustus,
                          0         AS laekumised,
+                         0         AS mahakantud,
                          0         AS tagastused,
                          a.rekv_id AS rekv_id,
                          a.laps_id
@@ -190,16 +229,29 @@ FROM (
                          0         AS arvestatud,
                          0         AS soodustus,
                          l.summa   AS laekumised,
+                         0         AS mahakantud,
                          0         AS tagastused,
                          l.rekv_id AS rekv_id,
                          l.laps_id
                   FROM laekumised l
+                  UNION ALL
+                  -- mahakandmine
+                  SELECT 0         AS alg_saldo,
+                         0         AS arvestatud,
+                         0         AS soodustus,
+                         0         AS laekumised,
+                         l.summa   AS mahakantud,
+                         0         AS tagastused,
+                         l.rekv_id AS rekv_id,
+                         l.laps_id
+                  FROM mahakandmine l
                   UNION ALL
                   -- tagastused
                   SELECT 0                    AS alg_saldo,
                          0                    AS arvestatud,
                          0                    AS soodustus,
                          0                    AS laekumised,
+                         0                    AS mahakantud,
                          coalesce(t.summa, 0) AS tagastused,
                          t.rekv_id            AS rekv_id,
                          t.laps_id
@@ -210,6 +262,7 @@ FROM (
                          k.arvestatud AS arvestatud,
                          k.soodustus  AS soodustus,
                          0            AS laekumised,
+                         0            AS mahakantud,
                          0            AS tagastused,
                          k.rekv_id    AS rekv_id,
                          k.laps_id

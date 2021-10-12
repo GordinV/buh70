@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
         arvestatud      NUMERIC(14, 4),
         soodustus       NUMERIC(14, 4),
         laekumised      NUMERIC(14, 4),
+        mahakantud      NUMERIC(14, 4),
         tagastused      NUMERIC(14, 4),
         jaak            NUMERIC(14, 4),
         rekvid          INTEGER
@@ -55,12 +56,13 @@ SELECT count(*) OVER (PARTITION BY laps_id)                        AS id,
            ELSE 'Ei' END::TEXT                                     AS kulastatavus,
        l.nimi::TEXT                                                AS lapse_nimi,
        l.isikukood::TEXT                                           AS lapse_isikukood,
-       yksus::TEXT,
+       coalesce(yksus, '')::TEXT,
        lapsed.get_viitenumber(report.rekvid, report.laps_id)::TEXT AS viitenumber,
        sum(coalesce(alg_saldo, 0))::NUMERIC(14, 4),
        sum(coalesce(arvestatud, 0))::NUMERIC(14, 4),
        sum(coalesce(soodustus, 0))::NUMERIC(14, 4),
        sum(coalesce(laekumised, 0))::NUMERIC(14, 4),
+       sum(coalesce(mahakantud, 0))::NUMERIC(14, 4),
        sum(coalesce(-1 * tagastused, 0))::NUMERIC(14, 4),
        sum(coalesce(jaak, 0))::NUMERIC(14, 4),
        report.rekvid
@@ -95,6 +97,9 @@ FROM (
                         WHERE kpv >= kpv_start::DATE
                           AND kpv <= kpv_end::DATE
                           AND status <> 3
+                          AND pankkassa <> 3 -- только платежные документы
+                          AND rekvid IN (SELECT rekv_id
+                                         FROM get_asutuse_struktuur(l_rekvid))
                         GROUP BY doc_arv_id
                        ) at
                            INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid AND
@@ -107,6 +112,32 @@ FROM (
                     AND a.liik = 0 -- только счета исходящие
                   GROUP BY at.doc_arv_id, (a1.properties ->> 'yksus'), at.summa, l.parentid, a.rekvid
               ),
+              mahandmine AS (
+                  SELECT a.rekvid,
+                         a1.properties ->> 'yksus'                             AS yksus,
+                         sum((a1.summa / a.summa) * at.summa) ::NUMERIC(14, 4) AS summa,
+                         l.parentid                                            AS laps_id
+                  FROM (SELECT doc_arv_id, sum(summa) summa
+                        FROM docs.arvtasu
+                        WHERE kpv >= kpv_start::DATE
+                          AND kpv <= kpv_end::DATE
+                          AND status <> 3
+                          AND pankkassa = 3 -- только проводки (списания)
+                          AND rekvid IN (SELECT rekv_id
+                                         FROM get_asutuse_struktuur(l_rekvid))
+                        GROUP BY doc_arv_id
+                       ) at
+                           INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid AND
+                                                    (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+                           INNER JOIN docs.doc d ON d.id = a.parentid AND d.status <> 3
+                           INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
+                           INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
+                  WHERE a.rekvid IN (SELECT rekv_id
+                                     FROM get_asutuse_struktuur(l_rekvid))
+                    AND a.liik = 0 -- только счета исходящие
+                  GROUP BY at.doc_arv_id, (a1.properties ->> 'yksus'), at.summa, l.parentid, a.rekvid
+              ),
+
               arvestatud AS (
                   SELECT ld.parentid                               AS laps_id,
                          coalesce(a1.yksus, '')::TEXT              AS yksus,
@@ -164,14 +195,19 @@ FROM (
                     AND mk.jaak <> 0
               )
 
-         SELECT yksus,
-                (alg_saldo)               AS alg_saldo,
-                (arvestatud)              AS arvestatud,
-                (soodustus)               AS soodustus,
-                (laekumised)              AS laekumised,
-                (-1 * tagastused)         AS tagastused,
-                (coalesce(alg_saldo, 0) + coalesce(arvestatud, 0) - coalesce(laekumised, 0) - coalesce(soodustus, 0) +
-                 coalesce(tagastused, 0)) AS jaak,
+         SELECT coalesce(yksus, '')          AS yksus,
+                sum(alg_saldo)               AS alg_saldo,
+                sum(arvestatud)              AS arvestatud,
+                sum(soodustus)               AS soodustus,
+                sum(laekumised)              AS laekumised,
+                sum(mahakantud)              AS mahakantud,
+                sum(-1 * tagastused)         AS tagastused,
+                sum(coalesce(alg_saldo, 0) +
+                    coalesce(arvestatud, 0) -
+                    coalesce(laekumised, 0) -
+                    coalesce(mahakantud, 0) -
+                    coalesce(soodustus, 0) +
+                    coalesce(tagastused, 0)) AS jaak,
                 qry.rekvid,
                 qry.laps_id
          FROM (
@@ -181,6 +217,7 @@ FROM (
                          0                        AS arvestatud,
                          0                        AS soodustus,
                          0                        AS laekumised,
+                         0                        AS mahakantud,
                          0                        AS tagastused,
                          0                        AS jaak,
                          a.rekvid                 AS rekvid,
@@ -193,6 +230,7 @@ FROM (
                          0                         AS arvestatud,
                          0                         AS soodustus,
                          coalesce(a.laekumised, 0) AS laekumised,
+                         0                         AS mahakantud,
                          coalesce(a.tagastused, 0) AS tagastused,
                          0                         AS jaak,
                          a.rekvid                  AS rekvid,
@@ -205,11 +243,25 @@ FROM (
                          0                         AS arvestatud,
                          0                         AS soodustus,
                          coalesce(a.laekumised, 0) AS laekumised,
+                         0                         AS mahakantud,
                          coalesce(a.tagastus, 0)   AS tagastused,
                          0                         AS jaak,
                          a.rekvid                  AS rekvid,
                          a.laps_id
                   FROM laekumised a
+                  UNION ALL
+                  -- mahakandmine
+                  SELECT a.yksus  AS yksus,
+                         0        AS alg_saldo,
+                         0        AS arvestatud,
+                         0        AS soodustus,
+                         0        AS laekumised,
+                         a.summa  AS mahakantud,
+                         0        AS tagastused,
+                         0        AS jaak,
+                         a.rekvid AS rekvid,
+                         a.laps_id
+                  FROM mahandmine a
                   UNION ALL
                   -- kaibed
                   SELECT k.yksus                   AS yksus,
@@ -217,12 +269,14 @@ FROM (
                          COALESCE(k.arvestatud, 0) AS arvestatud,
                          COALESCE(k.soodustus, 0)  AS soodustus,
                          0                         AS laekumised,
+                         0                         AS mahakantud,
                          0                         AS tagastused,
                          0                         AS jaak,
                          k.rekvid                  AS rekvid,
                          k.laps_id
                   FROM arvestatud k
               ) qry
+         GROUP BY coalesce(yksus, ''), rekvid, laps_id
      ) report
          LEFT OUTER JOIN kulastavus k ON k.parentid = report.laps_id AND k.rekvid = report.rekvid
          INNER JOIN lapsed.laps l ON l.id = report.laps_id
@@ -232,7 +286,7 @@ GROUP BY (CASE
               ELSE 'Ei' END),
          l.nimi,
          l.isikukood,
-         yksus,
+         coalesce(yksus, ''),
          laps_id,
          report.rekvid
 

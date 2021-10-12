@@ -35,6 +35,9 @@ exports.get = async (req, res) => {
         const Doc = require('./../classes/DocumentTemplate');
         const doc = new Doc(docTypeId, (id ? id : null), user.userId, user.asutusId, 'lapsed');
 
+        // установим таймаут для ожидания тяжелых отчетов
+        res.setTimeout(400000);
+
         const printTemplates = doc.config.print;
 
         let templateObject;

@@ -33,6 +33,7 @@ class Documents extends React.PureComponent {
             arvestatud: 0,
             soodustus: 0,
             laekumised: 0,
+            mahakantud: 0,
             tagastused: 0,
             jaak: 0,
             read: 0,
@@ -88,6 +89,12 @@ class Documents extends React.PureComponent {
                              ref="input-laekumised"
                              value={Number(this.state.laekumised) || 0}
                              disabled={true}/>
+                <InputNumber title="Mahakantud kokku:"
+                             name='mahakantud_kokku'
+                             style={styles.total}
+                             ref="input-mahakantud"
+                             value={Number(this.state.mahakantud) || 0}
+                             disabled={true}/>
                 <InputNumber title="Tagastused kokku:"
                              name='tagastused_kokku'
                              style={styles.total}
@@ -116,6 +123,7 @@ class Documents extends React.PureComponent {
         let soodustus = self.gridData ? self.gridData[0].soodustus_total : 0;
         let arv_ja_soodustus = self.gridData ? self.gridData[0].arv_ja_soodustus_total : 0;
         let laekumised = self.gridData ? self.gridData[0].laekumised_total : 0;
+        let mahakantud = self.gridData ? self.gridData[0].mahakantud_total : 0;
         let tagastused = self.gridData ? self.gridData[0].tagastused_total : 0;
         let jaak = self.gridData ? self.gridData[0].jaak_total : 0;
 
@@ -129,6 +137,7 @@ class Documents extends React.PureComponent {
             soodustus: soodustus,
             arv_ja_soodustus: arv_ja_soodustus,
             laekumised: laekumised,
+            mahakantud: mahakantud,
             tagastused: tagastused,
             jaak: jaak,
             read: read,

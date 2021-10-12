@@ -11,6 +11,7 @@ module.exports = {
             {id: "soodustus", name: "Soodustus", width: "7%", type: "number", interval: true},
             {id: "arv_ja_soodustus", name: "Arvestatud ja Soodustus", width: "7%", type: "number", interval: true},
             {id: "laekumised", name: "Laekumised", width: "7%", type: "number", interval: true},
+            {id: "mahakantud", name: "Mahakantud", width: "7%", type: "number", interval: true},
             {id: "tagastused", name: "Tagastused", width: "7%", type: "number", interval: true},
             {id: "jaak", name: "Võlg", width: "7%", type: "number", interval: true},
             {id: "asutus", name: "Asutus", width: "10%"},
@@ -19,6 +20,7 @@ module.exports = {
                            sum(qryReport.arvestatud) OVER (PARTITION BY rekvid)               AS arvestatud_group,
                            sum(qryReport.soodustus) OVER (PARTITION BY rekvid)                AS soodustus_group,
                            sum(qryReport.laekumised) OVER (PARTITION BY rekvid)               AS laekumised_group,
+                           sum(qryReport.mahakantud) OVER (PARTITION BY rekvid)               AS mahakantud_group,
                            sum(qryReport.arvestatud - qryReport.soodustus)
                            OVER (PARTITION BY rekvid)                                         AS arv_ja_soodustus_group,
                            sum(qryReport.tagastused) OVER (PARTITION BY rekvid)               AS tagastused_group,
@@ -34,6 +36,7 @@ module.exports = {
                            coalesce(arvestatud, 0)::NUMERIC(14, 4)                            AS arvestatud,
                            coalesce(soodustus, 0)::NUMERIC(14, 4)                             AS soodustus,
                            coalesce(laekumised, 0)::NUMERIC(14, 4)                            AS laekumised,
+                           coalesce(mahakantud, 0)::NUMERIC(14, 4)                            AS mahakantud,
                            coalesce(tagastused, 0)::NUMERIC(14, 4)                            AS tagastused,
                            (coalesce(arvestatud, 0) - coalesce(soodustus, 0))::NUMERIC(14, 4) AS arv_ja_soodustus,
                            coalesce(jaak, 0)::NUMERIC(14, 4)                                  AS jaak,
@@ -50,6 +53,7 @@ module.exports = {
                 sum(soodustus) over() as soodustus_total, 
                 sum(arvestatud - soodustus) over() as arv_ja_soodustus_total, 
                 sum(laekumised) over() as laekumised_total,
+                sum(mahakantud) over() as mahakantud_total,
                 sum(tagastused) over() as tagastused_total,
                 sum(jaak) over() as jaak_total `,
         alias: 'kaive_aruanne_report'
@@ -64,6 +68,7 @@ module.exports = {
                 let arvestatud_kokku = 0;
                 let soodustus_kokku = 0;
                 let laekumised_kokku = 0;
+                let mahakantud_kokku = 0;
                 let tagastused_kokku = 0;
                 let row_id = 0;
                 let groupedData = {};
@@ -72,6 +77,7 @@ module.exports = {
                     arvestatud_kokku = Number(arvestatud_kokku) + Number(row.arvestatud);
                     soodustus_kokku = Number(soodustus_kokku) + Number(row.soodustus);
                     laekumised_kokku = Number(laekumised_kokku) + Number(row.laekumised);
+                    mahakantud_kokku = Number(mahakantud_kokku) + Number(row.mahakantud);
                     tagastused_kokku = Number(tagastused_kokku) + Number(row.tagastused);
                 });
 
@@ -81,6 +87,7 @@ module.exports = {
                     row.arvestatud_kokku = arvestatud_kokku;
                     row.soodustus_kokku = soodustus_kokku;
                     row.laekumised_kokku = laekumised_kokku;
+                    row.mahakantud_kokku = mahakantud_kokku;
                     row.tagastused_kokku = tagastused_kokku;
                     row.row_id = row_id;
                     return row;

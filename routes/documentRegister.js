@@ -329,7 +329,6 @@ exports.executeTask = async (req, res) => {
 
     if (taskName == 'ebatoenaolised') {
         taskParams = [params.docId, user.userId, seisuga];
-        console.log('taskname', taskName)
     }
 
     if (params.docTypeId === 'LAPS' &&  gruppId) {
