@@ -267,12 +267,73 @@ class Vanem extends React.PureComponent {
                 break;
             case "delete":
                 console.log('btnDelete clicked');
+                this.fetchData(docTypeId, id).then((response) => {
+                    let isTrue = response && response.status && response.status === 200 ? 'Ok' : 'Error';
+                    let errorMessage = 'Viga';
+                    if (isTrue && response.data && response.data.error) {
+                        // error
+                        isTrue = false;
+                        errorMessage = response.data.error_message;
+                    }
+                    const Doc = this.refs['document'];
+                    // обновим справочник
+                    Doc.loadLibs('vanem');
+
+                    if (isTrue === 'Ok') {
+
+
+                        Doc.setState({
+                            reloadData: true,
+                            warning: 'Kiri kustutatud',
+                            warningType: 'ok',
+                        }, () => {
+                            setTimeout(() => {
+                                const current = this.props.location.pathname;
+                                this.props.history.replace(`/reload`);
+                                setTimeout(() => {
+                                    this.props.history.replace(current);
+                                });
+
+                            }, 2000)
+                        });
+
+                    } else {
+                        Doc.setState({
+                            reloadData: false,
+                            warning: `${errorMessage}`,
+                            warningType: 'error',
+                        });
+                    }
+
+                });
+                break;
+
+
                 break;
             default:
                 console.log('Vigane click');
         }
 
     }
+
+    // отправит запрос на удаление с параметром тип документа и ид
+
+    fetchData(docTypeId, id) {
+
+        const url = `/newApi/delete`;
+
+        const params = {
+            parameter: docTypeId,
+            module: 'lapsed',
+            userId: DocContext.userData.userId,
+            uuid: DocContext.userData.uuid,
+            docId: id
+        };
+
+        return fetchData['fetchDataPost'](url, params)
+    }
+
+
 
     // обработчик события клиска на кнопке редактирования контр-агента
     btnEditAsutusClick() {

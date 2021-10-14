@@ -266,6 +266,11 @@ class DocumentTemplate extends React.Component {
      * Обработчик для кнопки сохранить
      */
     btnSaveClick() {
+        this.setState({
+            edited: false,
+            warning: 'Salvestan...',
+            warningType: 'notValid',
+        });
 
         this.fetchData('Put').then((response) => {
             if (!response) return false;

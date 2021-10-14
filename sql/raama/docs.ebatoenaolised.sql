@@ -51,6 +51,7 @@ BEGIN
             OR (a.properties ->> 'ebatoenaolised_2_id') IS NULL)
           AND a.liik = 0 -- только доходы
         LOOP
+            RAISE NOTICE 'number %', v_arv.number;
             l_json_details = '[]'::JSONB; -- инициализируем массив под проводку
 
             l_user_id = (SELECT id FROM ou.userid WHERE kasutaja::TEXT = userName AND rekvid = v_arv.rekv_id LIMIT 1);
@@ -58,7 +59,8 @@ BEGIN
 
             -- расчет суммы
             l_summa = (v_arv.jaak * 0.5)::NUMERIC(14, 2);
-            IF v_arv.ebatoenaolised_1_id IS NOT NULL AND v_arv.ebatoenaolised_1_id > 0 and exists(select id from cur_journal where id = v_arv.ebatoenaolised_1_id)
+            IF v_arv.ebatoenaolised_1_id IS NOT NULL AND v_arv.ebatoenaolised_1_id > 0 AND
+               exists(SELECT id FROM cur_journal WHERE id = v_arv.ebatoenaolised_1_id)
             THEN
                 -- расчет суммы
                 l_summa = v_arv.jaak - coalesce((SELECT sum(j1.summa)
@@ -74,32 +76,38 @@ BEGIN
 
                 --    l_json_details = '';
                 l_json_details = l_json_details || to_jsonb(row)
-                                 FROM (SELECT 0        AS id,
-                                              l_summa  AS summa, -- 50% от требования
-                                              '605030' AS deebet,
-                                              '103009' AS kreedit,
-                                              a1.kood1,
-                                              a1.kood2,
+                                 FROM (SELECT 0                                                                    AS id,
+                                              l_summa                                                              AS summa, -- 50% от требования
+                                              '605030'                                                             AS deebet,
+                                              '103009'                                                             AS kreedit,
+                                              CASE
+                                                  WHEN a1.kood1 IS NULL OR empty(a1.kood1) THEN '01112'
+                                                  ELSE a1.kood1 END                                                AS kood1,
+                                              CASE
+                                                  WHEN a1.kood2 IS NULL OR empty(a1.kood2) THEN '80'
+                                                  ELSE a1.kood2 END                                                AS kood2,
                                               a1.kood3,
                                               a1.tunnus,
-                                              a1.konto,
-                                              '608',
-                                              a1.tp    AS lisa_d,
-                                              a1.tp    AS lisa_k
+                                              CASE
+                                                  WHEN a1.konto IS NULL OR empty(a1.konto) THEN '322000'
+                                                  ELSE a1.konto END                                                AS konto,
+                                              '608'                                                                AS kood5,
+                                              CASE WHEN a1.tp IS NULL OR empty(a1.tp) THEN '800699' ELSE a1.tp END AS lisa_d,
+                                              CASE WHEN a1.tp IS NULL OR empty(a1.tp) THEN '800699' ELSE a1.tp END AS lisa_k
                                        FROM docs.arv1 a1
                                        WHERE a1.parentid = v_arv.arv_id
                                        ORDER BY summa DESC
                                        LIMIT 1
                                       ) row;
 
-                SELECT 0                               AS id,
-                       'JOURNAL'                       AS doc_type_id,
-                       v_arv.lausendi_period           AS kpv,
-                       'Ebatõenäolised nõuded'         AS selg,
+                SELECT 0                                AS id,
+                       'JOURNAL'                        AS doc_type_id,
+                       v_arv.lausendi_period            AS kpv,
+                       'Ebatõenäolised nõuded'          AS selg,
                        v_arv.Asutusid,
                        'Arve nr.' || v_arv.number::TEXT AS dok,
-                       l_json_details                  AS "gridData"
-                       INTO v_params;
+                       l_json_details                   AS "gridData"
+                INTO v_params;
 
                 l_json = to_json(row)
                          FROM (SELECT 0        AS id,
@@ -168,7 +176,7 @@ ALTER FUNCTION docs.ebatoenaolised( INTEGER, DATE )
 GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE) TO dbpeakasutaja;
 
---SELECT docs.ebatoenaolised(69, '2020-12-31'::DATE);
+--SELECT docs.ebatoenaolised(63, '2021-03-31'::DATE);
 
 /*
 

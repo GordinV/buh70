@@ -96,7 +96,7 @@ describe('dok. type Arv tests', function () {
         });
     });
 
-    it(`should exists procedure docs.create_new_mk`, async () => {
+    it.skip(`should exists procedure docs.create_new_mk`, async () => {
         let sql = `SELECT 1
                    FROM pg_proc
                    WHERE proname = 'create_new_mk'`;
@@ -106,7 +106,7 @@ describe('dok. type Arv tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should exists procedure docs.create_new_order', async () => {
+    it.skip('should exists procedure docs.create_new_order', async () => {
         let sql = `SELECT 1
                    FROM pg_proc
                    WHERE proname = 'create_new_order'`;
@@ -116,7 +116,7 @@ describe('dok. type Arv tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should exists procedure sp_tasu_arv', async () => {
+    it.skip('should exists procedure sp_tasu_arv', async () => {
         let sql = `SELECT 1
                    FROM pg_proc
                    WHERE proname = 'sp_tasu_arv'`;
@@ -126,7 +126,7 @@ describe('dok. type Arv tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should exists procedure docs.create_new_arve', async () => {
+    it.skip('should exists procedure docs.create_new_arve', async () => {
         let sql = `SELECT 1
                    FROM pg_proc
                    WHERE proname = 'create_new_arve'`;
@@ -136,7 +136,7 @@ describe('dok. type Arv tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should exists procedure docs.check_arv_number)', async () => {
+    it.skip('should exists procedure docs.check_arv_number)', async () => {
         let sql = `SELECT 1
                    FROM pg_proc
                    WHERE proname = 'check_arv_number'`;
@@ -146,7 +146,7 @@ describe('dok. type Arv tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('doc type library should contain MENU doc.type', async () => {
+    it.skip('doc type library should contain MENU doc.type', async () => {
         let sql = `SELECT id
                    FROM libs.library
                    WHERE kood = 'ARV'
@@ -159,7 +159,7 @@ describe('dok. type Arv tests', function () {
 
     });
 
-    it('should exists view cur_laste_arved', async () => {
+    it.skip('should exists view cur_laste_arved', async () => {
         let sql = `SELECT 1
                    FROM pg_views
                    WHERE viewname = 'cur_laste_arved'`;
@@ -170,7 +170,7 @@ describe('dok. type Arv tests', function () {
 
     });
 
-    it('should succefully execute sql new query', async () => {
+    it.skip('should succefully execute sql new query', async () => {
         let sql = doc.select[0].sqlAsNew;
         let returnValue = await db.queryDb(sql, [0, 1]);
         expect(returnValue).toBeDefined();
@@ -178,7 +178,7 @@ describe('dok. type Arv tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should exists proc sp_salvesta_arv', async () => {
+    it.skip('should exists proc sp_salvesta_arv', async () => {
         let sql = `SELECT 1
                    FROM pg_proc
                    WHERE proname = 'sp_salvesta_arv'`;
@@ -189,7 +189,7 @@ describe('dok. type Arv tests', function () {
 
     });
 
-    it('should exists proc sp_delete_arv', async () => {
+    it.skip('should exists proc sp_delete_arv', async () => {
         let sql = `SELECT 1
                    FROM pg_proc
                    WHERE proname = 'sp_delete_arv'`;
@@ -200,7 +200,7 @@ describe('dok. type Arv tests', function () {
 
     });
 
-    it('should save new row', async () => {
+    it.skip('should save new row', async () => {
         let l_asutus_data = await db.queryDb(`SELECT asutusid, parentid
                                               FROM lapsed.vanemad
                                               WHERE staatus <> 3
@@ -245,7 +245,7 @@ describe('dok. type Arv tests', function () {
 
     });
 
-    it('should select saved row', async () => {
+    it.skip('should select saved row', async () => {
         let sql = doc.select[0].sql;
         let returnValue = await db.queryDb(sql, [globalDocId, USER_ID]);
         expect(returnValue).toBeDefined();
@@ -256,7 +256,7 @@ describe('dok. type Arv tests', function () {
 
     });
 
-    it('should select grid query', async () => {
+    it.skip('should select grid query', async () => {
         let sql = doc.grid.sqlString;
         let returnValue = await db.queryDb(sql, [REKV_ID, USER_ID]);
         expect(returnValue).toBeDefined();

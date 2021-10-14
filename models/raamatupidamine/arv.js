@@ -6,7 +6,7 @@ const start = require('./../BP/start'),
     endProcess = require('./../BP/endProcess');
 
 const Arv = {
-    selectAsLibs: `SELECT *, $2 as rekvid
+    selectAsLibs: `SELECT *, $2 AS rekvid
                    FROM com_arved a
                    WHERE (a.rekvId = $1::INTEGER)`, //$1 - rekvid, $2 userid
     select: [
@@ -334,11 +334,20 @@ const Arv = {
             not_initial_load: true
         },
         {
+            sql: `SELECT error_code, result, error_message, 'ARV' AS doc_type_id
+                  FROM docs.ebatoenaolised_mahakandmine($1::INTEGER, $2::INTEGER, $3::DATE)`, //$1 - userId, $2 - id, $3 kpv
+            query: null,
+            multuple: false,
+            alias: 'ebatoenaolised',
+            data: [],
+            not_initial_load: true
+        },
+        {
             sql: `SELECT *
                   FROM libs.asutus
                   WHERE regkood = $1
-                      ORDER BY staatus
-                      LIMIT 1`,
+                  ORDER BY staatus
+                  LIMIT 1`,
             query: null,
             multiple: false,
             alias: 'validate_asutus',
@@ -388,7 +397,8 @@ const Arv = {
                            lausnr,
                            docs_ids,
                            coalesce(a.arve, qry_aa.arve)::VARCHAR(20) AS aa,
-                           a.viitenr::VARCHAR(120)                    AS viitenr
+                           a.viitenr::VARCHAR(120)                    AS viitenr,
+                           ebatoenaolised
                     FROM cur_arved a,
                          (SELECT arve
                           FROM ou.aa aa
@@ -524,7 +534,7 @@ const Arv = {
                          coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
                                   '')::VARCHAR(20)                                                                   AS kustutatud
                   FROM (
-                           SELECT jsonb_array_elements( history) AS ajalugu, d.id, d.rekvid
+                           SELECT jsonb_array_elements(history) AS ajalugu, d.id, d.rekvid
                            FROM docs.doc d,
                                 ou.userid u
                            WHERE d.id = $1

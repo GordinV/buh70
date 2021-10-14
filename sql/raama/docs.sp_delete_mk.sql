@@ -23,9 +23,9 @@ BEGIN
     SELECT d.*,
            (m.properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER AS ebatoenaolised_tagastamine_id,
            u.ametnik                                                   AS user_name
-           INTO v_doc
+    INTO v_doc
     FROM docs.doc d
-             INNER JOIN docs.mk m ON m.parentid = d.id
+             LEFT OUTER JOIN docs.mk m ON m.parentid = d.id
              LEFT OUTER JOIN ou.userid u ON u.id = l_user_id
     WHERE d.id = doc_id;
 
@@ -110,7 +110,8 @@ BEGIN
                                                     WHERE k.parentid = doc_id) row));
 
 
-    SELECT row_to_json(row) INTO new_history
+    SELECT row_to_json(row)
+    INTO new_history
     FROM (SELECT now()           AS deleted,
                  v_doc.user_name AS user,
                  mk_history      AS mk,

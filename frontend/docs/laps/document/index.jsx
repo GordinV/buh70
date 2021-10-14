@@ -296,7 +296,6 @@ class Laps extends React.PureComponent {
 
     // обработчик события клик на гриде родителей
     handleGridBtnClick(btnName, activeRow, id, docTypeId) {
-
         switch (btnName.toUpperCase()) {
             case "EDIT":
 

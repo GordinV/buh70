@@ -69,8 +69,6 @@ BEGIN
 
     json_mk1 = array_to_json((SELECT array_agg(row_to_json(v_mk1))));
 
-    RAISE NOTICE 'json_mk1 %', json_mk1;
-
     SELECT 0                                         AS id,
            l_dokprop_id                              AS doklausid,
            v_mk.aaid                                 AS aa_id,
@@ -86,13 +84,10 @@ BEGIN
            l_laps_id                                 AS lapsid
            INTO v_params;
 
-    RAISE NOTICE 'v_params %, l_laps_id %', v_params, l_laps_id;
-
     SELECT row_to_json(row) INTO json_object
     FROM (SELECT 0        AS id,
                  v_params AS data) row;
 
-    RAISE NOTICE 'json_object %', json_object;
    SELECT docs.sp_salvesta_mk(json_object :: JSON, user_id, l_rekvId) INTO mk_id;
 
     IF mk_id IS NOT NULL AND mk_id > 0

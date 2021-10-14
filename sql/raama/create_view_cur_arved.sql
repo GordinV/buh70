@@ -34,7 +34,10 @@ SELECT d.id                                         AS id,
        jid.number                                   AS lausnr,
        coalesce(a.muud, '')                         AS markused,
        (a.properties ->> 'aa') :: VARCHAR(120)      AS arve,
-       (a.properties ->> 'viitenr') :: VARCHAR(120) AS viitenr
+       (a.properties ->> 'viitenr') :: VARCHAR(120) AS viitenr,
+       CASE
+           WHEN coalesce((a.properties ->> 'ebatoenaolised_2_id')::INTEGER, 0) > 0 THEN 'Jah'
+           ELSE 'Ei' END::VARCHAR(3)                AS ebatoenaolised
 FROM docs.doc d
          INNER JOIN docs.arv a ON a.parentId = d.id
          INNER JOIN libs.library s ON s.kood = d.status :: TEXT AND s.library = 'STATUS'

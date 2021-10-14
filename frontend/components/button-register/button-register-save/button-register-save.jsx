@@ -8,7 +8,7 @@ const React = require('react'),
     ICON = 'save';
 
 
-class ButtonRegisterSave extends React.PureComponent{
+class ButtonRegisterSave extends React.PureComponent {
 // кнопка создания документа в регистрах
     constructor(props) {
         super(props);
@@ -18,7 +18,11 @@ class ButtonRegisterSave extends React.PureComponent{
     }
 
     handleClick(e) {
-        return this.props.onClick();
+        // дисейблим кнопку
+        if (!this.state.disabled) {
+            this.setState({disabled: true});
+            return this.props.onClick();
+        }
     }
 
     componentDidUpdate(nextProps) {
@@ -31,7 +35,7 @@ class ButtonRegisterSave extends React.PureComponent{
             value='Save'
             show={this.props.show}
             disabled={this.state.disabled}
-            onClick={(e)=> this.handleClick(e)}>
+            onClick={(e) => this.handleClick(e)}>
             <img ref='image' src={styles.icons[ICON]}/>
         </Button>
     }
