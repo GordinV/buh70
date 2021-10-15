@@ -16,6 +16,8 @@ const
     createEmptyFilterData = require('./../../../../libs/createEmptyFilterData'),
     styles = require('./styles');
 
+const fetchData = require('./../../../../libs/fetchData');
+
 const LIBRARIES = [];
 const DOCS = ['ARV', 'SMK', 'VMK'];
 const DocContext = require('./../../../doc-context.js');
@@ -266,7 +268,6 @@ class Vanem extends React.PureComponent {
                 });
                 break;
             case "delete":
-                console.log('btnDelete clicked');
                 this.fetchData(docTypeId, id).then((response) => {
                     let isTrue = response && response.status && response.status === 200 ? 'Ok' : 'Error';
                     let errorMessage = 'Viga';
