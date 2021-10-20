@@ -153,7 +153,7 @@ BEGIN
                       WHERE ltrim(rtrim(number)) = ltrim(rtrim(v_doc.dok))
                         AND asutusid = v_doc.asutusid
                         AND year(kpv) = year(v_doc.kpv)
-                      LIMIT 1);
+                          LIMIT 1);
 
     END IF;
 
@@ -179,6 +179,7 @@ BEGIN
                     WHERE rekvid = v_doc.rekvid
                       AND doc_tasu_id = v_doc.id
                       AND a.status <> 3
+                        LIMIT 1
     );
 
     IF l_arvtasu_id IS NOT NULL

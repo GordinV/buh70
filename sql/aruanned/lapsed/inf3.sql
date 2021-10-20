@@ -6,10 +6,11 @@ CREATE OR REPLACE FUNCTION lapsed.inf3(l_rekvid INTEGER, l_kond INTEGER DEFAULT 
         maksja_nimi      TEXT,
         maksja_isikukood TEXT,
         lapse_nimi       TEXT,
-        lapse_isikukood   TEXT,
+        lapse_isikukood  TEXT,
         aasta            INTEGER,
         rekvid           INTEGER
-    ) AS
+    )
+AS
 $BODY$
 SELECT sum(summa)            AS summa,
        a.nimetus::TEXT       AS maksja_nimi,
@@ -17,7 +18,7 @@ SELECT sum(summa)            AS summa,
        lapse_nimi::TEXT      AS lapse_nimi,
        lapse_isikukood::TEXT AS lapse_isikukood,
        aasta::INTEGER        AS aasta,
-       qry.rekvid                AS rekvid
+       qry.rekvid            AS rekvid
 FROM (
          SELECT d.rekvid                                                                  AS rekvid,
                 l.nimi                                                                    AS lapse_nimi,
@@ -30,7 +31,7 @@ FROM (
                   INNER JOIN lapsed.laps l ON l.id = ld.parentid
                   INNER JOIN docs.arv a ON a.parentid = d.id
                   INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
-                  INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = ld.parentid AND lk.nomid = a1.nomid
+                  INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
 
          WHERE d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
@@ -43,7 +44,7 @@ FROM (
              WHERE a.jaak = 0
          )
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
-           AND coalesce((lk.properties ->> 'kas_inf3')::BOOLEAN, FALSE)::BOOLEAN
+           AND coalesce((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE)::BOOLEAN
      ) qry
          INNER JOIN libs.asutus a ON a.id = qry.asutusId
 GROUP BY lapse_isikukood, lapse_nimi, a.nimetus, a.regkood, aasta, qry.rekvid;

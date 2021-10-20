@@ -20,7 +20,7 @@ BEGIN
   INTO v_doc
   FROM docs.arvtasu d
     LEFT OUTER JOIN ou.userid u ON u.id = userid
-  WHERE d.id = doc_id;
+  WHERE d.id = doc_id limit 1;
 
   IF v_doc IS NULL
   THEN

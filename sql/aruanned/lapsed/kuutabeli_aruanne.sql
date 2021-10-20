@@ -21,12 +21,12 @@ WITH preReport AS (
            lt.nimi::TEXT,
            lt.isikukood::TEXT,
            lapsed.get_viitenumber(lt.rekvid, l.id)::TEXT AS viitenumber,
+           (CASE WHEN lt.tyyp IS NOT NULL AND lt.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END) *
            (lt.hind * lt.kogus)::NUMERIC(14, 4)          AS arvestatud,
            (CASE
                 WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
                                           ((lt.soodustus * lt.sooduse_kehtivus) / 100)
-                ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus *
-                     (CASE WHEN lt.tyyp IS NOT NULL AND lt.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END)
+                ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus
                END)::NUMERIC(12, 2)
                                                          AS soodustus,
            lt.kuu::INTEGER,
@@ -50,7 +50,7 @@ SELECT ruhm::TEXT,
        sum(soodustus):: NUMERIC(14, 4),
        kuu:: INTEGER,
        aasta
-from preReport
+FROM preReport
 GROUP BY ruhm, nimi, isikukood, viitenumber, kuu, aasta
 
 $BODY$
@@ -67,5 +67,13 @@ GRANT EXECUTE ON FUNCTION lapsed.kuutabeli_aruanne(INTEGER, INTEGER, INTEGER) TO
 
 
 SELECT *
-FROM lapsed.kuutabeli_aruanne(89, 1, 2021);
+FROM (
+         SELECT *
+         FROM lapsed.kuutabeli_aruanne(83, 2, 2021)
+     ) qry
+WHERE isikukood LIKE '51507300%'
 
+/*select * from lapsed.cur_lapse_taabel lt
+where isikukood like '51507300%'
+and kuu = 2
+and aasta = 2021*/
