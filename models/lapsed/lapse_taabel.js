@@ -10,9 +10,11 @@ module.exports = {
                      lt.lapse_kaart_id,
                      lk.properties ->> 'yksus'     AS yksys,
                      lk.properties ->> 'all_yksus' AS all_yksys,
+                     lt.umberarvestus::BOOLEAN     AS umberarvestus,
                      lt.kuu,
                      lt.aasta,
                      lt.kogus,
+                     lt.hind,
                      lt.muud,
                      l.isikukood,
                      l.nimi,
@@ -35,6 +37,8 @@ module.exports = {
                   date_part('month', now()) as kuu,
                   date_part('year', now()) as aasta,
                   0::numeric as kogus,
+                  0::numeric as hind,
+                  false as umberarvestus,
                   null::text as isikukood,
                   null::text as nimi,
                   null::text as kood,
@@ -72,7 +76,7 @@ module.exports = {
                 {id: "id", name: "id", width: "10%", show: false},
                 {id: "isikukood", name: "Isikukood", width: "20%"},
                 {id: "nimi", name: "Nimi", width: "30%"},
-                {id: "teenus", name: "Teenus", width: "30%"},
+                {id: "teenus", name: "Teenus", width: "25%"},
                 {id: "yksus", name: "Üksus", width: "20%"},
                 {id: "kuu", name: "Kuu", width: "10%", type: "integer", interval: true},
                 {id: "aasta", name: "Aasta", width: "10%", type: "integer"},
@@ -81,6 +85,7 @@ module.exports = {
                 {id: "uhik", name: "Ühik", width: "5%"},
                 {id: "soodustus", name: "Soodustus", width: "10%", type: "number"},
                 {id: "summa", name: "Summa", width: "15%", type: "number", interval: true},
+                {id: "umberarvestus", name: "Ümberarvestus", width: "5%"},
             ],
             sqlString:
                 `with qryNoms as 
@@ -93,6 +98,7 @@ module.exports = {
                             lt.kogus::NUMERIC(12, 2),
                             lt.hind::NUMERIC(12, 2),
                             lt.uhik,
+                            case when lt.umberarvestus then 'Jah' else 'Ei' end::text as umberarvestus,
                             (CASE
                                  WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
                                                            ((lt.soodustus * lt.sooduse_kehtivus) / 100)
@@ -149,6 +155,13 @@ module.exports = {
         type: "sql",
         alias: "getLogs"
     },
+    importTaabel: {
+        command: `SELECT error_code, result, error_message
+                  FROM lapsed.import_laste_taabelid($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+        type: 'sql',
+        alias: 'importTaabel'
+    },
+
 
 };
 

@@ -1,6 +1,6 @@
 module.exports = async (file, mimeType, user) => {
     const Doc = require('./../../classes/DocumentTemplate');
-    const Document = new Doc('LAPSE_KAART', null, user.userId, user.asutusId, 'lapsed');
+    const Document = new Doc('LAPSE_TAABEL', null, user.userId, user.asutusId, 'lapsed');
 
     let rows = [];
 
@@ -11,12 +11,14 @@ module.exports = async (file, mimeType, user) => {
         console.error('Viga:', e);
         return `Tekkis viga, vale formaat`;
     }
+
     let saved = 0;
     if (rows.length) {
         // сохраняем
 
         const params = [JSON.stringify(rows), user.id, user.asutusId];
-        const result = await Document.executeTask('importTeenused', params).then((result) => {
+        console.log('save', params);
+        const result = await Document.executeTask('importTaabel', params).then((result) => {
                 saved = result.result ? result.result : 0;
             }
         );
@@ -47,20 +49,11 @@ const readCSV = async (csvContent) => {
                 rows.push({
                     isikukood: row[0],
                     yksus: row[1],
-                    kood: row[3],
-                    hind: row[4],
-                    kogus: row[5],
-                    kuu: row[6],
-                    aasta: row[7],
-                    lopp_kpv: row[8],
-                    kas_ettemaks: row[9],
-                    ettemaksu_period: row[10],
-                    kas_eraldi: row[11],
-                    kas_inf3: row[12],
-                    soodus: row[13],
-                    sooduse_alg: row[14],
-                    sooduse_lopp:row[15],
-                    kas_protsent:row[16]
+                    kood: row[2],
+                    hind: row[3],
+                    kogus: row[4],
+                    kuu: row[5],
+                    aasta: row[6]
                 });
             }
         });

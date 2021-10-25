@@ -39,7 +39,8 @@ BEGIN
     -- will return docTypeid of new doc
 
     -- логируем имя, кому считаем
-    SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr INTO v_laps
+    SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr
+    INTO v_laps
     FROM lapsed.laps
     WHERE id = l_laps_id;
 
@@ -53,6 +54,7 @@ BEGIN
       AND kuu = month(l_kpv)
       AND aasta = year(l_kpv)
       AND rekvid = l_rekvid
+      AND NOT umberarvestus
       AND staatus < 2;
 
     -- делаем выборку услуг, не предоплатных
@@ -92,7 +94,8 @@ BEGIN
 
             IF upper(v_kaart.uhik) IN ('PAEV', 'PÄEV')
             THEN
-                SELECT sum(kogus) INTO v_kaart.kogus
+                SELECT sum(kogus)
+                INTO v_kaart.kogus
                 FROM lapsed.day_taabel1 t1
                          INNER JOIN lapsed.day_taabel t ON t.id = t1.parent_id
                 WHERE t.staatus <> 3
@@ -126,10 +129,12 @@ BEGIN
                                      ) qry);
                 IF (coalesce(l_kulastused, 0)) > 0
                 THEN
-                    v_kaart.muud = 'Hinna arvestuse selgitus: ' || v_kaart.hind::text  || '/' || l_too_paevad::text || '*' || l_kulastused::text;
+                    v_kaart.muud = 'Hinna arvestuse selgitus: ' || v_kaart.hind::TEXT || '/' || l_too_paevad::TEXT ||
+                                   '*' || l_kulastused::TEXT;
                     v_kaart.hind = v_kaart.hind / l_too_paevad * l_kulastused;
                 ELSE
-                    v_kaart.muud = 'Hinna arvestuse selgitus: ' || v_kaart.hind:: text || '/' || l_too_paevad::text || '*' || l_kulastused::text;
+                    v_kaart.muud = 'Hinna arvestuse selgitus: ' || v_kaart.hind:: TEXT || '/' || l_too_paevad::TEXT ||
+                                   '*' || l_kulastused::TEXT;
                     v_kaart.hind = 0; -- нет посещений
                 END IF;
             ELSE
@@ -140,11 +145,12 @@ BEGIN
 
             SELECT lt.id,
                    lt.staatus
-                   INTO l_taabel_id, l_status
+            INTO l_taabel_id, l_status
             FROM lapsed.lapse_taabel lt
             WHERE lt.lapse_kaart_id = v_kaart.lapse_kaart_id
               AND aasta = date_part('year'::TEXT, l_kpv::DATE)
               AND kuu = date_part('month'::TEXT, l_kpv::DATE)
+              AND NOT lt.umberarvestus
               AND lt.staatus <> 3 -- удаленный
             LIMIT 1;
 
@@ -153,7 +159,8 @@ BEGIN
                 -- продолжаем расчет
 
                 -- подготавливаем параметры для сохранения
-                SELECT row_to_json(row) INTO json_object
+                SELECT row_to_json(row)
+                INTO json_object
                 FROM (SELECT coalesce(l_taabel_id, 0)     AS id,
                              (SELECT to_jsonb(v_kaart.*)) AS data) row;
 

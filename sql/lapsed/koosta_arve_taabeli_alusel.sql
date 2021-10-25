@@ -58,7 +58,8 @@ DECLARE
     l_arve_kogus    NUMERIC = 0; -- для проверки кол-ва услуг в счете
 
 BEGIN
-    SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr INTO v_laps
+    SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr
+    INTO v_laps
     FROM lapsed.laps l
     WHERE id = l_laps_id;
 
@@ -90,7 +91,7 @@ BEGIN
            coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN AS kas_paber,
            coalesce((v.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN   AS kas_earve,
            coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN   AS kas_email
-           INTO v_maksja
+    INTO v_maksja
     FROM lapsed.vanemad v
     WHERE asutusid = l_asutus_id
       AND v.parentid = l_laps_id;
@@ -131,12 +132,12 @@ BEGIN
                (lk.properties ->> 'sooduse_lopp')::DATE                              AS sooduse_lopp,
                coalesce(n.properties ->> 'tyyp', '')                                 AS tyyp,
                CASE
-                   WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN lk.hind
+                   WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' and not lt.umberarvestus THEN lk.hind
                    WHEN coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN
                        THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0) / 100 * lk.hind
                    ELSE coalesce((lk.properties ->> 'soodus')::NUMERIC, 0) END *
                CASE
-                   WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN -1
+                   WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' and not lt.umberarvestus THEN -1
                    WHEN (lk.properties ->> 'sooduse_alg')::DATE <= l_kpv
                        -- если услуга месячная
                        AND (lk.properties ->> 'sooduse_lopp')::DATE >=
@@ -169,8 +170,8 @@ BEGIN
                (n.properties::JSONB ->> 'tegev')::VARCHAR(20)                        AS tegev,
                (n.properties::JSONB ->> 'allikas')::VARCHAR(20)                      AS allikas,
                (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)                     AS rahavoog,
-               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)                     AS artikkel
-
+               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)                     AS artikkel,
+               lt.umberarvestus
         FROM lapsed.lapse_taabel lt
                  INNER JOIN lapsed.lapse_kaart lk
                             ON lk.id = lt.lapse_kaart_id AND lt.nomid = lk.nomid AND lt.rekvid = lk.rekvid
@@ -196,16 +197,16 @@ BEGIN
             json_arvrea = '[]'::JSONB || (SELECT row_to_json(row)
                                           FROM (SELECT v_taabel.nomid                          AS nomid,
                                                        v_taabel.kogus                          AS kogus,
-                                                       CASE WHEN v_taabel.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END * v_taabel.hind -
+                                                       CASE WHEN v_taabel.tyyp = 'SOODUSTUS' and not v_taabel.umberarvestus THEN 0 ELSE 1 END * v_taabel.hind -
                                                        v_taabel.real_soodus                    AS hind,
-                                                       (CASE WHEN v_taabel.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END * v_taabel.hind -
+                                                       (CASE WHEN v_taabel.tyyp = 'SOODUSTUS' and not v_taabel.umberarvestus THEN 0 ELSE 1 END * v_taabel.hind -
                                                         v_taabel.real_soodus) * v_taabel.kogus AS kbmta,
-                                                       ((CASE WHEN v_taabel.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END * v_taabel.hind -
+                                                       ((CASE WHEN v_taabel.tyyp = 'SOODUSTUS' and not v_taabel.umberarvestus THEN 0 ELSE 1 END * v_taabel.hind -
                                                          v_taabel.real_soodus) * v_taabel.kogus *
                                                         (v_taabel.vat / 100))                  AS kbm,
                                                        ((v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus *
                                                         (v_taabel.vat / 100)) +
-                                                       (CASE WHEN v_taabel.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END * v_taabel.hind -
+                                                       (CASE WHEN v_taabel.tyyp = 'SOODUSTUS' and not v_taabel.umberarvestus THEN 0 ELSE 1 END * v_taabel.hind -
                                                         v_taabel.real_soodus) * v_taabel.kogus AS summa,
                                                        v_taabel.tegev                          AS kood1,
                                                        v_taabel.allikas                        AS kood2,
@@ -222,6 +223,8 @@ BEGIN
                                                                             WHEN v_taabel.real_soodus > 0
                                                                                 THEN ' kasutatud soodustus summas ' ||
                                                                                      round(v_taabel.real_soodus::NUMERIC, 2)::TEXT
+                                                                            WHEN v_taabel.umberarvestus
+                                                                                THEN ' Ümberarvestus '
                                                                             ELSE '' END        AS muud,
                                                        l_tp                                    AS tp) row) :: JSONB;
 
@@ -233,7 +236,7 @@ BEGIN
                 SELECT d.id,
                        d.status,
                        a.number
-                       INTO l_arv_id, l_status, l_number
+                INTO l_arv_id, l_status, l_number
                 FROM docs.doc d
                          INNER JOIN docs.arv a ON a.parentid = d.id
                          INNER JOIN lapsed.liidestamine l ON l.docid = d.id
@@ -268,7 +271,8 @@ BEGIN
                                                 json_arvrea                                   AS "gridData") row);
 
                     -- подготавливаем параметры для создания счета
-                    SELECT row_to_json(row) INTO json_object
+                    SELECT row_to_json(row)
+                    INTO json_object
                     FROM (SELECT coalesce(l_arv_id, 0) AS id, l_json_arve AS data) row;
 
                     IF (v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus > 0 OR l_arve_kogus <> 0
@@ -295,7 +299,7 @@ BEGIN
     SELECT d.id,
            d.status,
            a.number
-           INTO l_arv_id, l_status, l_number
+    INTO l_arv_id, l_status, l_number
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
              INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
@@ -335,7 +339,8 @@ BEGIN
     THEN
 
         -- подготавливаем параметры для создания счета
-        SELECT row_to_json(row) INTO json_object
+        SELECT row_to_json(row)
+        INTO json_object
         FROM (SELECT coalesce(l_arv_id, 0) AS id, l_json_arve AS data) row;
 
 
@@ -359,7 +364,7 @@ BEGIN
         result = 0;
         error_code = 1;
         error_message =
-                    'Kehtiv teenused ei leidnud,  Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
+                        'Kehtiv teenused ei leidnud,  Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
         RETURN;
     END IF;
 
@@ -380,7 +385,7 @@ BEGIN
     ELSE
         error_code = 1;
         error_message =
-                    'Dokumendi koostamise viga,  Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
+                        'Dokumendi koostamise viga,  Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
 
     END IF;
     RETURN;

@@ -20,6 +20,7 @@ DECLARE
     doc_kuu            INTEGER = doc_data ->> 'kuu';
     doc_aasta          INTEGER = doc_data ->> 'aasta';
     doc_muud           TEXT    = doc_data ->> 'muud';
+    doc_umberarvestus  BOOLEAN = coalesce((doc_data ->> 'umberarvestus')::BOOLEAN, FALSE);
     doc_staatus        INTEGER = 1;
     json_ajalugu       JSONB;
     v_lapse_kaart      RECORD;
@@ -30,7 +31,8 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -44,7 +46,7 @@ BEGIN
 
     SELECT coalesce((lk.properties ->> 'alg_kpv')::DATE, date(year(), month(), 1)) AS alg_kpv,
            coalesce((lk.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31))    AS lopp_kpv
-           INTO v_lapse_kaart
+    INTO v_lapse_kaart
     FROM lapsed.lapse_kaart lk
     WHERE lk.id = doc_lapse_kaart_id;
 
@@ -60,13 +62,14 @@ BEGIN
     THEN
         SELECT id,
                staatus
-               INTO doc_id, doc_staatus
+        INTO doc_id, doc_staatus
         FROM lapsed.lapse_taabel lt
         WHERE parentid = doc_parentid
           AND rekvid = user_rekvid
           AND nomid = doc_nomid
           AND kuu = doc_kuu
-          AND aasta = doc_aasta;
+          AND aasta = doc_aasta
+          AND NOT umberarvestus;
 
         IF doc_id IS NULL
         THEN
@@ -92,10 +95,10 @@ BEGIN
                                     userName AS user) row;
 
         INSERT INTO lapsed.lapse_taabel (parentid, lapse_kaart_id, nomid, rekvid, hind, kogus, kuu, aasta, muud,
-                                         ajalugu)
+                                         ajalugu, umberarvestus)
         VALUES (doc_parentid, doc_lapse_kaart_id, doc_nomid, user_rekvid, doc_hind, doc_kogus, doc_kuu, doc_aasta,
                 doc_muud,
-                '[]' :: JSONB || json_ajalugu) RETURNING id
+                '[]' :: JSONB || json_ajalugu, doc_umberarvestus) RETURNING id
                    INTO doc_id;
 
     ELSE
@@ -118,7 +121,8 @@ BEGIN
             aasta          = doc_aasta,
             muud           = doc_muud,
             ajalugu        = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu,
-            staatus        = doc_staatus
+            staatus        = doc_staatus,
+            umberarvestus  = doc_umberarvestus
         WHERE id = doc_id RETURNING id
             INTO doc_id;
 

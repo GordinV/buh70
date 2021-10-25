@@ -146,17 +146,17 @@ WITH qryTabel AS (
                              END)))::NUMERIC(12, 2)                                                   AS summa
 
                   FROM laste_kaart lk
-                  WHERE ((make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month')::DATE - 1) BETWEEN alg_kpv AND lopp_kpv
-                     OR ((make_date(2021, 4, 1) + INTERVAL '1 month')::DATE - 1) = lopp_kpv
+                  WHERE  alg_kpv <= ((make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month')::DATE - 1)
+                      and lopp_kpv >=  make_date(l_aasta, l_kuu, 1)
               ) hind
                   INNER JOIN (
-             SELECT lk.kood, lk.laps_id, lk.rekv_id
+             SELECT lk.kood, lk.laps_id
              FROM laste_kaart lk
-             WHERE (((make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month')::DATE - 1) BETWEEN alg_kpv AND lopp_kpv OR
-                    ((make_date(2021, 4, 1) + INTERVAL '1 month')::DATE - 1) = lopp_kpv)
-             GROUP BY lk.kood, lk.laps_id, lk.rekv_id
+             WHERE  alg_kpv <= (make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month')::DATE - 1
+               and lopp_kpv >=  make_date(l_aasta, l_kuu, 1)
+             GROUP BY lk.kood, lk.laps_id
              HAVING count(*) > 1) dbl
-                             ON hind.teenuse_kood = dbl.kood AND hind.rekv_id = dbl.rekv_id AND
+                             ON hind.teenuse_kood = dbl.kood  AND
                                 hind.laps_id = dbl.laps_id
      )
 SELECT nimi,

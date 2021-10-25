@@ -267,7 +267,8 @@ SELECT sum(sm_kokku) as sm, sum(sm_kokku_1) as sm_1
 FROM
 (
 select  * from
-palk.tsd_lisa_1('2021-08-01', '2021-08-31', 119, 1 :: INTEGER)
+palk.tsd_lisa_1('2021-10-01', '2021-10-31', 3, 1 :: INTEGER)
+where isikukood = '46112297010'
 
 
 ) qry

@@ -4,9 +4,17 @@ const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
 const getSum = require('./../../../libs/getSum');
+const ButtonUpload = require('./../../components/upload_button/index.jsx');
+const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
+const DocRights = require('./../../../config/doc_rights');
+const checkRights = require('./../../../libs/checkRights');
+
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'LAPSE_TAABEL';
+const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
+const DocContext = require('./../../doc-context.js');
+
 
 /**
  * Класс реализует документ справочника признаков.
@@ -53,12 +61,27 @@ class Documents extends React.PureComponent {
 
     // custom render
     renderer(self) {
+        let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
         let summa = self.gridData && self.gridData.length ? self.gridData[0].summa_kokku : 0;
-        let soodustus = self.gridData  && self.gridData.length ? self.gridData[0].soodustus_kokku : 0;
+        let soodustus = self.gridData && self.gridData.length ? self.gridData[0].soodustus_kokku : 0;
 
         if (summa || soodustus) {
             this.setState({summa: summa, read: self.gridData.length, soodustus: soodustus});
         }
+        return (
+            <ToolbarContainer>
+                {checkRights(userRoles, docRights, 'importTaabel') ?
+                    <ButtonUpload
+                        ref='btnUpload'
+                        docTypeId={DOC_TYPE_ID}
+                        onClick={this.handleClick}
+                        show={true}
+                        mimeTypes={'.csv'}
+                    /> : null}
+            </ToolbarContainer>
+        );
+
 
         return null;
     }

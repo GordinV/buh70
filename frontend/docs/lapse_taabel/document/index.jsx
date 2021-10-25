@@ -11,6 +11,8 @@ const
     Select = require('../../../components/select/select.jsx'),
     SelectData = require('../../../components/select-data/select-data.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
+    CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
+    Loading = require('./../../../components/loading/index.jsx'),
     styles = require('./styles');
 
 const DocContext = require('../../../doc-context');
@@ -41,7 +43,7 @@ class Laps extends React.PureComponent {
     componentDidMount() {
         if (!this.state.lapsId && DocContext['laps']) {
             //есть значение ид ребенка
-            this.setState({lapsId:DocContext['laps'] });
+            this.setState({lapsId: DocContext['laps']});
         }
 
     }
@@ -55,7 +57,7 @@ class Laps extends React.PureComponent {
     }
 
     render() {
-        let filter = this.state.lapsId ? `where lapsid = ${this.state.lapsId}`: '';
+        let filter = this.state.lapsId ? `where lapsid = ${this.state.lapsId}` : '';
 
         const LIBRARIES = [{id: 'lapse_kaart', filter: filter}];
 
@@ -79,6 +81,16 @@ class Laps extends React.PureComponent {
      */
 
     renderer(self) {
+        //|| !self.state.loadedLibs
+        if (!self || !self.docData || !self.libs['lapse_kaart']) {
+            // не загружены данные
+            return (<div style={styles.doc}>
+                <Loading label={'Laadimine...'}/>
+            </div>);
+        }
+
+
+
         let isEditMode = self.state.edited;
 
         if ((self.docData.id === 0 || !self.docData.parentid) && this.state.lapsId) {
@@ -97,7 +109,7 @@ class Laps extends React.PureComponent {
         let buttonEditNom = styles.btnEditNom;
 
         //фильтр на используемы номенклатуры
-        const nomData = self.libs['lapse_kaart'] ? self.libs['lapse_kaart'].filter(row => row.lapsid ===  self.docData.parentid): [];
+        const nomData = self.libs['lapse_kaart'] ? self.libs['lapse_kaart'].filter(row => row.lapsid === self.docData.parentid) : [];
 
         return (
             <div style={styles.doc}>
@@ -157,7 +169,7 @@ class Laps extends React.PureComponent {
                     </div>
                 </div>
 
-            <div style={styles.docRow}>
+                <div style={styles.docRow}>
                     <div style={styles.docColumn}>
                         <InputNumber ref="input-kogus"
                                      title='Kogus:'
@@ -166,6 +178,19 @@ class Laps extends React.PureComponent {
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
 
+                        {!self.docData.id || Boolean(self.docData.umberarvestus)? <InputNumber ref="input-hind"
+                                                        title='Summa:'
+                                                        name='hind'
+                                                        value={Number(self.docData.hind) || Number(0)}
+                                                        readOnly={!isEditMode}
+                                                        onChange={self.handleInputChange}/> : null}
+                        <CheckBox title="Kas ümberarvestus?"
+                                  name='umberarvestus'
+                                  value={Boolean(self.docData.umberarvestus)}
+                                  ref={'checkbox_kas_umberarvestus'}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditMode}
+                        />
 
                         <InputNumber ref="input-kuu"
                                      title='Kuu:'

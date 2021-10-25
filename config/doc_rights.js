@@ -153,7 +153,8 @@ module.exports = {
         select: ['arvestaja'],
         add: ['arvestaja'],
         edit: ['arvestaja'],
-        delete: ['arvestaja']
+        delete: ['arvestaja'],
+        importTaabel: ['admin']
     },
     PAEVA_TAABEL: {
         select: ['arvestaja'],

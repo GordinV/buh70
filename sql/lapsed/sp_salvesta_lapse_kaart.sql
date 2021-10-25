@@ -135,7 +135,7 @@ BEGIN
               LIMIT 1
         )
     THEN
-        RAISE EXCEPTION 'Vale alg.kuupäev. Leidnud tabel varem kui alg. kpv';
+        RAISE EXCEPTION 'Vale alg.kuupäev. Leidnud tabel varem kui alg. kpv, laps_id %, nom_id %', doc_parentid, doc_nomid;
     END IF;
 
     -- дата конц. услуги - нельзя ставить раньше , чем есть табель
