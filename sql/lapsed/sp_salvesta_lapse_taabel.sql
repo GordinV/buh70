@@ -54,7 +54,7 @@ BEGIN
        v_lapse_kaart.lopp_kpv < (date(doc_aasta, doc_kuu, 1))
     THEN
         -- date is not in range
-        RAISE EXCEPTION 'Teenus selles periodil ei kehti';
+        RAISE notice 'Teenus selles periodil ei kehti';
     END IF;
 
     -- поиск удаленной записи

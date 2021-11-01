@@ -112,7 +112,8 @@ GRANT EXECUTE ON FUNCTION docs.varadearuanne( DATE, DATE, INTEGER ) TO dbkasutaj
 
 /*
 SELECT *
-FROM docs.varadearuanne('2021-01-01', '2021-08-31' :: DATE, 130)
-where kood = '01365-14'
+FROM docs.varadearuanne('2021-01-01', '2021-10-31' :: DATE, 3)
+where vastisik ilike 'aarne p%'
+and grupp ilike 'kulu%'
 
 */

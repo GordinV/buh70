@@ -149,7 +149,7 @@ BEGIN
 
         )
     THEN
-        RAISE EXCEPTION 'Vale lõpp kuupäev. Leidnud tabel hiljem kui lõpp kpv';
+        RAISE notice 'Vale lõpp kuupäev. Leidnud tabel hiljem kui lõpp kpv';
     END IF;
 
     -- проверка на дату льготы, если дата не конец мнесяца и не равна дате окончания услуги

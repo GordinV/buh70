@@ -62,7 +62,7 @@ WITH qryKaibed AS (
              SELECT po.pv_kaart_id                                AS pv_kaart_id,
                     0::NUMERIC(12, 2)                             AS alg_soetmaks,
                     0::NUMERIC(12, 2)                             AS alg_kulum,
-                    sum(summa) FILTER ( WHERE po.liik IN (3) ) AS db_soetmaks,
+                    sum(summa) FILTER ( WHERE po.liik IN (1,3) ) AS db_soetmaks,
                     (sum(summa) FILTER ( WHERE po.liik = 2)) +
                     sum(CASE
                             WHEN (l.properties :: JSONB ->> 'soetkpv') :: DATE >= l_kpv1 AND
@@ -78,7 +78,8 @@ WITH qryKaibed AS (
                AND po.kpv >= l_kpv1
                AND po.kpv <= l_kpv2
                AND ((l.properties :: JSONB ->> 'mahakantud')::DATE IS NULL
-                 OR (l.properties :: JSONB ->> 'mahakantud')::DATE > l_kpv2)
+                 OR (l.properties :: JSONB ->> 'mahakantud')::DATE > l_kpv2
+                   )
              GROUP BY po.pv_kaart_id
              UNION ALL
              SELECT l.id                                                        AS pv_kaart_id,

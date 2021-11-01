@@ -31,7 +31,7 @@ WHERE
   j.kpv >= l_kpv1
   AND j.kpv <= l_kpv2
   AND j.rekvid = (CASE
-                    WHEN l_kond IS NOT NULL AND NOT empty(l_kond)
+                    WHEN l_kond IS NOT NULL AND NOT l_kond > 0
                       THEN l_rekvid
                     ELSE j.rekvid END)
   AND j.rekvid IN (SELECT rekv_id
@@ -49,7 +49,6 @@ GRANT EXECUTE ON FUNCTION palk.palk_lausend( DATE, DATE, INTEGER, INTEGER ) TO d
 
 /*
 
-SELECT *
-FROM palk.palk_lausend('2018-01-01', '2018-12-31', 63, 1 :: INTEGER);
-
+SELECT qry.*
+FROM palk.palk_lausend('2021-11-01'::date, '2021-11-30'::date, 63::INTEGER, 1::INTEGER) qry
 */

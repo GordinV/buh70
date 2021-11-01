@@ -16,6 +16,7 @@ module.exports = async (file, mimeType, user) => {
         // сохраняем
 
         const params = [JSON.stringify(rows), user.id, user.asutusId];
+        console.log('params', params);
         const result = await Document.executeTask('importTeenused', params).then((result) => {
                 saved = result.result ? result.result : 0;
             }

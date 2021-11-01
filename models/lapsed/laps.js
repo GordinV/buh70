@@ -87,7 +87,12 @@ module.exports = {
                                   to_char(coalesce((k.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)),
                                           'DD.MM.YYYY')                                                    AS kehtivus,
                                   coalesce((k.properties ->> 'lopp_kpv')::DATE,
-                                           date(year(), 12, 31))                                           AS lopp_kpv
+                                           date(year(), 12, 31))                                           AS lopp_kpv,
+                                  coalesce((k.properties ->> 'soodus')::NUMERIC, 0)::NUMERIC               AS soodustus,
+                                  coalesce((k.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN     AS kas_protsent,
+                                  to_char((k.properties ->> 'sooduse_alg')::DATE, 'DD.MM.YYYY') || ' ' ||
+                                  to_char((k.properties ->> 'sooduse_lopp')::DATE, 'DD.MM.YYYY')           AS soodustuste_period
+
                            FROM lapsed.lapse_kaart k
                                     INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
                                     LEFT OUTER JOIN libs.library gr
@@ -126,14 +131,17 @@ module.exports = {
             gridTeenusteConfig:
                 [
                     {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
-                    {id: 'kood', name: 'Kood', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'uhik', name: 'Ühik', width: '50px', show: true, type: 'text', readOnly: false},
-                    {id: 'hind', name: 'Hind', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'yksus', name: 'Üksus', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'all_yksus', name: 'All üksus', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'inf3', name: 'INF3', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'kehtivus', name: 'Period', width: '150px', show: true, type: 'text', readOnly: false},
+                    {id: 'kood', name: 'Kood', width: '10%', show: true, type: 'text', readOnly: false},
+                    {id: 'nimetus', name: 'Nimetus', width: '20%', show: true, type: 'text', readOnly: false},
+                    {id: 'uhik', name: 'Ühik', width: '5%', show: true, type: 'text', readOnly: false},
+                    {id: 'hind', name: 'Hind', width: '10%', show: true, type: 'text', readOnly: false},
+                    {id: 'yksus', name: 'Üksus', width: '10%', show: true, type: 'text', readOnly: false},
+                    {id: 'all_yksus', name: 'All üksus', width: '5%', show: true, type: 'text', readOnly: false},
+                    {id: 'inf3', name: 'INF3', width: '5%', show: true, type: 'text', readOnly: false},
+                    {id: 'kehtivus', name: 'Period', width: '10%', show: true, type: 'text', readOnly: false},
+                    {id: 'soodustus', name: 'Soodustus', width: '10%', show: true, type: 'text', readOnly: false},
+                    {id: 'soodustuste_period', name: 'Kehtiv', width: '10%', show: true, type: 'text', readOnly: false},
+                    {id: 'kas_protsent', name: '%', width: '5%', show: true, type: 'text', readOnly: false},
                 ]
         },
     requiredFields: [

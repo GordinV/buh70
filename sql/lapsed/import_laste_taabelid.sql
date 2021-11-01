@@ -76,7 +76,7 @@ BEGIN
             THEN
 
                 json_object = to_jsonb(row)
-                              FROM (SELECT coalesce(l_id, 0)                       AS id,
+                              FROM (SELECT 0                                       AS id,
                                            l_laps_id                               AS parentid,
                                            l_lapse_kaart_id                        AS lapse_kaart_id,
                                            CASE
@@ -101,9 +101,12 @@ BEGIN
                 IF l_id > 0
                 THEN
                     count = count + 1;
+                    RAISE NOTICE 'saved , l_id %, json_save_params %', l_id, json_save_params;
                 ELSE
                     RAISE NOTICE 'salvestamine eba onnestus, %',json_save_params;
                 END IF;
+            ELSE
+                RAISE NOTICE 'not found l_laps_id % , l_lapse_kaart_id %, json_record.kood %', l_laps_id, l_lapse_kaart_id, json_record.kood;
 
             END IF;
 
@@ -133,9 +136,18 @@ GRANT EXECUTE ON FUNCTION lapsed.import_laste_taabelid(JSONB, INTEGER, INTEGER) 
 
 /*
 SELECT *
-FROM lapsed.import_laste_taabelid('[{"isikukood":"51001163716","yksus":"Sekretar ","kood":"322020-061 ","hind":"-25","kogus":"1","kuu":"11","aasta":"2021"}]',
-  2477,
-  63)
+FROM lapsed.import_laste_taabelid('[{"isikukood":"51403100160","yksus":"LAED-002-04","kood":"322020-061","hind":"-7.53","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"51403100160","yksus":"LAED-002-04","kood":"322030-066","hind":"-3.23","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"51905140147","yksus":"LAED-001-01","kood":"322020-061","hind":"-7.53","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"51905140147","yksus":"LAED-001-01","kood":"322030-066","hind":"-3.23","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"51907160105","yksus":"LAED-001-01","kood":"322020-061","hind":"-7.53","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"51907160105","yksus":"LAED-001-01","kood":"322030-066","hind":"-3.23","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"51907230101","yksus":"LAED-001-01","kood":"322020-061","hind":"-7.53","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"51907230101","yksus":"LAED-001-01","kood":"322030-066","hind":"-3.23","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61406040176","yksus":"LAED-002-04","kood":"322020-061","hind":"-5.65","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61406040176","yksus":"LAED-002-04","kood":"322030-066","hind":"-2.42","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61903060222","yksus":"LAED-001-01","kood":"322020-061","hind":"-7.53","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61903060222","yksus":"LAED-001-01","kood":"322030-066","hind":"-3.23","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61903290190","yksus":"LAED-001-01","kood":"322020-061","hind":"-7.53","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61903290190","yksus":"LAED-001-01","kood":"322030-066","hind":"-3.23","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61905060134","yksus":"LAED-001-01","kood":"322020-061","hind":"-5.65","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61905060134","yksus":"LAED-001-01","kood":"322030-066","hind":"-2.42","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61908010180","yksus":"LAED-001-01","kood":"322020-061","hind":"-5.65","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61908010180","yksus":"LAED-001-01","kood":"322030-066","hind":"-2.42","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61908020198","yksus":"LAED-001-01","kood":"322020-061","hind":"-7.53","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61908020198","yksus":"LAED-001-01","kood":"322030-066","hind":"-3.23","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61908060157","yksus":"LAED-001-01","kood":"322020-061","hind":"-7.53","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61908060157","yksus":"LAED-001-01","kood":"322030-066","hind":"-3.23","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61910140171","yksus":"LAED-001-01","kood":"322020-061","hind":"-5.65","kogus":"1","kuu":"2","aasta":"2021"},{"isikukood":"61910140171","yksus":"LAED-001-01","kood":"322030-066","hind":"-2.42","kogus":"1","kuu":"2","aasta":"2021"}]',
+  4959,
+  80)
+
+
+
+
+select * from libs.nomenklatuur where kood in ('322030-066','322030-061')
+and rekvid = 80
+
 
 */
-
+SELECT *
+FROM lapsed.lapse_taabel
+WHERE id = 56
