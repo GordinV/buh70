@@ -89,7 +89,10 @@ module.exports = {
                                   coalesce((k.properties ->> 'lopp_kpv')::DATE,
                                            date(year(), 12, 31))                                           AS lopp_kpv,
                                   coalesce((k.properties ->> 'soodus')::NUMERIC, 0)::NUMERIC               AS soodustus,
-                                  coalesce((k.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN     AS kas_protsent,
+                                  CASE
+                                      WHEN coalesce((k.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN
+                                          THEN 'Jah'
+                                      ELSE 'Ei' END::TEXT                                                  AS kas_protsent,
                                   to_char((k.properties ->> 'sooduse_alg')::DATE, 'DD.MM.YYYY') || ' ' ||
                                   to_char((k.properties ->> 'sooduse_lopp')::DATE, 'DD.MM.YYYY')           AS soodustuste_period
 
