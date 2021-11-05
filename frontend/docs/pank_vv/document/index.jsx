@@ -101,7 +101,7 @@ class Tunnus extends React.PureComponent {
                     </div>
                     <div style={styles.docColumn}>
                         <label>
-                            {`(${self.docData.nimi}, ${self.docData.asutus})`}
+                            {`(${self.docData.nimi ?  self.docData.nimi || ',' || self.docData.asutus : 'Puudub'})`}
                         </label>
                     </div>
                 </div>
