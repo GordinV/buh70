@@ -158,22 +158,23 @@ BEGIN
             /* sisse kassa order*/
             lcDbKonto = coalesce(v_vorder1.konto, 'puudub');
             lcKrKonto = v_dokprop.konto;
+            lcDbTp = CASE WHEN left(lcDbKonto, 6) = '100080' THEN '' ELSE coalesce(v_vorder.asutus_tp, '800599') END;
 
-            SELECT 0                                      AS id,
-                   coalesce(v_vorder1.summa, 0)           AS summa,
-                   coalesce(v_vorder1.valuuta, 'EUR')     AS valuuta,
-                   coalesce(v_vorder1.kuurs, 1)           AS kuurs,
-                   lcDbKonto                              AS deebet,
-                   coalesce(v_vorder.asutus_tp, '800599') AS lisa_d,
-                   lcKrKonto                              AS kreedit,
-                   ''                                     AS lisa_k,
-                   coalesce(v_vorder1.tunnus, '')         AS tunnus,
-                   coalesce(v_vorder1.proj, '')           AS proj,
-                   coalesce(v_vorder1.kood1, '')          AS kood1,
-                   coalesce(v_vorder1.kood2, '')          AS kood2,
-                   coalesce(v_vorder1.kood3, '')          AS kood3,
-                   coalesce(v_vorder1.kood4, '')          AS kood4,
-                   coalesce(v_vorder1.kood5, '')          AS kood5
+            SELECT 0                                  AS id,
+                   coalesce(v_vorder1.summa, 0)       AS summa,
+                   coalesce(v_vorder1.valuuta, 'EUR') AS valuuta,
+                   coalesce(v_vorder1.kuurs, 1)       AS kuurs,
+                   lcDbKonto                          AS deebet,
+                   lcDbTp                             AS lisa_d,
+                   lcKrKonto                          AS kreedit,
+                   ''                                 AS lisa_k,
+                   coalesce(v_vorder1.tunnus, '')     AS tunnus,
+                   coalesce(v_vorder1.proj, '')       AS proj,
+                   coalesce(v_vorder1.kood1, '')      AS kood1,
+                   coalesce(v_vorder1.kood2, '')      AS kood2,
+                   coalesce(v_vorder1.kood3, '')      AS kood3,
+                   coalesce(v_vorder1.kood4, '')      AS kood4,
+                   coalesce(v_vorder1.kood5, '')      AS kood5
             INTO v_journal;
 
             l_json_row = row_to_json(v_journal);

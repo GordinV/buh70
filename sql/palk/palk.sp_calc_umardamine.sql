@@ -101,14 +101,26 @@ BEGIN
     -- arvestame, loop for each tululiik
     FOR v_tululiik IN
         SELECT po.tululiik,
-               sum(po.summa)     AS summa,
-               count(po.id)      AS arv_count,
-               sum(po.tulubaas)  AS mvt,
-               sum(po.tootumaks) AS tki,
-               sum(po.pensmaks)  AS pm,
-               sum(po.tulumaks)  AS tm,
-               count(*) OVER ()  AS tululiigi_arv
+               sum(po.summa)       AS summa,
+               count(po.id)        AS arv_count,
+               sum(po.tulubaas)    AS mvt,
+               sum(po.tootumaks)   AS tki,
+               sum(po.pensmaks)    AS pm,
+               sum(po.tulumaks)    AS tm,
+               count(*) OVER ()    AS tululiigi_arv,
+               max(l.sm_maksustav) AS sm_maksustav,
+               max(l.tk_maksustav) AS tk_maksustav,
+               max(l.pm_maksustav) AS pm_maksustav
         FROM palk.cur_palkoper po
+                 LEFT OUTER JOIN (SELECT l.kood,
+                                         l.tun1 AS tm_maar,
+                                         l.tun2 AS sm_maksustav,
+                                         l.tun4 AS tk_maksustav,
+                                         l.tun5 AS pm_maksustav
+                                  FROM libs.library l
+                                  WHERE LIBRARY = 'MAKSUKOOD'
+                                    AND l.status <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')) l
+                                 ON l.kood = po.tululiik
         WHERE po.lepingId IN (
             SELECT t.id
             FROM palk.tooleping t
@@ -123,7 +135,6 @@ BEGIN
         GROUP BY po.tululiik, po.palk_liik
         ORDER BY po.palk_liik
         LOOP
-            RAISE NOTICE 'tululiik % arv_count % summa %', v_tululiik.tululiik, v_tululiik.arv_count, v_tululiik.summa;
             IF v_tululiik.arv_count > 1
             THEN
                 -- есть необходимость в округлении
@@ -202,7 +213,7 @@ BEGIN
                   AND po.palk_liik = 'ARVESTUSED';
 
 
-                RAISE NOTICE 'v_arv.mvt %, v_fakt_arv.mvt %', v_arv.mvt,v_fakt_arv.mvt;
+--                RAISE NOTICE 'v_arv.mvt %, v_fakt_arv.mvt %', v_arv.mvt,v_fakt_arv.mvt;
 
 
                 IF coalesce(v_arv.tm, 0) = 0 AND coalesce(v_arv.tm_kokku, 0) > 0 AND v_tululiik.tululiik = '10'
@@ -212,10 +223,10 @@ BEGIN
                 END IF;
                 -- check if we need to round taxes
                 IF coalesce(v_arv.tm, 0) - round(coalesce(v_fakt_arv.tm, 0), 2) <> 0 OR
-                   coalesce(v_arv.sm, 0) - round(coalesce(v_fakt_arv.sm, 0), 2) <> 0 OR
-                   coalesce(v_arv.tki, 0) - round(coalesce(v_fakt_arv.tki, 0), 2) <> 0 OR
-                   coalesce(v_arv.tka, 0) - round(coalesce(v_fakt_arv.tka, 0), 2) <> 0 OR
-                   coalesce(v_arv.pm, 0) - round(coalesce(v_fakt_arv.pm, 0), 2) <> 0 OR
+                   (coalesce(v_arv.sm, 0) - round(coalesce(v_fakt_arv.sm, 0), 2)) * v_tululiik.sm_maksustav <> 0 OR
+                   (coalesce(v_arv.tki, 0) - round(coalesce(v_fakt_arv.tki, 0), 2)) * v_tululiik.tk_maksustav <> 0 OR
+                   (coalesce(v_arv.tka, 0) - round(coalesce(v_fakt_arv.tka, 0), 2)) * v_tululiik.tk_maksustav <> 0 OR
+                   (coalesce(v_arv.pm, 0) - round(coalesce(v_fakt_arv.pm, 0), 2)) * v_tululiik.pm_maksustav <> 0 OR
                    (CASE
                         WHEN v_tululiik.tululiigi_arv > 1 THEN 0
                         WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1
@@ -301,5 +312,5 @@ GRANT EXECUTE ON FUNCTION palk.sp_calc_umardamine(INTEGER, JSON) TO dbpeakasutaj
 
 /*
 
-SELECT * FROM palk.sp_calc_umardamine(4827, '{"lepingid": 30998,"libid": 147583,"kpv": "2021-03-31"}')
+SELECT * FROM palk.sp_calc_umardamine(4827, '{"kpv":"2021-12-31","rekvid":121,"lepingid":27610,"libid":136331}')
  */

@@ -62,9 +62,12 @@ BEGIN
                  INNER JOIN libs.library l ON l.kood = lk.properties ->> 'yksus'
             AND l.library = 'LAPSE_GRUPP'
             AND l.status <> 3
-                 INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
+                 INNER JOIN (SELECT id, kood, nimetus, uhik
+                             FROM libs.nomenklatuur n
+                             WHERE rekvid = l_rekvid
+                               AND ltrim(rtrim(n.uhik)) IN ('paev', 'päev')) n ON n.id = lk.nomid
         WHERE lk.staatus <> 3
-          and lk.rekvid = l_rekvid
+          AND lk.rekvid = l_rekvid
           AND l.id = l_grupp_id
           AND (lk.properties ->> 'alg_kpv' IS NULL OR
                (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
@@ -76,7 +79,7 @@ BEGIN
                    v_lapsed.lapsId AS laps_id,
                    v_lapsed.kogus  AS kogus,
                    1               AS osalemine
-                   INTO v_row;
+            INTO v_row;
 
             l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_row);
         END LOOP;
@@ -88,9 +91,10 @@ BEGIN
            l_rekvid       AS rekv_id,
            l_kpv          AS kpv,
            l_json_details AS "gridData"
-           INTO v_params;
+    INTO v_params;
 
-    SELECT row_to_json(row) INTO l_json
+    SELECT row_to_json(row)
+    INTO l_json
     FROM (SELECT 0        AS id,
                  v_params AS data) row;
 

@@ -65,9 +65,6 @@ BEGIN
         RETURN;
     END IF;
 
-    RAISE NOTICE 'eelproj 3';
-
-
     FOR v_taotlus IN
         SELECT t1.eelarveid,
                t.rekvid,
@@ -87,7 +84,7 @@ BEGIN
                t1.id    AS taotlus1id,
                t1.eelprojid,
                t.tunnus AS tun,
-               t1.selg
+               t.muud as selg
         FROM docs.doc d
                  INNER JOIN eelarve.taotlus t ON t.parentid = d.id
                  INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
@@ -98,8 +95,6 @@ BEGIN
 --        AND empty(t1.eelarveid)
 
         LOOP
-
-            RAISE NOTICE 'eelproj loop';
 
             -- Kontrollime aasta
             IF (SELECT fnc_aasta_kontrol(v_taotlus.rekvid, v_taotlus.kpv)) = 0

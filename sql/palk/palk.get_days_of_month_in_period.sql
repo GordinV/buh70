@@ -11,6 +11,7 @@ DECLARE
     l_result      INTEGER = 0; -- tulemus, paevad
     l_pidu_paevad INTEGER = 0;
 BEGIN
+    RAISE notice 'kuu %, l_kpv1 %, l_kpv2 %', kuu, l_kpv1, l_kpv2;
     IF year(l_kpv1) = year(l_kpv2) AND month(l_kpv2) = month(l_kpv1) AND aasta = year(l_kpv1) AND kuu = month(l_kpv1)
     THEN
         -- ajavahemik samas kuu ja aastas

@@ -17,6 +17,7 @@ DECLARE
     kas_min_sots       BOOLEAN = coalesce((params ->> 'min_sots')::BOOLEAN, FALSE);
     kas_kalendripaevad BOOLEAN = coalesce((params ->> 'kas_kalendripaevad')::BOOLEAN, FALSE);
     kas_puudumised     BOOLEAN = (params ->> 'puudumised');
+    kas_taabel         BOOLEAN = (params ->> 'taabel'); -- для расчета табеля, чтобы учесть административный отпуск только
 
     l_start_paev       INTEGER = coalesce((params ->> 'alg_paev')::INTEGER, 1);
     l_lopp_paev        INTEGER = params ->> 'lopp_paev';
@@ -44,7 +45,9 @@ BEGIN
           AND (month(p.kpv1) = l_kuu AND year(p.kpv1) = l_aasta
             OR (month(kpv2) = l_kuu AND year(kpv2) = l_aasta))
           AND (l_pohjus IS NULL OR p.pohjus = l_pohjus)
-          AND CASE WHEN l_pohjus IS NOT NULL AND l_pohjus = 'PUHKUS' THEN p.tyyp <> 4 ELSE TRUE END -- убрал для расчета мин. соц.налога
+          AND CASE
+                  WHEN l_pohjus IS NOT NULL AND l_pohjus = 'PUHKUS' AND kas_taabel IS NULL THEN p.tyyp <> 4
+                  ELSE TRUE END -- убрал для расчета мин. соц.налога
           AND (l_pohjuse_tyyp IS NULL OR p.tyyp = l_pohjuse_tyyp)
           AND (kas_puudumised IS NULL OR p.kas_muutab_kalendripäevad)
           AND (l_start_paev IS NULL OR DAY(p.kpv1) >= l_start_paev)

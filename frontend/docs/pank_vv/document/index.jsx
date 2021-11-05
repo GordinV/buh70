@@ -59,8 +59,8 @@ class Tunnus extends React.PureComponent {
 
         return (
             <div style={styles.doc}>
-                <div style={styles.docColumn}>
-                    <div style={styles.docRow}>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <InputText title="Pank ID "
                                    name='pank_id'
                                    ref="input-pank_id"
@@ -68,7 +68,9 @@ class Tunnus extends React.PureComponent {
                                    value={self.docData.pank_id || ''}
                                    onChange={self.handleInputChange}/>
                     </div>
-                    <div style={styles.docRow}>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <InputDate title='Maksepäev:'
                                    name='valid'
                                    value={self.docData.kpv}
@@ -76,7 +78,10 @@ class Tunnus extends React.PureComponent {
                                    readOnly={!self.state.edited}
                                    onChange={self.handleInputChange}/>
                     </div>
-                    <div style={styles.docRow}>
+                </div>
+
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <InputNumber title='Summa: '
                                      name='summa'
                                      value={Number(self.docData.summa)}
@@ -84,8 +89,9 @@ class Tunnus extends React.PureComponent {
                                      readOnly={!self.state.edited}
                                      onChange={self.handleInputChange}/>
                     </div>
-
-                    <div style={styles.docRow}>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <InputText title="Viitenumber:"
                                    name='viitenumber'
                                    ref="input-viitenumber"
@@ -93,7 +99,14 @@ class Tunnus extends React.PureComponent {
                                    value={self.docData.viitenumber || ''}
                                    onChange={self.handleInputChange}/>
                     </div>
-                    <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
+                        <label>
+                            {`(${self.docData.nimi}, ${self.docData.asutus})`}
+                        </label>
+                    </div>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <InputText title="Reg.(Isiku) kood:"
                                    name='isikukood'
                                    ref="input-isikukood"
@@ -101,7 +114,9 @@ class Tunnus extends React.PureComponent {
                                    value={self.docData.isikukood || ''}
                                    onChange={self.handleInputChange}/>
                     </div>
-                    <div style={styles.docRow}>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <InputText title="Maksja:"
                                    name='maksja'
                                    ref="input-maksja"
@@ -109,7 +124,9 @@ class Tunnus extends React.PureComponent {
                                    value={self.docData.maksja || ''}
                                    onChange={self.handleInputChange}/>
                     </div>
-                    <div style={styles.docRow}>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <InputText title="Maksja AA:"
                                    name='iban'
                                    ref="input-iban"
@@ -117,13 +134,16 @@ class Tunnus extends React.PureComponent {
                                    value={self.docData.iban || ''}
                                    onChange={self.handleInputChange}/>
                     </div>
-                    <div style={styles.docRow}>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         <InputText title="Pank:"
                                    name='pank'
                                    ref="input-pank"
                                    readOnly={!self.state.edited}
                                    value={self.docData.pank || ''}
                                    onChange={self.handleInputChange}/>
+
                     </div>
                 </div>
                 <div style={styles.docRow}>

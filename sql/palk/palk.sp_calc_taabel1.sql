@@ -1,6 +1,5 @@
 DROP FUNCTION IF EXISTS sp_calc_taabel1(INTEGER, INTEGER, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS palk.sp_calc_taabel1(params JSONB);
-DROP FUNCTION IF EXISTS palk.sp_calc_taabel1_(params JSONB);
 
 CREATE FUNCTION palk.sp_calc_taabel1(params JSONB)
     RETURNS NUMERIC
@@ -38,7 +37,8 @@ BEGIN
     END IF;
     l_kpv = make_date(l_aasta, l_kuu, l_maxdays);
 
-    SELECT t.* INTO v_tooleping
+    SELECT t.*
+    INTO v_tooleping
     FROM palk.tooleping t
     WHERE t.id = l_lepingid;
 
@@ -59,19 +59,22 @@ BEGIN
 
 
     -- arv puhkuse paevad
-    SELECT row_to_json(row) INTO l_params
+    SELECT row_to_json(row)
+    INTO l_params
     FROM (SELECT l_kuu       AS kuu,
                  l_aasta     AS aasta,
                  l_kpv       AS kpv,
                  l_lepingid  AS lepingid,
                  l_alg_paev  AS alg_paev,
                  l_lopp_paev AS lopp_paev,
+                 TRUE        AS taabel,
                  'PUHKUS'    AS pohjus) row;
 
     l_puhkus = palk.get_puudumine(l_params :: JSONB);
 
     -- arv haiguse paevad
-    SELECT row_to_json(row) INTO l_params
+    SELECT row_to_json(row)
+    INTO l_params
     FROM (SELECT l_kuu      AS kuu,
                  l_aasta    AS aasta,
                  l_kpv      AS kpv,
@@ -82,7 +85,8 @@ BEGIN
     l_haigus := palk.get_puudumine(l_params :: JSONB);
 
     -- arv muu paevad
-    SELECT row_to_json(row) INTO l_params
+    SELECT row_to_json(row)
+    INTO l_params
     FROM (SELECT l_kuu      AS kuu,
                  l_aasta    AS aasta,
                  l_kpv      AS kpv,
@@ -104,7 +108,8 @@ BEGIN
     END IF;
 
     -- check work table
-    SELECT t.tund INTO l_hours
+    SELECT t.tund
+    INTO l_hours
     FROM palk.Toograf t
     WHERE t.lepingid = l_lepingid
       AND status <> 'deleted'
@@ -122,7 +127,8 @@ BEGIN
     ELSE
         -- töögraafik
         -- график не установлен, считаем по календарным дням
-        SELECT row_to_json(row) INTO l_params
+        SELECT row_to_json(row)
+        INTO l_params
         FROM (SELECT l_kuu       AS kuu,
                      l_aasta     AS aasta,
                      l_kpv       AS kpv,
@@ -134,8 +140,8 @@ BEGIN
                                                      FROM cur_tahtpaevad l
                                                      WHERE (l.rekvid = v_Tooleping.rekvid OR l.rekvid IS NULL)
                                                        AND kuu = l_kuu
-                                                       and paev >= coalesce(l_alg_paev, 1)
-                                                       and paev <= coalesce(l_lopp_paev, 31)
+                                                       AND paev >= coalesce(l_alg_paev, 1)
+                                                       AND paev <= coalesce(l_lopp_paev, 31)
                                                        AND l.luhipaev = 1) * 3;
 
         l_toopaevad = (SELECT palk.get_work_days(l_params::JSON));

@@ -18,9 +18,15 @@ module.exports = {
                      pank_vv.summa,
                      pank_vv.iban,
                      pank_vv.pank,
-                     mk.number
+                     mk.number,
+                     l.nimi,
+                     r.nimetus                                AS asutus
               FROM lapsed.pank_vv pank_vv
                        LEFT OUTER JOIN docs.mk mk ON mk.parentid = pank_vv.doc_id
+                       LEFT OUTER JOIN lapsed.viitenr v ON v.viitenumber = pank_vv.viitenumber
+                       LEFT OUTER JOIN lapsed.laps l ON l.isikukood = v.isikukood
+                       LEFT OUTER JOIN ou.rekv r ON r.id = v.rekv_id
+
               WHERE pank_vv.id = $1::INTEGER`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,

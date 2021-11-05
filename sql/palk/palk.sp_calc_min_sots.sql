@@ -75,6 +75,8 @@ BEGIN
         RETURN;
     END IF;
 
+
+
     -- puhkusepaevad arvestame
     SELECT sum(palk.get_puudumine((SELECT row_to_json(row)
                                    FROM (SELECT l_lepingid   AS lepingid,
@@ -98,7 +100,8 @@ BEGIN
            sum(po.summa)
            FILTER (WHERE po.kood ILIKE '%HAIGUS%') AS haigused,
            sum(po.sotsmaks)
-           FILTER (WHERE po.kood ILIKE '%HAIGUS%') AS sm_haigused
+           FILTER (WHERE po.kood ILIKE '%HAIGUS%') AS sm_haigused,
+           max(mk.sm_arv) as sm_arv
     INTO v_po
     FROM palk.cur_palkoper po
              INNER JOIN palk.com_maksukood mk ON mk.kood = po.tululiik :: TEXT AND NOT empty(mk.sm_arv)
@@ -121,11 +124,20 @@ BEGIN
            lopp_kpv                                                AS lopp,
            (pc.minpalk * pc.sm / 100)                              AS minsots,
            pc.minpalk,
-           day(l_last_paev) - coalesce(v_puhkus.puhkuse_paevad, 0) AS paevad
+           day(l_last_paev) - coalesce(v_puhkus.puhkuse_paevad, 0) AS paevad,
+           v_po.sm_arv
     INTO v_arvestus
     FROM palk.palk_config pc
     WHERE pc.rekvid = v_tooleping.rekvid;
 
+    if v_po.sm_arv is null then
+        -- нет облагаемых соц.налогом сумм
+        error_message = 'Pole vaja arvestada';
+        summa = 0;
+        result = 1;
+        RETURN;
+
+    END IF;
 
     l_paevad = (CASE
                     WHEN COALESCE(v_puhkus.puhkuse_paevad, 0) = 0
@@ -141,8 +153,6 @@ BEGIN
 
     l_korr_sm = v_arvestus.sm - (v_arvestus.sm_puhkused + v_arvestus.sm_haigused);
     l_korr_summa = v_arvestus.summa - (v_arvestus.puhkused + v_arvestus.haigused);
-
-    RAISE NOTICE 'l_last_paev %, v_puhkus.puhkuse_paevad %, l_paevad %, l_korr_sm %, v_arvestus.sm_puhkused %', l_last_paev, v_puhkus.puhkuse_paevad, l_paevad, l_korr_sm, v_arvestus.sm_puhkused;
 
     IF (l_min_sots - l_korr_sm) > 0
     THEN

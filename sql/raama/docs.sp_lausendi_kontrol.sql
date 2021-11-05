@@ -30,7 +30,6 @@ DECLARE
     v_lib      RECORD;
     is_error   INTEGER;
 BEGIN
-    raise notice 'kontrol %', params;
 
     IF l_kpv <= make_date(2020, 12, 31)
     THEN
@@ -96,7 +95,6 @@ BEGIN
         AND l_kpv > make_date(val(left(v_lib.valid::TEXT, 4)), val(substr(v_lib.valid::TEXT, 5, 2)),
                               val(substr(v_lib.valid::TEXT, 7, 2)))
     THEN
-        raise notice 'TP-D %', l_tp_d;
         lcMsg1 = 'TP-D,Ei saa kasuta, sest TP kood ei ole kehtiv';
         l_msg = l_msg + lcMsg1;
     END IF;
@@ -222,7 +220,6 @@ BEGIN
             lnAllikas = 0;
         END IF;
     END IF;
-    raise notice 'lnTPK %', lnTPK;
 
     IF left(l_db, 5) = '20200'
     THEN
@@ -293,7 +290,6 @@ BEGIN
 
 
     -- Kreedit
-        raise notice 'kreedit %',  v_konto_k;
 
     IF v_konto_k.kood IS NULL OR empty(l_kr) OR len(l_kr) < 6
     THEN
@@ -391,7 +387,6 @@ BEGIN
     END IF;
 
 --omakapital
-    RAISE NOTICE 'omakapital v_konto_k.rahavoog %, l_rahavoog %, l_kr %', v_konto_k.rahavoog, l_rahavoog, l_kr;
     IF v_konto_k.rahavoog IS NOT NULL AND v_konto_k.rahavoog::TEXT = '1'
     THEN
         IF left(l_kr, 3) = '298' AND

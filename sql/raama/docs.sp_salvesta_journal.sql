@@ -16,7 +16,7 @@ DECLARE
                                 FROM libs.library
                                 WHERE kood = doc_type_kood
                                   AND library = 'DOK'
-                                    LIMIT 1);
+                                LIMIT 1);
     doc_data         JSON    = data ->> 'data';
     doc_details      JSON    = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     doc_asutusid     INTEGER = doc_data ->> 'asutusid';
@@ -45,10 +45,12 @@ DECLARE
                                 FROM ou.aa
                                 WHERE parentid = user_rekvid
                                   AND kassa = 2
-                                    LIMIT 1);
+                                LIMIT 1);
 
     l_check_lausend  TEXT;
     l_avans_id       INTEGER;
+    l_db_tp          VARCHAR(20);
+    l_kr_tp          VARCHAR(20);
 BEGIN
 
     SELECT kasutaja,
@@ -150,13 +152,28 @@ BEGIN
             IF json_record.summa <> 0
             THEN
 
+                l_db_tp = json_record.lisa_d;
+                l_kr_tp = json_record.lisa_k;
+
+                l_db_tp = CASE
+                    WHEN json_record.deebet IN ('601000', '601002') THEN '014001'
+                    WHEN left(json_record.deebet,6) IN ('100000','100080') THEN ''
+                    ELSE l_db_tp
+                    END;
+
+                l_kr_tp = CASE
+                              WHEN json_record.kreedit IN ('601000', '601002') THEN '014001'
+                              WHEN left(json_record.kreedit,6) IN ('100000','100080') THEN ''
+                              ELSE l_kr_tp
+                    END;
+
                 -- проверка проводки
                 SELECT row_to_json(row)
                 INTO json_lausend
                 FROM (SELECT json_record.deebet             AS db,
                              json_record.kreedit            AS kr,
-                             json_record.lisa_d             AS tpd,
-                             json_record.lisa_k             AS tpk,
+                             l_db_tp                        AS tpd,
+                             l_kr_tp                        AS tpk,
                              json_record.kood1              AS tt,
                              json_record.kood2              AS allikas,
                              CASE
@@ -192,7 +209,7 @@ BEGIN
                                          ELSE json_record.kood3 END, ''),
                             json_record.kood4,
                             json_record.kood5,
-                            json_record.lisa_d, json_record.lisa_k,
+                            l_db_tp, l_kr_tp,
                             coalesce(json_record.valuuta, 'EUR'), coalesce(json_record.kuurs, 1),
                             coalesce(json_record.kuurs, 1) * json_record.summa);
 --                            RETURNING id INTO journal1_id;
@@ -217,8 +234,8 @@ BEGIN
                                                 ELSE json_record.kood3 END, ''),
                         kood4    = json_record.kood4,
                         kood5    = json_record.kood5,
-                        lisa_d   = json_record.lisa_d,
-                        lisa_k   = json_record.lisa_k,
+                        lisa_d   = l_db_tp,
+                        lisa_k   = l_kr_tp,
                         kuurs    = 1,
                         valuuta  = 'EUR',
                         valsumma = json_record.summa
@@ -242,9 +259,9 @@ BEGIN
               AND a1.asutusId = doc_asutusid
               AND (ltrim(rtrim((d.details :: JSONB ->> 'konto')::TEXT)) = ltrim(rtrim(json_record.deebet)) OR
                    ltrim(rtrim((d.details :: JSONB ->> 'konto')::TEXT)) = ltrim(rtrim(json_record.kreedit)))
-                ORDER BY a1.kpv
+            ORDER BY a1.kpv
                 DESC
-                LIMIT 1;
+            LIMIT 1;
 
             IF lnId IS NOT NULL
             THEN
@@ -287,9 +304,9 @@ BEGIN
                   AND number = doc_dok
                   AND a.rekvid = user_rekvid
                   AND a.journalid <> doc_id
-                    ORDER BY a.jaak DESC
-                    , a.kpv
-                    LIMIT 1
+                ORDER BY a.jaak DESC
+                        , a.kpv
+                LIMIT 1
     );
 
     IF is_import IS NULL AND l_arv_id IS NOT NULL
@@ -308,8 +325,8 @@ BEGIN
       AND a1.rekvid = user_rekvid
       AND a1.asutusId = doc_asutusid
       AND ltrim(rtrim(coalesce((d.details :: JSONB ->> 'konto'), '') :: TEXT)) IN ('202050')
-        ORDER BY a1.kpv DESC
-        LIMIT 1;
+    ORDER BY a1.kpv DESC
+    LIMIT 1;
 
     IF l_avans_id IS NOT NULL
     THEN

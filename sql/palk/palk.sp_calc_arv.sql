@@ -339,7 +339,7 @@ BEGIN
         -- не будем считать MVT, а используем уже примененный
         mvt = CASE WHEN l_used_mvt IS NULL THEN coalesce(l_isiku_mvt, 0) ELSE l_used_mvt END;
 
-        raise notice 'umardamine tm mvt %, l_used_mvt %, l_tulud_kokku %, summa %, l_tululiik %', mvt, l_used_mvt, l_tulud_kokku, summa, l_tululiik;
+--        raise notice 'umardamine tm mvt %, l_used_mvt %, l_tulud_kokku %, summa %, l_tululiik %', mvt, l_used_mvt, l_tulud_kokku, summa, l_tululiik;
 
         -- но если доход менее 500 (минимального оклада)
         IF (l_tulud_kokku < l_min_palk)
@@ -382,7 +382,7 @@ BEGIN
     tm = palk.fnc_calc_tm(summa, mvt, tki, pm, l_tululiik);
     tm_kokku = palk.fnc_calc_tm(l_tulud_kokku, mvt, tki, pm, NULL::TEXT);
 
-    raise notice 'umardamine tm %, tm_kokku %', tm, tm_kokku;
+--    raise notice 'umardamine tm %, tm_kokku %', tm, tm_kokku;
 
 
     selg = coalesce(selg, '') + 'TM arvestus:' + round(tm, 2) :: TEXT + ltEnter;

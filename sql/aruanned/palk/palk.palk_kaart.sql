@@ -155,7 +155,9 @@ CREATE OR REPLACE FUNCTION palk.palk_kaart(l_kpv1 DATE, l_kpv2 DATE, l_rekvid IN
         muu_9     INTEGER,
         muu_10    INTEGER,
         muu_11    INTEGER,
-        muu_12    INTEGER
+        muu_12    INTEGER,
+        idx       INTEGER,
+        liik      INTEGER
 
     )
 AS
@@ -403,7 +405,12 @@ SELECT a.regkood :: VARCHAR(20)                  AS isikukood,
        coalesce(qryPuudu.muu_9, 0) :: INTEGER    AS muu_9,
        coalesce(qryPuudu.muu_10, 0) :: INTEGER   AS muu_10,
        coalesce(qryPuudu.muu_11, 0) :: INTEGER   AS muu_11,
-       coalesce(qryPuudu.muu_12, 0) :: INTEGER   AS muu_12
+       coalesce(qryPuudu.muu_12, 0) :: INTEGER   AS muu_12,
+       idx,
+       CASE
+           WHEN liik = 1 THEN liik
+           WHEN liik IN (2, 3, 8, 4, 6, 70) THEN 2
+           ELSE 3 END                            AS liik
 FROM (
          WITH preArv AS (
              -- Основная ЗП
@@ -421,6 +428,7 @@ FROM (
                     sum(summa11)               AS summa11,
                     sum(summa12)               AS summa12,
                     'Põhipalk' :: VARCHAR(254) AS NIMETUS,
+                    10                         AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE (po.konto IN (SELECT unnest('{50000001,50010001,50012001,50014001,50021001,;
@@ -445,6 +453,7 @@ FROM (
                     sum(summa11)                AS summa11,
                     sum(summa12)                AS summa12,
                     'Lisatasud' :: VARCHAR(254) AS NIMETUS,
+                    20                          AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE (ltrim(rtrim(po.konto)) IN (SELECT unnest(
@@ -471,6 +480,7 @@ FROM (
                     sum(summa11)                            AS summa11,
                     sum(summa12)                            AS summa12,
                     'Preemiad, tulemuspalk' :: VARCHAR(254) AS NIMETUS,
+                    30                                      AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE po.konto IN (SELECT unnest(
@@ -494,6 +504,7 @@ FROM (
                     sum(summa11)                        AS summa11,
                     sum(summa12)                        AS summa12,
                     'Tööandja toetused' :: VARCHAR(254) AS NIMETUS,
+                    40                                  AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE (po.konto IN (SELECT unnest(
@@ -518,6 +529,7 @@ FROM (
                     sum(summa11)                                 AS summa11,
                     sum(summa12)                                 AS summa12,
                     'Puhkusetasud,ja -hüvitised' :: VARCHAR(254) AS NIMETUS,
+                    50                                           AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE (left(po.konto, 7) IN (SELECT unnest(
@@ -545,6 +557,7 @@ FROM (
                     sum(summa11)                      AS summa11,
                     sum(summa12)                      AS summa12,
                     'Õppepuhkusetasu' :: VARCHAR(254) AS NIMETUS,
+                    55                                AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE po.konto IN (SELECT unnest(
@@ -568,6 +581,7 @@ FROM (
                     sum(summa11)                          AS summa11,
                     sum(summa12)                          AS summa12,
                     'Täiendavad puhkused' :: VARCHAR(254) AS NIMETUS,
+                    56                                    AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE left(po.konto, 6) IN ('103560')
@@ -588,6 +602,7 @@ FROM (
                     sum(summa11)                            AS summa11,
                     sum(summa12)                            AS summa12,
                     'Hüvitised ja toetused' :: VARCHAR(254) AS NIMETUS,
+                    60                                      AS idx,
                     po.liik
 
              FROM qryPalkOper po
@@ -610,6 +625,7 @@ FROM (
                     sum(summa11)                AS summa11,
                     sum(summa12)                AS summa12,
                     'Hüvitised' :: VARCHAR(254) AS NIMETUS,
+                    65                          AS idx,
                     po.liik
 
              FROM qryPalkOper po
@@ -632,11 +648,12 @@ FROM (
                     sum(summa11)                              AS summa11,
                     sum(summa12)                              AS summa12,
                     'Võlaõiguslikud lepingud' :: VARCHAR(254) AS NIMETUS,
+                    70                                        AS idx,
                     po.liik
 
              FROM qryPalkOper po
              WHERE (po.konto IN ('50026801', '50029801')
-                 OR left(po.konto, 6) IN ('500500')
+                 OR left(po.konto, 6) IN ('500500', '500268')
                  )
                AND po.liik = 1
              GROUP BY lepingid, po.liik
@@ -655,6 +672,7 @@ FROM (
                     sum(summa11)                       AS summa11,
                     sum(summa12)                       AS summa12,
                     'Tootasu ettemaks' :: VARCHAR(254) AS NIMETUS,
+                    80                                 AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE po.konto IN ('103930')
@@ -675,6 +693,7 @@ FROM (
                     sum(summa11)                   AS summa11,
                     sum(summa12)                   AS summa12,
                     'Sotsiaalmaks' :: VARCHAR(254) AS NIMETUS,
+                    200                            AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE po.konto IN ('506000', '103931')
@@ -695,6 +714,8 @@ FROM (
                     sum(summa11)                            AS summa11,
                     sum(summa12)                            AS summa12,
                     'TÖÖTUSKINDLUSTUSMAKS ' :: VARCHAR(254) AS NIMETUS,
+                    120                                     AS idx,
+
                     70                                      AS liik
              FROM qryPalkOper po
              WHERE po.liik = 7
@@ -715,6 +736,7 @@ FROM (
                     sum(summa11)                           AS summa11,
                     sum(summa12)                           AS summa12,
                     'TÖÖTUSKINDLUSTUSMAKS' :: VARCHAR(254) AS NIMETUS,
+                    210                                    AS idx,
                     71                                     AS liik
              FROM qryPalkOper po
              WHERE po.liik = 7
@@ -735,6 +757,7 @@ FROM (
                     sum(summa11)                    AS summa11,
                     sum(summa12)                    AS summa12,
                     'Pensioonimaks' :: VARCHAR(254) AS NIMETUS,
+                    130                             AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE po.liik = 8
@@ -754,6 +777,7 @@ FROM (
                     sum(summa11)           AS summa11,
                     sum(summa12)           AS summa12,
                     'Tasu' :: VARCHAR(254) AS NIMETUS,
+                    300                    AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE po.liik = 6
@@ -773,6 +797,7 @@ FROM (
                     sum(summa11)               AS summa11,
                     sum(summa12)               AS summa12,
                     'Tulumaks' :: VARCHAR(254) AS NIMETUS,
+                    140                        AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE po.liik = 4
@@ -792,6 +817,7 @@ FROM (
                     sum(summa11)           AS summa11,
                     sum(summa12)           AS summa12,
                     'Muud' :: VARCHAR(254) AS NIMETUS,
+                    400                    AS idx,
                     po.liik
              FROM qryPalkOper po
              WHERE po.liik = 2
@@ -863,24 +889,79 @@ FROM (
                 sum(qryKokku.kinni_9)  AS kinni_9,
                 sum(qryKokku.kinni_10) AS kinni_10,
                 sum(qryKokku.kinni_11) AS kinni_11,
-                sum(qryKokku.kinni_12) AS kinni_12
-
+                sum(qryKokku.kinni_12) AS kinni_12,
+                idx,
+                liik
          FROM preArv
                   LEFT OUTER JOIN qryKokku ON preArv.lepingid = qryKokku.lepingid
-         GROUP BY preArv.lepingid, qryKokku.lepingid, nimetus
+         GROUP BY preArv.lepingid, qryKokku.lepingid, nimetus, liik, idx
      ) po
          LEFT OUTER JOIN (
     WITH qryPuudumine AS (
         -- собираем здесь данные о пропусках раб. места, сгруппированные по договорам , по месяцам
-        WITH qryPeriods AS (
-            -- сделаем периоды
-            SELECT kuu,
-                   year(date()) AS aasta,
-                   t.id         AS lepingid
-            FROM unnest('{1,2,3,4,5,6,7,8,9,10,11,12}' :: INTEGER[]) AS kuu,
-                 palk.tooleping t
-            WHERE t.rekvid = l_rekvid
-            ORDER BY lepingid, kuu, aasta
+        WITH puudumised_paevad AS (
+            WITH qryKuu AS (
+                SELECT kuu,
+                       year(l_kpv1) AS aasta,
+                       t.id         AS lepingid
+                FROM unnest('{1,2,3,4,5,6,7,8,9,10,11,12}' :: INTEGER[]) AS kuu,
+                     palk.tooleping t
+                WHERE t.rekvid = l_rekvid
+                ORDER BY lepingid, kuu, aasta
+            ),
+                 qryKorPuudu AS (
+                     SELECT p.id                    AS p_id,
+                            q.alg_kpv,
+                            q.lopp_kpv,
+                            p.kpv1                  AS kpv_1,
+                            p.kpv2                  AS kpv_2,
+                            CASE
+                                WHEN p.kpv1 >= q.alg_kpv AND month(p.kpv1) = month(q.alg_kpv) THEN p.kpv1
+                                ELSE q.alg_kpv END  AS kpv1,
+                            CASE
+                                WHEN p.kpv2 <= q.lopp_kpv AND MONTH(p.kpv2) = MONTH(q.lopp_kpv) THEN p.kpv2
+                                ELSE q.lopp_kpv END AS kpv2,
+                            CASE
+                                WHEN month(p.kpv1) = month(p.kpv2) THEN p.paevad
+
+                                WHEN p.kpv1 >= q.alg_kpv AND MONTH(p.kpv1) = MONTH(q.alg_kpv)
+                                    THEN palk.get_days_of_month_in_period(kuu, aasta, p.kpv1, (q.alg_kpv + INTERVAL
+                                    '1 month')::DATE, TRUE)
+                                WHEN MONTH(p.kpv1) < MONTH(q.alg_kpv) AND MONTH(p.kpv2) = MONTH(q.lopp_kpv)
+                                    THEN palk.get_days_of_month_in_period(kuu, aasta,
+                                                                          make_date(YEAR(q.lopp_kpv), MONTH(q.lopp_kpv), 1), p.kpv2,
+                                                                          TRUE)
+                                WHEN p.kpv1 > q.alg_kpv THEN 0
+                                ELSE palk.get_days_of_month_in_period(kuu, aasta,
+                                                                      make_date(YEAR(q.lopp_kpv), MONTH(q.lopp_kpv), 1), q.lopp_kpv,
+                                                                      TRUE)
+                                END                 AS paevad,
+
+                            p.puudumiste_liik,
+                            p.lepingid,
+                            p.tyyp,
+                            q.kuu,
+                            q.aasta
+                     FROM (SELECT kuu,
+                                  aasta,
+                                  make_date(aasta, qryKuu.kuu, 1) alg_kpv,
+                                  ((make_date(aasta, qryKuu.kuu, 1) + INTERVAL '1 month')::DATE -
+                                   1)::DATE AS                    lopp_kpv,
+                                  lepingid
+                           FROM qryKuu
+                          ) q,
+                          palk.puudumine p
+                     WHERE p.status <> 'deleted'
+                       AND q.alg_kpv >= l_kpv1
+                       AND q.lopp_kpv <= l_kpv2
+                       AND p.kpv1 >= l_kpv1
+                       AND p.kpv2 <= l_kpv2
+                       AND q.lepingid = p.lepingid
+                       AND q.kuu >= MONTH(p.kpv1)
+                       AND q.kuu <= MONTH(p.kpv2)
+                 )
+            SELECT *
+            FROM qryKorPuudu q
         )
              -- разбиваем дни по периодам
         SELECT lepingid,
@@ -935,21 +1016,17 @@ FROM (
                puudumiste_liik,
                tyyp
         FROM (
-                 SELECT qryPeriods.kuu,
-                        qryPeriods.aasta,
-                        palk.get_days_of_month_in_period(qryPeriods.kuu, qryPeriods.aasta, p.kpv1,
-                                                         p.kpv2, p.puudumiste_liik = 'PUHKUS') AS paevad,
+                 SELECT p.kuu,
+                        p.aasta,
+                        p.paevad,
                         p.puudumiste_liik,
                         p.tyyp,
                         p.lepingid
-                 FROM qryPeriods
-                          INNER JOIN palk.tooleping t ON t.id = qryPeriods.lepingid
-                          INNER JOIN palk.puudumine p
-                                     ON ((YEAR(p.kpv1) = qryPeriods.aasta AND MONTH(p.kpv1) = qryPeriods.kuu)
-                                         OR (YEAR(p.kpv2) = qryPeriods.aasta AND MONTH(p.kpv2) = qryPeriods.kuu)) AND
-                                        qryPeriods.lepingid = p.lepingid
+                 FROM puudumised_paevad p
+                          INNER JOIN palk.tooleping t ON t.id = p.lepingid
+                     AND p.paevad > 0
+--                     AND p.puudumiste_liik = 'PUHKUS'
                  WHERE t.rekvid = l_rekvid
-                   AND p.status <> 'deleted'
              ) qry
         WHERE kuu >= month(l_kpv1)
           AND kuu <= month(l_kpv2)
@@ -1205,6 +1282,10 @@ GRANT EXECUTE ON FUNCTION palk.palk_kaart( DATE, DATE, INTEGER, INTEGER ) TO dbk
 /*
 
 SELECT *
-FROM palk.palk_kaart('2021-01-01', '2021-07-31',132, 0 :: INTEGER)
-where isikukood = '47510062247'
+FROM palk.palk_kaart('2021-01-01', '2021-12-31',132, 0 :: INTEGER)
+where isikukood = '48705172234'
+
+
+
+select * from ou.rekv where parentid =  64
 */

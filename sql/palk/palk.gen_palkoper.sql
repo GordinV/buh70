@@ -153,19 +153,44 @@ BEGIN
                                   THEN 99 :: TEXT
                               ELSE pk.tululiik END
                         , Pk.percent_ DESC
-                        , pk.summa DESC
+                        , (CASE WHEN pk.summa < 0 THEN 1 ELSE 0 END) DESC, pk.summa DESC
                 LOOP
 
                     -- umardamine
                     IF v_lib.liik > 1 AND l_viimane_summa <> 0
-                        AND -- tulud rohkem kui 1
-                       l_arv_kogus > 1 AND NOT l_kasutatud_umardamine
-
                     THEN
-                        -- отчечаем об использованном округлении
-                        l_kasutatud_umardamine = TRUE;
-                        -- umardamine
-                        PERFORM palk.sp_calc_umardamine(user_id, l_viimane_params);
+                        IF (l_arv_kogus = 1 AND NOT l_kasutatud_umardamine)
+                        THEN
+                            -- проверим есть ли округления в периоде
+
+                            l_arv_kogus = (SELECT count(po.id)
+                                           FROM palk.palk_oper po
+                                                    INNER JOIN palk.tooleping t ON po.lepingid = t.id
+                                           WHERE kpv >= make_date(year(l_kpv), month(l_kpv), 1)::DATE
+                                             AND kpv <= l_kpv::DATE
+                                             AND t.parentid = v_tooleping.parentid
+                                             AND t.rekvid = v_tooleping.rekvid
+                                             AND po.libid IN (
+                                               SELECT id
+                                               FROM libs.library l
+                                               WHERE library = 'PALK'
+                                                 AND l.rekvid = po.rekvid
+                                                 AND (l.properties::JSONB ->> 'liik')::INTEGER = 1
+                                           ));
+
+                        END IF;
+
+                        IF l_arv_kogus > 1 AND NOT l_kasutatud_umardamine
+
+                        THEN
+
+                            -- отчечаем об использованном округлении
+                            l_arv_kogus = 0;
+                            l_kasutatud_umardamine = TRUE;
+                            -- umardamine
+                            PERFORM palk.sp_calc_umardamine(user_id, l_viimane_params);
+                        END IF;
+
                     END IF;
 
                     -- Готовим параметры для расчета
@@ -265,9 +290,10 @@ BEGIN
 
                         -- save results
                         l_dok_id =
-                                palk.sp_salvesta_palk_oper(('{"lausend":true,"data":' || l_save_params || '}') :: JSON,
-                                                           user_id,
-                                                           v_tooleping.rekvid);
+                                palk.sp_salvesta_palk_oper(
+                                        ('{"lausend":true,"data":' || l_save_params || '}') :: JSON,
+                                        user_id,
+                                        v_tooleping.rekvid);
                         IF (coalesce(l_dok_id, 0) > 0)
                         THEN
                             result = coalesce(result, 0) + 1;
@@ -279,11 +305,14 @@ BEGIN
                 END LOOP;
             -- umardamine kontrol
             -- umardamine
+
             IF l_viimane_summa <> 0
                 AND -- tulud rohkem kui 1
                l_arv_kogus > 1 AND NOT l_kasutatud_umardamine
 
             THEN
+                l_arv_kogus = 0;
+
                 l_kasutatud_umardamine = TRUE;
                 -- вызываем округление так как его еще нет
                 -- umardamine
@@ -303,7 +332,6 @@ BEGIN
 
             -- дорасчет мин СН
 
-            RAISE NOTICE 'calc min sm is_calc_min_sots %, l_sm_lib %', is_calc_min_sots, l_sm_lib;
             IF (is_calc_min_sots) AND l_sm_lib IS NOT NULL
             THEN
                 -- удаляем предыдущий расчет мин.СН
@@ -333,8 +361,6 @@ BEGIN
                 SELECT *
                 FROM palk.sp_calc_min_sots(user_id, l_params::JSON)
                 INTO tulemus;
-
-                RAISE NOTICE 'done tulemus.summa %, tulemus %', tulemus.summa ,tulemus;
 
                 IF tulemus.summa > 0
                 THEN
@@ -422,7 +448,8 @@ BEGIN
 EXCEPTION
     WHEN OTHERS
         THEN
-            v_tulemus.error_message = v_tulemus.error_message || SQLERRM;
+            v_tulemus.
+                error_message = v_tulemus.error_message || SQLERRM;
             v_tulemus.error_code = 1;
             l_params = to_jsonb(v_tulemus);
             data = coalesce(data, '[]'::JSONB) || l_params::JSONB;

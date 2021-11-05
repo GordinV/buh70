@@ -473,69 +473,42 @@ BEGIN
                        AND tyyp = 1
                      UNION ALL
 -- Строка 55 - Tekke täitmine – добавляем к уже имеющейся формуле KD 55 налог с оборота KD601 минус KD 601002.
-                     SELECT '2.12'
-                             ,
-                            1                                                                             AS is_e
-                             ,
-                            $2                                                                            AS rekvid
-                             ,
-                            ''::VARCHAR(20)                                                               AS tegev
-                             ,
-                            ''::VARCHAR(20)                                                               AS allikas
-                             ,
-                            '55'::VARCHAR(20)                                                             AS artikkel
-                             ,
-                            'Majandamiskulud'                                                             AS nimetus
-                             ,
-                            -1 * coalesce(sum(q.eelarve), 0)                                              AS eelarve
-                             ,
-                            -1 * coalesce(sum(q.eelarve_kassa), 0)                                        AS eelarve_kassa
-                             ,
-                            -1 * coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)                         AS eelarve_taps
-                             ,
-                            -1 * coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2)                   AS eelarve_kassa_taps
-                             ,
-                            -1 * coalesce(sum(q.tegelik), 0)                                              AS tegelik
-                             ,
-                            -1 * coalesce(sum(q.kassa), 0)                                                AS kassa
-                             ,
+                     SELECT '2.12',
+                            1                                                                             AS is_e,
+                            $2                                                                            AS rekvid,
+                            ''::VARCHAR(20)                                                               AS tegev,
+                            ''::VARCHAR(20)                                                               AS allikas,
+                            '55'::VARCHAR(20)                                                             AS artikkel,
+                            'Majandamiskulud'                                                             AS nimetus,
+                            -1 * coalesce(sum(q.eelarve), 0)                                              AS eelarve ,
+                            -1 * coalesce(sum(q.eelarve_kassa), 0)                                        AS eelarve_kassa,
+                            -1 * coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)                         AS eelarve_taps,
+                            -1 * coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2)                   AS eelarve_kassa_taps,
+                            -1 * coalesce(sum(q.tegelik), 0)                                              AS tegelik,
+                            -1 * coalesce(sum(q.kassa), 0)                                                AS kassa,
                             get_saldo('KD', '55', NULL, NULL) +
-                            get_saldo('KD', '601000', NULL, NULL) + get_saldo('KD', '601001', NULL, NULL) AS saldoandmik
+                            get_saldo('KD', '601000', NULL, NULL)  AS saldoandmik
                      FROM tmp_andmik q
                      WHERE q.artikkel LIKE '55%'
                        AND tyyp = 1
                      UNION ALL
                      --  KD60 минус KD 601
-                     SELECT '2.13'::VARCHAR(20)
-                             ,
-                            1                                                           AS is_e
-                             ,
-                            $2                                                          AS rekvid
-                             ,
-                            ''::VARCHAR(20)                                             AS tegev
-                             ,
-                            ''::VARCHAR(20)                                             AS allikas
-                             ,
-                            '60'::VARCHAR(20)                                           AS artikkel
-                             ,
-                            'Muud kulud'                                                AS nimetus
-                             ,
-                            -1 * coalesce(sum(q.eelarve), 0)                            AS eelarve
-                             ,
-                            -1 * coalesce(sum(q.eelarve_kassa), 0)                      AS eelarve_kassa
-                             ,
-                            -1 * coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)       AS eelarve_taps
-                             ,
-                            -1 * coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2) AS eelarve_kassa_taps
-                             ,
-                            -1 * coalesce(sum(q.tegelik), 0)                            AS tegelik
-                             ,
-                            -1 * coalesce(sum(q.kassa), 0)                              AS kassa
-                             ,
+                     SELECT '2.13'::VARCHAR(20) ,
+                            1                                                           AS is_e,
+                            $2                                                          AS rekvid,
+                            ''::VARCHAR(20)                                             AS tegev,
+                            ''::VARCHAR(20)                                             AS allikas,
+                            '60'::VARCHAR(20)                                           AS artikkel,
+                            'Muud kulud'                                                AS nimetus,
+                            -1 * coalesce(sum(q.eelarve), 0)                            AS eelarve,
+                            -1 * coalesce(sum(q.eelarve_kassa), 0)                      AS eelarve_kassa,
+                            -1 * coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)       AS eelarve_taps,
+                            -1 * coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2) AS eelarve_kassa_taps,
+                            -1 * coalesce(sum(q.tegelik), 0)                            AS tegelik,
+                            -1 * coalesce(sum(q.kassa), 0)                              AS kassa,
                             get_saldo('KD', '60', NULL, NULL) -
                             get_saldo('KD', '601000', NULL, NULL) -
-                            get_saldo('KD', '601002', NULL, NULL) -
-                            get_saldo('KD', '601001', NULL, NULL)                       AS saldoandmik
+                            get_saldo('KD', '601002', NULL, NULL)                       AS saldoandmik
                      FROM tmp_andmik q
                      WHERE q.artikkel LIKE '60%'
                        AND tyyp = 1
@@ -1665,8 +1638,8 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2021,03, 31),119, 1) qry
-         where artikkel = '1000'
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2021,09, 30),130, 1) qry
+         where artikkel in ('60','55')
      ) qry
 --test
 -- 12330698.41

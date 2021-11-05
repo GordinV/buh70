@@ -72,7 +72,8 @@ BEGIN
 
     SELECT * INTO doc_row FROM lapsed.lapse_kaart WHERE id = doc_id LIMIT 1;
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -97,6 +98,7 @@ BEGIN
                 AND dt.kpv < doc_alg_kpv
                 AND dt1.nom_id = doc_nomid
                 AND dt.grupp_id = l_grupp_id
+                AND coalesce(dt1.kogus, 0) > 0
                 AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
                 AND dt.staatus < 3
               LIMIT 1
@@ -114,6 +116,7 @@ BEGIN
                 AND dt.kpv > doc_lopp_kpv
                 AND dt1.nom_id = doc_nomid
                 AND dt.grupp_id = l_grupp_id
+                AND coalesce(dt1.kogus, 0) > 0
                 AND dt.staatus < 3
                 AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
                 AND dt.grupp_id = l_grupp_id
@@ -128,7 +131,7 @@ BEGIN
     IF exists(SELECT lt.id
               FROM lapsed.lapse_taabel lt
               WHERE lt.parentid = doc_parentid
-                AND (make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - interval '1 day')::date < doc_alg_kpv
+                AND (make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day')::DATE < doc_alg_kpv
                 AND lt.nomid = doc_nomid
                 AND lt.staatus < 3
                 AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
@@ -149,7 +152,7 @@ BEGIN
 
         )
     THEN
-        RAISE notice 'Vale lõpp kuupäev. Leidnud tabel hiljem kui lõpp kpv';
+        RAISE NOTICE 'Vale lõpp kuupäev. Leidnud tabel hiljem kui lõpp kpv';
     END IF;
 
     -- проверка на дату льготы, если дата не конец мнесяца и не равна дате окончания услуги
