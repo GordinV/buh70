@@ -190,7 +190,9 @@ exports.put = async (req, res) => {
         }
     }
 
+    console.log(params);
     const savedData = await Document.save(params);
+    console.log('saved', savedData);
 
     let l_error = '';
     if (Document.config.bpm) {

@@ -13,8 +13,10 @@ module.exports = {
         import: ['admin']
     },
     PANK_VV: {
-        edit: ['kasutaja', 'peakasutaja'],
-        delete: ['kasutaja', 'peakasutaja'],
+        select: ['kasutaja', 'arvestaja', 'vaatleja', 'peakasutaja'],
+        add: ['kasutaja', 'peakasutaja','arvestaja'],
+        edit: ['kasutaja', 'peakasutaja','arvestaja'],
+        delete: ['kasutaja', 'peakasutaja','arvestaja'],
     },
     VMK: {
         select: ['kasutaja', 'arvestaja', 'vaatleja', 'peakasutaja'],
@@ -91,13 +93,6 @@ module.exports = {
         add: ['arvestaja'],
         edit: ['arvestaja'],
         delete: ['arvestaja']
-    },
-    //koolituse_tyyp
-    ASUTUSE_LIIK : {
-        select: ['arvestaja'],
-        add: ['kasutaja'],
-        edit: ['kasutaja'],
-        delete: ['kasutaja']
     },
     //koolituse_liik
     KOOLITUSE_LIIK : {

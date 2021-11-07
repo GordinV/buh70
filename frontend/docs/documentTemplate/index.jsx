@@ -287,18 +287,24 @@ class DocumentTemplate extends React.Component {
                 edited: false,
                 docId: this.docData.id ? this.docData.id : 0
             }, () => {
-                // сохраним в контексте последние изменения
-                DocContext[this.props.docTypeId] = this.docData.id;
-
-                //если было создание нового докмента и этот док был карта ребенка, то сделаем переадрессацию на добавление услуг
                 let docTypeId = this.props.docTypeId,
                     docId = this.docData.id;
 
-                // обновим справочник
-                if (DocContext.libs[this.props.docTypeId.toLowerCase()]) {
-                    this.loadLibs(this.props.docTypeId.toLowerCase());
-                }
+                // сохраним в контексте последние изменения
+                DocContext[docTypeId] = this.docData.id;
 
+                //если было создание нового докмента и этот док был карта ребенка, то сделаем переадрессацию на добавление услуг
+
+                // обновим справочник
+                if (DocContext.libs && DocContext.libs[docTypeId.toLowerCase()]) {
+                    this.loadLibs(docTypeId.toLowerCase());
+                }
+                // если есть в кеше , то читим
+                let lib = docTypeId.toLowerCase();
+
+                if (DocContext.libs && DocContext.libs[lib] && DocContext.libs[lib].length > 0) {
+                    DocContext.libs[lib] = []
+                }
 
                 if (docTypeId.toUpperCase() === 'LAPS' && this.props.docId === 0) {
                     // делаем редайрект на карту услуг
@@ -306,12 +312,6 @@ class DocumentTemplate extends React.Component {
                     docId = 0;
                 }
 
-                // если есть в кеше , то читим
-                let lib = this.props.docTypeId.toLowerCase();
-
-                if (DocContext.libs && DocContext.libs[lib] && DocContext.libs[lib].length > 0) {
-                    DocContext.libs[lib] = []
-                }
 
                 if (this.props.reload) {
                     // reload / redirect
@@ -326,7 +326,6 @@ class DocumentTemplate extends React.Component {
                 }
 
             });
-
         });
     }
 
@@ -1189,7 +1188,8 @@ DocumentTemplate
     pages: [],
     libs: [],
     isDisableSave: false,
-    isGridDataSave: false
+    isGridDataSave: false,
+    reload: false
 };
 
 module

@@ -56,7 +56,6 @@ class Tunnus extends React.PureComponent {
                 <Loading label={'Laadimine...'}/>
             </div>);
         }
-
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>
