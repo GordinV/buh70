@@ -54,9 +54,13 @@ exports.post = function (req, res, next) {
                         roles: kasutaja.roles
                     }, kasutaja);
 
-
                     req.session.users.push(newUser);
                     user = newUser;
+
+// save user uuid
+                    const params = {userId: newUser.userId, asutusId: newUser.asutusId, uuid: newUser.uuid};
+                    userid.storeUserUuid(params);
+
                     return callback(null, newUser);
                 });
             },
@@ -102,7 +106,7 @@ exports.post = function (req, res, next) {
                     callback(err, result);
                 });
 
-            }
+            },
 
         ],
 

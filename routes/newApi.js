@@ -5,7 +5,7 @@ const Const = require('./../config/constants');
 const Liimit = Const.RECORDS_LIMIT;
 
 exports.post = async (req, res) => {
-    const user = require('../middleware/userData')(req), // данные пользователя
+    const user = await require('../middleware/userData')(req), // данные пользователя
         parameter = req.body.parameter || '',// параметры если переданы
         module = req.body.module || 'documents',
         sortBy = req.body.sortBy, //порядок сортировки
@@ -13,8 +13,6 @@ exports.post = async (req, res) => {
         method = req.body.method ? req.body.method: 'selectDocs', //порядок сортировки
         sqlWhere = req.body.sqlWhere, //динамический фильтр
         filterData = req.body.filterData || []; // параметры фильтры
-
-
 
     if (!user) {
         console.error('error 401 newAPI');
@@ -31,7 +29,6 @@ exports.post = async (req, res) => {
         let gridParams;
         let subtotals = doc.config.grid.subtotals ? doc.config.grid.subtotals : [];
         let filterTotals = doc.config.grid.totals ? doc.config.grid.totals : null;
-
 
         if (filterData.length > 0 && doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
             gridParams = getParameterFromFilter(user.asutusId,  user.userId, doc.config.grid.params , filterData);
@@ -55,7 +52,6 @@ exports.post = async (req, res) => {
 
 
         // вернуть данные
-
         res.status(200).send(data);
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок

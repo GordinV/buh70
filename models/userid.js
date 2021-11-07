@@ -6,6 +6,8 @@ const _ = require('underscore');
 
 //model
 const useridModel = require('./ou/userid');
+const Db = require('./../libs/db');
+
 
 
 module.exports = {
@@ -24,6 +26,25 @@ module.exports = {
 
         return db;
     },
+
+    getUserByUuid: async function (uuid) {
+        const sql = _.findWhere(useridModel.select, {alias: 'get_user_by_uuid'}).sql;
+        return await Db.queryDb(sql, [uuid], null, null, null);
+    },
+    storeUserUuid: async function (params) {
+        const sql = _.findWhere(useridModel.select, {alias: 'store_user_uuid'}).sql;
+        return await Db.queryDb(sql, [params]);
+    },
+    deleteUserUuid: function (params) {
+        console.log('delete uuid', params);
+        const sql = _.findWhere(useridModel.select, {alias: 'delete_user_uuid'}).sql;
+        if (sql) {
+            console.log(sql, params);
+            Db.queryDb(sql, [params]);
+        }
+    },
+
+
 // возвращает строку пользователя по логину и ид учреждения
     getUserId: function (nimi, rekvId, callback) {
 
@@ -55,7 +76,7 @@ module.exports = {
                 this.lastLogin = result.rows[0].last_login;
                 this.encriptedPassword = result.rows[0].parool;
 
-                const userData = Object.assign({},result.rows[0] );
+                const userData = Object.assign({}, result.rows[0]);
 
                 db.end();
                 callback(null, userData);
@@ -202,7 +223,7 @@ module.exports = {
                     callback(err, null);
                 }
                 db.end();
-                let data = result.rows.map((row)=>{
+                let data = result.rows.map((row) => {
                     return JSON.stringify(row);
                 });
                 callback(err, data);

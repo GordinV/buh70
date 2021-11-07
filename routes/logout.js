@@ -1,6 +1,11 @@
 const _ = require('lodash');
+Userid = require('../models/userid'),
 
 exports.get = function(req, res) {
+// удалим  из таблицы данные сессии
+    let uuid = req.body.uuid;
+    Userid.deleteUserUuid(uuid);
+
     req.session.destroy();
     res.redirect('/login');
 
@@ -9,6 +14,9 @@ exports.get = function(req, res) {
 exports.post = function(req, res) {
     const userId = req.body.userId,
         uuid = req.body.uuid;
+// удалим  из таблицы данные сессии
+
+    Userid.deleteUserUuid(uuid);
 
     if (userId && req.session.users.length) {
         req.session.users = _.reject(req.session.users, (user) => {

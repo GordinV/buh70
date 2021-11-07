@@ -4,7 +4,7 @@ const userid = require('../models/userid'),
     HttpError = require('./../error').HttpError;
 
 
-exports.post = (req, res) => {
+exports.post = async (req, res) => {
 
     let rekvId;
     if (req.params.rekvId) {
@@ -12,8 +12,7 @@ exports.post = (req, res) => {
     }
     let userUuid = req.body.uuid;
 
-    let user = require('./../middleware/userData')(req, userUuid);  // check for userid in session
-
+    let user = await require('./../middleware/userData')(req, userUuid);  // check for userid in session
 
     // load new User data
     const userName = user.login;
@@ -54,6 +53,9 @@ exports.post = (req, res) => {
             userid.updateUseridLastLogin(userData.id, (err, result) => {
             });
 
+            // save user uuid
+            const params = {userId: userData.id, asutusId: userData.rekvid, uuid: userUuid};
+            userid.storeUserUuid(params);
 
 
             //will load new userdata
@@ -61,6 +63,9 @@ exports.post = (req, res) => {
 
             //save in locals
             req.app.locals.user = newUser;
+
+
+
 
             //send result and wait for reload
             res.send({result: 'Ok'}); //пока нет новых данных

@@ -100,6 +100,37 @@ module.exports = {
             not_initial_load: true
 
         },
+        {
+            sql: `SELECT *
+                  FROM ou.get_user_by_uuid($1::TEXT)`, //$1 - uuid
+            query: null,
+            multiple: true,
+            alias: 'get_user_by_uuid',
+            data: [],
+            not_initial_load: true
+
+        },
+        {
+            sql: `SELECT *
+                  FROM ou.store_user_uuid($1::JSONB)`, //$1 - params
+            query: null,
+            multiple: true,
+            alias: 'store_user_uuid',
+            data: [],
+            not_initial_load: true
+
+        },
+        {
+            sql: `DELETE
+                  FROM ou.session_uuid
+                  WHERE uuid = $1::TEXT`, //$1 - uuid
+            query: null,
+            multiple: true,
+            alias: 'delete_user_uuid',
+            data: [],
+            not_initial_load: true
+
+        },
     ],
     returnData: {
         row: {},
