@@ -145,11 +145,11 @@ exports.put = async (req, res) => {
 
     if (!user) {
         console.error('No user', user);
-            return res.send({
-                action: 'save',
-                result: {error_code: 4, error_message: 'Autentimise viga'},
-                data: []
-            });
+        return res.send({
+            action: 'save',
+            result: {error_code: 4, error_message: 'Autentimise viga'},
+            data: []
+        });
     }
 
     const params = {
@@ -190,9 +190,7 @@ exports.put = async (req, res) => {
         }
     }
 
-    console.log(params);
     const savedData = await Document.save(params);
-    console.log('saved', savedData);
 
     let l_error = '';
     if (Document.config.bpm) {
@@ -309,14 +307,14 @@ exports.executeTask = async (req, res) => {
 
     let seisuga = params.seisuga ? params.seisuga : now;
     let gruppId = params.gruppId ? params.gruppId : null;
-    let viitenumber = params.viitenumber ? params.viitenumber: null;
-    let kogus = params.kogus ? params.kogus: null;
+    let viitenumber = params.viitenumber ? params.viitenumber : null;
+    let kogus = params.kogus ? params.kogus : null;
 
     const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, module);
 
     let taskParams;
 
-    if ((params.docTypeId === 'LAPS' || params.docTypeId === 'PAEVA_TAABEL' || params.docTypeId === 'LAPSE_GRUPP' || params.docTypeId === 'SMK' || params.docTypeId === 'NOMENCLATURE'))  {
+    if ((params.docTypeId === 'LAPS' || params.docTypeId === 'PAEVA_TAABEL' || params.docTypeId === 'LAPSE_GRUPP' || params.docTypeId === 'SMK' || params.docTypeId === 'NOMENCLATURE')) {
         //@TODO сделать универсальный набор параметров
         taskParams = [params.docId, user.userId, seisuga];
         if (viitenumber) {
@@ -333,7 +331,7 @@ exports.executeTask = async (req, res) => {
         taskParams = [params.docId, user.userId, seisuga];
     }
 
-    if (params.docTypeId === 'LAPS' &&  gruppId) {
+    if (params.docTypeId === 'LAPS' && gruppId) {
         // задача с параметром gruppId
         taskParams.push(gruppId);
     }
@@ -475,17 +473,8 @@ exports.upload = async (req, res) => {
         try {
             const readFile = require(`./import/${params.docTypeId.toLowerCase()}`);
 
-            await readFile(content, req.file.mimetype, user).then((result) => {
-                    // ответ
-                    return res.status(200).send(result);
-                }
-            ).catch(error => {
-                console.error('error', error);
-                return res.status(500).send(error);
-
-            });
-
-
+            const result = await readFile(content, req.file.mimetype, user);
+            return res.status(200).send(result);
         } catch (e) {
             console.error('viga', e);
             return res.status(500).send(e.error);
