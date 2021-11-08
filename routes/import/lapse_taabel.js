@@ -1,34 +1,63 @@
 module.exports = async (file, mimeType, user) => {
     const Doc = require('./../../classes/DocumentTemplate');
     const Document = new Doc('LAPSE_TAABEL', null, user.userId, user.asutusId, 'lapsed');
+    const parse = require('csv-parse');
 
-    let rows = [];
+    let rowsToImport = [];
 
     try {
-        rows = await readCSV(file);
-    } catch
-        (e) {
+        console.log('start rows');
+//        rowsToImport = await readCSV(file);
+        // Create the parser
+        const fileContent = await parse(file, {headers: false, delimiter: ';', columns: false}, async (err, output) => {
+            result = output;
+            if (err) {
+                console.error(err);
+                return null;
+            }
+
+            for (let i = 0; i < output.length; i++) {
+                if (isNumber(output[i][0])) {
+                    rowsToImport.push({
+                        isikukood: output[i][0],
+                        yksus: output[i][1],
+                        kood: output[i][2],
+                        hind: output[i][3],
+                        kogus: output[i][4],
+                        kuu: output[i][5],
+                        aasta: output[i][6]
+                    });
+                }
+
+            }
+
+            let saved = 0;
+            if (rowsToImport.length) {
+                // сохраняем
+
+                const params = [JSON.stringify(rowsToImport), user.id, user.asutusId];
+                console.log('save', params);
+                const result = await Document.executeTask('importTaabel', params).then((result) => {
+                        saved = result.result ? result.result : 0;
+                    }
+                );
+
+                return `Kokku leidsin ${rowsToImport.length} teenused, salvestatud kokku: ${saved}`;
+
+            } else {
+                return `Kokku leidsin 0 teenused, salvestatud kokku: 0`;
+
+            }
+
+        });
+
+
+        console.log('rows', rowsToImport)
+    } catch (e) {
         console.error('Viga:', e);
         return `Tekkis viga, vale formaat`;
     }
 
-    let saved = 0;
-    if (rows.length) {
-        // сохраняем
-
-        const params = [JSON.stringify(rows), user.id, user.asutusId];
-        console.log('save', params);
-        const result = await Document.executeTask('importTaabel', params).then((result) => {
-                saved = result.result ? result.result : 0;
-            }
-        );
-
-        return `Kokku leidsin ${rows.length} teenused, salvestatud kokku: ${saved}`;
-
-    } else {
-        return `Kokku leidsin 0 teenused, salvestatud kokku: 0`;
-
-    }
 }
 ;
 
@@ -43,21 +72,23 @@ const readCSV = async (csvContent) => {
             return null;
         }
 
-        output.forEach(row => {
-            // проверим на заголовок
-            if (isNumber(row[0])) {
+        console.log('output', output);
+        for (let i = 0; i < output.length; i++) {
+            if (isNumber(output[i][0])) {
                 rows.push({
-                    isikukood: row[0],
-                    yksus: row[1],
-                    kood: row[2],
-                    hind: row[3],
-                    kogus: row[4],
-                    kuu: row[5],
-                    aasta: row[6]
+                    isikukood: output[i][0],
+                    yksus: output[i][1],
+                    kood: output[i][2],
+                    hind: output[i][3],
+                    kogus: output[i][4],
+                    kuu: output[i][5],
+                    aasta: output[i][6]
                 });
             }
-        });
+
+        }
     });
+    console.log('rows finished', fileContent, rows);
     return rows;
 };
 
