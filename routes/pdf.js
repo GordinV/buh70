@@ -30,7 +30,7 @@ exports.get = async (req, res) => {
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const docTypeId = req.params.documentType || ''; // параметр тип документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
-    const user = require('../middleware/userData')(req, uuid); // данные пользователя
+    const user = await require('../middleware/userData')(req, uuid); // данные пользователя
     let filterData = []; // параметр filter документов;
 
     if (id && !sqlWhere) {

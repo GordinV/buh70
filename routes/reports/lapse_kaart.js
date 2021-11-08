@@ -5,7 +5,7 @@ exports.get = async (req, res) => {
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const kasKond = req.params.kond || false; // параметр kond
-    const user = require('../../middleware/userData')(req, uuid); // данные пользователя
+    const user =await require('../../middleware/userData')(req, uuid); // данные пользователя
 
     if (!user) {
         console.error('error 401 newAPI');

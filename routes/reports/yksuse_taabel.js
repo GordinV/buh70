@@ -7,7 +7,7 @@ exports.get = async (req, res) => {
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const filter = req.params.filter || [];// массив фильтров документов;
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
-    const user = require('../../middleware/userData')(req, uuid); // данные пользователя
+    const user = await require('../../middleware/userData')(req, uuid); // данные пользователя
     const DOC_TYPE_ID = 'yksuse_taabel';
 
     let filterData = [];

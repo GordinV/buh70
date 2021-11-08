@@ -16,7 +16,6 @@ module.exports = async (file, mimeType, user) => {
         // сохраняем
 
         const params = [JSON.stringify(rows), user.id, user.asutusId];
-        console.log('params', params);
 
         const result = await Document.executeTask('importPankLeping', params).then((result) => {
                 console.log('result', result);

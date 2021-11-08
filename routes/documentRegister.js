@@ -465,7 +465,7 @@ exports.upload = async (req, res) => {
 
         // доп параметры
         let params = JSON.parse(JSON.stringify(req.body));
-        const user = require('../middleware/userData')(req, params.uuid); // данные пользователя
+        const user = await require('../middleware/userData')(req, params.uuid); // данные пользователя
 
         if (!user) {
             return res.status(401);

@@ -5,7 +5,7 @@ exports.post = async (req, res) => {
     const params = req.body;
     const docTypeId = 'PANK_VV';
     const makse_id = params.data.makse_id; // параметр ids документа
-    const user = require('../../middleware/userData')(req); // данные пользователя
+    const user = await require('../../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
     const taskName = 'loeMakse';
 

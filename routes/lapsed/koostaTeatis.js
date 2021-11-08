@@ -6,7 +6,7 @@ exports.post = async (req, res) => {
     const params = req.body;
     const docTypeId = params.parameter;
     const arvestuseKpv = params.data.seisuga || getNow(); // доп параметр дата
-    const user = require('../../middleware/userData')(req); // данные пользователя
+    const user =await require('../../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
     const taskName = 'koostaTeatis';
 

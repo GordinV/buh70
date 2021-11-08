@@ -4,7 +4,7 @@ const getINF3 = require('./../lapsed/get_INF3_xml');
 exports.get = async (req, res) => {
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
-    const user = require('../../middleware/userData')(req, uuid); // данные пользователя
+    const user =await require('../../middleware/userData')(req, uuid); // данные пользователя
 
     if (!user) {
         console.error('error 401 newAPI');

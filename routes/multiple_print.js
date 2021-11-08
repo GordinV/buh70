@@ -5,7 +5,7 @@ exports.get = async (req, res) => {
     let ids = req.params.id || ''; // параметр id документа
     const docTypeId = req.params.documentType || ''; // параметр тип документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
-    const user = require('../middleware/userData')(req, uuid); // данные пользователя
+    const user = await require('../middleware/userData')(req, uuid); // данные пользователя
     const rows = [];
 
 
@@ -56,7 +56,7 @@ exports.get = async (req, res) => {
 exports.teatis = async (req, res) => {
     let ids = req.params.id || ''; // параметр id документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
-    const user = require('../middleware/userData')(req, uuid); // данные пользователя
+    const user = await require('../middleware/userData')(req, uuid); // данные пользователя
     const rows = [];
 
 

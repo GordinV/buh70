@@ -17,7 +17,7 @@ exports.post = async (req, res) => {
     // load new User data
     const userName = user.login;
 
-    userid.getUserId(userName, rekvId, function (err, userData) {
+    userid.getUserId(userName, rekvId,async function  (err, userData) {
         if (!userData) {
             const err = new HttpError(403, 'No user');
             res.send({status: 403, result: 'error'});
@@ -59,7 +59,7 @@ exports.post = async (req, res) => {
 
 
             //will load new userdata
-            let newUser = require('../middleware/userData')(req, userUuid); // данные пользователя
+            let newUser = await require('../middleware/userData')(req, userUuid); // данные пользователя
 
             //save in locals
             req.app.locals.user = newUser;
