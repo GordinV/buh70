@@ -259,7 +259,7 @@ exports.post = async (req, res) => {
     const id = Number(params.docId || 0); // параметр id документа
     const ids = params.data || []; // параметр ids документов
 
-    const user = require('../middleware/userData')(req); // данные пользователя
+    const user = await require('../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
     let result = 0;
 

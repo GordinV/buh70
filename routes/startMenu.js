@@ -2,7 +2,7 @@
 
 exports.post = async (req, res) => {
 
-    let user = require('../middleware/userData')(req); // данные пользователя
+    let user = await require('../middleware/userData')(req); // данные пользователя
     const db = require('./../libs/db');
     const menuModel = require('./../models/ou/start-menu');
     let module = req.params.module;

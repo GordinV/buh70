@@ -4,7 +4,7 @@ const _ = require('lodash'),
 
 
 exports.post = async (req, res) => {
-    let user = require('../middleware/userData')(req); // данные пользователя
+    let user = await require('../middleware/userData')(req); // данные пользователя
     let documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
     const module = req.body.module || 'lapsed';
     let sqlWhere = _.has(req.body,'sql') ? req.body.sql: null;

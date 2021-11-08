@@ -120,6 +120,8 @@ class Laps extends React.PureComponent {
 
         }
 
+        console.log('data', self.docData);
+
         return (
             <div style={styles.doc}>
                 <div style={styles.docRow}>

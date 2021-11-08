@@ -8,7 +8,7 @@ exports.post = async (req, res) => {
     const docTypeId = params.parameter ? params.parameter : params.data.docTypeId;
     let ids = params.data && params.data.docs ? params.data.docs : []; // параметр ids документа
     const execDate = params.data && params.data.seisuga ? params.data.seisuga : getNow(); // доп параметр дата
-    const user = require('../middleware/userData')(req); // данные пользователя
+    const user = await require('../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
 
     let result = 0;

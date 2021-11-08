@@ -131,7 +131,7 @@ exports.post = async (req, res) => {
 };
 
 exports.put = async (req, res) => {
-    let user = require('../middleware/userData')(req); // данные пользователя
+    let user = await require('../middleware/userData')(req); // данные пользователя
     let documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
     const docId = Number(req.params.id); //ид документа
     let data = req.body;

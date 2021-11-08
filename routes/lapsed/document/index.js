@@ -12,7 +12,7 @@ exports.get = async (req, res) => {
         docId = Number(req.params.id);
 
     const DocumentView = require(`./../../../frontend/docs/${documentType}/document/index.jsx`);
-    let user = require('./../../../middleware/userData')(req);  // check for userid in session
+    let user = await require('./../../../middleware/userData')(req);  // check for userid in session
 
     if (!user) {
         //error 401, no user

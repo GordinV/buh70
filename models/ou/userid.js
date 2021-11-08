@@ -77,7 +77,9 @@ module.exports = {
             data: []
         },
         {
-            sql: `SELECT r.nimetus AS asutus, u.*, $2 AS rekvid
+            sql: `SELECT r.nimetus  AS asutus,
+                         u.*
+--                , $2 AS rekvid
                   FROM ou.userid u
                            INNER JOIN ou.rekv r ON r.id = u.rekvid
                   WHERE ($1 = 0

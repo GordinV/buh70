@@ -39,7 +39,7 @@ exports.post = async (req, res) => {
     const id = Number(params.docId || 0); // параметр id документа
     let ids = params.data || []; // параметр ids документов
 
-    const user = require('../middleware/userData')(req); // данные пользователя
+    const user = await require('../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
     let result = 0;
 
@@ -244,7 +244,7 @@ exports.sendTeatis = async (req, res) => {
     const id = Number(params.docId || 0); // параметр id документа
     let ids = params.data || []; // параметр ids документов
 
-    const user = require('../middleware/userData')(req); // данные пользователя
+    const user = await require('../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
     let result = 0;
 
@@ -462,7 +462,7 @@ exports.sendPrintForm = async (req, res) => {
     let context = params.context ? params.context : null;
     let email = params.email ? params.email : null;
 
-    const user = require('../middleware/userData')(req); // данные пользователя
+    const user = await require('../middleware/userData')(req); // данные пользователя
     const module = params.module;
     let result = 0;
 

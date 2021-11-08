@@ -25,7 +25,7 @@ exports.get = async (req, res) => {
     documentType.toLowerCase();
 
     const DocumentRegister = require(`../frontend/docs/${documentType}/index.jsx`);
-    let user = require('../middleware/userData')(req);  // check for userid in session
+    let user = await require('../middleware/userData')(req);  // check for userid in session
 
     if (!user) {
         //error 401, no user
@@ -98,7 +98,7 @@ exports.get = async (req, res) => {
 
 exports.post = async (req, res) => {
 
-    let user = require('../middleware/userData')(req); // данные пользователя
+    let user = await require('../middleware/userData')(req); // данные пользователя
     const documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
     const docId = Number(req.params.id); //ид документа
     const module = req.params.module || 'lapsed'; // используемый модуль
@@ -136,7 +136,7 @@ exports.post = async (req, res) => {
 };
 
 exports.put = async (req, res) => {
-    let user = require('../middleware/userData')(req); // данные пользователя
+    let user = await require('../middleware/userData')(req); // данные пользователя
     let documentType = req.params.documentType.toUpperCase(); // получим из параметра тип документа
 
     const docId = Number(req.params.id); //ид документа
@@ -245,7 +245,7 @@ exports.delete = async (req, res) => {
 
     // вызвать метод. Есди ИД = 0, то вызывается запрос на создание нового документа
 
-    let user = require('../middleware/userData')(req); // данные пользователя
+    let user = await require('../middleware/userData')(req); // данные пользователя
 
     if (!userId) {
         console.error('no userId', userId, req.body, user.userId);
@@ -301,7 +301,7 @@ exports.delete = async (req, res) => {
 };
 
 exports.executeTask = async (req, res) => {
-    const user = require('../middleware/userData')(req); // данные пользователя
+    const user = await require('../middleware/userData')(req); // данные пользователя
     const taskName = req.params.taskName; // получим из параметра task
     const Doc = require('./../classes/DocumentTemplate');
     const params = req.body;
@@ -355,7 +355,7 @@ exports.executeTask = async (req, res) => {
 };
 
 exports.validate = async (req, res) => {
-    const user = require('../middleware/userData')(req); // данные пользователя
+    const user = await require('../middleware/userData')(req); // данные пользователя
     const method = req.params.method; // получим из параметра метод в моделе
     const parameter = req.params.parameter; // получим из параметра искомое значение
     const Doc = require('./../classes/DocumentTemplate');
@@ -379,7 +379,7 @@ exports.validate = async (req, res) => {
 };
 
 exports.validateLibs = async (req, res) => {
-    const user = require('../middleware/userData')(req); // данные пользователя
+    const user = await require('../middleware/userData')(req); // данные пользователя
     const Doc = require('./../classes/DocumentTemplate');
     const params = req.body;
     const Document = new Doc(params.docTypeId, params.docId, user.userId, user.asutusId, params.module.toLowerCase());
@@ -422,7 +422,7 @@ exports.validateLibs = async (req, res) => {
 
 
 exports.getLogs = async (req, res) => {
-    const user = require('../middleware/userData')(req); // данные пользователя
+    const user = await require('../middleware/userData')(req); // данные пользователя
     const Doc = require('./../classes/DocumentTemplate');
     const params = req.body;
     if (!user || !user.userId) {

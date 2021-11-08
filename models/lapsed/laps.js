@@ -113,7 +113,22 @@ module.exports = {
             multiple: true,
             alias: 'teenused',
             data: []
-        }
+        },
+        {
+            sql: `SELECT v.id,
+                         v.viitenumber,
+                         v.isikukood,
+                         l.id AS laps_id,
+                      $2 AS userid
+                  FROM lapsed.viitenr v
+                           INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood
+                  WHERE l.id = $1`,
+            query: null,
+            multiple: true,
+            alias: 'viitenumbers',
+            data: []
+        },
+
 
     ],
     returnData:
