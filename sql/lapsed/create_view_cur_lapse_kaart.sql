@@ -34,8 +34,8 @@ SELECT l.id                                                                     
        (lk.properties ->> 'sooduse_alg')::DATE                                  AS sooduse_alg,
        (lk.properties ->> 'sooduse_lopp')::DATE                                 AS sooduse_lopp,
        r.nimetus::TEXT                                                          AS asutus,
-       v.viitenumber                                                            AS vana_viitenumber
-
+       v.viitenumber                                                            AS vana_viitenumber,
+       n.properties ->> 'tyyp'                                                  AS tyyp
 FROM lapsed.laps l
          INNER JOIN lapsed.lapse_kaart lk ON lk.parentid = l.id
          INNER JOIN libs.nomenklatuur n ON lk.nomid = n.id
@@ -56,7 +56,8 @@ GRANT SELECT ON TABLE lapsed.cur_lapse_kaart TO dbpeakasutaja;
 
 SELECT *
 FROM lapsed.cur_lapse_kaart
-WHERE kas_ettemaks
+WHERE tyyp is not null
+--      kas_ettemaks
 LIMIT 10;
 
 /*

@@ -75,7 +75,10 @@ module.exports = {
                                   k.nomid,
                                   n.kood,
                                   n.nimetus,
-                                  k.hind,
+                                  CASE
+                                      WHEN n.properties ->> 'tyyp' IS NOT NULL AND n.properties ->> 'tyyp' = 'SOODUSTUS'
+                                          THEN 0
+                                      ELSE k.hind END                                                         hind,
                                   gr.nimetus::TEXT                                                         AS yksus,
                                   k.properties ->> 'all_yksus'                                             AS all_yksus,
                                   CASE WHEN (n.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3,
@@ -88,7 +91,10 @@ module.exports = {
                                           'DD.MM.YYYY')                                                    AS kehtivus,
                                   coalesce((k.properties ->> 'lopp_kpv')::DATE,
                                            date(year(), 12, 31))                                           AS lopp_kpv,
-                                  coalesce((k.properties ->> 'soodus')::NUMERIC, 0)::NUMERIC               AS soodustus,
+                                  CASE
+                                      WHEN n.properties ->> 'tyyp' IS NOT NULL AND n.properties ->> 'tyyp' = 'SOODUSTUS'
+                                          THEN (-1 * k.hind)::NUMERIC
+                                      ELSE coalesce((k.properties ->> 'soodus')::NUMERIC, 0)::NUMERIC END  AS soodustus,
                                   CASE
                                       WHEN coalesce((k.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN
                                           THEN 'Jah'
@@ -118,10 +124,12 @@ module.exports = {
             sql: `SELECT v.id,
                          v.viitenumber,
                          v.isikukood,
-                         l.id AS laps_id,
-                      $2 AS userid
+                         l.id      AS laps_id,
+                         r.nimetus AS asutus,
+                         $2        AS userid
                   FROM lapsed.viitenr v
                            INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood
+                           INNER JOIN ou.rekv r ON r.id = v.rekv_id
                   WHERE l.id = $1`,
             query: null,
             multiple: true,
@@ -137,6 +145,7 @@ module.exports = {
             details: [],
             teenused: [],
             vanemad: [],
+            viitenumbers: [],
             gridConfig:
                 [
                     {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
@@ -160,7 +169,13 @@ module.exports = {
                     {id: 'soodustus', name: 'Soodustus', width: '10%', show: true, type: 'text', readOnly: false},
                     {id: 'soodustuste_period', name: 'Kehtiv', width: '10%', show: true, type: 'text', readOnly: false},
                     {id: 'kas_protsent', name: '%', width: '5%', show: true, type: 'text', readOnly: false},
-                ]
+                ],
+            gridViitenumberConfig: [
+                {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
+                {id: 'viitenumber', name: 'Viitenumber', width: '30%', show: true, type: 'text', readOnly: false},
+                {id: 'asutus', name: 'Asutus', width: '70%', show: true, type: 'text', readOnly: false},
+
+            ]
         },
     requiredFields: [
         {name: 'isikukood', type: 'C', serverValidation: 'validateIsikukood'},

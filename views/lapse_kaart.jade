@@ -94,6 +94,7 @@ block content
                     th Nimetus
                     th Grupp
                     th Hind
+                    th Soodustus
 
             tbody
                 each teenus in data.teenused
@@ -102,3 +103,4 @@ block content
                         td=teenus.nimetus
                         td=(`${teenus.yksus}  ${teenus.all_yksus}`)
                         td=teenus.hind
+                        td=teenus.soodustus

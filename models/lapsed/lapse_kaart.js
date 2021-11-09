@@ -152,7 +152,7 @@ module.exports = {
                             nimetus,
                             yksus::TEXT ||
                             CASE WHEN all_yksus IS NOT NULL THEN '(' || all_yksus::TEXT || ')' ELSE '' END AS yksus,
-                            hind,
+                            CASE WHEN v.tyyp IS NOT NULL AND v.tyyp = 'SOODUSTUS' then 0 ELSE hind END     AS hind,
                             uhik,
                             lapsed.get_viitenumber(v.rekvid, lapsid)                                       AS viitenumber,
                             v.rekvid::INTEGER                                                              AS rekvid,
@@ -163,6 +163,7 @@ module.exports = {
                                 WHEN (soodustus::NUMERIC(12, 2)) > 0 THEN ((soodustus::NUMERIC(12, 2))::TEXT || ' ' ||
                                                                            kas_protsent || '(' || sooduse_kehtivus ||
                                                                            ')')
+                                WHEN v.tyyp IS NOT NULL AND v.tyyp = 'SOODUSTUS' THEN (-1 * hind)::TEXT
                                 ELSE '' END                                                                AS soodustus,
                             soodustus::NUMERIC(12, 2)                                                      AS soodustuse_summa,
                             kas_ettemaks::BOOLEAN                                                          AS ettemaks,
