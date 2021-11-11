@@ -21,12 +21,12 @@ SELECT rekv_id,
        maksja_regkood,
        saaja_regkood,
        saaja_tp,
-       left(ltrim(rtrim(saaja_nimi)), 98)::text AS saaja_nimi,
+       left(ltrim(rtrim(saaja_nimi)), 98)::TEXT AS saaja_nimi,
        kpv,
-       sum(summa)                         AS summa,
+       sum(summa)                               AS summa,
        artikkel,
        tegev,
-       array_agg(id)                      AS docs_ids
+       array_agg(id)                            AS docs_ids
 FROM (
          SELECT j.rekvid::INTEGER              AS rekv_id,
                 r.regkood::VARCHAR(20)         AS maksja_regkood,
@@ -65,6 +65,7 @@ FROM (
            AND j.deebet NOT LIKE '100%'
            AND deebet NOT IN ('203620')
      ) qry
+--WHERE saaja_tp <> '800699'
 
 GROUP BY rekv_id, maksja_regkood, saaja_regkood, saaja_tp, saaja_nimi, kpv, artikkel, tegev;
 
@@ -82,13 +83,17 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO dbvaat
 /*
 
 select * from (
-                    SELECT *
-                    FROM eelarve.lisa_9('2021-08-01', '2021-08-31', 130,  0)
+                    SELECT len(saaja_nimi), *
+                    FROM eelarve.lisa_9('2021-10-01', '2021-10-31', 130,  0)
                 ) qry
   where  summa >= 100
-
+and saaja_regkood= '37411112220'
 
 select * from ou.rekv where parentid = 64
+
+select * from cur_journal where id = 3198106
+
+select * from libs.asutus where id = 7455
 */
 
 

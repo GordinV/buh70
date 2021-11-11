@@ -16,10 +16,9 @@ module.exports = async (file, mimeType, user) => {
         // сохраняем
 
         const params = [JSON.stringify(rows), user.id, user.asutusId];
-        const result = await Document.executeTask('importTeenused', params).then((result) => {
-                saved = result.result ? result.result : 0;
-            }
-        );
+        const result = await Document.executeTask('importTeenused', params);
+        
+        saved = result.result ? result.result : 0;
 
         return `Kokku leidsin ${rows.length} teenused, salvestatud kokku: ${saved}`;
 

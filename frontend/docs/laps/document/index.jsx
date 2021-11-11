@@ -89,7 +89,10 @@ class Laps extends React.PureComponent {
             gridVanemadData = self.docData.vanemad,
             gridVanemadColumns = self.docData.gridConfig,
             gridTeenusteData = self.docData.teenused,
-            gridTeenusteColumns = self.docData.gridTeenusteConfig;
+            gridTeenusteColumns = self.docData.gridTeenusteConfig,
+            gridViitenumbersData = self.docData.viitenumbers,
+            gridViitenumbersColumns = self.docData.gridViitenumberConfig;
+
         let gridSoodustusteData = [];
 
 
@@ -144,14 +147,33 @@ class Laps extends React.PureComponent {
                                    readOnly={true}
                                    disabled={true}
                                    onChange={self.handleInputChange}/>
-                    </div>
-                    <div style={styles.docColumn}>
                         <InputText ref="input-jaak"
                                    title='Jääk:'
                                    name='jaak'
                                    value={self.docData.jaak || ''}
                                    readOnly={true}
+                                   style={styles.jaak}
                         />
+                    </div>
+
+                    <div style={styles.docColumn}>
+                        <div style={styles.docRow}>
+                            <label ref="label">
+                                {'Vana viitenumbrid'}
+                            </label>
+                        </div>
+
+                        <div style={styles.docRow}>
+                            <DataGrid source='viitenumbers'
+                                      gridData={gridViitenumbersData}
+                                      gridColumns={gridViitenumbersColumns}
+                                      showToolBar={!isEditMode}
+                                      handleGridBtnClick={self.handleGridBtnClick}
+                                      readOnly={isEditMode}
+                                      style={styles.grid.headerTable}
+                                      docTypeId={'viitenr'}
+                                      ref="viitenr-data-grid"/>
+                        </div>
                     </div>
                 </div>
                 <div style={styles.docRow}>
@@ -162,8 +184,10 @@ class Laps extends React.PureComponent {
                               value={self.docData.muud || ''}
                               readOnly={!isEditMode}/>
                 </div>
-                <div style={styles.docRow}>
-                    <label ref="label">
+                < div
+                    style={styles.docRow}>
+                    < label
+                        ref="label">
                         {'Vanemad'}
                     </label>
                 </div>
@@ -211,7 +235,7 @@ class Laps extends React.PureComponent {
                 </div>
                 <div style={styles.docRow}>
                     <label ref="label">
-                        {'Soodustused'}
+                        {'Lühiajalised soodustused (miinusmärgiga)'}
                     </label>
                 </div>
                 <div style={styles.docRow}>

@@ -58,6 +58,8 @@ const KoolituseLiikRegister = require('./../docs/koolituse_liik/index.jsx'),
 
 const PankVVRegister = require('./../docs/pank_vv/index.jsx');
 const PankVVDocument = require('./../docs/pank_vv/document/index.jsx');
+const ViitenrDocument = require('./../docs/viitenr/document/index.jsx');
+
 const ConfigDocument = require('./../docs/config/document/index.jsx');
 const RekvDocument = require('./../docs/rekv/document/index.jsx');
 const DokpropsDocument = require('./../docs/dokprops/document/index.jsx');
@@ -81,6 +83,7 @@ const YksuseTaabel = require('./../docs/yksuse_taabel/index.jsx');
 const KohalolekuAruanne = require('./../docs/kohaloleku_aruanne/index.jsx');
 const Topeltmaksud = require('./../docs/topeltmaksud/index.jsx');
 const Kuutabeli_aruanne = require('./../docs/kuutabeli_aruanne/index.jsx');
+
 
 const {Route, Redirect} = require('react-router-dom');
 
@@ -386,6 +389,12 @@ class App extends React.Component {
                                                                  module={MODULE}
                                                                  history={props.history}
                        />}/>
+                <Route exact path="/lapsed/viitenr/:docId"
+                       render={(props) => <ViitenrDocument {...props}
+                                                                 module={MODULE}
+                                                                 history={props.history}
+                       />}/>
+
 
 
             </StyleRoot>

@@ -152,7 +152,7 @@ module.exports = {
                             nimetus,
                             yksus::TEXT ||
                             CASE WHEN all_yksus IS NOT NULL THEN '(' || all_yksus::TEXT || ')' ELSE '' END AS yksus,
-                            CASE WHEN v.tyyp IS NOT NULL AND v.tyyp = 'SOODUSTUS' then 0 ELSE hind END     AS hind,
+                            hind                                                                           AS hind,
                             uhik,
                             lapsed.get_viitenumber(v.rekvid, lapsid)                                       AS viitenumber,
                             v.rekvid::INTEGER                                                              AS rekvid,

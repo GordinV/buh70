@@ -49,4 +49,6 @@ module.exports = {
     kohaloleku_aruanne: '/aruanned/lapsed/kohaloleku_aruanne',
     topeltmaksud: '/aruanned/lapsed/topeltmaksud',
     kuutabeli_aruanne: '/aruanned/lapsed/kuutabeli_aruanne',
+    viitenr:'/lapsed/viitenr',
+
 };

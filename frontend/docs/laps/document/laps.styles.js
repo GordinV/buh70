@@ -50,6 +50,10 @@ module.exports = {
     },
     kehtivSeisuga: {
         width: 'min-content'
+    },
+    jaak :{
+        width: 'min-content',
+        margin: '0px'
     }
 
 };

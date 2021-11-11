@@ -65,14 +65,16 @@ BEGIN
                  INNER JOIN (SELECT id, kood, nimetus, uhik
                              FROM libs.nomenklatuur n
                              WHERE rekvid = l_rekvid
-                               AND ltrim(rtrim(n.uhik)) IN ('paev', 'päev')) n ON n.id = lk.nomid
+                               AND lower(ltrim(rtrim(n.uhik))) IN ('paev', 'päev')) n ON n.id = lk.nomid
         WHERE lk.staatus <> 3
           AND lk.rekvid = l_rekvid
           AND l.id = l_grupp_id
           AND (lk.properties ->> 'alg_kpv' IS NULL OR
                (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
           AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
+          AND n.uhik IN ('paev', 'päev', 'PAEV', 'PÄEV')
         LOOP
+            raise notice 'v_lapsed.nomid %, v_lapsed.lapsId  %, v_lapsed.kogus %', v_lapsed.nomid, v_lapsed.lapsId, v_lapsed.kogus ;
             -- details
             SELECT 0               AS id,
                    v_lapsed.nomid  AS nom_id,
@@ -124,6 +126,6 @@ GRANT EXECUTE ON FUNCTION lapsed.koosta_paevad_taabel(JSONB, INTEGER) TO arvesta
 
 
 /*
-select lapsed.koosta_paevad_taabel('{"kpv":"2020-03-20","grupp_id":"214107"}', 70)
+select lapsed.koosta_paevad_taabel('{"kpv":"2020-10-11","grupp_id":"237485"}', 22)
 
 */

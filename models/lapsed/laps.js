@@ -75,10 +75,7 @@ module.exports = {
                                   k.nomid,
                                   n.kood,
                                   n.nimetus,
-                                  CASE
-                                      WHEN n.properties ->> 'tyyp' IS NOT NULL AND n.properties ->> 'tyyp' = 'SOODUSTUS'
-                                          THEN 0
-                                      ELSE k.hind END                                                         hind,
+                                  k.hind                                                                      hind,
                                   gr.nimetus::TEXT                                                         AS yksus,
                                   k.properties ->> 'all_yksus'                                             AS all_yksus,
                                   CASE WHEN (n.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3,
