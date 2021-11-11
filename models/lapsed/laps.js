@@ -127,6 +127,7 @@ module.exports = {
                   FROM lapsed.viitenr v
                            INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood
                            INNER JOIN ou.rekv r ON r.id = v.rekv_id
+                           INNER JOIN ou.userid u ON u.id = $2 AND r.id = u.rekvid
                   WHERE l.id = $1`,
             query: null,
             multiple: true,
@@ -195,8 +196,37 @@ module.exports = {
                 {id: "lopp_kpv", name: "Kehtivus", width: "20%", type: 'date', interval: true},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
-            sqlString:
-                    `SELECT TRUE                                  AS select,
+            sqlString: `
+with cur_lapsed as (
+SELECT l.id,
+       l.isikukood,
+       l.nimi,
+       l.properties,
+       array_to_string(lk.yksused,','::text)::TEXT AS yksused,
+       lk.rekv_ids,
+       lk.lopp_kpv
+FROM lapsed.laps l
+         JOIN (SELECT parentid, array_agg(rekvid) AS rekv_ids, array_agg(yksused) AS yksused, max(lopp_kpv) as lopp_kpv
+               FROM (
+                        SELECT parentid,
+                               rekvid,
+                               (k.properties->>'lopp_kpv')::date as lopp_kpv,
+                               (get_unique_value_from_json(json_agg((k.properties ->> 'yksus')::TEXT || CASE
+                                                                                                            WHEN (k.properties ->> 'all_yksus') IS NOT NULL
+                                                                                                                THEN
+                                                                                                                    '-' ||
+                                                                                                                    (k.properties ->> 'all_yksus')::TEXT
+                                                                                                            ELSE '' END)::JSONB)) AS yksused
+                        FROM lapsed.lapse_kaart k
+                        WHERE k.staatus <> 3
+                        and k.rekvid IN (SELECT rekv_id
+                            FROM get_asutuse_struktuur($1) )
+                        GROUP BY parentid, rekvid, (k.properties->>'lopp_kpv')
+                    ) qry
+               GROUP BY parentid) lk ON lk.parentid = l.id
+WHERE l.staatus <> 3
+)
+SELECT TRUE                                  AS select,
                             id,
                             isikukood,
                             nimi,
@@ -206,7 +236,7 @@ module.exports = {
                             $2::INTEGER                           AS user_id,
                             count(*) OVER ()                      AS rows_total,
                             to_char(lopp_kpv, 'DD.MM.YYYY')::TEXT AS lopp_kpv
-                     FROM lapsed.cur_lapsed l
+                     FROM cur_lapsed l
                      WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
             `,     //  $1 всегда ид учреждения, $2 - userId
             params: ['rekvid', 'userid'],

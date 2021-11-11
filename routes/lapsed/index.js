@@ -53,7 +53,7 @@ exports.get = async (req, res) => {
     };
 
     // усли указан конвертер, то отдаем данные туда на обработку
-    if (Document.config.grid && Document.config.grid.converter) {
+    if (Document.config.grid && Document.config.grid.converter && sqlData.result && sqlData.result.data) {
         sqlData.result.data = Document.config.grid.converter(sqlData.result.data);
     }
 

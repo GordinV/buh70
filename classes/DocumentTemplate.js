@@ -3,6 +3,7 @@ const getParameterFromFilter = require('./../libs/getParameterFromFilter');
 
 const getModule = require('./../libs/getModule');
 const path = './../models/'; // путь к каталогу с моделями
+const log = require('./../libs/log');
 
 //class
 class Document {
@@ -121,28 +122,35 @@ class Document {
      */
     async selectDocs(sortBy, sqlWhere, limit, params = [this.rekvId, this.userId], subTotals) {
         let sql = this.config.grid.sqlString;
-        let sqlParamsQantity = (this.config.grid.params == '' ? 2 : this.config.grid.params.length);
+        try {
+            let sqlParamsQantity = (this.config.grid.params == '' ? 2 : this.config.grid.params.length);
 
 // добавим при необходимости кол-во параметром
-        let paramsToAdd = sqlParamsQantity - params.length;
+            let paramsToAdd = sqlParamsQantity - params.length;
 
-        if (sqlParamsQantity > 2 && params.length == 2) {
-            for (let i = 0; i < paramsToAdd; i++) {
-                params.push(null)
-            }
-        }
-
-
-        if (sqlParamsQantity > 2 && params.length == 2) {
-
-            if (this.config.grid.params && typeof this.config.grid.params !== 'string') {
-                params = getParameterFromFilter(user.asutusId, user.userId, this.config.grid.params, params.filterData);
+            if (sqlParamsQantity > 2 && params.length == 2) {
+                for (let i = 0; i < paramsToAdd; i++) {
+                    params.push(null)
+                }
             }
 
 
-        }
+            if (sqlParamsQantity > 2 && params.length == 2) {
 
-        return await db.queryDb(sql, params, sortBy, sqlWhere, limit, subTotals);
+                if (this.config.grid.params && typeof this.config.grid.params !== 'string') {
+                    params = getParameterFromFilter(user.asutusId, user.userId, this.config.grid.params, params.filterData);
+                }
+
+
+            }
+
+            return await db.queryDb(sql, params, sortBy, sqlWhere, limit, subTotals);
+        } catch (e) {
+            // logs
+            let message = `selectDocs, tekkis viga, ${sql}, ${e}, ${params}`;
+            log(message, 'error');
+            return null;
+        }
     }
 
     /**

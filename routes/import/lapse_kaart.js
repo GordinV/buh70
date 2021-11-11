@@ -1,14 +1,18 @@
 module.exports = async (file, mimeType, user) => {
     const Doc = require('./../../classes/DocumentTemplate');
     const Document = new Doc('LAPSE_KAART', null, user.userId, user.asutusId, 'lapsed');
+    const log = require('./../../libs/log');
+
 
     let rows = [];
 
     try {
         rows = await readCSV(file);
-    } catch
-        (e) {
-        console.error('Viga:', e);
+    } catch (e) {
+        // logs
+        let message = `tekkis viga, readCSV ${e}`;
+        log(message,'error');
+
         return `Tekkis viga, vale formaat`;
     }
     let saved = 0;
@@ -17,12 +21,20 @@ module.exports = async (file, mimeType, user) => {
 
         const params = [JSON.stringify(rows), user.id, user.asutusId];
         const result = await Document.executeTask('importTeenused', params);
-        
+
         saved = result.result ? result.result : 0;
+
+        // logs
+        let message = `LapseKaartImport, saved: ${saved}, params: ${params}`;
+        log(message);
 
         return `Kokku leidsin ${rows.length} teenused, salvestatud kokku: ${saved}`;
 
     } else {
+        // logs
+        let message = `LapseKaartImport, no rows from file`;
+        log(message,'error');
+
         return `Kokku leidsin 0 teenused, salvestatud kokku: 0`;
 
     }
@@ -36,7 +48,10 @@ const readCSV = (csvContent) => {
         // Create the parser
         const fileContent = parse(csvContent, {headers: false, delimiter: ';', columns: false}, (err, output) => {
             if (err) {
-                console.error(err);
+                // logs
+                let message = `LapseKaartImport, readCsv error: ${err}`;
+                log(message,'error');
+
                 return null;
             }
 

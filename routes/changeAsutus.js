@@ -2,6 +2,7 @@
 
 const userid = require('../models/userid'),
     HttpError = require('./../error').HttpError;
+const log = require('./../libs/log');
 
 
 exports.post = async (req, res) => {
@@ -17,12 +18,17 @@ exports.post = async (req, res) => {
     // load new User data
     const userName = user.login;
 
-    userid.getUserId(userName, rekvId,async function  (err, userData) {
-        if (!userData) {
+    userid.getUserId(userName, rekvId, async function (err, userData) {
+        if (!userData || !req.session.users || req.session.users.length == 0) {
+            // logs
+            let message = `changeAsutus, tekkis viga !userData,userName-> ${userName} , rekvId-> ${rekvId}`;
+            log(message, 'error');
+
             const err = new HttpError(403, 'No user');
             res.send({status: 403, result: 'error'});
         } else {
-            let users  = req.session.users;
+
+            let users = req.session.users;
             // меняем данные пользователя. все кроме индентификатора
             req.session.users = users.map((userRow) => {
                 if (userUuid !== userRow.uuid) {
@@ -64,8 +70,8 @@ exports.post = async (req, res) => {
             //save in locals
             req.app.locals.user = newUser;
 
-
-
+            let message = `changeAsutus, userId-> ${JSON.stringify(userData.id)}, userData.rekvid-> ${userData.rekvid}, rekvId-> ${rekvId}`;
+            log(message, 'info');
 
             //send result and wait for reload
             res.send({result: 'Ok'}); //пока нет новых данных

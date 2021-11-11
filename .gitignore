@@ -42,3 +42,6 @@ routes/ssh
 
 #config/ default/json
 config/default.json
+
+#logs
+*.log

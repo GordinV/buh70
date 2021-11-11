@@ -46,7 +46,7 @@ exports.post = async (req, res) => {
         };
 
         // усли указан конвертер, то отдаем данные туда на обработку
-        if (doc.config.grid && doc.config.grid.converter) {
+        if (doc.config.grid && doc.config.grid.converter && data.result && data.result.data) {
             data.result.data = doc.config.grid.converter(data.result.data);
         }
 

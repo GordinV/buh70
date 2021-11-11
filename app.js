@@ -26,20 +26,10 @@ const app = express(),
     csrf = require('csurf');
 
 
-const log = require('./libs/log')(module); //@not found
+const log = require('./libs/log');
 const HttpError = require('./error').HttpError;
 const port = config.get('port');
 
-const limiter = new RateLimit({
-        windowMs: 5 * 60 * 1000, // 15 minutes
-        max: 100, // limit each IP to 100 requests per windowMs
-        delayMs: 0 // disable delaying - full speed until the max limit is reached
-    }),
-    apiLimiter = new RateLimit({
-        windowMs: 5 * 60 * 1000, // 15 minutes
-        max: 100,
-        delayMs: 0 // disabled
-    });
 
 global.__base = __dirname + '/';
 
@@ -54,19 +44,9 @@ app.set('port', port);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-/*
- запускает каждую минуту сервис
- const dailyCleanup = setInterval(() => {
- console.log('clean up called');
- //    cleanup();
- }, 1000 * 60);
-
- dailyCleanup.unref();
- */
-
 
 http.createServer(app).listen(config.get('port'), function () {
-    log.info('Express server listening on port ' + port);
+    log('Express server listening on port ' + port, 'info');
 });
 
 let pathToSshKey = path.join(__dirname,'routes', 'ssh', 'server.key');
@@ -81,35 +61,13 @@ if (fs.existsSync(pathToSshCert) && config.get('https')) {
     };
 
     https.createServer(options, app).listen(config.get('https'), ()=>{
-        console.log('Express server listening on port ' + config.get('https'));
-        log.info('Express server listening on port ' + config.get('https'));
+        log('Express server listening on port ' + config.get('https'),'info');
     });
 }
 
 
-/*
-const allowCrossDomain = function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', "*");
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    next();
-}
-
-app.configure(function() {
-    app.use(allowCrossDomain);
-    //some other code
-});
-*/
-
-
 // middleware
 
-/*
-//  apply to all requests
-app.use(limiter);
-// only apply to requests that begin with /api/
-app.use('/api/', apiLimiter);
-*/
 
 //Helmet помогает защитить приложение от некоторых широко известных веб-уязвимостей путем соответствующей настройки заголовков HTTP.
 app.use(helmet());
@@ -123,7 +81,7 @@ app.use(cookieParser(config.get('session.secret')));
 app.use(require('./middleware/sendHttpError'));
 
 app.use(cors()); //Enable All CORS Requests
-
+// log
 app.use(session({
     store: new pgSession({
         pg: pg,                                  // Use global pg-module

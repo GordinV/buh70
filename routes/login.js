@@ -6,6 +6,7 @@ const userid = require('../models/userid'),
     uuid = require('uuid/v1'),
     errorMessage = '';
 const _ = require('lodash');
+const log = require('./../libs/log');
 
 exports.get = function (req, res) {
     res.render('login', {"title": 'login', "errorMessage": errorMessage});
@@ -94,7 +95,8 @@ exports.post = function (req, res, next) {
             function (kasutaja, result, callback) {
                 userid.loadPermitedAsutused(username, function (err, result) {
                     if (err) {
-                        console.error(err);
+                        let message = `login, error ${err}`;
+                        log(message, 'error');
                         return callback(err, null);
                     }
 
@@ -113,13 +115,28 @@ exports.post = function (req, res, next) {
 
         // finished
         function (err) {
-            if (err) return next(err);
+            if (err) {
+                // log
+                let message = `login, error ${err}`;
+                log(message, 'error');
+
+                return next(err);
+            }
 
             if (errorMessage) {
+                // log
+                let message = `login, error ${errorMessage}`;
+                log(message, 'error');
+
                 //back to login
+
                 res.statusCode = statusCode;
                 res.redirect('/login');
             } else {
+                // log
+                let message = `login, username-> ${username}`;
+                log(message, 'info');
+
                 // open main page
                 req.app.locals.user = user;
                 res.redirect('/lapsed'); //@todo переделать

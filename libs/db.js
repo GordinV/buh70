@@ -1,9 +1,10 @@
 const {Client} = require('pg');
+const log = require('./log');
 
 const db = {
     queryDb: async (sqlString, params, sortBy, sqlWhere, sqlLimit, subTotals, dbConfig) => {
         // если не задана конфигурация, используем дефолтный
-        let config = !dbConfig ? require('../config/default'): dbConfig;
+        let config = !dbConfig ? require('../config/default') : dbConfig;
 
         let result = {
             error_code: 0,
@@ -31,7 +32,10 @@ const db = {
             }
 
         } catch (e) {
-            console.error('tekkis viga', e, prepairedSqlString);
+            // logs
+            let message = `tekkis viga ${e}, ${JSON.stringify(prepairedSqlString)}, ${params}`;
+            log(message, 'error');
+
             result.error_code = 9;
             result.error_message = e.message;
         }
@@ -40,19 +44,19 @@ const db = {
         return result;
     },
     executeQueries: async (sqls, params, returnData, dbConfig) => {
-        let config = !dbConfig ? require('../config/default'): dbConfig;
+        let config = !dbConfig ? require('../config/default') : dbConfig;
 
         const client = new Client(config.pg.connection);
         await client.connect();
         let result = [];
         let sqlString;
+
         try {
-            await Promise.all(sqls.map(async sql => {
+           await  Promise.all(sqls.map(async sql => {
                 sqlString = typeof sql === 'string' ? sql : sql.sql;
                 let data = await client.query(sqlString, params);
                 // запишем итог в объект, который вернем как результат
                 result.push({error_code: 0, result: data.rowCount, data: data.rows});
-
                 //если задан шаблон и параметр отдан объектом, то вернем результат в заданой форме
                 if (typeof sql === 'object' && returnData) {
                     // если есть декоратор (триггер) , то пропустим данные через него
@@ -65,7 +69,10 @@ const db = {
 
             }));
         } catch (e) {
-            console.error('Error in query', sqlString, params, e);
+            // logs
+            let message = `tekkis viga ${e}, ${sqls}`;
+            log(message, 'error');
+
             result.push({error_code: 9, result: null, data: [], error_message: e.message});
         }
 
