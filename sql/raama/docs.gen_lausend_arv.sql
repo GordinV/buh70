@@ -1,9 +1,10 @@
 ﻿DROP FUNCTION IF EXISTS docs.gen_lausend_arv(INTEGER);
 
 DROP FUNCTION IF EXISTS docs.gen_lausend_arv(INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS docs.gen_lausend_arv_(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.gen_lausend_arv(IN tnId INTEGER, IN userId INTEGER, OUT error_code INTEGER,
-                                                OUT result INTEGER, OUT error_message TEXT)
+                                                 OUT result INTEGER, OUT error_message TEXT)
 AS
 $BODY$
 DECLARE
@@ -33,7 +34,7 @@ BEGIN
     SELECT d.docs_ids,
            a.*,
            asutus.tp AS asutus_tp
-           INTO v_arv
+    INTO v_arv
     FROM docs.arv a
              INNER JOIN docs.doc d ON d.id = a.parentId
              INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid
@@ -59,7 +60,8 @@ BEGIN
         RETURN;
     END IF;
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = v_arv.rekvId
       AND u.id = userId;
@@ -82,10 +84,11 @@ BEGIN
         SELECT library.kood,
                dokprop.*,
                details.*
-               INTO v_dokprop
+        INTO v_dokprop
         FROM libs.dokprop dokprop
                  INNER JOIN libs.library library ON library.id = dokprop.parentid
-           , jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
+                ,
+             jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
         WHERE dokprop.id = v_arv.doklausid
         LIMIT 1;
 
@@ -93,7 +96,6 @@ BEGIN
 
         IF NOT Found OR v_dokprop.registr = 0
         THEN
-            RAISE NOTICE 'v_dokprop.registr = 0';
 
             error_code = 1; -- Konteerimine pole vajalik
             result = 0;
@@ -105,6 +107,10 @@ BEGIN
     IF result IS NULL
     THEN
         lcDbKonto = '103000';
+        lcDbTp = CASE
+                     WHEN left(lcDbKonto, 6) IN ('601000', '103701', '203010', '203000') THEN '014001'
+                     ELSE coalesce(v_arv.asutus_tp, '800599') END;
+
         -- koostame selg rea
         lcSelg = trim(v_dokprop.selg);
         IF (SELECT count(id)
@@ -141,7 +147,7 @@ BEGIN
                v_arv.muud,
                v_arv.Asutusid,
                'Arve nr. ' || v_arv.number::TEXT AS dok
-               INTO v_journal;
+        INTO v_journal;
 
         l_json = row_to_json(v_journal);
 
@@ -172,8 +178,6 @@ BEGIN
                     lcDbKonto = coalesce(v_dokprop.konto, '103000');
                     lcKrKonto = v_arv1.konto;
 
-                    RAISE NOTICE 'lcDbKonto %, lcKrKonto %, v_arv.asutus_tp %, v_dokprop.konto %', lcDbKonto, lcKrKonto, v_arv.asutus_tp, v_dokprop.konto;
-
                     SELECT 0                                   AS id,
                            CASE
                                WHEN v_arv1.kbmta = 0 AND v_arv1.hind <> 0
@@ -185,7 +189,7 @@ BEGIN
                            coalesce(v_arv1.kuurs, 1)           AS kuurs,
                            lcDbKonto                           AS deebet,
                            lcKrKonto                           AS kreedit,
-                           coalesce(v_arv.asutus_tp, '800599') AS lisa_d,
+                           coalesce(lcDbTp, '800599')          AS lisa_d,
                            coalesce(v_arv.asutus_tp, '800599') AS lisa_k,
                            coalesce(v_arv1.tunnus, '')         AS tunnus,
                            coalesce(v_arv1.proj, '')           AS proj,
@@ -194,7 +198,7 @@ BEGIN
                            coalesce(v_arv1.kood3, '')          AS kood3,
                            coalesce(v_arv1.kood4, '')          AS kood4,
                            coalesce(v_arv1.kood5, '')          AS kood5
-                           INTO v_journal;
+                    INTO v_journal;
 
                     l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
 
@@ -225,7 +229,7 @@ BEGIN
                                coalesce(v_arv1.kood3, '')                       AS kood3,
                                coalesce(v_arv1.kood4, '')                       AS kood4,
                                coalesce(v_arv1.kood5, '')                       AS kood5
-                               INTO v_journal;
+                        INTO v_journal;
 
                         l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
 
@@ -257,7 +261,7 @@ BEGIN
                            coalesce(v_arv1.kood3, '')          AS kood3,
                            coalesce(v_arv1.kood4, '')          AS kood4,
                            coalesce(v_arv1.kood5, '')          AS kood5
-                           INTO v_journal;
+                    INTO v_journal;
 
                     l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
 
@@ -284,7 +288,7 @@ BEGIN
                                coalesce(v_arv1.kood3, '')             AS kood3,
                                coalesce(v_arv1.kood4, '')             AS kood4,
                                coalesce(v_arv1.kood5, '')             AS kood5
-                               INTO v_journal;
+                        INTO v_journal;
 
                         l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
 
@@ -292,18 +296,16 @@ BEGIN
                 END IF;
 
                 l_row_count = l_row_count + 1;
---      raise notice 'l_json_details %',l_json_details;
             END LOOP;
 
         l_json = ('{"id": ' || coalesce(v_arv.journalid, 0)::TEXT || ',"data":' ||
                   trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":' || l_json_details::TEXT || '}}');
-        --    RAISE NOTICE 'l_json 2 %', l_json :: JSON;
 
         /* salvestan lausend */
 
         IF l_row_count > 0
         THEN
-            result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_arv.rekvId);
+             result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_arv.rekvId);
         ELSE
             error_message = 'Puudub kehtiv read';
             result = 0;
@@ -315,7 +317,8 @@ BEGIN
             ajalugu
             */
 
-            SELECT row_to_json(row) INTO new_history
+            SELECT row_to_json(row)
+            INTO new_history
             FROM (SELECT now()    AS updated,
                          userName AS user) row;
 
@@ -330,7 +333,8 @@ BEGIN
             WHERE id = v_arv.parentId;
 
             -- lausend
-            SELECT docs_ids INTO a_docs_ids
+            SELECT docs_ids
+            INTO a_docs_ids
             FROM docs.doc
             WHERE id = result;
 
@@ -365,7 +369,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_arv(INTEGER, INTEGER) TO dbpeakasutaj
 
 /*
 
-SELECT error_code, result, error_message from docs.gen_lausend_arv(121, 1)
+SELECT error_code, result, error_message from docs.gen_lausend_arv_(3201948, 2525)
 
 select kasutaja from userid u
 	where u.rekvid = v_arv.rekvId and u.id = 1

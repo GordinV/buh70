@@ -1,6 +1,9 @@
 DROP VIEW IF EXISTS cur_mk;
 DROP VIEW IF EXISTS cur_pank;
 
+ALTER TABLE ou.aa
+    ALTER COLUMN arve TYPE character (24) COLLATE pg_catalog."default";
+
 CREATE OR REPLACE VIEW cur_pank AS
 SELECT d.id,
        Mk.rekvid,

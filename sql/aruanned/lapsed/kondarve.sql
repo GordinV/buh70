@@ -7,7 +7,6 @@ CREATE OR REPLACE FUNCTION lapsed.kondarve(l_rekvid INTEGER,
         period    DATE,
         parameter TEXT,
         rekvid    INTEGER,
-        kood      TEXT,
         summa     NUMERIC(14, 2),
         konto     TEXT
     ) AS
@@ -25,14 +24,12 @@ SELECT qryPeriod.kpv_start                                                      
        (to_char(qryPeriod.kpv_start, 'DD.MM.YYYY') || ' - ' ||
         to_char(qryPeriod.kpv_end, 'DD.MM.YYYY'))::TEXT                                                        AS parameter,
        d.rekvid,
-       n.kood::TEXT                                                                                            AS kood,
        sum(a1.summa)                                                                                           AS summa,
        a1.konto::TEXT
 FROM docs.doc d
          INNER JOIN docs.arv a ON a.parentid = d.id
          INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
-         INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-         INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid,
+         INNER JOIN lapsed.liidestamine l ON l.docid = d.id,
      qryPeriod
 WHERE a.rekvid IN (SELECT rekv_id
                    FROM get_asutuse_struktuur($1))
@@ -41,7 +38,7 @@ WHERE a.rekvid IN (SELECT rekv_id
   AND d.rekvid IN (SELECT rekv_id
                    FROM get_asutuse_struktuur(l_rekvid))
   AND (a.kpv >= qryPeriod.kpv_start AND a.kpv <= qryPeriod.kpv_end)
-GROUP BY n.kood, a1.konto, d.rekvid, qryPeriod.kpv_start, qryPeriod.kpv_end
+GROUP BY a1.konto, d.rekvid, qryPeriod.kpv_start, qryPeriod.kpv_end
 
 $BODY$
     LANGUAGE SQL

@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const Userid = require('../models/userid');
+const log = require('./../libs/log');
 
 
 const userData = async function (req, _uuid) {
@@ -7,6 +8,10 @@ const userData = async function (req, _uuid) {
         uuid = _uuid ? _uuid : req.body.uuid;
 
     if (!req.session.users) {
+        // logs
+        let message = `userData, !req.session.users userId -> ${userId},uuid -> ${uuid}`;
+        log(message,'Error');
+
         return null;
     }
     let userIndex = _.findIndex(req.session.users, {uuid: uuid});
@@ -30,6 +35,11 @@ const userData = async function (req, _uuid) {
             sqlUser.asutusId = uuidUser.data[0].asutusid;
             sqlUser.kasutaja = uuidUser.data[0].kasutaja;
         }
+
+        // logs
+        let message = `userData, userIndex < 0 userId -> ${sqlUser.userId},asutusId -> ${sqlUser.asutusId}`;
+        log(message,'info');
+
     }
 
     const user = Object.assign({

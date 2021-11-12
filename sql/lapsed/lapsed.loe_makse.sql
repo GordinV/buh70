@@ -51,7 +51,8 @@ BEGIN
             l_viitenr = v_pank_vv.viitenumber;
 
             -- ишем плательшика
-            SELECT row_to_json(row) INTO json_object
+            SELECT row_to_json(row)
+            INTO json_object
             FROM (SELECT v_pank_vv.isikukood AS regkood,
                          v_pank_vv.maksja    AS nimetus,
                          v_pank_vv.iban      AS aa,
@@ -77,7 +78,8 @@ BEGIN
             l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
 
             -- ищем пользователя в целевом цчреждении
-            SELECT id INTO l_target_user_id
+            SELECT id
+            INTO l_target_user_id
             FROM ou.userid
             WHERE rekvid = l_rekvid
               AND kasutaja::TEXT = l_user_kood::TEXT
@@ -95,7 +97,8 @@ BEGIN
                 -- сохраним плательзика как родителя
                 SELECT l_laps_id AS parentid, l_maksja_id AS asutusid INTO v_vanem;
 
-                SELECT row_to_json(row) INTO json_object
+                SELECT row_to_json(row)
+                INTO json_object
                 FROM (SELECT 0       AS id,
                              v_vanem AS data) row;
 
@@ -169,7 +172,8 @@ BEGIN
                                         ELSE l_tasu_jaak END;
 
                     -- создаем параметры для расчета платежкм
-                    SELECT row_to_json(row) INTO json_object
+                    SELECT row_to_json(row)
+                    INTO json_object
                     FROM (SELECT v_arv.id         AS arv_id,
                                  l_maksja_id      AS maksja_id,
                                  l_dokprop_id     AS dokprop_id,
@@ -182,7 +186,8 @@ BEGIN
                                  l_makse_summa    AS summa) row;
 
                     -- создаем платежку
-                    SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
+                    SELECT fnc.result, fnc.error_message
+                    INTO l_mk_id, l_error
                     FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
 
                     -- проверим на соответствие платильщика
@@ -221,22 +226,24 @@ BEGIN
                 -- создаем поручение с суммой равной остатку, без привязки к счету
 
                 -- создаем параметры для расчета платежкм
-                SELECT row_to_json(row) INTO json_object
-                FROM (SELECT NULL             AS arv_id,
-                             l_maksja_id      AS maksja_id,
-                             l_dokprop_id     AS dokprop_id,
-                             l_new_viitenr    AS viitenumber,
-                             v_pank_vv.selg   AS selg,
-                             v_pank_vv.number AS number,
-                             v_pank_vv.kpv    AS kpv,
-                             v_pank_vv.kpv    AS maksepaev,
-                             v_pank_vv.aa     AS aa,
-                             v_pank_vv.iban   AS maksja_arve,
-                             l_tasu_jaak      AS summa) row;
+                SELECT row_to_json(row)
+                INTO json_object
+                FROM (SELECT NULL                       AS arv_id,
+                             l_maksja_id                AS maksja_id,
+                             l_dokprop_id               AS dokprop_id,
+                             l_new_viitenr              AS viitenumber,
+                             v_pank_vv.selg             AS selg,
+                             left(v_pank_vv.number, 18) AS number,
+                             v_pank_vv.kpv              AS kpv,
+                             v_pank_vv.kpv              AS maksepaev,
+                             v_pank_vv.aa               AS aa,
+                             v_pank_vv.iban             AS maksja_arve,
+                             l_tasu_jaak                AS summa) row;
 
                 -- создаем платежку
 
-                SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
+                SELECT fnc.result, fnc.error_message
+                INTO l_mk_id, l_error
                 FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
 
                 -- сохраняем пулученную информаци.
@@ -326,5 +333,5 @@ GRANT EXECUTE ON FUNCTION lapsed.loe_makse(IN user_id INTEGER, IN INTEGER) TO ar
 
 /*
 
-SELECT lapsed.loe_makse(70, 9498)
+SELECT lapsed.loe_makse(62, 26643)
 */
