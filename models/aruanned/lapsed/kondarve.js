@@ -4,7 +4,7 @@ module.exports = {
             {id: "period", name: "Period", width: "0%", type: "date", interval: true, show: false},
             {id: "asutus", name: "Asutus", width: "30%"},
             {id: "konto", name: "Konto", width: "15%"},
-            {id: "summa", name: "Summa", width: "15%"}
+            {id: "summa", name: "Summa", width: "15%", type: "number", interval: true}
         ],
         sqlString: `SELECT row_number() OVER ()                         AS row_id,
                            d.rekvid,
@@ -20,6 +20,8 @@ module.exports = {
                     ORDER BY r.nimetus, d.konto
         `,     // $1 - rekvid, $3 - kond
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
+        totals: ` sum(summa) over() as summa_total`,
+
         alias: 'kondarve_report'
     },
     print: [

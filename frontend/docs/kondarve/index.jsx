@@ -5,6 +5,8 @@ const DocumentRegister = require('./../documents/documents.jsx');
 const BtnGetXml = require('./../../components/button-register/button-task/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 const DocContext = require('./../../doc-context.js');
+const InputNumber = require('../../components/input-number/input-number.jsx');
+const InputText = require('../../components/input-text/input-text.jsx');
 
 const styles = require('./styles');
 const DOC_TYPE_ID = 'KONDARVE';
@@ -24,6 +26,11 @@ class Documents extends React.PureComponent {
         super(props);
         this.onClickHandler = this.onClickHandler.bind(this);
         this.renderer = this.renderer.bind(this);
+        this.state = {
+            summa: 0,
+            read: 0,
+            filtri_read: 0
+        }
     }
 
     render() {
@@ -37,11 +44,43 @@ class Documents extends React.PureComponent {
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
                                   render={this.renderer}/>;
+
+                <InputText title="Filtri all / read kokku:"
+                           name='read_kokku'
+                           style={styles.total}
+                           ref="input-read"
+                           value={String(this.state.filtri_read + '/' + this.state.read) || 0}
+                           disabled={true}/>
+                <InputNumber title="Summa kokku:"
+                             name='summa_kokku'
+                             style={styles.total}
+                             ref="input-read"
+                             value={Number(this.state.summa) || 0}
+                             disabled={true}/>
+
             </div>
         )
     }
 
-    renderer() {
+    renderer(self) {
+        if (!self || !self.gridData || !self.gridData.length) {
+            // пока нет данных
+            return null;
+        }
+
+        let summa = self.gridData ? self.gridData[0].summa_total : 0;
+
+        let read = self.gridData && self.gridData.length && self.gridData[0].rows_total ? self.gridData[0].rows_total : 0;
+        let filtri_read = self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : 0;
+
+        this.setState({
+            summa: summa,
+            read: read,
+            filtri_read: filtri_read
+        });
+
+
+
         return (<ToolbarContainer>
                 <BtnGetXml
                     value={'Saama CSV fail'}
