@@ -8,6 +8,9 @@ module.exports = async function (req, res, next) {
     let result = 0;
 
     if (!uuid && req.session.users.length > 0) {
+        // logs
+        let message = `Auth, !uuid && req.session.users.length > 0 -> ${userId},uuid -> ${uuid}`;
+        log(message,'info');
 
         // get
         return next();
@@ -16,7 +19,7 @@ module.exports = async function (req, res, next) {
     if (!user) {
         // logs
         let message = `Auth, !user userId -> ${userId},uuid -> ${uuid}`;
-        log(message,'Error');
+        log(message,'error');
 
         res.statusCode = 401;
         res.redirect('/login');

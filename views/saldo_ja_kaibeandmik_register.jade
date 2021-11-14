@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+        .kulastavus {
+            width: 100px
+        }
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 SALDO JA KÄIBEANDMIK
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Asutuse nimetus
+                    th Algsaldo deebet (nõuded)
+                    th Algsaldo kreedit (ettemaksed)
+                    th Käive deebet (arvestatud)
+                    th Käive kreedit (maksed)
+                    th Mahakantud
+                    th Lõppsaldo deebet (nõuded)
+                    th Lõppsaldo kreedit (ettemaksed)
+
+            tbody
+                each rea in data
+                    tr
+                        td(align='center')=rea.asutus
+                        td(align='center')=Number(rea.alg_db).toFixed(2)
+                        td(align='center')=Number(rea.alg_kr).toFixed(2)
+                        td(align='center')=Number(rea.db).toFixed(2)
+                        td(align='center')=Number(rea.kr).toFixed(2)
+                        td(align='center')=Number(rea.mahakantud).toFixed(2)
+                        td(align='center')=Number(rea.lopp_db).toFixed(2)
+                        td(align='center')=Number(rea.lopp_kr).toFixed(2)
+

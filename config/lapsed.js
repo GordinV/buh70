@@ -36,6 +36,7 @@ module.exports = {
     laps_kokkuvotte:'/aruanned/lapsed/laps_kokkuvotte',
     arved_koodi_jargi:'/aruanned/lapsed/arved_koodi_jargi',
     saldo_ja_kaive:'/aruanned/lapsed/saldo_ja_kaive',
+    saldo_ja_kaibeandmik:'/aruanned/lapsed/saldo_ja_kaibeandmik',
     kaive_aruanne:'/aruanned/lapsed/kaive_aruanne',
     sent_docs:'/aruanned/lapsed/sent_docs',
     child_age:'/aruanned/lapsed/child_age',
