@@ -95,12 +95,6 @@ class Documents extends React.PureComponent {
                              ref="input-laekumised"
                              value={Number(this.state.lopp_db) || 0}
                              disabled={true}/>
-                <InputNumber title="Tagastused kokku:"
-                             name='tagastused_kokku'
-                             style={styles.total}
-                             ref="input-tagastused"
-                             value={Number(this.state.tagastused) || 0}
-                             disabled={true}/>
                 <InputNumber title="Lõpp kr. kokku:"
                              name='kr_kokku'
                              style={styles.total}
