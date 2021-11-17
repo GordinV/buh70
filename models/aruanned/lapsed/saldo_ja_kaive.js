@@ -45,7 +45,7 @@ module.exports = {
                            rekvid,
                            $2                                                                 AS user_id,
                            r.nimetus::TEXT                                                    AS asutus
-                    FROM lapsed.saldo_ja_kaive($1::INTEGER, $3, $4) qryReport
+                    FROM lapsed.get_saldo_ja_kaive_from_cache($1::INTEGER, jsonb_build_object('kpv_start',$3::date, 'kpv_end', $4::date)) qryReport
                              INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
                     ORDER BY r.nimetus
         `,     // $1 - rekvid, $3 - alg_kpv, $4 - lopp_kpv

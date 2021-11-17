@@ -1,28 +1,27 @@
 module.exports = {
     select: [{
-        sql: `SELECT
-                  a.id,
-                  a.regkood,
-                  a.nimetus,
-                  a.omvorm,
-                  a.aadress,
-                  a.kontakt,
-                  a.aadress,
-                  a.tel,
-                  a.faks,
-                  a.email,
-                  a.muud,
-                  a.tp,
-                  a.staatus,
-                  true::boolean as is_tootaja,
-                  a.mark,
-                    $2:: INTEGER AS userid,
-                'TOOTAJA' AS doc_type_id,
-                (properties->>'pank'):: TEXT AS pank,
-                (properties->>'palk_email'):: VARCHAR(254) AS palk_email,       
-                a.tp
-                FROM libs.asutus a 
-                where id = $1`,
+        sql: `SELECT a.id,
+                     a.regkood,
+                     a.nimetus,
+                     a.omvorm,
+                     a.aadress,
+                     a.kontakt,
+                     a.aadress,
+                     a.tel,
+                     a.faks,
+                     a.email,
+                     a.muud,
+                     a.tp,
+                     a.staatus,
+                     TRUE::BOOLEAN                                AS is_tootaja,
+                     a.mark,
+                     $2:: INTEGER                                 AS userid,
+                     'TOOTAJA'                                    AS doc_type_id,
+                     (properties ->> 'pank'):: TEXT               AS pank,
+                     (properties ->> 'palk_email'):: VARCHAR(254) AS palk_email,
+                     a.tp
+              FROM libs.asutus a
+              WHERE id = $1`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER            AS id,
                   $2 :: INTEGER            AS userid,
@@ -48,11 +47,11 @@ module.exports = {
         data: []
     },
         {
-            sql: `SELECT (e.element ->> 'aa') :: varchar(20) AS aa,
-                $2 :: INTEGER            AS userid
-                FROM libs.asutus a,
-                      json_array_elements((a.properties -> 'asutus_aa') :: JSON) AS e(element)
-                WHERE a.id = $1`, //$1 - doc_id, $2 0 userId
+            sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa,
+                         $2 :: INTEGER                       AS userid
+                  FROM libs.asutus a,
+                       json_array_elements((a.properties -> 'asutus_aa') :: JSON) AS e(element)
+                  WHERE a.id = $1`, //$1 - doc_id, $2 0 userId
             query: null,
             multiple: true,
             alias: 'asutus_aa',
@@ -60,8 +59,10 @@ module.exports = {
 
         },
         {
-            sql: `SELECT * from palk.cur_toolepingud t
-                WHERE t.parentid = $1 and rekvid in (select rekvid from ou.userid where id = $2)`,
+            sql: `SELECT *
+                  FROM palk.cur_toolepingud t
+                  WHERE t.parentid = $1
+                    AND rekvid IN (SELECT rekvid FROM ou.userid WHERE id = $2)`,
             query: null,
             multiple: true,
             alias: 'tooleping',
@@ -69,44 +70,46 @@ module.exports = {
 
         },
         {
-            sql: `select 
-                    liik_::varchar(20),
-                    tund_::varchar(20),
-                    maks_::varchar(20),
-                    id,
-                    parentid,
-                    lepingid,
-                    libid,
-                    summa,
-                    case WHEN not empty(percent_::INTEGER)
-                        THEN 'JAH'
-                      ELSE 'EI' END :: VARCHAR(5) AS percent_,
-                    CASE WHEN empty(tulumaks::INTEGER)
-                        THEN 'JAH'
-                      ELSE 'EI' END :: VARCHAR(5) AS tulumaks_,                    tulumaks,
-                    tulumaar,
-                    status,
-                    muud,
-                    alimentid,
-                    tunnus,
-                    amet::varchar(20),
-                    osakond::varchar(20),
-                    osakondid,
-                    tund,
-                    liik,
-                    maks,
-                    asutusest,
-                    round,
-                    tululiik,
-                    minsots,
-                    rekvid,
-                    kood::varchar(20) as kood,
-                    nimetus::varchar(254) as nimetus                     
-                    from palk.cur_palk_kaart pk
-                    WHERE pk.parentid = $1 --asutus_id
+            sql: `SELECT liik_::VARCHAR(20),
+                         tund_::VARCHAR(20),
+                         maks_::VARCHAR(20),
+                         id,
+                         parentid,
+                         lepingid,
+                         libid,
+                         summa,
+                         CASE
+                             WHEN NOT empty(percent_::INTEGER)
+                                 THEN 'JAH'
+                             ELSE 'EI' END :: VARCHAR(5) AS percent_,
+                         CASE
+                             WHEN empty(tulumaks::INTEGER)
+                                 THEN 'JAH'
+                             ELSE 'EI' END :: VARCHAR(5) AS tulumaks_,
+                         tulumaks,
+                         tulumaar,
+                         status,
+                         muud,
+                         alimentid,
+                         tunnus,
+                         amet::VARCHAR(20),
+                         osakond::VARCHAR(20),
+                         osakondid,
+                         tund,
+                         liik,
+                         maks,
+                         asutusest,
+                         round,
+                         tululiik,
+                         minsots,
+                         rekvid,
+                         kood::VARCHAR(20)               AS kood,
+                         nimetus::VARCHAR(254)           AS nimetus
+                  FROM palk.cur_palk_kaart pk
+                  WHERE pk.parentid = $1 --asutus_id
                     AND pk.rekvid IN (SELECT rekvid
-                                           FROM ou.userid u
-                                           WHERE u.id = $2)`,  //$1 --asutus_id, $2 - user_id
+                                      FROM ou.userid u
+                                      WHERE u.id = $2)`,  //$1 --asutus_id, $2 - user_id
             query: null,
             multiple: true,
             alias: 'palk_kaart',
@@ -114,40 +117,45 @@ module.exports = {
 
         },
         {
-            sql: `select * from palk.get_taotlus_mvt_data($1::INTEGER, (select rekvid from ou.userid where id = $2)::integer)`, //$1 asutus_id, $2 - userid
+            sql: `SELECT *
+                  FROM palk.get_taotlus_mvt_data($1::INTEGER, (SELECT rekvid FROM ou.userid WHERE id = $2)::INTEGER)`, //$1 asutus_id, $2 - userid
             query: null,
             multiple: true,
             alias: 'taotlus_mvt',
             data: []
         },
         {
-            sql: `select sum(p.summa) as summa,
-                    p.isik,
-                    p.amet
-                    from palk.cur_used_mvt p
-                    where p.isikid = $1
-                    and month(alg_kpv) <= $2
-                    and month(lopp_kpv) >= $2
-                    and year(alg_kpv) = $3 
-                    group by isik, amet`, //$1 - isik_id, $2 - kuu, $3 - aasta
+            sql: `SELECT sum(p.summa) AS summa,
+                         p.isik,
+                         p.amet
+                  FROM palk.cur_used_mvt p
+                  WHERE p.isikid = $1
+                    AND month(alg_kpv) <= $2
+                    AND month(lopp_kpv) >= $2
+                    AND year(alg_kpv) = $3
+                  GROUP BY isik, amet`, //$1 - isik_id, $2 - kuu, $3 - aasta
             query: null,
             multiple: true,
             alias: 'curUsed_mvt',
             data: []
         },
         {
-            sql:`SELECT a.id 
-                    FROM libs.asutus a
-                    WHERE  RTRIM(LTRIM(a.regkood)) = RTRIM(LTRIM($1)) order by id desc limit 1`, //isikukood
+            sql: `SELECT a.id
+                  FROM libs.asutus a
+                  WHERE RTRIM(LTRIM(a.regkood)) = RTRIM(LTRIM($1))
+                    AND a.staatus < 3
+                  ORDER BY id DESC
+                  LIMIT 1`, //isikukood
             query: null,
-            multiple:true,
+            multiple: true,
             alias: 'validate_asutus',
             data: []
         }
 
-        ],
-    selectAsLibs: `select * from palk.com_tootajad a 
-        where rekvid = $1`, //$1 - rekvId
+    ],
+    selectAsLibs: `SELECT *
+                   FROM palk.com_tootajad a
+                   WHERE rekvid = $1`, //$1 - rekvId
     returnData: {
         row: {},
         asutus_aa: [],
@@ -162,7 +170,8 @@ module.exports = {
         {name: 'nimetus', type: 'C'}
     ],
     saveDoc: `select libs.sp_salvesta_asutus($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from libs.sp_delete_asutus($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM libs.sp_delete_asutus($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
@@ -171,31 +180,32 @@ module.exports = {
             {id: "osakond", name: "Osakond", width: "20%"},
             {id: "amet", name: "Amet", width: "25%"}
         ],
-        sqlString: `select a.*, $2::integer as userId
-            from palk.cur_tootajad a
-            where rekvid = $1`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT a.*, $2::INTEGER AS userId
+                    FROM palk.cur_tootajad a
+                    WHERE rekvid = $1`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curTootajad'
     },
     getLog: {
-        command: `SELECT ROW_NUMBER() OVER ()                                                                        AS id,
-                         (ajalugu ->> 'user')::VARCHAR(20)                                                           AS kasutaja,
+        command: `SELECT ROW_NUMBER() OVER ()              AS id,
+                         (ajalugu ->> 'user')::VARCHAR(20) AS kasutaja,
                          coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
-                                  '')::VARCHAR(20)                                                                   AS koostatud,
+                                  '')::VARCHAR(20)         AS koostatud,
                          coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
-                                  '')::VARCHAR(20)                                                                   AS muudatud,
+                                  '')::VARCHAR(20)         AS muudatud,
                          coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
-                                  '')::VARCHAR(20)                                                                   AS prinditud,
+                                  '')::VARCHAR(20)         AS prinditud,
                          coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
-                                  '')::VARCHAR(20)                                                                   AS kustutatud
+                                  '')::VARCHAR(20)         AS kustutatud
 
                   FROM (
-                           SELECT jsonb_array_elements('[]'::jsonb || d.ajalugu::jsonb) AS ajalugu, d.id
+                           SELECT jsonb_array_elements('[]'::JSONB || d.ajalugu::JSONB) AS ajalugu, d.id
                            FROM libs.asutus d,
                                 ou.userid u
                            WHERE d.id = $1
                              AND u.id = $2
-                       ) qry where (ajalugu ->> 'user') is not null`,
+                       ) qry
+                  WHERE (ajalugu ->> 'user') IS NOT NULL`,
         type: "sql",
         alias: "getLogs"
     },

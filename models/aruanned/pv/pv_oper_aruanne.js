@@ -27,6 +27,7 @@ module.exports = {
                       INNER JOIN cur_pv_oper po ON p.id = po.pv_kaart_id
                       INNER JOIN libs.library g ON g.id = (p.properties :: JSONB ->> 'gruppid') :: INTEGER
                     WHERE p.library = 'POHIVARA'
+                      AND p.status <> 3
                       and p.rekvid = $3
                       and po.kpv >= $1
                       and po.kpv <= $2`,     // $1 - kpv1, $2 - kpv2, $3- rekvid (svod)

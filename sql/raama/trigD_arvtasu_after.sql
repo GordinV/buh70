@@ -10,6 +10,8 @@ AS $$
 BEGIN
 
   PERFORM docs.sp_update_arv_jaak(old.doc_arv_Id);
+  PERFORM docs.sp_update_mk_jaak(old.doc_tasu_id);
+
   RETURN NULL;
 
 END;

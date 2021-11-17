@@ -339,7 +339,7 @@ const Arv = {
             {id: "asutus", name: "Maksja", width: "15%"},
             {id: "summa", name: "Summa", width: "7%", type: "number", interval: true},
             {id: "tahtaeg", name: "Tähtaeg", width: "7%", type: 'date', interval: true},
-            {id: "jaak", name: "Jääk", width: "7%", type: "number"},
+            {id: "jaak", name: "Jääk", width: "7%", type: "number", interval: true},
             {id: "tasud", name: "Tasud", width: "7%", type: 'date', interval: true},
             {id: "nimi", name: "Nimi", width: "15%"},
             {id: "isikukood", name: "Isikukood", width: "7%"},

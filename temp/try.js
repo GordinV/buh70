@@ -1,17 +1,10 @@
-const winston = require('winston');
-winston.clear();
+const modelCreator = require('./../libs/createXMLmodel');
+const fs = require('fs');
+modelForExport = 'ou/aasta';
 
-var path = module.filename.split('/').slice(-2).join('/');
 
-const Logger = new winston.Logger({
-    transports: [
-        new winston.transports.Console({
-            colorize: true,
-            level: 'info'
-        }),
-        new winston.transports.File({filename:'temp.log'})
-    ]
+fs.readFile('try.js', function (err, data) {
+    if (err) throw err;
+
+    console.log(data);
 });
-
-Logger.info('test info');
-

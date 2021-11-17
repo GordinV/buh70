@@ -74,7 +74,7 @@ BEGIN
           AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
           AND n.uhik IN ('paev', 'päev', 'PAEV', 'PÄEV')
         LOOP
-            raise notice 'v_lapsed.nomid %, v_lapsed.lapsId  %, v_lapsed.kogus %', v_lapsed.nomid, v_lapsed.lapsId, v_lapsed.kogus ;
+            RAISE NOTICE 'v_lapsed.nomid %, v_lapsed.lapsId  %, v_lapsed.kogus %', v_lapsed.nomid, v_lapsed.lapsId, v_lapsed.kogus;
             -- details
             SELECT 0               AS id,
                    v_lapsed.nomid  AS nom_id,
@@ -102,6 +102,18 @@ BEGIN
 
     SELECT lapsed.sp_salvesta_day_taabel(l_json :: JSONB, user_id, l_rekvId) INTO tab_id;
     result = tab_id;
+
+    -- удалим операции с ед. изм не день
+
+    DELETE
+    FROM lapsed.day_taabel1
+    WHERE parent_id = tab_id
+      AND nom_id IN (
+        SELECT id
+        FROM libs.nomenklatuur
+        WHERE lower(uhik) NOT IN ('paev', 'päev')
+    );
+    
     RETURN;
 
 EXCEPTION
