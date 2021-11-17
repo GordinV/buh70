@@ -6,5 +6,5 @@ modelForExport = 'ou/aasta';
 fs.readFile('try.js', function (err, data) {
     if (err) throw err;
 
-    console.log('data',data);
+    console.log('data 1',data);
 });
