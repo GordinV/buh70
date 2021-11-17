@@ -48,7 +48,7 @@
     "multer": "^1.4.2",
     "nconf": "^0.8.2",
     "node-jsx": "^0.13.3",
-    "nodemailer": "^6.3.1",
+    "nodemailer": "^6.4.16",
     "pg": "^7.12.1",
     "pgpass": "^1.0.2",
     "prop-types": "^15.7.2",
