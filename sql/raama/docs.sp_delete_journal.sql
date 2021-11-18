@@ -84,7 +84,7 @@ BEGIN
 
     -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
 
-    IF v_doc.docs_ids IS NOT NULL
+ /*   IF v_doc.docs_ids IS NOT NULL
         AND NOT exists(
                 SELECT 1 FROM docs.arvtasu WHERE doc_tasu_id = v_doc.id)
         AND exists(
@@ -106,7 +106,7 @@ BEGIN
         result = 0;
         RETURN;
     END IF;
-
+*/
     -- проврека на связанного с проводкой счета (маловероятные)
     IF exists(SELECT id FROM docs.doc WHERE docs_ids @> ARRAY [doc_id])
     THEN

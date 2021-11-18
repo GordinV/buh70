@@ -67,7 +67,6 @@ BEGIN
             WHERE (a.properties::JSONB ->> 'ettemaksu_arve_id') ::INTEGER = v_arv.id
               AND (a.properties ->> 'ettemaksu_period')::INTEGER = i;
 
-
             -- выбираем услуги
             FOR v_arvread IN
                 SELECT a1.*,
@@ -137,6 +136,7 @@ BEGIN
             FROM (SELECT coalesce(l_arve_id, 0) AS id, l_json_arve AS data) row;
 
             SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, v_arv.rekvid) INTO l_arve_id;
+
             IF l_arve_id IS NOT NULL AND l_arve_id > 0
             THEN
                 IF (l_arv_summa > 0)

@@ -17,7 +17,7 @@ DECLARE
                                             FROM libs.library
                                             WHERE kood = doc_type_kood
                                               AND library = 'DOK'
-                                            LIMIT 1);
+                                                LIMIT 1);
 
     doc_details           JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     doc_number            TEXT           = doc_data ->> 'number';
@@ -61,6 +61,7 @@ DECLARE
 
     l_mk_id               INTEGER;
     l_km                  TEXT;
+    l_mks                 RECORD;
 BEGIN
 
     -- если есть ссылка на ребенка, то присвоим viitenumber
@@ -86,7 +87,8 @@ BEGIN
         doc_number = docs.sp_get_number(user_rekvid, 'ARV', YEAR(doc_kpv), tnDokLausId);
     END IF;
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = user_id;
@@ -142,7 +144,8 @@ BEGIN
 
     ELSE
         -- history
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS updated,
                      userName AS user) row;
 
@@ -176,7 +179,7 @@ BEGIN
             objektid   = doc_objektid,
             objekt     = doc_objekt,
             doklausid  = tnDokLausId,
-            properties = properties::jsonb || dok_props::jsonb
+            properties = properties::JSONB || dok_props::JSONB
         WHERE parentid = doc_id RETURNING id
             INTO arv_id;
 
@@ -187,7 +190,8 @@ BEGIN
         SELECT *
         FROM json_array_elements(doc_details)
         LOOP
-            SELECT * INTO json_record
+            SELECT *
+            INTO json_record
             FROM json_to_record(
                          json_object) AS x (id TEXT, nomId INTEGER, kogus NUMERIC(14, 4), hind NUMERIC(14, 4),
                                             kbm NUMERIC(14, 4),
@@ -200,7 +204,8 @@ BEGIN
                                             soodustus NUMERIC(14, 4), soodus NUMERIC(14, 4));
 
 
-            SELECT row_to_json(row) INTO arv1_rea_json
+            SELECT row_to_json(row)
+            INTO arv1_rea_json
             FROM (SELECT json_record.yksus,
                          json_record.all_yksus,
                          json_record.lapse_taabel_id,
@@ -409,7 +414,7 @@ BEGIN
                                                     WHERE parentid = doc_id)))
                                    AND a.properties ->> 'tyyp' IS NOT NULL
                                    AND a.properties ->> 'tyyp' = 'ETTEMAKS'
-                                 LIMIT 1
+                                     LIMIT 1
         );
 
     END IF;
@@ -422,9 +427,11 @@ BEGIN
             )
         THEN
             -- вызываем оплату
+            FOR l_mks IN SELECT doc_tasu_id AS mk_id FROM docs.arvtasu WHERE doc_arv_id = doc_ettemaksu_arve_id
+                LOOP
+                    PERFORM docs.sp_tasu_arv(l_mks.mk_id, doc_ettemaksu_arve_id, user_id);
 
-            l_mk_id = (SELECT doc_tasu_id FROM docs.arvtasu WHERE doc_arv_id = doc_ettemaksu_arve_id);
-            PERFORM docs.sp_tasu_arv(l_mk_id, doc_ettemaksu_arve_id, user_id);
+                END LOOP;
 
         END IF;
     END IF;

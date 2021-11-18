@@ -124,20 +124,24 @@ const Smk = {
             data: []
         },
         {
-            sql: `SELECT t.id,
-                         t.kpv,
-                         to_char(a.kpv, 'DD.MM.YYYY') AS print_kpv,
-                         t.summa                      AS tasu_summa,
-                         a.summa                      AS arv_summa,
-                         a.number,
-                         a.asutus,
-                         a.tyyp,
-                         a.jaak,
-                         $2                           AS user_id
-                  FROM lapsed.cur_laste_arved a
-                           INNER JOIN docs.arvtasu t ON t.doc_arv_id = a.id AND t.status <> 3
-                  WHERE t.doc_tasu_id = $1
-                  ORDER BY t.kpv, t.id`,
+            sql: ` SELECT t.id,
+                          t.kpv,
+                          to_char(a.kpv, 'DD.MM.YYYY') AS print_kpv,
+                          t.summa                      AS tasu_summa,
+                          a.summa                      AS arv_summa,
+                          a.number,
+                          asutus.nimetus               AS asutus,
+                          a.properties ->> 'tyyp'      AS tyyp,
+                          a.jaak,
+                          $2                           AS user_id
+                   FROM docs.arvtasu t
+                            INNER JOIN docs.doc d ON d.id = t.doc_arv_id
+                            INNER JOIN docs.arv a ON a.parentid = d.id
+                            INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid
+                   WHERE t.doc_tasu_id = $1
+                     AND t.status <> 3
+                       ORDER BY t.kpv
+                       , t.id`,
             query: null,
             multiple: true,
             alias: 'queryArvTasu',
@@ -336,7 +340,10 @@ const Smk = {
     KoostaUlekanneMakse: {
         command: `SELECT error_code, result, error_message, doc_type_id
                   FROM docs.ulekanne_makse($2::INTEGER, (SELECT to_jsonb(row.*)
-                                                           FROM (SELECT $1 AS mk_id, $3::DATE AS maksepaev, $4::TEXT as viitenumber, $5::NUMERIC as kogus) row))`, //$1 - docs.doc.id, $2 - userId, $3 - maksepaev
+                                                         FROM (SELECT $1          AS mk_id,
+                                                                      $3::DATE    AS maksepaev,
+                                                                      $4::TEXT    AS viitenumber,
+                                                                      $5::NUMERIC AS kogus) row))`, //$1 - docs.doc.id, $2 - userId, $3 - maksepaev
         type: "sql",
         alias: 'KoostaUlekanneMakse'
     },

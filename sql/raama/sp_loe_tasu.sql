@@ -27,7 +27,8 @@ BEGIN
                d.rekvid,
                (regexp_replace(viitenr, '[^0-9]', ''))::TEXT                    AS viitenr,
                (SELECT sum(summa) FROM docs.mk1 mk1 WHERE mk1.parentid = mk.id) AS summa,
-               jaak
+               jaak,
+               case when mk.opt = 1 then 'VM' else 'SM' end as liik
                INTO v_tasu
         FROM docs.doc D
                  INNER JOIN docs.mk mk ON mk.parentid = D.id
@@ -61,6 +62,7 @@ BEGIN
 --      AND a.jaak = v_tasu.summa
               AND (arv.properties ->> 'ettemaksu_period' IS NULL OR
                    arv.properties ->> 'tyyp' = 'ETTEMAKS') -- только обычные счета или предоплаты
+            and liik = case when v_tasu.liik = 'VM' then 1 else 0 end -- при выплате ищем входящие счета или наоборот
             ORDER BY a.kpv, a.id
             LOOP
                 -- списываем в оплату сальдо счета (только остаток счета)

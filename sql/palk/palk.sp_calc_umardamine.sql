@@ -217,6 +217,7 @@ BEGIN
                     -- если налог по виду дохода 0, но общий более нуля
                     v_arv.tm = v_arv.tm_kokku;
                 END IF;
+
                 -- check if we need to round taxes
                 IF coalesce(v_arv.tm, 0) - round(coalesce(v_fakt_arv.tm, 0), 2) <> 0 OR
                    (coalesce(v_arv.sm, 0) - round(coalesce(v_fakt_arv.sm, 0), 2)) * v_tululiik.sm_maksustav <> 0 OR
@@ -235,7 +236,6 @@ BEGIN
                 THEN
                     --saving diff
                     -- will find last arvestus
-
 
                     IF l_lepingid IS NULL
                     THEN
@@ -258,21 +258,21 @@ BEGIN
                     -- если не переданны параметры
 
                     --готовим параметры для сохранения операции
-                    SELECT NULL :: INTEGER                                                                      AS id,
-                           l_kpv                                                                                AS kpv,
-                           l_lepingid                                                                           AS lepingid,
-                           l_libid                                                                              AS libid,
-                           0                                                                                    AS summa,
-                           NULL :: INTEGER                                                                      AS dokpropid,
-                           coalesce(v_arv.tm - round(v_fakt_arv.tm, 2), 0) :: NUMERIC                           AS tulumaks,
+                    SELECT NULL :: INTEGER                                              AS id,
+                           l_kpv                                                        AS kpv,
+                           l_lepingid                                                   AS lepingid,
+                           l_libid                                                      AS libid,
+                           0                                                            AS summa,
+                           NULL :: INTEGER                                              AS dokpropid,
+                           coalesce(v_arv.tm - round(v_fakt_arv.tm, 2), 0) :: NUMERIC   AS tulumaks,
                            coalesce(v_arv.sm - round(v_fakt_arv.sm, 2), 0) *
-                           v_tululiik.sm_maksustav :: NUMERIC                                                   AS sotsmaks,
+                           v_tululiik.sm_maksustav :: NUMERIC                           AS sotsmaks,
                            coalesce(v_arv.tki - round(v_fakt_arv.tki, 2), 0) *
-                           v_tululiik.tk_maksustav:: NUMERIC                                                    AS tootumaks,
+                           v_tululiik.tk_maksustav:: NUMERIC                            AS tootumaks,
                            coalesce(v_arv.tka - round(v_fakt_arv.tka, 2), 0) *
-                           v_tululiik.tk_maksustav :: NUMERIC                                                   AS tka,
+                           v_tululiik.tk_maksustav :: NUMERIC                           AS tka,
                            coalesce(v_arv.pm - round(v_fakt_arv.pm, 2), 0) *
-                           v_tululiik.pm_maksustav :: NUMERIC                                                   AS pensmaks,
+                           v_tululiik.pm_maksustav :: NUMERIC                           AS pensmaks,
                            (CASE
                                 WHEN v_tululiik.tululiigi_arv > 1 THEN 0
                                 WHEN v_tululiik.tululiik ::INTEGER < 20 THEN 1
@@ -281,14 +281,15 @@ BEGIN
                                WHEN v_tululiik.tululiigi_arv > 1 THEN 0
                                WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1
                                ELSE 0 END *
-                           coalesce(v_arv.mvt - round(v_fakt_arv.mvt, 2), 0) :: NUMERIC                         AS tulubaas,
-                           v_tululiik.tululiik                                                                  AS tululiik,
-                           'Umardamine' :: TEXT || v_arv.selg                                                   AS selg
+                           coalesce(v_arv.mvt - round(v_fakt_arv.mvt, 2), 0) :: NUMERIC AS tulubaas,
+                           v_tululiik.tululiik                                          AS tululiik,
+                           'Umardamine' :: TEXT || v_arv.selg                           AS selg
                     INTO v_palk_oper;
                     l_save_params = row_to_json(v_palk_oper);
 
                     IF v_palk_oper.summa <> 0 OR v_palk_oper.tulumaks <> 0 OR v_palk_oper.sotsmaks <> 0 OR
                        v_palk_oper.tulumaks <> 0
+                        OR v_palk_oper.tootumaks <> 0
                         OR v_palk_oper.tka <> 0 OR v_palk_oper.pensmaks <> 0 OR v_palk_oper.tulubaas <> 0
                     THEN
                         -- save results

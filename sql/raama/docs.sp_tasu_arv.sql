@@ -90,15 +90,15 @@ BEGIN
                                FROM docs.mk m
                                         INNER JOIN docs.mk1 m1 ON m.id = m1.parentid
                                WHERE m.parentid = l_tasu_id
-                               UNION ALL
-                               SELECT summa
-                               FROM docs.korder1 k
-                               WHERE k.parentid = l_tasu_id
-                               UNION ALL
-                               SELECT summa
-                               FROM docs.journal j
-                                        INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
-                               WHERE j.parentid = l_tasu_id
+                                   UNION ALL
+                                   SELECT summa
+                                   FROM docs.korder1 k
+                                   WHERE k.parentid = l_tasu_id
+                                   UNION ALL
+                                   SELECT summa
+                                   FROM docs.journal j
+                                         INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
+                                   WHERE j.parentid = l_tasu_id
                            ) tasud
                   )
                   ELSE tasu_summa END;
@@ -109,8 +109,8 @@ BEGIN
         WHERE doc_arv_id = l_arv_id
           AND doc_tasu_id = l_tasu_id
           AND a.status <> 3
-        ORDER BY a.id DESC
-        LIMIT 1
+            ORDER BY a.id DESC
+            LIMIT 1
     );
 
     SELECT coalesce(l_doc_tasu_id, 0)                         AS id,
@@ -144,8 +144,9 @@ BEGIN
             )
               AND d.id <> l_arv_id
               AND a.jaak > 0
-            ORDER BY kpv
+                ORDER BY kpv
             LOOP
+
                 -- делаем пропорциональную оплату
                 -- изем уже имеющуюся оплату
                 l_doc_tasu_id = (
@@ -154,8 +155,8 @@ BEGIN
                     WHERE doc_arv_id = v_tulu_arved.id
                       AND doc_tasu_id = l_tasu_id
                       AND status <> 3
-                    ORDER BY id DESC
-                    LIMIT 1
+                        ORDER BY id DESC
+                        LIMIT 1
                 );
 
                 -- готовим параметры
@@ -188,10 +189,6 @@ BEGIN
 
     END IF;
     -- сальдо платежа
-    IF l_tasu_type = 1
-    THEN
-        PERFORM docs.sp_update_mk_jaak(l_tasu_id);
-    END IF;
     -- оплата маловероятных
 
     IF NOT exists(SELECT 1
@@ -204,7 +201,6 @@ BEGIN
     THEN
         PERFORM docs.tasumine_ebatoenaolised(l_tasu_id, l_arv_id, l_user_id);
     END IF;
-
 
     RETURN l_doc_id;
 

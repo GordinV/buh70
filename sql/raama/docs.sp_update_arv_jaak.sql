@@ -44,13 +44,11 @@ BEGIN
         l_jaak := l_arv_summa - l_tasu_summa;
     END IF;
 
-    raise notice 'l_arv_summa %, l_tasu_summa %', l_arv_summa, l_tasu_summa;
     UPDATE docs.arv
     SET tasud = l_kpv,
         jaak  = coalesce(l_jaak, 0)
     WHERE parentid = l_arv_Id;
 
-raise notice 'l_jaak %', l_jaak;
     UPDATE docs.doc
     SET status = CASE
                      WHEN l_jaak = 0

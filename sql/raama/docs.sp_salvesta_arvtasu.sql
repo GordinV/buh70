@@ -75,7 +75,6 @@ BEGIN
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
-
         -- check if tasu from journal
         IF doc_doc_arv_id IS NULL OR empty(doc_doc_arv_id) AND NOT empty(doc_doc_tasu_id) AND doc_pankkassa = 3
         THEN
@@ -134,8 +133,7 @@ BEGIN
 
 
     -- update arv jaak
-    PERFORM docs.sp_update_arv_jaak(doc_doc_arv_id);
-
+--    PERFORM docs.sp_update_arv_jaak(doc_doc_arv_id);
     RETURN lib_id;
 
 EXCEPTION

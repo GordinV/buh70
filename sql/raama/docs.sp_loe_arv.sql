@@ -24,7 +24,8 @@ BEGIN
                d.rekvid,
                arv.summa  AS summa,
                arv.jaak,
-               l.parentid AS laps_id
+               l.parentid AS laps_id,
+               arv.liik
                INTO v_arve
         FROM docs.doc D
                  INNER JOIN docs.arv arv ON arv.parentid = D.id
@@ -65,6 +66,7 @@ BEGIN
 
                 -- вызывает оплату
                 -- l_tasu_id integer, l_arv_id integer,
+                raise notice 'calling sp_tasu_arv';
                 result = docs.sp_tasu_arv(v_mk.id, v_arve.id, l_user_id, l_tasu);
 
                 IF result IS NOT NULL AND result > 0
