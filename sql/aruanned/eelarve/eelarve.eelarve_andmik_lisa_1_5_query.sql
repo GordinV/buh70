@@ -38,7 +38,8 @@ BEGIN
         kr                 NUMERIC(14, 2),
         aasta              INTEGER,
         kuu                INTEGER,
-        is_kulud           INTEGER DEFAULT 0
+        is_kulud           INTEGER DEFAULT 0,
+        rekv_id            INTEGER null
     );
 
 /*

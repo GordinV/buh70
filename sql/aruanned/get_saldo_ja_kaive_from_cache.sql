@@ -31,7 +31,7 @@ BEGIN
     l_timestamp = (SELECT max(d.lastupdate) AS lastupdate
                    FROM docs.doc d
                             INNER JOIN docs.mk mk ON mk.parentid = d.id
-                   WHERE  mk.maksepaev <= l_end
+                   WHERE mk.maksepaev <= l_end
                      AND d.status < 3
                      AND d.rekvid IN (SELECT rekv_id
                                       FROM get_asutuse_struktuur(l_rekvid))
@@ -39,12 +39,12 @@ BEGIN
                    SELECT max(d.lastupdate) AS lastupdate
                    FROM docs.doc d
                             INNER JOIN docs.arv ON arv.parentid = d.id
-                   WHERE  arv.kpv <= l_end
+                   WHERE arv.kpv <= l_end
                      AND d.rekvid IN (SELECT rekv_id
                                       FROM get_asutuse_struktuur(l_rekvid)
                    )
                      AND d.status < 3
-                   ORDER BY lastupdate desc
+                   ORDER BY lastupdate DESC
                    LIMIT 1);
 
     -- ищев в кеше
@@ -79,7 +79,9 @@ BEGIN
                q.tagastused ::NUMERIC(14, 4),
                q.jaak ::NUMERIC(14, 4),
                q.rekvid
-        FROM lapsed.saldo_ja_kaive q;
+        FROM lapsed.saldo_ja_kaive q
+        WHERE q.rekvid IN (SELECT rekv_id
+                           FROM get_asutuse_struktuur(l_rekvid));
 END
 $$;
 

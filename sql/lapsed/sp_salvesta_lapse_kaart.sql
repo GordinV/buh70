@@ -210,6 +210,7 @@ BEGIN
                        FROM (SELECT now()    AS created,
                                     userName AS user) row;
 
+        raise notice 'doc_parentid %', doc_parentid;
         INSERT INTO lapsed.lapse_kaart (parentid, rekvid, nomid, hind, tunnus, muud, properties, ajalugu)
         VALUES (doc_parentid, user_rekvid, doc_nomid, doc_hind, doc_tunnus, doc_muud, json_props,
                 '[]' :: JSONB || json_ajalugu) RETURNING id

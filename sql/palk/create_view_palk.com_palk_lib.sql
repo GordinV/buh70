@@ -30,7 +30,9 @@ SELECT l.id,
        l.muud
 FROM libs.library l
 WHERE l.library = 'PALK'
+  AND empty(l.tun5)
   AND l.status <> array_position(enum_range(NULL :: DOK_STATUS), 'deleted');
+
 
 
 GRANT SELECT ON TABLE palk.com_palk_lib TO dbkasutaja;

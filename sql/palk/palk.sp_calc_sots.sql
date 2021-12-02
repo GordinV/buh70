@@ -165,6 +165,8 @@ BEGIN
                 l_sotsmaks_min_palgast = (l_min_palk * l_min_sots * l_pk_summa * 0.01);
             END IF;
 
+
+            raise notice 'l_sotsmaks_min_palgast > l_enne_arvestatud_sotsmaks %, %',l_sotsmaks_min_palgast, l_enne_arvestatud_sotsmaks;
             IF l_sotsmaks_min_palgast > coalesce(l_enne_arvestatud_sotsmaks, 0)
             THEN
 
@@ -178,6 +180,8 @@ BEGIN
                 ELSE
                     sm = f_round(l_min_palk - coalesce(l_min_sotsmaks_alus,0), l_round);
                 END IF;
+
+                raise notice 'l_min_palk %, l_puudu_paevad %, l_sotsmaks_min_palgast %, l_enne_arvestatud_sotsmaks %',l_min_palk, l_puudu_paevad, l_sotsmaks_min_palgast, l_enne_arvestatud_sotsmaks;
 
                 selg = 'lisa SM (' + l_min_palk::TEXT + '/30 * ' ||
                        coalesce(l_paevad_periodis, 30)::TEXT || '-' + coalesce(l_min_sotsmaks_alus, 0)::TEXT +

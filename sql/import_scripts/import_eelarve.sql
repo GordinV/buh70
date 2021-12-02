@@ -206,7 +206,9 @@ COST 100;
 
 /*
 
---SELECT import_eelarve(102876)
+--SELECT import_eelarve(113637)
+
+delete from eelarve.eelarve where id =
 
 SELECT import_eelarve(e.id)
 from remote_eelarve e

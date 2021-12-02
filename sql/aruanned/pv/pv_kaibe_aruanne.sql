@@ -32,7 +32,8 @@ CREATE OR REPLACE FUNCTION docs.pv_kaibe_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rek
         rentnik        VARCHAR(254),
         tegevus_alla   VARCHAR(20),
         turu_vaartsus  NUMERIC(12, 2)
-    ) AS
+    )
+AS
 $BODY$
 
 WITH qryKaibed AS (
@@ -62,7 +63,7 @@ WITH qryKaibed AS (
              SELECT po.pv_kaart_id                                AS pv_kaart_id,
                     0::NUMERIC(12, 2)                             AS alg_soetmaks,
                     0::NUMERIC(12, 2)                             AS alg_kulum,
-                    sum(summa) FILTER ( WHERE po.liik IN (1,3) ) AS db_soetmaks,
+                    sum(summa) FILTER ( WHERE po.liik IN (1, 3) ) AS db_soetmaks,
                     (sum(summa) FILTER ( WHERE po.liik = 2)) +
                     sum(CASE
                             WHEN (l.properties :: JSONB ->> 'soetkpv') :: DATE >= l_kpv1 AND
@@ -79,7 +80,7 @@ WITH qryKaibed AS (
                AND po.kpv <= l_kpv2
                AND ((l.properties :: JSONB ->> 'mahakantud')::DATE IS NULL
                  OR (l.properties :: JSONB ->> 'mahakantud')::DATE > l_kpv2
-                   )
+                 )
              GROUP BY po.pv_kaart_id
              UNION ALL
              SELECT l.id                                                        AS pv_kaart_id,
@@ -89,7 +90,7 @@ WITH qryKaibed AS (
                     0::NUMERIC(12, 2)                                           AS db_kulum,
                     (SELECT soetmaks FROM libs.get_pv_kaart_jaak(l.id, l_kpv2)) AS kr_soetmaks,
                     0
-              --      (SELECT kulum FROM libs.get_pv_kaart_jaak(l.id, l_kpv2))    AS kr_kulum
+                    --      (SELECT kulum FROM libs.get_pv_kaart_jaak(l.id, l_kpv2))    AS kr_kulum
              FROM libs.library l
              WHERE l.library = 'POHIVARA'
                AND l.rekvid = l_rekvid
@@ -113,7 +114,7 @@ SELECT l.kood::VARCHAR(20),
        qryKaibed.db_kulum::NUMERIC(12, 2)                                                       AS db_kulum,
        1::NUMERIC(12, 4)                                                                        AS kr_kogus,
        qryKaibed.kr_soetmaks::NUMERIC(12, 2)                                                    AS kr_soetmaks,
-       qryKaibed.kr_soetmaks::NUMERIC(12, 2)                                                    AS kr_kulum,
+       0::NUMERIC(12, 2)                                                                        AS kr_kulum,
        1::NUMERIC(12, 4)                                                                        AS lopp_kogus,
        (qryKaibed.alg_soetmaks + qryKaibed.db_soetmaks - qryKaibed.kr_soetmaks)::NUMERIC(12, 2) AS lopp_soetmaks,
        (qryKaibed.alg_kulum + qryKaibed.db_kulum - qryKaibed.kr_kulum)::NUMERIC(12, 2)          AS lopp_kulum,
@@ -161,8 +162,8 @@ GRANT EXECUTE ON FUNCTION docs.pv_kaibe_aruanne( DATE, DATE, INTEGER ) TO dbkasu
 
 /*
 SELECT *
-FROM docs.pv_kaibe_aruanne('2021-01-01', current_date :: DATE, 130)
-where kood = '01365-14'
+FROM docs.pv_kaibe_aruanne('2021-01-01', current_date :: DATE,63)
+where kood = '156910/0001'
 
 		SELECT (row_number() over())::INTEGER as jrnr, *  from (SELECT                      *
 		FROM docs.pv_kaibe_aruanne('2019-01-01', current_date :: DATE, 63::integer) qry

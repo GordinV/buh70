@@ -8,6 +8,7 @@ SELECT a.id,
        btrim(a.properties ->> 'palk_email')              AS email,
        osakond.kood                                      AS osakond,
        amet.kood                                         AS amet,
+       amet.kood                                         AS kood,
        t.lopp,
        t.rekvid,
        t.ametid,
@@ -24,6 +25,7 @@ FROM libs.asutus a
          LEFT OUTER JOIN libs.library amet ON amet.id = t.ametid
 WHERE coalesce((a.properties ->> 'is_tootaja') :: BOOLEAN, FALSE)
   AND a.staatus <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
+and not empty(t.ametid)
 ORDER BY a.nimetus, osakond.kood, amet.kood;
 
 GRANT SELECT ON TABLE palk.cur_tootajad TO dbkasutaja;

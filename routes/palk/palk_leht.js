@@ -41,8 +41,8 @@ let promise = new Promise((resolve, reject) => {
                         INNER JOIN ou.userid u ON u.rekvid = r.id AND kasutaja = '${l_user}'
                WHERE (lopp IS NULL OR lopp >= current_date)
                AND (t.email IS NOT NULL AND NOT empty(t.email) AND t.email LIKE '%@%')
-                AND t.id NOT IN (
-                    SELECT (propertis ->> 'isik_id')::INTEGER
+                AND (t.rekvid * 1000000 + t.id) NOT IN (
+                    SELECT rekvid * 1000000 + (propertis ->> 'isik_id')::INTEGER
                     FROM ou.logs
                     WHERE doc_id = ${doc_id}
                       AND propertis ->> 'event' = 'email'
@@ -58,7 +58,6 @@ let promise = new Promise((resolve, reject) => {
     // массив задач
     let tasks = [];
 
-    console.log('got data');
     data.data.map(row => {
         tasks.push(function (callback) {
                 l_smtp = row.smtp;

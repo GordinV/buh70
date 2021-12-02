@@ -62,7 +62,7 @@ FROM (
                 coalesce((SELECT sum(summa)
                           FROM docs.pv_oper po
                           WHERE pv_kaart_id = p.id
-                            AND liik IN (1)), 0)              AS soetmaks,
+                            AND liik IN (1) and kpv < l_kpv), 0)              AS soetmaks,
                 coalesce((SELECT sum(summa)
                           FROM docs.pv_oper po
                           WHERE pv_kaart_id = p.id

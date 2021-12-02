@@ -359,7 +359,7 @@ BEGIN
                              TRUE               AS kas_min_sots) row;
 
                 SELECT *
-                FROM palk.sp_calc_min_sots(user_id, l_params::JSON)
+                FROM palk.sp_calc_sots(user_id, l_params::JSON)
                 INTO tulemus;
 
                 IF tulemus.summa > 0
@@ -392,7 +392,7 @@ BEGIN
                            l.korrkonto                                                             AS korrkonto,
                            l.proj                                                                  AS proj,
                            '800699' :: TEXT                                                        AS tp,
-                           coalesce((l_tulemus_json ->> 'sm') :: NUMERIC, tulemus.alus) :: NUMERIC AS sotsmaks,
+                           coalesce((l_tulemus_json ->> 'sm') :: NUMERIC, tulemus.sm) :: NUMERIC AS sotsmaks,
                            l_tulemus_json ->> 'selg' :: TEXT                                       AS muud,
                            TRUE                                                                    AS kas_lausend,
                            FALSE                                                                   AS kas_kas_arvesta_saldo
