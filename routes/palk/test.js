@@ -15,6 +15,7 @@ const nodemailer = require('nodemailer');
 const Doc = require('./../../classes/DocumentTemplate');
 const async = require('async');
 const doc_id = 213041; // palk_leht dok.tyyp
+const log = require('./../../libs/log');
 
 
 const getConfigData = async function (user) {

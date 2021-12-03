@@ -50,7 +50,7 @@ let promise = new Promise((resolve, reject) => {
                       AND month((timestamp)::DATE) = month(current_date)
                       AND year(timestamp::DATE) = year(current_date)
                       )
-                      LIMIT 5`;
+                      LIMIT 10`;
 
     let data = db.queryDb(sql, null, null, null, null, null, config);
     resolve(data);
