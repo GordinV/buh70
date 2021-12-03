@@ -6,6 +6,7 @@ module.exports = function (app) {
 
     // arv.palk leht
 
+/*
     app.get('/print/PALK_LEHT/', require('./palk/palk_leht').get); //checkAuth
     // arv.palk leht
     app.get('/print/PALK_LEHT/:id', require('./palk/palk_leht').get); //checkAuth
@@ -13,6 +14,7 @@ module.exports = function (app) {
     app.get('/pdf/PALK_LEHT/:id', require('./palk/palk_leht').pdf); //checkAuth
     // arv.palk leht, email
     app.get('/email/PALK_LEHT/:id', require('./palk/palk_leht').email); //checkAuth
+*/
 
 
 
