@@ -15,7 +15,6 @@ const nodemailer = require('nodemailer');
 const Doc = require('./../../classes/DocumentTemplate');
 const async = require('async');
 const doc_id = 213041; // palk_leht dok.tyyp
-const log = require('./../../libs/log');
 
 
 const getConfigData = async function (user) {
@@ -31,10 +30,12 @@ var l_user_name = 'Palk';
 var l_user_mail = 'palk@narva.ee';
 var l_pass;
 
-let promise = new Promise((resolve, reject) => {
+
+
+    let promise = new Promise((resolve, reject) => {
 
 // получить список работников
-    let sql = `SELECT DISTINCT t.rekvid, t.id, r.regkood, r.nimetus AS asutus, r.muud AS asutus_tais, 
+        let sql = `SELECT DISTINCT t.rekvid, t.id, r.regkood, r.nimetus AS asutus, r.muud AS asutus_tais, 
                 u.id AS user_id, u.properties->>'smtp' AS smtp, u.properties->>'port' AS port, u.properties->>'pass' AS pass, ltrim(rtrim(u.ametnik)) AS user_name,
                 t.nimetus AS nimi, t.email
                FROM palk.cur_tootajad t
@@ -50,35 +51,38 @@ let promise = new Promise((resolve, reject) => {
                       AND month((timestamp)::DATE) = month(current_date)
                       AND year(timestamp::DATE) = year(current_date)
                       )
+and t.id = 30529
                       LIMIT 5`;
 
-    let data = db.queryDb(sql, null, null, null, null, null, config);
-    resolve(data);
-}).then((data) => {
-    // отправить всем квитанции
-    // массив задач
-    let tasks = [];
 
-    data.data.map(row => {
-        tasks.push(function (callback) {
-                l_smtp = row.smtp;
-                l_port = row.port;
-                l_pass = row.pass;
-                l_user_name = row.user_name;
-                saada_palga_kvitung_mailiga(row.id);
-                callback();
-            }
-        )
+        let data = db.queryDb(sql, null, null, null, null, null, config);
+        resolve(data);
+    }).then((data) => {
+        // отправить всем квитанции
+        // массив задач
+        let tasks = [];
+
+        data.data.map(row => {
+            tasks.push(function (callback) {
+                    l_smtp = row.smtp;
+                    l_port = row.port;
+                    l_pass = row.pass;
+                    l_user_name = row.user_name;
+                    saada_palga_kvitung_mailiga(row.id);
+                    callback();
+                }
+            )
+        });
+        return tasks;
+    }).then((tasks) => {
+        // выполнить последовательно задачи
+        async.series(tasks, (tulemus) => {
+        }, (err, results) => {
+            console.log(err, results);
+            // results is now equal to: { 1: 'one', 2: 'two', 3:'three' }
+        })
     });
-    return tasks;
-}).then((tasks) => {
-    // выполнить последовательно задачи
-    async.series(tasks, (tulemus) => {
-    }, (err, results) => {
-        console.log(err, results);
-        // results is now equal to: { 1: 'one', 2: 'two', 3:'three' }
-    })
-});
+
 
 
 //saada_palga_kvitung_mailiga(30752);
@@ -156,9 +160,7 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
                     (make_date(year(current_date), month(current_date),1) -1)::DATE, ${row.rekvid}::INTEGER, 0::INTEGER,0::INTEGER, ${row.id}::INTEGER) qry`;
 
             leht = await (db.queryDb(sql, null, null, null, null, null, config));
-            // logs
-            let message = `Palk leht, asutus -> ${row.rekvid},tootaja_id -> ${row.id}`;
-            log(message, 'info');
+//            console.log('leht', leht, row.rekvid, row.id);
 
         }
     ).then(() => {
@@ -177,9 +179,6 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
                 user: User,
                 groupData: group_data
             });
-            // logs
-            let message = `Palk leht, html`;
-            log(message, 'info');
 
         }
     ).then(async () => {
@@ -187,8 +186,6 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
             let l_file_name = `doc_${row.id}`;
 
             filePDF = await createPDF(html, l_file_name);
-            let message = `Palk leht, pdf`;
-            log(message, 'info');
 
         }
     ).then(async () => {
@@ -210,8 +207,7 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
 
             // sending email
             // send mail with defined transport object
-            let message = `Palk leht, mail`;
-            log(message, 'info');
+            console.log('sending mail', row.email);
             return transporter.sendMail({
                 from: `"${l_user}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
                 to: `${row.email}`, // (, baz@example.com) list of receivers
@@ -234,14 +230,9 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
             } else {
                 log_data.mail_info = info;
                 result++;
-                let message = `Palk leht, saadetud, log_data.mail_info -> ${log_data.mail_info}`;
-                log(message, 'info');
 
                 // удаляем файл
                 return fs.unlink(filePDF, (data, err) => {
-                    let message = `Palk leht, delete pdf, ${data}, ${err}`;
-                    log(message, 'info');
-
                     if (err) {
                         console.error('unlink: ', err);
                     }
@@ -255,8 +246,6 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
             // регистрируем событие
             let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
             let tulemus = await db.queryDb(sql, null, null, null, null, null, config);
-            let message = `Palk leht, register logis, ${tulemus}`;
-            log(message, 'info');
 
             return;
             return ('Ok')
@@ -264,8 +253,6 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
     ).catch((error) => {
         // rejection
         console.error('rejected', error);
-        let message = `Palk leht, reject, ${error}`;
-        log(message, 'info');
 
     });
 
