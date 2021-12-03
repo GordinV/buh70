@@ -232,7 +232,7 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
             if (err) {
                 console.error('mail.error', err);
             } else {
-                log_data.mail_info = info;
+                log_data.mail_info = JSON.stringify(info);
                 result++;
                 let message = `Palk leht, saadetud, log_data.mail_info -> ${log_data.mail_info}`;
                 log(message, 'info');
