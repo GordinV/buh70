@@ -109,6 +109,17 @@ class Documents extends React.PureComponent {
 
         if (!self || !self.gridData || !self.gridData.length) {
             // пока нет данных
+            this.setState({
+                alg_db: 0,
+                alg_kr: 0,
+                db: 0,
+                kr: 0,
+                mahakantud: 0,
+                lopp_db: 0,
+                lopp_kr: 0,
+                read: 0,
+                filtri_read: 0
+            });
             return null;
         }
 

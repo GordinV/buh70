@@ -115,6 +115,18 @@ class Documents extends React.PureComponent {
 
         if (!self || !self.gridData || !self.gridData.length) {
             // пока нет данных
+            this.setState({
+                alg_saldo: 0,
+                arvestatud: 0,
+                soodustus: 0,
+                arv_ja_soodustus: 0,
+                laekumised: 0,
+                mahakantud: 0,
+                tagastused: 0,
+                jaak: 0,
+                read: 0,
+                filtri_read: 0
+            });
             return null;
         }
 

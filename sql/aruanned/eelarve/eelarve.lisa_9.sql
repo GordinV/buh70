@@ -64,6 +64,16 @@ FROM (
                     AND j.kood5::TEXT = '2586'::TEXT AND j.kood3::TEXT = '06'::TEXT)
            AND j.deebet NOT LIKE '100%'
            AND deebet NOT IN ('203620')
+           -- J.Tekanina
+           AND j.id NOT IN (SELECT id
+                            FROM cur_journal
+                            WHERE deebet = '203910'
+                              AND kood5 = '2586'
+                              AND j.kpv >= l_kpv1
+                              AND j.kpv <= l_kpv2
+                              AND j.rekvid IN (SELECT rekv_id
+                                               FROM get_asutuse_struktuur(l_rekvid))
+         )
      ) qry
 --WHERE saaja_tp <> '800699'
 
@@ -84,7 +94,7 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO dbvaat
 
 select * from (
                     SELECT len(saaja_nimi), *
-                    FROM eelarve.lisa_9('2021-10-01', '2021-10-31', 130,  0)
+                    FROM eelarve.lisa_9('2021-09-01', '2021-09-30', 130,  0)
                 ) qry
   where  summa >= 100
 and saaja_regkood= '37411112220'

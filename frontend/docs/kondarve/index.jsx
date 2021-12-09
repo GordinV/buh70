@@ -65,6 +65,11 @@ class Documents extends React.PureComponent {
     renderer(self) {
         if (!self || !self.gridData || !self.gridData.length) {
             // пока нет данных
+            this.setState({
+                summa: 0,
+                read: 0,
+                filtri_read: 0
+            });
             return null;
         }
 
