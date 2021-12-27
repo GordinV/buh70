@@ -22,7 +22,8 @@ BEGIN
 
     SELECT d.*,
            (m.properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER AS ebatoenaolised_tagastamine_id,
-           u.ametnik                                                   AS user_name
+           u.ametnik                                                   AS user_name,
+           m.maksepaev
     INTO v_doc
     FROM docs.doc d
              LEFT OUTER JOIN docs.mk m ON m.parentid = d.id
@@ -174,6 +175,15 @@ BEGIN
         status     = DOC_STATUS
     WHERE id = doc_id;
 
+    --удалим из кеша отчета, если он там
+    IF exists(SELECT 1 FROM pg_class WHERE relname = 'saldo_ja_kaive')
+    THEN
+        DELETE
+        FROM lapsed.saldo_ja_kaive
+        WHERE (params ->> 'kpv_end' IS NULL OR ((params ->> 'kpv_end')::DATE <= v_doc.maksepaev
+            OR (params ->> 'kpv_start')::DATE >= v_doc.maksepaev))
+          AND rekvid = v_doc.rekvid;
+    END IF;
 
     result = 1;
     RETURN;

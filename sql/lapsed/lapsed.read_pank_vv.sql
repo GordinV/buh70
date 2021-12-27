@@ -42,6 +42,7 @@ BEGIN
         FROM lapsed.pank_vv v
         WHERE timestamp::TIMESTAMP = l_timestamp::TIMESTAMP
           AND (doc_id IS NULL OR doc_id = 0)
+          AND isikukood IS NOT NULL
         ORDER BY kpv, id
         LOOP
             l_message = 'Tehingu nr.: ' || ltrim(rtrim(v_pank_vv.pank_id)) ||
@@ -50,7 +51,8 @@ BEGIN
 
 
             -- ишем плательшика
-            SELECT row_to_json(row) INTO json_object
+            SELECT row_to_json(row)
+            INTO json_object
             FROM (SELECT v_pank_vv.isikukood AS regkood,
                          v_pank_vv.maksja    AS nimetus,
                          v_pank_vv.iban      AS aa,
@@ -76,7 +78,8 @@ BEGIN
             l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
 
             -- ищем пользователя в целевом цчреждении
-            SELECT id INTO l_target_user_id
+            SELECT id
+            INTO l_target_user_id
             FROM ou.userid
             WHERE rekvid = l_rekvid
               AND kasutaja::TEXT = l_user_kood::TEXT
@@ -94,7 +97,8 @@ BEGIN
                 -- сохраним плательзика как родителя
                 SELECT l_laps_id AS parentid, l_maksja_id AS asutusid INTO v_vanem;
 
-                SELECT row_to_json(row) INTO json_object
+                SELECT row_to_json(row)
+                INTO json_object
                 FROM (SELECT 0       AS id,
                              v_vanem AS data) row;
 
@@ -151,7 +155,8 @@ BEGIN
             THEN
 
                 -- создаем параметры для расчета платежкм
-                SELECT row_to_json(row) INTO json_object
+                SELECT row_to_json(row)
+                INTO json_object
                 FROM (SELECT l_maksja_id      AS maksja_id,
                              l_dokprop_id     AS dokprop_id,
                              l_new_viitenr    AS viitenumber,
@@ -163,7 +168,8 @@ BEGIN
                              v_pank_vv.summa  AS summa) row;
 
                 -- создаем платежку
-                SELECT fnc.result, fnc.error_message INTO l_mk_id, l_error
+                SELECT fnc.result, fnc.error_message
+                INTO l_mk_id, l_error
                 FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
             END IF;
 

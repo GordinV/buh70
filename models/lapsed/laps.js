@@ -329,7 +329,8 @@ SELECT TRUE                                  AS select,
     validateIsikukood: {
         command: `SELECT id
                   FROM lapsed.laps
-                  WHERE isikukood = $1::TEXT`,
+                  WHERE isikukood = $1::TEXT
+                    AND staatus < 3`,
         type: 'sql',
         alias: 'validateIsikukood'
     },

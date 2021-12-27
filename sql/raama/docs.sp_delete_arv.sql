@@ -22,10 +22,12 @@ DECLARE
 BEGIN
 
     SELECT d.*,
-           u.ametnik AS user_name
-           INTO v_doc
+           u.ametnik AS user_name,
+           a.kpv
+    INTO v_doc
     FROM docs.doc d
              LEFT OUTER JOIN ou.userid u ON u.id = user_id
+             LEFT OUTER JOIN docs.arv a ON a.parentid = d.id
     WHERE d.id = doc_id;
 
     -- проверка на пользователя и его соответствие учреждению
@@ -76,7 +78,7 @@ BEGIN
         RETURN;
     END IF;
 */
- -- Логгирование удаленного документа
+    -- Логгирование удаленного документа
     -- docs.arv
 
     arv_history = row_to_json(row.*)
@@ -99,7 +101,8 @@ BEGIN
                                                              INNER JOIN docs.arv a ON a.id = at.doc_arv_id
                                                     WHERE a.parentid = doc_id) row));
 
-    SELECT row_to_json(row) INTO new_history
+    SELECT row_to_json(row)
+    INTO new_history
     FROM (SELECT now()           AS deleted,
                  v_doc.user_name AS user,
                  arv_history     AS arv,
@@ -173,6 +176,17 @@ BEGIN
     IF exists(SELECT id FROM docs.leping1 WHERE parentid IN (SELECT unnest(v_doc.docs_ids)))
     THEN
         UPDATE docs.doc SET docs_ids = array_remove(docs_ids, doc_id) WHERE id IN (SELECT unnest(v_doc.docs_ids));
+    END IF;
+
+
+    --удалим из кеша отчета, если он там
+    IF exists(SELECT 1 FROM pg_class WHERE relname = 'saldo_ja_kaive')
+    THEN
+        DELETE
+        FROM lapsed.saldo_ja_kaive
+        WHERE (params ->> 'kpv_end' IS NULL OR ((params ->> 'kpv_end')::DATE <= v_doc.kpv
+            OR (params ->> 'kpv_start')::DATE >= v_doc.kpv))
+          AND rekvid = v_doc.rekvid;
     END IF;
 
 

@@ -75,8 +75,8 @@ BEGIN
             l_tahtpaeva_tunnid = l_pohikoht * (SELECT count(id)
                                                FROM cur_tahtpaevad l
                                                WHERE (l.rekvid = l_rekvid OR l.rekvid IS NULL)
-                                                 AND kuu = month(l_kpv)
-                                                 AND aasta = year(l_kpv)
+                                                 AND make_date(aasta, kuu, paev) >= make_date(year(l_kpv), month(l_kpv), 1)
+                                                 AND make_date(aasta, kuu, paev) <= (l_kpv::DATE + 1)
                                                  AND l.luhipaev = 1) * 3;
 
             RAISE NOTICE 'kas_tahtpaevad %, l_tahtpaeva_tunnid %, l_pohikoht %',kas_tahtpaevad, l_tahtpaeva_tunnid, l_pohikoht;

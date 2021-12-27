@@ -63,10 +63,10 @@ BEGIN
     ELSE
         --		* puudub eelarve variant
         --		lnresult = -1;
-
-        lnEelProjId = eelarve.koosta_eelproj(70,
+raise notice 'puudub eelproj';
+        lnEelProjId = (select e.result from eelarve.koosta_eelproj(70,
                                              json_build_object('rekvid', tmpTaotlus.rekvid, 'aasta', tmpTaotlus.aasta,
-                                                               'muud', tmpTaotlus.muud));
+                                                               'muud', tmpTaotlus.muud)) e);
 
 
 --    lnEelProjId = eelarve.sp_salvesta_eelproj(l_proj_json, user_id, tmpTaotlus.rekvid);
@@ -121,4 +121,8 @@ GRANT EXECUTE ON FUNCTION eelarve.sp_taotlus_allkiri(INTEGER, JSON) TO eelallkir
 GRANT EXECUTE ON FUNCTION eelarve.sp_taotlus_allkiri(INTEGER, JSON) TO eelaktsepterja;
 GRANT EXECUTE ON FUNCTION eelarve.sp_taotlus_allkiri(INTEGER, JSON) TO eelkoostaja;
 
+/*
+ select * from eelarve.taotlus order by id desc limit 1
+ select eelarve.sp_taotlus_allkiri(2477,'{"doc_id":3420746}'::JSON)
 
+ */

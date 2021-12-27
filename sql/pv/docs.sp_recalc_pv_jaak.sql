@@ -71,7 +71,10 @@ GRANT EXECUTE ON FUNCTION docs.sp_recalc_pv_jaak(INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_recalc_pv_jaak(INTEGER) TO dbpeakasutaja;
 
 /*
-SELECT docs.sp_recalc_pv_jaak(252845);
+SELECT docs.sp_recalc_pv_jaak(230431);
 
-select * from libs.library order by id desc limit 1
+select * from libs.library
+where rekvid = 3 and kood = '155405/0002'
+
+order by id desc limit 1
 */

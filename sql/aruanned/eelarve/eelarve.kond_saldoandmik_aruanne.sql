@@ -49,7 +49,14 @@ WITH andmik AS (
             , left(s.allikas, 2)
             , s.rahavoo
             , s.tyyp
-)
+),
+     pv_kontod AS (
+         SELECT unnest(ARRAY ['154000',
+             '155000', '155100', '155101', '155106', '155109','155300','155400','155405','155500','155600','155700','155900','155910','155920',
+             '156000','156200','156400','156410','156500','156600','156900','156910','156920',
+             '157000','157010','157020','157090']) AS kood
+     )
+
 SELECT konto:: VARCHAR(20),
        nimetus:: VARCHAR(254),
        tp:: VARCHAR(20),
@@ -71,7 +78,7 @@ FROM (
                 kreedit:: NUMERIC(14, 2),
                 tyyp::INTEGER
          FROM andmik
-         WHERE ltrim(rtrim(konto)) IN ('155000', '155100', '155101', '154000')
+         WHERE ltrim(rtrim(konto)) IN (SELECT kood FROM pv_kontod)
          UNION ALL
          SELECT konto:: VARCHAR(20),
                 nimetus:: VARCHAR(254),
@@ -83,7 +90,7 @@ FROM (
                 kreedit:: NUMERIC(14, 2),
                 tyyp::INTEGER
          FROM andmik
-         WHERE ltrim(rtrim(konto)) NOT IN ('155000', '155100', '155101', '154000')
+         WHERE ltrim(rtrim(konto)) NOT IN (SELECT kood FROM pv_kontod)
      ) qry
 GROUP BY konto, nimetus, tp, tegev, allikas, rahavoo, tyyp;
 
@@ -101,6 +108,6 @@ select * from (
 SELECT *
 FROM eelarve.kond_saldoandmik_aruanne('2021-07-31' :: DATE, 999 :: INTEGER)
 ) qry
-where konto like '155100%'
+where konto like '155109%'
 
 */

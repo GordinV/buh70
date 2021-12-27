@@ -1639,7 +1639,7 @@ SELECT *
 FROM (
          SELECT *
          FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2021,09, 30),130, 1) qry
-         where artikkel in ('60','55')
+         where artikkel in ('1512')
      ) qry
 --test
 -- 12330698.41

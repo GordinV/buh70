@@ -43,6 +43,7 @@ BEGIN
         FROM lapsed.pank_vv v
         WHERE v.id = l_id
           AND (doc_id IS NULL OR doc_id = 0)
+          AND isikukood IS NOT NULL
         ORDER BY kpv, id
         LOOP
 

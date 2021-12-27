@@ -280,7 +280,7 @@ FROM (
      ) report
          LEFT OUTER JOIN kulastavus k ON k.parentid = report.laps_id AND k.rekvid = report.rekvid
          INNER JOIN lapsed.laps l ON l.id = report.laps_id
-
+where
 GROUP BY (CASE
               WHEN k.lopp_kpv >= kpv_end THEN 'Jah'
               ELSE 'Ei' END),

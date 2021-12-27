@@ -1,7 +1,7 @@
 module.exports = {
     select: [{
-        sql: `SELECT $2 :: INTEGER AS userid,
-                     'PALK_TAABEL' AS doc_type_id,
+        sql: `SELECT $2 :: INTEGER                                                        AS userid,
+                     'PALK_TAABEL'                                                        AS doc_type_id,
                      p.id,
                      p.lepingid,
                      p.kuu,
@@ -16,6 +16,7 @@ module.exports = {
                      p.uleajatoo,
                      p.status,
                      p.muud,
+                     coalesce((p.properties ->> 'tahtpaeva_tunnid')::NUMERIC, 0)::NUMERIC AS tahtpaeva_tunnid,
                      t.parentid
               FROM palk.palk_taabel1 p
                        INNER JOIN palk.tooleping t ON t.id = p.lepingid
@@ -36,6 +37,7 @@ module.exports = {
                       0::numeric(12,4) as tahtpaev,
                       0::numeric(12,4) as puhapaev,
                       0::numeric(12,4) as uleajatoo,
+                      0::numeric(12,4) as tahtpaeva_tunnid,
                       1 as status,
                       0::integer          as parentid,
                       null::text as muud`,
@@ -91,17 +93,17 @@ module.exports = {
     getLog: {
         command: `SELECT ROW_NUMBER() OVER ()                                                                        AS id,
                          (qry.ajalugu ->> 'user')::VARCHAR(20)                                                       AS kasutaja,
-                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS koostatud,
-                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS muudatud,
-                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS prinditud,
-                         coalesce(to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'), '')::VARCHAR(20) AS
+                         coalesce(to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'), '')::VARCHAR(20) AS
                                                                                                                         email,
-                         coalesce(to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS earve,
-                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS kustutatud
                   FROM (
                            SELECT jsonb_array_elements('[]'::JSONB || d.ajalugu) AS ajalugu, d.id

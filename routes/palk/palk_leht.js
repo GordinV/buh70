@@ -42,6 +42,7 @@ let promise = new Promise((resolve, reject) => {
                         INNER JOIN ou.userid u ON u.rekvid = r.id AND kasutaja = '${l_user}'
                WHERE (lopp IS NULL OR lopp >= current_date)
                AND (t.email IS NOT NULL AND NOT empty(t.email) AND t.email LIKE '%@%')
+                AND t.isikukood = '36711163715'
                 AND t.id NOT IN (
                     SELECT (propertis ->> 'isik_id')::INTEGER
                     FROM ou.logs
@@ -50,7 +51,7 @@ let promise = new Promise((resolve, reject) => {
                       AND month((timestamp)::DATE) = month(current_date)
                       AND year(timestamp::DATE) = year(current_date)
                       )
-                      LIMIT 10`;
+                      ORDER BY t.id, t.rekvid LIMIT 10`;
 
     let data = db.queryDb(sql, null, null, null, null, null, config);
     resolve(data);
@@ -65,7 +66,7 @@ let promise = new Promise((resolve, reject) => {
                 l_port = row.port;
                 l_pass = row.pass;
                 l_user_name = row.user_name;
-                saada_palga_kvitung_mailiga(row.id);
+                saada_palga_kvitung_mailiga(row.id, row.rekvid);
                 callback();
             }
         )
@@ -83,7 +84,7 @@ let promise = new Promise((resolve, reject) => {
 
 //saada_palga_kvitung_mailiga(30752);
 
-async function saada_palga_kvitung_mailiga(tootajaId) {
+async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
 //    let id = (req.params.id || 17248); // параметр id документа
     let data = [];
 
@@ -123,7 +124,8 @@ async function saada_palga_kvitung_mailiga(tootajaId) {
                         INNER JOIN ou.rekv r ON r.id = t.rekvid
                         INNER JOIN ou.userid u ON u.rekvid = r.id AND kasutaja = '${l_user}'
                WHERE (lopp IS NULL OR lopp >= current_date)
-                 AND t.id = ${tootajaId}`;
+                 AND t.id = ${tootajaId}
+                 AND t.rekvid = ${asutusId}`;
 
             return await db.queryDb(sql, null, null, null, null, null, config);
 

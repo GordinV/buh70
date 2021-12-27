@@ -32,6 +32,7 @@ DECLARE
     doc_toopaev    NUMERIC(14, 4) = coalesce((doc_data ->> 'toopaev') :: NUMERIC, 8);
     doc_pohikoht   INTEGER        = coalesce((doc_data ->> 'pohikoht') :: INTEGER, 1);
     doc_ametnik    INTEGER        = coalesce((doc_data ->> 'ametnik') :: INTEGER, 0);
+    doc_kuupalk    INTEGER        = coalesce((doc_data ->> 'kuupalk') :: INTEGER, 0);
     doc_tasuliik   INTEGER        = coalesce((doc_data ->> 'tasuliik') :: INTEGER,
                                              array_position((enum_range(NULL :: PALK_TASU_LIIK)), 'ASTMEPALK'));
     new_properties JSONB;
@@ -42,10 +43,12 @@ DECLARE
                                             THEN array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
                                         ELSE array_position((enum_range(NULL :: DOK_STATUS)), 'active') END;
     is_import      BOOLEAN        = data ->> 'import';
+    l_json         JSONB          = jsonb_build_object('kuupalk', doc_kuupalk);
 BEGIN
 
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -62,60 +65,61 @@ BEGIN
 
     -- вставка или апдейт docs.doc
 
-    RAISE NOTICE 'save leping %, user_rekvid %',doc_id, user_rekvid;
-
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;
 
 
         INSERT INTO palk.tooleping (rekvid, parentid, osakondid, ametid, algab, lopp, palk, palgamaar, pohikoht,
-                                    ametnik, tasuliik, resident, riik, toend, koormus, toopaev, ajalugu, muud)
+                                    ametnik, tasuliik, resident, riik, toend, koormus, toopaev, ajalugu, muud,
+                                    properties)
         VALUES (user_rekvid, doc_parentid, doc_osakondid, doc_ametid, doc_algab, doc_lopp, doc_palk, doc_palgamaar,
                 doc_pohikoht,
                 doc_ametnik, doc_tasuliik, doc_resident, doc_riik, doc_toend, doc_koormus, doc_toopaev, new_history,
-                doc_muud) RETURNING id
+                doc_muud, l_json) RETURNING id
                    INTO leping_id;
-
-        RAISE NOTICE 'saved %', leping_id;
 
     ELSE
         -- history
-        SELECT * INTO v_tooleping
+        SELECT *
+        INTO v_tooleping
         FROM palk.tooleping
         WHERE id = doc_id;
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()       AS updated,
                      userName    AS user,
                      v_tooleping AS tooleping) row;
 
         UPDATE palk.tooleping
-        SET osakondid = doc_osakondid,
-            ametid    = doc_ametid,
-            algab     = doc_algab,
-            lopp      = doc_lopp,
-            palk      = doc_palk,
-            palgamaar = doc_palgamaar,
-            pohikoht  = doc_pohikoht,
-            ametnik   = doc_ametnik,
-            tasuliik  = doc_tasuliik,
-            resident  = doc_resident,
-            riik      = doc_riik,
-            toend     = doc_toend,
-            koormus   = doc_koormus,
-            toopaev   = doc_toopaev,
-            ajalugu   = '[]'::JSONB || coalesce(ajalugu, '[]'::JSONB) || new_history,
-            status    = l_status,
-            muud      = doc_muud,
-            rekvid    = CASE
-                            WHEN is_import IS NOT NULL
-                                THEN user_rekvid
-                            ELSE rekvid END
+        SET osakondid  = doc_osakondid,
+            ametid     = doc_ametid,
+            algab      = doc_algab,
+            lopp       = doc_lopp,
+            palk       = doc_palk,
+            palgamaar  = doc_palgamaar,
+            pohikoht   = doc_pohikoht,
+            ametnik    = doc_ametnik,
+            tasuliik   = doc_tasuliik,
+            resident   = doc_resident,
+            riik       = doc_riik,
+            toend      = doc_toend,
+            koormus    = doc_koormus,
+            toopaev    = doc_toopaev,
+            ajalugu    = '[]'::JSONB || coalesce(ajalugu, '[]'::JSONB) || new_history,
+            status     = l_status,
+            muud       = doc_muud,
+            properties = coalesce(properties, '{}'::JSONB) || l_json,
+            rekvid     = CASE
+                             WHEN is_import IS NOT NULL
+                                 THEN user_rekvid
+                             ELSE rekvid END
         WHERE id = doc_id RETURNING id
             INTO leping_id;
 

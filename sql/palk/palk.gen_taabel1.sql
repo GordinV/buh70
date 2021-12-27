@@ -1,35 +1,36 @@
 DROP FUNCTION IF EXISTS gen_taabel1(INTEGER, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS palk.gen_taabel1(user_id INTEGER, params JSONB);
 DROP FUNCTION IF EXISTS palk.gen_taabel1(user_id INTEGER, params JSON);
+DROP FUNCTION IF EXISTS palk.gen_taabel1_(user_id INTEGER, params JSON);
 
 CREATE FUNCTION palk.gen_taabel1(IN user_id INTEGER,
-                                 IN params JSON,
-                                 OUT error_code INTEGER,
-                                 OUT result INTEGER,
-                                 OUT error_message TEXT,
-                                 OUT data JSONB)
+                                  IN params JSON,
+                                  OUT error_code INTEGER,
+                                  OUT result INTEGER,
+                                  OUT error_message TEXT,
+                                  OUT data JSONB)
     RETURNS RECORD
     LANGUAGE plpgsql
 AS
 $$
 DECLARE
-    l_hours     NUMERIC(12, 4) = 0;
-    json_object JSON;
-    v_params    RECORD;
-    json_record RECORD;
-    l_id        INTEGER;
-    l_params    JSON;
-    v_user      RECORD;
-    l_result    INTEGER        = 0;
-    v_tulemus   RECORD;
-
+    l_hours            NUMERIC(12, 4) = 0;
+    json_object        JSON;
+    v_params           RECORD;
+    json_record        RECORD;
+    l_id               INTEGER;
+    l_params           JSON;
+    v_user             RECORD;
+    l_result           INTEGER        = 0;
+    v_tulemus          RECORD;
+    l_tahtpaeva_tunnid NUMERIC(12, 4) = 0;
 BEGIN
 
     SELECT kasutaja,
            rekvid
-           INTO v_user
+    INTO v_user
     FROM ou.userid u
-        WHERE u.id = user_Id;
+    WHERE u.id = user_Id;
 
     IF v_user.kasutaja IS NULL
     THEN
@@ -43,6 +44,7 @@ BEGIN
         RETURN;
     END IF;
 
+raise notice 'start %', params;
 
     IF params IS NULL
     THEN
@@ -59,7 +61,8 @@ BEGIN
         SELECT *
         FROM json_array_elements(params :: JSON)
         LOOP
-            SELECT * INTO json_record
+            SELECT *
+            INTO json_record
             FROM json_to_record(
                          json_object) AS x (lepingid INT, kuu INT, aasta INT);
 
@@ -68,21 +71,22 @@ BEGIN
                    ltrim(rtrim(p.nimetus)) AS error_message,
                    NULL::INTEGER           AS error_code,
                    0                       AS result
-                   INTO v_tulemus
+            INTO v_tulemus
             FROM palk.cur_tootajad p
-                WHERE p.lepingid = json_record.lepingid;
+            WHERE p.lepingid = json_record.lepingid;
 
             -- find available row
             l_id = coalesce((SELECT p.id
                              FROM palk.cur_palk_taabel p
-                                 WHERE p.lepingid = json_record.lepingid
-                                      AND p.kuu = json_record.kuu
-                                      AND p.aasta = json_record.aasta
-                                 LIMIT 1), 0);
+                             WHERE p.lepingid = json_record.lepingid
+                               AND p.kuu = json_record.kuu
+                               AND p.aasta = json_record.aasta
+                             LIMIT 1), 0);
 
 
             -- calc tabel
-            SELECT row_to_json(row) INTO l_params
+            SELECT row_to_json(row)
+            INTO l_params
             FROM (SELECT json_record.lepingid AS lepingid,
                          json_record.kuu      AS kuu,
                          json_record.aasta    AS aasta) row;
@@ -90,13 +94,16 @@ BEGIN
             -- проверка на действительность договора
             IF NOT exists(SELECT id
                           FROM palk.tooleping t
-                              WHERE t.id = json_record.lepingid
-                                   AND (t.lopp IS NULL OR
-                                        (year(t.lopp) >= json_record.aasta AND month(t.lopp) >= json_record.kuu)))
+                          WHERE t.id = json_record.lepingid
+                            AND (t.lopp IS NULL OR
+                                 (year(t.lopp) >= json_record.aasta AND month(t.lopp) >= json_record.kuu)))
             THEN
                 CONTINUE;
             END IF;
-            l_hours = palk.sp_calc_taabel1(l_params :: JSONB); -- -> 145 ?
+
+            SELECT t.result, t.tahtpaeva_tunnid
+            INTO l_hours, l_tahtpaeva_tunnid
+            FROM palk.sp_calc_taabel2(l_params :: JSONB) t; -- -> 145 ?
 
             IF coalesce(l_hours, 0) > 0
             THEN
@@ -107,10 +114,12 @@ BEGIN
                        json_record.aasta    AS aasta,
                        l_hours              AS too,
                        l_hours              AS kokku,
-                       json_record.lepingid AS lepingid
-                       INTO v_params;
+                       json_record.lepingid AS lepingid,
+                       l_tahtpaeva_tunnid   AS tahtpaeva_tunnid
+                INTO v_params;
 
-                SELECT row_to_json(row) INTO l_params
+                SELECT row_to_json(row)
+                INTO l_params
                 FROM (SELECT l_id     AS id,
                              v_params AS data) row;
 
@@ -176,7 +185,7 @@ GRANT EXECUTE ON FUNCTION palk.gen_taabel1(user_id INTEGER, params JSON) TO dbpe
 
 /*
 select * from palk.gen_taabel1(1, null::text);
-select * from palk.gen_taabel1(1, '[{"lepingid":4,"kuu":4,"aasta":2018}]'::json);
+select * from palk.gen_taabel1(1, '[{"lepingid":27261,"kuu":12,"aasta":2021}]'::json);
 
 
 */

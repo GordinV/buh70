@@ -23,10 +23,39 @@ CREATE FUNCTION lapsed.get_saldo_ja_kaive_from_cache(l_rekvid INTEGER, l_params 
 AS
 $$
 DECLARE
-    l_start     DATE = coalesce((l_params ->> 'kpv_start')::DATE, make_date(year(current_date), 1, 1))::DATE;
-    l_end       DATE = coalesce((l_params ->> 'kpv_end')::DATE, current_date)::DATE;
-    l_timestamp TIMESTAMP;
+    l_start         DATE = coalesce((l_params ->> 'kpv_start')::DATE, make_date(year(current_date), 1, 1))::DATE;
+    l_end           DATE = coalesce((l_params ->> 'kpv_end')::DATE, current_date)::DATE;
+    l_timestamp     TIMESTAMP;
+    l_max_timestamp TIMESTAMP;
 BEGIN
+    IF l_params ->> 'kpv_end' IS NULL
+    THEN
+        RETURN QUERY
+            SELECT NULL:: DATE,
+                   NULL:: TEXT,
+                   NULL:: TEXT,
+                   NULL:: TEXT,
+                   NULL:: TEXT,
+                   NULL:: TEXT,
+                   0:: NUMERIC(14, 4),
+                   0:: NUMERIC(14, 4),
+                   0:: NUMERIC(14, 4),
+                   0:: NUMERIC(14, 4),
+                   0:: NUMERIC(14, 4),
+                   0:: NUMERIC(14, 4),
+                   0:: NUMERIC(14, 4),
+                   NULL:: INTEGER;
+    END IF;
+
+    -- последний отчет
+    l_max_timestamp = (SELECT max(created)
+                       FROM lapsed.saldo_ja_kaive q
+                       WHERE (q.params ->> 'kpv_start')::DATE = l_start
+                         AND (q.params ->> 'kpv_end')::DATE = l_end
+                         AND q.rekvid = l_rekvid
+    );
+
+
     -- ищем в дату изменения документов
     l_timestamp = (SELECT max(d.lastupdate) AS lastupdate
                    FROM docs.doc d
@@ -51,14 +80,17 @@ BEGIN
 
     IF NOT exists(SELECT q.id
                   FROM lapsed.saldo_ja_kaive q
-                  WHERE q.params @> l_params
+                  WHERE (q.params ->> 'kpv_start')::DATE = l_start
+                    AND (q.params ->> 'kpv_end')::DATE = l_end
                     AND q.created > l_timestamp
-                    AND q.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid)
-                  )
+                    AND q.rekvid = l_rekvid
         )
     THEN
-        RAISE NOTICE 'no andmed';
+        IF (l_params ->> 'kpv_end') IS NULL
+        THEN
+            l_params = jsonb_build_object('kpv_start', l_start, 'kpv_end', l_end);
+        END IF;
+
         PERFORM
         FROM lapsed.create_cache_for_saldo_ja_kaive(l_rekvid, l_params::JSONB);
     END IF;
@@ -81,7 +113,10 @@ BEGIN
                q.rekvid
         FROM lapsed.saldo_ja_kaive q
         WHERE q.rekvid IN (SELECT rekv_id
-                           FROM get_asutuse_struktuur(l_rekvid));
+                           FROM get_asutuse_struktuur(l_rekvid))
+          AND created = l_max_timestamp
+          AND (q.params ->> 'kpv_start')::DATE = l_start
+          AND (q.params ->> 'kpv_end')::DATE = l_end;
 END
 $$;
 
