@@ -14,10 +14,10 @@ module.exports = {
                                             WHEN p.id = r.id THEN ''
                                             WHEN r.id = 999999 THEN ''
                                             ELSE coalesce(p.nimetus, '') END)) || ' ' ||
-                            ltrim(rtrim(r.nimetus)))::VARCHAR(254) AS asutus,
+                            ltrim(rtrim(r.nimetus)))::VARCHAR(254)                 AS asutus,
                            qryReport.tunnus,
                            qryReport.tegev,
-                           coalesce(t.nimetus, '')::VARCHAR(254)   AS tegev_nimetus,
+                           coalesce(t.nimetus, '')::VARCHAR(254)                   AS tegev_nimetus,
                            qryReport.artikkel,
                            a.nimetus,
                            qryReport.aasta_1_tekke_taitmine,
@@ -26,7 +26,7 @@ module.exports = {
                            qryReport.aasta_2_tekke_taitmine,
                            qryReport.aasta_3_eelnou,
                            qryReport.aasta_3_prognoos,
-                           qryReport.selg::VARCHAR(254)
+                           qryReport.selg                                          AS selg
                     FROM eelarve.tulud_eelnou($1::DATE, $2::INTEGER, $3::INTEGER) qryReport
                              INNER JOIN (SELECT id, parentid, regkood, nimetus
                                          FROM ou.rekv

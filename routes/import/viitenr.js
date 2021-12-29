@@ -29,32 +29,35 @@ module.exports = async (file, mimeType, user) => {
 
 };
 
-const readCSV = async (csvContent) => {
+const readCSV = (csvContent) => {
     const parse = require('csv-parse');
     const rows = [];
     // Create the parser
-    const fileContent = await parse(csvContent, {headers: false, delimiter: ';', columns: false}, (err, output) => {
-        result = output;
-        if (err) {
-            console.error(err);
-            return null;
-        }
-
-        output.forEach(row => {
-            // проверим на заголовок
-            if (row[0] !== 'IK ученика') {
-
-                rows.push({
-                    isikukood: row[0],
-                    viitenr: row[1],
-                    asutus: row[2],
-                    nimetus: row[3]
-                });
+    return new Promise(function (resolve, reject) {
+        const fileContent = parse(csvContent, {headers: false, delimiter: ';', columns: false}, (err, output) => {
+            result = output;
+            if (err) {
+                console.error(err);
+                return null;
             }
+
+            output.forEach(row => {
+                // проверим на заголовок
+                if (row[0] !== 'IK ученика') {
+
+                    rows.push({
+                        isikukood: row[0],
+                        viitenr: row[1],
+                        asutus: row[2],
+                        nimetus: row[3]
+                    });
+                }
+
+            });
+            resolve(rows);
 
         });
     });
-    return rows;
 };
 
 function isNumber(val) {

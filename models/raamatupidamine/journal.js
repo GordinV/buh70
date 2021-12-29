@@ -109,7 +109,7 @@ const Journal = {
             not_initial_load: true
         },
         {
-            sql: `select docs.sp_kooperi_journal($1::integer, $2::integer) as result`,
+            sql: `select docs.sp_kooperi_journal($1::integer, $2::integer, $3::date) as result`,
             query: null,
             multiple: false,
             alias: 'kooperi_journal',

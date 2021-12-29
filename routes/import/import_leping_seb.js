@@ -18,8 +18,6 @@ module.exports = async (file, mimeType, user) => {
         const params = [JSON.stringify(rows), user.id, user.asutusId];
 
         const result = await Document.executeTask('importPankLeping', params).then((result) => {
-                console.log('result', result);
-
                 saved = result.result ? result.result : 0;
                 return saved;
             }
@@ -46,7 +44,6 @@ const readCSV = async (csvContent) => {
         delimiter: ';',
         columns: false
     }, (err, output) => {
-        console.log('outpur', output);
         result = output;
         if (err) {
             console.error(err);
@@ -55,7 +52,6 @@ const readCSV = async (csvContent) => {
 
         output.forEach(row => {
             // проверим на заголовок
-            console.log('row', row[9], row);
             if (!row[0].match(/[A-Z]/g)) {
                 rows.push({
                     kpv: row[8],
