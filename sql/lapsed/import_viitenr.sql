@@ -5,7 +5,8 @@ CREATE OR REPLACE FUNCTION lapsed.import_viitenr(IN data JSONB,
                                                  IN user_rekvid INTEGER,
                                                  OUT result INTEGER,
                                                  OUT error_code INTEGER,
-                                                 OUT error_message TEXT)
+                                                 OUT error_message TEXT,
+                                                 OUT tulemus JSONB)
     RETURNS RECORD AS
 $BODY$
 
@@ -16,14 +17,20 @@ DECLARE
     json_record  RECORD;
     l_viitenr_id INTEGER;
     l_rekv_id    INTEGER;
+    v_tulemus    RECORD;
+    l_params     JSONB;
 BEGIN
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = user_id;
     IF userName IS NULL
     THEN
         error_message = 'User not found';
+        SELECT error_message, error_code INTO v_tulemus;
+        l_params = to_jsonb(v_tulemus);
+        tulemus = coalesce(tulemus, '[]'::JSONB) || l_params::JSONB;
         RETURN;
     END IF;
 
@@ -32,12 +39,14 @@ BEGIN
         FROM jsonb_array_elements(data)
         LOOP
 
-            SELECT * INTO json_record
+            SELECT *
+            INTO json_record
             FROM json_to_record(
                          json_object) AS x (isikukood TEXT, viitenr TEXT, asutus TEXT, nimetus TEXT);
 
             -- ищем ид учреждения
-            SELECT id INTO l_rekv_id
+            SELECT id
+            INTO l_rekv_id
             FROM ou.rekv
             WHERE nimetus LIKE json_record.asutus || '%'
             ORDER BY id DESC
@@ -47,6 +56,8 @@ BEGIN
             THEN
                 -- проверяем уникальность записи
 
+                RAISE NOTICE 'l_rekv_id %', l_rekv_id;
+
                 IF NOT exists(SELECT 1 FROM lapsed.viitenr WHERE viitenumber = json_record.viitenr)
                 THEN
                     INSERT INTO lapsed.viitenr (isikukood, rekv_id, viitenumber)
@@ -54,11 +65,52 @@ BEGIN
 
                     IF l_viitenr_id > 0
                     THEN
+                        l_params = to_jsonb(row.*)
+                                   FROM (
+                                            SELECT l_viitenr_id  AS id,
+                                                   json_record.isikukood,
+                                                   json_record.viitenr,
+                                                   l_rekv_id     AS rekv_id,
+                                                   'Salvestatud' AS status
+                                        ) row;
                         count = count + 1;
+                    ELSE
+                        l_params = to_jsonb(row.*)
+                                   FROM (
+                                            SELECT 0                          AS id,
+                                                   json_record.isikukood,
+                                                   json_record.viitenr,
+                                                   l_rekv_id                  AS rekv_id,
+                                                   'Salvestamine ebaõnnestus' AS status
+                                        ) row;
+
                     END IF;
+                ELSE
+                    l_params = to_jsonb(row.*)
+                               FROM (
+                                        SELECT 0         AS id,
+                                               json_record.isikukood,
+                                               json_record.viitenr,
+                                               l_rekv_id AS rekv_id,
+                                               'Olemas'  AS status
+                                    ) row;
+
                 END IF;
+            ELSE
+                l_params = to_jsonb(row.*)
+                           FROM (
+                                    SELECT 0               AS id,
+                                           json_record.isikukood,
+                                           json_record.viitenr,
+                                           0               AS rekv_id,
+                                           'Puudub asutus' AS status
+                                ) row;
+
             END IF;
 
+            -- report
+            tulemus = coalesce(tulemus, '[]'::JSONB) || l_params::JSONB;
+            RAISE NOTICE 'tulemus %, l_params %',tulemus, l_params;
         END LOOP;
 
     -- расшифруем платежи
@@ -79,3 +131,11 @@ $BODY$
     VOLATILE
     COST 100;
 
+/*
+select  lapsed.import_viitenr('[{"isikukood":"60911153738",
+"viitenr":"8446514", "asutus":"0951004", "nimetus":"0951004 Narva Muusikakool T"}]'::jsonb,
+                                                 2477,
+                                                 63)
+
+select * from ou.userid where rekvid = 63 and kasutaja = 'vlad'
+ */

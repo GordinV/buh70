@@ -28,7 +28,6 @@ exports.post = async (req, res) => {
     }
 
     result = await doc.executeTask(taskName, [makse_id, user.userId]);
-    console.log('result', result);
     //ответ
 
     res.send({

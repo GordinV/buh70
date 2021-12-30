@@ -4,6 +4,6 @@ module.exports = {
         height: '75%'
     },
     tulemus: {
-        height: '2em'
+        height: '3em'
     }
 };

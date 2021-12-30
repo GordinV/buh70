@@ -321,8 +321,15 @@ SELECT TRUE                                  AS select,
         alias: 'importLapsed'
     },
     importViitenr: {
-        command: `SELECT error_code, result, error_message
-                  FROM lapsed.import_viitenr($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
+        command: `SELECT DISTINCT *
+                  FROM jsonb_to_recordset(
+                               (
+                                   SELECT qry.tulemus
+                                   FROM (
+                                            SELECT * FROM lapsed.import_viitenr($1::JSONB, $2::INTEGER, $3::INTEGER)
+                                        ) qry
+                               )
+                           ) AS x (id INTEGER, isikukood TEXT, viitenr TEXT, rekv_id NUMERIC, status TEXT)`,//$1 data [], $2 - userId, $3 rekvid
         type: 'sql',
         alias: 'importViitenr'
     },

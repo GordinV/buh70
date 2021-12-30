@@ -28,7 +28,6 @@ const readCSV = async (csvContent, cb) => {
         output.forEach(row => {
             // проверим на заголовок
             if (isNumber(row[0])) {
-                console.log('insert', row[0]);
                 rows.push({
                     yksus: row[0],
                     laps_ik: row[1],
@@ -48,7 +47,6 @@ const readCSV = async (csvContent, cb) => {
             let sql = `SELECT error_code, result, error_message
                    FROM lapsed.import_alg_saldo_deebet($1::JSONB, $2::INTEGER, $3::INTEGER)`;
 
-                console.log(params);
              db.queryDb(sql, params).then(returnValue => {
                 console.log('tulemus->', returnValue, sql, params);
 

@@ -1,5 +1,4 @@
 module.exports = async (file, mimeType, user) => {
-    console.log('user', user);
     const Doc = require('./../../classes/DocumentTemplate');
     const Document = new Doc('LAPSE_GRUPP', null, user.userId, user.asutusId, 'lapsed');
 
@@ -17,7 +16,6 @@ module.exports = async (file, mimeType, user) => {
         // сохраняем
 
         const params = [JSON.stringify(rows), user.id, user.asutusId];
-        console.log(params);
         const result = await Document.executeTask('importGroups', params).then((result) => {
                 saved = result.result ? result.result : 0;
             }

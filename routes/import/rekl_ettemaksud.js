@@ -40,7 +40,6 @@ const readCSV = async (csvContent, cb) => {
             // сохраняем
 
             const params = [JSON.stringify(rows)];
-            console.log('params', params);
             let sql = `SELECT *
                    FROM import_ettemaksud_from_data($1::JSONB, '2020-09-30'::date)`;
 

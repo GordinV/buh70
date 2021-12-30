@@ -10,6 +10,7 @@ module.exports = async (file, mimeType, user) => {
     const Document = new Doc('LAPS', null, user.userId, user.asutusId, 'lapsed');
 
     let saved = 0;
+    let returnData = [];
     if (rows.length) {
         // сохраняем
 
@@ -17,13 +18,31 @@ module.exports = async (file, mimeType, user) => {
 
         const result = await Document.executeTask('importViitenr', params).then((result) => {
                 saved = result.result ? result.result : 0;
+                if (result && result.data && result.data.length) {
+                    result.data = result.data.map(row => {
+                        return {
+                            kas_vigane: row.id ? false: true,
+                            error_message: row.isikukood + ' ' + row.status,
+                            viitenr: row.viitenr
+                        }
+                    })
+                }
+                returnData = result && result.data && result.data.length ? result : [];
             }
         );
-
-        return `Kokku leidsin ${rows.length} laste viitenumbrid, salvestatud kokku: ${saved}`;
+        return {
+            error_message: `Kokku leidsin ${rows.length}  laste viitenumbrid, salvestatud kokku: ${saved}`,
+            result: saved,
+            data: returnData
+        };
+//        return `Kokku leidsin ${rows.length} laste viitenumbrid, salvestatud kokku: ${saved}`;
 
     } else {
-        return `Kokku leidsin 0 viitenumbrid, salvestatud kokku: 0`;
+        return {
+            error_message: `Kokku leidsin 0 viitenumbrid, salvestatud kokku: 0`,
+            result: saved,
+            data: []
+        };
 
     }
 
