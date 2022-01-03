@@ -27,13 +27,15 @@ BEGIN
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
+
     IF userName IS NULL
     THEN
         RAISE NOTICE 'User not found %', user;
         RETURN 0;
     END IF;
 
-    if doc_viitenumber is null or l_isikukood is null then
+    IF doc_viitenumber IS NULL OR l_isikukood IS NULL
+    THEN
 
     END IF;
 
@@ -46,6 +48,9 @@ BEGIN
             INTO doc_id;
 
     ELSE
+        if not exists (select id from lapsed.viitenr where id = doc_id and rekv_id = user_rekvid) then
+            RAISE exception 'Puudub õigused %', user;
+        END IF;
 
         UPDATE lapsed.viitenr
         SET viitenumber = doc_viitenumber,

@@ -250,7 +250,7 @@ SELECT l.id,
                             count(*) OVER ()                      AS rows_total,
                             to_char(lopp_kpv, 'DD.MM.YYYY')::TEXT AS lopp_kpv
                      FROM cur_lapsed l
-        INNER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
+        left outer JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                      FROM lapsed.viitenr vn
                      WHERE vn.rekv_id IN (SELECT rekv_id
                                           FROM get_asutuse_struktuur($1))
