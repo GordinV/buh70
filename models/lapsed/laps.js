@@ -18,23 +18,24 @@ module.exports = {
         ]
     },
 
-    select: [{
-        sql: `SELECT l.id,
-                     l.isikukood,
-                     l.nimi,
-                     l.muud,
-                     lapsed.get_viitenumber((SELECT rekvid
-                                             FROM ou.userid
-                                             WHERE id = $2), l.id) AS viitenumber,
-                     $2::INTEGER                                   AS userid,
-                     coalesce(ll.jaak, 0)::NUMERIC                 AS jaak
-              FROM lapsed.laps l
-                       LEFT OUTER JOIN lapsed.lapse_saldod(current_date, $1) ll ON ll.laps_id = l.id AND
-                                                                                   ll.rekv_id IN (SELECT rekvid
-                                                                                                  FROM ou.userid u
-                                                                                                  WHERE u.id = $2)
-              WHERE l.id = $1::INTEGER`,
-        sqlAsNew: `SELECT
+    select: [
+        {
+            sql: `SELECT l.id,
+                         l.isikukood,
+                         l.nimi,
+                         l.muud,
+                         lapsed.get_viitenumber((SELECT rekvid
+                                                 FROM ou.userid
+                                                 WHERE id = $2), l.id) AS viitenumber,
+                         $2::INTEGER                                   AS userid,
+                         coalesce(ll.jaak, 0)::NUMERIC                 AS jaak
+                  FROM lapsed.laps l
+                           LEFT OUTER JOIN lapsed.lapse_saldod(current_date, $1) ll ON ll.laps_id = l.id AND
+                                                                                       ll.rekv_id IN (SELECT rekvid
+                                                                                                      FROM ou.userid u
+                                                                                                      WHERE u.id = $2)
+                  WHERE l.id = $1::INTEGER`,
+            sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,
                   0::integer as vanemid,
@@ -43,11 +44,11 @@ module.exports = {
                   null::text as viitenumber,
                   null::text as muud,
                   0::numeric(14,2) as jaak`,
-        query: null,
-        multiple: false,
-        alias: 'row',
-        data: []
-    },
+            query: null,
+            multiple: false,
+            alias: 'row',
+            data: []
+        },
         {
             sql: `SELECT v.id,
                          v.parentid,
@@ -127,7 +128,6 @@ module.exports = {
                   FROM lapsed.viitenr v
                            INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood
                            INNER JOIN ou.rekv r ON r.id = v.rekv_id
-                           INNER JOIN ou.userid u ON u.id = $2 AND r.id = u.rekvid
                   WHERE l.id = $1`,
             query: null,
             multiple: true,
@@ -189,11 +189,13 @@ module.exports = {
             gridConfiguration: [
                 {id: "id", name: "id", width: "10%", show: false},
                 {id: "row_id", name: "Jrk", width: "3%", show: true, hideFilter: true},
-                {id: "isikukood", name: "Isikukood", width: "20%"},
-                {id: "nimi", name: "Nimi", width: "30%"},
-                {id: "viitenumber", name: "Viitenumber", width: "20%"},
+                {id: "isikukood", name: "Isikukood", width: "15%"},
+                {id: "nimi", name: "Nimi", width: "25%"},
+                {id: "viitenumber", name: "Viitenumber", width: "25%"},
+                {id: "vana_vn", name: "Vana vn", width: "25%"},
                 {id: "yksused", name: "Üksused", width: "30%"},
                 {id: "lopp_kpv", name: "Kehtivus", width: "20%", type: 'date', interval: true},
+                {id: "rekv_names", name: "Asutused", width: "30%", default: `DocContext.userData.asutus`},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString: `
@@ -202,14 +204,23 @@ SELECT l.id,
        l.isikukood,
        l.nimi,
        l.properties,
-       array_to_string(lk.yksused,','::text)::TEXT AS yksused,
        lk.rekv_ids,
-       lk.lopp_kpv
-FROM lapsed.laps l
-         JOIN (SELECT parentid, array_agg(rekvid) AS rekv_ids, array_agg(yksused) AS yksused, max(lopp_kpv) as lopp_kpv
+       (SELECT string_agg(nimetus, ', ') FROM ou.rekv WHERE id IN (SELECT unnest(lk.rekv_ids))) AS rekv_names,
+       lk.lopp_kpv,
+       (select string_agg(yksus, ', ') from (select DISTINCT yksus from unnest(yksused) yksus) yksus ) as yksused,
+           (SELECT string_agg(vn, ', ')
+            FROM (SELECT DISTINCT vn  FROM unnest(viitenumbers) vn) vn)                                   AS viitenumbers
+       
+    FROM lapsed.laps l
+         JOIN (SELECT parentid, 
+                array_agg(rekvid) AS rekv_ids, 
+                array_agg(yksused) AS yksused, 
+                array_agg(viitenumber) AS viitenumbers,
+                max(lopp_kpv) as lopp_kpv
                FROM (
                         SELECT parentid,
                                rekvid,
+                                   lapsed.get_viitenumber(k.rekvid, k.parentid)                                                             AS viitenumber,
                                (k.properties->>'lopp_kpv')::date as lopp_kpv,
                                (get_unique_value_from_json(json_agg((k.properties ->> 'yksus')::TEXT || CASE
                                                                                                             WHEN (k.properties ->> 'all_yksus') IS NOT NULL
@@ -224,21 +235,27 @@ FROM lapsed.laps l
                         GROUP BY parentid, rekvid, (k.properties->>'lopp_kpv')
                     ) qry
                GROUP BY parentid) lk ON lk.parentid = l.id
-WHERE l.staatus <> 3
-)
-SELECT TRUE                                  AS select,
-                            id,
-                            isikukood,
-                            nimi,
-                            yksused,
-                            lapsed.get_viitenumber($1, l.id)      AS viitenumber,
+        WHERE l.staatus <> 3
+        )
+                    SELECT TRUE                                  AS select,
+                            l.id,
+                            l.isikukood,
+                            l.nimi,
+                            l.yksused,
+                            l.rekv_names,
+                            vn.vn                                 AS vana_vn,
+                            l.viitenumbers                          AS viitenumber,
                             $1::INTEGER                           AS rekvid,
                             $2::INTEGER                           AS user_id,
                             count(*) OVER ()                      AS rows_total,
                             to_char(lopp_kpv, 'DD.MM.YYYY')::TEXT AS lopp_kpv
                      FROM cur_lapsed l
-                     WHERE rekv_ids @> ARRAY [$1::INTEGER]::INTEGER[]
-            `,     //  $1 всегда ид учреждения, $2 - userId
+        INNER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
+                     FROM lapsed.viitenr vn
+                     WHERE vn.rekv_id IN (SELECT rekv_id
+                                          FROM get_asutuse_struktuur($1))
+             GROUP BY vn.isikukood
+) vn ON vn.isikukood = l.isikukood`,     //  $1 всегда ид учреждения, $2 - userId
             params: ['rekvid', 'userid'],
             alias: 'curLapsed',
             converter: function (data) {
@@ -403,10 +420,10 @@ SELECT TRUE                                  AS select,
     getLog: {
         command: `SELECT ROW_NUMBER() OVER ()                                               AS id,
                          (ajalugu ->> 'user')::TEXT                                         AS kasutaja,
-                         to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS koostatud,
-                         to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS muudatud,
-                         to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS')   AS prinditud,
-                         to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS') AS kustutatud
+                         to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS') AS koostatud,
+                         to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS') AS muudatud,
+                         to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS')   AS prinditud,
+                         to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS') AS kustutatud
 
                   FROM (
                            SELECT jsonb_array_elements(d.ajalugu) AS ajalugu
