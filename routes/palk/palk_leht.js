@@ -153,7 +153,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         sum(deebet) OVER(PARTITION BY leping_id)  AS deebet_kokku,
                         sum(kreedit) FILTER ( WHERE palk_liik <> 'TASU' ) OVER(PARTITION BY leping_id)  AS kreedit_kokku,
                         sum(sotsmaks) OVER(PARTITION BY leping_id) AS sotsmaks_kokku       
-                    FROM palk.palk_leht(gomonth(make_date(year(current_date), month(current_date),1), -1)::DATE,
+                    FROM palk.palk_leht( (make_date(year(current_date), month(current_date),1) - interval '1 month')::DATE,
                     (make_date(year(current_date), month(current_date),1) -1)::DATE, ${row.rekvid}::INTEGER, 0::INTEGER,0::INTEGER, ${row.id}::INTEGER) qry`;
 
             leht = await (db.queryDb(sql, null, null, null, null, null, config));

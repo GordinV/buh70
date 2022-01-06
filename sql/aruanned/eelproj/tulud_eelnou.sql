@@ -1233,7 +1233,7 @@ BEGIN
                    AND kood5 IN (SELECT kood FROM qryArtikkel)
                  GROUP BY e.rekvid, e.kood5, e.kood1, e.tunnus
              ),
-*/             -- Сумма всех строк с данным Art  в блоке Eelarve Tekkepõhine kinnitatud
+*/ -- Сумма всех строк с данным Art  в блоке Eelarve Tekkepõhine kinnitatud
              -- текущего года
 
              qryAasta4 AS (
@@ -1456,31 +1456,132 @@ BEGIN
                           FROM qryAasta7 q
                       ) qry
                           LEFT OUTER JOIN qryTaotlused t ON t.artikkel = qry.artikkel AND t.rekvid = qry.rekvid
-                 GROUP BY qry.rekvid, qry.artikkel, qry.tegev, CASE WHEN t.artikkel IS NULL THEN '' ELSE qry.tunnus END)
-        SELECT s.rekvid:: INTEGER,
-               CASE
-                   WHEN ARRAY [s.artikkel::TEXT] <@ a_maksud THEN 100
-                   WHEN ARRAY [s.artikkel::TEXT] <@ a_tuluMuugist THEN 200
-                   WHEN ARRAY [s.artikkel::TEXT] <@ a_SaadetudToetused THEN 300
-                   WHEN ARRAY [s.artikkel::TEXT] <@ a_MuudTegevusTulud THEN 400
-                   WHEN ARRAY [s.artikkel::TEXT] <@ a_TuludInvesteerimistegevusest THEN 500
-                   WHEN ARRAY [s.artikkel::TEXT] <@ a_FinanseerimisTegevus THEN 600
-                   WHEN ARRAY [s.artikkel::TEXT] <@ a_LikviidseteVaradeMuutus THEN 700
-                   ELSE 900 END                     AS idx,
-               s.artikkel::VARCHAR(20),
-               coalesce(s.tegev, '')::VARCHAR(20)   AS tegev,
-               coalesce(s.tunnus, ''):: VARCHAR(20) AS tunnus,
-               s.aasta_1_tekke_taitmine:: NUMERIC(14, 2),
-               s.aasta_2_tekke_taitmine:: NUMERIC(14, 2),
-               s.aasta_2_oodatav_taitmine:: NUMERIC(14, 2),
-               s.aasta_3_eelnou:: NUMERIC(14, 2),
-               s.aasta_3_prognoos::NUMERIC(14, 2),
-               s.eelarve_tekkepohine_kinnitatud::NUMERIC(14, 2),
-               s.eelarve_tekkepohine_tapsustatud::NUMERIC(14, 2),
-               s.selg                               AS selg
-        FROM preReport s
-                 INNER JOIN qryArtikkel l ON l.kood = s.artikkel
-        UNION ALL
+                 GROUP BY qry.rekvid, qry.artikkel, qry.tegev,
+                          CASE WHEN t.artikkel IS NULL THEN '' ELSE qry.tunnus END),
+             qryReport AS (
+                 SELECT s.rekvid:: INTEGER,
+                        r.parentid,
+                        CASE
+                            WHEN ARRAY [s.artikkel::TEXT] <@ a_maksud THEN 100
+                            WHEN ARRAY [s.artikkel::TEXT] <@ a_tuluMuugist THEN 200
+                            WHEN ARRAY [s.artikkel::TEXT] <@ a_SaadetudToetused THEN 300
+                            WHEN ARRAY [s.artikkel::TEXT] <@ a_MuudTegevusTulud THEN 400
+                            WHEN ARRAY [s.artikkel::TEXT] <@ a_TuludInvesteerimistegevusest THEN 500
+                            WHEN ARRAY [s.artikkel::TEXT] <@ a_FinanseerimisTegevus THEN 600
+                            WHEN ARRAY [s.artikkel::TEXT] <@ a_LikviidseteVaradeMuutus THEN 700
+                            ELSE 900 END                     AS idx,
+                        s.artikkel::VARCHAR(20),
+                        coalesce(s.tegev, '')::VARCHAR(20)   AS tegev,
+                        coalesce(s.tunnus, ''):: VARCHAR(20) AS tunnus,
+                        s.aasta_1_tekke_taitmine:: NUMERIC(14, 2),
+                        s.aasta_2_tekke_taitmine:: NUMERIC(14, 2),
+                        s.aasta_2_oodatav_taitmine:: NUMERIC(14, 2),
+                        s.aasta_3_eelnou:: NUMERIC(14, 2),
+                        s.aasta_3_prognoos::NUMERIC(14, 2),
+                        s.eelarve_tekkepohine_kinnitatud::NUMERIC(14, 2),
+                        s.eelarve_tekkepohine_tapsustatud::NUMERIC(14, 2),
+                        s.selg                               AS selg
+                 FROM preReport s
+                          INNER JOIN qryArtikkel l ON l.kood = s.artikkel
+                          INNER JOIN ou.rekv r ON r.id = s.rekvid
+             ),
+             -- kond
+             qryKond AS (
+                 SELECT s.idx,
+                        999999:: INTEGER                                       AS rekv_id,
+                        coalesce(s.tunnus, ''):: VARCHAR(20)                   AS tunnus,
+                        coalesce(s.tegev, '')::VARCHAR(20)                     AS tegev,
+                        s.artikkel::VARCHAR(20),
+                        sum(s.aasta_1_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_1_tekke_taitmine,
+                        sum(s.aasta_2_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_2_tekke_taitmine,
+                        sum(s.aasta_2_oodatav_taitmine):: NUMERIC(14, 2)       AS aasta_2_oodatav_taitmine,
+                        sum(s.aasta_3_eelnou):: NUMERIC(14, 2)                 AS aasta_3_eelnou,
+                        sum(s.aasta_3_prognoos)::NUMERIC(14, 2)                AS aasta_3_prognoos,
+                        sum(s.eelarve_tekkepohine_kinnitatud)::NUMERIC(14, 2)  AS eelarve_tekkepohine_kinnitatud,
+                        sum(s.eelarve_tekkepohine_tapsustatud)::NUMERIC(14, 2) AS eelarve_tekkepohine_tapsustatud,
+                        NULL::TEXT                                             AS selg
+                 FROM qryReport s
+                 GROUP BY s.artikkel, s.idx, s.tunnus, s.tegev
+             ),
+             report AS (
+                 SELECT qryReport.idx,
+                        CASE
+                            WHEN qryReport.parentid = l_rekvid THEN qryReport.rekvId
+                            ELSE l_rekvid END                          AS rekv_id,
+                        qryReport.tunnus,
+                        qryReport.tegev,
+                        qryReport.artikkel,
+                        sum(qryReport.aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
+                        sum(qryReport.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
+                        sum(qryReport.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud,
+                        sum(qryReport.aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
+                        sum(qryReport.aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
+                        sum(qryReport.aasta_3_eelnou)                  AS aasta_3_eelnou,
+                        sum(qryReport.aasta_3_prognoos)                AS aasta_3_prognoos,
+                        string_agg(qryReport.selg, ',')                AS selg
+                 FROM qryReport
+                 GROUP BY qryReport.idx,
+                          (CASE WHEN qryReport.parentid = l_rekvid THEN qryReport.rekvid ELSE l_rekvid END),
+                          qryReport.tunnus, qryReport.tegev, qryReport.artikkel
+                 UNION ALL
+                 SELECT 0                                              AS idx,
+                        CASE
+                            WHEN qryReport.parentid = l_rekvid THEN qryReport.rekvId
+                            ELSE l_rekvid END                          AS rekv_id,
+                        ''                                             AS tunnus,
+                        left(qryReport.tegev, 2)::VARCHAR(20)          AS tegev,
+                        ''                                             AS artikkel,
+                        sum(qryReport.aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
+                        sum(qryReport.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
+                        sum(qryReport.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud,
+                        sum(qryReport.aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
+                        sum(qryReport.aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
+                        sum(qryReport.aasta_3_eelnou)                  AS aasta_3_eelnou,
+                        sum(qryReport.aasta_3_prognoos)                AS aasta_3_prognoos,
+                        ''                                             AS selg
+                 FROM qryReport
+                 where not empty(qryReport.tegev)
+                 GROUP BY (CASE WHEN qryReport.parentid = l_rekvid THEN qryReport.rekvid ELSE l_rekvid END),
+                          left(qryReport.tegev, 2)
+                 UNION ALL
+                 SELECT 0                                            AS idx,
+                        qryKond.rekv_id                              AS rekv_id,
+                        ''                                           AS tunnus,
+                        left(qryKond.tegev, 2)::VARCHAR(20)          AS tegev,
+                        ''                                           AS artikkel,
+                        sum(qryKond.aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
+                        sum(qryKond.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
+                        sum(qryKond.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud,
+                        sum(qryKond.aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
+                        sum(qryKond.aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
+                        sum(qryKond.aasta_3_eelnou)                  AS aasta_3_eelnou,
+                        sum(qryKond.aasta_3_prognoos)                AS aasta_3_prognoos,
+                        ''                                           AS selg
+                 FROM qryKond
+                 where not empty(qryKond.tegev)
+                 GROUP BY qryKond.rekv_id, left(qryKond.tegev, 2)
+                 UNION ALL
+
+                 SELECT *
+                 FROM qryKond
+             )
+        SELECT rep.rekv_id:: INTEGER,
+               rep.idx:: INTEGER,
+               rep.artikkel:: VARCHAR(20),
+               rep.tegev:: VARCHAR(20),
+               rep.tunnus:: VARCHAR(20),
+               rep.aasta_1_tekke_taitmine:: NUMERIC(14, 2),
+               rep.aasta_2_tekke_taitmine:: NUMERIC(14, 2),
+               rep.aasta_2_oodatav_taitmine:: NUMERIC(14, 2),
+               rep.aasta_3_eelnou:: NUMERIC(14, 2),
+               rep.aasta_3_prognoos ::NUMERIC(14, 2),
+               rep.eelarve_tekkepohine_kinnitatud ::NUMERIC(14, 2),
+               rep.eelarve_tekkepohine_tapsustatud ::NUMERIC(14, 2),
+               rep.selg
+        FROM report rep
+
+
+/*        UNION ALL
         SELECT 999999:: INTEGER                                       AS rekvid,
                CASE
                    WHEN ARRAY [s.artikkel::TEXT] <@ a_maksud THEN 100
@@ -1492,8 +1593,8 @@ BEGIN
                    WHEN ARRAY [s.artikkel::TEXT] <@ a_LikviidseteVaradeMuutus THEN 700
                    ELSE 900 END                                       AS idx,
                s.artikkel::VARCHAR(20),
-               coalesce(s.tegev, '')::VARCHAR(20)                     AS tegev,
-               coalesce(s.tunnus, ''):: VARCHAR(20)                   AS tunnus,
+               ''::VARCHAR(20)                                        AS tegev,
+               '' :: VARCHAR(20)                                      AS tunnus,
                sum(s.aasta_1_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_1_tekke_taitmine,
                sum(s.aasta_2_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_2_tekke_taitmine,
                sum(s.aasta_2_oodatav_taitmine):: NUMERIC(14, 2)       AS aasta_2_oodatav_taitmine,
@@ -1504,7 +1605,8 @@ BEGIN
                NULL::TEXT                                             AS selg
         FROM preReport s
                  INNER JOIN qryArtikkel l ON l.kood = s.artikkel
-        GROUP BY s.artikkel, coalesce(s.tegev, ''), coalesce(s.tunnus, '');
+        GROUP BY s.artikkel
+*/ ;
 END
 $$
     LANGUAGE plpgsql
@@ -1517,9 +1619,12 @@ GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER) TO dbpeak
 GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER) TO eelaktsepterja;
 GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER) TO dbvaatleja;
 
+/*
 SELECT *
 FROM eelarve.tulud_eelnou('2021-12-31'::DATE, 63:: INTEGER, 1)
---where idx = 100
+where tegev like '08%'
+
+*/--where idx = 100
 
 /*
 
