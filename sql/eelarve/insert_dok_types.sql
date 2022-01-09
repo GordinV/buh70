@@ -33,6 +33,15 @@ WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'T
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
+       'KULUD_EELNOU'                             AS kood,
+       'Kulude eelarve eelnõu'                    AS nimetus,
+       'DOK'                                      AS library,
+       '{"type":"aruanne", "module":["Eelarve"]}' AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'KULUD_EELNOU');
+
+
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
        'KONTOASUTUSANDMIK_TUNNUS_TT'                  AS kood,
        'Kontoasutusandmik tunnus ja tegevusala järgi' AS nimetus,
        'DOK'                                          AS library,

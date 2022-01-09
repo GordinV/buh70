@@ -154,11 +154,11 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         sum(kreedit) FILTER ( WHERE palk_liik <> 'TASU' ) OVER(PARTITION BY leping_id)  AS kreedit_kokku,
                         sum(sotsmaks) OVER(PARTITION BY leping_id) AS sotsmaks_kokku       
                     FROM palk.palk_leht( (make_date(year(current_date), month(current_date),1) - interval '1 month')::DATE,
-                    (make_date(year(current_date), month(current_date),1) -1)::DATE, ${row.rekvid}::INTEGER, 0::INTEGER,0::INTEGER, ${row.id}::INTEGER) qry`;
+                    (make_date(year(current_date), month(current_date),1) -1)::DATE, ${asutusId}::INTEGER, 0::INTEGER,0::INTEGER, ${tootajaId}::INTEGER) qry`;
 
             leht = await (db.queryDb(sql, null, null, null, null, null, config));
             // logs
-            let message = `Palk leht, asutus -> ${row.rekvid},tootaja_id -> ${row.id}`;
+            let message = `Palk leht, asutus -> ${asutusId},tootaja_id -> ${tootajaId}`;
             log(message, 'info');
 
         }
@@ -185,7 +185,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
         }
     ).then(async () => {
             //attachment
-            let l_file_name = `doc_${row.id}`;
+            let l_file_name = `doc_${tootajaId}_${asutusId}`;
 
             filePDF = await createPDF(html, l_file_name);
             let message = `Palk leht, pdf`;
@@ -259,8 +259,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
             let message = `Palk leht, register logis, ${tulemus}`;
             log(message, 'info');
 
-            return;
-            return ('Ok')
+
         }
     ).catch((error) => {
         // rejection

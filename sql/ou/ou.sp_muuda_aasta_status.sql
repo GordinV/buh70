@@ -23,7 +23,7 @@ DECLARE
 BEGIN
     SELECT *,
            (roles ->> 'is_peakasutaja')::BOOLEAN AS is_peakasutaja
-           INTO v_user
+    INTO v_user
     FROM ou.userid
     WHERE id = user_id;
 
@@ -41,7 +41,8 @@ BEGIN
 
     IF l_aasta_id IS NOT NULL
     THEN
-        SELECT kuu, aasta INTO l_kuu, l_aasta
+        SELECT kuu, aasta
+        INTO l_kuu, l_aasta
         FROM ou.aasta
         WHERE id = l_aasta_id;
 
@@ -52,10 +53,11 @@ BEGIN
         FROM (
                  SELECT rekv_id
                  FROM get_asutuse_struktuur(l_rekv_id)
+                 WHERE rekv_id = l_rekv_id
              ) qry
         WHERE CASE WHEN l_status = 1 THEN rekv_id = rekv_id ELSE rekv_id = l_rekv_id END
         LOOP
-            raise notice 'v_rekv.id %', v_rekv.rekv_id;
+            RAISE NOTICE 'v_rekv.id %', v_rekv.rekv_id;
             l_aasta_id = (SELECT id
                           FROM ou.aasta a
                           WHERE rekvid = v_rekv.rekv_id
@@ -63,7 +65,8 @@ BEGIN
                             AND l_aasta = aasta);
 
             -- ajalugu
-            SELECT row_to_json(row) INTO new_history
+            SELECT row_to_json(row)
+            INTO new_history
             FROM (SELECT now()                        AS updated,
                          ltrim(rtrim(v_user.ametnik)) AS user) row;
 
@@ -84,7 +87,8 @@ BEGIN
                               FROM ou.aasta a
                               WHERE rekvid = v_rekv.rekv_id
                                 AND kuu = l_kuu
-                                AND l_aasta = aasta limit 1);
+                                AND l_aasta = aasta
+                              LIMIT 1);
 
                 IF l_aasta_id IS NULL OR l_aasta_id = 0
                 THEN
@@ -94,7 +98,8 @@ BEGIN
 
                 END IF;
             ELSE
-                SELECT a.* INTO v_doc
+                SELECT a.*
+                INTO v_doc
                 FROM ou.aasta a
                 WHERE a.id = l_aasta_id;
 

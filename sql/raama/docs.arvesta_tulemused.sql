@@ -27,7 +27,7 @@ DECLARE
 BEGIN
     SELECT *,
            (roles ->> 'is_peakasutaja')::BOOLEAN AS is_peakasutaja
-           INTO v_user
+    INTO v_user
     FROM ou.userid
     WHERE id = l_user_id;
 
@@ -47,9 +47,11 @@ BEGIN
     FOR v_rekv IN
         SELECT rekv_id
         FROM get_asutuse_struktuur(l_rekv_id)
+        WHERE rekv_id = l_rekv_id
         LOOP
             -- ищем пользователя
-            SELECT id INTO l_asutuse_kasutaja_id
+            SELECT id
+            INTO l_asutuse_kasutaja_id
             FROM ou.userid
             WHERE rekvid = v_rekv.rekv_id
               AND kasutaja = v_user.kasutaja
@@ -81,7 +83,8 @@ BEGIN
                                       GROUP BY deebet
                                       UNION ALL
                                       SELECT sum(summa) AS summa
-                                           , kreedit    AS konto
+                                              ,
+                                             kreedit    AS konto
                                       FROM docs.doc d
                                                INNER JOIN docs.journal j ON j.parentid = d.id
                                                INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -115,7 +118,7 @@ BEGIN
                                '00'                                                                AS kood3,
                                ''                                                                  AS kood4,
                                ''                                                                  AS kood5
-                               INTO v_json;
+                        INTO v_json;
 
                         l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_json);
 
@@ -125,7 +128,8 @@ BEGIN
                 IF l_rows > 0
                 THEN
                     -- ищем проводку с результатом
-                    SELECT d.id INTO l_journal_id
+                    SELECT d.id
+                    INTO l_journal_id
                     FROM docs.doc d
                              INNER JOIN docs.journal j ON d.id = j.parentid
                     WHERE j.rekvid = v_rekv.rekv_id
@@ -146,7 +150,7 @@ BEGIN
                            'TULEMUSED, TULUD'                    AS muud,
                            NULL                                  AS Asutusid,
                            ''::TEXT                              AS dok
-                           INTO v_json;
+                    INTO v_json;
 
                     l_json = to_jsonb(v_json);
 
@@ -193,7 +197,8 @@ BEGIN
                                       GROUP BY deebet
                                       UNION ALL
                                       SELECT sum(-1 * summa) AS summa
-                                           , kreedit         AS konto
+                                              ,
+                                             kreedit         AS konto
                                       FROM docs.doc d
                                                INNER JOIN docs.journal j ON j.parentid = d.id
                                                INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -227,7 +232,7 @@ BEGIN
                                '00'                                                                AS kood3,
                                ''                                                                  AS kood4,
                                ''                                                                  AS kood5
-                               INTO v_json;
+                        INTO v_json;
 
                         l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_json);
 
@@ -236,7 +241,8 @@ BEGIN
                 IF l_rows > 0
                 THEN
                     -- ищем проводку с результатом
-                    SELECT d.id INTO l_journal_id
+                    SELECT d.id
+                    INTO l_journal_id
                     FROM docs.doc d
                              INNER JOIN docs.journal j ON d.id = j.parentid
                     WHERE j.rekvid = v_rekv.rekv_id
@@ -257,7 +263,7 @@ BEGIN
                            'TULEMUSED, KULUD'                    AS muud,
                            NULL                                  AS Asutusid,
                            ''::TEXT                              AS dok
-                           INTO v_json;
+                    INTO v_json;
 
                     l_json = to_jsonb(v_json);
 
@@ -286,7 +292,7 @@ BEGIN
             END IF;
 
             -- 7x saldo
-            l_json_details = '[]'::jsonb;
+            l_json_details = '[]'::JSONB;
             FOR v_journal IN
                 SELECT *
                 FROM (
@@ -303,7 +309,8 @@ BEGIN
                                   GROUP BY j1.deebet
                                   UNION ALL
                                   SELECT sum(-1 * summa) AS summa
-                                       , j1.kreedit      AS konto
+                                          ,
+                                         j1.kreedit      AS konto
                                   FROM docs.doc d
                                            INNER JOIN docs.journal j ON j.parentid = d.id
                                            INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -324,7 +331,7 @@ BEGIN
                            'EUR'           AS valuuta,
                            1               AS kuurs,
                            v_journal.konto AS kreedit,
-                           '999990'::TEXT  AS deebet,
+                           '298000'::TEXT  AS deebet,
                            ''              AS lisa_d,
                            ''              AS lisa_k,
                            ''              AS tunnus,
@@ -334,7 +341,7 @@ BEGIN
                            '00'            AS kood3,
                            ''              AS kood4,
                            ''              AS kood5
-                           INTO v_json;
+                    INTO v_json;
 
                     l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_json);
 
@@ -343,7 +350,8 @@ BEGIN
             IF l_rows > 0
             THEN
                 -- ищем проводку с результатом
-                SELECT d.id INTO l_journal_id
+                SELECT d.id
+                INTO l_journal_id
                 FROM docs.doc d
                          INNER JOIN docs.journal j ON d.id = j.parentid
                 WHERE j.rekvid = v_rekv.rekv_id
@@ -364,7 +372,7 @@ BEGIN
                        'TULEMUSED, 7x'                    AS muud,
                        NULL                               AS Asutusid,
                        ''::TEXT                           AS dok
-                       INTO v_json;
+                INTO v_json;
 
                 l_json = to_jsonb(v_json);
 
