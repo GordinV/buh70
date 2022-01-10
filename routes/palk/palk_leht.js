@@ -50,7 +50,7 @@ let promise = new Promise((resolve, reject) => {
                       AND month((timestamp)::DATE) = month(current_date)
                       AND year(timestamp::DATE) = year(current_date)
                       )
-                      ORDER BY t.id, t.rekvid LIMIT 20`;
+                      ORDER BY t.id, t.rekvid LIMIT 15`;
 
     let data = db.queryDb(sql, null, null, null, null, null, config);
     resolve(data);
@@ -153,7 +153,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         sum(deebet) OVER(PARTITION BY leping_id)  AS deebet_kokku,
                         sum(kreedit) FILTER ( WHERE palk_liik <> 'TASU' ) OVER(PARTITION BY leping_id)  AS kreedit_kokku,
                         sum(sotsmaks) OVER(PARTITION BY leping_id) AS sotsmaks_kokku       
-                    FROM palk.palk_leht( (make_date(year(current_date), month(current_date),1) - interval '1 month')::DATE,
+                    FROM palk.palk_leht( (make_date(year(current_date), month(current_date),1) - INTERVAL '1 month')::DATE,
                     (make_date(year(current_date), month(current_date),1) -1)::DATE, ${asutusId}::INTEGER, 0::INTEGER,0::INTEGER, ${tootajaId}::INTEGER) qry`;
 
             leht = await (db.queryDb(sql, null, null, null, null, null, config));
@@ -229,9 +229,20 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
 
             });
         }
-    ).then((info, err) => {
+    ).then(async (info, err) => {
             if (err) {
                 console.error('mail.error', err);
+                log_data.status = 'ERROR';
+                log_data.content = 'Mitte saadetud';
+                log_data.mail_info = err;
+
+                // регистрируем событие
+                let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
+                let tulemus = await db.queryDb(sql, null, null, null, null, null, config);
+                let message = `Palk leht, register logis, ${tulemus}`;
+                log(message, 'error');
+
+
             } else {
                 log_data.mail_info = JSON.stringify(info);
                 result++;
