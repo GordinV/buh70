@@ -319,5 +319,7 @@ GRANT EXECUTE ON FUNCTION palk.sp_calc_umardamine(INTEGER, JSON) TO dbpeakasutaj
 
 /*
 
-SELECT * FROM palk.sp_calc_umardamine(4827, '{"kpv":"2021-12-31","rekvid":121,"lepingid":27610,"libid":136331}')
+SELECT * FROM palk.sp_calc_umardamine(4711, '{"kpv":"2022-02-01","rekvid":3,"lepingid":19394,"libid":230114}')
+
+
  */

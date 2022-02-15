@@ -21,6 +21,7 @@ module.exports = {
                      'POHIVARA'                                                                            AS doc_type_id,
                      (l.properties :: JSONB ->> 'gruppid') :: INTEGER                                      AS gruppid,
                      (l.properties :: JSONB ->> 'konto') :: VARCHAR(20)                                    AS konto,
+                     (l.properties :: JSONB ->> 'korr_konto') :: VARCHAR(20)                               AS korr_konto,
                      coalesce((l.properties :: JSONB ->> 'soetkpv') :: DATE, now() :: DATE)                AS soetkpv,
                      (l.properties :: JSONB ->> 'kulum') :: NUMERIC(12, 4)                                 AS kulum,
                      (l.properties :: JSONB ->> 'algkulum') :: NUMERIC(12, 4)                              AS algkulum,
@@ -69,6 +70,7 @@ module.exports = {
                       NULL :: TEXT               AS muud,
                       NULL :: INTEGER            AS gruppid,
                       NULL :: VARCHAR(20)        AS konto,
+                      NULL :: VARCHAR(20)        AS korr_konto,
                       now() :: DATE              AS soetkpv,
                       0 :: NUMERIC(12, 4)        AS kulum,
                       0 :: NUMERIC(12, 2)        AS algkulum,
@@ -167,23 +169,21 @@ module.exports = {
                            coalesce((l.properties :: JSONB ->> 'selg'), '') :: VARCHAR(120)                      AS selgitus,
                            (l.properties :: JSONB ->> 'parent_id') :: INTEGER                                    AS parent_id,
                            coalesce((l.properties :: JSONB ->> 'pindala') :: NUMERIC(12, 4), 0):: NUMERIC(12, 4) AS pindala,
-                           'EUR' :: CHARACTER VARYING                                                            AS valuuta,
-                           1 :: NUMERIC                                                                          AS kuurs,
                            grupp.id                                                                              AS gruppid,
                            grupp.nimetus                                                                         AS grupp,
                            coalesce(p.kood, '')                                                                  AS parent_kood,
                            coalesce(p.nimetus, '')                                                               AS parent_nimetus,
                            coalesce((l.properties :: JSONB ->> 'aadress'), ''):: VARCHAR(254)                    AS aadress,
                            l.status,
-                           $2                                                                                    AS user_id
+                           $2::INTEGER                                                                                    AS user_id
                     FROM libs.library l
                              JOIN libs.library grupp ON (l.properties :: JSONB -> 'gruppid') = to_jsonb(grupp.id)
                              LEFT JOIN libs.asutus a ON (l.properties :: JSONB -> 'vastisikid') = to_jsonb(a.id)
                              LEFT JOIN libs.library p ON (l.properties :: JSONB -> 'parent_id') = to_jsonb(p.id)
                     WHERE l.status <> 3
-                      AND l.rekvId = $1
-                      AND ($3 IS NULL OR coalesce((l.properties :: JSONB ->> 'selg'), '') ILIKE $3) 
-        `,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                      AND l.rekvId = $1::INTEGER
+                      AND ($3::TEXT IS NULL OR coalesce((l.properties :: JSONB ->> 'selg'), '') ILIKE '%' || ltrim(rtrim($3)) || '%' ::TEXT)
+        `,     //  $1 всегда ид учреждения $2 - всегда ид пользователя, $3 - пояснение
         params: '',
         alias: 'curPohivara'
     },

@@ -10,7 +10,8 @@ CREATE OR REPLACE FUNCTION eelarve.tekke_taitmine(l_kpv1 DATE, l_kpv2 DATE, l_re
         artikkel VARCHAR(20),
         rahavoog VARCHAR(20),
         tunnus   VARCHAR(20)
-    ) AS
+    )
+AS
 $BODY$
 
     -- kontod
@@ -41,11 +42,14 @@ SELECT rekvid     AS rekv_id,
        tunnus
 FROM (
          -- расходы
-         SELECT j1.summa AS summa,
-                j1.kood1 AS tegev,
-                j1.kood2 AS allikas,
-                j1.kood3 AS rahavoog,
-                j1.kood5 AS artikkel,
+         SELECT CASE
+                    WHEN left(j1.kood5, 2) = '15' AND NOT empty(j1.kood3) AND j1.kood3 NOT IN ('01')
+                        THEN 0
+                    ELSE j1.summa END AS summa,
+                j1.kood1              AS tegev,
+                j1.kood2              AS allikas,
+                j1.kood3              AS rahavoog,
+                j1.kood5              AS artikkel,
                 j1.tunnus,
                 j.rekvid
          FROM docs.doc d
@@ -54,35 +58,43 @@ FROM (
                   INNER JOIN qryKontodKulud k ON k.kood = j1.deebet
                   INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 2 --kulud
              AND l.library = 'TULUDEALLIKAD'
-         WHERE j.kpv >= l_kpv1
-           AND j.kpv <= l_kpv2
+             -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+
+         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+           AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND j.rekvid = CASE WHEN l_kond > 0 THEN j.rekvid ELSE l_rekvid END
 
          UNION ALL
          -- востановление расходов
-         SELECT -1 * j1.summa AS summa,
-                j1.kood1      AS tegev,
-                j1.kood2      AS allikas,
-                j1.kood3      AS rahavoog,
-                j1.kood5      AS artikkel,
+         SELECT -1 * (CASE
+                          WHEN left(j1.kood5, 2) = '15' AND NOT empty(j1.kood3) AND j1.kood3 NOT IN ('01') THEN 0
+                          ELSE j1.summa END) AS summa,
+                j1.kood1                     AS tegev,
+                j1.kood2                     AS allikas,
+                j1.kood3                     AS rahavoog,
+                j1.kood5                     AS artikkel,
                 j1.tunnus,
                 j.rekvid
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                   INNER JOIN qryKontodKulud k ON k.kood = j1.kreedit
-                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 2 --kulud
+                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 2 --kulud                  
              AND l.library = 'TULUDEALLIKAD'
-         WHERE j.kpv >= l_kpv1
-           AND j.kpv <= l_kpv2
+             -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+           AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND j.rekvid = CASE WHEN l_kond > 0 THEN j.rekvid ELSE l_rekvid END
      ) qry
 WHERE NOT empty(artikkel)
   AND summa <> 0
+
 GROUP BY rekvid, tegev, allikas, artikkel, tunnus, rahavoog;
 
 $BODY$
@@ -99,7 +111,7 @@ GRANT EXECUTE ON FUNCTION eelarve.tekke_taitmine( DATE,DATE, INTEGER, INTEGER ) 
 
 select * from (
 SELECT *
-FROM eelarve.tekke_taitmine('2020-01-01', '2020-03-31', 3, 0)
+FROM eelarve.tekke_taitmine('2021-01-01', '2021-12-31', 130, 0)
 ) qry
-where artikkel = '2586'
+where artikkel like '15%'
 */

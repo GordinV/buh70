@@ -14,7 +14,8 @@ CREATE OR REPLACE FUNCTION eelarve.kulu_taitmine(l_kpv1 DATE, l_kpv2 DATE, l_rek
         kuu      INTEGER,
         aasta    INTEGER
 
-    ) AS
+    )
+AS
 $BODY$
 
     -- kontod
@@ -39,17 +40,19 @@ SELECT rekvid              AS rekv_id,
        aasta
 FROM (
          -- доход
-         SELECT summa          AS summa,
-                j1.kood1::TEXT AS tegev,
-                j1.kood2::TEXT AS allikas,
-                j1.kood3::TEXT AS rahavoog,
-                j1.kood5::TEXT AS artikkel,
+         SELECT CASE
+                    WHEN left(j1.kood5, 2) = '15' AND NOT empty(j1.kood3) AND j1.kood3 NOT IN ('01') THEN 0
+                    ELSE j1.summa END AS summa,
+                j1.kood1::TEXT        AS tegev,
+                j1.kood2::TEXT        AS allikas,
+                j1.kood3::TEXT        AS rahavoog,
+                j1.kood5::TEXT        AS artikkel,
                 j1.tunnus::TEXT,
                 j.rekvid,
-                TRUE           AS kas_kulud,
-                d.id           AS docs_ids,
-                month(j.kpv)   AS kuu,
-                year(j.kpv)    AS aasta
+                TRUE                  AS kas_kulud,
+                d.id                  AS docs_ids,
+                month(j.kpv)          AS kuu,
+                year(j.kpv)           AS aasta
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -64,17 +67,20 @@ FROM (
                               ELSE l_rekvid END
          UNION ALL
          -- востановление
-         SELECT -1 * j1.summa  AS summa,
-                j1.kood1::TEXT AS tegev,
-                j1.kood2::TEXT AS allikas,
-                j1.kood3::TEXT AS rahavoog,
-                j1.kood5::TEXT AS artikkel,
+         SELECT -1 *
+                (CASE
+                     WHEN left(j1.kood5, 2) = '15' AND NOT empty(j1.kood3) AND j1.kood3 NOT IN ('01') THEN 0
+                     ELSE j1.summa END) AS summa,
+                j1.kood1::TEXT          AS tegev,
+                j1.kood2::TEXT          AS allikas,
+                j1.kood3::TEXT          AS rahavoog,
+                j1.kood5::TEXT          AS artikkel,
                 j1.tunnus::TEXT,
                 j.rekvid,
-                FALSE          AS kas_kulud,
-                d.id           AS docs_ids,
-                month(j.kpv)   AS kuu,
-                year(j.kpv)    AS aasta
+                FALSE                   AS kas_kulud,
+                d.id                    AS docs_ids,
+                month(j.kpv)            AS kuu,
+                year(j.kpv)             AS aasta
 
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
@@ -109,8 +115,8 @@ GRANT EXECUTE ON FUNCTION eelarve.kulu_taitmine( DATE,DATE, INTEGER, INTEGER ) T
 /*
 
 SELECT *
-FROM eelarve.tulu_taitmine('2020-01-01', '2020-03-31', 63, 0)
-where artikkel like '655%'
+FROM eelarve.kulu_taitmine('2021-01-01', '2021-12-31', 130, 0)
+where artikkel like '15%'
 
  SELECT l.kood, l.tun5 AS tyyp
     FROM libs.library l

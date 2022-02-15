@@ -1,6 +1,7 @@
 /*
 drop SERVER if exists dbtest_narva_ee CASCADE ;
-CREATE SERVER dbtest_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'dbarch.narva.ee', dbname 'test2', port '5436');
+CREATE SERVER dbtest_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS
+(host '213.184.47.198', dbname 'narvalv', port '5436');
 
 CREATE USER MAPPING FOR vlad
     SERVER dbtest_narva_ee

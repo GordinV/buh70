@@ -1,56 +1,53 @@
 module.exports = {
-    selectAsLibs: `select * from cur_pohivara    l
-        where  (l.rekvId = $1 or l.rekvid is null)`,
+    selectAsLibs: `SELECT *
+                   FROM cur_pohivara l
+                   WHERE (l.rekvId = $1 OR l.rekvid IS NULL)`,
     select: [{
-        sql: `SELECT
-                  d.id,
-                  $2 :: INTEGER                                                  AS userid,
-                  to_char(created, 'DD.MM.YYYY HH:MM:SS') :: TEXT                AS created,
-                  to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT             AS lastupdate,
-                  d.bpm,
-                  trim(l.nimetus)                                                AS doc,
-                  trim(l.kood)                                                   AS doc_type_id,
-                  trim(s.nimetus)                                                AS status,
-                  d.status                                                       AS doc_status,
-                  asutus.regkood,
-                  trim(asutus.nimetus) :: VARCHAR(254)                           AS asutus,
-                  po.doklausid,
-                  po.pv_kaart_id,
-                  po.nomid,
-                  po.liik,
-                  po.kpv,
-                  po.summa,
-                  po.kood1,
-                  po.kood2,
-                  po.kood3,
-                  po.kood4,
-                  po.kood5,
-                  po.konto,
-                  po.tp,
-                  po.asutusid,
-                  po.tunnus,
-                  po.proj,
-                  po.journalid,
-                  po.muud,
-                  n.kood,
-                  n.nimetus,
-                  coalesce(v.valuuta, 'EUR')                                     AS valuuta,
-                  coalesce(v.kuurs, 1) :: NUMERIC(12, 4)                         AS kuurs,
-                  coalesce(jid.number, 0) :: INTEGER                             AS laus_nr,
-                  coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20) AS korrkonto,
-                  dp.selg :: VARCHAR(120)                                        AS dokprop
-                FROM docs.doc d
-                  INNER JOIN libs.library l ON l.id = d.doc_type_id
-                  INNER JOIN docs.pv_oper po ON po.parentId = d.id
-                  INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                  INNER JOIN libs.nomenklatuur n ON n.id = po.nomid
-                  LEFT OUTER JOIN libs.asutus AS asutus ON asutus.id = po.asutusId
-                  LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
-                  LEFT OUTER JOIN libs.dokprop dp ON dp.id = po.doklausid
-                  LEFT OUTER JOIN docs.journal j ON j.parentid = po.journalid
-                  LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
-                  LEFT OUTER JOIN docs.dokvaluuta1 v ON (v.dokid = po.id AND v.dokliik = array_position((enum_range(NULL :: DOK_VALUUTA)), 'pv_oper'))
-                WHERE d.id = $1`,
+        sql: `SELECT d.id,
+                     $2 :: INTEGER                                                  AS userid,
+                     to_char(created, 'DD.MM.YYYY HH:MI:SS') :: TEXT                AS created,
+                     to_char(lastupdate, 'DD.MM.YYYY HH:MI:SS') :: TEXT             AS lastupdate,
+                     d.bpm,
+                     trim(l.nimetus)                                                AS doc,
+                     trim(l.kood)                                                   AS doc_type_id,
+                     trim(s.nimetus)                                                AS status,
+                     d.status                                                       AS doc_status,
+                     asutus.regkood,
+                     trim(asutus.nimetus) :: VARCHAR(254)                           AS asutus,
+                     po.doklausid,
+                     po.pv_kaart_id,
+                     po.nomid,
+                     po.liik,
+                     po.kpv,
+                     po.summa,
+                     po.kood1,
+                     po.kood2,
+                     po.kood3,
+                     po.kood4,
+                     po.kood5,
+                     po.konto,
+                     po.tp,
+                     po.asutusid,
+                     po.tunnus,
+                     po.proj,
+                     po.journalid,
+                     po.muud,
+                     n.kood,
+                     n.nimetus,
+                     coalesce(jid.number, 0) :: INTEGER                             AS laus_nr,
+                     coalesce((dp.details :: JSONB ->> 'konto'), '') :: VARCHAR(20) AS korrkonto,
+                     dp.selg :: VARCHAR(120)                                        AS dokprop
+              FROM docs.doc d
+                       INNER JOIN libs.library l ON l.id = d.doc_type_id
+                       INNER JOIN docs.pv_oper po ON po.parentId = d.id
+                       INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                       LEFT OUTER JOIN libs.nomenklatuur n ON n.id = po.nomid
+                       LEFT OUTER JOIN libs.asutus AS asutus ON asutus.id = po.asutusId
+                       LEFT OUTER JOIN libs.library s ON s.library = 'STATUS' AND s.kood = d.status :: TEXT
+                       LEFT OUTER JOIN libs.dokprop dp ON dp.id = po.doklausid
+                       LEFT OUTER JOIN docs.journal j ON j.parentid = po.journalid
+                       LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
+              WHERE d.id = $1`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,
@@ -94,7 +91,8 @@ module.exports = {
         data: []
     },
         {
-            sql: ` select * from docs.sp_pv_kulum_umber_arvestamine($1::INTEGER, $2::INTEGER)`, // $1 - pvOperId, $2 - userId
+            sql: ` SELECT *
+                   FROM docs.sp_pv_kulum_umber_arvestamine($1::INTEGER, $2::INTEGER)`, // $1 - pvOperId, $2 - userId
             query: null,
             multiple: false,
             alias: 'kulum_umber_arvestamine',
@@ -112,13 +110,15 @@ module.exports = {
         {name: 'summa', type: 'N'}
     ],
     executeCommand: {
-        command: `SELECT result, selgitus, summa from docs.sp_calc_kulum(?tnId::INTEGER, current_date::date)`,
-        type:'sql',
-        alias:'arvestaKulum'
+        command: `SELECT result, selgitus, summa
+                  FROM docs.sp_calc_kulum(?tnId::INTEGER, current_date::DATE)`,
+        type: 'sql',
+        alias: 'arvestaKulum'
     },
 
     saveDoc: `select docs.sp_salvesta_pv_oper($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc: `select error_code, result, error_message from docs.sp_delete_pv_oper($1::integer, $2::integer)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT error_code, result, error_message
+                FROM docs.sp_delete_pv_oper($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
@@ -126,39 +126,40 @@ module.exports = {
             {id: "nimetus", name: "Nimetus", width: "35%"},
             {id: "pv_grupp", name: "Grupp", width: "35%"},
         ],
-        sqlString: `select * 
-            from cur_pv_oper l
-            where (l.rekvId = $1 or l.rekvid is null)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT *
+                    FROM cur_pv_oper l
+                    WHERE (l.rekvId = $1 OR l.rekvid IS NULL)`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curPVoper'
     },
     generateJournal: {
-        command: "select error_code, result, error_message from docs.gen_lausend_pv_oper($2::INTEGER, $1::INTEGER)", //$1 - docs.doc.id, $2 - userId
+        command: "SELECT error_code, result, error_message FROM docs.gen_lausend_pv_oper($2::INTEGER, $1::INTEGER)", //$1 - docs.doc.id, $2 - userId
         type: "sql",
         alias: 'generateJournal'
     },
     getLog: {
         command: `SELECT ROW_NUMBER() OVER ()                                                                        AS id,
                          (ajalugu ->> 'user')::VARCHAR(20)                                                           AS kasutaja,
-                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS koostatud,
-                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS muudatud,
-                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS prinditud,
-                         coalesce(to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'), '')::VARCHAR(20) AS
+                         coalesce(to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'), '')::VARCHAR(20) AS
                                                                                                                         email,
-                         coalesce(to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS earve,
-                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS kustutatud
                   FROM (
-                           SELECT jsonb_array_elements( history) AS ajalugu, d.id, d.rekvid
+                           SELECT jsonb_array_elements(history) AS ajalugu, d.id, d.rekvid
                            FROM docs.doc d,
                                 ou.userid u
                            WHERE d.id = $1
                              AND u.id = $2
-                       ) qry WHERE (qry.ajalugu ->> 'user') IS NOT NULL`,
+                       ) qry
+                  WHERE (qry.ajalugu ->> 'user') IS NOT NULL`,
         type: "sql",
         alias: "getLogs"
     },

@@ -47,7 +47,7 @@ BEGIN
     FOR v_rekv IN
         SELECT rekv_id
         FROM get_asutuse_struktuur(l_rekv_id)
-        WHERE rekv_id = l_rekv_id
+        WHERE rekv_id = case when l_rekv_id = 119 then rekv_id else l_rekv_id END -- только по структуре для отдела культуры (Е. Чеканина
         LOOP
             -- ищем пользователя
             SELECT id

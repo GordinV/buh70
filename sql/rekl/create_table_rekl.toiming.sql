@@ -27,6 +27,12 @@ CREATE TABLE rekl.toiming
   lisa jsonb
 );
 
+GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE rekl.toiming TO dbpeakasutaja;
+GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE rekl.toiming TO dbadmin;
+GRANT SELECT ON TABLE rekl.toiming TO dbvaatleja;
+GRANT SELECT, UPDATE, INSERT, DELETE, TRIGGER ON TABLE rekl.toiming TO dbkasutaja;
+
+
 CREATE INDEX idx_toiming_parentid
   ON rekl.toiming (parentid);
 CREATE INDEX idx_toiming_asutusid

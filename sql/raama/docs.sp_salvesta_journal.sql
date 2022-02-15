@@ -51,6 +51,7 @@ DECLARE
     l_avans_id       INTEGER;
     l_db_tp          VARCHAR(20);
     l_kr_tp          VARCHAR(20);
+    kas_uus BOOLEAN = false;
 BEGIN
 
     SELECT kasutaja,
@@ -80,6 +81,8 @@ BEGIN
                                                   FROM cur_journal
                                                   WHERE id = doc_id)
     THEN
+
+        kas_uus = true; -- uus lausend
 
         SELECT row_to_json(row)
         INTO new_history
@@ -140,6 +143,8 @@ BEGIN
         SELECT *
         FROM json_array_elements(doc_details)
         LOOP
+
+
             SELECT *
             INTO json_record
             FROM json_to_record(
@@ -149,6 +154,8 @@ BEGIN
                                             lisa_k TEXT,
                                             valuuta TEXT, kuurs NUMERIC(14, 8));
 
+
+            raise notice 'loop %', json_record;
             IF json_record.summa <> 0
             THEN
 
@@ -198,6 +205,8 @@ BEGIN
                               FROM docs.journal1
                               WHERE id = json_record.id :: INTEGER)
                 THEN
+                    raise notice 'uus lausend';
+
                     INSERT INTO docs.journal1 (parentid, deebet, kreedit, summa, tunnus, proj, kood1, kood2, kood3,
                                                kood4, kood5,
                                                lisa_d, lisa_k, valuuta, kuurs, valsumma)
@@ -220,6 +229,7 @@ BEGIN
                     ids = array_append(ids, journal1_id);
 
                 ELSE
+                    raise notice 'vana lausend';
 
                     UPDATE docs.journal1
                     SET deebet   = json_record.deebet,

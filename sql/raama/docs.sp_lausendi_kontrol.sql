@@ -183,6 +183,12 @@ BEGIN
             lnEelarve = 0;
         END IF;
     END IF;
+
+    -- kontrollin 'RE' (только для отчетов)
+    if not empty(l_allikas) and l_allikas = 'RE' then
+        l_msg = l_msg + ' Ei saa kasutada allikas RE';
+    END IF;
+
     IF v_konto_d.allikas::TEXT = '1' AND (empty(l_allikas) OR isdigit(l_allikas) = 0)
     THEN
         lnAllikas = 1;
@@ -595,7 +601,7 @@ SELECT docs.sp_lausendikontrol('{
   "kr": "155910",
   "tpk": "",
   "oma_tp": "18510130",
-  "allikas": "LE-P",
+  "allikas": "RE",
   "rahavoog": "15",
   "eelarve": "155",
   "tt": "09110 "

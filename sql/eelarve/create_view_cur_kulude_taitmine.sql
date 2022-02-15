@@ -19,8 +19,8 @@ SELECT sum(summa)    AS summa,
 
 FROM (
          SELECT d.id,
-                month(j.kpv)                                                              AS kuu,
-                year(j.kpv)                                                               AS aasta,
+                month(coalesce(a.kpv, j.kpv))                                                              AS kuu,
+                year(coalesce(a.kpv, j.kpv))                                                               AS aasta,
                 j.rekvid,
                 rekv.nimetus                                                              AS asutus,
                 rekv.parentid,
@@ -37,6 +37,7 @@ FROM (
                   INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
                   INNER JOIN ou.rekv rekv ON j.rekvid = rekv.id
                   JOIN FAKT_kulud ON ltrim(rtrim(j1.deebet)) ~~ ltrim(rtrim(fakt_kulud.kood))
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id             
                   LEFT OUTER JOIN libs.library l
                                   ON l.kood = j1.kood5 AND l.library = 'TULUDEALLIKAD'
                                          --AND l.tun5 = 2

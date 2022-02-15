@@ -142,26 +142,9 @@ GRANT EXECUTE ON FUNCTION eelarve.sp_koosta_saldoandmik(INTEGER, JSON) TO dbpeak
 
 
 /*
-select error_code, result, error_message from eelarve.sp_koosta_saldoandmik(2477,'{"kpv":"2021-01-31","tyyp":1,"kond":1, "rekvid":63}'::json)
+select error_code, result, error_message from eelarve.sp_koosta_saldoandmik(2477,'{"kpv":"2022-01-31","tyyp":1,"kond":1, "rekvid":63}'::json)
 
-select * from eelarve.saldoandmik where rekvid = 63 and kuu = 9 and aasta = 2018
-
-select * from ou.userid where rekvid = 63
-
-select * from ou.rekv where id = 131
-
-
-insert into ou.aa (parentid, arve, nimetus, default_, kassa, pank, tp)
-select 131, 'TP', 'ARHIIV', 1, 2, 1 ,tp from ou.aa where arve = 'TP' AND  parentid = 3
-
-update ou.aa set kassa = 2 where id = 34
-
-                SELECT tp
-                FROM ou.aa
-                WHERE parentid = 131
-                  AND kassa = 2
-                LIMIT 1;
-
-
+select * from pg_stat_activity
+where usename in ('vlad','postgres')
 
 */

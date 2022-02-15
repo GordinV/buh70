@@ -14,7 +14,8 @@ CREATE OR REPLACE FUNCTION eelarve.tulu_taitmine(l_kpv1 DATE, l_kpv2 DATE, l_rek
         kuu      INTEGER,
         aasta    INTEGER
 
-    ) AS
+    )
+AS
 $BODY$
 
     -- kontod
@@ -60,13 +61,16 @@ FROM (
                       j1.tunnus,
                       d.rekvid,
                       d.id,
-                      j.kpv,
+                      coalesce(a.kpv, j.kpv) AS kpv,
                       j1.kreedit
                FROM docs.doc D
                         INNER JOIN docs.journal j ON j.parentid = D.id
                         INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-               WHERE j.kpv >= l_kpv1
-                 AND j.kpv <= l_kpv2
+                   -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                        LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+
+               WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+                 AND coalesce(a.kpv, j.kpv) <= l_kpv2
                  AND j.rekvid IN (SELECT rekv_id
                                   FROM get_asutuse_struktuur(l_rekvid))
                  AND j.rekvid = CASE
@@ -104,14 +108,17 @@ FROM (
                       j1.kood5,
                       j1.tunnus,
                       j1.deebet,
-                      j.kpv,
+                      coalesce(a.kpv, j.kpv) AS kpv,
                       d.rekvid,
                       d.id
                FROM docs.doc D
                         INNER JOIN docs.journal j ON j.parentid = D.id
                         INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-               WHERE j.kpv >= l_kpv1
-                 AND j.kpv <= l_kpv2
+                   -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                        LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+
+               WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+                 AND coalesce(a.kpv, j.kpv) <= l_kpv2
                  AND j.rekvid IN (SELECT rekv_id
                                   FROM get_asutuse_struktuur(l_rekvid))
                  AND j.rekvid = CASE
@@ -146,7 +153,7 @@ GRANT EXECUTE ON FUNCTION eelarve.tulu_taitmine( DATE,DATE, INTEGER, INTEGER ) T
 /*
 
 SELECT sum(summa) over(),*
-FROM eelarve.tulu_taitmine('2019-01-01', '2019-12-31', 130, 0)
+FROM eelarve.tulu_taitmine('2021-01-01', '2021-12-31', 130, 0)
 where artikkel like '3823%'
 and allikas = '80'
 and tegev = '01112'

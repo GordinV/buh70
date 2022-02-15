@@ -17,25 +17,26 @@ SELECT sum(summa)    AS summa,
        nimetus
 FROM (
          SELECT d.id,
-                month(j.kpv)               AS kuu,
-                year(j.kpv)                AS aasta,
+                month(coalesce(a.kpv, j.kpv)) AS kuu,
+                year(coalesce(a.kpv, j.kpv))  AS aasta,
                 j.rekvid,
-                rekv.nimetus               AS asutus,
+                rekv.nimetus                  AS asutus,
                 rekv.parentid,
-                j1.tunnus                  AS tunnus,
-                j1.summa                   AS summa,
-                j1.kood5                   AS artikkel,
-                j1.kood1                   AS tegev,
-                j1.kood2                   AS allikas,
-                j1.kood3                   AS rahavoog,
-                l.nimetus                  AS nimetus,
+                j1.tunnus                     AS tunnus,
+                j1.summa                      AS summa,
+                j1.kood5                      AS artikkel,
+                j1.kood1                      AS tegev,
+                j1.kood2                      AS allikas,
+                j1.kood3                      AS rahavoog,
+                l.nimetus                     AS nimetus,
                 (CASE
                      WHEN (lpad(j1.deebet, 6) = '601000' OR lpad(j1.deebet, 6) = '601001') THEN j1.summa
-                     ELSE 0 END):: NUMERIC AS kbm
+                     ELSE 0 END):: NUMERIC    AS kbm
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
                   INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
                   INNER JOIN ou.rekv rekv ON j.rekvid = rekv.id
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
                   JOIN eelarve.kassa_kulud kassakulud
                        ON ltrim(rtrim(j1.deebet)) ~~ ltrim(rtrim(kassakulud.kood))
                   JOIN eelarve.kassa_kontod kassakontod

@@ -9,23 +9,23 @@ module.exports = {
             {id: "lopp_db", name: "Lõpp saldo", width: "100px"},
             {id: "asutus", name: "Asutus", width: "200px"}
         ],
-        sqlString: `SELECT
-                      qry.rekv_id,
-                      qry.asutus_id,
-                      qry.konto,
-                      l.nimetus,
-                      qry.alg_saldo,
-                      qry.deebet,
-                      qry.kreedit,
-                      (qry.alg_saldo + qry.deebet - qry.kreedit) as lopp_saldo,
-                      a.regkood,
-                      a.nimetus as asutus,
-                      a.tp
-                    FROM docs.kaibeasutusandmik($1::text, $2::integer, $3::date, $4::date, $5::integer, $6::text, $7::integer) qry
-                      INNER JOIN com_asutused a on a.id = qry.asutus_id  
-                      INNER JOIN com_kontoplaan l ON l.kood = qry.konto
-                      WHERE (qry.alg_saldo <> 0 or qry.deebet <> 0 or qry.kreedit <> 0)
-                      ORDER BY a.nimetus, qry.konto`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- kpv2, $5 rekvid (svod), $6 tunnus, $7 kond
+        sqlString: `SELECT qry.rekv_id,
+                           qry.asutus_id,
+                           qry.konto,
+                           l.nimetus,
+                           qry.alg_saldo,
+                           qry.deebet,
+                           qry.kreedit,
+                           (qry.alg_saldo + qry.deebet - qry.kreedit) AS lopp_saldo,
+                           coalesce(a.regkood, ''):: VARCHAR(20)      AS regkood,
+                           coalesce(a.nimetus, '')::VARCHAR(254)      AS asutus,
+                           coalesce(a.tp, '')::VARCHAR(20)            AS tp
+                    FROM docs.kaibeasutusandmik($1::TEXT, $2::INTEGER, $3::DATE, $4::DATE, $5::INTEGER, $6::TEXT,
+                                                $7::INTEGER) qry
+                             LEFT OUTER JOIN com_asutused a ON a.id = qry.asutus_id
+                             INNER JOIN com_kontoplaan l ON l.kood = qry.konto
+                    WHERE (qry.alg_saldo <> 0 OR qry.deebet <> 0 OR qry.kreedit <> 0)
+                    ORDER BY a.nimetus, qry.konto`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- kpv2, $5 rekvid (svod), $6 tunnus, $7 kond
         params: '',
         alias: 'kaibeasutusandmik_report'
     }

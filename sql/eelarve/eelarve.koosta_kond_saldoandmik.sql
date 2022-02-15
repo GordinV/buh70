@@ -51,8 +51,9 @@ BEGIN
           AND kuu = month(l_kpv)
           AND left(omatp, 4) = left(l_oma_tp, 4)
         LOOP
-            RAISE NOTICE 'v_omatp %, l_Oma_tp %', v_omatp.omatp, l_Oma_tp;
-            INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv, rekvid, docs_ids)
+
+            INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv, rekvid,
+                                         docs_ids)
             SELECT coalesce(s.nimetus, ''),
                    CASE
                        WHEN kontod.tyyp IS NULL OR kontod.tyyp IN (1, 3)
@@ -183,8 +184,6 @@ BEGIN
                       AND ltrim(rtrim(tp)) = ltrim(rtrim(v_omatp.omatp))
                       AND left(konto, 1) = '3';
 
-
-                    raise notice '70 v_tp.tp %, v_omatp.OmaTp %', v_tp.tp , v_omatp.OmaTp;
                     --(esitaja saldoandmik sum (kõik kontod algusega 7, mille TP kood on võrreldava kood (deebet miinus kreedit)))
                     INSERT INTO tmp_saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, timestamp, kpv,
                                                  rekvid, docs_ids)
@@ -282,7 +281,7 @@ BEGIN
                     tp,
                     allikas,
                     rahavoo,
-                    array_agg(docs_ids) as docs_ids
+                    array_agg(docs_ids)   AS docs_ids
              FROM (
                       SELECT ltrim(rtrim(tmp_saldoandmik.nimetus))     AS nimetus,
                              CASE
@@ -298,12 +297,19 @@ BEGIN
                              left(ltrim(rtrim(tmp_saldoandmik.tp)), 6) AS tp,
                              ltrim(rtrim(tmp_saldoandmik.allikas))     AS allikas,
                              ltrim(rtrim(tmp_saldoandmik.rahavoo))     AS rahavoo,
-                             coalesce(docs_ids,array[0]) as docs_ids
+                             coalesce(docs_ids, ARRAY [0])             AS docs_ids
                       FROM tmp_saldoandmik
                                LEFT OUTER JOIN com_kontoplaan kontod
                                                ON (ltrim(rtrim(kontod.kood)) = ltrim(rtrim(tmp_saldoandmik.konto)))
                       WHERE timestamp = l_timestamp
                         AND (tmp_saldoandmik.tyyp <> 1 OR (tmp_saldoandmik.db = tmp_saldoandmik.kr))
+                        -- кроме 9 с длинными ТП кодами
+                        AND tmp_saldoandmik.id NOT IN (SELECT id
+                                                       FROM tmp_saldoandmik
+                                                       WHERE left(konto, 1) = '9'
+                                                         AND tp LIKE '185101%'
+                                                         AND len(ltrim(rtrim(tp))) > 6
+                      )
                   ) tmp
              GROUP BY konto, nimetus, tegev, tp, allikas, rahavoo
          ) qry
@@ -331,7 +337,7 @@ GRANT EXECUTE ON FUNCTION eelarve.koosta_kond_saldoandmik(INTEGER, DATE) TO dbka
 
 
 /*
-select error_code, result, error_message from eelarve.koosta_kond_saldoandmik(2477,'2021-01-31')
+select error_code, result, error_message from eelarve.koosta_kond_saldoandmik(2477,'2021-12-31')
 */
 
 

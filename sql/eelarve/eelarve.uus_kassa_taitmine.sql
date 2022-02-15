@@ -58,15 +58,17 @@ FROM (
                 j.rekvid,
                 TRUE           AS kas_kulud,
                 d.id           AS docs_ids,
-                month(j.kpv)   AS kuu,
-                year(j.kpv)    AS aasta
+                month(coalesce(a.kpv, j.kpv))   AS kuu,
+                year(coalesce(a.kpv, j.kpv))    AS aasta
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                   INNER JOIN qryKontodKulud k ON k.kood = j1.deebet
                   INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.kreedit
-         WHERE j.kpv >= l_kpv1
-           AND j.kpv <= l_kpv2
+             -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+           AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND j.rekvid = CASE
@@ -84,17 +86,19 @@ FROM (
                          j.rekvid,
                          TRUE           AS kas_kulud,
                          d.id           AS docs_ids,
-                         month(j.kpv)   AS kuu,
-                         year(j.kpv)    AS aasta
+                         month(coalesce(a.kpv, j.kpv))   AS kuu,
+                         year(coalesce(a.kpv, j.kpv))    AS aasta
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                   INNER JOIN qryKontodKulud k ON k.kood = j1.kreedit
                   INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.deebet
                   INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 2 --kulud
+         -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
 
-         WHERE j.kpv >= l_kpv1
-           AND j.kpv <= l_kpv2
+         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+           AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND j.rekvid = CASE
@@ -167,7 +171,7 @@ GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_taitmine( DATE,DATE, INTEGER, INTEGE
 /*
 
 SELECT *
-FROM eelarve.uus_kassa_taitmine('2021-01-01', '2021-03-31', 130, 0)
+FROM eelarve.uus_kassa_taitmine('2021-01-01', '2021-12-31', 63, 1)
 where artikkel = '5503'
 
 select *

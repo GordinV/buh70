@@ -23,12 +23,11 @@ DECLARE
     doc_pv_kaart_id INTEGER        = doc_data ->> 'pv_kaart_id';
     doc_nomid       INTEGER        = doc_data ->> 'nomid';
     doc_muud        TEXT           = doc_data ->> 'muud';
-    tcValuuta       TEXT           = coalesce(doc_data ->> 'valuuta', 'EUR');
-    tnKuurs         NUMERIC(14, 8) = coalesce(doc_data ->> 'kuurs', '1');
     doc_liik        INTEGER        = doc_data ->> 'liik';
     doc_doklausid   INTEGER        = doc_data ->> 'doklausid';
     doc_summa       NUMERIC(12, 2) = doc_data ->> 'summa';
     doc_konto       TEXT           = doc_data ->> 'konto';
+    doc_korr_konto  TEXT           = doc_data ->> 'korr_konto';
     doc_tunnus      TEXT           = doc_data ->> 'tunnus';
     doc_tp          TEXT           = doc_data ->> 'tp';
     doc_proj        TEXT           = doc_data ->> 'proj';
@@ -41,9 +40,11 @@ DECLARE
     docs            INTEGER[];
     a_pv_opers      TEXT[]         = enum_range(NULL :: PV_OPERATSIOONID);
     is_import       BOOLEAN        = data ->> 'import';
+    l_korr_konto    TEXT;
 BEGIN
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -63,14 +64,17 @@ BEGIN
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;
 
 
         INSERT INTO docs.doc (doc_type_id, history, rekvid, status)
-        VALUES (doc_typeId, '[]' :: JSONB || new_history, user_rekvid, 1) RETURNING id
-            INTO doc_id;
+        VALUES (doc_typeId, '[]' :: JSONB || new_history, user_rekvid, 1);
+--        RETURNING id    INTO doc_id;
+        SELECT currval('docs.doc_id_seq') INTO doc_id;
+
 
         INSERT INTO docs.pv_oper (parentid, kpv, pv_kaart_id, nomid, liik, summa, muud, kood1, kood2, kood3, kood4,
                                   kood5,
@@ -87,14 +91,16 @@ BEGIN
                    INTO pv_oper_id;
 
     ELSE
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS updated,
                      userName AS user) row;
 
         -- устанавливаем связи с документами
 
         -- получим связи документа
-        SELECT docs_ids INTO docs
+        SELECT docs_ids
+        INTO docs
         FROM docs.doc
         WHERE id = doc_id;
 
@@ -142,10 +148,29 @@ BEGIN
         ELSEIF doc_liik = array_position(a_pv_opers, 'mahakandmine')
         THEN
             PERFORM docs.sp_pv_oper_mahakandmine(doc_id);
-        END IF;
-    END IF;
-    -- calculation of jaak
+        ELSEIF doc_liik = 6
+        THEN
+            -- переквалификация
+            IF doc_konto = '154000'
+            THEN
+                -- запоминаем кор.счет карточки
+                SELECT properties::JSONB ->> 'konto'
+                INTO l_korr_konto
+                FROM libs.library
+                WHERE id = doc_pv_kaart_id;
 
+                UPDATE libs.library
+                SET properties = properties::JSONB || jsonb_build_object('korr_konto', l_korr_konto)
+                WHERE id = doc_pv_kaart_id;
+
+            END IF;
+
+            PERFORM docs.pv_umberklassifitseerimine(doc_id);
+        ELSE
+            -- ничего
+        END IF;
+        -- calculation of jaak
+    END IF;
     PERFORM docs.sp_recalc_pv_jaak(doc_pv_kaart_id);
 
     RETURN doc_id;

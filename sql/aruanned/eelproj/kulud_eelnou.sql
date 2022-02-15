@@ -28,7 +28,7 @@ DECLARE
     a_MuudKulud                                TEXT[] = ARRAY ['601','608'];
     a_PohivaraSoetus                           TEXT[] = ARRAY ['155','156','157','158','4502','1501','1511','1531','650'];
     a_FinanseerimisTegevus                     TEXT[] = ARRAY ['2586'];
-    l_allikas                                  TEXT   = l_params -> 'allikas';
+    l_allikas                                  TEXT   = l_params ->> 'allikas';
 BEGIN
     -- оздаем выборку данных для отчета
     -- eelmise aasta
@@ -99,13 +99,26 @@ BEGIN
                           FROM docs.doc d
                                    INNER JOIN docs.journal j ON j.parentid = d.id
                                    INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
-                          WHERE j.kpv <= make_date(year(l_kpv) - 1, 12, 31)
+                                   INNER JOIN (
+                              SELECT kood
+                              FROM qryArtikkel
+/*                              WHERE kood NOT IN ('35200', '35201', '3818', '2585')
+                              UNION ALL
+                              SELECT unnest(ARRAY ['155', '154','156','109', '208', '258'])
+*/ ) a
+                                              ON ((ltrim(rtrim((j1.deebet) :: TEXT)) ~~
+                                                   ltrim(rtrim((a.kood) || '%' :: TEXT))))
+
+                              -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                                   LEFT OUTER JOIN docs.alg_saldo alg ON alg.journal_id = d.id
+
+                          WHERE coalesce(alg.kpv, j.kpv) <= make_date(year(l_kpv) - 1, 12, 31)
                             AND d.rekvid = (CASE
                                                 WHEN l_kond = 1 THEN d.rekvid
                                                 ELSE l_rekvid END)
                             AND d.rekvid IN (SELECT r.rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid) r)
-                            AND j1.kood2 NOT iLIKE ('%RF%')
+                            AND j1.kood2 NOT ILIKE ('%RF%')
                             AND (l_allikas IS NULL OR j1.kood2 ILIKE '%' || l_allikas || '%')
                             AND d.status <> 3
                           UNION ALL
@@ -122,7 +135,20 @@ BEGIN
                           FROM docs.doc d
                                    INNER JOIN docs.journal j ON j.parentid = d.id
                                    INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
-                          WHERE j.kpv <= make_date(year(l_kpv) - 1, 12, 31)
+                                   INNER JOIN (
+                              SELECT kood
+                              FROM qryArtikkel
+/*                              WHERE kood NOT IN ('35200', '35201', '3818', '2585')
+                              UNION ALL
+                              SELECT unnest(ARRAY ['155', '154','156','109', '208', '258'])
+*/                          ) a
+                                              ON ((ltrim(rtrim((j1.kreedit) :: TEXT)) ~~
+                                                   ltrim(rtrim((a.kood) || '%' :: TEXT))))
+
+                              -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                                   LEFT OUTER JOIN docs.alg_saldo alg ON alg.journal_id = d.id
+
+                          WHERE coalesce(alg.kpv, j.kpv) <= make_date(year(l_kpv) - 1, 12, 31)
                             AND d.rekvid = (CASE
                                                 WHEN l_kond = 1 THEN d.rekvid
                                                 ELSE l_rekvid END)
@@ -145,7 +171,7 @@ BEGIN
                         s.tunnus,
                         sum(s.db - s.kr) AS tegelik,
                         year(l_kpv)      AS aasta,
-                        6                AS kuu,
+                        9                AS kuu,
                         s.rekv_id
                  FROM (
                           SELECT 2                       AS tyyp,
@@ -164,9 +190,11 @@ BEGIN
                                    INNER JOIN qryArtikkel a
                                               ON ((ltrim(rtrim((j1.deebet) :: TEXT)) ~~
                                                    ltrim(rtrim((a.kood) || '%' :: TEXT))))
+                              -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                                   LEFT OUTER JOIN docs.alg_saldo alg ON alg.journal_id = d.id
 
-                          WHERE j.kpv <= make_date(year(l_kpv), 06, 30)
-                            AND j.kpv >= make_date(year(l_kpv), 01, 01)
+                          WHERE coalesce(alg.kpv, j.kpv) <= make_date(year(l_kpv), 09, 30)
+                            AND coalesce(alg.kpv, j.kpv) >= make_date(year(l_kpv), 01, 01)
                             AND d.rekvid = (CASE
                                                 WHEN l_kond = 1 THEN d.rekvid
                                                 ELSE l_rekvid END)
@@ -192,9 +220,11 @@ BEGIN
                                    INNER JOIN qryArtikkel a
                                               ON ((ltrim(rtrim((j1.kreedit) :: TEXT)) ~~
                                                    ltrim(rtrim((a.kood) || '%' :: TEXT))))
+                              -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                                   LEFT OUTER JOIN docs.alg_saldo alg ON alg.journal_id = d.id
 
-                          WHERE j.kpv <= make_date(year(l_kpv), 06, 30)
-                            AND j.kpv >= make_date(year(l_kpv), 01, 01)
+                          WHERE coalesce(alg.kpv, j.kpv) <= make_date(year(l_kpv), 09, 30)
+                            AND coalesce(alg.kpv, j.kpv) >= make_date(year(l_kpv), 01, 01)
                             AND d.rekvid = (CASE
                                                 WHEN l_kond = 1 THEN d.rekvid
                                                 ELSE l_rekvid END)
@@ -217,7 +247,7 @@ BEGIN
                  FROM tmp_andmik s
                  WHERE aasta = year(l_kpv) - 1
                  GROUP BY s.rekv_id, s.artikkel, s.tegev, s.tunnus
-                 ),
+             ),
              qryAasta2 AS (
                  SELECT s.rekv_id      AS rekvid,
                         s.artikkel     AS artikkel,
@@ -226,34 +256,9 @@ BEGIN
                         sum(s.tegelik) AS summa,
                         1              AS idx
                  FROM tmp_andmik s
-                 WHERE aasta <= year(l_kpv)
+                 WHERE aasta = year(l_kpv)
                  GROUP BY s.rekv_id, s.artikkel, s.tegev, s.tunnus
              ),
-             -- пока не нужен
-/*             qryAasta3 AS (
-                 -- Данные соответствуют данным Tekke eelarve täps в отчете EELARVEARUANNE (Lisa 1, Lisa 5) текущего года за исключением итоговых строк.
-                 -- Формулы итогов можно увидеть в соответствующих ячейках
-                 -- eelarve taps
-
-                 SELECT e.rekvid,
-                        e.kood5      AS artikkel,
-                        e.kood1      AS tegev,
-                        e.tunnus     AS tunnus,
-                        sum(e.summa) AS summa
-                 FROM eelarve.eelarve e
-                 WHERE rekvid = (CASE
-                                     WHEN $3 = 1
-                                         THEN rekvid
-                                     ELSE l_rekvid END)
-                   AND e.rekvid IN (SELECT a.rekv_id
-                                    FROM get_asutuse_struktuur(l_rekvid) a)
-                   AND aasta = YEAR($1)
-                   AND (e.kpv IS NULL AND e.kpv <= l_kpv)
-                   AND e.status <> 3
-                   AND kood5 IN (SELECT kood FROM qryArtikkel)
-                 GROUP BY e.rekvid, e.kood5, e.kood1, e.tunnus
-             ),
-*/ -- Сумма всех строк с данным Art  в блоке Eelarve Tekkepõhine kinnitatud
              -- текущего года
 
              qryAasta4 AS (
@@ -277,7 +282,6 @@ BEGIN
                                   FROM get_asutuse_struktuur(l_rekvid) a)
                    AND t1.kood2 NOT ILIKE ('%RF%')
                    AND (l_allikas IS NULL OR t1.kood2 ILIKE '%' || l_allikas || '%')
-
                    AND t1.kood5 IN (
                      SELECT kood
                      FROM qryArtikkel
@@ -306,6 +310,8 @@ BEGIN
                                      ELSE l_rekvid END)
                    AND rekvid IN (SELECT a.rekv_id
                                   FROM get_asutuse_struktuur(l_rekvid) a)
+                   AND t1.kood2 NOT ILIKE ('%RF%')
+                   AND (l_allikas IS NULL OR t1.kood2 ILIKE '%' || l_allikas || '%')
                    AND t1.kood5 IN (
                      SELECT kood
                      FROM qryArtikkel
@@ -330,6 +336,8 @@ BEGIN
                    AND e.rekvid IN (SELECT a.rekv_id
                                     FROM get_asutuse_struktuur(l_rekvid) a)
                    AND aasta = YEAR($1)
+                   AND e.kood2 NOT ILIKE ('%RF%')
+                   AND (l_allikas IS NULL OR e.kood2 ILIKE '%' || l_allikas || '%')
                    AND e.kpv IS NULL
                    AND e.status <> 3
                    AND kood5 IN (SELECT kood FROM qryArtikkel)
@@ -337,7 +345,7 @@ BEGIN
              ),
              qryAasta7 AS (
 -- Сумма всех строк с данным Art  в блоке Eelarve Tekkepõhine täpsustatud
--- текущего года seisuga 30.06.2022
+-- текущего года seisuga 30.09.2022
 
                  SELECT e.rekvid,
                         e.kood5      AS artikkel,
@@ -352,7 +360,9 @@ BEGIN
                    AND e.rekvid IN (SELECT a.rekv_id
                                     FROM get_asutuse_struktuur(l_rekvid) a)
                    AND aasta = YEAR($1)
-                   AND (e.kpv IS NULL OR e.kpv <= make_date(YEAR($1), 06, 30))
+                   AND (e.kpv IS NULL OR e.kpv <= make_date(YEAR($1), 09, 30))
+                   AND e.kood2 NOT ILIKE ('%RF%')
+                   AND (l_allikas IS NULL OR e.kood2 ILIKE '%' || l_allikas || '%')
                    AND e.status <> 3
                    AND kood5 IN (SELECT kood FROM qryArtikkel)
                  GROUP BY e.rekvid, e.kood5, e.kood1, e.tunnus
@@ -401,22 +411,6 @@ BEGIN
                                  0::NUMERIC(14, 2)     eelarve_tekkepohine_tapsustatud,
                                  NULL::TEXT         AS selg
                           FROM qryAasta2 q
-/*                          UNION ALL
-                          SELECT rekvid                AS rekv_id,
-                                 2                     AS idx,
-                                 q.artikkel:: VARCHAR(20),
-                                 q.tegev,
-                                 q.tunnus,
-                                 0::NUMERIC(14, 2)     AS aasta_1_tekke_taitmine,
-                                 0::NUMERIC(14, 2)     AS aasta_2_tekke_taitmine,
-                                 summa::NUMERIC(14, 2) AS aasta_2_oodatav_taitmine,
-                                 0::NUMERIC(14, 2)     AS aasta_3_eelnou,
-                                 0::NUMERIC(14, 2)     AS aasta_3_prognoos,
-                                 0:: NUMERIC(14, 2)    AS eelarve_tekkepohine_kinnitatud,
-                                 0::NUMERIC(14, 2)        eelarve_tekkepohine_tapsustatud,
-                                 NULL::TEXT            AS selg
-                          FROM qryAasta3 q
-*/
                           UNION ALL
                           SELECT rekvid                AS rekv_id,
                                  2                     AS idx,
@@ -517,21 +511,23 @@ BEGIN
                         coalesce(s.tegev, '')::VARCHAR(20)                     AS tegev,
                         s.artikkel::VARCHAR(20),
                         sum(s.aasta_1_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_1_tekke_taitmine,
+                        sum(s.eelarve_tekkepohine_kinnitatud)::NUMERIC(14, 2)  AS eelarve_tekkepohine_kinnitatud,
+                        sum(s.eelarve_tekkepohine_tapsustatud)::NUMERIC(14, 2) AS eelarve_tekkepohine_tapsustatud,
                         sum(s.aasta_2_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_2_tekke_taitmine,
                         sum(s.aasta_2_oodatav_taitmine):: NUMERIC(14, 2)       AS aasta_2_oodatav_taitmine,
                         sum(s.aasta_3_eelnou):: NUMERIC(14, 2)                 AS aasta_3_eelnou,
                         sum(s.aasta_3_prognoos)::NUMERIC(14, 2)                AS aasta_3_prognoos,
-                        sum(s.eelarve_tekkepohine_kinnitatud)::NUMERIC(14, 2)  AS eelarve_tekkepohine_kinnitatud,
-                        sum(s.eelarve_tekkepohine_tapsustatud)::NUMERIC(14, 2) AS eelarve_tekkepohine_tapsustatud,
                         NULL::TEXT                                             AS selg
                  FROM qryReport s
                  GROUP BY s.artikkel, s.idx, s.tunnus, s.tegev
              ),
              report AS (
                  SELECT qryReport.idx,
-                        CASE
+/*                        CASE
                             WHEN qryReport.parentid = l_rekvid THEN qryReport.rekvId
                             ELSE l_rekvid END                          AS rekv_id,
+*/
+                        qryReport.rekvId                               AS rekv_id,
                         qryReport.tunnus,
                         qryReport.tegev,
                         qryReport.artikkel,
@@ -544,14 +540,16 @@ BEGIN
                         sum(qryReport.aasta_3_prognoos)                AS aasta_3_prognoos,
                         string_agg(qryReport.selg, ',')                AS selg
                  FROM qryReport
-                 GROUP BY qryReport.idx,
-                          (CASE WHEN qryReport.parentid = l_rekvid THEN qryReport.rekvid ELSE l_rekvid END),
+                 GROUP BY qryReport.idx, qryreport.rekvid,
+--                          (CASE WHEN qryReport.parentid = l_rekvid THEN qryReport.rekvid ELSE l_rekvid END),
                           qryReport.tunnus, qryReport.tegev, qryReport.artikkel
                  UNION ALL
                  SELECT 0                                              AS idx,
-                        CASE
-                            WHEN qryReport.parentid = l_rekvid THEN qryReport.rekvId
+/*                         CASE
+                           WHEN qryReport.parentid = l_rekvid THEN qryReport.rekvId
                             ELSE l_rekvid END                          AS rekv_id,
+*/
+                        qryReport.rekvId                               AS rekv_id,
                         ''                                             AS tunnus,
                         left(qryReport.tegev, 2)::VARCHAR(20)          AS tegev,
                         ''                                             AS artikkel,
@@ -565,7 +563,7 @@ BEGIN
                         ''                                             AS selg
                  FROM qryReport
                  WHERE NOT empty(qryReport.tegev)
-                 GROUP BY (CASE WHEN qryReport.parentid = l_rekvid THEN qryReport.rekvid ELSE l_rekvid END),
+                 GROUP BY qryreport.rekvid,
                           left(qryReport.tegev, 2)
                  UNION ALL
                  SELECT 0                                            AS idx,
@@ -602,7 +600,8 @@ BEGIN
                rep.eelarve_tekkepohine_kinnitatud ::NUMERIC(14, 2),
                rep.eelarve_tekkepohine_tapsustatud ::NUMERIC(14, 2),
                rep.selg
-        FROM report rep;
+        FROM report rep
+        WHERE rep.artikkel <> '';
 END
 $$
     LANGUAGE plpgsql

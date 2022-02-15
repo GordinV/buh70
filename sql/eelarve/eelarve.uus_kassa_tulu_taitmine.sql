@@ -13,7 +13,8 @@ CREATE OR REPLACE FUNCTION eelarve.uus_kassa_tulu_taitmine(l_kpv1 DATE, l_kpv2 D
         docs_ids INTEGER[],
         kuu      INTEGER,
         aasta    INTEGER
-    ) AS
+    )
+AS
 $BODY$
 
     -- kontod
@@ -47,17 +48,17 @@ SELECT rekvid              AS rekv_id,
        aasta
 FROM (
          -- доход
-         SELECT summa          AS summa,
-                j1.kood1::TEXT AS tegev,
-                j1.kood2::TEXT AS allikas,
-                j1.kood3::TEXT AS rahavoog,
-                j1.kood5::TEXT AS artikkel,
+         SELECT summa                         AS summa,
+                j1.kood1::TEXT                AS tegev,
+                j1.kood2::TEXT                AS allikas,
+                j1.kood3::TEXT                AS rahavoog,
+                j1.kood5::TEXT                AS artikkel,
                 j1.tunnus::TEXT,
                 j.rekvid,
-                FALSE          AS kas_kulud,
-                d.id           AS docs_ids,
-                month(j.kpv)   AS kuu,
-                year(j.kpv)    AS aasta
+                FALSE                         AS kas_kulud,
+                d.id                          AS docs_ids,
+                month(coalesce(a.kpv, j.kpv)) AS kuu,
+                year(coalesce(a.kpv, j.kpv))  AS aasta
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -66,8 +67,11 @@ FROM (
                   INNER JOIN libs.library l ON l.kood = j1.kood5
              AND l.tun5 = 1
              AND l.library = 'TULUDEALLIKAD' --tulud
-         WHERE j.kpv >= l_kpv1
-           AND j.kpv <= l_kpv2
+         -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+
+         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+           AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND j.rekvid = CASE
@@ -77,17 +81,17 @@ FROM (
            AND l.status <> 3
          UNION ALL
          -- востановление
-         SELECT -1 * j1.summa  AS summa,
-                j1.kood1::TEXT AS tegev,
-                j1.kood2::TEXT AS allikas,
-                j1.kood3::TEXT AS rahavoog,
-                j1.kood5::TEXT AS artikkel,
+         SELECT -1 * j1.summa                 AS summa,
+                j1.kood1::TEXT                AS tegev,
+                j1.kood2::TEXT                AS allikas,
+                j1.kood3::TEXT                AS rahavoog,
+                j1.kood5::TEXT                AS artikkel,
                 j1.tunnus::TEXT,
                 j.rekvid,
-                FALSE          AS kas_kulud,
-                d.id           AS docs_ids,
-                month(j.kpv)   AS kuu,
-                year(j.kpv)    AS aasta
+                FALSE                         AS kas_kulud,
+                d.id                          AS docs_ids,
+                month(coalesce(a.kpv, j.kpv)) AS kuu,
+                year(coalesce(a.kpv, j.kpv))  AS aasta
 
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
@@ -95,9 +99,11 @@ FROM (
                   INNER JOIN qryKontod k ON k.kood = j1.deebet
                   INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.kreedit
                   INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 1 AND l.library = 'TULUDEALLIKAD' --tulud
+         -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
 
-         WHERE j.kpv >= l_kpv1
-           AND j.kpv <= l_kpv2
+         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
+           AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND j.rekvid = CASE
@@ -125,7 +131,7 @@ GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_tulu_taitmine( DATE,DATE, INTEGER, I
 /*
 
 SELECT *
-FROM eelarve.uus_kassa_tulu_taitmine('2020-01-01', '2020-03-31', 64, 0)
+FROM eelarve.uus_kassa_tulu_taitmine('2021-01-01', '2021-12-31', 63, 0)
 where artikkel = '3501'
 
 */

@@ -1,11 +1,11 @@
 DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER);
 DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER);
 --DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, TEXT);
-DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne_(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, TEXT);
+DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, TEXT);
 
 
-CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne_(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER,
-                                                        l_tunnus TEXT DEFAULT '%')
+CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER,
+                                                       l_tunnus TEXT DEFAULT '%')
     RETURNS TABLE (
         rekv_id  INTEGER,
         konto    VARCHAR(20),
@@ -16,7 +16,8 @@ CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne_(l_kpv2 DATE, l_rekvid IN
         deebet   NUMERIC(14, 2),
         kreedit  NUMERIC(14, 2),
         tyyp     INTEGER
-    ) AS
+    )
+AS
 $BODY$
 WITH qrySaldoAndmik AS (
     SELECT coalesce(a.kpv, j.kpv)                                          AS kpv,
@@ -89,7 +90,8 @@ WITH qrySaldoAndmik AS (
                  NOT empty(l.tun2)   AS is_tegev,
                  NOT empty(l.tun3)   AS is_allikas,
                  NOT empty(l.tun4)   AS is_rahavoog,
-                 coalesce(l.tun5, 1) AS tyyp
+                 coalesce(l.tun5, 1) AS tyyp,
+                 l.muud
           FROM libs.library l
           WHERE l.library = 'KONTOD'
             AND l.status <> 3)
@@ -99,10 +101,14 @@ WITH qrySaldoAndmik AS (
          SELECT qry.rekvid                  AS rekv_id,
                 left(konto, 6)::TEXT        AS konto,
                 (CASE
-                     WHEN l.is_tp
+                     WHEN l.is_tp AND (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(qry.rahavoog)) = '01')
                          THEN tp
                      ELSE '' END)::CHAR(20) AS tp,
                 (CASE
+                     WHEN is_tegev AND
+                          ltrim(rtrim(coalesce(l.muud, ''))) = '*' AND ltrim(rtrim(coalesce(qry.rahavoog, ''))) = '00'
+                         THEN
+                         ''
                      WHEN l.is_tegev
                          THEN tegev
                      ELSE '' END)::TEXT     AS tegev,
@@ -134,7 +140,7 @@ WITH qrySaldoAndmik AS (
          SELECT rekvid                      AS rekv_id,
                 left(konto, 6)::TEXT        AS konto,
                 (CASE
-                     WHEN is_tp
+                     WHEN is_tp AND (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(qry.rahavoog)) = '01')
                          THEN tp
                      ELSE '' END)::CHAR(20) AS tp,
                 (CASE
@@ -183,12 +189,12 @@ WITH qrySaldoAndmik AS (
          WHERE deebet <> 0
             OR kreedit <> 0
          GROUP BY rekv_id
-                , konto
-                , tp
-                , tegev
-                , allikas
-                , rahavoog
-                , tyyp
+                 , konto
+                 , tp
+                 , tegev
+                 , allikas
+                 , rahavoog
+                 , tyyp
      )
 SELECT rekv_id,
        konto::VARCHAR(20),
@@ -200,32 +206,33 @@ SELECT rekv_id,
        sum(kreedit)  AS kreedit,
        tyyp::INTEGER AS tyyp
 FROM report tmp
-WHERE deebet <> 0
-   OR kreedit <> 0
+WHERE (deebet <> 0
+   OR kreedit <> 0)
 GROUP BY rekv_id
-       , konto
-       , tp
-       , tegev
-       , allikas
-       , rahavoog
-       , tyyp
+        , konto
+        , tp
+        , tegev
+        , allikas
+        , rahavoog
+        , tyyp
     ;
 
 $BODY$
     LANGUAGE SQL
     VOLATILE
-    COST 10000;
+    COST 100;
 
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne_(DATE, INTEGER, INTEGER, TEXT) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne_(DATE, INTEGER, INTEGER, TEXT) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne_(DATE, INTEGER, INTEGER, TEXT) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne_(DATE, INTEGER, INTEGER, TEXT) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO dbvaatleja;
 
 
 /*
-
+explain
 SELECT *
-FROM eelarve.saldoandmik_aruanne_('2021-08-31' :: DATE, 119 :: INTEGER, 1 ::integer, '%')
-WHERE konto = '202000'
-GROUP BY konto, tp
+FROM eelarve.saldoandmik_aruanne('2022-01-31' :: DATE, 119 :: INTEGER, 1 ::integer, '%')
+WHERE konto like '155000%'
+and rahavoog = '01'
+--GROUP BY konto, tp
 */

@@ -1,16 +1,7 @@
-module.exports = {
-    grid: {
-        gridConfiguration: [
-            {id: "konto", name: "konto", width: "25px", show: false},
-            {id: "nimetus", name: "Nimetus", width: "100px"},
-            {id: "alg_db", name: "Alg.Deebet", width: "100px"},
-            {id: "alg_kr", name: "Alg.Kreedit", width: "75px"},
-            {id: "deebet", name: "Deebet", width: "100px"},
-            {id: "kreedit", name: "Kreedit", width: "100px"},
-            {id: "lopp_db", name: "Lõpp deebet", width: "100px"},
-            {id: "lopp_kr", name: "Lõpp kreedit", width: "200px"}
-        ],
-        sqlString: `WITH report AS (
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData>
+  <grid>
+    <sql>WITH report AS (
             SELECT qry.rekv_id,
                    qry.idx,
                    qry.artikkel,
@@ -22,7 +13,7 @@ module.exports = {
                    sum(qry.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
                    sum(qry.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud
             FROM eelarve.kulud_eelnou($1::DATE, $2::INTEGER, $3::INTEGER, $4::JSONB) qry
-            where artikkel <> ''
+            where artikkel &lt;&gt; ''
             GROUP BY qry.rekv_id, qry.idx, qry.artikkel
         ),        
         preReport AS (
@@ -209,7 +200,7 @@ module.exports = {
          ) qryReport
                  INNER JOIN (SELECT id, parentid, regkood, nimetus
                              FROM ou.rekv
-                             WHERE parentid < 999
+                             WHERE parentid &lt; 999
                              UNION ALL
                              SELECT 999999, 0, '' AS regkood, 'Kond' AS nimetus
                              WHERE $3::INTEGER = 1
@@ -223,10 +214,50 @@ module.exports = {
                  LEFT OUTER JOIN ou.rekv p ON p.id = r.parentid
                   LEFT OUTER JOIN libs.library a
                             ON a.kood = qryReport.artikkel
-                                AND a.library = 'TULUDEALLIKAD' AND a.status < 3
-        ORDER BY CASE WHEN r.id > 999 THEN 0 WHEN r.id = $2 THEN 1 ELSE r.id END, r.parentid, r.nimetus, qryReport.idx,
-                 qryReport.artikkel`,     // $1 - kpv $2 - rekvid, $3 - kond
-        params: '',
-        alias: 'kulud_eelnou'
-    }
-};
+                                AND a.library = 'TULUDEALLIKAD' AND a.status &lt; 3
+        ORDER BY CASE WHEN r.id &gt; 999 THEN 0 WHEN r.id = $2 THEN 1 ELSE r.id END, r.parentid, r.nimetus, qryReport.idx,
+                 qryReport.artikkel</sql>
+    <alias>kulud_eelnou</alias>
+  </grid>
+  <select></select>
+  <selectAsLibs>
+    <sql></sql>
+    <alias>selectAsLibs</alias>
+  </selectAsLibs>
+  <saveDoc>
+    <sql></sql>
+    <alias>saveDoc</alias>
+  </saveDoc>
+  <deleteDoc>
+    <sql></sql>
+    <alias>deleteDoc</alias>
+  </deleteDoc>
+  <requiredFields>
+    <validate></validate>
+  </requiredFields>
+  <executeSql>
+    <sql></sql>
+    <alias></alias>
+  </executeSql>
+  <executeCommand>
+    <sql></sql>
+    <alias></alias>
+  </executeCommand>
+  <register>
+    <sql></sql>
+    <alias></alias>
+  </register>
+  <endProcess>
+    <sql />
+    <alias />
+  </endProcess>
+  <generateJournal>
+    <sql />
+    <alias />
+  </generateJournal>
+  <print></print>
+  <getLog>
+    <sql />
+    <alias />
+  </getLog>
+</VFPData>

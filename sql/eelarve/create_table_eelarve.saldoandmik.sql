@@ -20,6 +20,9 @@ CREATE TABLE eelarve.saldoandmik
 )
 WITH (OIDS=FALSE);
 
+ALTER table eelarve.saldoandmik ADD COLUMN timestamp timestamp not null DEFAULT now();
+
+
 GRANT SELECT ON TABLE eelarve.saldoandmik TO dbvaatleja;
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE eelarve.saldoandmik TO saldoandmikkoostaja;
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE eelarve.saldoandmik TO dbpeakasutaja;

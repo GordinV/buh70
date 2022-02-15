@@ -1,5 +1,6 @@
 DROP FUNCTION IF EXISTS import_userid( INTEGER );
 
+drop FOREIGN TABLE if EXISTS remote_userid;
 CREATE FOREIGN TABLE remote_userid (
 
   id       INTEGER                                        NOT NULL,
@@ -10,10 +11,11 @@ CREATE FOREIGN TABLE remote_userid (
   kasutaja_    INTEGER   DEFAULT 1     NOT NULL,
   peakasutaja_ INTEGER   DEFAULT 0     NOT NULL,
   admin        INTEGER   DEFAULT 0     NOT NULL,
+    properties jsonb, roles jsonb,
   muud         TEXT  )
 
-  SERVER db_narva_ee
-  OPTIONS (schema_name 'public', table_name 'userid');
+  SERVER dbtest_narva_ee
+  OPTIONS (schema_name 'ou', table_name 'userid');
 
 CREATE OR REPLACE FUNCTION import_userid(in_old_id INTEGER)
   RETURNS INTEGER AS

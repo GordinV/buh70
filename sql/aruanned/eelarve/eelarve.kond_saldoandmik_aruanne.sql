@@ -1,8 +1,9 @@
 DROP FUNCTION IF EXISTS eelarve.kond_saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER);
 DROP FUNCTION IF EXISTS eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER);
 DROP FUNCTION IF EXISTS eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER, BOOLEAN);
 
-CREATE OR REPLACE FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER DEFAULT 0)
+CREATE OR REPLACE FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER,is_xml_file BOOLEAN)
     RETURNS TABLE (
         konto    VARCHAR(20),
         nimetus  VARCHAR(254),
@@ -40,22 +41,53 @@ WITH andmik AS (
       AND s.rekvid IN (SELECT rekv_id
                        FROM get_asutuse_struktuur(l_rekvid)
                        UNION ALL
-                       SELECT l_rekvid
-    )
-    GROUP BY s.konto
-            , k.nimetus
-            , left(s.tp, 6)
-            , s.tegev
-            , left(s.allikas, 2)
-            , s.rahavoo
-            , s.tyyp
-),
-     pv_kontod AS (
-         SELECT unnest(ARRAY ['154000',
-             '155000', '155100', '155101', '155106', '155109','155300','155400','155405','155500','155600','155700','155900','155910','155920',
-             '156000','156200','156400','156410','156500','156600','156900','156910','156920',
-             '157000','157010','157020','157090','150020', '150200', '150210','151910']) AS kood
-     )
+                       SELECT l_rekvid)
+      AND s.konto NOT IN (SELECT * FROM unnest(CASE WHEN is_xml_file THEN ARRAY ['910019','910029'] ELSE ARRAY [''] END))
+GROUP BY S.konto
+        , k.nimetus
+        , LEFT (S.tp, 6)
+        , S.tegev
+        , LEFT (S.allikas, 2)
+        , S.rahavoo
+        , S.tyyp
+)
+,
+pv_kontod
+AS
+(
+SELECT unnest(ARRAY ['154000',
+                     '155000',
+                     '155100',
+                     '155101',
+                     '155106',
+                     '155109',
+                     '155300',
+                     '155400',
+                     '155405',
+                     '155500',
+                     '155600',
+                     '155700',
+                     '155900',
+                     '155910',
+                     '155920',
+                     '156000',
+                     '156200',
+                     '156400',
+                     '156410',
+                     '156500',
+                     '156600',
+                     '156900',
+                     '156910',
+                     '156920',
+                     '157000',
+                     '157010',
+                     '157020',
+                     '157090',
+                     '150020',
+                     '150200',
+                     '150210',
+                     '151910']) AS kood
+)
 
 SELECT konto:: VARCHAR(20),
        nimetus:: VARCHAR(254),
@@ -99,15 +131,15 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER, BOOLEAN) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER, BOOLEAN) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER, BOOLEAN) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid INTEGER, INTEGER, BOOLEAN) TO dbvaatleja;
 /*
 select * from (
 SELECT *
-FROM eelarve.kond_saldoandmik_aruanne('2021-07-31' :: DATE, 999 :: INTEGER)
+FROM eelarve.kond_saldoandmik_aruanne('2021-12-31' :: DATE, 63 :: INTEGER,1, false::boolean)
 ) qry
-where konto like '155109%'
+where konto like '910029%'
 
 */

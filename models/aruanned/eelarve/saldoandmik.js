@@ -79,7 +79,8 @@ module.exports = {
                                         NOT empty(l.tun2)   AS is_tegev,
                                         NOT empty(l.tun3)   AS is_allikas,
                                         NOT empty(l.tun4)   AS is_rahavoog,
-                                        coalesce(l.tun5, 1) AS tyyp
+                                        coalesce(l.tun5, 1) AS tyyp,
+                                        l.muud
                                  FROM libs.library l
                                  WHERE l.library = 'KONTOD'
                                    AND l.status <> 3)
@@ -102,10 +103,17 @@ module.exports = {
                                 SELECT qry.rekvid                  AS rekv_id,
                                        left(konto, 6)::TEXT        AS konto,
                                        (CASE
+                                            WHEN l.is_tp AND (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(qry.rahavoog)) = '01')
+                                                THEN tp                                           
                                             WHEN l.is_tp
                                                 THEN tp
                                             ELSE '' END)::CHAR(20) AS tp,
                                        (CASE
+                                            WHEN is_tegev AND
+                                                 ltrim(rtrim(coalesce(l.muud, ''))) = '*' AND ltrim(rtrim(coalesce(qry.rahavoog, ''))) = '00'
+                                                THEN
+                                                ''
+                                           
                                             WHEN l.is_tegev
                                                 THEN tegev
                                             ELSE '' END)::TEXT     AS tegev,

@@ -369,13 +369,13 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_arv(INTEGER, INTEGER) TO dbpeakasutaj
 
 /*
 
-SELECT error_code, result, error_message from docs.gen_lausend_arv_(3201948, 2525)
+SELECT error_code, result, error_message from docs.gen_lausend_arv(3537732, 5873)
 
 select kasutaja from userid u
 	where u.rekvid = v_arv.rekvId and u.id = 1
 select * from userid
 
-select * from docs.arv where id =
+select * from docs.arv where number = '82020122007'
 
 select array(select distinct unnest(array[1,1,2]))
 
