@@ -22,11 +22,11 @@ module.exports = {
                            a.tp,
                            a.aadress,
                            sum(saldo) OVER ( PARTITION BY asutus_id) AS kond_saldo
-                    FROM docs.kontosaldoandmik_tunnus_tt($1::TEXT, $2::INTEGER, $3::DATE, $4::INTEGER) qry
+                    FROM docs.kontosaldoandmik_tunnus_tt($1::TEXT, $2::INTEGER, $3::DATE, $4::INTEGER, $5::JSONB) qry
                              INNER JOIN libs.asutus a ON a.id = qry.asutus_id
                              INNER JOIN com_kontoplaan l ON l.kood = qry.konto
                     WHERE qry.saldo <> 0
-                    ORDER BY qry.konto, a.nimetus`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- rekvid (svod)
+                    ORDER BY qry.konto, a.nimetus`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- rekvid (svod), $5::JSONB  - прочие параметры
         params: '',
         alias: 'kontosaldoandmik_report'
     }

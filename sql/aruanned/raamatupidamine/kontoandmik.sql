@@ -1,9 +1,10 @@
 DROP FUNCTION IF EXISTS docs.kontoandmik(DATE, DATE, INTEGER);
 DROP FUNCTION IF EXISTS docs.kontoandmik(TEXT, DATE, DATE, INTEGER);
 DROP FUNCTION IF EXISTS docs.kontoandmik(TEXT, DATE, DATE, INTEGER, TEXT);
+DROP FUNCTION IF EXISTS docs.kontoandmik(TEXT, DATE, DATE, INTEGER, TEXT, JSON);
 
 CREATE OR REPLACE FUNCTION docs.kontoandmik(l_konto TEXT, l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER,
-                                            l_tunnus TEXT DEFAULT '%')
+                                             l_tunnus TEXT DEFAULT '%', l_params JSONB DEFAULT NULL::JSONB)
     RETURNS TABLE (
         alg_saldo NUMERIC(14, 2),
         db_kokku  NUMERIC(14, 2),
@@ -25,7 +26,8 @@ CREATE OR REPLACE FUNCTION docs.kontoandmik(l_konto TEXT, l_kpv1 DATE, l_kpv2 DA
         proj      VARCHAR(20),
         tunnus    VARCHAR(20),
         selg      TEXT
-    ) AS
+    )
+AS
 $BODY$
 WITH alg_kaibed AS (
     SELECT j.rekvid,
@@ -46,16 +48,17 @@ WITH alg_kaibed AS (
       AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
       AND j.rekvid IN (SELECT rekv_id
                        FROM get_asutuse_struktuur(l_rekvid))
-      AND coalesce(j.tunnus,'') ILIKE trim(l_tunnus) || '%'
-
+      AND coalesce(j.tunnus, '') ILIKE trim(l_tunnus) || '%'
+      AND ((l_params ->> 'proj') IS NULL OR coalesce(j.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
+      AND ((l_params ->> 'tunnus') IS NULL OR coalesce(j.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
     GROUP BY rekvid
 )
 
 SELECT coalesce(a.alg_saldo, 0)::NUMERIC(14, 2)                       AS alg_saldo,
        sum(coalesce(CASE WHEN j.deebet::TEXT = ltrim(rtrim(l_konto))::TEXT THEN summa ELSE 0 END, 0))
-           OVER (PARTITION BY j.rekvid) ::NUMERIC(14, 2)              AS db_kokku,
+       OVER (PARTITION BY j.rekvid) ::NUMERIC(14, 2)                  AS db_kokku,
        sum(coalesce(CASE WHEN j.kreedit::TEXT = ltrim(rtrim(l_konto))::TEXT THEN summa ELSE 0 END, 0))
-           OVER (PARTITION BY j.rekvid)::NUMERIC(14, 2)               AS kr_kokku,
+       OVER (PARTITION BY j.rekvid)::NUMERIC(14, 2)                   AS kr_kokku,
        coalesce(j.rekvid, a.rekvid)                                   AS rekv_id,
        coalesce(j.rekv_nimi, r.nimetus)::VARCHAR(254)                 AS rekv_nimi,
        coalesce(j.kpv, l_kpv1)                                        AS kpv,
@@ -108,7 +111,10 @@ FROM alg_kaibed a
            AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
-           AND coalesce(j.tunnus,'') ILIKE trim(l_tunnus) || '%'
+           AND coalesce(j.tunnus, '') ILIKE trim(coalesce(l_tunnus,'')) || '%'
+           AND ((l_params ->> 'proj') IS NULL OR coalesce(j.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
+           AND ((l_params ->> 'tunnus') IS NULL OR
+                coalesce(j.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
      ) j
      ON j.rekvid = a.rekvid
          INNER JOIN ou.rekv r ON r.id = coalesce(a.rekvid, j.rekvid)
@@ -118,9 +124,9 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER, TEXT ) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER, TEXT ) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER, TEXT ) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER, TEXT, JSONB ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER, TEXT, JSONB ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER, TEXT, JSONB ) TO dbkasutaja;
 
 /*
 select sum(deebet), sum(kreedit) from (

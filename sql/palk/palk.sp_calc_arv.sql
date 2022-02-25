@@ -78,6 +78,7 @@ DECLARE
     l_work_days        INTEGER;
 
 BEGIN
+
     IF l_lepingid IS NOT NULL
     THEN
         SELECT t.toopaev,
@@ -453,20 +454,9 @@ END;
 $$;
 
 /*
+
 SELECT *
-FROM palk.sp_calc_arv(1, '{"lepingid":31113,"libid":135748,"kpv":20210430}' :: JSON)
+FROM palk.sp_calc_arv(5439, {"kpv":"2022-03-31","lepingid":null::integer,"libid":null::integer,"alus_summa":117.0000,"mvt":117.00,"umardamine":true} :: JSON)
 
-select * from palk.l
-
-
-select * from palk.sp_calc_arv(1,'{"lepingid":4, "libid":386, "kpv":"2018-04-09"}'::JSON)
-SELECT * FROM palk.sp_calc_arv(1,'{ "alus_summa": 100,"kpv": "2018-04-09"}' :: JSON)
-SELECT * FROM palk.sp_calc_arv(1,'{ "alus_summa": 100,"tululiik":"13","kpv": "2018-04-09"}' :: JSON)
-SELECT * FROM palk.sp_calc_arv(1,'{"kpv": "2018-04-09", "palk": 1200,  "summa":100,"tunnid_kokku":168}' :: JSON)
-SELECT * FROM palk.sp_calc_arv(1,'{"kpv": "2018-04-09", "palk": 1200, "is_percent":false}' :: JSON)
-SELECT * FROM palk.sp_calc_arv(1,'{"kpv": "2018-04-09", "palk": 1200, "is_percent":false, "pm_maksustav":0}' :: JSON)
-SELECT * FROM palk.sp_calc_arv(1,'{"kpv": "2018-04-09", "palk": 1200, "is_percent":false, "sm_maksustav":0}' :: JSON)
-SELECT * FROM palk.sp_calc_arv(1,'{"lepingid":4,"libid":526,"kpv":20180630}'::json)
-        {"kpv":"2018-06-30","lepingid":4,"lib":526}
 */
 

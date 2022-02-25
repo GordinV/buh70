@@ -53,7 +53,7 @@ BEGIN
         FROM (
                  SELECT rekv_id
                  FROM get_asutuse_struktuur(l_rekv_id)
-                 WHERE rekv_id = l_rekv_id
+--                 WHERE rekv_id = l_rekv_id
              ) qry
         WHERE CASE WHEN l_status = 1 THEN rekv_id = rekv_id ELSE rekv_id = l_rekv_id END
         LOOP

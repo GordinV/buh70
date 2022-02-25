@@ -1,15 +1,18 @@
 DROP FUNCTION IF EXISTS docs.kaibeandmik(DATE, DATE, INTEGER);
 DROP FUNCTION IF EXISTS docs.kaibeandmik(DATE, DATE, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS docs.kaibeandmik(DATE, DATE, INTEGER, INTEGER, TEXT);
+DROP FUNCTION IF EXISTS docs.kaibeandmik(DATE, DATE, INTEGER, INTEGER, TEXT, JSONB);
+
 
 CREATE OR REPLACE FUNCTION docs.kaibeandmik(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER DEFAULT 0,
-                                            l_tunnus TEXT DEFAULT '%')
+                                             l_tunnus TEXT DEFAULT '%', l_params JSONB DEFAULT NULL::JSONB)
     RETURNS TABLE (
         alg_saldo NUMERIC(14, 2),
         deebet    NUMERIC(14, 2),
         kreedit   NUMERIC(14, 2),
         konto     VARCHAR(20)
-    ) AS
+    )
+AS
 $BODY$
 WITH algsaldo AS (
     SELECT sum(deebet) - sum(kreedit) AS alg_saldo,
@@ -29,15 +32,16 @@ WITH algsaldo AS (
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
                AND (d.rekvid = l_rekvid OR l_kond = 1)
-               AND coalesce(j1.tunnus, '') ILIKE l_tunnus
-               and d.status <> 3
+               AND ((l_params ->> 'tunnus') IS NULL OR coalesce(j1.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
+               AND ((l_params ->> 'konto') IS NULL OR coalesce(j1.deebet, '') ILIKE coalesce((l_params ->> 'konto'), '') || '%')
+               AND ((l_params ->> 'proj') IS NULL OR coalesce(j1.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
+               AND ((l_params ->> 'uritus') IS NULL OR coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
+               AND d.status <> 3
+               AND coalesce(j1.tunnus, '') ILIKE coalesce(l_tunnus, '%')
              UNION ALL
-             SELECT d.rekvid
-                     ,
-                    0 :: NUMERIC                  AS deebet
-                     ,
-                    (j1.summa)                    AS kreedit
-                     ,
+             SELECT d.rekvid ,
+                    0 :: NUMERIC                  AS deebet,
+                    (j1.summa)                    AS kreedit ,
                     trim(j1.kreedit)::VARCHAR(20) AS konto
              FROM docs.doc d
                       INNER JOIN docs.journal j ON j.parentid = d.id
@@ -48,8 +52,13 @@ WITH algsaldo AS (
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
                AND (d.rekvid = l_rekvid OR l_kond = 1)
-               AND coalesce(j1.tunnus, '') ILIKE l_tunnus
-               and d.status <> 3
+               AND coalesce(j1.tunnus, '') ILIKE coalesce(l_tunnus, '%')
+               AND ((l_params ->> 'tunnus') IS NULL OR coalesce(j1.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
+               AND ((l_params ->> 'konto') IS NULL OR coalesce(j1.kreedit, '') ILIKE coalesce((l_params ->> 'konto'), '') || '%')
+               AND ((l_params ->> 'proj') IS NULL OR coalesce(j1.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
+               AND ((l_params ->> 'uritus') IS NULL OR coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
+
+               AND d.status <> 3
          ) qry
     GROUP BY konto,
              rekvid)
@@ -81,8 +90,13 @@ FROM (
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND (d.rekvid = l_rekvid OR l_kond = 1)
-           and d.status <> 3
-           AND coalesce(j1.tunnus, '') ILIKE l_tunnus
+           AND d.status <> 3
+           AND coalesce(j1.tunnus, '') ILIKE coalesce(l_tunnus, '%')
+           AND (l_params ->> 'tunnus' IS NULL OR coalesce(j1.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
+           AND (l_params ->> 'konto' IS NULL OR coalesce(j1.deebet, '') ILIKE coalesce((l_params ->> 'konto'), '') || '%')
+           AND ((l_params ->> 'proj') IS NULL OR coalesce(j1.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
+           AND ((l_params ->> 'uritus') IS NULL OR coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
+
          UNION ALL
          SELECT d.rekvid,
                 0 :: NUMERIC(14, 2)           AS alg_saldo,
@@ -99,8 +113,13 @@ FROM (
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
            AND (d.rekvid = l_rekvid OR l_kond = 1)
-           and d.status <> 3
-           AND coalesce(j1.tunnus, '') ILIKE l_tunnus
+           AND d.status <> 3
+           AND coalesce(j1.tunnus, '') ILIKE coalesce(l_tunnus, '%')
+           AND (l_params ->> 'tunnus' IS NULL OR coalesce(j1.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
+           AND (l_params ->> 'konto' IS NULL OR coalesce(j1.kreedit, '') ILIKE coalesce((l_params ->> 'konto'), '') || '%')
+           AND ((l_params ->> 'proj') IS NULL OR coalesce(j1.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
+           AND ((l_params ->> 'uritus') IS NULL OR coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
+
      ) qry
 WHERE NOT empty(qry.konto)
   AND left(konto, 2) NOT IN ('90', '91', '92', '93', '94', '95', '96', '97', '98')
@@ -113,16 +132,18 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER,INTEGER , TEXT) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER, INTEGER, TEXT ) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER,INTEGER, TEXT ) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER,INTEGER , TEXT, JSONB) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER, INTEGER, TEXT, JSONB ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER,INTEGER, TEXT, JSONB ) TO dbkasutaja;
 
 
 /*
 select * from (
 select *
-FROM docs.kaibeandmik('2020-01-01', current_date :: DATE, 63)
+FROM docs.kaibeandmik_('2022-02-01', current_date :: DATE, 63,0,null,'{"konto":"10010007"}'::jsonb)
 ) qry
-where konto like '100%'
-and rekv_id = 63
+where konto like '10010007%'
+
+'{"tunnus":"EEL","konto":"100"}'
+
 */

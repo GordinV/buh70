@@ -75,7 +75,7 @@ describe('dok. type kaibeandmik tests', function () {
 
     });
 
-    it('should select data from grid query', async()=> {
+    it.skip('should select data from grid query', async()=> {
         let sql = doc.grid.sqlString;
         let returnValue = await db.queryDb(sql, ['2018-01-01','2018-08-31', 1]);
         expect(returnValue).toBeDefined();

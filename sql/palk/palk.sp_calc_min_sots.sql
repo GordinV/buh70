@@ -186,6 +186,18 @@ BEGIN
         l_paevad_periodis = 30;
     END IF;
 
+    if make_date(year(l_kpv), month(l_kpv), 01) < v_tooleping.algab or
+       l_kpv > coalesce(v_tooleping.lopp,l_kpv) then
+
+        l_paevad_periodis = l_paevad_periodis - l_puudu_paevad - CASE
+                                                    WHEN make_date(year(l_kpv), month(l_kpv), 01) < v_tooleping.algab
+                                                        THEN (day(v_tooleping.algab) - 1)
+                                                    ELSE 0 END -
+                            CASE WHEN l_kpv > v_tooleping.lopp THEN (day(l_kpv) - (day(v_tooleping.lopp) - 1)) ELSE 0 END;
+
+    END IF;
+
+
     IF l_paevad < 0
     THEN
         l_paevad = 0;
@@ -233,6 +245,6 @@ FROM palk.sp_calc_min_sots(1, '{
 }' :: JSON);
 
 /*
-select * from palk.sp_calc_min_sots(1, '{"lepingid":31524}'::JSON);
+select * from palk.sp_calc_min_sots(70, '{"lepingid":36018,"libid":149081,"kpv":20220228}'::JSON)
 
 */

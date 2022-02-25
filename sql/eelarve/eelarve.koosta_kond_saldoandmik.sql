@@ -337,7 +337,7 @@ GRANT EXECUTE ON FUNCTION eelarve.koosta_kond_saldoandmik(INTEGER, DATE) TO dbka
 
 
 /*
-select error_code, result, error_message from eelarve.koosta_kond_saldoandmik(2477,'2021-12-31')
+select error_code, result, error_message from eelarve.koosta_kond_saldoandmik(2477,'2022-01-31')
 */
 
 

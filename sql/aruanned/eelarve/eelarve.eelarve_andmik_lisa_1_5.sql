@@ -1099,32 +1099,19 @@ BEGIN
 
 -- MKD208+MKD258
                      UNION ALL
-                     SELECT '8.11'
-                             ,
-                            1                      AS is_e
-                             ,
-                            $2                     AS rekvid
-                             ,
-                            ''::VARCHAR(20)        AS tegev
-                             ,
-                            ''::VARCHAR(20)        AS allikas
-                             ,
-                            '9100'::VARCHAR(20)    AS artikkel
-                             ,
-                            'sh sildfinantseering' AS nimetus
-                             ,
-                            l_9100                 AS eelarve
-                             ,
-                            l_9100                 AS eelarve_kassa
-                             ,
-                            0                      AS eelarve_taps
-                             ,
-                            0                      AS eelarve_kassa_taps
-                             ,
-                            l_9100                 AS tegelik
-                             ,
-                            l_9100                 AS kassa
-                             ,
+                     SELECT '8.11',
+                            1                      AS is_e ,
+                            $2                     AS rekvid,
+                            ''::VARCHAR(20)        AS tegev,
+                            ''::VARCHAR(20)        AS allikas,
+                            '9100'::VARCHAR(20)    AS artikkel,
+                            'sh sildfinantseering' AS nimetus,
+                            l_9100                 AS eelarve,
+                            l_9100                 AS eelarve_kassa ,
+                            0                      AS eelarve_taps,
+                            0                      AS eelarve_kassa_taps,
+                            l_9100                 AS tegelik,
+                            l_9100                 AS kassa,
                             l_9100                 AS saldoandmik
 -- MKD910090
                      UNION ALL
@@ -1638,8 +1625,8 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2021,09, 30),130, 1) qry
-         where artikkel in ('1512')
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2022,01, 31),28, 0) qry
+         where artikkel in ('9100')
      ) qry
 --test
 -- 12330698.41

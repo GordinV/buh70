@@ -138,8 +138,8 @@ GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid 
 /*
 select * from (
 SELECT *
-FROM eelarve.kond_saldoandmik_aruanne('2021-12-31' :: DATE, 63 :: INTEGER,1, false::boolean)
+FROM eelarve.kond_saldoandmik_aruanne('2022-01-31' :: DATE, 63 :: INTEGER,1, true::boolean)
 ) qry
-where konto like '910029%'
+where konto like '150200%'
 
 */

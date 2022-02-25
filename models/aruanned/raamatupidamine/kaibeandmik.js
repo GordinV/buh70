@@ -30,8 +30,8 @@ module.exports = {
                                 WHEN l.tyyp IN (2, 4)
                                     THEN -1 * (qry.alg_saldo + deebet - kreedit)
                                 ELSE 0 END) :: NUMERIC(14, 2) AS lopp_kr
-                    FROM docs.kaibeandmik($1::DATE, $2::DATE, $3::INTEGER, $4::INTEGER, $5::TEXT) qry
-                             INNER JOIN com_kontoplaan l ON l.kood = qry.konto`,     //  $1 - kpv1, $2 - kpv2, $3 - rekvid (svod), $4 - kond, $5 - TUNNUS
+                    FROM docs.kaibeandmik($1::DATE, $2::DATE, $3::INTEGER, $4::INTEGER, $5::TEXT,  $6::JSONB) qry
+                             INNER JOIN com_kontoplaan l ON l.kood = qry.konto`,     //  $1 - kpv1, $2 - kpv2, $3 - rekvid (svod), $4 - kond, $5 - TUNNUS (устарело), $6 - доп. параметры
         params: '',
         alias: 'kaibeandmik_report'
     }

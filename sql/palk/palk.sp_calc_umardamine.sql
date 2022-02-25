@@ -150,154 +150,159 @@ BEGIN
                   AND po.rekvId = l_rekvid
                   AND po.palk_liik = 'ARVESTUSED'
                   AND po.tululiik = v_tululiik.tululiik
+                  AND po.summa <> 0
                 ORDER BY t.pohikoht DESC, po.summa DESC
                 LIMIT 1;
 
-                --calculate full summa for this tululiik
-                -- Готовим параметры для расчета
+                IF v_leping.lepingId IS NOT NULL
+                THEN
+                    --calculate full summa for this tululiik
+                    -- Готовим параметры для расчета
 
-                SELECT row_to_json(row)
-                INTO l_params
-                FROM (SELECT l_kpv             AS kpv,
-                             v_leping.lepingId AS lepingid,
-                             v_leping.libId    AS libid,
-                             v_tululiik.summa  AS alus_summa,
-                             v_tululiik.mvt    AS mvt,
-                             TRUE              AS umardamine
-                     ) row;
+                    SELECT row_to_json(row)
+                    INTO l_params
+                    FROM (SELECT l_kpv             AS kpv,
+                                 v_leping.lepingId AS lepingid,
+                                 v_leping.libId    AS libid,
+                                 v_tululiik.summa  AS alus_summa,
+                                 v_tululiik.mvt    AS mvt,
+                                 TRUE              AS umardamine
+                         ) row;
 
-                -- вызов процедура расчета
-                SELECT *
-                FROM palk.sp_calc_arv(user_id, l_params)
-                INTO STRICT v_arv;
+                    -- вызов процедура расчета
+                    SELECT *
+                    FROM palk.sp_calc_arv(user_id, l_params)
+                    INTO STRICT v_arv;
 
 
 -- get mvt from taotlus
-                l_mvt_kokku = coalesce((SELECT sum(mvt.summa)
-                                        FROM palk.taotlus_mvt mvt
-                                                 INNER JOIN palk.com_toolepingud t ON t.id = mvt.lepingId
-                                        WHERE t.parentId = l_isikid
-                                          AND mvt.status <> 'deleted'
-                                          AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
-                                          AND alg_kpv <= l_kpv
-                                          AND lopp_kpv >= l_kpv), 0);
+                    l_mvt_kokku = coalesce((SELECT sum(mvt.summa)
+                                            FROM palk.taotlus_mvt mvt
+                                                     INNER JOIN palk.com_toolepingud t ON t.id = mvt.lepingId
+                                            WHERE t.parentId = l_isikid
+                                              AND mvt.status <> 'deleted'
+                                              AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)
+                                              AND alg_kpv <= l_kpv
+                                              AND lopp_kpv >= l_kpv), 0);
 
 
-                -- get fact summa done before
-                SELECT sum(po.tulubaas)                                 AS mvt,
-                       sum(po.summa)
-                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS arv,
-                       sum(po.tulumaks)
-                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tm,
-                       sum(po.sotsmaks)
-                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS sm,
-                       sum(po.tootumaks)
-                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tki,
-                       sum(po.pensmaks)
-                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS pm,
-                       sum(po.tka)
-                       FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tka
+                    -- get fact summa done before
+                    SELECT sum(po.tulubaas)                                 AS mvt,
+                           sum(po.summa)
+                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS arv,
+                           sum(po.tulumaks)
+                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tm,
+                           sum(po.sotsmaks)
+                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS sm,
+                           sum(po.tootumaks)
+                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tki,
+                           sum(po.pensmaks)
+                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS pm,
+                           sum(po.tka)
+                           FILTER (WHERE po.tululiik = v_tululiik.tululiik) AS tka
 
-                INTO v_fakt_arv
-                FROM palk.cur_palkoper po
-                WHERE po.lepingId IN (
-                    SELECT t.id
-                    FROM palk.tooleping t
-                    WHERE t.parentId = l_isikid
-                )
-                  --	and po.kpv = tdKpv
-                  AND po.kpv >= date(year(l_kpv), month(l_kpv), 1)
-                  AND kpv <= ldKpv
-                  AND po.period IS NULL
-                  AND po.rekvId = l_rekvid
-                  AND po.palk_liik = 'ARVESTUSED';
+                    INTO v_fakt_arv
+                    FROM palk.cur_palkoper po
+                    WHERE po.lepingId IN (
+                        SELECT t.id
+                        FROM palk.tooleping t
+                        WHERE t.parentId = l_isikid
+                    )
+                      --	and po.kpv = tdKpv
+                      AND po.kpv >= date(year(l_kpv), month(l_kpv), 1)
+                      AND kpv <= ldKpv
+                      AND po.period IS NULL
+                      AND po.rekvId = l_rekvid
+                      AND po.palk_liik = 'ARVESTUSED';
 
-                IF coalesce(v_arv.tm, 0) = 0 AND coalesce(v_arv.tm_kokku, 0) > 0 AND v_tululiik.tululiik = '10'
-                THEN
-                    -- если налог по виду дохода 0, но общий более нуля
-                    v_arv.tm = v_arv.tm_kokku;
-                END IF;
-
-                -- check if we need to round taxes
-                IF coalesce(v_arv.tm, 0) - round(coalesce(v_fakt_arv.tm, 0), 2) <> 0 OR
-                   (coalesce(v_arv.sm, 0) - round(coalesce(v_fakt_arv.sm, 0), 2)) * v_tululiik.sm_maksustav <> 0 OR
-                   (coalesce(v_arv.tki, 0) - round(coalesce(v_fakt_arv.tki, 0), 2)) * v_tululiik.tk_maksustav <> 0 OR
-                   (coalesce(v_arv.tka, 0) - round(coalesce(v_fakt_arv.tka, 0), 2)) * v_tululiik.tk_maksustav <> 0 OR
-                   (coalesce(v_arv.pm, 0) - round(coalesce(v_fakt_arv.pm, 0), 2)) * v_tululiik.pm_maksustav <> 0 OR
-                   (CASE
-                        WHEN v_tululiik.tululiigi_arv > 1 THEN 0
-                        WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1
-                        ELSE 0 END) * coalesce(v_arv.mvt, 0) -
-                   (CASE
-                        WHEN v_tululiik.tululiigi_arv > 1 THEN 0
-                        WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1
-                        ELSE 0 END) *
-                   round(coalesce(v_fakt_arv.mvt, 0), 2) <> 0
-                THEN
-                    --saving diff
-                    -- will find last arvestus
-
-                    IF l_lepingid IS NULL
+                    IF coalesce(v_arv.tm, 0) = 0 AND coalesce(v_arv.tm_kokku, 0) > 0 AND v_tululiik.tululiik = '10'
                     THEN
-
-                        SELECT libid,
-                               lepingid
-                        INTO l_libId, l_lepingId
-                        FROM palk.cur_palkoper po
-                        WHERE po.lepingid IN (SELECT t.id
-                                              FROM palk.tooleping t
-                                              WHERE t.parentid = l_isikid
-                                                AND t.rekvid = l_rekvid)
-                          AND po.period IS NULL
-                          AND po.kpv = l_kpv
-                          AND po.tululiik = v_tululiik.tululiik :: INTEGER
-                          AND po.summa <> 0
-                        ORDER BY po.id DESC
-                        LIMIT 1;
-                    END IF;
-                    -- если не переданны параметры
-
-                    --готовим параметры для сохранения операции
-                    SELECT NULL :: INTEGER                                              AS id,
-                           l_kpv                                                        AS kpv,
-                           l_lepingid                                                   AS lepingid,
-                           l_libid                                                      AS libid,
-                           0                                                            AS summa,
-                           NULL :: INTEGER                                              AS dokpropid,
-                           coalesce(v_arv.tm - round(v_fakt_arv.tm, 2), 0) :: NUMERIC   AS tulumaks,
-                           coalesce(v_arv.sm - round(v_fakt_arv.sm, 2), 0) *
-                           v_tululiik.sm_maksustav :: NUMERIC                           AS sotsmaks,
-                           coalesce(v_arv.tki - round(v_fakt_arv.tki, 2), 0) *
-                           v_tululiik.tk_maksustav:: NUMERIC                            AS tootumaks,
-                           coalesce(v_arv.tka - round(v_fakt_arv.tka, 2), 0) *
-                           v_tululiik.tk_maksustav :: NUMERIC                           AS tka,
-                           coalesce(v_arv.pm - round(v_fakt_arv.pm, 2), 0) *
-                           v_tululiik.pm_maksustav :: NUMERIC                           AS pensmaks,
-                           (CASE
-                                WHEN v_tululiik.tululiigi_arv > 1 THEN 0
-                                WHEN v_tululiik.tululiik ::INTEGER < 20 THEN 1
-                                ELSE 0 END) *
-                           CASE
-                               WHEN v_tululiik.tululiigi_arv > 1 THEN 0
-                               WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1
-                               ELSE 0 END *
-                           coalesce(v_arv.mvt - round(v_fakt_arv.mvt, 2), 0) :: NUMERIC AS tulubaas,
-                           v_tululiik.tululiik                                          AS tululiik,
-                           'Umardamine' :: TEXT || v_arv.selg                           AS selg
-                    INTO v_palk_oper;
-                    l_save_params = row_to_json(v_palk_oper);
-
-                    IF v_palk_oper.summa <> 0 OR v_palk_oper.tulumaks <> 0 OR v_palk_oper.sotsmaks <> 0 OR
-                       v_palk_oper.tulumaks <> 0
-                        OR v_palk_oper.tootumaks <> 0
-                        OR v_palk_oper.tka <> 0 OR v_palk_oper.pensmaks <> 0 OR v_palk_oper.tulubaas <> 0
-                    THEN
-                        -- save results
-                        l_id = palk.sp_salvesta_palk_oper(('{"data":' || l_save_params || '}') :: JSON, user_id,
-                                                          l_rekvid);
-
+                        -- если налог по виду дохода 0, но общий более нуля
+                        v_arv.tm = v_arv.tm_kokku;
                     END IF;
 
+                    -- check if we need to round taxes
+                    IF coalesce(v_arv.tm, 0) - round(coalesce(v_fakt_arv.tm, 0), 2) <> 0 OR
+                       (coalesce(v_arv.sm, 0) - round(coalesce(v_fakt_arv.sm, 0), 2)) * v_tululiik.sm_maksustav <> 0 OR
+                       (coalesce(v_arv.tki, 0) - round(coalesce(v_fakt_arv.tki, 0), 2)) * v_tululiik.tk_maksustav <>
+                       0 OR
+                       (coalesce(v_arv.tka, 0) - round(coalesce(v_fakt_arv.tka, 0), 2)) * v_tululiik.tk_maksustav <>
+                       0 OR
+                       (coalesce(v_arv.pm, 0) - round(coalesce(v_fakt_arv.pm, 0), 2)) * v_tululiik.pm_maksustav <> 0 OR
+                       (CASE
+                            WHEN v_tululiik.tululiigi_arv > 1 THEN 0
+                            WHEN (v_tululiik.tululiik::INTEGER < 20 OR v_tululiik.tululiik = '24') THEN 1
+                            ELSE 0 END) * coalesce(v_arv.mvt, 0) -
+                       (CASE
+                            WHEN v_tululiik.tululiigi_arv > 1 THEN 0
+                            WHEN (v_tululiik.tululiik::INTEGER < 20 OR v_tululiik.tululiik = '24') THEN 1
+                            ELSE 0 END) *
+                       round(coalesce(v_fakt_arv.mvt, 0), 2) <> 0
+                    THEN
+                        --saving diff
+                        -- will find last arvestus
+
+                        IF l_lepingid IS NULL
+                        THEN
+
+                            SELECT libid,
+                                   lepingid
+                            INTO l_libId, l_lepingId
+                            FROM palk.cur_palkoper po
+                            WHERE po.lepingid IN (SELECT t.id
+                                                  FROM palk.tooleping t
+                                                  WHERE t.parentid = l_isikid
+                                                    AND t.rekvid = l_rekvid)
+                              AND po.period IS NULL
+                              AND po.kpv = l_kpv
+                              AND po.tululiik = v_tululiik.tululiik :: INTEGER
+                              AND po.summa <> 0
+                            ORDER BY po.id DESC
+                            LIMIT 1;
+                        END IF;
+                        -- если не переданны параметры
+
+                        --готовим параметры для сохранения операции
+                        SELECT NULL :: INTEGER                                              AS id,
+                               l_kpv                                                        AS kpv,
+                               l_lepingid                                                   AS lepingid,
+                               l_libid                                                      AS libid,
+                               0                                                            AS summa,
+                               NULL :: INTEGER                                              AS dokpropid,
+                               coalesce(v_arv.tm - round(v_fakt_arv.tm, 2), 0) :: NUMERIC   AS tulumaks,
+                               coalesce(v_arv.sm - round(v_fakt_arv.sm, 2), 0) *
+                               v_tululiik.sm_maksustav :: NUMERIC                           AS sotsmaks,
+                               coalesce(v_arv.tki - round(v_fakt_arv.tki, 2), 0) *
+                               v_tululiik.tk_maksustav:: NUMERIC                            AS tootumaks,
+                               coalesce(v_arv.tka - round(v_fakt_arv.tka, 2), 0) *
+                               v_tululiik.tk_maksustav :: NUMERIC                           AS tka,
+                               coalesce(v_arv.pm - round(v_fakt_arv.pm, 2), 0) *
+                               v_tululiik.pm_maksustav :: NUMERIC                           AS pensmaks,
+                               (CASE
+                                    WHEN v_tululiik.tululiigi_arv > 1 THEN 0
+                                    WHEN v_tululiik.tululiik ::INTEGER < 20 THEN 1
+                                    ELSE 0 END) *
+                               CASE
+                                   WHEN v_tululiik.tululiigi_arv > 1 THEN 0
+                                   WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1
+                                   ELSE 0 END *
+                               coalesce(v_arv.mvt - round(v_fakt_arv.mvt, 2), 0) :: NUMERIC AS tulubaas,
+                               v_tululiik.tululiik                                          AS tululiik,
+                               'Umardamine' :: TEXT || v_arv.selg                           AS selg
+                        INTO v_palk_oper;
+                        l_save_params = row_to_json(v_palk_oper);
+
+                        IF v_palk_oper.summa <> 0 OR v_palk_oper.tulumaks <> 0 OR v_palk_oper.sotsmaks <> 0 OR
+                           v_palk_oper.tulumaks <> 0
+                            OR v_palk_oper.tootumaks <> 0
+                            OR v_palk_oper.tka <> 0 OR v_palk_oper.pensmaks <> 0 OR v_palk_oper.tulubaas <> 0
+                        THEN
+                            -- save results
+                            l_id = palk.sp_salvesta_palk_oper(('{"data":' || l_save_params || '}') :: JSON, user_id,
+                                                              l_rekvid);
+
+                        END IF;
+                    END IF;
 
                 END IF;
 

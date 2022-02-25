@@ -47,7 +47,7 @@ CREATE FOREIGN TABLE remote_saldoandmik_2019 (
 
 --DELETE from eelarve.saldoandmik;
 DELETE from eelarve.saldoandmik
-where aasta = 2019 and kuu = 12;
+where aasta = 2020 and kuu = 12;
 
 -- 2019
 INSERT INTO eelarve.saldoandmik (rekvid, nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, omatp, tyyp, kuu)
@@ -67,7 +67,7 @@ SELECT
   tyyp,
   kuu
 FROM remote_saldoandmik_2019
-where aasta = 2019 and kuu = 12
+where aasta = 2020 and kuu = 12
 ;
 
 INSERT INTO eelarve.saldoandmik (rekvid, nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, omatp, tyyp, kuu)

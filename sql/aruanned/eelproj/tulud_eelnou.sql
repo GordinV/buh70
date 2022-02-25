@@ -117,6 +117,7 @@ BEGIN
                                                 ELSE l_rekvid END)
                             AND d.rekvid IN (SELECT r.rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid) r)
+                            and d.rekvid <>9 -- убрать внутренее учреждение культуры для элиминирования                            
                             AND d.status <> 3
                           UNION ALL
                           SELECT 2,
@@ -149,6 +150,8 @@ BEGIN
                                                 ELSE l_rekvid END)
                             AND d.rekvid IN (SELECT r.rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid) r)
+                            and d.rekvid <>9 -- убрать внутренее учреждение культуры для элиминирования
+                            
                             AND d.status <> 3
                       ) s
 
@@ -198,6 +201,8 @@ BEGIN
                                                 ELSE l_rekvid END)
                             AND d.rekvid IN (SELECT r.rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid) r)
+                            and d.rekvid <>9 -- убрать внутренее учреждение культуры для элиминирования
+                            
                             AND d.status <> 3
                           UNION ALL
                           SELECT 2,
@@ -231,6 +236,8 @@ BEGIN
                                                 ELSE l_rekvid END)
                             AND d.rekvid IN (SELECT r.rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid) r)
+                            and d.rekvid <>9 -- убрать внутренее учреждение культуры для элиминирования
+                            
                             AND d.status <> 3
                       ) s
 

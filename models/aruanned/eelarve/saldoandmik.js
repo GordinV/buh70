@@ -41,7 +41,8 @@ module.exports = {
                                               FROM get_asutuse_struktuur($2::INTEGER))
                              AND d.rekvid = CASE WHEN $3::INTEGER IS NULL THEN $2::INTEGER ELSE d.rekvid END
                              AND j.kpv <= $1::DATE
-                             AND coalesce(j1.tunnus, '') ILIKE $4::TEXT
+                             AND (($4::jsonb ->> 'tunnus') IS NULL OR coalesce(j1.tunnus, '') ILIKE coalesce(($4::jsonb ->> 'tunnus'), '') || '%')
+                             AND (($4::jsonb ->> 'proj') IS NULL OR coalesce(j1.proj, '') ILIKE coalesce(($4::jsonb ->> 'proj'), '') || '%')                             
                              AND d.status <> 3
                            GROUP BY coalesce(a.kpv, j.kpv), j.kpv, j.rekvid, j1.deebet, j1.lisa_d, j1.kood1, j1.kood2,j1.kood3
                            UNION ALL
@@ -69,7 +70,8 @@ module.exports = {
                                               FROM get_asutuse_struktuur($2::INTEGER))
                              AND d.rekvid = CASE WHEN $3::INTEGER IS NULL THEN $2::INTEGER ELSE d.rekvid END
                              AND j.kpv <= $1::DATE
-                             AND coalesce(j1.tunnus, '') ILIKE $4::TEXT
+                             AND (($4::jsonb ->> 'tunnus') IS NULL OR coalesce(j1.tunnus, '') ILIKE coalesce(($4::jsonb ->> 'tunnus'), '') || '%')
+                             AND (($4::jsonb ->> 'proj') IS NULL OR coalesce(j1.proj, '') ILIKE coalesce(($4::jsonb ->> 'proj'), '') || '%')
                              AND d.status <> 3
                            GROUP BY coalesce(a.kpv, j.kpv), j.kpv, j.rekvid, j1.kreedit, j1.lisa_k, j1.kood1, j1.kood2, j1.kood3
                        ),
@@ -103,7 +105,7 @@ module.exports = {
                                 SELECT qry.rekvid                  AS rekv_id,
                                        left(konto, 6)::TEXT        AS konto,
                                        (CASE
-                                            WHEN l.is_tp AND (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(qry.rahavoog)) = '01')
+                                            WHEN l.is_tp AND (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(qry.rahavoog)) in ('01','00','21','17'))
                                                 THEN tp                                           
                                             WHEN l.is_tp
                                                 THEN tp
@@ -144,7 +146,7 @@ module.exports = {
                                 SELECT rekvid                      AS rekv_id,
                                        left(konto, 6)::TEXT        AS konto,
                                        (CASE
-                                            WHEN is_tp
+                                            WHEN is_tp AND (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(qry.rahavoog)) in ('01','00','21','17'))
                                                 THEN tp
                                             ELSE '' END)::CHAR(20) AS tp,
                                        (CASE

@@ -61,7 +61,7 @@ BEGIN
                t.algab,
                t.lopp,
                t.parentid
-               INTO v_tooleping
+        INTO v_tooleping
         FROM palk.tooleping t
         WHERE t.id = l_lepingid;
 
@@ -72,7 +72,7 @@ BEGIN
                coalesce(pc.minpalk, 0) AS minpalk,
                l.round
                --    INTO v_palk_kaart
-               INTO l_pk_summa, is_percent, l_min_sots, l_min_palk, l_round
+        INTO l_pk_summa, is_percent, l_min_sots, l_min_palk, l_round
         FROM palk.palk_kaart pk
                  LEFT OUTER JOIN palk.palk_config pc ON pc.rekvid = v_tooleping.rekvid
                  INNER JOIN palk.com_palk_lib l ON pk.libid = l.id
@@ -86,10 +86,10 @@ BEGIN
             -- kontrollime enne arvestatud sotsmaks
 
             SELECT sum(po.summa)
-                       FILTER ( WHERE po.palk_liik :: TEXT = 'SOTSMAKS' AND (po.sotsmaks IS NULL OR po.sotsmaks = 0)),
+                   FILTER ( WHERE po.palk_liik :: TEXT = 'SOTSMAKS' AND (po.sotsmaks IS NULL OR po.sotsmaks = 0)),
                    sum(po.summa) FILTER ( WHERE po.palk_liik :: TEXT = 'ARVESTUSED' AND po.is_sotsmaks AND
                                                 right(rtrim(po.konto), 2) NOT IN ('21', '23', '24', '25'))
-                   INTO l_enne_arvestatud_sotsmaks, l_min_sotsmaks_alus
+            INTO l_enne_arvestatud_sotsmaks, l_min_sotsmaks_alus
             FROM palk.cur_palkoper po
             WHERE year(po.kpv) = year(l_kpv)
               AND month(po.kpv) = month(l_kpv)
@@ -103,10 +103,11 @@ BEGIN
 
             -- отсутствие на раб.месте
             -- params
-            SELECT row_to_json(row) INTO l_params
+            SELECT row_to_json(row)
+            INTO l_params
             FROM (SELECT month(l_kpv) AS kuu,
                          year(l_kpv)  AS aasta,
-                         true as kas_kalendripaevad,
+                         TRUE         AS kas_kalendripaevad,
                          TRUE         AS puudumised,
                          l_lepingid   AS lepingid) row;
 
@@ -140,13 +141,34 @@ BEGIN
                 l_paevad_periodis = 30;
             END IF;
 
-            IF NOT empty(l_min_sots) AND NOT empty(l_min_palk) AND
-               (coalesce(l_min_sotsmaks_alus,0) * l_pk_summa * 0.01) <
-               (l_min_palk * l_min_sots * l_pk_summa * 0.01) --arvetsame sotsmaks min.palgast
+-- если не полный раб. месяц
+            IF make_date(year(l_kpv), month(l_kpv), 01) < v_tooleping.algab OR
+               l_kpv > coalesce(v_tooleping.lopp, l_kpv)
+            THEN
+
+                l_paevad_periodis = l_paevad_periodis - l_puudu_paevad - CASE
+                                                                             WHEN make_date(year(l_kpv), month(l_kpv), 01) < v_tooleping.algab
+                                                                                 THEN (day(v_tooleping.algab) + 1)
+                                                                             ELSE 0 END -
+                                    CASE
+                                        WHEN l_kpv > v_tooleping.lopp THEN (day(l_kpv) - (day(v_tooleping.lopp) - 1))
+                                        ELSE 0 END;
+
+            END IF;
+
+            raise notice 'l_paevad_periodis %, l_puudu_paevad %,  (day(v_tooleping.algab) + 1) %',l_paevad_periodis, l_puudu_paevad, (day(v_tooleping.algab) + 1);
+
+
+            IF NOT empty(l_min_sots) OR NOT empty(l_min_palk) AND
+                                        (coalesce(l_min_sotsmaks_alus, 0) * l_pk_summa * 0.01) <
+                                        (l_min_palk * l_min_sots * l_pk_summa * 0.01) --arvetsame sotsmaks min.palgast
             THEN
 
                 -- 584* 0.33 с поправкой на дни
-                IF coalesce(l_puudu_paevad, 0) > 0
+                IF (coalesce(l_puudu_paevad, 0) > 0 OR make_date(year(l_kpv), month(l_kpv), 01) < v_tooleping.algab OR
+                    l_kpv > coalesce(v_tooleping.lopp, l_kpv)) AND NOT empty(l_min_palk) AND
+                   (coalesce(l_min_sotsmaks_alus, 0) * l_pk_summa * 0.01) <
+                   (l_min_palk * l_min_sots * l_pk_summa * 0.01)
                 THEN
                     l_sotsmaks_min_palgast = ((l_min_palk * l_min_sots * l_pk_summa * 0.01) / 30 * (l_paevad_periodis));
                 ELSE
@@ -165,8 +187,6 @@ BEGIN
                 l_sotsmaks_min_palgast = (l_min_palk * l_min_sots * l_pk_summa * 0.01);
             END IF;
 
-
-            raise notice 'l_sotsmaks_min_palgast > l_enne_arvestatud_sotsmaks %, %',l_sotsmaks_min_palgast, l_enne_arvestatud_sotsmaks;
             IF l_sotsmaks_min_palgast > coalesce(l_enne_arvestatud_sotsmaks, 0)
             THEN
 
@@ -174,14 +194,15 @@ BEGIN
                 summa = l_sotsmaks_min_palgast - coalesce(l_enne_arvestatud_sotsmaks, 0);
                 -- основа начисления соц. налога
 
-                IF coalesce(l_puudu_paevad, 0) > 0
-                THEN
-                    sm = f_round(l_min_palk / 30 * coalesce(l_paevad_periodis, 30) - coalesce(l_min_sotsmaks_alus,0), l_round);
-                ELSE
-                    sm = f_round(l_min_palk - coalesce(l_min_sotsmaks_alus,0), l_round);
-                END IF;
+                IF coalesce(l_puudu_paevad, 0) > 0 OR make_date(year(l_kpv), month(l_kpv), 01) < v_tooleping.algab OR
+                   l_kpv > coalesce(v_tooleping.lopp, l_kpv)
 
-                raise notice 'l_min_palk %, l_puudu_paevad %, l_sotsmaks_min_palgast %, l_enne_arvestatud_sotsmaks %',l_min_palk, l_puudu_paevad, l_sotsmaks_min_palgast, l_enne_arvestatud_sotsmaks;
+                THEN
+                    sm = f_round(l_min_palk / 30 * coalesce(l_paevad_periodis, 30) - coalesce(l_min_sotsmaks_alus, 0),
+                                 l_round);
+                ELSE
+                    sm = f_round(l_min_palk - coalesce(l_min_sotsmaks_alus, 0), l_round);
+                END IF;
 
                 selg = 'lisa SM (' + l_min_palk::TEXT + '/30 * ' ||
                        coalesce(l_paevad_periodis, 30)::TEXT || '-' + coalesce(l_min_sotsmaks_alus, 0)::TEXT +
@@ -199,7 +220,7 @@ BEGIN
             -- обычный соц. налог
             SELECT sum(po.sotsmaks) AS sotsmaks,
                    sum(po.summa)
-                   INTO summa, l_alus_summa
+            INTO summa, l_alus_summa
             FROM palk.cur_palkoper po
                      INNER JOIN libs.library l ON l.id = po.libid
             WHERE po.kpv = l_kpv
@@ -250,8 +271,7 @@ FROM palk.sp_calc_sots_(70, '        {
   "kas_min_sots": true
 }'::JSON)
 
-
-select * from palk.sp_calc_sots(70, '{"lepingid":34860,"libid":149081,"kpv":20210331}'::JSON)
+select * from palk.sp_calc_sots(70, '{"lepingid":36018,"libid":149081,"kpv":20220228,"kas_min_sots":true}'::JSON)
 
 
  */

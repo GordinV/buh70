@@ -415,30 +415,35 @@ WITH cur_kulude_kassa_taitmine AS (
                    GROUP BY rekvid
      )
 SELECT *
-FROM preReport
-UNION ALL
+FROM (
+         SELECT *
+         FROM preReport
+         UNION ALL
 -- kond
-SELECT 999999,
-       sum(eelarve_kinni)            AS eelarve_kinni,
-       sum(eelarve_parandatud)       AS eelarve_parandatud,
-       sum(eelarve_kassa_kinni)      AS eelarve_kassa_kinni,
-       SUM(eelarve_kassa_parandatud) AS eelarve_kassa_parandatud,
-       sum(tegelik)                  AS tegelik,
-       sum(kassa)                    AS kassa,
-       tegev,
-       allikas,
-       artikkel,
-       rahavoog,
-       tunnus,
-       idx
-FROM preReport
-WHERE l_kond > 0
-GROUP BY tegev,
-         allikas,
-         artikkel,
-         rahavoog,
-         tunnus,
-         idx
+         SELECT 999999,
+                sum(eelarve_kinni)            AS eelarve_kinni,
+                sum(eelarve_parandatud)       AS eelarve_parandatud,
+                sum(eelarve_kassa_kinni)      AS eelarve_kassa_kinni,
+                SUM(eelarve_kassa_parandatud) AS eelarve_kassa_parandatud,
+                sum(tegelik)                  AS tegelik,
+                sum(kassa)                    AS kassa,
+                tegev,
+                allikas,
+                artikkel,
+                rahavoog,
+                tunnus,
+                idx
+         FROM preReport
+         WHERE l_kond > 0
+         GROUP BY tegev,
+                  allikas,
+                  artikkel,
+                  rahavoog,
+                  tunnus,
+                  idx
+     ) qry
+WHERE (eelarve_kinni <> 0 OR eelarve_parandatud <> 0 OR eelarve_kassa_kinni <> 0 OR
+       eelarve_kassa_parandatud <> 0 OR tegelik <> 0 OR kassa <> 0)
 
 $BODY$
     LANGUAGE SQL

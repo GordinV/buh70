@@ -101,7 +101,10 @@ WITH qrySaldoAndmik AS (
          SELECT qry.rekvid                  AS rekv_id,
                 left(konto, 6)::TEXT        AS konto,
                 (CASE
-                     WHEN l.is_tp AND (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(qry.rahavoog)) = '01')
+                     WHEN is_tp AND left(konto, 6) IN ('150200', '150210', '150020') AND
+                          ltrim(rtrim(coalesce(qry.rahavoog, ''))) IN ('01', '00', '17', '21') THEN tp
+                     WHEN l.is_tp AND
+                          (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(coalesce(qry.rahavoog, ''))) = '01')
                          THEN tp
                      ELSE '' END)::CHAR(20) AS tp,
                 (CASE
@@ -139,8 +142,16 @@ WITH qrySaldoAndmik AS (
          -- kaibed
          SELECT rekvid                      AS rekv_id,
                 left(konto, 6)::TEXT        AS konto,
+                -- 150200 00,21,17
+                --
+                -- 150210
+                --
+                -- 150020
                 (CASE
-                     WHEN is_tp AND (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(qry.rahavoog)) = '01')
+                     WHEN is_tp AND left(konto, 6) IN ('150200', '150210', '150020') AND
+                          ltrim(rtrim(coalesce(qry.rahavoog, ''))) IN ('01', '00', '17', '21') THEN tp
+                     WHEN l.is_tp AND (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR
+                                       ltrim(rtrim(coalesce(qry.rahavoog, ''))) = ('01'))
                          THEN tp
                      ELSE '' END)::CHAR(20) AS tp,
                 (CASE
@@ -207,7 +218,7 @@ SELECT rekv_id,
        tyyp::INTEGER AS tyyp
 FROM report tmp
 WHERE (deebet <> 0
-   OR kreedit <> 0)
+    OR kreedit <> 0)
 GROUP BY rekv_id
         , konto
         , tp
@@ -231,8 +242,8 @@ GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TE
 /*
 explain
 SELECT *
-FROM eelarve.saldoandmik_aruanne('2022-01-31' :: DATE, 119 :: INTEGER, 1 ::integer, '%')
-WHERE konto like '155000%'
+FROM eelarve.saldoandmik_aruanne('2022-01-31' :: DATE, 28 :: INTEGER, 0 ::integer, '%')
+WHERE konto in ('150200','150210','150020') or konto like '155%'
 and rahavoog = '01'
 --GROUP BY konto, tp
 */

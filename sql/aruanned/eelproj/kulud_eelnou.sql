@@ -118,6 +118,7 @@ BEGIN
                                                 ELSE l_rekvid END)
                             AND d.rekvid IN (SELECT r.rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid) r)
+                            and d.rekvid <>9 -- убрать внутренее учреждение культуры для элиминирования
                             AND j1.kood2 NOT ILIKE ('%RF%')
                             AND (l_allikas IS NULL OR j1.kood2 ILIKE '%' || l_allikas || '%')
                             AND d.status <> 3
@@ -154,6 +155,8 @@ BEGIN
                                                 ELSE l_rekvid END)
                             AND d.rekvid IN (SELECT r.rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid) r)
+                            and d.rekvid <>9 -- убрать внутренее учреждение культуры для элиминирования
+
                             AND j1.kood2 NOT ILIKE ('%RF%')
                             AND (l_allikas IS NULL OR j1.kood2 ILIKE '%' || l_allikas || '%')
                             AND d.status <> 3
@@ -200,6 +203,8 @@ BEGIN
                                                 ELSE l_rekvid END)
                             AND d.rekvid IN (SELECT r.rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid) r)
+                            and d.rekvid <>9 -- убрать внутренее учреждение культуры для элиминирования
+
                             AND j1.kood2 NOT ILIKE ('%RF%')
                             AND (l_allikas IS NULL OR j1.kood2 ILIKE '%' || l_allikas || '%')
                             AND d.status <> 3
@@ -230,6 +235,7 @@ BEGIN
                                                 ELSE l_rekvid END)
                             AND d.rekvid IN (SELECT r.rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid) r)
+                            and d.rekvid <>9 -- убрать внутренее учреждение культуры для элиминирования
                             AND j1.kood2 NOT ILIKE ('%RF%')
                             AND (l_allikas IS NULL OR j1.kood2 ILIKE '%' || l_allikas || '%')
                             AND d.status <> 3
@@ -616,7 +622,7 @@ GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO 
 
 /*
 SELECT *
-FROM eelarve.kulud_eelnou('2021-12-31'::DATE, 63:: INTEGER, 1)
+FROM eelarve.kulud_eelnou('2021-12-31'::DATE, 119:: INTEGER, 1)
 where tegev like '08%'
 
 */--where idx = 100
