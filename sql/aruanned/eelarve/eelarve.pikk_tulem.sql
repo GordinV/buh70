@@ -27,7 +27,7 @@ WITH qrySaldo AS (
                             THEN 999
                         ELSE l_rekvid END)
       AND s.rekvid IN (SELECT rekv_id
-                       FROM get_asutuse_struktuur(l_rekvid)
+                       FROM get_asutuse_struktuur(l_rekvid, l_kpv)
                        UNION ALL
                        SELECT CASE
                                   WHEN l_kond = 1 AND l_rekvid <> 63
@@ -1826,7 +1826,7 @@ SELECT sum(summa),
        konto,
        nimetus,
        idx
-FROM eelarve.pikk_tulem('2020-12-31' :: DATE, 63, 1)
+FROM eelarve.pikk_tulem('2020-12-31' :: DATE, 119, 1)
 GROUP BY konto, nimetus, idx
 ORDER BY konto, idx
 

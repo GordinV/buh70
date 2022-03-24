@@ -568,7 +568,8 @@ exports.sendPrintForm = async (req, res) => {
 
     }, async (err, info) => {
         if (err) {
-            return reject(err);
+            console.error('transporter.sendMail error', err)
+//            return reject(err);
         } else {
             result++;
             if (filePDF) {

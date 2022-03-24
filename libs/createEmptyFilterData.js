@@ -1,5 +1,5 @@
 const DocContext = require('./../frontend/doc-context');
-
+const getDefaultDates = require('./getDefaultDate');
 
 /**
  * создаст массив для создания фильтра
@@ -29,7 +29,8 @@ function createEmptyFilterData(gridConfig, filterData, docTypeId) {
 
     });
 
-    DocContext.filter[docTypeId] = filterData;
+
+    DocContext.setFilter = filterData;
     return filterData;
 }
 

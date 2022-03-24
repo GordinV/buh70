@@ -79,12 +79,6 @@ const EelProj = {
             name: 'rekvid',
             type: 'I',
         },
-        {
-            name: 'kinnitaja',
-            type: 'I',
-        }
-
-
     ],
     executeCommand: {
         command: `select error_code, result, error_message from sp_execute_task($1::integer, $2::JSON, $3::TEXT )`, //$1- userId, $2 - params, $3 - task

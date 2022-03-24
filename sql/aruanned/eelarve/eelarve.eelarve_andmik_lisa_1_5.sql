@@ -1020,7 +1020,7 @@ BEGIN
                                                              THEN j.rekvid
                                                          ELSE l_rekvid END)
                                      AND j.rekvid IN (SELECT rekv_id
-                                                      FROM get_asutuse_struktuur(l_rekvid))
+                                                      FROM get_asutuse_struktuur(l_rekvid, l_kpv))
                                      AND (j.kreedit LIKE '100%' OR j.kreedit LIKE '999%')
                                      AND j.kood5 = '2586'
                                      AND year(kpv) = year(l_kpv)
@@ -1625,8 +1625,8 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2022,01, 31),28, 0) qry
-         where artikkel in ('9100')
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2022,03, 31),63, 1) qry
+         where tegev like '01800%'
      ) qry
 --test
 -- 12330698.41

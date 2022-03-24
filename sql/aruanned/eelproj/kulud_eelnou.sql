@@ -309,7 +309,7 @@ BEGIN
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
-                   AND t.status = 2
+                   AND t.status IN (2, 3)
                    AND rekvid = (CASE
                                      WHEN $3 = 1
                                          THEN rekvid
@@ -622,7 +622,7 @@ GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO 
 
 /*
 SELECT *
-FROM eelarve.kulud_eelnou('2021-12-31'::DATE, 119:: INTEGER, 1)
+FROM eelarve.kulud_eelnou('2021-12-31'::DATE, 63:: INTEGER, 1)
 where tegev like '08%'
 
 */--where idx = 100

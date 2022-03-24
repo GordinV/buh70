@@ -5,7 +5,7 @@ DROP FUNCTION IF EXISTS docs.kaibeandmik(DATE, DATE, INTEGER, INTEGER, TEXT, JSO
 
 
 CREATE OR REPLACE FUNCTION docs.kaibeandmik(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER DEFAULT 0,
-                                             l_tunnus TEXT DEFAULT '%', l_params JSONB DEFAULT NULL::JSONB)
+                                            l_tunnus TEXT DEFAULT '%', l_params JSONB DEFAULT NULL::JSONB)
     RETURNS TABLE (
         alg_saldo NUMERIC(14, 2),
         deebet    NUMERIC(14, 2),
@@ -32,16 +32,22 @@ WITH algsaldo AS (
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
                AND (d.rekvid = l_rekvid OR l_kond = 1)
-               AND ((l_params ->> 'tunnus') IS NULL OR coalesce(j1.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
-               AND ((l_params ->> 'konto') IS NULL OR coalesce(j1.deebet, '') ILIKE coalesce((l_params ->> 'konto'), '') || '%')
-               AND ((l_params ->> 'proj') IS NULL OR coalesce(j1.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
-               AND ((l_params ->> 'uritus') IS NULL OR coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
+               AND ((l_params ->> 'konto') IS NULL OR
+                    coalesce(j1.deebet, '') LIKE coalesce((l_params ->> 'konto'), '') || '%')
+               AND (((CASE WHEN left(j1.deebet, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+                     'tunnus') IS NULL OR
+                    COALESCE(j1.tunnus, '') ILIKE COALESCE((l_params ->> 'tunnus'), '') || '%')
+               AND (((CASE WHEN left(j1.deebet, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+                     'proj') IS NULL OR
+                    COALESCE(j1.proj, '') ILIKE COALESCE((l_params ->> 'proj'), '') || '%')
+               AND (((CASE WHEN left(j1.deebet, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+                     'uritus') IS NULL OR
+                    COALESCE(j1.kood4, '') ILIKE COALESCE((l_params ->> 'uritus'), '') || '%')
                AND d.status <> 3
-               AND coalesce(j1.tunnus, '') ILIKE coalesce(l_tunnus, '%')
              UNION ALL
-             SELECT d.rekvid ,
+             SELECT d.rekvid,
                     0 :: NUMERIC                  AS deebet,
-                    (j1.summa)                    AS kreedit ,
+                    (j1.summa)                    AS kreedit,
                     trim(j1.kreedit)::VARCHAR(20) AS konto
              FROM docs.doc d
                       INNER JOIN docs.journal j ON j.parentid = d.id
@@ -52,11 +58,19 @@ WITH algsaldo AS (
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
                AND (d.rekvid = l_rekvid OR l_kond = 1)
-               AND coalesce(j1.tunnus, '') ILIKE coalesce(l_tunnus, '%')
-               AND ((l_params ->> 'tunnus') IS NULL OR coalesce(j1.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
-               AND ((l_params ->> 'konto') IS NULL OR coalesce(j1.kreedit, '') ILIKE coalesce((l_params ->> 'konto'), '') || '%')
-               AND ((l_params ->> 'proj') IS NULL OR coalesce(j1.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
-               AND ((l_params ->> 'uritus') IS NULL OR coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
+               AND ((l_params ->> 'konto') IS NULL OR
+                    coalesce(j1.kreedit, '') LIKE coalesce((l_params ->> 'konto'), '') || '%')
+               AND (((CASE WHEN left(j1.kreedit, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+                     'tunnus') IS NULL OR
+                    COALESCE(j1.tunnus, '') ILIKE COALESCE((l_params ->> 'tunnus'), '') || '%')
+               AND (((CASE WHEN left(j1.kreedit, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+                     'proj') IS NULL OR
+                    left(j1.kreedit, 1) IN ('1', '2') OR
+                    coalesce(j1.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
+               AND (((CASE WHEN left(j1.kreedit, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+                     'uritus') IS NULL OR
+                    left(j1.kreedit, 1) IN ('1', '2') OR
+                    coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
 
                AND d.status <> 3
          ) qry
@@ -92,10 +106,13 @@ FROM (
            AND (d.rekvid = l_rekvid OR l_kond = 1)
            AND d.status <> 3
            AND coalesce(j1.tunnus, '') ILIKE coalesce(l_tunnus, '%')
-           AND (l_params ->> 'tunnus' IS NULL OR coalesce(j1.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
-           AND (l_params ->> 'konto' IS NULL OR coalesce(j1.deebet, '') ILIKE coalesce((l_params ->> 'konto'), '') || '%')
+           AND (l_params ->> 'tunnus' IS NULL OR
+                coalesce(j1.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
+           AND (l_params ->> 'konto' IS NULL OR
+                coalesce(j1.deebet, '') LIKE coalesce((l_params ->> 'konto'), '') || '%')
            AND ((l_params ->> 'proj') IS NULL OR coalesce(j1.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
-           AND ((l_params ->> 'uritus') IS NULL OR coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
+           AND ((l_params ->> 'uritus') IS NULL OR
+                coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
 
          UNION ALL
          SELECT d.rekvid,
@@ -115,11 +132,13 @@ FROM (
            AND (d.rekvid = l_rekvid OR l_kond = 1)
            AND d.status <> 3
            AND coalesce(j1.tunnus, '') ILIKE coalesce(l_tunnus, '%')
-           AND (l_params ->> 'tunnus' IS NULL OR coalesce(j1.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
-           AND (l_params ->> 'konto' IS NULL OR coalesce(j1.kreedit, '') ILIKE coalesce((l_params ->> 'konto'), '') || '%')
+           AND (l_params ->> 'tunnus' IS NULL OR
+                coalesce(j1.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus'), '') || '%')
+           AND (l_params ->> 'konto' IS NULL OR
+                coalesce(j1.kreedit, '') LIKE coalesce((l_params ->> 'konto'), '') || '%')
            AND ((l_params ->> 'proj') IS NULL OR coalesce(j1.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
-           AND ((l_params ->> 'uritus') IS NULL OR coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
-
+           AND ((l_params ->> 'uritus') IS NULL OR
+                coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
      ) qry
 WHERE NOT empty(qry.konto)
   AND left(konto, 2) NOT IN ('90', '91', '92', '93', '94', '95', '96', '97', '98')
@@ -140,7 +159,7 @@ GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER,INTEGER, TEXT, J
 /*
 select * from (
 select *
-FROM docs.kaibeandmik_('2022-02-01', current_date :: DATE, 63,0,null,'{"konto":"10010007"}'::jsonb)
+FROM docs.kaibeandmik_('2022-01-01', current_date :: DATE, 28,0,null,'{"konto":"103100","tunnus":"12"}'::jsonb)
 ) qry
 where konto like '10010007%'
 

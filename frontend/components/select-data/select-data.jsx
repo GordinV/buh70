@@ -250,7 +250,7 @@ class SelectData extends React.PureComponent {
 
         sqlWhere = `where ${sqlWhere}`;
 
-        let libParams = Object.assign({uuid: DocContext.userData.uuid}, sqlWhere.length ? {
+        let libParams = Object.assign({uuid: DocContext.getUuid}, sqlWhere.length ? {
             sql: sqlWhere,
             limit: limit,
             kpv: kpv ? kpv: new Date().toISOString().slice(0,10)
@@ -292,13 +292,13 @@ class SelectData extends React.PureComponent {
         let docId = this.state.gridData[activeRow]['id'];
         switch (btnName) {
             case "Muuda":
-                this.props.history.push(`/${DocContext.module}/${this.props.libName}/${docId}`);
+                this.props.history.push(`/${DocContext.getModule}/${this.props.libName}/${docId}`);
                 break;
             case "edit":
-                this.props.history.push(`/${DocContext.module}/${this.props.libName}/${docId}`);
+                this.props.history.push(`/${DocContext.getModule}/${this.props.libName}/${docId}`);
                 break;
             case "add":
-                this.props.history.push(`/${DocContext.module}/${this.props.libName}/0`);
+                this.props.history.push(`/${DocContext.getModule}/${this.props.libName}/0`);
                 break;
             default:
                 console.log('Vigane click');

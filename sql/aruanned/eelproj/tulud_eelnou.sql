@@ -1395,7 +1395,7 @@ BEGIN
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
-                   AND t.status = 2
+                   AND t.status in (2,3)
                    AND rekvid = (CASE
                                      WHEN $3 = 1
                                          THEN rekvid

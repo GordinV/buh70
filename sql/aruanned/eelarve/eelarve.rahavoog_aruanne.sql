@@ -26,7 +26,7 @@ WITH qrySaldoAndmik AS (
                             THEN 999
                         ELSE l_rekvid END)
       AND s.rekvid IN (SELECT rekv_id
-                       FROM get_asutuse_struktuur(l_rekvid)
+                       FROM get_asutuse_struktuur(l_rekvid, l_kpv)
                        UNION ALL
                        SELECT CASE
                                   WHEN l_kond = 1 AND l_rekvid <> 63
@@ -48,7 +48,7 @@ WITH qrySaldoAndmik AS (
                                  THEN 999
                              ELSE l_rekvid END)
            AND s.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid)
+                            FROM get_asutuse_struktuur(l_rekvid, make_date(year(l_kpv)-1,12,31))
                             UNION ALL
                             SELECT CASE
                                        WHEN l_kond = 1 AND l_rekvid <> 63
@@ -70,7 +70,7 @@ WITH qrySaldoAndmik AS (
                                  THEN 999
                              ELSE l_rekvid END)
            AND s.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid)
+                            FROM get_asutuse_struktuur(l_rekvid, make_date(year(l_kpv)-2,12,31))
                             UNION ALL
                             SELECT CASE
                                        WHEN l_kond = 1 AND l_rekvid <> 63
@@ -516,7 +516,7 @@ WITH qrySaldoAndmik AS (
                                           THEN 999
                                       ELSE l_rekvid END)
                     AND s.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid)
+                                     FROM get_asutuse_struktuur(l_rekvid, l_kpv)
                                      UNION ALL
                                      SELECT CASE
                                                 WHEN l_kond = 1 AND l_rekvid <> 63
@@ -555,7 +555,7 @@ WITH qrySaldoAndmik AS (
                                           THEN 999
                                       ELSE l_rekvid END)
                     AND s.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid)
+                                     FROM get_asutuse_struktuur(l_rekvid, l_kpv)
                                      UNION ALL
                                      SELECT CASE
                                                 WHEN l_kond = 1 AND l_rekvid <> 63
@@ -3069,16 +3069,21 @@ GRANT EXECUTE ON FUNCTION eelarve.rahavoog_aruanne(l_kpv DATE, l_rekvid INTEGER,
 GRANT EXECUTE ON FUNCTION eelarve.rahavoog_aruanne(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER) TO eelaktsepterja;
 GRANT EXECUTE ON FUNCTION eelarve.rahavoog_aruanne(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER) TO dbvaatleja;
 
-SELECT rekv_id,
+SELECT sum(summa) over(), sum(eelmise_summa) over(),
+       rekv_id,
        summa,
        eelmise_summa,
        grupp,
        all_grupp,
        konto,
        nimetus
-FROM eelarve.rahavoog_aruanne('2021-06-30' :: DATE, 63, 1)
---WHERE eelmise_summa <> 0
+FROM eelarve.rahavoog_aruanne('2021-12-31' :: DATE, 119, 1)
+WHERE konto like '91%'
+--and rekv_id = 90
 ORDER BY idx
 ;
 
+-- 1413729.28, 1001525.22
+
+--  14201811,33
 

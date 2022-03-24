@@ -58,10 +58,10 @@ class GridFilter extends React.PureComponent {
 
         let kas_sisaldab = 1;
         // ищем значение sqlNo
-        if (DocContext.filter[this.props.docTypeId]) {
-            let idx = DocContext.filter[this.props.docTypeId].findIndex((row) => row.id === name);
+        if (DocContext.getFilter) {
+            let idx = DocContext.getFilter.findIndex((row) => row.id === name);
             if (idx >= 0 ) {
-                kas_sisaldab = DocContext.filter[this.props.docTypeId][idx].sqlNo;
+                kas_sisaldab = DocContext.getFilter[idx].sqlNo;
             }
         }
 
@@ -120,7 +120,7 @@ class GridFilter extends React.PureComponent {
         }
 
         // сохраним фильтр
-        DocContext.filter[this.props.docTypeId] = data;
+        DocContext.setFilter = data;
 
         if (this.props.handler) {
             this.props.handler(data);

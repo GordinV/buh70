@@ -30,17 +30,9 @@ const getDefaultValues = (row) => {
 function prepareFilterData(gridConfig, docTypeId) {
     let data = [];
 
-    if (!DocContext.filter) {
-        DocContext.filter = {};
-    }
-
-    if (!DocContext.filter[docTypeId]) {
-        DocContext.filter[docTypeId] = [];
-    }
-
     // проверим, если фильтр уже сохранен, то вернем уже ранее сохжанный массив
-    if (docTypeId && DocContext.filter[docTypeId].length > 0) {
-        data = DocContext.filter[docTypeId];
+    if (DocContext.getFilter.length > 0) {
+        data = DocContext.getFilter;
     } else {
         gridConfig.map((row) => {
 

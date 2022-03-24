@@ -145,11 +145,10 @@ class Documents extends React.PureComponent {
         let ids = new Set; // сюда пишем ид счетом, которые под обработку
 
         const Doc = this.refs['register'];
-
         switch (event) {
             case EVENTS[0].name:
                 //делаем редайрект на конфигурацию
-                this.props.history.push(`/${this.props.module}/config/${DocContext.userData.asutusId}`);
+                this.props.history.push(`/${this.props.module}/config/${DocContext.getAsutusId}`);
                 break;
             case EVENTS[1].name:
                 // Print
@@ -170,7 +169,7 @@ class Documents extends React.PureComponent {
                         warningType: 'ok',
                     });
 
-                    let url = `/multiple_print/${DOC_TYPE_ID}/${DocContext.userData.uuid}/${ids}`;
+                    let url = `/multiple_print/${DOC_TYPE_ID}/${DocContext.getUuid}/${ids}`;
                     window.open(`${url}`);
                 } else {
                     Doc.setState({
@@ -286,7 +285,7 @@ class Documents extends React.PureComponent {
                         warningType: 'ok',
                     });
 
-                    let url = `/e-arved/${DocContext.userData.uuid}/${ids}`;
+                    let url = `/e-arved/${DocContext.getUuid}/${ids}`;
                     window.open(`${url}`);
 
                 }
@@ -317,7 +316,7 @@ class Documents extends React.PureComponent {
                         warningType: 'ok',
                     });
 
-                    let url = `/e-arved/seb/${DocContext.userData.uuid}/${ids}`;
+                    let url = `/e-arved/seb/${DocContext.getUuid}/${ids}`;
                     window.open(`${url}`);
 
                 }
@@ -348,7 +347,7 @@ class Documents extends React.PureComponent {
                         warningType: 'ok',
                     });
 
-                    let url = `/e-arved/swed/${DocContext.userData.uuid}/${ids}`;
+                    let url = `/e-arved/swed/${DocContext.getUuid}/${ids}`;
                     window.open(`${url}`);
 
                 }

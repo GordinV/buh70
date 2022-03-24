@@ -460,9 +460,8 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DAT
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_taitmine_allikas_artikkel(2021::INTEGER,'2021-01-01'::date, '2021-06-30'::DATE, 64, 1,'{"tunnus":"2101","allikas":"80"}')
-where rekv_id = 999999
-and artikkel = '2586(A80)'
+         FROM eelarve.eelarve_taitmine_allikas_artikkel(2021::INTEGER,'2022-01-01'::date, '2022-03-31'::DATE, 29, 1,'{"tunnus":null,"allikas":null}')
+where artikkel = '655'
      ) qry
 WHERE artikkel like '15,2586,4,5,6%'
 or artikkel = '1532'

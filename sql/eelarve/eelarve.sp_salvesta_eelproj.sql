@@ -77,7 +77,7 @@ BEGIN
       kuu       = doc_kuu,
       kinnitaja = doc_kinnitaja,
       muud      = doc_muud,
-      ajalugu   = coalesce(ajalugu,'[]'::jsonb) || new_history
+      ajalugu   = coalesce(ajalugu,'[]'::jsonb) || new_history::jsonb
     WHERE id = doc_id
       RETURNING id
         INTO eelarve_id;

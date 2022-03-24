@@ -412,7 +412,7 @@ BEGIN
     -- TM arvestus
 
     tm = palk.fnc_calc_tm(summa, mvt, tki, pm, l_tululiik);
-    tm_kokku = palk.fnc_calc_tm(l_tulud_kokku, mvt, tki, pm, NULL::TEXT);
+    tm_kokku = palk.fnc_calc_tm(l_tulud_kokku, l_isiku_mvt, tki, pm, NULL::TEXT);
 
     selg = coalesce(selg, '') + 'TM arvestus:' + round(tm, 2) :: TEXT + ltEnter;
     IF summa IS NOT NULL

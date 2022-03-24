@@ -13,7 +13,8 @@ CREATE OR REPLACE FUNCTION eelarve.uus_kassa_taitmine(l_kpv1 DATE, l_kpv2 DATE, 
         docs_ids INTEGER[],
         kuu      INTEGER,
         aasta    INTEGER
-    ) AS
+    )
+AS
 $BODY$
 
     -- kontod
@@ -49,17 +50,17 @@ SELECT rekvid              AS rekv_id,
 FROM (
 
          -- расход
-         SELECT summa          AS summa,
-                j1.kood1::TEXT AS tegev,
-                j1.kood2::TEXT AS allikas,
-                j1.kood3::TEXT AS rahavoog,
-                j1.kood5::TEXT AS artikkel,
+         SELECT summa                         AS summa,
+                j1.kood1::TEXT                AS tegev,
+                j1.kood2::TEXT                AS allikas,
+                j1.kood3::TEXT                AS rahavoog,
+                j1.kood5::TEXT                AS artikkel,
                 j1.tunnus::TEXT,
                 j.rekvid,
-                TRUE           AS kas_kulud,
-                d.id           AS docs_ids,
-                month(coalesce(a.kpv, j.kpv))   AS kuu,
-                year(coalesce(a.kpv, j.kpv))    AS aasta
+                TRUE                          AS kas_kulud,
+                d.id                          AS docs_ids,
+                month(coalesce(a.kpv, j.kpv)) AS kuu,
+                year(coalesce(a.kpv, j.kpv))  AS aasta
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
@@ -77,23 +78,23 @@ FROM (
                               ELSE l_rekvid END
          UNION ALL
          -- востановление расходов
-         SELECT DISTINCT -1 * j1.summa  AS summa,
-                         j1.kood1::TEXT AS tegev,
-                         j1.kood2::TEXT AS allikas,
-                         j1.kood3::TEXT AS rahavoog,
-                         j1.kood5::TEXT AS artikkel,
+         SELECT DISTINCT -1 * j1.summa                 AS summa,
+                         j1.kood1::TEXT                AS tegev,
+                         j1.kood2::TEXT                AS allikas,
+                         j1.kood3::TEXT                AS rahavoog,
+                         j1.kood5::TEXT                AS artikkel,
                          j1.tunnus::TEXT,
                          j.rekvid,
-                         TRUE           AS kas_kulud,
-                         d.id           AS docs_ids,
-                         month(coalesce(a.kpv, j.kpv))   AS kuu,
-                         year(coalesce(a.kpv, j.kpv))    AS aasta
+                         TRUE                          AS kas_kulud,
+                         d.id                          AS docs_ids,
+                         month(coalesce(a.kpv, j.kpv)) AS kuu,
+                         year(coalesce(a.kpv, j.kpv))  AS aasta
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                   INNER JOIN qryKontodKulud k ON k.kood = j1.kreedit
                   INNER JOIN qryKassaKontod kassa ON kassa.kood = j1.deebet
-                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 2 --kulud
+                  INNER JOIN libs.library l ON l.kood = j1.kood5 AND l.tun5 = 2 AND library = 'TULUDEALLIKAD' --kulud
          -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                   LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
 
@@ -153,7 +154,7 @@ FROM (
                               ELSE l_rekvid END
 */ ) qry
 WHERE NOT empty(artikkel)
-  and artikkel not in ('655')
+--  and artikkel not in ('655')
   AND summa <> 0
 GROUP BY rekvid, tegev, allikas, artikkel, tunnus, rahavoog, kuu, aasta
 HAVING sum(summa) <> 0;
@@ -171,8 +172,8 @@ GRANT EXECUTE ON FUNCTION eelarve.uus_kassa_taitmine( DATE,DATE, INTEGER, INTEGE
 /*
 
 SELECT *
-FROM eelarve.uus_kassa_taitmine('2021-01-01', '2021-12-31', 63, 1)
-where artikkel = '5503'
+FROM eelarve.uus_kassa_taitmine('2022-01-01', '2022-03-31', 29, 1)
+where artikkel = '655'
 
 select *
 

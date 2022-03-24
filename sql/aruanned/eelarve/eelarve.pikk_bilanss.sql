@@ -26,7 +26,7 @@ WITH qrySaldo AS (
                             THEN 999
                         ELSE l_rekvid END)
       AND s.rekvid IN (SELECT rekv_id
-                       FROM get_asutuse_struktuur(l_rekvid)
+                       FROM get_asutuse_struktuur(l_rekvid, l_kpv)
                        UNION ALL
                        SELECT CASE
                                   WHEN l_kond = 1 AND l_rekvid <> 63
@@ -53,7 +53,7 @@ WITH qrySaldo AS (
                             THEN 999
                         ELSE l_rekvid END)
       AND s.rekvid IN (SELECT rekv_id
-                       FROM get_asutuse_struktuur(l_rekvid)
+                       FROM get_asutuse_struktuur(l_rekvid, l_kpv)
                        UNION ALL
                        SELECT CASE
                                   WHEN l_kond = 1 AND l_rekvid <> 63
@@ -80,7 +80,7 @@ WITH qrySaldo AS (
                                  THEN 999
                              ELSE l_rekvid END)
            AND s.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid)
+                            FROM get_asutuse_struktuur(l_rekvid,  make_date(year(l_kpv)-1,12,31))
                             UNION ALL
                             SELECT CASE
                                        WHEN l_kond = 1 AND l_rekvid <> 63
@@ -108,7 +108,7 @@ WITH qrySaldo AS (
                                  THEN 999
                              ELSE l_rekvid END)
            AND s.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid)
+                            FROM get_asutuse_struktuur(l_rekvid, make_date(year(l_kpv)-1,12,31))
                             UNION ALL
                             SELECT CASE
                                        WHEN l_kond = 1 AND l_rekvid <> 63
@@ -2414,7 +2414,7 @@ GRANT EXECUTE ON FUNCTION eelarve.pikk_bilanss(l_kpv DATE, l_rekvid INTEGER, l_k
 GRANT EXECUTE ON FUNCTION eelarve.pikk_bilanss(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER) TO dbvaatleja;
 
 SELECT *
-FROM eelarve.pikk_bilanss('2021-06-30' :: DATE, 130, 1)
+FROM eelarve.pikk_bilanss('2021-12-31' :: DATE, 119, 1)
 WHERE konto like '10%'
 --GROUP BY konto, nimetus, rekv_id
 ORDER BY konto;

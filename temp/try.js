@@ -1,10 +1,7 @@
-const modelCreator = require('./../libs/createXMLmodel');
-const fs = require('fs');
-modelForExport = 'ou/aasta';
+'use strict';
+//import DocContext from './../frontend/doc-context.js';
+const DocContext = require('./../frontend/doc-context.js');
 
+DocContext.setInitData = [{id:1,name:'name'}];
 
-fs.readFile('try.js', function (err, data) {
-    if (err) throw err;
-
-    console.log('data 2',data);
-});
+console.log(DocContext);

@@ -196,12 +196,15 @@ const Arv = {
                          doc_tasu_id,
                          coalesce(journalid.number, 0) AS number,
                          'EUR' :: VARCHAR              AS valuuta,
-                         1 :: NUMERIC                  AS kuurs
+                         1 :: NUMERIC                  AS kuurs,
+                         coalesce(a.kinni, 0)          AS kinni       
                   FROM docs.arvtasu arvtasu
                            INNER JOIN docs.mk mk ON (arvtasu.doc_tasu_id = mk.parentid AND arvtasu.pankkassa = 1)
                            INNER JOIN docs.mk1 mk1 ON (mk.id = mk1.parentid)
                            LEFT OUTER JOIN docs.journal j ON mk1.journalId = j.parentid
                            LEFT OUTER JOIN docs.journalid journalid ON j.id = journalId.journalId
+                           LEFT OUTER JOIN ou.aasta a
+                                           ON a.rekvid = arvtasu.rekvid AND month(arvtasu.kpv) = a.kuu AND year(arvtasu.kpv) = a.aasta
                   WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
                     AND arvtasu.status <> 3
@@ -216,12 +219,15 @@ const Arv = {
                          doc_tasu_id,
                          coalesce(journalid.number, 0) AS number,
                          'EUR' :: VARCHAR              AS valuuta,
-                         1 :: NUMERIC                  AS kuurs
+                         1 :: NUMERIC                  AS kuurs,
+                         coalesce(a.kinni, 0)          AS kinni                         
                   FROM docs.arvtasu arvtasu
                            INNER JOIN docs.korder1 korder1
                                       ON (arvtasu.doc_tasu_id = korder1.parentid AND arvtasu.pankkassa = 2)
                            LEFT OUTER JOIN docs.journal j ON korder1.journalId = j.parentid
                            LEFT OUTER JOIN docs.journalid journalid ON j.id = journalId.journalId
+                           LEFT OUTER JOIN ou.aasta a
+                                           ON a.rekvid = arvtasu.rekvid AND month(arvtasu.kpv) = a.kuu AND year(arvtasu.kpv) = a.aasta
                   WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
                     AND arvtasu.status <> 3
@@ -236,11 +242,14 @@ const Arv = {
                          doc_tasu_id,
                          coalesce(journalid.number, 0) AS number,
                          'EUR' :: VARCHAR              AS valuuta,
-                         1 :: NUMERIC                  AS kuurs
+                         1 :: NUMERIC                  AS kuurs,
+                         coalesce(a.kinni, 0)          AS kinni                         
                   FROM docs.arvtasu arvtasu
                            LEFT OUTER JOIN docs.journal journal
                                            ON (arvtasu.doc_tasu_id = journal.parentId AND arvtasu.pankkassa = 3)
                            LEFT OUTER JOIN docs.journalid journalid ON (journal.id = journalId.journalId)
+                           LEFT OUTER JOIN ou.aasta a
+                                           ON a.rekvid = arvtasu.rekvid AND month(arvtasu.kpv) = a.kuu AND year(arvtasu.kpv) = a.aasta
                   WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
                     AND arvtasu.status <> 3
@@ -256,14 +265,15 @@ const Arv = {
                          NULL,
                          0                 AS number,
                          'EUR' :: VARCHAR  AS valuuta,
-                         1 :: NUMERIC      AS kuurs
+                         1 :: NUMERIC      AS kuurs,
+                         coalesce(a.kinni, 0)          AS kinni                         
                   FROM docs.arvtasu arvtasu
+                           LEFT OUTER JOIN ou.aasta a
+                                           ON a.rekvid = arvtasu.rekvid AND month(arvtasu.kpv) = a.kuu AND year(arvtasu.kpv) = a.aasta
                   WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0
                     AND arvtasu.status <> 3
-                    AND arvtasu.pankkassa IN (0, 4)
-
-            `,
+                    AND arvtasu.pankkassa IN (0, 4)`,
             query: null,
             multiple: true,
             alias: 'queryArvTasu',

@@ -61,12 +61,12 @@ class StartMenu extends React.PureComponent {
      * Выполнит запросы
      */
     fetchData(props) {
-        let url = URL + `/${DocContext.module}`;
-        let params = {userId: DocContext.userData.userId, uuid: DocContext.userData.uuid};
+        let url = URL + `/${DocContext.getModule}`;
+        let params = {userId: DocContext.getUserId, uuid: DocContext.getUuid};
 
         try {
             // will check in cache
-            if (!DocContext['menu'] || DocContext['menu'].length === 0) {
+            if (!DocContext.getMenu.length === 0) {
                 fetchData.fetchDataPost(url, params)
                     .then(response => {
                         if (response.status && response.status == 401) {
@@ -77,7 +77,7 @@ class StartMenu extends React.PureComponent {
 
                             this.treeData = response.data.data;
                             // запомним содержимое
-                            DocContext.menu = this.treeData;
+                            DocContext.setMenu = this.treeData;
                             this.forceUpdate();
                         }
                     })
@@ -88,7 +88,7 @@ class StartMenu extends React.PureComponent {
                         }
                     });
             } else {
-                this.treeData = DocContext['menu'];
+                this.treeData = DocContext.getMenu;
                 this.forceUpdate();
             }
 

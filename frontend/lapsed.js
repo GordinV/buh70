@@ -10,12 +10,10 @@ userData = JSON.parse(userData);
 
 // сохраним базовые данные в памети
 
-DocContext.initData = initData;
-DocContext.userData = userData;
-DocContext.module = 'lapsed';
-DocContext.pageName = 'Laste register';
-DocContext.gridConfig = initData.docConfig;
-DocContext.menu = initData.menu ? initData.menu.data : [];
+DocContext.setInitData = initData;
+DocContext.setUserData = userData;
+DocContext.setModule = 'lapsed';
+DocContext.setPageName = 'Laste register';
 
 ReactDOM.hydrate(
     <BrowserRouter>

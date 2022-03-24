@@ -39,7 +39,7 @@ BEGIN
         aasta              INTEGER,
         kuu                INTEGER,
         is_kulud           INTEGER DEFAULT 0,
-        rekv_id            INTEGER null
+        rekv_id            INTEGER NULL
     );
 
 /*
@@ -67,7 +67,9 @@ BEGIN
                             kassa, aasta, kuu,
                             is_kulud)
     WITH cur_kulude_kassa_taitmine AS (
-        SELECT * FROM eelarve.uus_kassa_taitmine(make_date(year(l_kpv), 01, 01), l_kpv, l_rekvid, l_kond)
+        SELECT *
+        FROM eelarve.uus_kassa_taitmine(make_date(year(l_kpv), 01, 01), l_kpv, l_rekvid, l_kond)
+        WHERE artikkel NOT IN ('655')
     ),
          cur_tulude_kassa_taitmine AS (
              SELECT * FROM eelarve.uus_kassa_tulu_taitmine(make_date(year(l_kpv), 01, 01), l_kpv, l_rekvid, l_kond)
@@ -107,7 +109,7 @@ BEGIN
                                      THEN rekvid
                                  ELSE l_rekv_id END)
                AND e.rekvid IN (SELECT rekv_id
-                                FROM get_asutuse_struktuur(l_rekvid))
+                                FROM get_asutuse_struktuur(l_rekvid, $1))
                AND aasta = year($1)
                AND (e.kpv IS NULL) --  OR e.kpv <= $1
                AND e.status <> 3
@@ -138,7 +140,7 @@ BEGIN
                                      THEN rekvid
                                  ELSE l_rekv_id END)
                AND e.rekvid IN (SELECT rekv_id
-                                FROM get_asutuse_struktuur(l_rekvid))
+                                FROM get_asutuse_struktuur(l_rekvid, $1))
                AND aasta = year($1)
                AND (e.kpv IS NOT NULL AND e.kpv <= l_kpv)
                AND e.status <> 3
@@ -168,7 +170,7 @@ BEGIN
                                         THEN rekvid
                                     ELSE l_rekv_id END)
                AND ft.rekvid IN (SELECT rekv_id
-                                 FROM get_asutuse_struktuur(l_rekvid))
+                                 FROM get_asutuse_struktuur(l_rekvid, $1))
                AND ft.kuu <= MONTH(l_kpv)
                AND ft.aasta = year(l_kpv)
                AND ft.artikkel IS NOT NULL
@@ -199,7 +201,7 @@ BEGIN
                                         THEN rekvid
                                     ELSE l_rekv_id END)
                AND tt.rekvid IN (SELECT rekv_id
-                                 FROM get_asutuse_struktuur(l_rekvid))
+                                 FROM get_asutuse_struktuur(l_rekvid, $1))
                AND tt.kuu <= MONTH(l_kpv)
                AND tt.aasta = year(l_kpv)
                AND tt.artikkel IS NOT NULL
@@ -266,7 +268,7 @@ BEGIN
                                                 THEN j.rekvid
                                             ELSE $2 END)
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekvid))
+                                         FROM get_asutuse_struktuur(l_rekvid, $1))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.kood5 IN
@@ -319,7 +321,7 @@ BEGIN
                                                 THEN j.rekvid
                                             ELSE l_rekvid END)
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekvid))
+                                         FROM get_asutuse_struktuur(l_rekvid, $1))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.deebet LIKE '100%'
@@ -359,7 +361,7 @@ BEGIN
                                                 THEN j.rekvid
                                             ELSE l_rekvid END)
                         AND j.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekvid))
+                                         FROM get_asutuse_struktuur(l_rekvid, $1))
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND left(j1.kreedit, 3) IN ('100', '999')
@@ -405,7 +407,7 @@ BEGIN
                         WHEN $3 = 1 AND l_rekvid <> 63 THEN rekvid
                         ELSE l_rekvid END)
       AND rekvid IN (SELECT rekv_id
-                     FROM get_asutuse_struktuur(l_rekvid)
+                     FROM get_asutuse_struktuur(l_rekvid, $1)
                      UNION ALL
                      SELECT CASE WHEN l_rekvid = 63 THEN 999 ELSE l_rekvid END AS rekv_id
     )
@@ -439,7 +441,7 @@ BEGIN
                         WHEN $3 = 1 AND l_rekvid <> 63 THEN rekvid
                         ELSE l_rekv_id END)
       AND rekvid IN (SELECT rekv_id
-                     FROM get_asutuse_struktuur(l_rekvid)
+                     FROM get_asutuse_struktuur(l_rekvid, make_date(year($1) - 1, 12,31))
                      UNION ALL
                      SELECT CASE WHEN l_rekvid = 63 THEN 999 ELSE l_rekvid END AS rekv_id
     )
@@ -469,16 +471,28 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5_query(DATE, INTEGER, I
 
 /*
 select * from (
-    SELECT eelarve.eelarve_andmik_lisa_1_5_query(DATE(2021, 03, 31), 63, 1)
+    SELECT * from eelarve.eelarve_andmik_lisa_1_5_query(DATE(2022, 03, 31), 63, 1)
     ) qry
-where artikkel = '655'
+where tegev like '01800%'
 
 
-
+1413729.28
 
 SELECT *
 FROM tmp_andmik
-WHERE artikkel = '655'
+WHERE artikkel like '100%'
+and aasta = 2020
   AND tyyp = 2;
+
+select *from eelarve.saldoandmik
+where rekvid = 999
+and kuu = 12
+and aasta = 2020
+and konto like '100%'
+
+select * from eelarve.saldoandmik where timestamp = '2022-03-17 03:00:00.010366'
+
 */
+
+select now()
 --

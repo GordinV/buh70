@@ -4,24 +4,146 @@ const DocContext = {
     filter: {},
     libs: {},
     menu: [],
+    initData: [],
     docTypeId: 'LAPS',
-    initFilter: (docTypeId) => {
-        /**
-         * метод создаст пустой фильтр по переданной конфигурации
-         */
-        if (!docTypeId) {
-            docTypeId = this.docTypeId;
-            // проверим наличие конфигураций. если нет, то вернем пустой массив
-            if (!DocContext.gridConfig || !DocContext.gridConfig[docTypeId].length) {
-                DocContext.filter[docTypeId] = [];
-            } else {
-                DocContext.filter[docTypeId] = createEmptyFilterData(DocContext.gridConfig[docTypeId], [], docTypeId)
-            }
+    userData: {},
+    module: 'lapsed',
+    pageName: 'Laste register',
+    gridConfig: {},
+    'email-params': {},
+    /**
+     * setter setinitData
+     * @param data
+     */
+    set setInitData(data) {
+        this.initData = data;
+        this.setGridConfig = data.docConfig;
+        this.menu = data.menu ? data.menu.data : [];
+    },
+
+    /**
+     * setter userData
+     * @param user
+     */
+
+    set setUserData(user) {
+        this.userData = user;
+    },
+
+    /**
+     * setter module
+     * @param module
+     */
+    set setModule(module) {
+        this.module = module;
+    },
+
+    set setPageName(page) {
+        this.pageName = page;
+    },
+
+    set setGridConfig(config) {
+        this.gridConfig = config;
+    },
+
+    set setFilter(filter) {
+        this.filter[this.docTypeId] = filter;
+    },
+
+    set setDocTypeId(docTypeId) {
+        this.docTypeId = docTypeId;
+
+        // инициализируем последнее ИД
+        this[this.docTypeId.toLowerCase()] = this[this.docTypeId] ? this[this.docTypeId] : 0;
+
+        // Название страницыиз меню
+        let menuRow = this.menu ? this.menu.find(row => row.kood === this.docTypeId) : null;
+
+        if (menuRow) {
+            this.pageName = menuRow.name;
         }
 
+        // set Filter
+        if (!this.getFilter) {
+            this.filter[this.docTypeId] = [];
+        }
+    },
+
+    set setLib(data) {
+        this.libs[this.docTypeId.toLowerCase()] = data;
+    },
+
+    set setEmailParams(params) {
+        this["email-params"] = params;
+    },
+
+    set setDocId(id) {
+        this[this.docTypeId.toLowerCase()] = id;
+    },
+
+    set setMenu(data) {
+        this.menu = data;
+    },
+
+    /**
+     * getter for rekvId
+     * @returns {null|*}
+     */
+
+    get getAsutusId() {
+        if (this.userData && this.userData.asutusId) {
+            return this.userData.asutusId;
+        } else {
+            return null;
+        }
+    },
+
+    get getDocTypeId() {
+        return this.docTypeId;
+    },
+
+    get getUuid() {
+        return this.userData && this.userData.uuid ? this.userData.uuid : null;
+    },
+
+    get getUserId() {
+        return this.userData && this.userData.userId ? this.userData.userId : null;
+    },
+
+    get getUserName() {
+        return this.userData && this.userData.userName ? this.userData.userName : '';
+    },
+
+    get getGridConfig() {
+        return this.gridConfig && this.gridConfig[this.docTypeId] ? this.gridConfig[this.docTypeId] : [];
+    },
+
+    get getFilter() {
+        return this.filter && this.filter[this.docTypeId] ? this.filter[this.docTypeId] : [];
+    },
+
+    get getRoles() {
+        return this.userData ? this.userData.roles : [];
+    },
+
+    get getLib() {
+        return this.libs[this.docTypeId.toLowerCase()];
+    },
+
+    get getModule() {
+        return this.module;
+    },
+
+    get getMenu() {
+        return this.menu;
+    },
+
+    get getPageName() {
+        return this.pageName;
     }
+
 
 };
 
 
-module.export = (DocContext);
+module.exports = (DocContext);

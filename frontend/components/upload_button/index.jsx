@@ -146,11 +146,11 @@ class UploadButton extends React.PureComponent {
     fecthData() {
         const params = {
             parameter: this.props.docTypeId, // параметры
-            uuid: DocContext.userData.uuid
+            uuid: DocContext.getUuid
         };
         const data = new FormData();
         data.append('file', this.state.selectedFile);
-        data.append('uuid', DocContext.userData.uuid);
+        data.append('uuid', DocContext.getUuid);
         data.append('docTypeId', this.props.docTypeId);
 
         return fetchData.fetchDataPost(`/newApi/upload/`, data);

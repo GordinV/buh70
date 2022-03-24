@@ -27,20 +27,21 @@ CREATE OR REPLACE FUNCTION palk.palk_leht(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INT
         uleajatoo NUMERIC(12, 4),
         kokku     NUMERIC(12, 4),
         tootunnid NUMERIC(12, 4),
-        palk_liik text
-    ) AS
+        palk_liik TEXT
+    )
+AS
 $BODY$
 WITH qry_taabel AS (
     SELECT t.isik_id,
-           sum(paev)                                                                           AS paev,
-           sum(ohtu)                                                                           AS ohtu,
-           sum(oo)                                                                             AS oo,
-           sum(puhapaev)                                                                       AS puhapaev,
-           sum(tahtpaev)                                                                       AS tahtpaev,
-           sum(uleajatoo)                                                                      AS uleajatoo,
-           sum(kokku)                                                                          AS kokku,
+           sum(paev)                                                                                                   AS paev,
+           sum(ohtu)                                                                                                   AS ohtu,
+           sum(oo)                                                                                                     AS oo,
+           sum(puhapaev)                                                                                               AS puhapaev,
+           sum(tahtpaev)                                                                                               AS tahtpaev,
+           sum(uleajatoo)                                                                                              AS uleajatoo,
+           sum(kokku)                                                                                                  AS kokku,
            sum(palk.get_work_hours((SELECT to_jsonb(qry)
-                                    FROM (SELECT t.lepingid AS lepingid, l_kpv2 AS kpv) qry))) AS tootunnid
+                                    FROM (SELECT t.lepingid AS lepingid, l_kpv2 AS kpv, TRUE AS kas_tahtpaevad) qry))) AS tootunnid
 
     FROM palk.cur_palk_taabel t
     WHERE t.aasta = year(l_kpv2)
@@ -55,7 +56,7 @@ SELECT qry.isikid :: INTEGER                AS isik_id,
        qry.isik :: VARCHAR(254),
        qry.amet :: VARCHAR(254),
        qry.amet_id,
-       qry.lepingid as lepind_id,
+       qry.lepingid                         AS lepind_id,
        qry.kuu :: INTEGER,
        qry.aasta :: INTEGER,
        sum(qry.deebet) :: NUMERIC(14, 2)    AS deebet,
@@ -179,6 +180,6 @@ GRANT EXECUTE ON FUNCTION palk.palk_leht( DATE, DATE, INTEGER, INTEGER, INTEGER,
 /*
 
 SELECT *
-FROM palk.palk_leht('2021-02-01', '2021-02-28', 125, 1 :: INTEGER);
-
+FROM palk.palk_leht('2021-02-01', '2021-02-28', 119, 0 :: INTEGER)
+where isikukood = '46212213710'
 */

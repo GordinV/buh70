@@ -33,14 +33,11 @@ class ButtonLogs extends React.PureComponent {
             return this.props.onClick('logid');
         } else {
             // register name
-            let docType = DocContext['menu'].find(row => row.kood.toUpperCase() === 'pank_vv'.toUpperCase());
 
-            if (!docType) {
-                DocContext.pageName = docType ? docType.name: 'Panga väljavõtte';
-            }
+            DocContext.setPageName = 'Panga väljavõtte';
 
             //redirect
-            this.props.history.push({pathname: `/${DocContext.module}/pank_vv`, state: {module: DocContext.module}});
+            this.props.history.push({pathname: `/${DocContext.getModule}/pank_vv`, state: {module: DocContext.getModule}});
         }
     }
 

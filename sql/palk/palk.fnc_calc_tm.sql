@@ -15,6 +15,7 @@ DECLARE
                              / 100;
 BEGIN
 
+
   l_TM = round((coalesce(l_summa, 0) - coalesce(l_mvt, 0) - coalesce(l_tki, 0) - coalesce(l_pm, 0)) * l_tm_maar, 2);
 
 

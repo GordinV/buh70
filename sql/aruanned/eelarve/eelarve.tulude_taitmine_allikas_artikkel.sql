@@ -467,7 +467,7 @@ GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.tulude_taitmine_allikas_artikkel_(2021::INTEGER, '2021-03-01'::DATE, '2021-06-30', 64, 1,'{"tunnus":"2101"}')
+         FROM eelarve.tulude_taitmine_allikas_artikkel_(2021::INTEGER, '2022-01-01'::DATE, '2022-03-31', 29, 1,'{"tunnus":null}')
      ) qry
 WHERE left(artikkel, 3) IN ('655')
 --and tegev = '04730'

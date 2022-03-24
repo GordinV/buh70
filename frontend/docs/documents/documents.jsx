@@ -43,7 +43,7 @@ class Documents extends React.Component {
         super(props);
 
         this.gridData = [];
-        this.gridConfig = DocContext.gridConfig ? DocContext.gridConfig[props.docTypeId] : [];
+        this.gridConfig = DocContext.gridConfig && DocContext.gridConfig[props.docTypeId] ? DocContext.gridConfig[props.docTypeId] : [];
         this.filterData = DocContext.filter && DocContext.filter[props.docTypeId] ? DocContext.filter[props.docTypeId] : [];
 
         if (props.initData && props.initData.result) {
@@ -80,7 +80,7 @@ class Documents extends React.Component {
             'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick',
             'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData',
-            'handleInputChange', 'btnEmailClick', 'setRegisterName', 'modalReportePageBtnClick');
+            'handleInputChange', 'btnEmailClick', 'modalReportePageBtnClick');
 
 
     }
@@ -89,13 +89,9 @@ class Documents extends React.Component {
      * пишем делаем запрос по итогу загрузки
      */
     componentDidMount() {
-        if (!DocContext.filter) {
-            DocContext.filter = {};
-        }
 
         // will save current docTypeid
-        DocContext['docTypeId'] = this.docTypeId;
-
+        DocContext.setDocTypeId = this.docTypeId;
         let reload = false; // if reload === true then it will call to reload
 
         if (this.props.initData && this.props.initData.docTypeId && this.props.initData.docTypeId.toUpperCase() !== this.docTypeId.toUpperCase()) {
@@ -103,8 +99,8 @@ class Documents extends React.Component {
         }
 
         // дефолтные значения
-        if (!DocContext.filter[this.docTypeId] && DocContext.gridConfig[this.docTypeId]) {
-            let config = DocContext.gridConfig[this.docTypeId];
+        if (!DocContext.getFilter && DocContext.getGridConfig) {
+            let config = DocContext.getGridConfig;
             let filter = prepareData(config, this.docTypeId);
 
             // ищем дефолтные значения
@@ -128,15 +124,15 @@ class Documents extends React.Component {
             });
 
             if (filter.length) {
-                DocContext.filter[this.docTypeId] = filter;
+                DocContext.setFilter = filter;
             }
 
         }
 
 
         // проверим сохраненный фильтр для этого типа
-        if (DocContext.filter[this.docTypeId] && DocContext.filter[this.docTypeId].length > 0) {
-            this.filterData = DocContext.filter[this.docTypeId];
+        if (DocContext.getFilter && DocContext.getFilter.length > 0) {
+            this.filterData = DocContext.getFilter;
             reload = true;
         }
 
@@ -157,8 +153,6 @@ class Documents extends React.Component {
             this.setState({value: docId});
         }
 
-        // задать имя реристра на страницу
-        this.setRegisterName();
 
     }
 
@@ -185,7 +179,7 @@ class Documents extends React.Component {
                 <Menu params={btnParams}
                       ref='menu'
                       history={this.props.history}
-                      rekvId={DocContext.userData ? DocContext.userData.asutusId : 0}
+                      rekvId={DocContext.getAsutusId}
                       module={this.props.module}/>
 
                 <div style={_style.docRow}>
@@ -242,13 +236,6 @@ class Documents extends React.Component {
         );
     }
 
-    //поиск названия регистра
-    setRegisterName() {
-        let docType = DocContext['menu'].find(row => row.kood === this.props.docTypeId);
-        if (docType) {
-            DocContext.pageName = docType.name;
-        }
-    }
 
     // обработчик изменений в инпут (лимит)
     handleInputChange(name, value) {
@@ -362,10 +349,10 @@ class Documents extends React.Component {
         });
         let filter = encodeURIComponent(`${JSON.stringify(filterData)}`);
         if (this.filterData.length) {
-            url = `/print/${this.docTypeId}/${DocContext.userData.uuid}/${filter}`;
+            url = `/print/${this.docTypeId}/${DocContext.getUuid}/${filter}`;
 
         } else {
-            url = `/print/${this.docTypeId}/${DocContext.userData.uuid}/0`;
+            url = `/print/${this.docTypeId}/${DocContext.getUuid}/0`;
         }
         window.open(`${url}/${params}`);
 
@@ -381,10 +368,10 @@ class Documents extends React.Component {
         let filter = encodeURIComponent(`${JSON.stringify(this.filterData)}`);
 
         if (this.filterData.length) {
-            url = `/pdf/${this.docTypeId}/${DocContext.userData.uuid}/${filter}`;
+            url = `/pdf/${this.docTypeId}/${DocContext.getUuid}/${filter}`;
 
         } else {
-            url = `/pdf/${this.docTypeId}/${DocContext.userData.uuid}/0`;
+            url = `/pdf/${this.docTypeId}/${DocContext.getUuid}/0`;
         }
         window.open(`${url}/${params}`);
 
@@ -448,9 +435,9 @@ class Documents extends React.Component {
                     } else {
                         this.fetchData('selectDocs');
                         // если есть в кеше , то чиcтим
-                        let lib = this.docTypeId.toLowerCase();
-                        if (DocContext.libs[lib] && DocContext.libs[lib].length > 0) {
-                            DocContext.libs[lib] = []
+
+                        if (DocContext.getLib && DocContext.getLib.length > 0) {
+                            DocContext.setLib = []
                         }
 
                     }
@@ -466,16 +453,8 @@ class Documents extends React.Component {
         this.filterData = data;
 
         // создади обьект = держатель состояния фильтра
-        if (!DocContext.filter) {
-            DocContext.filter = {};
-        }
-
-        if (!DocContext.filter[this.docTypeId]) {
-            DocContext.filter[this.docTypeId] = [];
-        }
-
         if (data && data.length > 0 && this.props.history.location) {
-            DocContext.filter[this.docTypeId] = this.filterData;
+            DocContext.setFilter = this.filterData;
         }
 
     }
@@ -529,12 +508,12 @@ class Documents extends React.Component {
         let string = '';
 
         this.filterData.map(row => {
-            let kas_sisaldab = row.sqlNo && row.sqlNo == 0 ? '<>':  '=';
+            let kas_sisaldab = row.sqlNo && row.sqlNo == 0 ? '<>' : '=';
             if (row.start) {
                 string = `${string} ${row.name}>=${row.start},${row.name}<=${row.end};`;
             } else {
                 if (row.value) {
-                    string = string + row.name +  ':' + kas_sisaldab + ' ' + row.value + '; ';
+                    string = string + row.name + ':' + kas_sisaldab + ' ' + row.value + '; ';
                 }
             }
         });
@@ -619,7 +598,7 @@ class Documents extends React.Component {
      */
     prepareParamsForToolbar() {
         let docRights = DocRights[this.docTypeId] ? DocRights[this.docTypeId] : {};
-        let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+        let userRoles = DocContext.getRoles;
 
         let toolbarProps = {
             add: this.props.toolbarProps ? !!this.props.toolbarProps.add : checkRights(userRoles, docRights, 'add'),
@@ -707,8 +686,8 @@ class Documents extends React.Component {
             filterData: this.filterData,
             lastDocId: null,
             module: this.props.module,
-            userId: DocContext.userData.userId,
-            uuid: DocContext.userData.uuid,
+            userId: DocContext.getUserId,
+            uuid: DocContext.getUuid,
             data: additionalData
         };
 
@@ -774,7 +753,7 @@ class Documents extends React.Component {
      */
     btnEmailClick() {
         // сохраним параметры для формирования вложения в контексте
-        DocContext['email-params'] = {
+        DocContext.setEmailParams = {
             docId: this.state.docId,
             docTypeId: this.docTypeId,
             queryType: 'sqlWhere', // ид - документ

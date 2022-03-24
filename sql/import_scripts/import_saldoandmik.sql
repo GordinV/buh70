@@ -45,6 +45,8 @@ CREATE FOREIGN TABLE remote_saldoandmik_2019 (
   OPTIONS (SCHEMA_NAME 'public', TABLE_NAME 'saldoandmik'
   );
 
+
+
 --DELETE from eelarve.saldoandmik;
 DELETE from eelarve.saldoandmik
 where aasta = 2020 and kuu = 12;
@@ -67,7 +69,7 @@ SELECT
   tyyp,
   kuu
 FROM remote_saldoandmik_2019
-where aasta = 2020 and kuu = 12
+where aasta = 2019 and kuu = 12
 ;
 
 INSERT INTO eelarve.saldoandmik (rekvid, nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, omatp, tyyp, kuu)
@@ -87,10 +89,15 @@ INSERT INTO eelarve.saldoandmik (rekvid, nimetus, db, kr, konto, tegev, tp, alli
     tyyp,
     kuu
   FROM remote_saldoandmik
-where aasta = 2020 and kuu = 12
+--where aasta = 2020 and kuu = 12
+where id = 34482094
+--and rekvid in  (87, 86, 76, 120, 15, 115, 68, 93, 111, 104, 102, 103, 91, 70, 126, 90)
+
 ;
 
 DROP RULE IF EXISTS saldoandmik_2020_delete ON eelarve.saldoandmik;
+
+
 CREATE RULE saldoandmik_2020_delete AS ON DELETE TO eelarve.saldoandmik
   WHERE aasta <= 2020
   DO INSTEAD NOTHING;
@@ -101,4 +108,4 @@ CREATE RULE saldoandmik_2020_insert AS ON DELETE TO eelarve.saldoandmik
   DO INSTEAD NOTHING;
 
 
-select * from eelarve.saldoandmik where aasta = 2019 and kuu = 12
+select * from eelarve.saldoandmik where aasta = 2010 and kuu = 12

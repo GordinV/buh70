@@ -111,7 +111,7 @@ class MenuToolBar extends React.Component {
                         onClick={this.btnEditRekvClick}
                     />
                     <BtnAccount ref='btnAccount'
-                                value={DocContext.userData ? DocContext.userData.userName : ''}
+                                value={DocContext.getUserName}
                                 onClick={this.btnAccountClick}
                                 show={toolbarParams['btnAccount'].show}
                                 disabled={toolbarParams['btnAccount'].disabled}/>
@@ -133,9 +133,7 @@ class MenuToolBar extends React.Component {
     renderStartMenu() {
         let component = null;
         let data = [];
-/*
-        data = DocContext.menu;
-*/
+
         if (this.state.showStartMenu) {
             component = <StartMenu ref='startMenu'
                                    value={this.state.startMenuValue}
@@ -158,19 +156,14 @@ class MenuToolBar extends React.Component {
     startMenuClickHandler(value) {
         this.setState({showStartMenu: false});
 
-        let docType = DocContext['menu'].find(row => row.kood === value);
-        if (docType) {
-            DocContext.pageName = docType.name;
-        }
-
         if (this.props.history) {
             return this.props.history.push({
-                pathname: `/${DocContext.module}/${value}`,
-                state: {module: DocContext.module}
+                pathname: `/${DocContext.getModule}/${value}`,
+                state: {module: DocContext.getModule}
 
             });
         } else {
-            document.location.href = `/${DocContext.module}/${value}`
+            document.location.href = `/${DocContext.getModule}/${value}`
         }
     }
 
@@ -179,14 +172,14 @@ class MenuToolBar extends React.Component {
         this.setState({logedIn: false});
 
         try {
-            let userId = DocContext.userData.userId;
+            let userId = DocContext.getUserId;
             const params = {
-                userId: userId, module: DocContext.module,
-                uuid: this.state.logedIn ? DocContext.userData.uuid : null
+                userId: userId, module: DocContext.getModule,
+                uuid: this.state.logedIn ? DocContext.getUuid : null
             };
 
             fetchData.fetchDataPost(URL, params).then(() => {
-                    DocContext.userData = null;
+                    DocContext.setUserData = null;
                 }
             );
         } catch (e) {
@@ -198,8 +191,8 @@ class MenuToolBar extends React.Component {
 
     btnAccountClick() {
         return this.props.history.push({
-            pathname: `/${DocContext.module}/userid/${DocContext.userData.userId}`,
-            state: {module: DocContext.module}
+            pathname: `/${DocContext.getModule}/userid/${DocContext.getUserId}`,
+            state: {module: DocContext.getModule}
         });
 
 
@@ -207,8 +200,8 @@ class MenuToolBar extends React.Component {
 
     btnEditRekvClick() {
         return this.props.history.push({
-            pathname: `/${DocContext.module}/rekv/${DocContext.userData.asutusId}`,
-            state: {module: DocContext.module}
+            pathname: `/${DocContext.getModule}/rekv/${DocContext.getAsutusId}`,
+            state: {module: DocContext.getModule}
         });
 
     }
@@ -224,20 +217,20 @@ class MenuToolBar extends React.Component {
         // отправить пост запрос
         try {
             let localUrl = `${URL}/${rekvId}`;
-            let userId = this.state.logedIn ? DocContext.userData.userId : null;
-            let uuid = this.state.logedIn ? DocContext.userData.uuid : null;
+            let userId = this.state.logedIn ? DocContext.getUserId : null;
+            let uuid = this.state.logedIn ? DocContext.getUuid : null;
 
             const params = {
                 userId: userId,
-                module: DocContext.module,
-                docTypeId: DocContext.docTypeId,
+                module: DocContext.getModule,
+                docTypeId: DocContext.getDocTypeId,
                 uuid: uuid
             };
 
             this.setState({rekvId: rekvId});
 
             fetchData.fetchDataPost(localUrl, params).then(response => {
-                DocContext.userData = Object.assign(DocContext.userData, response.config.data);
+                DocContext.setUserData = Object.assign(DocContext.userData, response.config.data);
 
                 // redirect to main
                 this.props.history.push({

@@ -21,7 +21,7 @@ class ButtonInfo extends React.Component {
      * @param e
      */
     handleClick() {
-        let docTypeId = this.props.docTypeId ?  this.props.docTypeId: DocContext.docTypeId;
+        let docTypeId = this.props.docTypeId ?  this.props.docTypeId: DocContext.getDocTypeId;
         let url = `/help/${docTypeId}`;
         window.open(`${url}`);
     }

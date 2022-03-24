@@ -60,7 +60,7 @@ class DocumentTemplate extends React.Component {
             'btnSaveClick', 'btnCancelClick', 'btnTaskClick', 'fetchData', 'createLibs', 'loadLibs', 'hasLibInCache',
             'addRow', 'editRow', 'handleGridBtnClick', 'handleGridRowInput', 'handleGridRow', 'validateGridRow',
             'modalPageClick', 'handleGridRowChange', 'handlePageClick', 'modalPageBtnClick', 'btnLogsClick',
-            'handleGridCellClick', 'setDocumentName', 'modalReportePageBtnClick');
+            'handleGridCellClick', 'modalReportePageBtnClick');
 
 
         this.gridRowData = {}; //будем хранить строку грида
@@ -70,7 +70,7 @@ class DocumentTemplate extends React.Component {
     componentDidUpdate() {
         // сохраним последнее значение дока этого типа
         if (this.state.docId) {
-            DocContext[(this.props.docTypeId).toLowerCase()] = this.state.docId;
+            DocContext.setDocId = this.state.docId;
         }
     }
 
@@ -79,7 +79,7 @@ class DocumentTemplate extends React.Component {
      */
     componentDidMount() {
         // сохраним в контексте тип документа, с которым мы работает
-        DocContext.docTypeId = this.props.docTypeId;
+        DocContext.setDocTypeId = this.props.docTypeId;
 
         if (this.state.reloadData) {
             //делаем запрос на получение данных
@@ -94,8 +94,6 @@ class DocumentTemplate extends React.Component {
             }
         }
 
-        // задать имя реристра на страницу
-        this.setDocumentName();
     }
 
 
@@ -134,7 +132,7 @@ class DocumentTemplate extends React.Component {
                 <Menu params={btnParams}
                       ref="menu"
                       history={this.props.history}
-                      rekvId={DocContext.userData ? DocContext.userData.asutusId : 0}
+                      rekvId={DocContext.getAsutusId}
                       module={this.props.module}/>
                 {this.renderDocToolBar()}
                 <Form pages={this.pages}
@@ -215,13 +213,13 @@ class DocumentTemplate extends React.Component {
     }
 
     btnPrintClick() {
-        let url = `/print/${this.props.docTypeId}/${DocContext.userData.uuid}/${this.state.docId}`;
+        let url = `/print/${this.props.docTypeId}/${DocContext.getUuid}/${this.state.docId}`;
         window.open(`${url}`);
 
     }
 
     btnPdfClick() {
-        let url = `/pdf/${this.props.docTypeId}/${DocContext.userData.uuid}/${this.state.docId}`;
+        let url = `/pdf/${this.props.docTypeId}/${DocContext.getUuid}/${this.state.docId}`;
         window.open(`${url}`);
     }
 
@@ -252,7 +250,7 @@ class DocumentTemplate extends React.Component {
 
         } else {
             // сохраним параметры для формирования вложения в контексте
-            DocContext['email-params'] = {
+            DocContext.setEmailParams = {
                 docId: this.state.docId,
                 docTypeId: this.props.docTypeId,
                 queryType: 'id' // ид - документ, where -
@@ -291,20 +289,18 @@ class DocumentTemplate extends React.Component {
                     docId = this.docData.id;
 
                 // сохраним в контексте последние изменения
-                DocContext[docTypeId] = this.docData.id;
+                DocContext.setDocId = this.docData.id;
 
                 //если было создание нового докмента и этот док был карта ребенка, то сделаем переадрессацию на добавление услуг
 
+                // если есть в кеше , то чистим
+                DocContext.setLib = [];
+
                 // обновим справочник
-                if (DocContext.libs && DocContext.libs[docTypeId.toLowerCase()]) {
+                if (DocContext.getLib) {
                     this.loadLibs(docTypeId.toLowerCase());
                 }
-                // если есть в кеше , то читим
-                let lib = docTypeId.toLowerCase();
 
-                if (DocContext.libs && DocContext.libs[lib] && DocContext.libs[lib].length > 0) {
-                    DocContext.libs[lib] = []
-                }
 
                 if (docTypeId.toUpperCase() === 'LAPS' && this.props.docId === 0) {
                     // делаем редайрект на карту услуг
@@ -627,7 +623,7 @@ class DocumentTemplate extends React.Component {
      */
     prepareParamsForToolbar() {
         let docRights = DocRights[this.props.docTypeId] ? DocRights[this.props.docTypeId] : [];
-        let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+        let userRoles = DocContext.getRoles;
 
         return {
             btnAdd: {
@@ -679,8 +675,8 @@ class DocumentTemplate extends React.Component {
         let params = {
             docTypeId: this.props.docTypeId ? this.props.docTypeId : DocContext.docTypeId,
             module: this.props.module ? this.props.module : DocContext.module,
-            userId: DocContext.userData.userId,
-            uuid: DocContext.userData.uuid,
+            userId: DocContext.getUserId,
+            uuid: DocContext.getUuid,
             docId: this.state.docId,
             context: DocContext[api] ? DocContext[api] : null
         };
@@ -711,7 +707,7 @@ class DocumentTemplate extends React.Component {
                             // will store bpm info
                             if (response.data.data[0].bpm) {
                                 let docRights = DocRights[this.props.docTypeId] ? DocRights[this.props.docTypeId] : [];
-                                let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+                                let userRoles = DocContext.getRoles;
 
                                 // только доступные таски должны попасть в список
                                 this.bpm = response.data.data[0].bpm.filter(task => {
@@ -788,8 +784,8 @@ class DocumentTemplate extends React.Component {
 
             let params = Object.assign({
                 module: this.props.module,
-                userId: DocContext.userData.id,
-                uuid: DocContext.userData.uuid,
+                userId: DocContext.getUserId,
+                uuid: DocContext.getUuid,
             }, hasSqlWhere ? {
                 sql: this.state.libParams[lib],
                 kpv: kpv ? kpv : new Date().toISOString().slice(0, 10)
@@ -803,7 +799,7 @@ class DocumentTemplate extends React.Component {
                             this.libs[lib] = response.data.result.result.data;
 
                             // save lib in cache
-                            DocContext.libs[lib] = this.libs[lib];
+                            DocContext.setLib = this.libs[lib];
 
                             libsCount--;
                             // отметка что справочник загружен
@@ -827,7 +823,7 @@ class DocumentTemplate extends React.Component {
                     });
             } else {
                 // берем данные из кеша
-                this.libs[lib] = DocContext.libs[lib].filter(row => {
+                this.libs[lib] = DocContext.getLib.filter(row => {
                     let kpv = this.docData.valid ? this.docData.valid : new Date().toISOString().slice(0, 10);
                     kpv = this.docData.kpv ? this.docData.kpv : kpv;
                     // есди в справочнике есть дата и она не пустая
@@ -870,10 +866,7 @@ class DocumentTemplate extends React.Component {
      * @returns {boolean}
      */
     hasLibInCache(lib) {
-        if (!DocContext.libs) {
-            DocContext.libs = {};
-        }
-        return (!DocContext.libs[lib] || DocContext.libs[lib].length === 0) ? false : true;
+        return (!DocContext.getLib || DocContext.getLib.length === 0) ? false : true;
     }
 
     /**
@@ -1147,13 +1140,6 @@ class DocumentTemplate extends React.Component {
         }
     }
 
-    //поиск названия регистра
-    setDocumentName() {
-        let docType = DocContext['menu'].find(row => row.kood === this.props.docTypeId);
-        if (docType) {
-            DocContext.pageName = docType.name;
-        }
-    }
 
     /**
      * уберет окно с отчетом

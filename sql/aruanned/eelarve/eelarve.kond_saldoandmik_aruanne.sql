@@ -39,7 +39,7 @@ WITH andmik AS (
                           ELSE l_rekvid END
         )
       AND s.rekvid IN (SELECT rekv_id
-                       FROM get_asutuse_struktuur(l_rekvid)
+                       FROM get_asutuse_struktuur(l_rekvid, l_kpv)
                        UNION ALL
                        SELECT l_rekvid)
       AND s.konto NOT IN (SELECT * FROM unnest(CASE WHEN is_xml_file THEN ARRAY ['910019','910029'] ELSE ARRAY [''] END))
@@ -138,8 +138,8 @@ GRANT EXECUTE ON FUNCTION eelarve.kond_saldoandmik_aruanne(l_kpv DATE, l_rekvid 
 /*
 select * from (
 SELECT *
-FROM eelarve.kond_saldoandmik_aruanne('2022-01-31' :: DATE, 63 :: INTEGER,1, true::boolean)
+FROM eelarve.kond_saldoandmik_aruanne('2020-12-31' :: DATE, 119 :: INTEGER,1, true::boolean)
 ) qry
-where konto like '150200%'
+where konto like '100%'
 
 */
