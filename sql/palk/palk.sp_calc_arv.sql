@@ -218,7 +218,6 @@ BEGIN
                 summa = f_round(l_rate * l_pk_summa * 0.01 * l_tunnid_kokku, l_round);
 
                 selg = coalesce(selg, '') + 'Palk kokku:' + ltrim(rtrim(round(l_palk_summa, 2) :: VARCHAR)) + ltEnter;
---                selg = coalesce(selg, '') + 'Tunni hind:' + ltrim(rtrim(round(l_rate, 2) :: VARCHAR)) + ltEnter;
                 lnBaas := (l_tunnid_kokku);
 
                 -- кол-во часов отработанных + если неполный отработанный месяц и указан месячный оклад, то добавляем считаем по дням
@@ -229,20 +228,13 @@ BEGIN
                     -- приводим расчет к дням
                     l_rate := l_palk_summa / l_work_days * 0.01 * l_koormus;
 
+
+                    -- убрал промежуточное округление 30.03.2022 из-за ошибки при расчете переработки
                     summa = f_round(l_rate * l_pk_summa * 0.01 *
-                                    round(((l_tunnid_kokku + l_tahtpaeva_tunnid) / l_toopaev), 0),
+                                    ((l_tunnid_kokku + l_tahtpaeva_tunnid) / l_toopaev),
                                     l_round);
 
                 END IF;
-
-
-/*                selg = coalesce(selg, '') + 'parandamine:' + ltrim(rtrim(round(l_rate, 2) :: VARCHAR)) + '*' +
-                       ltrim(rtrim(round(l_pk_summa, 2) :: VARCHAR)) + ' * 0.01 * (' +
-                       ltrim(rtrim(round(l_tunnid_kokku, 3)::TEXT)) + '+' + ltrim(rtrim((l_kuupalk *
-                                                                                         (CASE WHEN l_tunnid_kokku < l_hours THEN l_tahtpaeva_tunnid ELSE 0 END))::TEXT)) :: VARCHAR +
-                       ')' +
-                       ltEnter;
-*/
 
             ELSE
                 --tunni alusel

@@ -36,6 +36,10 @@ BEGIN
          l.properties::JSON ->> 'allikas'   AS allikas,
          l.properties::JSON ->> 'artikkel'  AS artikkel,
          l.properties::JSON ->> 'tululiik'  AS tululiik,
+         l.tun1,
+         l.tun2,
+         l.tun3,
+         l.tun4,
          l.tun5
          INTO v_lib
   FROM libs.library l
@@ -74,6 +78,10 @@ BEGIN
              v_lib.allikas,
              v_lib.artikkel,
              v_lib.tululiik,
+             v_lib.tun1,
+             v_lib.tun2,
+             v_lib.tun3,
+             v_lib.tun4,
              v_lib.tun5
              INTO v_params;
 

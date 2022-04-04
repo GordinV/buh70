@@ -34,6 +34,7 @@ WITH cur_kulude_kassa_taitmine AS (
       AND (l_params IS NULL OR coalesce(qry.artikkel, '') ILIKE coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
       AND (l_params IS NULL OR coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
       AND (l_params IS NULL OR coalesce(qry.rahavoog, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
+      AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
 ),
      cur_kulude_taitmine AS (SELECT *
                              FROM eelarve.tekke_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond) qry
@@ -47,6 +48,8 @@ WITH cur_kulude_kassa_taitmine AS (
                                     coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
                                AND (l_params IS NULL OR coalesce(qry.rahavoog, '') ILIKE
                                                         coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
+
+                               AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
      ),
      qryReport AS (
          SELECT rekvid,
@@ -311,6 +314,7 @@ WITH cur_kulude_kassa_taitmine AS (
                     AND (l_params IS NULL OR
                          coalesce(j.kood3, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
               ) qry
+         WHERE rekvid <> 9
          GROUP BY rekvid,
                   tegev,
                   allikas,
@@ -460,10 +464,8 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DAT
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_taitmine_allikas_artikkel(2021::INTEGER,'2022-01-01'::date, '2022-03-31'::DATE, 29, 1,'{"tunnus":null,"allikas":null}')
-where artikkel = '655'
+         FROM eelarve.eelarve_taitmine_allikas_artikkel(2022::INTEGER,'2021-01-01'::date, '2021-12-31'::DATE, 119, 1,'{"tunnus":null,"allikas":null}')
+        where rekv_id = 9
      ) qry
 WHERE artikkel like '15,2586,4,5,6%'
-or artikkel = '1532'
-order by idx, artikkel
 */

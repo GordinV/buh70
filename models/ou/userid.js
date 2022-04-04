@@ -77,7 +77,7 @@ module.exports = {
             data: []
         },
         {
-            sql: `SELECT r.nimetus  AS asutus,
+            sql: `SELECT r.nimetus AS asutus,
                          u.*
 --                , $2 AS rekvid
                   FROM ou.userid u
@@ -182,5 +182,14 @@ module.exports = {
         },
 
     ],
+    getAccessCode: {
+        command: `SELECT *
+                  FROM ou.userid
+                  WHERE status < 3
+                    AND kasutaja = '$1'
+                    AND properties ->> 'email' IS NOT NULL`,//$1 docId, $2 - userId
+        type: 'sql',
+        alias: 'getAccessCode'
+    },
 
 };

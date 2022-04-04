@@ -12,8 +12,10 @@ module.exports = {
         ],
         sqlString: `SELECT *
                     FROM eelarve.eelarve_andmik_lisa_1_5($1::DATE, $2::INTEGER,
-                                                         $3::INTEGER) where (not EMPTY(tegev) OR NOT empty(artikkel))
-                        AND EMPTY(saldoandmik)
+                                                         $3::INTEGER)
+                    WHERE NOT EMPTY(tegev)
+                       OR NOT empty(artikkel)
+                       OR NOT EMPTY(saldoandmik)
                     ORDER BY tegev, artikkel`,     // $1 - kpv $2 - rekvid, $3 - kond
         params: '',
         alias: 'eelarve_andmik_lisa_1_5_report'

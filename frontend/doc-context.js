@@ -10,6 +10,7 @@ const DocContext = {
     module: 'lapsed',
     pageName: 'Laste register',
     gridConfig: {},
+    accessCode: {},
     'email-params': {},
     /**
      * setter setinitData
@@ -19,6 +20,31 @@ const DocContext = {
         this.initData = data;
         this.setGridConfig = data.docConfig;
         this.menu = data.menu ? data.menu.data : [];
+    },
+
+
+    /**
+     * сохранит код доступа и факт его акцептации для пользователя
+     * @param userName
+     */
+    set setAccessCode(userName) {
+        if (!this.accessCode[userName]) {
+            this.accessCode[userName] = {
+                accessCode: null,
+                accepted: null
+            }
+        }
+    },
+
+    // проверит и сохранит отметку о подтверждении кода доступа
+    acceptAccessCode(userName, accessCode) {
+        console.log('acceptAccessCode',userName, accessCode, this.accessCode[userName], this.accessCode[userName].accessCode, this.accessCode[userName].accessCode == accessCode);
+        if (this.accessCode[userName].accessCode == accessCode) {
+            this.accessCode[userName].accepted = new Date().getDate();
+            return true;
+        } else {
+            return false;
+        }
     },
 
     /**
@@ -140,6 +166,23 @@ const DocContext = {
 
     get getPageName() {
         return this.pageName;
+    },
+
+    getAccessCode(userName) {
+        // создадим обект пользователя
+        if (!this.accessCode[userName]) {
+            this.setAccessCode = userName;
+        }
+
+        // генерация кода доступа, если не акцептирован или акцептирован не сегодня
+        if (!this.accessCode[userName].accessCode || !this.accessCode[userName].accepted || this.accessCode[userName].accepted !== new Date().getDate()) {
+            // обнуляем код доступа
+            let min = Math.ceil(1000);
+            let max = Math.floor(9999);
+            this.accessCode[userName].accessCode = Math.floor(Math.random() * (max - min) + min);
+        }
+
+        return this.accessCode[userName].accessCode;
     }
 
 

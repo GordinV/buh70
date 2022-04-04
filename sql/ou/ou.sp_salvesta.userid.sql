@@ -47,12 +47,12 @@ DECLARE
                                                   FALSE)                                              AS is_rekl_maksuhaldur,
                                          coalesce((doc_data ->> 'is_ladu_kasutaja') :: BOOLEAN,
                                                   FALSE)                                              AS is_ladu_kasutaja,
-                                      coalesce((doc_data ->> 'is_arvestaja') :: BOOLEAN,
-                                               FALSE)                                              AS is_arvestaja,
-                                      coalesce((doc_data ->> 'is_palga_kasutaja') :: BOOLEAN,
-                                               FALSE)                                              AS is_palga_kasutaja,
-                                      coalesce((doc_data ->> 'is_pohivara_kasutaja') :: BOOLEAN,
-                                               FALSE)                                              AS is_pohivara_kasutaja
+                                         coalesce((doc_data ->> 'is_arvestaja') :: BOOLEAN,
+                                                  FALSE)                                              AS is_arvestaja,
+                                         coalesce((doc_data ->> 'is_palga_kasutaja') :: BOOLEAN,
+                                                  FALSE)                                              AS is_palga_kasutaja,
+                                         coalesce((doc_data ->> 'is_pohivara_kasutaja') :: BOOLEAN,
+                                                  FALSE)                                              AS is_pohivara_kasutaja
                                  ) row);
 
     is_import    BOOLEAN = data ->> 'import';
@@ -60,17 +60,27 @@ DECLARE
     l_string     TEXT;
 BEGIN
 
-    raise notice 'start';
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.id = user_id
       AND roles ->> 'is_admin' IS NOT NULL
       AND (roles ->> 'is_admin')::BOOLEAN;
 
+    -- проверка на почту
+-- должна быть из домена narva.ee или в исключениях
+    IF doc_data ->> 'email' IS NULL OR (doc_data ->> 'email')::TEXT IN ('vladislav.gordin@gmail.com')
+        OR (doc_data ->> 'email') LIKE '%@narva.ee'
+    THEN
+        -- подходит
+    ELSE
+        RAISE EXCEPTION 'Viga, vale domain, peaks olla narva.ee aga sisestatud %', (doc_data ->> 'email');
+    END IF;
+
 
     IF is_import IS NULL AND userName IS NULL
     THEN
-        RAISE EXCEPTION 'kasutaja ei leidnud või puudub õigused %', user;
+        RAISE EXCEPTION 'Viga, kasutaja ei leidnud või puudub õigused %', user;
     END IF;
 
     IF (doc_id IS NULL)
@@ -99,18 +109,20 @@ BEGIN
                            ' NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION ';
                 RAISE NOTICE 'create user %', l_string;
                 EXECUTE (l_string);
-                IF (roles_json ->> 'is_kasutaja')::boolean or (roles_json ->> 'is_palga_kasutaja')::boolean or (roles_json ->> 'is_pohivara_kasutaja')::boolean
+                IF (roles_json ->> 'is_kasutaja')::BOOLEAN OR (roles_json ->> 'is_palga_kasutaja')::BOOLEAN OR
+                   (roles_json ->> 'is_pohivara_kasutaja')::BOOLEAN
                 THEN
                     EXECUTE 'GRANT dbkasutaja TO "' || doc_kasutaja || '"';
                 END IF;
 
             ELSE
 
-                RAISE EXCEPTION 'System role for user is not esists, kasutaja %, import %', doc_kasutaja, is_import;
+                RAISE EXCEPTION 'Viga, System role for user is not esists, kasutaja %, import %', doc_kasutaja, is_import;
             END IF;
         END IF;
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;
 
@@ -121,7 +133,8 @@ BEGIN
                    INTO new_user_id;
     ELSE
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS updated,
                      userName AS user,
                      u.kasutaja,
@@ -179,12 +192,13 @@ BEGIN
         roles_list = roles_list || ',eelesitaja';
     END IF;
 
-    if roles_json ->>'is_arvestaja' THEN
+    IF roles_json ->> 'is_arvestaja'
+    THEN
         roles_list = roles_list || ',arvestaja';
     END IF;
 
     l_string = 'GRANT ' || roles_list || ' TO ' || quote_ident(doc_kasutaja);
-    raise notice '%', l_string;
+    RAISE NOTICE '%', l_string;
     EXECUTE (l_string);
 
 

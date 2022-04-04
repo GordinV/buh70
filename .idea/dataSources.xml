@@ -54,6 +54,12 @@
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://localhost:5432/db</jdbc-url>
+      <driver-properties>
+        <property name="sslmode" value="prefer" />
+        <property name="sslcert" value="C:\development\root.crt" />
+        <property name="sslrootcert" value="C:\development\root.crt" />
+        <property name="sslkey" value="C:\development\server.key" />
+      </driver-properties>
     </data-source>
     <data-source source="LOCAL" name="archive_2019" uuid="76fa3c8a-1504-42a2-907b-b00080a5f253">
       <driver-ref>postgresql</driver-ref>
@@ -72,6 +78,15 @@
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://80.235.127.119:5438/db</jdbc-url>
+    </data-source>
+    <data-source source="LOCAL" name="narvalv@localhost" uuid="42842083-9e92-4fc6-b57c-6f3ef3704b2c">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/narvalv</jdbc-url>
+      <driver-properties>
+        <property name="sslmode" value="disable" />
+      </driver-properties>
     </data-source>
   </component>
 </project>

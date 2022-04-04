@@ -45,3 +45,7 @@ config/default.json
 
 #logs
 *.log
+
+#ssl
+*.key
+*.crt

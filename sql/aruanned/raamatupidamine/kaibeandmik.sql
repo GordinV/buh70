@@ -19,8 +19,9 @@ WITH algsaldo AS (
            konto,
            rekvid
     FROM (
+-- < 2022-01-02
              SELECT d.rekvid,
-                    (j1.summa)                   AS deebet,
+                    sum(j1.summa)                AS deebet,
                     0 :: NUMERIC(14, 2)          AS kreedit,
                     trim(j1.deebet)::VARCHAR(20) AS konto
              FROM docs.doc d
@@ -28,51 +29,118 @@ WITH algsaldo AS (
                       INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                  -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                       LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-             WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
+             WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, make_date(year(l_kpv1), 01, 01), l_kpv2) < make_date(year(l_kpv1), 01, 01)
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
                AND (d.rekvid = l_rekvid OR l_kond = 1)
-               AND ((l_params ->> 'konto') IS NULL OR
-                    coalesce(j1.deebet, '') LIKE coalesce((l_params ->> 'konto'), '') || '%')
-               AND (((CASE WHEN left(j1.deebet, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+               AND ((l_params::JSONB ->> 'konto') IS NULL OR
+                    coalesce(j1.deebet, '') LIKE coalesce((l_params::JSONB ->> 'konto'), '') || '%')
+               AND (((CASE
+                          WHEN left(j1.deebet, 1) IN ('1', '2') THEN l_params::JSONB
+                          ELSE '{}'::JSONB END) ->>
                      'tunnus') IS NULL OR
-                    COALESCE(j1.tunnus, '') ILIKE COALESCE((l_params ->> 'tunnus'), '') || '%')
-               AND (((CASE WHEN left(j1.deebet, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+                    COALESCE(j1.tunnus, '') ILIKE COALESCE((l_params::JSONB ->> 'tunnus'), '') || '%')
+               AND (((CASE
+                          WHEN left(j1.deebet, 1) IN ('1', '2') THEN l_params::JSONB
+                          ELSE '{}'::JSONB END) ->>
                      'proj') IS NULL OR
-                    COALESCE(j1.proj, '') ILIKE COALESCE((l_params ->> 'proj'), '') || '%')
-               AND (((CASE WHEN left(j1.deebet, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+                    COALESCE(j1.proj, '') ILIKE COALESCE((l_params::JSONB ->> 'proj'), '') || '%')
+               AND (((CASE
+                          WHEN left(j1.deebet, 1) IN ('1', '2') THEN l_params::JSONB
+                          ELSE '{}'::JSONB END) ->>
                      'uritus') IS NULL OR
-                    COALESCE(j1.kood4, '') ILIKE COALESCE((l_params ->> 'uritus'), '') || '%')
+                    COALESCE(j1.kood4, '') ILIKE COALESCE((l_params::JSONB ->> 'uritus'), '') || '%')
                AND d.status <> 3
+             GROUP BY j1.deebet, d.rekvid
              UNION ALL
+             -- >= 2022-01-01
+             SELECT d.rekvid,
+                    sum(j1.summa)                AS deebet,
+                    0 :: NUMERIC(14, 2)          AS kreedit,
+                    trim(j1.deebet)::VARCHAR(20) AS konto
+             FROM docs.doc d
+                      INNER JOIN docs.journal j ON j.parentid = d.id
+                      INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                 -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                      LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+             WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) >= make_date(year(l_kpv1), 01, 01)
+               AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
+               AND d.rekvid IN (SELECT rekv_id
+                                FROM get_asutuse_struktuur(l_rekvid))
+               AND (d.rekvid = l_rekvid OR l_kond = 1)
+               AND ((l_params::JSONB ->> 'konto') IS NULL OR
+                    coalesce(j1.deebet, '') LIKE coalesce((l_params::JSONB ->> 'konto'), '') || '%')
+               AND ( l_params::JSONB ->> 'tunnus' IS NULL OR
+                    COALESCE(j1.tunnus, '') ILIKE COALESCE((l_params::JSONB ->> 'tunnus'), '') || '%')
+               AND ( l_params::JSONB  ->> 'proj' IS NULL OR
+                    COALESCE(j1.proj, '') ILIKE COALESCE((l_params::JSONB ->> 'proj'), '') || '%')
+               AND (l_params::JSONB ->>'uritus' IS NULL OR
+                    COALESCE(j1.kood4, '') ILIKE COALESCE((l_params::JSONB ->> 'uritus'), '') || '%')
+               AND d.status <> 3
+             GROUP BY j1.deebet, d.rekvid
+             UNION ALL
+             -- < 2022-01-01
              SELECT d.rekvid,
                     0 :: NUMERIC                  AS deebet,
-                    (j1.summa)                    AS kreedit,
+                    sum(j1.summa)                 AS kreedit,
                     trim(j1.kreedit)::VARCHAR(20) AS konto
              FROM docs.doc d
                       INNER JOIN docs.journal j ON j.parentid = d.id
                       INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                  -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                       LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-             WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
+             WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, make_date(year(l_kpv1), 01, 01), l_kpv2) < make_date(year(l_kpv1), 01, 01)
                AND d.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid))
                AND (d.rekvid = l_rekvid OR l_kond = 1)
-               AND ((l_params ->> 'konto') IS NULL OR
-                    coalesce(j1.kreedit, '') LIKE coalesce((l_params ->> 'konto'), '') || '%')
-               AND (((CASE WHEN left(j1.kreedit, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+               AND ((l_params::JSONB ->> 'konto') IS NULL OR
+                    coalesce(j1.kreedit, '') LIKE coalesce((l_params::JSONB ->> 'konto'), '') || '%')
+               AND (((CASE
+                          WHEN left(j1.kreedit, 1) IN ('1', '2') THEN l_params::JSONB
+                          ELSE '{}'::JSONB END) ->>
                      'tunnus') IS NULL OR
-                    COALESCE(j1.tunnus, '') ILIKE COALESCE((l_params ->> 'tunnus'), '') || '%')
-               AND (((CASE WHEN left(j1.kreedit, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+                    COALESCE(j1.tunnus, '') ILIKE COALESCE((l_params::JSONB ->> 'tunnus'), '') || '%')
+               AND (((CASE
+                          WHEN left(j1.kreedit, 1) IN ('1', '2') THEN l_params::JSONB
+                          ELSE '{}'::JSONB END) ->>
                      'proj') IS NULL OR
-                    left(j1.kreedit, 1) IN ('1', '2') OR
-                    coalesce(j1.proj, '') ILIKE coalesce((l_params ->> 'proj'), '') || '%')
-               AND (((CASE WHEN left(j1.kreedit, 1) IN ('1', '2') THEN l_params ELSE '{}'::JSONB END) ->>
+                    coalesce(j1.proj, '') ILIKE coalesce((l_params::JSONB ->> 'proj'), '') || '%')
+               AND (((CASE
+                          WHEN left(j1.kreedit, 1) IN ('1', '2') THEN l_params::JSONB
+                          ELSE '{}'::JSONB END) ->>
                      'uritus') IS NULL OR
                     left(j1.kreedit, 1) IN ('1', '2') OR
-                    coalesce(j1.kood4, '') ILIKE coalesce((l_params ->> 'uritus'), '') || '%')
-
+                    coalesce(j1.kood4, '') ILIKE coalesce((l_params::JSONB ->> 'uritus'), '') || '%')
                AND d.status <> 3
+             GROUP BY j1.kreedit, d.rekvid
+             UNION ALL
+             -- >= 2022-01-01
+             SELECT d.rekvid,
+                    0 :: NUMERIC                  AS deebet,
+                    sum(j1.summa)                 AS kreedit,
+                    trim(j1.kreedit)::VARCHAR(20) AS konto
+             FROM docs.doc d
+                      INNER JOIN docs.journal j ON j.parentid = d.id
+                      INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                 -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                      LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+             WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, make_date(year(l_kpv1), 01, 01), l_kpv2) >= make_date(year(l_kpv1), 01, 01)
+               AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
+               AND d.rekvid IN (SELECT rekv_id
+                                FROM get_asutuse_struktuur(l_rekvid))
+               AND (d.rekvid = l_rekvid OR l_kond = 1)
+               AND ((l_params::JSONB ->> 'konto') IS NULL OR
+                    coalesce(j1.kreedit, '') LIKE coalesce((l_params::JSONB ->> 'konto'), '') || '%')
+               AND ((l_params::JSONB ->> 'tunnus') IS NULL OR
+                    COALESCE(j1.tunnus, '') ILIKE COALESCE((l_params::JSONB ->> 'tunnus'), '') || '%')
+               AND ((l_params::JSONB ->>
+                     'proj') IS NULL OR
+                    coalesce(j1.proj, '') ILIKE coalesce((l_params::JSONB ->> 'proj'), '') || '%')
+               AND ((l_params::JSONB ->>
+                     'uritus') IS NULL OR
+                    coalesce(j1.kood4, '') ILIKE coalesce((l_params::JSONB ->> 'uritus'), '') || '%')
+               AND d.status <> 3
+             GROUP BY j1.kreedit, d.rekvid
          ) qry
     GROUP BY konto,
              rekvid)
@@ -157,12 +225,7 @@ GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER,INTEGER, TEXT, J
 
 
 /*
-select * from (
 select *
-FROM docs.kaibeandmik_('2022-01-01', current_date :: DATE, 28,0,null,'{"konto":"103100","tunnus":"12"}'::jsonb)
-) qry
-where konto like '10010007%'
-
-'{"tunnus":"EEL","konto":"100"}'
+FROM docs.kaibeandmik('2022-03-01', '2022-03-31':: DATE, 28,0,'%','{"konto":"4","tunnus":""}'::jsonb)
 
 */

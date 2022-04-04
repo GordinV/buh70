@@ -1,5 +1,7 @@
 const {Client} = require('pg');
 const log = require('./log');
+const path = require('path');
+const fs = require('fs');
 
 const db = {
     queryDb: async (sqlString, params, sortBy, sqlWhere, sqlLimit, subTotals, dbConfig) => {
@@ -18,11 +20,40 @@ const db = {
             prepairedSqlString = createSqlString(prepairedSqlString, sortBy, sqlWhere, sqlLimit, subTotals)
         }
 
-        const client = new Client(config.pg.connection);
-        await client.connect();
+        // SSL соединение, если прописано в конфигурации
+        let client;
+        if (config.pg.ssl) {
+
+            const pathToSSLCa = path.join(global.__base, 'config', 'client.crt');
+            const pathToSSLKey = path.join(global.__base, 'config', 'server.key');
+            const pathToSSLcert = path.join(global.__base, 'config', 'client.crt');
+
+            const pgConfig = {
+                user: config.pg.user,
+                password: config.pg.password,
+                database: config.pg.database,
+                port: config.pg.port,
+                host: config.pg.host,
+                ssl: {
+                    rejectUnauthorized: false,
+                    require: true,
+                    ca: fs.readFileSync(pathToSSLCa).toString(),
+                    key: fs.readFileSync(pathToSSLKey).toString(),
+                    cert: fs.readFileSync(pathToSSLcert).toString(),
+                }
+            };
+
+            client = new Client(pgConfig);
+
+        } else {
+            client = new Client(config.pg.connection);
+        }
 
         try {
+            await client.connect();
+
             const res = await client.query(prepairedSqlString, params);
+
             if (res.rowCount && res.rowCount === 1 && res.rows && res.rows.length === 1 && ('error_code' in res.rows[0])) {
                 // executed procedure
                 result = Object.assign(result, res.rows[0]);

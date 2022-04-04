@@ -31,6 +31,8 @@ module.exports = function (app) {
     // logout logic
     app.post('/logout', require('./logout').post);
 
+    app.get('/get_access_code/:kasutaja/:access_code', require ('./get_access_code').get);
+    app.post('/get_access_code', require ('./get_access_code').post);
     app.get('/raama', require('./raama').get); // module raamatupidamine
     app.get('/raama/:documentType', checkAuth, require('./raama').get); // module raamatupidamine
     app.get('/raama/:documentType/:id', checkAuth, require('./raama/document').get); // module raamatupidamine

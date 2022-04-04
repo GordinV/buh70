@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+        .kulastavus {
+            width: 100px
+        }
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 SALDO JA KÄIVE ARUANNE (Kokkuvõte)
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th.kulastavus Külastatavus
+                    th Alg.saldo
+                    th Arvestatud
+                    th Soodustus
+                    th Kokku arvestatud
+                    th Laekumised
+                    th Mahakantud
+                    th Tagastatud
+                    th Võlg
+                    th Asutus
+
+            tbody
+                each rea in data
+                    tr
+                        td(align='center')=rea.kulastatavus
+                        td(align='center')=Number(rea.alg_saldo).toFixed(2)
+                        td(align='center')=Number(rea.arvestatud).toFixed(2)
+                        td(align='center')=Number(rea.soodustus).toFixed(2)
+                        td(align='center')=((Number(rea.arvestatud) - Number(rea.soodustus)).toFixed(2))
+                        td(align='center')=Number(rea.laekumised).toFixed(2)
+                        td(align='center')=Number(rea.mahakantud).toFixed(2)
+                        td(align='center')=Number(rea.tagastused).toFixed(2)
+                        td(align='center')=Number(rea.jaak).toFixed(2)
+                        td(align='center')=rea.asutus
+            tr.group
+                td.group=' Kokku:'
+                td(align='center').group=Number(data[0].alg_saldo_group).toFixed(2)
+                td(align='center').group=Number(data[0].arvestatud_group).toFixed(2)
+                td(align='center').group=Number(data[0].soodustus_group).toFixed(2)
+                td(align='center').group=((Number(data[0].arvestatud_group) - Number(data[0].soodustus_group)).toFixed(2))
+                td(align='center').group=Number(data[0].laekumised_group).toFixed(2)
+                td(align='center').group=Number(data[0].mahakantud_group).toFixed(2)
+                td(align='center').group=Number(data[0].tagastused_group).toFixed(2)
+                td(align='center').group=Number(data[0].jaak_group).toFixed(2)
+

@@ -4,11 +4,11 @@ DROP FUNCTION IF EXISTS eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, 
 DROP FUNCTION IF EXISTS eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE, DATE, INTEGER, INTEGER, JSONB);
 
 CREATE OR REPLACE FUNCTION eelarve.tulude_taitmine_allikas_artikkel(l_aasta INTEGER,
-                                                                     l_kpv_1 DATE,
-                                                                     l_kpv_2 DATE,
-                                                                     l_rekvid INTEGER,
-                                                                     l_kond INTEGER,
-                                                                     l_params JSONB DEFAULT NULL)
+                                                                    l_kpv_1 DATE,
+                                                                    l_kpv_2 DATE,
+                                                                    l_rekvid INTEGER,
+                                                                    l_kond INTEGER,
+                                                                    l_params JSONB DEFAULT NULL)
     RETURNS TABLE (
         rekv_id                  INTEGER,
         eelarve_kinni            NUMERIC(14, 2),
@@ -36,6 +36,7 @@ WITH cur_tulude_kassa_taitmine AS (
       AND (l_params IS NULL OR coalesce(qry.artikkel, '') ILIKE coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
       AND (l_params IS NULL OR coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
       AND (l_params IS NULL OR coalesce(qry.rahavoog, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
+      AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
 ),
      cur_tulude_taitmine AS (
          SELECT *
@@ -48,6 +49,7 @@ WITH cur_tulude_kassa_taitmine AS (
            AND (l_params IS NULL OR coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
            AND (l_params IS NULL OR
                 coalesce(qry.rahavoog, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
+           AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
      ),
      laekumised_eelarvesse AS (
          SELECT j.rekvid,
@@ -195,6 +197,7 @@ WITH cur_tulude_kassa_taitmine AS (
                          coalesce(e.kood2, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
                     AND (l_params IS NULL OR
                          coalesce(e.kood3, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
+                    AND e.rekvid <> 9 -- TP18510139, VB убрать из отчетов
 
                   UNION ALL
                   SELECT rekv_id          AS rekvid,
@@ -220,7 +223,7 @@ WITH cur_tulude_kassa_taitmine AS (
                   FROM cur_tulude_taitmine ft
                   WHERE ft.artikkel IS NOT NULL
                     AND NOT empty(ft.artikkel)
-
+                    AND ft.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
                   UNION ALL
                   SELECT kt.rekv_id                                                           AS rekvid,
                          0 :: NUMERIC                                                         AS eelarve_kinni,
@@ -238,7 +241,9 @@ WITH cur_tulude_kassa_taitmine AS (
                   FROM cur_tulude_kassa_taitmine kt
                   WHERE kt.artikkel IS NOT NULL
                     AND NOT empty(kt.artikkel)
+                    AND kt.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
               ) qry
+         WHERE qry.rekvid <> 9
          GROUP BY rekvid,
                   tegev,
                   allikas,
@@ -467,7 +472,8 @@ GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.tulude_taitmine_allikas_artikkel_(2021::INTEGER, '2022-01-01'::DATE, '2022-03-31', 29, 1,'{"tunnus":null}')
+         FROM eelarve.tulude_taitmine_allikas_artikkel(2021::INTEGER, '2021-01-01'::DATE, '2021-12-31', 119, 1,'{"tunnus":null}')
+where rekv_id = 9
      ) qry
 WHERE left(artikkel, 3) IN ('655')
 --and tegev = '04730'

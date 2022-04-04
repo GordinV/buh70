@@ -16,7 +16,8 @@ CREATE OR REPLACE FUNCTION lapsed.lapse_saldod(l_kpv DATE DEFAULT now(), l_laps_
         ettemaksud NUMERIC(14, 4), -- в.т. числе переплат
         tagastused NUMERIC(14, 4)  -- возвраты
 
-    ) AS
+    )
+AS
 $BODY$
 
 SELECT sum(jaak)::NUMERIC(14, 4)       AS jaak,
@@ -53,44 +54,64 @@ FROM (
               lapsed.get_group_part_from_mk(D.id, l_kpv) AS ymk
          WHERE D.status <> 3
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
-         UNION ALL
-         -- распределенные авансовые платежи
-         SELECT -1 * ((a1.summa / a.summa) * at.summa) AS jaak,
-                l.parentid                             AS laps_id,
-                a1.properties ->> 'yksus'              AS yksus,
-                at.rekvid                              AS rekv_id,
-                at.doc_tasu_id                         AS docs_id,
-                0                                      AS laekumised,
-                0                                      AS arv_tasud,
-                0                                      AS ettemaksud,
-                0                                      AS tagastused
-         FROM docs.arvtasu at
-                  INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid
-                  INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
-                  INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
-         WHERE at.kpv < l_kpv::DATE
+             UNION ALL
+           -- распределенные авансовые платежи
+             SELECT -1 * ((a1.summa / a.summa) * at.summa) AS jaak
+             ,
+             l.parentid AS laps_id
+             ,
+             a1.properties ->> 'yksus' AS yksus
+             ,
+             at.rekvid AS rekv_id
+             ,
+             at.doc_tasu_id AS docs_id
+             ,
+             0 AS laekumised
+             ,
+             0 AS arv_tasud
+             ,
+             0 AS ettemaksud
+             ,
+             0 AS tagastused
+             FROM docs.arvtasu at
+             INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid
+             INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
+             INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
+             WHERE at.kpv < l_kpv::DATE
+           AND at.status <> 3
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
            AND (l_rekv_id IS NULL OR a.rekvid IN (SELECT rekv_id
                                                   FROM get_asutuse_struktuur(l_rekv_id)))
-         UNION ALL
+             UNION ALL
 
 
-         -- laekumised, поступления (не распределенные)
-         SELECT 0                                               AS jaak,
-                l.parentid                                      AS laps_id,
-                ymk.yksus                                       AS yksus,
-                d.rekvid                                        AS rekv_id,
-                d.id                                            AS docs_id,
-                CASE WHEN ymk.opt = 2 THEN ymk.summa ELSE 0 END AS laekumised,
-                0                                               AS arv_tasud,
-                0                                               AS ettemaksud,
-                CASE WHEN ymk.opt = 1 THEN ymk.summa ELSE 0 END AS tagastused
-         FROM docs.doc d,
-              lapsed.get_group_part_from_mk(d.id, l_kpv) AS ymk,
-              docs.mk mk,
-              lapsed.liidestamine l
-         WHERE mk.parentid = d.id
+           -- laekumised, поступления (не распределенные)
+             SELECT 0 AS jaak
+             ,
+             l.parentid AS laps_id
+             ,
+             ymk.yksus AS yksus
+             ,
+             d.rekvid AS rekv_id
+             ,
+             d.id AS docs_id
+             ,
+             CASE WHEN ymk.opt = 2 THEN ymk.summa ELSE 0 END AS laekumised
+             ,
+             0 AS arv_tasud
+             ,
+             0 AS ettemaksud
+             ,
+             CASE WHEN ymk.opt = 1 THEN ymk.summa ELSE 0 END AS tagastused
+             FROM docs.doc d
+             ,
+             lapsed.get_group_part_from_mk(d.id, l_kpv) AS ymk
+             ,
+             docs.mk mk
+             ,
+             lapsed.liidestamine l
+             WHERE mk.parentid = d.id
            AND l.docid = d.id
            AND d.status <> 3
            AND year(mk.maksepaev) = year(l_kpv - 1)
@@ -99,45 +120,59 @@ FROM (
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
            AND (l_rekv_id IS NULL OR mk.rekvid IN (SELECT rekv_id
                                                    FROM get_asutuse_struktuur(l_rekv_id)))
-
-         UNION ALL
-         -- распределенные авансовые платежи
-         SELECT 0                                 AS jaak,
-                l.parentid                        AS laps_id,
-                a1.properties ->> 'yksus'         AS yksus,
-                at.rekvid                         AS rekv_id,
-                at.doc_tasu_id                    AS docs_id,
-                0                                 AS laekumised,
-                ((a1.summa / a.summa) * at.summa) AS arv_tasud,
-                0                                 AS ettemaksud,
-                0                                 AS tagastused
-         FROM docs.arvtasu at
-                  INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid
-                  INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
-                  INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
-         WHERE year(at.kpv) = year(l_kpv - 1)
+             UNION ALL
+           -- распределенные авансовые платежи
+             SELECT 0 AS jaak
+             ,
+             l.parentid AS laps_id
+             ,
+             a1.properties ->> 'yksus' AS yksus
+             ,
+             at.rekvid AS rekv_id
+             ,
+             at.doc_tasu_id AS docs_id
+             ,
+             0 AS laekumised
+             ,
+             ((a1.summa / a.summa) * at.summa) AS arv_tasud
+             ,
+             0 AS ettemaksud
+             ,
+             0 AS tagastused
+             FROM docs.arvtasu at
+             INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid
+             INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
+             INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
+             WHERE year(at.kpv) = year(l_kpv - 1)
            AND month(at.kpv) = month(l_kpv - 1)
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
            AND (l_rekv_id IS NULL OR a.rekvid IN (SELECT rekv_id
                                                   FROM get_asutuse_struktuur(l_rekv_id)))
-         UNION ALL
-         --jaak, arved, сумма счетов начисленных до периода
-         SELECT a1.summa::NUMERIC(14, 4)    AS jaak,
-                l.parentid                  AS laps_id,
-                (a1.properties ->> 'yksus') AS yksus,
-                a.rekvid                    AS rekv_id,
-                d.id                        AS docs_id,
-                0                           AS laekumised,
-                0                           AS arv_tasud,
-                0                           AS ettemaksud,
-                0                           AS tagastused
-
-         FROM docs.doc d
-                  INNER JOIN docs.arv a ON a.parentid = d.id
-                  INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
-                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-         WHERE (a.kpv < l_kpv)
+             UNION ALL
+           --jaak, arved, сумма счетов начисленных до периода
+             SELECT a1.summa::NUMERIC(14, 4) AS jaak
+             ,
+             l.parentid AS laps_id
+             ,
+             (a1.properties ->> 'yksus') AS yksus
+             ,
+             a.rekvid AS rekv_id
+             ,
+             d.id AS docs_id
+             ,
+             0 AS laekumised
+             ,
+             0 AS arv_tasud
+             ,
+             0 AS ettemaksud
+             ,
+             0 AS tagastused
+             FROM docs.doc d
+             INNER JOIN docs.arv a ON a.parentid = d.id
+             INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
+             INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+             WHERE (a.kpv < l_kpv)
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
            AND d.status <> 3
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)

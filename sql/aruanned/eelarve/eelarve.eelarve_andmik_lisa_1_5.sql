@@ -1625,7 +1625,7 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2022,03, 31),63, 1) qry
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2021,12, 31),63, 1) qry
          where tegev like '01800%'
      ) qry
 --test

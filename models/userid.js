@@ -7,7 +7,13 @@ const _ = require('underscore');
 //model
 const useridModel = require('./ou/userid');
 const Db = require('./../libs/db');
+const fs = require('fs');
 
+const path = require('path');
+
+const pathToSSLCa = path.join(global.__base, 'config', 'client.crt');
+const pathToSSLKey = path.join(global.__base, 'config', 'server.key');
+const pathToSSLcert = path.join(global.__base, 'config', 'client.crt');
 
 
 module.exports = {
@@ -19,13 +25,6 @@ module.exports = {
     lastLogin: null,
     asutusName: '',
     app_port: 3000,
-    connectDb: function () {
-        const pg = require('pg'),
-            config = require('../config/default'),
-            db = new pg.Client(config.pg.connection);
-
-        return db;
-    },
 
     getUserByUuid: async function (uuid) {
         const sql = _.findWhere(useridModel.select, {alias: 'get_user_by_uuid'}).sql;
@@ -36,58 +35,34 @@ module.exports = {
         return await Db.queryDb(sql, [params]);
     },
     deleteUserUuid: function (params) {
-        console.log('delete uuid', params);
         const sql = _.findWhere(useridModel.select, {alias: 'delete_user_uuid'}).sql;
         if (sql) {
-            console.log(sql, params);
             Db.queryDb(sql, [params]);
         }
     },
 
 
 // возвращает строку пользователя по логину и ид учреждения
-    getUserId: function (nimi, rekvId, callback) {
+    getUserId: async function (nimi, rekvId, callback) {
 
-        const db = this.connectDb();
+        const sql = _.findWhere(useridModel.select, {alias: 'get_last_login'}).sql;
 
-        db.connect(function (err) {
-            if (err) {
-                callback(err, null);
-                return console.error('could not connect to postgres', err);
-            }
+        const result = await Db.queryDb(sql, [nimi, rekvId]);
 
-            const sql = _.findWhere(useridModel.select, {alias: 'get_last_login'}).sql;
+        this.userId = result.data[0].id;
+        this.loginName = result.data[0].kasutaja;
+        this.userName = result.data[0].ametnik;
+        this.lastLogin = result.data[0].last_login;
+        this.encriptedPassword = result.data[0].parool;
 
-            db.query(sql, [nimi, rekvId], function (err, result) {
-                db.end();
+        const userData = Object.assign({}, result.data[0]);
 
-                if (err) {
-                    console.error('Error, getUserId');
-                    return callback(err, null);
-                }
+        return callback(null, userData);
 
-                if (result.rows.length == 0) {
-                    return callback(null, null);
-                }
-
-                this.userId = result.rows[0].id;
-                this.loginName = result.rows[0].kasutaja;
-                this.userName = result.rows[0].ametnik;
-                this.lastLogin = result.rows[0].last_login;
-                this.encriptedPassword = result.rows[0].parool;
-
-                const userData = Object.assign({}, result.rows[0]);
-
-                db.end();
-                callback(null, userData);
-
-            });
-        });
     },
 
     //сохраняет шифрованный пароль в таблице, если там его нет
-    updateUserPassword: function (userLogin, userPassword, savedPassword, callback) {
-
+    updateUserPassword: async function (userLogin, userPassword, savedPassword, callback) {
         let encryptedPassword = this.createEncryptPassword(userPassword, userLogin.length + '');
 
         this.loginName = userLogin; // сохраним имя пользователя
@@ -96,104 +71,28 @@ module.exports = {
             this.login = encryptedPassword === savedPassword; // проверка пароля
             callback(null, this.login);
         } else {
+            // get hash and update userInformation
+            const sql = _.findWhere(useridModel.executeSql, {alias: 'update_hash'}).sql;
 
-            //first should connect to pg, using connection, username and password. If success, then get hash and update userInformation
-            const pg = require('pg');
-            const local_config = require('../config/default');
-
-            const local_db = new pg.Client({
-                host: local_config.pg.host,
-                port: local_config.pg.port,
-                database: local_config.pg.database,
-                user: userLogin,
-                password: userPassword
-            });
-
-
-            local_db.connect((err, result) => {
-
-                if (err) {
-                    callback(err, null);
-                }
-
-                // иначе сохраняем его в таблице
-                const db = this.connectDb();
-
-                db.connect(function (err) {
-                    if (err) {
-                        return console.error('could not connect to postgres', err);
-                    }
-
-                    const sql = _.findWhere(useridModel.executeSql, {alias: 'update_hash'}).sql;
-
-                    db.query(sql, [userLogin, encryptedPassword], function (err, result) {
-                        if (err) {
-                            callback(err, null);
-                            return console.error('error in query');
-                        }
-                        db.end();
-                        callback(null, true);
-                    });
-
-                    callback(err, true);
-
-                });
-
-                // close connection
-                local_db.end();
-
-            });
-
+            await Db.queryDb(sql, [userLogin, encryptedPassword]);
+            callback(err, true);
         }
-
     },
 
     // when succesfully logged in, will update last_login field
-    updateUseridLastLogin: function (userId, callback) {
-        // иначе сохраняем его в таблице
-        const db = this.connectDb();
+    updateUseridLastLogin: async function (userId, callback) {
+        const sql = _.findWhere(useridModel.executeSql, {alias: 'update_last_login'}).sql;
 
-        db.connect(function (err) {
-            if (err) {
-                return console.error('could not connect to postgres', err);
-            }
-
-            const sql = _.findWhere(useridModel.executeSql, {alias: 'update_last_login'}).sql;
-
-            db.query(sql, [userId], function (err, result) {
-                if (err) {
-                    console.error('error in query', err);
-                    next(err);
-                }
-
-                db.end();
-                callback(null, true);
-            });
-        });
-
+        await Db.queryDb(sql, [userId]);
+        callback(null, true);
     },
 
     // выбирает всех польователей
-    selectAllUsers: function (userId, callback) {
-        const db = this.connectDb();
+    selectAllUsers: async function (userId, callback) {
+        const sql = _.findWhere(useridModel.select, {alias: 'get_all_users'}).sql;
 
-        db.connect(function (err) {
-            if (err) {
-                return console.error('could not connect to postgres', err);
-            }
-            const sql = _.findWhere(useridModel.select, {alias: 'get_all_users'}).sql;
-
-            db.query(sql, [userId], function (err, result) {
-                if (err) {
-                    console.error(err);
-                    return callback(err);
-                }
-                db.end();
-
-                callback(err, result);
-            });
-        });
-
+        const result = await Db.queryDb(sql, [userId]);
+        callback(null, result);
     },
 
 // создает криптованный пароль
@@ -201,36 +100,20 @@ module.exports = {
         const crypto = require('crypto'),
             hashParool = crypto.createHmac('sha1', salt).update(password).digest('hex');
         if (callback) {
-//            this.encriptedPassword = hashParool;
             callback(null, hashParool);
         }
         return hashParool;
     },
 
     //грузим доступные учреждения
-    loadPermitedAsutused: function (kasutajaNimi, callback) {
+    loadPermitedAsutused: async function (kasutajaNimi, callback) {
         const sql = _.findWhere(useridModel.select, {alias: 'com_user_rekv'}).sql;
 
-        const db = this.connectDb();
-
-        db.connect(function (err) {
-            if (err) {
-                return console.error('could not connect to postgres', err);
-            }
-            db.query(sql, [kasutajaNimi], function (err, result) {
-                if (err) {
-                    console.error(err);
-                    callback(err, null);
-                }
-                db.end();
-                let data = result.rows.map((row) => {
-                    return JSON.stringify(row);
-                });
-                callback(err, data);
-            });
+        const result = await Db.queryDb(sql, [kasutajaNimi]);
+        let data = result.data.map((row) => {
+            return JSON.stringify(row);
         });
-
-
+        callback(null, data);
     }
 
 };

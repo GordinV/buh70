@@ -72,6 +72,7 @@ const ArvedKoodiJargiReport = require('./../docs/arved_koodi_jargi/index.jsx');
 const SaldoJaKaiveReport = require('./../docs/saldo_ja_kaive/index.jsx');
 const SaldoJaKaibeAndmik = require('./../docs/saldo_ja_kaibeandmik/index.jsx');
 const KaiveAruanne = require('./../docs/kaive_aruanne/index.jsx');
+const KaiveAruanneKokku = require('./../docs/kaive_aruanne_kokku/index.jsx');
 const SentDocsReport = require('./../docs/sent_docs/index.jsx');
 const ChildAgeReport = require('./../docs/child_age/index.jsx');
 const SoodustusedReport = require('./../docs/soodustused/index.jsx');
@@ -293,6 +294,11 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/kaive_aruanne"
                        render={(props) => <KaiveAruanne
+                           module={MODULE}
+                           history={props.history}
+                           initData={props.initData}/>}/>
+                <Route exact path="/lapsed/kaive_aruanne_kokku"
+                       render={(props) => <KaiveAruanneKokku
                            module={MODULE}
                            history={props.history}
                            initData={props.initData}/>}/>

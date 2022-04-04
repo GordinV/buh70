@@ -51,5 +51,5 @@ module.exports = {
     topeltmaksud: '/aruanned/lapsed/topeltmaksud',
     kuutabeli_aruanne: '/aruanned/lapsed/kuutabeli_aruanne',
     viitenr:'/lapsed/viitenr',
-
+    kaive_aruanne_kokku:'/aruanned/lapsed/kaive_kokkuvote',
 };
