@@ -1,7 +1,8 @@
 DROP FUNCTION IF EXISTS palk.sp_calc_umardamine(INTEGER, JSON);
+DROP FUNCTION IF EXISTS palk.sp_calc_umardamine_(INTEGER, JSON);
 
 CREATE OR REPLACE FUNCTION palk.sp_calc_umardamine(IN user_id INTEGER, params JSON, OUT result INTEGER,
-                                                   OUT error_code INTEGER, OUT error_message TEXT)
+                                                    OUT error_code INTEGER, OUT error_message TEXT)
     --tnisikid integer, tdkpv date, tnrekvid integer)
     RETURNS RECORD AS
 $BODY$
@@ -282,17 +283,19 @@ BEGIN
                                coalesce(v_arv.pm - round(v_fakt_arv.pm, 2), 0) *
                                v_tululiik.pm_maksustav :: NUMERIC                           AS pensmaks,
                                (CASE
+                                    WHEN v_fakt_arv.mvt < v_arv.mvt_kokku THEN 1 -- если меньше 500 то округляем
                                     WHEN v_tululiik.tululiigi_arv > 1 THEN 0
                                     WHEN v_tululiik.tululiik ::INTEGER < 20 THEN 1
                                     ELSE 0 END) *
                                CASE
-                                   WHEN v_tululiik.tululiigi_arv > 1 THEN 0
+                                   WHEN v_tululiik.tululiigi_arv > 1 AND v_fakt_arv.mvt > v_arv.mvt_kokku THEN 0
                                    WHEN v_tululiik.tululiik::INTEGER < 20 THEN 1
                                    ELSE 0 END *
                                coalesce(v_arv.mvt - round(v_fakt_arv.mvt, 2), 0) :: NUMERIC AS tulubaas,
                                v_tululiik.tululiik                                          AS tululiik,
                                'Umardamine' :: TEXT || v_arv.selg                           AS selg
                         INTO v_palk_oper;
+
                         l_save_params = row_to_json(v_palk_oper);
 
                         IF v_palk_oper.summa <> 0 OR v_palk_oper.tulumaks <> 0 OR v_palk_oper.sotsmaks <> 0 OR

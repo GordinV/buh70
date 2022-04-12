@@ -86,12 +86,13 @@ BEGIN
 
                 if l_tasu_jaak = 0 THEN
                     -- если оплата выбрана, то выходим
+                    
                     exit;
                 END IF;
             END LOOP;
 
     END IF;
-
+    raise notice 'l_tasu_jaak  %', l_tasu_jaak;
 END;
 $BODY$
     LANGUAGE plpgsql

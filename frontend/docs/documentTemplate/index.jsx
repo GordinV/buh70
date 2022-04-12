@@ -799,8 +799,7 @@ class DocumentTemplate extends React.Component {
                             this.libs[lib] = response.data.result.result.data;
 
                             // save lib in cache
-                            DocContext.setLib = this.libs[lib];
-
+                            DocContext.setLib = {[lib]: this.libs[lib]};
                             libsCount--;
                             // отметка что справочник загружен
                             this.loadingLibs[lib] = false;

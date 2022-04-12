@@ -64,7 +64,7 @@ FROM (
          WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
            AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
+                            FROM get_asutuse_struktuur(l_rekvid, l_kpv1))
            AND j.rekvid = CASE WHEN l_kond > 0 THEN j.rekvid ELSE l_rekvid END
 
          UNION ALL
@@ -89,7 +89,7 @@ FROM (
          WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
            AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND j.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
+                            FROM get_asutuse_struktuur(l_rekvid, l_kpv1))
            AND j.rekvid = CASE WHEN l_kond > 0 THEN j.rekvid ELSE l_rekvid END
      ) qry
 WHERE NOT empty(artikkel)

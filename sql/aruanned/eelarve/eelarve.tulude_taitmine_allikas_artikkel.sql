@@ -472,8 +472,9 @@ GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.tulude_taitmine_allikas_artikkel(2021::INTEGER, '2021-01-01'::DATE, '2021-12-31', 119, 1,'{"tunnus":null}')
-where rekv_id = 9
+         FROM eelarve.tulude_taitmine_allikas_artikkel(2021::INTEGER, '2021-01-01'::DATE, '2021-06-30', 63, 1,'{"tunnus":null}')
+where allikas = '80'
+and artikkel = '3044'
      ) qry
 WHERE left(artikkel, 3) IN ('655')
 --and tegev = '04730'

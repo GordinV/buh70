@@ -96,7 +96,7 @@ const DocContext = {
     },
 
     set setLib(data) {
-        this.libs[this.docTypeId.toLowerCase()] = data;
+        this.libs = Object.assign({},this.libs,data);
     },
 
     set setEmailParams(params) {

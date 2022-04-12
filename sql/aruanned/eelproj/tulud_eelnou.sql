@@ -455,7 +455,7 @@ BEGIN
                                  S.tunnus,
                                  sum(S.tegelik) AS summa
                           FROM tmp_andmik S
-                          WHERE S.konto LIKE '1032%'
+                          WHERE S.artikkel = '1032'
                             AND S.rahavoog = '02'
                             AND S.aasta = YEAR(l_kpv) - 1
                           GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus
@@ -466,7 +466,7 @@ BEGIN
                                  S.tunnus,
                                  sum(S.tegelik) AS summa
                           FROM tmp_andmik S
-                          WHERE S.konto LIKE '1532%'
+                          WHERE S.artikkel = '1532'
                             AND S.rahavoog = '02'
                             AND S.aasta = YEAR(l_kpv) - 1
                           GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus
@@ -795,7 +795,7 @@ BEGIN
                                                 WHEN l_kond = 1 THEN S.rekvid
                                                 ELSE l_rekvid END)
                             AND S.rekvid IN (SELECT r.rekv_id
-                                             FROM get_asutuse_struktuur(l_rekvid,make_date(YEAR(l_kpv) - 1, 12, 31)) r)
+                                             FROM get_asutuse_struktuur(l_rekvid, make_date(YEAR(l_kpv) - 1, 12, 31)) r)
                           GROUP BY S.rekvid, S.allikas, S.tegev
                           UNION ALL
                           -- - get_saldo('DK', '1019', NULL, NULL, S.rekv_id, YEAR (l_kpv) - 1)
@@ -813,7 +813,7 @@ BEGIN
                                                 WHEN l_kond = 1 THEN S.rekvid
                                                 ELSE l_rekvid END)
                             AND S.rekvid IN (SELECT r.rekv_id
-                                             FROM get_asutuse_struktuur(l_rekvid, make_date(YEAR(l_kpv) , 12, 31)) r)
+                                             FROM get_asutuse_struktuur(l_rekvid, make_date(YEAR(l_kpv), 12, 31)) r)
                           GROUP BY S.rekvid, S.allikas, S.tegev
                           UNION ALL
                           -- + get_saldo('MDK', '1019', NULL, NULL, S.rekv_id, YEAR (l_kpv) - 1)
@@ -831,7 +831,7 @@ BEGIN
                                                 WHEN l_kond = 1 THEN S.rekvid
                                                 ELSE l_rekvid END)
                             AND S.rekvid IN (SELECT r.rekv_id
-                                             FROM get_asutuse_struktuur(l_rekvid,make_date(YEAR(l_kpv) - 1, 12, 31)) r)
+                                             FROM get_asutuse_struktuur(l_rekvid, make_date(YEAR(l_kpv) - 1, 12, 31)) r)
                           GROUP BY S.rekvid, S.allikas, S.tegev
                           UNION ALL
                           -- + get_saldo('DK', '151', NULL, NULL, S.rekv_id, YEAR (l_kpv) - 1)
@@ -978,9 +978,8 @@ BEGIN
                                  S.tunnus,
                                  sum(S.tegelik) AS summa
                           FROM tmp_andmik S
-                          WHERE S.konto LIKE '1032%'
-                            AND S.rahavoog =
-                                '02'
+                          WHERE S.artikkel = '1032'
+                            AND S.rahavoog = '02'
                             AND S.aasta = YEAR(l_kpv)
                           GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus
                           UNION ALL
@@ -990,10 +989,8 @@ BEGIN
                                  S.tunnus,
                                  sum(S.tegelik) AS summa
                           FROM tmp_andmik S
-                          WHERE S.konto LIKE
-                                '1532%'
-                            AND S.rahavoog =
-                                '02'
+                          WHERE S.artikkel = '1532'
+                            AND S.rahavoog = '02'
                             AND S.aasta = YEAR(l_kpv)
                           GROUP BY S.rekv_id, S.tegev, S.allikas, S.tunnus
                       ) S
@@ -1228,12 +1225,12 @@ BEGIN
 -- следующего года (Taotlused -esitatud)
                      -- следующего года (Taotlused -esitatud)
                      SELECT t.rekvid,
-                            t1.kood5                                     AS artikkel,
-                            t1.kood1                                     AS tegev,
-                            t1.kood2                                     AS allikas,
+                            t1.kood5                                              AS artikkel,
+                            t1.kood1                                              AS tegev,
+                            t1.kood2                                              AS allikas,
                             t1.tunnus,
-                            sum(summa_kassa)                             AS summa,
-                            string_agg(ltrim(rtrim(t1.selg)), ' '::TEXT) AS selg
+                            sum(summa_kassa)                                      AS summa,
+                            string_agg(ltrim(rtrim(t1.selg, E'\r\n')), ','::TEXT) AS selg
                      FROM eelarve.taotlus t
                               INNER JOIN eelarve.taotlus1 t1
                                          ON t.id = t1.parentid
@@ -1322,8 +1319,7 @@ BEGIN
                             sum(qry.aasta_3_prognoos)                                AS aasta_3_prognoos,
                             sum(qry.eelarve_tekkepohine_kinnitatud)                  AS eelarve_tekkepohine_kinnitatud,
                             sum(qry.eelarve_tekkepohine_tapsustatud)                 AS eelarve_tekkepohine_tapsustatud,
-                            string_agg(qry.selg,
-                                       ' ')                                          AS selg
+                            string_agg(qry.selg,',')                                     AS selg
                      FROM (
                               SELECT q.rekvid           AS rekvid,
                                      q.idx,
@@ -1592,7 +1588,7 @@ GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER, JSONB) TO
 SELECT sum(aasta_1_tekke_taitmine) OVER (PARTITION BY rekv_id, artikkel) AS aasta1,
        sum(aasta_2_tekke_taitmine) OVER (PARTITION BY rekv_id, artikkel) AS aasta2,
        *
-FROM eelarve.tulud_eelnou('2021-12-31'::DATE, 63:: INTEGER, 1)
-WHERE artikkel = '100'
+FROM eelarve.tulud_eelnou('2021-12-31'::DATE, 130:: INTEGER, 1)
+WHERE artikkel = '1532'
 
 

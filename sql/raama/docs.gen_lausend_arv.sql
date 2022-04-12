@@ -4,7 +4,7 @@ DROP FUNCTION IF EXISTS docs.gen_lausend_arv(INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS docs.gen_lausend_arv_(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.gen_lausend_arv(IN tnId INTEGER, IN userId INTEGER, OUT error_code INTEGER,
-                                                 OUT result INTEGER, OUT error_message TEXT)
+                                                OUT result INTEGER, OUT error_message TEXT)
 AS
 $BODY$
 DECLARE
@@ -33,7 +33,9 @@ BEGIN
     -- select dok data
     SELECT d.docs_ids,
            a.*,
-           asutus.tp AS asutus_tp
+           asutus.tp                                                   AS asutus_tp,
+           a.properties ->> 'tyyp'                                     AS tyyp,
+           coalesce((a.properties ->> 'ettemaksu_period')::INTEGER, 0) AS kas_tulu_arve
     INTO v_arv
     FROM docs.arv a
              INNER JOIN docs.doc d ON d.id = a.parentId
@@ -90,7 +92,7 @@ BEGIN
                 ,
              jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
         WHERE dokprop.id = v_arv.doklausid
-        LIMIT 1;
+            LIMIT 1;
 
 --        v_dokprop.kbmkonto = CASE WHEN v_dokprop.kbmkonto IS NULL OR v_dokprop.kbmkonto = '' THEN v_dokprop.konto END;
 
@@ -175,8 +177,22 @@ BEGIN
 
                 IF v_arv.liik = 0
                 THEN
-                    lcDbKonto = coalesce(v_dokprop.konto, '103000');
-                    lcKrKonto = v_arv1.konto;
+                    -- ettemaksu arve
+
+                    IF (v_arv.tyyp IS NOT NULL AND v_arv.tyyp = 'ETTEMAKS')
+                    THEN
+                        -- 103000	203900
+                        lcDbKonto = '103000';
+                        lcKrKonto = '203900';
+                    ELSIF NOT empty(v_arv.kas_tulu_arve)
+                    THEN
+                        -- 203900	32ХХХХ
+                        lcDbKonto = '203900';
+                        lcKrKonto = v_arv1.konto;
+                    ELSE
+                        lcDbKonto = coalesce(v_dokprop.konto, '103000');
+                        lcKrKonto = v_arv1.konto;
+                    END IF;
 
                     SELECT 0                                   AS id,
                            CASE
@@ -236,6 +252,8 @@ BEGIN
                     END IF;
 
                 ELSE
+                    -- kreedit arve
+
                     IF v_arv1.konto = '601000' OR v_arv1.konto = '203000' OR
                        left(ltrim(rtrim(v_arv1.konto)), 6) = '103701'
                     THEN
@@ -296,16 +314,18 @@ BEGIN
                 END IF;
 
                 l_row_count = l_row_count + 1;
-            END LOOP;
+            END
+                LOOP;
 
         l_json = ('{"id": ' || coalesce(v_arv.journalid, 0)::TEXT || ',"data":' ||
-                  trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":' || l_json_details::TEXT || '}}');
+                  trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":' || l_json_details::TEXT ||
+                  '}}');
 
         /* salvestan lausend */
 
         IF l_row_count > 0
         THEN
-             result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_arv.rekvId);
+            result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_arv.rekvId);
         ELSE
             error_message = 'Puudub kehtiv read';
             result = 0;

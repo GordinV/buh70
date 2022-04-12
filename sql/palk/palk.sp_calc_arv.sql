@@ -13,6 +13,7 @@ CREATE OR
                                       OUT sm NUMERIC,
                                       OUT summa NUMERIC,
                                       OUT mvt NUMERIC(14, 4),
+                                      OUT mvt_kokku NUMERIC(14, 4),
                                       OUT error_code INTEGER,
                                       OUT result INTEGER,
                                       OUT error_message TEXT,
@@ -327,6 +328,7 @@ BEGIN
 
         l_isiku_mvt = 0;
         l_kasutatud_mvt = 0;
+        mvt_kokku = l_mvt_kokku;
 
         IF (l_mvt_kokku > 0)
         THEN
@@ -373,6 +375,7 @@ BEGIN
                 mvt = l_mvt_kokku;
             END IF;
         END IF;
+
     ELSE
         -- MVT  arvestus
         IF l_mvt_kokku > 0

@@ -293,7 +293,7 @@ BEGIN
                         sum(qry.aasta_3_prognoos)                                AS aasta_3_prognoos,
                         sum(qry.eelarve_tekkepohine_kinnitatud)                  AS eelarve_tekkepohine_kinnitatud,
                         sum(qry.eelarve_tekkepohine_tapsustatud)                 AS eelarve_tekkepohine_tapsustatud,
-                        string_agg(replace(qry.selg, E'\r', ''), ' ')::TEXT      AS selg
+                        string_agg(rtrim(qry.selg, E'\r\n'), ',')::TEXT      AS selg
                  FROM (
                           SELECT q.rekvid           AS rekvid,
                                  q.idx,
@@ -352,7 +352,7 @@ BEGIN
                                  summa::NUMERIC(14, 2) AS aasta_3_prognoos,
                                  0:: NUMERIC(14, 2)    AS eelarve_tekkepohine_kinnitatud,
                                  0::NUMERIC(14, 2)        eelarve_tekkepohine_tapsustatud,
-                                 ltrim(rtrim(replace(q.selg, E'\r', '')))::TEXT
+                                 ltrim(rtrim(q.selg, E'\r\n'))::TEXT
                           FROM qryAasta5 q
                           UNION ALL
                           SELECT rekvid                 AS rekv_id,
@@ -528,8 +528,8 @@ GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO 
 
 /*
 SELECT *
-FROM eelarve.kulud_eelnou('2022-03-31'::DATE, 119:: INTEGER, 1)
-where rekv_id = 9
+FROM eelarve.kulud_eelnou('2021-12-31'::DATE, 63:: INTEGER, 1)
+where artikkel = '100'
 
 */--where idx = 100
 

@@ -262,7 +262,7 @@ SELECT
   error_code,
   result,
   error_message
-FROM docs.gen_lausend_smk(1016,1);
+FROM docs.gen_lausend_smk(2078084,(select id from ou.userid where kasutaja = 'vlad' and rekvid = 69 limit 1));
 
 select * from libs.dokprop
 
