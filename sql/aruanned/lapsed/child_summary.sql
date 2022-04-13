@@ -15,39 +15,42 @@ CREATE OR REPLACE FUNCTION lapsed.child_summary(l_rekvid INTEGER, l_kond INTEGER
     )
 AS
 $BODY$
-WITH qryArved AS (
-    SELECT c.nimetus::TEXT                      AS maksja_nimi,
-           c.regkood::TEXT                      AS maksja_isikukood,
-           l.nimi::TEXT                         AS lapse_nimi,
-           l.isikukood::TEXT                    AS lapse_isikukood,
-           a.number::TEXT                       AS number,
-           a.kpv                                AS kpv,
-           a.summa::NUMERIC(12, 2)              AS summa,
-           coalesce(t.summa, 0)::NUMERIC(12, 2) AS tasutud,
-           a.jaak::NUMERIC(12, 2)               AS jaak,
-           d.rekvid                             AS rekvid
-    FROM docs.doc d
-             INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
-             INNER JOIN lapsed.laps l ON l.id = ld.parentid
-             INNER JOIN docs.arv a ON a.parentid = d.id
-             INNER JOIN libs.asutus c ON c.id = a.asutusid
-             LEFT OUTER JOIN (SELECT doc_arv_id, sum(summa) AS summa FROM docs.arvtasu at GROUP BY doc_arv_id) t
-                             ON t.doc_arv_id = d.id
-    WHERE d.rekvid IN (SELECT rekv_id
-                       FROM get_asutuse_struktuur(l_rekvid))
-      AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+WITH qryRekv AS (
+    SELECT rekv_id
+    FROM get_asutuse_struktuur(l_rekvid)
 ),
+     qryArved AS (
+         SELECT a.asutusid,
+                ld.parentid                          AS laps_id,
+                a.number::TEXT                       AS number,
+                a.kpv                                AS kpv,
+                a.summa::NUMERIC(12, 2)              AS summa,
+                coalesce(t.summa, 0)::NUMERIC(12, 2) AS tasutud,
+                a.jaak::NUMERIC(12, 2)               AS jaak,
+                d.rekvid                             AS rekvid
+         FROM docs.doc d
+                  INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
+                  INNER JOIN docs.arv a ON a.parentid = d.id
+                  LEFT OUTER JOIN (SELECT doc_arv_id, sum(summa) AS summa
+                                   FROM docs.arvtasu at
+                                   WHERE at.rekvid IN (SELECT rekv_id
+                                                       FROM qryRekv)
+                                   GROUP BY doc_arv_id) t
+                                  ON t.doc_arv_id = d.id
+         WHERE d.rekvid IN (SELECT rekv_id
+                            FROM qryRekv)
+           AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+     ),
      qrytasud AS (
-         SELECT a.nimetus::TEXT                          AS maksja_nimi,
-                a.regkood::TEXT                          AS maksja_isikukood,
-                laps.nimi::TEXT                          AS lapse_nimi,
-                laps.isikukood::TEXT                     AS lapse_isikukood,
-                NULL::TEXT                               AS number,
-                mk.maksepaev                             AS kpv,
-                0                                        AS summa,
-                mk_tyyp * ymk.summa::NUMERIC(12, 2)      AS tasutud,
-                -1 * mk_tyyp * ymk.summa::NUMERIC(12, 2) AS jaak,
-                d.rekvid                                 AS rekvid
+         SELECT mk1.asutusid,
+                l.parentid                         AS laps_id,
+                NULL::TEXT                         AS number,
+                mk.maksepaev                       AS kpv,
+                0                                  AS summa,
+                mk_tyyp * mk1.summa::NUMERIC(12, 2) AS tasutud,
+--                -1 * mk_tyyp * ymk.summa::NUMERIC(12, 2) AS jaak,
+                -1 * mk_tyyp * mk.jaak,
+                d.rekvid                           AS rekvid
          FROM docs.doc D
                   INNER JOIN (SELECT mk.id,
                                      mk.parentid,
@@ -57,24 +60,47 @@ WITH qryArved AS (
                                      CASE WHEN mk.opt = 1 THEN -1 ELSE 1 END AS mk_tyyp
                               FROM docs.mk mk
                               WHERE mk.jaak <> 0
+                                AND rekvid IN (SELECT rekv_id
+                                               FROM qryRekv)
          ) mk ON mk.parentid = D.id
                   INNER JOIN lapsed.liidestamine l
                              ON l.docid = D.id
-                  INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
-                  INNER JOIN libs.asutus a ON a.id = mk1.asutusid
-                  INNER JOIN lapsed.laps laps ON laps.id = l.parentid
-                 ,
-              lapsed.get_group_part_from_mk(D.id, current_date) AS ymk
+                  INNER JOIN (SELECT DISTINCT mk1.parentid, mk1.asutusid, sum(mk1.summa) AS summa
+                              FROM docs.mk1,
+                                   docs.mk
+                              WHERE mk.id = mk1.parentid
+                                AND mk.rekvid IN (SELECT rekv_id
+                                                  FROM qryRekv)
+                              GROUP BY mk1.asutusid, mk1.parentid
+         ) mk1 ON mk1.parentid = mk.id
+              --                ,
+              --             lapsed.get_group_part_from_mk(D.id, current_date) AS ymk
          WHERE D.status <> 3
            AND D.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
+                            FROM qryRekv)
      )
-SELECT *
-FROM qryArved
-UNION ALL
-SELECT *
-FROM qrytasud
+SELECT a.nimetus::TEXT   AS maksja_nimi,
+       a.regkood::TEXT   AS maksja_isikukood,
+       l.nimi::TEXT      AS lapse_nimi,
+       l.isikukood::TEXT AS lapse_isikukood,
+       qryDoc.number::TEXT,
+       qryDoc.kpv::DATE,
+       qryDoc.summa:: NUMERIC(12, 2),
+       qryDoc.tasutud:: NUMERIC(12, 2),
+       qryDoc.jaak:: NUMERIC(12, 2),
+       qryDoc.rekvid:: INTEGER
 
+FROM (
+         SELECT *
+         FROM qryArved
+         UNION ALL
+         SELECT *
+         FROM qrytasud
+     ) qryDoc,
+     libs.asutus a,
+     lapsed.laps l
+WHERE qryDoc.asutusid = a.id
+  AND l.id = qryDoc.laps_id
 
 $BODY$
     LANGUAGE SQL
@@ -90,7 +116,7 @@ GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER) TO dbvaatleja;
 /*
 
 SELECT *
-FROM lapsed.child_summary(63, 1)
-where lapse_isikukood = '40308233762'
+FROM lapsed.child_summary(72, 1)
+where lapse_isikukood = '61405220125'
 
 */

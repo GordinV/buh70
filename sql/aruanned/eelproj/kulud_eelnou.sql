@@ -102,8 +102,48 @@ BEGIN
                         coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
                    AND (l_params IS NULL OR coalesce(qry.rahavoog, '') ILIKE
                                             coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
+                   AND qry.allikas NOT like ('%RF%')
                    AND qry.rekv_id <> 9
+                   AND qry.artikkel NOT IN ('2586')
                  UNION ALL
+-- 2586
+                 SELECT 2               AS tyyp,
+                        ''              AS konto,
+                        qry.kood2       AS allikas,
+                        qry.kood1       AS tegev,
+                        qry.kood5       AS artikkel,
+                        qry.kood3       AS rahavoog,
+                        qry.tunnus,
+                        qry.summa       AS tegelik,
+                        year(l_kpv) - 1 AS aasta,
+                        12              AS kuu,
+                        qry.rekvid      AS rekv_id
+                 FROM cur_journal qry
+                 WHERE qry.rekvid = (CASE
+                                         WHEN l_kond = 1
+                                             THEN rekvid
+                                         ELSE l_rekvid END)
+                   AND qry.rekvid IN (SELECT r.rekv_id FROM get_asutuse_struktuur(l_rekvid) r)
+                   AND year(qry.kpv) = year(l_kpv) - 1
+                   AND qry.kood5 IS NOT NULL
+                   AND NOT empty(qry.kood5)
+                   AND qry.kood2 NOT like ('%RF%')
+                   AND qry.kood3 = '06'
+                   AND LEFT(qry.deebet, 3) IN ('208', '258')
+                   AND (l_params IS NULL OR
+                        COALESCE(qry.tunnus
+                            , '') ILIKE COALESCE((l_params ->> 'tunnus')::TEXT
+                                            , '') + '%')
+                   AND (l_params IS NULL OR
+                        COALESCE(qry.kood1
+                            , '') ILIKE COALESCE((l_params ->> 'tegev')::TEXT
+                                            , '') + '%')
+                   AND (l_params IS NULL OR
+                        COALESCE(qry.kood2
+                            , '') ILIKE COALESCE((l_params ->> 'allikas')::TEXT
+                                            , '') + '%')
+                 UNION ALL
+
 --  текущий год
                  SELECT 2           AS tyyp,
                         ''          AS konto,
@@ -113,22 +153,72 @@ BEGIN
                         qry.rahavoog,
                         qry.tunnus,
                         qry.summa   AS tegelik,
-                        year(l_kpv) AS aasta,
+                        YEAR(l_kpv) AS aasta,
                         9           AS kuu,
                         qry.rekv_id
-                 FROM eelarve.tekke_taitmine(make_date(year(l_kpv), 1, 1), make_date(year(l_kpv), 09, 30),
+                 FROM eelarve.tekke_taitmine(make_date(YEAR(l_kpv), 1, 1), make_date(YEAR(l_kpv), 09, 30),
                                              l_rekvid, l_kond) qry
                  WHERE (l_params IS NULL OR
-                        coalesce(qry.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus')::TEXT, '') + '%')
+                        COALESCE(qry.tunnus
+                            , '') ILIKE COALESCE((l_params ->> 'tunnus')::TEXT
+                                            , '') + '%')
                    AND (l_params IS NULL OR
-                        coalesce(qry.tegev, '') ILIKE coalesce((l_params ->> 'tegev')::TEXT, '') + '%')
-                   AND (l_params IS NULL OR coalesce(qry.artikkel, '') ILIKE
-                                            coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
+                        COALESCE(qry.tegev
+                            , '') ILIKE COALESCE((l_params ->> 'tegev')::TEXT
+                                            , '') + '%')
+                   AND (l_params IS NULL OR COALESCE(qry.artikkel
+                                                , '') ILIKE
+                                            COALESCE((l_params ->> 'artikkel')::TEXT
+                                                , '') + '%')
                    AND (l_params IS NULL OR
-                        coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
-                   AND (l_params IS NULL OR coalesce(qry.rahavoog, '') ILIKE
-                                            coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
+                        COALESCE(qry.allikas
+                            , '') ILIKE COALESCE((l_params ->> 'allikas')::TEXT
+                                            , '') + '%')
+                   AND (l_params IS NULL OR COALESCE(qry.rahavoog
+                                                , '') ILIKE
+                                            COALESCE((l_params ->> 'rahavoog')::TEXT
+                                                , '') + '%')
+                   AND qry.allikas NOT like ('%RF%')
                    AND qry.rekv_id <> 9
+                   AND qry.artikkel NOT IN ('2586')
+                 UNION ALL
+-- 2586
+                 SELECT 2           AS tyyp,
+                        ''          AS konto,
+                        qry.kood2   AS allikas,
+                        qry.kood1   AS tegev,
+                        qry.kood5   AS artikkel,
+                        qry.kood3   AS rahavoog,
+                        qry.tunnus,
+                        qry.summa   AS tegelik,
+                        year(l_kpv) AS aasta,
+                        12          AS kuu,
+                        qry.rekvid  AS rekv_id
+                 FROM cur_journal qry
+                 WHERE qry.rekvid = (CASE
+                                         WHEN l_kond = 1
+                                             THEN rekvid
+                                         ELSE l_rekvid END)
+                   AND qry.rekvid IN (SELECT r.rekv_id FROM get_asutuse_struktuur(l_rekvid) r)
+                   AND qry.kpv >= make_date(YEAR(l_kpv), 1, 1)
+                   AND qry.kpv <= make_date(YEAR(l_kpv), 09, 30)
+                   AND qry.kood5 IS NOT NULL
+                   AND NOT empty(qry.kood5)
+                   AND left(qry.kood2, 2) NOT IN ('RF')
+                   AND qry.kood3 = '06'
+                   AND LEFT(qry.deebet, 3) IN ('208', '258')
+                   AND (l_params IS NULL OR
+                        COALESCE(qry.tunnus
+                            , '') ILIKE COALESCE((l_params ->> 'tunnus')::TEXT
+                                            , '') + '%')
+                   AND (l_params IS NULL OR
+                        COALESCE(qry.kood1
+                            , '') ILIKE COALESCE((l_params ->> 'tegev')::TEXT
+                                            , '') + '%')
+                   AND (l_params IS NULL OR
+                        COALESCE(qry.kood2
+                            , '') ILIKE COALESCE((l_params ->> 'allikas')::TEXT
+                                            , '') + '%')
              ),
              qryAasta1 AS (
                  SELECT s.rekv_id      AS rekvid,
@@ -293,7 +383,7 @@ BEGIN
                         sum(qry.aasta_3_prognoos)                                AS aasta_3_prognoos,
                         sum(qry.eelarve_tekkepohine_kinnitatud)                  AS eelarve_tekkepohine_kinnitatud,
                         sum(qry.eelarve_tekkepohine_tapsustatud)                 AS eelarve_tekkepohine_tapsustatud,
-                        string_agg(rtrim(qry.selg, E'\r\n'), ',')::TEXT      AS selg
+                        string_agg(rtrim(qry.selg, E'\r\n'), ',')::TEXT          AS selg
                  FROM (
                           SELECT q.rekvid           AS rekvid,
                                  q.idx,
@@ -527,9 +617,10 @@ GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO 
 GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO dbvaatleja;
 
 /*
-SELECT *
-FROM eelarve.kulud_eelnou('2021-12-31'::DATE, 63:: INTEGER, 1)
-where artikkel = '100'
+SELECT sum(aasta_2_tekke_taitmine) over(), *
+FROM eelarve.kulud_eelnou('2021-12-31'::DATE, 119:: INTEGER, 0)
+where artikkel like '5525%'
+    and rekv_id = 119
 
 */--where idx = 100
 

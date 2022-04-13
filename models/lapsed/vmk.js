@@ -37,8 +37,8 @@ const Vmk = {
                          k.doklausid,
                          (D.history -> 0 ->>
                           'user')::VARCHAR(120)                               AS koostaja,
-                         laps.nimi                                               AS lapse_nimi,
-                         laps.id                                                 AS lapsid
+                         laps.nimi                                            AS lapse_nimi,
+                         laps.id                                              AS lapsid
 
                   FROM docs.doc D
                            INNER JOIN docs.mk k
@@ -135,7 +135,7 @@ const Vmk = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "0%", show: false},
-            {id: "kpv", name: "Kuupäev", width: "10%", type: "date", interval: true},
+            {id: "maksepaev", name: "Maksepäev", width: "10%", type: "date", interval: true},
             {id: "number", name: "Number", width: "10%"},
             {id: "asutus", name: "Maksja", width: "20%"},
             {id: "kreedit", name: "Summa", width: "10%", type: "number", interval: true},
@@ -148,7 +148,8 @@ const Vmk = {
 
         ],
         sqlString: `SELECT mk.id,
-                           to_char(mk.kpv, 'DD.MM.YYYY')::TEXT AS kpv,
+                           to_char(mk.kpv, 'DD.MM.YYYY')::TEXT       AS kpv,
+                           to_char(mk.maksepaev, 'DD.MM.YYYY')::TEXT AS maksepaev,
                            mk.selg,
                            mk.asutus,
                            mk.kood,
@@ -161,10 +162,10 @@ const Vmk = {
                            mk.journalnr,
                            mk.opt,
                            mk.vanem_isikukood,
-                           0                                   AS valitud,
+                           0                                         AS valitud,
                            mk.isikukood,
                            mk.nimi,
-                           $2                                  AS userid,
+                           $2                                        AS userid,
                            mk.viitenr::TEXT
                     FROM lapsed.cur_lapsed_mk mk
                     WHERE mk.opt = 1

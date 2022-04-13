@@ -65,3 +65,10 @@ DROP RULE IF EXISTS arv_insert_2020 ON docs.arv;
 CREATE RULE arv_insert_2020 AS ON INSERT TO docs.arv
     WHERE kpv <= '2020-12-31'
     DO INSTEAD NOTHING;
+
+
+
+CREATE INDEX IF NOT EXISTS idx_arv_not_ettemaks
+    ON docs.arv USING btree
+        (parentid)
+    where (properties ->> 'tyyp' IS NULL OR properties ->> 'tyyp' <> 'ETTEMAKS');
