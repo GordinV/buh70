@@ -10,6 +10,7 @@ CREATE OR REPLACE FUNCTION lapsed.child_summary(l_rekvid INTEGER, l_kond INTEGER
         kpv              DATE,
         summa            NUMERIC(12, 2),
         tasutud          NUMERIC(12, 2),
+        mahakandmine     NUMERIC(12, 2),
         jaak             NUMERIC(12, 2),
         rekvid           INTEGER
     )
@@ -21,20 +22,24 @@ WITH qryRekv AS (
 ),
      qryArved AS (
          SELECT a.asutusid,
-                ld.parentid                          AS laps_id,
-                a.number::TEXT                       AS number,
-                a.kpv                                AS kpv,
-                a.summa::NUMERIC(12, 2)              AS summa,
-                coalesce(t.summa, 0)::NUMERIC(12, 2) AS tasutud,
-                a.jaak::NUMERIC(12, 2)               AS jaak,
-                d.rekvid                             AS rekvid
+                ld.parentid                                 AS laps_id,
+                a.number::TEXT                              AS number,
+                a.kpv                                       AS kpv,
+                a.summa::NUMERIC(12, 2)                     AS summa,
+                coalesce(t.summa, 0)::NUMERIC(12, 2)        AS tasutud,
+                coalesce(t.mahakandmine, 0)::NUMERIC(12, 2) AS mahakandmine,
+                a.jaak::NUMERIC(12, 2)                      AS jaak,
+                d.rekvid                                    AS rekvid
          FROM docs.doc d
                   INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
                   INNER JOIN docs.arv a ON a.parentid = d.id
-                  LEFT OUTER JOIN (SELECT doc_arv_id, sum(summa) AS summa
+                  LEFT OUTER JOIN (SELECT doc_arv_id,
+                                          sum(CASE WHEN at.pankkassa < 3 THEN summa ELSE 0 END) AS summa,
+                                          sum(CASE WHEN at.pankkassa = 3 THEN summa ELSE 0 END) AS mahakandmine
                                    FROM docs.arvtasu at
                                    WHERE at.rekvid IN (SELECT rekv_id
                                                        FROM qryRekv)
+                                     AND at.status < 3
                                    GROUP BY doc_arv_id) t
                                   ON t.doc_arv_id = d.id
          WHERE d.rekvid IN (SELECT rekv_id
@@ -43,14 +48,15 @@ WITH qryRekv AS (
      ),
      qrytasud AS (
          SELECT mk1.asutusid,
-                l.parentid                         AS laps_id,
-                NULL::TEXT                         AS number,
-                mk.maksepaev                       AS kpv,
-                0                                  AS summa,
+                l.parentid                          AS laps_id,
+                NULL::TEXT                          AS number,
+                mk.maksepaev                        AS kpv,
+                0                                   AS summa,
                 mk_tyyp * mk1.summa::NUMERIC(12, 2) AS tasutud,
+                0                                   AS mahakandmine,
 --                -1 * mk_tyyp * ymk.summa::NUMERIC(12, 2) AS jaak,
                 -1 * mk_tyyp * mk.jaak,
-                d.rekvid                           AS rekvid
+                d.rekvid                            AS rekvid
          FROM docs.doc D
                   INNER JOIN (SELECT mk.id,
                                      mk.parentid,
@@ -87,6 +93,7 @@ SELECT a.nimetus::TEXT   AS maksja_nimi,
        qryDoc.kpv::DATE,
        qryDoc.summa:: NUMERIC(12, 2),
        qryDoc.tasutud:: NUMERIC(12, 2),
+       qryDoc.mahakandmine:: NUMERIC(12, 2),
        qryDoc.jaak:: NUMERIC(12, 2),
        qryDoc.rekvid:: INTEGER
 
@@ -116,7 +123,7 @@ GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER) TO dbvaatleja;
 /*
 
 SELECT *
-FROM lapsed.child_summary(72, 1)
-where lapse_isikukood = '61405220125'
+FROM lapsed.child_summary(69, 1)
+where lapse_isikukood = '60901163721'
 
 */

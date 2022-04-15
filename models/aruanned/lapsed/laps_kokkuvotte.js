@@ -7,6 +7,7 @@ module.exports = {
             {id: "kpv", name: "Kuupäev", width: "10%", type: "date", interval: true},
             {id: "summa", name: "Arve summa", width: "10%", type: "number"},
             {id: "tasutud", name: "Tasutud", width: "10%", type: "number"},
+            {id: "mahakandmine", name: "Mahakantud", width: "10%", type: "number"},
             {id: "jaak", name: "Jääk", width: "10%", type: "number"},
             {id: "maksja_nimi", name: "Maksja nimi", width: "20%", show: true},
             {id: "maksja_isikukood", name: "Maksja isikukood", width: "10%"},
@@ -17,6 +18,7 @@ module.exports = {
                            to_char(kpv, 'DD.MM.YYYY')::TEXT          AS kpv,
                            jaak::NUMERIC(12, 2)                      AS jaak,
                            tasutud::NUMERIC(12, 2)                   AS tasutud,
+                           mahakandmine::NUMERIC(12, 2)              AS mahakandmine,
                            lapse_nimi,
                            lapse_isikukood,
                            maksja_nimi,
@@ -26,11 +28,11 @@ module.exports = {
                            to_char(current_date, 'DD.MM.YYYY')::TEXT AS print_date
                     FROM lapsed.child_summary($1::INTEGER, 1) qryReport
                              INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
-                    ORDER BY lapse_nimi, r.nimetus, (kpv::date)
+                    ORDER BY lapse_nimi, r.nimetus, (kpv::DATE)
         `,     // $1 - rekvid, $3 - kond? removed jaak = 0
         params: '',
         alias: 'child_summary_report',
-        subtotals: ['summa', 'jaak','tasutud']
+        subtotals: ['summa', 'jaak', 'tasutud', 'mahakandmine']
 
     },
     print: [
@@ -40,16 +42,22 @@ module.exports = {
             converter: function (data) {
                 let summa_kokku = 0;
                 let jaak_kokku = 0;
+                let tasutud_kokku = 0;
+                let mahakandmine_kokku = 0;
                 let row_id = 0;
                 data.forEach(row => {
                     summa_kokku = summa_kokku + Number(row.summa);
                     jaak_kokku = jaak_kokku + Number(row.jaak);
+                    tasutud_kokku = tasutud_kokku + Number(row.tasutud);
+                    mahakandmine_kokku = mahakandmine_kokku + Number(row.mahakandmine);
                 });
 
                 return data.map(row => {
                     row_id++;
                     row.summa_kokku = summa_kokku;
                     row.jaak_kokku = jaak_kokku;
+                    row.tasutud_kokku = tasutud_kokku;
+                    row.mahakandmine_kokku = mahakandmine_kokku;
                     row.row_id = row_id;
                     return row;
                 })

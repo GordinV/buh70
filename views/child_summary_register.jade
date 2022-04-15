@@ -28,6 +28,8 @@ block content
                     th.th Arve kpv
                     th.th Arve summa
                     th.th Jääk
+                    th.th Tasud
+                    th.th Mahakantud
                     th.th Koolituse eest tasunud isiku ees- ja perekonnanimi
                     th.th Isikukood
                     th.th Asutus
@@ -41,6 +43,8 @@ block content
                         td.td=rea.kpv
                         td.td=rea.summa
                         td.td=rea.jaak
+                        td.td=rea.tasutud
+                        td.td=rea.mahakandmine
                         td.td=rea.maksja_nimi
                         td.td=rea.maksja_isikukood
                         td.td=rea.asutus
@@ -51,6 +55,8 @@ block content
                 td(align='center')='Kokku:'
                 td=Number(data[0].summa_kokku).toFixed(2)
                 td=Number(data[0].jaak_kokku).toFixed(2)
+                td=Number(data[0].tasutud_kokku).toFixed(2)
+                td=Number(data[0].mahakandmine_kokku).toFixed(2)
                 td
                 td
                 td
