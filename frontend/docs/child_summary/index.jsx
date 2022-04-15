@@ -26,6 +26,7 @@ class Documents extends React.PureComponent {
         this.state = {
             summa: 0,
             tasutud: 0,
+            mahakandmine: 0,
             jaak: 0,
             read: 0
         };
@@ -62,7 +63,12 @@ class Documents extends React.PureComponent {
                              ref="input-tasutud"
                              value={Number(this.state.tasutud).toFixed(2) || 0}
                              disabled={true}/>
-
+                <InputNumber title="Mahakantud kokku:"
+                             name='mahakandmine_kokku'
+                             style={styles.total}
+                             ref="input-mahakandmine"
+                             value={Number(this.state.mahakandmine).toFixed(2) || 0}
+                             disabled={true}/>
                 <InputNumber title="Jääk kokku:"
                              name='jaak_kokku'
                              style={styles.total}
@@ -76,9 +82,10 @@ class Documents extends React.PureComponent {
     renderer(self) {
         let summa = self.gridData ? getSum (self.gridData,'summa') : 0;
         let tasutud = self.gridData ? getSum (self.gridData,'tasutud') : 0;
+        let mahakandmine = self.gridData ? getSum (self.gridData,'mahakandmine') : 0;
         let jaak = self.gridData ? getSum (self.gridData,'jaak') : 0;
         if (summa) {
-            this.setState({summa: summa, tasutud: tasutud, jaak: jaak, read: self.gridData.length});
+            this.setState({summa: summa, tasutud: tasutud, mahakandmine: mahakandmine, jaak: jaak, read: self.gridData.length});
         }
 
         return (<div/>
