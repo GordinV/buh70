@@ -474,26 +474,26 @@ BEGIN
                      UNION ALL
 -- Строка 55 - Tekke täitmine – добавляем к уже имеющейся формуле KD 55 налог с оборота KD601 минус KD 601002.
                      SELECT '2.12',
-                            1                                                                             AS is_e,
-                            $2                                                                            AS rekvid,
-                            ''::VARCHAR(20)                                                               AS tegev,
-                            ''::VARCHAR(20)                                                               AS allikas,
-                            '55'::VARCHAR(20)                                                             AS artikkel,
-                            'Majandamiskulud'                                                             AS nimetus,
-                            -1 * coalesce(sum(q.eelarve), 0)                                              AS eelarve ,
-                            -1 * coalesce(sum(q.eelarve_kassa), 0)                                        AS eelarve_kassa,
-                            -1 * coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)                         AS eelarve_taps,
-                            -1 * coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2)                   AS eelarve_kassa_taps,
-                            -1 * coalesce(sum(q.tegelik), 0)                                              AS tegelik,
-                            -1 * coalesce(sum(q.kassa), 0)                                                AS kassa,
+                            1                                                           AS is_e,
+                            $2                                                          AS rekvid,
+                            ''::VARCHAR(20)                                             AS tegev,
+                            ''::VARCHAR(20)                                             AS allikas,
+                            '55'::VARCHAR(20)                                           AS artikkel,
+                            'Majandamiskulud'                                           AS nimetus,
+                            -1 * coalesce(sum(q.eelarve), 0)                            AS eelarve,
+                            -1 * coalesce(sum(q.eelarve_kassa), 0)                      AS eelarve_kassa,
+                            -1 * coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)       AS eelarve_taps,
+                            -1 * coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2) AS eelarve_kassa_taps,
+                            -1 * coalesce(sum(q.tegelik), 0)                            AS tegelik,
+                            -1 * coalesce(sum(q.kassa), 0)                              AS kassa,
                             get_saldo('KD', '55', NULL, NULL) +
-                            get_saldo('KD', '601000', NULL, NULL)  AS saldoandmik
+                            get_saldo('KD', '601000', NULL, NULL)                       AS saldoandmik
                      FROM tmp_andmik q
                      WHERE q.artikkel LIKE '55%'
                        AND tyyp = 1
                      UNION ALL
                      --  KD60 минус KD 601
-                     SELECT '2.13'::VARCHAR(20) ,
+                     SELECT '2.13'::VARCHAR(20),
                             1                                                           AS is_e,
                             $2                                                          AS rekvid,
                             ''::VARCHAR(20)                                             AS tegev,
@@ -1100,14 +1100,14 @@ BEGIN
 -- MKD208+MKD258
                      UNION ALL
                      SELECT '8.11',
-                            1                      AS is_e ,
+                            1                      AS is_e,
                             $2                     AS rekvid,
                             ''::VARCHAR(20)        AS tegev,
                             ''::VARCHAR(20)        AS allikas,
                             '9100'::VARCHAR(20)    AS artikkel,
                             'sh sildfinantseering' AS nimetus,
                             l_9100                 AS eelarve,
-                            l_9100                 AS eelarve_kassa ,
+                            l_9100                 AS eelarve_kassa,
                             0                      AS eelarve_taps,
                             0                      AS eelarve_kassa_taps,
                             l_9100                 AS tegelik,
@@ -1424,6 +1424,7 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                                                     AND j.rekvid IN (SELECT rekv_id
                                                                      FROM get_asutuse_struktuur(l_rekvid))
                                                     AND j.kpv <= l_kpv
+                                                    AND j.kpv >= make_date(year(l_kpv), 01, 01)
                                                     AND (j1.deebet LIKE '100%' OR left(j1.deebet, 6) = '999999')
                                                     AND j1.kood5 = '3501'
                                                     AND d.status <> 3
@@ -1441,6 +1442,7 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                                                     AND j.rekvid IN (SELECT rekv_id
                                                                      FROM get_asutuse_struktuur(l_rekvid))
                                                     AND j.kpv <= l_kpv
+                                                    AND j.kpv >= make_date(year(l_kpv), 01, 01)
                                                     AND (j1.kreedit LIKE '100%')
                                                     AND j1.kood5 = '3501'
                                                     AND d.status <> 3
@@ -1543,6 +1545,7 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                             AND j.rekvid IN (SELECT rekv_id
                                              FROM get_asutuse_struktuur(l_rekvid))
                             AND kpv <= l_kpv
+                            AND kpv >= make_date(year(l_kpv), 01, 01)
                       ),
                       qryKassa AS (
                           -- Из Päevaraamat: дебет 100 art 3501 минус кредит 100 art 3501
@@ -1625,8 +1628,8 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5(DATE, INTEGER, INTEGER
 SELECT *
 FROM (
          SELECT *
-         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2021,12, 31),63, 1) qry
-         where tegev like '01800%'
+         FROM eelarve.eelarve_andmik_lisa_1_5(DATE(2022,03, 31),64, 1) qry
+         where artikkel like '3501'
      ) qry
 --test
 -- 12330698.41

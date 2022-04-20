@@ -142,7 +142,7 @@ GRANT EXECUTE ON FUNCTION eelarve.sp_koosta_saldoandmik(INTEGER, JSON) TO dbpeak
 
 
 /*
-select error_code, result, error_message from eelarve.sp_koosta_saldoandmik(2477,'{"kpv":"2022-01-31","tyyp":1,"kond":1, "rekvid":63}'::json)
+select error_code, result, error_message from eelarve.sp_koosta_saldoandmik(2477,'{"kpv":"2022-03-31","tyyp":1,"kond":1, "rekvid":63}'::json)
 
 select * from pg_stat_activity
 where usename in ('vlad','postgres')

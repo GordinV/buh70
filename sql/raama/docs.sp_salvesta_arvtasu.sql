@@ -23,6 +23,7 @@ DECLARE
     is_import       BOOLEAN        = data ->> 'import';
     l_arv_tasud     NUMERIC        = 0;
     l_arv_summa     NUMERIC        = 0;
+    l_inf3_summa    NUMERIC        = 0; -- доля INF3 услуг в платеже
 
 BEGIN
 
@@ -31,7 +32,8 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -80,12 +82,14 @@ BEGIN
         THEN
 
             --1 open jounal doc
-            SELECT * INTO v_tasu_dok
+            SELECT *
+            INTO v_tasu_dok
             FROM docs.journal
             WHERE parentid = doc_doc_tasu_id;
 
             -- 2 find arv doc
-            SELECT d.id INTO doc_doc_arv_id
+            SELECT d.id
+            INTO doc_doc_arv_id
             FROM docs.doc d
                      INNER JOIN docs.arv a ON a.parentid = d.id
             WHERE d.rekvid = v_tasu_dok.rekvid
@@ -131,9 +135,13 @@ BEGIN
     -- добавим связь оплаты со счетом
     UPDATE docs.doc SET docs_ids = array_append(docs_ids, doc_doc_arv_id) WHERE id = doc_doc_tasu_id;
 
+    -- расчет INF3
+    l_inf3_summa = lapsed.get_inf3_part(lib_id);
+    IF coalesce(l_inf3_summa, 0) <> 0
+    THEN
+        UPDATE docs.arvtasu SET inf3_summa = l_inf3_summa WHERE id = lib_id;
+    END IF;
 
-    -- update arv jaak
---    PERFORM docs.sp_update_arv_jaak(doc_doc_arv_id);
     RETURN lib_id;
 
 EXCEPTION
