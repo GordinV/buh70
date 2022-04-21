@@ -1563,6 +1563,7 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                                                          AND j.rekvid IN (SELECT rekv_id
                                                                           FROM get_asutuse_struktuur(l_rekvid))
                                                          AND j.kpv <= l_kpv
+                                                         AND kpv >= make_date(year(l_kpv), 01, 01)
                                                          AND (j1.deebet LIKE '100%' OR left(j1.deebet, 6) = '999999')
                                                          AND j1.kood5 = '3501'
                                                          AND d.status <> 3
@@ -1581,6 +1582,7 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                                                          AND j.rekvid IN (SELECT rekv_id
                                                                           FROM get_asutuse_struktuur(l_rekvid))
                                                          AND j.kpv <= l_kpv
+                                                         AND kpv >= make_date(year(l_kpv), 01, 01)
                                                          AND (j1.kreedit LIKE '100%')
                                                          AND j1.kood5 = '3501'
                                                          AND d.status <> 3

@@ -41,7 +41,7 @@ module.exports = {
                   union all
                   SELECT qry.rekv_id,
                          90                                   AS idx,
-                         upper('Maksud')                             AS artikkel,
+                         upper('Maksutulud')                             AS artikkel,
                          sum(aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
                          sum(aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
                          sum(aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
@@ -98,7 +98,7 @@ module.exports = {
                   UNION ALL
                   SELECT qry.rekv_id,
                          490                                  AS idx,
-                         upper('Tulud investeerimistegevusest')      AS artikkel,
+                         upper('INVESTEERIMISTEGEVUS')      AS artikkel,
                          sum(aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
                          sum(aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
                          sum(aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,

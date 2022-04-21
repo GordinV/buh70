@@ -21,6 +21,7 @@ BEGIN
                                  INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
                         WHERE at.id = l_arvtasu_id
                           AND coalesce((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE)
+                          AND at.pankkassa < 3
                         LIMIT 1
                     ) qry);
 
@@ -33,4 +34,4 @@ $$;
 GRANT EXECUTE ON FUNCTION lapsed.get_inf3_part(INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.get_inf3_part(INTEGER) TO dbvaatleja;
 
-SELECT lapsed.get_inf3_part(101638)
+SELECT lapsed.get_inf3_part(93112)

@@ -129,6 +129,8 @@ const Smk = {
                           to_char(a.kpv, 'DD.MM.YYYY') AS print_kpv,
                           t.summa                      AS tasu_summa,
                           a.summa                      AS arv_summa,
+                          CASE WHEN coalesce((a.properties ->> 'tyyp'), '') = 'ETTEMAKS' THEN 0 ELSE 1 END *
+                          coalesce(t.inf3_summa, 0)    AS inf3_summa,
                           a.number,
                           asutus.nimetus               AS asutus,
                           a.properties ->> 'tyyp'      AS tyyp,
@@ -140,8 +142,8 @@ const Smk = {
                             INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid
                    WHERE t.doc_tasu_id = $1
                      AND t.status <> 3
-                       ORDER BY t.kpv
-                       , t.id`,
+                   ORDER BY t.kpv
+                           , t.id`,
             query: null,
             multiple: true,
             alias: 'queryArvTasu',
@@ -215,6 +217,7 @@ const Smk = {
                 {id: 'tasu_summa', name: 'Tasu summa', width: '10%', show: true, type: 'text', readOnly: true},
                 {id: 'arv_summa', name: 'Arve summa', width: '10%', show: true, type: 'text', readOnly: true},
                 {id: 'jaak', name: 'Arve jääk', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'inf3_summa', name: 'INF3 Summa', width: '10%', show: true, readOnly: true},
             ]
 
     },

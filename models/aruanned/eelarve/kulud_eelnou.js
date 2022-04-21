@@ -68,7 +68,7 @@ module.exports = {
            UNION ALL
            SELECT qry.rekv_id,
                   380                                      AS idx,
-                  'MUUD TEGEVUSKULUD'                      AS artikkel,
+                  'TÖÖJÕU- JA MAJANDAMISKULUD'                      AS artikkel,
                   sum(qry.aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
                   sum(qry.aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
                   sum(qry.aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
@@ -79,6 +79,20 @@ module.exports = {
            FROM Report qry
            WHERE idx IN (400, 500, 600)
            GROUP BY qry.rekv_id
+         UNION ALL         
+         SELECT qry.rekv_id,
+                190                                      AS idx,
+                '45'                                     AS artikkel,
+                sum(qry.aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
+                sum(qry.aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
+                sum(qry.aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
+                sum(qry.aasta_3_eelnou)                  AS aasta_3_eelnou,
+                sum(qry.aasta_3_prognoos)                AS aasta_3_prognoos,
+                sum(qry.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
+                sum(qry.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud
+         FROM Report qry
+         WHERE idx = 200
+         GROUP BY qry.rekv_id
          UNION ALL         
          SELECT qry.rekv_id,
                 390                                      AS idx,
@@ -150,6 +164,21 @@ module.exports = {
          FROM Report qry
          WHERE (idx = 700)
             OR artikkel IN ('4502', '1501', '1511', '1531', '650')
+         GROUP BY qry.rekv_id
+         UNION ALL
+         SELECT qry.rekv_id,
+                780                                      AS idx,
+                'FINANTSEERIMISTEGEVUS'                   AS artikkel,
+                sum(qry.aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
+                sum(qry.aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
+                sum(qry.aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
+                sum(qry.aasta_3_eelnou)                  AS aasta_3_eelnou,
+                sum(qry.aasta_3_prognoos)                AS aasta_3_prognoos,
+                sum(qry.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
+                sum(qry.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud
+         FROM Report qry
+         WHERE (idx = 800
+            OR artikkel IN ('2586'))
          GROUP BY qry.rekv_id
          
      ),
@@ -277,9 +306,14 @@ module.exports = {
                                 ) r
                             ON r.id = qryReport.rekv_id
                  LEFT OUTER JOIN ou.rekv p ON p.id = r.parentid
-                  LEFT OUTER JOIN libs.library a
+                  LEFT OUTER JOIN (select id, kood, nimetus from libs.library a
+                        where  a.library = 'TULUDEALLIKAD' AND a.status < 3
+                        union all 
+                        select 99990 as id, '45' as kood, 'MUUD TOETUSED' as nimetus
+                        ) a
                             ON a.kood = qryReport.artikkel
-                                AND a.library = 'TULUDEALLIKAD' AND a.status < 3
+                               
+                                
         ORDER BY  CASE
              WHEN r.id > 9999 THEN 0
              WHEN r.id = 63 THEN 10
