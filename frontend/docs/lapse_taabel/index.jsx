@@ -8,6 +8,7 @@ const ButtonUpload = require('./../../components/upload_button/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 const DocRights = require('./../../../config/doc_rights');
 const checkRights = require('./../../../libs/checkRights');
+const BtnGetCsv = require('./../../components/button-register/button-task/index.jsx');
 
 
 const styles = require('./styles');
@@ -27,6 +28,7 @@ class Documents extends React.PureComponent {
             soodustus: 0
         };
         this.renderer = this.renderer.bind(this);
+        this.onClickHandler = this.onClickHandler.bind(this);
 
     }
 
@@ -79,6 +81,12 @@ class Documents extends React.PureComponent {
                         show={true}
                         mimeTypes={'.csv'}
                     /> : null}
+                <BtnGetCsv
+                    value={'Saama CSV fail'}
+                    onClick={this.onClickHandler}
+                    showDate={false}
+                    ref={`btn-getcsv`}
+                />
             </ToolbarContainer>
         );
 
@@ -86,6 +94,26 @@ class Documents extends React.PureComponent {
         return null;
     }
 
+    //handler для события клик на кнопках панели
+    onClickHandler(event) {
+        const Doc = this.refs['register'];
+        let ids = new Set; // сюда пишем ид счетом, которые под обработку
+        //Saama CSV fail
+        if (Doc.gridData && Doc.gridData.length) {
+            //делаем редайрект на конфигурацию
+            let sqlWhere = Doc.state.sqlWhere;
+            let url = `/reports/${DOC_TYPE_ID.toLowerCase()}/${DocContext.userData.uuid}`;
+            let params = encodeURIComponent(`${sqlWhere}`);
+            window.open(`${url}/${params}`);
+        } else {
+            Doc.setState({
+                warning: 'Mitte ühtegi kirjed leidnud', // строка извещений
+                warningType: 'notValid',
+
+            });
+        }
+
+    }
 }
 
 

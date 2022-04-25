@@ -84,6 +84,7 @@ module.exports = function (app) {
     app.get('/reports/kohaoleku_aruanne/:uuid/:filter/:params*?',require('./reports/kohaoleku_aruanne').get);
     app.get('/reports/lapse_kaart/:uuid/:kond/:filter/:params*?',require('./reports/lapse_kaart').get);
     app.get('/reports/lapse_kaart/:uuid/:kond/',require('./reports/lapse_kaart').get);
+    app.get('/reports/lapse_taabel/:uuid/:params*?/',require('./reports/lapse_taabel').get);
 
     app.get('/pdf/:documentType/:uuid/:id/:params', require('./pdf').get); //checkAuth
     app.get('/pdf/:documentType/:uuid/:id/', require('./pdf').get); //checkAuth

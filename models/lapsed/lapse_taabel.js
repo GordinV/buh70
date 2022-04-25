@@ -111,6 +111,7 @@ module.exports = {
                                              
                                              END)))::NUMERIC(12, 2)                                            AS summa,
                             lt.isikukood,
+                            v.viitenumber,
                             lt.nimi,
                             lt.kood,
                             lt.teenus,
@@ -118,7 +119,11 @@ module.exports = {
                              CASE WHEN lt.all_yksus IS NULL THEN '' ELSE '-' || lt.all_yksus END) AS yksus,
                             $2::INTEGER                                                           AS userid
                      FROM lapsed.cur_lapse_taabel lt
-                     WHERE rekvid = $1::INTEGER
+                         LEFT OUTER JOIN (SELECT rekv_id, array_to_string(array_agg(viitenumber), ',') AS viitenumber, isikukood
+                              FROM lapsed.viitenr v
+                              GROUP BY v.rekv_id, v.isikukood) v ON v.rekv_id = lt.rekvid AND v.isikukood = lt.isikukood
+                     
+                     WHERE lt.rekvid = $1::INTEGER
                      )
                      select * from qryNoms
                      ORDER BY aasta DESC, kuu DESC, nimi`,     //  $1 всегда ид учреждения, $2 - userId

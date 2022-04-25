@@ -91,7 +91,7 @@ module.exports = {
                 sum(qry.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
                 sum(qry.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud
          FROM Report qry
-         WHERE idx = 200
+         WHERE idx = 200 or artikkel in ('4500','4502','452')
          GROUP BY qry.rekv_id
          UNION ALL         
          SELECT qry.rekv_id,

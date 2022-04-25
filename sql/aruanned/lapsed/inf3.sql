@@ -20,31 +20,25 @@ SELECT sum(summa)            AS summa,
        aasta::INTEGER        AS aasta,
        qry.rekvid            AS rekvid
 FROM (
-         SELECT d.rekvid                                                                  AS rekvid,
-                l.nimi                                                                    AS lapse_nimi,
-                l.isikukood                                                               AS lapse_isikukood,
-                a1.summa                                                                  AS summa,
-                (SELECT asutusid FROM docs.arvtasu at WHERE at.doc_arv_id = d.id LIMIT 1) AS asutusId,
-                year(a.kpv)                                                               AS aasta
-         FROM docs.doc d
-                  INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
+         SELECT at.rekvid     AS rekvid,
+                l.nimi        AS lapse_nimi,
+                l.isikukood   AS lapse_isikukood,
+                at.inf3_summa AS summa,
+                (SELECT m1.asutusid
+                 FROM docs.mk m
+                          INNER JOIN docs.mk1 m1 ON m.id = m1.parentid
+                 WHERE at.doc_tasu_id = m.parentid
+                 LIMIT 1)     AS asutusId,
+                year(at.kpv)  AS aasta,
+                at.doc_arv_id
+         FROM docs.arvtasu at
+                  INNER JOIN lapsed.liidestamine ld ON ld.docid = at.doc_tasu_id
                   INNER JOIN lapsed.laps l ON l.id = ld.parentid
-                  INNER JOIN docs.arv a ON a.parentid = d.id
-                  INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
-                  INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
-
-         WHERE d.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
-
-           AND a.parentid IN (
-             SELECT d.id
-             FROM docs.doc d
-                      INNER JOIN docs.arv a ON a.parentId = d.id
-                      INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
-             WHERE a.jaak = 0
-         )
-           AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
-           AND coalesce((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE)::BOOLEAN
+                  INNER JOIN docs.arv a ON a.parentid = at.doc_arv_id
+         WHERE at.rekvid IN (SELECT rekv_id
+                             FROM get_asutuse_struktuur(l_rekvid))
+           AND at.status <> 3
+           AND coalesce(a.properties ->> 'tyyp', '') <> 'ETTEMAKS'
      ) qry
          INNER JOIN libs.asutus a ON a.id = qry.asutusId
 GROUP BY lapse_isikukood, lapse_nimi, a.nimetus, a.regkood, aasta, qry.rekvid;
