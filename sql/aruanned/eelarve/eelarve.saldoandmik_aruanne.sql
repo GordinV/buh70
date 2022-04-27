@@ -242,8 +242,8 @@ GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TE
 /*
 explain
 SELECT *
-FROM eelarve.saldoandmik_aruanne('2022-01-31' :: DATE, 28 :: INTEGER, 0 ::integer, '%')
-WHERE konto in ('150200','150210','150020') or konto like '155%'
+FROM eelarve.saldoandmik_aruanne('2022-03-31' :: DATE, 119 :: INTEGER, 1 ::integer, '%')
+WHERE konto like '3221%'
 and rahavoog = '01'
 --GROUP BY konto, tp
 */

@@ -506,5 +506,3 @@ select * from eelarve.saldoandmik where timestamp = '2022-03-17 03:00:00.010366'
 
 */
 
-SELECT now()
---

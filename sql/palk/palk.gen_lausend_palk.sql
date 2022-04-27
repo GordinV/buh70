@@ -49,6 +49,9 @@ BEGIN
   FROM palk.cur_palk_oper_lausend po
   WHERE po.id = l_palkoper_id;
 
+  l_db_tp = v_palk_oper.tp;
+  l_kr_tp = v_palk_oper.tp;
+
   IF v_palk_oper.dokpropid = 0 OR v_palk_oper.summa = 0
   THEN
     error_message = 'Konteerimine ei ole vajalik, dok tyyp ei ole defineeritud voi summa = 0 ';
@@ -62,9 +65,6 @@ BEGIN
     result = 1;
     RETURN;
   END IF;
-
---  l_db_tp = v_palk_oper.tp;
---  l_kr_tp = v_palk_oper.tp;
 
   CASE WHEN v_palk_oper.palk_liik = 'ARVESTUSED'
     THEN

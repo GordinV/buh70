@@ -1,7 +1,7 @@
 'use strict';
 const getCSV = require('./../lapsed/get_csv');
 const getParameterFromFilter = require('./../../libs/getParameterFromFilter');
-
+const Moment = require('moment');
 exports.get = async (req, res) => {
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const filter = req.params.filter || [];// массив фильтров документов;
@@ -42,7 +42,9 @@ exports.get = async (req, res) => {
         // get xml
         let header;
         let csv = getCSV(data.data.map(row => {
-            let arvKpv = new Date(row.aasta, row.kuu + 1, '05').toISOString().substring(0, 10);
+            let arvKpv = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '05', "YYYY-MM-DD").add(1, 'month') .format("YYYY-MM-DD");
+            let tahtaeg = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '19', "YYYY-MM-DD").add(1, 'month') .format("YYYY-MM-DD");
+
 
             //поправить если структура меняется
             const obj =  {
@@ -55,8 +57,8 @@ exports.get = async (req, res) => {
                 Kolich: row.kogus,
                 Nach: row.summa,
                 Info: '',
-                SrokOpl: 0,
-                VhSaldo: 0
+                SrokOpl: tahtaeg,
+                VhSaldo: false
             };
 
             // will add header to file

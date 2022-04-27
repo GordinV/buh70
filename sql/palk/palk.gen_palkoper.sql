@@ -102,7 +102,10 @@ BEGIN
         SELECT t.id,
                t.rekvid,
                t.parentId,
-               ltrim(rtrim(a.nimetus)) AS nimi
+               ltrim(rtrim(a.nimetus)) AS nimi,
+               CASE
+                   WHEN coalesce(a.tp, '800699') LIKE '800%' THEN '800699'
+                   ELSE a.tp END       AS tp -- берем за основу клиентский ТП код. если пусто, то 800699
         FROM palk.tooleping t
                  INNER JOIN libs.asutus a ON a.id = t.parentid
         WHERE (t.id IN (SELECT value :: INTEGER
@@ -271,7 +274,7 @@ BEGIN
                                v_lib.tunnusid                                                AS tunnusid,
                                l.korrkonto                                                   AS korrkonto,
                                l.proj                                                        AS proj,
-                               '800699' :: TEXT                                              AS tp,
+                               v_tooleping.tp :: TEXT                                        AS tp,
                                coalesce((l_tulemus_json ->> 'tm') :: NUMERIC, 0) :: NUMERIC  AS tulumaks,
                                coalesce((l_tulemus_json ->> 'sm') :: NUMERIC, 0) :: NUMERIC  AS sotsmaks,
                                coalesce((l_tulemus_json ->> 'tki') :: NUMERIC, 0) :: NUMERIC AS tootumaks,
@@ -376,26 +379,26 @@ BEGIN
                       AND status = 1
                       AND pk.libid = l_sm_lib;
 
-                    SELECT coalesce(l_dok_id, 0) :: INTEGER                                        AS id,
-                           l_kpv                                                                   AS kpv,
-                           v_tooleping.id                                                          AS lepingid,
-                           v_lib.id                                                                AS libid,
-                           tulemus.summa                                                           AS summa,
-                           l_dokprop_id                                                            AS dokpropid,
-                           l.tegev                                                                 AS kood1,
-                           l.allikas                                                               AS kood2,
-                           l.artikkel                                                              AS kood5,
-                           l.uritus                                                                AS kood4,
-                           l.konto                                                                 AS konto,
-                           v_lib.tunnus                                                            AS tunnus,
-                           v_lib.tunnusid                                                          AS tunnusid,
-                           l.korrkonto                                                             AS korrkonto,
-                           l.proj                                                                  AS proj,
-                           '800699' :: TEXT                                                        AS tp,
+                    SELECT coalesce(l_dok_id, 0) :: INTEGER                                      AS id,
+                           l_kpv                                                                 AS kpv,
+                           v_tooleping.id                                                        AS lepingid,
+                           v_lib.id                                                              AS libid,
+                           tulemus.summa                                                         AS summa,
+                           l_dokprop_id                                                          AS dokpropid,
+                           l.tegev                                                               AS kood1,
+                           l.allikas                                                             AS kood2,
+                           l.artikkel                                                            AS kood5,
+                           l.uritus                                                              AS kood4,
+                           l.konto                                                               AS konto,
+                           v_lib.tunnus                                                          AS tunnus,
+                           v_lib.tunnusid                                                        AS tunnusid,
+                           l.korrkonto                                                           AS korrkonto,
+                           l.proj                                                                AS proj,
+                           v_tooleping.tp :: TEXT                                                AS tp,
                            coalesce((l_tulemus_json ->> 'sm') :: NUMERIC, tulemus.sm) :: NUMERIC AS sotsmaks,
-                           l_tulemus_json ->> 'selg' :: TEXT                                       AS muud,
-                           TRUE                                                                    AS kas_lausend,
-                           FALSE                                                                   AS kas_kas_arvesta_saldo
+                           l_tulemus_json ->> 'selg' :: TEXT                                     AS muud,
+                           TRUE                                                                  AS kas_lausend,
+                           FALSE                                                                 AS kas_kas_arvesta_saldo
                     INTO v_palk_oper
                     FROM palk.com_palk_lib AS l
                     WHERE l.id = V_lib.id;
@@ -460,7 +463,7 @@ EXCEPTION
             result = 0;
             data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
             RETURN;
-END;
+END ;
 $BODY$
     LANGUAGE 'plpgsql'
     VOLATILE

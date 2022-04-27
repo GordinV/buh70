@@ -12,7 +12,8 @@ CREATE OR REPLACE FUNCTION eelarve.lisa1_lisa5_kontrol(IN l_kpv DATE,
         kassa              NUMERIC(14, 2),
         saldoandmik        NUMERIC(14, 2),
         idx                INTEGER
-    ) AS
+    )
+AS
 $BODY$
     -- ВЫЗОВ ОТЧЕТА
 WITH qryLisa1Lisa5 AS (
@@ -186,7 +187,20 @@ WITH qryLisa1Lisa5 AS (
            AND left(deebet, 6) IN ('710001')
            AND left(kreedit, 6) IN ('100100')
          GROUP BY deebet, kreedit, kood5
-     )
+     ),
+     qryJournal39 AS (SELECT j.deebet,
+                             j.kreedit,
+                             sum(j.summa) AS kassa,
+                             j.kood5      AS artikkel
+                      FROM cur_journal j
+                      WHERE kpv >= make_date(year(l_kpv), 01, 01)::DATE
+                        AND kpv <= l_kpv
+                        AND j.rekvid IN (SELECT rekv_id
+                                         FROM get_asutuse_struktuur(l_rekvid))
+                        AND j.rekvid = CASE WHEN l_kond = 1 THEN j.rekvid ELSE l_rekvid END
+                        AND j.rekvid = 9
+                      GROUP BY deebet, kreedit, kood5)
+
 -- l_result_eelarve_kassa_taps =  get_kontrol ('','1000','',l_field) +
 -- get_kontrol ('','100','',l_field) - get_kontrol ('','1001','',l_field)
 SELECT nimetus::VARCHAR(254)                                AS nimetus,
@@ -376,6 +390,17 @@ FROM (
                   FROM qrySaldoandmik
                   WHERE left(konto, 1) IN ('4', '5', '6')
                     AND tp LIKE '185101%'
+                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '55%'
+
               ) qryKulud
          UNION ALL
 
@@ -655,6 +680,19 @@ FROM (
                         -- Сумма всех строк с бюджетом 32* в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke täitmine +
                         -- Jooksva per saldoandmikust (без элиминирования) конто 32* TP 185101=0
                   UNION ALL
+                  -- корректировка эллиминирования отдела культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '32%'
+                        -- Строка 32 Tekke täitmine (Lisa 1) в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
+                        -- Сумма всех строк с бюджетом 32* в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke täitmine +
+                        -- Jooksva per saldoandmikust (без элиминирования) конто 32* TP 185101=0
+                  UNION ALL
                   SELECT 0,
                          0,
                          0,
@@ -795,6 +833,26 @@ FROM (
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3221%'
                     AND tp LIKE '185101%'
+                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3221%'
+                  UNION ALL
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
+                  FROM qrySaldoandmik
+                  WHERE konto LIKE '3221%'
+                    AND tp LIKE '185101%'
               ) qry3221
          UNION ALL
          SELECT 1010                    AS idx,
@@ -831,6 +889,16 @@ FROM (
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
                          0
                   FROM qryJournal
+                  WHERE artikkel LIKE '3222%'
+                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
                   WHERE artikkel LIKE '3222%'
                   UNION ALL
                   SELECT 0,
@@ -880,6 +948,17 @@ FROM (
                   FROM qryJournal
                   WHERE artikkel LIKE '3224%'
                   UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3224%'
+
+                  UNION ALL
                   SELECT 0,
                          0,
                          0,
@@ -926,6 +1005,17 @@ FROM (
                          0
                   FROM qryJournal
                   WHERE artikkel LIKE '3229%'
+                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3229%'
+
                   UNION ALL
                   SELECT 0,
                          0,
@@ -974,6 +1064,17 @@ FROM (
                   FROM qryJournal
                   WHERE artikkel LIKE '3232%'
                   UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3232%'
+
+                  UNION ALL
                   SELECT 0,
                          0,
                          0,
@@ -1019,6 +1120,16 @@ FROM (
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
                          0
                   FROM qryJournal
+                  WHERE artikkel LIKE '3233%'
+                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa  ELSE 0  END
+                  FROM qryJournal39
                   WHERE artikkel LIKE '3233%'
                   UNION ALL
                   SELECT 0,
@@ -1068,6 +1179,17 @@ FROM (
                   FROM qryJournal
                   WHERE artikkel LIKE '3237%'
                   UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3237%'
+
+                  UNION ALL
                   SELECT 0,
                          0,
                          0,
@@ -1114,6 +1236,17 @@ FROM (
                          0
                   FROM qryJournal
                   WHERE artikkel LIKE '3238%'
+                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '3238%'
+
                   UNION ALL
                   SELECT 0,
                          0,
@@ -1582,6 +1715,49 @@ FROM (
               ) qry382
          UNION ALL
          SELECT 1010                    AS idx,
+                '38251'                 AS nimetus,
+                sum(eelarve)            AS eelarve,
+                sum(eelarve_taps)       AS eelarve_taps,
+                sum(eelarve_kassa)      AS eelarve_kassa,
+                sum(eelarve_kassa_taps) AS eelarve_kassa_taps,
+                sum(kassa)              AS kassa,
+                sum(saldoandmik)        AS saldoandmik
+         FROM (
+                  SELECT eelarve,
+                         eelarve_taps,
+                         eelarve_kassa,
+                         eelarve_kassa_taps,
+                         kassa,
+                         saldoandmik
+                  FROM qryLisa1Lisa5
+                  WHERE artikkel = '38251'
+                  UNION ALL
+                  SELECT -1 * eelarve,
+                         -1 * eelarve_taps,
+                         -1 * eelarve_kassa,
+                         -1 * eelarve_kassa_taps,
+                         -1 * kassa,
+                         -1 * saldoandmik
+                  FROM qryTuludTaitmine
+                  WHERE artikkel LIKE '38251%'
+                  UNION ALL
+                  --                      Строка 38251 Kassa täitmine (Lisa 5) в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
+                  --                      Сумма всех строк с бюджетом 38251* в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Kassa täitmine +
+                  --                      Сумма всех строк D710001 K 100100 с бюджетом 38251*в Päevaraamat =0
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN 0 ELSE kassa END,
+                         0
+                  FROM qryJournal
+                  WHERE artikkel LIKE '38251%'
+-- Строка 382 Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
+                  -- Сумма всех строк с бюджетом 382* в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke eelarve kinn +
+                  -- Сумма всех строк с бюджетом 3825* в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke eelarve kinn =0
+              ) qry382
+         UNION ALL
+         SELECT 1010                    AS idx,
                 '38252'                 AS nimetus,
                 sum(eelarve)            AS eelarve,
                 sum(eelarve_taps)       AS eelarve_taps,
@@ -2031,6 +2207,16 @@ FROM (
                   FROM qrySaldoandmik
                   WHERE left(konto, 2) = '55'
                     AND left(tp, 6) = '185101'
+                  UNION ALL
+                  -- убираем элиминирование отд. культуры
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         -1 * CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
+                  FROM qryJournal39
+                  WHERE artikkel LIKE '55%'
               ) qry55
          UNION ALL
          -- Строка 60* Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5) +
@@ -2580,7 +2766,8 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO
 
 
 SELECT *
-FROM eelarve.lisa1_lisa5_kontrol('2021-06-30'::DATE, 64, 1)
+FROM eelarve.lisa1_lisa5_kontrol('2022-03-31'::DATE, 63, 1)
+--where left(nimetus,2) in ('32','55', '38')
 ORDER BY idx, nimetus
 
 
