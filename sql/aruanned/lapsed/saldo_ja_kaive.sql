@@ -88,11 +88,13 @@ FROM (
               laekumised AS (
                   SELECT a.rekvid,
                          a1.properties ->>
-                         'yksus'                                                                              AS yksus,
-                         sum(((a1.summa / a.summa) * AT.summa)) FILTER ( WHERE AT.summa < 0 )::NUMERIC(14, 4) AS tagastus,
-                         sum(((a1.summa / a.summa) * AT.summa)) FILTER ( WHERE AT.summa > 0 )::NUMERIC(14, 4) AS laekumised,
-                         l.parentid                                                                           AS laps_id
-                  FROM (SELECT doc_arv_id, sum(summa) summa
+                         'yksus'                                                      AS yksus,
+                         sum(((a1.summa / a.summa) * AT.tagastus)) ::NUMERIC(14, 4)   AS tagastus,
+                         sum(((a1.summa / a.summa) * AT.laekumised)) ::NUMERIC(14, 4) AS laekumised,
+                         l.parentid                                                   AS laps_id
+                  FROM (SELECT doc_arv_id,
+                               sum(summa) FILTER (WHERE summa > 0) laekumised,
+                               sum(summa) FILTER (WHERE summa < 0) tagastus
                         FROM docs.arvtasu
                         WHERE kpv >= kpv_start::DATE
                           AND kpv <= kpv_end::DATE
@@ -114,7 +116,7 @@ FROM (
                                      FROM get_asutuse_struktuur(l_rekvid))
                     AND a.liik = 0 -- только счета исходящие
                   GROUP BY AT.doc_arv_id, (a1.properties ->>
-                                           'yksus'), AT.summa, l.parentid, a.rekvid
+                                           'yksus'), l.parentid, a.rekvid
               ),
               mahandmine AS (
                   SELECT a.rekvid,
@@ -327,9 +329,13 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 
 
 /*
+SELECT * FROM lapsed.saldo_ja_kaive(96, '2021-01-01', '2021-03-31') qry
+where lapse_nimi ilike 'Gruntova Arina%'
+
+
 select sum(arvestatud) from (
 
-SELECT * FROM lapsed.saldo_ja_kaive(71, '2021-01-01', '2021-01-31') qry
+SELECT * FROM lapsed.saldo_ja_kaive(96, '2021-01-01', '2021-01-31') qry
 left outer join  lapsed.saldo_ja_kaive(84, '2021-01-01', '2021-01-31') qry1
 on qry1.lapse_isikukood =  qry.lapse_isikukood
 where qry.jaak <> qry1.alg_saldo

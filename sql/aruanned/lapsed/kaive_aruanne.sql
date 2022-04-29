@@ -288,6 +288,6 @@ GRANT EXECUTE ON FUNCTION lapsed.kaive_aruanne(INTEGER, DATE, DATE) TO dbvaatlej
 /*
 explain
 select *
-FROM lapsed.kaive_aruanne(72, '2020-01-01', '2021-12-30') qry
-where lapse_nimi ilike 'Jelagin%'
+FROM lapsed.kaive_aruanne(96, '2021-01-01', '2021-12-30') qry
+where lapse_nimi ilike 'Gruntova Arina%'
 */

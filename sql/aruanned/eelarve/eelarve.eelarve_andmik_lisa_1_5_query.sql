@@ -113,7 +113,7 @@ BEGIN
                                  ELSE l_rekv_id END)
                AND e.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid, $1))
-               AND e.rekvid <> 9
+--               AND e.rekvid <> 9
                AND aasta = year($1)
                AND (e.kpv IS NULL) --  OR e.kpv <= $1
                AND e.status <> 3
@@ -145,7 +145,7 @@ BEGIN
                                  ELSE l_rekv_id END)
                AND e.rekvid IN (SELECT rekv_id
                                 FROM get_asutuse_struktuur(l_rekvid, $1))
-               AND e.rekvid <> 9
+--               AND e.rekvid <> 9
                AND aasta = year($1)
                AND (e.kpv IS NOT NULL AND e.kpv <= l_kpv)
                AND e.status <> 3
@@ -176,7 +176,7 @@ BEGIN
                                     ELSE l_rekv_id END)
                AND ft.rekvid IN (SELECT rekv_id
                                  FROM get_asutuse_struktuur(l_rekvid, $1))
-               AND ft.rekvid <> 9
+--               AND ft.rekvid <> 9
                AND ft.kuu <= MONTH(l_kpv)
                AND ft.aasta = year(l_kpv)
                AND ft.artikkel IS NOT NULL
@@ -208,7 +208,7 @@ BEGIN
                                     ELSE l_rekv_id END)
                AND tt.rekvid IN (SELECT rekv_id
                                  FROM get_asutuse_struktuur(l_rekvid, $1))
-               AND tt.rekvid <> 9
+--               AND tt.rekvid <> 9
                AND tt.kuu <= MONTH(l_kpv)
                AND tt.aasta = year(l_kpv)
                AND tt.artikkel IS NOT NULL
@@ -276,7 +276,7 @@ BEGIN
                                             ELSE $2 END)
                         AND j.rekvid IN (SELECT rekv_id
                                          FROM get_asutuse_struktuur(l_rekvid, $1))
-                        AND j.rekvid <> 9
+--                        AND j.rekvid <> 9
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.kood5 IN
@@ -330,7 +330,7 @@ BEGIN
                                             ELSE l_rekvid END)
                         AND j.rekvid IN (SELECT rekv_id
                                          FROM get_asutuse_struktuur(l_rekvid, $1))
-                        AND j.rekvid <> 9
+--                        AND j.rekvid <> 9
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND j1.deebet LIKE '100%'
@@ -371,7 +371,7 @@ BEGIN
                                             ELSE l_rekvid END)
                         AND j.rekvid IN (SELECT rekv_id
                                          FROM get_asutuse_struktuur(l_rekvid, $1))
-                        AND j.rekvid <> 9
+--                        AND j.rekvid <> 9
                         AND j1.kood5 IS NOT NULL
                         AND NOT empty(j1.kood5)
                         AND left(j1.kreedit, 3) IN ('100', '999')
@@ -421,7 +421,7 @@ BEGIN
                      UNION ALL
                      SELECT CASE WHEN l_rekvid = 63 THEN 999 ELSE l_rekvid END AS rekv_id
     )
-      AND rekvid <> 9
+--      AND rekvid <> 9
     GROUP BY tegev
             , konto
             , rahavoo
@@ -456,7 +456,7 @@ BEGIN
                      UNION ALL
                      SELECT CASE WHEN l_rekvid = 63 THEN 999 ELSE l_rekvid END AS rekv_id
     )
-      AND rekvid <> 9
+--      AND rekvid <> 9
     GROUP BY tegev
             , allikas
             , konto

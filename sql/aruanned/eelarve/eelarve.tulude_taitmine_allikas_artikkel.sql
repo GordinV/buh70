@@ -36,7 +36,7 @@ WITH cur_tulude_kassa_taitmine AS (
       AND (l_params IS NULL OR coalesce(qry.artikkel, '') ILIKE coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
       AND (l_params IS NULL OR coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
       AND (l_params IS NULL OR coalesce(qry.rahavoog, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
-      AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
+--      AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
 ),
      cur_tulude_taitmine AS (
          SELECT *
@@ -49,7 +49,7 @@ WITH cur_tulude_kassa_taitmine AS (
            AND (l_params IS NULL OR coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
            AND (l_params IS NULL OR
                 coalesce(qry.rahavoog, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
-           AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
+--           AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
      ),
      laekumised_eelarvesse AS (
          SELECT j.rekvid,
@@ -197,7 +197,7 @@ WITH cur_tulude_kassa_taitmine AS (
                          coalesce(e.kood2, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
                     AND (l_params IS NULL OR
                          coalesce(e.kood3, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
-                    AND e.rekvid <> 9 -- TP18510139, VB убрать из отчетов
+ --                   AND e.rekvid <> 9 -- TP18510139, VB убрать из отчетов
 
                   UNION ALL
                   SELECT rekv_id          AS rekvid,
@@ -223,7 +223,7 @@ WITH cur_tulude_kassa_taitmine AS (
                   FROM cur_tulude_taitmine ft
                   WHERE ft.artikkel IS NOT NULL
                     AND NOT empty(ft.artikkel)
-                    AND ft.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
+--                    AND ft.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
                   UNION ALL
                   SELECT kt.rekv_id                                                           AS rekvid,
                          0 :: NUMERIC                                                         AS eelarve_kinni,
@@ -241,9 +241,9 @@ WITH cur_tulude_kassa_taitmine AS (
                   FROM cur_tulude_kassa_taitmine kt
                   WHERE kt.artikkel IS NOT NULL
                     AND NOT empty(kt.artikkel)
-                    AND kt.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
+--                    AND kt.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
               ) qry
-         WHERE qry.rekvid <> 9
+--         WHERE qry.rekvid <> 9
          GROUP BY rekvid,
                   tegev,
                   allikas,

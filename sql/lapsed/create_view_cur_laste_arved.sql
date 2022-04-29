@@ -33,7 +33,8 @@ SELECT d.id                                                                     
        (v.properties ->> 'pank'):: TEXT                                                                      AS pank,
        CASE
            WHEN coalesce((a.properties ->> 'ebatoenaolised_2_id')::INTEGER, 0) > 0 THEN 'Jah'
-           ELSE 'Ei' END                                                                                     AS ebatoenaolised
+           ELSE 'Ei' END                                                                                     AS ebatoenaolised,
+       l.id as laps_id
 FROM docs.doc d
          INNER JOIN docs.arv a ON a.parentId = d.id
          INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id

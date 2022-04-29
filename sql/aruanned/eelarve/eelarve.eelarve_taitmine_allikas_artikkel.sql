@@ -34,7 +34,7 @@ WITH cur_kulude_kassa_taitmine AS (
       AND (l_params IS NULL OR coalesce(qry.artikkel, '') ILIKE coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
       AND (l_params IS NULL OR coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
       AND (l_params IS NULL OR coalesce(qry.rahavoog, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
-      AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
+--      AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
 ),
      cur_kulude_taitmine AS (SELECT *
                              FROM eelarve.tekke_taitmine(l_kpv_1, l_kpv_2, l_rekvid, l_kond) qry
@@ -49,7 +49,7 @@ WITH cur_kulude_kassa_taitmine AS (
                                AND (l_params IS NULL OR coalesce(qry.rahavoog, '') ILIKE
                                                         coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
 
-                               AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
+--                               AND qry.rekv_id <> 9 -- TP18510139, VB убрать из отчетов
      ),
      qryReport AS (
          SELECT rekvid,
@@ -314,7 +314,7 @@ WITH cur_kulude_kassa_taitmine AS (
                     AND (l_params IS NULL OR
                          coalesce(j.kood3, '') ILIKE coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
               ) qry
-         WHERE rekvid <> 9
+--         WHERE rekvid <> 9
          GROUP BY rekvid,
                   tegev,
                   allikas,

@@ -228,8 +228,6 @@ BEGIN
     FROM (SELECT 0        AS id,
                  v_params AS data) row;
 
-    raise notice 'salvesta mk, json_object %', json_object;
-
     SELECT docs.sp_salvesta_mk(json_object :: JSON, user_id, l_rekvId) INTO mk_id;
 
     IF mk_id IS NOT NULL AND mk_id > 0 AND doc_type_id = 'VMK'

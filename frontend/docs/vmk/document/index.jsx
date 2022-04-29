@@ -94,6 +94,15 @@ class Vmk extends React.Component {
             relatedDocuments(self);
         }
 
+        // queryArvTasu
+        let gridArvData = self.docData.queryArvTasu,
+            gridArvColumns = self.docData.gridArvConfig;
+
+        let tasuSumma = 0;
+        gridArvData.forEach(row => {
+            tasuSumma += Number(row['tasu_summa']);
+        });
+
         return (
             <div>
                 <div className='div-doc'>
@@ -228,6 +237,32 @@ class Vmk extends React.Component {
                 {self.state.gridRowEdit ?
                     this.createGridRow(self)
                     : null}
+
+                <br/>
+                <div style={styles.docRow}>
+                    <label ref="label">
+                        {'Arved'}
+                    </label>
+                </div>
+                <div style={styles.docRow}>
+                    <DataGrid source='arved'
+                              gridData={gridArvData}
+                              gridColumns={gridArvColumns}
+                              showToolBar={false}
+                              handleGridBtnClick={self.handleGridBtnClick}
+                              docTypeId={'arv'}
+                              readOnly={true}
+                              style={styles.grid.headerTable}
+                              ref="arved-data-grid"/>
+                </div>
+                <div style={styles.docRow}>
+                    <InputText title="Tasu kokku: "
+                               name='tasuSumma'
+                               ref="input-tasuSumma"
+                               value={String(tasuSumma) || '0.00'}
+                               width='auto'
+                               disabled={true}/>
+                </div>
 
             </div>
         );

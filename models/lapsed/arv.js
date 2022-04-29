@@ -245,18 +245,18 @@ const Arv = {
         {
             sql: `SELECT Arvtasu.id,
                          arvtasu.kpv,
-                         to_char(arvtasu.kpv, 'DD.MM.YYYY') AS print_kpv,
+                         to_char(arvtasu.kpv, 'DD.MM.YYYY')                            AS print_kpv,
                          arvtasu.summa,
-                         coalesce(arvtasu.inf3_summa, 0)    AS inf3_summa,
-                         'MK' :: VARCHAR(20)                AS dok,
-                         'PANK' :: VARCHAR                  AS liik,
-                         mk.number                          AS dok_nr,
+                         coalesce(arvtasu.inf3_summa, 0)                               AS inf3_summa,
+                         CASE WHEN mk.opt = 2 THEN 'SMK' ELSE 'VMK' END :: VARCHAR(20) AS dok,
+                         'PANK' :: VARCHAR                                             AS liik,
+                         mk.number                                                     AS dok_nr,
                          pankkassa,
                          mk1.journalid,
                          doc_tasu_id,
-                         coalesce(journalid.number, 0)      AS number,
-                         a.nimetus                          AS maksja,
-                         $2                                 AS userid
+                         coalesce(journalid.number, 0)                                 AS number,
+                         a.nimetus                                                     AS maksja,
+                         $2                                                            AS userid
                   FROM docs.arvtasu arvtasu
                            INNER JOIN docs.mk mk ON (arvtasu.doc_tasu_id = mk.parentid AND arvtasu.pankkassa = 1)
                            INNER JOIN docs.mk1 mk1 ON (mk.id = mk1.parentid)

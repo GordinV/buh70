@@ -129,7 +129,33 @@ const Vmk = {
             multiple: true,
             alias: 'relations',
             data: []
-        }
+        },
+        {
+            sql: ` SELECT t.id,
+                          t.kpv,
+                          to_char(a.kpv, 'DD.MM.YYYY') AS print_kpv,
+                          t.summa                      AS tasu_summa,
+                          a.summa                      AS arv_summa,
+                          CASE WHEN coalesce((a.properties ->> 'tyyp'), '') = 'ETTEMAKS' THEN 0 ELSE 1 END *
+                          coalesce(t.inf3_summa, 0)    AS inf3_summa,
+                          a.number,
+                          asutus.nimetus               AS asutus,
+                          a.properties ->> 'tyyp'      AS tyyp,
+                          a.jaak,
+                          $2                           AS user_id
+                   FROM docs.arvtasu t
+                            INNER JOIN docs.doc d ON d.id = t.doc_arv_id
+                            INNER JOIN docs.arv a ON a.parentid = d.id
+                            INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid
+                   WHERE t.doc_tasu_id = $1
+                     AND t.status <> 3
+                   ORDER BY t.kpv
+                           , t.id`,
+            query: null,
+            multiple: true,
+            alias: 'queryArvTasu',
+            data: []
+        },
 
     ],
     grid: {
@@ -187,7 +213,20 @@ const Vmk = {
             {id: 'tunnus', name: 'Tunnus', width: '100px', show: true, type: 'text', readOnly: false},
             {id: 'proj', name: 'Projekt', width: '100px', show: true, type: 'text', readOnly: false},
             {id: 'lausnr', name: 'Lausend', width: '100px', show: true, type: 'text', readOnly: false}
-        ]
+        ],
+        gridArvConfig:
+            [
+                {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
+                {id: 'tyyp', name: 'Arv. tüüp', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'number', name: 'Number', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'print_kpv', name: 'Kuupäev', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'asutus', name: 'Maksja', width: '20%', show: true, type: 'text', readOnly: true},
+                {id: 'tasu_summa', name: 'Tasu summa', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'arv_summa', name: 'Arve summa', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'jaak', name: 'Arve jääk', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'inf3_summa', name: 'INF3 Summa', width: '10%', show: true, readOnly: true},
+            ]
+
     },
     saveDoc: `select docs.sp_salvesta_mk($1::json, $2::integer, $3::integer) as id`,
     deleteDoc: `SELECT error_code, result, error_message
