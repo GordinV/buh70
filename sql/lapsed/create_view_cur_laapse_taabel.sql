@@ -19,7 +19,7 @@ SELECT lt.id,
        (lk.properties ->> 'kas_protsent')::BOOLEAN AS kas_protsent,
        CASE
            WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN -1
-           WHEN (lk.properties ->> 'sooduse_alg')::DATE < (make_date(lt.aasta, lt.kuu, 1) + interval '1 month' )
+           WHEN (lk.properties ->> 'sooduse_alg')::DATE < (make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month')
                AND (lk.properties ->> 'sooduse_lopp')::DATE >=
                    CASE
                        WHEN upper(n.uhik) = ('KUU') THEN make_date(lt.aasta, lt.kuu, 1)
@@ -51,6 +51,7 @@ FROM lapsed.lapse_taabel lt
 WHERE lt.staatus <> 3
   AND lt.kogus <> 0
   AND n.status <> 3
+  AND NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN
 ORDER BY aasta, kuu, nimi, kood;
 
 GRANT SELECT ON TABLE lapsed.cur_lapse_taabel TO arvestaja;

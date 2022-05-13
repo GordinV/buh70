@@ -49,3 +49,12 @@ CREATE INDEX lapse_kaart_lopp_kpv_idx
         USING btree
         ((properties->>'lopp_kpv'))
     where staatus <> 3;
+
+
+drop INdex if exists lapsed.lapse_kaart_kas_ettemaks_idx;
+
+CREATE INDEX lapse_kaart_kas_ettemaks_idx
+    ON lapsed.lapse_kaart
+        USING btree
+        ((properties->'kas_ettemaks'))
+    where staatus <> 3;

@@ -73,60 +73,109 @@ module.exports = {
     grid:
         {
             gridConfiguration: [
-                {id: "id", name: "id", width: "10%", show: false},
-                {id: "isikukood", name: "Isikukood", width: "20%"},
+                {id: "id", name: "id", width: "1%", show: false},
+                {id: "isikukood", name: "Isikukood", width: "15%"},
                 {id: "nimi", name: "Nimi", width: "30%"},
                 {id: "teenus", name: "Teenus", width: "25%"},
-                {id: "yksus", name: "Üksus", width: "20%"},
-                {id: "kuu", name: "Kuu", width: "10%", type: "integer", interval: true},
-                {id: "aasta", name: "Aasta", width: "10%", type: "integer"},
-                {id: "kogus", name: "Kogus", width: "10%", type: "number", interval: true},
-                {id: "hind", name: "Hind", width: "10%", type: "number", interval: true},
+                {id: "yksus", name: "Üksus", width: "15%"},
+                {id: "kuu", name: "Kuu", width: "5%", type: "integer", interval: true},
+                {id: "aasta", name: "Aasta", width: "5%", type: "integer"},
+                {id: "kogus", name: "Kogus", width: "8%", type: "number", interval: true},
+                {id: "hind", name: "Hind", width: "8%", type: "number", interval: true},
                 {id: "uhik", name: "Ühik", width: "5%"},
                 {id: "soodustus", name: "Soodustus", width: "10%", type: "number"},
-                {id: "summa", name: "Summa", width: "15%", type: "number", interval: true},
-                {id: "umberarvestus", name: "Ümberarvestus", width: "5%"},
+                {id: "summa", name: "Summa", width: "10%", type: "number", interval: true},
+                {id: "umberarvestus", name: "Ümberarv", width: "5%"},
+                {id: "tab_tyyp", name: "Tüüp", width: "10%"},
             ],
             sqlString:
-                `with qryNoms as 
-                        (SELECT lt.id,
-                            lt.parentid,
-                            lt.rekvid,
-                            lt.nomid,
-                            lt.kuu::integer,
-                            lt.aasta::integer,
-                            lt.kogus::NUMERIC(12, 2),
-                            lt.hind::NUMERIC(12, 2),
-                            lt.uhik,
-                            case when lt.umberarvestus then 'Jah' else 'Ei' end::text as umberarvestus,
-                            (CASE
-                                 WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
-                                                           ((lt.soodustus * lt.sooduse_kehtivus) / 100)
-                                 ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus END)::NUMERIC(12, 2)     AS soodustus,
-                            ((lt.hind * lt.kogus - (CASE
-                                             WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
-                                                                       ((lt.soodustus * lt.sooduse_kehtivus) / 100)
-                                             ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus *  
-                                             (case when lt.tyyp is not null and lt.tyyp = 'SOODUSTUS' then 0 else 1 end)
-                                             
-                                             END)))::NUMERIC(12, 2)                                            AS summa,
-                            lt.isikukood,
-                            v.viitenumber,
-                            lt.nimi,
-                            lt.kood,
-                            lt.teenus,
-                            (coalesce(lt.yksus, '') ||
-                             CASE WHEN lt.all_yksus IS NULL THEN '' ELSE '-' || lt.all_yksus END) AS yksus,
-                            $2::INTEGER                                                           AS userid
-                     FROM lapsed.cur_lapse_taabel lt
-                         LEFT OUTER JOIN (SELECT rekv_id, array_to_string(array_agg(viitenumber), ',') AS viitenumber, isikukood
-                              FROM lapsed.viitenr v
-                              GROUP BY v.rekv_id, v.isikukood) v ON v.rekv_id = lt.rekvid AND v.isikukood = lt.isikukood
-                     
-                     WHERE lt.rekvid = $1::INTEGER
+                `WITH viitenr AS (SELECT array_to_string(array_agg(viitenumber), ',') AS viitenumber, isikukood
+                                 FROM lapsed.viitenr v
+                                 WHERE v.rekv_id = $1::INTEGER
+                                 GROUP BY v.isikukood),
+                     is_ettemaks AS (
+                         SELECT exists(SELECT 1
+                                       FROM lapsed.lapse_kaart lk
+                                       WHERE lk.rekvid = $1::INTEGER
+                                         AND (lk.properties -> 'kas_ettemaks') = 'true'
+                                         AND lk.staatus <> 3
+                                    ) AS kas_ettemaks
+                     ),                                 
+                     qryTabs AS
+                         (SELECT lt.id,
+                                 lt.parentid,
+                                 lt.rekvid,
+                                 lt.nomid,
+                                 lt.kuu::INTEGER,
+                                 lt.aasta::INTEGER,
+                                 lt.kogus::NUMERIC(12, 2),
+                                 lt.hind::NUMERIC(12, 2),
+                                 lt.uhik,
+                                 CASE WHEN lt.umberarvestus THEN 'Jah' ELSE 'Ei' END::TEXT                    AS umberarvestus,
+                                 (CASE
+                                      WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
+                                                                ((lt.soodustus * lt.sooduse_kehtivus) / 100)
+                                      ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus END)::NUMERIC(12, 2) AS soodustus,
+                                 ((lt.hind * lt.kogus - (CASE
+                                                             WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
+                                                                                       ((lt.soodustus * lt.sooduse_kehtivus) / 100)
+                                                             ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus *
+                                                                  (CASE WHEN lt.tyyp IS NOT NULL AND lt.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END)
+                                     END)))::NUMERIC(12, 2)                                                   AS summa,
+                                 lt.isikukood,
+                                 v.viitenumber,
+                                 lt.nimi,
+                                 lt.kood,
+                                 lt.teenus,
+                                 (coalesce(lt.yksus, '') ||
+                                  CASE WHEN lt.all_yksus IS NULL THEN '' ELSE '-' || lt.all_yksus END)        AS yksus,
+                                 $2::INTEGER                                                           AS userid
+                          FROM lapsed.cur_lapse_taabel lt
+                                   LEFT OUTER JOIN viitenr v ON v.isikukood = lt.isikukood
+                          WHERE lt.rekvid = $1::INTEGER                          
+                         ),
+                     qryVirtTabs AS (SELECT lt.id,
+                                            lt.parentid,
+                                            lt.rekvid,
+                                            lt.nomid,
+                                            lt.kuu::INTEGER,
+                                            lt.aasta::INTEGER,
+                                            lt.kogus::NUMERIC(12, 2),
+                                            lt.hind::NUMERIC(12, 2),
+                                            lt.uhik,
+                                            'Ei'                    AS umberarvestus,
+                                            (CASE
+                                                 WHEN lt.kas_protsent::BOOLEAN THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
+                                                                           ((lt.soodustus * lt.sooduse_kehtivus) / 100)
+                                                 ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus END)::NUMERIC(12, 2) AS soodustus,
+                                            ((lt.hind * lt.kogus - (CASE
+                                                                        WHEN lt.kas_protsent::BOOLEAN THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
+                                                                                                  ((lt.soodustus * lt.sooduse_kehtivus) / 100)
+                                                                        ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus
+                                                END)))::NUMERIC(12, 2)                                                   AS summa,
+                                            lt.isikukood,
+                                            v.viitenumber,
+                                            lt.nimi,
+                                            lt.kood,
+                                            lt.teenus,
+                                            (coalesce(lt.yksus, '') ||
+                                             CASE WHEN lt.all_yksus IS NULL THEN '' ELSE '-' || lt.all_yksus END)        AS yksus,
+                                 $2::INTEGER                                                           AS userid
+                                     FROM is_ettemaks,
+                                        lapsed.cur_lapse_virtuaal_taabel lt
+                                              LEFT OUTER JOIN viitenr v ON v.isikukood = lt.isikukood
+                                     WHERE is_ettemaks.kas_ettemaks::BOOLEAN
+                                        and lt.rekvid = $1::INTEGER
                      )
-                     select * from qryNoms
-                     ORDER BY aasta DESC, kuu DESC, nimi`,     //  $1 всегда ид учреждения, $2 - userId
+                SELECT *
+                FROM (
+                         SELECT *, 'Tavaline' as tab_tyyp
+                         FROM qryTabs
+                         UNION ALL
+                         SELECT *, 'Virtuaalne' as tab_tyyp
+                         FROM qryVirtTabs
+                     ) tab
+                ORDER BY aasta DESC, kuu DESC, nimi`,     //  $1 всегда ид учреждения, $2 - userId
             params: '',
             alias: 'curLapseTaabel',
             totals: ` sum(soodustus) over() as soodustus_kokku,  

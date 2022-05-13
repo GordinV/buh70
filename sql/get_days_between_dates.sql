@@ -16,7 +16,7 @@ BEGIN
                 a_kpv = a_kpv || l_kpv;
             END IF;
         END LOOP;
-    raise notice 'a_kpv %', a_kpv;
+--    raise notice 'a_kpv %', a_kpv;
     RETURN a_kpv;
 END;
 $BODY$

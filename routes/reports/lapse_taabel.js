@@ -42,8 +42,8 @@ exports.get = async (req, res) => {
         // get xml
         let header;
         let csv = getCSV(data.data.map(row => {
-            let arvKpv = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '05', "YYYY-MM-DD").add(1, 'month') .format("YYYY-MM-DD");
-            let tahtaeg = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '19', "YYYY-MM-DD").add(1, 'month') .format("YYYY-MM-DD");
+            let arvKpv = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '05', "YYYY-MM-DD").add(1, 'month') .format("DD.MM.YYYY");
+            let tahtaeg = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '19', "YYYY-MM-DD").add(1, 'month') .format("DD.MM.YYYY");
 
 
             //поправить если структура меняется

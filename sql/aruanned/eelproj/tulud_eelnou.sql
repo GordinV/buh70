@@ -1,5 +1,5 @@
 DROP FUNCTION IF EXISTS eelarve.tulud_eelnou(DATE, INTEGER, INTEGER);
-DROP FUNCTION IF EXISTS eelarve.tulud_eelnou_(DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS eelarve.tulud_eelnou(DATE, INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS eelarve.tulud_eelnou_(DATE, INTEGER, INTEGER, JSONB);
 
 CREATE OR REPLACE FUNCTION eelarve.tulud_eelnou(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER,
@@ -631,10 +631,8 @@ BEGIN
                         1              AS idx
                  FROM tmp_andmik S
                  WHERE aasta = YEAR(l_kpv)
-                   AND LEFT(S.konto
-                           , 3) NOT IN ('352', '100', '381', '655')
-                   AND LEFT(S.artikkel
-                           , 4) NOT IN ('3502', '1502', '1532', '2585', '1032')
+                   AND LEFT(S.konto, 3) NOT IN ('352', '100', '381', '655')
+                   AND LEFT(S.artikkel, 4) NOT IN ('3502', '1502', '1532', '2585', '1032')
                  GROUP BY S.rekv_id, S.artikkel, S.tegev, S.allikas, S.tunnus
                  UNION ALL
                  /*                 -- 352
@@ -1319,7 +1317,7 @@ BEGIN
                             sum(qry.aasta_3_prognoos)                                AS aasta_3_prognoos,
                             sum(qry.eelarve_tekkepohine_kinnitatud)                  AS eelarve_tekkepohine_kinnitatud,
                             sum(qry.eelarve_tekkepohine_tapsustatud)                 AS eelarve_tekkepohine_tapsustatud,
-                            string_agg(qry.selg,',')                                     AS selg
+                            string_agg(qry.selg, ',')                                AS selg
                      FROM (
                               SELECT q.rekvid           AS rekvid,
                                      q.idx,
@@ -1502,6 +1500,25 @@ BEGIN
                      GROUP BY qryReport.idx, qryReport.rekvid,
                               qryReport.tunnus, qryReport.tegev, qryReport.allikas, qryReport.artikkel
                      UNION ALL
+                     SELECT qryReport.idx,
+                            qryReport.rekvId                               AS rekv_id,
+                            qryReport.tunnus,
+                            qryReport.tegev,
+                            qryReport.allikas,
+                            qryReport.artikkel,
+                            0                                              AS aasta_1_tekke_taitmine,
+                            sum(qryReport.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
+                            sum(qryReport.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud,
+                            0                                              AS aasta_2_tekke_taitmine,
+                            sum(qryReport.aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
+                            0                                              AS aasta_3_eelnou,
+                            0                                              AS aasta_3_prognoos,
+                            string_agg(qryReport.selg, ',')                AS selg
+                     FROM qryReport
+                     WHERE qryReport.artikkel = '100'
+                     GROUP BY qryReport.idx, qryReport.rekvid,
+                              qryReport.tunnus, qryReport.tegev, qryReport.allikas, qryReport.artikkel
+                     UNION ALL
                      SELECT 0                                              AS idx,
                             qryReport.rekvId                               AS rekv_id,
                             ''                                             AS tunnus,
@@ -1588,7 +1605,8 @@ GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER, JSONB) TO
 SELECT sum(aasta_1_tekke_taitmine) OVER (PARTITION BY rekv_id, artikkel) AS aasta1,
        sum(aasta_2_tekke_taitmine) OVER (PARTITION BY rekv_id, artikkel) AS aasta2,
        *
-FROM eelarve.tulud_eelnou('2021-12-31'::DATE, 130:: INTEGER, 1)
-WHERE artikkel = '1532'
+FROM eelarve.tulud_eelnou('2021-12-31'::DATE, 63:: INTEGER, 0)
+WHERE tegev LIKE '05%'
+   OR tegev LIKE '01-10%'
 
 

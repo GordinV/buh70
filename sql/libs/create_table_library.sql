@@ -1,25 +1,24 @@
-﻿DROP TABLE if exists libs.library;
+﻿DROP TABLE IF EXISTS libs.library;
 
-CREATE TABLE libs.library
-(
-  id serial,
-  rekvid integer NOT NULL,
-  kood character(20) NOT NULL DEFAULT space(1),
-  nimetus character(254) NOT NULL DEFAULT space(1),
-  library character(20) NOT NULL DEFAULT space(1),
-  muud text,
-  tun1 integer NOT NULL DEFAULT 0,
-  tun2 integer NOT NULL DEFAULT 0,
-  tun3 integer NOT NULL DEFAULT 0,
-  tun4 integer NOT NULL DEFAULT 0,
-  tun5 integer NOT NULL DEFAULT 0,
-  vanaid integer,
-  properties jsonb,
-  CONSTRAINT library_pkey PRIMARY KEY (id)
+CREATE TABLE libs.library (
+    id         SERIAL,
+    rekvid     INTEGER        NOT NULL,
+    kood       CHARACTER(20)  NOT NULL DEFAULT space(1),
+    nimetus    CHARACTER(254) NOT NULL DEFAULT space(1),
+    library    CHARACTER(20)  NOT NULL DEFAULT space(1),
+    muud       TEXT,
+    tun1       INTEGER        NOT NULL DEFAULT 0,
+    tun2       INTEGER        NOT NULL DEFAULT 0,
+    tun3       INTEGER        NOT NULL DEFAULT 0,
+    tun4       INTEGER        NOT NULL DEFAULT 0,
+    tun5       INTEGER        NOT NULL DEFAULT 0,
+    vanaid     INTEGER,
+    properties JSONB,
+    CONSTRAINT library_pkey PRIMARY KEY (id)
 )
-WITH (
-  OIDS=TRUE
-);
+    WITH (
+        OIDS= TRUE
+    );
 
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE libs.library TO dbpeakasutaja;
 GRANT SELECT, UPDATE, INSERT ON TABLE libs.library TO dbkasutaja;
@@ -31,67 +30,85 @@ GRANT SELECT ON TABLE libs.library TO dbvaatleja;
 -- DROP INDEX libs.library_kood;
 
 CREATE INDEX library_kood
-  ON libs.library
-  USING btree
-  (kood COLLATE pg_catalog."default");
+    ON libs.library
+        USING btree
+        (kood COLLATE pg_catalog."default");
 
 -- Index: libs.library_library
 
 -- DROP INDEX libs.library_library;
 
 CREATE INDEX library_library
-  ON libs.library
-  USING btree
-  (library COLLATE pg_catalog."default");
+    ON libs.library
+        USING btree
+        (library COLLATE pg_catalog."default");
 
 -- Index: libs.library_rekvid
 
 -- DROP INDEX libs.library_rekvid;
 
 CREATE INDEX library_rekvid
-  ON libs.library
-  USING btree
-  (rekvid);
-ALTER TABLE libs.library CLUSTER ON library_rekvid;
+    ON libs.library
+        USING btree
+        (rekvid);
+ALTER TABLE libs.library
+    CLUSTER ON library_rekvid;
 
 CREATE INDEX library_status
-  ON libs.library
-  USING btree
-  (status)
-  WHERE status <> 3;
-ALTER TABLE libs.library CLUSTER ON library_rekvid;
+    ON libs.library
+        USING btree
+        (status)
+    WHERE status <> 3;
+ALTER TABLE libs.library
+    CLUSTER ON library_rekvid;
 
 
 CREATE INDEX library_pv_gruppid
-  ON libs.library
-  USING gin
-  ((properties::jsonb->gruppid));
+    ON libs.library
+        USING gin
+        ((properties::JSONB -> gruppid));
 
 DROP INDEX IF EXISTS library_docs_modules;
 CREATE INDEX library_docs_modules
-  ON libs.library ((properties :: JSONB ->> 'module'))
-where library = 'DOK';
+    ON libs.library ((properties :: JSONB ->> 'module'))
+    WHERE library = 'DOK';
 
 
-ALTER TABLE libs.library CLUSTER ON library_rekvid;
+--ALTER TABLE libs.library CLUSTER ON library_rekvid;
+
+DROP INDEX IF EXISTS libs.library_idx_cluster_library;
 
 CREATE INDEX library_idx_cluster_library
-  ON libs.library USING btree
-    (library ASC NULLS LAST)
-  INCLUDE(library)
-  TABLESPACE pg_default;
+    ON libs.library USING btree
+        (library)
+--  INCLUDE(library)
+--  TABLESPACE pg_default
+--    where status <> 3
+;
+
+drop index if exists libs.library_idx_lapse_grupp;
+
+CREATE INDEX library_idx_lapse_grupp
+    ON libs.library USING btree
+        (id)
+    WHERE status <> 3 AND library::text = 'LAPSE_GRUPP'::text
+;
+
+
 
 ALTER TABLE libs.library
-  CLUSTER ON library_idx_cluster_library;
+    CLUSTER ON library_idx_cluster_library;
+
+
 
 ALTER TABLE libs.library
-  ADD COLUMN "timestamp" timestamp without time zone NOT NULL DEFAULT LOCALTIMESTAMP;
+    ADD COLUMN "timestamp" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT LOCALTIMESTAMP;
 
 
 ALTER TABLE libs.library
-  ADD COLUMN status integer NOT NULL DEFAULT 1;
+    ADD COLUMN status INTEGER NOT NULL DEFAULT 1;
 COMMENT ON COLUMN libs.library.status
-IS '0 - draft, 1 - active, 2 - ?, 3 - deleted';
+    IS '0 - draft, 1 - active, 2 - ?, 3 - deleted';
 
 /*
 

@@ -27,7 +27,8 @@ DECLARE
     a_docs_ids     INTEGER[];
     rows_fetched   INTEGER = 0;
     l_dok          TEXT;
-
+    l_asutus_id    INTEGER;
+    l_laps_id      INTEGER;
 BEGIN
 
     RAISE NOTICE 'start gen_lausend %',tnid;
@@ -49,8 +50,8 @@ BEGIN
         WHERE parentid = v_smk.rekvid
           AND default_ = 1
           AND kassa = 1
-            ORDER BY id DESC
-            LIMIT 1;
+        ORDER BY id DESC
+        LIMIT 1;
         v_smk.konto = v_aa.konto;
         v_smk.tp = v_aa.tp;
 
@@ -105,7 +106,7 @@ BEGIN
             ,
          jsonb_to_record(dokprop.details) AS details(konto TEXT, kbmkonto TEXT)
     WHERE dokprop.id = v_smk.doklausid
-        LIMIT 1;
+    LIMIT 1;
 
     IF NOT Found OR v_dokprop.registr = 0
     THEN
@@ -156,14 +157,32 @@ BEGIN
                  INNER JOIN libs.asutus a ON a.id = k1.asutusid
         WHERE k1.parentid = v_smk.Id
         LOOP
+            l_asutus_id = v_smk1.asutusid;
+            -- если род. плата, то меняем на ответственного
 
+            l_laps_id = (SELECT parentid FROM lapsed.liidestamine l WHERE docid = v_smk.parentid LIMIT 1);
+
+            -- если есть ребенок, то используем ответственного родителя для контировки
+            IF l_laps_id IS NOT NULL
+            THEN
+                l_asutus_id = (SELECT asutusid
+                               FROM lapsed.vanem_arveldus v
+                                        INNER JOIN libs.asutus a ON a.id = v.asutusid
+                               WHERE v.parentid = l_laps_id
+                                 AND v.rekvid = v_smk.rekvid
+                               ORDER BY v.arveldus DESC, v.id DESC
+                               LIMIT 1);
+            END IF;
+
+
+            -- готовим параментры для шапки проводки
             SELECT coalesce(v_smk1.journalid, 0) AS id,
                    'JOURNAL'                     AS doc_type_id,
                    v_smk.kpv                     AS kpv,
                    lcSelg                        AS selg,
                    v_smk.muud                    AS muud,
                    l_dok                         AS dok,
-                   v_smk1.asutusid               AS asutusid
+                   l_asutus_id                   AS asutusid
             INTO v_journal;
 
 
@@ -171,6 +190,8 @@ BEGIN
             THEN
                 lcAllikas = v_smk1.kood2;
             END IF;
+
+            -- параметры для табличной части
 
             SELECT 0                               AS id,
                    coalesce(v_smk1.summa, 0)       AS summa,
@@ -189,10 +210,12 @@ BEGIN
                    coalesce(v_smk1.kood5, '')      AS kood5
             INTO v_journal1;
 
+            -- готовим параметры
             l_json_details = row_to_json(v_journal1);
             l_json = row_to_json(v_journal);
             l_json = ('{"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":[' || l_json_details ||
                       ']}}');
+
             result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_smk.rekvId);
 
             /* salvestan lausend */
@@ -262,7 +285,7 @@ SELECT
   error_code,
   result,
   error_message
-FROM docs.gen_lausend_smk(2078084,(select id from ou.userid where kasutaja = 'vlad' and rekvid = 69 limit 1));
+FROM docs.gen_lausend_smk(2377148,(select id from ou.userid where kasutaja = 'vlad' and rekvid = 63 limit 1));
 
 select * from libs.dokprop
 
@@ -273,4 +296,11 @@ insert into libs.dokprop (parentid, registr, selg, details, tyyp)
 	values (7, 1, 'Sorder', '{"konto":"100000"}'::jsonb, 1 )
 
 update docs.korder1 set doklausid = 4 where tyyp = 1
+
+select * from docs.mk1 where parentid in (select id from docs.mk where parentid = 2377148)
+
+update docs.mk1 set kood1 = '01111', kood5 = '3220'
+where id = 1101234
 */
+
+

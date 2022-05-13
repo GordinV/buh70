@@ -28,6 +28,7 @@ module.exports = {
                 ''                                   AS selg
          FROM preReport
          WHERE left(tegev, 2) IN ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10')
+         and len(ltrim(rtrim(tegev))) = 5         
          GROUP BY rekv_id
      ),
      qryReport AS (
