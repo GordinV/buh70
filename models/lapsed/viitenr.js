@@ -1,5 +1,13 @@
 module.exports = {
-    selectAsLibs: ``,
+    selectAsLibs: `SELECT v.id,
+                          v.viitenumber AS kood,
+                          l.nimi        AS nimetus,
+                          l.id          AS laps_id
+                   FROM lapsed.viitenr v
+                            INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood
+                   WHERE l.staatus <> 3
+                     AND v.rekv_id = $1
+    `,
     select: [{
         sql: `SELECT $2        AS userid,
                      v.id,
@@ -23,7 +31,7 @@ module.exports = {
                           r.nimetus::TEXT AS asutus
                    FROM ou.userid u
                             INNER JOIN ou.rekv r ON u.rekvid = r.id
-                   WHERE u.id =  $2`,
+                   WHERE u.id = $2`,
         query: null,
         multiple: false,
         alias: 'row',

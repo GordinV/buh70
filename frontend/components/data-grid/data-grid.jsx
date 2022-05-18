@@ -67,6 +67,7 @@ class DataGrid extends React.Component {
     }
 
     render() {
+        console.log('grid state', this.state);
         let tableHeaderStyle = Object.assign({}, styles.headerTable ? styles.headerTable : {}, this.props.style);
         let tableMainStyle = Object.assign({}, styles.mainTable ? styles.mainTable : {}, this.props.style);
 
@@ -197,10 +198,10 @@ class DataGrid extends React.Component {
      * ищем индех в массиве данных
      */
     getGridRowIndexById() {
-        let index = 0;
+        let index = this.state.activeRow;
 
         if (this.state.value) {
-            index = this.state.gridData.findIndex(row => row.id === this.state.value);
+            index = this.state.gridData.findIndex(row => row.id == this.state.value);
             index = index > -1 ? index : 0;
         }
         return index;

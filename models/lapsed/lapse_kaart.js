@@ -55,7 +55,8 @@ module.exports = {
                      to_char(coalesce((lk.properties ->> 'alg_kpv')::DATE, date(year(), month(), 1)),
                              'DD-MM-YYYY') ||
                      to_char(coalesce((lk.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)),
-                             'DD.MM.YYYY')                                                 AS kehtivus
+                             'DD.MM.YYYY')                                                 AS kehtivus,
+                     lk.properties ->> 'viitenr'                                           AS viitenr
 
               FROM lapsed.lapse_kaart lk
                        INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
@@ -86,6 +87,7 @@ module.exports = {
                   null::date as sooduse_lopp,
                   to_char(date(year(), 1, 1),'YYYY-MM-DD')  AS alg_kpv, 
                   to_char(date(year(), 12, 31),'YYYY-MM-DD')  AS lopp_kpv,
+                  null::text as viitenr,
                   null::text as muud`,
         query: null,
         multiple: false,

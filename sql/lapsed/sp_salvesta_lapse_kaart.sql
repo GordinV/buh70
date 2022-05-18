@@ -38,6 +38,7 @@ DECLARE
                                         WHEN (doc_data ->> 'lopp_kpv')::TEXT = '' THEN NULL
                                         ELSE doc_data ->> 'lopp_kpv' END)::DATE;
     doc_muud             TEXT    = doc_data ->> 'muud';
+    doc_viitenr          TEXT    = doc_data ->> 'viitenr';
     doc_kogus            NUMERIC = doc_data ->> 'kogus';
     doc_ettemaksu_period INTEGER = doc_data ->> 'ettemaksu_period';
     json_props           JSONB;
@@ -179,7 +180,8 @@ BEGIN
                               doc_alg_kpv          AS alg_kpv,
                               doc_lopp_kpv         AS lopp_kpv,
                               doc_kas_eraldi       AS kas_eraldi,
-                              doc_kas_ettemaks     AS kas_ettemaks
+                              doc_kas_ettemaks     AS kas_ettemaks,
+                              doc_viitenr          AS viitenr
                       ) row;
 
     -- проверка на статус карты ребенка
@@ -210,7 +212,7 @@ BEGIN
                        FROM (SELECT now()    AS created,
                                     userName AS user) row;
 
-        raise notice 'doc_parentid %', doc_parentid;
+        RAISE NOTICE 'doc_parentid %', doc_parentid;
         INSERT INTO lapsed.lapse_kaart (parentid, rekvid, nomid, hind, tunnus, muud, properties, ajalugu)
         VALUES (doc_parentid, user_rekvid, doc_nomid, doc_hind, doc_tunnus, doc_muud, json_props,
                 '[]' :: JSONB || json_ajalugu) RETURNING id

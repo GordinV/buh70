@@ -84,7 +84,7 @@ module.exports = {
             {id: 5, kood: 'aasta', name: 'Aasta'}
         ],
 
-        ALGORITMID:[
+        ALGORITMID: [
             {id: 1, kood: 'päev', name: 'Päev'},
             {id: 2, kood: 'konstantne', name: 'Konstantne'},
             {id: 3, kood: 'külastamine', name: 'Külastamine'},
@@ -94,6 +94,14 @@ module.exports = {
             {id: 2, kood: 'SOODUSTUS', name: ' '}
         ]
 
+    },
+    LAPSE_KAART: {
+        LIBRARIES: [
+            {id: 'tunnus', filter: ''},
+            {id: 'nomenclature', filter: `where dok = 'ARV'`},
+            {id: 'lapse_grupp', filter: ``},
+            {id: 'viitenr', filter: ``}
+        ]
     },
     REKV: {
         LIB_OBJS: [

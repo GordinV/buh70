@@ -16,19 +16,7 @@ const
     Loading = require('./../../../components/loading/index.jsx'),
     styles = require('./styles');
 
-const LIBRARIES = [
-    {
-        id: 'tunnus', filter: ''
-    },
-    {
-        id: 'nomenclature',
-        filter: `where dok = 'ARV'`
-    },
-    {
-        id: 'lapse_grupp',
-        filter: ``
-    }];
-
+const {LIBRARIES} = require('./../../../../config/constants').LAPSE_KAART;
 
 class LapseKaart extends React.PureComponent {
     constructor(props) {
@@ -50,8 +38,6 @@ class LapseKaart extends React.PureComponent {
         this.pages = [
             {pageName: 'Teenus', docTypeId: 'LAPSE_KAART'}
         ];
-
-        this.libs = {}; // libs cache
 
     }
 
@@ -109,13 +95,17 @@ class LapseKaart extends React.PureComponent {
         let buttonEditNom = styles.btnEditNom;
 
         let yksus;
+        let all_yksused = [{id: 0, nimetus: ''}];
         if (self.libs['lapse_grupp'] && self.docData.yksus) {
             yksus = self.libs['lapse_grupp'].find(yksus => yksus.kood === self.docData.yksus);
-        }
+            console.log('yksus', yksus);
 
-        const all_yksused = (yksus ? yksus.all_yksused : []).map((item, index) => {
-            return {id: index++, nimetus: item}
-        });
+            all_yksused = (yksus && yksus.all_yksused ? yksus.all_yksused : []).map((item, index) => {
+                return {id: index++, nimetus: item}
+            });
+            console.log('all_yksused', all_yksused);
+
+        }
 
         let nomData = [];
         // берем только услуги для группы, добавляяем цену и ед.измерения и сортируем
@@ -151,6 +141,13 @@ class LapseKaart extends React.PureComponent {
 
         } catch (e) {
             console.error(e, nomData);
+        }
+
+        // накладываем фильтр на справочник старых витенумберов на ребенка
+        let viitenr = [{id: 0, kood: '', nimetus: '', laps_id: self.docData.parentid}];
+
+        if (self.libs['viitenr'] && self.docData.parentid) {
+            viitenr = self.libs['viitenr'].filter(kaart => kaart.laps_id == self.docData.parentid);
         }
 
         // проверим стоит ли разрешить редактирование
@@ -238,6 +235,21 @@ class LapseKaart extends React.PureComponent {
                                 readOnly={!isEditMode}
                         />
                     </div>
+                    <div style={styles.docColumn}>
+                        <Select title="Vana viitenumber:"
+                                name='viitenr'
+                                libs="viitenr"
+                                data={viitenr}
+                                value={self.docData.viitenr || ''}
+                                defaultValue={self.docData.viitenr || ''}
+                                ref="select-viitenr"
+                                collId={'kood'}
+                                btnDelete={isEditMode}
+                                onChange={self.handleInputChange}
+                                readOnly={!isEditMode}
+                        />
+                    </div>
+
                 </div>
 
                 <div style={styles.docRow}>

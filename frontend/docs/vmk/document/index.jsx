@@ -99,9 +99,12 @@ class Vmk extends React.Component {
             gridArvColumns = self.docData.gridArvConfig;
 
         let tasuSumma = 0;
-        gridArvData.forEach(row => {
-            tasuSumma += Number(row['tasu_summa']);
-        });
+        if (gridArvData && gridArvData.length) {
+            gridArvData.forEach(row => {
+                tasuSumma += Number(row['tasu_summa']);
+            });
+
+        }
 
         return (
             <div>

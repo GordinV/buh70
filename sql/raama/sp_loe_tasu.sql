@@ -101,11 +101,12 @@ BEGIN
         -- при условии переплаты
 
         l_laps_id = (SELECT parentid FROM lapsed.liidestamine WHERE docid = l_tasu_id LIMIT 1);
-        SELECT jaak
+
+/*        SELECT jaak
         INTO l_tasu_jaak
         FROM lapsed.lapse_saldod(v_tasu.maksepaev::DATE, l_laps_id);
-
-        IF (l_tasu_jaak >= 0 AND v_tasu.liik = 'VM' AND
+*/
+        IF (v_tasu.liik = 'VM' AND
             l_laps_id IS NOT NULL)
             -- если есть нет переплаты, то списываем лишнее с оплаты счетов
         THEN
@@ -169,9 +170,9 @@ GRANT EXECUTE ON FUNCTION docs.sp_loe_tasu(INTEGER, INTEGER) TO arvestaja;
 
 COMMENT ON FUNCTION docs.sp_loe_tasu(INTEGER, INTEGER) IS 'производит поиск неоплаченных счетов и вызывает процедуру их оплаты';
 
-SELECT *
+/*SELECT *
 FROM docs.sp_loe_tasu(2354874, 3)
-
+*/
 
 /*
 

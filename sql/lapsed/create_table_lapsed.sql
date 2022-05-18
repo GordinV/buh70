@@ -20,6 +20,9 @@ GRANT SELECT, INSERT, UPDATE ON TABLE lapsed.laps TO arvestaja;
 GRANT ALL ON TABLE lapsed.laps TO dbadmin;
 GRANT SELECT ON TABLE lapsed.laps TO dbvaatleja;
 
-drop INDEX if exists lapsed.laps_isikukood_idx;
+DROP INDEX IF EXISTS lapsed.laps_isikukood_idx;
 CREATE UNIQUE INDEX CONCURRENTLY laps_isikukood_idx ON lapsed.laps (isikukood, staatus);
 
+DROP INDEX IF EXISTS lapsed.isikukood_idx;
+CREATE INDEX isikukood_idx ON lapsed.laps USING hash
+    (isikukood) WHERE staatus <> 3;

@@ -610,6 +610,29 @@ class Documents extends React.Component {
             start: this.props.toolbarProps ? !!this.props.toolbarProps.start : true
         };
 
+
+        // сделаем обработку для виртуального табеля
+        if (this.docTypeId == 'LAPSE_TAABEL') {
+            let gridTaabelRow = {};
+
+            if (!this.state.value) {
+                gridTaabelRow = this.gridData.length ?  this.gridData[0]: 0;
+            } else {
+                gridTaabelRow = this.gridData.find(row =>  {
+                    return row.id == this.state.value
+                });
+            }
+
+            if (gridTaabelRow &&  gridTaabelRow.tab_tyyp && gridTaabelRow.tab_tyyp == 'Virtuaalne') {
+
+                toolbarProps['add'] = false;
+                toolbarProps['edit'] = false;
+                toolbarProps['delete'] = false;
+            }
+        }
+
+
+
         return Object.assign({
             btnAdd: {
                 show: toolbarProps['add'],

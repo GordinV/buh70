@@ -89,17 +89,17 @@ BEGIN
     END IF;
 
 
-    SELECT 0                            AS id,
-           nomid                        AS nomid,
-           asutusid                     AS asutusid,
-           -1 * CASE WHEN l_summa = 0 then summa else l_summa end AS summa,
-           aa :: TEXT                   AS aa,
+    SELECT 0                                                      AS id,
+           nomid                                                  AS nomid,
+           asutusid                                               AS asutusid,
+           -1 * CASE WHEN l_summa = 0 THEN summa ELSE l_summa END AS summa,
+           aa :: TEXT                                             AS aa,
            kood1,
            kood2,
            kood3,
            kood4,
            kood5,
-           konto                        AS konto,
+           konto                                                  AS konto,
            tp,
            tunnus,
            proj

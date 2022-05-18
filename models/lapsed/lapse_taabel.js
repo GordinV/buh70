@@ -86,7 +86,7 @@ module.exports = {
                 {id: "soodustus", name: "Soodustus", width: "10%", type: "number"},
                 {id: "summa", name: "Summa", width: "10%", type: "number", interval: true},
                 {id: "umberarvestus", name: "Ümberarv", width: "5%"},
-                {id: "tab_tyyp", name: "Tüüp", width: "10%"},
+                {id: "tab_tyyp", name: "Tüüp", width: "10%", type: "text"},
             ],
             sqlString:
                 `WITH viitenr AS (SELECT array_to_string(array_agg(viitenumber), ',') AS viitenumber, isikukood
