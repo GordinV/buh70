@@ -115,14 +115,13 @@ module.exports = {
             {id: 'koolituse_tyyp', filter: ``}
         ],
     },
-
-    LAPSED_KAART: {
-        LIBRARIES: [
-            {id: 'tunnus', filter: ''},
-            {id: 'nomenclature', filter: `where dok = 'ARV'`},
-            {id: 'lapse_grupp', filter: ``}
+    PAEVA_TAABEL: {
+        LIBRARIES : [
+            {
+                id: 'lapse_grupp',
+                filter: ``
+            }
         ]
-
     },
     // нода для справочников
     LIBS: {

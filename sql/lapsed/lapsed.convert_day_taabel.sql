@@ -53,6 +53,9 @@ BEGIN
                                  CASE
                                      WHEN (json_object ->> 'osalemine'::TEXT)::BOOLEAN = TRUE THEN 1
                                      ELSE 0 END::INTEGER                                                            AS osalemine,
+                                 CASE
+                                     WHEN (json_object ->> 'covid'::TEXT)::BOOLEAN = TRUE THEN 1
+                                     ELSE 0 END::INTEGER                                                            AS covid,
                                  json_object ->> 'muud'                                                             AS muud
                          ) row;
                     json_grid = json_grid || json_taabel_row;

@@ -65,3 +65,8 @@ CREATE INDEX IF NOT EXISTS day_taabel_lapsid_idx ON lapsed.day_taabel1 (laps_id)
 
 DROP INDEX IF EXISTS day_taabel_taabel_id_idx;
 CREATE INDEX IF NOT EXISTS day_taabel_taabel_id_idx ON lapsed.day_taabel1 (taabel_id);
+
+
+alter table lapsed.day_taabel1 add COLUMN if not exists osalemine INTEGER DEFAULT 1;
+
+alter table lapsed.day_taabel1 add COLUMN if not exists covid INTEGER DEFAULT 0;

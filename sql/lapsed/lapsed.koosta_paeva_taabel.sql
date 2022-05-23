@@ -80,7 +80,8 @@ BEGIN
                    v_lapsed.nomid  AS nom_id,
                    v_lapsed.lapsId AS laps_id,
                    v_lapsed.kogus  AS kogus,
-                   1               AS osalemine
+                   1               AS osalemine,
+                   0               AS covid
             INTO v_row;
 
             l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_row);
@@ -113,7 +114,7 @@ BEGIN
         FROM libs.nomenklatuur
         WHERE lower(uhik) NOT IN ('paev', 'päev')
     );
-    
+
     RETURN;
 
 EXCEPTION
@@ -138,6 +139,7 @@ GRANT EXECUTE ON FUNCTION lapsed.koosta_paevad_taabel(JSONB, INTEGER) TO arvesta
 
 
 /*
-select lapsed.koosta_paevad_taabel('{"kpv":"2020-10-11","grupp_id":"237485"}', 22)
+select lapsed.koosta_paevad_taabel('{"kpv":"2022-05-23","grupp_id":"214218"}', 70)
+select * from lapsed.day_taabel1 where parent_id = 45714
 
 */

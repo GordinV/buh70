@@ -14,7 +14,7 @@ DECLARE
     l_saja      INTEGER; -- Lähim suurem kümnekordne (4)
 BEGIN
     -- структура
-    viitenumber = l_rekv_osa + l_lapse_osa;
+    viitenumber = l_rekv_osa || l_lapse_osa;
     -- должна быть длина 9 знаков, если меняется необходимо пометь 731
 
     -- перемножаем в цикле
@@ -31,7 +31,7 @@ BEGIN
             l_saja = l_saja + 1;
         END LOOP;
     l_control = l_saja - l_summa;
-    viitenumber = viitenumber + l_control::TEXT;
+    viitenumber = viitenumber || l_control::TEXT;
     RETURN;
 END;
 $BODY$

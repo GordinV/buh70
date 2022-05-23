@@ -23,12 +23,9 @@ const
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
 
     styles = require('./styles');
-const LIBRARIES = [
-    {
-        id: 'lapse_grupp',
-        filter: ``
-    }
-];
+const Loading = require('./../../../components/loading/index.jsx');
+
+const LIBRARIES = require('./../../../../config/constants')[DOC_TYPE_ID].LIBRARIES;
 
 class PaevaTaabel extends React.PureComponent {
     constructor(props) {
@@ -143,6 +140,14 @@ class PaevaTaabel extends React.PureComponent {
         let isEditMode = self.state.edited;
         let userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
+        // ждем загрузки библиотек и данных
+        if (!self || !self.docData || !self.state.loadedLibs) {
+            // не загружены данные
+            return (<div style={styles.doc}>
+                <Loading label={'Laadimine...'}/>
+            </div>);
+        }
+
         if (self.docData && self.docData.gridData && self.docData.gridData.length && (this.state.isInit || !isEditMode)) {
             // преобразовываем данные
             this.prepaireInitData(self);
@@ -155,11 +160,10 @@ class PaevaTaabel extends React.PureComponent {
                     if (!this.subtotals.some(item => item == row.id)) {
                         this.subtotals.push(row.id);
                     }
-
                 }
             });
-
         }
+
         this.setState({grupp_id: self.docData.grupp_id, kpv: self.docData.kpv});
         const gridStyle = {...styles.grid.headerTable, ...styles.grid};
 
@@ -299,6 +303,20 @@ class PaevaTaabel extends React.PureComponent {
                         self.docData.gridData[idx][key] = !value;
                     }
                 }
+            }
+
+            if (self.docData.gridData[idx].osalemine && self.docData.gridData[idx].covid) {
+                // не может ковид быть, если нет отсутствия
+                self.docData.gridData[idx].covid = 0;
+            }
+
+        }
+
+        // обработка поля кодид
+        if (columnId && columnId == 'covid') {
+            if (self.docData.gridData[idx].osalemine) {
+                // если есть посещение, то не может быть ковид
+                self.docData.gridData[idx].covid = !value;
             }
         }
 

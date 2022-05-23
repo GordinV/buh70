@@ -129,6 +129,7 @@ module.exports = {
                                  lt.teenus,
                                  (coalesce(lt.yksus, '') ||
                                   CASE WHEN lt.all_yksus IS NULL THEN '' ELSE '-' || lt.all_yksus END)        AS yksus,
+                                  lt.viitenr,
                                  $2::INTEGER                                                           AS userid
                           FROM lapsed.cur_lapse_taabel lt
                                    LEFT OUTER JOIN viitenr v ON v.isikukood = lt.isikukood
@@ -160,6 +161,7 @@ module.exports = {
                                             lt.teenus,
                                             (coalesce(lt.yksus, '') ||
                                              CASE WHEN lt.all_yksus IS NULL THEN '' ELSE '-' || lt.all_yksus END)        AS yksus,
+                                             lt.viitenr,
                                  $2::INTEGER                                                           AS userid
                                      FROM is_ettemaks,
                                         lapsed.cur_lapse_virtuaal_taabel lt

@@ -56,6 +56,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
                       l.id                                       AS grupp_id,
                       lk.rekvid,
                       max(t1.osalemine)                          AS osalemine,
+                      max(t1.covid)                              AS covid,
                       json_agg(
                               json_build_object('nom_id', to_json(lk.nomid),
                                                 'teenus', to_json(COALESCE((n.properties ->>
@@ -96,6 +97,17 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
                 {
                     id: 'osalemine',
                     name: 'Külastamine',
+                    width: '50px',
+                    show: true,
+                    type: 'boolean',
+                    readOnly: false,
+                    boolSumbolYes: '\u25CF',
+                    yesBackgroundColor: '#b9edb9',
+                    boolSumbolNo: '\u2716'
+                },
+                {
+                    id: 'covid',
+                    name: 'COVID',
                     width: '50px',
                     show: true,
                     type: 'boolean',
@@ -156,10 +168,14 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
                 // создать поля
                 const totals = {};
                 let osalemine = 0;
+                let covid = 0;
                 data.details = data.details.map((row) => {
                     // считаем кол-во
                     if (row.osalemine) {
                         osalemine++;
+                    }
+                    if (row.covid) {
+                        covid++;
                     }
 
                     //дополнить строки полями
@@ -180,6 +196,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
 
                 // totals
                 totals['osalemine'] = osalemine;
+                totals['covid'] = covid;
                 data[0].totals = totals;
                 return data;
             }

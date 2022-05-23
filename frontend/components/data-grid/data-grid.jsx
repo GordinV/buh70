@@ -67,7 +67,6 @@ class DataGrid extends React.Component {
     }
 
     render() {
-        console.log('grid state', this.state);
         let tableHeaderStyle = Object.assign({}, styles.headerTable ? styles.headerTable : {}, this.props.style);
         let tableMainStyle = Object.assign({}, styles.mainTable ? styles.mainTable : {}, this.props.style);
 

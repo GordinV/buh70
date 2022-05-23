@@ -98,13 +98,10 @@ class LapseKaart extends React.PureComponent {
         let all_yksused = [{id: 0, nimetus: ''}];
         if (self.libs['lapse_grupp'] && self.docData.yksus) {
             yksus = self.libs['lapse_grupp'].find(yksus => yksus.kood === self.docData.yksus);
-            console.log('yksus', yksus);
 
             all_yksused = (yksus && yksus.all_yksused ? yksus.all_yksused : []).map((item, index) => {
                 return {id: index++, nimetus: item}
             });
-            console.log('all_yksused', all_yksused);
-
         }
 
         let nomData = [];
