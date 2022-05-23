@@ -181,7 +181,8 @@ module.exports = {
                             v.yksuse_kood,
                             count(*) OVER ()                                                               AS rows_total,
                             v.asutus,
-                            v.vana_viitenumber
+                            v.vana_viitenumber,    
+                            v.viitenr as tapne_viitenumber
                      FROM lapsed.cur_lapse_kaart v
                      WHERE rekvid IN (SELECT rekv_id
                                       FROM get_asutuse_struktuur($1::INTEGER))`,     //  $1 всегда ид учреждения, $2 - userId

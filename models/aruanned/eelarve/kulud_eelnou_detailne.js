@@ -15,6 +15,7 @@ module.exports = {
                        qryReport.rekv_id,
                        qryReport.tunnus,
                        qryReport.tegev,
+                       qryReport.allikas,
                        qryReport.artikkel,
                        qryReport.aasta_1_tekke_taitmine,
                        qryReport.eelarve_tekkepohine_kinnitatud,
@@ -26,11 +27,34 @@ module.exports = {
                 FROM eelarve.kulud_eelnou($1::DATE, $2::INTEGER, $3::INTEGER, $4::jsonb) qryReport
                 WHERE artikkel <> ''
             ),
+                     qryKond AS (
+                         SELECT 
+                         0 as idx,
+                            rekv_id,
+                            ''                                   AS tunnus,
+                            '01-10'                              AS tegev,
+                            ''                                   as allikas,
+                            ''                                   AS artikkel,
+                            sum(aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
+                            sum(eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
+                            sum(eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud,
+                            sum(aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
+                            sum(aasta_3_eelnou)                  AS aasta_3_eelnou,
+                            sum(aasta_3_prognoos)                AS aasta_3_prognoos,
+                            ''                                   AS selg
+                     FROM report
+                     WHERE left(tegev, 2) IN ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10')
+                     and len(ltrim(rtrim(tegev))) = 5 
+                     AND NOT empty(tegev)        
+                     GROUP BY rekv_id
+                 ),
+            
                  TegevKond AS (
                      SELECT 0                                        AS idx,
                             rekv_id                                  AS rekv_id,
                             ''                                       AS tunnus,
                             left(qry.tegev, 2)::VARCHAR(20)          AS tegev,
+                            ''                                       as allikas,
                             ''                                       AS artikkel,
                             sum(qry.aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
                             sum(qry.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
@@ -51,6 +75,7 @@ module.exports = {
                             ELSE '' END::VARCHAR(254)                                                               AS parent_asutus,
                    qryReport.tunnus,
                    qryReport.tegev,
+                   qryReport.allikas,
                    coalesce(t.nimetus, '')::VARCHAR(254)         AS tegev_nimetus,
                    coalesce(qryReport.artikkel, '')::VARCHAR(20) AS artikkel,
                    coalesce(a.nimetus, '')::VARCHAR(254)         AS nimetus,
@@ -67,6 +92,10 @@ module.exports = {
                   UNION ALL
                   SELECT *
                   FROM TegevKond
+                  UNION ALL
+                  SELECT *
+                  FROM qryKond
+                  
                  ) qryReport
                              INNER JOIN (SELECT id, parentid, regkood, nimetus
                                          FROM ou.rekv
@@ -102,8 +131,9 @@ module.exports = {
                                      ON trim(t.kood)::TEXT = trim(qryReport.tegev)::TEXT
             
             
-            ORDER BY CASE WHEN r.id > 999 THEN 0 WHEN r.id = $2 THEN 1 ELSE r.id END, r.parentid,
-                     qryReport.rekv_id, qryReport.tegev, qryReport.tunnus, qryReport.artikkel`,     // $1 - kpv $2 - rekvid, $3 - kond
+            ORDER BY CASE WHEN r.id > 999 THEN 0 ELSE 1 END, 
+            CASE WHEN r.parentid > 0 AND r.parentid <> 63 THEN '63-' else '' end + r.parentid::text + '-' + qryReport.rekv_id::TEXT, 
+            CASE WHEN tegev = '01-10' then '0' ELSE qryReport.tegev END, qryReport.tunnus, qryReport.artikkel`,     // $1 - kpv $2 - rekvid, $3 - kond
         params: '',
         alias: 'kulud_eelnou'
     }

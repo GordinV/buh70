@@ -199,7 +199,8 @@
                  sum(qry.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
                  sum(qry.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud
           FROM preReport qry
-          WHERE idx IN (80, 380, 680, 790)
+          WHERE idx IN (80, 380, 680, 790, 800)
+                      OR artikkel IN ('2586')
           GROUP BY qry.rekv_id
         
      )

@@ -63,7 +63,7 @@ BEGIN
                                        INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                               WHERE t1.tunnus IS NOT NULL
                                 AND NOT empty(t1.tunnus)
-                                AND t.status IN (2, 3)
+                                AND t.status IN (3)
                                 AND t.rekvid = (CASE
                                                     WHEN l_kond = 1 THEN t.rekvid
                                                     ELSE l_rekvid END)
@@ -1201,7 +1201,7 @@ BEGIN
                               INNER JOIN eelarve.taotlus1 t1
                                          ON t.id = t1.parentid
                      WHERE t.aasta = YEAR(l_kpv) + 1
-                       AND t.status IN (2, 3)
+                       AND t.status IN (3)
                        AND rekvid = (CASE
                                          WHEN $3 = 1
                                              THEN rekvid
@@ -1228,12 +1228,12 @@ BEGIN
                             t1.kood2                                              AS allikas,
                             t1.tunnus,
                             sum(summa_kassa)                                      AS summa,
-                            string_agg(ltrim(rtrim(t1.selg, E'\r\n')), ','::TEXT) AS selg
+                            string_agg(ltrim(rtrim(replace (t1.selg, E'\n', '' ), E'\r\n')), ','::TEXT) AS selg
                      FROM eelarve.taotlus t
                               INNER JOIN eelarve.taotlus1 t1
                                          ON t.id = t1.parentid
                      WHERE t.aasta = YEAR(l_kpv) + 1
-                       AND t.status IN (2, 3)
+                       AND t.status IN (3)
                        AND rekvid = (CASE
                                          WHEN $3 = 1
                                              THEN rekvid
@@ -1608,5 +1608,7 @@ SELECT sum(aasta_1_tekke_taitmine) OVER (PARTITION BY rekv_id, artikkel) AS aast
 FROM eelarve.tulud_eelnou('2021-12-31'::DATE, 63:: INTEGER, 0)
 WHERE tegev LIKE '05%'
    OR tegev LIKE '01-10%'
+
+
 
 

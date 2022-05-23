@@ -40,7 +40,8 @@ SELECT lt.id,
        lt.lapse_kaart_id,
        (lk.properties ->> 'sooduse_alg')::DATE     AS sooduse_alg,
        (lk.properties ->> 'sooduse_lopp')::DATE    AS sooduse_lopp,
-       (n.properties ->> 'kas_inf3')::BOOLEAN      AS kas_inf3
+       (lk.properties ->> 'viitenr')::TEXT         AS viitenr
+
 FROM lapsed.lapse_taabel lt
          INNER JOIN lapsed.laps l ON l.id = lt.parentid
          INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
@@ -60,6 +61,6 @@ GRANT SELECT ON TABLE lapsed.cur_lapse_taabel TO dbpeakasutaja;
 
 /*
 
-select * from lapsed.cur_lapse_taabel
+select * from lapsed.cur_lapse_taabel limit 10
 select * from lapsed.laps
  */

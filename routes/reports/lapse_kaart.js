@@ -43,7 +43,8 @@ exports.get = async (req, res) => {
                 nimi: row.nimi,
                 viitenumber: row.viitenumber,
                 asutus: row.asutus,
-                vana_viitenumber: row.vana_viitenumber
+                vana_viitenumber: row.vana_viitenumber,
+                tapne_viitenumber: row.tapne_viitenumber
 
             }
         });
@@ -69,7 +70,8 @@ exports.get = async (req, res) => {
             nimi: 'nimi',
             viitenumber: 'viitenumber',
             asutus: 'asutus',
-            vana_viitenumber: 'vana_viitenumber'
+            vana_viitenumber: 'vana_viitenumber',
+            tapne_viitenumber: 'tapne_viitenumber'
         }];
 
         const csv = getCSV(header.concat(csvData));

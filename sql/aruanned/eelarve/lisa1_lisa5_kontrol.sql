@@ -21,7 +21,7 @@ WITH qryLisa1Lisa5 AS (
     FROM eelarve.eelarve_andmik_lisa_1_5(l_kpv, l_rekvid, l_kond)
 ),
      qrySaldoandmik AS (
-         SELECT db, kr, konto, tp
+         SELECT db, kr, konto, tp, rekvid
          FROM eelarve.saldoandmik
          WHERE kuu = month(l_kpv)
            AND aasta = year(l_kpv)
@@ -689,7 +689,7 @@ FROM (
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
                   FROM qryJournal39
                   WHERE artikkel LIKE '32%'
-*/                        -- Строка 32 Tekke täitmine (Lisa 1) в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
+*/ -- Строка 32 Tekke täitmine (Lisa 1) в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
                         -- Сумма всех строк с бюджетом 32* в отчете Tulude eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke täitmine +
                         -- Jooksva per saldoandmikust (без элиминирования) конто 32* TP 185101=0
                   UNION ALL
@@ -829,27 +829,7 @@ FROM (
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
-                  FROM qrySaldoandmik
-                  WHERE konto LIKE '3221%'
-                    AND tp LIKE '185101%'
-/*                  UNION ALL
-                  -- убираем элиминирование отд. культуры
-                  SELECT 0,
-                         0,
-                         0,
-                         0,
-                         0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
-                  FROM qryJournal39
-                  WHERE artikkel LIKE '3221%'
-*/                  UNION ALL
-                  SELECT 0,
-                         0,
-                         0,
-                         0,
-                         0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END as saldoandmik
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3221%'
                     AND tp LIKE '185101%'
@@ -901,7 +881,8 @@ FROM (
                   FROM qryJournal39
                   WHERE artikkel LIKE '3222%'
                   UNION ALL
-*/                  SELECT 0,
+*/
+                  SELECT 0,
                          0,
                          0,
                          0,
@@ -958,7 +939,8 @@ FROM (
                   FROM qryJournal39
                   WHERE artikkel LIKE '3224%'
 
-*/                  UNION ALL
+*/
+                  UNION ALL
                   SELECT 0,
                          0,
                          0,
@@ -1131,7 +1113,8 @@ FROM (
                          CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa  ELSE 0  END
                   FROM qryJournal39
                   WHERE artikkel LIKE '3233%'
-*/                  UNION ALL
+*/
+                  UNION ALL
                   SELECT 0,
                          0,
                          0,
@@ -2217,7 +2200,7 @@ FROM (
                          -1 * CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kassa ELSE 0 END
                   FROM qryJournal39
                   WHERE artikkel LIKE '55%'
-*/              ) qry55
+*/ ) qry55
          UNION ALL
          -- Строка 60* Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5) +
          -- Сумма всех строк с бюджетом 60* в отчете Eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke eelarve kinn =0
