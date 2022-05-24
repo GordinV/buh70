@@ -56,7 +56,7 @@ class PaevaTaabel extends React.PureComponent {
             {pageName: 'Päeva taabel', docTypeId: DOC_TYPE_ID}
         ];
 
-        this.subtotals = ['osalemine'];
+        this.subtotals = ['osalemine','covid'];
 
     }
 
@@ -243,7 +243,7 @@ class PaevaTaabel extends React.PureComponent {
                         <ButtonSetAll
                             onClick={this.onClickHandler.bind('muuda')}
                             style={styles.ButtonSetAll}
-                            value={'Kas muuda Covid veerg väärtus?'}
+                            value={'Kas muuta veeru "Eriarvestus" väärtust?'}
                             ref={`btn-muuda-covid`}
                             key={`key-muuda-covid`}
                         />
@@ -329,6 +329,12 @@ class PaevaTaabel extends React.PureComponent {
      */
     checkData(self, idx, columnId, value) {
         const data = this.refs['document'].docData;
+        let isEditMode = this.refs['document'].state.edited;
+
+        if (!isEditMode) {
+            // не в режиме редактирования
+            return false;
+        }
 
         if (columnId && columnId == 'osalemine') {
             if (!data.gridData[idx].osalemine) {

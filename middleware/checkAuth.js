@@ -7,7 +7,7 @@ module.exports = async function (req, res, next) {
     const user = await require('../middleware/userData')(req);
     let result = 0;
 
-    if (!uuid && req.session.users.length > 0) {
+    if (!uuid &&  req.session.users && req.session.users.length > 0) {
         // logs
         let message = `Auth, !uuid && req.session.users.length > 0 -> ${userId},uuid -> ${uuid}`;
         log(message,'info');

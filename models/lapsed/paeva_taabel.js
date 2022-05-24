@@ -107,7 +107,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
                 },
                 {
                     id: 'covid',
-                    name: 'COVID',
+                    name: 'Eriarvestus',
                     width: '50px',
                     show: true,
                     type: 'boolean',
