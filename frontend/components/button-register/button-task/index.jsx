@@ -34,13 +34,16 @@ class ButtonTask extends React.PureComponent {
 
     render() {
         let value = this.props.value ? this.props.value : 'Täitmine';
+        let propStyle  = ('style' in this.props)? this.props.style: {};
+        let style = Object.assign({}, styles.button, propStyle);
+
         return (
             <div>
                 <Button
                     show={true}
                     value={value}
                     ref={'btnTask' || this.props.ref}
-                    style={styles.button}
+                    style={style}
                     disabled={false}
                     onClick={this.handleClick}>
                     <img ref="image" src={styles.icons[ICON]}/>

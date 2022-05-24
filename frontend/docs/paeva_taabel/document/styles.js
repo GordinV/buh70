@@ -67,6 +67,14 @@ module.exports = {
     btnEdit: {
         width: 'min-content'
     },
+    ButtonSetAll: {
+        width: 'fit-content'
+    },
+    BtnArvesta: {
+        width: 'min-content'
+    },
+
+
     total: {
         width: 'auto'
     }

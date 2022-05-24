@@ -21,6 +21,7 @@ const
     InputText = require('../../../components/input-text/input-text.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
+    ButtonSetAll = require('../../../components/button-register/button-register.jsx'),
 
     styles = require('./styles');
 const Loading = require('./../../../components/loading/index.jsx');
@@ -148,6 +149,13 @@ class PaevaTaabel extends React.PureComponent {
             </div>);
         }
 
+        // не успевает подгрузиться справочник, перегрузка формы
+        if (!self.libs['lapse_grupp'].length) {
+            setTimeout(() => {
+                this.forceUpdate()
+            }, 1);
+        }
+
         if (self.docData && self.docData.gridData && self.docData.gridData.length && (this.state.isInit || !isEditMode)) {
             // преобразовываем данные
             this.prepaireInitData(self);
@@ -208,8 +216,9 @@ class PaevaTaabel extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <BtnArvesta
                                 value={'Arvesta taabel ?'}
-                                onClick={this.onClickHandler}
+                                onClick={this.onClickHandler.bind('arvesta')}
                                 showDate={false}
+                                style={styles.BtnArvesta}
                                 ref={`btn-arvesta`}
                                 key={`key-arvesta`}
                             />
@@ -227,8 +236,19 @@ class PaevaTaabel extends React.PureComponent {
                                 disabled={false}
                             /> : null}
                     </div>
-
                 </div>
+                {self.docData.id && isEditMode ? (<div style={styles.docRow}>
+                    <div style={styles.docColumn}/>
+                    <div style={styles.docColumn}>
+                        <ButtonSetAll
+                            onClick={this.onClickHandler.bind('muuda')}
+                            style={styles.ButtonSetAll}
+                            value={'Kas muuda Covid veerg väärtus?'}
+                            ref={`btn-muuda-covid`}
+                            key={`key-muuda-covid`}
+                        />
+                    </div>
+                </div>) : null}
                 <div style={styles.docRow}>
                     <DataGrid source='details'
                               gridData={self.docData.gridData}
@@ -261,32 +281,46 @@ class PaevaTaabel extends React.PureComponent {
     }
 
     onClickHandler(name, value) {
-        const Doc = this.refs['document'];
-        let api = `/newApi/task/arvestaPaevaTaabel`;
+        if (name == 'arvesta') {
+            // действие для кнопки arvesta
+            const Doc = this.refs['document'];
+            let api = `/newApi/task/arvestaPaevaTaabel`;
 
-        Doc.fetchData('Post', api, {seisuga: this.state.kpv, docId: this.state.grupp_id}).then((response) => {
-            if (response.data && response.data.error_code) {
-                Doc.setState({
-                    warning: response.data.error_message,
-                    warningType: 'error'
-                }, () => {
-                    this.forceUpdate();
-                });
-
-            } else {
-
-                let docId = response.data && response.data.result ? response.data.result : null;
-                if (docId) {
-                    // reload / redirect
-                    const current = `/lapsed/paeva_taabel/${docId}`;
-                    this.props.history.replace(`/reload`);
-                    setTimeout(() => {
-                        this.props.history.replace(current);
+            Doc.fetchData('Post', api, {seisuga: this.state.kpv, docId: this.state.grupp_id}).then((response) => {
+                if (response.data && response.data.error_code) {
+                    Doc.setState({
+                        warning: response.data.error_message,
+                        warningType: 'error'
+                    }, () => {
+                        this.forceUpdate();
                     });
-                }
 
+                } else {
+
+                    let docId = response.data && response.data.result ? response.data.result : null;
+                    if (docId) {
+                        // reload / redirect
+                        const current = `/lapsed/paeva_taabel/${docId}`;
+                        this.props.history.replace(`/reload`);
+                        setTimeout(() => {
+                            this.props.history.replace(current);
+                        });
+                    }
+
+                }
+            })
+        } else {
+            const data = this.refs['document'].docData.gridData;
+            if (data) {
+                // пройти по всем записям и поменять значение наоборот
+                data.forEach((row, index) => {
+                    if (!row.osalemine) {
+                        this.checkData(null, index, 'covid', !row.covid);
+                        this.forceUpdate();
+                    }
+                })
             }
-        })
+        }
     }
 
     /**
@@ -294,29 +328,35 @@ class PaevaTaabel extends React.PureComponent {
      * @param self
      */
     checkData(self, idx, columnId, value) {
+        const data = this.refs['document'].docData;
+
         if (columnId && columnId == 'osalemine') {
-            if (!self.docData.gridData[idx].osalemine) {
+            if (!data.gridData[idx].osalemine) {
                 // обнулить значения всех услуг
-                for (let [key, value] of Object.entries(self.docData.gridData[idx])) {
+                for (let [key, value] of Object.entries(data.gridData[idx])) {
                     if (!isNaN(key) && !!value) {
                         // посещения нет, а значение положительное. меняем
-                        self.docData.gridData[idx][key] = !value;
+                        data.gridData[idx][key] = !value;
                     }
                 }
             }
 
-            if (self.docData.gridData[idx].osalemine && self.docData.gridData[idx].covid) {
+            if (data.gridData[idx].osalemine && data.gridData[idx].covid) {
                 // не может ковид быть, если нет отсутствия
-                self.docData.gridData[idx].covid = 0;
+                data.gridData[idx].covid = 0;
             }
 
         }
 
         // обработка поля кодид
         if (columnId && columnId == 'covid') {
-            if (self.docData.gridData[idx].osalemine) {
+            if (!data.gridData[idx].osalemine) {
                 // если есть посещение, то не может быть ковид
-                self.docData.gridData[idx].covid = !value;
+                data.gridData[idx].covid = value;
+            } else {
+                // не меняем значение ковид, так как есть посещение
+                data.gridData[idx].covid = !value;
+
             }
         }
 

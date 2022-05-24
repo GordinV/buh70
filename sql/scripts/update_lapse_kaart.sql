@@ -1,6 +1,6 @@
-DROP FUNCTION IF EXISTS lapsed.update_lapse_kaart();
+DROP FUNCTION IF EXISTS lapsed.update_viitenumber_lapse_kaart();
 
-CREATE FUNCTION lapsed.update_lapse_kaart()
+CREATE FUNCTION lapsed.update_viitenumber_lapse_kaart()
     RETURNS INTEGER
     LANGUAGE plpgsql
 AS
@@ -14,17 +14,18 @@ BEGIN
         SELECT *
         FROM lapsed.lapse_kaart lk
         WHERE lk.staatus <> 3
-          AND exists(SELECT v.id
+/*          AND exists(SELECT v.id
                      FROM lapsed.viitenr v
                               INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood
                      WHERE l.id = lk.parentid)
---        and lk.id = 21623
+*/
+--          AND lk.parentid = 7367
         LOOP
 
             SELECT v.viitenumber
             INTO l_vn
             FROM lapsed.viitenr v
-                     INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood
+                     INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood AND v.rekv_id = v_kaart.rekvid
             WHERE l.id = v_kaart.parentid
             ORDER BY v.id DESC
             LIMIT 1;
@@ -36,12 +37,17 @@ BEGIN
                 WHERE id = v_kaart.id;
 
                 l_count = l_count + 1;
+            ELSE
+                UPDATE lapsed.lapse_kaart
+                SET properties = properties || ('{"viitenr": null}')::JSONB
+                WHERE id = v_kaart.id;
+
 
             END IF;
 
             IF l_count > 0
             THEN
-                RAISE NOTICE 'Deleted total: l_count %', l_count;
+                RAISE NOTICE 'Updated total: l_count %', l_count;
             END IF;
         END LOOP;
     RETURN l_count;
@@ -49,7 +55,7 @@ BEGIN
 END ;
 $$;
 
-SELECT lapsed.update_lapse_kaart();
+SELECT lapsed.update_viitenumber_lapse_kaart();
 
-DROP FUNCTION IF EXISTS lapsed.update_lapse_kaart();
+DROP FUNCTION IF EXISTS lapsed.update_viitenumber_lapse_kaart();
 
