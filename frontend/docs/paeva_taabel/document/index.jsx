@@ -281,7 +281,7 @@ class PaevaTaabel extends React.PureComponent {
     }
 
     onClickHandler(name, value) {
-        if (name == 'arvesta') {
+        if (name == 'Arvesta taabel ?') {
             // действие для кнопки arvesta
             const Doc = this.refs['document'];
             let api = `/newApi/task/arvestaPaevaTaabel`;

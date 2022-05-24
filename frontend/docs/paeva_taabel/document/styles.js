@@ -71,7 +71,7 @@ module.exports = {
         width: 'fit-content'
     },
     BtnArvesta: {
-        width: 'min-content'
+        width: 'fit-content'
     },
 
 
