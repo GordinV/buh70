@@ -89,7 +89,12 @@ class Laps extends React.PureComponent {
             </div>);
         }
 
-
+        // не успевает подгрузиться справочник, перегрузка формы
+        if (!self.libs['lapse_kaart'].length) {
+            setTimeout(() => {
+                this.forceUpdate()
+            }, 1);
+        }
 
         let isEditMode = self.state.edited;
 
