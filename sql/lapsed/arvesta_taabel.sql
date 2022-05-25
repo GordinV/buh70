@@ -3,13 +3,13 @@
 DROP FUNCTION IF EXISTS lapsed.arvesta_taabel(INTEGER, INTEGER, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.arvesta_taabel(IN user_id INTEGER,
-                                                 IN l_laps_id INTEGER,
-                                                 IN l_kpv DATE DEFAULT current_date,
-                                                 OUT error_code INTEGER,
-                                                 OUT result INTEGER,
-                                                 OUT doc_type_id TEXT,
-                                                 OUT error_message TEXT,
-                                                 OUT viitenr TEXT)
+                                                  IN l_laps_id INTEGER,
+                                                  IN l_kpv DATE DEFAULT current_date,
+                                                  OUT error_code INTEGER,
+                                                  OUT result INTEGER,
+                                                  OUT doc_type_id TEXT,
+                                                  OUT error_message TEXT,
+                                                  OUT viitenr TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -26,7 +26,6 @@ DECLARE
     DOC_STATUS   INTEGER = 1; -- только активные услуги
     l_taabel_id  INTEGER;
     l_count      INTEGER = 0;
-    l_kogus      NUMERIC = 0;
     userName     TEXT    = (SELECT ametnik
                             FROM ou.userid
                             WHERE id = user_id);
@@ -61,16 +60,16 @@ BEGIN
 
     FOR v_kaart IN
         SELECT lk.nomid,
-               lk.id                                                     AS lapse_kaart_id,
+               lk.id                                                      AS lapse_kaart_id,
                lk.parentid,
                n.uhik,
-               coalesce(n.properties ->> 'algoritm', 'konstantne')::TEXT AS algoritm,
-               ltrim(rtrim(n.kood))                                      AS kood,
-               coalesce((lk.properties ->> 'kogus')::NUMERIC, 0)         AS kogus,
-               date_part('month'::TEXT, l_kpv::DATE)                     AS kuu,
-               date_part('year'::TEXT, l_kpv::DATE)                      AS aasta,
+               coalesce(n.properties ->> 'algoritm', 'konstantne')::TEXT  AS algoritm,
+               ltrim(rtrim(n.kood))                                       AS kood,
+               coalesce((lk.properties ->> 'kogus')::NUMERIC, 0)::NUMERIC AS kogus,
+               date_part('month'::TEXT, l_kpv::DATE)                      AS kuu,
+               date_part('year'::TEXT, l_kpv::DATE)                       AS aasta,
                lk.hind,
-               NULL::TEXT                                                AS muud
+               NULL::TEXT                                                 AS muud
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.parentid = l_laps_id
@@ -78,12 +77,13 @@ BEGIN
           AND lk.staatus = DOC_STATUS
           AND (lk.properties ->> 'alg_kpv' IS NULL OR
                (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
---          AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
           AND (lk.properties ->> 'lopp_kpv' IS NULL OR
                make_date(year((lk.properties ->> 'lopp_kpv')::DATE), month((lk.properties ->> 'lopp_kpv')::DATE), 1) +
                INTERVAL '1 month' >= l_kpv)
           AND ((lk.properties ->> 'kas_ettemaks') IS NULL OR NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN)
         LOOP
+
+            RAISE NOTICE 'teenused %', v_kaart;
 
             -- ищем аналогичный табель в периоде
             -- критерий
@@ -106,7 +106,6 @@ BEGIN
                   AND year(t.kpv) = year(l_kpv::DATE);
 
                 v_kaart.hind = NULL; -- нет расчета цены
-
             ELSIF lower(v_kaart.algoritm) IN ('külastamine')
             THEN
                 -- на основании табеля посещений
@@ -137,11 +136,43 @@ BEGIN
                                    '*' || l_kulastused::TEXT;
                     v_kaart.hind = 0; -- нет посещений
                 END IF;
+
             ELSE
+
+                -- поправка с 25.05. расчет идет с учетом отсутствия по причине ковида
+
+                SELECT (visidid_kokku + puudumised_kokku), covid_kokku
+                INTO l_too_paevad, l_kulastused
+                FROM (
+                         SELECT count(*) FILTER (WHERE osalemine = 1)               AS visidid_kokku,
+                                count(*) FILTER (WHERE osalemine = 0)               AS puudumised_kokku,
+                                count(*) FILTER (WHERE osalemine = 0 AND covid = 1) AS covid_kokku
+                         FROM lapsed.day_taabel dt
+                                  INNER JOIN lapsed.day_taabel1 dt1 ON dt.id = dt1.parent_id
+                         WHERE month(dt.kpv) = month(l_kpv::DATE)
+                           AND year(dt.kpv) = year(l_kpv::DATE)
+                           AND dt.staatus < 3
+                           AND rekv_id = l_rekvid
+                           AND dt1.laps_id = v_kaart.parentid
+                     ) qry;
+
+                v_kaart.kogus = 1;
+
+                RAISE NOTICE 'l_kulastused % , l_too_paevad %, v_kaart.parentid %', l_kulastused, l_too_paevad, v_kaart.parentid;
+
+                IF coalesce(l_kulastused, 0) > 0
+                THEN
+
+
+                    -- были пропуски с причиной = ковид
+                    v_kaart.kogus = (l_too_paevad - l_kulastused)::numeric / l_too_paevad::numeric;
+
+                    --                    А в счете желательно в строке с услугой справочно вставить количество получившихся расчетных дней - 18.
+                    v_kaart.muud = (l_too_paevad - l_kulastused)::TEXT + ' päevade eest';
+                END IF;
                 v_kaart.hind = NULL; -- нет расчета цены
 
             END IF;
-
 
             SELECT lt.id,
                    lt.staatus
@@ -157,6 +188,7 @@ BEGIN
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN
                 -- продолжаем расчет
+                RAISE NOTICE 'kogus %', v_kaart.kogus;
 
                 -- подготавливаем параметры для сохранения
                 SELECT row_to_json(row)
@@ -220,7 +252,7 @@ EXCEPTION
             error_message = SQLERRM;
             result = 0;
             RETURN;
-END ;
+END;
 $BODY$
     LANGUAGE plpgsql
     VOLATILE
@@ -232,6 +264,8 @@ GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arves
 
 
 /*
-select lapsed.arvesta_taabel(70, 5573,'2020-10-30')
+select lapsed.arvesta_taabel_(70, 3,'2022-05-31')
+
+select * from lapsed.lapsed_taabel where rekvid = 63
 
  */

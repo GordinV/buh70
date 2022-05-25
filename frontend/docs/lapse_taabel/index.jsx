@@ -71,6 +71,8 @@ class Documents extends React.PureComponent {
         if (summa || soodustus) {
             this.setState({summa: summa, read: self.gridData.length, soodustus: soodustus});
         }
+
+        console.log('self.gridData',self.gridData);
         return (
             <ToolbarContainer>
                 {checkRights(userRoles, docRights, 'importTaabel') ?

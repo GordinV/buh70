@@ -85,6 +85,14 @@ class LapseKaart extends React.PureComponent {
             </div>);
         }
 
+        // не успевает подгрузиться справочник, перегрузка формы
+        if (!self.libs['nomenclature'].length) {
+            setTimeout(() => {
+                this.forceUpdate()
+            }, 1);
+        }
+
+
         let isEditMode = self.state.edited;
 
         if ((!Number(self.docData.id) || !self.docData.parentid) && this.state.lapsId) {

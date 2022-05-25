@@ -169,10 +169,14 @@ module.exports = {
                                      WHERE is_ettemaks.kas_ettemaks::BOOLEAN
                                         and lt.rekvid = $1::INTEGER
                      )
-                SELECT *
+                SELECT id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
+                            isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid,                             
+                            tab_tyyp
                 FROM (
-                         SELECT *, 'Tavaline' as tab_tyyp
-                         FROM qryTabs
+                         select id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
+                            isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid,                             
+                            'Tavaline' as tab_tyyp
+                         from qryTabs
                          UNION ALL
                          SELECT *, 'Virtuaalne' as tab_tyyp
                          FROM qryVirtTabs
