@@ -39,7 +39,8 @@ class PaevaTaabel extends React.PureComponent {
             kpv: null,
             isRebuild: false,
             isInit: true,
-            kogus: 0
+            kogus: 0,
+            covid: 0
         };
 
         this.renderer = this.renderer.bind(this);
@@ -312,13 +313,14 @@ class PaevaTaabel extends React.PureComponent {
         } else {
             const data = this.refs['document'].docData.gridData;
             if (data) {
+                let covid = !this.state.covid;
                 // пройти по всем записям и поменять значение наоборот
                 data.forEach((row, index) => {
                     if (!row.osalemine) {
-                        this.checkData(null, index, 'covid', !row.covid);
-                        this.forceUpdate();
+                        this.checkData(null, index, 'covid', covid);
                     }
-                })
+                });
+                this.setState({covid: covid});
             }
         }
     }

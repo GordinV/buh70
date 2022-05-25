@@ -190,7 +190,6 @@ exports.put = async (req, res) => {
         }
     }
 
-    console.log('save params', JSON.stringify(params));
     const savedData = await Document.save(params);
 
     let l_error = '';
