@@ -1,4 +1,6 @@
-const Moment = require('moment');
-let kpv = Moment(2022 + '-' + '12'.toString() + '-' + '05', "YYYY-MM-DD").add(1, 'month') .format("YYYY-MM-DD");
+let muud = '18 päevad eest';
 
-console.log(kpv);
+
+let info = muud.replace('päevad eest', 'pv');
+
+console.log('info', info);

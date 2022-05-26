@@ -56,7 +56,7 @@ exports.get = async (req, res) => {
                 Stoim: row.hind,
                 Kolich: row.kogus,
                 Nach: row.summa,
-                Info: row.muud,
+                Info:  row.muud ? row.muud.replace('päevade eest', 'pv'): '' ,
                 SrokOpl: tahtaeg,
                 VhSaldo: false
             };
