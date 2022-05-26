@@ -84,7 +84,7 @@ block content
             p.input #{`${data[0].lisa ? data[0].lisa: ''}`}
 
         div.row_wrapper
-            p.label Märkused:
+            p.label Märkused :
             p.input #{`${data[0].muud ? data[0].muud : ''}`}
         table.table.table-hover.grid_data
             thead.grid_head
@@ -100,7 +100,7 @@ block content
             tbody
                 each row in data.details
                     tr
-                        td=row.nimetus
+                        td=(row.markused)
                         td(align='center')=Number(row.tais_hind,2).toFixed(2)
                         td(align='center')=Number(row.soodustus).toFixed(4)
                         td(align='center')=(Number(row.tais_hind,2) - Number(row.soodustus)).toFixed(4)

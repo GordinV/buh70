@@ -80,8 +80,9 @@ exports.get = async (req, res) => {
             data = getGroupedData(data,templateObject.group);
         }
 
+
         // вернуть отчет
-        res.render(template, {title: 'Tunnused', data: data, user: user, filter: filterData});
+        res.render(template, {title: 'Report', data: data, user: user, filter: filterData});
 
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок

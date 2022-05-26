@@ -206,7 +206,8 @@ const Arv = {
                          n.uhik,
                          a1.properties ->>
                          'yksus'                                                                         AS yksus,
-                         a1.muud
+                         a1.muud,
+                         trim(n.nimetus) || ',' || a1.muud   as markused
                   FROM docs.arv1 a1
                            INNER JOIN docs.arv a
                                       ON a.id = a1.parentId
