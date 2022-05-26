@@ -51,12 +51,12 @@ exports.get = async (req, res) => {
                 DateNach: arvKpv,
                 GodNach: row.aasta,
                 MesNach: row.kuu,
-                NrSch: row.viitenumber.substring(0,row.viitenumber.length - 1),
+                NrSch: row.viitenumber ? row.viitenumber.substring(0,row.viitenumber.length - 1): '',
                 KodNach: getCode(row.kood),
                 Stoim: row.hind,
                 Kolich: row.kogus,
                 Nach: row.summa,
-                Info: '',
+                Info: row.muud,
                 SrokOpl: tahtaeg,
                 VhSaldo: false
             };

@@ -130,7 +130,8 @@ module.exports = {
                                  (coalesce(lt.yksus, '') ||
                                   CASE WHEN lt.all_yksus IS NULL THEN '' ELSE '-' || lt.all_yksus END)        AS yksus,
                                   lt.viitenr,
-                                 $2::INTEGER                                                           AS userid
+                                 $2::INTEGER                                                           AS userid,
+                                 lt.muud
                           FROM lapsed.cur_lapse_taabel lt
                                    LEFT OUTER JOIN viitenr v ON v.isikukood = lt.isikukood
                           WHERE lt.rekvid = $1::INTEGER                          
@@ -162,7 +163,8 @@ module.exports = {
                                             (coalesce(lt.yksus, '') ||
                                              CASE WHEN lt.all_yksus IS NULL THEN '' ELSE '-' || lt.all_yksus END)        AS yksus,
                                              lt.viitenr,
-                                 $2::INTEGER                                                           AS userid
+                                 $2::INTEGER                                                           AS userid,
+                                 ''::text as muud
                                      FROM is_ettemaks,
                                         lapsed.cur_lapse_virtuaal_taabel lt
                                               LEFT OUTER JOIN viitenr v ON v.isikukood = lt.isikukood
@@ -170,15 +172,16 @@ module.exports = {
                                         and lt.rekvid = $1::INTEGER
                      )
                 SELECT id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
-                            isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid,                             
+                            isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid, muud,                            
                             tab_tyyp
                 FROM (
                          select id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
-                            isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid,                             
+                            isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid, muud,                           
                             'Tavaline' as tab_tyyp
                          from qryTabs
                          UNION ALL
-                         SELECT *, 'Virtuaalne' as tab_tyyp
+                         SELECT *, 
+                         'Virtuaalne' as tab_tyyp 
                          FROM qryVirtTabs
                      ) tab
                 ORDER BY aasta DESC, kuu DESC, nimi`,     //  $1 всегда ид учреждения, $2 - userId
