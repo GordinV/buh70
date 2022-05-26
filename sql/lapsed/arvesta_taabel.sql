@@ -3,13 +3,13 @@
 DROP FUNCTION IF EXISTS lapsed.arvesta_taabel(INTEGER, INTEGER, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.arvesta_taabel(IN user_id INTEGER,
-                                                  IN l_laps_id INTEGER,
-                                                  IN l_kpv DATE DEFAULT current_date,
-                                                  OUT error_code INTEGER,
-                                                  OUT result INTEGER,
-                                                  OUT doc_type_id TEXT,
-                                                  OUT error_message TEXT,
-                                                  OUT viitenr TEXT)
+                                                 IN l_laps_id INTEGER,
+                                                 IN l_kpv DATE DEFAULT current_date,
+                                                 OUT error_code INTEGER,
+                                                 OUT result INTEGER,
+                                                 OUT doc_type_id TEXT,
+                                                 OUT error_message TEXT,
+                                                 OUT viitenr TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -82,8 +82,6 @@ BEGIN
                INTERVAL '1 month' >= l_kpv)
           AND ((lk.properties ->> 'kas_ettemaks') IS NULL OR NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN)
         LOOP
-
-            RAISE NOTICE 'teenused %', v_kaart;
 
             -- ищем аналогичный табель в периоде
             -- критерий
@@ -158,17 +156,15 @@ BEGIN
 
                 v_kaart.kogus = 1;
 
-                RAISE NOTICE 'l_kulastused % , l_too_paevad %, v_kaart.parentid %', l_kulastused, l_too_paevad, v_kaart.parentid;
-
                 IF coalesce(l_kulastused, 0) > 0
                 THEN
 
 
                     -- были пропуски с причиной = ковид
-                    v_kaart.kogus = (l_too_paevad - l_kulastused)::numeric / l_too_paevad::numeric;
+                    v_kaart.kogus = (l_too_paevad - l_kulastused)::NUMERIC / l_too_paevad::NUMERIC;
 
                     --                    А в счете желательно в строке с услугой справочно вставить количество получившихся расчетных дней - 18.
-                    v_kaart.muud = (l_too_paevad - l_kulastused)::TEXT + ' päevade eest';
+                    v_kaart.muud = '(' || (l_too_paevad - l_kulastused)::TEXT + ' päeva)';
                 END IF;
                 v_kaart.hind = NULL; -- нет расчета цены
 
