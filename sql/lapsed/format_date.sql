@@ -13,7 +13,7 @@ DECLARE
     return_date DATE;
 BEGIN
     -- format DD.MM.YYYY HH:MI:SS
-    IF (SELECT l_kpv SIMILAR TO '__.__.____') or (SELECT l_kpv SIMILAR TO '__.__.____ __:__*')
+    IF (SELECT l_kpv SIMILAR TO '__.__.____') OR (SELECT l_kpv SIMILAR TO '__.__.____ __:__*')
     THEN
         return_date = make_date(substring(l_kpv FROM 7 FOR 4)::INTEGER, substring(l_kpv FROM 4 FOR 2)::INTEGER,
                                 left(l_kpv, 2)::INTEGER);
@@ -23,13 +23,13 @@ BEGIN
         return_date = l_kpv;
     END IF;
 
-    RETURN return_date;
+    RETURN coalesce(return_date, '2999-12-31')::DATE;
 
 EXCEPTION
     WHEN OTHERS
         THEN
             RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-            RETURN NULL;
+            RETURN '2999-12-31'::DATE;
 
 END;
 $BODY$
@@ -40,5 +40,6 @@ $BODY$
 /*
 select format_date(to_char(current_date,'DD.MM.YYYY')::TEXT);
 select format_date('01.12.2019'::TEXT);
-
+select format_date('undefinite'::TEXT);
+select coalesce(format_date('undefined'::text),'2999-12-31')
  */

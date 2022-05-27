@@ -37,7 +37,7 @@ const prepareSqlWhereFromFilter = (filterData, docTypeId) => {
                     break;
                 case 'date':
                     if ('start' in row && row.start) {
-                        filterString = `${filterString} format_date(${row.id}::text)  >=  format_date('${row.start}'::text) and (format_date(${row.id}::text)  <=  format_date('${row.end}'::text) or ${row.end} is null)`;
+                        filterString = `${filterString} format_date(${row.id}::text)  >=  format_date('${row.start}'::text) and (format_date(${row.id}::text)  <=  format_date('${(row.end ? row.end: '2999-12-31')}'::text) or ${(row.end ? row.end: null)} is null)`;
                     } else if (row.id == 'valid') {
                         // для этого поля ставим фильтр на контект действует до
                         filterString = `${filterString} (format_date(${row.id}::text)  >=  format_date('${row.value}'::text) or ${row.id} is null)`;
