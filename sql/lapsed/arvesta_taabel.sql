@@ -103,7 +103,11 @@ BEGIN
                   AND month(t.kpv) = month(l_kpv::DATE)
                   AND year(t.kpv) = year(l_kpv::DATE);
 
-                v_kaart.hind = NULL; -- нет расчета цены
+                v_kaart.hind = NULL;
+                -- нет расчета цены
+                --                    А в счете желательно в строке с услугой справочно вставить количество получившихся расчетных дней - 18.
+                v_kaart.muud = '(' || (v_kaart.kogus::INTEGER)::TEXT + ' päeva)';
+
             ELSIF lower(v_kaart.algoritm) IN ('külastamine')
             THEN
                 -- на основании табеля посещений
@@ -118,9 +122,9 @@ BEGIN
                                          SELECT DISTINCT dt.id, dt1.laps_id, dt.rekv_id, dt.kpv
                                          FROM lapsed.day_taabel dt
                                                   INNER JOIN lapsed.day_taabel1 dt1 ON dt.id = dt1.parent_id
-                                         WHERE dt1.laps_id = 3
-                                           AND month(dt.kpv) = 4
-                                           AND year(dt.kpv) = 2021
+                                         WHERE dt1.laps_id = v_kaart.parentid
+                                           AND month(dt.kpv) = month(l_kpv::DATE)
+                                           AND year(dt.kpv) = year(l_kpv::DATE)
                                            AND dt.staatus < 3
                                            AND coalesce(dt1.osalemine, 0) = 1
                                      ) qry);
@@ -142,16 +146,21 @@ BEGIN
                 SELECT (visidid_kokku + puudumised_kokku), covid_kokku
                 INTO l_too_paevad, l_kulastused
                 FROM (
+                         WITH day_taabel AS (
+                             SELECT DISTINCT dt.id, dt1.osalemine, dt1.covid
+                             FROM lapsed.day_taabel dt
+                                      INNER JOIN lapsed.day_taabel1 dt1 ON dt.id = dt1.parent_id
+                             WHERE month(dt.kpv) = month(l_kpv::DATE)
+                               AND year(dt.kpv) = year(l_kpv::DATE)
+                               AND dt.staatus < 3
+                               AND rekv_id = l_rekvid
+                               AND dt1.laps_id = v_kaart.parentid
+                         )
+
                          SELECT count(*) FILTER (WHERE osalemine = 1)               AS visidid_kokku,
                                 count(*) FILTER (WHERE osalemine = 0)               AS puudumised_kokku,
                                 count(*) FILTER (WHERE osalemine = 0 AND covid = 1) AS covid_kokku
-                         FROM lapsed.day_taabel dt
-                                  INNER JOIN lapsed.day_taabel1 dt1 ON dt.id = dt1.parent_id
-                         WHERE month(dt.kpv) = month(l_kpv::DATE)
-                           AND year(dt.kpv) = year(l_kpv::DATE)
-                           AND dt.staatus < 3
-                           AND rekv_id = l_rekvid
-                           AND dt1.laps_id = v_kaart.parentid
+                         FROM day_taabel
                      ) qry;
 
                 v_kaart.kogus = 1;
@@ -163,10 +172,14 @@ BEGIN
                     -- были пропуски с причиной = ковид
                     v_kaart.kogus = (l_too_paevad - l_kulastused)::NUMERIC / l_too_paevad::NUMERIC;
 
+                END IF;
+                IF coalesce(l_too_paevad, 0) > 0
+                THEN
                     --                    А в счете желательно в строке с услугой справочно вставить количество получившихся расчетных дней - 18.
                     v_kaart.muud = '(' || (l_too_paevad - l_kulastused)::TEXT + ' päeva)';
                 END IF;
                 v_kaart.hind = NULL; -- нет расчета цены
+
 
             END IF;
 
@@ -228,13 +241,12 @@ BEGIN
             END IF;
 
         END LOOP;
-
     IF (l_count = 0)
     THEN
         l_message = l_message || ':teenused ei leidnud';
     END IF;
 
-    result = coalesce(l_taabel_id, 0);
+    result = COALESCE(l_taabel_id, 0);
     error_message = l_message;
     viitenr = v_laps.viitenr;
     -- проверка
@@ -249,8 +261,7 @@ EXCEPTION
             result = 0;
             RETURN;
 END;
-$BODY$
-    LANGUAGE plpgsql
+$BODY$ LANGUAGE plpgsql
     VOLATILE
     COST 100;
 

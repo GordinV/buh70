@@ -41,6 +41,7 @@ module.exports = {
                     ORDER BY vanem_isikukood, lapse_nimi
         `,     // $1 - rekvid, $3 - kond
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
+        notReloadWithoutParameters: true,
         alias: 'soodustused_report'
     },
     print: [

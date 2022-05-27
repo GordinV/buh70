@@ -64,7 +64,8 @@ module.exports = {
                     ORDER BY r.nimetus, d.liik
         `,     // $1 - rekvid, $2 - user_id, $3 - seisuga, $4 - grupp_liik, $5 - koolituse_tyyp
         params: ['rekvid', 'userid', 'period', 'grupp_liik', 'koolituse_tyyp'],
-        alias: 'aasta_naitajad_report'
+        alias: 'aasta_naitajad_report',
+        notReloadWithoutParameters: true
     },
     print: [
         {

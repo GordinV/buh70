@@ -30,6 +30,7 @@ module.exports = {
                     FROM lapsed.topeltmaksud($1::INTEGER, $3, $4) qryReport
                     ORDER BY isikukood, kood`,     // $1 - rekvid, $3 - kuu, $4 - aasta
         params: ['rekvid', 'userid', 'kuu', 'aasta'],
+        notReloadWithoutParameters: true,
         alias: 'topeltmaksud_report'
     },
     print: [

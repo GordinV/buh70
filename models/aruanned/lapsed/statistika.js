@@ -28,6 +28,7 @@ module.exports = {
                     ORDER BY aruanne, text_indikator
         `,     // $1 - rekvid, $3 - kond
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
+        notReloadWithoutParameters: true,
         alias: 'statistika_report'
     },
     print: [

@@ -30,7 +30,8 @@ module.exports = {
         `,     // $1 - rekvid, $2-KUU $3 - aasta
         params: ['rekvid', 'kuu', 'aasta'],
         alias: 'kohaloleku_report',
-        subtotals: ['yksuse_kogus', 'nimekirje_kogus', 'faktiline_kogus', 'kogus']
+        subtotals: ['yksuse_kogus', 'nimekirje_kogus', 'faktiline_kogus', 'kogus'],
+        notReloadWithoutParameters: true
 
     },
     print: [

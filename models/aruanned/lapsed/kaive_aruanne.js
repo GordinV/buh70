@@ -56,7 +56,8 @@ module.exports = {
                 sum(mahakantud) over() as mahakantud_total,
                 sum(tagastused) over() as tagastused_total,
                 sum(jaak) over() as jaak_total `,
-        alias: 'kaive_aruanne_report'
+        alias: 'kaive_aruanne_report',
+        notReloadWithoutParameters: true
     },
     print: [
         {

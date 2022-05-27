@@ -29,6 +29,7 @@ module.exports = {
                     ORDER BY asutus
         `,     // $1 - rekvid, $3 - alg_kpv, $4 - lopp_kpv
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
+        notReloadWithoutParameters: true,
         totals: `sum(alg_db) OVER ()           AS alg_db_total,
                  sum(alg_kr) OVER ()           AS alg_kr_total,
                  sum(db) OVER ()               AS db_total,

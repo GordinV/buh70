@@ -9,8 +9,8 @@ exports.post = async (req, res) => {
         parameter = req.body.parameter || '',// параметры если переданы
         module = req.body.module || 'documents',
         sortBy = req.body.sortBy, //порядок сортировки
-        limit = req.body.limit ? req.body.limit: Liimit, //порядок сортировки
-        method = req.body.method ? req.body.method: 'selectDocs', //порядок сортировки
+        limit = req.body.limit ? req.body.limit : Liimit, //порядок сортировки
+        method = req.body.method ? req.body.method : 'selectDocs', //порядок сортировки
         sqlWhere = req.body.sqlWhere, //динамический фильтр
         filterData = req.body.filterData || []; // параметры фильтры
 
@@ -26,36 +26,55 @@ exports.post = async (req, res) => {
         const doc = new Doc(parameter, null, user.userId, user.asutusId, module);
 
         let gridConfig = doc.config.grid.gridConfiguration;
+
         let gridParams;
         let subtotals = doc.config.grid.subtotals ? doc.config.grid.subtotals : [];
         let filterTotals = doc.config.grid.totals ? doc.config.grid.totals : null;
 
         if (filterData.length > 0 && doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
-            gridParams = getParameterFromFilter(user.asutusId,  user.userId, doc.config.grid.params , filterData);
+            gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
         }
 
         // установим таймаут для ожидания тяжелых отчетов
         res.setTimeout(400000);
 
-        // вызвать метод
-        let data = {
-            docTypeId: parameter,
-            result: await doc[method](sortBy, sqlWhere, limit, gridParams, filterTotals ),
-            gridConfig: gridConfig,
-            subtotals: subtotals
-        };
+        let data;
+        // оставим только "заданные" параметры
+        let paramsWithData = gridParams ? gridParams.filter(param => param) : [];
+
+        if (doc.config.grid.notReloadWithoutParameters && doc.config.grid.params.length > 2 && paramsWithData.length <= 2) {
+            // если задан параметр, то не делать выборку, пока нет параметров (для отчетов)
+            data = {
+                docTypeId: parameter,
+                result: {
+                    error_code: 1,
+                    error_message: 'Puudub vajaliku parametrid',
+                    data: []
+                },
+                gridConfig: gridConfig,
+                subtotals: subtotals
+            };
+
+        } else {
+            // вызвать метод
+            data = {
+                docTypeId: parameter,
+                result: await doc[method](sortBy, sqlWhere, limit, gridParams, filterTotals),
+                gridConfig: gridConfig,
+                subtotals: subtotals
+            };
+        }
 
         // усли указан конвертер, то отдаем данные туда на обработку
         if (doc.config.grid && doc.config.grid.converter && data.result && data.result.data) {
             data.result.data = doc.config.grid.converter(data.result.data);
         }
 
-
         // вернуть данные
         res.status(200).send(data);
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок
-        res.send({status: 500,result:'Error'});
+        res.send({status: 500, result: 'Error'});
 
     }
 };

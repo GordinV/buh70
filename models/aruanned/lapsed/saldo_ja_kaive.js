@@ -50,6 +50,7 @@ module.exports = {
                     ORDER BY r.nimetus
         `,     // $1 - rekvid, $3 - alg_kpv, $4 - lopp_kpv
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
+        notReloadWithoutParameters: true,
         totals: ` sum(alg_saldo) over() as alg_saldo_total,
                 sum(arvestatud) over() as arvestatud_total,
                 sum(soodustus) over() as soodustus_total, 

@@ -61,6 +61,7 @@ module.exports = {
         `,     // $1 - rekvid, $3 - kond
         params: '',
         alias: 'arved_koodi_jargi_report'
+
     },
     print: [
         {

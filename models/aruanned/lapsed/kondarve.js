@@ -21,7 +21,7 @@ module.exports = {
         `,     // $1 - rekvid, $3 - kond
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
         totals: ` sum(summa) over() as summa_total`,
-
+        notReloadWithoutParameters: true,
         alias: 'kondarve_report'
     },
     print: [

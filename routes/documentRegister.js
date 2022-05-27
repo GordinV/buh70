@@ -418,7 +418,6 @@ exports.validateLibs = async (req, res) => {
     });
 };
 
-
 exports.getLogs = async (req, res) => {
     const user = await require('../middleware/userData')(req); // данные пользователя
     const Doc = require('./../classes/DocumentTemplate');

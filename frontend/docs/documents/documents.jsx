@@ -136,7 +136,7 @@ class Documents extends React.Component {
             reload = true;
         }
 
-        if (reload || !this.props.initData || !this.gridData.length || !this.props.initData.docTypeId) {
+        if (reload || !this.props.initData || !this.gridData.length) {
 
             // проверим на фильтр
             let sqlWhere = prepareSqlWhereFromFilter(this.filterData, this.docTypeId);
@@ -291,9 +291,7 @@ class Documents extends React.Component {
      * выполнит запрос и обновит данные грида
      */
     btnRefreshClick() {
-        this.fetchData('selectDocs').then(() => {
-            this.setState({warning: 'Edukalt', warningType: 'ok'});
-        });
+        this.fetchData('selectDocs');
     }
 
 
@@ -728,7 +726,7 @@ class Documents extends React.Component {
                     return {
                         result: null,
                         status: response.status,
-                        error_message: `error ${(response.data && response.data.error_message) ? 'response.data.error_message' : response.error_message}`
+                        error_message: `error ${(response.data && response.data.error_message) ? 'response.data.error_message' : response.data.error_message}`
                     }
                 }
 
@@ -741,9 +739,15 @@ class Documents extends React.Component {
                         if (this.props.trigger_select) {
                             this.props.trigger_select(this);
                         }
-
                     }
-                    this.setState({warning: 'Edukalt', warningType: 'ok'})
+
+                    let warning = 'Edukalt';
+                    if (response.data && response.data.result  && response.data.result.error_message) {
+                        // нет ошибки, есть извещение. Покажем его в статусной строке
+                        warning = response.data.result.error_message;
+                    }
+
+                    this.setState({warning: warning, warningType: 'ok'})
 
                 } else if (method == 'delete' && response.data && response.data.result && response.data.result.error_code) {
                     // проверка перед удалением
