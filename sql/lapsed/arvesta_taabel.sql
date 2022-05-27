@@ -105,8 +105,6 @@ BEGIN
 
                 v_kaart.hind = NULL;
                 -- нет расчета цены
-                --                    А в счете желательно в строке с услугой справочно вставить количество получившихся расчетных дней - 18.
-                v_kaart.muud = '(' || (v_kaart.kogus::INTEGER)::TEXT + ' päeva)';
 
             ELSIF lower(v_kaart.algoritm) IN ('külastamine')
             THEN
