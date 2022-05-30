@@ -41,9 +41,20 @@ exports.get = async (req, res) => {
 
         // get xml
         let header;
-        let csv = getCSV(data.data.map(row => {
+
+        let csvData = [];
+
+        data.data.forEach(row => {
+            let kasSoodustus = false;
+
             let arvKpv = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '05', "YYYY-MM-DD").add(1, 'month') .format("DD.MM.YYYY");
             let tahtaeg = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '19', "YYYY-MM-DD").add(1, 'month') .format("DD.MM.YYYY");
+
+            if (row.kood == '322040-033') {
+                // У нее размерность ВСЕГДА штуки (т.е.  разовая, от посещаемости не зависит), т.е. всегда кол-во = 1 и кол-во дней не указывается
+                row.kogus = 1;
+                row.muud = null;
+            }
 
 
             //поправить если структура меняется
@@ -52,7 +63,7 @@ exports.get = async (req, res) => {
                 GodNach: row.aasta,
                 MesNach: row.kuu,
                 NrSch: row.viitenumber ? row.viitenumber.substring(0,row.viitenumber.length - 1): '',
-                KodNach: getCode(row.kood),
+                KodNach: getCode(row.kood, kasSoodustus),
                 Stoim: row.hind,
                 Kolich: row.kogus,
                 Nach: row.summa,
@@ -61,14 +72,45 @@ exports.get = async (req, res) => {
                 VhSaldo: false
             };
 
+            if (Number(row.soodustus) > 0 && Number(row.hind) > 0 ) {
+// меняем сумму на полную
+                obj.Nach = Number(row.kogus) * Number(row.hind);
+                kasSoodustus = true;
+            }
+
+
             // will add header to file
             if (!header) {
                 header = Object.keys(obj).join(';') + '\n';
             }
 
-            return obj;
+            csvData.push(obj);
 
-        }));
+            if (kasSoodustus) {
+
+                row.kogus = Number(row.soodustus) /  Number(row.hind);
+
+            // делаем доп. вставку в массив
+                const obj =  {
+                    DateNach: arvKpv,
+                    GodNach: row.aasta,
+                    MesNach: row.kuu,
+                    NrSch: row.viitenumber ? row.viitenumber.substring(0,row.viitenumber.length - 1): '',
+                    KodNach: getCode(row.kood, kasSoodustus),
+                    Stoim: -1 * Number(row.hind),
+                    Kolich: row.kogus,
+                    Nach: -1 * Number(row.soodustus),
+                    Info:  row.muud ? row.muud.replace('päeva', 'pv'): '' ,
+                    SrokOpl: tahtaeg,
+                    VhSaldo: false
+                };
+                // вставка доп. строки (льготы)
+                csvData.push(obj);
+            }
+
+    });
+
+        let csv = getCSV(csvData);
         csv = header + csv;
         if (csv) {
             res.attachment('report.csv');
@@ -84,23 +126,35 @@ exports.get = async (req, res) => {
     }
 };
 
-function getCode(newCode) {
+function getCode(newCode, isBonus) {
     let oldCode = '';
     switch (newCode) {
         case '322020-014':
             oldCode = '14';
+            if (isBonus) {
+                oldCode = '34';
+            }
             break;
         case '322020-015':
             oldCode = '15';
+            if (isBonus) {
+                oldCode = '35';
+            }
             break;
         case '322020-061':
             oldCode = '61';
             break;
         case '322030-016':
             oldCode = '16';
+            if (isBonus) {
+                oldCode = '36';
+            }
             break;
         case '322030-017':
             oldCode = '17';
+            if (isBonus) {
+                oldCode = '37';
+            }
             break;
         case '322030-066':
             oldCode = '66';
