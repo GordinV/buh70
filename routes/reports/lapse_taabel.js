@@ -74,7 +74,7 @@ exports.get = async (req, res) => {
 
             if (Number(row.soodustus) > 0 && Number(row.hind) > 0 ) {
 // меняем сумму на полную
-                obj.Nach = Number(row.kogus) * Number(row.hind);
+                obj.Nach = (Number(row.kogus) * Number(row.hind)).toFixed(2);
                 kasSoodustus = true;
             }
 
