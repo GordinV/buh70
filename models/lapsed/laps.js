@@ -195,69 +195,97 @@ module.exports = {
                 {id: "viitenumber", name: "Viitenumber", width: "25%"},
                 {id: "vana_vn", name: "Vana vn", width: "25%"},
                 {id: "yksused", name: "Üksused", width: "30%"},
-                {id: "lopp_kpv", name: "Kehtivus", width: "20%", type: 'date', interval: true},
+                {id: "lopp_kpv", name: "Lõpp kpv", width: "20%", type: 'date', interval: true},
+                {id: "period", name: "Kehtivus", width: "20%", type: 'date', interval: true, show: false, default: 'AASTA'},
+                {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'text'},
                 {id: "rekv_names", name: "Asutused", width: "30%", default: `DocContext.userData.asutus`},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString: `
-with cur_lapsed as (
-SELECT l.id,
-       l.isikukood,
-       l.nimi,
-       l.properties,
-       lk.rekv_ids,
-       (SELECT string_agg(nimetus, ', ') FROM ou.rekv WHERE id IN (SELECT unnest(lk.rekv_ids))) AS rekv_names,
-       lk.lopp_kpv,
-       (select string_agg(yksus, ', ') from (select DISTINCT yksus from unnest(yksused) yksus) yksus ) as yksused,
-           (SELECT string_agg(vn, ', ')
-            FROM (SELECT DISTINCT vn  FROM unnest(viitenumbers) vn) vn)                                   AS viitenumbers
-       
-    FROM lapsed.laps l
-         JOIN (SELECT parentid, 
-                array_agg(rekvid) AS rekv_ids, 
-                array_agg(yksused) AS yksused, 
-                array_agg(viitenumber) AS viitenumbers,
-                max(lopp_kpv) as lopp_kpv
-               FROM (
-                        SELECT parentid,
-                               rekvid,
-                                   lapsed.get_viitenumber(k.rekvid, k.parentid)                                                             AS viitenumber,
-                               (k.properties->>'lopp_kpv')::date as lopp_kpv,
-                               (get_unique_value_from_json(json_agg((k.properties ->> 'yksus')::TEXT || CASE
-                                                                                                            WHEN (k.properties ->> 'all_yksus') IS NOT NULL
-                                                                                                                THEN
-                                                                                                                    '-' ||
-                                                                                                                    (k.properties ->> 'all_yksus')::TEXT
-                                                                                                            ELSE '' END)::JSONB)) AS yksused
-                        FROM lapsed.lapse_kaart k
-                        WHERE k.staatus <> 3
-                        and k.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur($1) )
-                        GROUP BY parentid, rekvid, (k.properties->>'lopp_kpv')
-                    ) qry
-               GROUP BY parentid) lk ON lk.parentid = l.id
-        WHERE l.staatus <> 3
-        )
-                    SELECT TRUE                                  AS select,
-                            l.id,
-                            l.isikukood,
-                            l.nimi,
-                            l.yksused,
-                            l.rekv_names,
-                            vn.vn                                 AS vana_vn,
-                            l.viitenumbers                          AS viitenumber,
-                            $1::INTEGER                           AS rekvid,
-                            $2::INTEGER                           AS user_id,
-                            count(*) OVER ()                      AS rows_total,
-                            to_char(lopp_kpv, 'DD.MM.YYYY')::TEXT AS lopp_kpv
-                     FROM cur_lapsed l
-        left outer JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
-                     FROM lapsed.viitenr vn
-                     WHERE vn.rekv_id IN (SELECT rekv_id
-                                          FROM get_asutuse_struktuur($1))
-             GROUP BY vn.isikukood
-) vn ON vn.isikukood = l.isikukood`,     //  $1 всегда ид учреждения, $2 - userId
-            params: ['rekvid', 'userid'],
+        WITH cur_lapsed AS (
+            SELECT l.id,
+                   l.isikukood,
+                   l.nimi,
+                   l.properties,
+                   lk.rekv_ids,
+                   (SELECT string_agg(nimetus, ', ') FROM ou.rekv WHERE id IN (SELECT unnest(lk.rekv_ids)))       AS rekv_names,
+                   lk.lopp_kpv,
+                   (SELECT string_agg(yksus, ', ') FROM (SELECT DISTINCT yksus FROM unnest(yksused) yksus) yksus) AS yksused,
+        
+                   lk_range,
+                   ('[' || format_date(coalesce(($3::date - 1)::text,make_date(year(),01,01)::text))::TEXT || ',' || (format_date(coalesce($4,current_date::text))::TEXT) ||
+                    ')') ::DATERANGE                                                                              AS new_range,
+                   (SELECT string_agg(vn, ', ')
+                    FROM (SELECT DISTINCT vn FROM unnest(viitenumbers) vn) vn)                                    AS viitenumbers
+        
+            FROM lapsed.laps l
+                     JOIN (SELECT parentid,
+                                  array_agg(rekvid)      AS rekv_ids,
+                                  array_agg(yksused)     AS yksused,
+                                  array_agg(viitenumber) AS viitenumbers,
+                                  array_agg(lk_range)    AS lk_range,
+                                  max(lopp_kpv)          AS lopp_kpv
+                           FROM (
+                                    SELECT parentid,
+                                           rekvid,
+                                           lapsed.get_viitenumber(k.rekvid, k.parentid)                                                       AS viitenumber,
+                                           (k.properties ->> 'lopp_kpv')::DATE                                                                AS lopp_kpv,
+                                           ('[' || ((k.properties ->> 'alg_kpv')::DATE)::TEXT || ',' || (CASE
+                                                                                                             WHEN (k.properties ->> 'alg_kpv')::DATE >=
+                                                                                                                  (k.properties ->> 'lopp_kpv')::DATE
+                                                                                                                 THEN (k.properties ->> 'alg_kpv')::DATE
+                                                                                                             ELSE (k.properties ->> 'lopp_kpv')::DATE END)::TEXT ||
+                                            ')') ::DATERANGE                                                                                  AS lk_range,
+                                           (get_unique_value_from_json(json_agg((k.properties ->> 'yksus')::TEXT || CASE
+                                                                                                                        WHEN (k.properties ->> 'all_yksus') IS NOT NULL
+                                                                                                                            THEN
+                                                                                                                                '-' ||
+                                                                                                                                (k.properties ->> 'all_yksus')::TEXT
+                                                                                                                        ELSE '' END)::JSONB)) AS yksused
+                                    FROM lapsed.lapse_kaart k
+                                    WHERE k.staatus <> 3
+                                      AND k.rekvid IN (SELECT rekv_id
+                                                       FROM get_asutuse_struktuur($1))
+                                    GROUP BY parentid, rekvid, (k.properties ->> 'alg_kpv'), (k.properties ->> 'lopp_kpv')
+                                ) qry
+                           GROUP BY parentid) lk ON lk.parentid = l.id
+            WHERE l.staatus <> 3
+        ),
+             qry_range AS (
+                 SELECT DISTINCT unnest(lk.lk_range) &&
+                                 new_range AS kehtivus,
+                                 lk.id
+                 FROM cur_lapsed lk
+             )
+        SELECT TRUE                                  AS select,
+               l.id,
+               l.isikukood,
+               l.nimi,
+               l.yksused,
+               l.rekv_names,
+               vn.vn                                 AS vana_vn,
+               l.viitenumbers                        AS viitenumber,
+               $1::INTEGER                           AS rekvid,
+               $2::INTEGER                           AS user_id,
+               count(*) OVER ()                      AS rows_total,
+               to_char(lopp_kpv, 'DD.MM.YYYY')::TEXT AS lopp_kpv,
+               CASE
+                   WHEN coalesce(qr.kehtivus, FALSE) IS TRUE THEN
+                       'Jah'
+                   ELSE
+                       'Ei' END                      AS kehtivus,
+                       $3::date as period
+        FROM cur_lapsed l
+                 LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
+                                  FROM lapsed.viitenr vn
+                                  WHERE vn.rekv_id IN (SELECT rekv_id
+                                                       FROM get_asutuse_struktuur($1))
+                                  GROUP BY vn.isikukood
+        ) vn
+                                 ON vn.isikukood = l.isikukood
+                 LEFT OUTER JOIN (SELECT * FROM qry_range WHERE kehtivus IS TRUE) qr ON qr.id = l.id
+`,     //  $1 всегда ид учреждения, $2 - userId
+            params: ['rekvid', 'userid', 'period_start', 'period_end'],
             alias: 'curLapsed',
             converter: function (data) {
                 let row_id = 0;
