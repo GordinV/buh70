@@ -196,8 +196,8 @@ module.exports = {
                 {id: "vana_vn", name: "Vana vn", width: "25%"},
                 {id: "yksused", name: "Üksused", width: "30%"},
                 {id: "lopp_kpv", name: "Lõpp kpv", width: "20%", type: 'date', interval: true},
-                {id: "period", name: "Kehtivus", width: "20%", type: 'date', interval: true, show: false, default: 'AASTA'},
-                {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'text'},
+                {id: "period", name: "Kehtivuse periood", width: "20%", type: 'date', interval: true, show: false, default: 'AASTA'},
+                {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'select', data: ['','Jah','Ei']},
                 {id: "rekv_names", name: "Asutused", width: "30%", default: `DocContext.userData.asutus`},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],

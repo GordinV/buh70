@@ -122,6 +122,7 @@ class Document {
      */
     async selectDocs(sortBy, sqlWhere, limit, params = [this.rekvId, this.userId], subTotals) {
         let sql = this.config.grid.sqlString;
+
         try {
             let sqlParamsQantity = (this.config.grid.params == '' ? 2 : this.config.grid.params.length);
 

@@ -20,6 +20,7 @@ class GridFilter extends React.PureComponent {
         this.prepareFilterFields = this.prepareFilterFields.bind(this);
         this.returnInterval = this.returnInterval.bind(this);
         this.returnTextComponent = this.returnTextComponent.bind(this);
+        this.returnSelectComponent = this.returnSelectComponent.bind(this);
         this.handleSelectChange = this.handleSelectChange.bind(this);
     }
 
@@ -182,11 +183,68 @@ class GridFilter extends React.PureComponent {
                 </div>
                 <div style={styles.formWidgetInput}>
                     {row.interval ? this.returnInterval(row)
-                        : this.returnTextComponent(row)
+                        : row.type && row.type == 'select' ? this.returnSelectComponent(row): this.returnTextComponent(row)
                     }
                 </div>
             </div>
         })
+    }
+
+    /**
+     * Вернет Select
+     * @param row
+     * @returns {*}
+     */
+    returnSelectComponent(row) {
+        let data = this.props.data;
+
+        // проверим на наличие полей для фильтрации
+        if (!data.length) {
+            data = prepareData(this.props.gridConfig, this.props.docTypeId);
+        }
+
+        let componentType = row.type ? row.type : 'text';
+
+        // ишем дефолтное значение
+        let value = row.value ? row.value : '';
+        let kas_sisaldab = 1;
+
+        // ищем инициализированное значение
+        let obj = data.find(dataRow => dataRow.id == row.id);
+
+        if (obj && ('value' in obj)) {
+            if (!obj.value && value) {
+                // есть дефолтное значение
+                value = data[index][row.id].value;
+            }
+            value = obj.value ? obj.value : value;
+            kas_sisaldab = obj.sqlNo ? obj.sqlNo : 1;
+        }
+
+        return (<div style={styles.wrapper}>
+                <select style={styles.select}
+                        value={kas_sisaldab || 1}
+                        name={row.id}
+                        disabled={!value}
+                        id='sqlNo'
+                        onChange={this.handleSelectChange}>
+                    <option value={1}>{'SISALDAB'}</option>
+                    <option value={0}>{'EI SISALDA'}</option>
+                </select>
+                <select style={styles.input}
+                       title={row.name}
+                       name={row.id}
+                       placeholder={row.toolTip ? row.toolTip : row.name}
+                       ref={row.id}
+                       value={value || ''}
+                       onChange={this.handleChange}
+                       defaultValue={this.props.data[row.id]}>
+                    {row.data.map(rea=>{
+                        return <option  value={rea}>{rea} </option>
+                    })}
+                </select>
+            </div>
+        )
     }
 
     returnTextComponent(row) {

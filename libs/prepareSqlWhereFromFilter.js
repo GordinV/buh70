@@ -16,7 +16,6 @@ const prepareSqlWhereFromFilter = (filterData, docTypeId) => {
 
             switch (row.type) {
                 case 'text':
-
                     let prepairedParameter = row.value.split(',').map(str => `'${str.trim()}'`).join(',');
 
                     // если параметры раздедены, то множественный параметр
@@ -33,6 +32,9 @@ const prepareSqlWhereFromFilter = (filterData, docTypeId) => {
                     }
                     break;
                 case 'string':
+                    filterString = `${filterString}  upper(${row.id}) ${kas_sisaldab} like upper('%${row.value.trim()}%')`;
+                    break;
+                case 'select':
                     filterString = `${filterString}  upper(${row.id}) ${kas_sisaldab} like upper('%${row.value.trim()}%')`;
                     break;
                 case 'date':
