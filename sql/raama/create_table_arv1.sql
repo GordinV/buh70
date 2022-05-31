@@ -53,3 +53,6 @@ CREATE INDEX arv1_parentid
   USING btree
   (parentid);
 
+
+ALTER TABLE docs.arv1
+    ALTER COLUMN kogus TYPE numeric(18, 4);

@@ -204,7 +204,7 @@ module.exports = {
             sqlString: `
          WITH range_parameters AS (
              SELECT ('[' || format_date(coalesce($3::text, make_date(year(current_date), 01, 01)::TEXT))::TEXT || ',' ||
-                     (format_date($4::text)::TEXT) ||
+                     (format_date(($4::date + case when $3::date = $4::date then interval '1 day' else interval '0 day' end)::text)::TEXT) ||
                      ')') ::DATERANGE AS range,
                     $3::DATE        AS period_start,
                     $4::DATE        AS period_finish
