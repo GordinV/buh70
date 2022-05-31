@@ -63,7 +63,8 @@ BEGIN
                                        INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                               WHERE t1.tunnus IS NOT NULL
                                 AND NOT empty(t1.tunnus)
-                                AND t.status IN (3)
+                                AND t.status IN (3) -- акцептированные
+                                AND coalesce(t.tunnus, 0) = 0 -- только утвержденные
                                 AND t.rekvid = (CASE
                                                     WHEN l_kond = 1 THEN t.rekvid
                                                     ELSE l_rekvid END)
@@ -1201,7 +1202,8 @@ BEGIN
                               INNER JOIN eelarve.taotlus1 t1
                                          ON t.id = t1.parentid
                      WHERE t.aasta = YEAR(l_kpv) + 1
-                       AND t.status IN (3)
+                       AND t.status IN (3) -- акцептированные
+                       AND coalesce(t.tunnus, 0) = 0 -- только утвержденные
                        AND rekvid = (CASE
                                          WHEN $3 = 1
                                              THEN rekvid
@@ -1223,17 +1225,18 @@ BEGIN
 -- следующего года (Taotlused -esitatud)
                      -- следующего года (Taotlused -esitatud)
                      SELECT t.rekvid,
-                            t1.kood5                                              AS artikkel,
-                            t1.kood1                                              AS tegev,
-                            t1.kood2                                              AS allikas,
+                            t1.kood5                                                                  AS artikkel,
+                            t1.kood1                                                                  AS tegev,
+                            t1.kood2                                                                  AS allikas,
                             t1.tunnus,
-                            sum(summa_kassa)                                      AS summa,
-                            string_agg(ltrim(rtrim(replace (t1.selg, E'\n', '' ), E'\r\n')), ','::TEXT) AS selg
+                            sum(summa_kassa)                                                          AS summa,
+                            string_agg(ltrim(rtrim(replace(t1.selg, E'\n', ''), E'\r\n')), ','::TEXT) AS selg
                      FROM eelarve.taotlus t
                               INNER JOIN eelarve.taotlus1 t1
                                          ON t.id = t1.parentid
                      WHERE t.aasta = YEAR(l_kpv) + 1
                        AND t.status IN (3)
+                       AND coalesce(t.tunnus, 0) = 0 -- только утвержденные
                        AND rekvid = (CASE
                                          WHEN $3 = 1
                                              THEN rekvid

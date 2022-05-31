@@ -202,7 +202,15 @@ module.exports = {
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString: `
-        WITH cur_lapsed AS (
+         WITH range_parameters AS (
+             SELECT ('[' || format_date(coalesce($3::text, make_date(year(current_date), 01, 01)::TEXT))::TEXT || ',' ||
+                     (format_date($4::text)::TEXT) ||
+                     ')') ::DATERANGE AS range,
+                    $3::DATE        AS period_start,
+                    $4::DATE        AS period_finish
+         ),
+            
+       cur_lapsed AS (
             SELECT l.id,
                    l.isikukood,
                    l.nimi,
@@ -213,8 +221,6 @@ module.exports = {
                    (SELECT string_agg(yksus, ', ') FROM (SELECT DISTINCT yksus FROM unnest(yksused) yksus) yksus) AS yksused,
         
                    lk_range,
-                   ('[' || format_date(coalesce(($3::date - 1)::text,make_date(year(),01,01)::text))::TEXT || ',' || (format_date(coalesce($4,current_date::text))::TEXT) ||
-                    ')') ::DATERANGE                                                                              AS new_range,
                    (SELECT string_agg(vn, ', ')
                     FROM (SELECT DISTINCT vn FROM unnest(viitenumbers) vn) vn)                                    AS viitenumbers
         
@@ -247,15 +253,18 @@ module.exports = {
                                       AND k.rekvid IN (SELECT rekv_id
                                                        FROM get_asutuse_struktuur($1))
                                     GROUP BY parentid, rekvid, (k.properties ->> 'alg_kpv'), (k.properties ->> 'lopp_kpv')
-                                ) qry
+                                ) qry,
+                                  range_parameters
+                                 WHERE lk_range && range_parameters.range
+                                    OR range_parameters.period_start IS NULL                                
                            GROUP BY parentid) lk ON lk.parentid = l.id
             WHERE l.staatus <> 3
         ),
              qry_range AS (
                  SELECT DISTINCT unnest(lk.lk_range) &&
-                                 new_range AS kehtivus,
+                                 range_parameters.range AS kehtivus,
                                  lk.id
-                 FROM cur_lapsed lk
+                 FROM cur_lapsed lk, range_parameters
              )
         SELECT TRUE                                  AS select,
                l.id,
