@@ -255,16 +255,22 @@ module.exports = {
                                     GROUP BY parentid, rekvid, (k.properties ->> 'alg_kpv'), (k.properties ->> 'lopp_kpv')
                                 ) qry,
                                   range_parameters
-                                 WHERE lk_range && range_parameters.range
+                                 WHERE (lk_range -|- range_parameters.range or lk_range &&
+                                 range_parameters.range)
                                     OR range_parameters.period_start IS NULL                                
                            GROUP BY parentid) lk ON lk.parentid = l.id
             WHERE l.staatus <> 3
         ),
              qry_range AS (
-                 SELECT DISTINCT unnest(lk.lk_range) &&
+                with qry_range as (
+                 SELECT DISTINCT unnest(lk.lk_range) AS range,
+                                 lk.id
+                 FROM cur_lapsed lk)
+                 SELECT DISTINCT lk.range &&
+                                 range_parameters.range or lk.range -|-
                                  range_parameters.range AS kehtivus,
                                  lk.id
-                 FROM cur_lapsed lk, range_parameters
+                 FROM qry_range lk, range_parameters
              )
         SELECT TRUE                                  AS select,
                l.id,
