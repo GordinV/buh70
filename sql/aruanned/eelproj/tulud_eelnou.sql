@@ -64,7 +64,7 @@ BEGIN
                               WHERE t1.tunnus IS NOT NULL
                                 AND NOT empty(t1.tunnus)
                                 AND t.status IN (3) -- акцептированные
-                                AND coalesce(t.tunnus, 0) = 0 -- только утвержденные
+--                                AND coalesce(t.tunnus, 0) = 0 -- только утвержденные
                                 AND t.rekvid = (CASE
                                                     WHEN l_kond = 1 THEN t.rekvid
                                                     ELSE l_rekvid END)
@@ -1478,6 +1478,7 @@ BEGIN
                             sum(S.eelarve_tekkepohine_tapsustatud)::NUMERIC(14, 2) AS eelarve_tekkepohine_tapsustatud,
                             NULL::TEXT                                             AS selg
                      FROM qryReport S
+                     where l_rekvid = 63 and l_kond = 1 -- только для фин. департамента
                      GROUP BY S.artikkel, S.idx, S.tunnus, S.tegev, S.allikas
                  )
                 ,
@@ -1608,7 +1609,7 @@ GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER, JSONB) TO
 SELECT sum(aasta_1_tekke_taitmine) OVER (PARTITION BY rekv_id, artikkel) AS aasta1,
        sum(aasta_2_tekke_taitmine) OVER (PARTITION BY rekv_id, artikkel) AS aasta2,
        *
-FROM eelarve.tulud_eelnou('2021-12-31'::DATE, 63:: INTEGER, 0)
+FROM eelarve.tulud_eelnou('2021-12-31'::DATE, 64:: INTEGER, 1)
 WHERE tegev LIKE '05%'
    OR tegev LIKE '01-10%'
 

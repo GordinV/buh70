@@ -547,6 +547,7 @@ BEGIN
                         sum(s.aasta_3_prognoos)::NUMERIC(14, 2)                AS aasta_3_prognoos,
                         NULL::TEXT                                             AS selg
                  FROM qryReport s
+                 where l_rekvid = 63 and l_kond = 1 -- только для фин. департамента
                  GROUP BY s.artikkel,
                           s.idx,
                           s.tunnus,

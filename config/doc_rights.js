@@ -122,7 +122,7 @@ module.exports = {
         koostaArve: ['kasutaja'],
         koostaEttemaksuArved: ['kasutaja'],
         koostaEttemaksuArve: ['kasutaja'],
-        arvestaTaabel: ['arvestaja'],
+        arvestaTaabel: ['kasutaja'],
         importLapsed: ['admin'],
         importViitenr: ['admin']
     },
@@ -146,9 +146,9 @@ module.exports = {
     },
     LAPSE_TAABEL: {
         select: ['arvestaja'],
-        add: ['arvestaja'],
-        edit: ['arvestaja'],
-        delete: ['arvestaja'],
+        add: ['kasutaja'],
+        edit: ['kasutaja'],
+        delete: ['kasutaja'],
         importTaabel: ['admin']
     },
     PAEVA_TAABEL: {

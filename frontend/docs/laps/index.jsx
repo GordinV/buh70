@@ -36,7 +36,7 @@ class Documents extends React.PureComponent {
             read: 0,
             filtri_read: 0,
             isReport: false,
-            txtReport:[],
+            txtReport: [],
             kehtivus: today
         };
 
@@ -84,24 +84,24 @@ class Documents extends React.PureComponent {
 
         if (self.gridData) {
             this.setState({
-                read: self.gridData && self.gridData.length && self.gridData[0].rows_total ? self.gridData[0].rows_total: this.state.read,
+                read: self.gridData && self.gridData.length && self.gridData[0].rows_total ? self.gridData[0].rows_total : this.state.read,
                 filtri_read: self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : 0
             });
         }
 
         return (
             <ToolbarContainer>
-                {events.map(event => {
-                    return (
-                        <BtnArvesta
-                            value={event.name}
-                            onClick={this.onClickHandler}
-                            ref={`btn-${event.name}`}
-                            key={`key-${event.name}`}
-                        />
-
-                    )
-                })}
+                {checkRights(userRoles, docRights, 'arvestaTaabel') ?
+                    events.map(event => {
+                        return (
+                            <BtnArvesta
+                                value={event.name}
+                                onClick={this.onClickHandler}
+                                ref={`btn-${event.name}`}
+                                key={`key-${event.name}`}
+                            />
+                        )
+                    }) : null}
                 {checkRights(userRoles, docRights, 'importLapsed') ?
                     <ButtonUpload
                         ref='btnUpload'
@@ -189,7 +189,7 @@ class Documents extends React.PureComponent {
      * уберет окно с отчетом
      */
     modalReportePageBtnClick(event) {
-        let isReport = event && event == 'Ok' ? false: true;
+        let isReport = event && event == 'Ok' ? false : true;
         this.setState({isReport: isReport})
     }
 
