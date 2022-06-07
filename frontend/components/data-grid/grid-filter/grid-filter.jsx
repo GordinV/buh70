@@ -28,7 +28,26 @@ class GridFilter extends React.PureComponent {
      * Обработчик на изменения инпутов
      */
     handleChange(e) {
-        this.saveFilterContent(e.target.name, e.target.value, null);
+        let fieldName = e.target.name;
+        let fieldValue = e.target.value;
+        // ищем параметры в моделе
+
+        fieldName = fieldName.replace(/_start/g, '').replace(/_end/g, '');
+
+
+        let fieldParams = this.state.gridConfig.filter((row)=>{
+            return row.id == fieldName
+        });
+        console.log('fieldName, fieldParams', fieldName, fieldParams);
+
+        // проверим на наличие функции валидатора для значений поля
+        if (fieldParams && fieldParams.length && fieldParams.filterValidation) {
+            // если есть, то запускаем валидацию параметров
+            let result = fieldParams.filterValidation(e.target.name, e.target.value, this.state.data);
+            console.log('result', result)
+        }
+
+        this.saveFilterContent(fieldName, fieldValue, null);
         this.forceUpdate();
     }
 

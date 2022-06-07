@@ -1,8 +1,8 @@
 DROP FUNCTION IF EXISTS lapsed.topeltmaksud(INTEGER, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION lapsed.topeltmaksud(l_rekvid INTEGER,
-                                                l_kuu INTEGER DEFAULT month(current_date),
-                                                l_aasta INTEGER DEFAULT year(current_date))
+                                               l_kuu INTEGER DEFAULT month(current_date),
+                                               l_aasta INTEGER DEFAULT year(current_date))
     RETURNS TABLE (
         nimi        TEXT,
         isikukood   TEXT,
@@ -42,6 +42,7 @@ WITH qryTabel AS (
            'KUUTABEL'                                    AS koht,
            1                                             AS id
     FROM lapsed.cur_lapse_taabel lt
+             INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
              INNER JOIN lapsed.laps l ON l.id = lt.parentid
              INNER JOIN (
         SELECT id, nimetus
@@ -59,8 +60,8 @@ WITH qryTabel AS (
                          HAVING count(*) > 1) dbl ON dbl.isikukood = lt.isikukood AND dbl.kood = lt.kood
     WHERE lt.kuu = l_kuu
       AND lt.aasta = l_aasta
-      AND lt.kas_inf3 IS NOT NULL
-      AND lt.kas_inf3),
+      AND coalesce((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE)
+),
      qryKaart AS (
          WITH laste_kaart AS
                   (
@@ -146,17 +147,17 @@ WITH qryTabel AS (
                              END)))::NUMERIC(12, 2)                                                   AS summa
 
                   FROM laste_kaart lk
-                  WHERE  alg_kpv <= ((make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month')::DATE - 1)
-                      and lopp_kpv >=  make_date(l_aasta, l_kuu, 1)
+                  WHERE alg_kpv <= ((make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month')::DATE - 1)
+                    AND lopp_kpv >= make_date(l_aasta, l_kuu, 1)
               ) hind
                   INNER JOIN (
              SELECT lk.kood, lk.laps_id
              FROM laste_kaart lk
-             WHERE  alg_kpv <= (make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month')::DATE - 1
-               and lopp_kpv >=  make_date(l_aasta, l_kuu, 1)
+             WHERE alg_kpv <= (make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month')::DATE - 1
+               AND lopp_kpv >= make_date(l_aasta, l_kuu, 1)
              GROUP BY lk.kood, lk.laps_id
              HAVING count(*) > 1) dbl
-                             ON hind.teenuse_kood = dbl.kood  AND
+                             ON hind.teenuse_kood = dbl.kood AND
                                 hind.laps_id = dbl.laps_id
      )
 SELECT nimi,

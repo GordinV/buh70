@@ -80,16 +80,16 @@ BEGIN
              ),
              tmp_andmik AS (
 -- eelmise aasta
-                 SELECT 2               AS tyyp,
-                        ''              AS konto,
+                 SELECT 2                                                                                     AS tyyp,
+                        ''                                                                                    AS konto,
                         qry.allikas,
                         qry.tegev,
                         qry.artikkel,
                         qry.rahavoog,
-                        case when qry.tunnus in ('null','04', '1.' , '3.3' , '13') then '' else qry.tunnus end as tunnus,
-                        qry.summa       AS tegelik,
-                        year(l_kpv) - 1 AS aasta,
-                        12              AS kuu,
+                        CASE WHEN qry.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE qry.tunnus END AS tunnus,
+                        qry.summa                                                                             AS tegelik,
+                        year(l_kpv) - 1                                                                       AS aasta,
+                        12                                                                                    AS kuu,
                         qry.rekv_id
                  FROM eelarve.tekke_taitmine(make_date(year(l_kpv) - 1, 1, 1), make_date(year(l_kpv) - 1, 12, 31),
                                              l_rekvid, l_kond) qry
@@ -108,17 +108,17 @@ BEGIN
                    AND qry.artikkel NOT IN ('2586')
                  UNION ALL
 -- 2586
-                 SELECT 2               AS tyyp,
-                        ''              AS konto,
-                        qry.kood2       AS allikas,
-                        qry.kood1       AS tegev,
-                        qry.kood5       AS artikkel,
-                        qry.kood3       AS rahavoog,
-                        case when qry.tunnus in ('null','04', '1.' , '3.3' , '13') then '' else qry.tunnus end as tunnus,
-                        qry.summa       AS tegelik,
-                        year(l_kpv) - 1 AS aasta,
-                        12              AS kuu,
-                        qry.rekvid      AS rekv_id
+                 SELECT 2                                                                                     AS tyyp,
+                        ''                                                                                    AS konto,
+                        qry.kood2                                                                             AS allikas,
+                        qry.kood1                                                                             AS tegev,
+                        qry.kood5                                                                             AS artikkel,
+                        qry.kood3                                                                             AS rahavoog,
+                        CASE WHEN qry.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE qry.tunnus END AS tunnus,
+                        qry.summa                                                                             AS tegelik,
+                        year(l_kpv) - 1                                                                       AS aasta,
+                        12                                                                                    AS kuu,
+                        qry.rekvid                                                                            AS rekv_id
                  FROM cur_journal qry
                  WHERE qry.rekvid = (CASE
                                          WHEN l_kond = 1
@@ -146,16 +146,16 @@ BEGIN
                  UNION ALL
 
 --  текущий год
-                 SELECT 2           AS tyyp,
-                        ''          AS konto,
+                 SELECT 2                                                                                     AS tyyp,
+                        ''                                                                                    AS konto,
                         qry.allikas,
                         qry.tegev,
                         qry.artikkel,
                         qry.rahavoog,
-                        case when qry.tunnus in ('null','04', '1.' , '3.3' , '13') then '' else qry.tunnus end as tunnus,
-                        qry.summa   AS tegelik,
-                        YEAR(l_kpv) AS aasta,
-                        9           AS kuu,
+                        CASE WHEN qry.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE qry.tunnus END AS tunnus,
+                        qry.summa                                                                             AS tegelik,
+                        YEAR(l_kpv)                                                                           AS aasta,
+                        9                                                                                     AS kuu,
                         qry.rekv_id
                  FROM eelarve.tekke_taitmine(make_date(YEAR(l_kpv), 1, 1), make_date(YEAR(l_kpv), 09, 30),
                                              l_rekvid, l_kond) qry
@@ -184,17 +184,17 @@ BEGIN
                    AND qry.artikkel NOT IN ('2586')
                  UNION ALL
 -- 2586
-                 SELECT 2           AS tyyp,
-                        ''          AS konto,
-                        qry.kood2   AS allikas,
-                        qry.kood1   AS tegev,
-                        qry.kood5   AS artikkel,
-                        qry.kood3   AS rahavoog,
-                        case when qry.tunnus in ('null','04', '1.' , '3.3' , '13') then '' else qry.tunnus end as tunnus,
-                        qry.summa   AS tegelik,
-                        year(l_kpv) AS aasta,
-                        12          AS kuu,
-                        qry.rekvid  AS rekv_id
+                 SELECT 2                                                                                     AS tyyp,
+                        ''                                                                                    AS konto,
+                        qry.kood2                                                                             AS allikas,
+                        qry.kood1                                                                             AS tegev,
+                        qry.kood5                                                                             AS artikkel,
+                        qry.kood3                                                                             AS rahavoog,
+                        CASE WHEN qry.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE qry.tunnus END AS tunnus,
+                        qry.summa                                                                             AS tegelik,
+                        year(l_kpv)                                                                           AS aasta,
+                        12                                                                                    AS kuu,
+                        qry.rekvid                                                                            AS rekv_id
                  FROM cur_journal qry
                  WHERE qry.rekvid = (CASE
                                          WHEN l_kond = 1
@@ -222,13 +222,13 @@ BEGIN
                                             , '') + '%')
              ),
              qryAasta1 AS (
-                 SELECT s.rekv_id      AS rekvid,
-                        s.artikkel     AS artikkel,
-                        s.tegev        AS tegev,
-                        s.allikas      AS allikas,
-                        case when s.tunnus in ('null','04', '1.' , '3.3' , '13') then '' else s.tunnus end as tunnus,
-                        sum(s.tegelik) AS summa,
-                        1              AS idx
+                 SELECT s.rekv_id                                                                         AS rekvid,
+                        s.artikkel                                                                        AS artikkel,
+                        s.tegev                                                                           AS tegev,
+                        s.allikas                                                                         AS allikas,
+                        CASE WHEN s.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE s.tunnus END AS tunnus,
+                        sum(s.tegelik)                                                                    AS summa,
+                        1                                                                                 AS idx
                  FROM tmp_andmik s
                  WHERE aasta = year(l_kpv) - 1
                  GROUP BY s.rekv_id,
@@ -259,16 +259,16 @@ BEGIN
                  -- Сумма всех строк с данным Art Tekke põhine в проекте бюджета
 -- следующего года (Taotlused -esitatud)
                  SELECT t.rekvid,
-                        t1.kood5   AS artikkel,
-                        t1.kood1   AS tegev,
-                        t1.kood2   AS allikas,
-                        case when t1.tunnus in ('null','04', '1.' , '3.3' , '13') then '' else t1.tunnus end as tunnus,
-                        sum(summa) AS summa,
-                        NULL::TEXT AS selg
+                        t1.kood5                                                                            AS artikkel,
+                        t1.kood1                                                                            AS tegev,
+                        t1.kood2                                                                            AS allikas,
+                        CASE WHEN t1.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE t1.tunnus END AS tunnus,
+                        sum(summa)                                                                          AS summa,
+                        NULL::TEXT                                                                          AS selg
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
-                   AND t.status IN ( 3)
+                   AND t.status IN (3)
                    AND rekvid = (CASE
                                      WHEN $3 = 1
                                          THEN rekvid
@@ -294,12 +294,12 @@ BEGIN
 -- следующего года (Taotlused -esitatud)
                  -- следующего года (Taotlused -esitatud)
                  SELECT t.rekvid,
-                        t1.kood5                                                 AS artikkel,
-                        t1.kood1                                                 AS tegev,
-                        t1.kood2                                                 AS allikas,
-                        case when t1.tunnus in ('null','04', '1.' , '3.3' , '13') then '' else t1.tunnus end as tunnus,
-                        sum(summa_kassa)                                         AS summa,
-                        string_agg(replace(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT) AS selg
+                        t1.kood5                                                                            AS artikkel,
+                        t1.kood1                                                                            AS tegev,
+                        t1.kood2                                                                            AS allikas,
+                        CASE WHEN t1.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE t1.tunnus END AS tunnus,
+                        sum(summa_kassa)                                                                    AS summa,
+                        string_agg(replace(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
@@ -495,7 +495,8 @@ BEGIN
                                  NULL::TEXT         AS selg
                           FROM qryAasta7 q
                       ) qry
-                          LEFT OUTER JOIN qryTaotlused t ON t.artikkel = qry.artikkel AND t.rekvid = qry.rekvid
+                          LEFT OUTER JOIN qryTaotlused t
+                                          ON trim(t.artikkel) = trim(qry.artikkel) AND t.rekvid = qry.rekvid
                  GROUP BY qry.rekvid,
                           qry.artikkel,
                           qry.tegev,
@@ -547,7 +548,8 @@ BEGIN
                         sum(s.aasta_3_prognoos)::NUMERIC(14, 2)                AS aasta_3_prognoos,
                         NULL::TEXT                                             AS selg
                  FROM qryReport s
-                 where l_rekvid = 63 and l_kond = 1 -- только для фин. департамента
+                 WHERE l_rekvid = 63
+                   AND l_kond = 1 -- только для фин. департамента
                  GROUP BY s.artikkel,
                           s.idx,
                           s.tunnus,
@@ -580,9 +582,9 @@ BEGIN
                  SELECT qryReport.idx,
                         qryReport.rekv_id                              AS rekv_id,
                         CASE
-                            WHEN qryReport.eelarve_tekkepohine_kinnitatud = 0 OR
-                                 qryReport.eelarve_tekkepohine_tapsustatud = 0 OR
-                                 qryReport.tunnus in ('null','04', '1.' , '3.3' , '13') THEN ''
+                            WHEN (qryReport.eelarve_tekkepohine_kinnitatud = 0 AND
+                                  qryReport.eelarve_tekkepohine_tapsustatud = 0) OR
+                                 qryReport.tunnus IN ('null', '04', '1.', '3.3', '13') THEN ''
                             ELSE qryReport.tunnus END                  AS tunnus,
                         qryReport.tegev,
                         qryReport.allikas,
@@ -599,9 +601,9 @@ BEGIN
                  GROUP BY qryReport.idx,
                           qryreport.rekv_id,
                           CASE
-                              WHEN qryReport.eelarve_tekkepohine_kinnitatud = 0 OR
-                                   qryReport.eelarve_tekkepohine_tapsustatud = 0 OR
-                                   qryReport.tunnus in ('null','04', '1.' , '3.3' , '13') THEN ''
+                              WHEN (qryReport.eelarve_tekkepohine_kinnitatud = 0 AND
+                                    qryReport.eelarve_tekkepohine_tapsustatud = 0) OR
+                                   qryReport.tunnus IN ('null', '04', '1.', '3.3', '13') THEN ''
                               ELSE qryReport.tunnus END,
                           qryReport.tegev,
                           qryReport.allikas,
@@ -663,7 +665,15 @@ BEGIN
                rep.eelarve_tekkepohine_tapsustatud ::NUMERIC(14, 2),
                rep.selg
         FROM report rep
-        WHERE rep.artikkel <> '';
+        WHERE rep.artikkel <> ''
+          AND (rep.aasta_1_tekke_taitmine <> 0
+            OR rep.aasta_2_tekke_taitmine <> 0
+            OR rep.aasta_2_oodatav_taitmine <> 0
+            OR rep.aasta_3_eelnou <> 0
+            OR rep.aasta_3_prognoos <> 0
+            OR rep.eelarve_tekkepohine_kinnitatud <> 0
+            OR rep.eelarve_tekkepohine_tapsustatud <> 0
+            );
 END
 $$
     LANGUAGE plpgsql
@@ -677,9 +687,14 @@ GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO 
 GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO dbvaatleja;
 
 /*
-SELECT  *
-FROM eelarve.kulud_eelnou('2021-12-31'::DATE, 63:: INTEGER, 1)
-where artikkel = '155'
+SELECT CASE
+                            WHEN (eelarve_tekkepohine_kinnitatud = 0 AND
+                                  eelarve_tekkepohine_tapsustatud = 0) OR
+                                 tunnus IN ('null', '04', '1.', '3.3', '13') THEN 'A'
+                            ELSE 'B' END as tind, *
+FROM eelarve.kulud_eelnou('2021-12-31'::DATE, 64:: INTEGER, 1)
+where artikkel = '4502'
+and tegev = '10121'
 --tunnus in ('null','04', '1.' , '3.3' , '13')
 ORDER BY rekv_id, ARTIKKEL, tegev, TUNNUS
 

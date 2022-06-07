@@ -67,10 +67,12 @@ BEGIN
       AND roles ->> 'is_admin' IS NOT NULL
       AND (roles ->> 'is_admin')::BOOLEAN;
 
+    
+    raise notice 'email %',  doc_data ->> 'email';
     -- проверка на почту
 -- должна быть из домена narva.ee или в исключениях
     IF doc_data ->> 'email' IS NULL OR (doc_data ->> 'email')::TEXT IN ('vladislav.gordin@gmail.com')
-        OR (doc_data ->> 'email') LIKE '%@narva.ee'
+        OR (doc_data ->> 'email')::text LIKE '%@narva.ee'
     THEN
         -- подходит
     ELSE
