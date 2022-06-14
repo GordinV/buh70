@@ -47,7 +47,7 @@ class GridFilter extends React.PureComponent {
             console.log('result', result)
         }
 
-        this.saveFilterContent(fieldName, fieldValue, null);
+        this.saveFilterContent(e.target.name, fieldValue, null);
         this.forceUpdate();
     }
 

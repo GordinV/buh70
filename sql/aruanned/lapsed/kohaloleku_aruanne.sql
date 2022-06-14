@@ -33,7 +33,7 @@ FROM (
          WHERE staatus <> 3
            AND ((lk.properties ->> 'alg_kpv')::DATE IS NULL OR
                 (lk.properties ->> 'alg_kpv')::DATE <=
-                get_last_day(make_date(l_aasta, coalesce(1, month(current_date)), 1)))
+                get_last_day(make_date(l_aasta, coalesce(l_kuu, month(current_date)), 1)))
            AND ((lk.properties ->> 'lopp_kpv')::DATE IS NULL OR
                 (lk.properties ->> 'lopp_kpv')::DATE >= (
                     make_date(coalesce(l_aasta, year(current_date)), coalesce(l_kuu, month(current_date)), 1)))
@@ -111,6 +111,6 @@ GRANT EXECUTE ON FUNCTION lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER) T
 
 /*
 SELECT *
-FROM lapsed.kohaloleku_aruanne(85, 1, 2022)
+FROM lapsed.kohaloleku_aruanne(85, 4, 2022)
 
 */

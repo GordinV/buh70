@@ -68,7 +68,7 @@ BEGIN
                                                     ELSE l_rekvid END)
                                 AND t.rekvid IN (SELECT r.rekv_id
                                                  FROM get_asutuse_struktuur(l_rekvid) r)
-                                AND t.aasta IN (year(l_kpv) - 1, year(l_kpv))
+                                AND t.aasta IN (year(l_kpv) - 1, year(l_kpv), year(l_kpv) + 1)
                                 AND t1.kood2 NOT LIKE ('%RF%')
                                 AND (l_allikas IS NULL OR t1.kood2 ILIKE '%' || l_allikas || '%')
                                 AND t.rekvid <> 9
@@ -582,9 +582,7 @@ BEGIN
                  SELECT qryReport.idx,
                         qryReport.rekv_id                              AS rekv_id,
                         CASE
-                            WHEN (qryReport.eelarve_tekkepohine_kinnitatud = 0 AND
-                                  qryReport.eelarve_tekkepohine_tapsustatud = 0) OR
-                                 qryReport.tunnus IN ('null', '04', '1.', '3.3', '13') THEN ''
+                            WHEN qryReport.tunnus IN ('null', '04', '1.', '3.3', '13') THEN ''
                             ELSE qryReport.tunnus END                  AS tunnus,
                         qryReport.tegev,
                         qryReport.allikas,
@@ -601,9 +599,7 @@ BEGIN
                  GROUP BY qryReport.idx,
                           qryreport.rekv_id,
                           CASE
-                              WHEN (qryReport.eelarve_tekkepohine_kinnitatud = 0 AND
-                                    qryReport.eelarve_tekkepohine_tapsustatud = 0) OR
-                                   qryReport.tunnus IN ('null', '04', '1.', '3.3', '13') THEN ''
+                              WHEN qryReport.tunnus IN ('null', '04', '1.', '3.3', '13') THEN ''
                               ELSE qryReport.tunnus END,
                           qryReport.tegev,
                           qryReport.allikas,
@@ -692,7 +688,7 @@ SELECT CASE
                                   eelarve_tekkepohine_tapsustatud = 0) OR
                                  tunnus IN ('null', '04', '1.', '3.3', '13') THEN 'A'
                             ELSE 'B' END as tind, *
-FROM eelarve.kulud_eelnou('2021-12-31'::DATE, 64:: INTEGER, 1)
+FROM eelarve.kulud_eelnou('2022-06-30'::DATE, 64:: INTEGER, 1)
 where artikkel = '4502'
 and tegev = '10121'
 --tunnus in ('null','04', '1.' , '3.3' , '13')

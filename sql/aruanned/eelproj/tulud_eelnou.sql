@@ -70,7 +70,7 @@ BEGIN
                                                     ELSE l_rekvid END)
                                 AND t.rekvid IN (SELECT r.rekv_id
                                                  FROM get_asutuse_struktuur(l_rekvid) r)
-                                AND t.aasta IN (year(l_kpv) - 1, year(l_kpv))
+                                AND t.aasta IN (year(l_kpv) - 1, year(l_kpv), year(l_kpv) + 1 )
                                 AND t.rekvid <> 9
                               GROUP BY t.aasta, t.rekvid, t1.kood5
                               HAVING (count(*) > 0)
@@ -636,48 +636,6 @@ BEGIN
                    AND LEFT(S.artikkel, 4) NOT IN ('3502', '1502', '1532', '2585', '1032')
                  GROUP BY S.rekv_id, S.artikkel, S.tegev, S.allikas, S.tunnus
                  UNION ALL
-                 /*                 -- 352
-                                  SELECT S.rekv_id    AS rekvid,
-                                         '352'        AS artikkel,
-                                         s.tegev      AS tegev,
-                                         s.allikas,
-                                         s.tunnus,
-                                         sum(s.summa) AS summa,
-                                         1            AS idx
-                                  FROM (
-                                           SELECT s.rekv_id,
-                                                  s.tegev,
-                                                  s.allikas,
-                                                  s.tunnus,
-                                                  sum(s.tegelik) AS summa
-                                           FROM tmp_andmik s
-                                           WHERE s.konto LIKE '352%'
-                                             AND s.aasta = YEAR(l_kpv)
-                                           GROUP BY s.rekv_id, s.tegev, s.allikas, s.tunnus
-                                           UNION ALL
-                                           SELECT s.rekv_id,
-                                                  s.tegev,
-                                                  s.allikas,
-                                                  s.tunnus,
-                                                  -1 * sum(s.tegelik) AS summa
-                                           FROM tmp_andmik s
-                                           WHERE konto LIKE '35200%'
-                                             AND aasta = YEAR(l_kpv)
-                                           GROUP BY s.rekv_id, s.tegev, s.allikas, s.tunnus
-                                           UNION ALL
-                                           SELECT s.rekv_id,
-                                                  s.tegev,
-                                                  s.allikas,
-                                                  s.tunnus,
-                                                  -1 * sum(s.tegelik) AS summa
-                                           FROM tmp_andmik s
-                                           WHERE s.konto LIKE '352001%'
-                                             AND s.aasta = YEAR(l_kpv)
-                                           GROUP BY s.rekv_id, s.tegev, s.allikas, s.tunnus
-                                       ) s
-                                  GROUP BY s.rekv_id, s.tegev, s.allikas, s.tunnus
-                                  UNION ALL
-                 */ --3502
 --         get_saldo('KD', '3502', '01', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
 --         get_saldo('KD', '3502', '05', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
 --         get_saldo('KD', '3502', '', NULL, S.rekv_id, YEAR (l_kpv) - 1) AS summa
@@ -1160,30 +1118,6 @@ BEGIN
              )
                 ,
              -- пока не нужен
-/*             qryAasta3 AS (
-                 -- Данные соответствуют данным Tekke eelarve täps в отчете EELARVEARUANNE (Lisa 1, Lisa 5) текущего года за исключением итоговых строк.
-                 -- Формулы итогов можно увидеть в соответствующих ячейках
-                 -- eelarve taps
-
-                 SELECT e.rekvid,
-                        e.kood5      AS artikkel,
-                        e.kood1      AS tegev,
-                        e.tunnus     AS tunnus,
-                        sum(e.summa) AS summa
-                 FROM eelarve.eelarve e
-                 WHERE rekvid = (CASE
-                                     WHEN $3 = 1
-                                         THEN rekvid
-                                     ELSE l_rekvid END)
-                   AND e.rekvid IN (SELECT a.rekv_id
-                                    FROM get_asutuse_struktuur(l_rekvid) a)
-                   AND aasta = YEAR($1)
-                   AND (e.kpv IS NULL AND e.kpv <= l_kpv)
-                   AND e.status <> 3
-                   AND kood5 IN (SELECT kood FROM qryArtikkel)
-                 GROUP BY e.rekvid, e.kood5, e.kood1, e.tunnus
-             ),
-*/ -- Сумма всех строк с данным Art  в блоке Eelarve Tekkepõhine kinnitatud
              -- текущего года
 
              qryAasta4
