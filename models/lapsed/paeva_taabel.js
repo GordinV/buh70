@@ -141,7 +141,7 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
         {
             gridConfiguration: [
                 {id: "id", name: "id", width: "10%", show: false},
-                {id: "kpv", name: "Kuupäev", width: "30%", type: "date", interval: true},
+                {id: "kpv", name: "Kuupäev", width: "25%", type: "date", interval: true, filterValidation: true},
                 {id: "yksus", name: "Üksus", width: "50%"},
                 {id: "staatus", name: "Staatus", width: "20%"},
             ],
@@ -234,6 +234,10 @@ GROUP BY t.id, t.kpv, t.grupp_id, l.kood, l.nimetus, s.nimetus, t.staatus`,
         alias: 'arvestaPaevaTaabel'
     },
 
+    filterValidation:()=>  {
+        console.log('test');
+
+    }
 
 };
 

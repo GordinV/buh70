@@ -38,7 +38,7 @@ class GridFilter extends React.PureComponent {
         let fieldParams = this.state.gridConfig.filter((row)=>{
             return row.id == fieldName
         });
-        console.log('fieldName, fieldParams', fieldName, fieldParams);
+        console.log('fieldName, fieldParams', fieldName, fieldParams, DocContext);
 
         // проверим на наличие функции валидатора для значений поля
         if (fieldParams && fieldParams.length && fieldParams.filterValidation) {

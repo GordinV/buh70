@@ -59,13 +59,25 @@ class Documents extends React.PureComponent {
      * @param self
      */
     checkWeekEnds(self) {
-        if (!self.gridConfig) {
+        if (!self.gridConfig || !self.gridData) {
             return null;
         }
 
         let weekEnds = [];
-        if (self.gridData.length) {
+
+        if (self.gridData && self.gridData.length) {
             weekEnds = self.gridData[0].week_ends;
+            // если значение нулл, тогда ищем
+            if (weekEnds && weekEnds.length) {
+                self.gridData.every(row => {
+                    if (row.week_ends && row.week_ends.length && row.week_ends[0]) {
+                        weekEnds = row.week_ends;
+                        return false;
+                    }
+                })
+            } else {
+                weekEnds = [];
+            }
         }
 
         if (weekEnds.length) {
@@ -78,8 +90,6 @@ class Documents extends React.PureComponent {
 
         // filter
         self.gridData = self.gridData.filter(row =>row.is_row)
-
-
     }
 
     /**

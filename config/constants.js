@@ -116,11 +116,19 @@ module.exports = {
         ],
     },
     PAEVA_TAABEL: {
-        LIBRARIES : [
+        LIBRARIES: [
             {
                 id: 'lapse_grupp',
                 filter: ``
             }
+        ],
+        FILTER_VALIDATION: [
+            {
+                kpv: () => {
+                    console.log('validation')
+                }
+            }
+
         ]
     },
     // нода для справочников
