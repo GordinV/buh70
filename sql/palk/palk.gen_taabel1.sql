@@ -44,8 +44,6 @@ BEGIN
         RETURN;
     END IF;
 
-raise notice 'start %', params;
-
     IF params IS NULL
     THEN
         error_code = 6;

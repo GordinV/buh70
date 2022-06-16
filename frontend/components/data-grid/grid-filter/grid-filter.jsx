@@ -16,6 +16,7 @@ class GridFilter extends React.PureComponent {
             data: props.data
         };
 
+        this.validationError = '';
         this.handleChange = this.handleChange.bind(this);
         this.prepareFilterFields = this.prepareFilterFields.bind(this);
         this.returnInterval = this.returnInterval.bind(this);
@@ -38,16 +39,18 @@ class GridFilter extends React.PureComponent {
         let fieldParams = this.state.gridConfig.filter((row)=>{
             return row.id == fieldName
         });
-        console.log('fieldName, fieldParams', fieldName, fieldParams, DocContext);
-
-        // проверим на наличие функции валидатора для значений поля
-        if (fieldParams && fieldParams.length && fieldParams.filterValidation) {
-            // если есть, то запускаем валидацию параметров
-            let result = fieldParams.filterValidation(e.target.name, e.target.value, this.state.data);
-            console.log('result', result)
-        }
 
         this.saveFilterContent(e.target.name, fieldValue, null);
+
+        // проверим на наличие функции валидатора для значений поля
+        if (fieldParams && fieldParams.length && fieldParams[0].filterValidation) {
+            // если есть, то запускаем валидацию параметров
+
+            // валидация
+            if (DocContext.filterValidation[DocContext.getDocTypeId]) {
+                this.validationError = DocContext.filterValidation[DocContext.getDocTypeId](DocContext.getFilter);
+            }
+        }
         this.forceUpdate();
     }
 
@@ -143,9 +146,8 @@ class GridFilter extends React.PureComponent {
         DocContext.setFilter = data;
 
         if (this.props.handler) {
-            this.props.handler(data);
+            this.props.handler(data, this.validationError);
         }
-
     }
 
     componentDidMount() {
@@ -178,8 +180,10 @@ class GridFilter extends React.PureComponent {
     }
 
     render() {
+
         // создаст из полей грида компоненты для формирования условий фильтрации
         return <div style={styles.fieldset}>
+            <div style={styles.validationError}>{this.validationError}</div>
             {this.prepareFilterFields()}
         </div>
     }

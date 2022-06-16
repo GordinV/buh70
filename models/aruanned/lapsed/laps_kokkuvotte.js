@@ -1,10 +1,10 @@
 module.exports = {
     grid: {
         gridConfiguration: [
-            {id: "lapse_isikukood", name: "Lapse isikukood", width: "10%"},
-            {id: "lapse_nimi", name: "Lapse nimi", width: "20%"},
+            {id: "lapse_isikukood", name: "Lapse isikukood", width: "10%", filterValidation: true},
+            {id: "lapse_nimi", name: "Lapse nimi", width: "20%", filterValidation: true},
             {id: "number", name: "Arve nr", width: "10%"},
-            {id: "kpv", name: "Kuupäev", width: "10%", type: "date", interval: true},
+            {id: "kpv", name: "Kuupäev", width: "10%", type: "date", interval: true, filterValidation: true},
             {id: "summa", name: "Arve summa", width: "10%", type: "number", interval: true},
             {id: "tasutud", name: "Tasutud", width: "10%", type: "number", interval: true},
             {id: "mahakandmine", name: "Mahakantud", width: "10%", type: "number", interval: true},
@@ -24,13 +24,13 @@ module.exports = {
                            maksja_nimi,
                            maksja_isikukood,
                            r.nimetus                                 AS asutus,
-                           $2                                        AS user_id,
                            to_char(current_date, 'DD.MM.YYYY')::TEXT AS print_date
-                    FROM lapsed.child_summary($1::INTEGER, 1) qryReport
+                    FROM lapsed.child_summary($1::INTEGER, 1, $2::text, $3::text) qryReport
                              INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
                     ORDER BY lapse_nimi, r.nimetus, (kpv::DATE)
         `,     // $1 - rekvid, $3 - kond? removed jaak = 0
-        params: '',
+        params: ['rekvid', 'lapse_isikukood','lapse_nimi'],
+        notReloadWithoutParameters: true,
         alias: 'child_summary_report',
         subtotals: ['summa', 'jaak', 'tasutud', 'mahakandmine']
 

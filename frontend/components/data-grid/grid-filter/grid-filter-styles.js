@@ -55,6 +55,10 @@ module.exports = {
     },
     interval: {
         display: 'inline-flex'
+    },
+    validationError: {
+        margin: '5px',
+        backgroundColor: 'lightcoral'
     }
 
 

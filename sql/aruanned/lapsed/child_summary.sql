@@ -1,6 +1,8 @@
 DROP FUNCTION IF EXISTS lapsed.child_summary(INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT);
 
-CREATE OR REPLACE FUNCTION lapsed.child_summary(l_rekvid INTEGER, l_kond INTEGER DEFAULT 0)
+CREATE OR REPLACE FUNCTION lapsed.child_summary(l_rekvid INTEGER, l_kond INTEGER DEFAULT 0, l_ik TEXT DEFAULT '%',
+                                                l_nimi TEXT DEFAULT '%')
     RETURNS TABLE (
         maksja_nimi      TEXT,
         maksja_isikukood TEXT,
@@ -20,6 +22,13 @@ WITH qryRekv AS (
     SELECT rekv_id
     FROM get_asutuse_struktuur(l_rekvid)
 ),
+     qryLapsed AS (
+         SELECT *
+         FROM lapsed.laps l
+         WHERE staatus <> 3
+           AND l.isikukood LIKE rtrim(l_ik) || '%'
+           AND l.nimi ILIKE '%' || ltrim(rtrim(l_nimi)) || '%'
+     ),
      qryArved AS (
          SELECT a.asutusid,
                 ld.parentid                                 AS laps_id,
@@ -45,6 +54,7 @@ WITH qryRekv AS (
          WHERE d.rekvid IN (SELECT rekv_id
                             FROM qryRekv)
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+           AND ld.parentid IN (SELECT id FROM qryLapsed)
      ),
      qrytasud AS (
          SELECT mk1.asutusid,
@@ -84,6 +94,7 @@ WITH qryRekv AS (
          WHERE D.status <> 3
            AND D.rekvid IN (SELECT rekv_id
                             FROM qryRekv)
+           AND l.parentid IN (SELECT id FROM qryLapsed)
      )
 SELECT a.nimetus::TEXT   AS maksja_nimi,
        a.regkood::TEXT   AS maksja_isikukood,
@@ -105,7 +116,7 @@ FROM (
          FROM qrytasud
      ) qryDoc,
      libs.asutus a,
-     lapsed.laps l
+     qryLapsed l
 WHERE qryDoc.asutusid = a.id
   AND l.id = qryDoc.laps_id
 
@@ -115,10 +126,10 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT) TO dbvaatleja;
 
 /*
 

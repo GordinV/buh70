@@ -45,6 +45,7 @@ class Documents extends React.Component {
         this.gridData = [];
         this.gridConfig = DocContext.gridConfig && DocContext.gridConfig[props.docTypeId] ? DocContext.gridConfig[props.docTypeId] : [];
         this.filterData = DocContext.filter && DocContext.filter[props.docTypeId] ? DocContext.filter[props.docTypeId] : [];
+        this.validationError = '';
 
         if (props.initData && props.initData.result) {
             this.gridData = props.initData.result.data || [];
@@ -89,7 +90,6 @@ class Documents extends React.Component {
      * пишем делаем запрос по итогу загрузки
      */
     componentDidMount() {
-
         // will save current docTypeid
         DocContext.setDocTypeId = this.docTypeId;
         let reload = false; // if reload === true then it will call to reload
@@ -218,6 +218,7 @@ class Documents extends React.Component {
                                         docTypeId={this.docTypeId}
                                         handler={this.filterDataHandler}
                                         gridConfig={this.gridConfig}
+                                        validationError={this.validationError}
                                         data={this.filterData}/>
                         </ModalPage> : null
                     }
@@ -384,9 +385,17 @@ class Documents extends React.Component {
         let filterString = ''; // строка фильтра
 
         if (btnEvent === 'Ok') {
-            // собираем данные
+            if (!this.validationError) {
+                // только при отчутствии ошибки на валидации
+                // собираем данные
+                filterString = prepareSqlWhereFromFilter(this.filterData, this.docTypeId);
+                this.setState({
+                    getFilter: false,
+                    sqlWhere: filterString,
+                    isEmptyFilter: !filterString
+                }, () => this.fetchData('selectDocs'));
+            }
 
-            filterString = prepareSqlWhereFromFilter(this.filterData, this.docTypeId);
         } else {
             // чистим строку фильтрации и массив фильтров
             filterString = '';
@@ -398,14 +407,16 @@ class Documents extends React.Component {
                 if (row.end) {
                     row.end = null;
                 }
-            })
+            });
+
+            this.setState({
+                getFilter: false,
+                sqlWhere: filterString,
+                isEmptyFilter: !filterString
+            }, () => this.fetchData('selectDocs'));
+
         }
 
-        this.setState({
-            getFilter: false,
-            sqlWhere: filterString,
-            isEmptyFilter: !filterString
-        }, () => this.fetchData('selectDocs'));
     }
 
     /**
@@ -447,13 +458,16 @@ class Documents extends React.Component {
      * обработчик для фильтра грида
      * @param data
      */
-    filterDataHandler(data) {
+    filterDataHandler(data, validationError) {
         this.filterData = data;
+        // итог валидации
+        this.validationError = validationError;
 
         // создади обьект = держатель состояния фильтра
         if (data && data.length > 0 && this.props.history.location) {
             DocContext.setFilter = this.filterData;
         }
+
 
     }
 
@@ -614,21 +628,20 @@ class Documents extends React.Component {
             let gridTaabelRow = {};
 
             if (!this.state.value) {
-                gridTaabelRow = this.gridData.length ?  this.gridData[0]: 0;
+                gridTaabelRow = this.gridData.length ? this.gridData[0] : 0;
             } else {
-                gridTaabelRow = this.gridData.find(row =>  {
+                gridTaabelRow = this.gridData.find(row => {
                     return row.id == this.state.value
                 });
             }
 
-            if (gridTaabelRow &&  gridTaabelRow.tab_tyyp && gridTaabelRow.tab_tyyp == 'Virtuaalne') {
+            if (gridTaabelRow && gridTaabelRow.tab_tyyp && gridTaabelRow.tab_tyyp == 'Virtuaalne') {
 
                 toolbarProps['add'] = false;
                 toolbarProps['edit'] = false;
                 toolbarProps['delete'] = false;
             }
         }
-
 
 
         return Object.assign({
@@ -742,7 +755,7 @@ class Documents extends React.Component {
                     }
 
                     let warning = 'Edukalt';
-                    if (response.data && response.data.result  && response.data.result.error_message) {
+                    if (response.data && response.data.result && response.data.result.error_message) {
                         // нет ошибки, есть извещение. Покажем его в статусной строке
                         warning = response.data.result.error_message;
                     }

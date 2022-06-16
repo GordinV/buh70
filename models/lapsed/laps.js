@@ -196,13 +196,18 @@ module.exports = {
                 {id: "vana_vn", name: "Vana vn", width: "25%"},
                 {id: "yksused", name: "Üksused", width: "30%"},
                 {id: "lopp_kpv", name: "Lõpp kpv", width: "20%", type: 'date', interval: true},
-                {id: "period", name: "Kehtivuse periood", width: "20%", type: 'date', interval: true, show: false, default: 'AASTA',
-                    filterValidation: (name, value, data) => {
-                        console.log('validation', name, value, data);
-                        return false;
-                    }
+                {
+                    id: "period",
+                    name: "Kehtivuse periood",
+                    width: "20%",
+                    type: 'date',
+                    interval: true,
+                    show: false,
+                    default: 'AASTA',
+                    filterValidation: true
                 },
-                {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'select', data: ['','Jah','Ei']},
+                {id: "kehtiv_kpv", name: "Kehtiv seisuga", width: "20%", type: 'date', show: false},
+                {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
                 {id: "rekv_names", name: "Asutused", width: "30%", default: `DocContext.userData.asutus`},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
@@ -212,7 +217,8 @@ module.exports = {
                      (format_date(($4::date + case when $3::date = $4::date then interval '1 day' else interval '0 day' end)::text)::TEXT) ||
                      ')') ::DATERANGE AS range,
                     $3::DATE        AS period_start,
-                    $4::DATE        AS period_finish
+                    $4::DATE        AS period_finish,
+                    case when $5::text is not null and $5::text = '' then null::date else $5::DATE end::date as kehtiv_kpv
          ),
             
        cur_lapsed AS (
@@ -274,7 +280,8 @@ module.exports = {
                  SELECT DISTINCT lk.range &&
                                  range_parameters.range or lk.range -|-
                                  range_parameters.range AS kehtivus,
-                                 lk.id
+                                 lk.id,
+                                 lk.range
                  FROM qry_range lk, range_parameters
              )
         SELECT TRUE                                  AS select,
@@ -294,7 +301,8 @@ module.exports = {
                        'Jah'
                    ELSE
                        'Ei' END                      AS kehtivus,
-                       $3::date as period
+                $3::date as period,
+                case when r.kehtiv_kpv is not null and qr.range @> (r.kehtiv_kpv::date - 1) then r.kehtiv_kpv else null::date end::date as kehtiv_kpv                       
         FROM cur_lapsed l
                  LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                                   FROM lapsed.viitenr vn
@@ -303,9 +311,10 @@ module.exports = {
                                   GROUP BY vn.isikukood
         ) vn
                                  ON vn.isikukood = l.isikukood
-                 LEFT OUTER JOIN (SELECT * FROM qry_range WHERE kehtivus IS TRUE) qr ON qr.id = l.id
+                 LEFT OUTER JOIN (SELECT * FROM qry_range WHERE kehtivus IS TRUE) qr ON qr.id = l.id,
+                 range_parameters r
 `,     //  $1 всегда ид учреждения, $2 - userId
-            params: ['rekvid', 'userid', 'period_start', 'period_end'],
+            params: ['rekvid', 'userid', 'period_start', 'period_end', 'kehtiv_kpv'],
             alias: 'curLapsed',
             converter: function (data) {
                 let row_id = 0;

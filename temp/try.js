@@ -1,7 +1,4 @@
-let a = [null];
+let start = '2022-06-02';
+let end = '2021-12-31';
 
-if (!!a) {
-    console.log('aaaa', a.length, !!a[0])
-} else {
-    console.log('bbbb')
-}
+console.log(start < end, new Date(start), new Date(end), new Date(start) < new Date(end));

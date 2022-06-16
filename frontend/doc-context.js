@@ -10,6 +10,88 @@ const DocContext = {
     module: 'lapsed',
     pageName: 'Laste register',
     gridConfig: {},
+    filterValidation: {
+        PAEVA_TAABEL: (data) => {
+            // контроль на данные одного дня
+            let errorMessage = '';
+            data.forEach((filterData) => {
+                switch (filterData.id) {
+                    case 'kpv':
+                        if (filterData.start && filterData.end && (new Date(filterData.start) > new Date(filterData.end))) {
+                            errorMessage = errorMessage + 'Alg. kuupäev ei tohi olla hiljem kui lõpp kuupäaev;';
+                        }
+                        break;
+                    default:
+                        // ничего
+                        break;
+                }
+            });
+            return errorMessage;
+        },
+        LAPS: (data) => {
+            // контроль на данные одного дня
+            let errorMessage = '';
+            data.forEach((filterData) => {
+                switch (filterData.id) {
+                    case 'period':
+                        if (filterData.start && filterData.end && (filterData.start === filterData.end)) {
+                            errorMessage = errorMessage + 'Alg. ja lõpp kuupäev ei tohi olla võrdsed;';
+                        }
+                        break;
+                    default:
+                        // ничего
+                        break;
+                }
+            });
+            return errorMessage;
+        },
+        LAPS_KOKKUVOTTE: (data) => {
+            // контроль на данные одного дня
+            let errorMessage = '';
+            // нужно имя или личн. код
+            let isMinimumDataAvailable = false;
+            data.forEach((filterData) => {
+                switch (filterData.id) {
+                    case 'lapse_isikukood':
+                        if (filterData.value && filterData.value != '%') {
+                            isMinimumDataAvailable = true;
+                        }
+                        break;
+                    case 'lapse_nimi':
+                        if (filterData.value && filterData.value != '%') {
+                            isMinimumDataAvailable = true;
+                        }
+                        break;
+                    case 'kpv':
+                        if (filterData.start && filterData.end && (new Date(filterData.start) > new Date(filterData.end))) {
+                            errorMessage = errorMessage + 'Alg. kuupäev ei tohi olla hiljem kui lõpp kuupäaev;';
+                        }
+                        break;
+                    default:
+                        // ничего
+                        break;
+                }
+            });
+
+            if (!isMinimumDataAvailable) {
+                errorMessage = 'Isikukood või nimi on kohustlik;';
+            }
+            // какой-то параметр есть, добавим % для пустого
+            data = data.map(row => {
+                if (row.id === 'lapse_isikukood' && (!row.value || row.value == '%')) {
+                    row.value = isMinimumDataAvailable  ? '%': '';
+                }
+
+                if (isMinimumDataAvailable && row.id === 'lapse_nimi' && (!row.value || row.value == '%')) {
+                    row.value = isMinimumDataAvailable ? '%': '';
+                }
+
+                return row;
+            });
+            return errorMessage;
+        },
+
+    },
     accessCode: {},
     'email-params': {},
     /**
@@ -38,7 +120,6 @@ const DocContext = {
 
     // проверит и сохранит отметку о подтверждении кода доступа
     acceptAccessCode(userName, accessCode) {
-        console.log('acceptAccessCode',userName, accessCode, this.accessCode[userName], this.accessCode[userName].accessCode, this.accessCode[userName].accessCode == accessCode);
         if (this.accessCode[userName].accessCode == accessCode) {
             this.accessCode[userName].accepted = new Date().getDate();
             return true;
@@ -96,7 +177,7 @@ const DocContext = {
     },
 
     set setLib(data) {
-        this.libs = Object.assign({},this.libs,data);
+        this.libs = Object.assign({}, this.libs, data);
     },
 
     set setEmailParams(params) {
