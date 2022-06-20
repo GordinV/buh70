@@ -17,36 +17,37 @@ CREATE OR REPLACE FUNCTION palk.sp_calc_sots(user_id INTEGER, params JSON,
 AS
 $$
 DECLARE
-    l_lepingid                       INTEGER        = params ->> 'lepingid';
-    l_libId                          INTEGER        = params ->> 'libid';
-    l_kpv                            DATE           = coalesce((params ->> 'kpv') :: DATE, current_date);
-    l_pk_summa                       NUMERIC        = coalesce((params ->> 'summa') :: NUMERIC, 33);
-    is_percent                       BOOLEAN        = coalesce((params ->> 'is_percent') :: BOOLEAN,
-                                                               TRUE); -- kas pk summa percentis (33%)
-    l_min_sots                       INTEGER        = ((coalesce((params ->> 'minsots') :: INTEGER, 0)) :: INTEGER);
-    l_alus_summa                     NUMERIC(12, 4) = params ->> 'alus_summa'; -- tulud , milliest arvestame sots.maks
-    kas_arvesta_min_sots             BOOLEAN        = coalesce((params ->> 'kas_min_sots')::BOOLEAN, FALSE);
-    l_round                          NUMERIC        = 0.01;
-    l_params                         JSON;
+    l_lepingid                         INTEGER        = params ->> 'lepingid';
+    l_libId                            INTEGER        = params ->> 'libid';
+    l_kpv                              DATE           = coalesce((params ->> 'kpv') :: DATE, current_date);
+    l_pk_summa                         NUMERIC        = coalesce((params ->> 'summa') :: NUMERIC, 33);
+    is_percent                         BOOLEAN        = coalesce((params ->> 'is_percent') :: BOOLEAN,
+                                                                 TRUE); -- kas pk summa percentis (33%)
+    l_min_sots                         INTEGER        = ((coalesce((params ->> 'minsots') :: INTEGER, 0)) :: INTEGER);
+    l_alus_summa                       NUMERIC(12, 4) = params ->> 'alus_summa'; -- tulud , milliest arvestame sots.maks
+    kas_arvesta_min_sots               BOOLEAN        = coalesce((params ->> 'kas_min_sots')::BOOLEAN, FALSE);
+    l_round                            NUMERIC        = 0.01;
+    l_params                           JSON;
 
-    v_tooleping                      RECORD;
-    l_min_palk                       NUMERIC(12, 4) = 584; --alus arvestada sots.maks min palgast (2021)
+    v_tooleping                        RECORD;
+    l_min_palk                         NUMERIC(12, 4) = 584; --alus arvestada sots.maks min palgast (2021)
 
-    ln_umardamine                    NUMERIC(14, 4) = 0;
-    l_sotsmaks_min_palgast           NUMERIC(14, 4) = 0;
-    l_enne_sotsmaks_min_palgast_alus NUMERIC(14, 4) = 0;
-    l_enne_arvestatud_sotsmaks       NUMERIC(14, 4) = 0; -- summa, mis ole arvestatud koos tulu summaga, palk.oper.sotsmaks
+    ln_umardamine                      NUMERIC(14, 4) = 0;
+    l_sotsmaks_min_palgast             NUMERIC(14, 4) = 0;
+    l_enne_sotsmaks_min_palgast_alus   NUMERIC(14, 4) = 0;
+    l_enne_arvestatud_sotsmaks         NUMERIC(14, 4) = 0; -- summa, mis ole arvestatud koos tulu summaga, palk.oper.sotsmaks
+    l_enne_arvestatud_sotsmaks_palgast NUMERIC(14, 4) = 0; -- summa, mis ole arvestatud koos tulu summaga, palk.oper.sotsmaks, va puhkus
 
-    l_enne_koostatud_sotsmaks        NUMERIC(14, 4) = 0; -- sotsmaks, arvestatus selles kuues enne kaesolev arvestus
-    l_too_paevad                     INTEGER        = 30;
-    l_puudu_paevad                   INTEGER        = 0;
-    l_last_paev                      DATE           =
+    l_enne_koostatud_sotsmaks          NUMERIC(14, 4) = 0; -- sotsmaks, arvestatus selles kuues enne kaesolev arvestus
+    l_too_paevad                       INTEGER        = 30;
+    l_puudu_paevad                     INTEGER        = 0;
+    l_last_paev                        DATE           =
             (date(year(l_kpv), month(l_kpv), 1) + INTERVAL '1 month') :: DATE - 1;
-    l_paevad_periodis                INTEGER        = 30;
-    l_min_sotsmaks_alus              NUMERIC(14, 4) = 0; -- основание для до расчет до мин. соц. налога
-    l_lisa_sm                        NUMERIC(14, 4) = 0; -- до начисленные соц. налог
-    l_1090_isik                      NUMERIC(14, 4) = 0; -- до начисленные соц. налог? итого по работнику
-    l_selg                           TEXT           = '';
+    l_paevad_periodis                  INTEGER        = 30;
+    l_min_sotsmaks_alus                NUMERIC(14, 4) = 0; -- основание для до расчет до мин. соц. налога
+    l_lisa_sm                          NUMERIC(14, 4) = 0; -- до начисленные соц. налог
+    l_1090_isik                        NUMERIC(14, 4) = 0; -- до начисленные соц. налог? итого по работнику
+    l_selg                             TEXT           = '';
 
 
 BEGIN
@@ -88,8 +89,10 @@ BEGIN
             SELECT sum(po.summa)
                    FILTER ( WHERE po.palk_liik :: TEXT = 'SOTSMAKS' AND (po.sotsmaks IS NULL OR po.sotsmaks = 0)),
                    sum(po.summa) FILTER ( WHERE po.palk_liik :: TEXT = 'ARVESTUSED' AND po.is_sotsmaks AND
-                                                right(rtrim(po.konto), 2) NOT IN ('21', '23', '24', '25'))
-            INTO l_enne_arvestatud_sotsmaks, l_min_sotsmaks_alus
+                                                right(rtrim(po.konto), 2) NOT IN ('21', '23', '24', '25')),
+                   sum(po.sotsmaks) FILTER ( WHERE po.palk_liik :: TEXT = 'ARVESTUSED' AND po.is_sotsmaks AND
+                                                   right(rtrim(po.konto), 2) NOT IN ('21', '23', '24', '25'))
+            INTO l_enne_arvestatud_sotsmaks, l_min_sotsmaks_alus, l_enne_arvestatud_sotsmaks_palgast
             FROM palk.cur_palkoper po
             WHERE year(po.kpv) = year(l_kpv)
               AND month(po.kpv) = month(l_kpv)
@@ -100,6 +103,7 @@ BEGIN
                                     AND t.rekvid = v_tooleping.rekvId);
 
             l_enne_arvestatud_sotsmaks = coalesce(l_enne_arvestatud_sotsmaks, 0);
+            l_enne_arvestatud_sotsmaks_palgast = coalesce(l_enne_arvestatud_sotsmaks_palgast, 0);
 
             -- отсутствие на раб.месте
             -- params
@@ -130,6 +134,7 @@ BEGIN
 
             END IF;
 
+
             -- считаем календарные дни
             l_paevad_periodis =
                     palk.get_days_of_month_in_period(month(l_kpv), year(l_kpv), date(year(l_kpv), month(l_kpv), 01),
@@ -155,9 +160,6 @@ BEGIN
                                         ELSE 0 END;
 
             END IF;
-
-            raise notice 'l_paevad_periodis %, l_puudu_paevad %,  (day(v_tooleping.algab) + 1) %',l_paevad_periodis, l_puudu_paevad, (day(v_tooleping.algab) + 1);
-
 
             IF NOT empty(l_min_sots) OR NOT empty(l_min_palk) AND
                                         (coalesce(l_min_sotsmaks_alus, 0) * l_pk_summa * 0.01) <
@@ -187,11 +189,11 @@ BEGIN
                 l_sotsmaks_min_palgast = (l_min_palk * l_min_sots * l_pk_summa * 0.01);
             END IF;
 
-            IF l_sotsmaks_min_palgast > coalesce(l_enne_arvestatud_sotsmaks, 0)
+            IF l_sotsmaks_min_palgast > l_enne_arvestatud_sotsmaks_palgast -- Поправка 17.06.2022 . Берем в зачет только соц. налог без учета отпускных
             THEN
 
                 -- считаем необходимую для до начисления сумму налога
-                summa = l_sotsmaks_min_palgast - coalesce(l_enne_arvestatud_sotsmaks, 0);
+                summa = l_sotsmaks_min_palgast - coalesce(l_enne_arvestatud_sotsmaks_palgast, 0);
                 -- основа начисления соц. налога
 
                 IF coalesce(l_puudu_paevad, 0) > 0 OR make_date(year(l_kpv), month(l_kpv), 01) < v_tooleping.algab OR
@@ -271,7 +273,7 @@ FROM palk.sp_calc_sots_(70, '        {
   "kas_min_sots": true
 }'::JSON)
 
-select * from palk.sp_calc_sots(70, '{"lepingid":36018,"libid":149081,"kpv":20220228,"kas_min_sots":true}'::JSON)
+select * from palk.sp_calc_sots(88, '{"lepingid":35183,"libid":149081,"kpv":20220228,"kas_min_sots":true}'::JSON)
 
 
  */

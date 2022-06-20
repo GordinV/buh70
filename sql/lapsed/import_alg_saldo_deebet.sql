@@ -33,7 +33,7 @@ DECLARE
     v_nom           RECORD;
     l_count         INTEGER = 0;
     l_user_id       INTEGER;
-    l_kpv           DATE    = '2020-12-31';
+    l_kpv           DATE    = '2021-12-31';
 
 BEGIN
 
@@ -224,4 +224,4 @@ FROM lapsed.import_alg_saldo_deebet( '[{"yksus":"0951004","laps_ik":"61012133737
 
  */
 
-update docs.arv set number = '449' where parentid = 2347613
+--update docs.arv set number = '449' where parentid = 2347613
