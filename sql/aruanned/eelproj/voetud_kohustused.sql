@@ -12,6 +12,8 @@ CREATE OR REPLACE FUNCTION eelarve.voetud_kohustused(l_kpv DATE, l_rekvid INTEGE
         aasta_3_intress     NUMERIC(14, 2),
         aasta_4_pohiosa     NUMERIC(14, 2),
         aasta_4_intress     NUMERIC(14, 2),
+        aasta_5_pohiosa     NUMERIC(14, 2),
+        aasta_5_intress     NUMERIC(14, 2),
         aasta_kokku_pohiosa NUMERIC(14, 2),
         aasta_kokku_intress NUMERIC(14, 2)
     )
@@ -27,48 +29,65 @@ SELECT liik,
        coalesce(aasta_3_intress, 0) AS aasta_3_intress,
        coalesce(aasta_4_pohiosa, 0) AS aasta_4_pohiosa,
        coalesce(aasta_4_intress, 0) AS aasta_4_intress,
+       coalesce(aasta_5_pohiosa, 0) AS aasta_5_pohiosa,
+       coalesce(aasta_5_intress, 0) AS aasta_5_intress,
        coalesce(aasta_1_pohiosa, 0) + coalesce(aasta_2_pohiosa, 0) + coalesce(aasta_3_pohiosa, 0) +
-       coalesce(aasta_4_pohiosa, 0) AS aasta_kokku_pohiosa,
+       coalesce(aasta_4_pohiosa, 0) + coalesce(aasta_5_pohiosa, 0) AS aasta_kokku_pohiosa,
        coalesce(aasta_1_intress, 0) + coalesce(aasta_2_intress, 0) + coalesce(aasta_3_intress, 0) +
-       coalesce(aasta_4_intress, 0) AS aasta_kokku_intress
+       coalesce(aasta_4_intress, 0) + coalesce(aasta_5_intress, 0)  AS aasta_kokku_intress
 FROM (
          SELECT 'Laen'::VARCHAR(254) AS liik,
+                --2023
+                sum(db) FILTER (WHERE konto = '910010'
+                    AND (rahavoo = '91' AND kpv = make_date((year(l_kpv)), 06, 30)
+                        OR rahavoo = '92' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
+                                          )
+                    )                AS aasta_1_pohiosa,
+                sum(db) FILTER (WHERE konto = '910019'
+                    AND (rahavoo = '91' AND kpv = make_date((year(l_kpv)), 06, 30)
+                        OR rahavoo = '92' AND kpv = make_date((year(l_kpv) - 1), 12, 31))
+                    )                AS aasta_1_intress,
+                -- 2024
                 sum(db) FILTER (WHERE konto = '910010'
                     AND (rahavoo = '92' AND kpv = make_date((year(l_kpv)), 06, 30)
                         OR rahavoo = '93' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
                                           )
-                    )                AS aasta_1_pohiosa,
+                    )                AS aasta_2_pohiosa,
                 sum(db) FILTER (WHERE konto = '910019'
                     AND (rahavoo = '92' AND kpv = make_date((year(l_kpv)), 06, 30)
                         OR rahavoo = '93' AND kpv = make_date((year(l_kpv) - 1), 12, 31))
-                    )                AS aasta_1_intress,
+                    )                AS aasta_2_intress,
+                -- 2025
                 sum(db) FILTER (WHERE konto = '910010'
                     AND (rahavoo = '93' AND kpv = make_date((year(l_kpv)), 06, 30)
                         OR rahavoo = '94' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
                                           )
-                    )                AS aasta_2_pohiosa,
+                    )                AS aasta_3_pohiosa,
                 sum(db) FILTER (WHERE konto = '910019'
                     AND (rahavoo = '93' AND kpv = make_date((year(l_kpv)), 06, 30)
                         OR rahavoo = '94' AND kpv = make_date((year(l_kpv) - 1), 12, 31))
-                    )                AS aasta_2_intress,
+                    )                AS aasta_3_intress,
+                -- 2026
                 sum(db) FILTER (WHERE konto = '910010'
                     AND (rahavoo = '94' AND kpv = make_date((year(l_kpv)), 06, 30)
                         OR rahavoo = '95' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
                                           )
-                    )                AS aasta_3_pohiosa,
+                    )                AS aasta_4_pohiosa,
                 sum(db) FILTER (WHERE konto = '910019'
                     AND (rahavoo = '94' AND kpv = make_date((year(l_kpv)), 06, 30)
                         OR rahavoo = '95' AND kpv = make_date((year(l_kpv) - 1), 12, 31))
-                    )                AS aasta_3_intress,
+                    )                AS aasta_4_intress,
+                -- Järelejäänud aastad
                 sum(db) FILTER (WHERE konto = '910010'
                     AND (rahavoo = '95' AND kpv = make_date((year(l_kpv)), 06, 30)
                         OR rahavoo = '96' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
                                           )
-                    )                AS aasta_4_pohiosa,
+                    )                AS aasta_5_pohiosa,
                 sum(db) FILTER (WHERE konto = '910019'
                     AND (rahavoo = '95' AND kpv = make_date((year(l_kpv)), 06, 30)
                         OR rahavoo = '96' AND kpv = make_date((year(l_kpv) - 1), 12, 31))
-                    )                AS aasta_4_intress
+                    )                AS aasta_5_intress
+
          FROM eelarve.saldoandmik
          WHERE rekvid = (CASE
                              WHEN l_kond = 1 AND l_rekvid = 63 THEN 999
@@ -84,38 +103,52 @@ FROM (
          )
          UNION ALL
          SELECT 'Kapitalirent'::VARCHAR(254) AS liik,
+                -- 2023
                 sum(db) FILTER (WHERE konto = '910020' AND
-                                      (rahavoo = '92' AND kpv = make_date((year(l_kpv)), 06, 30)
-                                          OR rahavoo = '93' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
+                                      (rahavoo = '91' AND kpv = make_date((year(l_kpv)), 06, 30)
+                                          OR rahavoo = '92' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
                                           )) AS aasta_1_pohiosa,
                 sum(db) FILTER (WHERE konto = '910029' AND
+                                      (rahavoo = '91' AND kpv = make_date((year(l_kpv)), 06, 30)
+                                          OR rahavoo = '92' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
+                                          )) AS aasta_1_intress,
+                -- 2024
+                sum(db) FILTER (WHERE konto = '910020' AND
                                       (rahavoo = '92' AND kpv = make_date((year(l_kpv)), 06, 30)
                                           OR rahavoo = '93' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
-                                          )) AS aasta_1_intress,
-                sum(db) FILTER (WHERE konto = '910020' AND
-                                      (rahavoo = '93' AND kpv = make_date((year(l_kpv)), 06, 30)
-                                          OR rahavoo = '94' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
                                           )) AS aasta_2_pohiosa,
                 sum(db) FILTER (WHERE konto = '910029' AND
+                                      (rahavoo = '92' AND kpv = make_date((year(l_kpv)), 06, 30)
+                                          OR rahavoo = '93' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
+                                          )) AS aasta_2_intress,
+                -- 2025
+                sum(db) FILTER (WHERE konto = '910020' AND
                                       (rahavoo = '93' AND kpv = make_date((year(l_kpv)), 06, 30)
                                           OR rahavoo = '94' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
-                                          )) AS aasta_2_intress,
-                sum(db) FILTER (WHERE konto = '910020' AND
-                                      (rahavoo = '94' AND kpv = make_date((year(l_kpv)), 06, 30)
-                                          OR rahavoo = '95' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
                                           )) AS aasta_3_pohiosa,
                 sum(db) FILTER (WHERE konto = '910029' AND
+                                      (rahavoo = '93' AND kpv = make_date((year(l_kpv)), 06, 30)
+                                          OR rahavoo = '94' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
+                                          )) AS aasta_3_intress,
+                -- 2026
+                sum(db) FILTER (WHERE konto = '910020' AND
                                       (rahavoo = '94' AND kpv = make_date((year(l_kpv)), 06, 30)
                                           OR rahavoo = '95' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
-                                          )) AS aasta_3_intress,
+                                          )) AS aasta_4_pohiosa,
+                sum(db) FILTER (WHERE konto = '910029' AND
+                                      (rahavoo = '94' AND kpv = make_date((year(l_kpv)), 06, 30)
+                                          OR rahavoo = '95' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
+                                          )) AS aasta_4_intress,
+                -- Järelejäänud aastad
                 sum(db) FILTER (WHERE konto = '910020' AND
                                       (rahavoo = '95' AND kpv = make_date((year(l_kpv)), 06, 30)
                                           OR rahavoo = '96' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
-                                          )) AS aasta_4_pohiosa,
+                                          )) AS aasta_5_pohiosa,
                 sum(db) FILTER (WHERE konto = '910029' AND
                                       (rahavoo = '95' AND kpv = make_date((year(l_kpv)), 06, 30)
-                                          OR rahavoo = '96' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
-                                          )) AS aasta_4_intress
+                                          OR rahavoo = '96  ' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
+                                          )) AS aasta_5_intress
+
          FROM eelarve.saldoandmik
          WHERE rekvid = (CASE
                              WHEN l_kond = 1 AND l_rekvid = 63 THEN 999

@@ -33,7 +33,7 @@ BEGIN
     -- select dok data
     SELECT d.docs_ids,
            a.*,
-           case when empty(coalesce(asutus.tp,'')) then '800599' else asutus.tp end)                                                   AS asutus_tp,
+           case when empty(coalesce(asutus.tp,'')) then '800599' else asutus.tp end                                                   AS asutus_tp,
            a.properties ->> 'tyyp'                                     AS tyyp,
            coalesce((a.properties ->> 'ettemaksu_period')::INTEGER, 0) AS kas_tulu_arve
     INTO v_arv
@@ -113,6 +113,7 @@ BEGIN
                      WHEN left(lcDbKonto, 6) IN ('601000', '103701', '203010', '203000') THEN '014001'
                      ELSE coalesce(v_arv.asutus_tp, '800599') END;
 
+        lcDbTp = '800699';
         -- koostame selg rea
         lcSelg = trim(v_dokprop.selg);
         IF (SELECT count(id)

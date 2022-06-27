@@ -208,7 +208,8 @@ module.exports = {
                 },
                 {id: "kehtiv_kpv", name: "Kehtiv seisuga", width: "20%", type: 'date', show: false},
                 {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
-                {id: "rekv_names", name: "Asutused", width: "30%", default: `DocContext.userData.asutus`},
+                {id: "rekv_names", name: "Asutused", width: "20%", default: `DocContext.userData.asutus`},
+                {id: "arveldus", name: "Kas arveldus?", width: "10%"},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString: `
@@ -277,12 +278,13 @@ module.exports = {
                  SELECT DISTINCT unnest(lk.lk_range) AS range,
                                  lk.id
                  FROM cur_lapsed lk)
-                 SELECT DISTINCT lk.range &&
+                 SELECT DISTINCT bool_and(lk.range &&
                                  range_parameters.range or lk.range -|-
-                                 range_parameters.range AS kehtivus,
+                                 range_parameters.range) AS kehtivus,
                                  lk.id,
-                                 lk.range
+                                 array_agg(lk.range) as range
                  FROM qry_range lk, range_parameters
+                group by lk.id                 
              )
         SELECT TRUE                                  AS select,
                l.id,
@@ -302,7 +304,11 @@ module.exports = {
                    ELSE
                        'Ei' END                      AS kehtivus,
                 $3::date as period,
-                case when r.kehtiv_kpv is not null and qr.range @> (r.kehtiv_kpv::date - 1) then r.kehtiv_kpv else null::date end::date as kehtiv_kpv                       
+                case when r.kehtiv_kpv is not null and exists (select unnest (qr.range) @> (r.kehtiv_kpv::DATE - 1)) then r.kehtiv_kpv else null::date end::date as kehtiv_kpv,
+                CASE
+                    WHEN exists(SELECT id FROM lapsed.vanem_arveldus va WHERE parentid = l.id AND arveldus) THEN 'JAH'
+                    ELSE 'EI' END                     AS arveldus
+                                       
         FROM cur_lapsed l
                  LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                                   FROM lapsed.viitenr vn
