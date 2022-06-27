@@ -20,7 +20,8 @@ module.exports = {
 
     select: [
         {
-            sql: `SELECT l.id,
+            sql: `
+                    SELECT l.id,
                          l.isikukood,
                          l.nimi,
                          l.muud,
@@ -28,7 +29,14 @@ module.exports = {
                                                  FROM ou.userid
                                                  WHERE id = $2), l.id) AS viitenumber,
                          $2::INTEGER                                   AS userid,
-                         coalesce(ll.jaak, 0)::NUMERIC                 AS jaak
+                         coalesce(ll.jaak, 0)::NUMERIC                 AS jaak,
+                         coalesce((SELECT count(id)
+                                   FROM lapsed.vanem_arveldus va
+                                   WHERE parentid = l.id
+                                     AND arveldus
+                                     AND rekvid IN (SELECT rekvid
+                                                    FROM ou.userid u
+                                                    WHERE u.id = $2)), 0)              AS arveldus
                   FROM lapsed.laps l
                            LEFT OUTER JOIN lapsed.lapse_saldod(current_date, $1) ll ON ll.laps_id = l.id AND
                                                                                        ll.rekv_id IN (SELECT rekvid
@@ -43,6 +51,7 @@ module.exports = {
                   null::text as nimi,
                   null::text as viitenumber,
                   null::text as muud,
+                  0::integer as arveldus
                   0::numeric(14,2) as jaak`,
             query: null,
             multiple: false,
@@ -209,7 +218,7 @@ module.exports = {
                 {id: "kehtiv_kpv", name: "Kehtiv seisuga", width: "20%", type: 'date', show: false},
                 {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
                 {id: "rekv_names", name: "Asutused", width: "20%", default: `DocContext.userData.asutus`},
-                {id: "arveldus", name: "Kas arveldus?", width: "10%",  data: ['', 'Jah', 'Ei']},
+                {id: "arveldus", name: "Kas arveldus?", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString: `
@@ -307,7 +316,7 @@ module.exports = {
                 $3::date as period,
                 r.kehtiv_kpv::date as kehtiv_kpv,
                 CASE
-                    WHEN exists(SELECT id FROM lapsed.vanem_arveldus va WHERE parentid = l.id AND arveldus) THEN 'JAH'
+                    WHEN exists(SELECT id FROM lapsed.vanem_arveldus va WHERE parentid = l.id AND arveldus and rekvid = $1) THEN 'JAH'
                     ELSE 'EI' END                     AS arveldus
                                        
         FROM cur_lapsed l

@@ -52,7 +52,7 @@ FROM lapsed.lapse_taabel lt
 WHERE lt.staatus <> 3
   AND lt.kogus <> 0
   AND n.status <> 3
-  AND NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN
+  AND NOT coalesce((lk.properties ->> 'kas_ettemaks')::BOOLEAN, FALSE)
 ORDER BY aasta, kuu, nimi, kood;
 
 GRANT SELECT ON TABLE lapsed.cur_lapse_taabel TO arvestaja;

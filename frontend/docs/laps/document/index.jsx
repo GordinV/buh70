@@ -122,9 +122,10 @@ class Laps extends React.PureComponent {
             });
 
         }
-
         return (
             <div style={styles.doc}>
+                {self.docData && self.docData.isikukood && !Number(self.docData.arveldus) ? (<div style={styles.docRow}><div style={styles.warning}>Puudub arvestuse eest vastutav isik </div></div>): null
+                }
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
                         <InputText ref="input-isikukood"

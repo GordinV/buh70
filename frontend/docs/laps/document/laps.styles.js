@@ -6,6 +6,11 @@ module.exports = {
                 border: '1px solid blue'
         */
     },
+    warning: {
+        backgroundColor: 'lightcoral',
+        width: '100%',
+        textAlign: 'left'
+    },
     docColumn: {
         display: 'flex',
         flexDirection: 'column',
@@ -28,7 +33,7 @@ module.exports = {
             zIndex: '-1'
         },
         headerTable: {
-            width:'100%',
+            width: '100%',
         },
 
         gridContainer: {
@@ -51,7 +56,7 @@ module.exports = {
     kehtivSeisuga: {
         width: 'min-content'
     },
-    jaak :{
+    jaak: {
         width: 'min-content',
         margin: '0px'
     }
