@@ -209,7 +209,7 @@ module.exports = {
                 {id: "kehtiv_kpv", name: "Kehtiv seisuga", width: "20%", type: 'date', show: false},
                 {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
                 {id: "rekv_names", name: "Asutused", width: "20%", default: `DocContext.userData.asutus`},
-                {id: "arveldus", name: "Kas arveldus?", width: "10%"},
+                {id: "arveldus", name: "Kas arveldus?", width: "10%",  data: ['', 'Jah', 'Ei']},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString: `
@@ -278,9 +278,10 @@ module.exports = {
                  SELECT DISTINCT unnest(lk.lk_range) AS range,
                                  lk.id
                  FROM cur_lapsed lk)
-                 SELECT DISTINCT bool_and(lk.range &&
-                                 range_parameters.range or lk.range -|-
-                                 range_parameters.range) AS kehtivus,
+                 SELECT DISTINCT bool_or(case when range_parameters.kehtiv_kpv is null then lk.range &&
+                                  range_parameters.range OR lk.range -|-
+                                                            range_parameters.range else lk.range  @>
+                                                                                        range_parameters.kehtiv_kpv end) AS kehtivus,
                                  lk.id,
                                  array_agg(lk.range) as range
                  FROM qry_range lk, range_parameters
@@ -304,7 +305,7 @@ module.exports = {
                    ELSE
                        'Ei' END                      AS kehtivus,
                 $3::date as period,
-                case when r.kehtiv_kpv is not null and exists (select unnest (qr.range) @> (r.kehtiv_kpv::DATE - 1)) then r.kehtiv_kpv else null::date end::date as kehtiv_kpv,
+                r.kehtiv_kpv::date as kehtiv_kpv,
                 CASE
                     WHEN exists(SELECT id FROM lapsed.vanem_arveldus va WHERE parentid = l.id AND arveldus) THEN 'JAH'
                     ELSE 'EI' END                     AS arveldus
@@ -317,7 +318,7 @@ module.exports = {
                                   GROUP BY vn.isikukood
         ) vn
                                  ON vn.isikukood = l.isikukood
-                 LEFT OUTER JOIN (SELECT * FROM qry_range WHERE kehtivus IS TRUE) qr ON qr.id = l.id,
+                 LEFT OUTER JOIN (SELECT * FROM qry_range WHERE coalesce(kehtivus, false) IS TRUE) qr ON qr.id = l.id,
                  range_parameters r
 `,     //  $1 всегда ид учреждения, $2 - userId
             params: ['rekvid', 'userid', 'period_start', 'period_end', 'kehtiv_kpv'],
