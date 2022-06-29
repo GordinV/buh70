@@ -16,6 +16,9 @@ DECLARE
                                   FROM lapsed.lapse_kaart
                                   WHERE id = doc_lapse_kaart_id);
     doc_kogus          NUMERIC = doc_data ->> 'kogus';
+    doc_kulastused     NUMERIC = doc_data ->> 'kulastused';
+    doc_too_paevad     NUMERIC = doc_data ->> 'too_paevad';
+    doc_kovid          NUMERIC = doc_data ->> 'kovid';
     doc_hind           NUMERIC = doc_data ->> 'hind';
     doc_kuu            INTEGER = doc_data ->> 'kuu';
     doc_aasta          INTEGER = doc_data ->> 'aasta';
@@ -23,6 +26,7 @@ DECLARE
     doc_umberarvestus  BOOLEAN = coalesce((doc_data ->> 'umberarvestus')::BOOLEAN, FALSE);
     doc_staatus        INTEGER = 1;
     json_ajalugu       JSONB;
+    json_props         JSONB;
     v_lapse_kaart      RECORD;
 BEGIN
 
@@ -50,13 +54,13 @@ BEGIN
     FROM lapsed.lapse_kaart lk
     WHERE lk.id = doc_lapse_kaart_id;
 
-/*    IF v_lapse_kaart.alg_kpv > date(doc_aasta, doc_kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' OR
-       v_lapse_kaart.lopp_kpv < (date(doc_aasta, doc_kuu, 1))
-    THEN
-        -- date is not in range
-        RAISE notice 'Teenus selles periodil ei kehti';
-    END IF;
-*/
+    /*    IF v_lapse_kaart.alg_kpv > date(doc_aasta, doc_kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' OR
+           v_lapse_kaart.lopp_kpv < (date(doc_aasta, doc_kuu, 1))
+        THEN
+            -- date is not in range
+            RAISE notice 'Teenus selles periodil ei kehti';
+        END IF;
+    */
     -- поиск удаленной записи
     IF doc_id IS NULL OR doc_id = 0
     THEN
@@ -84,6 +88,12 @@ BEGIN
 
     END IF;
 
+    json_props = to_jsonb(row)
+                 FROM (SELECT doc_kulastused AS kulastused,
+                              doc_kovid      AS kovid,
+                              doc_too_paevad AS too_paevad) row;
+
+
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
@@ -95,10 +105,10 @@ BEGIN
                                     userName AS user) row;
 
         INSERT INTO lapsed.lapse_taabel (parentid, lapse_kaart_id, nomid, rekvid, hind, kogus, kuu, aasta, muud,
-                                         ajalugu, umberarvestus)
+                                         ajalugu, umberarvestus, properties)
         VALUES (doc_parentid, doc_lapse_kaart_id, doc_nomid, user_rekvid, doc_hind, doc_kogus, doc_kuu, doc_aasta,
                 doc_muud,
-                '[]' :: JSONB || json_ajalugu, doc_umberarvestus) RETURNING id
+                '[]' :: JSONB || json_ajalugu, doc_umberarvestus, json_props) RETURNING id
                    INTO doc_id;
 
     ELSE
@@ -122,7 +132,8 @@ BEGIN
             muud           = doc_muud,
             ajalugu        = coalesce(ajalugu, '[]') :: JSONB || json_ajalugu,
             staatus        = doc_staatus,
-            umberarvestus  = doc_umberarvestus
+            umberarvestus  = doc_umberarvestus,
+            properties     = coalesce(properties, '{}') :: JSONB || json_props
         WHERE id = doc_id RETURNING id
             INTO doc_id;
 

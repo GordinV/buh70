@@ -131,7 +131,10 @@ module.exports = {
                                   CASE WHEN lt.all_yksus IS NULL THEN '' ELSE '-' || lt.all_yksus END)        AS yksus,
                                   lt.viitenr,
                                  $2::INTEGER                                                           AS userid,
-                                 lt.muud
+                                 lt.muud,
+                                 lt.kulastused,
+                                 lt.too_paevad,
+                                 lt.kovid
                           FROM lapsed.cur_lapse_taabel lt
                                    LEFT OUTER JOIN viitenr v ON v.isikukood = lt.isikukood
                           WHERE lt.rekvid = $1::INTEGER                          
@@ -173,15 +176,16 @@ module.exports = {
                      )
                 SELECT id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
                             isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid, muud,                            
-                            tab_tyyp
+                            tab_tyyp, kulastused, too_paevad, kovid
                 FROM (
                          select id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
                             isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid, muud,                           
-                            'Tavaline' as tab_tyyp
+                            'Tavaline' as tab_tyyp, kulastused, too_paevad, kovid
                          from qryTabs
                          UNION ALL
                          SELECT *, 
-                         'Virtuaalne' as tab_tyyp 
+                         'Virtuaalne' as tab_tyyp,
+                                 0 as kulastused, 0 as too_paevad , 0 as kovid
                          FROM qryVirtTabs
                      ) tab
                 ORDER BY aasta DESC, kuu DESC, nimi`,     //  $1 всегда ид учреждения, $2 - userId

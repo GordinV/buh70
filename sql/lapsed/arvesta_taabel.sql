@@ -69,7 +69,12 @@ BEGIN
                date_part('month'::TEXT, l_kpv::DATE)                      AS kuu,
                date_part('year'::TEXT, l_kpv::DATE)                       AS aasta,
                lk.hind,
-               NULL::TEXT                                                 AS muud
+               NULL::TEXT                                                 AS muud,
+               0                                                          AS too_paevad,
+               0                                                          AS kulastused,
+               0                                                          AS kovid,
+               0                                                          AS muud,
+               lk.properties ->> 'yksus'                                  AS yksus
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.parentid = l_laps_id
@@ -161,8 +166,20 @@ BEGIN
                          FROM day_taabel
                      ) qry;
 
-                v_kaart.kogus = 1;
+                -- расчет кол-во табелей в группе за месяц
+                v_kaart.too_paevad = (SELECT count(dt.id)
+                                      FROM lapsed.day_taabel dt
+                                               INNER JOIN libs.library l ON l.id = dt.grupp_id
+                                      WHERE month(dt.kpv) = month(l_kpv::DATE)
+                                        AND year(dt.kpv) = year(l_kpv::DATE)
+                                        AND dt.staatus < 3
+                                        AND rekv_id = l_rekvid
+                                        AND l.kood = v_kaart.yksus
+                );
 
+                v_kaart.kogus = 1;
+                v_kaart.kulastused = l_kulastused;
+                v_kaart.kovid = (l_too_paevad - l_kulastused)::NUMERIC;
                 IF coalesce(l_kulastused, 0) > 0
                 THEN
 
@@ -195,8 +212,6 @@ BEGIN
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN
                 -- продолжаем расчет
-                RAISE NOTICE 'kogus %', v_kaart.kogus;
-
                 -- подготавливаем параметры для сохранения
                 SELECT row_to_json(row)
                 INTO json_object

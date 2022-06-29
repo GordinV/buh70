@@ -235,10 +235,10 @@ BEGIN
                                                        v_taabel.lapse_taabel_id,
                                                        v_taabel.real_soodus                            AS soodustus,
                                                        v_taabel.muud || CASE
-                                                                            WHEN v_taabel.real_soodus > 0
+/*                                                                            WHEN v_taabel.real_soodus > 0
                                                                                 THEN ' kasutatud soodustus summas ' ||
                                                                                      round(v_taabel.real_soodus::NUMERIC, 2)::TEXT
-                                                                            WHEN v_taabel.umberarvestus
+*/                                                                            WHEN v_taabel.umberarvestus
                                                                                 THEN ' Ümberarvestus '
                                                                             ELSE (CASE WHEN len(coalesce(v_taabel.muud, '')) > 0 THEN ',' ELSE '' END) ||
                                                                                  v_taabel.markused END AS muud,
