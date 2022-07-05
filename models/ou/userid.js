@@ -139,8 +139,8 @@ module.exports = {
         details: []
     },
     requiredFields: [
-        {name: 'regkood', type: 'C'},
-        {name: 'nimetus', type: 'C'}
+        {name: 'kasutaja', type: 'C'},
+        {name: 'email', type: 'C'},
     ],
     saveDoc: `select ou.sp_salvesta_userid($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `SELECT error_code, result, error_message

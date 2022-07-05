@@ -107,7 +107,7 @@ exports.get = async (req, res) => {
                 Stoim: Number(row.hind).toFixed(2),
                 Kolich: (Number(row.kogus) ).toFixed(4),
                 Nach: (Number(row.summa) ).toFixed(2),
-                Info:  row.muud ? row.muud.replace('päeva', 'pv'): '' ,
+                Info:  row.muud && row.muud !== '0' ? row.muud.replace('päeva', 'pv'): '' ,
                 SrokOpl: tahtaeg,
                 VhSaldo: false
             };
@@ -142,7 +142,7 @@ exports.get = async (req, res) => {
                     Stoim: -1 * Number(row.hind).toFixed(2),
                     Kolich: (Number(row.kogus)).toFixed(4),
                     Nach: -1 * (Number(row.summa) !== 0 ? Number(row.summa): Number(row.soodustus)).toFixed(2),
-                    Info:  row.muud ? row.muud.replace('päeva', 'pv'): '' ,
+                    Info:  row.muud && row.muud !== '0' ? row.muud.replace('päeva', 'pv'): '' ,
                     SrokOpl: tahtaeg,
                     VhSaldo: false
                 };

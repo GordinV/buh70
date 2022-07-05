@@ -29,7 +29,8 @@ BEGIN
     LOOP
       -- kontrollime kas ettemaks juba koostatud
       SELECT coalesce(e.id, 0)
-          INTO l_id FROM rekl.ettemaksud e WHERE journalid = v_journal.journal1Id;
+          INTO l_id FROM rekl.ettemaksud e
+        WHERE journalid = v_journal.journal1Id;
 
       SELECT coalesce(l_id,0)             AS id,
              v_journal.number       AS number,

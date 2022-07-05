@@ -88,7 +88,7 @@ describe('dok. type Userid tests', function () {
 
     });
 
-    it('should succefully execute new sql request', async()=> {
+    it.skip('should succefully execute new sql request', async()=> {
         let sql = doc.select[0].sqlAsNew;
         let returnValue = await db.queryDb(sql, [0,1]);
         expect(returnValue).toBeDefined();
@@ -96,7 +96,7 @@ describe('dok. type Userid tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should exists ou.sp_salvesta_userid', async()=> {
+    it.skip('should exists ou.sp_salvesta_userid', async()=> {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_userid'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -104,7 +104,7 @@ describe('dok. type Userid tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should succefully execute ou.sp_salvesta_userid', async()=> {
+    it.skip('should succefully execute ou.sp_salvesta_userid', async()=> {
         let sql = doc.saveDoc;
         let returnValue = await db.queryDb(sql, [params, 1,1]);
         expect(returnValue).toBeDefined();
@@ -120,7 +120,7 @@ describe('dok. type Userid tests', function () {
         expect(returnValue.result).toBe(1);
     });
 
-    it ('should select data', async() => {
+    it.skip ('should select data', async() => {
         let sql = doc.select[0].sql;
         let returnValue = await db.queryDb(sql, [globalDocId,1]);
         expect(returnValue).toBeDefined();
@@ -129,7 +129,7 @@ describe('dok. type Userid tests', function () {
 
     });
 
-    it ('should select grid data', async() => {
+    it.skip ('should select grid data', async() => {
         let sql = doc.grid.sqlString;
         let returnValue = await db.queryDb(sql, [1,1]);
         expect(returnValue).toBeDefined();
@@ -138,7 +138,7 @@ describe('dok. type Userid tests', function () {
 
     });
 
-    it ('should select userid as lib', async() => {
+    it.skip ('should select userid as lib', async() => {
         let sql = doc.selectAsLibs;
         let returnValue = await db.queryDb(sql, [1]);
         expect(returnValue).toBeDefined();
@@ -147,7 +147,7 @@ describe('dok. type Userid tests', function () {
 
     });
 
-    it ('should select com_user_rekv', async() => {
+    it.skip ('should select com_user_rekv', async() => {
         let sql = _.find(doc.select,{alias:'com_user_rekv'}).sql;
         let returnValue = await db.queryDb(sql, ['vlad']);
         expect(returnValue).toBeDefined();
@@ -156,7 +156,7 @@ describe('dok. type Userid tests', function () {
 
     });
 
-    it('should exists ou.sp_delete_userid', async()=> {
+    it.skip('should exists ou.sp_delete_userid', async()=> {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_delete_userid'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -164,7 +164,7 @@ describe('dok. type Userid tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should succefully execute ou.sp_delete_userid', async()=> {
+    it.skip('should succefully execute ou.sp_delete_userid', async()=> {
         let sql = doc.deleteDoc;
         let returnValue = await db.queryDb(sql, [1,globalDocId]);
         expect(returnValue).toBeDefined();

@@ -22,7 +22,7 @@ BEGIN
 
     SELECT kasutaja,
            rekvid
-           INTO v_user
+    INTO v_user
     FROM ou.userid u
     WHERE u.id = user_Id;
 
@@ -49,7 +49,7 @@ BEGIN
            d.selg,
            l.rekvid,
            l.docs_ids
-           INTO v_toiming
+    INTO v_toiming
     FROM rekl.toiming t
              INNER JOIN libs.asutus a ON a.id = t.asutusid
              INNER JOIN docs.doc l ON l.id = t.parentid
@@ -74,7 +74,7 @@ BEGIN
            coalesce(v_toiming.selg, 'Reklaam')          AS selg,
            'AUTOMATSELT LAUSEND (GEN_LAUSEND_REKLMAKS)' AS muud,
            v_toiming.asutusid                           AS asutusid
-           INTO v_journal;
+    INTO v_journal;
 
     SELECT 0                            AS id,
            coalesce(v_toiming.summa, 0) AS summa,
@@ -83,8 +83,9 @@ BEGIN
            l_kr_konto                   AS kreedit,
            l_kr_tp                      AS lisa_k,
            '01112'                      AS kood1,
+           '80'                         AS kood2, -- Valentina 29.06.2022
            '3044'                       AS kood5
-           INTO v_journal1;
+    INTO v_journal1;
 
     l_json = ('{"data":' || trim(TRAILING FROM (row_to_json(v_journal)) :: TEXT, '}') :: TEXT || ',"gridData":[' ||
               (row_to_json(v_journal1)) || ']}}');
@@ -98,7 +99,8 @@ BEGIN
         ajalugu
         */
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()           AS updated,
                      v_user.kasutaja AS user) row;
 
@@ -112,7 +114,8 @@ BEGIN
         WHERE id = v_toiming.parentId;
 
         -- lausend
-        SELECT docs_ids INTO a_docs_ids
+        SELECT docs_ids
+        INTO a_docs_ids
         FROM docs.doc
         WHERE id = result;
 

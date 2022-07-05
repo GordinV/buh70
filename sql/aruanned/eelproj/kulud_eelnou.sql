@@ -100,7 +100,7 @@ BEGIN
                    AND (l_params IS NULL OR coalesce(qry.artikkel, '') ILIKE
                                             coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
                    AND (l_params IS NULL OR
-                        coalesce(qry.allikas, '') ILIKE coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
+                        coalesce(qry.allikas, '') ILIKE  '%' + coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
                    AND (l_params IS NULL OR coalesce(qry.rahavoog, '') ILIKE
                                             coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
                    AND qry.allikas NOT LIKE ('%RF%')
@@ -141,7 +141,7 @@ BEGIN
                                             , '') + '%')
                    AND (l_params IS NULL OR
                         COALESCE(qry.kood2
-                            , '') ILIKE COALESCE((l_params ->> 'allikas')::TEXT
+                            , '') ILIKE '%' + COALESCE((l_params ->> 'allikas')::TEXT
                                             , '') + '%')
                  UNION ALL
 
@@ -173,7 +173,7 @@ BEGIN
                                                 , '') + '%')
                    AND (l_params IS NULL OR
                         COALESCE(qry.allikas
-                            , '') ILIKE COALESCE((l_params ->> 'allikas')::TEXT
+                            , '') ILIKE '%' + COALESCE((l_params ->> 'allikas')::TEXT
                                             , '') + '%')
                    AND (l_params IS NULL OR COALESCE(qry.rahavoog
                                                 , '') ILIKE
@@ -218,7 +218,7 @@ BEGIN
                                             , '') + '%')
                    AND (l_params IS NULL OR
                         COALESCE(qry.kood2
-                            , '') ILIKE COALESCE((l_params ->> 'allikas')::TEXT
+                            , '') ILIKE '%' + COALESCE((l_params ->> 'allikas')::TEXT
                                             , '') + '%')
              ),
              qryAasta1 AS (
@@ -688,8 +688,8 @@ SELECT CASE
                                   eelarve_tekkepohine_tapsustatud = 0) OR
                                  tunnus IN ('null', '04', '1.', '3.3', '13') THEN 'A'
                             ELSE 'B' END as tind, *
-FROM eelarve.kulud_eelnou('2022-06-30'::DATE, 64:: INTEGER, 1)
-where artikkel = '4502'
+FROM eelarve.kulud_eelnou('2022-06-30'::DATE, 130:: INTEGER, 1,'{"allikas":"LE-P"}')
+where artikkel = '4500'
 and tegev = '10121'
 --tunnus in ('null','04', '1.' , '3.3' , '13')
 ORDER BY rekv_id, ARTIKKEL, tegev, TUNNUS
