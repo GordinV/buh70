@@ -20,6 +20,7 @@ DECLARE
                             LIMIT 1);
 
     v_kaart      RECORD;
+    jsonb_row    JSONB;
     json_object  JSONB;
 
     l_status     INTEGER;
@@ -33,6 +34,8 @@ DECLARE
     v_laps       RECORD;
     l_too_paevad INTEGER;
     l_kulastused INTEGER = 0;
+    l_muud       TEXT;
+
 BEGIN
     doc_type_id = 'LAPSE_TAABEL';
     -- will return docTypeid of new doc
@@ -73,7 +76,6 @@ BEGIN
                0                                                          AS too_paevad,
                0                                                          AS kulastused,
                0                                                          AS kovid,
-               0                                                          AS muud,
                lk.properties ->> 'yksus'                                  AS yksus
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
@@ -109,6 +111,7 @@ BEGIN
                   AND year(t.kpv) = year(l_kpv::DATE);
 
                 v_kaart.hind = NULL;
+                l_muud = null;
                 -- нет расчета цены
 
             ELSIF lower(v_kaart.algoritm) IN ('külastamine')
@@ -133,12 +136,12 @@ BEGIN
                                      ) qry);
                 IF (coalesce(l_kulastused, 0)) > 0
                 THEN
-                    v_kaart.muud = 'Hinna arvestuse selgitus: ' || v_kaart.hind::TEXT || '/' || l_too_paevad::TEXT ||
-                                   '*' || l_kulastused::TEXT;
+                    l_muud = 'Hinna arvestuse selgitus: ' || v_kaart.hind::TEXT || '/' || l_too_paevad::TEXT ||
+                             '*' || l_kulastused::TEXT;
                     v_kaart.hind = v_kaart.hind / l_too_paevad * l_kulastused;
                 ELSE
-                    v_kaart.muud = 'Hinna arvestuse selgitus: ' || v_kaart.hind:: TEXT || '/' || l_too_paevad::TEXT ||
-                                   '*' || l_kulastused::TEXT;
+                    l_muud = 'Hinna arvestuse selgitus: ' || v_kaart.hind:: TEXT || '/' || l_too_paevad::TEXT ||
+                             '*' || l_kulastused::TEXT;
                     v_kaart.hind = 0; -- нет посещений
                 END IF;
 
@@ -183,18 +186,19 @@ BEGIN
                 IF coalesce(l_kulastused, 0) > 0
                 THEN
 
-
                     -- были пропуски с причиной = ковид
                     v_kaart.kogus = (l_too_paevad - l_kulastused)::NUMERIC / l_too_paevad::NUMERIC;
 
                 END IF;
+
+                l_muud = NULL;
                 IF coalesce(l_too_paevad, 0) > 0
                 THEN
                     --                    А в счете желательно в строке с услугой справочно вставить количество получившихся расчетных дней - 18.
-                    v_kaart.muud = '(' || (l_too_paevad - l_kulastused)::TEXT + ' päeva)';
+                    l_muud = '(' || (l_too_paevad - l_kulastused)::TEXT + ' päeva)';
                 END IF;
                 v_kaart.hind = NULL; -- нет расчета цены
-
+                RAISE NOTICE ' v_kaart.muud%', l_muud;
 
             END IF;
 
@@ -211,12 +215,17 @@ BEGIN
 
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN
+                json_object = NULL;
+
                 -- продолжаем расчет
                 -- подготавливаем параметры для сохранения
+
+                jsonb_row = to_jsonb(v_kaart.*) || jsonb_build_object('muud', l_muud);
+
                 SELECT row_to_json(row)
                 INTO json_object
-                FROM (SELECT coalesce(l_taabel_id, 0)     AS id,
-                             (SELECT to_jsonb(v_kaart.*)) AS data) row;
+                FROM (SELECT coalesce(l_taabel_id, 0) AS id,
+                             jsonb_row                AS data) row;
 
                 SELECT lapsed.sp_salvesta_lapse_taabel(json_object :: JSONB, user_id, l_rekvid) INTO l_taabel_id;
 
@@ -284,7 +293,7 @@ GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arves
 
 
 /*
-select lapsed.arvesta_taabel_(70, 3,'2022-05-31')
+select lapsed.arvesta_taabel(45, 13687,'2022-01-31')
 
 select * from lapsed.lapsed_taabel where rekvid = 63
 

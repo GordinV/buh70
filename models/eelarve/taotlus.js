@@ -1,14 +1,14 @@
 module.exports = {
     select: [{
         sql: `SELECT d.id,
-                     $2 :: INTEGER                                                                               AS userid,
-                     to_char(created, 'DD.MM.YYYY HH:MM:SS') :: TEXT                                             AS created,
-                     to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT                                          AS lastupdate,
+                     $2 :: INTEGER                                                                 AS userid,
+                     to_char(created, 'DD.MM.YYYY HH:MM:SS') :: TEXT                               AS created,
+                     to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT                            AS lastupdate,
                      d.bpm,
-                     trim(l.nimetus)                                                                             AS doc,
-                     trim(l.kood)                                                                                AS doc_type_id,
-                     d.status                                                                                    AS status,
-                     t.status                                                                                    AS taotlus_status,
+                     trim(l.nimetus)                                                               AS doc,
+                     trim(l.kood)                                                                  AS doc_type_id,
+                     d.status                                                                      AS status,
+                     t.status                                                                      AS taotlus_status,
                      t.rekvid,
                      t.koostajaId,
                      t.ametnikId,
@@ -17,25 +17,25 @@ module.exports = {
                      t.number,
                      t.aasta,
                      t.kuu,
-                     t.status                                                                                    AS taotlus_status,
+                     t.status                                                                      AS taotlus_status,
                      t.allkiri,
                      t.muud,
-                     coalesce(t.tunnus, 0)::INTEGER                                                              AS tunnus,
-                     coalesce(koostaja.ametnik, '') :: VARCHAR(120)                                              AS koostaja,
-                     coalesce(esitaja.ametnik, '') :: VARCHAR(120)                                               AS esitaja,
-                     coalesce(aktsepteerija.ametnik, '') :: VARCHAR(120)                                         AS aktseptja,
+                     coalesce(t.tunnus, 0)::INTEGER                                                AS tunnus,
+                     coalesce(koostaja.ametnik, '') :: VARCHAR(120)                                AS koostaja,
+                     coalesce(esitaja.ametnik, '') :: VARCHAR(120)                                 AS esitaja,
+                     coalesce(aktsepteerija.ametnik, '') :: VARCHAR(120)                           AS aktseptja,
                      (SELECT sum(summa)
                       FROM eelarve.taotlus1 t1
-                      WHERE t1.parentid = t.id)::NUMERIC(12, 2)                                                  AS summa,
+                      WHERE t1.parentid = t.id)::NUMERIC(12, 2)                                    AS summa,
                      (SELECT sum(summa_kassa)
                       FROM eelarve.taotlus1 t1
-                      WHERE t1.parentid = t.id)::NUMERIC(12, 2)                                                  AS summa_kassa,
-                     (to_json($2::INTEGER)::JSONB <@ (d.rigths ->> 'EelKoostaja')::JSONB)::BOOLEAN               AS is_koostaja,
+                      WHERE t1.parentid = t.id)::NUMERIC(12, 2)                                    AS summa_kassa,
+                     (to_json($2::INTEGER)::JSONB <@ (d.rigths ->> 'EelKoostaja')::JSONB)::BOOLEAN AS is_koostaja,
                      (to_json($2::INTEGER)::JSONB <@
-                      (d.rigths ->> 'EelAktsepterja')::JSONB)::BOOLEAN                                           AS is_aktsepterja,
+                      (d.rigths ->> 'EelAktsepterja')::JSONB)::BOOLEAN                             AS is_aktsepterja,
                      (to_json($2::INTEGER)::JSONB <@
-                      (d.rigths ->> 'EelAllkirjastaja')::JSONB)::BOOLEAN                                         AS is_allkirjastaja,
-                     (to_json($2::INTEGER)::JSONB <@ (d.rigths ->> 'Eelesitaja')::JSONB)::BOOLEAN                AS is_esitaja
+                      (d.rigths ->> 'EelAllkirjastaja')::JSONB)::BOOLEAN                           AS is_allkirjastaja,
+                     (to_json($2::INTEGER)::JSONB <@ (d.rigths ->> 'Eelesitaja')::JSONB)::BOOLEAN  AS is_esitaja
               FROM docs.doc d
                        INNER JOIN libs.library l ON l.id = d.doc_type_id
                        INNER JOIN eelarve.taotlus t ON t.parentId = d.id
@@ -101,6 +101,7 @@ module.exports = {
                      t1.tunnus,
                      t1.summa,
                      t1.summa_kassa,
+                     COALESCE(t1.oodatav_taitmine, 0)::NUMERIC(14, 2) AS oodatav_taitmine,
                      t1.selg,
                      t1.status,
                      t1.markused,
@@ -123,6 +124,23 @@ module.exports = {
             alias: 'kooperi_taotlus',
             data: []
 
+        },
+        {
+            sql: `SELECT sum(summa)       AS summa,
+                         sum(summa_kassa) AS summa_kassa,
+                         tunnus,
+                         kood1            AS tegev,
+                         kood2            AS allikas,
+                         kood3            AS rahavoog,
+                         kood5            AS artikkel
+                  FROM eelarve.eelarve
+                  WHERE aasta = $1::INTEGER
+                    AND rekvid = $2::INTEGER
+                  GROUP BY tunnus, kood1, kood2, kood3, kood5`, // $1 - aasta, $2 - rekvId
+            query: null,
+            multiple: true,
+            alias: 'oodatav_taitmine',
+            data: []
         }
     ],
     returnData: {
@@ -156,15 +174,15 @@ module.exports = {
             {id: "tegev", name: "Tegevusalla", width: "15%"},
 
         ],
-        sqlString: `SELECT id,
-                           rekvid,
+        sqlString: `SELECT t.id,
+                           t.rekvid,
                            koostajaid,
                            aktseptid,
                            kpv,
                            number,
                            aasta,
                            kuu,
-                           status AS status,
+                           t.status    AS status,
                            allkiri,
                            kood1,
                            kood2,
@@ -177,7 +195,9 @@ module.exports = {
                            parentid,
                            regkood,
                            nimetus::VARCHAR(254),
-                           ametnik::VARCHAR(254)
+                           t.ametnik::VARCHAR(254),
+                           rea_selg::TEXT,
+                           dok_mark::TEXT
                     FROM cur_taotlused t
                     WHERE t.rekvId IN (SELECT rekv_id
                                        FROM get_asutuse_struktuur($1::INTEGER))
@@ -206,7 +226,8 @@ module.exports = {
                                 ou.userid u
                            WHERE d.id = $1
                              AND u.id = $2
-                       ) qry where (ajalugu ->> 'user') is not null`,
+                       ) qry
+                  WHERE (ajalugu ->> 'user') IS NOT NULL`,
         type: "sql",
         alias: "getLogs"
     },

@@ -75,17 +75,7 @@ exports.get = async (req, res) => {
             if (Number(row.soodustus) > 0) {
                 // расчет суммы льготы
                 soodustus = ((Number(row.soodustus) /  (Number(row.hind) * Number(row.kogus))) * 100).toFixed(0);
-
                 if (soodustus == 25 || soodustus == 100) {
-                    // Вычисляется пропорция посещений. Например 4 дня посещений из 21-го (4/21=0.19047619)
-                    kulastused = Number(row.kovid) === 0 ?  1: (row.kovid) / row.too_paevad;
-                    // 2. Вычисляется количество (часть от единицы)
-                    // Пропорция посещений * скидку и результат округлить до 4 знаков после запятой
-                    // 0.19047619*0,25=0.0476190475 - округл = 0.0476 - это попадает в поле "Kolich"
-                    row.kogus = ((soodustus / 100)  * kulastused).toFixed(4);
-                    // 3. Вычисляется сумма начисления в счет.
-                    // Полная стоимость услуги (со знаком минус, т.к. скидка) * вычисленное количество и результат округлить до 2 знаков после запятой
-                    // -20.44 (плата за место) * 0.0476 = -0.972944 - округл = -0.97 - это попадает в поле "Nach"
 
                     row.summa = (Number(row.hind) * Number(row.kogus)).toFixed(2);
                 }
@@ -101,7 +91,7 @@ exports.get = async (req, res) => {
                 DateNach: arvKpv,
                 GodNach: row.aasta,
                 MesNach: row.kuu,
-                NrSch: row.viitenumber ? row.viitenumber.substring(0,row.viitenumber.length - 1): '',
+                NrSch: row.viitenr ? row.viitenr.substring(0,row.viitenr.length - 1): '',
                 KodNach: getCode(row.kood, kasSoodustus),
                 Stoim: Number(row.hind).toFixed(2),
                 Kolich: (Number(row.kogus) ).toFixed(4),
@@ -111,10 +101,30 @@ exports.get = async (req, res) => {
                 VhSaldo: false
             };
 
+            let soodustuseKogus;
+            let soodustuseSumma;
+
             if (Number(row.soodustus) > 0 && Number(row.hind) > 0 ) {
 // меняем сумму на полную
 //                obj.Nach = (Number(row.kogus)  * Number(row.hind)).toFixed(2);
                 kasSoodustus = true;
+
+                // Вычисляется пропорция посещений. Например 4 дня посещений из 21-го (4/21=0.19047619)
+                // 2. Вычисляется количество (часть от единицы)
+                // Пропорция посещений * скидку и результат округлить до 4 знаков после запятой
+                // 0.19047619*0,25=0.0476190475 - округл = 0.0476 - это попадает в поле "Kolich"
+//                    let parandatudSoodustus = Number(row.soodustus) * (soodustus / 100)  * kulastused;
+//                    let parandatudHind = parandatudSoodustus * Number(row.hind);
+//                    row.kogus = ((soodustus / 100)  * kulastused).toFixed(4);
+
+                // 3. Вычисляется сумма начисления в счет.
+                // Полная стоимость услуги (со знаком минус, т.к. скидка) * вычисленное количество и результат округлить до 2 знаков после запятой
+                // -20.44 (плата за место) * 0.0476 = -0.972944 - округл = -0.97 - это попадает в поле "Nach"
+
+                kulastused = Number(row.kovid) === 0 ?  1: (row.kovid) / row.too_paevad;
+
+                soodustuseKogus = ((soodustus / 100)  * kulastused).toFixed(4);
+                soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
             }
 
 
@@ -139,8 +149,8 @@ exports.get = async (req, res) => {
                     NrSch: row.viitenumber ? row.viitenumber.substring(0,row.viitenumber.length - 1): '',
                     KodNach: getCode(row.kood, kasSoodustus),
                     Stoim: -1 * Number(row.hind).toFixed(2),
-                    Kolich: (Number(row.kogus)).toFixed(4),
-                    Nach: -1 * (Number(row.summa) !== 0 ? Number(row.summa): Number(row.soodustus)).toFixed(2),
+                    Kolich: soodustuseKogus,
+                    Nach:soodustuseSumma,
                     Info:  row.muud && row.muud !== '0' ? row.muud.replace('päeva', 'pv'): '' ,
                     SrokOpl: tahtaeg,
                     VhSaldo: false

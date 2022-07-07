@@ -23,7 +23,9 @@ SELECT d.id,
        Rekv.parentid,
        Rekv.regkood,
        Rekv.nimetus,
-       Userid.ametnik
+       Userid.ametnik,
+       t1.selg as rea_selg,
+       t.muud as dok_mark
 FROM docs.doc d
          INNER JOIN eelarve.taotlus t ON d.id = t.parentid
          INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
@@ -38,3 +40,8 @@ GRANT SELECT ON TABLE cur_taotlused TO eelaktsepterja;
 GRANT SELECT ON TABLE cur_taotlused TO eelallkirjastaja;
 GRANT SELECT ON TABLE cur_taotlused TO eelesitaja;
 GRANT SELECT ON TABLE cur_taotlused TO eelkoostaja;
+
+/*
+
+ select * from cur_taotlused order by id desc limit 10
+ */

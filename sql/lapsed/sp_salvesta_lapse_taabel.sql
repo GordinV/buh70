@@ -94,6 +94,8 @@ BEGIN
                               doc_too_paevad AS too_paevad) row;
 
 
+    raise notice 'doc_muud %', doc_muud;
+
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
     THEN
