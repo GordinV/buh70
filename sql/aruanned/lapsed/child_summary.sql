@@ -1,9 +1,13 @@
 DROP FUNCTION IF EXISTS lapsed.child_summary(INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT);
+DROP FUNCTION IF EXISTS lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT, DATE, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.child_summary(l_rekvid INTEGER, l_kond INTEGER DEFAULT 0, l_ik TEXT DEFAULT '%',
-                                                l_nimi TEXT DEFAULT '%')
-    RETURNS TABLE (
+                                                l_nimi TEXT DEFAULT '%',
+                                                l_kpv1 DATE DEFAULT make_date(year(now()::DATE), 01, 01),
+                                                l_kpv2 DATE DEFAULT NOW()::DATE)
+    RETURNS TABLE
+    (
         maksja_nimi      TEXT,
         maksja_isikukood TEXT,
         lapse_nimi       TEXT,
@@ -22,6 +26,10 @@ WITH qryRekv AS (
     SELECT rekv_id
     FROM get_asutuse_struktuur(l_rekvid)
 ),
+     qryParams AS (
+         SELECT coalesce(l_kpv1, make_date(year(now()::DATE) - 1, 01, 01)) AS kpv_1,
+                coalesce(l_kpv2, make_date(year(now()::DATE), 12, 31))     AS kpv_2
+     ),
      qryLapsed AS (
          SELECT *
          FROM lapsed.laps l
@@ -109,16 +117,47 @@ SELECT a.nimetus::TEXT   AS maksja_nimi,
        qryDoc.rekvid:: INTEGER
 
 FROM (
-         SELECT *
-         FROM qryArved
+         SELECT qryArved.*
+         FROM qryArved, qryParams
+         WHERE kpv >= qryParams.kpv_1
+           AND kpv <= qryParams.kpv_2
          UNION ALL
-         SELECT *
-         FROM qrytasud
+         SELECT qrytasud.*
+         FROM qrytasud, qryParams
+         WHERE kpv >= qryParams.kpv_1
+           AND kpv <= qryParams.kpv_2
+         UNION ALL
+         SELECT asutusid,
+                laps_id               AS laps_id,
+                'Alg.saldo'::TEXT     AS number,
+                qryParams.kpv_1::DATE AS kpv,
+                summa                 AS summa,
+                0::NUMERIC(12, 2)     AS tasutud,
+                0                     AS mahakandmine,
+                summa,
+                rekvid
+         FROM (
+                  WITH qryAlg AS (
+                      SELECT sum(-1 * tasutud) AS summa, laps_id, rekvid, asutusid
+                      FROM qrytasud t, qryParams
+                      WHERE kpv < qryParams.kpv_1
+                      GROUP BY laps_id, rekvid, asutusid
+                      UNION ALL
+                      SELECT sum(summa) AS summa, laps_id, rekvid, t.asutusid
+                      FROM qryArved t, qryParams
+                      WHERE kpv < qryParams.kpv_1
+                      GROUP BY laps_id, rekvid, asutusid
+                  )
+                  SELECT sum(summa) AS summa, laps_id, rekvid, asutusid
+                  FROM qryAlg
+                  GROUP BY laps_id, rekvid, asutusid
+              ) alg, qryParams
      ) qryDoc,
      libs.asutus a,
      qryLapsed l
 WHERE qryDoc.asutusid = a.id
   AND l.id = qryDoc.laps_id
+
 
 $BODY$
     LANGUAGE SQL
@@ -126,15 +165,16 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT, DATE, DATE) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT, DATE, DATE) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT, DATE, DATE) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT, DATE, DATE) TO dbvaatleja;
 
 /*
 
 SELECT *
-FROM lapsed.child_summary(69, 1)
-where lapse_isikukood = '60901163721'
+FROM lapsed.child_summary(85, 1, '51503280040%','%', null::date,null::date)
 
+
+select * from ou.rekv where id = 85
 */

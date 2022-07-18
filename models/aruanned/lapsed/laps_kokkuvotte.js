@@ -25,11 +25,11 @@ module.exports = {
                            maksja_isikukood,
                            r.nimetus                                 AS asutus,
                            to_char(current_date, 'DD.MM.YYYY')::TEXT AS print_date
-                    FROM lapsed.child_summary($1::INTEGER, 1, $2::text, $3::text) qryReport
+                    FROM lapsed.child_summary($1::INTEGER, 1, $2::text, $3::text, $4::date, $5::date) qryReport
                              INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
                     ORDER BY lapse_nimi, r.nimetus, (kpv::DATE)
         `,     // $1 - rekvid, $3 - kond? removed jaak = 0
-        params: ['rekvid', 'lapse_isikukood','lapse_nimi'],
+        params: ['rekvid', 'lapse_isikukood','lapse_nimi','kpv_start', 'kpv_end'],
         notReloadWithoutParameters: true,
         alias: 'child_summary_report',
         subtotals: ['summa', 'jaak', 'tasutud', 'mahakandmine']
