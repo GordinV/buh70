@@ -71,12 +71,19 @@ exports.get = async (req, res) => {
 
             let kulastused = 1;
             let soodustus = 0;
+            let soodustuseKogus = 0;
+            let soodustuseSumma = 0;
 
             if (Number(row.soodustus) > 0) {
                 // расчет суммы льготы
                 soodustus = ((Number(row.soodustus) /  (Number(row.hind) * Number(row.kogus))) * 100).toFixed(0);
                 if (soodustus == 25 || soodustus == 100) {
+                    kulastused = Number(row.kovid) === 0 ?  1: (row.kovid) / row.too_paevad;
 
+                    soodustuseKogus = ((soodustus / 100)  * kulastused).toFixed(4);
+                    soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
+
+                    row.kogus = soodustuseKogus;
                     row.summa = (Number(row.hind) * Number(row.kogus)).toFixed(2);
                 }
 
@@ -101,11 +108,9 @@ exports.get = async (req, res) => {
                 VhSaldo: false
             };
 
-            let soodustuseKogus;
-            let soodustuseSumma;
-
             if (Number(row.soodustus) > 0 && Number(row.hind) > 0 ) {
-// меняем сумму на полную
+
+                // меняем сумму на полную
 //                obj.Nach = (Number(row.kogus)  * Number(row.hind)).toFixed(2);
                 kasSoodustus = true;
 

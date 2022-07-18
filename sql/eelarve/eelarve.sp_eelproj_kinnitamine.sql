@@ -29,8 +29,6 @@ DECLARE
           ) ROW;
 BEGIN
 
-    RAISE NOTICE 'eelproj 1';
-
     -- find eelprojekt if eelproj_id is null
     IF ((eelproj_id IS NULL OR eelproj_id = 0) AND taotlus_id IS NOT NULL)
     THEN
@@ -50,8 +48,6 @@ BEGIN
         result = 0;
         RETURN;
     END IF;
-
-    RAISE NOTICE 'eelproj 2';
 
     SELECT e.* INTO v_eelproj
     FROM eelarve.eelproj e
@@ -97,7 +93,7 @@ BEGIN
         LOOP
 
             -- Kontrollime aasta
-            IF (SELECT fnc_aasta_kontrol(v_taotlus.rekvid, v_taotlus.kpv)) = 0
+            IF not coalesce((SELECT ou.fnc_aasta_kontrol(v_taotlus.rekvid, v_taotlus.kpv)),true)
             THEN
                 error_code = 1;
                 error_message = 'Period on kinnitatud';

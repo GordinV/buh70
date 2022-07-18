@@ -39,6 +39,8 @@ DECLARE
                                          coalesce((doc_data ->> 'is_eel_esitaja') :: BOOLEAN, FALSE)  AS is_eel_esitaja,
                                          coalesce((doc_data ->> 'is_eel_aktsepterja') :: BOOLEAN,
                                                   FALSE)                                              AS is_eel_aktsepterja,
+                                         coalesce((doc_data ->> 'is_eel_admin') :: BOOLEAN, FALSE)    AS is_eel_admin,
+
                                          coalesce((doc_data ->> 'is_asutuste_korraldaja') :: BOOLEAN,
                                                   FALSE)                                              AS is_asutuste_korraldaja,
                                          coalesce((doc_data ->> 'is_rekl_administraator') :: BOOLEAN,
@@ -67,12 +69,12 @@ BEGIN
       AND roles ->> 'is_admin' IS NOT NULL
       AND (roles ->> 'is_admin')::BOOLEAN;
 
-    
-    raise notice 'email %',  doc_data ->> 'email';
+
+    RAISE NOTICE 'email %', doc_data ->> 'email';
     -- проверка на почту
 -- должна быть из домена narva.ee или в исключениях
     IF doc_data ->> 'email' IS NULL OR (doc_data ->> 'email')::TEXT IN ('vladislav.gordin@gmail.com')
-        OR (doc_data ->> 'email')::text LIKE '%@narva.ee'
+        OR (doc_data ->> 'email')::TEXT LIKE '%@narva.ee'
     THEN
         -- подходит
     ELSE

@@ -47,3 +47,11 @@ SELECT 1::INTEGER,
        'DOK'                                          AS library,
        '{"type":"aruanne", "module":["Eelarve"]}'     AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'KONTOASUTUSANDMIK_TUNNUS_TT');
+
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
+       'HALLATAVATE_EELNOU'                  AS kood,
+       'Hallatavate asutuste eelarve eelnõu' AS nimetus,
+       'DOK'                                          AS library,
+       '{"type":"aruanne", "module":["Eelproj"]}'     AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'HALLATAVATE_EELNOU');

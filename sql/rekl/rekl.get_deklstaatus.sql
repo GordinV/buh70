@@ -26,7 +26,7 @@ BEGIN
     RETURN 'active';
   END IF;
 
-  IF NOT empty(v_toiming.saadetud) AND v_toiming.jaak <> v_toiming.summa
+  IF NOT empty(v_toiming.saadetud) AND v_toiming.jaak = 0
   THEN
     RETURN 'closed';
   ELSE

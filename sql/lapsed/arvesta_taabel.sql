@@ -182,12 +182,18 @@ BEGIN
 
                 v_kaart.kogus = 1;
                 v_kaart.kulastused = l_kulastused;
+
+
+                raise notice 'l_too_paevad %, v_kaart.too_paevad %, l_kulastused %',l_too_paevad,v_kaart.too_paevad, l_kulastused ;
+                -- поправка на расчет из-=за неполного табеля
+--                l_too_paevad = v_kaart.too_paevad;
+
                 v_kaart.kovid = (l_too_paevad - l_kulastused)::NUMERIC;
                 IF coalesce(l_kulastused, 0) > 0
                 THEN
 
                     -- были пропуски с причиной = ковид
-                    v_kaart.kogus = (l_too_paevad - l_kulastused)::NUMERIC / l_too_paevad::NUMERIC;
+                    v_kaart.kogus = (l_too_paevad - l_kulastused)::NUMERIC / v_kaart.too_paevad::NUMERIC;
 
                 END IF;
 

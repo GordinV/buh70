@@ -5,21 +5,27 @@ CREATE OR REPLACE FUNCTION ou.fnc_aasta_kontrol(l_rekvid INTEGER, l_kpv DATE)
 $BODY$
 
 BEGIN
-  IF NOT exists(SELECT id FROM ou.aasta WHERE kuu = month(l_kpv) AND aasta = year(l_kpv) AND rekvid = l_rekvid)
+    raise notice 'start';
+  IF NOT exists(SELECT a.id FROM ou.aasta a  WHERE a.kuu = month(l_kpv) AND a.aasta = year(l_kpv) AND a.rekvid = l_rekvid)
   THEN
-    INSERT INTO ou.aasta (rekvid, aasta, kuu, kinni)
+      raise notice 'insert';
+    INSERT INTO ou.aasta (rekvid, "aasta", kuu, kinni)
     VALUES (l_rekvid, year(l_kpv), month(l_kpv), 0);
   END IF;
+    raise notice 'saved';
 
   IF exists(
-      SELECT id FROM ou.aasta WHERE kuu = month(l_kpv) AND aasta = year(l_kpv) AND rekvid = l_rekvid AND kinni = 1)
+      SELECT a.id FROM ou.aasta a WHERE a.kuu = month(l_kpv) AND a.aasta = year(l_kpv) AND a.rekvid = l_rekvid AND a.kinni = 1)
   THEN
-    --    RAISE EXCEPTION 'Ei tohi selles periodis töötada';
+      raise notice 'exists';
+
+      --    RAISE EXCEPTION 'Ei tohi selles periodis töötada';
     RETURN FALSE;
   ELSE
     RETURN TRUE;
   END IF;
-END;
+
+END
 $BODY$
   LANGUAGE 'plpgsql'
   VOLATILE
@@ -27,3 +33,8 @@ $BODY$
 
 GRANT EXECUTE ON FUNCTION ou.fnc_aasta_kontrol(INTEGER, DATE) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION ou.fnc_aasta_kontrol(INTEGER, DATE) TO dbpeakasutaja;
+
+
+/*
+ select * from ou.aasta
+ */

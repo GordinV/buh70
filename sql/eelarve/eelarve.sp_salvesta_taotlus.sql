@@ -17,7 +17,7 @@ DECLARE
                               FROM libs.library
                               WHERE ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood)))
                                 AND library = 'DOK'
-                              LIMIT 1);
+                                  LIMIT 1);
     doc_details    JSON    = doc_data ->> 'gridData';
     doc_kpv        DATE    = doc_data ->> 'kpv';
     doc_number     TEXT    = coalesce(doc_data ->> 'number',
@@ -80,7 +80,7 @@ BEGIN
 
     ELSE
 
-        IF coalesce(doc_status, 0) = 3
+        IF coalesce(doc_status, 0) < 3
         THEN
 
             SELECT row_to_json(row)
@@ -115,7 +115,7 @@ BEGIN
                 muud       = doc_muud,
                 status     = CASE
                                  WHEN is_import IS NOT NULL
-                                     THEN coalesce(doc_status,0)
+                                     THEN coalesce(doc_status, 0)
                                  ELSE status END
             WHERE parentid = doc_id RETURNING id
                 INTO taotlus_id;
@@ -139,9 +139,7 @@ BEGIN
                                            kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, muud TEXT,
                                            selg TEXT, eelarveid INTEGER, eelprojid INTEGER);
 
-            RAISE NOTICE 'doc_status %, json_record %', doc_status, json_record;
-
-            IF coalesce(doc_status, 0) <> 3 AND
+            IF coalesce(doc_status, 0) < 3 AND
                (json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
                 NOT exists(SELECT id
                            FROM eelarve.taotlus1
@@ -160,30 +158,20 @@ BEGIN
 
             ELSE
 
-                IF (coalesce(doc_status,0) = 3)
-                THEN
-                    UPDATE eelarve.taotlus1
-                    SET oodatav_taitmine = json_record.oodatav_taitmine
-                    WHERE id = json_record.id :: INTEGER;
-
-                    -- add existing id into array of ids
-                    ids = array_append(ids, taotlus1_id);
-
-                ELSE
-                    UPDATE eelarve.taotlus1
-                    SET summa       = json_record.summa,
-                        summa_kassa = json_record.summa_kassa,
-                        tunnus      = json_record.tunnus,
-                        proj        = json_record.proj,
-                        kood1       = json_record.kood1,
-                        kood2       = json_record.kood2,
-                        kood3       = json_record.kood3,
-                        kood4       = json_record.kood4,
-                        kood5       = json_record.kood5,
-                        muud        = json_record.muud,
-                        selg        = json_record.selg
-                    WHERE id = json_record.id :: INTEGER;
-                END IF;
+                UPDATE eelarve.taotlus1
+                SET summa            = json_record.summa,
+                    summa_kassa      = json_record.summa_kassa,
+                    oodatav_taitmine = json_record.oodatav_taitmine,
+                    tunnus           = json_record.tunnus,
+                    proj             = json_record.proj,
+                    kood1            = json_record.kood1,
+                    kood2            = json_record.kood2,
+                    kood3            = json_record.kood3,
+                    kood4            = json_record.kood4,
+                    kood5            = json_record.kood5,
+                    muud             = json_record.muud,
+                    selg             = json_record.selg
+                WHERE id = json_record.id :: INTEGER;
 
                 taotlus1_id = json_record.id :: INTEGER;
 
@@ -193,7 +181,7 @@ BEGIN
             END IF;
 
             -- delete record which not in json
-            IF (coalesce(doc_status,0) <> 3)
+            IF (coalesce(doc_status, 0) <> 3)
             THEN
                 DELETE
                 FROM eelarve.taotlus1

@@ -2749,8 +2749,8 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO
 
 
 SELECT *
-FROM eelarve.lisa1_lisa5_kontrol('2022-03-31'::DATE, 63, 1)
---where left(nimetus,2) in ('32','55', '38')
+FROM eelarve.lisa1_lisa5_kontrol('2022-06-30'::DATE, 130, 0)
+where nimetus = 'PÕHITEGEVUSE KULUDE JA INVESTEERIMIS TEGEVUSE VÄLJAMINEKUTE JAOTUS TEGEVUSALADE JÄRGI'
 ORDER BY idx, nimetus
 
 

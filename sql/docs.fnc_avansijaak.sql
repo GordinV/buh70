@@ -31,21 +31,10 @@ BEGIN
     LEFT OUTER JOIN libs.dokprop dp ON dp.id = a1.dokpropId
   WHERE d.id = tnId;
 
-  SELECT v.kuurs
-  INTO lnDokValuuta
-  FROM docs.dokvaluuta1 v
-  WHERE dokid IN (SELECT id
-                  FROM docs.avans2
-                  WHERE parentid = v_avans.avans_id
-                  LIMIT 1)
-        AND dokliik = array_position(a_dokvaluuta, 'avans2');
-
-  lnDokValuuta = coalesce(lnDokValuuta, 1);
-
   -- tasumine via päevaraamat
 
   DELETE FROM docs.avans3
-  WHERE parentid = tnId AND liik = 1;
+  WHERE parentid = v_avans.avans_id AND liik = 1;
 
   INSERT INTO docs.avans3 (parentid, dokid, liik, muud, summa)
     SELECT
@@ -86,11 +75,9 @@ BEGIN
          UNION ALL
          SELECT
            0 :: NUMERIC(12, 2)               AS tasu,
-           sum(summa * coalesce(v.kuurs, 1)) AS avans
+           sum(summa) AS avans
          FROM docs.avans1 a1
            INNER JOIN docs.avans2 a2 ON a1.id = a2.parentid
-           LEFT OUTER JOIN docs.dokvaluuta1 v
-             ON (v.dokid = a2.id AND v.dokliik = array_position(a_dokvaluuta, 'avans2'))
          WHERE a1.parentid = tnId) qry;
 
 
@@ -117,9 +104,6 @@ COST 100;
 GRANT EXECUTE ON FUNCTION docs.fnc_avansijaak(INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.fnc_avansijaak(INTEGER) TO dbpeakasutaja;
 
-
-SELECT docs.fnc_avansijaak(d.id)
-FROM docs.doc d INNER JOIN docs.avans1 a1 ON a1.parentid = d.id
 
 /*
 select docs.fnc_avansijaak(d.id) from docs.doc d inner join docs.avans1 a1 on a1.parentid = d.id

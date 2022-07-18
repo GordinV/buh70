@@ -380,20 +380,7 @@ WITH cur_kulude_kassa_taitmine AS (
                           ''                            AS tunnus,
                           200                           AS idx
                    FROM qryReport
-                   WHERE
-                       /*((artikkel LIKE
-                               '4%' OR artikkel LIKE
-                                       '5%' OR (artikkel LIKE
-                                                '6%' AND artikkel NOT LIKE
-                                                         '655%') OR
-                               artikkel LIKE
-                               '15%')
-                           OR (artikkel =
-                               '2586' AND rahavoog =
-                                          '06')
-                           )
-                         AND artikkel <> '1532'*/
-                       idx >= 200
+                   WHERE  idx >= 200
                      AND qryReport.artikkel NOT IN ('2585', '1532')
                    GROUP BY rekvid
                    UNION ALL
@@ -461,10 +448,14 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DAT
 GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DATE, DATE, INTEGER, INTEGER, JSONB) TO dbvaatleja;
 
 /*
-SELECT *
+--artikkel like
+SELECT sum(tegelik), artikkel
 FROM (
          SELECT *
-         FROM eelarve.eelarve_taitmine_allikas_artikkel(2022::INTEGER,'2021-01-01'::date, '2021-06-30'::DATE, 63, 1,'{"tunnus":null,"allikas":null}')
+         FROM eelarve.eelarve_taitmine_allikas_artikkel(2022::INTEGER,'2022-01-01'::date, '2022-06-30'::DATE, 130, 0,'{"tunnus":null,"allikas":null}')
      ) qry
-WHERE artikkel like '15,2586,4,5,6%'
+WHERE idx >= 200
+and tegelik <> 0
+group by artikkel
+'15,2586,4,5,6%'
 */
