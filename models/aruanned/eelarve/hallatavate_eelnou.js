@@ -40,8 +40,8 @@ module.exports = {
                                              ON l.kood = qry.artikkel
                              LEFT OUTER JOIN libs.library t ON t.kood = qry.tegev AND t.library = 'TEGEV'
                     ORDER BY CASE
-                                 WHEN r.id IS NULL THEN 999
-                                 WHEN r.id > 9999 THEN 0
+                                 WHEN r.id IS NULL THEN 0
+                                 WHEN r.id > 9999 THEN 1
                                  WHEN r.id = 63 THEN 10
                                  WHEN r.id = 1190 THEN 100
                                  WHEN r.id = 119 THEN 110
@@ -54,7 +54,11 @@ module.exports = {
                                  WHEN r.parentid = 63 THEN 200
                                  WHEN r.parentid = 119 THEN 300
                                  ELSE 900 END * 1000, r.nimetus, qry.kas_tulud,
-                             qry.artikkel, qry.tegev`,     // $1 - kpv $2 - rekvid, $3 - kond
+                             CASE
+                                 WHEN artikkel = 'KULUD' THEN '0'
+                                 WHEN artikkel = 'TULUD' THEN '00'
+                                 ELSE qry.artikkel END,
+                             CASE WHEN qry.tegev IS NULL THEN '000000' ELSE qry.tegev END`,     // $1 - kpv $2 - rekvid, $3 - kond
         params: '',
         alias: 'hallatavate_eelnou'
     }

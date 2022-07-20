@@ -94,10 +94,10 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO dbvaat
 
 select * from (
                     SELECT len(saaja_nimi), *
-                    FROM eelarve.lisa_9('2021-09-01', '2021-09-30', 130,  0)
+                    FROM eelarve.lisa_9('2022-06-01', '2022-06-30', 63,  1)
                 ) qry
   where  summa >= 100
-and saaja_regkood= '37411112220'
+and saaja_regkood= '80356461'
 
 select * from ou.rekv where parentid = 64
 

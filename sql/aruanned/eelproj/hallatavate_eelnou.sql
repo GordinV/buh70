@@ -184,7 +184,7 @@ FROM (
          -- 2 итоги по учреждению по всем Tegevusala, artikkel
 --                - итог по доходам
 --                - итог по расходам
-         SELECT parent_id         AS rekvid,
+         SELECT parent_id    AS rekvid,
                 NULL,
                 artikkel,
                 tegev,
@@ -246,8 +246,8 @@ FROM eelarve.hallatavate_eelnou('2022-12-31', 119, 1) qry
                          ON l.kood = qry.artikkel
          LEFT OUTER JOIN libs.library t ON t.kood = qry.tegev AND t.library = 'TEGEV'
 ORDER BY CASE
-             WHEN r.id IS NULL THEN 999
-             WHEN r.id > 9999 THEN 0
+             WHEN r.id IS NULL THEN 0
+             WHEN r.id > 9999 THEN 1
              WHEN r.id = 63 THEN 10
              WHEN r.id = 1190 THEN 100
              WHEN r.id = 119 THEN 110
@@ -262,12 +262,13 @@ ORDER BY CASE
              WHEN r.parentid = 119 THEN 300
              ELSE 900 END * 1000, r.nimetus,
          qry.kas_tulud,
-         qry.artikkel, qry.tegev
+         CASE WHEN artikkel = 'KULUD' THEN '0' WHEN artikkel = 'TULUD' THEN '00'  ELSE qry.artikkel END,
+         CASE WHEN qry.tegev IS NULL THEN '000000' ELSE qry.tegev END
 
 /*
 
 SELECT *
-FROM eelarve.hallatavate_eelnou('2021-12-31', 125, 1)
+FROM eelarve.hallatavate_eelnou('2022-07-31', 63, 1)
 
 select * from libs.library
 where library.library = 'DOK'
