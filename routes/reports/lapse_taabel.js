@@ -83,7 +83,7 @@ exports.get = async (req, res) => {
                     soodustuseKogus = ((soodustus / 100)  * kulastused).toFixed(4);
                     soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
 
-                    row.kogus = soodustuseKogus;
+                    row.kogus = row.kogus ? row.kogus: soodustuseKogus;
                     row.summa = (Number(row.hind) * Number(row.kogus)).toFixed(2);
                 }
 
@@ -130,6 +130,7 @@ exports.get = async (req, res) => {
 
                 soodustuseKogus = ((soodustus / 100)  * kulastused).toFixed(4);
                 soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
+
             }
 
 
