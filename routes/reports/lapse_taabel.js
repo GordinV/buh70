@@ -77,6 +77,7 @@ exports.get = async (req, res) => {
             if (Number(row.soodustus) > 0) {
                 // расчет суммы льготы
                 soodustus = ((Number(row.soodustus) /  (Number(row.hind) * Number(row.kogus))) * 100).toFixed(0);
+
                 if (soodustus == 25 || soodustus == 100) {
                     kulastused = Number(row.kovid) === 0 ?  1: (row.kovid) / row.too_paevad;
 
@@ -130,7 +131,6 @@ exports.get = async (req, res) => {
 
                 soodustuseKogus = ((soodustus / 100)  * kulastused).toFixed(4);
                 soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
-
             }
 
 
@@ -152,7 +152,7 @@ exports.get = async (req, res) => {
                     DateNach: arvKpv,
                     GodNach: row.aasta,
                     MesNach: row.kuu,
-                    NrSch: row.viitenumber ? row.viitenumber.substring(0,row.viitenumber.length - 1): '',
+                    NrSch: row.viitenr ? row.viitenr.substring(0,row.viitenr.length - 1): '',
                     KodNach: getCode(row.kood, kasSoodustus),
                     Stoim: -1 * Number(row.hind).toFixed(2),
                     Kolich: soodustuseKogus,
