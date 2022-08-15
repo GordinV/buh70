@@ -6,9 +6,9 @@ exports.get = async (req, res) => {
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const filter = req.params.filter || [];// массив фильтров документов;
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
-    const user =await require('../../middleware/userData')(req, uuid); // данные пользователя
+    const user = await require('../../middleware/userData')(req, uuid); // данные пользователя
 
-    let filterData = filter && filter.length ? JSON.parse(filter): [];
+    let filterData = filter && filter.length ? JSON.parse(filter) : [];
 
     if (!user) {
         console.error('error 401 newAPI');
@@ -45,23 +45,23 @@ exports.get = async (req, res) => {
         let csvData = [];
 
 // поправка 28.06
-/*
-        В случае наличия скидки (25% или 100%) платы за место и учебные надо поступать так:
-            1. Вычисляется пропорция посещений. Например 4 дня посещений из 21-го (4/21=0.19047619)
-        2. Вычисляется количество (часть от единицы)
-        Пропорция посещений * скидку и результат округлить до 4 знаков после запятой
-        0.19047619*0,25=0.0476190475 - округл = 0.0476 - это попадает в поле "Kolich"
-        3. Вычисляется сумма начисления в счет.
-            Полная стоимость услуги (со знаком минус, т.к. скидка) * вычисленное количество и результат округлить до 2 знаков после запятой
-        -20.44 (плата за место) * 0.0476 = -0.972944 - округл = -0.97 - это попадает в поле "Nach"
-*/
+        /*
+                В случае наличия скидки (25% или 100%) платы за место и учебные надо поступать так:
+                    1. Вычисляется пропорция посещений. Например 4 дня посещений из 21-го (4/21=0.19047619)
+                2. Вычисляется количество (часть от единицы)
+                Пропорция посещений * скидку и результат округлить до 4 знаков после запятой
+                0.19047619*0,25=0.0476190475 - округл = 0.0476 - это попадает в поле "Kolich"
+                3. Вычисляется сумма начисления в счет.
+                    Полная стоимость услуги (со знаком минус, т.к. скидка) * вычисленное количество и результат округлить до 2 знаков после запятой
+                -20.44 (плата за место) * 0.0476 = -0.972944 - округл = -0.97 - это попадает в поле "Nach"
+        */
 
 
         data.data.forEach(row => {
             let kasSoodustus = false;
 
-            let arvKpv = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '05', "YYYY-MM-DD").add(1, 'month') .format("DD.MM.YYYY");
-            let tahtaeg = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '19', "YYYY-MM-DD").add(1, 'month') .format("DD.MM.YYYY");
+            let arvKpv = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '05', "YYYY-MM-DD").add(1, 'month').format("DD.MM.YYYY");
+            let tahtaeg = Moment(row.aasta.toString() + '-' + row.kuu.toString() + '-' + '19', "YYYY-MM-DD").add(1, 'month').format("DD.MM.YYYY");
 
             if (row.kood == '322040-033') {
                 // У нее размерность ВСЕГДА штуки (т.е.  разовая, от посещаемости не зависит), т.е. всегда кол-во = 1 и кол-во дней не указывается
@@ -76,17 +76,17 @@ exports.get = async (req, res) => {
 
             if (Number(row.soodustus) > 0) {
                 // расчет суммы льготы
-                soodustus = ((Number(row.soodustus) /  (Number(row.hind) * Number(row.kogus))) * 100).toFixed(0);
+                soodustus = ((Number(row.soodustus) / (Number(row.hind) * Number(row.kogus))) * 100).toFixed(0);
 
-                if (soodustus == 25 || soodustus == 100 || soodustus == 26) {
-                    kulastused = Number(row.kovid) === 0 ?  1: (row.kovid) / row.too_paevad;
+//                if (soodustus == 25 || soodustus == 100 || soodustus == 26) {
+                kulastused = Number(row.kovid) === 0 ? 1 : (row.kovid) / row.too_paevad;
 
-                    soodustuseKogus = ((soodustus / 100)  * kulastused).toFixed(4);
-                    soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
+                soodustuseKogus = ((soodustus / 100) * kulastused).toFixed(4);
+                soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
 
-                    row.kogus = row.kogus ? row.kogus: soodustuseKogus;
-                    row.summa = (Number(row.hind) * Number(row.kogus)).toFixed(2);
-                }
+                row.kogus = row.kogus ? row.kogus : soodustuseKogus;
+                row.summa = (Number(row.hind) * Number(row.kogus)).toFixed(2);
+//                }
 
                 //Вычисляется количество (часть от единицы)
                 // Пропорция посещений * скидку и результат округлить до 4 знаков после запятой
@@ -95,21 +95,21 @@ exports.get = async (req, res) => {
             }
 
             //поправить если структура меняется
-            const obj =  {
+            const obj = {
                 DateNach: arvKpv,
                 GodNach: row.aasta,
                 MesNach: row.kuu,
-                NrSch: row.viitenr ? row.viitenr.substring(0,row.viitenr.length - 1): '',
+                NrSch: row.viitenr ? row.viitenr.substring(0, row.viitenr.length - 1) : '',
                 KodNach: getCode(row.kood, kasSoodustus),
                 Stoim: Number(row.hind).toFixed(2),
-                Kolich: (Number(row.kogus) ).toFixed(4),
-                Nach: (Number(row.summa) ).toFixed(2),
-                Info:  row.muud && row.muud !== '0' ? row.muud.replace('päeva', 'pv'): '' ,
+                Kolich: (Number(row.kogus)).toFixed(4),
+                Nach: (Number(row.summa)).toFixed(2),
+                Info: row.muud && row.muud !== '0' ? row.muud.replace('päeva', 'pv') : '',
                 SrokOpl: tahtaeg,
                 VhSaldo: false
             };
 
-            if (Number(row.soodustus) > 0 && Number(row.hind) > 0 ) {
+            if (Number(row.soodustus) > 0 && Number(row.hind) > 0) {
 
                 // меняем сумму на полную
 //                obj.Nach = (Number(row.kogus)  * Number(row.hind)).toFixed(2);
@@ -127,9 +127,9 @@ exports.get = async (req, res) => {
                 // Полная стоимость услуги (со знаком минус, т.к. скидка) * вычисленное количество и результат округлить до 2 знаков после запятой
                 // -20.44 (плата за место) * 0.0476 = -0.972944 - округл = -0.97 - это попадает в поле "Nach"
 
-                kulastused = Number(row.kovid) === 0 ?  1: (row.kovid) / row.too_paevad;
+                kulastused = Number(row.kovid) === 0 ? 1 : (row.kovid) / row.too_paevad;
 
-                soodustuseKogus = ((soodustus / 100)  * kulastused).toFixed(4);
+                soodustuseKogus = ((soodustus / 100) * kulastused).toFixed(4);
                 soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
             }
 
@@ -142,22 +142,22 @@ exports.get = async (req, res) => {
             csvData.push(obj);
 
             if (kasSoodustus) {
-                if (Number(row.summa) == 0 ) {
+                if (Number(row.summa) == 0) {
                     // старая схема
-                    row.kogus = (Number(row.soodustus) /  Number(row.hind)) ;
+                    row.kogus = (Number(row.soodustus) / Number(row.hind));
                 }
 
-            // делаем доп. вставку в массив
-                const obj =  {
+                // делаем доп. вставку в массив
+                const obj = {
                     DateNach: arvKpv,
                     GodNach: row.aasta,
                     MesNach: row.kuu,
-                    NrSch: row.viitenr ? row.viitenr.substring(0,row.viitenr.length - 1): '',
+                    NrSch: row.viitenr ? row.viitenr.substring(0, row.viitenr.length - 1) : '',
                     KodNach: getCode(row.kood, kasSoodustus),
                     Stoim: -1 * Number(row.hind).toFixed(2),
                     Kolich: soodustuseKogus,
-                    Nach:soodustuseSumma,
-                    Info:  row.muud && row.muud !== '0' ? row.muud.replace('päeva', 'pv'): '' ,
+                    Nach: soodustuseSumma,
+                    Info: row.muud && row.muud !== '0' ? row.muud.replace('päeva', 'pv') : '',
                     SrokOpl: tahtaeg,
                     VhSaldo: false
                 };
@@ -165,7 +165,7 @@ exports.get = async (req, res) => {
                 csvData.push(obj);
             }
 
-    });
+        });
 
         let csv = getCSV(csvData);
         csv = header + csv;
