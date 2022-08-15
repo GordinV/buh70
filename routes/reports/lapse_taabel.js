@@ -78,7 +78,7 @@ exports.get = async (req, res) => {
                 // расчет суммы льготы
                 soodustus = ((Number(row.soodustus) /  (Number(row.hind) * Number(row.kogus))) * 100).toFixed(0);
 
-                if (soodustus == 25 || soodustus == 100) {
+                if (soodustus == 25 || soodustus == 100 || soodustus == 26) {
                     kulastused = Number(row.kovid) === 0 ?  1: (row.kovid) / row.too_paevad;
 
                     soodustuseKogus = ((soodustus / 100)  * kulastused).toFixed(4);
