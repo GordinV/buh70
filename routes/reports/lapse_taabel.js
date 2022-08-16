@@ -249,6 +249,36 @@ function getCode(newCode, isBonus) {
         case '322090-053':
             oldCode = '53';
             break;
+        case '322040-053':
+            oldCode = '53';
+            break;
+        case '322040-054':
+            oldCode = '54';
+            break;
+        case '322040-055':
+            oldCode = '55';
+            break;
+        case '322040-056':
+            oldCode = '56';
+            break;
+        case '322040-057':
+            oldCode = '57';
+            break;
+        case '322040-058':
+            oldCode = '58';
+            break;
+        case '322040-059':
+            oldCode = '59';
+            break;
+        case '322040-060':
+            oldCode = '60';
+            break;
+        case '322020-084':
+            oldCode = '84';
+            break;
+        case '322030-085':
+            oldCode = '85';
+            break;
         default:
             oldCode = '';
     }
