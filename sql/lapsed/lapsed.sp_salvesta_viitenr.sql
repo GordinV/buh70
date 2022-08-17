@@ -15,6 +15,8 @@ DECLARE
                                WHERE id = doc_laps_id
                                  AND staatus <> 3
                                LIMIT 1);
+    v_teenused      RECORD;
+    l_old_viitenr   TEXT;
 BEGIN
 
     IF (doc_id IS NULL)
@@ -48,9 +50,13 @@ BEGIN
             INTO doc_id;
 
     ELSE
-        if not exists (select id from lapsed.viitenr where id = doc_id and rekv_id = user_rekvid) then
-            RAISE exception 'Puudub õigused %', user;
+        IF NOT exists(SELECT id FROM lapsed.viitenr WHERE id = doc_id AND rekv_id = user_rekvid)
+        THEN
+            RAISE EXCEPTION 'Puudub õigused %', user;
         END IF;
+
+        -- запоминаем старый (прежний) код
+        l_old_viitenr = (SELECT viitenumber FROM lapsed.viitenr WHERE id = doc_id LIMIT 1);
 
         UPDATE lapsed.viitenr
         SET viitenumber = doc_viitenumber,
@@ -58,7 +64,28 @@ BEGIN
         WHERE id = doc_id RETURNING id
             INTO doc_id;
 
+        IF (l_old_viitenr <> doc_viitenumber)
+        THEN
+            -- проверить в карточках услуг витенумберов
+            FOR v_teenused IN
+                SELECT lk.id
+                FROM lapsed.lapse_kaart lk
+                WHERE lk.rekvid = user_rekvid
+                  AND parentid = doc_laps_id
+                  AND staatus < 3
+                  AND (lk.properties ->> 'viitenr' IS NOT NULL AND (lk.properties ->> 'viitenr')::TEXT = l_old_viitenr)
+                LOOP
+                    UPDATE lapsed.lapse_kaart
+                    SET properties = properties::JSONB || jsonb_build_object('viitenr', doc_viitenumber)
+                    WHERE id = v_teenused.id;
+
+                END LOOP;
+
+        END IF;
+
+
     END IF;
+
 
     RETURN doc_id;
 

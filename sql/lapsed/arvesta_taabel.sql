@@ -81,7 +81,7 @@ BEGIN
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.parentid = l_laps_id
           AND lk.rekvid = l_rekvid
-          AND lk.staatus = DOC_STATUS
+          AND lk.staatus <= DOC_STATUS
           AND (lk.properties ->> 'alg_kpv' IS NULL OR
                (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
           AND (lk.properties ->> 'lopp_kpv' IS NULL OR
@@ -180,31 +180,28 @@ BEGIN
                                         AND l.kood = v_kaart.yksus
                 );
 
-                v_kaart.kogus = 1;
+--                v_kaart.kogus = 1;
                 v_kaart.kulastused = l_kulastused;
 
 
-                raise notice 'l_too_paevad %, v_kaart.too_paevad %, l_kulastused %',l_too_paevad,v_kaart.too_paevad, l_kulastused ;
                 -- поправка на расчет из-=за неполного табеля
 --                l_too_paevad = v_kaart.too_paevad;
 
                 v_kaart.kovid = (l_too_paevad - l_kulastused)::NUMERIC;
-                IF coalesce(l_kulastused, 0) > 0
+                IF coalesce(l_kulastused, 0) > 0 and v_kaart.hind >= 0
                 THEN
 
                     -- были пропуски с причиной = ковид
                     v_kaart.kogus = (l_too_paevad - l_kulastused)::NUMERIC / v_kaart.too_paevad::NUMERIC;
 
                 END IF;
-
+                v_kaart.hind = NULL; -- нет расчета цены
                 l_muud = NULL;
                 IF coalesce(l_too_paevad, 0) > 0
                 THEN
                     --                    А в счете желательно в строке с услугой справочно вставить количество получившихся расчетных дней - 18.
                     l_muud = '(' || (l_too_paevad - l_kulastused)::TEXT + ' päeva)';
                 END IF;
-                v_kaart.hind = NULL; -- нет расчета цены
-                RAISE NOTICE ' v_kaart.muud%', l_muud;
 
             END IF;
 
@@ -299,7 +296,7 @@ GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arves
 
 
 /*
-select lapsed.arvesta_taabel(45, 13687,'2022-01-31')
+select lapsed.arvesta_taabel(45, 8013,'2022-01-31')
 
 select * from lapsed.lapsed_taabel where rekvid = 63
 

@@ -66,8 +66,9 @@ GRANT SELECT ON TABLE lapsed.cur_lapse_taabel TO dbpeakasutaja;
 /*
 
 select * from lapsed.cur_lapse_taabel
-where rekvid = 85
+where rekvid = 92
 and kuu = 1 and aasta = 2022
+and parentid = 8021
 limit 10
 select * from lapsed.laps
  */

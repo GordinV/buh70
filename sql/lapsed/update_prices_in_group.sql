@@ -32,7 +32,7 @@ BEGIN
         WITH v_group AS (SELECT id, kood, (properties::JSONB -> 'teenused')::JSONB AS teenused
                          FROM libs.library
                          WHERE id = l_group_id)
-        SELECT x.*, v_group.kood as yksus
+        SELECT x.*, v_group.kood AS yksus
         FROM v_group,
              jsonb_to_recordset(
                      v_group.teenused::JSONB
@@ -60,18 +60,22 @@ BEGIN
                        lk.properties ->> 'alg_kpv'          AS alg_kpv,
                        lk.properties ->> 'lopp_kpv'         AS lopp_kpv,
                        lk.properties ->> 'kogus'            AS kogus,
+                       lk.properties ->> 'viitenr'          AS viitenr,
                        lk.muud
                 FROM lapsed.lapse_kaart lk
                 WHERE lk.nomid = v_noms.nomid
-                  and (lk.properties ->> 'yksus') = v_noms.yksus
+                  AND (lk.properties ->> 'yksus') = v_noms.yksus
                   AND lk.staatus = DOC_STATUS
                   AND lk.hind <> v_noms.hind
-                  AND (lk.properties ->> 'alg_kpv' IS NULL OR
-                       (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
-                  AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
+                  AND ((lk.properties ->> 'alg_kpv' IS NULL OR
+                        (lk.properties ->> 'alg_kpv')::DATE <= l_kpv) -- услуга должны действоаать в периоде
+                           AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
+                    OR l_kpv <= (lk.properties ->> 'lopp_kpv')::DATE
+                    )
                 LOOP
                     -- salvestame kaart
-                    SELECT row_to_json(row) INTO json_object
+                    SELECT row_to_json(row)
+                    INTO json_object
                     FROM (SELECT v_kaart.id                   AS id,
                                  (SELECT to_jsonb(v_kaart.*)) AS data) row;
 

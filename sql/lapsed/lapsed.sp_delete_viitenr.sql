@@ -11,8 +11,11 @@ CREATE OR REPLACE FUNCTION lapsed.sp_delete_viitenr(IN user_id INTEGER,
 $BODY$
 
 DECLARE
-    v_doc        RECORD;
-    json_ajalugu JSONB;
+    v_doc         RECORD;
+    json_ajalugu  JSONB;
+    l_old_viitenr TEXT;
+    v_teenused    RECORD;
+
 BEGIN
 
     SELECT v.*,
@@ -60,10 +63,29 @@ BEGIN
 
     END IF;
 
+    -- запоминаем старый (прежний) код
+    l_old_viitenr = (SELECT viitenumber FROM lapsed.viitenr WHERE id = doc_id LIMIT 1);
 
     DELETE
     FROM lapsed.viitenr
     WHERE id = doc_id;
+
+    -- проверить в карточках услуг витенумберов
+    FOR v_teenused IN
+        SELECT lk.id
+        FROM lapsed.lapse_kaart lk
+                 INNER JOIN lapsed.laps l ON l.id = lk.parentid
+        WHERE lk.rekvid = v_doc.rekv_id
+          AND l.isikukood = v_doc.isikukood
+          AND lk.staatus < 3
+          AND (lk.properties ->> 'viitenr' IS NOT NULL AND (lk.properties ->> 'viitenr')::TEXT = l_old_viitenr)
+        LOOP
+            UPDATE lapsed.lapse_kaart
+            SET properties = properties::JSONB || jsonb_build_object('viitenr', NULL)
+            WHERE id = v_teenused.id;
+
+        END LOOP;
+
 
     result = 1;
     RETURN;

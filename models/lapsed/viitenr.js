@@ -93,6 +93,20 @@ module.exports = {
         params: '',
         alias: 'curPankVV'
     },
+    updateTeenusedSetViitenr: {
+        command: `SELECT error_code, result, error_message, doc_type_id
+                  FROM lapsed.update_teenused_set_viitenr($2::INTEGER, $1::INTEGER)`, //$1 docId, $2 - userId
+        type: 'sql',
+        alias: 'updateTeenusedSetViitenr'
+    },
+    bpm: [
+        {
+            name: 'Omistada viitenumbrita teenustele',
+            task: 'updateTeenusedSetViitenr',
+            type: 'manual',
+            action: 'updateTeenusedSetViitenr',
+            hideDate: true
+        }]
 
 };
 
