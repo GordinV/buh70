@@ -153,11 +153,11 @@ class LapseKaart extends React.PureComponent {
         let defaultViitenr;
 
         if (self.libs['viitenr'] && self.libs['viitenr'].length && self.docData.parentid) {
-            viitenr = self.libs['viitenr'].filter(kaart => kaart.laps_id == self.docData.parentid);
+            viitenr.push(...self.libs['viitenr'].filter(kaart => kaart.laps_id == self.docData.parentid));
 
             // считаем кол-во старых номеров
             let index = viitenr.length - 1;
-            defaultViitenr = viitenr[index];
+            defaultViitenr = viitenr[index].kood;
 
             if (!self.docData.viitenr) {
                 // если не задан старый витенумбер, то добавим последний из регистра
