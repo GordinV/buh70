@@ -21,28 +21,28 @@ module.exports = {
     select: [
         {
             sql: `
-                    SELECT l.id,
-                         l.isikukood,
-                         l.nimi,
-                         l.muud,
-                         lapsed.get_viitenumber((SELECT rekvid
-                                                 FROM ou.userid
-                                                 WHERE id = $2), l.id) AS viitenumber,
-                         $2::INTEGER                                   AS userid,
-                         coalesce(ll.jaak, 0)::NUMERIC                 AS jaak,
-                         coalesce((SELECT count(id)
-                                   FROM lapsed.vanem_arveldus va
-                                   WHERE parentid = l.id
-                                     AND arveldus
-                                     AND rekvid IN (SELECT rekvid
-                                                    FROM ou.userid u
-                                                    WHERE u.id = $2)), 0)              AS arveldus
-                  FROM lapsed.laps l
-                           LEFT OUTER JOIN lapsed.lapse_saldod(current_date, $1) ll ON ll.laps_id = l.id AND
-                                                                                       ll.rekv_id IN (SELECT rekvid
-                                                                                                      FROM ou.userid u
-                                                                                                      WHERE u.id = $2)
-                  WHERE l.id = $1::INTEGER`,
+                SELECT l.id,
+                       l.isikukood,
+                       l.nimi,
+                       l.muud,
+                       lapsed.get_viitenumber((SELECT rekvid
+                                               FROM ou.userid
+                                               WHERE id = $2), l.id)    AS viitenumber,
+                       $2::INTEGER                                      AS userid,
+                       coalesce(ll.jaak, 0)::NUMERIC                    AS jaak,
+                       coalesce((SELECT count(id)
+                                 FROM lapsed.vanem_arveldus va
+                                 WHERE parentid = l.id
+                                   AND arveldus
+                                   AND rekvid IN (SELECT rekvid
+                                                  FROM ou.userid u
+                                                  WHERE u.id = $2)), 0) AS arveldus
+                FROM lapsed.laps l
+                         LEFT OUTER JOIN lapsed.lapse_saldod(current_date, $1) ll ON ll.laps_id = l.id AND
+                                                                                     ll.rekv_id IN (SELECT rekvid
+                                                                                                    FROM ou.userid u
+                                                                                                    WHERE u.id = $2)
+                WHERE l.id = $1::INTEGER`,
             sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,
@@ -107,8 +107,8 @@ module.exports = {
                                           THEN 'Jah'
                                       ELSE 'Ei' END::TEXT                                                  AS kas_protsent,
                                   to_char((k.properties ->> 'sooduse_alg')::DATE, 'DD.MM.YYYY') || ' ' ||
-                                  to_char((k.properties ->> 'sooduse_lopp')::DATE, 'DD.MM.YYYY')           AS soodustuste_period
-
+                                  to_char((k.properties ->> 'sooduse_lopp')::DATE, 'DD.MM.YYYY')           AS soodustuste_period,
+                                  k.properties ->> 'viitenr'                                               AS viitenr
                            FROM lapsed.lapse_kaart k
                                     INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
                                     LEFT OUTER JOIN libs.library gr
@@ -167,7 +167,7 @@ module.exports = {
                 [
                     {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
                     {id: 'kood', name: 'Kood', width: '10%', show: true, type: 'text', readOnly: false},
-                    {id: 'nimetus', name: 'Nimetus', width: '20%', show: true, type: 'text', readOnly: false},
+                    {id: 'nimetus', name: 'Nimetus', width: '15%', show: true, type: 'text', readOnly: false},
                     {id: 'uhik', name: 'Ühik', width: '5%', show: true, type: 'text', readOnly: false},
                     {id: 'hind', name: 'Hind', width: '10%', show: true, type: 'text', readOnly: false},
                     {id: 'yksus', name: 'Üksus', width: '10%', show: true, type: 'text', readOnly: false},
@@ -175,8 +175,9 @@ module.exports = {
                     {id: 'inf3', name: 'INF3', width: '5%', show: true, type: 'text', readOnly: false},
                     {id: 'kehtivus', name: 'Period', width: '10%', show: true, type: 'text', readOnly: false},
                     {id: 'soodustus', name: 'Soodustus', width: '10%', show: true, type: 'text', readOnly: false},
-                    {id: 'soodustuste_period', name: 'Kehtiv', width: '10%', show: true, type: 'text', readOnly: false},
+                    {id: 'soodustuste_period', name: 'Kehtiv', width: '5%', show: true, type: 'text', readOnly: false},
                     {id: 'kas_protsent', name: '%', width: '5%', show: true, type: 'text', readOnly: false},
+                    {id: 'viitenr', name: 'Vana VN', width: '10%', show: true, type: 'text', readOnly: true},
                 ],
             gridViitenumberConfig: [
                 {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
@@ -329,6 +330,7 @@ module.exports = {
                                  ON vn.isikukood = l.isikukood
                  LEFT OUTER JOIN (SELECT * FROM qry_range WHERE coalesce(kehtivus, false) IS TRUE) qr ON qr.id = l.id,
                  range_parameters r
+                 order by l.nimi
 `,     //  $1 всегда ид учреждения, $2 - userId
             params: ['rekvid', 'userid', 'period_start', 'period_end', 'kehtiv_kpv'],
             alias: 'curLapsed',
