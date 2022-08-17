@@ -7,6 +7,7 @@ module.exports = {
                             INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood
                    WHERE l.staatus <> 3
                      AND v.rekv_id = $1
+                   ORDER BY laps_id, id
     `,
     select: [{
         sql: `SELECT $2        AS userid,

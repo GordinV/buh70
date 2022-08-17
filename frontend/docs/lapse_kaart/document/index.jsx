@@ -150,9 +150,19 @@ class LapseKaart extends React.PureComponent {
 
         // накладываем фильтр на справочник старых витенумберов на ребенка
         let viitenr = [{id: 0, kood: '', nimetus: '', laps_id: self.docData.parentid}];
+        let defaultViitenr;
 
-        if (self.libs['viitenr'] && self.docData.parentid) {
+        if (self.libs['viitenr'] && self.libs['viitenr'].length && self.docData.parentid) {
             viitenr = self.libs['viitenr'].filter(kaart => kaart.laps_id == self.docData.parentid);
+
+            // считаем кол-во старых номеров
+            let index = viitenr.length - 1;
+            defaultViitenr = viitenr[index];
+
+            if (!self.docData.viitenr) {
+                // если не задан старый витенумбер, то добавим последний из регистра
+                self.docData.viitenr = defaultViitenr;
+            }
         }
 
         // проверим стоит ли разрешить редактирование
