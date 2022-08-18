@@ -79,7 +79,7 @@ exports.get = async (req, res) => {
                 soodustus = ((Number(row.soodustus) / (Number(row.hind) * Number(row.kogus))) * 100).toFixed(0);
 
 //                if (soodustus == 25 || soodustus == 100 || soodustus == 26) {
-                kulastused = Number(row.kovid) === 0 ? 1 : (row.kovid) / row.too_paevad;
+                kulastused = Number(row.kulastused) === 0  ? 1 : (row.kovid) / row.too_paevad;
 
                 soodustuseKogus = ((soodustus / 100) * kulastused).toFixed(4);
                 soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
@@ -127,7 +127,7 @@ exports.get = async (req, res) => {
                 // Полная стоимость услуги (со знаком минус, т.к. скидка) * вычисленное количество и результат округлить до 2 знаков после запятой
                 // -20.44 (плата за место) * 0.0476 = -0.972944 - округл = -0.97 - это попадает в поле "Nach"
 
-                kulastused = Number(row.kovid) === 0 ? 1 : (row.kovid) / row.too_paevad;
+                kulastused = Number(row.kulastused) === 0 ? 1 : (row.kovid) / row.too_paevad;
 
                 soodustuseKogus = ((soodustus / 100) * kulastused).toFixed(4);
                 soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
