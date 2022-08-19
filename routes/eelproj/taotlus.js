@@ -124,7 +124,7 @@ exports.post = async (req, res) => {
 //    const user = await require('../middleware/userData')(req, uuid); // данные пользователя
     const user = {'nimi':'vlad','rekvid':63}; // данные пользователя
     let filterData = []; // параметр filter документов;
-    let template = docTypeId; // jade template
+    let template = docTypeId.toLowerCase(); // jade template
     let isPdf = true;
     const limit = 10000;
 
