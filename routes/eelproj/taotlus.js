@@ -103,7 +103,7 @@ exports.get = async (req, res) => {
 
         } else {
             // вернуть отчет
-            res.render(template, {title: 'Report', data: docData.data, user: user, filter: filterData});
+            res.render('taotlus', {title: 'Report', data: docData.data, user: user, filter: filterData});
 
         }
 
