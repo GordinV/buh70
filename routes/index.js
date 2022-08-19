@@ -16,6 +16,9 @@ module.exports = function (app) {
     app.get('/email/PALK_LEHT/:id', require('./palk/palk_leht').email); //checkAuth
 */
 
+// taotlus
+    app.get('/print/TAOTLUS/:id/', require('./eelproj/taotlus').get); //checkAuth
+    app.post('/print/TAOTLUS/:id', require('./eelproj/taotlus').post); //checkAuth
 
 
     // same as main

@@ -184,7 +184,7 @@
     <alias>deleteDoc</alias>
   </deleteDoc>
   <requiredFields>
-    <validate>koostajaId,aasta,kpv</validate>
+    <validate>koostajaId,aasta,kpv,muud</validate>
   </requiredFields>
   <executeSql>
     <sql></sql>

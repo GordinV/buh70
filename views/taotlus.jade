@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+html(lang="et")
+//extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid black;
+        }
+
+        .td {
+            font-size: smaller;
+            border-bottom: 1px solid black;
+            border-left: 1px solid black;
+        }
+
+        .th {
+            border-bottom: 1px solid black;
+            border-left: 1px solid black;
+            font-size: smaller;
+        }
+
+        .table {
+            border-spacing: 0px;
+            margin-top: -50px;
+        }
+
+        .pikkus {
+            width: auto
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .normal {
+            font-weight: normal;
+            margin-left: 10px;
+        }
+
+        .dline {
+            line-height: 0.75;
+        }
+
+        .header {
+            font-weight: bolder;
+            font-size:  x-large;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        p.label #{data.rekv.nimetus}
+        p.label #{data.rekv.aadress}
+        p.label #{data.rekv.tel}
+
+        br
+        p(align='center').pikkus.bold.header EELARVE TAOTLUS:
+            label.normal #{data.number}
+        p.pikkus.bold.dline Kuupäev:
+            label.normal #{data.kpv_print}
+        p.pikkus.bold.dline Asutus:
+            label.normal #{data.asutus}
+        p.pikkus.bold.dline Koostaja:
+            label.normal #{data.koostaja}
+        p.pikkus.bold.dline Eelarve aasta:
+            label.normal #{data.aasta}
+        br
+        br
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Tunnus
+                    th Eelarve
+                    th Tegevus ala
+                    th Allikas
+                    th Tekkepõhine summa
+                    th Kassapõhine summa
+                    th Rea selgitus
+
+            tbody
+            each row in data.details
+                tr
+                    td=(row.tunnus)
+                    td(align='center')=row.kood5
+                    td(align='center')=row.kood1
+                    td(align='center')=row.kood2
+                    td(align='center')=Number(row.summa).toFixed(2)
+                    td(align='center')=Number(row.summa_kassa).toFixed(2)
+                    td(align='left')=row.selg
+        br
+        p.pikkus.bold.dline Alus:
+            label.normal #{data.muud}
+
