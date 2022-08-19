@@ -77,7 +77,7 @@ exports.get = async (req, res) => {
         if (isPdf) {
             var printHtml;
 
-            res.render(template, {data: docData.data, user: user, filter: filterData}, (err, html) => {
+            res.render('taotlus', {data: docData.data, user: user, filter: filterData}, (err, html) => {
                 printHtml = html;
                 console.log('printHtml',printHtml,html, err)
             });
