@@ -8,6 +8,7 @@ const fs = require('fs');
 
 
 exports.get = async (req, res) => {
+    let hash = (req.params.hash || 0); // параметр id документа
     let ids = (req.params.id || 0); // параметр id документа
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const docTypeId = 'TAOTLUS'; // параметр тип документа
@@ -32,13 +33,13 @@ exports.get = async (req, res) => {
         });
     }
 
-    let rekvAndmedSql = require('./../../models/ou/rekv').select[0].sql;
-/*
-    if (!user) {
+    // проверим на пароль
+    if (!checkForAccess(hash)) {
         console.error('error 401 newAPI');
         return res.status(401).end();
     }
-*/
+
+    let rekvAndmedSql = require('./../../models/ou/rekv').select[0].sql;
 
     try {
         // создать объект
@@ -53,7 +54,7 @@ exports.get = async (req, res) => {
         let templateObject;
 
         // вызвать метод
-        let params = [4024175, 2477];
+        let params = [id, userId];
 
         let sql_ = doc.config.select.find(sqls => sqls.alias == 'row');
         let sql = sql_.sql;
@@ -79,7 +80,6 @@ exports.get = async (req, res) => {
 
             res.render('taotlus', {data: docData.data, user: user, filter: filterData}, (err, html) => {
                 printHtml = html;
-                console.log('printHtml',printHtml,html, err)
             });
 
             //attachment
@@ -117,6 +117,8 @@ exports.get = async (req, res) => {
 exports.post = async (req, res) => {
     let parameter = (req.body); // параметр id документа
     const id = req.params.id || '';// параметр sqlWhere документа
+    let hash = (req.params.hash || 0); // параметр id документа
+
 //    let ids = (req.params.id || 0); // параметр id документа
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const docTypeId = 'TAOTLUS'; // параметр тип документа
@@ -132,12 +134,12 @@ exports.post = async (req, res) => {
     const userId = 2477;
 
     let rekvAndmedSql = require('./../../models/ou/rekv').select[0].sql;
-    /*
-        if (!user) {
-            console.error('error 401 newAPI');
-            return res.status(401).end();
-        }
-    */
+
+    // проверим на пароль
+    if (!checkForAccess(hash)) {
+        console.error('error 401 newAPI');
+        return res.status(401).end();
+    }
 
     try {
         // создать объект
@@ -152,7 +154,7 @@ exports.post = async (req, res) => {
         let templateObject;
 
         // вызвать метод
-        let params = [4024175, 2477];
+        let params = [id, userId];
 
         let sql_ = doc.config.select.find(sqls => sqls.alias == 'row');
         let sql = sql_.sql;
@@ -245,4 +247,12 @@ function exportHtml(html, file, options) {
             }
         });
     });
+}
+
+function checkForAccess(hash) {
+    const crypto = require('crypto');
+    let controlHash = crypto.createHmac('sha1','').update('63').digest('hex');
+
+    return controlHash == hash;
+
 }
