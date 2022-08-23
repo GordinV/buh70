@@ -14,7 +14,7 @@ exports.get = async (req, res) => {
     const docTypeId = 'TAOTLUS'; // параметр тип документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
 //    const user = await require('../middleware/userData')(req, uuid); // данные пользователя
-    const user = {'nimi':'vlad','rekvid':63}; // данные пользователя
+    const user = {'nimi': 'vlad', 'rekvid': 63}; // данные пользователя
     let filterData = []; // параметр filter документов;
     let template = docTypeId; // jade template
     let isPdf = true;
@@ -44,7 +44,7 @@ exports.get = async (req, res) => {
     try {
         // создать объект
         const Doc = require('./../../classes/DocumentTemplate');
-        const doc = new Doc(docTypeId, id , null, null, 'eelproj');
+        const doc = new Doc(docTypeId, id, null, null, 'eelproj');
 
         // установим таймаут для ожидания тяжелых отчетов
         res.setTimeout(400000);
@@ -63,14 +63,34 @@ exports.get = async (req, res) => {
         let data = await db.queryDb(sql, params, null, null, null, null, config);
 
         docData.data = {...data.data['0']};
-        let rekvData = await db.queryDb(rekvAndmedSql,[docData.data.rekvid, userId], null, null, null, null, config);
+        let rekvData = await db.queryDb(rekvAndmedSql, [docData.data.rekvid, userId], null, null, null, null, config);
         docData.data.rekv = {...rekvData.data['0']};
 
         // details
         let detailSql_ = doc.config.select.find(sqls => sqls.alias == 'details');
         let detailSql = detailSql_.sql;
 
-        let detailsData = await db.queryDb(detailSql,params, null, null, null, null, config);
+        let detailsData = await db.queryDb(detailSql, params, null, null, null, null, config);
+
+        let summa_kokku = 0;
+        let kassa_kokku = 0;
+        let oodatav_kokku = 0;
+
+        detailsData.data.forEach(row => {
+            summa_kokku = summa_kokku + Number(row.summa);
+            kassa_kokku = kassa_kokku + Number(row.summa_kassa);
+            oodatav_kokku = oodatav_kokku + Number(row.oodatav_taitmine);
+        });
+
+        detailsData.data = detailsData.data.map(row => {
+            row.summa_kokku = summa_kokku;
+            row.kassa_kokku = kassa_kokku;
+            row.oodatav_kokku = oodatav_kokku;
+            return row;
+        });
+
+        console.log(detailsData);
+
 
         docData.data.details = {...detailsData.data};
 
@@ -124,7 +144,7 @@ exports.post = async (req, res) => {
     const docTypeId = 'TAOTLUS'; // параметр тип документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
 //    const user = await require('../middleware/userData')(req, uuid); // данные пользователя
-    const user = {'nimi':'vlad','rekvid':63}; // данные пользователя
+    const user = {'nimi': 'vlad', 'rekvid': 63}; // данные пользователя
     let filterData = []; // параметр filter документов;
     let template = docTypeId.toLowerCase(); // jade template
     let isPdf = true;
@@ -144,7 +164,7 @@ exports.post = async (req, res) => {
     try {
         // создать объект
         const Doc = require('./../../classes/DocumentTemplate');
-        const doc = new Doc(docTypeId, id , null, null, 'eelproj');
+        const doc = new Doc(docTypeId, id, null, null, 'eelproj');
 
         // установим таймаут для ожидания тяжелых отчетов
         res.setTimeout(400000);
@@ -163,14 +183,19 @@ exports.post = async (req, res) => {
         let data = await db.queryDb(sql, params, null, null, null, null, config);
 
         docData.data = {...data.data['0']};
-        let rekvData = await db.queryDb(rekvAndmedSql,[docData.data.rekvid, userId], null, null, null, null, config);
+        let rekvData = await db.queryDb(rekvAndmedSql, [docData.data.rekvid, userId], null, null, null, null, config);
         docData.data.rekv = {...rekvData.data['0']};
 
         // details
         let detailSql_ = doc.config.select.find(sqls => sqls.alias == 'details');
         let detailSql = detailSql_.sql;
 
-        let detailsData = await db.queryDb(detailSql,params, null, null, null, null, config);
+        let detailsData = await db.queryDb(detailSql, params, null, null, null, null, config);
+
+        // усли указан конвертер, то отдаем данные туда на обработку
+        if (templateObject && templateObject.converter) {
+            detailsData.data = templateObject.converter(detailsData.data);
+        }
 
         docData.data.details = {...detailsData.data};
 
@@ -251,7 +276,7 @@ function exportHtml(html, file, options) {
 
 function checkForAccess(hash) {
     const crypto = require('crypto');
-    let controlHash = crypto.createHmac('sha1','').update('63').digest('hex');
+    let controlHash = crypto.createHmac('sha1', '').update('63').digest('hex');
 
     return controlHash == hash;
 
