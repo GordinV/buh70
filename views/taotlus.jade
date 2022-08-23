@@ -89,19 +89,31 @@ block content
                     th Allikas
                     th Tekkepõhine summa
                     th Kassapõhine summa
+                    th Oodatav täitmine
                     th Rea selgitus
 
             tbody
-            each row in data.details
-                tr
-                    td.td=(row.tunnus)
-                    td.td(align='center')=row.kood5
-                    td.td(align='center')=row.kood1
-                    td.td(align='center')=row.kood2
-                    td.td(align='center')=Number(row.summa).toFixed(2)
-                    td.td(align='center')=Number(row.summa_kassa).toFixed(2)
-                    td.td(align='left')=row.selg
-        br
+                each row in data.details
+                    tr
+                        td.td=(row.tunnus)
+                        td.td(align='center')=row.kood5
+                        td.td(align='center')=row.kood1
+                        td.td(align='center')=row.kood2
+                        td.td(align='center')=Number(row.summa).toFixed(2)
+                        td.td(align='center')=Number(row.summa_kassa).toFixed(2)
+                        td.td(align='center')=Number(row.oodatav_taitmine).toFixed(2)
+                        td.td(align='left')=row.selg
+            tr.group
+                td
+                td
+                td
+                td(align='center')='Kokku:'
+                td=Number(data.details[0].summa_kokku).toFixed(2)
+                td=Number(data.details[0].kassa_kokku).toFixed(2)
+                td=Number(data.details[0].oodatav_kokku).toFixed(2)
+                td
+            br
+
         p.pikkus.bold.dline Alus:
             label.normal #{data.muud}
 
