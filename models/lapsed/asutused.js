@@ -79,7 +79,7 @@ module.exports = {
             `, //$1 rekvid, $2 v_nom.kood
             query: null,
             multiple: true,
-            alias: 'validate_lib_usage',
+            alias: 'validate_lib_usage_',
             data: [],
             not_initial_load: true
 
