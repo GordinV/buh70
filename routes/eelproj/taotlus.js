@@ -5,6 +5,8 @@ const wkhtmltopdf = require('wkhtmltopdf');
 const jade = require('jade');
 const path = require('path');
 const fs = require('fs');
+const DocContext = require('./../../frontend/doc-context.js');
+const crypto = require('crypto');
 
 
 exports.get = async (req, res) => {
@@ -21,6 +23,7 @@ exports.get = async (req, res) => {
     const limit = 10000;
     let id;
     const userId = 2477;
+    let rekvId = await getRekvIdFromHash(hash);
 
     if (ids && !sqlWhere) {
         // only 1 id
@@ -34,7 +37,7 @@ exports.get = async (req, res) => {
     }
 
     // проверим на пароль
-    if (!checkForAccess(hash)) {
+    if (!rekvId) {
         console.error('error 401 newAPI');
         return res.status(401).end();
     }
@@ -63,7 +66,7 @@ exports.get = async (req, res) => {
         let data = await db.queryDb(sql, params, null, null, null, null, config);
 
         docData.data = {...data.data['0']};
-        let rekvData = await db.queryDb(rekvAndmedSql, [docData.data.rekvid, userId], null, null, null, null, config);
+        let rekvData = await db.queryDb(rekvAndmedSql, [rekvId, userId], null, null, null, null, config);
         docData.data.rekv = {...rekvData.data['0']};
 
         // details
@@ -88,9 +91,6 @@ exports.get = async (req, res) => {
             row.oodatav_kokku = oodatav_kokku;
             return row;
         });
-
-        console.log(detailsData);
-
 
         docData.data.details = {...detailsData.data};
 
@@ -260,7 +260,6 @@ const createPDF = async function createFile(html, fileName = 'doc') {
     return outFile;
 };
 
-
 function exportHtml(html, file, options) {
     return new Promise((resolve, reject) => {
         wkhtmltopdf(html, options, (err, stream) => {
@@ -274,10 +273,30 @@ function exportHtml(html, file, options) {
     });
 }
 
-function checkForAccess(hash) {
-    const crypto = require('crypto');
-    let controlHash = crypto.createHmac('sha1', '').update('63').digest('hex');
 
-    return controlHash == hash;
+async function generateHash() {
+    const rekvHash = {};
+    let rekvIds = await getRekvIds();
+    rekvIds.forEach(rekv => {
+        let hashParool = crypto.createHmac('sha1','').update(rekv.id.toString()).digest('hex');
+        rekvHash[hashParool] = rekv.id;
+    });
+    return rekvHash;
+}
 
+async function  getRekvIds() {
+    let aHash = [];
+    let sql = 'select id from ou.rekv where parentid < 999';
+
+    let rekvIds = await db.queryDb(sql, null, null, null, null, null, config);
+
+    return rekvIds.data;
+}
+
+async function getRekvIdFromHash(hash) {
+    if (!DocContext.rekvHash) {
+        DocContext.rekvHash = await generateHash();
+    }
+
+    return DocContext.rekvHash[hash];
 }
