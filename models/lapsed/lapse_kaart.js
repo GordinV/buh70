@@ -142,7 +142,7 @@ module.exports = {
                 {id: "alg_kpv", name: "Kpv-st", width: "7%", type: 'date', interval: true},
                 {id: "lopp_kpv", name: "Kpv-ni", width: "7%", type: 'date', interval: true},
                 {id: "inf3", name: "INF3", width: "5%"},
-                {id: "viitenr", name: "Vana VN", width: "10%"},
+                {id: "tapne_viitenumber", name: "Vana VN", width: "10%"},
                 {id: "asutus", name: "Asutus", width: "10%", default: `DocContext.userData.asutus`},
                 {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean', hideFilter: true}
             ],
