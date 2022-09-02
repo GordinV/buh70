@@ -6,10 +6,10 @@ exports.post = async (req, res) => {
     const noticeModel = require('./../models/ou/noticed');
     const action = req.body.action || 'select';
 
-    console.log('action',action);
-
     const sqlString = action === 'select' ?  noticeModel.sqlString: noticeModel.updateString,
         params = [user.userId];
+
+    console.log('sqlString',sqlString, params);
 
     try {
         if (!user) {
@@ -19,6 +19,7 @@ exports.post = async (req, res) => {
 
         let data = await db.queryDb(sqlString, params);
         // вернуть данные
+        console.log('notice data', data);
         res.status(200).send(data);
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок
