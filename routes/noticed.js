@@ -10,8 +10,6 @@ exports.post = async (req, res) => {
     const sqlString = action === 'select' ?  noticeModel.sqlString: noticeModel.updateString,
         params = [userId];
 
-    console.log('sqlStringv',sqlString, params);
-
     try {
         if (!user) {
             console.error('No user, set status to 401');
@@ -20,7 +18,6 @@ exports.post = async (req, res) => {
 
         let data = await db.queryDb(sqlString, params);
         // вернуть данные
-        console.log('notice data', data);
         res.status(200).send(data);
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок
