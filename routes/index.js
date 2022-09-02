@@ -47,7 +47,9 @@ module.exports = function (app) {
     app.get('/lapsed/:documentType', checkAuth, require('./lapsed').get); // module lapsed
     app.get('/lapsed/:documentType/:id', checkAuth, require('./lapsed/document').get); // module lapsed
     app.get('/lapsed/:documentType/:id/:paramId', checkAuth, require('./lapsed/document').get); // module lapsed
+// /newApi/noticed
 
+    app.post('/newApi/noticed', require('./noticed').post); //checkAuth,
     app.post('/newApi/startMenu/:module', require('./startMenu').post); //checkAuth,
     app.post('/newApi/document/:documentType/:id', checkAuth, require('./documentRegister').post); //апи для обмена даты по протоколу POST с моделью документа
     app.put('/newApi/document/:documentType/:id', checkAuth, require('./documentRegister').put); //апи для обмена даты по протоколу PUT с моделью документа

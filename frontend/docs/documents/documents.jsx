@@ -78,7 +78,7 @@ class Documents extends React.Component {
         };
 
         this._bind('btnAddClick', 'clickHandler', 'btnEditClick', 'dblClickHandler', 'headerClickHandler',
-            'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick', 'modalPageBtnClick',
+            'headerClickHandler', 'btnFilterClick', 'btnSelectClick', 'btnRefreshClick','modalPageBtnClick',
             'modalDeletePageBtnClick', 'filterDataHandler', 'renderFilterToolbar',
             'btnStartClickHanler', 'renderStartMenu', 'startMenuClickHandler', 'fetchData',
             'handleInputChange', 'btnEmailClick', 'modalReportePageBtnClick');

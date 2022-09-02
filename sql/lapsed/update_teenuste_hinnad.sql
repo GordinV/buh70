@@ -48,10 +48,12 @@ BEGIN
                                       (properties::JSONB -> 'teenused')::JSONB
                                   ) AS x(nomid INTEGER, hind TEXT, kogus TEXT, kood TEXT, nimetus TEXT)
                                   INNER JOIN libs.nomenklatuur n ON n.id = x.nomid
+                         WHERE l.properties IS NOT NULL
                      ) qry
                )::TEXT                                          AS gridData
         FROM libs.library l
         WHERE l.library = 'LAPSE_GRUPP'
+          AND l.rekvid = l_rekvid
           AND l_nom_id IN (
             SELECT qry.nomid
             FROM (

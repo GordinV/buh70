@@ -81,6 +81,14 @@ $BODY$
 
 GRANT EXECUTE ON FUNCTION ou.sp_delete_userid(INTEGER, INTEGER) TO dbadmin;
 
+drop RULE if exists ou_userid_delete_rule ON ou.userid ;
+
+CREATE OR REPLACE RULE ou_userid_delete_rule AS
+    ON DELETE TO ou.userid
+    DO INSTEAD NOTHING;
+
+
+
 /*
 select error_code, result, error_message from ou.sp_delete_userid(4837, 4995)
 

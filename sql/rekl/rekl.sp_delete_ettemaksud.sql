@@ -63,3 +63,10 @@ $$;
 
 GRANT EXECUTE ON FUNCTION rekl.sp_delete_ettemaksud(user_id INTEGER, doc_id INTEGER ) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION rekl.sp_delete_ettemaksud(user_id INTEGER, doc_id INTEGER ) TO dbpeakasutaja;
+
+
+drop RULE if exists rekl_ettemaks_delete_rule ON rekl.ettemaksud ;
+
+CREATE RULE rekl_ettemaks_delete_rule AS
+    ON DELETE TO rekl.ettemaksud
+    DO INSTEAD NOTHING;

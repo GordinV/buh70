@@ -158,13 +158,12 @@ BEGIN
 
     -- проверка на дату льготы, если дата не конец мнесяца и не равна дате окончания услуги
     IF (doc_sooduse_lopp IS NOT NULL
-        AND doc_sooduse_lopp <
-            (make_date(year(doc_sooduse_lopp), month(doc_sooduse_lopp), 1) + INTERVAL '1 month' -
-             INTERVAL '1 day')::DATE)
-        AND doc_sooduse_lopp < doc_lopp_kpv
+           AND doc_sooduse_lopp <
+                (make_date(year(doc_sooduse_lopp), month(doc_sooduse_lopp), 1) + INTERVAL '1 month' -
+                 INTERVAL '1 day')::DATE)
+        OR coalesce(doc_sooduse_lopp, doc_lopp_kpv) > doc_lopp_kpv
     THEN
         RAISE EXCEPTION 'Vale soodustuse lõpp kuupäev. peaks olla kuu lõpp või teenuse lõpp kuupäev';
-
     END IF;
 
     json_props = to_jsonb(row)
@@ -212,7 +211,6 @@ BEGIN
                        FROM (SELECT now()    AS created,
                                     userName AS user) row;
 
-        RAISE NOTICE 'doc_parentid %', doc_parentid;
         INSERT INTO lapsed.lapse_kaart (parentid, rekvid, nomid, hind, tunnus, muud, properties, ajalugu)
         VALUES (doc_parentid, user_rekvid, doc_nomid, doc_hind, doc_tunnus, doc_muud, json_props,
                 '[]' :: JSONB || json_ajalugu) RETURNING id

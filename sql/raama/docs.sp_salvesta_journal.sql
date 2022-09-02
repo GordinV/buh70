@@ -7,51 +7,52 @@ CREATE OR REPLACE FUNCTION docs.sp_salvesta_journal(data JSON,
 $BODY$
 
 DECLARE
-    journal_id       INTEGER;
-    journal1_id      INTEGER;
-    userName         TEXT;
-    doc_id           INTEGER = data ->> 'id';
-    doc_type_kood    TEXT    = 'JOURNAL'/*data->>'doc_type_id'*/;
-    doc_type_id      INTEGER = (SELECT id
-                                FROM libs.library
-                                WHERE kood = doc_type_kood
-                                  AND library = 'DOK'
-                                LIMIT 1);
-    doc_data         JSON    = data ->> 'data';
-    doc_details      JSON    = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
-    doc_asutusid     INTEGER = doc_data ->> 'asutusid';
-    doc_dok          TEXT    = doc_data ->> 'dok';
-    doc_objekt       TEXT    = doc_data ->> 'objekt';
-    doc_kpv          DATE    = doc_data ->> 'kpv';
-    doc_selg         TEXT    = doc_data ->> 'selg';
-    doc_muud         TEXT    = doc_data ->> 'muud';
-    l_number         INTEGER = coalesce((SELECT max(number) + 1
-                                         FROM docs.journalid
-                                         WHERE rekvId = user_rekvid
-                                           AND aasta = (date_part('year' :: TEXT, doc_kpv) :: INTEGER)), 1);
-    json_object      JSON;
-    json_lausend     JSON;
+    journal_id             INTEGER;
+    journal1_id            INTEGER;
+    userName               TEXT;
+    doc_id                 INTEGER = data ->> 'id';
+    doc_type_kood          TEXT    = 'JOURNAL'/*data->>'doc_type_id'*/;
+    doc_type_id            INTEGER = (SELECT id
+                                      FROM libs.library
+                                      WHERE kood = doc_type_kood
+                                        AND library = 'DOK'
+                                      LIMIT 1);
+    doc_data               JSON    = data ->> 'data';
+    doc_details            JSON    = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
+    doc_asutusid           INTEGER = doc_data ->> 'asutusid';
+    doc_dok                TEXT    = doc_data ->> 'dok';
+    doc_objekt             TEXT    = doc_data ->> 'objekt';
+    doc_kpv                DATE    = doc_data ->> 'kpv';
+    doc_selg               TEXT    = doc_data ->> 'selg';
+    doc_muud               TEXT    = doc_data ->> 'muud';
+    l_number               INTEGER = coalesce((SELECT max(number) + 1
+                                               FROM docs.journalid
+                                               WHERE rekvId = user_rekvid
+                                                 AND aasta = (date_part('year' :: TEXT, doc_kpv) :: INTEGER)), 1);
+    json_object            JSON;
+    json_lausend           JSON;
 
-    json_params      JSON;
-    json_record      RECORD;
-    new_history      JSONB;
-    ids              INTEGER[];
-    lnId             INTEGER;
-    is_import        BOOLEAN = data ->> 'import';
-    is_rekl_ettemaks BOOLEAN = FALSE;
-    l_prev_kpv       DATE;
-    l_arv_id         INTEGER; --ид счета, если проводка является оплатой
-    l_oma_tp         TEXT    = (SELECT tp
-                                FROM ou.aa
-                                WHERE parentid = user_rekvid
-                                  AND kassa = 2
-                                LIMIT 1);
+    json_params            JSON;
+    json_record            RECORD;
+    new_history            JSONB;
+    ids                    INTEGER[];
+    lnId                   INTEGER;
+    is_import              BOOLEAN = data ->> 'import';
+    is_rekl_ettemaks       BOOLEAN = FALSE;
+    is_hooldekodu_ettemaks BOOLEAN = FALSE;
+    l_prev_kpv             DATE;
+    l_arv_id               INTEGER; --ид счета, если проводка является оплатой
+    l_oma_tp               TEXT    = (SELECT tp
+                                      FROM ou.aa
+                                      WHERE parentid = user_rekvid
+                                        AND kassa = 2
+                                      LIMIT 1);
 
-    l_check_lausend  TEXT;
-    l_avans_id       INTEGER;
-    l_db_tp          VARCHAR(20);
-    l_kr_tp          VARCHAR(20);
-    kas_uus BOOLEAN = false;
+    l_check_lausend        TEXT;
+    l_avans_id             INTEGER;
+    l_db_tp                VARCHAR(20);
+    l_kr_tp                VARCHAR(20);
+    kas_uus                BOOLEAN = FALSE;
 BEGIN
 
     SELECT kasutaja,
@@ -82,7 +83,7 @@ BEGIN
                                                   WHERE id = doc_id)
     THEN
 
-        kas_uus = true; -- uus lausend
+        kas_uus = TRUE; -- uus lausend
 
         SELECT row_to_json(row)
         INTO new_history
@@ -155,7 +156,7 @@ BEGIN
                                             valuuta TEXT, kuurs NUMERIC(14, 8));
 
 
-            raise notice 'loop %', json_record;
+            RAISE NOTICE 'loop %', json_record;
             IF json_record.summa <> 0
             THEN
 
@@ -163,14 +164,14 @@ BEGIN
                 l_kr_tp = json_record.lisa_k;
 
                 l_db_tp = CASE
-                    WHEN json_record.deebet IN ('601000', '601002') THEN '014001'
-                    WHEN left(json_record.deebet,6) IN ('100000','100080') THEN ''
-                    ELSE l_db_tp
+                              WHEN json_record.deebet IN ('601000', '601002') THEN '014001'
+                              WHEN left(json_record.deebet, 6) IN ('100000', '100080') THEN ''
+                              ELSE l_db_tp
                     END;
 
                 l_kr_tp = CASE
                               WHEN json_record.kreedit IN ('601000', '601002') THEN '014001'
-                              WHEN left(json_record.kreedit,6) IN ('100000','100080') THEN ''
+                              WHEN left(json_record.kreedit, 6) IN ('100000', '100080') THEN ''
                               ELSE l_kr_tp
                     END;
 
@@ -205,7 +206,7 @@ BEGIN
                               FROM docs.journal1
                               WHERE id = json_record.id :: INTEGER)
                 THEN
-                    raise notice 'uus lausend';
+                    RAISE NOTICE 'uus lausend';
 
                     INSERT INTO docs.journal1 (parentid, deebet, kreedit, summa, tunnus, proj, kood1, kood2, kood3,
                                                kood4, kood5,
@@ -229,7 +230,7 @@ BEGIN
                     ids = array_append(ids, journal1_id);
 
                 ELSE
-                    raise notice 'vana lausend';
+                    RAISE NOTICE 'vana lausend';
 
                     UPDATE docs.journal1
                     SET deebet   = json_record.deebet,
@@ -282,6 +283,12 @@ BEGIN
             IF (json_record.kreedit = '200060' OR json_record.kreedit = '200095') AND doc_selg <> 'Alg.saldo kreedit'
             THEN
                 is_rekl_ettemaks = TRUE;
+            END IF;
+
+
+            IF (json_record.kreedit = '203630') AND doc_selg <> 'Alg.saldo kreedit'
+            THEN
+                is_hooldekodu_ettemaks = TRUE;
             END IF;
         END LOOP;
 
@@ -341,6 +348,18 @@ BEGIN
     IF l_avans_id IS NOT NULL
     THEN
         PERFORM docs.get_avans_jaak(l_avans_id);
+    END IF;
+
+    -- hooldekodu
+-- hooldekodu
+    IF is_hooldekodu_ettemaks
+    THEN
+        SELECT row_to_json(row)
+        INTO json_params
+        FROM (SELECT doc_id AS id,
+                     1      AS liik) row;
+
+        PERFORM hooldekodu.sp_koosta_hooettemaks(userid, json_params::JSONB);
     END IF;
 
 

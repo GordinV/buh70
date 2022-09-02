@@ -14,6 +14,7 @@ const React = require('react'),
     BtnInfo = require('./../button-register/button-info/index.jsx'),
     StartMenu = require('./../start-menu/start-menu.jsx'),
     SelectRekv = require('./../select-rekv/index.jsx'),
+    NoticeButton = require('./../button-register/button_noticed/index.jsx'),
     BtnAccount = require('./../button-register/button-account/button-account.jsx');
 
 const style = require('./menu-toolbar.styles');
@@ -120,6 +121,7 @@ class MenuToolBar extends React.Component {
                               onClick={this.btnLoginClick}
                               show={toolbarParams['btnLogin'].show}
                               disabled={toolbarParams['btnLogin'].disabled}/>
+                    <NoticeButton value={'teatised'}/>
                     <BtnInfo ref='btnInfo'
                              value={'Juhend'}
                              show={toolbarParams['btnInfo'].show}/>

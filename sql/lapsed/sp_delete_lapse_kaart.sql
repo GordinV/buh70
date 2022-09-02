@@ -23,7 +23,7 @@ BEGIN
            (lk.properties ->> 'lopp_kpv')::DATE  AS lopp_kpv,
            (lk.properties ->> 'alg_kpv')::DATE   AS alg_kpv,
            (lk.properties ->> 'yksus')           AS yksus
-           INTO v_doc
+    INTO v_doc
     FROM lapsed.lapse_kaart lk
              JOIN ou.userid u ON u.id = user_id
     WHERE lk.id = doc_id;
@@ -66,22 +66,23 @@ BEGIN
     END IF;
 
     --удаление - нельзя удалять услугу, если на нее оформлены дневные табеля
-    SELECT count(id) INTO l_count
+    SELECT count(id)
+    INTO l_count
     FROM lapsed.lapse_kaart lk
     WHERE lk.parentid = v_doc.parentid
       AND lk.nomid = v_doc.nomid
       AND lk.properties ->> 'yksus' = v_doc.yksus
-      AND lk.staatus < 3 ;
+      AND lk.staatus < 3;
 
 -- если услуг более 1, проверка не осуществляется
-    IF coalesce (l_count,0) < 2 and exists((SELECT dt.id
-               FROM lapsed.day_taabel dt
-                        INNER JOIN lapsed.day_taabel1 dt1 ON dt.id = dt1.parent_id
-                        INNER JOIN libs.library l ON l.id = dt.grupp_id
-               WHERE dt1.laps_id = v_doc.parentid
-                 AND dt1.nom_id = v_doc.nomid
-                 AND ltrim(rtrim(v_doc.yksus)) = ltrim(rtrim(l.kood))
-                 AND dt.staatus < 3))
+    IF coalesce(l_count, 0) < 2 AND exists((SELECT dt.id
+                                            FROM lapsed.day_taabel dt
+                                                     INNER JOIN lapsed.day_taabel1 dt1 ON dt.id = dt1.parent_id
+                                                     INNER JOIN libs.library l ON l.id = dt.grupp_id
+                                            WHERE dt1.laps_id = v_doc.parentid
+                                              AND dt1.nom_id = v_doc.nomid
+                                              AND ltrim(rtrim(v_doc.yksus)) = ltrim(rtrim(l.kood))
+                                              AND dt.staatus < 3))
     THEN
 
         RAISE NOTICE 'нельзя удалять услугу, если на нее оформлены дневные табеля';
@@ -94,7 +95,8 @@ BEGIN
 
     -- Логгирование удаленного документа
 
-    SELECT to_jsonb(row) INTO json_ajalugu
+    SELECT to_jsonb(row)
+    INTO json_ajalugu
     FROM (SELECT now()          AS deleted,
                  v_doc.kasutaja AS user) row;
 
@@ -115,7 +117,11 @@ GRANT EXECUTE ON FUNCTION lapsed.sp_delete_lapse_kaart(INTEGER, INTEGER) TO arve
 GRANT EXECUTE ON FUNCTION lapsed.sp_delete_lapse_kaart(INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.sp_delete_lapse_kaart(INTEGER, INTEGER) TO dbpeakasutaja;
 
+DROP RULE IF EXISTS lapsed_lapse_kaart_delete_rule ON lapsed.lapse_kaart;
 
+CREATE RULE lapsed_lapse_kaart_delete_rule AS
+    ON DELETE TO lapsed.lapse_kaart
+    DO INSTEAD NOTHING;
 /*
 select lapsed.sp_delete_lapse_kaart(70,3)
 

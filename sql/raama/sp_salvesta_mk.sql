@@ -114,7 +114,7 @@ BEGIN
 
         INSERT INTO docs.mk (parentid, rekvid, kpv, opt, aaId, number, muud, arvid, doklausid, maksepaev, selg, viitenr,
                              dokid)
-        VALUES (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, doc_number, doc_muud,
+        VALUES (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, left(doc_number,20), doc_muud,
                 coalesce(doc_arvid, 0),
                 coalesce(doc_doklausid, 0), coalesce(doc_maksepaev, doc_kpv), coalesce(doc_selg, ''),
                 coalesce(doc_viitenr, ''), coalesce(doc_dok_id, 0)) RETURNING id
@@ -150,7 +150,7 @@ BEGIN
         UPDATE docs.mk
         SET kpv       = doc_kpv,
             aaid      = doc_aa_id,
-            number    = doc_number,
+            number    = left(doc_number,20),
             muud      = doc_muud,
             arvid     = coalesce(doc_arvid, 0),
             doklausid = coalesce(doc_doklausid, 0),

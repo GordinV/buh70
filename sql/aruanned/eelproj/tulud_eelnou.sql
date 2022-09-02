@@ -70,7 +70,7 @@ BEGIN
                                                     ELSE l_rekvid END)
                                 AND t.rekvid IN (SELECT r.rekv_id
                                                  FROM get_asutuse_struktuur(l_rekvid) r)
-                                AND t.aasta IN (year(l_kpv) - 1, year(l_kpv), year(l_kpv) + 1 )
+                                AND t.aasta IN (year(l_kpv) - 1, year(l_kpv), year(l_kpv) + 1)
                                 AND t.rekvid <> 9
                               GROUP BY t.aasta, t.rekvid, t1.kood5
                               HAVING (count(*) > 0)
@@ -636,7 +636,7 @@ BEGIN
                    AND LEFT(S.artikkel, 4) NOT IN ('3502', '1502', '1532', '2585', '1032')
                  GROUP BY S.rekv_id, S.artikkel, S.tegev, S.allikas, S.tunnus
                  UNION ALL
---         get_saldo('KD', '3502', '01', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
+                 --         get_saldo('KD', '3502', '01', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
 --         get_saldo('KD', '3502', '05', NULL, S.rekv_id, YEAR (l_kpv) - 1) +
 --         get_saldo('KD', '3502', '', NULL, S.rekv_id, YEAR (l_kpv) - 1) AS summa
                  SELECT S.rekv_id    AS rekvid,
@@ -1136,7 +1136,7 @@ BEGIN
                               INNER JOIN eelarve.taotlus1 t1
                                          ON t.id = t1.parentid
                      WHERE t.aasta = YEAR(l_kpv) + 1
-                       AND t.status IN (3) -- акцептированные
+                       AND t.status IN (3)           -- акцептированные
                        AND coalesce(t.tunnus, 0) = 0 -- только утвержденные
                        AND rekvid = (CASE
                                          WHEN $3 = 1
@@ -1238,6 +1238,37 @@ BEGIN
                      GROUP BY e.rekvid, e.kood5, e.kood1, e.kood2, e.tunnus
                  )
                 ,
+             qryAasta8 AS (
+                 -- oodatav taitine
+                 SELECT t.rekvid,
+                        t1.kood5                                                                            AS artikkel,
+                        t1.kood1                                                                            AS tegev,
+                        t1.kood2                                                                            AS allikas,
+                        CASE WHEN t1.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE t1.tunnus END AS tunnus,
+                        sum(oodatav_taitmine)                                                               AS summa,
+                        string_agg(replace(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
+                 FROM eelarve.taotlus t
+                          INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
+                 WHERE t.aasta = YEAR(l_kpv) + 1
+                   AND t.status IN (3)
+                   AND rekvid = (CASE
+                                     WHEN $3 = 1
+                                         THEN rekvid
+                                     ELSE l_rekvid END)
+                   AND rekvid IN (SELECT a.rekv_id
+                                  FROM get_asutuse_struktuur(l_rekvid) a)
+                   AND t1.kood2 NOT ILIKE ('%RF%')
+                   AND t1.kood5 IN (
+                     SELECT kood
+                     FROM qryArtikkel
+                 )
+                   AND t.rekvid <> 9
+                 GROUP BY t1.kood5,
+                          t1.kood1,
+                          t1.kood2,
+                          t1.tunnus,
+                          t.rekvid
+             ),
 
              preReport
                  AS
@@ -1351,6 +1382,22 @@ BEGIN
                                      summa::NUMERIC(14, 2) eelarve_tekkepohine_tapsustatud,
                                      NULL::TEXT         AS selg
                               FROM qryAasta7 q
+                              UNION ALL
+                              SELECT q.rekvid           AS rekvid,
+                                     2,
+                                     q.artikkel,
+                                     q.tegev,
+                                     q.allikas,
+                                     q.tunnus,
+                                     0                  AS aasta_1_tekke_taitmine,
+                                     0                  AS aasta_2_tekke_taitmine,
+                                     q.summa            AS aasta_2_oodatav_taitmine,
+                                     0                  AS aasta_3_eelnou,
+                                     0                  AS aasta_3_prognoos,
+                                     0:: NUMERIC(14, 2) AS eelarve_tekkepohine_kinnitatud,
+                                     0::NUMERIC(14, 2)     eelarve_tekkepohine_tapsustatud,
+                                     NULL::TEXT         AS selg
+                              FROM qryAasta8 q
                           ) qry
                               LEFT OUTER JOIN qryTaotlused t
                                               ON t.artikkel = qry.artikkel AND t.rekvid = qry.rekvid
@@ -1412,7 +1459,8 @@ BEGIN
                             sum(S.eelarve_tekkepohine_tapsustatud)::NUMERIC(14, 2) AS eelarve_tekkepohine_tapsustatud,
                             NULL::TEXT                                             AS selg
                      FROM qryReport S
-                     where l_rekvid = 63 and l_kond = 1 -- только для фин. департамента
+                     WHERE l_rekvid = 63
+                       AND l_kond = 1 -- только для фин. департамента
                      GROUP BY S.artikkel, S.idx, S.tunnus, S.tegev, S.allikas
                  )
                 ,
@@ -1539,14 +1587,9 @@ GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER, JSONB) TO
 GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER, JSONB) TO eelaktsepterja;
 GRANT EXECUTE ON FUNCTION eelarve.tulud_eelnou(DATE, INTEGER, INTEGER, JSONB) TO dbvaatleja;
 
-
-SELECT sum(aasta_1_tekke_taitmine) OVER (PARTITION BY rekv_id, artikkel) AS aasta1,
-       sum(aasta_2_tekke_taitmine) OVER (PARTITION BY rekv_id, artikkel) AS aasta2,
-       *
-FROM eelarve.tulud_eelnou('2021-12-31'::DATE, 64:: INTEGER, 1)
-WHERE tegev LIKE '05%'
-   OR tegev LIKE '01-10%'
-
+SELECT  *
+FROM eelarve.tulud_eelnou('2022-12-31'::DATE, 63:: INTEGER, 0)
+where aasta_2_oodatav_taitmine > 0
 
 
 

@@ -106,7 +106,11 @@ $BODY$
 GRANT EXECUTE ON FUNCTION lapsed.sp_delete_laps(INTEGER, INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.sp_delete_laps(INTEGER, INTEGER) TO dbpeakasutaja;
 
+drop RULE if exists lapsed_laps_delete_rule ON lapsed.laps;
 
+CREATE RULE lapsed_laps_delete_rule AS
+    ON DELETE TO lapsed.laps
+    DO INSTEAD NOTHING;
 /*
 select lapsed.sp_delete_laps(4450,37)
 

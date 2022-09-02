@@ -25,6 +25,7 @@ module.exports = {
                 sum(aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
                 sum(aasta_3_eelnou)                  AS aasta_3_eelnou,
                 sum(aasta_3_prognoos)                AS aasta_3_prognoos,
+                sum(aasta_2_oodatav_taitmine) as aasta_2_oodatav_taitmine,
                 ''                                   AS selg
          FROM preReport
          WHERE left(tegev, 2) IN ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10')
@@ -43,6 +44,7 @@ module.exports = {
                 aasta_2_tekke_taitmine,
                 aasta_3_eelnou,
                 aasta_3_prognoos,
+                aasta_2_oodatav_taitmine,
                 coalesce(selg,'') as selg
          FROM preReport
              UNION ALL
@@ -57,6 +59,7 @@ module.exports = {
                 aasta_2_tekke_taitmine,
                 aasta_3_eelnou,
                 aasta_3_prognoos,
+                aasta_2_oodatav_taitmine,
                 selg
          FROM qryKond
      )
@@ -78,6 +81,7 @@ SELECT CASE WHEN r.parentid NOT IN (0, 63) THEN ltrim(rtrim(r.nimetus)) ELSE '' 
            qryReport.aasta_2_tekke_taitmine,
            qryReport.aasta_3_eelnou,
            qryReport.aasta_3_prognoos,
+           qryReport.aasta_2_oodatav_taitmine,
            qryReport.selg                                                                              AS selg
             FROM qryReport
             INNER JOIN (SELECT id, parentid, regkood, nimetus

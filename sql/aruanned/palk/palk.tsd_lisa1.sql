@@ -4,35 +4,38 @@ DROP FUNCTION IF EXISTS palk.tsd_lisa_1(DATE, DATE, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION palk.tsd_lisa_1(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER)
     RETURNS TABLE (
-        isikukood     VARCHAR(20),
-        isik          VARCHAR(254),
-        tululiik      VARCHAR(20),
-        liik          INTEGER,
-        minsots       NUMERIC(14, 2),
-        sm_arv        INTEGER,
-        tk_arv        INTEGER,
-        minpalk       NUMERIC(14, 2),
-        summa         NUMERIC(14, 2),
-        puhkused      NUMERIC(14, 2),
-        haigused      NUMERIC(14, 2),
-        tm            NUMERIC(14, 2),
-        sm            NUMERIC(14, 2),
-        tki           NUMERIC(14, 2),
-        pm            NUMERIC(14, 2),
-        tka           NUMERIC(14, 2),
-        tulubaas      NUMERIC(14, 2),
-        puhkus        NUMERIC(14, 2),
-        v1040         NUMERIC(14, 2),
-        lopp          DATE,
-        arv_min_sots  NUMERIC(14, 2),
-        min_sots_alus NUMERIC(14, 2),
-        eri_tm        NUMERIC(14, 2),
-        eri_sm        NUMERIC(14, 2),
-        lisa_min_sots NUMERIC(14, 2),
-        lisa_sm_alus  NUMERIC(14, 2),
-        sm_kokku      NUMERIC(14, 2)
+        isikukood          VARCHAR(20),
+        isik               VARCHAR(254),
+        tululiik           VARCHAR(20),
+        liik               INTEGER,
+        minsots            NUMERIC(14, 2),
+        sm_arv             INTEGER,
+        tk_arv             INTEGER,
+        minpalk            NUMERIC(14, 2),
+        summa              NUMERIC(14, 2),
+        puhkused           NUMERIC(14, 2),
+        haigused           NUMERIC(14, 2),
+        tm                 NUMERIC(14, 2),
+        sm                 NUMERIC(14, 2),
+        tki                NUMERIC(14, 2),
+        pm                 NUMERIC(14, 2),
+        tka                NUMERIC(14, 2),
+        tulubaas           NUMERIC(14, 2),
+        puhkus             NUMERIC(14, 2),
+        v1040              NUMERIC(14, 2),
+        lopp               DATE,
+        arv_min_sots       NUMERIC(14, 2),
+        min_sots_alus      NUMERIC(14, 2),
+        eri_tm             NUMERIC(14, 2),
+        eri_sm             NUMERIC(14, 2),
+        lisa_min_sots      NUMERIC(14, 2),
+        lisa_sm_alus       NUMERIC(14, 2),
+        sm_kokku           NUMERIC(14, 2),
+        lisa_sm_arvestatud NUMERIC(14, 2),
+        alus_sm_arvestatud NUMERIC(14, 2)
 
-    ) AS
+    )
+AS
 $BODY$
 WITH qrySMKokku AS (
     SELECT sum(summa) AS sm_kokku
@@ -73,7 +76,9 @@ SELECT isikukood,
        coalesce(eri_sm, 0)::NUMERIC(14, 2),
        arv_min_sots * sm_arv  AS lisa_min_sots,
        min_sots_alus * sm_arv AS lisa_sm_alus,
-       qrySMKokku.sm_kokku    AS sm_kokku
+       qrySMKokku.sm_kokku    AS sm_kokku,
+       lisa_sm_arvestatud,
+       alus_sm_arvestatud
 FROM (
          WITH qryKoormus AS (
              SELECT a.regkood :: VARCHAR(20)                   AS isikukood,
@@ -94,6 +99,7 @@ FROM (
                                      ON pl.id = po.libid AND pl.liik = 5 AND po.sotsmaks <> 0
                  WHERE po.kpv >= l_kpv1
                    AND po.kpv <= l_kpv2
+                   AND po.period IS NULL -- убрать доп.соц налог из lisa1b
              ) qryMinSots ON qryMinSots.lepingid = t.id AND qryMinSots.rekvid = rekv.id
              WHERE rekv.id = (CASE
                                   WHEN l_kond IS NOT NULL
@@ -106,6 +112,25 @@ FROM (
                AND t.resident = 1
              GROUP BY a.regkood, a.nimetus
          ),
+              qryLisaSM AS (
+                  SELECT a.regkood AS isikukood, sum(summa) AS sotsmaks, sum(sotsmaks) AS alus
+                  FROM palk.palk_oper po
+                           INNER JOIN libs.library l ON l.id = po.libid
+                           INNER JOIN palk.tooleping t ON t.id = po.lepingid
+                           INNER JOIN libs.asutus a ON a.id = t.parentid
+                  WHERE po.rekvid IN (SELECT rekv_id
+                                      FROM get_asutuse_struktuur(l_rekvid))
+                    AND po.rekvid = (CASE
+                                         WHEN l_kond IS NOT NULL
+                                             THEN l_rekvid
+                                         ELSE po.rekvid END)
+                    AND po.kpv >= l_kpv1
+                    AND po.kpv <= l_kpv2
+                    AND po.period IS NULL -- убрать доп.соц налог из lisa1b
+                    AND l.properties::JSONB ->> 'liik' = '5'
+                  GROUP BY a.regkood
+              ),
+
               qryEriTM AS (
                   SELECT sum(summa) AS summa, asutusid
                   FROM cur_journal j
@@ -171,7 +196,9 @@ FROM (
                 max(qry.arv_min_sots)                                AS arv_min_sots,
                 max(qry.min_sots_alus)                               AS min_sots_alus,
                 sum(COALESCE(qryEriTm.summa, 0))::NUMERIC(14, 2)     AS eri_tm,
-                sum(COALESCE(qryEriSm.summa, 0))::NUMERIC(14, 2)     AS eri_sm
+                sum(COALESCE(qryEriSm.summa, 0))::NUMERIC(14, 2)     AS eri_sm,
+                sum(qryLisaSM.sotsmaks)                              AS lisa_sm_arvestatud,
+                sum(qryLisaSM.alus)                                  AS alus_sm_arvestatud
          FROM (
                   SELECT a.regkood                                                         AS isikukood,
                          a.nimetus                                                         AS isik,
@@ -213,7 +240,6 @@ FROM (
                          COALESCE(qryMinSots.min_sots_alus, 0)                             AS min_sots_alus,
                          COALESCE(sp_puudumise_paevad(l_kpv1 :: DATE, t.id), 0) :: NUMERIC AS puhkus,
                          COALESCE(t.koormus, 0)                                            AS koormus
-
                   FROM palk.tooleping t
                            INNER JOIN libs.asutus a ON a.id = t.parentid
                            INNER JOIN palk.palk_oper po ON po.lepingid = t.id
@@ -245,6 +271,7 @@ FROM (
                                      FROM get_asutuse_struktuur(l_rekvid))
               ) qry
                   FULL OUTER JOIN qryKoormus ON qryKoormus.isikukood = qry.isikukood
+                  LEFT OUTER JOIN qryLisaSM ON qryLisaSM.isikukood = qryKoormus.isikukood
                   FULL OUTER JOIN qryEriTm ON qryEriTm.asutusid = qry.Id
                   FULL OUTER JOIN qryEriSm ON qryEriSm.asutusid = qry.Id
          GROUP BY qry.id, qry.isikukood, qryKoormus.isikukood, qry.isik, qryKoormus.isik,

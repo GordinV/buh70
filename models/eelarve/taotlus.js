@@ -38,11 +38,11 @@ module.exports = {
                       (d.rigths ->> 'EelAllkirjastaja')::JSONB)::BOOLEAN                           AS is_allkirjastaja,
                      (to_json($2::INTEGER)::JSONB <@ (d.rigths ->> 'Eelesitaja')::JSONB)::BOOLEAN  AS is_esitaja,
                      r.regkood,
-                     r.nimetus                                        AS asutus       
+                     r.nimetus                                                                     AS asutus
               FROM docs.doc d
                        INNER JOIN libs.library l ON l.id = d.doc_type_id
                        INNER JOIN eelarve.taotlus t ON t.parentId = d.id
-                       INNER JOIN ou.rekv r ON r.id = t.rekvid                  
+                       INNER JOIN ou.rekv r ON r.id = t.rekvid
                        LEFT OUTER JOIN ou.userid koostaja ON t.koostajaid = koostaja.id
                        LEFT OUTER JOIN ou.userid esitaja ON t.ametnikid = esitaja.id
                        LEFT OUTER JOIN ou.userid aktsepteerija ON t.aktseptid = aktsepteerija.id
@@ -154,6 +154,7 @@ module.exports = {
         {name: 'koostajaId', type: 'I'},
         {name: 'aasta', type: 'I'},
         {name: 'kpv', type: 'D'},
+        {name: 'number', type: 'C'},
         {name: 'muud', type: 'T'}
     ],
     saveDoc: `select eelarve.sp_salvesta_taotlus($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
@@ -197,6 +198,7 @@ module.exports = {
                            tunnus,
                            summa,
                            summa_kassa,
+                           oodatav_taitmine,
                            parentid,
                            regkood,
                            nimetus::VARCHAR(254),
@@ -240,7 +242,7 @@ module.exports = {
         {
             view: 'taotlus',
             params: 'id',
-            register: ``
+            register: ``,
         }
     ],
     email: [

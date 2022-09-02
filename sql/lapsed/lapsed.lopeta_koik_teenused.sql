@@ -25,28 +25,47 @@ DECLARE
     json_ajalugu JSONB   = jsonb_build_object('updated', now(), 'userName', l_user); -- логгирование
     v_laps       RECORD;
     l_count      INTEGER = 0;
+    json_params  JSONB;
+    v_teenused   RECORD;
 
 BEGIN
-    SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr INTO v_laps
+    SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr
+    INTO v_laps
     FROM lapsed.laps l
     WHERE id = l_laps_id;
 
     --
     -- update
-    UPDATE lapsed.lapse_kaart
-    SET properties = properties::JSONB || jsonb_build_object('lopp_kpv', l_kpv),
-        ajalugu    = ajalugu::JSONB || json_ajalugu
-    WHERE parentid = l_laps_id
-      AND rekvid = l_rekvid
-      AND ((properties ->> 'lopp_kpv')::DATE IS NULL OR (properties ->> 'lopp_kpv')::DATE > l_kpv)
-      AND staatus = 1;
-    GET DIAGNOSTICS l_count = ROW_COUNT;
+    FOR v_teenused IN
+        SELECT id, (properties ->> 'sooduse_lopp')::DATE AS sooduse_lopp
+        FROM lapsed.lapse_kaart lk
+        WHERE parentid = l_laps_id
+          AND rekvid = l_rekvid
+          AND ((properties ->> 'lopp_kpv')::DATE IS NULL OR (properties ->> 'lopp_kpv')::DATE > l_kpv)
+          AND staatus = 1
+        LOOP
+
+            json_params = jsonb_build_object('lopp_kpv', l_kpv);
+            -- льгота
+            IF (v_teenused.sooduse_lopp)::DATE IS NOT NULL AND
+               (v_teenused.sooduse_lopp)::DATE > l_kpv
+            THEN
+                -- льгота не должна превышать срок услуги
+                json_params = json_params || jsonb_build_object('sooduse_lopp', l_kpv);
+            END IF;
+
+            UPDATE lapsed.lapse_kaart
+            SET properties = properties::JSONB || json_params,
+                ajalugu    = ajalugu::JSONB || json_ajalugu
+            WHERE id = v_teenused.id;
+            l_count = l_count + 1;
+        END LOOP;
 
     -- response
     doc_type_id = 'LAPS';
     result = l_laps_id;
     error_message = 'Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi || ', kokku uuendatud ' ||
-                    coalesce(l_count, 0)::TEXT || ' teenused'::TEXT;
+                    COALESCE(l_count, 0)::TEXT || ' teenused'::TEXT;
 
 
     RETURN;
@@ -60,8 +79,7 @@ EXCEPTION
             result = 0;
             RETURN;
 END ;
-$BODY$
-    LANGUAGE plpgsql
+$BODY$ LANGUAGE plpgsql
     VOLATILE
     COST 100;
 

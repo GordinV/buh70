@@ -63,7 +63,7 @@ BEGIN
 
             -- проверяем viitenumber
             -- если длина ссылки меньше 9, то это старый  номер
-            IF (len(v_pank_vv.viitenumber::TEXT)) < 9
+            IF (char_length(v_pank_vv.viitenumber::TEXT)) < 9
             THEN
                 l_new_viitenr = lapsed.get_viitenumber_from_old(v_pank_vv.viitenumber::TEXT);
 
@@ -73,7 +73,7 @@ BEGIN
             END IF;
 
             -- читаем ссылку и ищем учреждение
-            l_rekvid = substr(l_new_viitenr, 1, len(l_new_viitenr::TEXT) - 7)::INTEGER;
+            l_rekvid = substr(l_new_viitenr, 1, char_length(l_new_viitenr::TEXT) - 7)::INTEGER;
 
             -- получим ид ребенка
             l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;

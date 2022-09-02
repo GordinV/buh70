@@ -45,7 +45,6 @@ SELECT lt.id,
        coalesce((lt.properties ->> 'kulastused')::INTEGER, 0) AS kulastused,
        coalesce((lt.properties ->> 'too_paevad')::INTEGER, 0) AS too_paevad,
        coalesce((lt.properties ->> 'kovid')::INTEGER, 0)      AS kovid
-
 FROM lapsed.lapse_taabel lt
          INNER JOIN lapsed.laps l ON l.id = lt.parentid
          INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid

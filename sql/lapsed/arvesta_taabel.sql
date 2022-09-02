@@ -1,6 +1,7 @@
 -- Function: docs.sp_delete_mk(integer, integer)
 
 DROP FUNCTION IF EXISTS lapsed.arvesta_taabel(INTEGER, INTEGER, DATE);
+DROP FUNCTION IF EXISTS lapsed.arvesta_taabel_(INTEGER, INTEGER, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.arvesta_taabel(IN user_id INTEGER,
                                                  IN l_laps_id INTEGER,
@@ -76,7 +77,8 @@ BEGIN
                0                                                          AS too_paevad,
                0                                                          AS kulastused,
                0                                                          AS kovid,
-               lk.properties ->> 'yksus'                                  AS yksus
+               lk.properties ->> 'yksus'                                  AS yksus,
+               0                                                          AS kovid_kokku
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.parentid = l_laps_id
@@ -111,7 +113,7 @@ BEGIN
                   AND year(t.kpv) = year(l_kpv::DATE);
 
                 v_kaart.hind = NULL;
-                l_muud = null;
+                l_muud = NULL;
                 -- нет расчета цены
 
             ELSIF lower(v_kaart.algoritm) IN ('külastamine')
@@ -183,12 +185,11 @@ BEGIN
 --                v_kaart.kogus = 1;
                 v_kaart.kulastused = l_kulastused;
 
-
-                -- поправка на расчет из-=за неполного табеля
+                -- поправка на расчет из-за неполного табеля
 --                l_too_paevad = v_kaart.too_paevad;
 
                 v_kaart.kovid = (l_too_paevad - l_kulastused)::NUMERIC;
-                IF coalesce(l_kulastused, 0) > 0 and v_kaart.hind >= 0
+                IF coalesce(l_kulastused, 0) > 0 AND v_kaart.hind >= 0
                 THEN
 
                     -- были пропуски с причиной = ковид
@@ -269,6 +270,10 @@ BEGIN
     IF (l_count = 0)
     THEN
         l_message = l_message || ':teenused ei leidnud';
+    ELSE
+        -- формируем извещение
+        INSERT INTO ou.noticed (userid, teatis,task_name)
+        VALUES (user_id, l_message,'Arvesta tabel');
     END IF;
 
     result = COALESCE(l_taabel_id, 0);
@@ -296,7 +301,8 @@ GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arves
 
 
 /*
-select lapsed.arvesta_taabel(45, 8013,'2022-01-31')
+-- 19201
+select lapsed.arvesta_taabel(45, 14961,'2022-05-31')
 
 select * from lapsed.lapsed_taabel where rekvid = 63
 

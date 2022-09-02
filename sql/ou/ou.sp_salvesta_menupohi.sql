@@ -38,6 +38,8 @@ DECLARE
     doc_is_eel_aktsepterja     INTEGER = doc_data ->> 'is_eel_aktsepterja';
     doc_is_rekl_maksuhaldur    INTEGER = doc_data ->> 'is_rekl_maksuhaldur';
     doc_is_rekl_administraator INTEGER = doc_data ->> 'is_rekl_administraator';
+    doc_is_sa_ametnik          INTEGER = doc_data ->> 'is_sa_ametnik';
+    doc_is_hk_ametnik          INTEGER = doc_data ->> 'is_hk_ametnik';
     doc_is_ladu_kasutaja       INTEGER = doc_data ->> 'is_ladu_kasutaja';
     doc_is_palga_kasutaja      INTEGER = doc_data ->> 'is_palga_kasutaja';
     doc_is_pohivara_kasutaja   INTEGER = doc_data ->> 'is_pohivara_kasutaja';
@@ -61,6 +63,17 @@ BEGIN
         RAISE NOTICE 'User not found %', user;
         RETURN 0;
     END IF;
+
+    IF doc_is_sa_ametnik
+    THEN
+        doc_groups = doc_groups || to_jsonb('SA_AMETNIK' :: TEXT);
+    END IF;
+
+    IF doc_is_hk_ametnik
+    THEN
+        doc_groups = doc_groups || to_jsonb('HK_AMETNIK' :: TEXT);
+    END IF;
+
 
     IF doc_is_palga_kasutaja
     THEN

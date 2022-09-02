@@ -95,7 +95,7 @@ module.exports = {
 
         }
     ],
-    selectAsLibs: `SELECT *, kehtivus AS valid, regkood as kood
+    selectAsLibs: `SELECT *, kehtivus AS valid, regkood AS kood
                    FROM com_asutused a
                    WHERE libs.check_asutus(a.id::INTEGER, $1::INTEGER)
                      AND (kehtivus IS NULL OR kehtivus >= date())

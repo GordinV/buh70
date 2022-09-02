@@ -9,6 +9,14 @@ module.exports = {
 //            {name: 'Lõpeta kõik teenused', method: 'lopetaKoikTeenused', docTypeId: 'laps'},
         ]
     },
+    // извещения
+    noticed: {
+        gridConfig: [
+            {id: "timestamp", name: "Aeg", width: "20%"},
+            {id: "task_name", name: "Tegevus", width: "20%"},
+            {id: "teatis", name: "Teatis", width: "60%"}]
+
+    },
     // логи
     logs: {
         gridConfig: [

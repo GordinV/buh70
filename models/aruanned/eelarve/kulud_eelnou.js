@@ -218,7 +218,7 @@ module.exports = {
                case when a.nimetus is null then '' else artikkel end as artikkel,
                aasta_1_tekke_taitmine                             AS aasta_1_tekke_taitmine,
                aasta_2_tekke_taitmine                             AS aasta_2_tekke_taitmine,
-               aasta_2_oodatav_taitmine                           AS aasta_2_oodatav_taitmine,
+               aasta_2_oodatav_taitmine                           AS aasta_3_oodatav,
                aasta_3_eelnou                                     AS aasta_3_eelnou,
                aasta_3_prognoos                                   AS aasta_3_prognoos,
                eelarve_tekkepohine_kinnitatud                     AS eelarve_tekkepohine_kinnitatud,

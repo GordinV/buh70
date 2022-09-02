@@ -13,6 +13,7 @@ const React = require('react'),
     BtnEmail = require('./../button-register/button-email/index.jsx'),
     BtnPdf = require('./../button-register/button-pdf/index.jsx'),
     BtnLogs = require('./../show-logs/index.jsx'),
+    BtnNoticed = require('./../button-register/button_noticed/index.jsx'),
     TaskWidget = require('./../task-widget/task-widget.jsx');
 
 class DocToolBar extends React.PureComponent {
@@ -28,6 +29,7 @@ class DocToolBar extends React.PureComponent {
         this.btnEmailClick = this.btnEmailClick.bind(this);
         this.btnLogsClick = this.btnLogsClick.bind(this);
         this.handleButtonTask = this.handleButtonTask.bind(this);
+        this.handleSelectTask = this.handleSelectTask.bind(this);
         this.handleSelectTask = this.handleSelectTask.bind(this);
 
         this.docId = null;

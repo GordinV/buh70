@@ -21,6 +21,7 @@ module.exports = {
                        qryReport.eelarve_tekkepohine_kinnitatud,
                        qryReport.eelarve_tekkepohine_tapsustatud,
                        qryReport.aasta_2_tekke_taitmine,
+                       qryReport.aasta_2_oodatav_taitmine,                       
                        qryReport.aasta_3_eelnou,
                        qryReport.aasta_3_prognoos,
                        qryReport.selg AS selg
@@ -39,6 +40,7 @@ module.exports = {
                             sum(eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
                             sum(eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud,
                             sum(aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
+                            sum(aasta_2_oodatav_taitmine)        as aasta_2_oodatav_taitmine,
                             sum(aasta_3_eelnou)                  AS aasta_3_eelnou,
                             sum(aasta_3_prognoos)                AS aasta_3_prognoos,
                             ''                                   AS selg
@@ -60,6 +62,7 @@ module.exports = {
                             sum(qry.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
                             sum(qry.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud,
                             sum(qry.aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
+                            sum(qry.aasta_2_oodatav_taitmine)        as aasta_2_oodatav_taitmine,
                             sum(qry.aasta_3_eelnou)                  AS aasta_3_eelnou,
                             sum(qry.aasta_3_prognoos)                AS aasta_3_prognoos,
                             ''                                       AS selg
@@ -83,7 +86,7 @@ module.exports = {
                    qryReport.eelarve_tekkepohine_kinnitatud,
                    qryReport.eelarve_tekkepohine_tapsustatud,
                    qryReport.aasta_2_tekke_taitmine,
-                   0::numeric(12,2) as aasta_3_oodatav,
+                   qryReport.aasta_2_oodatav_taitmine::numeric(12,2) as aasta_3_oodatav,
                    qryReport.aasta_3_eelnou,
                    qryReport.aasta_3_prognoos,
                    coalesce(qryReport.selg,' ')                                AS selg

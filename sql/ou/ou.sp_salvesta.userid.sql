@@ -54,7 +54,11 @@ DECLARE
                                          coalesce((doc_data ->> 'is_palga_kasutaja') :: BOOLEAN,
                                                   FALSE)                                              AS is_palga_kasutaja,
                                          coalesce((doc_data ->> 'is_pohivara_kasutaja') :: BOOLEAN,
-                                                  FALSE)                                              AS is_pohivara_kasutaja
+                                                  FALSE)                                              AS is_pohivara_kasutaja,
+                                         coalesce((doc_data ->> 'is_sa_ametnik') :: BOOLEAN,
+                                                  FALSE)                                              AS is_sa_ametnik,
+                                         coalesce((doc_data ->> 'is_hk_ametnik') :: BOOLEAN,
+                                                  FALSE)                                              AS is_hk_ametnik
                                  ) row);
 
     is_import    BOOLEAN = data ->> 'import';
@@ -69,8 +73,6 @@ BEGIN
       AND roles ->> 'is_admin' IS NOT NULL
       AND (roles ->> 'is_admin')::BOOLEAN;
 
-
-    RAISE NOTICE 'email %', doc_data ->> 'email';
     -- проверка на почту
 -- должна быть из домена narva.ee или в исключениях
     IF doc_data ->> 'email' IS NULL OR (doc_data ->> 'email')::TEXT IN ('vladislav.gordin@gmail.com')
@@ -199,6 +201,16 @@ BEGIN
     IF roles_json ->> 'is_arvestaja'
     THEN
         roles_list = roles_list || ',arvestaja';
+    END IF;
+
+    IF roles_json ->> 'is_sa_ametnik'
+    THEN
+        roles_list = roles_list || ',soametnik';
+    END IF;
+
+    IF roles_json ->> 'is_hk_ametnik'
+    THEN
+        roles_list = roles_list || ',hkametnik';
     END IF;
 
     l_string = 'GRANT ' || roles_list || ' TO ' || quote_ident(doc_kasutaja);

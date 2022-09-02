@@ -17,7 +17,7 @@ DECLARE
                                             FROM libs.library
                                             WHERE kood = doc_type_kood
                                               AND library = 'DOK'
-                                                LIMIT 1);
+                                            LIMIT 1);
 
     doc_details           JSON           = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
     doc_number            TEXT           = doc_data ->> 'number';
@@ -45,6 +45,9 @@ DECLARE
     doc_print             JSONB          = coalesce((doc_data ->> 'print')::JSONB, '[]'::JSONB); -- '["paber","email","earve"]'
     doc_ettemaksu_period  INTEGER        = doc_data ->> 'ettemaksu_period'; -- период в месяцах для счета на предоплату или номер периода в доходных
     doc_ettemaksu_arve_id INTEGER        = doc_data ->> 'ettemaksu_arve_id'; -- ссылка на счет предоплатв
+
+-- Hooldekodu
+    doc_isik_id           INTEGER        = doc_data ->> 'isik_id'; -- kui arve salvestatud hooldekodu modulist
 
     dok_props             JSONB;
 
@@ -74,6 +77,7 @@ BEGIN
                               doc_viitenr          AS viitenr,
                               doc_type             AS tyyp,
                               doc_ettemaksu_period AS ettemaksu_period,
+                              doc_isik_id          AS isik_id,
                               doc_print            AS print) row);
 
     IF (doc_id IS NULL)
@@ -414,7 +418,7 @@ BEGIN
                                                     WHERE parentid = doc_id)))
                                    AND a.properties ->> 'tyyp' IS NOT NULL
                                    AND a.properties ->> 'tyyp' = 'ETTEMAKS'
-                                     LIMIT 1
+                                 LIMIT 1
         );
 
     END IF;

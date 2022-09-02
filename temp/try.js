@@ -1,4 +1,4 @@
-let start = '2022-06-02';
-let end = '2021-12-31';
+let newTeatised = 1;
+let value =  newTeatised ? `Teatised (${newTeatised})`: `Teatised`;
 
-console.log(start < end, new Date(start), new Date(end), new Date(start) < new Date(end));
+console.log('value',value);

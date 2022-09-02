@@ -8,8 +8,12 @@ CREATE TABLE ou.logs (
     user_id   INTEGER NOT NULL,
     doc_id    INTEGER,
     TIMESTAMP TIMESTAMP DEFAULT now(),
-    propertis JSONB
+    propertis JSONB,
+    changes   JSONB
 );
+
+ALTER TABLE ou.logs
+    ADD COLUMN IF NOT EXISTS changes JSONB NULL;
 
 
 GRANT SELECT, UPDATE, INSERT ON TABLE ou.logs TO dbpeakasutaja;

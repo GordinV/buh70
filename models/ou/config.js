@@ -14,7 +14,9 @@ module.exports = {
                      coalesce((u.properties ->> 'pass')::VARCHAR(100))::VARCHAR(100)   AS pass,
                      coalesce((u.properties ->> 'email')::VARCHAR(254))::VARCHAR(254)  AS email,
                      coalesce((c.properties ->> 'earved')::VARCHAR(254))::VARCHAR(254) AS earved,
-                     c.tahtpaev
+                     c.tahtpaev,
+                     coalesce((c.properties ->> 'pdf')::VARCHAR(254))::VARCHAR(254)    AS pdf
+
               FROM ou.config c,
                    ou.userid u
               WHERE c.rekvid = $1
@@ -33,7 +35,8 @@ module.exports = {
                       ''::varchar(254) as pass,
                       ''::varchar(254) as email,
                       ''::varchar(254) as earved,
-                      5::integer as tahtpaev`,
+                      5::integer as tahtpaev,
+                      ''::::VARCHAR(254) as pdf`,
         query: null,
         multiple: false,
         alias: 'row',

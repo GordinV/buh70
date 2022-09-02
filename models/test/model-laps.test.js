@@ -61,7 +61,7 @@ describe('lapsed tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should exists proc lapsed.sp_salvesta_laps', async () => {
+    it.skip('should exists proc lapsed.sp_salvesta_laps', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_salvesta_laps'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -101,7 +101,7 @@ describe('lapsed tests', function () {
         expect(returnValue.result).toBeGreaterThan(0);
     });
 
-    it('should select saved row', async()=>{
+    it.skip('should select saved row', async()=>{
         let sql = doc.select[0].sql;
         let returnValue = await db.queryDb(sql, [globalDocId,USER_ID]);
         expect(returnValue).toBeDefined();

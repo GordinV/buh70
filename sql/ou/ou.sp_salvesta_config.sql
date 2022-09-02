@@ -21,6 +21,7 @@ DECLARE
     doc_tahtpaev    INTEGER = (doc_data ->> 'tahtpaev')::INTEGER;
     doc_earved      TEXT    = doc_data ->> 'earved';
     doc_limiit      NUMERIC = doc_data ->> 'limiit';
+    doc_pdf         TEXT    = doc_data ->> 'pdf';
 
     doc_json        JSON    = ((SELECT row_to_json(row)
                                 FROM (SELECT doc_keel  AS keel,
@@ -32,12 +33,14 @@ DECLARE
 
     doc_config_json JSONB   = ((SELECT row_to_json(row)
                                 FROM (SELECT doc_earved AS earved,
+                                             doc_pdf    AS pdf,
                                              doc_limiit AS limiit
                                      ) ROW));
 
 BEGIN
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = user_id;

@@ -36,7 +36,7 @@ module.exports = {
                       FROM ou.aa
                       WHERE parentid = $1
                         AND kassa = 2
-                          LIMIT 1)::VARCHAR(20)                                       AS oma_tp
+                      LIMIT 1)::VARCHAR(20)                                           AS oma_tp
 
               FROM ou.rekv r,
                    ou.userid u
@@ -109,8 +109,8 @@ module.exports = {
                          coalesce((u.properties ->> 'pass')::VARCHAR(100))::VARCHAR(254)   AS pass,
                          coalesce((u.properties ->> 'email')::VARCHAR(100))::VARCHAR(254)  AS email,
                          coalesce((c.properties ->> 'earved')::VARCHAR(254))::VARCHAR(254) AS earved,
-                         coalesce((c.properties ->> 'liik')::VARCHAR(20))::VARCHAR(20)     AS liik
-
+                         coalesce((c.properties ->> 'liik')::VARCHAR(20))::VARCHAR(20)     AS liik,
+                         coalesce((c.properties ->> 'pdf')::VARCHAR(254))::VARCHAR(254)    AS pdf
                   FROM ou.config c,
                        ou.userid u
                   WHERE c.rekvid = $1
