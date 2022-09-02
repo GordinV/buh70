@@ -5,11 +5,12 @@ exports.post = async (req, res) => {
     const db = require('./../libs/db');
     const noticeModel = require('./../models/ou/noticed');
     const action = req.body.action || 'select';
+    let userId = req.body.userId;
 
     const sqlString = action === 'select' ?  noticeModel.sqlString: noticeModel.updateString,
-        params = [user.userId];
+        params = [userId];
 
-    console.log('sqlString',sqlString, params);
+    console.log('sqlStringv',sqlString, params);
 
     try {
         if (!user) {

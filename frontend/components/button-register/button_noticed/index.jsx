@@ -10,7 +10,7 @@ const ModalPage = require('./../../modalpage/modalPage.jsx'),
     Button = require('./../../button-register/button-register.jsx'),
     BtnInfo = require('./../button-info/index.jsx');
 
-const styles = require('../button-register-styles'),
+const styles = require('./styles'),
     ICON = 'info';
 const GRID_CONFIG = require('./../../../../config/constants').noticed.gridConfig;
 
@@ -35,6 +35,7 @@ class ButtonTeatised extends React.PureComponent {
      * пишем делаем запрос по итогу загрузки
      */
     componentDidMount() {
+        this.fetchData('select');
         this.fetchNoticed()
     }
 
@@ -93,6 +94,7 @@ class ButtonTeatised extends React.PureComponent {
 
 
     render() {
+        console.log('render', this.state);
         return this.state.show ? this.modalPage() : (<Button
             value={this.state.value}
             ref="btnTeatised"

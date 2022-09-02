@@ -16,8 +16,10 @@ GRANT ALL ON TABLE ou.noticed TO dbpeakasutaja;
 GRANT ALL ON TABLE ou.noticed TO dbkasutaja;
 GRANT ALL ON TABLE ou.noticed TO arvestaja;
 
+DROP INDEX if EXISTS ou.noticed_index;
 
 CREATE INDEX noticed_index
     ON ou.noticed (userId)
+    WHERE status = 1
 
 

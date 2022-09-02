@@ -3,7 +3,9 @@ module.exports = {
         background: 'white',
         margin: '5px 2px',
         borderRadius: '5px',
-        height: '30px'
+        height: '30px',
+        width: 'auto',
+        flex: 'none'
     },
     buttonAccount: {
         width: '50%'
