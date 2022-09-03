@@ -58,7 +58,9 @@ module.exports = {
     },
     jaak: {
         width: 'min-content',
-        margin: '0px'
+        margin: '0px',
+        marginTop: '5px',
+        marginLeft: '-5px'
     }
 
 };

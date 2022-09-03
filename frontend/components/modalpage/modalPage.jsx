@@ -20,9 +20,11 @@ class ModalPage extends React.PureComponent {
 
     changeVisibilityModalPage() {
         this.setState({show: !this.state.show});
+/*
         if (this.props.modalPageBtnClick) {
             let show = this.props.modalPageBtnClick('Cancel');
         }
+*/
     }
 
     // will update state if props changed

@@ -180,6 +180,7 @@ class GridFilter extends React.PureComponent {
     }
 
     render() {
+        console.log('this.state', this.state);
 
         // создаст из полей грида компоненты для формирования условий фильтрации
         return <div style={styles.fieldset}>
