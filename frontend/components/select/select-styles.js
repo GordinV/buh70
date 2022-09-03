@@ -8,7 +8,7 @@ module.exports = {
     input: {
         width: '70%',
         margin: '5px 2px',
-        borderRadius:'5px'
+        borderRadius:'3px'
 
 
     },

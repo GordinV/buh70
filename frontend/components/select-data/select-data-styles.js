@@ -1,8 +1,8 @@
 module.exports = {
     wrapper: {
-        margin: '5px',
+        //margin: '5px',
         display: 'flex',
-        width: '95%'
+        //width: '95%'
 
     },
     input: {
