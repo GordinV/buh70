@@ -159,9 +159,10 @@ const Smk = {
             {id: "asutus", name: "Maksja", width: "20%"},
             {id: "deebet", name: "Summa", width: "10%", type: "number", interval: true},
             {id: "aa", name: "Arveldus arve", width: "15%"},
-            {id: "viitenr", name: "Viite number", width: "10%"},
-            {id: "nimi", name: "Nimi", width: "20%"},
+            {id: "viitenr", name: "Viite number", width: "7%"},
+            {id: "nimi", name: "Nimi", width: "15%"},
             {id: "isikukood", name: "Isikukood", width: "10%"},
+            {id: "yksused", name: "Yksus", width: "7%"},
 
         ],
         sqlString: `SELECT mk.id,
@@ -183,7 +184,8 @@ const Smk = {
                            mk.isikukood,
                            mk.nimi,
                            $2                                        AS userid,
-                           mk.viitenr::TEXT
+                           mk.viitenr::TEXT,
+                           mk.yksused::TEXT
                     FROM lapsed.cur_lapsed_mk mk
                     WHERE mk.opt = 2
                       AND mk.rekvId = $1`,

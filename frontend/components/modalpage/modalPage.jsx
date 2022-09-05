@@ -20,11 +20,6 @@ class ModalPage extends React.PureComponent {
 
     changeVisibilityModalPage() {
         this.setState({show: !this.state.show});
-/*
-        if (this.props.modalPageBtnClick) {
-            let show = this.props.modalPageBtnClick('Cancel');
-        }
-*/
     }
 
     // will update state if props changed
@@ -85,7 +80,7 @@ class ModalPage extends React.PureComponent {
                     <div style={styles.header} ref='modalPageHeader'>
                         <span ref='headerName' style={styles.headerName}> {this.props.modalPageName} </span>
                         <Button style={styles.buttonClose} ref="btnClose"
-                                onClick={this.changeVisibilityModalPage.bind(this)} value="x"/>
+                                onClick={this.handleBtnClick.bind(this, 'Cancel')} value="x"/>
                     </div>
                     <div style={styles.modalPageContent} ref="modalPageContent">
                         {this.props.children}

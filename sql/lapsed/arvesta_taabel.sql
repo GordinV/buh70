@@ -272,8 +272,9 @@ BEGIN
         l_message = l_message || ':teenused ei leidnud';
     ELSE
         -- формируем извещение
-        INSERT INTO ou.noticed (userid, teatis,task_name)
+/*        INSERT INTO ou.noticed (userid, teatis,task_name)
         VALUES (user_id, l_message,'Arvesta tabel');
+*/
     END IF;
 
     result = COALESCE(l_taabel_id, 0);
