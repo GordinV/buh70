@@ -18,6 +18,7 @@ module.exports = {
                      pank_vv.summa,
                      pank_vv.iban,
                      pank_vv.pank,
+                     pank_vv.aa,
                      mk.number,
                      l.nimi,
                      r.nimetus                                AS asutus
