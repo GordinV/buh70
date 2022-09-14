@@ -79,6 +79,7 @@ module.exports = function (app) {
     app.get('/reports/child_age/:uuid/:filter/:params*?',require('./reports/child_age').get);
     app.get('/reports/ebatoenaolised/:uuid/:filter/:params*?',require('./reports/ebatoenaolised').get);
     app.get('/reports/kondarve/:uuid/:filter/:params*?',require('./reports/kondarve').get);
+    app.get('/reports/kaive_aruanne/:uuid/:filter/:params*?',require('./reports/kaive_aruanne').get);
     app.get('/reports/saldo_ja_kaive/:uuid/:filter/:params*?',require('./reports/saldo_ja_kaive').get);
     app.get('/reports/kuutabeli_aruanne/:uuid/:filter/:params*?',require('./reports/kuutabeli_aruanne').get);
     app.get('/reports/arved_koodi_jargi/:uuid/:params*?',require('./reports/arved_koodi_jargi').get);
