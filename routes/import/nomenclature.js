@@ -1,11 +1,9 @@
 module.exports = async (file, mimeType, user) => {
     const Doc = require('./../../classes/DocumentTemplate');
     const Document = new Doc('NOMENCLATURE', null, user.userId, user.asutusId, 'lapsed');
-
+    let rows = [];
     try {
-        let rows = await readCSV(file);
-        console.log(rows)
-
+        rows = await readCSV(file);
     } catch (e) {
         console.error('Viga:', e);
         return `Tekkis viga, võib olla vale formaat`;
