@@ -82,14 +82,15 @@ app.use(require('./middleware/sendHttpError'));
 
 app.use(cors()); //Enable All CORS Requests
 // log
+
 app.use(session({
     store: new pgSession({
         pg: pg,                                  // Use global pg-module
-        conString: config.get('pg.session_connection') ? config.get('pg.session_connection'): config.get('pg.connection'), // Connect using something else than default DATABASE_URL env variable
+        conString:   config.pg.session_connection,
         tableName: 'session'               // Use another table-name than the default "session" one
     }),
-    secret: config.get('session.secret'),
-    cookie: {maxAge: config.get('session.cookie.maxAge')}
+    secret: config.session.secret,
+    cookie: {maxAge: config.session.cookie.maxAge}
 }));
 
 /*
