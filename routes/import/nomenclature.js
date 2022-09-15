@@ -2,11 +2,9 @@ module.exports = async (file, mimeType, user) => {
     const Doc = require('./../../classes/DocumentTemplate');
     const Document = new Doc('NOMENCLATURE', null, user.userId, user.asutusId, 'lapsed');
 
-    let rows = [];
-
     try {
-        rows = await readCSV(file);
-
+        let rows = await readCSV(file);
+        console.log(rows)
 
     } catch (e) {
         console.error('Viga:', e);
@@ -18,7 +16,6 @@ module.exports = async (file, mimeType, user) => {
         // сохраняем
 
         const params = [JSON.stringify(rows), user.id, user.asutusId];
-        console.log(params);
 
         const result = await Document.executeTask('importNoms', params).then((result) => {
                 saved = result.result ? result.result : 0;
@@ -33,44 +30,45 @@ module.exports = async (file, mimeType, user) => {
     }
 };
 
-const readCSV = async (csvContent) => {
+const readCSV = (csvContent) => {
     const parse = require('csv-parse');
-    const rows = [];
+    const fileRows = [];
     // Create the parser
-    const fileContent = await parse(csvContent, {headers: false, delimiter: ';', columns: false}, (err, output) => {
-        result = output;
-        if (err) {
-            console.error(err);
-            return null;
-        }
+    return new Promise(function (resolve, reject) {
 
-        output.forEach(row => {
-            // проверим на заголовок
-            if (row[0] !== 'Kood') {
-
-                rows.push({
-                    kood: row[0],
-                    nimetus: row[1],
-                    dok: row[2],
-                    maksumaar: row[3],
-                    hind: row[4],
-                    uhik: row[5],
-                    koolituse_liik: row[6],
-                    konto: row[7],
-                    tegev: row[8],
-                    allikas: row[9],
-                    artikkel: row[10],
-                    inf3: row[11],
-                    tunnus: row[12],
-                    proj: row[13],
-                    luno: row[14]
-
-                });
+        const fileContent = parse(csvContent, {headers: false, delimiter: ';', columns: false}, (err, output) => {
+            result = output;
+            if (err) {
+                console.error(err);
+                return null;
             }
+            output.forEach(row => {
+                // проверим на заголовок
+                if (row[0] !== 'Kood') {
+                    fileRows.push({
+                        kood: row[0],
+                        nimetus: row[1],
+                        dok: row[2],
+                        maksumaar: row[3],
+                        hind: row[4],
+                        uhik: row[5],
+                        koolituse_liik: row[6],
+                        konto: row[7],
+                        tegev: row[8],
+                        allikas: row[9],
+                        artikkel: row[10],
+                        inf3: row[11],
+                        tunnus: row[12],
+                        proj: row[13],
+                        luno: row[14]
 
+                    });
+                }
+
+            });
+            resolve(fileRows);
         });
     });
-    return rows;
 };
 
 
