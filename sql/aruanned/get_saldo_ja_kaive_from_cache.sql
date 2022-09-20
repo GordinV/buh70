@@ -93,6 +93,11 @@ BEGIN
 
         PERFORM
         FROM lapsed.create_cache_for_saldo_ja_kaive(l_rekvid, l_params::JSONB);
+        -- формируем извещение
+/*        INSERT INTO ou.noticed (userid, teatis,task_name)
+        VALUES (user_id, l_message,'Arvesta tabel');
+*/
+
     END IF;
 
     RETURN QUERY

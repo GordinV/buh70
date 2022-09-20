@@ -85,6 +85,7 @@ module.exports = {
                 {id: "uhik", name: "Ühik", width: "5%"},
                 {id: "soodustus", name: "Soodustus", width: "10%", type: "number"},
                 {id: "summa", name: "Summa", width: "10%", type: "number", interval: true},
+                {id: "vahe", name: "Vahe", width: "5%", type: "number", interval: true},
                 {id: "umberarvestus", name: "Ümberarv", width: "5%"},
                 {id: "tab_tyyp", name: "Tüüp", width: "10%", type: "text"},
             ],
@@ -134,7 +135,8 @@ module.exports = {
                                  lt.muud,
                                  lt.kulastused,
                                  lt.too_paevad,
-                                 lt.kovid
+                                 lt.kovid,
+                                 lt.vahe::numeric
                           FROM lapsed.cur_lapse_taabel lt
                                    LEFT OUTER JOIN viitenr v ON v.isikukood = lt.isikukood
                           WHERE lt.rekvid = $1::INTEGER                          
@@ -176,23 +178,23 @@ module.exports = {
                      )
                 SELECT id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
                             isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid, muud,                            
-                            tab_tyyp, kulastused, too_paevad, kovid
+                            tab_tyyp, kulastused, too_paevad, kovid, vahe
                 FROM (
                          select id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
                             isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid, muud,                           
-                            'Tavaline' as tab_tyyp, kulastused, too_paevad, kovid
+                            'Tavaline' as tab_tyyp, kulastused, too_paevad, kovid, vahe
                          from qryTabs
                          UNION ALL
                          SELECT *, 
                          'Virtuaalne' as tab_tyyp,
-                                 0 as kulastused, 0 as too_paevad , 0 as kovid
+                                 0 as kulastused, 0 as too_paevad , 0 as kovid, 0.00::numeric as vahe
                          FROM qryVirtTabs
                      ) tab
                 ORDER BY aasta DESC, kuu DESC, nimi`,     //  $1 всегда ид учреждения, $2 - userId
             params: '',
             alias: 'curLapseTaabel',
             totals: ` sum(soodustus) over() as soodustus_kokku,  
-                   sum(summa) over() as summa_kokku `
+                   sum(summa) over() as summa_kokku, sum(vahe) over() as vahe_kokku `
         },
     print: [
         {

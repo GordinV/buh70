@@ -44,7 +44,11 @@ SELECT lt.id,
        lt.muud,
        coalesce((lt.properties ->> 'kulastused')::INTEGER, 0) AS kulastused,
        coalesce((lt.properties ->> 'too_paevad')::INTEGER, 0) AS too_paevad,
-       coalesce((lt.properties ->> 'kovid')::INTEGER, 0)      AS kovid
+       coalesce((lt.properties ->> 'kovid')::INTEGER, 0)      AS kovid,
+       lapsed.get_differ_from_algoritm(coalesce(lt.hind, lk.hind), (CASE
+                                                                        WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN lk.hind
+                                                                        WHEN lk.properties ->> 'soodus' IS NOT NULL THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)
+                                                                        ELSE 0 END ::NUMERIC), lt.kogus) as vahe
 FROM lapsed.lapse_taabel lt
          INNER JOIN lapsed.laps l ON l.id = lt.parentid
          INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
@@ -64,8 +68,8 @@ GRANT SELECT ON TABLE lapsed.cur_lapse_taabel TO dbpeakasutaja;
 
 /*
 
-select * from lapsed.cur_lapse_taabel
-where rekvid = 92
+select vahe, * from lapsed.cur_lapse_taabel
+where rekvid = 99
 and kuu = 1 and aasta = 2022
 and parentid = 8021
 limit 10

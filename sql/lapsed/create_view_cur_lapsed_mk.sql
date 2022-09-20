@@ -45,7 +45,7 @@ FROM docs.doc d
                       (get_unique_value_from_json(json_agg((k.properties ->> 'yksus')::TEXT)::JSONB)) AS yksused
                FROM lapsed.lapse_kaart k
                WHERE k.staatus <> 3
-                 AND (k.properties ->> 'lopp_kpv')::DATE >= '2021-12-31'
+--                 AND (k.properties ->> 'lopp_kpv')::DATE >= '2021-01-01'
                GROUP BY parentid, rekvid
            ) qry
       GROUP BY parentid, rekvid

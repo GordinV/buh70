@@ -181,13 +181,13 @@ FROM (
                                                           (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(14, 2), 0)) *
                                                           a1.kogus::NUMERIC(14, 2)) AS soodustus,
                                               sum(
-                                                          (CASE
-                                                               WHEN a1.summa > 0 AND
-                                                                    COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) > 0
-                                                                   THEN COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0)
-                                                               ELSE COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) END::NUMERIC +
-                                                           CASE WHEN a1.summa = 0 THEN 0 ELSE a1.hind END) *
-                                                          a1.kogus)                 AS summa
+                                                      round((CASE
+                                                                 WHEN a1.summa > 0 AND
+                                                                      COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) > 0
+                                                                     THEN COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0)
+                                                                 ELSE COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) END::NUMERIC +
+                                                             CASE WHEN a1.summa = 0 THEN 0 ELSE a1.hind END) *
+                                                            a1.kogus, 2))           AS summa
                                        FROM docs.arv1 a1
                                                 INNER JOIN docs.arv a ON a.id = a1.parentid AND
                                                                          (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')

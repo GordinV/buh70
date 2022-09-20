@@ -25,7 +25,8 @@ class Documents extends React.PureComponent {
         super(props);
         this.state = {
             summa: 0,
-            soodustus: 0
+            soodustus: 0,
+            vahe: 0
         };
         this.renderer = this.renderer.bind(this);
         this.onClickHandler = this.onClickHandler.bind(this);
@@ -53,8 +54,13 @@ class Documents extends React.PureComponent {
                              style={styles.total}
                              ref="input-soodustus"
                              value={Number(this.state.soodustus).toFixed(2) || 0}
+                             disabled={true}/>
+                <InputNumber title="Vahe kokku:"
+                             name='vahe_kokku'
+                             style={styles.total}
+                             ref="input-vahe"
+                             value={Number(this.state.vahe).toFixed(2) || 0}
                              disabled={true}
-
                 />
             </div>
         );
@@ -67,12 +73,12 @@ class Documents extends React.PureComponent {
 
         let summa = self.gridData && self.gridData.length ? self.gridData[0].summa_kokku : 0;
         let soodustus = self.gridData && self.gridData.length ? self.gridData[0].soodustus_kokku : 0;
+        let vahe = self.gridData && self.gridData.length ? self.gridData[0].vahe_kokku : 0;
 
         if (summa || soodustus) {
-            this.setState({summa: summa, read: self.gridData.length, soodustus: soodustus});
+            this.setState({summa: summa, read: self.gridData.length, soodustus: soodustus, vahe: vahe});
         }
 
-        console.log('self.gridData',self.gridData);
         return (
             <ToolbarContainer>
                 {checkRights(userRoles, docRights, 'importTaabel') ?

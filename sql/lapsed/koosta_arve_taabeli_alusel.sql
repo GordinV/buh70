@@ -123,14 +123,14 @@ BEGIN
     -- читаем табель и создаем детали счета
     FOR v_taabel IN
         SELECT lt.nomid,
-               coalesce(lt.kogus, 0)                                                 AS kogus,
-               coalesce(lt.hind, lk.hind)                                            AS hind,
-               coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)::NUMERIC           AS soodus,
-               coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN AS kas_protsent,
-               coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE)::BOOLEAN   AS kas_eraldi,
-               (lk.properties ->> 'sooduse_alg')::DATE                               AS sooduse_alg,
-               (lk.properties ->> 'sooduse_lopp')::DATE                              AS sooduse_lopp,
-               coalesce(n.properties ->> 'tyyp', '')                                 AS tyyp,
+               coalesce(lt.kogus, 0)                                                                             AS kogus,
+               coalesce(lt.hind, lk.hind)                                                                        AS hind,
+               coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)::NUMERIC                                       AS soodus,
+               coalesce((lk.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN                             AS kas_protsent,
+               coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE)::BOOLEAN                               AS kas_eraldi,
+               (lk.properties ->> 'sooduse_alg')::DATE                                                           AS sooduse_alg,
+               (lk.properties ->> 'sooduse_lopp')::DATE                                                          AS sooduse_lopp,
+               coalesce(n.properties ->> 'tyyp', '')                                                             AS tyyp,
                CASE
                    WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' AND
                         NOT lt.umberarvestus THEN lk.hind
@@ -156,25 +156,32 @@ BEGIN
                            (lk.properties ->> 'lopp_kpv')::DATE = (lk.properties ->> 'sooduse_lopp')::DATE
                        THEN 1
 
-                   ELSE 0 END                                                        AS real_soodus,
+                   ELSE 0 END                                                                                    AS real_soodus,
                'Üksus: ' || (gr.nimetus::TEXT)::TEXT || CASE
                                                             WHEN (lk.properties ->> 'all_yksus')::TEXT IS NOT NULL
                                                                 THEN '(' || (lk.properties ->> 'all_yksus')::TEXT || ')'
-                                                            ELSE '' END              AS muud,
-               lk.properties ->> 'yksus'                                             AS yksus,
-               lk.properties ->> 'all_yksus'                                         AS all_yksus,
-               lt.id                                                                 AS lapse_taabel_id,
-               lk.id                                                                 AS lapse_kaart_id,
-               coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC               AS vat,
-               (n.properties::JSONB ->> 'konto')::VARCHAR(20)                        AS konto,
-               (n.properties::JSONB ->> 'projekt')::VARCHAR(20)                      AS projekt,
-               (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)                       AS tunnus,
-               (n.properties::JSONB ->> 'tegev')::VARCHAR(20)                        AS tegev,
-               (n.properties::JSONB ->> 'allikas')::VARCHAR(20)                      AS allikas,
-               (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)                     AS rahavoog,
-               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)                     AS artikkel,
+                                                            ELSE '' END                                          AS muud,
+               lk.properties ->> 'yksus'                                                                         AS yksus,
+               lk.properties ->> 'all_yksus'                                                                     AS all_yksus,
+               lt.id                                                                                             AS lapse_taabel_id,
+               lk.id                                                                                             AS lapse_kaart_id,
+               coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC                                           AS vat,
+               (n.properties::JSONB ->> 'konto')::VARCHAR(20)                                                    AS konto,
+               (n.properties::JSONB ->> 'projekt')::VARCHAR(20)                                                  AS projekt,
+               (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)                                                   AS tunnus,
+               (n.properties::JSONB ->> 'tegev')::VARCHAR(20)                                                    AS tegev,
+               (n.properties::JSONB ->> 'allikas')::VARCHAR(20)                                                  AS allikas,
+               (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)                                                 AS rahavoog,
+               (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)                                                 AS artikkel,
                lt.umberarvestus,
-               coalesce(lt.muud, '')                                                 AS markused
+               coalesce(lt.muud, '')                                                                             AS markused,
+               lapsed.get_differ_from_algoritm(coalesce(lt.hind, lk.hind), (CASE
+                                                                                WHEN (n.properties ->> 'tyyp') IS NOT NULL AND
+                                                                                     (n.properties ->> 'tyyp') = 'SOODUSTUS'
+                                                                                    THEN lk.hind
+                                                                                WHEN lk.properties ->> 'soodus' IS NOT NULL
+                                                                                    THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)
+                                                                                ELSE 0 END ::NUMERIC), lt.kogus) AS vahe
         FROM lapsed.lapse_taabel lt
                  INNER JOIN lapsed.lapse_kaart lk
                             ON lk.id = lt.lapse_kaart_id AND lt.nomid = lk.nomid AND lt.rekvid = lk.rekvid
@@ -218,11 +225,12 @@ BEGIN
                                                         (v_taabel.vat / 100))                          AS kbm,
                                                        ((v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus *
                                                         (v_taabel.vat / 100)) +
-                                                       (CASE
-                                                            WHEN v_taabel.tyyp = 'SOODUSTUS' AND NOT v_taabel.umberarvestus
-                                                                THEN 0
-                                                            ELSE 1 END * v_taabel.hind -
-                                                        v_taabel.real_soodus) * v_taabel.kogus         AS summa,
+                                                       round((CASE
+                                                                  WHEN v_taabel.tyyp = 'SOODUSTUS' AND NOT v_taabel.umberarvestus
+                                                                      THEN 0
+                                                                  ELSE 1 END * v_taabel.hind -
+                                                              v_taabel.real_soodus) * v_taabel.kogus, 2) -
+                                                       v_taabel.vahe                                   AS summa,
                                                        v_taabel.tegev                                  AS kood1,
                                                        v_taabel.allikas                                AS kood2,
                                                        v_taabel.rahavoog                               AS kood3,
@@ -238,7 +246,8 @@ BEGIN
 /*                                                                            WHEN v_taabel.real_soodus > 0
                                                                                 THEN ' kasutatud soodustus summas ' ||
                                                                                      round(v_taabel.real_soodus::NUMERIC, 2)::TEXT
-*/                                                                            WHEN v_taabel.umberarvestus
+*/
+                                                                            WHEN v_taabel.umberarvestus
                                                                                 THEN ' Ümberarvestus '
                                                                             ELSE (CASE WHEN len(coalesce(v_taabel.muud, '')) > 0 THEN ',' ELSE '' END) ||
                                                                                  v_taabel.markused END AS muud,
