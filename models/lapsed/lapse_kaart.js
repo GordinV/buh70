@@ -141,13 +141,25 @@ module.exports = {
                 {id: "yksus", name: "Üksus", width: "10%"},
                 {id: "alg_kpv", name: "Kpv-st", width: "7%", type: 'date', interval: true},
                 {id: "lopp_kpv", name: "Kpv-ni", width: "7%", type: 'date', interval: true},
+                {id: "kehtiv_kpv", name: "Kehtiv seisuga", width: "20%", type: 'date', show: false},
+                {id: "period",name: "Kehtivuse periood",width: "0%",type: 'date',interval: true,show: false,default: 'AASTA',filterValidation: true},
+                {id: "kas_kehtib", name: "Kehtivus", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
                 {id: "inf3", name: "INF3", width: "5%"},
                 {id: "tapne_viitenumber", name: "Vana VN", width: "10%"},
                 {id: "asutus", name: "Asutus", width: "10%", default: `DocContext.userData.asutus`},
                 {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString:
-                    `SELECT id,
+                `WITH range_parameters AS (
+                     SELECT ('[' || format_date(coalesce($3::text, make_date(year(current_date), 01, 01)::TEXT))::TEXT || ',' ||
+                             (format_date(($4::date + case when $3::date = $4::date then interval '1 day' else interval '0 day' end)::text)::TEXT) ||
+                             ')') ::DATERANGE AS range,
+                            $3::DATE        AS period_start,
+                            $4::DATE        AS period_finish,
+                            case when $5::text is not null and $5::text = '' then null::date else $5::DATE end::date as kehtiv_kpv
+                 ),
+                 lk AS (            
+                    SELECT id,
                             lapsid,
                             isikukood,
                             nimi,
@@ -179,15 +191,41 @@ module.exports = {
                             to_char(v.sooduse_lopp, 'DD.MM.YYYY')                                          AS sooduse_lopp,
                             to_char(v.alg_kpv, 'DD.MM.YYYY')                                               AS alg_kpv,
                             to_char(v.lopp_kpv, 'DD.MM.YYYY')                                              AS lopp_kpv,
+                            $3::date as period,
                             v.yksuse_kood,
                             count(*) OVER ()                                                               AS rows_total,
                             v.asutus,
                             v.vana_viitenumber,    
-                            v.viitenr as tapne_viitenumber
-                     FROM lapsed.cur_lapse_kaart v
+                            v.viitenr AS tapne_viitenumber,
+                            ('[' || ((v.alg_kpv)::DATE)::TEXT || ',' || (CASE
+                                                                             WHEN (v.alg_kpv)::DATE >=
+                                                                                  (v.lopp_kpv)::DATE
+                                                                                 THEN (v.alg_kpv)::DATE
+                                                                             ELSE (v.lopp_kpv)::DATE END)::TEXT ||
+                             ')') ::DATERANGE                                                              AS lk_range,
+                            r.kehtiv_kpv::DATE                                                             AS kehtiv_kpv
+                     FROM lapsed.cur_lapse_kaart v,
+                          range_parameters r
                      WHERE rekvid IN (SELECT rekv_id
-                                      FROM get_asutuse_struktuur($1::INTEGER))`,     //  $1 всегда ид учреждения, $2 - userId
-            params: '',
+                                      FROM get_asutuse_struktuur($1::INTEGER))
+                    )
+                    SELECT lk.*,
+                           CASE
+                               WHEN coalesce((
+                                                 CASE
+                                                     WHEN lk.kehtiv_kpv IS NULL THEN lk.lk_range &&
+                                                                                     r.range OR lk.lk_range -|-
+                                                                                                r.range
+                                                     ELSE lk.lk_range @>
+                                                          r.kehtiv_kpv END
+                                                 ), FALSE) IS TRUE THEN
+                                   'Jah'
+                               ELSE
+                                   'Ei' END AS kas_kehtib
+                    
+                    FROM lk,
+                         range_parameters r`,     //  $1 всегда ид учреждения, $2 - userId
+            params: ['rekvid', 'userid', 'period_start', 'period_end', 'kehtiv_kpv'],
             alias: 'curLapsed',
             converter: function (data) {
                 let row_id = 0;
