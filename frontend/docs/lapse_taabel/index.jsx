@@ -90,7 +90,7 @@ class Documents extends React.PureComponent {
                         showDate={false}
                         show={true}
                         mimeTypes={'.csv'}
-                        value={'Kas kustuta kõik valitud tabelid?'}
+                        value={'Kustuta kõik valitud tabelid?'}
                     /> : null}
 
                 {checkRights(userRoles, docRights, 'importTaabel') ?
@@ -130,7 +130,7 @@ class Documents extends React.PureComponent {
         ids = Array.from(ids);
 
         switch (event) {
-            case 'Kas kustuta kõik valitud tabelid?':
+            case 'Kustuta kõik valitud tabelid?':
                 if (!ids.length) {
                     Doc.setState({
                         warning: 'Mitte ühtegi tabel valitud', // строка извещений
