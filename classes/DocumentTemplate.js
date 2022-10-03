@@ -188,6 +188,33 @@ class Document {
             return [];
         }
 
+// ищем наличии контроля
+        let result = this.config.select.find(row => {
+            if (row.alias && row.alias === 'validate_lib_usage') {
+                return row;
+            }
+        });
+
+        if (result) {
+            let valid = '2000-01-01'; // проверка всех документов
+            // есть запрос для валидации
+            const tulemused = await db.queryDb(result.sql, [this.rekvId, this.docId, valid]);
+
+
+            if (tulemused && ((tulemused.result && tulemused.result > 0) || tulemused.error_code)) {
+                let report = tulemused.data.map((row, index) => {
+                    return {id: index, result: 0, kas_vigane: true, error_message: row.error_message};
+                });
+
+                if (tulemused.error_code && !tulemused.data.length) {
+                    // одно сообщение не массив
+                    report = [{id: 1, result: 0, kas_vigane: true, error_message: tulemused.error_message}];
+                }
+
+                return report;
+            }
+        }
+
         return await db.queryDb(sql, params);
     }
 

@@ -3,8 +3,9 @@
 const React = require('react');
 const DocumentRegister = require('./../documents/documents.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
-const getSum = require('./../../../libs/getSum');
+
 const ButtonUpload = require('./../../components/upload_button/index.jsx');
+const BtnArvesta = require('./../../components/button-register/button-task/index.jsx');
 const ToolbarContainer = require('./../../components/toolbar-container/toolbar-container.jsx');
 const DocRights = require('./../../../config/doc_rights');
 const checkRights = require('./../../../libs/checkRights');
@@ -81,11 +82,22 @@ class Documents extends React.PureComponent {
 
         return (
             <ToolbarContainer>
+                {checkRights(userRoles, docRights, 'delete') ?
+                    <BtnArvesta
+                        ref='btnUpload'
+                        docTypeId={DOC_TYPE_ID}
+                        onClick={this.onClickHandler}
+                        showDate={false}
+                        show={true}
+                        mimeTypes={'.csv'}
+                        value={'Kas kustuta kõik valitud tabelid?'}
+                    /> : null}
+
                 {checkRights(userRoles, docRights, 'importTaabel') ?
                     <ButtonUpload
                         ref='btnUpload'
                         docTypeId={DOC_TYPE_ID}
-                        onClick={this.handleClick}
+                        onClick={this.onClickHandler}
                         show={true}
                         mimeTypes={'.csv'}
                     /> : null}
@@ -97,28 +109,72 @@ class Documents extends React.PureComponent {
                 />
             </ToolbarContainer>
         );
-
-
-        return null;
     }
 
     //handler для события клик на кнопках панели
     onClickHandler(event) {
         const Doc = this.refs['register'];
         let ids = new Set; // сюда пишем ид счетом, которые под обработку
-        //Saama CSV fail
-        if (Doc.gridData && Doc.gridData.length) {
-            //делаем редайрект на конфигурацию
-            let sqlWhere = Doc.state.sqlWhere;
-            let url = `/reports/${DOC_TYPE_ID.toLowerCase()}/${DocContext.userData.uuid}`;
-            let params = encodeURIComponent(`${sqlWhere}`);
-            window.open(`${url}/${params}`);
-        } else {
-            Doc.setState({
-                warning: 'Mitte ühtegi kirjed leidnud', // строка извещений
-                warningType: 'notValid',
+        let message = '';
 
+        // ищем выбранные записи
+        if (Doc.gridData && Doc.gridData.length) {
+            Doc.gridData.forEach(row => {
+                if (row.select) {
+                    ids.add(row.id);
+                }
             });
+        }
+
+        // конвертация в массив
+        ids = Array.from(ids);
+
+        switch (event) {
+            case 'Kas kustuta kõik valitud tabelid?':
+                if (!ids.length) {
+                    Doc.setState({
+                        warning: 'Mitte ühtegi tabel valitud', // строка извещений
+                        warningType: 'notValid',
+                    });
+                } else {
+                    // удаляем выбранные табеля
+
+                    Doc.fetchData('delete', {docs: ids}).then((data) => {
+                        if (data && data.data && data.data.result) {
+                            message = `Kokku kustutatud ${data.data.result} kirjad`;
+                            Doc.setState({warning: `${message}`, warningType: 'ok'});
+
+                            //let tulemused = data.result.tulemused;
+                            // открываем отчет
+                            //this.setState({isReport: true, txtReport: tulemused});
+
+                        } else {
+                            if (data.error_message) {
+                                Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
+                            }
+                        }
+                    });
+                    setTimeout(() => {
+                        Doc.fetchData('selectDocs')
+                    }, 3000);
+
+                }
+                break;
+            case 'Saama CSV fail':
+                //Saama CSV fail
+                if (Doc.gridData && Doc.gridData.length) {
+                    //делаем редайрект на конфигурацию
+                    let sqlWhere = Doc.state.sqlWhere;
+                    let url = `/reports/${DOC_TYPE_ID.toLowerCase()}/${DocContext.userData.uuid}`;
+                    let params = encodeURIComponent(`${sqlWhere}`);
+                    window.open(`${url}/${params}`);
+                } else {
+                    Doc.setState({
+                        warning: 'Mitte ühtegi kirjed leidnud', // строка извещений
+                        warningType: 'notValid',
+
+                    });
+                }
         }
 
     }

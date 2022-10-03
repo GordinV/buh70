@@ -88,6 +88,7 @@ module.exports = {
                 {id: "vahe", name: "Vahe", width: "5%", type: "number", interval: true},
                 {id: "umberarvestus", name: "Ümberarv", width: "5%"},
                 {id: "tab_tyyp", name: "Tüüp", width: "10%", type: "text"},
+                {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString:
                 `WITH viitenr AS (SELECT array_to_string(array_agg(viitenumber), ',') AS viitenumber, isikukood
@@ -103,7 +104,8 @@ module.exports = {
                                     ) AS kas_ettemaks
                      ),                                 
                      qryTabs AS
-                         (SELECT lt.id,
+                         (SELECT 
+                                 lt.id,
                                  lt.parentid,
                                  lt.rekvid,
                                  lt.nomid,
@@ -141,7 +143,8 @@ module.exports = {
                                    LEFT OUTER JOIN viitenr v ON v.isikukood = lt.isikukood
                           WHERE lt.rekvid = $1::INTEGER                          
                          ),
-                     qryVirtTabs AS (SELECT lt.id,
+                     qryVirtTabs AS (SELECT FALSE::boolean                                  AS select,
+                                            lt.id,
                                             lt.parentid,
                                             lt.rekvid,
                                             lt.nomid,
@@ -176,11 +179,11 @@ module.exports = {
                                      WHERE is_ettemaks.kas_ettemaks::BOOLEAN
                                         and lt.rekvid = $1::INTEGER
                      )
-                SELECT id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
+                SELECT id::integer, "select", parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
                             isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid, muud,                            
                             tab_tyyp, kulastused, too_paevad, kovid, vahe
                 FROM (
-                         select id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
+                         select false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
                             isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid, muud,                           
                             'Tavaline' as tab_tyyp, kulastused, too_paevad, kovid, vahe
                          from qryTabs
@@ -229,7 +232,7 @@ module.exports = {
                   FROM lapsed.import_laste_taabelid($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
         type: 'sql',
         alias: 'importTaabel'
-    },
+    }
 
 
 };

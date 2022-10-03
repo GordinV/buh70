@@ -235,10 +235,20 @@ exports.put = async (req, res) => {
 exports.delete = async (req, res) => {
     const documentType = req.body.parameter.toUpperCase(); // получим из параметра тип документа
     const docId = Number(req.body.docId); //ид документа
+    const additionalData = req.body.data; //ид документа
     const module = req.body.module || 'lapsed'; // используемый модуль
     const userId = req.body.userId;
+    let isBundleDelete = false;
+    let docsIds = [];
+    const rows = [];
+    let deletedRows = 0;
+    let errorMessage;
+    let errorCode;
 
-
+    if (additionalData && additionalData.docs && additionalData.docs.length) {
+        docsIds = additionalData.docs;
+        isBundleDelete = true;
+    }
     const Doc = require('./../classes/DocumentTemplate');
 
     // вызвать метод. Есди ИД = 0, то вызывается запрос на создание нового документа
@@ -250,49 +260,45 @@ exports.delete = async (req, res) => {
         return res.status(401).end();
     }
 
+//    return res.status(500).end();
+
     const Document = new Doc(documentType, docId, userId, user.asutusId, module.toLowerCase());
-    let data;
+    let data = [];
 
-    // валидация использование
-    let result = Document.config.select.find(row => {
-        if (row.alias && row.alias == 'validate_lib_usage') {
-            return row;
-        }
-    });
-
-    if (result) {
-        let valid = '2000-01-01'; // проверка всех документов
-        // есть запрос для валидации
-        const tulemused = await db.queryDb(result.sql, [user.asutusId, docId, valid]);
-
-        if (tulemused && ((tulemused.result && tulemused.result > 0) || tulemused.error_code)) {
-            let raport = tulemused.data.map((row, index) => {
-                return {id: index, result: 0, kas_vigane: true, error_message: row.error_message};
-            });
-
-            if (tulemused.error_code && !tulemused.data.length) {
-                // одно сообщение не массив
-                raport = [{id: 1, result: 0, kas_vigane: true, error_message: tulemused.error_message}];
-            }
-
-            return res.send({
-                action: 'delete',
-                result: {error_code: 1, error_message: 'Kood kasutusel'},
-                data: raport
-            })
-        }
+    if (!isBundleDelete) {
+        docsIds.push(docId)
     }
 
+    const promises = docsIds.map(id => {
+        return new Promise(resolve => {
+            Document.setDocumentId(id);
+            resolve(Document.delete());
+        })
+    });
 
-    data = {result: await Document.delete()};
-    if (!data.result.error_code) {
-        res.send({action: 'delete', error: 0, error_message: null, data: data});
+    let promiseResult = await Promise.all(promises).then((data) => {
+        data.forEach(result => {
+            if (result && !result.error_code) {
+                deletedRows = deletedRows + result.result;
+                errorMessage = result.error_message
+            } else {
+                errorCode = result.error_code;
+                errorMessage = result.error_message;
+            }
+        })
+
+    });
+
+
+//    data = {result: await Document.delete()};
+    if (deletedRows) {
+        res.send({action: 'delete', error: 0, error_message: null, data: {result: deletedRows, error_code: null,error_message: errorMessage }});
     } else {
         res.send({
             action: 'delete',
-            error: data.result.error_code,
-            data: data,
-            error_message: data.result.error_message
+            error: errorCode,
+            data: rows,
+            error_message: errorMessage
         });
     }
 
