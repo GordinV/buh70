@@ -3,7 +3,7 @@ const getCSV = require('./../lapsed/get_csv');
 const getParameterFromFilter = require('./../../libs/getParameterFromFilter');
 const Moment = require('moment');
 exports.get = async (req, res) => {
-    const sqlWhere = req.params.params || '';// параметр sqlWhere документа
+    let sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const filter = req.params.filter || [];// массив фильтров документов;
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user = await require('../../middleware/userData')(req, uuid); // данные пользователя
@@ -31,6 +31,9 @@ exports.get = async (req, res) => {
         if (doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
             gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
         }
+
+        // убрать нули (количество)
+        sqlWhere = (!sqlWhere  ? ' where ':  (sqlWhere +  ' and ')) + ' coalesce(kogus,0) <> 0';
 
         const data = await doc.selectDocs('', sqlWhere, 10000, gridParams);
 
@@ -79,7 +82,7 @@ exports.get = async (req, res) => {
                 soodustus = ((Number(row.soodustus) / (Number(row.hind) * Number(row.kogus))) * 100).toFixed(0);
 
 //                if (soodustus == 25 || soodustus == 100 || soodustus == 26) {
-                kulastused = Number(row.kulastused) === 0  ? 1 : (row.kovid) / row.too_paevad;
+                kulastused = Number(row.kulastused) === 0 ? 1 : (row.kovid) / row.too_paevad;
 
                 soodustuseKogus = ((soodustus / 100) * kulastused).toFixed(4);
                 soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
