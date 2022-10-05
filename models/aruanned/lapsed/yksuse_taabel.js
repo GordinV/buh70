@@ -1,9 +1,10 @@
 module.exports = {
     grid: {
         gridConfiguration: [
-            {id: "yksus", name: "Üksus", width: "6%"},
-            {id: "viitenr", name: "Viitenr.", width: "6%"},
+            {id: "yksus", name: "Üksus", width: "7%"},
+            {id: "viitenr", name: "Viitenr.", width: "7%"},
             {id: "vana_vn", name: "Vana VN", width: "5%"},
+            {id: "isikukood", name: "Isikukood", width: "7%"},
             {id: "nimi", name: "Nimi", width: "7%"},
             {id: "teenus", name: "Teenus", width: "6%"},
             {id: "kuu", name: "Kuu", width: "2%", type: "integer"},
@@ -11,7 +12,7 @@ module.exports = {
             {
                 id: "day_1",
                 name: "1",
-                width: "2%",
+                width: "1%",
                 hideFilter: true,
                 hideEmptyValue: true,
                 type: "integer"
@@ -19,7 +20,7 @@ module.exports = {
             {
                 id: "day_2",
                 name: "2",
-                width: "2%",
+                width: "1%",
                 hideFilter: true,
                 hideEmptyValue: true,
                 type: "integer"
@@ -27,7 +28,7 @@ module.exports = {
             {
                 id: "day_3",
                 name: "3",
-                width: "2%",
+                width: "1%",
                 hideFilter: true,
                 hideEmptyValue: true,
                 type: "integer"
@@ -35,7 +36,7 @@ module.exports = {
             {
                 id: "day_4",
                 name: "4",
-                width: "2%",
+                width: "1%",
                 hideFilter: true,
                 hideEmptyValue: true,
                 type: "integer",
@@ -43,7 +44,7 @@ module.exports = {
             {
                 id: "day_5",
                 name: "5",
-                width: "2%",
+                width: "1%",
                 hideFilter: true,
                 hideEmptyValue: true,
                 type: "integer"
@@ -51,7 +52,7 @@ module.exports = {
             {
                 id: "day_6",
                 name: "6",
-                width: "2%",
+                width: "1%",
                 hideFilter: true,
                 hideEmptyValue: true,
                 type: "integer"
@@ -59,7 +60,7 @@ module.exports = {
             {
                 id: "day_7",
                 name: "7",
-                width: "2%",
+                width: "1%",
                 hideFilter: true,
                 hideEmptyValue: true,
                 type: "integer"
@@ -67,7 +68,7 @@ module.exports = {
             {
                 id: "day_8",
                 name: "8",
-                width: "2%",
+                width: "1%",
                 hideFilter: true,
                 hideEmptyValue: true,
                 type: "integer"
@@ -75,7 +76,7 @@ module.exports = {
             {
                 id: "day_9",
                 name: "9",
-                width: "2%",
+                width: "1%",
                 hideFilter: true,
                 hideEmptyValue: true,
                 type: "integer"
@@ -264,7 +265,7 @@ module.exports = {
         ],
         sqlString: `
             SELECT qry.*,
-                   vn.vn                                    AS vana_vn                   
+                   vn.vn AS vana_vn
             FROM (
                      SELECT row_number() OVER (PARTITION BY yksus, isikukood
                          ORDER BY

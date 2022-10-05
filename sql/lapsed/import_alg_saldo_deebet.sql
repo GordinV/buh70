@@ -33,7 +33,7 @@ DECLARE
     v_nom           RECORD;
     l_count         INTEGER = 0;
     l_user_id       INTEGER;
-    l_kpv           DATE    = '2021-12-31';
+    l_kpv           DATE    = '2022-08-31';
 
 BEGIN
 

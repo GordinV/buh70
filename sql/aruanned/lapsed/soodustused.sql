@@ -13,22 +13,26 @@ CREATE OR REPLACE FUNCTION lapsed.soodustused(l_rekvid INTEGER, l_kond INTEGER D
         lapsed          INTEGER,
         pered_kokku     INTEGER,
         asutus          TEXT,
-        rekvid          INTEGER
-    ) AS
+        rekvid          INTEGER,
+        viitenumber     TEXT
+    )
+AS
 $BODY$
 WITH qry AS (
     (
-        SELECT l.isikukood::TEXT            AS lapse_isikukood,
-               l.nimi::TEXT                 AS lapse_nimi,
-               lk.soodustus::NUMERIC(12, 2) AS soodustus,
-               r.nimetus::TEXT              AS asutus,
+        SELECT l.isikukood::TEXT                       AS lapse_isikukood,
+               l.nimi::TEXT                            AS lapse_nimi,
+               lk.soodustus::NUMERIC(12, 2)            AS soodustus,
+               r.nimetus::TEXT                         AS asutus,
                (SELECT asutusid
                 FROM lapsed.vanemad v
                 WHERE v.parentid = l.id
                   AND v.staatus <> 3
                 ORDER BY coalesce((v.properties ->> 'kas_esindaja')::BOOLEAN, FALSE) DESC
-                LIMIT 1)                    AS vanem_id,
-               lk.rekvid
+                LIMIT 1)                               AS vanem_id,
+               lk.rekvid,
+               lapsed.get_viitenumber(lk.rekvid, l.id) AS viitenumber
+
         FROM lapsed.laps l
                  INNER JOIN (SELECT lk.parentid,
                                     lk.rekvid,
@@ -61,7 +65,8 @@ SELECT soodustus::NUMERIC(12, 2)                                   AS soodustus,
           AND (v.properties ->> 'kas_esindaja')::BOOLEAN)::INTEGER AS lapsed,
        (SELECT count(DISTINCT vanem_id) FROM qry)::INTEGER         AS pered_kokku,
        qry.asutus,
-       qry.rekvid
+       qry.rekvid,
+       qry.viitenumber::TEXT
 FROM qry
          INNER JOIN libs.asutus a ON a.id = qry.vanem_id
 

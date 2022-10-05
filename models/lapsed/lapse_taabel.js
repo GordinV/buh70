@@ -75,8 +75,9 @@ module.exports = {
             gridConfiguration: [
                 {id: "id", name: "id", width: "1%", show: false},
                 {id: "isikukood", name: "Isikukood", width: "10%"},
-                {id: "nimi", name: "Nimi", width: "25%"},
-                {id: "viitenr", name: "Vana VN", width: "7%"},
+                {id: "nimi", name: "Nimi", width: "20%"},
+                {id: "viitenumber", name: "Viitenumber", width: "10%"},
+                {id: "viitenr", name: "Vana VN", width: "6%"},
                 {id: "teenus", name: "Teenus", width: "25%"},
                 {id: "yksus", name: "Üksus", width: "15%"},
                 {id: "kuu", name: "Kuu", width: "5%", type: "integer", interval: true},
@@ -174,7 +175,8 @@ module.exports = {
                      )
                 SELECT id::integer, "select", parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
                             isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                            
-                            tab_tyyp, kulastused, too_paevad, kovid, vahe
+                            tab_tyyp, kulastused, too_paevad, kovid, vahe,
+                            lapsed.get_viitenumber(rekvid, parentid) AS viitenumber
                 FROM (
                          select false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
                             isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                           

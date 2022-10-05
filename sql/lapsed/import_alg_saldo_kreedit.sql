@@ -94,7 +94,7 @@ BEGIN
                          INNER JOIN lapsed.liidestamine l ON l.docid = m.parentid
                     WHERE m1.asutusid = l_asutus_id
                          AND l.parentid = l_laps_id
-                         AND m.kpv = '2021-12-31'
+                         AND m.kpv = '2022-08-31'
                     LIMIT 1
             );
             RAISE NOTICE 'l_mk_id %',l_mk_id;

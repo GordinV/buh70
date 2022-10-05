@@ -6,6 +6,7 @@ module.exports = {
             {id: "vanem_nimi", name: "Vanem nimi", width: "15%"},
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "10%"},
             {id: "lapse_nimi", name: "Lapse nimi", width: "15%"},
+            {id: "viitenumber", name: "Viitenumber", width: "10%"},
             {id: "vana_vn", name: "Vana VN", width: "10%"},
             {id: "soodustus", name: "%", width: "5%", type: "number"},
             {id: "period", name: "Period", width: "5%", show: false, type: "date", interval: true},
@@ -36,7 +37,8 @@ module.exports = {
                                ELSE NULL::TEXT
                                END::TEXT                                                                AS viga,
                            $2                                                                           AS user_id,
-                           vn.vn                                                                        AS vana_vn
+                           vn.vn                                                                        AS vana_vn,
+                           qry.viitenumber
                     FROM lapsed.soodustused($1, 1, $3, $4) qry
                              LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                                               FROM lapsed.viitenr vn
