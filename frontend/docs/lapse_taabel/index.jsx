@@ -76,9 +76,7 @@ class Documents extends React.PureComponent {
         let soodustus = self.gridData && self.gridData.length ? self.gridData[0].soodustus_kokku : 0;
         let vahe = self.gridData && self.gridData.length ? self.gridData[0].vahe_kokku : 0;
 
-        if (summa || soodustus) {
-            this.setState({summa: summa, read: self.gridData.length, soodustus: soodustus, vahe: vahe});
-        }
+        this.setState({summa: summa, read: self.gridData.length, soodustus: soodustus, vahe: vahe});
 
         return (
             <ToolbarContainer>

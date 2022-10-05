@@ -71,6 +71,7 @@ BEGIN
         WHERE parentid = doc_parentid
           AND rekvid = user_rekvid
           AND nomid = doc_nomid
+          AND lapse_kaart_id = doc_lapse_kaart_id
           AND kuu = doc_kuu
           AND aasta = doc_aasta
           AND NOT umberarvestus;

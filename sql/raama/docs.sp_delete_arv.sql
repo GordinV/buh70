@@ -107,20 +107,21 @@ BEGIN
                  v_doc.user_name AS user,
                  arv_history     AS arv,
                  arv1_history    AS arv1,
-                 arvtasu_history AS arvtasu) row;
+                 arvtasu_history AS arvtasu
+         ) row;
 
     -- удаление оплат
     FOR v_mk IN
-        SELECT DISTINCT mk.parentid AS mk_id
-        FROM docs.doc d
-                 INNER JOIN docs.mk mk ON mk.parentid = d.id
-                 INNER JOIN docs.arvtasu tasu ON tasu.doc_arv_id = v_doc.id
+        SELECT id, doc_tasu_id FROM docs.arvtasu WHERE doc_arv_id = doc_id
         LOOP
             -- удаление оплат
-            DELETE FROM docs.arvtasu WHERE doc_arv_id = doc_id;
+            DELETE FROM docs.arvtasu WHERE id = v_mk.id;
             -- перерасчет сальдо платежа
-            PERFORM docs.sp_update_mk_jaak(v_mk.mk_id);
+            PERFORM docs.sp_update_mk_jaak(v_mk.doc_tasu_id);
         END LOOP;
+
+
+--    DELETE FROM docs.arvtasu WHERE doc_arv_id = doc_id;
 
     -- удаление связей
     UPDATE docs.doc
@@ -144,7 +145,7 @@ BEGIN
 
     -- уберем ссылку на счет
     UPDATE docs.mk SET arvid = NULL WHERE arvid = doc_id;
-    PERFORM docs.sp_update_mk_jaak(parentid) FROM docs.mk WHERE arvid = doc_id;
+--    PERFORM docs.sp_update_mk_jaak(parentid) FROM docs.mk WHERE arvid = doc_id;
 
     UPDATE docs.korder1 SET arvid = NULL WHERE arvid = doc_id;
 

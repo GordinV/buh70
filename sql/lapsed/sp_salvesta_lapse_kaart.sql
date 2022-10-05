@@ -71,7 +71,12 @@ BEGIN
         l_noms = l_noms + 1;
     END IF;
 
-    SELECT * INTO doc_row FROM lapsed.lapse_kaart WHERE id = doc_id LIMIT 1;
+    SELECT l.isikukood, lk.*
+    INTO doc_row
+    FROM lapsed.lapse_kaart lk
+             INNER JOIN lapsed.laps l ON l.id = lk.parentid
+    WHERE lk.id = doc_id
+    LIMIT 1;
 
     SELECT kasutaja
     INTO userName
@@ -87,7 +92,7 @@ BEGIN
 -- проверка на даты
     IF (doc_alg_kpv > doc_lopp_kpv)
     THEN
-        RAISE EXCEPTION 'Vale kuupäevad alg.kpv > lõpp kpv';
+        RAISE EXCEPTION 'Vale kuupäevad alg.kpv > lõpp kpv, %', doc_row.isikukood;
     END IF;
 
     -- проверка на табеля
@@ -105,7 +110,7 @@ BEGIN
               LIMIT 1
         )
     THEN
-        RAISE EXCEPTION 'Vale alg.kuupäev. Päevatabelid leidnud koostatud  varem kui alg. kpv';
+        RAISE EXCEPTION 'Vale alg.kuupäev. Päevatabelid leidnud koostatud  varem kui alg. kpv, %',doc_row.isikukood;
 
     END IF;
 
@@ -124,7 +129,7 @@ BEGIN
               LIMIT 1
         )
     THEN
-        RAISE EXCEPTION 'Vale lõpp.kuupäev. Päevatabelid leidnud koostatud  hiljem kui lõpp. kpv';
+        RAISE EXCEPTION 'Vale lõpp.kuupäev. Päevatabelid leidnud koostatud  hiljem kui lõpp. kpv, %', doc_row.isikukood;
     END IF;
 
 
@@ -139,7 +144,7 @@ BEGIN
               LIMIT 1
         )
     THEN
-        RAISE EXCEPTION 'Vale alg.kuupäev. Leidnud tabel varem kui alg. kpv, laps_id %, nom_id %', doc_parentid, doc_nomid;
+        RAISE EXCEPTION 'Vale alg.kuupäev. Leidnud tabel varem kui alg. kpv, isikukood %, nom_id %', doc_row.isikukood, doc_nomid;
     END IF;
 
     -- дата конц. услуги - нельзя ставить раньше , чем есть табель
@@ -153,18 +158,33 @@ BEGIN
 
         )
     THEN
-        RAISE NOTICE 'Vale lõpp kuupäev. Leidnud tabel hiljem kui lõpp kpv';
+        RAISE NOTICE 'Vale lõpp kuupäev. Leidnud tabel hiljem kui lõpp kpv, %', doc_row.isikukood;
     END IF;
 
     -- проверка на дату льготы, если дата не конец мнесяца и не равна дате окончания услуги
-    IF (doc_sooduse_lopp IS NOT NULL
-           AND doc_sooduse_lopp <
-                (make_date(year(doc_sooduse_lopp), month(doc_sooduse_lopp), 1) + INTERVAL '1 month' -
-                 INTERVAL '1 day')::DATE)
+    IF (doc_sooduse_lopp IS NOT NULL AND doc_sooduse_lopp <> doc_lopp_kpv
+        AND doc_sooduse_lopp <
+            (make_date(year(doc_sooduse_lopp), month(doc_sooduse_lopp), 1) + INTERVAL '1 month' -
+             INTERVAL '1 day')::DATE)
         OR coalesce(doc_sooduse_lopp, doc_lopp_kpv) > doc_lopp_kpv
     THEN
-        RAISE EXCEPTION 'Vale soodustuse lõpp kuupäev. peaks olla kuu lõpp või teenuse lõpp kuupäev';
+        RAISE EXCEPTION 'Vale soodustuse lõpp kuupäev. peaks olla kuu lõpp või teenuse lõpp kuupäev, %', doc_row.isikukood;
     END IF;
+
+    -- на наличие такой услуги в карте
+    IF exists(SELECT lk.id
+              FROM lapsed.lapse_kaart lk
+              WHERE lk.parentid = doc_parentid
+                AND lk.rekvid = user_rekvid
+                AND lk.nomid = doc_nomid
+                AND lk.properties ->> 'yksus' = doc_yksus
+                AND lk.id <> coalesce(doc_id, 0)
+                AND lk.staatus < 3
+        )
+    THEN
+        RAISE NOTICE 'See teenus juba olemas, korduv, %', doc_row.isikukood;
+    END IF;
+
 
     json_props = to_jsonb(row)
                  FROM (SELECT doc_yksus            AS yksus,

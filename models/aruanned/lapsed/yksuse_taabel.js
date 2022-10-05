@@ -1,12 +1,13 @@
 module.exports = {
     grid: {
         gridConfiguration: [
-            {id: "yksus", name: "Üksus", width: "7%"},
-            {id: "viitenr", name: "Viitenr.", width: "7%"},
-            {id: "nimi", name: "Nimi", width: "8%"},
-            {id: "teenus", name: "Teenus", width: "5%"},
-            {id: "kuu", name: "Kuu", width: "3%", type: "integer"},
-            {id: "aasta", name: "Aasta", width: "4%", type: "integer"},
+            {id: "yksus", name: "Üksus", width: "6%"},
+            {id: "viitenr", name: "Viitenr.", width: "6%"},
+            {id: "vana_vn", name: "Vana VN", width: "5%"},
+            {id: "nimi", name: "Nimi", width: "7%"},
+            {id: "teenus", name: "Teenus", width: "6%"},
+            {id: "kuu", name: "Kuu", width: "2%", type: "integer"},
+            {id: "aasta", name: "Aasta", width: "3%", type: "integer"},
             {
                 id: "day_1",
                 name: "1",
@@ -262,7 +263,8 @@ module.exports = {
 //            {id: "tuhi", name: " ", width: "1px", hideFilter: true},
         ],
         sqlString: `
-            SELECT *
+            SELECT qry.*,
+                   vn.vn                                    AS vana_vn                   
             FROM (
                      SELECT row_number() OVER (PARTITION BY yksus, isikukood
                          ORDER BY
@@ -314,7 +316,7 @@ module.exports = {
                                          CASE WHEN nom_id <> 999999999 AND day_29 = 0 THEN 0 ELSE day_29 END AS day_29,
                                          CASE WHEN nom_id <> 999999999 AND day_30 = 0 THEN 0 ELSE day_30 END AS day_30,
                                          CASE WHEN nom_id <> 999999999 AND day_31 = 0 THEN 0 ELSE day_31 END AS day_31,
-                                         week_ends::INTEGER[]                                                   AS week_ends
+                                         week_ends::INTEGER[]                                                AS week_ends
                                   FROM lapsed.yksuse_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER) qryReport
                                   ORDER BY yksus,
                                            nimi,
@@ -479,14 +481,14 @@ module.exports = {
                               -- tabelite kogus
                               SELECT FALSE           AS is_row,
                                      FALSE           AS is_osa,
-                                     l.nimetus::text as yksus,
+                                     l.nimetus::TEXT AS yksus,
                                      3,
                                      'Koostatud tabelite kokku',
                                      'XXXXXXXXXXX',
                                      'XXXXXXXXXXX',
                                      'Kokku'         AS nimi,
-                                     $2 as kuu,
-                                     $3 as aasta,
+                                     $2              AS kuu,
+                                     $3              AS aasta,
                                      count(t.id)
                                                      AS kogus,
                                      NULL            AS day_1,
@@ -530,6 +532,14 @@ module.exports = {
                               GROUP BY t.rekv_id, t.grupp_id, l.nimetus
                           ) qry
                  ) qry
+                     LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
+                                      FROM lapsed.viitenr vn
+                                      WHERE vn.rekv_id IN (SELECT rekv_id
+                                                           FROM get_asutuse_struktuur($1))
+                                      GROUP BY vn.isikukood
+            ) vn
+                                     ON vn.isikukood = qry.isikukood
+
             ORDER BY yksus,
                      is_row DESC,
                      nimi,

@@ -105,10 +105,13 @@ BEGIN
                 INTO v_kaart.kogus
                 FROM lapsed.day_taabel1 t1
                          INNER JOIN lapsed.day_taabel t ON t.id = t1.parent_id
+                         INNER JOIN libs.library l ON l.id = t.grupp_id
+
                 WHERE t.staatus <> 3
                   AND t.rekv_id = l_rekvid
                   AND t1.laps_id = v_kaart.parentid
                   AND t1.nom_id = v_kaart.nomid
+                  AND l.kood = v_kaart.yksus
                   AND month(t.kpv) = month(l_kpv::DATE)
                   AND year(t.kpv) = year(l_kpv::DATE);
 
@@ -303,7 +306,7 @@ GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arves
 
 /*
 -- 19201
-select lapsed.arvesta_taabel(45, 14961,'2022-05-31')
+select lapsed.arvesta_taabel(8, 7277,'2022-09-30')
 
 select * from lapsed.lapsed_taabel where rekvid = 63
 

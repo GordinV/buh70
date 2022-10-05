@@ -294,8 +294,8 @@ SELECT sum(sm_kokku) as sm, sum(sm_kokku_1) as sm_1
 FROM
 (
 select sum(tm) over() as sm_kokku, * from
-palk.tsd_lisa_1('2021-10-01', '2021-10-31', 94, 1 :: INTEGER)
-where isikukood = '46112297010'
+palk.tsd_lisa_1('2022-09-01', '2022-09-30', 81, 1 :: INTEGER)
+where isikukood in ('46408083713','37502100015')
 
 
 ) qry
@@ -308,5 +308,5 @@ union all
 
 --where isikukood = '35908263723'
 
-select * from ou.rekv where nimetus like '0911032 %'
+select * from ou.rekv where nimetus like '0911007 %'
 */

@@ -160,9 +160,10 @@ const Smk = {
             {id: "deebet", name: "Summa", width: "10%", type: "number", interval: true},
             {id: "aa", name: "Arveldus arve", width: "15%"},
             {id: "viitenr", name: "Viite number", width: "7%"},
+            {id: "vana_vn", name: "Vana VN", width: "5%"},
             {id: "nimi", name: "Nimi", width: "15%"},
-            {id: "isikukood", name: "Isikukood", width: "10%"},
-            {id: "yksused", name: "Yksus", width: "7%"},
+            {id: "isikukood", name: "Isikukood", width: "7%"},
+            {id: "yksused", name: "Yksus", width: "5%"},
 
         ],
         sqlString: `SELECT mk.id,
@@ -185,8 +186,16 @@ const Smk = {
                            mk.nimi,
                            $2                                        AS userid,
                            mk.viitenr::TEXT,
-                           mk.yksused::TEXT
+                           mk.yksused::TEXT,
+                           vn.vn                                 AS vana_vn
                     FROM lapsed.cur_lapsed_mk mk
+                             LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
+                                              FROM lapsed.viitenr vn
+                                              WHERE vn.rekv_id IN (SELECT rekv_id
+                                                                   FROM get_asutuse_struktuur($1))
+                                              GROUP BY vn.isikukood
+                    ) vn
+                                             ON vn.isikukood = mk.isikukood
                     WHERE mk.opt = 2
                       AND mk.rekvId = $1`,
 //                      AND coalesce(docs.usersRigths(mk.id, 'select', $2::INTEGER), TRUE)`,     // $1 всегда ид учреждения $2 - всегда ид пользователя

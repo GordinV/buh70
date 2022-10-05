@@ -150,7 +150,7 @@ BEGIN
                 VALUES (taotlus_id, json_record.summa, json_record.summa_kassa,
                         COALESCE(json_record.oodatav_taitmine, 0), json_record.tunnus, json_record.proj,
                         json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5,
-                        json_record.muud, json_record.selg, json_record.eelarveid, json_record.eelprojid) RETURNING id
+                        json_record.muud, replace(json_record.selg, ';', ','), json_record.eelarveid, json_record.eelprojid) RETURNING id
                            INTO taotlus1_id;
 
                 -- add new id into array of ids
@@ -170,7 +170,7 @@ BEGIN
                     kood4            = json_record.kood4,
                     kood5            = json_record.kood5,
                     muud             = json_record.muud,
-                    selg             = json_record.selg
+                    selg             = replace(json_record.selg, ';', ',')
                 WHERE id = json_record.id :: INTEGER;
 
                 taotlus1_id = json_record.id :: INTEGER;

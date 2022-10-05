@@ -57,6 +57,10 @@ BEGIN
                 -- проверяем уникальность записи
 
                 RAISE NOTICE 'l_rekv_id %', l_rekv_id;
+                IF exists(SELECT 1 FROM lapsed.viitenr WHERE viitenumber = json_record.viitenr)
+                THEN
+                    DELETE FROM lapsed.viitenr WHERE viitenumber = json_record.viitenr;
+                END IF;
 
                 IF NOT exists(SELECT 1 FROM lapsed.viitenr WHERE viitenumber = json_record.viitenr)
                 THEN

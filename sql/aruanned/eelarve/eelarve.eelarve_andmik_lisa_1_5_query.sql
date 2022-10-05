@@ -427,7 +427,6 @@ BEGIN
             , rahavoo
             , nimetus;
 
-    GET DIAGNOSTICS l_count= ROW_COUNT;
 
     -- eelmise periodi andmed
     INSERT INTO tmp_andmik (idx, tyyp, rekvid, tegev, artikkel, rahavoog, nimetus, saldoandmik, db, kr, aasta, kuu)
@@ -464,7 +463,6 @@ BEGIN
             , nimetus;
 
 
-    GET DIAGNOSTICS l_count= ROW_COUNT;
 
     RETURN TRUE;
 

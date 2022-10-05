@@ -84,29 +84,29 @@ BEGIN
 
     -- Проверка на наличие связанных документов и их типов (если тип не проводка, то удалять нельзя)
 
- /*   IF v_doc.docs_ids IS NOT NULL
-        AND NOT exists(
-                SELECT 1 FROM docs.arvtasu WHERE doc_tasu_id = v_doc.id)
-        AND exists(
-               SELECT d.id
-               FROM docs.doc d
-                        INNER JOIN libs.library l ON l.id = d.doc_type_id
-               WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
-                 AND d.status <> 3 -- not deleted
-                 AND l.kood IN (SELECT kood
-                                FROM libs.library
-                                WHERE library = 'DOK'
-                                  AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')))
-        AND v_doc.selg NOT LIKE '%Ebatõenäoliste nõuete mahakandmine%'
+    /*   IF v_doc.docs_ids IS NOT NULL
+           AND NOT exists(
+                   SELECT 1 FROM docs.arvtasu WHERE doc_tasu_id = v_doc.id)
+           AND exists(
+                  SELECT d.id
+                  FROM docs.doc d
+                           INNER JOIN libs.library l ON l.id = d.doc_type_id
+                  WHERE d.id IN (SELECT unnest(v_doc.docs_ids))
+                    AND d.status <> 3 -- not deleted
+                    AND l.kood IN (SELECT kood
+                                   FROM libs.library
+                                   WHERE library = 'DOK'
+                                     AND (properties IS NULL OR properties :: JSONB @> '{"type":"document"}')))
+           AND v_doc.selg NOT LIKE '%Ebatõenäoliste nõuete mahakandmine%'
 
-    THEN
+       THEN
 
-        error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
-        error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
-        result = 0;
-        RETURN;
-    END IF;
-*/
+           error_code = 3; -- Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid
+           error_message = 'Ei saa kustuta dokument. Kustuta enne kõik seotud dokumendid';
+           result = 0;
+           RETURN;
+       END IF;
+   */
     -- проврека на связанного с проводкой счета (маловероятные)
     IF exists(SELECT id FROM docs.doc WHERE docs_ids @> ARRAY [doc_id])
     THEN
@@ -153,7 +153,7 @@ BEGIN
                       WHERE ltrim(rtrim(number)) = ltrim(rtrim(v_doc.dok))
                         AND asutusid = v_doc.asutusid
                         AND year(kpv) = year(v_doc.kpv)
-                          LIMIT 1);
+                      LIMIT 1);
 
     END IF;
 
@@ -179,7 +179,7 @@ BEGIN
                     WHERE rekvid = v_doc.rekvid
                       AND doc_tasu_id = v_doc.id
                       AND a.status <> 3
-                        LIMIT 1
+                    LIMIT 1
     );
 
     IF l_arvtasu_id IS NOT NULL

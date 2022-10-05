@@ -91,6 +91,7 @@ app.use(session({
     }),
     secret: config.session.secret,
     cookie: {maxAge: config.session.cookie.maxAge}
+
 }));
 
 /*

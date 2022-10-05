@@ -93,6 +93,24 @@ BEGIN
 
     END IF;
 
+    --удаление - нельзя удалять услугу, если на нее табеля
+    IF exists((SELECT dt.id
+                                            FROM lapsed.lapse_taabel dt
+                                            WHERE dt.parentid = v_doc.parentid
+                                              and dt.lapse_kaart_id = v_doc.id
+                                              AND dt.staatus < 3))
+    THEN
+
+        RAISE NOTICE 'нельзя удалять услугу, если на нее оформлены табеля';
+        error_code = 4;
+        error_message = 'Ei saa kustuta teenus, enne kustuta ära kõik tabelid';
+        result = 0;
+        RETURN;
+
+    END IF;
+
+
+
     -- Логгирование удаленного документа
 
     SELECT to_jsonb(row)

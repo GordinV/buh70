@@ -1,11 +1,12 @@
 module.exports = {
     grid: {
         gridConfiguration: [
-            {id: "period", name: "Period", width: "5%", show: false, type: "date", interval: true},
+            {id: "period", name: "Period", width: "1%", show: false, type: "date", interval: true},
             {id: "kulastatavus", name: "Külastatavus", width: "5%", show: true},
             {id: "lapse_nimi", name: "Lapse nimi", width: "10%"},
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "0%", show: false},
-            {id: "viitenumber", name: "Viitenumber", width: "10%", show: true},
+            {id: "viitenumber", name: "Viitenumber", width: "7%", show: true},
+            {id: "vana_vn", name: "Vana VN", width: "5%"},
             {id: "alg_saldo", name: "Alg.saldo", width: "7%", type: "number", interval: true},
             {id: "arvestatud", name: "Arvestatud", width: "7%", type: "number", interval: true},
             {id: "soodustus", name: "Soodustus", width: "7%", type: "number", interval: true},
@@ -42,9 +43,17 @@ module.exports = {
                            coalesce(jaak, 0)::NUMERIC(14, 4)                                  AS jaak,
                            rekvid,
                            $2                                                                 AS user_id,
-                           r.nimetus::TEXT                                                    AS asutus
+                           r.nimetus::TEXT                                                    AS asutus,
+                           vn.vn                                 AS vana_vn
                     FROM lapsed.kaive_aruanne($1::INTEGER, $3, $4) qryReport
                              INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
+                             LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
+                                              FROM lapsed.viitenr vn
+                                              WHERE vn.rekv_id IN (SELECT rekv_id
+                                                                   FROM get_asutuse_struktuur($1))
+                                              GROUP BY vn.isikukood
+                    ) vn
+                                             ON vn.isikukood = qryReport.lapse_isikukood
                     ORDER BY r.nimetus
         `,     // $1 - rekvid, $3 - alg_kpv, $4 - lopp_kpv
         params: ['rekvid', 'userid', 'period_start', 'period_end'],

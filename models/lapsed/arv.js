@@ -85,6 +85,7 @@ const Arv = {
                            LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
                            LEFT OUTER JOIN lapsed.laps l
                                            ON l.id = ll.parentid
+
                            LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = asutus.id
                            LEFT OUTER JOIN lapsed.vanem_arveldus va
                                            ON va.asutusid = a.asutusid AND va.rekvid = d.rekvid AND va.parentid = l.id
@@ -207,7 +208,7 @@ const Arv = {
                          a1.properties ->>
                          'yksus'                                                                         AS yksus,
                          a1.muud,
-                         trim(n.nimetus) || ',' || a1.muud   as markused
+                         trim(n.nimetus) || ',' || a1.muud                                               AS markused
                   FROM docs.arv1 a1
                            INNER JOIN docs.arv a
                                       ON a.id = a1.parentId
@@ -346,18 +347,19 @@ const Arv = {
         gridConfiguration: [
             {id: "id", name: "id", width: "1px", show: false},
             {id: "number", name: "Number", width: "5%", type: "text"},
-            {id: "kpv", name: "Kuupaev", width: "7%", type: 'date', interval: true},
+            {id: "kpv", name: "Kuupaev", width: "5%", type: 'date', interval: true},
             {id: "asutus", name: "Maksja", width: "15%"},
-            {id: "summa", name: "Summa", width: "7%", type: "number", interval: true},
-            {id: "tahtaeg", name: "Tähtaeg", width: "7%", type: 'date', interval: true},
-            {id: "jaak", name: "Jääk", width: "7%", type: "number", interval: true},
-            {id: "tasud", name: "Tasud", width: "7%", type: 'date', interval: true},
+            {id: "summa", name: "Summa", width: "5%", type: "number", interval: true},
+            {id: "tahtaeg", name: "Tähtaeg", width: "5%", type: 'date', interval: true},
+            {id: "jaak", name: "Jääk", width: "5%", type: "number", interval: true},
+            {id: "tasud", name: "Tasud", width: "5%", type: 'date', interval: true},
             {id: "nimi", name: "Nimi", width: "15%"},
             {id: "isikukood", name: "Isikukood", width: "7%"},
-            {id: "viitenr", name: "Viitenr", width: "7%"},
-            {id: "tyyp", name: "Tüüp", width: "7%"},
-            {id: "ebatoenaolised", name: "Ebatõenaolised", width: "7%"},
-            {id: "select", name: "Valitud", width: "7%", show: false, type: 'boolean', hideFilter: true}
+            {id: "viitenr", name: "Viitenr", width: "5%"},
+            {id: "vana_vn", name: "Vana VN", width: "5%"},
+            {id: "tyyp", name: "Tüüp", width: "5%"},
+            {id: "ebatoenaolised", name: "Ebatõenaolised", width: "5%"},
+            {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean', hideFilter: true}
 
         ],
         sqlString: `SELECT id,
@@ -389,8 +391,17 @@ const Arv = {
                            kas_email::BOOLEAN                   AS kas_email,
                            kas_earved::BOOLEAN                  AS kas_earved,
                            pank::TEXT,
-                           ebatoenaolised
+                           ebatoenaolised,
+                           vn.vn                                 AS vana_vn
                     FROM lapsed.cur_laste_arved a
+                             LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
+                                              FROM lapsed.viitenr vn
+                                              WHERE vn.rekv_id IN (SELECT rekv_id
+                                                                   FROM get_asutuse_struktuur($1))
+                                              GROUP BY vn.isikukood
+                    ) vn
+                                             ON vn.isikukood = a.isikukood
+
                     WHERE a.rekvId = $1::INTEGER`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curLasteArved'

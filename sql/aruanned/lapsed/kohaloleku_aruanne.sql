@@ -89,13 +89,15 @@ FROM (
          INNER JOIN ou.rekv r ON r.id = g.rekvid
          INNER JOIN libs.library l ON l.kood = g.yksus AND l.library = 'LAPSE_GRUPP' AND
                                       l.rekvid = lk.rekvid
-         INNER JOIN libs.library t ON (l.properties::jsonb ->> 'tyyp')::INTEGER = t.id AND t.library = 'KOOLITUSE_TYYP'
+         LEFT OUTER JOIN libs.library t
+                         ON (l.properties::JSONB ->> 'tyyp')::INTEGER = t.id AND t.library = 'KOOLITUSE_TYYP'
 
 WHERE g.rekvid IN (SELECT rekv_id
                    FROM get_asutuse_struktuur(l_rekvid))
-and l.status <> 3
-and t.status <> 3
-GROUP BY t.nimetus, r.nimetus ;
+  AND l.status <> 3
+  AND t.status <> 3
+    GROUP BY t.nimetus
+    , r.nimetus ;
 
 $BODY$
     LANGUAGE SQL
@@ -111,6 +113,6 @@ GRANT EXECUTE ON FUNCTION lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER) T
 
 /*
 SELECT *
-FROM lapsed.kohaloleku_aruanne(85, 4, 2022)
+FROM lapsed.kohaloleku_aruanne(101, 1, 2022)
 
 */

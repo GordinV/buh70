@@ -3,39 +3,50 @@
 -- DROP FUNCTION docs.trigiu_korderid_after_laekumine();
 
 CREATE OR REPLACE FUNCTION docs.trigiu_korderid_after_laekumine()
-  RETURNS trigger AS
+    RETURNS TRIGGER AS
 $BODY$
-declare 
-	v_userid record;
-	lresult int;
-	lcNotice varchar;
-begin
+DECLARE
+    v_userid RECORD;
+    lresult  INT;
+    lcNotice VARCHAR;
+BEGIN
 
-	if new.arvid is not null then
+    IF new.arvid IS NOT NULL
+    THEN
 
-		delete from docs.arvtasu where arvid = new.arvid and doc_tasu_id = new.parentid;
-		
-		insert into docs.arvtasu (rekvid, doc_arv_id, doc_tasu_id, arvid, kpv, summa, dok, pankkassa, journalid, sorderid, muud, doklausid )
-		Select k.rekvid, a.parentid as doc_arv_id, d.id as doc_tasu_id, a.id, k.kpv, 
-			CASE when k.tyyp = 1 then k.summa else -1 * k.summa end as summa,
-			alltrim(k.number) || ' ' || k.kpv::text as dok,
-			1 as pankkassa, null as journalid, k.id as sorderid,
-			k.muud as muud, null as doklausid
-			From docs.korder1 k
-			inner join docs.doc d on d.id = k.parentid
-			inner join docs.arv a on a.id = k.arvid
-			WHERE  k.arvid = new.arvid 
-			and d.status > 0;
+        DELETE FROM docs.arvtasu WHERE arvid = new.arvid AND doc_tasu_id = new.parentid;
 
-	end if;	
+        INSERT INTO docs.arvtasu (rekvid, doc_arv_id, doc_tasu_id, arvid, kpv, summa, dok, pankkassa, journalid,
+                                  sorderid, muud, doklausid)
+        SELECT k.rekvid,
+               a.parentid                                              AS doc_arv_id,
+               d.id                                                    AS doc_tasu_id,
+               a.id,
+               k.kpv,
+               CASE WHEN k.tyyp = 1 THEN k.summa ELSE -1 * k.summa END AS summa,
+               alltrim(k.number) || ' ' || k.kpv::TEXT                 AS dok,
+               1                                                       AS pankkassa,
+               NULL                                                    AS journalid,
+               k.id                                                    AS sorderid,
+               k.muud                                                  AS muud,
+               NULL                                                    AS doklausid
+        FROM docs.korder1 k
+                 INNER JOIN docs.doc d ON d.id = k.parentid
+                 INNER JOIN docs.arv a ON a.id = k.arvid
+        WHERE k.arvid = new.arvid
+          AND d.status > 0;
 
-	if new.arvid is null and TG_OP = 'UPDATE' and old.arvid is not null then
-		delete from docs.arvtasu where arvid = new.arvid and doc_tasu_id = new.parentid;
-	end if;
-	return null;
-end; 
+    END IF;
+
+    IF new.arvid IS NULL AND TG_OP = 'UPDATE' AND old.arvid IS NOT NULL
+    THEN
+        DELETE FROM docs.arvtasu WHERE arvid = new.arvid AND doc_tasu_id = new.parentid;
+    END IF;
+    RETURN NULL;
+END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
+    LANGUAGE plpgsql
+    VOLATILE
+    COST 100;
 ALTER FUNCTION docs.trigiu_korderid_after_laekumine()
-  OWNER TO postgres;
+    OWNER TO postgres;

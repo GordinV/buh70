@@ -116,6 +116,7 @@ BEGIN
 
         LOOP
 
+            raise notice 'v_kaart %', v_kaart.id;
             -- salvestame kaart
             SELECT row_to_json(row)
             INTO json_object
@@ -156,6 +157,6 @@ GRANT EXECUTE ON FUNCTION lapsed.update_teenuste_hinnad(INTEGER, INTEGER, DATE) 
 
 
 /*
-select * from lapsed.lapse_kaart  order by id desc limit 10
-select lapsed.update_teenuste_hinnad(70, 738)
+select * from  lapsed.update_teenuste_hinnad(48, 18785, '2022-05-01')
+
  */

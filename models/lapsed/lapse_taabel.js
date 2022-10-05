@@ -74,8 +74,9 @@ module.exports = {
         {
             gridConfiguration: [
                 {id: "id", name: "id", width: "1%", show: false},
-                {id: "isikukood", name: "Isikukood", width: "15%"},
-                {id: "nimi", name: "Nimi", width: "30%"},
+                {id: "isikukood", name: "Isikukood", width: "10%"},
+                {id: "nimi", name: "Nimi", width: "25%"},
+                {id: "viitenr", name: "Vana VN", width: "7%"},
                 {id: "teenus", name: "Teenus", width: "25%"},
                 {id: "yksus", name: "Üksus", width: "15%"},
                 {id: "kuu", name: "Kuu", width: "5%", type: "integer", interval: true},
@@ -91,11 +92,7 @@ module.exports = {
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
             sqlString:
-                `WITH viitenr AS (SELECT array_to_string(array_agg(viitenumber), ',') AS viitenumber, isikukood
-                                 FROM lapsed.viitenr v
-                                 WHERE v.rekv_id = $1::INTEGER
-                                 GROUP BY v.isikukood),
-                     is_ettemaks AS (
+                `WITH is_ettemaks AS (
                          SELECT exists(SELECT 1
                                        FROM lapsed.lapse_kaart lk
                                        WHERE lk.rekvid = $1::INTEGER
@@ -126,7 +123,6 @@ module.exports = {
                                                                   (CASE WHEN lt.tyyp IS NOT NULL AND lt.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END)
                                      END)))::NUMERIC(12, 2)                                                   AS summa,
                                  lt.isikukood,
-                                 v.viitenumber,
                                  lt.nimi,
                                  lt.kood,
                                  lt.teenus,
@@ -140,7 +136,6 @@ module.exports = {
                                  lt.kovid,
                                  lt.vahe::numeric
                           FROM lapsed.cur_lapse_taabel lt
-                                   LEFT OUTER JOIN viitenr v ON v.isikukood = lt.isikukood
                           WHERE lt.rekvid = $1::INTEGER                          
                          ),
                      qryVirtTabs AS (SELECT FALSE::boolean                                  AS select,
@@ -164,7 +159,6 @@ module.exports = {
                                                                         ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus
                                                 END)))::NUMERIC(12, 2)                                                   AS summa,
                                             lt.isikukood,
-                                            v.viitenumber,
                                             lt.nimi,
                                             lt.kood,
                                             lt.teenus,
@@ -175,16 +169,15 @@ module.exports = {
                                  ''::text as muud
                                      FROM is_ettemaks,
                                         lapsed.cur_lapse_virtuaal_taabel lt
-                                              LEFT OUTER JOIN viitenr v ON v.isikukood = lt.isikukood
                                      WHERE is_ettemaks.kas_ettemaks::BOOLEAN
                                         and lt.rekvid = $1::INTEGER
                      )
                 SELECT id::integer, "select", parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
-                            isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid, muud,                            
+                            isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                            
                             tab_tyyp, kulastused, too_paevad, kovid, vahe
                 FROM (
                          select false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
-                            isikukood, viitenumber, nimi, kood, teenus, yksus, viitenr, userid, muud,                           
+                            isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                           
                             'Tavaline' as tab_tyyp, kulastused, too_paevad, kovid, vahe
                          from qryTabs
                          UNION ALL

@@ -6,6 +6,7 @@ module.exports = {
             {id: "vanem_nimi", name: "Vanem nimi", width: "15%"},
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "10%"},
             {id: "lapse_nimi", name: "Lapse nimi", width: "15%"},
+            {id: "vana_vn", name: "Vana VN", width: "10%"},
             {id: "soodustus", name: "%", width: "5%", type: "number"},
             {id: "period", name: "Period", width: "5%", show: false, type: "date", interval: true},
             {id: "viga", name: "Viga", width: "10%"},
@@ -34,8 +35,17 @@ module.exports = {
                                WHEN lapsed > 2 AND soodustus < 100 THEN 'Viga, < 100'
                                ELSE NULL::TEXT
                                END::TEXT                                                                AS viga,
-                           $2                                                                           AS user_id
+                           $2                                                                           AS user_id,
+                           vn.vn                                                                        AS vana_vn
                     FROM lapsed.soodustused($1, 1, $3, $4) qry
+                             LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
+                                              FROM lapsed.viitenr vn
+                                              WHERE vn.rekv_id IN (SELECT rekv_id
+                                                                   FROM get_asutuse_struktuur($1))
+                                              GROUP BY vn.isikukood
+                    ) vn
+                                             ON vn.isikukood = qry.lapse_isikukood
+
                     WHERE qry.rekvid IN (SELECT rekv_id
                                          FROM get_asutuse_struktuur($1))
                     ORDER BY vanem_isikukood, lapse_nimi

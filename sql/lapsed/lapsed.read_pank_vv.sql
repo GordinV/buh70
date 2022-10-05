@@ -77,120 +77,143 @@ BEGIN
             -- получим ид ребенка
             l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
 
-            -- ищем пользователя в целевом цчреждении
-            SELECT id
-            INTO l_target_user_id
-            FROM ou.userid
-            WHERE rekvid = l_rekvid
-              AND kasutaja::TEXT = l_user_kood::TEXT
-            LIMIT 1;
+/*
+Для всех учреждениях КРОМЕ 0911008, 0911012, 0911018, 0911027, 0911036, 0911038 применить правило не разбирать оплаты,
+сделанные до 01.09.2022 (включительно 31.08.2022) с пометкой "Kuni 01.09.2022" (вместо"PUUDUB")
+ */
 
-
-            -- ищем родителя
-            IF l_laps_id IS NOT NULL AND l_rekvid IS NOT NULL AND NOT exists(
-                    SELECT id
-                    FROM lapsed.vanemad v
-                    WHERE v.asutusid = l_maksja_id
-                      AND parentid = l_laps_id
-                )
+            IF v_pank_vv.kpv::DATE < '2022-09-01' AND l_rekvid IN (SELECT id
+                                                                   FROM ou.rekv r
+                                                                   WHERE left(nimetus, 7) NOT IN
+                                                                         ('0911008', '0911012', '0911018', '0911027', '0911036', '0911038')
+                                                                     AND parentid = 119
+            )
             THEN
-                -- сохраним плательзика как родителя
-                SELECT l_laps_id AS parentid, l_maksja_id AS asutusid INTO v_vanem;
-
-                SELECT row_to_json(row)
-                INTO json_object
-                FROM (SELECT 0       AS id,
-                             v_vanem AS data) row;
-
-                l_vanem = (SELECT lapsed.sp_salvesta_vanem(json_object :: JSONB, l_target_user_id, l_rekvid));
-
-                -- в лог о создании нового плательщика
-                IF (l_vanem IS NOT NULL AND l_vanem > 0)
-                THEN
-                    l_message = coalesce(l_message, '') || ',maksja puudub, uus maksja salvestatud';
-                ELSE
-                    l_error_code = 1;
-                    l_kas_vigane = TRUE;
-                    l_message = coalesce(l_message, '') || ',maksja puudub';
-                END IF;
-
-            END IF;
-
-            -- ищем ид конфигурации контировки
-            IF v_pank_vv.pank = 'EEUHEE2X' OR v_pank_vv.pank = '401'
-            THEN
-                -- seb
-                l_db_konto = '10010008';
-            ELSEIF v_pank_vv.pank = 'HABAEE2X' OR v_pank_vv.pank = '767'
-            THEN
-                -- swed
-                l_db_konto = '10010002';
-            END IF;
-
-            l_dokprop_id = (SELECT dp.id
-                            FROM libs.dokprop dp
-                                     INNER JOIN libs.library l ON l.id = dp.parentid
-                            WHERE dp.rekvid = l_rekvid
-                              AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
-                            ORDER BY dp.id DESC
-                            LIMIT 1
-            );
-
-            IF l_dokprop_id IS NULL
-            THEN
-                l_dokprop_id = (SELECT id
-                                FROM com_dokprop l
-                                WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
-                                  AND kood = 'SMK'
-                                ORDER BY id DESC
-                                LIMIT 1
-                );
-            END IF;
-
-            -- обнуляем счетчик найденных счетов
-            l_count = 0;
-
-            l_mk_id = NULL;
-            IF coalesce(l_maksja_id, 0) > 0
-            THEN
-
-                -- создаем параметры для расчета платежкм
-                SELECT row_to_json(row)
-                INTO json_object
-                FROM (SELECT l_maksja_id      AS maksja_id,
-                             l_dokprop_id     AS dokprop_id,
-                             l_new_viitenr    AS viitenumber,
-                             v_pank_vv.selg   AS selg,
-                             v_pank_vv.number AS number,
-                             v_pank_vv.kpv    AS kpv,
-                             v_pank_vv.aa     AS aa,
-                             v_pank_vv.iban   AS maksja_arve,
-                             v_pank_vv.summa  AS summa) row;
-
-                -- создаем платежку
-                SELECT fnc.result, fnc.error_message
-                INTO l_mk_id, l_error
-                FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
-            END IF;
-
-            IF l_mk_id IS NOT NULL AND l_mk_id > 0
-            THEN
-                l_count = l_count + 1;
-                l_count_kokku = l_count_kokku + 1;
-                l_kas_vigane = FALSE;
-                l_message = coalesce(l_message, '') || ', MK ' || ltrim(rtrim(v_pank_vv.number)) || ' koostatud';
-
-                -- lausend
-                PERFORM docs.gen_lausend_smk(l_mk_id, l_target_user_id);
-
-                -- сохраняем полученную информаци.
                 UPDATE lapsed.pank_vv v
-                SET doc_id   = l_mk_id,
-                    markused = l_error
+                SET markused = 'Kuni 01.09.2022'
                 WHERE id = v_pank_vv.id;
 
+                l_message = coalesce(l_message, '') || ', Kuni 01.09.2022 ';
+                l_mk_id = NULL;
+
             ELSE
-                l_mk_number = '';
+
+                -- ищем пользователя в целевом цчреждении
+                SELECT id
+                INTO l_target_user_id
+                FROM ou.userid
+                WHERE rekvid = l_rekvid
+                  AND kasutaja::TEXT = l_user_kood::TEXT
+                LIMIT 1;
+
+
+                -- ищем родителя
+                IF l_laps_id IS NOT NULL AND l_rekvid IS NOT NULL AND NOT exists(
+                        SELECT id
+                        FROM lapsed.vanemad v
+                        WHERE v.asutusid = l_maksja_id
+                          AND parentid = l_laps_id
+                    )
+                THEN
+                    -- сохраним плательзика как родителя
+                    SELECT l_laps_id AS parentid, l_maksja_id AS asutusid INTO v_vanem;
+
+                    SELECT row_to_json(row)
+                    INTO json_object
+                    FROM (SELECT 0       AS id,
+                                 v_vanem AS data) row;
+
+                    l_vanem = (SELECT lapsed.sp_salvesta_vanem(json_object :: JSONB, l_target_user_id, l_rekvid));
+
+                    -- в лог о создании нового плательщика
+                    IF (l_vanem IS NOT NULL AND l_vanem > 0)
+                    THEN
+                        l_message = coalesce(l_message, '') || ',maksja puudub, uus maksja salvestatud';
+                    ELSE
+                        l_error_code = 1;
+                        l_kas_vigane = TRUE;
+                        l_message = coalesce(l_message, '') || ',maksja puudub';
+                    END IF;
+
+                END IF;
+
+                -- ищем ид конфигурации контировки
+                IF v_pank_vv.pank = 'EEUHEE2X' OR v_pank_vv.pank = '401'
+                THEN
+                    -- seb
+                    l_db_konto = '10010008';
+                ELSEIF v_pank_vv.pank = 'HABAEE2X' OR v_pank_vv.pank = '767'
+                THEN
+                    -- swed
+                    l_db_konto = '10010002';
+                END IF;
+
+                l_dokprop_id = (SELECT dp.id
+                                FROM libs.dokprop dp
+                                         INNER JOIN libs.library l ON l.id = dp.parentid
+                                WHERE dp.rekvid = l_rekvid
+                                  AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
+                                ORDER BY dp.id DESC
+                                LIMIT 1
+                );
+
+                IF l_dokprop_id IS NULL
+                THEN
+                    l_dokprop_id = (SELECT id
+                                    FROM com_dokprop l
+                                    WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
+                                      AND kood = 'SMK'
+                                    ORDER BY id DESC
+                                    LIMIT 1
+                    );
+                END IF;
+
+                -- обнуляем счетчик найденных счетов
+                l_count = 0;
+
+                l_mk_id = NULL;
+                IF coalesce(l_maksja_id, 0) > 0
+                THEN
+
+                    -- создаем параметры для расчета платежкм
+                    SELECT row_to_json(row)
+                    INTO json_object
+                    FROM (SELECT l_maksja_id      AS maksja_id,
+                                 l_dokprop_id     AS dokprop_id,
+                                 l_new_viitenr    AS viitenumber,
+                                 v_pank_vv.selg   AS selg,
+                                 v_pank_vv.number AS number,
+                                 v_pank_vv.kpv    AS kpv,
+                                 v_pank_vv.aa     AS aa,
+                                 v_pank_vv.iban   AS maksja_arve,
+                                 v_pank_vv.summa  AS summa) row;
+
+                    -- создаем платежку
+                    SELECT fnc.result, fnc.error_message
+                    INTO l_mk_id, l_error
+                    FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
+                END IF;
+
+                IF l_mk_id IS NOT NULL AND l_mk_id > 0
+                THEN
+                    l_count = l_count + 1;
+                    l_count_kokku = l_count_kokku + 1;
+                    l_kas_vigane = FALSE;
+                    l_message = coalesce(l_message, '') || ', MK ' || ltrim(rtrim(v_pank_vv.number)) || ' koostatud';
+
+                    -- lausend
+                    PERFORM docs.gen_lausend_smk(l_mk_id, l_target_user_id);
+
+                    -- сохраняем полученную информаци.
+                    UPDATE lapsed.pank_vv v
+                    SET doc_id   = l_mk_id,
+                        markused = l_error
+                    WHERE id = v_pank_vv.id;
+
+                ELSE
+                    l_mk_number = '';
+                END IF;
+
             END IF;
 
             -- report
@@ -205,10 +228,11 @@ BEGIN
             data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
         END LOOP;
 
-    if (l_count_kokku > 0) then
+    IF (l_count_kokku > 0)
+    THEN
         -- формируем извещение
-        INSERT INTO ou.noticed (userid, teatis,task_name)
-        VALUES (user_id, l_message,'Loe maksed');
+        INSERT INTO ou.noticed (userid, teatis, task_name)
+        VALUES (user_id, l_message, 'Loe maksed');
     END IF;
 
     result = l_count_kokku;
@@ -247,6 +271,7 @@ GRANT EXECUTE ON FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN TEXT) TO ar
 
 /*
 select * from lapsed.pank_vv
+order by id desc limit 100
 
 SELECT lapsed.read_pank_vv(70, '2020-02-15 10:36:32.748115')
 

@@ -3,7 +3,8 @@ DROP VIEW IF EXISTS lapsed.cur_lapse_kaart;
 
 CREATE OR REPLACE VIEW lapsed.cur_lapse_kaart AS
 
-SELECT l.id                                                                     AS lapsid,
+
+    SELECT l.id                                                                     AS lapsid,
        lk.id,
        l.isikukood,
        l.nimi,

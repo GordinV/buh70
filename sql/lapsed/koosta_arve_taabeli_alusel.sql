@@ -197,6 +197,7 @@ BEGIN
           AND lt.aasta = year(l_kpv)
           AND lk.rekvid = l_rekvid
           AND coalesce(lt.kogus, 0) <> 0
+          AND coalesce(lt.hind, lk.hind) <> 0
         ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
 
 

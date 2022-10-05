@@ -57,7 +57,7 @@ FROM lapsed.lapse_taabel lt
                     ON grupp.library::TEXT = 'LAPSE_GRUPP'::TEXT AND grupp.rekvid = lk.rekvid AND grupp.status <> 3
                         AND grupp.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
 WHERE lt.staatus <> 3
-  AND lt.kogus <> 0
+  --AND coealslt.kogus <> 0
   AND n.status <> 3
   AND NOT coalesce((lk.properties ->> 'kas_ettemaks')::BOOLEAN, FALSE)
 ORDER BY aasta, kuu, nimi, kood;
