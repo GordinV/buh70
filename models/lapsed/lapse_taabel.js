@@ -96,7 +96,8 @@ module.exports = {
                 `WITH is_ettemaks AS (
                          SELECT exists(SELECT 1
                                        FROM lapsed.lapse_kaart lk
-                                       WHERE lk.rekvid = $1::INTEGER
+                                       WHERE lk.rekvid in (SELECT rekv_id
+                                                         FROM get_asutuse_struktuur($1::INTEGER))                         
                                          AND (lk.properties -> 'kas_ettemaks') = 'true'
                                          AND lk.staatus <> 3
                                     ) AS kas_ettemaks
@@ -137,7 +138,9 @@ module.exports = {
                                  lt.kovid,
                                  lt.vahe::numeric
                           FROM lapsed.cur_lapse_taabel lt
-                          WHERE lt.rekvid = $1::INTEGER                          
+                          WHERE lt.rekvid in
+                          (SELECT rekv_id
+                                                         FROM get_asutuse_struktuur($1::INTEGER))                         
                          ),
                      qryVirtTabs AS (SELECT FALSE::boolean                                  AS select,
                                             lt.id,
@@ -171,7 +174,9 @@ module.exports = {
                                      FROM is_ettemaks,
                                         lapsed.cur_lapse_virtuaal_taabel lt
                                      WHERE is_ettemaks.kas_ettemaks::BOOLEAN
-                                        and lt.rekvid = $1::INTEGER
+                                        and lt.rekvid in (SELECT rekv_id
+                                                         FROM get_asutuse_struktuur($1::INTEGER))                         
+
                      )
                 SELECT id::integer, "select", parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
                             isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                            

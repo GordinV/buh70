@@ -35,7 +35,7 @@ exports.get = async (req, res) => {
         // убрать нули (количество)
         sqlWhere = (!sqlWhere  ? ' where ':  (sqlWhere +  ' and ')) + ' coalesce(kogus,0) <> 0';
 
-        const data = await doc.selectDocs('', sqlWhere, 10000, gridParams);
+        const data = await doc.selectDocs('', sqlWhere, 100000, gridParams);
 
 
 // Кроме этого, как и отчет по сальдо-обороту, необходим экспорт в CSV файл полями:
