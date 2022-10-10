@@ -19,10 +19,11 @@ BEGIN
     SELECT l.*,
            u.ametnik::TEXT                       AS kasutaja,
            (u.roles ->> 'is_arvestaja')::BOOLEAN AS is_arvestaja
-           INTO v_doc
+    INTO v_doc
     FROM lapsed.lapse_taabel l
              JOIN ou.userid u ON u.id = user_id
-    WHERE l.id = doc_id;
+    WHERE l.id = doc_id
+      AND l.staatus = 1;
 
     -- проверка на пользователя и его соответствие учреждению
 
@@ -81,7 +82,8 @@ BEGIN
 
     -- Логгирование удаленного документа
 
-    SELECT to_jsonb(row) INTO json_ajalugu
+    SELECT to_jsonb(row)
+    INTO json_ajalugu
     FROM (SELECT now()          AS deleted,
                  v_doc.kasutaja AS user) row;
 

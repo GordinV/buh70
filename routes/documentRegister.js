@@ -11,6 +11,7 @@ const prepareSqlWhereFromFilter = require('./../libs/prepareSqlWhereFromFilter')
 const config = require('./../config/lapsed');
 const menuModel = require('./../models/ou/start-menu');
 const RECORDS_LIMIT = require('./../config/constants').RECORDS_LIMIT;
+const async = require('async');
 
 const db = require('./../libs/db');
 
@@ -249,6 +250,8 @@ exports.delete = async (req, res) => {
         docsIds = additionalData.docs;
         isBundleDelete = true;
     }
+
+    console.log('deleted docsIds', docsIds.length, docsIds);
     const Doc = require('./../classes/DocumentTemplate');
 
     // вызвать метод. Есди ИД = 0, то вызывается запрос на создание нового документа
@@ -265,34 +268,28 @@ exports.delete = async (req, res) => {
     const Document = new Doc(documentType, docId, userId, user.asutusId, module.toLowerCase());
     let data = [];
 
-    if (!isBundleDelete) {
-        docsIds.push(docId)
+    if (isBundleDelete) {
+        Document.setDocumentId(docsIds.join(','));
+    }
+    deletedRows = 1;
+    let result = await Document.delete();
+console.log('result',result);
+    if (result && !result.error_code) {
+        deletedRows = deletedRows + result.result;
+        errorMessage = result.error_message
+    } else {
+        errorCode = result.error_code;
+        errorMessage = result.error_message;
+        console.log('error',data, result)
     }
 
-    const promises = docsIds.map(id => {
-        return new Promise(resolve => {
-            Document.setDocumentId(id);
-            resolve(Document.delete());
-        })
-    });
-
-    let promiseResult = await Promise.all(promises).then((data) => {
-        data.forEach(result => {
-            if (result && !result.error_code) {
-                deletedRows = deletedRows + result.result;
-                errorMessage = result.error_message
-            } else {
-                errorCode = result.error_code;
-                errorMessage = result.error_message;
-            }
-        })
-
-    });
-
-
-//    data = {result: await Document.delete()};
     if (deletedRows) {
-        res.send({action: 'delete', error: 0, error_message: null, data: {result: deletedRows, error_code: null,error_message: errorMessage }});
+        res.send({
+            action: 'delete',
+            error: 0,
+            error_message: null,
+            data: {result: deletedRows, error_code: null, error_message: errorMessage}
+        });
     } else {
         res.send({
             action: 'delete',

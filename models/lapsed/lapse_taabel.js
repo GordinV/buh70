@@ -67,9 +67,9 @@ module.exports = {
     ],
     saveDoc:
         `select lapsed.sp_salvesta_lapse_taabel($1::jsonb, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
-    deleteDoc:
-            `SELECT error_code, result, error_message
-             FROM lapsed.sp_delete_lapse_taabel($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT lapsed.sp_delete_lapse_taabel($1::INTEGER, id::INTEGER)
+                FROM lapsed.cur_lapse_taabel
+                WHERE id::TEXT IN (SELECT unnest(string_to_array($2::TEXT, ',')))`, // $1 - userId, $2 - docId
     grid:
         {
             gridConfiguration: [

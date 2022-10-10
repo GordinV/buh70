@@ -43,6 +43,8 @@ FROM (
                             FROM get_asutuse_struktuur(l_rekvid))
            AND (j.rekvid = l_rekvid OR l_kond = 1)
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
+           -- поправка Калле 10.10.2022
+           AND (year(j.kpv) = year(l_kpv1) OR j1.deebet IN (SELECT kood FROM com_kontoplaan WHERE tyyp IN (1, 2)))
 
          UNION ALL
 
@@ -65,6 +67,9 @@ FROM (
                             FROM get_asutuse_struktuur(l_rekvid))
            AND (j.rekvid = l_rekvid OR l_kond = 1)
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
+           -- поправка Калле 10.10.2022
+
+           AND (year(j.kpv) = year(l_kpv1) OR j1.kreedit IN (SELECT kood FROM com_kontoplaan WHERE tyyp IN (1, 2)))
 
          UNION ALL
          -- db kaibed
@@ -124,9 +129,9 @@ GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INT
 
 /*
 SELECT *
-FROM docs.kaibeasutusandmik('',null,'2021-01-01','2021-12-31', 63)
-where konto like '100100%'
+FROM docs.kaibeasutusandmik('',18090,'2022-01-01','2022-01-31', 119,'%',1)
 
+select * from libs.asutus where nimetus like 'MANN GRUPP%'
 
 
 */

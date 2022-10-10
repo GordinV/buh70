@@ -34,6 +34,8 @@ exports.post = async (req, res) => {
     try {
 
         doc.setDocumentId(ids[0]);
+        let params = [ids.join(','), user.userId, execDate];
+
         tulemused = await doc.executeTask(taskName, [ids.join(','), user.userId, execDate]);
     } catch (e) {
         console.error('catch', err);
