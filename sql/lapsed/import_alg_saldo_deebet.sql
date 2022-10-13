@@ -49,21 +49,24 @@ BEGIN
         FROM qryJsons
         LOOP
             RAISE NOTICE 'yksus %, laps_ik %, vanem_ik %', json_record.yksus, json_record.laps_ik, json_record.vanem_ik;
+
+            l_laps_id = (SELECT id
+                         FROM lapsed.laps l
+                         WHERE l.isikukood = json_record.laps_ik
+                           AND l.staatus <> 3
+                         LIMIT 1);
+
+
             -- ищем котр-агента
             l_asutus_id = (
                 SELECT a.id
                 FROM libs.asutus a
                          LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = a.id AND v.staatus <> 3
                 WHERE a.regkood = json_record.vanem_ik
-                    ORDER BY v.id ASC
-                    LIMIT 1
+                  AND v.parentid = l_laps_id
+                ORDER BY v.id DESC
+                LIMIT 1
             );
-
-            l_laps_id = (SELECT id
-                         FROM lapsed.laps l
-                         WHERE l.isikukood = json_record.laps_ik
-                           AND l.staatus <> 3
-                             LIMIT 1);
 
             IF (l_asutus_id IS NULL OR l_laps_id IS NULL)
             THEN
@@ -76,7 +79,7 @@ BEGIN
             l_rekvid = (SELECT id
                         FROM ou.rekv
                         WHERE nimetus LIKE ltrim(rtrim(json_record.yksus)) + '%'
-                            LIMIT 1);
+                        LIMIT 1);
 
             l_user_id = (SELECT id
                          FROM ou.userid
@@ -88,8 +91,8 @@ BEGIN
                     FROM ou.aa
                     WHERE parentid = l_rekvid
                       AND kassa = 1
-                        ORDER BY default_ DESC
-                        LIMIT 1);
+                    ORDER BY default_ DESC
+                    LIMIT 1);
 
 
             -- ищем счет
@@ -111,8 +114,8 @@ BEGIN
                                WHERE dp.rekvid = l_rekvid
                                  AND (dp.details ->> 'konto')::TEXT = '103000'::TEXT
                                  AND l.kood = 'ARV'
-                                   ORDER BY dp.id DESC
-                                   LIMIT 1
+                               ORDER BY dp.id DESC
+                               LIMIT 1
             );
 
 
@@ -137,13 +140,14 @@ BEGIN
                     l_arve_summa = regexp_replace(v_details.summa, '[,]', '.')::NUMERIC;
 
                     -- ищем номенклатуру
-                    SELECT * INTO v_nom
+                    SELECT *
+                    INTO v_nom
                     FROM libs.nomenklatuur n
                     WHERE rekvid = l_rekvid
                       AND kood = v_details.kood
                       AND n.dok = 'ARV'
                       AND status <> 3
-                        LIMIT 1;
+                    LIMIT 1;
 
                     -- формируем строку
                     json_arvrea = json_arvrea || (SELECT row_to_json(row)
@@ -181,7 +185,8 @@ BEGIN
                                         TRUE                  AS import,
                                         json_arvrea           AS "gridData") row);
 
-            SELECT row_to_json(row) INTO json_object
+            SELECT row_to_json(row)
+            INTO json_object
             FROM (SELECT coalesce(l_arv_id, 0) AS id, l_json_arve AS data, TRUE AS import) row;
 
 

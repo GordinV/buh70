@@ -31,7 +31,7 @@ DECLARE
                                WHERE id = user_id
                                LIMIT 1);
     MK_TYYP         INTEGER = 1; -- VMK
-    l_mk_number     BIGINT = docs.sp_get_number(l_rekv_id, 'VMK', year(l_kpv), NULL);
+    l_mk_number     BIGINT  = docs.sp_get_number(l_rekv_id, 'VMK', year(l_kpv), NULL);
     l_vorder_number INTEGER = docs.sp_get_number(l_rekv_id, 'VORDER'::TEXT, year(l_kpv), NULL::INTEGER);
     v_tulemus       RECORD;
     l_journal_ids   INTEGER[];
@@ -39,9 +39,12 @@ DECLARE
 BEGIN
     SELECT kasutaja,
            rekvid
-           INTO v_user
+    INTO v_user
     FROM ou.userid u
     WHERE u.id = user_Id;
+
+    -- just for init
+    SELECT 0 AS error_code, NULL::TEXT AS error_message INTO v_tulemus;
 
     IF v_user.kasutaja IS NULL
     THEN
@@ -75,28 +78,23 @@ BEGIN
             coalesce((SELECT properties ->> 'mmk' FROM palk.palk_config WHERE rekvid = v_user.rekvid LIMIT 1)::BOOLEAN,
                      FALSE);
 
+
     IF kas_mmk
     THEN
-        SELECT 0                  AS id,
-               'VMK'              AS doc_type_id,
-               l_mk_number        AS number,
-               0 :: INTEGER       AS id,
-               MK_TYYP            AS opt,
-               l_kpv              AS kpv,
-               l_kpv              AS maksepaev,
-               'Tasu töötamisest' AS muud,
-               'Tasu töötamisest' AS selg,
-               (SELECT id
-                FROM ou.aa
-                WHERE parentid = v_user.rekvid
-                  AND aa.kassa = 1
-                ORDER BY default_ DESC
-                LIMIT 1)          AS aaid,
-               NULL::NUMERIC      AS summa
-               INTO v_mk;
+        SELECT 0                                  AS id,
+               'VMK'                              AS doc_type_id,
+               l_mk_number                        AS number,
+               0 :: INTEGER                       AS id,
+               MK_TYYP                            AS opt,
+               l_kpv                              AS kpv,
+               l_kpv                              AS maksepaev,
+               'Tasu töötamisest'                 AS muud,
+               'Tasu töötamisest'                 AS selg,
+               ou.get_aa(l_rekv_id, 'PALK'::TEXT) AS aaid,
+               NULL::NUMERIC                      AS summa
+        INTO v_mk;
 
     END IF;
-
 
     -- выбираем операции для подготовки расчет
     FOR v_po IN
@@ -116,7 +114,7 @@ BEGIN
         FROM (
                  SELECT d.id,
                         d.rekvid,
-                        t.parentid                                  AS isikid,
+                        t.parentid                              AS isikid,
                         po.summa,
                         po.tunnus,
                         po.proj,
@@ -127,19 +125,19 @@ BEGIN
                         po.kood4,
                         po.kood5,
                         po.journalid,
-                        l.properties :: JSON ->> 'konto'            AS korr_konto,
-                        (a.properties -> 'asutus_aa') -> 0 ->> 'aa' AS asutus_aa,
+                        l.properties :: JSON ->> 'konto'        AS korr_konto,
+                        libs.get_asutuse_aa(a.id, 'PALK'::TEXT) AS asutus_aa,
                         -- isiku pank arve
-                        a.regkood                                   AS isikukood,
-                        a.nimetus                                   AS nimi,
+                        a.regkood                               AS isikukood,
+                        a.nimetus                               AS nimi,
                         a.aadress,
                         a.tp,
                         coalesce((SELECT aa.kassa = 0
                                   FROM ou.aa aa
                                   WHERE aa.parentid = d.rekvid
                                     AND konto = (l.properties :: JSON ->> 'konto')
-                                  LIMIT 1), FALSE)                  AS is_kassa,
-                        d.docs_ids                                  AS docs_ids
+                                  LIMIT 1), FALSE)              AS is_kassa,
+                        d.docs_ids                              AS docs_ids
                  FROM palk.palk_oper po
                           INNER JOIN docs.doc d ON d.id = po.parentid
                           INNER JOIN palk.tooleping t ON t.id = po.lepingid
@@ -171,7 +169,7 @@ BEGIN
             SELECT NULL::INTEGER           AS doc_id,
                    ltrim(rtrim(v_po.nimi)) AS error_message,
                    NULL::INTEGER           AS error_code
-                   INTO v_tulemus;
+            INTO v_tulemus;
 
 
             -- создаем документ
@@ -184,23 +182,18 @@ BEGIN
                     -- для ммк параметры созданы выше
 --                    l_mk_number = docs.sp_get_number(l_rekv_id, 'VMK', year(l_kpv), NULL);
                     -- MK
-                    SELECT 0                  AS id,
-                           'VMK'              AS doc_type_id,
-                           l_mk_number        AS number,
-                           0 :: INTEGER       AS id,
-                           MK_TYYP            AS opt,
-                           l_kpv              AS kpv,
-                           l_kpv              AS maksepaev,
-                           'Tasu töötamisest' AS muud,
-                           'Tasu töötamisest' AS selg,
-                           (SELECT id
-                            FROM ou.aa
-                            WHERE parentid = v_po.rekvid
-                              AND aa.kassa = 1
-                            ORDER BY default_ DESC
-                            LIMIT 1)          AS aaid,
-                           v_po.summa         AS summa
-                           INTO v_mk;
+                    SELECT 0                                  AS id,
+                           'VMK'                              AS doc_type_id,
+                           l_mk_number                        AS number,
+                           0 :: INTEGER                       AS id,
+                           MK_TYYP                            AS opt,
+                           l_kpv                              AS kpv,
+                           l_kpv                              AS maksepaev,
+                           'Tasu töötamisest'                 AS muud,
+                           'Tasu töötamisest'                 AS selg,
+                           ou.get_aa(l_rekv_id, 'PALK'::TEXT) AS aaid,
+                           v_po.summa                         AS summa
+                    INTO v_mk;
 
                 END IF;
                 --MK1
@@ -216,7 +209,7 @@ BEGIN
                        v_po.tunnus,
                        v_po.tp,
                        v_po.summa     AS summa
-                       INTO v_mk1;
+                INTO v_mk1;
 
                 l_grid_params = l_grid_params || to_jsonb(v_mk1);
 
@@ -226,7 +219,8 @@ BEGIN
                     -- создаем мк, не ммк
                     v_mk.number = l_mk_number;
 
-                    SELECT json_object_agg('data', qry.data || qry."gridData") INTO l_params
+                    SELECT json_object_agg('data', qry.data || qry."gridData")
+                    INTO l_params
                     FROM (SELECT 0                                           AS id,
                                  to_jsonb(v_mk)                              AS data,
                                  jsonb_object_agg('gridData', l_grid_params) AS "gridData") qry;
@@ -254,7 +248,7 @@ BEGIN
                        'Tasu töötamisest'    AS muud,
                        'Tasu töötamisest'    AS alus,
                        v_po.summa            AS summa
-                       INTO v_mk;
+                INTO v_mk;
 
                 --MK1
                 SELECT v_po.isikid AS asutusid,
@@ -268,11 +262,12 @@ BEGIN
                        v_po.tunnus,
                        v_po.tp,
                        v_po.summa  AS summa
-                       INTO v_mk1;
+                INTO v_mk1;
 
                 l_grid_params = l_grid_params || to_jsonb(v_mk1);
 
-                SELECT json_object_agg('data', qry.data || qry."gridData") INTO l_params
+                SELECT json_object_agg('data', qry.data || qry."gridData")
+                INTO l_params
                 FROM (SELECT to_jsonb(v_mk)                              AS data,
                              jsonb_object_agg('gridData', l_grid_params) AS "gridData") qry;
 
@@ -293,7 +288,8 @@ BEGIN
                 THEN
                     -- добавим ссылку на PO
 
-                    SELECT docs_ids INTO ids
+                    SELECT docs_ids
+                    INTO ids
                     FROM docs.doc
                     WHERE id = l_dok_id;
 
@@ -332,7 +328,8 @@ BEGIN
     IF kas_mmk
     THEN
         -- сохраним ммк
-        SELECT json_object_agg('data', qry.data || qry."gridData") INTO l_params
+        SELECT json_object_agg('data', qry.data || qry."gridData")
+        INTO l_params
         FROM (SELECT 0                                           AS id,
                      to_jsonb(v_mk)                              AS data,
                      jsonb_object_agg('gridData', l_grid_params) AS "gridData") qry;
@@ -347,7 +344,8 @@ BEGIN
         THEN
             -- добавим ссылку на PO
 
-            SELECT docs_ids INTO ids
+            SELECT docs_ids
+            INTO ids
             FROM docs.doc
             WHERE id = l_dok_id;
 
@@ -410,9 +408,9 @@ GRANT EXECUTE ON FUNCTION palk.gen_palk_dok(user_id INTEGER, params JSON) TO dbp
 
 /*
 
-select palk.gen_palk_dok(2425, '{"isik_ids":[43598],
-		"osakond_ids":[214010],
-		"lib_ids":[135244,136071,136481,138433,138674,139368,139960,139981,140644,140726,142624,142742,143346,143658,144158,144350,145093,146055,146207,146240,146251,147391,147788,148441,150359,150362,151403,154211,244167,244296,245107,246078,246466,246476,246482,246489,246499,246508,246522,246532,247365],"kpv":20210212}'::json)
+select palk.gen_palk_dok(70, '{"isik_ids":[27042],
+		"osakond_ids":null,
+		"lib_ids":null,"kpv":20220930}'::json)
 
 
 

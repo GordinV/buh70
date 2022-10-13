@@ -286,12 +286,36 @@ class Rekv extends React.PureComponent {
                     <div style={styles.docRow}>
                         <CheckBox title="Kas põhiline?"
                                   name='default_'
-                                  value={Boolean(self.docData.default_)}
+                                  value={Boolean(row.default_)}
                                   ref={'checkbox_default_'}
-                                  onChange={self.handleInputChange}
+                                  onChange={self.handleGridRowChange}
                                   readOnly={false}
                         />
                     </div>
+                    {row.kassapank && row.kassapank == 1 ?
+                        (<div style={styles.docRow}>
+                            <CheckBox title="Kas tulud?"
+                                      name='kas_tulud'
+                                      value={Boolean(row.kas_tulud)}
+                                      ref={'checkbox_kas_tulud'}
+                                      onChange={self.handleGridRowChange}
+                                      readOnly={false}
+                            />
+                            <CheckBox title="Kas kulud?"
+                                      name='kas_kulud'
+                                      value={Boolean (row.kas_kulud)}
+                                      ref={'checkbox_kas_kulud'}
+                                      onChange={self.handleGridRowChange}
+                                      readOnly={false}
+                            />
+                            <CheckBox title="Kas palk?"
+                                      name='kas_palk'
+                                      value={Boolean(row.kas_palk)}
+                                      ref={'checkbox_kas_palk'}
+                                      onChange={self.handleGridRowChange}
+                                      readOnly={false}
+                            />
+                        </div>) : null}
 
                 </div>
                 <div><span>{validateMessage}</span></div>

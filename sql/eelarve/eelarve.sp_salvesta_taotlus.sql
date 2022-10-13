@@ -17,7 +17,7 @@ DECLARE
                               FROM libs.library
                               WHERE ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood)))
                                 AND library = 'DOK'
-                                  LIMIT 1);
+                              LIMIT 1);
     doc_details    JSON    = doc_data ->> 'gridData';
     doc_kpv        DATE    = doc_data ->> 'kpv';
     doc_number     TEXT    = coalesce(doc_data ->> 'number',
@@ -45,9 +45,10 @@ BEGIN
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
-    IF is_import IS NULL AND userName IS NULL
+
+    IF userName IS NULL
     THEN
-        RAISE NOTICE 'User not found %', user;
+        RAISE EXCEPTION 'User not found %', user;
         RETURN 0;
     END IF;
 
@@ -105,7 +106,6 @@ BEGIN
 
             UPDATE eelarve.taotlus
             SET kpv        = doc_kpv,
-                koostajaid = doc_koostajaid,
                 ametnikid  = doc_ametnikid,
                 aasta      = doc_aasta,
                 kuu        = doc_kuu,
@@ -150,7 +150,8 @@ BEGIN
                 VALUES (taotlus_id, json_record.summa, json_record.summa_kassa,
                         COALESCE(json_record.oodatav_taitmine, 0), json_record.tunnus, json_record.proj,
                         json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5,
-                        json_record.muud, replace(json_record.selg, ';', ','), json_record.eelarveid, json_record.eelprojid) RETURNING id
+                        json_record.muud, replace(json_record.selg, ';', ','), json_record.eelarveid,
+                        json_record.eelprojid) RETURNING id
                            INTO taotlus1_id;
 
                 -- add new id into array of ids

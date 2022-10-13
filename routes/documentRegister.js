@@ -251,7 +251,6 @@ exports.delete = async (req, res) => {
         isBundleDelete = true;
     }
 
-    console.log('deleted docsIds', docsIds.length, docsIds);
     const Doc = require('./../classes/DocumentTemplate');
 
     // вызвать метод. Есди ИД = 0, то вызывается запрос на создание нового документа
@@ -273,14 +272,14 @@ exports.delete = async (req, res) => {
     }
     deletedRows = 1;
     let result = await Document.delete();
-console.log('result',result);
+
     if (result && !result.error_code) {
         deletedRows = deletedRows + result.result;
         errorMessage = result.error_message
     } else {
         errorCode = result.error_code;
         errorMessage = result.error_message;
-        console.log('error',data, result)
+        console.error('error',data, result)
     }
 
     if (deletedRows) {

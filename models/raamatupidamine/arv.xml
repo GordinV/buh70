@@ -111,14 +111,7 @@
                               trim(l.kood)                                                           AS doc_type_id,
                               trim(s.nimetus)                                                        AS status,
                               0                                                                      AS doc_status,
-                              (SELECT arve
-                               FROM ou.aa aa
-                               WHERE aa.parentid = u.rekvid
-                                 AND NOT empty(default_::INTEGER)
-                                 AND NOT empty(kassa::INTEGER)
-                                 AND kassa = 1
-                               LIMIT 1)::VARCHAR(20)                                                 AS aa,
-
+                              ou.get_aa(u.rekvid, 'TULUD'::TEXT)::VARCHAR(20)                        AS aa,
                               docs.sp_get_number(u.rekvId, 'ARV', year(date()), NULL) :: VARCHAR(20) AS number,
                               0.00                                                                   AS summa,
                               NULL :: INTEGER                                                        AS rekvId,

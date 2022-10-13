@@ -35,7 +35,10 @@ DECLARE
     l_count         INTEGER = 0;
     l_user_id       INTEGER;
     l_dok_id        INTEGER = (SELECT id
-                               FROM libs.library WHERE library.library = 'DOK' AND kood = 'SMK' LIMIT 1);
+                               FROM libs.library
+                               WHERE library.library = 'DOK'
+                                 AND kood = 'SMK'
+                               LIMIT 1);
     v_mk1           RECORD;
     v_mk            RECORD;
     l_viitenr       TEXT;
@@ -53,35 +56,52 @@ BEGIN
         FROM qryJsons
         LOOP
             RAISE NOTICE 'yksus %, laps_ik %, vanem_ik %', json_record.yksus, json_record.laps_ik, json_record.vanem_ik;
+
+            l_laps_id = (SELECT id
+                         FROM lapsed.laps l
+                         WHERE l.isikukood = json_record.laps_ik
+                           AND l.staatus <> 3
+                         LIMIT 1);
+
+
             -- ищем котр-агента
             l_asutus_id = (
                 SELECT a.id
                 FROM libs.asutus a
                          LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = a.id AND v.staatus <> 3
-                    WHERE a.regkood = json_record.vanem_ik
-                    ORDER BY v.id ASC LIMIT 1
+                WHERE a.regkood = json_record.vanem_ik
+                  AND v.parentid = l_laps_id
+                ORDER BY v.id ASC
+                LIMIT 1
             );
 
-            l_laps_id = (SELECT id
-                         FROM lapsed.laps l WHERE l.isikukood = json_record.laps_ik AND l.staatus <> 3 LIMIT 1);
+            if l_asutus_id is null then
+                raise exception 'Maksja ei leidtud, l_asutus_id % json_record.vanem_ik %', l_asutus_id, json_record.vanem_ik;
+            END IF;
 
             -- ищем учреждение
             l_rekvid = (SELECT id
-                        FROM ou.rekv WHERE nimetus LIKE ltrim(rtrim(json_record.yksus)) + '%' LIMIT 1);
+                        FROM ou.rekv
+                        WHERE nimetus LIKE ltrim(rtrim(json_record.yksus)) + '%'
+                        LIMIT 1);
 
             l_viitenr = lapsed.get_viitenumber(l_rekvid, l_laps_id);
 
 
             l_user_id = (SELECT id
-                         FROM ou.userid WHERE rekvid = l_rekvid AND kasutaja = 'temp' LIMIT 1);
+                         FROM ou.userid
+                         WHERE rekvid = l_rekvid
+                           AND kasutaja = 'temp'
+                         LIMIT 1);
 
-            SELECT * INTO v_aa
+            SELECT *
+            INTO v_aa
             FROM ou.aa
-                WHERE parentid = l_rekvid
-                     AND kassa = 1
-                     AND konto = json_record.konto
-                ORDER BY default_ DESC
-                LIMIT 1;
+            WHERE parentid = l_rekvid
+              AND kassa = 1
+              AND konto = json_record.konto
+            ORDER BY default_ DESC
+            LIMIT 1;
 
             RAISE NOTICE 'v_aa %',v_aa;
 
@@ -92,10 +112,10 @@ BEGIN
                          INNER JOIN docs.mk m ON m.parentid = d.id AND d.status <> 3
                          INNER JOIN docs.mk1 m1 ON m1.parentid = m.id
                          INNER JOIN lapsed.liidestamine l ON l.docid = m.parentid
-                    WHERE m1.asutusid = l_asutus_id
-                         AND l.parentid = l_laps_id
-                         AND m.kpv = '2022-08-31'
-                    LIMIT 1
+                WHERE m1.asutusid = l_asutus_id
+                  AND l.parentid = l_laps_id
+                  AND m.kpv = '2022-08-31'
+                LIMIT 1
             );
             RAISE NOTICE 'l_mk_id %',l_mk_id;
 
@@ -104,10 +124,10 @@ BEGIN
             l_doklausend_id = (SELECT dp.id
                                FROM libs.dokprop dp
                                         INNER JOIN libs.library l ON l.id = dp.parentid
-                                   WHERE dp.rekvid = l_rekvid
-                                        AND l.kood = 'SMK'
-                                   ORDER BY dp.id DESC
-                                   LIMIT 1
+                               WHERE dp.rekvid = l_rekvid
+                                 AND l.kood = 'SMK'
+                               ORDER BY dp.id DESC
+                               LIMIT 1
             );
 
             IF (l_doklausend_id IS NULL)
@@ -119,13 +139,14 @@ BEGIN
                     FROM (SELECT 0                      AS id,
                                  0                      AS asutusid,
                                  NULL                   AS kbmkonto,
-                                 json_record.konto             AS konto,
+                                 json_record.konto      AS konto,
                                  l_dok_id               AS parentid,
                                  1                      AS registr,
                                  'Sissemakse korraldus' AS selg,
                                  1                      AS vaatalaus) row);
 
-                SELECT row_to_json(row) INTO json_object
+                SELECT row_to_json(row)
+                INTO json_object
                 FROM (SELECT 0 AS id, json_object AS data, TRUE AS import) row;
 
                 RAISE NOTICE 'dokprop json_object %', json_object;
@@ -133,7 +154,7 @@ BEGIN
                 -- сохранение
                 SELECT libs.sp_salvesta_dokprop(json_object :: JSON, l_user_id, l_rekvid) INTO l_doklausend_id;
 
-                raise notice 'dokprop saved, l_doklausend_id %', l_doklausend_id;
+                RAISE NOTICE 'dokprop saved, l_doklausend_id %', l_doklausend_id;
             END IF;
 
             RAISE NOTICE 'salvestan';
@@ -149,20 +170,22 @@ BEGIN
                 )
                 SELECT *
                 FROM qryJsons
-                    WHERE qryJsons.yksus = json_record.yksus
-                         AND qryJsons.laps_ik = json_record.laps_ik
-                         AND qryJsons.vanem_ik = json_record.vanem_ik
+                WHERE qryJsons.yksus = json_record.yksus
+                  AND qryJsons.laps_ik = json_record.laps_ik
+                  AND qryJsons.vanem_ik = json_record.vanem_ik
                 LOOP
 
 
                     l_mk_summa = regexp_replace(v_details.summa, '[,]', '.')::NUMERIC;
 
                     -- ищем номенклатуру
-                    SELECT * INTO v_nom
+                    SELECT *
+                    INTO v_nom
                     FROM libs.nomenklatuur n
-                        WHERE rekvid = l_rekvid
-                             AND n.dok IN ('SMK', 'MK')
-                             AND status <> 3 LIMIT 1;
+                    WHERE rekvid = l_rekvid
+                      AND n.dok IN ('SMK', 'MK')
+                      AND status <> 3
+                    LIMIT 1;
 
                     -- формируем строку
                     SELECT 0            AS id,
@@ -171,13 +194,13 @@ BEGIN
                            l_mk_summa   AS summa,
                            v_aa.arve    AS aa,
                            v_details.kr AS konto
-                           INTO v_mk1;
+                    INTO v_mk1;
 
-                    json_mk1 = json_mk1::jsonb || (SELECT (row_to_json(v_mk1)))::jsonb;
+                    json_mk1 = json_mk1::JSONB || (SELECT (row_to_json(v_mk1)))::JSONB;
 
                 END LOOP;
 
-            raise notice    'json_mk1 %, v_aa %, v_details %', json_mk1, v_aa, v_details;
+            RAISE NOTICE 'json_mk1 %, v_aa %, v_details %', json_mk1, v_aa, v_details;
 
             SELECT 0               AS id,
                    l_doklausend_id AS doklausid,
@@ -186,21 +209,22 @@ BEGIN
                    2               AS opt,
                    l_viitenr       AS viitenr,
                    NULL            AS number,
-                   '2021-12-31'    AS maksepaev,
-                   '2021-12-31'    AS kpv,
+                   '2022-08-31'    AS maksepaev,
+                   '2022-08-31'    AS kpv,
                    'Alg.saldo'     AS selg,
                    NULL            AS muud,
                    json_mk1        AS "gridData",
                    l_laps_id       AS lapsid
-                   INTO v_mk;
+            INTO v_mk;
 
             json_object = (SELECT (row_to_json(v_mk)));
 
-            SELECT row_to_json(row) INTO l_json_mk
+            SELECT row_to_json(row)
+            INTO l_json_mk
             FROM (SELECT 0           AS id,
                          json_object AS data) row;
 
-            raise notice 'l_json_mk %', l_json_mk;
+            RAISE NOTICE 'l_json_mk %', l_json_mk;
 
             SELECT docs.sp_salvesta_mk(l_json_mk :: JSON, l_user_id, l_rekvId) INTO l_mk_id;
 

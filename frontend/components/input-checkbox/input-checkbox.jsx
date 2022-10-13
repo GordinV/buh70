@@ -43,9 +43,11 @@ class Input extends React.PureComponent {
             this.state.readOnly ? styles.readOnly : {}
         );
 
+        let labelStyle = Object.assign({},styles.label,this.props.labelStyle);
+
         return (
             <div style={styles.wrapper}>
-                <label style={styles.label} htmlFor={this.props.name} ref="label">
+                <label style={labelStyle} htmlFor={this.props.name} ref="label">
                     {this.props.title}
                 </label>
                 <input type='checkbox'
@@ -85,7 +87,8 @@ Input.defaultProps = {
     readOnly: false,
     disabled: false,
     value: false,
-    title: ''
+    title: '',
+    labelStyle: {}
 };
 
 module.exports = radium(Input);

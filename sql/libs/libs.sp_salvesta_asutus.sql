@@ -33,6 +33,7 @@ DECLARE
     is_import      BOOLEAN = data ->> 'import';
     doc_is_tootaja BOOLEAN = coalesce((doc_data ->> 'is_tootaja') :: BOOLEAN, FALSE);
     doc_asutus_aa  JSONB   = coalesce((doc_data ->> 'asutus_aa') :: JSONB, '[]':: JSONB);
+    doc_details    JSONB   = doc_data ->> 'gridData';
     doc_aa         TEXT    = doc_data ->> 'aa';
     doc_palk_email TEXT    = doc_data ->> 'palk_email';
     new_properties JSONB;
@@ -57,15 +58,25 @@ BEGIN
     THEN
         doc_id = doc_data ->> 'id';
     END IF;
+raise notice 'doc_details %', doc_details;
+    raise notice 'doc_asutus_aa %', doc_asutus_aa;
+    raise notice 'doc_aa %', doc_aa;
 
-    IF (doc_aa IS NOT NULL)
+    -- расчетные счета
+    IF doc_details IS NOT NULL
+    THEN
+        -- для теста из род. платы
+        doc_asutus_aa = doc_details;
+        doc_aa = NULL;
+    END IF;
+
+    IF (doc_aa IS NOT NULL AND doc_details IS NULL)
     THEN
         -- если задан упрощенный расч. счет, то пишем его (для модуля дети)
 
         SELECT row_to_json(row)
         INTO new_aa
         FROM (SELECT doc_aa AS aa, '' AS pank) row;
-
     END IF;
 
     IF doc_id IS NOT NULL AND doc_id > 0 AND NOT coalesce((doc_data ->> 'is_tootaja') :: BOOLEAN, FALSE) AND
@@ -73,6 +84,11 @@ BEGIN
     THEN
         doc_is_tootaja = TRUE;
     END IF;
+
+    raise notice 'new aa %',  CASE
+                                  WHEN doc_aa IS NOT NULL THEN '[]'::JSONB || new_aa :: JSONB
+                                  ELSE doc_asutus_aa :: JSONB END;
+
 
 
     SELECT row_to_json(row)
@@ -87,7 +103,7 @@ BEGIN
                  doc_kmkr                                                                  AS kmkr) row;
 
     -- вставка или апдейт docs.doc
-
+    raise notice  'new_properties %', new_properties;
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
@@ -128,7 +144,7 @@ BEGIN
             mark       = doc_mark,
             muud       = doc_muud,
             tp         = coalesce(doc_tp, '800699'),
-            properties = new_properties,
+            properties = properties || new_properties,
             ajalugu    = coalesce(ajalugu, '[]') :: JSONB || new_history::JSONB,
             staatus    = CASE WHEN staatus = 3 THEN 1 ELSE staatus END
         WHERE id = doc_id RETURNING id
@@ -147,8 +163,8 @@ GRANT EXECUTE ON FUNCTION libs.sp_salvesta_asutus(JSON, INTEGER, INTEGER) TO dbp
 
 
 /*
-select libs.sp_salvesta_asutus('{"id":0,"data":{"aadress":null,"doc_type_id":"TOOTAJA","email":null,"faks":null,"id":0,"is_tootaja":"1","kontakt":null,"mark":null,"muud":null,"nimetus":"vfp tootaja test","omvorm":"ISIK","pank":null,"regkood":"1234_isik_test3367","staatus":0,"tel":null,"tp":"800699","userid":1}}',1, 1);
+select libs.sp_salvesta_asutus('{"data":{"docTypeId":"ASUTUSED","module":"lapsed","userId":70,"uuid":"6bb07170-4acd-11ed-a870-d7b70706ed8f","docId":30984,"context":null,"id":30984,"rekvid":1,"regkood":"47608105226         ","nimetus":"Jelena Golubeva                                                                                                                                                                                                                                               ","omvorm":"ISIK                ","aadress":"Gerassimovi 3-4, Narva","kontakt":"","tel":"3594848, 55675729                                           ","faks":"                                                            ","email":"                                                            ","muud":"","tp":"800699","staatus":1,"mark":"","timestamp":"09:58:23.626193","properties":{"kmkr":"","pank":null,"kehtivus":null,"asutus_aa":[{"aa":"EE50220022101148210800","id":"1","userid":70,"kas_palk":true,"kas_raama":true,"kas_oppetasu":null},{"aa":"EE502200221011482108","id":"2","userid":70,"kas_palk":null,"kas_raama":null,"kas_oppetasu":true}],"is_tootaja":true,"palk_email":null},"ajalugu":[{"user":null,"updated":"2020-02-25T08:59:04.810217+00:00"},{"user":null,"updated":"2020-03-02T11:14:39.354499+00:00"},{"user":null,"updated":"2020-03-02T13:58:33.804915+02:00"},{"user":"temp","updated":"2022-10-13T12:13:24.435832+03:00"},{"user":"temp","updated":"2022-10-13T12:17:28.022042+03:00"},{"user":"temp","updated":"2022-10-13T12:18:05.555452+03:00"},{"user":"temp","updated":"2022-10-13T12:18:20.717379+03:00"}],"userid":70,"doc_type_id":"ASUTUSED","pank":null,"kmkr":"","kehtivus":null,"valid":null,"aa":"EE50220022101148210800","palk_email":null,"row":[{"id":30984,"rekvid":1,"regkood":"47608105226         ","nimetus":"Jelena Golubeva                                                                                                                                                                                                                                               ","omvorm":"ISIK                ","aadress":"Gerassimovi 3-4, Narva","kontakt":"","tel":"3594848, 55675729                                           ","faks":"                                                            ","email":"                                                            ","muud":"","tp":"800699","staatus":1,"mark":"","timestamp":"09:58:23.626193","properties":{"kmkr":"","pank":null,"kehtivus":null,"asutus_aa":[{"aa":"EE50220022101148210800","id":"1","userid":70,"kas_palk":true,"kas_raama":true,"kas_oppetasu":null},{"aa":"EE502200221011482108","id":"2","userid":70,"kas_palk":null,"kas_raama":null,"kas_oppetasu":true}],"is_tootaja":true,"palk_email":null},"ajalugu":[{"user":null,"updated":"2020-02-25T08:59:04.810217+00:00"},{"user":null,"updated":"2020-03-02T11:14:39.354499+00:00"},{"user":null,"updated":"2020-03-02T13:58:33.804915+02:00"},{"user":"temp","updated":"2022-10-13T12:13:24.435832+03:00"},{"user":"temp","updated":"2022-10-13T12:17:28.022042+03:00"},{"user":"temp","updated":"2022-10-13T12:18:05.555452+03:00"},{"user":"temp","updated":"2022-10-13T12:18:20.717379+03:00"}],"userid":70,"doc_type_id":"ASUTUSED","pank":null,"kmkr":"","kehtivus":null,"valid":null,"aa":"EE50220022101148210800","palk_email":null}],"details":[{"aa":"EE502200221011482108","kas_palk":true,"kas_raama":true,"kas_oppetasu":null,"id":"1","userid":70},{"aa":"EE502200221011482108","kas_palk":null,"kas_raama":null,"kas_oppetasu":true,"id":"2","userid":70}],"gridConfig":[{"id":"id","name":"id","width":"1px","show":false,"type":"text","readOnly":true},{"id":"aa","name":"Arveldus arve","width":"100px","show":true,"type":"text","readOnly":false}],"bpm":[],"gridData":[{"aa":"EE502200221011482108-palk","kas_palk":true,"kas_raama":true,"kas_oppetasu":null,"id":"1","userid":70},{"aa":"EE502200221011482108","kas_palk":null,"kas_raama":null,"kas_oppetasu":true,"id":"2","userid":70}],"relations":[]}}',70, 63);
 
-select * from libs.asutus
+select * from libs.asutus where id = 30984
 
 */

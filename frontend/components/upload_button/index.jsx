@@ -90,7 +90,7 @@ class UploadButton extends React.PureComponent {
 
             //upload
             if (this.state.selectedFile) {
-                this.setState({loading: true});
+                this.setState({loading: true, show: false});
                 // fetch
                 this.fecthData().then((response) => {
                     // show response

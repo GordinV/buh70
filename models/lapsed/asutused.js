@@ -34,8 +34,12 @@ module.exports = {
         data: []
     },
         {
-            sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa,
-                         $2 :: INTEGER                       AS userid
+            sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20)       AS aa,
+                         (e.element ->> 'kas_palk') :: BOOLEAN     AS kas_palk,
+                         (e.element ->> 'kas_raama') :: BOOLEAN    AS kas_raama,
+                         (e.element ->> 'kas_oppetasu') :: BOOLEAN AS kas_oppetasu,
+                         row_number() OVER ()                      AS id,
+                         $2 :: INTEGER                             AS userid
                   FROM libs.asutus a,
                        json_array_elements(CASE
                                                WHEN (a.properties ->> 'asutus_aa') IS NULL THEN '[]'::JSON
@@ -43,9 +47,8 @@ module.exports = {
                   WHERE a.id = $1`, //$1 - doc_id, $2 0 userId
             query: null,
             multiple: true,
-            alias: 'asutus_aa',
+            alias: 'details',
             data: []
-
         },
         {
             sql: `SELECT Asutus.id
@@ -110,7 +113,14 @@ module.exports = {
         ]
     },
     returnData: {
-        row: {}
+        row: {},
+        details: [],
+        gridConfig: [
+            {id: 'id', name: 'id', width: '1px', show: false, type: 'text', readOnly: true},
+            {id: 'aa', name: 'Arveldus arve', width: '100px', show: true, type: 'text', readOnly: false},
+        ]
+
+
     },
     requiredFields: [
         {name: 'regkood', type: 'C', serverValidation: 'validateIsikukood'},

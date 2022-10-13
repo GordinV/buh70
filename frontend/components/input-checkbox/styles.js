@@ -13,7 +13,6 @@ module.exports = {
         width: '95%',
     },
     label : {
-        width: '30%',
         margin: '5px'
     }
 };

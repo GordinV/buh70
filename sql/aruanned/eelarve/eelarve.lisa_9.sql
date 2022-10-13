@@ -74,6 +74,8 @@ FROM (
                               AND j.rekvid IN (SELECT rekv_id
                                                FROM get_asutuse_struktuur(l_rekvid))
          )
+           -- J.Tsekanina, 11.10.2022 mitte residendid
+           AND (CASE WHEN left(j.kood5, 2) = '50' AND left(j.lisa_d, 4) = '9006' THEN FALSE ELSE TRUE END)
      ) qry
 --WHERE saaja_tp <> '800699'
 
@@ -93,11 +95,11 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO dbvaat
 /*
 
 select * from (
-                    SELECT len(saaja_nimi), *
-                    FROM eelarve.lisa_9('2022-06-01', '2022-06-30', 63,  1)
+                    SELECT *
+                    FROM eelarve.lisa_9('2022-09-01', '2022-09-30', 63,  1)
                 ) qry
   where  summa >= 100
-and saaja_regkood= '80356461'
+and saaja_tp like '9006%'
 
 select * from ou.rekv where parentid = 64
 

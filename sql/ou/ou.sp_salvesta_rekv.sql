@@ -47,12 +47,13 @@ DECLARE
     aa_history             JSON;
     user_json              JSON;
     v_user                 RECORD;
-    new_user_id            INTEGER;
     is_import              BOOLEAN = data ->> 'import';
+    aa_jsonb               JSONB   = '{}'::JSONB;
 
 BEGIN
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = user_id;
@@ -60,7 +61,6 @@ BEGIN
     IF is_import IS NULL AND userName IS NULL
     THEN
         RAISE EXCEPTION 'User not found %', user;
-        RETURN 0;
     END IF;
 
     -- rekl ftp andmed
@@ -101,7 +101,8 @@ BEGIN
     THEN
 
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;
 
@@ -124,11 +125,12 @@ BEGIN
                peakasutaja_,
                admin,
                muud
-               INTO v_user
+        INTO v_user
         FROM ou.userid
         WHERE id = user_id;
 
-        SELECT row_to_json(row) INTO user_json
+        SELECT row_to_json(row)
+        INTO user_json
         FROM (SELECT 0         AS id,
                      is_import AS import,
                      v_user    AS data) row;
@@ -142,7 +144,8 @@ BEGIN
 */
     ELSE
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS updated,
                      userName AS user,
                      r.*
@@ -151,7 +154,8 @@ BEGIN
 
         -- save aa old state
 
-        SELECT array_to_json(array_agg(row_to_json(row_data))) INTO aa_history
+        SELECT array_to_json(array_agg(row_to_json(row_data)))
+        INTO aa_history
         FROM (SELECT aa.*
               FROM ou.aa aa
               WHERE aa.parentid = doc_id) row_data;
@@ -160,21 +164,21 @@ BEGIN
         new_history = new_history :: JSONB || aa_history :: JSONB;
 
         UPDATE ou.rekv
-        SET 
+        SET
 --            parentid   = doc_parentid,
-            regkood    = doc_regkood,
-            kbmkood    = doc_kbmkood,
-            nimetus    = doc_nimetus,
-            aadress    = doc_aadress,
-            haldus     = doc_haldus,
-            tel        = doc_tel,
-            faks       = doc_faks,
-            email      = doc_email,
-            juht       = doc_juht,
-            raama      = doc_raama,
-            muud       = doc_muud,
-            ajalugu    = new_history,
-            properties = coalesce(properties :: JSONB, '{}' :: JSONB) || json_object :: JSONB
+regkood    = doc_regkood,
+kbmkood    = doc_kbmkood,
+nimetus    = doc_nimetus,
+aadress    = doc_aadress,
+haldus     = doc_haldus,
+tel        = doc_tel,
+faks       = doc_faks,
+email      = doc_email,
+juht       = doc_juht,
+raama      = doc_raama,
+muud       = doc_muud,
+ajalugu    = new_history,
+properties = coalesce(properties :: JSONB, '{}' :: JSONB) || json_object :: JSONB
         WHERE id = doc_id RETURNING id
             INTO rekv_id;
     END IF;
@@ -183,34 +187,42 @@ BEGIN
         SELECT *
         FROM json_array_elements(doc_details)
         LOOP
-            SELECT * INTO json_record
+            SELECT *
+            INTO json_record
             FROM jsonb_to_record(
                          json_object) AS x (id TEXT, parentid INTEGER, arve TEXT, nimetus TEXT, default_ BOOLEAN,
                                             kassa INTEGER,
                                             pank INTEGER,
-                                            konto TEXT, tp TEXT, muud TEXT, kassapank INTEGER);
+                                            konto TEXT, tp TEXT, muud TEXT, kassapank INTEGER, kas_tulud BOOLEAN,
+                                            kas_kulud BOOLEAN, kas_palk BOOLEAN);
+
+            aa_jsonb = jsonb_build_object('kas_tulud', json_record.kas_tulud, 'kas_kulud', json_record.kas_kulud,
+                                          'kas_palk', json_record.kas_palk);
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
             THEN
 
 
-                INSERT INTO ou.aa (parentid, arve, nimetus, default_, kassa, pank, konto, tp, muud)
+                INSERT INTO ou.aa (parentid, arve, nimetus, default_, kassa, pank, konto, tp, muud, properties)
                 VALUES (user_rekvid, json_record.arve, json_record.nimetus,
                         (CASE WHEN json_record.default_ IS NULL OR NOT json_record.default_ THEN 0 ELSE 1 END),
                         json_record.kassapank, coalesce(json_record.pank, 1), json_record.konto, json_record.tp,
-                        json_record.muud) RETURNING id
+                        json_record.muud, aa_jsonb) RETURNING id
                            INTO detail_id;
 
             ELSE
                 UPDATE ou.aa
-                SET arve     = json_record.arve,
-                    nimetus  = json_record.nimetus,
-                    default_ = (CASE WHEN json_record.default_ IS NULL OR NOT (json_record.default_) THEN 0 ELSE 1 END),
-                    kassa    = json_record.kassapank,
-                    pank     = json_record.pank,
-                    konto    = json_record.konto,
-                    tp       = json_record.tp,
-                    muud     = json_record.muud
+                SET arve       = json_record.arve,
+                    nimetus    = json_record.nimetus,
+                    default_   = (CASE
+                                      WHEN json_record.default_ IS NULL OR NOT (json_record.default_) THEN 0
+                                      ELSE 1 END),
+                    kassa      = json_record.kassapank,
+                    pank       = json_record.pank,
+                    konto      = json_record.konto,
+                    tp         = json_record.tp,
+                    muud       = json_record.muud,
+                    properties = coalesce(properties :: JSONB, '{}' :: JSONB) || aa_jsonb :: JSONB
                 WHERE id = json_record.id :: INTEGER RETURNING id
                     INTO detail_id;
             END IF;

@@ -198,7 +198,7 @@ class DocumentTemplate extends React.Component {
      */
     btnEditClick() {
         //в режим редактирования
-        this.setState({edited: true, reloadData: true});
+        this.setState({edited: true, reloadData: true,warning: '', warningType: ''});
         //бекап данных
         this.makeBackup();
 
@@ -992,7 +992,7 @@ class DocumentTemplate extends React.Component {
         this.gridRowData = this.docData.gridData[this.refs['data-grid'].state.activeRow];
 
         // откроем модальное окно для редактирования
-        this.setState({gridRowEdit: true, gridRowEvent: 'edit'});
+        this.setState({gridRowEdit: true, gridRowEvent: 'edit', warning: '', warningStyle: ''});
     }
 
     /**
@@ -1067,7 +1067,6 @@ class DocumentTemplate extends React.Component {
             // есть проблемы
             warning = 'Отсутсвуют данные:' + warning;
         }
-
         this.setState({checked: true, gridWarning: warning});
     }
 

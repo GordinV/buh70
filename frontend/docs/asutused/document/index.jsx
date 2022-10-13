@@ -8,6 +8,10 @@ const
     DocumentTemplate = require('./../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
+    DataGrid = require('../../../components/data-grid/data-grid.jsx'),
+    ModalPage = require('../../../components/modalpage/modalPage.jsx'),
+    CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
+
     styles = require('./asutused.styles');
 
 
@@ -20,6 +24,8 @@ class Asutused extends React.PureComponent {
         };
 
         this.renderer = this.renderer.bind(this);
+        this.createGridRow = this.createGridRow.bind(this);
+
     }
 
     render() {
@@ -36,8 +42,14 @@ class Asutused extends React.PureComponent {
     }
 
     renderer(self) {
+        if (!self.docData) {
+            return null;
+        }
 
+        console.log('self.docData',self.docData);
         let isEditeMode = self.state.edited;
+        const gridData = self.docData.gridData ? self.docData.gridData: [],
+            gridColumns = self.docData.gridConfig ? self.docData.gridConfig: [];
 
         return (
             <div style={styles.doc}>
@@ -61,12 +73,28 @@ class Asutused extends React.PureComponent {
                                    readOnly={!isEditeMode}
                                    value={self.docData.omvorm || ''}
                                    onChange={self.handleInputChange}/>
+{/*
                         <InputText title="Arveldus arve:"
                                    name='aa'
                                    ref="input-aa"
                                    readOnly={!isEditeMode}
                                    value={self.docData.aa || ''}
                                    onChange={self.handleInputChange}/>
+*/}
+                        <div style={styles.docRow}>
+                            <DataGrid source='details'
+                                      gridData={gridData}
+                                      gridColumns={gridColumns}
+                                      showToolBar={self.state.edited}
+                                      handleGridBtnClick={self.handleGridBtnClick}
+                                      readOnly={!self.state.edited}
+                                      style={styles.grid.headerTable}
+                                      ref="data-grid"/>
+                        </div>
+                        {self.state.gridRowEdit ?
+                            this.createGridRow(self)
+                            : null}
+
                     </div>
                 </div>
                 <div style={styles.docRow}>
@@ -120,6 +148,80 @@ class Asutused extends React.PureComponent {
             </div>
         );
     }
+
+    /**
+     * Создаст компонет строки грида
+     * @returns {XML}
+     */
+    createGridRow(self) {
+
+        let row = self.gridRowData ? self.gridRowData : {},
+            validateMessage = '', // self.state.warning
+            buttonOkReadOnly = validateMessage.length > 0 || !self.state.checked,
+            modalObjects = ['btnOk', 'btnCancel'];
+
+        if (buttonOkReadOnly) {
+            // уберем кнопку Ок
+            modalObjects.splice(0, 1);
+        }
+
+
+        if (!row) return <div/>;
+
+        return (<div className='.modalPage'>
+            <ModalPage
+                modalObjects={modalObjects}
+                ref="modalpage-grid-row"
+                show={true}
+                modalPageBtnClick={self.modalPageClick}
+                modalPageName='Rea lisamine / parandamine'>
+                <div ref="grid-row-container">
+                    {self.state.gridWarning.length ? (
+                        <div style={styles.docRow}>
+                            <span>{self.state.gridWarning}</span>
+                        </div>
+                    ) : null}
+
+                    <div style={styles.docRow}>
+                        <InputText title='Number: '
+                                   name='aa'
+                                   value={row.aa || ''}
+                                   readOnly={false}
+                                   disabled={false}
+                                   bindData={false}
+                                   ref='number'
+                                   onChange={self.handleGridRowInput}/>
+                    </div>
+                        <div style={styles.docRow}>
+                            <CheckBox title="Palk"
+                                      name='kas_palk'
+                                      value={Boolean(row.kas_palk)}
+                                      ref={'checkbox_kas_palk'}
+                                      onChange={self.handleGridRowChange}
+                                      readOnly={false}
+                                      labelStyle = {styles.label ? styles.label: {}}
+                            />
+                            <CheckBox title="Õppetasu"
+                                      name='kas_oppetasu'
+                                      value={Boolean (row.kas_oppetasu)}
+                                      ref={'checkbox_kas_oppetasu'}
+                                      onChange={self.handleGridRowChange}
+                                      readOnly={false}
+                            />
+                            <CheckBox title="Raamatupidamine"
+                                      name='kas_raama'
+                                      value={Boolean(row.kas_raama)}
+                                      ref={'checkbox_kas_raama'}
+                                      onChange={self.handleGridRowChange}
+                                      readOnly={false}
+                            />
+                        </div>
+                </div>
+                <div><span>{validateMessage}</span></div>
+            </ModalPage>
+        </div>);
+    }
+
 
 }
 

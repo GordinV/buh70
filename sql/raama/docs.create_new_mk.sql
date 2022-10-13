@@ -55,7 +55,7 @@ BEGIN
     SELECT dp.details ->> 'konto'                                         AS konto,
            a.*,
            coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120) AS viitenr
-           INTO v_arv
+    INTO v_arv
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
              LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
@@ -94,7 +94,7 @@ BEGIN
     IF l_summa IS NULL
     THEN
         l_summa = v_arv.jaak;
-        IF v_arv.jaak IS NULL or v_arv.jaak = 0
+        IF v_arv.jaak IS NULL OR v_arv.jaak = 0
         THEN
             l_summa = v_arv.summa - (SELECT sum(summa) FROM docs.arvtasu WHERE doc_arv_id = l_arv_id AND status <> 3);
         END IF;
@@ -137,18 +137,14 @@ BEGIN
                      WHERE kassa = 1
                        AND parentid = l_rekvId
                        AND aa.arve::TEXT = l_asutus_aa::TEXT
-                     ORDER BY default_ desc
+                     ORDER BY default_ DESC
                      LIMIT 1);
 
     END IF;
 
     l_pank_id = CASE
-                    WHEN l_pank_id IS NULL THEN (SELECT id
-                                                 FROM ou.aa
-                                                 WHERE kassa = 1
-                                                   AND parentid = l_rekvId
-                                                 ORDER BY default_ desc
-                                                 LIMIT 1)
+                    WHEN l_pank_id IS NULL THEN ou.get_aa(l_rekvId,
+                                                          CASE WHEN doc_type_id = 'SMK' THEN 'TULUD' ELSE 'KULUD'::TEXT END)
                     ELSE l_pank_id END;
 
     l_nom_id = (SELECT id
@@ -192,9 +188,10 @@ BEGIN
         WHERE a1.
                   parentid = v_arv.id
         ORDER BY kood5
-               , kood2 DESC
-               , kood1 DESC
-        LIMIT 1 INTO v_mk1;
+                , kood2 DESC
+                , kood1 DESC
+        LIMIT 1
+        INTO v_mk1;
 
     ELSE
         SELECT 0           AS id,
@@ -203,7 +200,7 @@ BEGIN
                l_summa     AS summa,
                l_aa        AS aa,
                '103000'    AS konto
-               INTO v_mk1;
+        INTO v_mk1;
     END IF;
 
 
@@ -222,9 +219,10 @@ BEGIN
            NULL           AS muud,
            json_mk1       AS "gridData",
            l_laps_id      AS lapsid
-           INTO v_params;
+    INTO v_params;
 
-    SELECT row_to_json(row) INTO json_object
+    SELECT row_to_json(row)
+    INTO json_object
     FROM (SELECT 0        AS id,
                  v_params AS data) row;
 
