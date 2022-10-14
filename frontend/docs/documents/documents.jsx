@@ -433,9 +433,13 @@ class Documents extends React.Component {
                     console.error('error in fetch-> ', err);
                 })
                 .then((data) => {
-                    if (data.error_message) {
-                        console.error('data.error_message', data);
-                        this.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
+                    console.log('data', data);
+                    let error;
+
+                    if (data.error_message || (data.data && data.data.error_message)) {
+                        error = data.error_message ?  data.error_message:  (data.data && data.data.error_message) ? data.data.error_message: 'Viga';
+                        console.error('Viga', error);
+                        this.setState({warning: `Tekkis viga: ${error}`, warningType: 'error'});
                         if (data.status && data.status == 401) {
                             setTimeout(() => {
                                 document.location = `/login`;

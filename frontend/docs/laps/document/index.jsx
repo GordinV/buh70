@@ -124,7 +124,9 @@ class Laps extends React.PureComponent {
         }
         return (
             <div style={styles.doc}>
-                {self.docData && self.docData.isikukood && !Number(self.docData.arveldus) ? (<div style={styles.docRow}><div style={styles.warning}>Puudub arvestuse eest vastutav isik </div></div>): null
+                {self.docData && self.docData.isikukood && !Number(self.docData.arveldus) ? (<div style={styles.docRow}>
+                    <div style={styles.warning}>Puudub arvestuse eest vastutav isik</div>
+                </div>) : null
                 }
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
@@ -350,14 +352,17 @@ class Laps extends React.PureComponent {
                 });
                 break;
             case "DELETE":
+                console.log('delete', docTypeId, id);
                 //send post to delete row
                 this.fetchData(docTypeId, id).then((response) => {
+                    console.log('deleted', response);
+
                     let isTrue = response && response.status && response.status === 200 ? 'Ok' : 'Error';
                     let errorMessage = 'Viga';
-                    if (isTrue && response.data && response.data.error) {
+                    if (isTrue && ((response.data && response.data.error) || (response.data && response.data.data && response.data.data.error_message))) {
                         // error
                         isTrue = false;
-                        errorMessage = response.data.error_message;
+                        errorMessage = response.data.data.error_message ? response.data.data.error_message : response.data.error_message;
                     }
                     const Doc = this.refs['document'];
                     // обновим справочник
