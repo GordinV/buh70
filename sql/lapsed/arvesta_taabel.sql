@@ -73,12 +73,35 @@ BEGIN
                date_part('month'::TEXT, l_kpv::DATE)                      AS kuu,
                date_part('year'::TEXT, l_kpv::DATE)                       AS aasta,
                lk.hind,
+               (lk.properties ->> 'kas_protsent')::BOOLEAN                AS kas_protsent,
+               (n.properties ->> 'tyyp')                                  AS tyyp,
+               CASE
+                   WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN lk.hind
+                   WHEN lk.properties ->> 'soodus' IS NOT NULL THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)
+                   ELSE 0 END ::NUMERIC                                   AS soodustus,
+
+               CASE
+                   WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN -1
+                   WHEN (lk.properties ->> 'sooduse_alg')::DATE < l_kpv
+                       AND (lk.properties ->> 'sooduse_lopp')::DATE >=
+                           CASE
+                               WHEN upper(n.uhik) = ('KUU') THEN make_date(year(l_kpv), month(l_kpv), 1)
+                               WHEN (lk.properties ->> 'sooduse_lopp')::DATE <
+                                    l_kpv AND
+                                    (lk.properties ->> 'lopp_kpv')::DATE = (lk.properties ->> 'sooduse_lopp')::DATE
+                                   THEN make_date(year(l_kpv), month(l_kpv), 1)
+                               ELSE l_kpv END
+                       THEN 1
+                   ELSE 0 END                                             AS sooduse_kehtivus,
+
                NULL::TEXT                                                 AS muud,
                0                                                          AS too_paevad,
                0                                                          AS kulastused,
                0                                                          AS kovid,
                lk.properties ->> 'yksus'                                  AS yksus,
-               0                                                          AS kovid_kokku
+               0                                                          AS kovid_kokku,
+               0::NUMERIC                                                 AS vahe,
+               0::NUMERIC                                                 AS summa
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.parentid = l_laps_id
@@ -115,7 +138,7 @@ BEGIN
                   AND month(t.kpv) = month(l_kpv::DATE)
                   AND year(t.kpv) = year(l_kpv::DATE);
 
-                v_kaart.hind = NULL;
+--                v_kaart.hind = NULL;
                 l_muud = NULL;
                 -- нет расчета цены
 
@@ -199,7 +222,7 @@ BEGIN
                     v_kaart.kogus = (l_too_paevad - l_kulastused)::NUMERIC / v_kaart.too_paevad::NUMERIC;
 
                 END IF;
-                v_kaart.hind = NULL; -- нет расчета цены
+--                v_kaart.hind = NULL; -- нет расчета цены
                 l_muud = NULL;
                 IF coalesce(l_too_paevad, 0) > 0
                 THEN
@@ -219,6 +242,23 @@ BEGIN
               AND NOT lt.umberarvestus
               AND lt.staatus <> 3 -- удаленный
             LIMIT 1;
+
+            -- расчет разницы алгоритмов
+            v_kaart.vahe = lapsed.get_differ_from_algoritm(v_kaart.hind, v_kaart.soodustus, v_kaart.kogus) AS vahe;
+
+            -- расчет суммы
+            v_kaart.summa = ((v_kaart.hind * v_kaart.kogus - (CASE
+                                                                  WHEN v_kaart.kas_protsent THEN
+                                                                          (v_kaart.hind * v_kaart.kogus)::NUMERIC(12, 2) *
+                                                                          ((v_kaart.soodustus * v_kaart.sooduse_kehtivus) / 100)
+                                                                  ELSE v_kaart.soodustus * v_kaart.kogus *
+                                                                       v_kaart.sooduse_kehtivus *
+                                                                       (CASE
+                                                                            WHEN v_kaart.tyyp IS NOT NULL AND v_kaart.tyyp = 'SOODUSTUS'
+                                                                                THEN 0
+                                                                            ELSE 1 END)
+                END)))::NUMERIC(12, 2);
+
 
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN

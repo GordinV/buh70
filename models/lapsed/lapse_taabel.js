@@ -15,6 +15,9 @@ module.exports = {
                      lt.aasta,
                      lt.kogus,
                      lt.hind,
+                     lt.soodustus,
+                     lt.vahe,
+                     lt.summa,
                      lt.muud,
                      l.isikukood,
                      l.nimi,
@@ -38,6 +41,9 @@ module.exports = {
                   date_part('year', now()) as aasta,
                   0::numeric as kogus,
                   0::numeric as hind,
+                  0::numeric as soodustus,
+                  0::numeric as summa,
+                  0::numeric as vahe,
                   false as umberarvestus,
                   null::text as isikukood,
                   null::text as nimi,
@@ -114,16 +120,8 @@ module.exports = {
                                  lt.hind::NUMERIC(12, 2),
                                  lt.uhik,
                                  CASE WHEN lt.umberarvestus THEN 'Jah' ELSE 'Ei' END::TEXT                    AS umberarvestus,
-                                 (CASE
-                                      WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
-                                                                ((lt.soodustus * lt.sooduse_kehtivus) / 100)
-                                      ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus END)::NUMERIC(12, 2) AS soodustus,
-                                 ((lt.hind * lt.kogus - (CASE
-                                                             WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
-                                                                                       ((lt.soodustus * lt.sooduse_kehtivus) / 100)
-                                                             ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus *
-                                                                  (CASE WHEN lt.tyyp IS NOT NULL AND lt.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END)
-                                     END)))::NUMERIC(12, 2)                                                   AS summa,
+                                 lt.soodustus AS soodustus,
+                                 lt.summa                                                   AS summa,
                                  lt.isikukood,
                                  lt.nimi,
                                  lt.kood,

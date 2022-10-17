@@ -20,6 +20,9 @@ DECLARE
     doc_too_paevad     NUMERIC = doc_data ->> 'too_paevad';
     doc_kovid          NUMERIC = doc_data ->> 'kovid';
     doc_hind           NUMERIC = doc_data ->> 'hind';
+    doc_soodustus      NUMERIC = doc_data ->> 'soodustus';
+    doc_summa          NUMERIC = doc_data ->> 'summa';
+    doc_vahe           NUMERIC = doc_data ->> 'vahe';
     doc_kuu            INTEGER = doc_data ->> 'kuu';
     doc_aasta          INTEGER = doc_data ->> 'aasta';
     doc_muud           TEXT    = doc_data ->> 'muud';
@@ -105,9 +108,11 @@ BEGIN
                        FROM (SELECT now()    AS created,
                                     userName AS user) row;
 
-        INSERT INTO lapsed.lapse_taabel (parentid, lapse_kaart_id, nomid, rekvid, hind, kogus, kuu, aasta, muud,
+        INSERT INTO lapsed.lapse_taabel (parentid, lapse_kaart_id, nomid, rekvid, hind, kogus, summa, vahe, kuu, aasta,
+                                         muud,
                                          ajalugu, umberarvestus, properties)
-        VALUES (doc_parentid, doc_lapse_kaart_id, doc_nomid, user_rekvid, doc_hind, doc_kogus, doc_kuu, doc_aasta,
+        VALUES (doc_parentid, doc_lapse_kaart_id, doc_nomid, user_rekvid, doc_hind, doc_kogus, doc_summa, doc_vahe,
+                doc_kuu, doc_aasta,
                 doc_muud,
                 '[]' :: JSONB || json_ajalugu, doc_umberarvestus, json_props) RETURNING id
                    INTO doc_id;
@@ -128,6 +133,8 @@ BEGIN
             lapse_kaart_id = doc_lapse_kaart_id,
             hind           = doc_hind,
             kogus          = doc_kogus,
+            summa          = doc_summa,
+            vahe           = doc_vahe,
             kuu            = doc_kuu,
             aasta          = doc_aasta,
             muud           = doc_muud,

@@ -183,12 +183,26 @@ class Laps extends React.PureComponent {
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
 
-                        {!self.docData.id || Boolean(self.docData.umberarvestus)? <InputNumber ref="input-hind"
-                                                        title='Summa:'
-                                                        name='hind'
-                                                        value={Number(self.docData.hind) || Number(0)}
-                                                        readOnly={!isEditMode}
-                                                        onChange={self.handleInputChange}/> : null}
+                        <InputNumber ref="input-hind"
+                                     title='Hind:'
+                                     name='hind'
+                                     value={Number(self.docData.hind) || Number(null)}
+                                     readOnly={!isEditMode}
+                                     onChange={self.handleInputChange}/>
+
+                        <InputNumber ref="input-soodustus"
+                                     title='Soodustus:'
+                                     name='soodustus'
+                                     value={Number(self.docData.soodustus) || Number(null)}
+                                     readOnly={!isEditMode}
+                                     onChange={self.handleInputChange}/>
+
+                        <InputNumber ref="input-summa"
+                                     title='Summa:'
+                                     name='summa'
+                                     value={(Number(self.docData.hind) * Number(self.docData.kogus) - Number(self.docData.soodustus)).toFixed(2) || Number(null)}
+                                     readOnly={true}/>
+
                         <CheckBox title="Kas ümberarvestus?"
                                   name='umberarvestus'
                                   value={Boolean(self.docData.umberarvestus)}
