@@ -182,6 +182,11 @@ const Arv = {
                          trim(n.kood) :: VARCHAR(20)                                                     AS kood,
                          trim(n.nimetus) :: VARCHAR(254)                                                 AS nimetus,
                          n.uhik :: TEXT                                                                  AS uhik,
+                         coalesce((SELECT vahe
+                                   FROM lapsed.cur_lapse_taabel
+                                   WHERE id = (a1.properties ->> 'lapse_taabel_id')::INTEGER
+                                   LIMIT 1)::NUMERIC(12, 4),
+                                  0)::NUMERIC(12, 4)                                                     AS vahe,
                          coalesce((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4)    AS soodustus,
                          coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) + a1.hind::NUMERIC(12, 4) AS tais_hind,
                          a1.soodus::NUMERIC(12, 4),
@@ -392,7 +397,7 @@ const Arv = {
                            kas_earved::BOOLEAN                  AS kas_earved,
                            pank::TEXT,
                            ebatoenaolised,
-                           vn.vn                                 AS vana_vn
+                           vn.vn                                AS vana_vn
                     FROM lapsed.cur_laste_arved a
                              LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                                               FROM lapsed.viitenr vn
@@ -416,21 +421,22 @@ const Arv = {
             {
                 id: 'kood',
                 name: 'Kood',
-                width: '100px',
+                width: '10%',
                 show: true,
                 type: 'select',
                 readOnly: false,
                 dataSet: 'nomenclature',
                 valueFieldName: 'nomid'
             },
-            {id: 'yksus', name: 'Üksus', width: '100px', show: true, readOnly: true},
-            {id: 'nimetus', name: 'Nimetus', width: '250px', show: true, readOnly: true},
-            {id: 'hind', name: 'Hind', width: '75px', show: true, type: 'number', readOnly: false},
-            {id: 'soodustus', name: 'Soodustus', width: '75px', show: false, type: 'number', readOnly: false},
-            {id: 'uhik', name: 'Ühik', width: '75px', show: true, readOnly: true},
-            {id: 'kogus', name: 'kogus', width: '100px', show: true, type: 'number', readOnly: false},
-            {id: 'kbm', name: 'Käibemaks', width: '100px', show: true, type: 'number', readOnly: false},
-            {id: 'summa', name: 'Summa', width: '100px', show: true, type: 'number', readOnly: false}
+            {id: 'yksus', name: 'Üksus', width: '15%', show: true, readOnly: true},
+            {id: 'nimetus', name: 'Nimetus', width: '25%', show: true, readOnly: true},
+            {id: 'hind', name: 'Hind', width: '10%', show: true, type: 'number', readOnly: false},
+            {id: 'soodustus', name: 'Soodustus', width: '10%', show: true, type: 'number', readOnly: false},
+            {id: 'vahe', name: 'Vahe', width: '5%', show: true, type: 'number', readOnly: false},
+            {id: 'uhik', name: 'Ühik', width: '5%', show: true, readOnly: true},
+            {id: 'kogus', name: 'kogus', width: '10%', show: true, type: 'number', readOnly: false},
+            {id: 'kbm', name: 'Käibemaks', width: '10%', show: true, type: 'number', readOnly: false},
+            {id: 'summa', name: 'Summa', width: '10%', show: true, type: 'number', readOnly: false}
         ],
         gridTasudConfig:
             [

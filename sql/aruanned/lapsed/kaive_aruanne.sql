@@ -169,19 +169,19 @@ FROM (
               ),
 
               arvestatud AS (
-                  SELECT ld.parentid                                    AS laps_id,
-                         sum(a1.summa) ::NUMERIC(14, 2)                 AS arvestatud,
-                         sum(COALESCE(a1.soodustus, 0))::NUMERIC(14, 2) AS soodustus,
-                         D.rekvid::INTEGER                              AS rekv_id
+                  SELECT ld.parentid                    AS laps_id,
+                         sum(a1.summa)                  AS arvestatud,
+                         sum(COALESCE(a1.soodustus, 0)) AS soodustus,
+                         D.rekvid::INTEGER              AS rekv_id
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
-                           INNER JOIN (SELECT a1.parentid                                     AS arv_id,
+                           INNER JOIN (SELECT a1.parentid                                                             AS arv_id,
                                               sum(
-                                                          (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(14, 2), 0)) )           AS soodustus,
+                                                      (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(14, 2), 0))) AS soodustus,
                                               sum(
-                                                          ((CASE WHEN a1.summa = 0 THEN 0 ELSE 1 END) * a1.hind *
-                                                                a1.kogus)) AS summa
+                                                      (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(14, 2), 0) +
+                                                       (CASE WHEN a1.summa = 0 THEN 0 ELSE 1 END) * a1.summa))        AS summa
                                        FROM docs.arv1 a1
                                                 INNER JOIN docs.arv a ON a.id = a1.parentid AND
                                                                          (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')

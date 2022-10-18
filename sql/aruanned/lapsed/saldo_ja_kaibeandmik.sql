@@ -33,72 +33,6 @@ SELECT count(*) OVER (PARTITION BY report.rekv_id) AS id,
        report.rekv_id
 FROM (
          WITH alg_saldo AS (
-/*             SELECT rekv_id, sum(alg_db)::NUMERIC(14, 4) AS alg_db, sum(alg_kr)::NUMERIC(14, 4) AS alg_kr
-             FROM (
-                      SELECT sum(a.summa)      AS alg_db,
-                             0::NUMERIC(14, 4) AS alg_kr,
-                             d.rekvid          AS rekv_id
-                      FROM docs.doc d
-                               INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
-                               INNER JOIN docs.arv a ON a.parentid = d.id AND a.liik = 0 -- только счета исходящие
-                      WHERE coalesce((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
-                        AND d.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekvid))
-                        AND a.liik = 0 -- только счета исходящие
-                        AND a.kpv < kpv_start
-                        AND d.status <> 3
-                      GROUP BY d.rekvid, 0::NUMERIC(14, 4)
-                      UNION ALL
--- arve tasumine
-                      SELECT -1 * sum(at.summa) AS alg_db,
-                             0                  AS alg_kr,
-                             at.rekvid          AS _rekv_id
-                      FROM docs.arvtasu at
-                               INNER JOIN lapsed.liidestamine ld ON ld.docid = at.doc_arv_id
-                               INNER JOIN docs.arv arv ON arv.parentid = at.doc_arv_id
-                               INNER JOIN docs.doc d ON d.id = at.doc_arv_id
-                      WHERE at.kpv < kpv_start
-                        AND arv.kpv < kpv_start
-                        AND at.rekvid IN (SELECT rekv_id
-                                          FROM get_asutuse_struktuur(l_rekvid))
-                        AND d.status <> 3
-
-                      GROUP BY _rekv_id
-                      UNION ALL
--- чистые платежи (без счетов)
-                      SELECT 0::NUMERIC(14, 4) AS alg_db,
-                             sum(mk1.summa)    AS alg_kr,
-                             d.rekvid          AS rekv_id
-                      FROM docs.doc d
-                               INNER JOIN docs.Mk mk ON mk.parentid = d.id
-                               INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
-                               INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
-                               INNER JOIN lapsed.laps l ON l.id = ld.parentid
-                      WHERE d.status <> 3
-                        AND d.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekvid))
-                        AND mk.maksepaev < kpv_start
-                        AND mk.opt = 2
-                      GROUP BY d.rekvid
-                      UNION ALL
--- минусуем оплаты
-                      SELECT 0                  AS alg_db,
-                             -1 * sum(at.summa) AS alg_kr,
-                             at.rekvid          AS _rekv_id
-                      FROM docs.arvtasu at
-                               INNER JOIN lapsed.liidestamine ld ON ld.docid = at.doc_tasu_id
-                               INNER JOIN docs.doc d ON d.id = at.doc_tasu_id
-                               INNER JOIN docs.arv arv ON arv.parentid = at.doc_arv_id
-                      WHERE at.kpv < kpv_start
-                        AND arv.kpv < kpv_start
-                        AND at.rekvid IN (SELECT rekv_id
-                                          FROM get_asutuse_struktuur(l_rekvid))
-                        AND at.pankkassa = 1
-                        AND d.status <> 3
-
-                      GROUP BY at.rekvid) alg
-             GROUP BY rekv_id
-*/
              SELECT rekv_id, sum(db) AS alg_db, sum(kr) AS alg_kr
              FROM (
                       -- laekumised
@@ -320,22 +254,8 @@ FROM (
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
                            INNER JOIN (SELECT a1.parentid                 AS arv_id,
-                                              sum(
-                                                      round((CASE
-                                                                 WHEN a1.summa > 0 AND
-                                                                      COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) > 0
-                                                                     THEN COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0)
-                                                                 ELSE COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) END::NUMERIC +
-                                                             CASE WHEN a1.summa = 0 THEN 0 ELSE a1.hind END) *
-                                                            a1.kogus, 2)) +
-                                              lapsed.get_differ_from_algoritm(a1.hind, (CASE
-                                                                                   WHEN a1.summa > 0 AND
-                                                                                        COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) > 0
-                                                                                       THEN COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0)
-                                                                                   ELSE COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) END::NUMERIC +
-                                                                               CASE WHEN a1.summa = 0 THEN 0 ELSE a1.hind END),  a1.kogus)
-
-                                                  AS summa
+                                              sum(COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0)  +
+                                                             a1.summa)  AS summa
                                        FROM docs.arv1 a1
                                                 INNER JOIN docs.arv a ON a.id = a1.parentid AND
                                                                          (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')

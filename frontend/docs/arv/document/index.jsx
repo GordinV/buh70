@@ -390,6 +390,16 @@ class Arve extends React.PureComponent {
                                          ref='hind'
                                          pattern="[0-9]{10}"
                                          onChange={self.handleGridRowInput}/>
+                            <InputNumber title='Vahe '
+                                         name='vahe'
+                                         value={Number(row.vahe ? row.vahe : 0)}
+                                         readOnly={true}
+                                         disabled={true}
+                                         bindData={false}
+                                         ref='hind'
+                                         pattern="[0-9]{10}"
+                                         onChange={self.handleGridRowInput}/>
+
                         </div>
                         <div style={styles.docColumn}>
                             <InputNumber title='Hind '
@@ -579,8 +589,8 @@ class Arve extends React.PureComponent {
 
         doc.gridRowData['kogus'] = Number(doc.gridRowData.kogus);
         doc.gridRowData['soodustus'] = doc.gridRowData['soodustus'] ? Number(doc.gridRowData.soodustus) : 0;
-        doc.gridRowData['hind'] = nomHind && doc.gridRowData['soodustus'] ? Number(nomHind) - doc.gridRowData['soodustus'] : Number(doc.gridRowData.hind);
-        doc.gridRowData['kbmta'] = Round(Number(doc.gridRowData['kogus']) * Number(doc.gridRowData['hind']));
+        doc.gridRowData['hind'] = Number(doc.gridRowData.hind);
+        doc.gridRowData['kbmta'] = Round(Number(doc.gridRowData['kogus']) * Number(doc.gridRowData['hind']) - Number(doc.gridRowData['soodustus']) + Number(doc.gridRowData['vahe']));
         doc.gridRowData['kbm'] = Round(Number(doc.gridRowData['kbmta']) * vat);
         doc.gridRowData['summa'] = Round(Number(doc.gridRowData['kbmta']) + Number(doc.gridRowData['kbm']));
 

@@ -159,23 +159,9 @@ FROM (
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
                            INNER JOIN (SELECT a1.parentid                           AS arv_id,
-                                              sum(
-                                                          (COALESCE((a1.properties ->>
-                                                                     'soodustus')::NUMERIC(14, 2), 0)) *
-                                                          a1.kogus::NUMERIC(14, 2)) AS soodustus,
-                                              (a1.properties ->>
-                                               'yksus')                             AS yksus,
-                                              sum(
-                                                      round((CASE
-                                                                 WHEN a1.summa > 0 AND
-                                                                      COALESCE((a1.properties ->>
-                                                                                'soodustus')::NUMERIC, 0) > 0
-                                                                     THEN COALESCE((a1.properties ->>
-                                                                                    'soodustus')::NUMERIC, 0)
-                                                                 ELSE COALESCE((a1.properties ->>
-                                                                                'soodustus')::NUMERIC, 0) END::NUMERIC +
-                                                             CASE WHEN a1.summa = 0 THEN 0 ELSE a1.hind END) *
-                                                            a1.kogus, 2))           AS summa
+                                              sum(COALESCE((a1.properties ->>'soodustus')::NUMERIC, 0))  AS soodustus,
+                                              (a1.properties ->>'yksus')                             AS yksus,
+                                              sum(COALESCE((a1.properties ->>'soodustus')::NUMERIC, 0) + a1.summa)           AS summa
                                        FROM docs.arv1 a1
                                                 INNER JOIN docs.arv a ON a.id = a1.parentid AND
                                                                          (a.properties ->>
