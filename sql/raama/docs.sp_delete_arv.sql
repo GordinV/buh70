@@ -23,7 +23,8 @@ BEGIN
 
     SELECT d.*,
            u.ametnik AS user_name,
-           a.kpv
+           a.kpv,
+           a.id      AS doc_arv_id
     INTO v_doc
     FROM docs.doc d
              LEFT OUTER JOIN ou.userid u ON u.id = user_id
@@ -121,7 +122,7 @@ BEGIN
         END LOOP;
 
 
---    DELETE FROM docs.arvtasu WHERE doc_arv_id = doc_id;
+    --    DELETE FROM docs.arvtasu WHERE doc_arv_id = doc_id;
 
     -- удаление связей
     UPDATE docs.doc
@@ -148,6 +149,19 @@ BEGIN
 --    PERFORM docs.sp_update_mk_jaak(parentid) FROM docs.mk WHERE arvid = doc_id;
 
     UPDATE docs.korder1 SET arvid = NULL WHERE arvid = doc_id;
+
+    --поменяем статус табелей в род.плате
+    IF exists(SELECT 1 FROM pg_class WHERE relname = 'lapse_taabel')
+    THEN
+        UPDATE lapsed.lapse_taabel
+        SET staatus = 1
+        WHERE staatus = 2
+          AND rekvid = v_doc.rekvid
+          AND id IN (
+            SELECT (properties ->> 'lapse_taabel_id')::INTEGER FROM docs.arv1 WHERE parentid = v_doc.doc_arv_id
+        );
+    END IF;
+
 
     DELETE FROM docs.arv1 WHERE parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id);
     DELETE FROM docs.arv WHERE parentid = v_doc.id;

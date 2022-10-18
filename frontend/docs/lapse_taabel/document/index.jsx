@@ -187,8 +187,7 @@ class Laps extends React.PureComponent {
                                      title='Hind:'
                                      name='hind'
                                      value={Number(self.docData.hind) || Number(null)}
-                                     readOnly={!isEditMode}
-                                     onChange={self.handleInputChange}/>
+                                     readOnly={true}/>
 
                         <InputNumber ref="input-soodustus"
                                      title='Soodustus:'

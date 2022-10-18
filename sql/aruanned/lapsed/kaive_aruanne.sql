@@ -56,13 +56,13 @@ SELECT count(*) OVER (PARTITION BY report.laps_id)                  AS id,
        l.nimi::TEXT                                                 AS lapse_nimi,
        l.isikukood::TEXT                                            AS lapse_isikukood,
        lapsed.get_viitenumber(report.rekv_id, report.laps_id)::TEXT AS viitenumber,
-       alg_saldo::NUMERIC(14, 4),
-       arvestatud::NUMERIC(14, 4),
-       soodustus::NUMERIC(14, 4),
-       laekumised::NUMERIC(14, 4),
-       mahakantud::NUMERIC(14, 4),
-       tagastused::NUMERIC(14, 4),
-       (alg_saldo + arvestatud - soodustus - laekumised - mahakantud + tagastused)::NUMERIC(14, 4),
+       alg_saldo::NUMERIC(14, 2),
+       arvestatud::NUMERIC(14, 2),
+       soodustus::NUMERIC(14, 2),
+       laekumised::NUMERIC(14, 2),
+       mahakantud::NUMERIC(14, 2),
+       tagastused::NUMERIC(14, 2),
+       (alg_saldo + arvestatud - soodustus - laekumised - mahakantud + tagastused)::NUMERIC(14, 2),
        report.rekv_id
 FROM (
          WITH alg_saldo AS (
@@ -170,24 +170,18 @@ FROM (
 
               arvestatud AS (
                   SELECT ld.parentid                                    AS laps_id,
-                         sum(a1.summa) ::NUMERIC(14, 4)                 AS arvestatud,
+                         sum(a1.summa) ::NUMERIC(14, 2)                 AS arvestatud,
                          sum(COALESCE(a1.soodustus, 0))::NUMERIC(14, 2) AS soodustus,
                          D.rekvid::INTEGER                              AS rekv_id
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
-                           INNER JOIN (SELECT a1.parentid                           AS arv_id,
+                           INNER JOIN (SELECT a1.parentid                                     AS arv_id,
                                               sum(
-                                                          (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(14, 2), 0)) *
-                                                          a1.kogus::NUMERIC(14, 2)) AS soodustus,
+                                                          (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(14, 2), 0)) )           AS soodustus,
                                               sum(
-                                                      round((CASE
-                                                                 WHEN a1.summa > 0 AND
-                                                                      COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) > 0
-                                                                     THEN COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0)
-                                                                 ELSE COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) END::NUMERIC +
-                                                             CASE WHEN a1.summa = 0 THEN 0 ELSE a1.hind END) *
-                                                            a1.kogus, 2))           AS summa
+                                                          ((CASE WHEN a1.summa = 0 THEN 0 ELSE 1 END) * a1.hind *
+                                                                a1.kogus)) AS summa
                                        FROM docs.arv1 a1
                                                 INNER JOIN docs.arv a ON a.id = a1.parentid AND
                                                                          (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')

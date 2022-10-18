@@ -74,7 +74,7 @@ class Vanem extends React.PureComponent {
      */
 
     renderer(self) {
-        if (!self || !self.docData.vanem_nimi || self.docData.vanem_nimi == 'undefined') {
+        if (!self || self.docData.vanem_nimi == 'undefined') {
             // не загружены данные
             return (<div style={styles.doc}>
                 <Loading label={'Laadimine...'}/>
