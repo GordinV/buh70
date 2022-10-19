@@ -120,7 +120,7 @@ module.exports = {
                                  lt.hind::NUMERIC(12, 2),
                                  lt.uhik,
                                  CASE WHEN lt.umberarvestus THEN 'Jah' ELSE 'Ei' END::TEXT                    AS umberarvestus,
-                                 lt.soodustus AS soodustus,
+                                 lt.alus_soodustus AS soodustus,
                                  lt.summa                                                   AS summa,
                                  lt.isikukood,
                                  lt.nimi,

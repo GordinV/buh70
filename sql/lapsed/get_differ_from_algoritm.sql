@@ -16,6 +16,8 @@ BEGIN
         l_differ =  round(l_tapne_summa - l_umardatud_summa,2);
     END IF;
 
+    raise notice 'l_tapne_summa %, l_umardatud_summa %, l_differ %',l_tapne_summa, l_umardatud_summa, l_differ;
+
     RETURN l_differ;
 
 END;
@@ -32,7 +34,10 @@ GRANT EXECUTE ON FUNCTION lapsed.get_differ_from_algoritm(NUMERIC,NUMERIC,NUMERI
 GRANT EXECUTE ON FUNCTION lapsed.get_differ_from_algoritm(NUMERIC,NUMERIC,NUMERIC) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION lapsed.get_differ_from_algoritm(NUMERIC,NUMERIC,NUMERIC) TO arvestaja;
 
-SELECT 8.76 * 0.9048, 2.19 * 0.9048, (8.76 * 0.9048 - 2.19 * 0.9048) as summa,
+/*SELECT 8.76 * 0.9048, 2.19 * 0.9048, (8.76 * 0.9048 - 2.19 * 0.9048) as summa,
        (round(8.76 * 0.9048,2) - round(2.19 * 0.9048,2)) as arv_summa,
-       lapsed.get_differ_from_algoritm(8.76,  2.19, 0.9048);
+       lapsed.get_differ_from_algoritm(8.76,  2.09, 0.9048);
 
+select * from lapsed.lapse_taabel where id = 89475
+*/
+  select  lapsed.get_differ_from_algoritm(8.76,  2.09, 0.9524)

@@ -13,6 +13,9 @@ SELECT lt.id,
        coalesce(n.properties ->> 'tyyp', '')                  AS tyyp,
        lt.umberarvestus::BOOLEAN                              AS umberarvestus,
        lt.soodustus                                           AS soodustus,
+       CASE
+           WHEN lk.properties ->> 'soodus' IS NOT NULL THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)
+           ELSE 0 END ::NUMERIC                               AS alus_soodustus,
        (lk.properties ->> 'kas_protsent')::BOOLEAN            AS kas_protsent,
        CASE
            WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN -1
