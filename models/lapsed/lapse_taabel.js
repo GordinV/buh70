@@ -91,10 +91,10 @@ module.exports = {
                 {id: "kogus", name: "Kogus", width: "8%", type: "number", interval: true},
                 {id: "hind", name: "Hind", width: "8%", type: "number", interval: true},
                 {id: "uhik", name: "Ühik", width: "5%"},
-                {id: "soodustus", name: "Soodustus", width: "10%", type: "number"},
+                {id: "alus_soodustus", name: "Soodustus", width: "10%", type: "number", show: false},
                 {id: "summa", name: "Summa", width: "10%", type: "number", interval: true},
                 {id: "vahe", name: "Vahe", width: "5%", type: "number", interval: true},
-                {id: "umberarvestus", name: "Ümberarv", width: "5%"},
+                {id: "umberarvestus", name: "Ümberarv", width: "7%"},
                 {id: "tab_tyyp", name: "Tüüp", width: "10%", type: "text"},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
             ],
@@ -120,7 +120,8 @@ module.exports = {
                                  lt.hind::NUMERIC(12, 2),
                                  lt.uhik,
                                  CASE WHEN lt.umberarvestus THEN 'Jah' ELSE 'Ei' END::TEXT                    AS umberarvestus,
-                                 lt.alus_soodustus AS soodustus,
+                                 lt.alus_soodustus AS alus_soodustus,
+                                 lt.soodustus AS soodustus,
                                  lt.summa                                                   AS summa,
                                  lt.isikukood,
                                  lt.nimi,
@@ -154,6 +155,10 @@ module.exports = {
                                             (CASE
                                                  WHEN lt.kas_protsent::BOOLEAN THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
                                                                            ((lt.soodustus * lt.sooduse_kehtivus) / 100)
+                                                 ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus END)::NUMERIC(12, 2) AS alus_soodustus,
+                                            (CASE
+                                                 WHEN lt.kas_protsent::BOOLEAN THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
+                                                                           ((lt.soodustus * lt.sooduse_kehtivus) / 100)
                                                  ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus END)::NUMERIC(12, 2) AS soodustus,
                                             ((lt.hind * lt.kogus - (CASE
                                                                         WHEN lt.kas_protsent::BOOLEAN THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
@@ -176,12 +181,12 @@ module.exports = {
                                                          FROM get_asutuse_struktuur($1::INTEGER))                         
 
                      )
-                SELECT id::integer, "select", parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
+                SELECT id::integer, "select", parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, alus_soodustus, soodustus, summa, 
                             isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                            
                             tab_tyyp, kulastused, too_paevad, kovid, vahe,
                             lapsed.get_viitenumber(rekvid, parentid) AS viitenumber
                 FROM (
-                         select false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, soodustus, summa, 
+                         select false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, alus_soodustus, soodustus, summa, 
                             isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                           
                             'Tavaline' as tab_tyyp, kulastused, too_paevad, kovid, vahe
                          from qryTabs

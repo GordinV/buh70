@@ -13,9 +13,6 @@ SELECT lt.id,
        coalesce(n.properties ->> 'tyyp', '')                  AS tyyp,
        lt.umberarvestus::BOOLEAN                              AS umberarvestus,
        lt.soodustus                                           AS soodustus,
-       CASE
-           WHEN lk.properties ->> 'soodus' IS NOT NULL THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)
-           ELSE 0 END ::NUMERIC                               AS alus_soodustus,
        (lk.properties ->> 'kas_protsent')::BOOLEAN            AS kas_protsent,
        CASE
            WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN -1
@@ -30,6 +27,23 @@ SELECT lt.id,
                        ELSE make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' END
                THEN 1
            ELSE 0 END                                         AS sooduse_kehtivus,
+       (CASE
+            WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN -1
+            WHEN (lk.properties ->> 'sooduse_alg')::DATE < (make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month')
+                AND (lk.properties ->> 'sooduse_lopp')::DATE >=
+                    CASE
+                        WHEN upper(n.uhik) = ('KUU') THEN make_date(lt.aasta, lt.kuu, 1)
+                        WHEN (lk.properties ->> 'sooduse_lopp')::DATE <
+                             make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' AND
+                             (lk.properties ->> 'lopp_kpv')::DATE = (lk.properties ->> 'sooduse_lopp')::DATE
+                            THEN make_date(lt.aasta, lt.kuu, 1)
+                        ELSE make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' END
+                THEN 1
+            ELSE 0 END) *
+       (CASE
+            WHEN lk.properties ->> 'soodus' IS NOT NULL THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)
+            ELSE 0 END) ::NUMERIC                             AS alus_soodustus,
+
        lt.summa,
 
        l.isikukood,
