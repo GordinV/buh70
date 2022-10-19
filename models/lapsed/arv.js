@@ -188,7 +188,7 @@ const Arv = {
                                    LIMIT 1)::NUMERIC(12, 4),
                                   0)::NUMERIC(12, 4)                                                     AS vahe,
                          coalesce((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4)    AS soodustus,
-                         coalesce((a1.properties ->> 'soodustus')::NUMERIC, 0) + a1.hind::NUMERIC(12, 4) AS tais_hind,
+                         a1.hind::NUMERIC(12, 4) AS tais_hind,
                          a1.soodus::NUMERIC(12, 4),
                          a1.kood1,
                          a1.kood2,
