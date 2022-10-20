@@ -167,7 +167,7 @@ module.exports = {
             gridTeenusteConfig:
                 [
                     {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
-                    {id: 'yksuse_kood', name: 'Üksuse kood', width: '5%', show: true, type: 'text', readOnly: false},
+                    {id: 'yksuse_kood', name: 'Üksuse kood', width: '10%', show: true, type: 'text', readOnly: false},
                     {id: 'yksus', name: 'Üksus', width: '10%', show: true, type: 'text', readOnly: false},
                     {id: 'kood', name: 'Kood', width: '10%', show: true, type: 'text', readOnly: false},
                     {id: 'nimetus', name: 'Nimetus', width: '15%', show: true, type: 'text', readOnly: false},
@@ -179,7 +179,7 @@ module.exports = {
                     {id: 'soodustus', name: 'Soodustus', width: '10%', show: true, type: 'text', readOnly: false},
                     {id: 'soodustuste_period', name: 'Kehtiv', width: '5%', show: true, type: 'text', readOnly: false},
                     {id: 'kas_protsent', name: '%', width: '5%', show: true, type: 'text', readOnly: false},
-                    {id: 'viitenr', name: 'Vana VN', width: '10%', show: true, type: 'text', readOnly: true},
+                    {id: 'viitenr', name: 'Vana VN', width: '5%', show: true, type: 'text', readOnly: true},
                 ],
             gridViitenumberConfig: [
                 {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
