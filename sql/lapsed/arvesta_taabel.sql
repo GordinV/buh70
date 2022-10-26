@@ -244,7 +244,7 @@ BEGIN
             LIMIT 1;
 
             -- расчет разницы алгоритмов
-            v_kaart.vahe = lapsed.get_differ_from_algoritm(v_kaart.hind, v_kaart.soodustus, v_kaart.kogus) AS vahe;
+            v_kaart.vahe = lapsed.get_differ_from_algoritm(v_kaart.hind, (v_kaart.soodustus * v_kaart.sooduse_kehtivus), v_kaart.kogus) AS vahe;
 
             -- расчет суммы
             v_kaart.summa = ((v_kaart.hind * v_kaart.kogus - (CASE
@@ -259,6 +259,7 @@ BEGIN
                                                                             ELSE 1 END)
                 END)))::NUMERIC(12, 2);
 
+            v_kaart.soodustus = v_kaart.soodustus * v_kaart.kogus  * v_kaart.sooduse_kehtivus;
 
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN

@@ -12,18 +12,22 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
         lapse_isikukood TEXT,
         yksus           TEXT,
         viitenumber     TEXT,
-        alg_saldo       NUMERIC(14, 4),
-        arvestatud      NUMERIC(14, 4),
-        soodustus       NUMERIC(14, 4),
-        laekumised      NUMERIC(14, 4),
-        mahakantud      NUMERIC(14, 4),
-        tagastused      NUMERIC(14, 4),
-        jaak            NUMERIC(14, 4),
+        alg_saldo       NUMERIC(14, 2),
+        arvestatud      NUMERIC(14, 2),
+        soodustus       NUMERIC(14, 2),
+        laekumised      NUMERIC(14, 2),
+        mahakantud      NUMERIC(14, 2),
+        tagastused      NUMERIC(14, 2),
+        jaak            NUMERIC(14, 2),
         rekvid          INTEGER
     )
 AS
 $BODY$
-WITH kulastavus AS (
+WITH rekv_ids AS (
+    SELECT rekv_id
+    FROM get_asutuse_struktuur(l_rekvid)
+),
+ kulastavus AS (
     SELECT parentid,
            rekvid,
            min(alg_kpv)            AS alg_kpv,
@@ -42,7 +46,7 @@ WITH kulastavus AS (
                             date(year(current_date), 12, 31))::DATE AS lopp_kpv
              FROM lapsed.lapse_kaart lk
              WHERE lk.staatus <> 3
-               AND lk.rekvid IN (SELECT rekv_id FROM get_asutuse_struktuur(l_rekvid))
+               AND lk.rekvid IN  (SELECT rekv_id FROM rekv_ids)
          ) qry
 
     GROUP BY parentid,
@@ -82,8 +86,7 @@ FROM (
                                               lapsed.get_last_maksja(docs_ids) AS asutus_id
                                        FROM lapsed.lapse_saldod(kpv_start::DATE, NULL::INTEGER, l_rekvid, 1)) alg_saldo
                                       ON alg_saldo.laps_id = l.id
-             WHERE alg_saldo.rekv_id IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekvid))
+             WHERE alg_saldo.rekv_id IN (SELECT rekv_id FROM rekv_ids)
          ),
               laekumised AS (
                   SELECT a.rekvid,
@@ -112,8 +115,7 @@ FROM (
                            INNER JOIN docs.doc D ON D.id = a.parentid AND D.status <> 3
                            INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                            INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
-                  WHERE a.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid))
+                  WHERE a.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND a.liik = 0 -- только счета исходящие
                   GROUP BY AT.doc_arv_id, (a1.properties ->>
                                            'yksus'), l.parentid, a.rekvid
@@ -142,8 +144,7 @@ FROM (
                            INNER JOIN docs.doc D ON D.id = a.parentid AND D.status <> 3
                            INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                            INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
-                  WHERE a.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid))
+                  WHERE a.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND a.liik = 0 -- только счета исходящие
                   GROUP BY AT.doc_arv_id, (a1.properties ->>
                                            'yksus'), AT.summa, l.parentid, a.rekvid
@@ -182,8 +183,7 @@ FROM (
                                   'tyyp')::TEXT,
                                  '') <>
                         'ETTEMAKS'
-                    AND D.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid))
+                    AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND a.liik = 0 -- только счета исходящие
                     AND a.kpv >= kpv_start
                     AND a.kpv <= kpv_end),
@@ -199,8 +199,7 @@ FROM (
                                   mk.rekvid
                   FROM lapsed.cur_lapsed_mk mk
                            INNER JOIN lapsed.get_group_part_from_mk(mk.id, kpv_start) ymk ON ymk.mk_id = mk.id
-                  WHERE mk.rekvid IN (SELECT rekv_id
-                                      FROM get_asutuse_struktuur(l_rekvid))
+                  WHERE mk.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND mk.maksepaev >= kpv_start
                     AND mk.maksepaev <= kpv_end
                     AND mk.jaak <> 0

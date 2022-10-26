@@ -22,7 +22,7 @@ WITH preReport AS (
            lt.isikukood::TEXT,
            lapsed.get_viitenumber(lt.rekvid, l.id)::TEXT    AS viitenumber,
            (CASE WHEN lt.tyyp IS NOT NULL AND lt.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END) *
-           lt.summa + lt.soodustus  AS arvestatud,
+           lt.summa + lt.soodustus - lt.vahe AS arvestatud,
            lt.soodustus AS soodustus,
            lt.kuu::INTEGER,
            lt.aasta::INTEGER

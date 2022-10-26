@@ -16,8 +16,6 @@ BEGIN
         l_differ =  round(l_tapne_summa - l_umardatud_summa,2);
     END IF;
 
-    raise notice 'l_tapne_summa %, l_umardatud_summa %, l_differ %',l_tapne_summa, l_umardatud_summa, l_differ;
-
     RETURN l_differ;
 
 END;
@@ -40,4 +38,8 @@ GRANT EXECUTE ON FUNCTION lapsed.get_differ_from_algoritm(NUMERIC,NUMERIC,NUMERI
 
 select * from lapsed.lapse_taabel where id = 89475
 */
-  select  lapsed.get_differ_from_algoritm(8.76,  2.09, 0.9524)
+  select  lapsed.get_differ_from_algoritm(8.76,  2.19, 0.7619)
+
+select * from lapsed.lapse_taabel where id = 89162
+
+select * from lapsed.lapse_kaart where id = 39945

@@ -2,7 +2,7 @@ import_algsaldo();
 
 async function import_algsaldo() {
     const fs = require('fs');
-    const path = 'c:/temp/csv/alg_db_0820201.csv';
+    const path = 'c:/temp/csv/alg_db_0951005.csv';
     const util = require('util');
 
 // Convert fs.readFile into Promise version of same
@@ -51,6 +51,8 @@ const readCSV = async (csvContent, cb) => {
                 console.log('tulemus->', returnValue, sql, params);
 
             });
+        } else {
+            console.log('fail tuhi')
         }
 
     });

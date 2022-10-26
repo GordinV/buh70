@@ -108,10 +108,12 @@ BEGIN
                        FROM (SELECT now()    AS created,
                                     userName AS user) row;
 
-        INSERT INTO lapsed.lapse_taabel (parentid, lapse_kaart_id, nomid, rekvid, hind, kogus, summa, vahe, kuu, aasta,
+        INSERT INTO lapsed.lapse_taabel (parentid, lapse_kaart_id, nomid, rekvid, hind, kogus, summa, vahe, soodustus,
+                                         kuu, aasta,
                                          muud,
                                          ajalugu, umberarvestus, properties)
         VALUES (doc_parentid, doc_lapse_kaart_id, doc_nomid, user_rekvid, doc_hind, doc_kogus, doc_summa, doc_vahe,
+                doc_soodustus,
                 doc_kuu, doc_aasta,
                 doc_muud,
                 '[]' :: JSONB || json_ajalugu, doc_umberarvestus, json_props) RETURNING id
@@ -135,6 +137,7 @@ BEGIN
             kogus          = doc_kogus,
             summa          = doc_summa,
             vahe           = doc_vahe,
+            soodustus      = doc_soodustus,
             kuu            = doc_kuu,
             aasta          = doc_aasta,
             muud           = doc_muud,
