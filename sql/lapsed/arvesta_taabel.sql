@@ -36,6 +36,7 @@ DECLARE
     l_too_paevad INTEGER;
     l_kulastused INTEGER = 0;
     l_muud       TEXT;
+    l_soodustus  NUMERIC = 0;
 
 BEGIN
     doc_type_id = 'LAPSE_TAABEL';
@@ -78,7 +79,9 @@ BEGIN
                CASE
                    WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN lk.hind
                    WHEN lk.properties ->> 'soodus' IS NOT NULL THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)
-                   ELSE 0 END ::NUMERIC                                   AS soodustus,
+                   ELSE 0 END ::NUMERIC * CASE
+                                              WHEN (lk.properties ->> 'kas_protsent')::BOOLEAN THEN (0.01 * lk.hind)
+                                              ELSE 1 END::NUMERIC         AS soodustus,
 
                CASE
                    WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN -1
@@ -244,22 +247,14 @@ BEGIN
             LIMIT 1;
 
             -- расчет разницы алгоритмов
-            v_kaart.vahe = lapsed.get_differ_from_algoritm(v_kaart.hind, (v_kaart.soodustus * v_kaart.sooduse_kehtivus), v_kaart.kogus) AS vahe;
+
+            v_kaart.vahe = lapsed.get_differ_from_algoritm(v_kaart.hind, (v_kaart.soodustus * v_kaart.sooduse_kehtivus),
+                                                           v_kaart.kogus) AS vahe;
 
             -- расчет суммы
-            v_kaart.summa = ((v_kaart.hind * v_kaart.kogus - (CASE
-                                                                  WHEN v_kaart.kas_protsent THEN
-                                                                          (v_kaart.hind * v_kaart.kogus)::NUMERIC(12, 2) *
-                                                                          ((v_kaart.soodustus * v_kaart.sooduse_kehtivus) / 100)
-                                                                  ELSE v_kaart.soodustus * v_kaart.kogus *
-                                                                       v_kaart.sooduse_kehtivus *
-                                                                       (CASE
-                                                                            WHEN v_kaart.tyyp IS NOT NULL AND v_kaart.tyyp = 'SOODUSTUS'
-                                                                                THEN 0
-                                                                            ELSE 1 END)
-                END)))::NUMERIC(12, 2);
+            v_kaart.summa = (v_kaart.hind * v_kaart.kogus - v_kaart.soodustus * v_kaart.kogus)::NUMERIC(12, 2);
 
-            v_kaart.soodustus = v_kaart.soodustus * v_kaart.kogus  * v_kaart.sooduse_kehtivus;
+            v_kaart.soodustus = v_kaart.soodustus * v_kaart.sooduse_kehtivus ;
 
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN
@@ -347,8 +342,10 @@ GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arves
 
 /*
 -- 19201
-select lapsed.arvesta_taabel(8, 7277,'2022-09-30')
+select lapsed.arvesta_taabel(28, 6762,'2022-10-31')
 
-select * from lapsed.lapsed_taabel where rekvid = 63
+select * from lapsed.lapsed_taabel where rekvid = 69
+
+ыудусе * акщь
 
  */

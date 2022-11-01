@@ -33,7 +33,8 @@ class TaskWidget extends React.PureComponent {
             viitenumber: null,
             yksus: 0,
             kogus: DocContext.mkJaak ? DocContext.mkJaak : 0,
-            seisuga: getNow()
+            seisuga: getNow(),
+            warning: null
         };
         this.handleSelectTask = this.handleSelectTask.bind(this);
         this.handleButtonTask = this.handleButtonTask.bind(this);
@@ -83,6 +84,7 @@ class TaskWidget extends React.PureComponent {
                             modalObjects={['btnOk', 'btnCancel']}
                         >
                             {`Kas käivata ${this.state.actualTask} ?`}
+                            {this.state.warning ? <div style={styles.notValid}> {this.state.warning} </div> : null}
 
                             {this.state.showDate ?
                                 <InputDate title={this.state.titleDate ? this.state.titleDate : 'Seisuga '}
@@ -118,7 +120,7 @@ class TaskWidget extends React.PureComponent {
                                              value={Number(this.state.kogus)}
                                              ref='input-kogus'
                                              readOnly={false}
-                                             max={(DocContext.mkJaak ? DocContext.mkJaak: 999999999)}
+                                             max={(DocContext.mkJaak ? DocContext.mkJaak : 999999999)}
                                              onChange={this.handleInputChange}/> : null}
 
                         </ModalPage> : null
@@ -130,6 +132,16 @@ class TaskWidget extends React.PureComponent {
     }
 
     modalPageClick(btnEvent) {
+        // проверим на заполнение полей
+        if (this.state.showViitenumber && !this.state.viitenumber) {
+            this.setState({warning: 'Puudub vajaliku andmed: viitenumber'});
+            return false;
+        }
+        if (this.state.showKogus && !this.state.kogus) {
+            this.setState({warning: 'Puudub vajaliku andmed'});
+            return false;
+        }
+
         this.setState({showModal: false});
         if (btnEvent === 'Ok') {
             this.props.handleButtonTask(this.state.actualTask, this.state.seisuga, this.state.yksus, this.state.viitenumber, this.state.kogus);

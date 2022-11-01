@@ -77,8 +77,8 @@ BEGIN
 
             -- получим ид ребенка
             l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
-            
-            raise notice 'l_rekvid %, l_laps_id %', l_rekvid, l_laps_id;
+
+            RAISE NOTICE 'l_rekvid %, l_laps_id %', l_rekvid, l_laps_id;
 
             -- ищем пользователя в целевом цчреждении
             SELECT id
@@ -116,8 +116,8 @@ BEGIN
                     l_kas_vigane = TRUE;
                     l_message = l_message || ',maksja puudub';
                 END IF;
-                
-                raise notice 'l_vanem %', l_vanem;
+
+                RAISE NOTICE 'l_vanem %', l_vanem;
 
             END IF;
 
@@ -179,16 +179,16 @@ BEGIN
                     -- создаем параметры для расчета платежкм
                     SELECT row_to_json(row)
                     INTO json_object
-                    FROM (SELECT v_arv.id         AS arv_id,
-                                 l_maksja_id      AS maksja_id,
-                                 l_dokprop_id     AS dokprop_id,
-                                 l_new_viitenr    AS viitenumber,
-                                 v_pank_vv.selg   AS selg,
-                                 v_pank_vv.number AS number,
-                                 v_pank_vv.kpv    AS kpv,
-                                 v_pank_vv.aa     AS aa,
-                                 v_pank_vv.iban   AS maksja_arve,
-                                 l_makse_summa    AS summa) row;
+                    FROM (SELECT v_arv.id               AS arv_id,
+                                 l_maksja_id            AS maksja_id,
+                                 l_dokprop_id           AS dokprop_id,
+                                 l_new_viitenr          AS viitenumber,
+                                 v_pank_vv.selg         AS selg,
+                                 v_pank_vv.number       AS number,
+                                 v_pank_vv.kpv          AS kpv,
+                                 left(v_pank_vv.aa, 27) AS aa,
+                                 v_pank_vv.iban         AS maksja_arve,
+                                 l_makse_summa          AS summa) row;
 
                     -- создаем платежку
                     SELECT fnc.result, fnc.error_message
@@ -338,5 +338,5 @@ GRANT EXECUTE ON FUNCTION lapsed.loe_makse(IN user_id INTEGER, IN INTEGER) TO ar
 
 /*
 
-SELECT lapsed.loe_makse(62, 26643)
+SELECT lapsed.loe_makse(92, 67600)
 */

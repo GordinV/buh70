@@ -72,7 +72,7 @@ describe('dok. type Rekv tests', function () {
         });
     });
 
-    it('doc type library should contain REKV doc.type', async()=> {
+    it.skip('doc type library should contain REKV doc.type', async()=> {
         let sql = `select id from libs.library where kood = 'REKV' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -81,7 +81,7 @@ describe('dok. type Rekv tests', function () {
 
     });
 
-    it('should succefully execute new sql request', async()=> {
+    it.skip('should succefully execute new sql request', async()=> {
         let sql = doc.select[0].sqlAsNew;
         let returnValue = await db.queryDb(sql, [0,1]);
         expect(returnValue).toBeDefined();
@@ -89,7 +89,7 @@ describe('dok. type Rekv tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should succefully execute sql request', async()=> {
+    it.skip('should succefully execute sql request', async()=> {
         let sql = doc.select[0].sqlAsNew;
         let returnValue = await db.queryDb(sql, [1,1]);
         expect(returnValue).toBeDefined();
@@ -97,7 +97,7 @@ describe('dok. type Rekv tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should succefully execute sql request config', async()=> {
+    it.skip('should succefully execute sql request config', async()=> {
         let sql = _.find(doc.select,{alias:'default.json'}).sql;
         let returnValue = await db.queryDb(sql, [63, 1]);
         expect(returnValue).toBeDefined();

@@ -11,13 +11,13 @@ CREATE OR REPLACE FUNCTION lapsed.kaive_aruanne(l_rekvid INTEGER,
         lapse_nimi      TEXT,
         lapse_isikukood TEXT,
         viitenumber     TEXT,
-        alg_saldo       NUMERIC(14, 4),
-        arvestatud      NUMERIC(14, 4),
-        soodustus       NUMERIC(14, 4),
-        laekumised      NUMERIC(14, 4),
-        mahakantud      NUMERIC(14, 4),
-        tagastused      NUMERIC(14, 4),
-        jaak            NUMERIC(14, 4),
+        alg_saldo       NUMERIC(14, 2),
+        arvestatud      NUMERIC(14, 2),
+        soodustus       NUMERIC(14, 2),
+        laekumised      NUMERIC(14, 2),
+        mahakantud      NUMERIC(14, 2),
+        tagastused      NUMERIC(14, 2),
+        jaak            NUMERIC(14, 2),
         rekvid          INTEGER
     )
 AS
@@ -178,9 +178,9 @@ FROM (
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
                            INNER JOIN (SELECT a1.parentid                                                             AS arv_id,
                                               sum(
-                                                      (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(14, 2), 0))) AS soodustus,
+                                                      (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(14, 4), 0))) AS soodustus,
                                               sum(
-                                                      (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(14, 2), 0) +
+                                                      (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(14, 4), 0) +
                                                        (CASE WHEN a1.summa = 0 THEN 0 ELSE 1 END) * a1.summa))        AS summa
                                        FROM docs.arv1 a1
                                                 INNER JOIN docs.arv a ON a.id = a1.parentid AND

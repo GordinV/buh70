@@ -12,6 +12,7 @@ const React = require('react'),
     BtnLogin = require('./../button-register/button-login/button-login.jsx'),
     BtnEdit = require('./../button-register/button-register-edit/button-register-edit.jsx'),
     BtnInfo = require('./../button-register/button-info/index.jsx'),
+    BtnLink = require('./../button-register/button-link/index.jsx'),
     StartMenu = require('./../start-menu/start-menu.jsx'),
     SelectRekv = require('./../select-rekv/index.jsx'),
     NoticeButton = require('./../button-register/button_noticed/index.jsx'),
@@ -39,6 +40,7 @@ class MenuToolBar extends React.Component {
         this.handleChange = this.handleChange.bind(this);
         this.btnAccountClick = this.btnAccountClick.bind(this);
         this.btnEditRekvClick = this.btnEditRekvClick.bind(this);
+        this.btnLinkClick = this.btnLinkClick.bind(this);
 
     }
 
@@ -93,6 +95,12 @@ class MenuToolBar extends React.Component {
                               onClick={this.btnStartClick}
                               show={toolbarParams['btnStart'].show}
                               disabled={toolbarParams['btnStart'].disabled}
+                    />
+                    <BtnLink ref='btnLink'
+                             value={'Lapsed'}
+                             docTypeId='LAPS'
+                             image={'laps'}
+                            onClick={this.btnLinkClick}
                     />
 
                     <SelectRekv name='rekvId'
@@ -199,6 +207,15 @@ class MenuToolBar extends React.Component {
 
 
     }
+
+    btnLinkClick() {
+        return this.props.history.push({
+            pathname: `/${DocContext.getModule}/laps`,
+            state: {module: DocContext.getModule}
+        });
+
+    }
+
 
     btnEditRekvClick() {
         return this.props.history.push({

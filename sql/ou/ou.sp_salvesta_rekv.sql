@@ -191,7 +191,6 @@ properties = coalesce(properties :: JSONB, '{}' :: JSONB) || json_object :: JSON
             INTO json_record
             FROM jsonb_to_record(
                          json_object) AS x (id TEXT, parentid INTEGER, arve TEXT, nimetus TEXT, default_ BOOLEAN,
-                                            kassa INTEGER,
                                             pank INTEGER,
                                             konto TEXT, tp TEXT, muud TEXT, kassapank INTEGER, kas_tulud BOOLEAN,
                                             kas_kulud BOOLEAN, kas_palk BOOLEAN);

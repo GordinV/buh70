@@ -47,10 +47,17 @@ module.exports = {
         data: []
     },
         {
-            sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa,
-                         $2 :: INTEGER                       AS userid
+            sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20)                  AS aa,
+                         $2 :: INTEGER                                        AS userid,
+                         ((e.element ->> 'kas_palk') :: BOOLEAN)::INTEGER     AS kas_palk,
+                         ((e.element ->> 'kas_raama') :: BOOLEAN)::INTEGER    AS kas_raama,
+                         ((e.element ->> 'kas_oppetasu') :: BOOLEAN)::INTEGER AS kas_oppetasu,
+                         row_number() OVER ()                                 AS id,
+                         libs.get_asutuse_aa(a.id, 'RAAMA'::TEXT)             AS default_aa
                   FROM libs.asutus a,
-                       json_array_elements((a.properties -> 'asutus_aa') :: JSON) AS e(element)
+                       json_array_elements(CASE
+                                               WHEN (a.properties ->> 'asutus_aa') IS NULL THEN '[]'::JSON
+                                               ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (element)
                   WHERE a.id = $1`, //$1 - doc_id, $2 0 userId
             query: null,
             multiple: true,
