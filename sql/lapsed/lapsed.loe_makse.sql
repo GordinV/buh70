@@ -78,8 +78,6 @@ BEGIN
             -- получим ид ребенка
             l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
 
-            RAISE NOTICE 'l_rekvid %, l_laps_id %', l_rekvid, l_laps_id;
-
             -- ищем пользователя в целевом цчреждении
             SELECT id
             INTO l_target_user_id
@@ -116,8 +114,6 @@ BEGIN
                     l_kas_vigane = TRUE;
                     l_message = l_message || ',maksja puudub';
                 END IF;
-
-                RAISE NOTICE 'l_vanem %', l_vanem;
 
             END IF;
 

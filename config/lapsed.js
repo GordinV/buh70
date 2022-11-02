@@ -52,4 +52,5 @@ module.exports = {
     kuutabeli_aruanne: '/aruanned/lapsed/kuutabeli_aruanne',
     viitenr:'/lapsed/viitenr',
     kaive_aruanne_kokku:'/aruanned/lapsed/kaive_kokkuvote',
+    selgemata_maksed:'/aruanned/lapsed/selgemata_maksed',
 };

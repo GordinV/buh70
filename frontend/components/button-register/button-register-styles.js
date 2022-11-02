@@ -3,7 +3,8 @@ module.exports = {
         background: 'white',
         margin: '5px 2px',
         borderRadius: '5px',
-        height: '30px',
+        minHeight: '30px',
+        height: 'max-content',
         display: 'flex',
         border: '1px solid gray'
     },

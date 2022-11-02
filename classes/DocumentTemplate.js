@@ -214,7 +214,6 @@ class Document {
                 return report;
             }
         }
-
         return await db.queryDb(sql, params);
     }
 

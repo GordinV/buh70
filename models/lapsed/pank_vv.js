@@ -54,7 +54,7 @@ module.exports = {
             {id: "iban", name: "Arveldus arve", width: "12%"},
             {id: "pank", name: "Pank", width: "7%"},
             {id: "kpv", name: "Maksepäev", width: "7%", show: true, type: 'date', interval: true},
-            {id: "summa", name: "Summa", width: "5%"},
+            {id: "summa", name: "Summa", width: "5%", type: 'number', interval: true},
             {id: "pank_id", name: "Tehingu nr.", width: "10%"},
             {id: "selg", name: "Makse selgitus", width: "10%"},
             {id: "markused", name: "Impordi märkused", width: "5%"},
@@ -90,6 +90,16 @@ module.exports = {
         params: '',
         alias: 'curPankVV'
     },
+    print: [
+        {
+            view: 'pank_vv',
+            params: 'id',
+        },
+        {
+            view: 'pank_vv',
+            params: 'sqlWhere'
+        },
+    ],
     koostaMK: {
         command: `SELECT result, error_message
                   FROM lapsed.read_pank_vv($2::INTEGER, $1::TEXT)`, //$1 - docs.doc.id, $2 - userId
@@ -106,12 +116,10 @@ module.exports = {
                 FROM lapsed.sp_delete_pank_vv($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     importDoc: {
         command: `SELECT result AS id, result, stamp, error_message, data
-              FROM lapsed.sp_salvesta_pank_vv($1::JSONB, $2::INTEGER, $3::INTEGER)`, // $1 - data json, $2 - userid, $3 - rekvid
+                  FROM lapsed.sp_salvesta_pank_vv($1::JSONB, $2::INTEGER, $3::INTEGER)`, // $1 - data json, $2 - userid, $3 - rekvid
         type: 'sql',
         alias: 'importVV'
     }
-
-
 
 
 };

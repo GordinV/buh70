@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+
+block content
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    style(type='text/css').
+        .kood {
+            width: 100px;
+        }
+
+    div.body_wrapper
+        h1 Panga väljavõtte
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Maksja
+                    th Maksja IK
+                    th Viitenr
+                    th Arveldus arve
+                    th Pank
+                    th Makse päev
+                    th Summa
+                    th Tehingu nr.
+                    th Makse selgitus
+
+            tbody
+                each rea in data
+                    tr
+                        td.kood=rea.maksja
+                        td=rea.maksja_ik
+                        td.kood=rea.viitenumber
+                        td=rea.iban
+                        td=rea.pank
+                        td=rea.kpv
+                        td=rea.summa
+                        td=rea.pank_id
+                        td=rea.selg

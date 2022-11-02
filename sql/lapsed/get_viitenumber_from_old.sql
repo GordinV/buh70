@@ -29,5 +29,5 @@ GRANT EXECUTE ON FUNCTION lapsed.get_viitenumber_from_old(TEXT) TO dbvaatleja;
 GRANT EXECUTE ON FUNCTION lapsed.get_viitenumber_from_old(TEXT) TO arvestaja;
 
 
-SELECT lapsed.get_viitenumber_from_old('8527653');
+SELECT lapsed.get_viitenumber_from_old('1010096511');
 

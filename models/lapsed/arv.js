@@ -452,8 +452,10 @@ const Arv = {
 
     },
     saveDoc: `select docs.sp_salvesta_arv($1::json, $2::integer, $3::integer) as id`,
-    deleteDoc: `SELECT error_code, result, error_message
-                FROM docs.sp_delete_arv($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
+    deleteDoc: `SELECT docs.sp_delete_arv($1::INTEGER, id::INTEGER)
+                FROM lapsed.cur_laste_arved
+                WHERE id::TEXT IN (SELECT unnest(string_to_array($2::TEXT, ',')))
+                `, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',

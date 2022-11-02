@@ -13,6 +13,7 @@ const InputText = require('../../../components/input-text/input-text.jsx'),
     BtnInfo = require('./../../../components/button-register/button-info/index.jsx'),
     styles = require('./styles');
 
+const Menu = require('./../../../components/menu-toolbar/menu-toolbar.jsx');
 
 /**
  * Класс реализует документ справочника признаков.
@@ -39,56 +40,78 @@ class Email extends React.Component {
     render() {
         let hasEmail = !!this.state.email;
         const warningStyle = styles[this.state.warningType] ? styles[this.state.warningType] : null;
+        const btnParams = {
+            btnStart: {
+                show: true
+            },
+            btnLogin: {
+                show: true,
+                disabled: false
+            },
+            btnAccount: {
+                show: true,
+                disabled: false
+            }
+
+        };
 
         return (
-            <Form>
-                <ToolbarContainer>
-                    <BtnEmail
-                        ref='btnEmail'
-                        docTypeId={DocContext.docTypeId}
-                        onClick={this.btnEmailClickHandler}
-                        disabled={!hasEmail}
+            <div>
+                <Menu params={btnParams}
+                      ref="menu"
+                      history={this.props.history}
+                      rekvId={DocContext.getAsutusId}
+                      module={this.props.module}/>
+
+                <Form>
+                    <ToolbarContainer>
+                        <BtnEmail
+                            ref='btnEmail'
+                            docTypeId={DocContext.docTypeId}
+                            onClick={this.btnEmailClickHandler}
+                            disabled={!hasEmail}
+                        />
+
+                        <BtnInfo ref='btnInfo'
+                                 value={''}
+                                 docTypeId={'email_document'}
+                                 show={true}/>
+
+                    </ToolbarContainer>
+                    <ToolbarContainer ref='toolbar-container'>
+                        <div className='doc-toolbar-warning' style={warningStyle}>
+                            {this.state.warning ? <span>{this.state.warning}</span> : null}
+                        </div>
+                    </ToolbarContainer>
+
+                    <InputText
+                        title="Adressaat: "
+                        name='email'
+                        ref="input-email"
+                        value={this.state.email || ''}
+                        onChange={this.handleInputChange}
                     />
-                    <BtnInfo ref='btnInfo'
-                             value={''}
-                             docTypeId={'email_document'}
-                             show={true}/>
-
-                </ToolbarContainer>
-                <ToolbarContainer ref='toolbar-container'>
-                    <div className='doc-toolbar-warning' style={warningStyle}>
-                        {this.state.warning ? <span>{this.state.warning}</span> : null}
-                    </div>
-                </ToolbarContainer>
-
-                <InputText
-                    title="Adressaat: "
-                    name='email'
-                    ref="input-email"
-                    value={this.state.email || ''}
-                    onChange={this.handleInputChange}
-                />
-                <InputText
-                    title="Pealkiri: "
-                    name='subject'
-                    ref="input-subject"
-                    value={this.state.subject || ''}
-                    onChange={this.handleInputChange}
-                />
-                <TextArea title="Sisu"
-                          name='context'
-                          ref="textarea-context"
-                          onChange={this.handleInputChange}
-                          value={this.state.context || ''}
-                />
-                <BtnGetPdf
-                    value={`doc.pdf`}
-                    name='btnGetPdf'
-                    ref='btnGetPdf'
-                    onClick={this.handleBtnGetPdf}
-                />
-            </Form>
-
+                    <InputText
+                        title="Pealkiri: "
+                        name='subject'
+                        ref="input-subject"
+                        value={this.state.subject || ''}
+                        onChange={this.handleInputChange}
+                    />
+                    <TextArea title="Sisu"
+                              name='context'
+                              ref="textarea-context"
+                              onChange={this.handleInputChange}
+                              value={this.state.context || ''}
+                    />
+                    <BtnGetPdf
+                        value={`doc.pdf`}
+                        name='btnGetPdf'
+                        ref='btnGetPdf'
+                        onClick={this.handleBtnGetPdf}
+                    />
+                </Form>
+            </div>
         )
     }
 
@@ -144,7 +167,7 @@ class Email extends React.Component {
                 });
             } else {
                 this.setState({
-                    warning: 'Tekkis viga',
+                    warning: 'Tekkis viga, ' + response.error_message ? response.error_message : '',
                     warningType: 'error',
                 });
             }

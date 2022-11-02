@@ -85,6 +85,7 @@ const YksuseTaabel = require('./../docs/yksuse_taabel/index.jsx');
 const KohalolekuAruanne = require('./../docs/kohaloleku_aruanne/index.jsx');
 const Topeltmaksud = require('./../docs/topeltmaksud/index.jsx');
 const Kuutabeli_aruanne = require('./../docs/kuutabeli_aruanne/index.jsx');
+const Selgemata_maksed = require('./../docs/selgemata_maksed/index.jsx');
 
 
 const {Route, Redirect} = require('react-router-dom');
@@ -371,6 +372,13 @@ class App extends React.Component {
                            history={props.history}
                            initData={props.initData}/>}/>
 
+                <Route exact path="/lapsed/selgemata_maksed"
+                       render={(props) => <Selgemata_maksed
+                           module={MODULE}
+                           history={props.history}
+                           initData={props.initData}/>}/>
+
+
                 <Route exact path="/lapsed/asutuse_liik"
                        render={(props) => <AsutuseLiikRegister
                            module={MODULE}
@@ -403,10 +411,9 @@ class App extends React.Component {
                        />}/>
                 <Route exact path="/lapsed/viitenr/:docId"
                        render={(props) => <ViitenrDocument {...props}
-                                                                 module={MODULE}
-                                                                 history={props.history}
+                                                           module={MODULE}
+                                                           history={props.history}
                        />}/>
-
 
 
             </StyleRoot>

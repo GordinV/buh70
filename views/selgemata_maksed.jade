@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 SELGITAMATA PANGAMAKSETE ANALÜÜS
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Maksja
+                    th Maksja IK
+                    th Viitenr
+                    th Maksepäev
+                    th Summa
+                    th Makse selgitus
+                    th Asutus
+
+            tbody
+                each rea in data
+                    tr
+                            td=rea.maksja
+                            td=rea.isikukood
+                            td=rea.viitenumber
+                            td=rea.kpv
+                            td=rea.summa
+                            td=rea.selg
+                            td=rea.asutus
+                tr
+                    td(align='center')='Read kokku:'
+                    td=Number(data.length)
+                    td
+                    td(align='center')='Summa kokku:'
+                    td=Number(data[0].summa_kokku)
+                    td
+

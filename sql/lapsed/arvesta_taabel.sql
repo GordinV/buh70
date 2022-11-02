@@ -252,7 +252,7 @@ BEGIN
                                                            v_kaart.kogus) AS vahe;
 
             -- расчет суммы
-            v_kaart.summa = (v_kaart.hind * v_kaart.kogus - v_kaart.soodustus * v_kaart.kogus)::NUMERIC(12, 2);
+            v_kaart.summa = (v_kaart.hind * v_kaart.kogus - v_kaart.soodustus * v_kaart.kogus * v_kaart.sooduse_kehtivus )::NUMERIC(12, 2);
 
             v_kaart.soodustus = v_kaart.soodustus * v_kaart.sooduse_kehtivus ;
 

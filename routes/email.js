@@ -77,7 +77,7 @@ exports.post = async (req, res) => {
     }
 
     const printTemplates = emailDoc.config.print;
-   const emailTemplates = emailDoc.config.email ? emailDoc.config.email: '';
+    const emailTemplates = emailDoc.config.email ? emailDoc.config.email: '';
 
     if (!printTemplates) {
         // нет документов для отправки
@@ -93,6 +93,8 @@ exports.post = async (req, res) => {
 
     const templateObject = printTemplates.find(templ => templ.params === (id ? 'id' : 'sqlWhere'));
     template = templateObject.view;
+
+    console.log('UserConfig[\'email\']',UserConfig['email']);
 
     // create reusable transporter object using the default SMTP transport
     let transporter = nodemailer.createTransport({
@@ -480,6 +482,12 @@ exports.sendPrintForm = async (req, res) => {
 
     if (!UserConfig.email) {
         await getConfigData(user);
+    }
+
+    if (!UserConfig['email'].smtp || !UserConfig['email'].port || !UserConfig['email'].user || !UserConfig['email'].pass) {
+        let errorInfo = 'Puudub e-maili kasutaja andmed';
+        console.error(errorInfo,UserConfig['email']);
+        return res.send({status: 500, result: null, error_message: errorInfo});
     }
 
     // create reusable transporter object using the default SMTP transport

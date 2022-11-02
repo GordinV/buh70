@@ -9,12 +9,16 @@ const BtnEmail = require('./../../components/button-register/button-email/index.
 const BtnEarve = require('./../../components/button-register/button-earve/index.jsx');
 const InputNumber = require('../../components/input-number/input-number.jsx');
 const BtnArvesta = require('./../../components/button-register/button-task/index.jsx');
+const checkRights = require('./../../../libs/checkRights');
+const DocRights = require('./../../../config/doc_rights');
+const DOC_TYPE_ID = 'ARV';
+
+const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
 
 const getSum = require('./../../../libs/getSum');
 
 const styles = require('./arv-register-styles');
 
-const DOC_TYPE_ID = 'ARV';
 const DocContext = require('./../../doc-context.js');
 const EVENTS = [
     {name: 'Häälestamine', method: null, docTypeId: null},
@@ -82,8 +86,21 @@ class Documents extends React.PureComponent {
         if (summa) {
             this.setState({summa: summa, read: self.gridData.length, jaak: jaak});
         }
+        let userRoles = DocContext.userData ? DocContext.userData.roles : [];
+
 
         return (<ToolbarContainer>
+            {checkRights(userRoles, docRights, 'delete') ?
+                <BtnArvesta
+                    ref='btnUpload'
+                    docTypeId={DOC_TYPE_ID}
+                    onClick={this.onClickHandler}
+                    showDate={false}
+                    show={true}
+                    mimeTypes={'.csv'}
+                    value={'Kustuta kõik valitud arved?'}
+                /> : null}
+
             <BtnEarve
                 onClick={this.onClickHandler}
                 docTypeId={DOC_TYPE_ID}
@@ -146,6 +163,47 @@ class Documents extends React.PureComponent {
 
         const Doc = this.refs['register'];
         switch (event) {
+            case 'Kustuta kõik valitud arved?':
+                // будет выведено на печать выбранные и только для печати счета
+                Doc.gridData.forEach(row => {
+                    if (row.select) {
+                        // выбрано для печати
+                        ids.add(row.id);
+                    }
+                });
+                // конвертация в массив
+                ids = Array.from(ids);
+
+                if (!ids.length) {
+                    Doc.setState({
+                        warning: 'Mitte ühtegi tabel valitud', // строка извещений
+                        warningType: 'notValid',
+                    });
+                } else {
+                    // удаляем выбранные табеля
+
+                    Doc.fetchData('delete', {docs: ids}).then((data) => {
+                        if (data && data.data && data.data.result) {
+                            message = `Kokku kustutatud ${data.data.result} kirjad`;
+                            Doc.setState({warning: `${message}`, warningType: 'ok'});
+
+                            //let tulemused = data.result.tulemused;
+                            // открываем отчет
+                            //this.setState({isReport: true, txtReport: tulemused});
+
+                        } else {
+                            if (data.error_message) {
+                                Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
+                            }
+                        }
+                    });
+                    setTimeout(() => {
+                        Doc.fetchData('selectDocs')
+                    }, 3000);
+
+                }
+
+                break;
             case EVENTS[0].name:
                 //делаем редайрект на конфигурацию
                 this.props.history.push(`/${this.props.module}/config/${DocContext.getAsutusId}`);

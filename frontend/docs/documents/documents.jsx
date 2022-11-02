@@ -263,7 +263,11 @@ class Documents extends React.Component {
      * Обработчик двойного клика
      */
     dblClickHandler() {
-        this.btnEditClick();
+        // если кнопка есть на редактирование, то откроем
+        let toolbarParams = this.prepareParamsForToolbar(); //параметры для кнопок управления, взависимости от активной строки
+        if (toolbarParams['btnEdit'].show) {
+            this.btnEditClick();
+        }
     }
 
     /**

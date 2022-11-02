@@ -34,6 +34,17 @@ ALTER TABLE lapsed.pank_vv ADD COLUMN IF NOT EXISTS isikukood text;
 ALTER TABLE lapsed.pank_vv ADD COLUMN IF NOT EXISTS aa text;
 
 
+DROP INDEX IF EXISTS pank_vv_timestamp_idx;
+
+CREATE INDEX IF NOT EXISTS pank_vv_timestamp_idx ON lapsed.pank_vv (timestamp);
+
+DROP INDEX IF EXISTS pank_vv_kpv_idx;
+
+CREATE INDEX IF NOT EXISTS pank_vv_kpv_idx ON lapsed.pank_vv (kpv);
+
+DROP INDEX IF EXISTS pank_vv_viitenumber_idx;
+CREATE INDEX IF NOT EXISTS pank_vv_viitenumber_idx ON lapsed.pank_vv (viitenumber) WHERE doc_id is null  AND NOT left(coalesce(markused,''), 4) = 'Kuni';
+
 /*
 pank_id TEXT, summa NUMERIC(12, 2), kpv DATE, maksja TEXT, iban TEXT,
                                             selg TEXT, viitenr TEXT
