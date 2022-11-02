@@ -37,7 +37,7 @@
     "express-rate-limit": "^2.14.2",
     "express-session": "^1.16.2",
     "fluxify": "^0.2.3",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.2",
     "gulp-mocha": "^4.1.0",
     "helmet": "^3.21.1",
     "immutable": "^3.8.1",
