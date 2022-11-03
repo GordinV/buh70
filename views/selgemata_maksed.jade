@@ -28,6 +28,7 @@ block content
                     th Summa
                     th Makse selgitus
                     th Asutus
+                    th Põhjus
 
             tbody
                 each rea in data
@@ -39,6 +40,7 @@ block content
                             td=rea.summa
                             td=rea.selg
                             td=rea.asutus
+                            td=rea.pohjus
                 tr
                     td(align='center')='Read kokku:'
                     td=Number(data.length)

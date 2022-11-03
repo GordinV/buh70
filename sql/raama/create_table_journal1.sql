@@ -67,6 +67,9 @@ CREATE INDEX journal_parentid_idx
   (parentid);
 
 ALTER TABLE docs.journal1 CLUSTER ON journal_parentid_idx;
+ALTER TABLE docs.journal1 CLUSTER ON journal_parentid_idx;
+
+
 
 ALTER TABLE docs.journal1
    ALTER COLUMN kood1 DROP DEFAULT;

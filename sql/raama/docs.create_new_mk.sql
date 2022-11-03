@@ -44,7 +44,7 @@ BEGIN
     IF (l_dokprop_id) IS NULL
     THEN
         l_dokprop_id = (SELECT id
-                        FROM com_dokprop l
+                        FROM public.com_dokprop l
                         WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
                           AND kood = l_dok
                         ORDER BY id DESC

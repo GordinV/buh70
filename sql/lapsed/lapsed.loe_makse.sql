@@ -36,6 +36,8 @@ DECLARE
     l_error_code     INTEGER        = 0;
     l_viitenr        TEXT;
     l_kas_vigane     BOOLEAN        = TRUE;
+    l_viimane_rea    INTEGER;
+    l_jsonb          JSONB;
 BEGIN
     -- ищем платежи
     FOR v_pank_vv IN
@@ -140,7 +142,7 @@ BEGIN
             IF l_dokprop_id IS NULL
             THEN
                 l_dokprop_id = (SELECT id
-                                FROM com_dokprop l
+                                FROM public.com_dokprop l
                                 WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
                                   AND kood = 'SMK'
                                 ORDER BY id DESC
@@ -247,6 +249,8 @@ BEGIN
                 INTO l_mk_id, l_error
                 FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
 
+                raise notice 'create_new_mk %',l_error;
+
                 -- сохраняем пулученную информаци.
                 UPDATE lapsed.pank_vv v
                 SET doc_id   = l_mk_id,
@@ -284,6 +288,15 @@ BEGIN
                 l_message = l_message || ',mk nr.:' || ltrim(rtrim(l_mk_number));
             ELSE
                 l_mk_number = '';
+
+                -- отчет об ошибке
+                l_jsonb = jsonb_build_object('viga', TRUE, 'error_message', l_message);
+                -- сохраняем полученную информаци.
+                UPDATE lapsed.pank_vv v
+                SET properties = coalesce(properties, '{}'::JSONB) || l_jsonb
+                WHERE id = v_pank_vv.id;
+
+
             END IF;
 
             json_object = to_jsonb(row.*)
@@ -318,6 +331,13 @@ EXCEPTION
                                           1::INTEGER                        AS error_code
                                ) row;
             data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
+            -- попробуем сохранить ошибку
+            -- отчет об ошибке
+            l_jsonb = jsonb_build_object('viga', TRUE, 'error_message', l_message || ',' || error_message);
+
+            UPDATE lapsed.pank_vv v
+            SET properties = coalesce(properties, '{}'::JSONB) || l_jsonb
+            WHERE id = l_id;
 
             RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
             RETURN;
@@ -333,6 +353,8 @@ GRANT EXECUTE ON FUNCTION lapsed.loe_makse(IN user_id INTEGER, IN INTEGER) TO ar
 
 
 /*
+47310123728
+SELECT lapsed.loe_makse(62, 69344)
 
-SELECT lapsed.loe_makse(92, 67600)
+SELECT * from lapsed.pank_vv where id = 69344
 */

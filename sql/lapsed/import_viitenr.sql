@@ -65,7 +65,7 @@ BEGIN
                 IF NOT exists(SELECT 1 FROM lapsed.viitenr WHERE viitenumber = json_record.viitenr)
                 THEN
                     INSERT INTO lapsed.viitenr (isikukood, rekv_id, viitenumber)
-                    VALUES (json_record.isikukood, l_rekv_id, json_record.viitenr) RETURNING id INTO l_viitenr_id;
+                    VALUES (ltrim(rtrim(json_record.isikukood)), l_rekv_id, ltrim(rtrim(json_record.viitenr))) RETURNING id INTO l_viitenr_id;
 
                     IF l_viitenr_id > 0
                     THEN

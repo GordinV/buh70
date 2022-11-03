@@ -10,7 +10,7 @@ DECLARE
 BEGIN
     error_code = 0;
     result = 0;
-    raise notice 'start';
+
     FOR v_arv IN
         SELECT d.id, a.jaak, a.tasud
         FROM docs.doc d
@@ -22,7 +22,6 @@ BEGIN
           AND d.id = CASE WHEN tnId IS NOT NULL THEN tnId ELSE D.id END
 
         LOOP
-            raise notice 'update jaak %', v_arv.id;
             -- update arv jaak
             PERFORM docs.sp_update_arv_jaak(v_arv.id);
             result = result + 1;

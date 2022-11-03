@@ -35,6 +35,8 @@ DECLARE
     l_error_code     INTEGER = 0;
     l_viitenr        TEXT;
     l_kas_vigane     BOOLEAN = FALSE;
+    l_jsonb          JSONB;
+    l_viimane_rea    INTEGER;
 BEGIN
     -- ищем платежи
     FOR v_pank_vv IN
@@ -49,6 +51,7 @@ BEGIN
                         ',Maksja:' || ltrim(rtrim(v_pank_vv.maksja));
             l_viitenr = v_pank_vv.viitenumber;
 
+            l_viimane_rea = v_pank_vv.id;
 
             -- ишем плательшика
             SELECT row_to_json(row)
@@ -212,6 +215,14 @@ BEGIN
 
                 ELSE
                     l_mk_number = '';
+
+                    -- отчет об ошибке
+                    l_jsonb = jsonb_build_object('viga', TRUE, 'error_message', l_message);
+                    -- сохраняем полученную информаци.
+                    UPDATE lapsed.pank_vv v
+                    SET properties = coalesce(properties, '{}'::JSONB) || l_jsonb
+                    WHERE id = v_pank_vv.id;
+
                 END IF;
 
             END IF;
@@ -226,6 +237,7 @@ BEGIN
                                           l_error_code::INTEGER AS error_code
                                ) row;
             data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
+            l_viimane_rea = NULL;
         END LOOP;
 
     IF (l_count_kokku > 0)
@@ -256,6 +268,18 @@ EXCEPTION
                                           1::INTEGER                        AS error_code
                                ) row;
             data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
+
+            -- попробуем сохранить ошибку
+            IF l_viimane_rea IS NOT NULL
+            THEN
+                -- отчет об ошибке
+                l_jsonb = jsonb_build_object('viga', TRUE, 'error_message', l_message);
+
+                UPDATE lapsed.pank_vv v
+                SET properties = coalesce(properties, '{}'::JSONB) || l_jsonb
+                WHERE id = l_viimane_rea;
+
+            END IF;
 
             RETURN;
 END;
