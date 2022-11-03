@@ -139,9 +139,8 @@ module.exports = {
             {id: "aadress", name: "Aadress", width: "25%"},
             {id: "valid", name: "Kehtivus", width: "10%", type: 'date', show: false},
         ],
-        sqlString: `SELECT a.*, $2::INTEGER AS userId, a.kehtivus AS valid
-                    FROM cur_asutused a
-                    WHERE libs.check_asutus(a.id::INTEGER, $1::INTEGER)`,     // проверка на права. $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `SELECT a.*,$1::INTEGER as rekv, $2::INTEGER AS userId, a.kehtivus AS valid
+                    FROM cur_asutused a`,     //
         params: '',
         alias: 'curAsutused'
     },
