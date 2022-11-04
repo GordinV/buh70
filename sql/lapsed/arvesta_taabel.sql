@@ -251,10 +251,17 @@ BEGIN
             v_kaart.vahe = lapsed.get_differ_from_algoritm(v_kaart.hind, (v_kaart.soodustus * v_kaart.sooduse_kehtivus),
                                                            v_kaart.kogus) AS vahe;
 
-            -- расчет суммы
-            v_kaart.summa = (v_kaart.hind * v_kaart.kogus - v_kaart.soodustus * v_kaart.kogus * v_kaart.sooduse_kehtivus )::NUMERIC(12, 2);
+            IF (v_kaart.tyyp = 'SOODUSTUS')
+            THEN
+                -- разовая скидка, забитая в цену. Поле льгота не считаем
+                v_kaart.soodustus = 0;
+            END IF;
 
-            v_kaart.soodustus = v_kaart.soodustus * v_kaart.sooduse_kehtivus ;
+            -- расчет суммы
+            v_kaart.summa = (v_kaart.hind * v_kaart.kogus -
+                             v_kaart.soodustus * v_kaart.kogus * v_kaart.sooduse_kehtivus)::NUMERIC(12, 2);
+
+            v_kaart.soodustus = v_kaart.soodustus * v_kaart.sooduse_kehtivus;
 
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN

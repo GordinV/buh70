@@ -11,6 +11,7 @@ exports.post = async (req, res) => {
     const user = await require('../middleware/userData')(req); // данные пользователя
     const module = req.body.module;
 
+    console.log('params', params, taskName);
     let result = 0;
 
     if (!user) {

@@ -94,8 +94,6 @@ exports.post = async (req, res) => {
     const templateObject = printTemplates.find(templ => templ.params === (id ? 'id' : 'sqlWhere'));
     template = templateObject.view;
 
-    console.log('UserConfig[\'email\']',UserConfig['email']);
-
     // create reusable transporter object using the default SMTP transport
     let transporter = nodemailer.createTransport({
         host: UserConfig['email'].smtp,
@@ -104,6 +102,7 @@ exports.post = async (req, res) => {
         auth: {
             user: UserConfig['email'].user,
             pass: UserConfig['email'].pass
+
         }
     });
 
@@ -477,12 +476,10 @@ exports.sendPrintForm = async (req, res) => {
     // проверим на наличие типа документа
     if (!email) {
         // нет документов для отправки
-        return res.send({status: 200, result: null, error_message: `Puudub email aadress`});
+        return res.send({status: 500, result: null, error_message: `Puudub email aadress`});
     }
 
-    if (!UserConfig.email) {
-        await getConfigData(user);
-    }
+    await getConfigData(user);
 
     if (!UserConfig['email'].smtp || !UserConfig['email'].port || !UserConfig['email'].user || !UserConfig['email'].pass) {
         let errorInfo = 'Puudub e-maili kasutaja andmed';
@@ -494,7 +491,7 @@ exports.sendPrintForm = async (req, res) => {
     let transporter = nodemailer.createTransport({
         host: UserConfig['email'].smtp,
         port: UserConfig['email'].port,
-        secure: UserConfig['email'].port == 465 ? true : false, // true for 465, false for other ports
+        secure: UserConfig['email'].port == 465  ? true : false, // true for 465, false for other ports
         auth: {
             user: UserConfig['email'].user,
             pass: UserConfig['email'].pass
@@ -576,8 +573,19 @@ exports.sendPrintForm = async (req, res) => {
 
     }, async (err, info) => {
         if (err) {
-            console.error('transporter.sendMail error', err)
+            console.error('transporter.sendMail error', err);
 //            return reject(err);
+            res.send({
+                status: 500, result: 0, data: {
+                    action: 'email',
+                    result: {
+                        error_code: 1,
+                        error_message: 'transporter.sendMail error:' + err,
+                    },
+                    data: result
+                }
+            });
+
         } else {
             result++;
             if (filePDF) {
@@ -601,20 +609,21 @@ exports.sendPrintForm = async (req, res) => {
                 }
             }
 
+//ответ
+            res.send({
+                status: 200, result: result, data: {
+                    action: 'email',
+                    result: {
+                        error_code: 0,
+                        error_message: null,
+                    },
+                    data: result
+                }
+            });
+
         }
     });
 
-//ответ
-    res.send({
-        status: 200, result: result, data: {
-            action: 'email',
-            result: {
-                error_code: 0,
-                error_message: null,
-            },
-            data: result
-        }
-    });
 };
 
 function exportHtml(html, file, options) {

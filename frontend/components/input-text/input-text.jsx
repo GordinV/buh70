@@ -46,7 +46,7 @@ class Input extends React.PureComponent {
                 <label style={styles.label} htmlFor={this.props.name} ref="label">
                     {this.props.title}
                 </label>
-                <input type='text'
+                <input type={this.props.type}
                        id={this.props.name}
                        ref="input"
                        style={inputStyle}
@@ -90,7 +90,8 @@ Input.defaultProps = {
     disabled: false,
     valid: true,
     value: '',
-    title: ''
+    title: '',
+    type: 'text'
 };
 
 module.exports = radium(Input);

@@ -33,7 +33,7 @@ FROM (
          WHERE staatus <> 3
            AND ((lk.properties ->> 'alg_kpv')::DATE IS NULL OR
                 (lk.properties ->> 'alg_kpv')::DATE <=
-                get_last_day(make_date(l_aasta, coalesce(l_kuu, month(current_date)), 1)))
+                public.get_last_day(make_date(l_aasta, coalesce(l_kuu, month(current_date)), 1)))
            AND ((lk.properties ->> 'lopp_kpv')::DATE IS NULL OR
                 (lk.properties ->> 'lopp_kpv')::DATE >= (
                     make_date(coalesce(l_aasta, year(current_date)), coalesce(l_kuu, month(current_date)), 1)))
@@ -49,7 +49,7 @@ FROM (
              WHERE staatus <> 3
                AND ((lk.properties ->> 'alg_kpv')::DATE IS NULL OR
                     (lk.properties ->> 'alg_kpv')::DATE <=
-                    get_last_day(make_date(l_aasta, coalesce(l_kuu, month(current_date)), 1)))
+                    public.get_last_day(make_date(l_aasta, coalesce(l_kuu, month(current_date)), 1)))
                AND ((lk.properties ->> 'lopp_kpv')::DATE IS NULL OR
                     (lk.properties ->> 'lopp_kpv')::DATE >= (
                         make_date(coalesce(l_aasta, year(current_date)), coalesce(l_kuu, month(current_date)), 1)))
@@ -93,9 +93,9 @@ FROM (
                          ON (l.properties::JSONB ->> 'tyyp')::INTEGER = t.id AND t.library = 'KOOLITUSE_TYYP'
 
 WHERE g.rekvid IN (SELECT rekv_id
-                   FROM get_asutuse_struktuur(l_rekvid))
-  AND l.status <> 3
-  AND t.status <> 3
+                   FROM public.get_asutuse_struktuur(l_rekvid))
+  AND coalesce(l.status,1) <> 3
+  AND coalesce(t.status,1) <> 3
     GROUP BY t.nimetus
     , r.nimetus ;
 
@@ -113,6 +113,6 @@ GRANT EXECUTE ON FUNCTION lapsed.kohaloleku_aruanne(INTEGER, INTEGER, INTEGER) T
 
 /*
 SELECT *
-FROM lapsed.kohaloleku_aruanne(101, 1, 2022)
+FROM lapsed.kohaloleku_aruanne(99, 1, 2022)
 
 */

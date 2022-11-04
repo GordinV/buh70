@@ -86,7 +86,7 @@ BEGIN
 
     IF is_import IS NULL AND userName IS NULL
     THEN
-        RAISE EXCEPTION 'Viga, kasutaja ei leidnud või puudub õigused %', user;
+        RAISE EXCEPTION 'Viga, kasutaja ei leidnud või puudub õigused (admin) %', user;
     END IF;
 
     IF (doc_id IS NULL)

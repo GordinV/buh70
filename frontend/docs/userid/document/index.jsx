@@ -84,6 +84,7 @@ class User extends React.PureComponent {
                                    value={self.docData.user || ''}
                                    onChange={self.handleInputChange}/>
                         <InputText title="Email parool: "
+                                   type={'password'}
                                    name='pass'
                                    ref="input-pass"
                                    readOnly={!self.state.edited}

@@ -6,7 +6,7 @@ $BODY$
 DECLARE
     viitenumber TEXT = viitenr;
 BEGIN
-    IF len(viitenr) < 10
+    IF public.len(viitenr) < 10
     THEN
         -- старый номер
         viitenumber = lapsed.get_viitenumber_from_old(viitenr);

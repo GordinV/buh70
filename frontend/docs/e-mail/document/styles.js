@@ -31,5 +31,11 @@ module.exports = {
         width:'100%',
         textAlign: 'right'
     },
+    notValid: {
+        backgroundColor:'yellow',
+        width:'100%',
+        textAlign: 'right'
+
+    },
 
 };

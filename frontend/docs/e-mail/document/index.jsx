@@ -28,7 +28,9 @@ class Email extends React.Component {
             context: null,
             attachment: null,
             warningType: null,
-            warning: null
+            warning: null,
+            warningStyle: '',
+
         };
 
         this.btnEmailClickHandler = this.btnEmailClickHandler.bind(this);
@@ -154,6 +156,9 @@ class Email extends React.Component {
             email: this.state.email,
             subject: this.state.subject
         };
+        this.setState({
+            warning: 'Email saadetakse ...',
+            warningType: 'notValid'});
 
         this.fetchData('Post', '/email/sendPrintForm', params).then((response) => {
             if (response.status === 200) {
@@ -166,10 +171,13 @@ class Email extends React.Component {
                     }, 10000);
                 });
             } else {
+                console.error('Error', response.data);
+
                 this.setState({
-                    warning: 'Tekkis viga, ' + response.error_message ? response.error_message : '',
+                    warning: 'Tekkis viga, ' + response.data.result.error_message  ? response.data.result.error_message : '',
                     warningType: 'error',
-                });
+                },()=> setTimeout(() => {
+                }, 10000));
             }
 
         }).catch(error => {

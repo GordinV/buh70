@@ -13,6 +13,7 @@ DECLARE
     l_result        INTEGER;
     l_last_id       INTEGER;
 BEGIN
+
     -- sequence name
     -- check if exists sequencetbl
     IF NOT EXISTS(
@@ -30,7 +31,7 @@ BEGIN
                     CASE WHEN l_dok = 'ARV' THEN ' and liik = 0' ELSE '' END;
             EXECUTE l_sql INTO l_number USING l_rekvid;
 
-            IF len(l_number) > 6
+            IF char_length(l_number) > 6
             THEN
                 l_number = '1';
             END IF;
@@ -39,29 +40,30 @@ BEGIN
         END IF;
 
         l_sql = 'CREATE SEQUENCE ' || l_sequence_name || ' AS integer;' ||
-                'GRANT ALL ON SEQUENCE ' || l_sequence_name || ' TO public;';
+                'GRANT ALL ON SEQUENCE public.' || l_sequence_name || ' TO public;';
 
         IF l_number IS NOT NULL AND l_number::INTEGER > 0
         THEN
             -- will store last value
-            l_sql = l_sql || 'select setval(' || quote_literal(l_sequence_name) || ',' || l_number || ');';
+            l_sql = l_sql || 'select setval(public.' || quote_literal(l_sequence_name) || ',' || l_number || ');';
 
         END IF;
+        raise notice 'l_sql %', l_sql;
 
         -- execute sequnce
         EXECUTE l_sql;
     ELSE
-        l_sql = 'GRANT ALL ON SEQUENCE ' || l_sequence_name || ' TO public;';
-
+--        l_sql = 'GRANT ALL ON SEQUENCE public.' || l_sequence_name || ' TO public;';
+        l_sql = '';
         IF l_number IS NOT NULL AND l_number::INTEGER > 0
         THEN
+            raise notice 'l_sql %', l_sql;
             -- will store last value
-            l_sql = l_sql || 'select setval(' || quote_literal(l_sequence_name) || ',0);';
-
+            l_sql = l_sql || 'select setval(public.' || quote_literal(l_sequence_name) || ',0);';
+            EXECUTE l_sql;
         END IF;
 
         -- execute sequnce
-        EXECUTE l_sql;
     END IF;
 
     -- return name of sequence

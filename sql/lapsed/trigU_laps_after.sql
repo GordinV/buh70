@@ -14,7 +14,7 @@ DECLARE
     json_differances JSONB;
     json_props       JSONB;
 BEGIN
-    json_differances = jsonb_diff(json_old::JSONB, json_new::JSONB);
+    json_differances = public.jsonb_diff(json_old::JSONB, json_new::JSONB);
     json_differances = json_differances - 'ajalugu';
     json_differances = json_differances - 'timestamp';
 

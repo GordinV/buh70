@@ -4,11 +4,11 @@ CREATE OR REPLACE FUNCTION lapsed.get_laps_from_viitenumber(IN viitenr TEXT, OUT
 AS
 $BODY$
 BEGIN
-    IF laps_id IS NULL AND exists(SELECT id FROM ou.rekv WHERE id = left(viitenr, 3)::INTEGER)
+    IF laps_id IS NULL AND exists(SELECT id FROM ou.rekv WHERE id = public.left(viitenr, 3)::INTEGER)
     THEN
         -- получим ид ребенка
         -- 0710055785
-        SELECT id INTO laps_id FROM lapsed.laps WHERE id = left(right(viitenr::TEXT, 7), 6)::INTEGER;
+        SELECT id INTO laps_id FROM lapsed.laps WHERE id = public.left(right(viitenr::TEXT, 7), 6)::INTEGER;
     END IF;
 
     IF laps_id IS NULL
@@ -33,5 +33,5 @@ GRANT EXECUTE ON FUNCTION lapsed.get_laps_from_viitenumber(TEXT) TO dbpeakasutaj
 GRANT EXECUTE ON FUNCTION lapsed.get_laps_from_viitenumber(TEXT) TO arvestaja;
 
 
-SELECT lapsed.get_laps_from_viitenumber('0630000412');
+SELECT lapsed.get_laps_from_viitenumber('0630000030');
 
