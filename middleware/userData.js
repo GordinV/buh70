@@ -24,7 +24,10 @@ const userData = async function (req, _uuid) {
     let sqlUser = {
         userId: null,
         asutusId: null,
-        kasutaja: null
+        kasutaja: null,
+        asutus: null,
+        asutus_tais: null,
+        regkood: null
     };
 
     if (userIndex < 0) {
@@ -34,6 +37,9 @@ const userData = async function (req, _uuid) {
             sqlUser.userId = uuidUser.data[0].userid;
             sqlUser.asutusId = uuidUser.data[0].asutusid;
             sqlUser.kasutaja = uuidUser.data[0].kasutaja;
+            sqlUser.asutus = uuidUser.data[0].asutus;
+            sqlUser.asutus_tais = uuidUser.data[0].taisnimetus;
+            sqlUser.regkood = uuidUser.data[0].regkood;
         }
 
         // logs
@@ -45,9 +51,9 @@ const userData = async function (req, _uuid) {
     const user = Object.assign({
         userId: userIndex > -1 ? req.session.users[userIndex].id : sqlUser.userId,
         userName: userIndex > -1 ? req.session.users[userIndex].ametnik : sqlUser.kasutaja,
-        asutus: userIndex > -1 ? req.session.users[userIndex].asutus : null,
-        asutusTais: userIndex > -1 ? req.session.users[userIndex].asutus_tais : null,
-        regkood: userIndex > -1 ? req.session.users[userIndex].regkood : null,
+        asutus: userIndex > -1 ? req.session.users[userIndex].asutus : sqlUser.asutus,
+        asutusTais: userIndex > -1 ? req.session.users[userIndex].asutus_tais : sqlUser.asutus_tais,
+        regkood: userIndex > -1 ? req.session.users[userIndex].regkood : sqlUser.regkood,
         asutusId: userIndex > -1 ? req.session.users[userIndex].rekvid : sqlUser.asutusId,
         lastLogin: userIndex > -1 ? req.session.users[userIndex].last_login : null,
         userAccessList: userIndex > -1 ? req.session.users[userIndex].userAllowedAsutused : [],

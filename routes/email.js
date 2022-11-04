@@ -539,6 +539,12 @@ exports.sendPrintForm = async (req, res) => {
 
         let data = id ? {...result.row, ...result} : result.data;
 
+        // усли указан конвертер, то отдаем данные туда на обработку
+        if (templateObject && templateObject.converter) {
+            data = templateObject.converter(data);
+        }
+
+
         // groups
         if (templateObject.group) {
             //преобразуем данные по группам

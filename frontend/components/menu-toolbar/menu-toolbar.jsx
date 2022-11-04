@@ -81,10 +81,17 @@ class MenuToolBar extends React.Component {
 
         }
 
-        let rekvId = this.state.rekvId,
-            asutus = userAccessList.find(row => {
-                return row.id == rekvId
-            }).name;
+        let asutus = '';
+        let rekvId = this.state.rekvId;
+        let asutus_obj = userAccessList.find(row => {
+            return row.id == rekvId
+        });
+
+        if (asutus_obj && asutus_obj.name) {
+            asutus = asutus_obj.name;
+        }
+
+
         return (
             <div style={style['container']}>
                 <p style={style['pageName']}> {DocContext.pageName ? DocContext.pageName : 'Laste register'} </p>
@@ -100,7 +107,7 @@ class MenuToolBar extends React.Component {
                              value={'Lapsed'}
                              docTypeId='LAPS'
                              image={'laps'}
-                            onClick={this.btnLinkClick}
+                             onClick={this.btnLinkClick}
                     />
 
                     <SelectRekv name='rekvId'
