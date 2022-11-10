@@ -47,8 +47,7 @@ module.exports = {
                            $2                                                                 AS user_id,
                            r.nimetus::TEXT                                                    AS asutus,
                            vn.vn                                                              AS vana_vn
-                    FROM lapsed.get_saldo_ja_kaive_from_cache($1::INTEGER,
-                                                              jsonb_build_object('kpv_start', $3::DATE, 'kpv_end', $4::DATE)) qryReport
+                    FROM lapsed.saldo_ja_kaive($1::INTEGER, $3::DATE, $4::DATE) qryReport
                              INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
                              LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                                               FROM lapsed.viitenr vn
