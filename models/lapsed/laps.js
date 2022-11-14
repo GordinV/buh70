@@ -90,6 +90,9 @@ module.exports = {
                                   gr.kood::TEXT                                                            AS yksuse_kood,
                                   k.properties ->> 'all_yksus'                                             AS all_yksus,
                                   CASE WHEN (n.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3,
+                                  CASE
+                                      WHEN (n.properties ->> 'kas_umberarvestus')::BOOLEAN THEN 'ÜMBERARVESTUS'
+                                      ELSE '' END                                                          AS umberarvestus,
                                   n.uhik,
                                   n.properties ->> 'tyyp'                                                  AS tyyp,
                                   to_char(coalesce((k.properties ->> 'alg_kpv')::DATE, date(year(), 1, 1)),
@@ -167,16 +170,17 @@ module.exports = {
             gridTeenusteConfig:
                 [
                     {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
-                    {id: 'yksuse_kood', name: 'Üksuse kood', width: '10%', show: true, type: 'text', readOnly: false},
-                    {id: 'yksus', name: 'Üksus', width: '10%', show: true, type: 'text', readOnly: false},
-                    {id: 'kood', name: 'Kood', width: '10%', show: true, type: 'text', readOnly: false},
+                    {id: 'yksuse_kood', name: 'Üksuse kood', width: '8%', show: true, type: 'text', readOnly: false},
+                    {id: 'yksus', name: 'Üksus', width: '8%', show: true, type: 'text', readOnly: false},
+                    {id: 'kood', name: 'Kood', width: '8%', show: true, type: 'text', readOnly: false},
                     {id: 'nimetus', name: 'Nimetus', width: '15%', show: true, type: 'text', readOnly: false},
                     {id: 'uhik', name: 'Ühik', width: '5%', show: true, type: 'text', readOnly: false},
-                    {id: 'hind', name: 'Hind', width: '10%', show: true, type: 'text', readOnly: false},
+                    {id: 'hind', name: 'Hind', width: '8%', show: true, type: 'text', readOnly: false},
                     {id: 'all_yksus', name: 'All üksus', width: '5%', show: false, type: 'text', readOnly: false},
                     {id: 'inf3', name: 'INF3', width: '5%', show: true, type: 'text', readOnly: false},
-                    {id: 'kehtivus', name: 'Period', width: '10%', show: true, type: 'text', readOnly: false},
-                    {id: 'soodustus', name: 'Soodustus', width: '10%', show: true, type: 'text', readOnly: false},
+                    {id: 'umberarvestus', name: 'Ümberarvestus', width: '10%', show: true, type: 'text', readOnly: false},
+                    {id: 'kehtivus', name: 'Period', width: '8%', show: true, type: 'text', readOnly: false},
+                    {id: 'soodustus', name: 'Soodustus', width: '5%', show: true, type: 'text', readOnly: false},
                     {id: 'soodustuste_period', name: 'Kehtiv', width: '5%', show: true, type: 'text', readOnly: false},
                     {id: 'kas_protsent', name: '%', width: '5%', show: true, type: 'text', readOnly: false},
                     {id: 'viitenr', name: 'Vana VN', width: '5%', show: true, type: 'text', readOnly: true},

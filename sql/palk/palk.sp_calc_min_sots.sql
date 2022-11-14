@@ -106,7 +106,23 @@ BEGIN
            FILTER (WHERE po.kood ILIKE '%HAIGUS%') AS sm_haigused,
            max(mk.sm_arv)                          AS sm_arv
     INTO v_po
-    FROM palk.cur_palkoper po
+    FROM (SELECT p.summa,
+                 p.sotsmaks,
+                 p.konto,
+                 p.kpv,
+                 p.tulubaas,
+                 lib.kood,
+                 (lib.properties :: JSONB ->> 'tululiik') :: TEXT                                           AS tululiik,
+                 p.period,
+                 (lib.properties :: JSONB ->> 'sots') :: BOOLEAN                                            AS is_sotsmaks,
+                 ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik,
+                 p.lepingid,
+                 p.id
+          FROM docs.doc d
+                   INNER JOIN palk.palk_oper p ON p.parentid = d.id
+                   INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
+                   INNER JOIN palk.tooleping t ON p.lepingid = t.id
+         ) po
              INNER JOIN palk.com_maksukood mk ON mk.kood = po.tululiik :: TEXT AND NOT empty(mk.sm_arv)
     WHERE po.palk_liik = 'ARVESTUSED'
       AND po.lepingid IN (SELECT id

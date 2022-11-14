@@ -73,6 +73,8 @@ BEGIN
         doc_number = docs.sp_get_number(user_rekvid, 'SMK', YEAR(doc_kpv), doc_doklausid);
     END IF;
 
+
+    raise notice 'doc_number %', doc_number;
 -- проверим расч. счет
     IF doc_aa_id IS NULL OR NOT exists(SELECT id
                                        FROM ou.aa
@@ -110,7 +112,6 @@ BEGIN
         VALUES (doc_typeId, '[]' :: JSONB || new_history, user_rekvid, 1);
         --RETURNING id             INTO doc_id;
         SELECT currval('docs.doc_id_seq') INTO doc_id;
-
 
         INSERT INTO docs.mk (parentid, rekvid, kpv, opt, aaId, number, muud, arvid, doklausid, maksepaev, selg, viitenr,
                              dokid)
@@ -238,7 +239,6 @@ BEGIN
             l_uus_tasu_summa = l_uus_tasu_summa + json_record.summa;
 
         END LOOP;
-
     -- правим сумму оплаты
     IF (kas_muudatus)
     THEN
@@ -271,24 +271,23 @@ BEGIN
     -- сальдо платежа
     l_jaak = docs.sp_update_mk_jaak(doc_id);
 
-
     IF doc_arvid IS NOT NULL AND doc_arvid > 0 AND l_jaak > 0
     THEN
+
         -- произведем оплату счета
         PERFORM docs.sp_tasu_arv(doc_id, doc_arvid, user_id);
-
     END IF;
 
-
     -- lapse module
-    IF doc_viitenr IS NOT NULL AND NOT empty(doc_viitenr) AND (doc_lapsid IS NULL OR empty(doc_lapsid))
+    IF doc_viitenr IS NOT NULL AND NOT char_length(doc_viitenr) > 0 AND (doc_lapsid IS NULL OR public.empty(doc_lapsid))
     THEN
+
         -- попробуем найти ребенка по ссылке
         doc_lapsid = lapsed.get_laps_from_viitenumber(doc_viitenr);
 
     END IF;
 
-    IF doc_lapsid IS NOT NULL AND NOT empty(doc_lapsid)
+    IF doc_lapsid IS NOT NULL AND NOT public.empty(doc_lapsid)
     THEN
         IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
         THEN

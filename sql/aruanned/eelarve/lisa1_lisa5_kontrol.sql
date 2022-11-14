@@ -133,7 +133,7 @@ WITH qryLisa1Lisa5 AS (
                 sum(kassa)              AS kassa,
                 sum(saldoandmik)        AS saldoandmik
          FROM qryLisa1Lisa5
-         WHERE NOT empty(tegev)
+         WHERE (NOT empty(tegev) OR idx = '3.1.099')
      ),
      qry_4 AS (
          SELECT '4'                     AS artikkel,
@@ -829,7 +829,7 @@ FROM (
                          0,
                          0,
                          0,
-                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END as saldoandmik
+                         CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN kr - db ELSE 0 END AS saldoandmik
                   FROM qrySaldoandmik
                   WHERE konto LIKE '3221%'
                     AND tp LIKE '185101%'
@@ -2749,8 +2749,8 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO
 
 
 SELECT *
-FROM eelarve.lisa1_lisa5_kontrol('2022-06-30'::DATE, 130, 0)
-where nimetus = 'PÕHITEGEVUSE KULUDE JA INVESTEERIMIS TEGEVUSE VÄLJAMINEKUTE JAOTUS TEGEVUSALADE JÄRGI'
+FROM eelarve.lisa1_lisa5_kontrol('2022-09-30'::DATE, 130, 0)
+WHERE nimetus = 'PÕHITEGEVUSE KULUDE JA INVESTEERIMIS TEGEVUSE VÄLJAMINEKUTE JAOTUS TEGEVUSALADE JÄRGI'
 ORDER BY idx, nimetus
 
 

@@ -82,8 +82,8 @@ BEGIN
     SELECT kinni INTO l_status
     FROM ou.aasta a
     WHERE rekvid = l_rekv_id
-      AND aasta = year(l_kpv)
-      AND kuu = month(l_kpv)
+      AND aasta = date_part('year',l_kpv)
+      AND kuu = date_part('month',l_kpv)
     LIMIT 1;
 
     IF l_status IS NULL OR l_status = 0

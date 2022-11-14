@@ -74,7 +74,6 @@ BEGIN
           AND (lk.properties ->> 'lopp_kpv' IS NULL OR (lk.properties ->> 'lopp_kpv')::DATE >= l_kpv)
           AND n.uhik IN ('paev', 'päev', 'PAEV', 'PÄEV')
         LOOP
-            RAISE NOTICE 'v_lapsed.nomid %, v_lapsed.lapsId  %, v_lapsed.kogus %', v_lapsed.nomid, v_lapsed.lapsId, v_lapsed.kogus;
             -- details
             SELECT 0               AS id,
                    v_lapsed.nomid  AS nom_id,

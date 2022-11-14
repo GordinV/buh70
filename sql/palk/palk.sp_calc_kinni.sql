@@ -42,7 +42,7 @@ BEGIN
                p.liik,
                l.round,
                NOT empty(p.percent_ :: INTEGER)
-               INTO l_pk_summa, l_asutusest, l_liik, l_round, is_percent
+        INTO l_pk_summa, l_asutusest, l_liik, l_round, is_percent
         FROM palk.com_palk_kaart p
                  INNER JOIN palk.com_palk_lib l ON p.libid = l.id
         WHERE p.lepingid = l_lepingid
@@ -62,8 +62,40 @@ BEGIN
                    sum(tootumaks) AS tki,
                    sum(tulumaks)  AS tm,
                    sum(pensmaks)  AS pm
-                   INTO v_tulemus
-            FROM palk.cur_palkoper po
+            INTO v_tulemus
+            FROM (SELECT p.summa,
+                         p.sotsmaks,
+                         p.tootumaks,
+                         p.tulumaks,
+                         p.pensmaks,
+                         p.konto,
+                         p.kpv,
+                         p.rekvid,
+                         p.libid,
+                         p.period,
+                         ((enum_range(NULL :: PALK_OPER_LIIK))[CASE ((lib.properties :: JSONB ->> 'liik') ||
+                                                                     (lib.properties :: JSONB ->> 'asutusest')) :: TEXT
+                                                                   WHEN '10'
+                                                                       THEN 1
+                                                                   WHEN '20'
+                                                                       THEN 2
+                                                                   WHEN '40'
+                                                                       THEN 2
+                                                                   WHEN '70'
+                                                                       THEN 2
+                                                                   WHEN '71'
+                                                                       THEN 3
+                                                                   WHEN '80'
+                                                                       THEN 2
+                                                                   WHEN '60'
+                                                                       THEN 2
+                                                                   ELSE 3 END]) :: VARCHAR(20) AS liik,
+                         p.lepingid
+                  FROM docs.doc d
+                           INNER JOIN palk.palk_oper p ON p.parentid = d.id
+                           INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
+                           INNER JOIN palk.tooleping t ON p.lepingid = t.id
+                 ) po
             WHERE po.lepingid = l_lepingid
               AND po.period IS NULL
               AND liik = '+'
@@ -106,8 +138,25 @@ BEGIN
         THEN
             -- kontrol kas on tulumaks avansimaksetest
 
-            SELECT sum(p.summa) INTO l_kulumaks
-            FROM palk.cur_palkoper p
+            SELECT sum(p.summa)
+            INTO l_kulumaks
+            FROM (SELECT p.summa,
+                         p.sotsmaks,
+                         p.tootumaks,
+                         p.tulumaks,
+                         p.pensmaks,
+                         p.konto,
+                         p.kpv,
+                         p.rekvid,
+                         p.libid,
+                         p.period,
+                         p.muud,
+                         p.lepingid
+                  FROM docs.doc d
+                           INNER JOIN palk.palk_oper p ON p.parentid = d.id
+                           INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
+                           INNER JOIN palk.tooleping t ON p.lepingid = t.id
+                 ) p
             WHERE p.lepingId = l_lepingid
               AND YEAR(p.kpv) = YEAR(l_kpv)
               AND MONTH(p.kpv) = MONTH(l_kpv)

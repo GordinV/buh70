@@ -35,7 +35,6 @@ DECLARE
     )), FALSE);
 
 BEGIN
-
     -- 1 (ативный. Права согласно роли)
     -- 2 (закрыт, права на просмотр, на редактирование прав нет, удаление у peakasutaja)
     -- 3 (удален, права на просмотр только у peakasutaja)
@@ -100,7 +99,7 @@ BEGIN
                          ) ROW;
                 END IF;
 
-        WHEN new.status = array_position((enum_range(NULL :: DOK_STATUS)), 'active')
+        WHEN new.status = array_position((enum_range(NULL :: public.DOK_STATUS)), 'active')
             THEN
                 SELECT row_to_json(row) INTO doc_rigths
                 FROM (SELECT array(SELECT id
@@ -163,7 +162,7 @@ BEGIN
 
                 END IF;
 
-        WHEN new.status = array_position((enum_range(NULL :: DOK_STATUS)), 'closed')
+        WHEN new.status = array_position((enum_range(NULL :: public.DOK_STATUS)), 'closed')
             THEN -- closed
                 SELECT row_to_json(row) INTO doc_rigths
                 FROM (SELECT ARRAY [0]                        AS "update",
@@ -196,7 +195,7 @@ BEGIN
 
                 END IF;
 
-        WHEN new.status = array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
+        WHEN new.status = array_position((enum_range(NULL :: public.DOK_STATUS)), 'deleted')
             THEN -- deleted
                 SELECT row_to_json(row) INTO doc_rigths
                 FROM (SELECT ARRAY [0]                     AS "update",
@@ -242,6 +241,7 @@ BEGIN
         END CASE;
 
     new.rigths = doc_rigths;
+
     RETURN new;
 
 END;

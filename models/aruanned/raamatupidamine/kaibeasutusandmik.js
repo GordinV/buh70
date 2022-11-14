@@ -21,11 +21,11 @@ module.exports = {
                            coalesce(a.nimetus, '')::VARCHAR(254)      AS asutus,
                            coalesce(a.tp, '')::VARCHAR(20)            AS tp
                     FROM docs.kaibeasutusandmik($1::TEXT, $2::INTEGER, $3::DATE, $4::DATE, $5::INTEGER, $6::TEXT,
-                                                $7::INTEGER) qry
+                                                $7::INTEGER, $8::jsonb) qry
                              LEFT OUTER JOIN com_asutused a ON a.id = qry.asutus_id
                              INNER JOIN com_kontoplaan l ON l.kood = qry.konto
                     WHERE (qry.alg_saldo <> 0 OR qry.deebet <> 0 OR qry.kreedit <> 0)
-                    ORDER BY a.nimetus, qry.konto`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- kpv2, $5 rekvid (svod), $6 tunnus, $7 kond
+                    ORDER BY a.nimetus, qry.konto`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- kpv2, $5 rekvid (svod), $6 tunnus, $7 kond, $8 params
         params: '',
         alias: 'kaibeasutusandmik_report'
     }

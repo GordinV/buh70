@@ -1,9 +1,9 @@
-DROP VIEW IF EXISTS cur_mk;
+/*DROP VIEW IF EXISTS cur_mk;
 DROP VIEW IF EXISTS cur_pank;
-
-ALTER TABLE ou.aa
+*/
+/*ALTER TABLE ou.aa
     ALTER COLUMN arve TYPE character (24) COLLATE pg_catalog."default";
-
+*/
 CREATE OR REPLACE VIEW cur_pank AS
 SELECT d.id,
        Mk.rekvid,
@@ -34,7 +34,9 @@ FROM docs.doc d
          LEFT OUTER JOIN libs.Asutus a ON mk1.asutusId = a.ID
          LEFT OUTER JOIN libs.Nomenklatuur n ON mk1.nomid = n.id
          LEFT OUTER JOIN ou.Aa aa ON Mk.aaid = Aa.id
-         LEFT OUTER JOIN docs.Journalid jid ON Mk1.journalid = Jid.journalid;
+         LEFT OUTER JOIN docs.Journalid jid ON Mk1.journalid = Jid.journalid
+WHERE d.status <> 3
+    AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood IN ('SMK', 'VMK'));
 
 GRANT SELECT ON TABLE cur_pank TO dbkasutaja;
 GRANT SELECT ON TABLE cur_pank TO dbvaatleja;

@@ -269,8 +269,7 @@ class LapseKaart extends React.PureComponent {
 
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
-
-                        <Select title="Kood:"
+                        <Select title={"Kood" + (self.docData.kas_umberarvestus ? '(Ümberarvestus)':'') + ":"}
                                 name='nomid'
                                 libs="nomenclature"
                                 data={nomData}

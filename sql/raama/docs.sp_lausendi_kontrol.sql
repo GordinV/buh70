@@ -43,7 +43,7 @@ BEGIN
     END IF;
 
 -- kontrollin oma TP
-    IF l_oma_tp IS NOT NULL AND NOT empty(l_oma_tp) AND (l_tp_d = l_oma_tp OR l_tp_k = l_oma_tp)
+    IF l_oma_tp IS NOT NULL AND NOT (char_length (l_oma_tp) = 0) AND (l_tp_d = l_oma_tp OR l_tp_k = l_oma_tp)
     THEN
         lcMsg1 = ' TP kood on vale, ei saa kasutada tehingus oma TP kood ';
         IF (left(l_oma_tp, 6) = '185101' OR l_oma_tp = '185130') AND (left(l_db, 1) = '7' OR left(l_kr, 1) = '7')
@@ -62,14 +62,14 @@ BEGIN
 
     -- Tp kontoll
 
-    IF left(ltrim(rtrim(l_tp_d)), 4) = '1851' AND len(ltrim(rtrim(l_tp_d))) = 6
+    IF left(ltrim(rtrim(l_tp_d)), 4) = '1851' AND char_length (ltrim(rtrim(l_tp_d))) = 6
     THEN
         lcMsg1 = 'TP-D Ei saa kasuta vana kohalik TP koodid';
         l_msg = l_msg + lcMsg1;
 
     END IF;
 
-    IF left(ltrim(rtrim(l_tp_k)), 4) = '1851' AND len(ltrim(rtrim(l_tp_k))) = 6
+    IF left(ltrim(rtrim(l_tp_k)), 4) = '1851' AND char_length (ltrim(rtrim(l_tp_k))) = 6
     THEN
         lcMsg1 = 'TP-K Ei saa kasuta vana kohalik TP koodid';
         l_msg = l_msg + lcMsg1;
@@ -80,9 +80,9 @@ BEGIN
 
 
     SELECT l.tun5 AS valid INTO v_lib FROM libs.library l WHERE kood = l_tp_k AND library = 'TP' LIMIT 1;
-    IF v_lib IS NOT NULL AND v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
-        AND l_kpv > make_date(val(left(v_lib.valid::TEXT, 4)), val(substr(v_lib.valid::TEXT, 5, 2)),
-                              val(substr(v_lib.valid::TEXT, 7, 2)))
+    IF v_lib IS NOT NULL AND v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
+        AND l_kpv > make_date((left(v_lib.valid::TEXT, 4))::integer, (substr(v_lib.valid::TEXT, 5, 2))::integer,
+                              (substr(v_lib.valid::TEXT, 7, 2))::integer)
     THEN
         lcMsg1 = 'TP-K,Ei saa kasuta, sest TP kood ei ole kehtiv';
         l_msg = l_msg + lcMsg1;
@@ -91,9 +91,9 @@ BEGIN
     -- D
     SELECT l.tun5 AS valid, l.kood INTO v_lib FROM libs.library l WHERE kood = l_tp_d AND library = 'TP' LIMIT 1;
 
-    IF v_lib IS NOT NULL AND v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
-        AND l_kpv > make_date(val(left(v_lib.valid::TEXT, 4)), val(substr(v_lib.valid::TEXT, 5, 2)),
-                              val(substr(v_lib.valid::TEXT, 7, 2)))
+    IF v_lib IS NOT NULL AND v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
+        AND l_kpv > make_date((left(v_lib.valid::TEXT, 4))::integer, (substr(v_lib.valid::TEXT, 5, 2))::integer,
+                              (substr(v_lib.valid::TEXT, 7, 2))::integer)
     THEN
         lcMsg1 = 'TP-D,Ei saa kasuta, sest TP kood ei ole kehtiv';
         l_msg = l_msg + lcMsg1;
@@ -117,10 +117,10 @@ BEGIN
       AND status <> 3
     LIMIT 1;
 
-    IF v_konto_d.valid IS NOT NULL AND len(v_konto_d.valid::TEXT) = 8 AND NOT empty(v_konto_d.valid::TEXT)
+    IF v_konto_d.valid IS NOT NULL AND char_length (v_konto_d.valid::TEXT) = 8 AND NOT public.empty(v_konto_d.valid::TEXT)
     THEN
-        ldKpv = make_date(val(left(v_konto_d.valid::TEXT, 4)), val(substr(v_konto_d.valid::TEXT, 5, 2)),
-                          val(substr(v_konto_d.valid::TEXT, 7, 2)));
+        ldKpv = make_date((left(v_konto_d.valid::TEXT, 4))::integer, (substr(v_konto_d.valid::TEXT, 5, 2))::integer,
+                          (substr(v_konto_d.valid::TEXT, 7, 2))::integer);
 
         IF l_kpv > ldKpv
         THEN
@@ -147,10 +147,10 @@ BEGIN
       AND status <> 3
     LIMIT 1;
 
-    IF v_konto_k.valid IS NOT NULL AND NOT empty(v_konto_k.valid) AND len(v_konto_k.valid::TEXT) = 8
+    IF v_konto_k.valid IS NOT NULL AND NOT public.empty(v_konto_k.valid) AND char_length (v_konto_k.valid::TEXT) = 8
     THEN
-        ldKpv = date(val(left(v_konto_k.valid::TEXT, 4)), val(substr(v_konto_k.valid::TEXT, 5, 2)),
-                     val(substr(v_konto_k.valid, 7, 2)));
+        ldKpv = date((left(v_konto_k.valid::TEXT, 4))::integer, (substr(v_konto_k.valid::TEXT, 5, 2))::integer,
+                     (substr(v_konto_k.valid, 7, 2))::integer);
         IF l_kpv > ldKpv
         THEN
             l_msg = l_msg + 'Konto K, Ei saa kasuta, sest kood ei ole kehtiv';
@@ -160,20 +160,20 @@ BEGIN
     -- deebet
 
 
-    IF v_konto_d.kood IS NULL OR empty(l_db) OR len(l_db) < 6
+    IF v_konto_d.kood IS NULL OR NOT char_length (l_db) > 0 OR char_length(l_db) < 6
     THEN
         l_msg = l_msg + ' Deebet konto: puudub või vale konto (' || l_db || ')' ;
     END IF;
 
-    IF v_konto_d.tp::TEXT = '1' AND empty(l_tp_d)
+    IF v_konto_d.tp::TEXT = '1' AND char_length(l_tp_d) = 0
     THEN
         lnTPD = 1;
     END IF;
 
 
-    IF v_konto_d.tegev::TEXT = '1' AND (empty(l_tt) OR empty(l_eelarve))
+    IF v_konto_d.tegev::TEXT = '1' AND (public.empty(l_tt) OR public.empty(l_eelarve))
     THEN
-        IF NOT empty(l_tt)
+        IF NOT public.empty(l_tt)
         THEN
             lnTT = 0;
         END IF;
@@ -185,16 +185,16 @@ BEGIN
     END IF;
 
     -- kontrollin 'RE' (только для отчетов)
-    if not empty(l_allikas) and l_allikas = 'RE' then
+    if not public.empty(l_allikas) and l_allikas = 'RE' then
         l_msg = l_msg + ' Ei saa kasutada allikas RE';
     END IF;
 
-    IF v_konto_d.allikas::TEXT = '1' AND (empty(l_allikas) OR isdigit(l_allikas) = 0)
+    IF v_konto_d.allikas::TEXT = '1' AND (public.empty(l_allikas) OR public.isdigit(l_allikas) = 0)
     THEN
         lnAllikas = 1;
     END IF;
 
-    IF v_konto_d.rahavoog::TEXT = '1' AND empty(l_rahavoog)
+    IF v_konto_d.rahavoog::TEXT = '1' AND public.empty(l_rahavoog)
     THEN
         lnRahavoog = 1;
     END IF;
@@ -207,7 +207,7 @@ BEGIN
             l_msg = l_msg + ' Ei saa kasutada see (' || l_tp_d || ') TP kood ';
         END IF;
 
-        IF l_oma_tp IS NOT NULL AND NOT empty(l_oma_tp) AND left(l_tp_d, 4) <> left(l_oma_tp, 4)
+        IF l_oma_tp IS NOT NULL AND NOT public.empty(l_oma_tp) AND left(l_tp_d, 4) <> left(l_oma_tp, 4)
         THEN
             l_msg = l_msg +
                     ' Ei saa kasutada see TP kood: saab siirdeid kajastada ainult nende TP koodidega, mille esimesed 4 numbrit on samad ';
@@ -215,7 +215,7 @@ BEGIN
     END IF;
 
 
-    IF NOT empty(v_konto_d.muud) AND v_konto_d.muud = '*'
+    IF NOT public.empty(v_konto_d.muud) AND v_konto_d.muud = '*'
     THEN
         IF l_rahavoog <> '01'
         THEN
@@ -286,7 +286,7 @@ BEGIN
             l_msg = l_msg + ' Ei saa kasutada see RV kood ';
         END IF;
 
-        IF (left(l_db, 4) = '1032' OR left(l_db, 4) = '1532') AND NOT empty(l_rahavoog) AND
+        IF (left(l_db, 4) = '1032' OR left(l_db, 4) = '1532') AND NOT public.empty(l_rahavoog) AND
            (l_rahavoog <> '01' AND l_rahavoog <> '02' AND l_rahavoog <> '23' AND l_rahavoog <> '02' AND
             l_rahavoog <> '21')
         THEN
@@ -297,15 +297,15 @@ BEGIN
 
     -- Kreedit
 
-    IF v_konto_k.kood IS NULL OR empty(l_kr) OR len(l_kr) < 6
+    IF v_konto_k.kood IS NULL OR public.empty(l_kr) OR char_length (l_kr) < 6
     THEN
         l_msg = l_msg + ' Kreedit konto: puudub või vale konto ';
     END IF;
 
 
-    IF v_konto_k.tegev IS NOT NULL AND v_konto_k.tegev::TEXT = '1' AND (empty(l_tt) OR empty(l_eelarve)) AND lnTT = 0
+    IF v_konto_k.tegev IS NOT NULL AND v_konto_k.tegev::TEXT = '1' AND (public.empty(l_tt) OR public.empty(l_eelarve)) AND lnTT = 0
     THEN
-        IF NOT empty(l_tt)
+        IF NOT public.empty(l_tt)
         THEN
             lnTT = 0;
         END IF;
@@ -318,12 +318,12 @@ BEGIN
     END IF;
 
     IF v_konto_k.allikas IS NOT NULL AND v_konto_k.allikas::TEXT = '1' AND
-       (empty(l_allikas) OR isdigit(l_allikas) = 0) AND lnAllikas = 0
+       (public.empty(l_allikas) OR public.isdigit(l_allikas) = 0) AND lnAllikas = 0
     THEN
         lnAllikas = 1;
     END IF;
 
-    IF v_konto_k.rahavoog IS NOT NULL AND v_konto_k.rahavoog::TEXT = '1' AND empty(l_rahavoog) AND lnRahavoog = 0
+    IF v_konto_k.rahavoog IS NOT NULL AND v_konto_k.rahavoog::TEXT = '1' AND public.empty(l_rahavoog) AND lnRahavoog = 0
     THEN
         lnRahavoog = 1;
     END IF;
@@ -335,7 +335,7 @@ BEGIN
             l_msg = l_msg + ' Ei saa kasutada see TP kood ';
         END IF;
 
-        IF NOT empty(l_oma_tp) AND left(l_tp_k, 4) <> left(l_oma_tp, 4)
+        IF NOT public.empty(l_oma_tp) AND left(l_tp_k, 4) <> left(l_oma_tp, 4)
         THEN
             l_msg = l_msg +
                     ' Ei saa kasutada see TP kood: saab siirdeid kajastada ainult nende TP koodidega, mille esimesed 4 numbrit on samad ';
@@ -344,7 +344,7 @@ BEGIN
     END IF;
 
 
-    IF NOT empty(v_konto_k.muud) AND v_konto_k.muud = '*'
+    IF NOT public.empty(v_konto_k.muud) AND v_konto_k.muud = '*'
     THEN
         IF l_rahavoog <> '01'
         THEN
@@ -433,7 +433,7 @@ BEGIN
 -- kontrollin RV 01 + TP
     IF l_kr = '253800'
     THEN
-        IF l_rahavoog = '01' AND empty(l_tp_k)
+        IF l_rahavoog = '01' AND public.empty(l_tp_k)
         THEN
             lnTPK = 1;
         ELSE
@@ -515,7 +515,7 @@ BEGIN
       AND l.status <> 3
     LIMIT 1;
 
-    IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
+    IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
         IF l_kpv > v_lib.valid
         THEN
@@ -533,7 +533,7 @@ BEGIN
       AND l.status <> 3
     LIMIT 1;
 
-    IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
+    IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
         IF l_kpv > v_lib.valid
         THEN
@@ -551,7 +551,7 @@ BEGIN
       AND l.status <> 3
     LIMIT 1;
 
-    IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
+    IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
         IF l_kpv > v_lib.valid
         THEN
@@ -569,7 +569,7 @@ BEGIN
       AND l.status <> 3
     LIMIT 1;
 
-    IF v_lib.valid IS NOT NULL AND NOT empty(v_lib.valid)
+    IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
         IF l_kpv > v_lib.valid
         THEN
@@ -578,7 +578,7 @@ BEGIN
     END IF;
 
 
-    IF NOT empty(l_msg::TEXT)
+    IF NOT public.empty(l_msg::TEXT)
     THEN
         l_msg = 'Viga Db:' || coalesce(l_db::TEXT, '') || ' ' || 'Kr:' || coalesce(l_kr::TEXT, '') ||
                 ' puudub eelarve koodid: ' || l_msg;
@@ -594,7 +594,7 @@ $BODY$
 GRANT EXECUTE ON FUNCTION docs.sp_lausendikontrol(params JSONB) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_lausendikontrol(params JSONB) TO dbpeakasutaja;
 
-
+/*
 SELECT docs.sp_lausendikontrol('{
   "db": "601000",
   "tpd": "014001",
@@ -605,4 +605,4 @@ SELECT docs.sp_lausendikontrol('{
   "rahavoog": "15",
   "eelarve": "155",
   "tt": "09110 "
-}'::JSONB);
+}'::JSONB);*/

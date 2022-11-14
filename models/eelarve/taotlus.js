@@ -31,6 +31,9 @@ module.exports = {
                      (SELECT sum(summa_kassa)
                       FROM eelarve.taotlus1 t1
                       WHERE t1.parentid = t.id)::NUMERIC(12, 2)                                    AS summa_kassa,
+                     (SELECT sum(oodatav_taitmine)
+                      FROM eelarve.taotlus1 t1
+                      WHERE t1.parentid = t.id)::NUMERIC(12, 2)                                    AS oodatav_taitmine,
                      (to_json($2::INTEGER)::JSONB <@ (d.rigths ->> 'EelKoostaja')::JSONB)::BOOLEAN AS is_koostaja,
                      (to_json($2::INTEGER)::JSONB <@
                       (d.rigths ->> 'EelAktsepterja')::JSONB)::BOOLEAN                             AS is_aktsepterja,
@@ -76,7 +79,8 @@ module.exports = {
                           0 :: INTEGER                                                             AS tunnus,
                           NULL :: VARCHAR(120)                                                     AS esitaja,
                           NULL::VARCHAR(120)                                                       AS aktseptja,
-                          0::NUMERIC(12, 2)                                                        AS summa
+                          0::NUMERIC(12, 2)                                                        AS summa,
+                          0::NUMERIC(12, 2)                                                        AS oodatav_taitmine
                    FROM libs.library l,
                         libs.library s,
                         ou.userid u
@@ -115,7 +119,7 @@ module.exports = {
                        INNER JOIN eelarve.taotlus t ON t.id = t1.parentid
                        LEFT OUTER JOIN com_artikkel a ON a.kood = t1.kood5
               WHERE t.parentid = $1
-              ORDER BY kood1, kood2, kood5`,
+              ORDER BY kood1, kood2, kood5, tunnus, proj`,
         query: null,
         multiple: true,
         alias: 'details',
@@ -185,7 +189,7 @@ module.exports = {
                            koostajaid,
                            aktseptid,
                            kpv,
-                           number,
+                           number::INTEGER,
                            aasta,
                            kuu,
                            t.status AS status,
@@ -195,6 +199,7 @@ module.exports = {
                            kood3,
                            kood4,
                            kood5,
+                           proj,
                            tunnus,
                            summa,
                            summa_kassa,

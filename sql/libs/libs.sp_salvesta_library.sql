@@ -8,24 +8,26 @@ CREATE OR REPLACE FUNCTION libs.sp_salvesta_library(data JSON,
 $BODY$
 
 DECLARE
-    lib_id         INTEGER;
-    userName       TEXT;
-    doc_id         INTEGER = data ->> 'id';
-    doc_data       JSON    = data ->> 'data';
-    doc_kood       TEXT    = doc_data ->> 'kood';
-    doc_nimetus    TEXT    = doc_data ->> 'nimetus';
-    doc_library    TEXT    = doc_data ->> 'library';
-    doc_tun1       INTEGER = doc_data ->> 'tun1'; --liik
-    doc_tun2       INTEGER = doc_data ->> 'tun2'; -- tegev
-    doc_tun3       INTEGER = doc_data ->> 'tun3'; -- allikas
-    doc_tun4       INTEGER = doc_data ->> 'tun4'; -- rahavoog
-    doc_tun5       INTEGER = doc_data ->> 'tun5';
-    doc_muud       TEXT    = doc_data ->> 'muud';
-    doc_valid      DATE    = CASE WHEN empty(doc_data ->> 'valid') THEN NULL::DATE ELSE (doc_data ->> 'valid')::DATE END;
-    is_import      BOOLEAN = data ->> 'import';
-    v_doc          RECORD;
-    is_peakasutaja BOOLEAN = FALSE;
-    json_object    JSON;
+    lib_id            INTEGER;
+    userName          TEXT;
+    doc_id            INTEGER = data ->> 'id';
+    doc_data          JSON    = data ->> 'data';
+    doc_kood          TEXT    = doc_data ->> 'kood';
+    doc_nimetus       TEXT    = doc_data ->> 'nimetus';
+    doc_library       TEXT    = doc_data ->> 'library';
+    doc_tun1          INTEGER = doc_data ->> 'tun1'; --liik
+    doc_tun2          INTEGER = doc_data ->> 'tun2'; -- tegev
+    doc_tun3          INTEGER = doc_data ->> 'tun3'; -- allikas
+    doc_tun4          INTEGER = doc_data ->> 'tun4'; -- rahavoog
+    doc_tun5          INTEGER = doc_data ->> 'tun5';
+    doc_muud          TEXT    = doc_data ->> 'muud';
+    doc_valid         DATE    = CASE
+                                    WHEN empty(doc_data ->> 'valid') THEN NULL::DATE
+                                    ELSE (doc_data ->> 'valid')::DATE END;
+    is_import         BOOLEAN = data ->> 'import';
+    v_doc             RECORD;
+    is_peakasutaja    BOOLEAN = FALSE;
+    json_object       JSON;
 
 BEGIN
 
@@ -37,7 +39,7 @@ BEGIN
 
     SELECT kasutaja,
            (u.roles ->> 'is_peakasutaja')::BOOLEAN AS is_peakasutaja
-           INTO userName, is_peakasutaja
+    INTO userName, is_peakasutaja
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -55,7 +57,8 @@ BEGIN
         RETURN 0;
     END IF;
 
-    SELECT row_to_json(row) INTO json_object
+    SELECT row_to_json(row)
+    INTO json_object
     FROM (SELECT doc_valid AS valid) row;
 
 

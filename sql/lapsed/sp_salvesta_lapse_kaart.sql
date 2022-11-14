@@ -178,6 +178,8 @@ BEGIN
                 AND lk.rekvid = user_rekvid
                 AND lk.nomid = doc_nomid
                 AND lk.properties ->> 'yksus' = doc_yksus
+-- различаются по срокам
+                and (lk.properties->>'lopp_kpv')::date > doc_alg_kpv
                 AND lk.id <> coalesce(doc_id, 0)
                 AND lk.staatus < 3
         )

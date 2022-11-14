@@ -224,6 +224,15 @@ class Nomenclature extends React.PureComponent {
                                       readOnly={!isEditeMode}
                             />
                         </div>
+                        <div style={styles.docColumn}>
+                            <CheckBox title="Kas ümberarvestus?"
+                                      name='kas_umberarvestus'
+                                      value={Boolean(self.docData.kas_umberarvestus)}
+                                      ref={'checkbox_kas_umberarvestus'}
+                                      onChange={self.handleInputChange}
+                                      readOnly={!isEditeMode}
+                            />
+                        </div>
                     </div>
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>

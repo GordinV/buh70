@@ -6,7 +6,7 @@ $BODY$
 
 BEGIN
     IF NOT exists(
-            SELECT a.id FROM ou.aasta a WHERE a.kuu = month(l_kpv) AND a.aasta = year(l_kpv) AND a.rekvid = l_rekvid)
+            SELECT a.id FROM ou.aasta a WHERE a.kuu = date_part('month',l_kpv) AND a.aasta = date_part('year',l_kpv) AND a.rekvid = l_rekvid)
     THEN
         INSERT INTO ou.aasta (rekvid, "aasta", kuu, kinni)
         VALUES (l_rekvid, year(l_kpv), month(l_kpv), 0);
@@ -15,8 +15,8 @@ BEGIN
     IF exists(
             SELECT a.id
             FROM ou.aasta a
-            WHERE a.kuu = month(l_kpv)
-              AND a.aasta = year(l_kpv)
+            WHERE a.kuu = date_part('month',l_kpv)
+              AND a.aasta = date_part('year',l_kpv)
               AND a.rekvid = l_rekvid
               AND a.kinni = 1)
     THEN

@@ -65,7 +65,7 @@ BEGIN
         END IF;
     */
     -- поиск удаленной записи
-    IF doc_id IS NULL OR doc_id = 0
+/*    IF doc_id IS NULL OR doc_id = 0
     THEN
         SELECT id,
                staatus
@@ -91,7 +91,7 @@ BEGIN
         END IF;
 
     END IF;
-
+*/
     json_props = to_jsonb(row)
                  FROM (SELECT doc_kulastused AS kulastused,
                               doc_kovid      AS kovid,

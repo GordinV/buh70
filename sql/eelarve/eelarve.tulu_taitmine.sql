@@ -27,8 +27,16 @@ WITH qryKontod AS (
     WHERE l.library = 'KONTOD'
       AND L.status <> 3
       AND l.kood NOT IN ('381010')
-)
-
+),
+     rekv_ids AS (
+         SELECT rekv_id
+         FROM get_asutuse_struktuur(l_rekvid)
+         WHERE rekv_id = CASE
+                             WHEN l_kond = 1
+                                 -- kond
+                                 THEN rekv_id
+                             ELSE l_rekvid END
+     )
 SELECT rekvid              AS rekv_id,
        sum(summa)          AS summa,
        tegev,
@@ -71,12 +79,7 @@ FROM (
 
                WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
                  AND coalesce(a.kpv, j.kpv) <= l_kpv2
-                 AND j.rekvid IN (SELECT rekv_id
-                                  FROM get_asutuse_struktuur(l_rekvid))
-                 AND j.rekvid = CASE
-                                    WHEN l_kond
-                                        > 0 THEN j.rekvid
-                                    ELSE l_rekvid END
+                 AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
                  --строка art 1532 в доходах может быть только с rahavoog 02, соответственно с rahavoog 23  быть не далжно
                  AND (CASE WHEN j1.kood5 = '1532' AND j1.kood3 = '23' THEN FALSE ELSE TRUE END)
                  AND d.status <> 3
@@ -119,12 +122,7 @@ FROM (
 
                WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
                  AND coalesce(a.kpv, j.kpv) <= l_kpv2
-                 AND j.rekvid IN (SELECT rekv_id
-                                  FROM get_asutuse_struktuur(l_rekvid))
-                 AND j.rekvid = CASE
-                                    WHEN l_kond
-                                        > 0 THEN j.rekvid
-                                    ELSE l_rekvid END
+                 AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
                  --строка art 1532 в доходах может быть только с rahavoog 02, соответственно с rahavoog 23  быть не далжно
                  AND (CASE WHEN j1.kood5 = '1532' AND j1.kood3 = '23' THEN FALSE ELSE TRUE END)
                  AND d.status <> 3
@@ -153,7 +151,7 @@ GRANT EXECUTE ON FUNCTION eelarve.tulu_taitmine( DATE,DATE, INTEGER, INTEGER ) T
 /*
 
 SELECT sum(summa) over(),*
-FROM eelarve.tulu_taitmine('2021-01-01', '2021-12-31', 130, 0)
+FROM eelarve.tulu_taitmine('2022-01-01', '2022-12-31', 63, 1)
 where artikkel like '3823%'
 and allikas = '80'
 and tegev = '01112'

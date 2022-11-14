@@ -68,6 +68,7 @@ block content
                         th Laekumised
                         th Mahakantud
                         th Tagastatud
+                        th Ümberarv.
                         th Võlg
 
                 tbody
@@ -84,6 +85,7 @@ block content
                             td=rea.laekumised
                             td=rea.mahakantud
                             td=rea.tagastatud
+                            td=rea.umberarvestus
                             td=rea.jaak
                     tr.group
                         td.group=Object.keys(asutus)[0] + ' Read kokku:'
@@ -97,5 +99,6 @@ block content
                         td.group=asutus[Object.keys(asutus)[0]][0].laekumised_group
                         td.group=asutus[Object.keys(asutus)[0]][0].mahakantud_group
                         td.group=asutus[Object.keys(asutus)[0]][0].tagastatud_group
+                        td.group=asutus[Object.keys(asutus)[0]][0].umberarvestus_group
                         td.group=asutus[Object.keys(asutus)[0]][0].jaak_group
 

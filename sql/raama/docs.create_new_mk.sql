@@ -75,7 +75,7 @@ BEGIN
     END IF;
 
     -- viitenr
-    IF l_viitenr IS NULL AND v_arv.viitenr IS NOT NULL AND NOT empty(v_arv.viitenr)
+    IF l_viitenr IS NULL AND v_arv.viitenr IS NOT NULL AND NOT public.empty(v_arv.viitenr)
     THEN
         l_viitenr = v_arv.viitenr;
     END IF;

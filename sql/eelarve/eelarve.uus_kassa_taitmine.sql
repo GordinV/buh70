@@ -1,7 +1,7 @@
 DROP FUNCTION IF EXISTS eelarve.uus_kassa_taitmine(DATE, DATE, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION eelarve.uus_kassa_taitmine(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER,
-                                                      l_kond INTEGER)
+                                                       l_kond INTEGER)
     RETURNS TABLE (
         rekv_id  INTEGER,
         summa    NUMERIC(14, 2),
@@ -34,8 +34,16 @@ WITH qryKontodKulud AS (
               ON ((ltrim(rtrim((l.kood) :: TEXT)) ~~ ltrim(rtrim((kassakontod.kood) :: TEXT))))
          WHERE l.library = 'KONTOD'
            AND L.status <> 3
+     ),
+     rekv_ids AS (
+         SELECT rekv_id
+         FROM get_asutuse_struktuur(l_rekvid)
+         WHERE rekv_id = CASE
+                             WHEN l_kond = 1
+                                 -- kond
+                                 THEN rekv_id
+                             ELSE l_rekvid END
      )
-
 SELECT rekvid              AS rekv_id,
        sum(summa)          AS summa,
        tegev,
@@ -50,7 +58,7 @@ SELECT rekvid              AS rekv_id,
 FROM (
 
          -- расход
-         SELECT summa                         AS summa,
+         SELECT (summa)                       AS summa,
                 j1.kood1::TEXT                AS tegev,
                 j1.kood2::TEXT                AS allikas,
                 j1.kood3::TEXT                AS rahavoog,
@@ -58,7 +66,7 @@ FROM (
                 j1.tunnus::TEXT,
                 j.rekvid,
                 TRUE                          AS kas_kulud,
-                d.id                          AS docs_ids,
+                (d.id)                        AS docs_ids,
                 month(coalesce(a.kpv, j.kpv)) AS kuu,
                 year(coalesce(a.kpv, j.kpv))  AS aasta
          FROM docs.doc D
@@ -70,15 +78,13 @@ FROM (
                   LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
          WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
            AND coalesce(a.kpv, j.kpv) <= l_kpv2
-           AND j.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
-           AND j.rekvid = CASE
-                              WHEN l_kond
-                                  > 0 THEN j.rekvid
-                              ELSE l_rekvid END
+           AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+/*         GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood5, j1.tunnus, j.rekvid, month(coalesce(a.kpv, j.kpv)),
+                  year(coalesce(a.kpv, j.kpv))
+*/
          UNION ALL
          -- востановление расходов
-         SELECT DISTINCT -1 * j1.summa                 AS summa,
+         SELECT DISTINCT (-1 * j1.summa)            AS summa,
                          j1.kood1::TEXT                AS tegev,
                          j1.kood2::TEXT                AS allikas,
                          j1.kood3::TEXT                AS rahavoog,
@@ -86,7 +92,7 @@ FROM (
                          j1.tunnus::TEXT,
                          j.rekvid,
                          TRUE                          AS kas_kulud,
-                         d.id                          AS docs_ids,
+                         (d.id)               AS docs_ids,
                          month(coalesce(a.kpv, j.kpv)) AS kuu,
                          year(coalesce(a.kpv, j.kpv))  AS aasta
          FROM docs.doc D
@@ -100,12 +106,10 @@ FROM (
 
          WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
            AND coalesce(a.kpv, j.kpv) <= l_kpv2
-           AND j.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
-           AND j.rekvid = CASE
-                              WHEN l_kond
-                                  > 0 THEN j.rekvid
-                              ELSE l_rekvid END
+           AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+/*         GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood5, j1.tunnus, j.rekvid, month(coalesce(a.kpv, j.kpv)),
+                  year(coalesce(a.kpv, j.kpv))
+*/
 /*         UNION ALL
          -- доходы
          SELECT summa          AS summa,

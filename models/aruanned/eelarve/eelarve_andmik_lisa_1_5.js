@@ -37,14 +37,7 @@ module.exports = {
                       AND kassa <> 0
                   )
                   OR
-                  COALESCE
-                  (
-                  selg
-                  ,
-                  ''
-                  )
-                  =
-                  'test'`,
+                  COALESCE(selg,'') ='test'`,
             query: null,
             multiple: true,
             alias: 'kontrol_pohitegevuse_tulud',

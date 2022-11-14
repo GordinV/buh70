@@ -234,6 +234,9 @@ BEGIN
 
                     -- вызов процедура расчета
 
+
+                    raise notice 'l_function %, $1 %, $2 %, current_time  %', l_function, $1,$2, current_time  ;
+
                     EXECUTE 'select * from ' || l_function || '($1, $2)'
                         INTO STRICT tulemus
                         USING user_id, l_params;

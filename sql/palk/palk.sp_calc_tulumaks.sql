@@ -59,7 +59,22 @@ BEGIN
                sum(po.summa)
                    FILTER (WHERE lepingid = l_lepingid) AS tulud
                INTO l_kasutatud_mvt_summa, summa, l_alus_summa
-        FROM palk.cur_palkoper po
+        FROM (SELECT p.summa,
+                     p.sotsmaks,
+                     p.tulubaas,
+                     p.tulumaks,
+                     p.konto,
+                     p.kpv,
+                     p.rekvid,
+                     p.libid,
+                     p.period,
+                     ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik,
+                     p.lepingid
+              FROM docs.doc d
+                       INNER JOIN palk.palk_oper p ON p.parentid = d.id
+                       INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
+                       INNER JOIN palk.tooleping t ON p.lepingid = t.id
+             ) po
         WHERE po.kpv = l_kpv
           AND po.rekvid = v_tooleping.rekvid
           AND po.palk_liik = 'ARVESTUSED'

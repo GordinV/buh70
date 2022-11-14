@@ -4,8 +4,8 @@ module.exports = {
             {id: "period", name: "Period", width: "5%", show: false, type: "date", interval: true},
             {id: "kulastatavus", name: "Külastatavus", width: "5%", show: true},
             {id: "yksus", name: "Rühm", width: "7%", show: true},
-            {id: "lapse_nimi", name: "Lapse nimi", width: "10%"},
-            {id: "lapse_isikukood", name: "Lapse isikukood", width: "0%", show: false},
+            {id: "lapse_nimi", name: "Lapse nimi", width: "7%"},
+            {id: "lapse_isikukood", name: "Lapse IK", width: "0%", show: false},
             {id: "viitenumber", name: "Viitenumber", width: "7%", show: true},
             {id: "vana_vn", name: "Vana VN", width: "5%"},
             {id: "alg_saldo", name: "Alg.saldo", width: "5%", type: "number", interval: true},
@@ -15,11 +15,13 @@ module.exports = {
             {id: "laekumised", name: "Laekumised", width: "5%", type: "number", interval: true},
             {id: "mahakantud", name: "Mahakantud", width: "5%", type: "number", interval: true},
             {id: "tagastused", name: "Tagastused", width: "5%", type: "number", interval: true},
+            {id: "umberarvestus", name: "Ümberarv.", width: "5%", type: "number", interval: true},
             {id: "jaak", name: "Võlg", width: "5%", type: "number", interval: true},
-            {id: "asutus", name: "Asutus", width: "10%"},
+            {id: "asutus", name: "Asutus", width: "8%"},
         ],
         sqlString: `SELECT sum(qryReport.alg_saldo) OVER (PARTITION BY rekvid)                AS alg_saldo_group,
                            sum(qryReport.arvestatud) OVER (PARTITION BY rekvid)               AS arvestatud_group,
+                           sum(qryReport.umberarvestus) OVER (PARTITION BY rekvid)            AS umberarvestus_group,
                            sum(qryReport.soodustus) OVER (PARTITION BY rekvid)                AS soodustus_group,
                            sum(qryReport.laekumised) OVER (PARTITION BY rekvid)               AS laekumised_group,
                            sum(qryReport.mahakantud) OVER (PARTITION BY rekvid)               AS mahakantud_group,
@@ -37,6 +39,7 @@ module.exports = {
                            viitenumber,
                            coalesce(alg_saldo, 0)::NUMERIC(14, 2)                             AS alg_saldo,
                            coalesce(arvestatud, 0)::NUMERIC(14, 2)                            AS arvestatud,
+                           coalesce(umberarvestus, 0)::NUMERIC(14, 2)                         AS umberarvestus,
                            coalesce(soodustus, 0)::NUMERIC(14, 2)                             AS soodustus,
                            coalesce(laekumised, 0)::NUMERIC(14, 2)                            AS laekumised,
                            coalesce(mahakantud, 0)::NUMERIC(14, 2)                            AS mahakantud,
@@ -63,6 +66,7 @@ module.exports = {
         notReloadWithoutParameters: true,
         totals: ` sum(alg_saldo) over() as alg_saldo_total,
                 sum(arvestatud) over() as arvestatud_total,
+                sum(umberarvestus) over() as umberarvestus_total,
                 sum(soodustus) over() as soodustus_total, 
                 sum(arvestatud - soodustus) over() as arv_ja_soodustus_total, 
                 sum(laekumised) over() as laekumised_total,
@@ -79,6 +83,7 @@ module.exports = {
             converter: function (data) {
                 let alg_saldo_kokku = 0;
                 let arvestatud_kokku = 0;
+                let umberarvestus_kokku = 0;
                 let soodustus_kokku = 0;
                 let laekumised_kokku = 0;
                 let mahakantud_kokku = 0;
@@ -88,6 +93,7 @@ module.exports = {
                 data.forEach(row => {
                     alg_saldo_kokku = Number(alg_saldo_kokku) + Number(row.alg_saldo);
                     arvestatud_kokku = Number(arvestatud_kokku) + Number(row.arvestatud);
+                    umberarvestus_kokku = Number(umberarvestus_kokku) + Number(row.umberarvestus);
                     soodustus_kokku = Number(soodustus_kokku) + Number(row.soodustus);
                     laekumised_kokku = Number(laekumised_kokku) + Number(row.laekumised);
                     mahakantud_kokku = Number(mahakantud_kokku) + Number(row.mahakantud);
@@ -98,6 +104,7 @@ module.exports = {
                     row_id++;
                     row.alg_saldo_kokku = alg_saldo_kokku;
                     row.arvestatud_kokku = arvestatud_kokku;
+                    row.umberarvestus_kokku = umberarvestus_kokku;
                     row.soodustus_kokku = soodustus_kokku;
                     row.laekumised_kokku = laekumised_kokku;
                     row.mahakantud_kokku = mahakantud_kokku;

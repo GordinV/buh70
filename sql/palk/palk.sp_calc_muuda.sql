@@ -40,11 +40,11 @@ BEGIN
                p.liik,
                l.round,
                NOT empty(p.percent_ :: INTEGER)
-               INTO l_pk_summa, l_asutusest, l_liik, l_round, is_percent
+        INTO l_pk_summa, l_asutusest, l_liik, l_round, is_percent
         FROM palk.com_palk_kaart p
                  INNER JOIN palk.com_palk_lib l ON p.libid = l.id
-            WHERE p.lepingid = l_lepingid
-                 AND p.libId = l_libId;
+        WHERE p.lepingid = l_lepingid
+          AND p.libId = l_libId;
 
     END IF;
 
@@ -55,11 +55,43 @@ BEGIN
             SELECT sum(coalesce(tka, 0))       AS tka,
                    sum(coalesce(tootumaks, 0)) AS tki,
                    sum(coalesce(pensmaks, 0))  AS pm
-                   INTO v_tulemus
-            FROM palk.cur_palkoper po
-                WHERE lepingid = l_lepingid
-                     AND kpv = l_kpv
-                     AND liik = '+';
+            INTO v_tulemus
+            FROM (SELECT p.summa,
+                         p.tka,
+                         p.tootumaks,
+                         p.pensmaks,
+                         p.sotsmaks,
+                         p.konto,
+                         p.kpv,
+                         p.tulubaas,
+                         p.period,
+                         p.lepingid,
+                         p.id,
+                         ((enum_range(NULL :: PALK_OPER_LIIK))[CASE ((lib.properties :: JSONB ->> 'liik') ||
+                                                                     (lib.properties :: JSONB ->> 'asutusest')) :: TEXT
+                                                                   WHEN '10'
+                                                                       THEN 1
+                                                                   WHEN '20'
+                                                                       THEN 2
+                                                                   WHEN '40'
+                                                                       THEN 2
+                                                                   WHEN '70'
+                                                                       THEN 2
+                                                                   WHEN '71'
+                                                                       THEN 3
+                                                                   WHEN '80'
+                                                                       THEN 2
+                                                                   WHEN '60'
+                                                                       THEN 2
+                                                                   ELSE 3 END]) :: VARCHAR(20) AS liik
+                  FROM docs.doc d
+                           INNER JOIN palk.palk_oper p ON p.parentid = d.id
+                           INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
+                           INNER JOIN palk.tooleping t ON p.lepingid = t.id
+                 ) po
+            WHERE lepingid = l_lepingid
+              AND kpv = l_kpv
+              AND liik = '+';
             CASE
                 WHEN l_liik = array_position((enum_range(NULL :: PALK_LIIK)), 'TÖÖTUSKINDLUSTUSMAKS')
                     AND empty(l_asutusest)

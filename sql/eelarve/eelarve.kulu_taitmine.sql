@@ -26,8 +26,16 @@ WITH qryKontod AS (
                         ON ((ltrim(rtrim((l.kood) :: TEXT)) ~~ ltrim(rtrim((kulud.kood) :: TEXT))))
     WHERE l.library = 'KONTOD'
       AND L.status <> 3
-)
-
+),
+     rekv_ids AS (
+         SELECT rekv_id
+         FROM get_asutuse_struktuur(l_rekvid)
+         WHERE rekv_id = CASE
+                             WHEN l_kond = 1
+                                 -- kond
+                                 THEN rekv_id
+                             ELSE l_rekvid END
+     )
 SELECT rekvid              AS rekv_id,
        sum(summa)          AS summa,
        tegev,
@@ -59,12 +67,7 @@ FROM (
                   INNER JOIN qryKontod k ON k.kood = j1.deebet
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
-           AND j.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
-           AND j.rekvid = CASE
-                              WHEN l_kond
-                                  > 0 THEN j.rekvid
-                              ELSE l_rekvid END
+           AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
          UNION ALL
          -- востановление
          SELECT -1 *
@@ -90,12 +93,7 @@ FROM (
 
          WHERE j.kpv >= l_kpv1
            AND j.kpv <= l_kpv2
-           AND j.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
-           AND j.rekvid = CASE
-                              WHEN l_kond
-                                  > 0 THEN j.rekvid
-                              ELSE l_rekvid END
+           AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
      ) qry
 WHERE NOT empty(artikkel)
   AND summa <> 0
@@ -115,7 +113,7 @@ GRANT EXECUTE ON FUNCTION eelarve.kulu_taitmine( DATE,DATE, INTEGER, INTEGER ) T
 /*
 
 SELECT *
-FROM eelarve.kulu_taitmine('2021-01-01', '2021-12-31', 130, 0)
+FROM eelarve.kulu_taitmine('2022-01-01', '2022-12-31', 63, 1)
 where artikkel like '15%'
 
  SELECT l.kood, l.tun5 AS tyyp

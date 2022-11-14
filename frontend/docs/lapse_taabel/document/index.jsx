@@ -203,11 +203,10 @@ class Laps extends React.PureComponent {
                                      readOnly={true}/>
 
                         <CheckBox title="Kas ümberarvestus?"
-                                  name='umberarvestus'
-                                  value={Boolean(self.docData.umberarvestus)}
+                                  name='kas_umberarvestus'
+                                  value={Boolean(self.docData.kas_umberarvestus)}
                                   ref={'checkbox_kas_umberarvestus'}
-                                  onChange={self.handleInputChange}
-                                  readOnly={!isEditMode}
+                                  readOnly={true}
                         />
 
                         <InputNumber ref="input-kuu"

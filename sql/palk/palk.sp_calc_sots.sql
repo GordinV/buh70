@@ -93,7 +93,20 @@ BEGIN
                    sum(po.sotsmaks) FILTER ( WHERE po.palk_liik :: TEXT = 'ARVESTUSED' AND po.is_sotsmaks AND
                                                    right(rtrim(po.konto), 2) NOT IN ('21', '23', '24', '25'))
             INTO l_enne_arvestatud_sotsmaks, l_min_sotsmaks_alus, l_enne_arvestatud_sotsmaks_palgast
-            FROM palk.cur_palkoper po
+            FROM (
+                     SELECT p.summa,
+                            p.sotsmaks,
+                            p.konto,
+                            p.kpv,
+                            p.period,
+                            (lib.properties :: JSONB ->> 'sots') :: BOOLEAN                                            AS is_sotsmaks,
+                            ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik,
+                            p.lepingid
+                     FROM docs.doc d
+                              INNER JOIN palk.palk_oper p ON p.parentid = d.id
+                              INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
+                              INNER JOIN palk.tooleping t ON p.lepingid = t.id
+                 ) po
             WHERE year(po.kpv) = year(l_kpv)
               AND month(po.kpv) = month(l_kpv)
               AND po.period IS NULL
@@ -223,7 +236,21 @@ BEGIN
             SELECT sum(po.sotsmaks) AS sotsmaks,
                    sum(po.summa)
             INTO summa, l_alus_summa
-            FROM palk.cur_palkoper po
+            FROM (SELECT p.summa,
+                         p.sotsmaks,
+                         p.konto,
+                         p.kpv,
+                         p.rekvid,
+                         p.libid,
+                         p.period,
+                         (lib.properties :: JSONB ->> 'sots') :: BOOLEAN                                            AS is_sotsmaks,
+                         ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik,
+                         p.lepingid
+                  FROM docs.doc d
+                           INNER JOIN palk.palk_oper p ON p.parentid = d.id
+                           INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
+                           INNER JOIN palk.tooleping t ON p.lepingid = t.id
+                 ) po
                      INNER JOIN libs.library l ON l.id = po.libid
             WHERE po.kpv = l_kpv
               AND po.rekvid = v_tooleping.rekvId

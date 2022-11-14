@@ -55,10 +55,10 @@ BEGIN
     PERFORM lapsed.sp_delete_lapse_taabel(user_id, t.id)
     FROM lapsed.lapse_taabel t
     WHERE t.parentid = l_laps_id
-      AND kuu = month(l_kpv)
-      AND aasta = year(l_kpv)
+      AND kuu = date_part('month',l_kpv)::integer
+      AND aasta = date_part('year',l_kpv)::integer
       AND rekvid = l_rekvid
-      AND NOT umberarvestus
+--      AND NOT umberarvestus
       AND staatus < 2;
 
     -- делаем выборку услуг, не предоплатных
@@ -263,6 +263,8 @@ BEGIN
 
             v_kaart.soodustus = v_kaart.soodustus * v_kaart.sooduse_kehtivus;
 
+            raise notice 'l_taabel_id %, l_status %', l_taabel_id, l_status;
+
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN
                 json_object = NULL;
@@ -349,9 +351,9 @@ GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arves
 
 /*
 -- 19201
-select lapsed.arvesta_taabel(28, 6762,'2022-10-31')
+select lapsed.arvesta_taabel(70, 5573,'2022-09-30')
 
-select * from lapsed.lapsed_taabel where rekvid = 69
+select * from lapsed.lapsed_taabel where rekvid = 6
 
 ыудусе * акщь
 

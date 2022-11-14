@@ -215,6 +215,16 @@ BEGIN
         status     = DOC_STATUS
     WHERE id = doc_id;
 
+
+    -- проверка и удаление из hooldekodu
+    IF exists(SELECT 1 FROM pg_class WHERE relname = 'hootehingud') AND
+       exists(SELECT id FROM hooldekodu.hootehingud ht WHERE ht.journalid = doc_id AND status < 3)
+    THEN
+        PERFORM (SELECT hooldekodu.sp_delete_hootehing(user_id, id)
+                 FROM hooldekodu.hootehingud ht
+                 WHERE journalid = doc_id);
+    END IF;
+
     result = 1;
     RETURN;
 END;

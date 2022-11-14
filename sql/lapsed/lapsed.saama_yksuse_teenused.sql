@@ -54,6 +54,8 @@ BEGIN
             WHERE parentid = l_id
               AND nomid = v_kaart.nom_id
               AND coalesce(lk.properties ->> 'yksus', '') = v_kaart.yksus
+-- различаются по срокам
+              and (lk.properties->>'lopp_kpv')::date > l_alates
               AND lk.staatus <> 3
               AND lk.rekvid = l_rekvid
             LIMIT 1;

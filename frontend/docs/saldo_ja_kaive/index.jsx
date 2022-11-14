@@ -31,6 +31,7 @@ class Documents extends React.PureComponent {
         this.state = {
             alg_saldo: 0,
             arvestatud: 0,
+            umberarvestus: 0,
             soodustus: 0,
             laekumised: 0,
             mahakantud: 0,
@@ -101,6 +102,12 @@ class Documents extends React.PureComponent {
                              ref="input-tagastused"
                              value={Number(this.state.tagastused) || 0}
                              disabled={true}/>
+                <InputNumber title="Ümberarvestus kokku:"
+                             name='umberarvestus_kokku'
+                             style={styles.total}
+                             ref="input-umberarvestus"
+                             value={Number(this.state.umberarvestus) || 0}
+                             disabled={true}/>
                 <InputNumber title="Jääk kokku:"
                              name='jaak_kokku'
                              style={styles.total}
@@ -118,6 +125,7 @@ class Documents extends React.PureComponent {
             this.setState({
                 alg_saldo: 0,
                 arvestatud: 0,
+                umberarvestus: 0,
                 soodustus: 0,
                 arv_ja_soodustus: 0,
                 laekumised: 0,
@@ -132,6 +140,7 @@ class Documents extends React.PureComponent {
 
         let alg_saldo = self.gridData ? self.gridData[0].alg_saldo_total : 0;
         let arvestatud = self.gridData ? self.gridData[0].arvestatud_total : 0;
+        let umberarvestus = self.gridData ? self.gridData[0].umberarvestus_total : 0;
         let soodustus = self.gridData ? self.gridData[0].soodustus_total : 0;
         let arv_ja_soodustus = self.gridData ? self.gridData[0].arv_ja_soodustus_total : 0;
         let laekumised = self.gridData ? self.gridData[0].laekumised_total : 0;
@@ -146,6 +155,7 @@ class Documents extends React.PureComponent {
         this.setState({
             alg_saldo: alg_saldo,
             arvestatud: arvestatud,
+            umberarvestus: umberarvestus,
             soodustus: soodustus,
             arv_ja_soodustus: arv_ja_soodustus,
             laekumised: laekumised,

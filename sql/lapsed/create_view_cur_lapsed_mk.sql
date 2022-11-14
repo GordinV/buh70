@@ -2,6 +2,7 @@ DROP VIEW IF EXISTS lapsed.cur_lapsed_mk;
 DROP VIEW IF EXISTS lapsed.cur_lapsed_mk_;
 
 CREATE OR REPLACE VIEW lapsed.cur_lapsed_mk AS
+
 SELECT d.id,
        Mk.rekvid,
        mk.arvid,
@@ -42,7 +43,7 @@ FROM docs.doc d
       FROM (
                SELECT parentid,
                       rekvid,
-                      (get_unique_value_from_json(json_agg((k.properties ->> 'yksus')::TEXT)::JSONB)) AS yksused
+                      (public.get_unique_value_from_json(json_agg((k.properties ->> 'yksus')::TEXT)::JSONB)) AS yksused
                FROM lapsed.lapse_kaart k
                WHERE k.staatus <> 3
 --                 AND (k.properties ->> 'lopp_kpv')::DATE >= '2021-01-01'
@@ -52,7 +53,10 @@ FROM docs.doc d
      ) yksus ON yksus.parentid = l.id AND yksus.rekvid = mk.rekvid
          LEFT OUTER JOIN libs.Nomenklatuur n ON mk1.nomid = n.id
          LEFT OUTER JOIN ou.Aa aa ON Mk.aaid = Aa.id
-         LEFT OUTER JOIN docs.Journalid jid ON Mk1.journalid = Jid.journalid;
+         LEFT OUTER JOIN docs.Journalid jid ON Mk1.journalid = Jid.journalid
+WHERE d.status <> 3
+  AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood IN ('SMK', 'VMK'))
+;
 
 GRANT SELECT ON TABLE lapsed.cur_lapsed_mk TO arvestaja;
 GRANT SELECT ON TABLE lapsed.cur_lapsed_mk TO dbkasutaja;
@@ -61,5 +65,5 @@ GRANT SELECT ON TABLE lapsed.cur_lapsed_mk TO dbpeakasutaja;
 
 /*
  select * from lapsed.cur_lapsed_mk
- where rekvid = 99
+ where rekvid = 95
  */

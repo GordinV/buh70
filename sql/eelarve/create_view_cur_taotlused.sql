@@ -18,6 +18,7 @@ SELECT d.id,
        coalesce(t1.kood4, '')::VARCHAR(20)  AS kood4,
        coalesce(t1.kood5, '')::VARCHAR(20)  AS kood5,
        coalesce(t1.tunnus, '')::VARCHAR(20) AS tunnus,
+       coalesce(t1.proj, '')::VARCHAR(20)   AS proj,
        t1.summa,
        t1.summa_kassa,
        t1.oodatav_taitmine,
@@ -25,14 +26,16 @@ SELECT d.id,
        Rekv.regkood,
        Rekv.nimetus,
        Userid.ametnik,
-       t1.selg as rea_selg,
-       t.muud as dok_mark
+       t1.selg                              AS rea_selg,
+       t.muud                               AS dok_mark
 FROM docs.doc d
          INNER JOIN eelarve.taotlus t ON d.id = t.parentid
          INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
          INNER JOIN ou.rekv rekv ON t.rekvid = Rekv.id
          LEFT OUTER JOIN ou.userid userid ON t.koostajaid = Userid.id
-WHERE d.status <> 3;
+WHERE d.status <> 3
+  AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood = 'TAOTLUS')
+;
 
 GRANT SELECT ON TABLE cur_taotlused TO dbpeakasutaja;
 GRANT ALL ON TABLE cur_taotlused TO dbadmin;

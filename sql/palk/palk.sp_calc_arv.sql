@@ -338,7 +338,22 @@ BEGIN
                    sum(po.summa)                                           AS tulud_kokku,
                    array_agg(po.id)
             INTO l_isiku_mvt, l_kasutatud_mvt, l_tulud_kokku, doc_ids
-            FROM palk.cur_palkoper po
+            FROM (SELECT p.summa,
+                         p.sotsmaks,
+                         p.konto,
+                         p.kpv,
+                         p.tulubaas,
+                         (lib.properties :: JSONB ->> 'tululiik') :: TEXT                                           AS tululiik,
+                         p.period,
+                         (lib.properties :: JSONB ->> 'sots') :: BOOLEAN                                            AS is_sotsmaks,
+                         ((enum_range(NULL :: PALK_LIIK))[(lib.properties :: JSONB ->> 'liik') :: INTEGER]) :: TEXT AS palk_liik,
+                         p.lepingid,
+                         p.id
+                  FROM docs.doc d
+                           INNER JOIN palk.palk_oper p ON p.parentid = d.id
+                           INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
+                           INNER JOIN palk.tooleping t ON p.lepingid = t.id
+                 ) po
                      INNER JOIN palk.com_toolepingud t ON t.id = po.lepingId
             WHERE t.parentid = l_isik_id
               AND (l_rekvid IS NULL OR t.rekvid = l_rekvid)

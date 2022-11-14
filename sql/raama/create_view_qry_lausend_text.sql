@@ -26,8 +26,9 @@ GRANT SELECT ON TABLE qry_lausend_text TO dbkasutaja;
 GRANT SELECT ON TABLE qry_lausend_text TO dbvaatleja;
 GRANT SELECT ON TABLE qry_lausend_text TO dbpeakasutaja;
 
-
+/*
 SELECT *
 FROM qry_lausend_text
 ORDER BY id DESC
 LIMIT 100
+*/

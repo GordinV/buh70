@@ -2,7 +2,7 @@
 DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaibeandmik(l_rekvid INTEGER,
-                                                       kpv_start DATE DEFAULT date(year(current_date), 1, 1),
+                                                       kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
                                                        kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
         id         BIGINT,
@@ -19,7 +19,13 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaibeandmik(l_rekvid INTEGER,
     )
 AS
 $BODY$
-
+WITH rekv_ids AS (
+    SELECT rekv_id
+    FROM public.get_asutuse_struktuur(l_rekvid)
+),
+     docs_types AS (
+         SELECT id, kood FROM libs.library WHERE library.library = 'DOK' AND kood IN ('SMK', 'VMK', 'ARV')
+     )
 SELECT count(*) OVER (PARTITION BY report.rekv_id) AS id,
        kpv_start::DATE                             AS period,
        r.nimetus                                   AS asutus,
@@ -36,69 +42,42 @@ FROM (
              SELECT rekv_id, sum(db) AS alg_db, sum(kr) AS alg_kr
              FROM (
                       -- laekumised
-                      SELECT 0                                     AS db,
-                             (mk.deebet - coalesce(laek.summa, 0)) AS kr,
-                             mk.rekvid                             AS rekv_id
-                      FROM lapsed.cur_lapsed_mk mk
-                               LEFT OUTER JOIN (SELECT sum(summa) summa, at.doc_tasu_id
-                                                FROM docs.arvtasu at
-                                                WHERE at.status < 3
-                                                  AND at.kpv < kpv_start
-                                                  AND AT.pankkassa <> 3 -- списания отдельно
-                                                  AND at.doc_arv_id NOT IN (SELECT a.parentid
-                                                                            FROM docs.arv a
-                                                                            WHERE a.rekvid IN (SELECT rekv_id
-                                                                                               FROM get_asutuse_struktuur(l_rekvid))
-                                                                              AND a.properties ->> 'tyyp' IS NOT NULL
-                                                                              AND a.properties ->> 'tyyp' = 'ETTEMAKS'
-                                                )
-                                                GROUP BY doc_tasu_id) laek
-                                               ON laek.doc_tasu_id = mk.id
-                      WHERE mk.rekvid IN (SELECT rekv_id
-                                          FROM get_asutuse_struktuur(l_rekvid))
+                      SELECT 0         AS db,
+                             mk1.summa AS kr,
+                             mk.rekvid AS rekv_id
+                      FROM docs.doc d
+                               INNER JOIN docs.mk mk ON d.id = mk.parentid
+                               INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
+                               INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+                      WHERE d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                        AND d.status < 3
+                        AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                         AND mk.opt = 2
                       UNION ALL
                       -- tagastused
-                      SELECT 0                                           AS db,
-                             -1 * (mk.kreedit - coalesce(laek.summa, 0)) AS kr,
-                             mk.rekvid                                   AS rekv_id
-                      FROM lapsed.cur_lapsed_mk mk
-                               LEFT OUTER JOIN (SELECT sum(summa) summa, at.doc_tasu_id
-                                                FROM docs.arvtasu at
-                                                WHERE at.status < 3
-                                                  AND at.kpv < kpv_start
-                                                  AND AT.pankkassa <> 3 -- списания отдельно
-                                                  AND at.doc_arv_id NOT IN (SELECT a.parentid
-                                                                            FROM docs.arv a
-                                                                            WHERE a.rekvid IN (SELECT rekv_id
-                                                                                               FROM get_asutuse_struktuur(l_rekvid))
-                                                                              AND a.properties ->> 'tyyp' IS NOT NULL
-                                                                              AND a.properties ->> 'tyyp' = 'ETTEMAKS'
-                                                )
-                                                GROUP BY doc_tasu_id) laek
-                                               ON laek.doc_tasu_id = mk.id
-                      WHERE mk.rekvid IN (SELECT rekv_id
-                                          FROM get_asutuse_struktuur(l_rekvid))
+                      SELECT 0              AS db,
+                             -1 * mk1.summa AS kr,
+                             mk.rekvid      AS rekv_id
+                      FROM docs.doc d
+                               INNER JOIN docs.mk mk ON d.id = mk.parentid
+                               INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
+                               INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+                      WHERE d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                        AND d.status < 3
+                        AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                         AND mk.opt = 1
                       UNION ALL
-                      SELECT (a.summa - coalesce(laek.summa, 0)) AS db,
-                             0                                   AS kr,
-                             d.rekvid                            AS rekv_id
+                      SELECT a.summa  AS db,
+                             0        AS kr,
+                             d.rekvid AS rekv_id
                       FROM docs.doc d
                                INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
                                INNER JOIN docs.arv a ON a.parentid = d.id AND a.liik = 0 -- только счета исходящие
-                               LEFT OUTER JOIN (SELECT sum(summa) summa, doc_arv_id
-                                                FROM docs.arvtasu at
-                                                WHERE at.status < 3
-                                                  AND at.kpv < kpv_start
-                                                  AND AT.pankkassa <> 3 -- списания отдельно
-                                                GROUP BY doc_arv_id) laek
-                                               ON laek.doc_arv_id = d.id
                       WHERE coalesce((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
-                        AND d.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekvid))
+                        AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                        AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
                         AND a.liik = 0 -- только счета исходящие
                         AND a.kpv < kpv_start
                         AND d.status < 3
@@ -112,8 +91,7 @@ FROM (
                                INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
 
                       WHERE a.pankkassa = 3 -- только проводки
-                        AND a.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur(l_rekvid))
+                        AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
                         AND a.kpv < kpv_start
                         AND arv.liik = 0
                         AND a.status <> 3
@@ -138,15 +116,13 @@ FROM (
                                                        AND AT.pankkassa <> 3 -- списания отдельно
                                                        AND at.doc_arv_id NOT IN (SELECT a.parentid
                                                                                  FROM docs.arv a
-                                                                                 WHERE a.rekvid IN (SELECT rekv_id
-                                                                                                    FROM get_asutuse_struktuur(l_rekvid))
+                                                                                 WHERE a.rekvid IN (SELECT rekv_id FROM rekv_ids)
                                                                                    AND a.properties ->> 'tyyp' IS NOT NULL
                                                                                    AND a.properties ->> 'tyyp' = 'ETTEMAKS'
                                                      )
                                                      GROUP BY doc_tasu_id) laek
                                                     ON laek.doc_tasu_id = mk.id
-                           WHERE mk.rekvid IN (SELECT rekv_id
-                                               FROM get_asutuse_struktuur(l_rekvid))
+                           WHERE mk.rekvid IN (SELECT rekv_id FROM rekv_ids)
                              AND mk.maksepaev <= kpv_end
                              AND mk.opt = 2
                            UNION ALL
@@ -162,15 +138,13 @@ FROM (
                                                        AND AT.pankkassa <> 3 -- списания отдельно
                                                        AND at.doc_arv_id NOT IN (SELECT a.parentid
                                                                                  FROM docs.arv a
-                                                                                 WHERE a.rekvid IN (SELECT rekv_id
-                                                                                                    FROM get_asutuse_struktuur(l_rekvid))
+                                                                                 WHERE a.rekvid IN (SELECT rekv_id FROM rekv_ids)
                                                                                    AND a.properties ->> 'tyyp' IS NOT NULL
                                                                                    AND a.properties ->> 'tyyp' = 'ETTEMAKS'
                                                      )
                                                      GROUP BY doc_tasu_id) laek
                                                     ON laek.doc_tasu_id = mk.id
-                           WHERE mk.rekvid IN (SELECT rekv_id
-                                               FROM get_asutuse_struktuur(l_rekvid))
+                           WHERE mk.rekvid IN (SELECT rekv_id FROM rekv_ids)
                              AND mk.maksepaev <= kpv_end
                              AND mk.opt = 1
                            UNION ALL
@@ -188,8 +162,8 @@ FROM (
                                                      GROUP BY doc_arv_id) laek
                                                     ON laek.doc_arv_id = d.id
                            WHERE coalesce((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
-                             AND d.rekvid IN (SELECT rekv_id
-                                              FROM get_asutuse_struktuur(l_rekvid))
+                             AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                             AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
                              AND a.liik = 0 -- только счета исходящие
                              AND a.kpv <= kpv_end
                              AND d.status < 3
@@ -203,8 +177,7 @@ FROM (
                                     INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
 
                            WHERE a.pankkassa = 3 -- только проводки
-                             AND a.rekvid IN (SELECT rekv_id
-                                              FROM get_asutuse_struktuur(l_rekvid))
+                             AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
                              AND a.kpv <= kpv_end
                              AND arv.liik = 0
                              AND a.status <> 3
@@ -223,8 +196,7 @@ FROM (
                            INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
                   WHERE a.status <> 3
                     AND a.pankkassa = 3
-                    AND a.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid))
+                    AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND a.kpv >= kpv_start
                     AND a.kpv <= kpv_end
                     AND (arv.properties ->> 'tyyp' IS NULL OR
@@ -240,8 +212,8 @@ FROM (
                            INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
                   WHERE d.status <> 3
-                    AND d.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid))
+                    AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                    AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                     AND mk.maksepaev >= kpv_start
                     AND mk.maksepaev <= kpv_end
                   GROUP BY d.rekvid
@@ -253,9 +225,9 @@ FROM (
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
-                           INNER JOIN (SELECT a1.parentid                 AS arv_id,
-                                              sum(COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0)  +
-                                                             a1.summa)  AS summa
+                           INNER JOIN (SELECT a1.parentid   AS arv_id,
+                                              sum(COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) +
+                                                  a1.summa) AS summa
                                        FROM docs.arv1 a1
                                                 INNER JOIN docs.arv a ON a.id = a1.parentid AND
                                                                          (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
@@ -265,8 +237,9 @@ FROM (
                                        GROUP BY a1.parentid) a1
                                       ON a1.arv_id = a.id
                   WHERE COALESCE((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
-                    AND D.rekvid IN (SELECT rekv_id
-                                     FROM get_asutuse_struktuur(l_rekvid))
+                    AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                    AND d.status <> 3
+                    AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
                     AND a.liik = 0 -- только счета исходящие
                     AND a.kpv >= kpv_start
                     AND a.kpv <= kpv_end

@@ -5,7 +5,7 @@ DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGE
 
 
 CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER,
-                                                       l_tunnus TEXT DEFAULT '%')
+                                                       l_params JSONB DEFAULT NULL)
     RETURNS TABLE (
         rekv_id  INTEGER,
         konto    VARCHAR(20),
@@ -19,71 +19,75 @@ CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INT
     )
 AS
 $BODY$
-WITH qrySaldoAndmik AS (
-    SELECT coalesce(a.kpv, j.kpv)                                          AS kpv,
-           j.rekvid,
-           j1.deebet                                                       AS konto,
-           coalesce(j1.lisa_d, '')::TEXT                                   AS tp,
-           coalesce(j1.kood1, '') :: VARCHAR(20)                           AS tegev,
-           coalesce(j1.kood2, '') :: VARCHAR(20)                           AS allikas,
-           coalesce(CASE
-                        WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
-                            THEN '00'
-                        ELSE j1.kood3 :: VARCHAR(20) END, '')::VARCHAR(20) AS rahavoog,
-           sum(j1.summa)                                                   AS deebet,
-           0 :: NUMERIC                                                    AS kreedit
-    FROM docs.doc d
-             INNER JOIN docs.journal j ON j.parentid = d.id
-             INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-        -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
-             LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-    WHERE d.rekvid IN (SELECT rekv_id
-                       FROM get_asutuse_struktuur(l_rekvid))
-      -- если свод, то оставим только учреждение, иначе все под
-      AND d.rekvid = CASE WHEN l_kond IS NULL THEN l_rekvid ELSE d.rekvid END
-      AND j.kpv <= l_kpv2
-      AND coalesce(j1.tunnus, '') ILIKE l_tunnus
-      AND d.status <> 3
-    GROUP BY coalesce(a.kpv, j.kpv), j.rekvid, j1.deebet, j1.lisa_d, j1.kood1, j1.kood2,
-             coalesce(CASE
-                          WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
-                              THEN '00'
-                          ELSE j1.kood3 :: VARCHAR(20) END,
-                      '')
-    UNION ALL
-    SELECT coalesce(a.kpv, j.kpv),
-           j.rekvid,
-           j1.kreedit                           AS konto,
-           j1.lisa_k:: VARCHAR(20)              AS tp,
-           j1.kood1 :: VARCHAR(20)              AS tegev,
-           j1.kood2 :: VARCHAR(20)              AS allikas,
-           CASE
-               WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
-                   THEN '00'
-               ELSE j1.kood3 :: VARCHAR(20) END AS rahavoog,
-           0 :: NUMERIC                         AS deebet,
-           sum(j1.summa)                        AS kreedit
-    FROM docs.doc d
-             INNER JOIN docs.journal j
-                        ON j.parentid = D.id
-             INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
-             INNER JOIN libs.library l ON l.library = 'KONTOD' AND
-                                          l.status <> 3 AND
-                                          ltrim(rtrim(l.kood)) = ltrim(rtrim(j1.kreedit))
-        -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
-             LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-    WHERE d.rekvid IN (SELECT rekv_id
-                       FROM get_asutuse_struktuur(l_rekvid))
-      -- если свод, то оставим только учреждение, иначе все под
-      AND d.rekvid = CASE WHEN l_kond IS NULL THEN l_rekvid ELSE d.rekvid END
-      AND j.kpv <= l_kpv2
-      AND coalesce(j1.tunnus, '') ILIKE l_tunnus
-      AND d.status <> 3
-    GROUP BY coalesce(a.kpv, j.kpv), j.rekvid, j1.kreedit, j1.lisa_k, j1.kood1, j1.kood2, (CASE
-                                                                                               WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
-                                                                                                   THEN '00'
-                                                                                               ELSE j1.kood3 :: VARCHAR(20) END)
+WITH rekv_ids AS (
+    SELECT rekv_id
+    FROM get_asutuse_struktuur(l_rekvid)
+    WHERE rekv_id = CASE
+                        WHEN l_kond = 1
+                            -- kond
+                            THEN rekv_id
+                        ELSE l_rekvid END
 ),
+     qrySaldoAndmik AS (
+         SELECT coalesce(a.kpv, j.kpv)                                          AS kpv,
+                j.rekvid,
+                j1.deebet                                                       AS konto,
+                coalesce(j1.lisa_d, '')::TEXT                                   AS tp,
+                coalesce(j1.kood1, '') :: VARCHAR(20)                           AS tegev,
+                coalesce(j1.kood2, '') :: VARCHAR(20)                           AS allikas,
+                coalesce(CASE
+                             WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
+                                 THEN '00'
+                             ELSE j1.kood3 :: VARCHAR(20) END, '')::VARCHAR(20) AS rahavoog,
+                sum(j1.summa)                                                   AS deebet,
+                0 :: NUMERIC                                                    AS kreedit
+         FROM docs.doc d
+                  INNER JOIN docs.journal j ON j.parentid = d.id
+                  INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+             -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+         WHERE d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+           -- если свод, то оставим только учреждение, иначе все под
+           AND j.kpv <= l_kpv2
+           AND d.status <> 3
+         GROUP BY coalesce(a.kpv, j.kpv), j.rekvid, j1.deebet, j1.lisa_d, j1.kood1, j1.kood2,
+                  coalesce(CASE
+                               WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
+                                   THEN '00'
+                               ELSE j1.kood3 :: VARCHAR(20) END,
+                           '')
+         UNION ALL
+         SELECT coalesce(a.kpv, j.kpv),
+                j.rekvid,
+                j1.kreedit                           AS konto,
+                j1.lisa_k:: VARCHAR(20)              AS tp,
+                j1.kood1 :: VARCHAR(20)              AS tegev,
+                j1.kood2 :: VARCHAR(20)              AS allikas,
+                CASE
+                    WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
+                        THEN '00'
+                    ELSE j1.kood3 :: VARCHAR(20) END AS rahavoog,
+                0 :: NUMERIC                         AS deebet,
+                sum(j1.summa)                        AS kreedit
+         FROM docs.doc d
+                  INNER JOIN docs.journal j
+                             ON j.parentid = D.id
+                  INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                  INNER JOIN libs.library l ON l.library = 'KONTOD' AND
+                                               l.status <> 3 AND
+                                               ltrim(rtrim(l.kood)) = ltrim(rtrim(j1.kreedit))
+             -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+         WHERE d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+           -- если свод, то оставим только учреждение, иначе все под
+           AND j.kpv <= l_kpv2
+--           AND coalesce(j1.tunnus, '') ILIKE l_params
+           AND d.status <> 3
+         GROUP BY coalesce(a.kpv, j.kpv), j.rekvid, j1.kreedit, j1.lisa_k, j1.kood1, j1.kood2, (CASE
+                                                                                                    WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
+                                                                                                        THEN '00'
+                                                                                                    ELSE j1.kood3 :: VARCHAR(20) END)
+     ),
      qryKontod AS (
          (SELECT l.kood,
                  NOT empty(l.tun1)   AS is_tp,
@@ -138,6 +142,7 @@ WITH qrySaldoAndmik AS (
          WHERE konto NOT IN ('999999', '000000', '888888')
            AND qry.kpv < make_date(year(l_kpv2), 1, 1)
            AND l.tyyp < 3
+
          UNION ALL
          -- kaibed
          SELECT rekvid                      AS rekv_id,
@@ -233,17 +238,17 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, TEXT) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, JSONB) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, JSONB) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, JSONB) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, JSONB) TO dbvaatleja;
 
 
 /*
 explain
 SELECT *
-FROM eelarve.saldoandmik_aruanne('2022-07-31' :: DATE, 119 :: INTEGER, 0 ::integer, '%')
-WHERE konto like '155100%'
+FROM eelarve.saldoandmik_aruanne('2022-09-30' :: DATE, 64 :: INTEGER, 1 ::integer)
+WHERE konto like '155109%'
 --and rahavoog = '01'
 --GROUP BY konto, tp
 */

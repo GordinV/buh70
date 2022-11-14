@@ -1,6 +1,6 @@
-DROP FUNCTION IF EXISTS lapsed.get_group_part_from_mk(INTEGER, DATE);
+DROP FUNCTION IF EXISTS lapsed.get_group_part_from_mk_(INTEGER, DATE);
 
-CREATE OR REPLACE FUNCTION lapsed.get_group_part_from_mk(l_mk_id INTEGER, l_kpv DATE DEFAULT current_date)
+CREATE OR REPLACE FUNCTION lapsed.get_group_part_from_mk_(l_mk_id INTEGER, l_kpv DATE DEFAULT current_date)
     RETURNS TABLE (
         mk_id   INTEGER,
         yksus   TEXT,
@@ -45,6 +45,7 @@ WITH qryMk AS (
                                  AND lk.rekvid = mk.rekvid
 
     WHERE mk.parentid = l_mk_id
+    and mk.jaak <> 0
 ),
      -- Последняя действующая услуга
      qryViimaneTeenus AS (
@@ -93,8 +94,8 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION lapsed.get_group_part_from_mk(INTEGER, DATE) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.get_group_part_from_mk(INTEGER, DATE) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.get_group_part_from_mk_(INTEGER, DATE) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.get_group_part_from_mk_(INTEGER, DATE) TO dbvaatleja;
 /*
 
 

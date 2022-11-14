@@ -44,6 +44,9 @@ FROM docs.doc d
          INNER JOIN lapsed.vanemad v ON l.id = v.parentid AND v.asutusid = asutus.id
          LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
          LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
+WHERE d.status <> 3
+  AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood = 'ARV')
+
 ORDER BY d.lastupdate DESC;
 
 GRANT SELECT ON TABLE lapsed.cur_laste_arved TO dbpeakasutaja;
@@ -54,7 +57,9 @@ GRANT SELECT ON TABLE lapsed.cur_laste_arved TO arvestaja;
 GRANT ALL ON TABLE lapsed.cur_laste_arved TO dbadmin;
 
 /*
-select * from lapsed.cur_laste_arved
+select * from lapsed.cur_laste_arved where rekvid = 95
+-- 262
+
 --limit 10
 where asutus like 'KREEK%'
  */
