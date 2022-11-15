@@ -8,61 +8,30 @@ SELECT lt.id,
        lt.nomid,
        lt.kuu,
        lt.aasta,
-       lt.kogus,
-       lt.hind                                                AS hind,
-       coalesce(n.properties ->> 'tyyp', '')                  AS tyyp,
-       lt.umberarvestus::BOOLEAN                              AS umberarvestus,
-       lt.soodustus                                           AS soodustus,
-       (lk.properties ->> 'kas_protsent')::BOOLEAN            AS kas_protsent,
-       CASE
-           WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN -1
-           WHEN (lk.properties ->> 'sooduse_alg')::DATE < (make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month')
-               AND (lk.properties ->> 'sooduse_lopp')::DATE >=
-                   CASE
-                       WHEN upper(n.uhik) = ('KUU') THEN make_date(lt.aasta, lt.kuu, 1)
-                       WHEN (lk.properties ->> 'sooduse_lopp')::DATE <
-                            make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' AND
-                            (lk.properties ->> 'lopp_kpv')::DATE = (lk.properties ->> 'sooduse_lopp')::DATE
-                           THEN make_date(lt.aasta, lt.kuu, 1)
-                       ELSE make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' END
-               THEN 1
-           ELSE 0 END                                         AS sooduse_kehtivus,
-       (CASE
-            WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN -1
-            WHEN (lk.properties ->> 'sooduse_alg')::DATE < (make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month')
-                AND (lk.properties ->> 'sooduse_lopp')::DATE >=
-                    CASE
-                        WHEN upper(n.uhik) = ('KUU') THEN make_date(lt.aasta, lt.kuu, 1)
-                        WHEN (lk.properties ->> 'sooduse_lopp')::DATE <
-                             make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' AND
-                             (lk.properties ->> 'lopp_kpv')::DATE = (lk.properties ->> 'sooduse_lopp')::DATE
-                            THEN make_date(lt.aasta, lt.kuu, 1)
-                        ELSE make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' END
-                THEN 1
-            ELSE 0 END) *
-       (CASE
-            WHEN lk.properties ->> 'soodus' IS NOT NULL THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)
-            ELSE 0 END) ::NUMERIC * CASE
-                                        WHEN (lk.properties ->> 'kas_protsent')::BOOLEAN THEN (0.01 * lt.hind)
-                                        ELSE 1 END::NUMERIC   AS alus_soodustus,
-
-       lt.summa,
-
+       coalesce(lt.kogus, 0)                                               AS kogus,
+       lt.hind                                                             AS hind,
+       coalesce(n.properties ->> 'tyyp', '')                               AS tyyp,
+       lt.umberarvestus::BOOLEAN                                           AS umberarvestus,
+       lt.soodustus                                                        AS soodustus,
+       (lk.properties ->> 'kas_protsent')::BOOLEAN                         AS kas_protsent,
+       CASE WHEN lt.properties ->> 'sooduse_alg' IS NULL THEN 1 ELSE 0 END AS sooduse_kehtivus,
+       (lt.properties ->> 'alus_soodustus')::NUMERIC(12, 2)                AS alus_soodustus,
+       coalesce(lt.summa, 0)                                               AS summa,
        l.isikukood,
        l.nimi,
        n.kood::TEXT,
-       n.nimetus::TEXT                                        AS teenus,
+       n.nimetus::TEXT                                                     AS teenus,
        n.uhik::TEXT,
-       grupp.nimetus::TEXT                                    AS yksus,
-       lk.properties ->> 'all_yksus'                          AS all_yksus,
+       grupp.nimetus::TEXT                                                 AS yksus,
+       lk.properties ->> 'all_yksus'                                       AS all_yksus,
        lt.lapse_kaart_id,
-       (lk.properties ->> 'sooduse_alg')::DATE                AS sooduse_alg,
-       (lk.properties ->> 'sooduse_lopp')::DATE               AS sooduse_lopp,
-       (lk.properties ->> 'viitenr')::TEXT                    AS viitenr,
+       (lt.properties ->> 'sooduse_alg')::DATE                             AS sooduse_alg,
+       (lt.properties ->> 'sooduse_lopp')::DATE                            AS sooduse_lopp,
+       (lk.properties ->> 'viitenr')::TEXT                                 AS viitenr,
        lt.muud,
-       coalesce((lt.properties ->> 'kulastused')::INTEGER, 0) AS kulastused,
-       coalesce((lt.properties ->> 'too_paevad')::INTEGER, 0) AS too_paevad,
-       coalesce((lt.properties ->> 'kovid')::INTEGER, 0)      AS kovid,
+       coalesce((lt.properties ->> 'kulastused')::INTEGER, 0)              AS kulastused,
+       coalesce((lt.properties ->> 'too_paevad')::INTEGER, 0)              AS too_paevad,
+       coalesce((lt.properties ->> 'kovid')::INTEGER, 0)                   AS kovid,
        lt.vahe
 FROM lapsed.lapse_taabel lt
          INNER JOIN lapsed.laps l ON l.id = lt.parentid

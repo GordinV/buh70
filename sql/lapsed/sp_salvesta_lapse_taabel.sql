@@ -26,6 +26,10 @@ DECLARE
     doc_kuu            INTEGER = doc_data ->> 'kuu';
     doc_aasta          INTEGER = doc_data ->> 'aasta';
     doc_muud           TEXT    = doc_data ->> 'muud';
+    doc_alus_hind      NUMERIC = doc_data ->> 'alus_hind';
+    doc_alus_soodustus NUMERIC = doc_data ->> 'alus_soodustus';
+    doc_sooduse_alg    DATE    = doc_data ->> 'sooduse_alg';
+    doc_sooduse_lopp   DATE    = doc_data ->> 'sooduse_lopp';
     doc_umberarvestus  BOOLEAN = coalesce((doc_data ->> 'umberarvestus')::BOOLEAN, FALSE);
     doc_staatus        INTEGER = 1;
     json_ajalugu       JSONB;
@@ -33,6 +37,7 @@ DECLARE
     v_lapse_kaart      RECORD;
 BEGIN
 
+    raise notice 'salvestan doc_alus_soodustus %', doc_alus_soodustus;
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
@@ -57,46 +62,16 @@ BEGIN
     FROM lapsed.lapse_kaart lk
     WHERE lk.id = doc_lapse_kaart_id;
 
-    /*    IF v_lapse_kaart.alg_kpv > date(doc_aasta, doc_kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day' OR
-           v_lapse_kaart.lopp_kpv < (date(doc_aasta, doc_kuu, 1))
-        THEN
-            -- date is not in range
-            RAISE notice 'Teenus selles periodil ei kehti';
-        END IF;
-    */
-    -- поиск удаленной записи
-/*    IF doc_id IS NULL OR doc_id = 0
-    THEN
-        SELECT id,
-               staatus
-        INTO doc_id, doc_staatus
-        FROM lapsed.lapse_taabel lt
-        WHERE parentid = doc_parentid
-          AND rekvid = user_rekvid
-          AND nomid = doc_nomid
-          AND lapse_kaart_id = doc_lapse_kaart_id
-          AND kuu = doc_kuu
-          AND aasta = doc_aasta
-          AND NOT umberarvestus;
-
-        IF doc_id IS NULL
-        THEN
-            doc_id = 0;
-            doc_staatus = 1;
-        ELSE
-            IF doc_staatus = 3
-            THEN
-                doc_staatus = 1; -- запись была удалена, восстанавливаем
-            END IF;
-        END IF;
-
-    END IF;
-*/
     json_props = to_jsonb(row)
-                 FROM (SELECT doc_kulastused AS kulastused,
-                              doc_kovid      AS kovid,
-                              doc_too_paevad AS too_paevad) row;
+                 FROM (SELECT doc_kulastused     AS kulastused,
+                              doc_kovid          AS kovid,
+                              doc_too_paevad     AS too_paevad,
+                              doc_alus_hind      AS alus_hind,
+                              doc_alus_soodustus AS alus_soodustus,
+                              doc_sooduse_alg    AS sooduse_alg,
+                              doc_sooduse_lopp   AS sooduse_lopp) row;
 
+    raise notice 'json_props %',json_props;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0

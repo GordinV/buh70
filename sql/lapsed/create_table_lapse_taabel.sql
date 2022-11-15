@@ -68,6 +68,4 @@ ALTER TABLE lapsed.lapse_taabel
 ALTER TABLE lapsed.lapse_taabel
     ADD COLUMN IF NOT EXISTS vahe NUMERIC(14, 4);
 
-
-
 CREATE INDEX IF NOT EXISTS lapse_taabel_lapse_kaart_id_idx ON lapsed.lapse_taabel (lapse_kaart_id);

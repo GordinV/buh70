@@ -55,8 +55,8 @@ BEGIN
     PERFORM lapsed.sp_delete_lapse_taabel(user_id, t.id)
     FROM lapsed.lapse_taabel t
     WHERE t.parentid = l_laps_id
-      AND kuu = date_part('month',l_kpv)::integer
-      AND aasta = date_part('year',l_kpv)::integer
+      AND kuu = date_part('month', l_kpv)::INTEGER
+      AND aasta = date_part('year', l_kpv)::INTEGER
       AND rekvid = l_rekvid
 --      AND NOT umberarvestus
       AND staatus < 2;
@@ -96,7 +96,12 @@ BEGIN
                                ELSE l_kpv END
                        THEN 1
                    ELSE 0 END                                             AS sooduse_kehtivus,
-
+               CASE
+                   WHEN (n.properties ->> 'tyyp') IS NOT NULL AND (n.properties ->> 'tyyp') = 'SOODUSTUS' THEN lk.hind
+                   WHEN lk.properties ->> 'soodus' IS NOT NULL THEN coalesce((lk.properties ->> 'soodus')::NUMERIC, 0)
+                   ELSE 0 END ::NUMERIC * CASE
+                                              WHEN (lk.properties ->> 'kas_protsent')::BOOLEAN THEN (0.01 * lk.hind)
+                                              ELSE 1 END::NUMERIC         AS alus_soodustus,
                NULL::TEXT                                                 AS muud,
                0                                                          AS too_paevad,
                0                                                          AS kulastused,
@@ -104,7 +109,11 @@ BEGIN
                lk.properties ->> 'yksus'                                  AS yksus,
                0                                                          AS kovid_kokku,
                0::NUMERIC                                                 AS vahe,
-               0::NUMERIC                                                 AS summa
+               0::NUMERIC                                                 AS summa,
+               -- добавлено информация о расчете
+               (lk.properties ->> 'sooduse_alg')::DATE                    AS sooduse_alg,
+               (lk.properties ->> 'sooduse_lopp')::DATE                   AS sooduse_lopp,
+               lk.hind                                                    AS alus_hind
         FROM lapsed.lapse_kaart lk
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
         WHERE lk.parentid = l_laps_id
@@ -116,6 +125,7 @@ BEGIN
                make_date(year((lk.properties ->> 'lopp_kpv')::DATE), month((lk.properties ->> 'lopp_kpv')::DATE), 1) +
                INTERVAL '1 month' >= l_kpv)
           AND ((lk.properties ->> 'kas_ettemaks') IS NULL OR NOT (lk.properties ->> 'kas_ettemaks')::BOOLEAN)
+
         LOOP
 
             -- ищем аналогичный табель в периоде
@@ -262,8 +272,15 @@ BEGIN
                              v_kaart.soodustus * v_kaart.kogus * v_kaart.sooduse_kehtivus)::NUMERIC(12, 2);
 
             v_kaart.soodustus = v_kaart.soodustus * v_kaart.sooduse_kehtivus;
+            IF (v_kaart.soodustus = 0)
+            THEN
+                -- уточняем сроки льготы
+                v_kaart.sooduse_alg = NULL;
+                v_kaart.sooduse_lopp = NULL;
+                v_kaart.alus_soodustus = NULL;
+            END IF;
 
-            raise notice 'l_taabel_id %, l_status %', l_taabel_id, l_status;
+            RAISE NOTICE 'l_taabel_id %, l_status %, v_kaart.alus_soodustus %', l_taabel_id, l_status, v_kaart.alus_soodustus;
 
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN
@@ -351,7 +368,7 @@ GRANT EXECUTE ON FUNCTION lapsed.arvesta_taabel(INTEGER, INTEGER, DATE) TO arves
 
 /*
 -- 19201
-select lapsed.arvesta_taabel(70, 5573,'2022-09-30')
+select lapsed.arvesta_taabel(70, 3,'2022-09-30')
 
 select * from lapsed.lapsed_taabel where rekvid = 6
 
