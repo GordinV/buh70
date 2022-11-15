@@ -52,6 +52,7 @@ exports.get = async (req, res) => {
                 arv_ja_soodustus: row.arv_ja_soodustus,
                 laekumised: (row.laekumised),
                 tagastatud: (row.tagastused),
+                umberarvestus: (row.umberarvestus),
                 jaak: row.jaak
 
             };

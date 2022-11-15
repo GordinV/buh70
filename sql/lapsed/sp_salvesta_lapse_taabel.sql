@@ -37,7 +37,6 @@ DECLARE
     v_lapse_kaart      RECORD;
 BEGIN
 
-    raise notice 'salvestan doc_alus_soodustus %', doc_alus_soodustus;
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
@@ -70,8 +69,6 @@ BEGIN
                               doc_alus_soodustus AS alus_soodustus,
                               doc_sooduse_alg    AS sooduse_alg,
                               doc_sooduse_lopp   AS sooduse_lopp) row;
-
-    raise notice 'json_props %',json_props;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
