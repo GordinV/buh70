@@ -93,7 +93,7 @@ class Smk extends React.PureComponent {
      * @returns {XML}
      */
     renderer(self) {
-        if (!self || !self.docData || !self.docData.userid) {
+        if (!self || !self.docData || !self.docData.is_data_loaded) {
             return (<div style={styles.doc}>
                 <Loading label={'Laadimine...'}/>
             </div>);
@@ -132,7 +132,7 @@ class Smk extends React.PureComponent {
                                        readOnly={!isEditeMode}/>
                             <InputDate title='Kuupäev '
                                        name='kpv'
-                                       value={self.docData.kpv ||  ''}
+                                       value={self.docData.kpv || ''}
                                        ref='input-kpv'
                                        onChange={self.handleInputChange}
                                        readOnly={!isEditeMode}/>

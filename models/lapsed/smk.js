@@ -36,8 +36,8 @@ const Smk = {
                          k.doklausid,
                          (D.history -> 0 ->>
                           'user')::VARCHAR(120)                               AS koostaja,
-                         k.jaak
-
+                         k.jaak,
+                         TRUE                                                 AS is_data_loaded
                   FROM docs.doc D
                            INNER JOIN docs.mk k
                                       ON k.parentId = D.id
@@ -71,7 +71,8 @@ const Smk = {
                               NULL::VARCHAR(20)                                            AS konto,
                               0                                                            AS doklausid,
                               NULL::INTEGER                                                AS lapsId,
-                              0                                                            AS jaak
+                              0                                                            AS jaak,
+                              TRUE                                                 AS is_data_loaded
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER
             `,
@@ -187,7 +188,7 @@ const Smk = {
                            $2                                        AS userid,
                            mk.viitenr::TEXT,
                            mk.yksused::TEXT,
-                           vn.vn                                 AS vana_vn
+                           vn.vn                                     AS vana_vn
                     FROM lapsed.cur_lapsed_mk mk
                              LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                                               FROM lapsed.viitenr vn

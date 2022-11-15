@@ -73,8 +73,6 @@ BEGIN
         doc_number = docs.sp_get_number(user_rekvid, 'SMK', YEAR(doc_kpv), doc_doklausid);
     END IF;
 
-
-    raise notice 'doc_number %', doc_number;
 -- проверим расч. счет
     IF doc_aa_id IS NULL OR NOT exists(SELECT id
                                        FROM ou.aa
@@ -96,6 +94,7 @@ BEGIN
             RETURN 0;
         END IF;
     END IF;
+
 
     -- вставка или апдейт docs.doc
 
@@ -278,16 +277,21 @@ BEGIN
         PERFORM docs.sp_tasu_arv(doc_id, doc_arvid, user_id);
     END IF;
 
-    -- lapse module
-    IF doc_viitenr IS NOT NULL AND NOT char_length(doc_viitenr) > 0 AND (doc_lapsid IS NULL OR public.empty(doc_lapsid))
-    THEN
+    raise notice 'doc_viitenr %, doc_lapsid %',doc_viitenr, doc_lapsid;
 
+    -- lapse module
+    IF doc_viitenr IS NOT NULL AND char_length(doc_viitenr) > 0 AND (doc_lapsid IS NULL OR doc_lapsid = 0)
+    THEN
+        raise notice 'otsin vn %',char_length(doc_viitenr);
         -- попробуем найти ребенка по ссылке
         doc_lapsid = lapsed.get_laps_from_viitenumber(doc_viitenr);
+        raise notice 'otsin doc_lapsid %',doc_lapsid;
 
     END IF;
 
-    IF doc_lapsid IS NOT NULL AND NOT public.empty(doc_lapsid)
+    raise notice ' fin doc_viitenr %, doc_lapsid %',doc_viitenr, doc_lapsid;
+
+    IF doc_lapsid IS NOT NULL AND doc_lapsid > 0
     THEN
         IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
         THEN
