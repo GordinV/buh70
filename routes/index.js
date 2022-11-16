@@ -6,15 +6,15 @@ module.exports = function (app) {
 
     // arv.palk leht
 
-/*
-    app.get('/print/PALK_LEHT/', require('./palk/palk_leht').get); //checkAuth
-    // arv.palk leht
-    app.get('/print/PALK_LEHT/:id', require('./palk/palk_leht').get); //checkAuth
-    // arv.palk leht, pdf
-    app.get('/pdf/PALK_LEHT/:id', require('./palk/palk_leht').pdf); //checkAuth
-    // arv.palk leht, email
-    app.get('/email/PALK_LEHT/:id', require('./palk/palk_leht').email); //checkAuth
-*/
+    /*
+        app.get('/print/PALK_LEHT/', require('./palk/palk_leht').get); //checkAuth
+        // arv.palk leht
+        app.get('/print/PALK_LEHT/:id', require('./palk/palk_leht').get); //checkAuth
+        // arv.palk leht, pdf
+        app.get('/pdf/PALK_LEHT/:id', require('./palk/palk_leht').pdf); //checkAuth
+        // arv.palk leht, email
+        app.get('/email/PALK_LEHT/:id', require('./palk/palk_leht').email); //checkAuth
+    */
 
 // taotlus
     app.get('/print/TAOTLUS/:hash/:id/', require('./eelproj/taotlus').get); //checkAuth
@@ -34,8 +34,8 @@ module.exports = function (app) {
     // logout logic
     app.post('/logout', require('./logout').post);
 
-    app.get('/get_access_code/:kasutaja/:access_code', require ('./get_access_code').get);
-    app.post('/get_access_code', require ('./get_access_code').post);
+    app.get('/get_access_code/:kasutaja/:access_code', require('./get_access_code').get);
+    app.post('/get_access_code', require('./get_access_code').post);
     app.get('/raama', require('./raama').get); // module raamatupidamine
     app.get('/raama/:documentType', checkAuth, require('./raama').get); // module raamatupidamine
     app.get('/raama/:documentType/:id', checkAuth, require('./raama/document').get); // module raamatupidamine
@@ -71,26 +71,26 @@ module.exports = function (app) {
     app.get('/multiple_print/:documentType/:uuid/:id/', require('./multiple_print').get); //checkAuth
 
 
-
     app.get('/print/:documentType/:uuid/', require('./print').get); //checkAuth
 
     app.get('/help/:documentType?/', require('./help').get); //checkAuth
 
-    app.get('/reports/child_age/:uuid/:filter/:params*?',require('./reports/child_age').get);
-    app.get('/reports/ebatoenaolised/:uuid/:filter/:params*?',require('./reports/ebatoenaolised').get);
-    app.get('/reports/kondarve/:uuid/:filter/:params*?',require('./reports/kondarve').get);
-    app.get('/reports/kaive_aruanne/:uuid/:filter/:params*?',require('./reports/kaive_aruanne').get);
-    app.get('/reports/saldo_ja_kaive/:uuid/:filter/:params*?',require('./reports/saldo_ja_kaive').get);
-    app.get('/reports/kuutabeli_aruanne/:uuid/:filter/:params*?',require('./reports/kuutabeli_aruanne').get);
-    app.get('/reports/arved_koodi_jargi/:uuid/:params*?',require('./reports/arved_koodi_jargi').get);
-    app.get('/reports/inf3/:uuid/:params/',require('./reports/inf3').get);
-    app.get('/reports/inf3/:uuid/',require('./reports/inf3').get);
-    app.get('/reports/kuu_taabel/:uuid/:filter/:params*?',require('./reports/kuu_taabel').get);
-    app.get('/reports/yksuse_taabel/:uuid/:filter/:params*?',require('./reports/yksuse_taabel').get);
-    app.get('/reports/kohaoleku_aruanne/:uuid/:filter/:params*?',require('./reports/kohaoleku_aruanne').get);
-    app.get('/reports/lapse_kaart/:uuid/:kond/:filter/:params*?',require('./reports/lapse_kaart').get);
-    app.get('/reports/lapse_kaart/:uuid/:kond/',require('./reports/lapse_kaart').get);
-    app.get('/reports/lapse_taabel/:uuid/:params*?/',require('./reports/lapse_taabel').get);
+    app.get('/reports/child_age/:uuid/:filter/:params*?', require('./reports/child_age').get);
+    app.get('/reports/ebatoenaolised/:uuid/:filter/:params*?', require('./reports/ebatoenaolised').get);
+    app.get('/reports/kondarve/:uuid/:filter/:params*?', require('./reports/kondarve').get);
+    app.get('/reports/kaive_aruanne_kokku/:uuid/:filter/:params*?', require('./reports/kaive_aruanne_kokku').get);
+    app.get('/reports/kaive_aruanne/:uuid/:filter/:params*?', require('./reports/kaive_aruanne').get);
+    app.get('/reports/saldo_ja_kaive/:uuid/:filter/:params*?', require('./reports/saldo_ja_kaive').get);
+    app.get('/reports/kuutabeli_aruanne/:uuid/:filter/:params*?', require('./reports/kuutabeli_aruanne').get);
+    app.get('/reports/arved_koodi_jargi/:uuid/:params*?', require('./reports/arved_koodi_jargi').get);
+    app.get('/reports/inf3/:uuid/:params/', require('./reports/inf3').get);
+    app.get('/reports/inf3/:uuid/', require('./reports/inf3').get);
+    app.get('/reports/kuu_taabel/:uuid/:filter/:params*?', require('./reports/kuu_taabel').get);
+    app.get('/reports/yksuse_taabel/:uuid/:filter/:params*?', require('./reports/yksuse_taabel').get);
+    app.get('/reports/kohaoleku_aruanne/:uuid/:filter/:params*?', require('./reports/kohaoleku_aruanne').get);
+    app.get('/reports/lapse_kaart/:uuid/:kond/:filter/:params*?', require('./reports/lapse_kaart').get);
+    app.get('/reports/lapse_kaart/:uuid/:kond/', require('./reports/lapse_kaart').get);
+    app.get('/reports/lapse_taabel/:uuid/:params*?/', require('./reports/lapse_taabel').get);
 
     app.get('/pdf/:documentType/:uuid/:id/:params', require('./pdf').get); //checkAuth
     app.get('/pdf/:documentType/:uuid/:id/', require('./pdf').get); //checkAuth
@@ -101,10 +101,10 @@ module.exports = function (app) {
     app.post('/email', checkAuth, require('./email').post); //will send arve
 
     app.post('/e-arved', checkAuth, require('./e-arved').post); //checkAuth
-    app.get('/e-arved/seb/:uuid/:id/',require('./e-arved').seb);
-    app.get('/e-arved/swed/:uuid/:id/',require('./e-arved').swed);
-    app.get('/e-arved/:uuid/:id/',require('./e-arved').get);
-    app.get('/sepa/:uuid/:id/',require('./sepa').get);
+    app.get('/e-arved/seb/:uuid/:id/', require('./e-arved').seb);
+    app.get('/e-arved/swed/:uuid/:id/', require('./e-arved').swed);
+    app.get('/e-arved/:uuid/:id/', require('./e-arved').get);
+    app.get('/sepa/:uuid/:id/', require('./sepa').get);
 
     app.post('/calc/koostaTeatis', checkAuth, require('./lapsed/koostaTeatis').post); //checkAuth
     app.post('/calc/muuda_ettemaksu_period', checkAuth, require('./lapsed/muuda_ettemaksu_period').post); //checkAuth

@@ -25,14 +25,14 @@ exports.get = async (req, res) => {
     try {
         // создать объект
         const Doc = require('./../../classes/DocumentTemplate');
-        const doc = new Doc('saldo_ja_kaive', null, user.userId, user.asutusId, 'lapsed');
+        const doc = new Doc('kaive_aruanne_kokku', null, user.userId, user.asutusId, 'lapsed');
 
         let gridParams;
         if (doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
             gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
         }
 
-        const data = await doc.selectDocs('', sqlWhere, 10000, gridParams);
+        const data = await doc.selectDocs('', sqlWhere, 100000, gridParams);
 
 
         // get xml
@@ -40,21 +40,16 @@ exports.get = async (req, res) => {
         let csv = getCSV(data.data.map(row => {
             //поправить если структура меняется
             const obj = {
-                kulastatavus: row.kpv,
-                yksus: row.yksus,
-                lapse_nimi: row.lapse_nimi,
-                lapse_isikukood: row.lapse_isikukood,
-                viitenumber: row.viitenumber,
-                number: row.number,
                 alg_saldo: (row.alg_saldo),
                 arvestatud: (row.arvestatud),
                 soodustus: (row.soodustus),
-                umberarvestus: Number(row.umberarvestus),
-                arv_kokku: (Number(row.umberarvestus) + Number(row.arvestatud) + Number(row.soodustus)).toFixed(2),
+                umberarvestus: (row.umberarvestus),
+                arv_kokku: (Number(row.arvestatud) + Number(row.soodustus) + Number(row.umberarvestus)).toFixed(2),
                 laekumised: (row.laekumised),
                 tagastatud: (row.tagastused),
-                mahakantud: (row.mahakantud),
-                jaak: row.jaak
+                mahakantud: row.mahakantud,
+                jaak: row.jaak,
+                asutus: row.asutus
 
             };
             if (!header) {

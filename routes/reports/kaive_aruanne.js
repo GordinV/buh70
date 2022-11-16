@@ -32,7 +32,7 @@ exports.get = async (req, res) => {
             gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
         }
 
-        const data = await doc.selectDocs('', sqlWhere, 10000, gridParams);
+        const data = await doc.selectDocs('', sqlWhere, 100000, gridParams);
 
 
         // get xml
@@ -48,9 +48,11 @@ exports.get = async (req, res) => {
                 alg_saldo: (row.alg_saldo),
                 arvestatud: (row.arvestatud),
                 soodustus: (row.soodustus),
-                arv_ja_soodustus: row.arv_ja_soodustus,
+                umberarvestus: (row.umberarvestus),
+                arv_kokku: (Number(row.arvestatud) + Number(row.soodustus) + Number(row.umberarvestus)).toFixed(2),
                 laekumised: (row.laekumised),
                 tagastatud: (row.tagastused),
+                mahakantud: row.mahakantud,
                 jaak: row.jaak
 
             };

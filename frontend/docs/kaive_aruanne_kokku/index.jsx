@@ -184,7 +184,7 @@ class Documents extends React.PureComponent {
         if (Doc.gridData && Doc.gridData.length) {
             //делаем редайрект на конфигурацию
             let sqlWhere = Doc.state.sqlWhere;
-            let url = `/reports/saldo_ja_kaive/${DocContext.userData.uuid}`;
+            let url = `/reports/kaive_aruanne_kokku/${DocContext.userData.uuid}`;
             let params = encodeURIComponent(`${sqlWhere}`);
             let filter = encodeURIComponent(`${(JSON.stringify(Doc.filterData))}`);
             let fullUrl = sqlWhere ? `${url}/${filter}/${params}` : `${url}/${filter}`;
