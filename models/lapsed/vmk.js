@@ -38,7 +38,8 @@ const Vmk = {
                          (D.history -> 0 ->>
                           'user')::VARCHAR(120)                               AS koostaja,
                          laps.nimi                                            AS lapse_nimi,
-                         laps.id                                              AS lapsid
+                         laps.id                                              AS lapsid,
+                         TRUE                                                 AS is_data_loaded
 
                   FROM docs.doc D
                            INNER JOIN docs.mk k
@@ -165,8 +166,6 @@ const Vmk = {
             {id: "number", name: "Number", width: "10%"},
             {id: "asutus", name: "Maksja", width: "20%"},
             {id: "kreedit", name: "Summa", width: "10%", type: "number", interval: true},
-            {id: "asutusid", name: "asutusid", width: "0%", show: false},
-            {id: "nomid", name: "nomid", width: "0%", show: false},
             {id: "aa", name: "Arveldus arve", width: "10%"},
             {id: "viitenr", name: "Viite number", width: "10%"},
             {id: "nimi", name: "Nimi", width: "20%"},

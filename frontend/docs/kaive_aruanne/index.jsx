@@ -31,6 +31,8 @@ class Documents extends React.PureComponent {
         this.state = {
             alg_saldo: 0,
             arvestatud: 0,
+            arv_kokku: 0,
+            umberarvestus: 0,
             soodustus: 0,
             laekumised: 0,
             mahakantud: 0,
@@ -65,7 +67,7 @@ class Documents extends React.PureComponent {
                              ref="input-read"
                              value={Number(this.state.alg_saldo) || 0}
                              disabled={true}/>
-                <InputNumber title="Arvestatud (sh ümberarvestus) kokku:"
+                <InputNumber title="Arvestatud kokku:"
                              name='arvestatud_kokku'
                              style={styles.total}
                              ref="input-arvestatud"
@@ -77,29 +79,36 @@ class Documents extends React.PureComponent {
                              ref="input-soodustus"
                              value={Number(this.state.soodustus) || 0}
                              disabled={true}/>
-                <InputNumber title="Arvestatud ja Soodustus kokku:"
-                             name='arv_ja_soodustus_kokku'
+                <InputNumber title="Ümberarvestus kokku:"
+                             name='umberarvestus_kokku'
                              style={styles.total}
-                             ref="input-arv_ja_soodustus"
-                             value={Number(this.state.arv_ja_soodustus) || 0}
+                             ref="input-arv_kokku"
+                             value={Number(this.state.umberarvestus) || 0}
                              disabled={true}/>
+                <InputNumber title="Kokku arvestatud (kokku)"
+                             name='arv_kokku'
+                             style={styles.total}
+                             ref="input-arv_kokku"
+                             value={(Number(this.state.arvestatud)+Number(this.state.soodustus)+Number(this.state.umberarvestus)).toFixed(2) || 0}
+                             disabled={true}/>
+
                 <InputNumber title="Laekumised kokku:"
                              name='laekumised_kokku'
                              style={styles.total}
                              ref="input-laekumised"
                              value={Number(this.state.laekumised) || 0}
                              disabled={true}/>
-                <InputNumber title="Mahakantud kokku:"
-                             name='mahakantud_kokku'
-                             style={styles.total}
-                             ref="input-mahakantud"
-                             value={Number(this.state.mahakantud) || 0}
-                             disabled={true}/>
                 <InputNumber title="Tagastused kokku:"
                              name='tagastused_kokku'
                              style={styles.total}
                              ref="input-tagastused"
                              value={Number(this.state.tagastused) || 0}
+                             disabled={true}/>
+                <InputNumber title="Mahakantud kokku:"
+                             name='mahakantud_kokku'
+                             style={styles.total}
+                             ref="input-mahakantud"
+                             value={Number(this.state.mahakantud) || 0}
                              disabled={true}/>
                 <InputNumber title="Jääk kokku:"
                              name='jaak_kokku'
@@ -118,6 +127,7 @@ class Documents extends React.PureComponent {
             this.setState({
                 alg_saldo: 0,
                 arvestatud: 0,
+                arv_kokku: 0,
                 soodustus: 0,
                 arv_ja_soodustus: 0,
                 laekumised: 0,
@@ -132,6 +142,7 @@ class Documents extends React.PureComponent {
 
         let alg_saldo = self.gridData ? self.gridData[0].alg_saldo_total : 0;
         let arvestatud = self.gridData ? self.gridData[0].arvestatud_total : 0;
+        let umberarvestus = self.gridData ? self.gridData[0].umberarvestus_total : 0;
         let soodustus = self.gridData ? self.gridData[0].soodustus_total : 0;
         let arv_ja_soodustus = self.gridData ? self.gridData[0].arv_ja_soodustus_total : 0;
         let laekumised = self.gridData ? self.gridData[0].laekumised_total : 0;
@@ -146,6 +157,8 @@ class Documents extends React.PureComponent {
         this.setState({
             alg_saldo: alg_saldo,
             arvestatud: arvestatud,
+            arv_kokku: arvestatud + soodustus + umberarvestus,
+            umberarvestus: umberarvestus,
             soodustus: soodustus,
             arv_ja_soodustus: arv_ja_soodustus,
             laekumised: laekumised,

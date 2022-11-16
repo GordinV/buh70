@@ -73,7 +73,13 @@ SELECT count(*) OVER (PARTITION BY laps_id)                        AS id,
        sum(coalesce(laekumised, 0))::NUMERIC(14, 4),
        sum(coalesce(mahakantud, 0))::NUMERIC(14, 4),
        sum(coalesce(-1 * tagastused, 0))::NUMERIC(14, 4),
-       sum(coalesce(jaak, 0))::NUMERIC(14, 4),
+       sum(COALESCE(alg_saldo, 0) +
+           COALESCE(arvestatud, 0) +
+           COALESCE(umberarvestus, 0) -
+           COALESCE(laekumised, 0) -
+           COALESCE(mahakantud, 0) -
+           COALESCE(soodustus, 0) +
+           COALESCE(tagastused, 0))::NUMERIC(14, 4)                AS jaak,
        report.rekvid
 FROM (
          WITH alg_saldo AS (
@@ -205,8 +211,8 @@ FROM (
                   SELECT DISTINCT mk.id                                                                            AS doc_tasu_id,
                                   (CASE WHEN mk.opt = 2 AND mk1.summa > 0 THEN mk.jaak ELSE 0 END)::NUMERIC(14, 4) AS laekumised,
                                   (CASE
-                                       WHEN mk.opt = 1 OR mk1.summa < 0
-                                           THEN (CASE WHEN mk.opt = 2 THEN -1 ELSE 1 END) * mk.jaak
+                                       WHEN mk.opt = 2 AND mk1.summa < 0 THEN mk.jaak
+                                       WHEN mk.opt = 1 THEN -1 * mk.jaak
                                        ELSE 0 END)::NUMERIC(14, 4)                                                 AS tagastused,
                                   ''                                                                               AS yksus,
                                   l.parentid                                                                       AS laps_id,
@@ -222,21 +228,15 @@ FROM (
                     AND mk.maksepaev <= kpv_end
                     AND mk.jaak <> 0
               )
-         SELECT COALESCE(yksus, '')          AS yksus,
-                sum(alg_saldo)               AS alg_saldo,
-                sum(arvestatud)              AS arvestatud,
-                sum(umberarvestus)           AS umberarvestus,
-                sum(soodustus)               AS soodustus,
-                sum(laekumised)              AS laekumised,
-                sum(mahakantud)              AS mahakantud,
-                sum(-1 * tagastused)         AS tagastused,
-                sum(COALESCE(alg_saldo, 0) +
-                    COALESCE(arvestatud, 0) +
-                    COALESCE(umberarvestus, 0) -
-                    COALESCE(laekumised, 0) -
-                    COALESCE(mahakantud, 0) -
-                    COALESCE(soodustus, 0) +
-                    COALESCE(tagastused, 0)) AS jaak,
+         SELECT COALESCE(yksus, '')  AS yksus,
+                sum(alg_saldo)       AS alg_saldo,
+                sum(arvestatud)      AS arvestatud,
+                sum(umberarvestus)   AS umberarvestus,
+                sum(soodustus)       AS soodustus,
+                sum(laekumised)      AS laekumised,
+                sum(mahakantud)      AS mahakantud,
+                sum(-1 * tagastused) AS tagastused,
+                0                    AS jaak,
                 qry.rekvid,
                 qry.laps_id
          FROM (

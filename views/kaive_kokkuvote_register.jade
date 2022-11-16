@@ -58,6 +58,7 @@ block content
                     th Alg.saldo
                     th Arvestatud
                     th Soodustus
+                    th Ümberarv.
                     th Kokku arvestatud
                     th Laekumised
                     th Mahakantud
@@ -72,7 +73,8 @@ block content
                         td(align='center')=Number(rea.alg_saldo).toFixed(2)
                         td(align='center')=Number(rea.arvestatud).toFixed(2)
                         td(align='center')=Number(rea.soodustus).toFixed(2)
-                        td(align='center')=((Number(rea.arvestatud) - Number(rea.soodustus)).toFixed(2))
+                        td(align='center')=Number(rea.umberarvestus).toFixed(2)
+                        td(align='center')=(Number(rea.arvestatud) + Number(rea.soodustus) + Number(rea.umberarvestus)).toFixed(2)
                         td(align='center')=Number(rea.laekumised).toFixed(2)
                         td(align='center')=Number(rea.mahakantud).toFixed(2)
                         td(align='center')=Number(rea.tagastused).toFixed(2)
@@ -83,7 +85,8 @@ block content
                 td(align='center').group=Number(data[0].alg_saldo_group).toFixed(2)
                 td(align='center').group=Number(data[0].arvestatud_group).toFixed(2)
                 td(align='center').group=Number(data[0].soodustus_group).toFixed(2)
-                td(align='center').group=((Number(data[0].arvestatud_group) - Number(data[0].soodustus_group)).toFixed(2))
+                td(align='center').group=Number(data[0].umberarvestus_group).toFixed(2)
+                td(align='center').group=((Number(data[0].arvestatud_group) + Number(data[0].soodustus_group) + Number(data[0].umberarvestus_group)).toFixed(2))
                 td(align='center').group=Number(data[0].laekumised_group).toFixed(2)
                 td(align='center').group=Number(data[0].mahakantud_group).toFixed(2)
                 td(align='center').group=Number(data[0].tagastused_group).toFixed(2)

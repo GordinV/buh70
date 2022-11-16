@@ -64,11 +64,11 @@ block content
                         th Alg.saldo
                         th Arvestatud
                         th Soodustus
+                        th Ümberarv.
                         th Kokku arvestatud
                         th Laekumised
                         th Mahakantud
                         th Tagastatud
-                        th Ümberarv.
                         th Võlg
 
                 tbody
@@ -81,11 +81,11 @@ block content
                             td=rea.alg_saldo
                             td=rea.arvestatud
                             td=rea.soodustus
-                            td=((Number(rea.arvestatud) - Number(rea.soodustus)).toFixed(2))
+                            td=rea.umberarvestus
+                            td=((Number(rea.arvestatud) - Number(rea.soodustus)+Number(rea.umberarvestus)).toFixed(2))
                             td=rea.laekumised
                             td=rea.mahakantud
                             td=rea.tagastatud
-                            td=rea.umberarvestus
                             td=rea.jaak
                     tr.group
                         td.group=Object.keys(asutus)[0] + ' Read kokku:'
@@ -95,10 +95,10 @@ block content
                         td.group=asutus[Object.keys(asutus)[0]][0].alg_saldo_group
                         td.group=asutus[Object.keys(asutus)[0]][0].arvestatud_group
                         td.group=asutus[Object.keys(asutus)[0]][0].soodustus_group
-                        td.group=((Number(asutus[Object.keys(asutus)[0]][0].arvestatud_group) - Number(asutus[Object.keys(asutus)[0]][0].soodustus_group)).toFixed(2))
+                        td.group=asutus[Object.keys(asutus)[0]][0].umberarvestus_group
+                        td.group=((Number(asutus[Object.keys(asutus)[0]][0].arvestatud_group) - Number(asutus[Object.keys(asutus)[0]][0].soodustus_group)+Number(asutus[Object.keys(asutus)[0]][0].umberarvestus_group)).toFixed(2))
                         td.group=asutus[Object.keys(asutus)[0]][0].laekumised_group
                         td.group=asutus[Object.keys(asutus)[0]][0].mahakantud_group
                         td.group=asutus[Object.keys(asutus)[0]][0].tagastatud_group
-                        td.group=asutus[Object.keys(asutus)[0]][0].umberarvestus_group
                         td.group=asutus[Object.keys(asutus)[0]][0].jaak_group
 

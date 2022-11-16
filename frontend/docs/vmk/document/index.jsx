@@ -82,7 +82,7 @@ class Vmk extends React.Component {
     renderer(self) {
         let isEditeMode = self.state.edited;
 
-        if (!self || !self.docData || !self.docData.kpv) {
+        if (!self || !self.docData || !self.docData.is_data_loaded) {
             return (<div style={styles.doc}>
                 <Loading label={'Laadimine...'}/>
             </div>);

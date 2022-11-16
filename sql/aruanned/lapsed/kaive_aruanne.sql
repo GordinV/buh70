@@ -13,6 +13,7 @@ CREATE OR REPLACE FUNCTION lapsed.kaive_aruanne(l_rekvid INTEGER,
         viitenumber     TEXT,
         alg_saldo       NUMERIC(14, 2),
         arvestatud      NUMERIC(14, 2),
+        umberarvestus   NUMERIC(14, 2),
         soodustus       NUMERIC(14, 2),
         laekumised      NUMERIC(14, 2),
         mahakantud      NUMERIC(14, 2),
@@ -67,11 +68,13 @@ SELECT count(*) OVER (PARTITION BY report.laps_id)                  AS id,
        lapsed.get_viitenumber(report.rekv_id, report.laps_id)::TEXT AS viitenumber,
        alg_saldo::NUMERIC(14, 2),
        arvestatud::NUMERIC(14, 2),
+       umberarvestus::NUMERIC(14, 2),
        soodustus::NUMERIC(14, 2),
        laekumised::NUMERIC(14, 2),
        mahakantud::NUMERIC(14, 2),
        tagastused::NUMERIC(14, 2),
-       (alg_saldo + arvestatud - soodustus - laekumised - mahakantud + tagastused)::NUMERIC(14, 2),
+       (alg_saldo + arvestatud + umberarvestus - soodustus - laekumised - mahakantud +
+        tagastused)::NUMERIC(14, 2)                                 AS jaak,
        report.rekv_id
 FROM (
          WITH alg_saldo AS (
@@ -181,22 +184,32 @@ FROM (
                   GROUP BY l.id, D.rekvid
               ),
               arvestatud AS (
-                  SELECT ld.parentid                    AS laps_id,
-                         sum(a1.summa)                  AS arvestatud,
-                         sum(COALESCE(a1.soodustus, 0)) AS soodustus,
-                         D.rekvid::INTEGER              AS rekv_id
+                  SELECT ld.parentid                            AS laps_id,
+                         sum(a1.summa)                          AS arvestatud,
+                         sum(a1.umberarvestus) ::NUMERIC(14, 4) AS umberarvestus,
+                         sum(COALESCE(a1.soodustus, 0))         AS soodustus,
+                         D.rekvid::INTEGER                      AS rekv_id
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
-                           INNER JOIN (SELECT a1.parentid                                                      AS arv_id,
+                           INNER JOIN (SELECT a1.parentid            AS arv_id,
                                               sum(
                                                       (COALESCE((a1.properties ->>
                                                                  'soodustus')::NUMERIC(14, 4),
-                                                                0)))                                           AS soodustus,
-                                              sum(
-                                                      (COALESCE((a1.properties ->>
-                                                                 'soodustus')::NUMERIC(14, 4), 0) +
-                                                       (CASE WHEN a1.summa = 0 THEN 0 ELSE 1 END) * a1.summa)) AS summa
+                                                                0))) AS soodustus,
+                                              sum((CASE
+                                                       WHEN (coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN)
+                                                           THEN 0
+                                                       ELSE 1 END) *
+                                                  (COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) +
+                                                   a1.summa))        AS summa,
+                                              sum((CASE
+                                                       WHEN (coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN)
+                                                           THEN 1
+                                                       ELSE 0 END) *
+                                                  (COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) +
+                                                   a1.summa))        AS umberarvestus
+
                                        FROM docs.arv1 a1
                                                 INNER JOIN docs.arv a ON a.id = a1.parentid AND
                                                                          (a.properties ->>
@@ -206,6 +219,7 @@ FROM (
                                            AND a.liik = 0 -- только счета исходящие
 
                                                 INNER JOIN docs.doc D ON D.id = a.parentid AND D.status <> 3
+                                                INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
                                        GROUP BY a1.parentid) a1
                                       ON a1.arv_id = a.id
                   WHERE COALESCE((a.properties ->>
@@ -220,18 +234,20 @@ FROM (
                     AND a.kpv <= kpv_end
                   GROUP BY ld.parentid, D.rekvid
               )
-         SELECT sum(alg_saldo)  AS alg_saldo,
-                sum(arvestatud) AS arvestatud,
-                sum(soodustus)  AS soodustus,
-                sum(laekumised) AS laekumised,
-                sum(mahakantud) AS mahakantud,
-                sum(tagastused) AS tagastused,
+         SELECT sum(alg_saldo)     AS alg_saldo,
+                sum(arvestatud)    AS arvestatud,
+                sum(umberarvestus) AS umberarvestus,
+                sum(soodustus)     AS soodustus,
+                sum(laekumised)    AS laekumised,
+                sum(mahakantud)    AS mahakantud,
+                sum(tagastused)    AS tagastused,
                 qry.rekv_id,
                 qry.laps_id
          FROM (
                   -- alg.saldo
                   SELECT a.jaak    AS alg_saldo,
                          0         AS arvestatud,
+                         0         AS umberarvestus,
                          0         AS soodustus,
                          0         AS laekumised,
                          0         AS mahakantud,
@@ -243,6 +259,7 @@ FROM (
                   -- laekumised
                   SELECT 0         AS alg_saldo,
                          0         AS arvestatud,
+                         0         AS umberarvestus,
                          0         AS soodustus,
                          l.summa   AS laekumised,
                          0         AS mahakantud,
@@ -254,6 +271,7 @@ FROM (
                   -- mahakandmine
                   SELECT 0         AS alg_saldo,
                          0         AS arvestatud,
+                         0         AS umberarvestus,
                          0         AS soodustus,
                          0         AS laekumised,
                          l.summa   AS mahakantud,
@@ -265,6 +283,7 @@ FROM (
                   -- tagastused
                   SELECT 0                    AS alg_saldo,
                          0                    AS arvestatud,
+                         0                    AS umberarvestus,
                          0                    AS soodustus,
                          0                    AS laekumised,
                          0                    AS mahakantud,
@@ -274,13 +293,14 @@ FROM (
                   FROM tagastused t
                   UNION ALL
                   -- arvestused
-                  SELECT 0            AS alg_saldo,
-                         k.arvestatud AS arvestatud,
-                         k.soodustus  AS soodustus,
-                         0            AS laekumised,
-                         0            AS mahakantud,
-                         0            AS tagastused,
-                         k.rekv_id    AS rekv_id,
+                  SELECT 0               AS alg_saldo,
+                         k.arvestatud    AS arvestatud,
+                         k.umberarvestus AS umberarvestus,
+                         k.soodustus     AS soodustus,
+                         0               AS laekumised,
+                         0               AS mahakantud,
+                         0               AS tagastused,
+                         k.rekv_id       AS rekv_id,
                          k.laps_id
                   FROM arvestatud k
               ) qry
@@ -303,8 +323,7 @@ GRANT EXECUTE ON FUNCTION lapsed.kaive_aruanne(INTEGER, DATE, DATE) TO dbvaatlej
 
 
 /*
-explain
 select *
-FROM lapsed.kaive_aruanne(97, '2022-08-01', '2022-08-31') qry
-where lapse_nimi ilike 'Gruntova Arina%'
+FROM lapsed.kaive_aruanne(69, '2022-09-01', '2022-10-31') qry
+where viitenumber= '0690041411'
 */

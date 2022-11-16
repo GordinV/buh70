@@ -31,6 +31,7 @@ class Documents extends React.PureComponent {
         this.state = {
             alg_saldo: 0,
             arvestatud: 0,
+            arv_kokku: 0,
             umberarvestus: 0,
             soodustus: 0,
             laekumised: 0,
@@ -66,7 +67,7 @@ class Documents extends React.PureComponent {
                              ref="input-read"
                              value={Number(this.state.alg_saldo) || 0}
                              disabled={true}/>
-                <InputNumber title="Arvestatud (sh ümberarvestus) kokku:"
+                <InputNumber title="Arvestatud kokku:"
                              name='arvestatud_kokku'
                              style={styles.total}
                              ref="input-arvestatud"
@@ -78,23 +79,24 @@ class Documents extends React.PureComponent {
                              ref="input-soodustus"
                              value={Number(this.state.soodustus) || 0}
                              disabled={true}/>
-                <InputNumber title="Arvestatud ja Soodustus kokku:"
-                             name='arv_ja_soodustus_kokku'
+                <InputNumber title="Ümberarvestus kokku:"
+                             name='umberarvestus_kokku'
                              style={styles.total}
-                             ref="input-arv_ja_soodustus"
-                             value={Number(this.state.arv_ja_soodustus) || 0}
+                             ref="input-umberarvestus"
+                             value={Number(this.state.umberarvestus) || 0}
                              disabled={true}/>
+                <InputNumber title="Kokku arvestatud (kokku)"
+                             name='arv_kokku'
+                             style={styles.total}
+                             ref="input-arv_kokku"
+                             value={(Number(this.state.arvestatud)+Number(this.state.soodustus)+Number(this.state.umberarvestus)).toFixed(2) || 0}
+                             disabled={true}/>
+
                 <InputNumber title="Laekumised kokku:"
                              name='laekumised_kokku'
                              style={styles.total}
                              ref="input-laekumised"
                              value={Number(this.state.laekumised) || 0}
-                             disabled={true}/>
-                <InputNumber title="Mahakantud kokku:"
-                             name='mahakantud_kokku'
-                             style={styles.total}
-                             ref="input-mahandmine"
-                             value={Number(this.state.mahakantud) || 0}
                              disabled={true}/>
                 <InputNumber title="Tagastused kokku:"
                              name='tagastused_kokku'
@@ -102,11 +104,11 @@ class Documents extends React.PureComponent {
                              ref="input-tagastused"
                              value={Number(this.state.tagastused) || 0}
                              disabled={true}/>
-                <InputNumber title="Ümberarvestus kokku:"
-                             name='umberarvestus_kokku'
+                <InputNumber title="Mahakantud kokku:"
+                             name='mahakantud_kokku'
                              style={styles.total}
-                             ref="input-umberarvestus"
-                             value={Number(this.state.umberarvestus) || 0}
+                             ref="input-mahandmine"
+                             value={Number(this.state.mahakantud) || 0}
                              disabled={true}/>
                 <InputNumber title="Jääk kokku:"
                              name='jaak_kokku'
@@ -127,6 +129,7 @@ class Documents extends React.PureComponent {
                 arvestatud: 0,
                 umberarvestus: 0,
                 soodustus: 0,
+                arv_kokku: 0,
                 arv_ja_soodustus: 0,
                 laekumised: 0,
                 mahakantud: 0,
@@ -157,6 +160,7 @@ class Documents extends React.PureComponent {
             arvestatud: arvestatud,
             umberarvestus: umberarvestus,
             soodustus: soodustus,
+            arv_kokku: arvestatud + soodustus + umberarvestus,
             arv_ja_soodustus: arv_ja_soodustus,
             laekumised: laekumised,
             mahakantud: mahakantud,
