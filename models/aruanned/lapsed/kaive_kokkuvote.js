@@ -40,7 +40,7 @@ module.exports = {
                        sum(r.mahakantud) OVER ()                                AS mahakantud_group,
                        sum(r.arvestatud + r.soodustus + r.umberarvestus)
                        OVER ()                                                          AS arv_kokku_group,
-                       sum(r.tagastused) OVER ()                                AS tagastused_group,
+                       -1 * sum(r.tagastused) OVER ()                                AS tagastused_group,
                        sum(r.jaak) OVER ()                                      AS jaak_group,
                        count(*) OVER ()                                                 AS rows_total,
                        row_number() OVER () as id,
@@ -52,7 +52,7 @@ module.exports = {
                        coalesce(soodustus, 0)::NUMERIC(14, 2)                           AS soodustus,
                        coalesce(laekumised, 0)::NUMERIC(14, 2)                          AS laekumised,
                        coalesce(mahakantud, 0)::NUMERIC(14, 2)                          AS mahakantud,
-                       coalesce(tagastused, 0)::NUMERIC(14, 2)                          AS tagastused,
+                       -1 * coalesce(tagastused, 0)::NUMERIC(14, 2)                          AS tagastused,
                        (coalesce(arvestatud, 0) + coalesce(soodustus, 0) + coalesce(umberarvestus, 0))::NUMERIC(14, 2) AS arv_kokku,
                        coalesce(jaak, 0)::NUMERIC(14, 2)                                AS jaak,
                        rekvid,
@@ -68,7 +68,7 @@ module.exports = {
                 sum(arvestatud + soodustus + umberarvestus) over() as arv_kokku_total, 
                 sum(laekumised) over() as laekumised_total,
                 sum(mahakantud) over() as mahakantud_total,
-                sum(tagastused) over() as tagastused_total,
+                -1 * sum(tagastused) over() as tagastused_total,
                 sum(jaak) over() as jaak_total `,
         alias: 'kaive_aruanne_report',
         notReloadWithoutParameters: true

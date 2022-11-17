@@ -26,7 +26,7 @@ module.exports = {
                            sum(qryReport.mahakantud) OVER (PARTITION BY rekvid)               AS mahakantud_group,
                            sum(qryReport.arvestatud - qryReport.soodustus)
                            OVER (PARTITION BY rekvid)                                         AS arv_ja_soodustus_group,
-                           sum(qryReport.tagastused) OVER (PARTITION BY rekvid)               AS tagastused_group,
+                           -1 * sum(qryReport.tagastused) OVER (PARTITION BY rekvid)          AS tagastused_group,
                            sum(qryReport.jaak) OVER (PARTITION BY rekvid)                     AS jaak_group,
                            count(*) OVER ()                                                   AS rows_total,
                            qryReport.id,
@@ -41,7 +41,7 @@ module.exports = {
                            -1 * coalesce(soodustus, 0)::NUMERIC(14, 2)                        AS soodustus,
                            coalesce(laekumised, 0)::NUMERIC(14, 2)                            AS laekumised,
                            coalesce(mahakantud, 0)::NUMERIC(14, 2)                            AS mahakantud,
-                           coalesce(tagastused, 0)::NUMERIC(14, 2)                            AS tagastused,
+                           -1 * coalesce(tagastused, 0)::NUMERIC(14, 2)                       AS tagastused,
                            (coalesce(arvestatud, 0) - coalesce(soodustus, 0))::NUMERIC(14, 4) AS arv_ja_soodustus,
                            (coalesce(arvestatud, 0) - coalesce(soodustus, 0) +
                             coalesce(umberarvestus, 0))::NUMERIC(14, 2)                       AS arv_kokku,
@@ -69,7 +69,7 @@ module.exports = {
                 sum(arvestatud + soodustus) over() as arv_ja_soodustus_total, 
                 sum(laekumised) over() as laekumised_total,
                 sum(mahakantud) over() as mahakantud_total,
-                sum(tagastused) over() as tagastused_total,
+                -1 * sum(tagastused) over() as tagastused_total,
                 sum(jaak) over() as jaak_total `,
         alias: 'kaive_aruanne_report',
         notReloadWithoutParameters: true

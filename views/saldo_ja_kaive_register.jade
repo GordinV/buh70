@@ -84,21 +84,21 @@ block content
                             td=rea.umberarvestus
                             td=((Number(rea.arvestatud) - Number(rea.soodustus)+Number(rea.umberarvestus)).toFixed(2))
                             td=rea.laekumised
+                            td=rea.tagastused
                             td=rea.mahakantud
-                            td=rea.tagastatud
                             td=rea.jaak
                     tr.group
                         td.group=Object.keys(asutus)[0] + ' Read kokku:'
                         td.group=Number(asutus[Object.keys(asutus)[0]].length)
                         td.group=''
                         td.group='Kokku:'
-                        td.group=asutus[Object.keys(asutus)[0]][0].alg_saldo_group
-                        td.group=asutus[Object.keys(asutus)[0]][0].arvestatud_group
-                        td.group=asutus[Object.keys(asutus)[0]][0].soodustus_group
-                        td.group=asutus[Object.keys(asutus)[0]][0].umberarvestus_group
-                        td.group=((Number(asutus[Object.keys(asutus)[0]][0].arvestatud_group) - Number(asutus[Object.keys(asutus)[0]][0].soodustus_group)+Number(asutus[Object.keys(asutus)[0]][0].umberarvestus_group)).toFixed(2))
-                        td.group=asutus[Object.keys(asutus)[0]][0].laekumised_group
-                        td.group=asutus[Object.keys(asutus)[0]][0].mahakantud_group
-                        td.group=asutus[Object.keys(asutus)[0]][0].tagastatud_group
-                        td.group=asutus[Object.keys(asutus)[0]][0].jaak_group
+                        td.group=Number(asutus[Object.keys(asutus)[0]][0].alg_saldo_group).toFixed(2)
+                        td.group=Number(asutus[Object.keys(asutus)[0]][0].arvestatud_group).toFixed(2)
+                        td.group=Number(asutus[Object.keys(asutus)[0]][0].soodustus_group).toFixed(2)
+                        td.group=Number(asutus[Object.keys(asutus)[0]][0].umberarvestus_group).toFixed(2)
+                        td.group=Number((Number(asutus[Object.keys(asutus)[0]][0].arvestatud_group) - Number(asutus[Object.keys(asutus)[0]][0].soodustus_group)+Number(asutus[Object.keys(asutus)[0]][0].umberarvestus_group)).toFixed(2))
+                        td.group=Number(asutus[Object.keys(asutus)[0]][0].laekumised_group).toFixed(2)
+                        td.group=Number(asutus[Object.keys(asutus)[0]][0].tagastused_group).toFixed(2)
+                        td.group=Number(asutus[Object.keys(asutus)[0]][0].mahakantud_group).toFixed(2)
+                        td.group=Number(asutus[Object.keys(asutus)[0]][0].jaak_group).toFixed(2)
 
