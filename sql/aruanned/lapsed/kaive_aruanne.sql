@@ -184,11 +184,11 @@ FROM (
                   GROUP BY l.id, D.rekvid
               ),
               arvestatud AS (
-                  SELECT ld.parentid                               AS laps_id,
-                         sum(a1.summa)                             AS arvestatud,
-                         sum(a1.umberarvestus) ::NUMERIC(14, 4)    AS umberarvestus,
-                         sum(COALESCE(a1.soodustus, 0) * a1.kogus) AS soodustus,
-                         D.rekvid::INTEGER                         AS rekv_id
+                  SELECT ld.parentid                                            AS laps_id,
+                         sum(a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus)) AS arvestatud,
+                         sum(a1.umberarvestus) ::NUMERIC(14, 4)                 AS umberarvestus,
+                         sum(COALESCE(a1.soodustus, 0) * a1.kogus)              AS soodustus,
+                         D.rekvid::INTEGER                                      AS rekv_id
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
@@ -197,12 +197,7 @@ FROM (
                                                   (COALESCE((a1.properties ->>
                                                              'soodustus')::NUMERIC(14, 4),
                                                             0))) AS soodustus,
-                                              ((CASE
-                                                    WHEN (coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN)
-                                                        THEN 0
-                                                    ELSE 1 END) *
-                                               (COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) +
-                                                a1.summa))       AS summa,
+                                              a1.summa           AS summa,
                                               ((CASE
                                                     WHEN (coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN)
                                                         THEN 1
@@ -221,7 +216,7 @@ FROM (
 
                                                 INNER JOIN docs.doc D ON D.id = a.parentid AND D.status <> 3
                                                 INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
-                                       ) a1
+                  ) a1
                                       ON a1.arv_id = a.id
                   WHERE COALESCE((a.properties ->>
                                   'tyyp')::TEXT,
@@ -325,6 +320,6 @@ GRANT EXECUTE ON FUNCTION lapsed.kaive_aruanne(INTEGER, DATE, DATE) TO dbvaatlej
 
 /*
 select *
-FROM lapsed.kaive_aruanne(69, '2022-09-01', '2022-10-31') qry
-where viitenumber= '0690041411'
+FROM lapsed.kaive_aruanne(99, '2022-01-01', '2022-01-31') qry
+where viitenumber= '0990090706'
 */

@@ -55,6 +55,9 @@ block content
                     th Aasta
                     th Teenuse nimetus
                     th Kogus
+                    th Hind
+                    th Soodustus
+                    th Summa
 
             tbody
                 each taabel in data
@@ -66,3 +69,16 @@ block content
                         td=taabel.aasta
                         td=taabel.teenus
                         td=taabel.kogus
+                        td(align='center')=Number(taabel.hind).toFixed(2)
+                        td(align='center')=Number(taabel.soodustus).toFixed(2)
+                        td(align='center')=Number(taabel.summa).toFixed(2)
+                td.group=' Kokku:'
+                td.group
+                td.group
+                td.group
+                td.group
+                td.group
+                td.group
+                td.group
+                td(align='center').group=Number(data[0].soodustus_kokku).toFixed(2)
+                td(align='center').group=Number(data[0].summa_kokku).toFixed(2)
