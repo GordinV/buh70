@@ -160,31 +160,27 @@ FROM (
                                            'yksus'), AT.summa, l.parentid, a.rekvid
               ),
               arvestatud AS (
-                  SELECT ld.parentid                               AS laps_id,
+                  SELECT ld.parentid                                                          AS laps_id,
                          COALESCE(a1.yksus,
-                                  '')::TEXT                        AS yksus,
-                         a1.summa ::NUMERIC(14, 4)                 AS arvestatud,
-                         a1.umberarvestus ::NUMERIC(14, 4)         AS umberarvestus,
-                         COALESCE(a1.soodustus, 0)::NUMERIC(14, 2) AS soodustus,
-                         D.rekvid::INTEGER                         AS rekvid
+                                  '')::TEXT                                                   AS yksus,
+                         (a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus)) ::NUMERIC(14, 4) AS arvestatud,
+                         a1.umberarvestus ::NUMERIC(14, 4)                                    AS umberarvestus,
+                         (COALESCE(a1.soodustus, 0) * a1.kogus)::NUMERIC(14, 2)               AS soodustus,
+                         D.rekvid::INTEGER                                                    AS rekvid
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
-                           INNER JOIN (SELECT a1.parentid                                                AS arv_id,
-                                              sum(COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0)) AS soodustus,
-                                              (a1.properties ->> 'yksus')                                AS yksus,
-                                              sum((CASE
-                                                       WHEN (coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN)
-                                                           THEN 0
-                                                       ELSE 1 END) *
-                                                  (COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) +
-                                                   a1.summa))                                            AS summa,
-                                              sum((CASE
-                                                       WHEN (coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN)
-                                                           THEN 1
-                                                       ELSE 0 END) *
-                                                  (COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) +
-                                                   a1.summa))                                            AS umberarvestus
+                           INNER JOIN (SELECT a1.parentid                                             AS arv_id,
+                                              (COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0)) AS soodustus,
+                                              (a1.properties ->> 'yksus')                             AS yksus,
+                                              a1.summa                                                AS summa,
+                                              ((CASE
+                                                    WHEN (coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN)
+                                                        THEN 1
+                                                    ELSE 0 END) *
+                                               (COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) +
+                                                a1.summa))                                            AS umberarvestus,
+                                              a1.kogus
                                        FROM docs.arv1 a1
                                                 INNER JOIN docs.arv a ON a.id = a1.parentid AND
                                                                          (a.properties ->>
@@ -194,8 +190,7 @@ FROM (
                                            AND a.liik = 0 -- только счета исходящие
                                                 INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
                                                 INNER JOIN docs.doc D ON D.id = a.parentid AND D.status <> 3
-                                       GROUP BY a1.parentid, a1.properties ->>
-                                                             'yksus') a1
+                  ) a1
                                       ON a1.arv_id = a.id AND
                                          (a.properties ->>
                                           'tyyp' IS NULL OR a.properties ->>

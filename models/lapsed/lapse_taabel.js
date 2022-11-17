@@ -209,7 +209,7 @@ module.exports = {
                 ORDER BY aasta DESC, kuu DESC, nimi`,     //  $1 всегда ид учреждения, $2 - userId
             params: '',
             alias: 'curLapseTaabel',
-            totals: ` sum(soodustus) over() as soodustus_kokku,  
+            totals: ` -1 * sum(soodustus * kogus) over() as soodustus_kokku,  
                    sum(summa) over() as summa_kokku, sum(vahe) over() as vahe_kokku `
         },
     print: [

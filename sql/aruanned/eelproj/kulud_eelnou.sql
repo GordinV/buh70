@@ -70,7 +70,6 @@ BEGIN
                                                  FROM get_asutuse_struktuur(l_rekvid) r)
                                 AND t.aasta IN (year(l_kpv) - 1, year(l_kpv), year(l_kpv) + 1)
                                 AND t1.kood2 NOT LIKE ('%RF%')
-                                AND (l_allikas IS NULL OR t1.kood2 ILIKE '%' || l_allikas || '%')
                                 AND t.rekvid <> 9
 
                               GROUP BY t.aasta,
