@@ -5,7 +5,7 @@
     "host": "80.235.127.119",
     "port": "5438",
     "database":"db",
-    "connection": "postgres://user:parool@host:port/dbname"
+    "connection": "postgres://vlad:Vlad490710@80.235.127.119:5438/db"
   },
   "session": {
     "secret": "Secret",
