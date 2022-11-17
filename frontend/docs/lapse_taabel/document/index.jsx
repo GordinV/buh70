@@ -33,6 +33,7 @@ class Laps extends React.PureComponent {
         this.btnEditNomClick = this.btnEditNomClick.bind(this);
         this.btnEditLapsClick = this.btnEditLapsClick.bind(this);
         this.lapsIdChangehandler = this.lapsIdChangehandler.bind(this);
+        this.recalcDocSumma = this.recalcDocSumma.bind(this);
 
 
         this.pages = [
@@ -72,6 +73,7 @@ class Laps extends React.PureComponent {
                                  pages={this.pages}
                                  renderer={this.renderer}
                                  handleGridBtnClick={this.handleGridBtnClick}
+                                 recalcDoc={this.recalcDocSumma}
                                  history={this.props.history}
         />
     }
@@ -199,7 +201,7 @@ class Laps extends React.PureComponent {
                         <InputNumber ref="input-summa"
                                      title='Summa:'
                                      name='summa'
-                                     value={(Number(self.docData.hind) * Number(self.docData.kogus) - Number(self.docData.soodustus)).toFixed(2) || Number(null)}
+                                     value={(Number(self.docData.summa)).toFixed(2) || Number(null)}
                                      readOnly={true}/>
 
                         <CheckBox title="Kas ümberarvestus?"
@@ -287,8 +289,15 @@ class Laps extends React.PureComponent {
         // обновить справочник
         Doc.createLibs();
 
-
     }
+
+    recalcDocSumma() {
+        let doc = this.refs['document'];
+
+        let summa = 0;
+        doc.docData['summa'] = ((Number(doc.docData['hind']) - Number(doc.docData['soodustus'])) * Number(doc.docData['kogus'])).toFixed(2)  ;
+    }
+
 }
 
 Laps.propTypes = {

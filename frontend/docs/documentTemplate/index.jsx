@@ -449,6 +449,11 @@ class DocumentTemplate extends React.Component {
         if (this.props.handleInputChange) {
             this.props.handleInputChange(inputName, inputValue);
         }
+        // перерасчет итогов
+        if (this.props.recalcDoc) {
+            this.props.recalcDoc();
+        }
+
         this.validation();
         this.forceUpdate();
     }

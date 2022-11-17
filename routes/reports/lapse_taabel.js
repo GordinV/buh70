@@ -77,18 +77,22 @@ exports.get = async (req, res) => {
             let soodustuseKogus = 0;
             let soodustuseSumma = 0;
 
+            console.log('row', JSON.stringify(row));
+
             if (Number(row.soodustus) > 0) {
                 // расчет суммы льготы
-                soodustus = ((Number(row.soodustus) / (Number(row.hind) * Number(row.kogus))) * 100).toFixed(0);
+                soodustus = ((Number(Number(row.alus_soodustus) * Number(row.kogus)) / (Number(row.hind) * Number(row.kogus))) * 100).toFixed(0);
 
 //                if (soodustus == 25 || soodustus == 100 || soodustus == 26) {
                 kulastused = Number(row.kulastused) === 0 ? 1 : (row.kovid) / row.too_paevad;
 
                 soodustuseKogus = ((soodustus / 100) * kulastused).toFixed(4);
-                soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
+                soodustuseSumma = (soodustuseKogus * row.kogus * row.hind * -1).toFixed(2);
+
 
                 row.kogus = row.kogus ? row.kogus : soodustuseKogus;
                 row.summa = (Number(row.hind) * Number(row.kogus)).toFixed(2);
+
 //                }
 
                 //Вычисляется количество (часть от единицы)
