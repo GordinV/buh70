@@ -22,7 +22,7 @@ module.exports = {
                            viitenumber,
                            arvestatud::NUMERIC(14, 2),
                            soodustus::NUMERIC(14, 2),
-                           (arvestatud - soodustus)::NUMERIC(14, 2) AS summa,
+                           (arvestatud + soodustus)::NUMERIC(14, 2) AS summa,
                            kuu,
                            aasta,
                            vn.vn                                    AS vana_vn
@@ -40,7 +40,7 @@ module.exports = {
         notReloadWithoutParameters: true,
         totals: ` sum(arvestatud) over() as arvestatud_total,
                 sum(soodustus) over() as soodustus_total, 
-                sum(arvestatud - soodustus) over() as summa_total`,
+                sum(arvestatud + soodustus) over() as summa_total`,
         alias: 'kuutabeli_aruanne'
     },
     print: [

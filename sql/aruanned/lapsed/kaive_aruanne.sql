@@ -184,28 +184,30 @@ FROM (
                   GROUP BY l.id, D.rekvid
               ),
               arvestatud AS (
-                  SELECT ld.parentid                                            AS laps_id,
-                         sum(a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus)) AS arvestatud,
-                         sum(a1.umberarvestus) ::NUMERIC(14, 4)                 AS umberarvestus,
-                         sum(COALESCE(a1.soodustus, 0) * a1.kogus)              AS soodustus,
-                         D.rekvid::INTEGER                                      AS rekv_id
+                  SELECT ld.parentid                                                                            AS laps_id,
+                         sum(a1.umberarvestus) ::NUMERIC(14, 4)                                                 AS umberarvestus,
+                         sum(CASE
+                                 WHEN kas_umberarvestus THEN 0
+                                 ELSE (a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus)) END) ::NUMERIC(14, 4) AS arvestatud,
+                         sum(COALESCE(a1.soodustus, 0) * a1.kogus)                                              AS soodustus,
+                         D.rekvid::INTEGER                                                                      AS rekv_id
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
-                           INNER JOIN (SELECT a1.parentid        AS arv_id,
+                           INNER JOIN (SELECT a1.parentid                                                               AS arv_id,
                                               (
                                                   (COALESCE((a1.properties ->>
                                                              'soodustus')::NUMERIC(14, 4),
-                                                            0))) AS soodustus,
-                                              a1.summa           AS summa,
+                                                            0)))                                                        AS soodustus,
+                                              a1.summa                                                                  AS summa,
                                               ((CASE
                                                     WHEN (coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN)
                                                         THEN 1
                                                     ELSE 0 END) *
                                                (COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) +
-                                                a1.summa))       AS umberarvestus,
-                                              a1.kogus           AS kogus
-
+                                                a1.summa))                                                              AS umberarvestus,
+                                              coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN AS kas_umberarvestus,
+                                              a1.kogus                                                                  AS kogus
                                        FROM docs.arv1 a1
                                                 INNER JOIN docs.arv a ON a.id = a1.parentid AND
                                                                          (a.properties ->>

@@ -22,8 +22,8 @@ WITH preReport AS (
            lt.isikukood::TEXT,
            lapsed.get_viitenumber(lt.rekvid, l.id)::TEXT    AS viitenumber,
            (CASE WHEN lt.tyyp IS NOT NULL AND lt.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END) *
-           lt.summa + lt.soodustus - lt.vahe AS arvestatud,
-           lt.soodustus AS soodustus,
+           lt.summa + (lt.soodustus * lt.kogus)- lt.vahe AS arvestatud,
+           -1 * lt.soodustus * lt.kogus AS soodustus,
            lt.kuu::INTEGER,
            lt.aasta::INTEGER
     FROM lapsed.cur_lapse_taabel lt
@@ -41,8 +41,8 @@ SELECT ruhm::TEXT,
        nimi:: TEXT,
        isikukood:: TEXT,
        viitenumber:: TEXT,
-       sum(arvestatud):: NUMERIC(14, 4),
-       sum(soodustus):: NUMERIC(14, 4),
+       sum(arvestatud):: NUMERIC(14, 2),
+       sum(soodustus):: NUMERIC(14, 2),
        kuu:: INTEGER,
        aasta
 FROM preReport

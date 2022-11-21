@@ -183,8 +183,10 @@ BEGIN
                                                        (v_taabel.summa *
                                                         (v_taabel.vat / 100)) +
                                                        round(CASE
+                                                                 WHEN TRUE THEN 1 -- временно
                                                                  WHEN v_taabel.tyyp = 'SOODUSTUS' AND NOT v_taabel.umberarvestus
                                                                      THEN 0
+
                                                                  ELSE 1 END * v_taabel.summa, 2) -
                                                        v_taabel.vahe                                   AS summa,
                                                        v_taabel.tegev                                  AS kood1,
