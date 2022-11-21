@@ -12,7 +12,7 @@ const app = express(),
     path = require('path'),
     routes = require('./routes/index'),
     errorHandle = require('errorhandler'),
-    config = require('config'),
+//    config = require('config'),
     cookieParser = require('cookie-parser'),
     bodyParser = require('body-parser'),
     logger = require('morgan'),
@@ -25,10 +25,12 @@ const app = express(),
     fs = require('fs'),
     csrf = require('csurf');
 
+const config = require('./config/default.json');
 
 const log = require('./libs/log');
 const HttpError = require('./error').HttpError;
-const port = config.get('port');
+const port = config.port;
+const https_port = config.https;
 
 
 global.__base = __dirname + '/';
@@ -45,7 +47,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 
-http.createServer(app).listen(config.get('port'), function () {
+http.createServer(app).listen(port, function () {
     log('Express server listening on port ' + port, 'info');
 });
 
@@ -53,15 +55,15 @@ let pathToSshKey = path.join(__dirname,'routes', 'ssh', 'server.key');
 let pathToSshCert = path.join(__dirname,'routes', 'ssh', 'server.cert');
 
 // will check if cert is available
-if (fs.existsSync(pathToSshCert) && config.get('https')) {
+if (fs.existsSync(pathToSshCert) && https_port) {
     const options = {
         key: fs.readFileSync(pathToSshKey),
         cert: fs.readFileSync(pathToSshCert),
         ca: ''
     };
 
-    https.createServer(options, app).listen(config.get('https'), ()=>{
-        log('Express server listening on port ' + config.get('https'),'info');
+    https.createServer(options, app).listen(https_port, ()=>{
+        log('Express server listening on port ' + https_port,'info');
     });
 }
 
@@ -77,7 +79,7 @@ app.use(compression());
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
-app.use(cookieParser(config.get('session.secret')));
+app.use(cookieParser(config.session.secret));
 app.use(require('./middleware/sendHttpError'));
 
 app.use(cors()); //Enable All CORS Requests
