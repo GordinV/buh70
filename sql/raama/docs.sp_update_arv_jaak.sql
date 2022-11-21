@@ -23,7 +23,7 @@ BEGIN
              INNER JOIN docs.doc d ON d.id = arv.parentid
     WHERE d.id = l_arv_Id;
 
-    SELECT coalesce(sum(summa) FILTER ( WHERE arvtasu.kpv <= date() ), 0),
+    SELECT coalesce(sum(summa) FILTER ( WHERE arvtasu.kpv <= current_date ), 0),
            coalesce(max(arvtasu.kpv), NULL :: DATE)
            INTO l_tasu_summa, l_kpv
     FROM docs.arvtasu arvtasu

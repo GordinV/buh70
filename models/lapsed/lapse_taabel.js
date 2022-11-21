@@ -101,8 +101,8 @@ module.exports = {
                 {id: "kogus", name: "Kogus", width: "8%", type: "number", interval: true},
                 {id: "hind", name: "Hind", width: "8%", type: "number", interval: true},
                 {id: "uhik", name: "Ühik", width: "5%"},
-                {id: "alus_soodustus", name: "Soodustus", width: "10%", type: "number", show: true},
-                {id: "summa", name: "Summa", width: "10%", type: "number", interval: true},
+                {id: "arv_soodustus", name: "Soodustus", width: "10%", type: "number", show: true},
+                {id: "arv_summa", name: "Summa", width: "10%", type: "number", interval: true},
                 {id: "vahe", name: "Vahe", width: "5%", type: "number", interval: true},
                 {id: "umberarvestus", name: "Ümberarv", width: "7%"},
                 {id: "tab_tyyp", name: "Tüüp", width: "10%", type: "text"},
@@ -132,7 +132,10 @@ module.exports = {
                                  CASE WHEN lt.umberarvestus THEN 'Jah' ELSE 'Ei' END::TEXT                    AS umberarvestus,
                                  lt.alus_soodustus AS alus_soodustus,
                                  lt.soodustus AS soodustus,
+                                 lt.arv_soodustus::NUMERIC(12, 2) AS arv_soodustus,
+                                 lt.arv_soodustus_kokku::NUMERIC(12, 2) AS arv_soodustus_kokku,
                                  lt.summa                                                   AS summa,
+                                 lt.arv_summa::NUMERIC(12, 2) as arv_summa,
                                  lt.isikukood,
                                  lt.nimi,
                                  lt.kood,
@@ -170,6 +173,7 @@ module.exports = {
                                                  WHEN lt.kas_protsent::BOOLEAN THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
                                                                            ((lt.soodustus * lt.sooduse_kehtivus) / 100)
                                                  ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus END)::NUMERIC(12, 2) AS soodustus,
+                                                 
                                             ((lt.hind * lt.kogus - (CASE
                                                                         WHEN lt.kas_protsent::BOOLEAN THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
                                                                                                   ((lt.soodustus * lt.sooduse_kehtivus) / 100)
@@ -191,26 +195,29 @@ module.exports = {
                                                          FROM get_asutuse_struktuur($1::INTEGER))                         
 
                      )
-                SELECT id::integer, "select", parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, alus_soodustus, soodustus, summa, 
+                SELECT id::integer, "select", parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, 
+                            alus_soodustus, soodustus, arv_soodustus::NUMERIC(12, 2), arv_soodustus_kokku, summa, arv_summa,
                             isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                            
                             tab_tyyp, kulastused, too_paevad, kovid, vahe,
                             lapsed.get_viitenumber(rekvid, parentid) AS viitenumber
                 FROM (
-                         select false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, alus_soodustus, soodustus, summa, 
+                         select false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, 
+                            alus_soodustus, soodustus, arv_soodustus, arv_soodustus_kokku, summa, arv_summa, 
                             isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                           
                             'Tavaline' as tab_tyyp, kulastused, too_paevad, kovid, vahe
                          from qryTabs
                          UNION ALL
-                         SELECT *, 
-                         'Virtuaalne' as tab_tyyp,
-                                 0 as kulastused, 0 as too_paevad , 0 as kovid, 0.00::numeric as vahe
+                         SELECT false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, 
+                            alus_soodustus, soodustus, soodustus as arv_soodustus, soodustus  as arv_soodustus_kokku, summa, summa as arv_summa, 
+                            isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                           
+                            'Virtuaalne' as tab_tyyp, 0 as kulastused, 0 as too_paevad , 0 as kovid, 0.00::numeric as vahe                                                         
                          FROM qryVirtTabs
                      ) tab
                 ORDER BY aasta DESC, kuu DESC, nimi`,     //  $1 всегда ид учреждения, $2 - userId
             params: '',
             alias: 'curLapseTaabel',
-            totals: `-1 * sum(soodustus * kogus) over() as soodustus_kokku,  
-                   sum(summa) over() as summa_kokku, sum(vahe) over() as vahe_kokku `
+            totals: `sum(arv_soodustus_kokku) over() as soodustus_kokku,  
+                   sum(arv_summa) over() as summa_kokku, sum(vahe) over() as vahe_kokku `
         },
     print: [
         {

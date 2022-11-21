@@ -73,8 +73,13 @@ SELECT count(*) OVER (PARTITION BY report.laps_id)                  AS id,
        laekumised::NUMERIC(14, 2),
        mahakantud::NUMERIC(14, 2),
        tagastused::NUMERIC(14, 2),
-       (alg_saldo + arvestatud + umberarvestus - soodustus - laekumised - mahakantud +
-        tagastused)::NUMERIC(14, 2)                                 AS jaak,
+       COALESCE(alg_saldo, 0) +
+       COALESCE(arvestatud, 0) +
+       COALESCE(umberarvestus, 0) -
+       COALESCE(soodustus, 0) -
+       COALESCE(laekumised, 0) -
+       COALESCE(mahakantud, 0) +
+       COALESCE(tagastused, 0)::NUMERIC(14, 2)                      AS jaak,
        report.rekv_id
 FROM (
          WITH alg_saldo AS (
@@ -94,12 +99,13 @@ FROM (
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                       UNION ALL
-                      SELECT a.summa     AS summa,
+                      SELECT a1.summa    AS summa,
                              ld.parentid AS laps_id,
                              D.rekvid    AS rekv_id
                       FROM docs.doc D
                                INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                                INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
+                               INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                       WHERE COALESCE((a.properties ->> 'tyyp')::TEXT,
                                      '') <>
                             'ETTEMAKS'
@@ -209,21 +215,63 @@ FROM (
                                               coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN AS kas_umberarvestus,
                                               a1.kogus                                                                  AS kogus
                                        FROM docs.arv1 a1
-                                                INNER JOIN docs.arv a ON a.id = a1.parentid AND
-                                                                         (a.properties ->>
-                                                                          'tyyp' IS NULL OR a.properties ->>
-                                                                                            'tyyp' <>
-                                                                                            'ETTEMAKS')
-                                           AND a.liik = 0 -- только счета исходящие
-
-                                                INNER JOIN docs.doc D ON D.id = a.parentid AND D.status <> 3
+                                                INNER JOIN docs.arv a ON a.id = a1.parentid
+                                                INNER JOIN docs.doc D ON D.id = a.parentid
                                                 INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
+                                       WHERE coalesce(n.properties ->> 'tyyp', '') <> 'SOODUSTUS' -- только простые операции, без льготных
+                                         AND n.dok = 'ARV'
+                                         AND n.rekvid = d.rekvid
+                                         AND D.status <> 3
+                                         AND (a.properties ->> 'tyyp' IS NULL
+                                           OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+                                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
+                                         AND a.liik = 0 -- только счета исходящие
                   ) a1
                                       ON a1.arv_id = a.id
-                  WHERE COALESCE((a.properties ->>
-                                  'tyyp')::TEXT,
-                                 '') <>
-                        'ETTEMAKS'
+                  WHERE COALESCE((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
+                    AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                    AND d.status < 3
+                    AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
+                    AND a.liik = 0 -- только счета исходящие
+                    AND a.kpv >= kpv_start
+                    AND a.kpv <= kpv_end
+                  GROUP BY ld.parentid, D.rekvid
+                  UNION ALL
+                  SELECT ld.parentid                                                                            AS laps_id,
+                         sum(a1.umberarvestus) ::NUMERIC(14, 4)                                                 AS umberarvestus,
+                         sum(CASE
+                                 WHEN kas_umberarvestus THEN 0
+                                 ELSE (a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus)) END) ::NUMERIC(14, 4) AS arvestatud,
+                         sum(a1.soodustus)                                                                      AS soodustus,
+                         D.rekvid::INTEGER                                                                      AS rekv_id
+                  FROM docs.doc D
+                           INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
+                           INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
+                           INNER JOIN (SELECT a1.parentid                                                               AS arv_id,
+                                              -1 * a1.summa                                                             AS soodustus, -- переворачиваем сумму как льготу
+                                              a1.summa                                                                  AS summa,
+                                              ((CASE
+                                                    WHEN (coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN)
+                                                        THEN 1
+                                                    ELSE 0 END) *
+                                               (COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) +
+                                                a1.summa))                                                              AS umberarvestus,
+                                              coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN AS kas_umberarvestus,
+                                              a1.kogus                                                                  AS kogus
+                                       FROM docs.arv1 a1
+                                                INNER JOIN docs.arv a ON a.id = a1.parentid
+                                                INNER JOIN docs.doc D ON D.id = a.parentid AND D.status <> 3
+                                                INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
+                                       WHERE coalesce(n.properties ->> 'tyyp', '') = 'SOODUSTUS' -- только операции льготы
+                                         AND n.dok = 'ARV'
+                                         AND n.rekvid = d.rekvid
+
+                                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
+                                         AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+                                         AND a.liik = 0 -- только счета исходящие
+                  ) a1
+                                      ON a1.arv_id = a.id
+                  WHERE COALESCE((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
                     AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND d.status < 3
                     AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')

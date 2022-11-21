@@ -16,10 +16,10 @@ module.exports = {
         ],
         sqlString: `WITH qryReport AS (
                     SELECT qryReport.period,
-                           sum(case when qryReport.kulastatavus = 'Jah' then 1 else 0 end) as kulastatavus,
-                           sum(coalesce(alg_saldo, 0))::NUMERIC(14, 2)                             AS alg_saldo,
-                           sum(coalesce(arvestatud, 0))::NUMERIC(14, 2)                            AS arvestatud,
-                           sum(coalesce(umberarvestus, 0))::NUMERIC(14, 2)                         AS umberarvestus,                           
+                           sum(case when qryReport.kulastatavus = 'Jah' then 1 else 0 end)          as kulastatavus,
+                           sum(coalesce(alg_saldo, 0))::NUMERIC(14, 2)                              AS alg_saldo,
+                           sum(coalesce(arvestatud, 0))::NUMERIC(14, 2)                             AS arvestatud,
+                           sum(coalesce(umberarvestus, 0))::NUMERIC(14, 2)                          AS umberarvestus,                           
                            sum(-1 * coalesce(soodustus, 0))::NUMERIC(14, 2)                             AS soodustus,
                            sum(coalesce(laekumised, 0))::NUMERIC(14, 2)                            AS laekumised,
                            sum(coalesce(mahakantud, 0))::NUMERIC(14, 2)                            AS mahakantud,
@@ -40,7 +40,7 @@ module.exports = {
                        sum(r.mahakantud) OVER ()                                AS mahakantud_group,
                        sum(r.arvestatud + r.soodustus + r.umberarvestus)
                        OVER ()                                                          AS arv_kokku_group,
-                       -1 * sum(r.tagastused) OVER ()                                AS tagastused_group,
+                       sum(r.tagastused) OVER ()                                AS tagastused_group,
                        sum(r.jaak) OVER ()                                      AS jaak_group,
                        count(*) OVER ()                                                 AS rows_total,
                        row_number() OVER () as id,
@@ -68,7 +68,7 @@ module.exports = {
                 sum(arvestatud + soodustus + umberarvestus) over() as arv_kokku_total, 
                 sum(laekumised) over() as laekumised_total,
                 sum(mahakantud) over() as mahakantud_total,
-                -1 * sum(tagastused) over() as tagastused_total,
+                sum(tagastused) over() as tagastused_total,
                 sum(jaak) over() as jaak_total `,
         alias: 'kaive_aruanne_report',
         notReloadWithoutParameters: true

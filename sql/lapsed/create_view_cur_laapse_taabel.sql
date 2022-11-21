@@ -17,6 +17,17 @@ SELECT lt.id,
        CASE WHEN lt.properties ->> 'sooduse_alg' IS NULL THEN 1 ELSE 0 END AS sooduse_kehtivus,
        (lt.properties ->> 'alus_soodustus')::NUMERIC(12, 2)                AS alus_soodustus,
        coalesce(lt.summa, 0)                                               AS summa,
+       CASE
+           WHEN coalesce(n.properties ->> 'tyyp', '') = 'SOODUSTUS' THEN coalesce(lt.summa, 0)
+           ELSE 0 END + (-1 * lt.soodustus * lt.kogus)                     AS arv_soodustus_kokku,
+       CASE
+           WHEN coalesce(n.properties ->> 'tyyp', '') = 'SOODUSTUS' THEN -1 * coalesce(lt.summa, 0)
+           ELSE 0 END + (lt.soodustus)                                     AS arv_soodustus,
+
+       CASE
+           WHEN coalesce(n.properties ->> 'tyyp', '') = 'SOODUSTUS' THEN lt.summa
+           ELSE coalesce(lt.summa, 0) END
+                                                                           AS arv_summa,
        l.isikukood,
        l.nimi,
        n.kood::TEXT,

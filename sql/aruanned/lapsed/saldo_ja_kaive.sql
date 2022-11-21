@@ -117,15 +117,15 @@ FROM (
                           AND rekvid IN (SELECT rekv_id FROM rekv_ids)
                         GROUP BY doc_arv_id
                        ) AT
-                           INNER JOIN docs.arv a ON AT.doc_arv_id = a.parentid AND
-                                                    (a.properties ->>
-                                                     'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+                           INNER JOIN docs.arv a ON AT.doc_arv_id = a.parentid
                            INNER JOIN docs.doc D ON D.id = a.parentid
                            INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                            INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
                   WHERE a.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND D.status <> 3
                     AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
+                    AND (a.properties ->> 'tyyp' IS NULL
+                            OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
                     AND a.liik = 0 -- только счета исходящие
                   GROUP BY AT.doc_arv_id, (a1.properties ->> 'yksus'), l.parentid, a.rekvid
               ),
@@ -144,11 +144,7 @@ FROM (
                           AND rekvid IN (SELECT rekv_id FROM rekv_ids)
                         GROUP BY doc_arv_id
                        ) AT
-                           INNER JOIN docs.arv a ON AT.doc_arv_id = a.parentid AND
-                                                    (a.properties ->>
-                                                     'tyyp' IS NULL OR a.properties ->>
-                                                                       'tyyp' <>
-                                                                       'ETTEMAKS')
+                           INNER JOIN docs.arv a ON AT.doc_arv_id = a.parentid
                            INNER JOIN docs.doc D ON D.id = a.parentid
                            INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                            INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
@@ -156,10 +152,14 @@ FROM (
                     AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
                     AND D.status <> 3
                     AND a.liik = 0 -- только счета исходящие
+                    AND (a.properties ->>
+                       'tyyp' IS NULL
+                             OR a.properties ->>'tyyp' <>'ETTEMAKS')
                   GROUP BY AT.doc_arv_id, (a1.properties ->>
                                            'yksus'), AT.summa, l.parentid, a.rekvid
               ),
               arvestatud AS (
+                  -- без усдуг - льгот
                   SELECT ld.parentid                                                                         AS laps_id,
                          COALESCE(a1.yksus,
                                   '')::TEXT                                                                  AS yksus,
@@ -185,26 +185,77 @@ FROM (
                                                 a1.summa))                                                              AS umberarvestus,
                                               a1.kogus
                                        FROM docs.arv1 a1
-                                                INNER JOIN docs.arv a ON a.id = a1.parentid AND
-                                                                         (a.properties ->>
-                                                                          'tyyp' IS NULL OR a.properties ->>
-                                                                                            'tyyp' <>
-                                                                                            'ETTEMAKS')
-                                           AND a.liik = 0 -- только счета исходящие
+                                                INNER JOIN docs.arv a ON a.id = a1.parentid
                                                 INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
-                                                INNER JOIN docs.doc D ON D.id = a.parentid AND D.status <> 3
+                                                INNER JOIN docs.doc D ON D.id = a.parentid
+                                       WHERE coalesce(n.properties ->> 'tyyp', '') <> 'SOODUSTUS'
+                                         AND n.dok = 'ARV'
+                                         AND n.rekvid = d.rekvid
+                                         AND (a.properties ->> 'tyyp' IS NULL
+                                           OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+                                         AND D.status <> 3
+                                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
+                                         AND a.liik = 0 -- только счета исходящие
+                                         AND a.kpv >= kpv_start
+                                         AND a.kpv <= kpv_end
                   ) a1
-                                      ON a1.arv_id = a.id AND
-                                         (a.properties ->>
-                                          'tyyp' IS NULL OR a.properties ->>
-                                                            'tyyp' <>
-                                                            'ETTEMAKS')
-                  WHERE COALESCE((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
+                                      ON a1.arv_id = a.id
+                  WHERE D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                    AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
+                    AND a.liik = 0 -- только счета исходящие
+                    AND a.kpv >= kpv_start
+                    AND a.kpv <= kpv_end
+                  UNION ALL
+                  -- добавим счета с услугами - льготами
+                  SELECT ld.parentid                                                                       AS laps_id,
+                         COALESCE(a1.yksus, '')::TEXT                                                      AS yksus,
+                         (CASE
+                              WHEN kas_umberarvestus THEN 0
+                              ELSE a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus) END) ::NUMERIC(14, 4) AS arvestatud,
+                         a1.umberarvestus ::NUMERIC(14, 4)                                                 AS umberarvestus,
+                         a1.soodustus::NUMERIC(14, 2)                                                      AS soodustus,
+                         D.rekvid::INTEGER                                                                 AS rekvid
+                  FROM docs.doc D
+                           INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
+                           INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
+                           INNER JOIN (SELECT a1.parentid                                                               AS arv_id,
+                                              -1 * a1.summa                                                             AS soodustus,
+                                              (a1.properties ->> 'yksus')                                               AS yksus,
+                                              a1.summa                                                                  AS summa,
+                                              coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN AS kas_umberarvestus,
+                                              ((CASE
+                                                    WHEN (coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN)
+                                                        THEN 1
+                                                    ELSE 0 END) *
+                                               (COALESCE((a1.properties ->> 'soodustus')::NUMERIC, 0) +
+                                                a1.summa))                                                              AS umberarvestus,
+                                              a1.kogus
+                                       FROM docs.arv1 a1
+                                                INNER JOIN docs.arv a ON a.id = a1.parentid
+                                                INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
+                                                INNER JOIN docs.doc D ON D.id = a.parentid
+                                       WHERE a.kpv >= kpv_start
+                                         AND a.kpv <= kpv_end
+                                         AND D.status <> 3
+                                         AND a.liik = 0 -- только счета исходящие
+                                         AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                                         AND coalesce(n.properties ->> 'tyyp', '') = 'SOODUSTUS'
+                                         AND n.dok = 'ARV'
+                                         AND n.rekvid = d.rekvid
+                                         AND (a.properties ->> 'tyyp' IS NULL
+                                           OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+                                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
+                  ) a1
+                                      ON a1.arv_id = a.id
+                  WHERE (a.properties ->> 'tyyp' IS NULL
+                      OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+                    AND a.liik = 0 -- только счета исходящие
                     AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
                     AND a.liik = 0 -- только счета исходящие
                     AND a.kpv >= kpv_start
-                    AND a.kpv <= kpv_end),
+                    AND a.kpv <= kpv_end
+              ),
               ettemaksud AS (
                   SELECT DISTINCT mk.id                                                                            AS doc_tasu_id,
                                   (CASE WHEN mk.opt = 2 AND mk1.summa > 0 THEN mk.jaak ELSE 0 END)::NUMERIC(14, 4) AS laekumised,

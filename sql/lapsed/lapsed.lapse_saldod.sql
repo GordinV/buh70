@@ -4,7 +4,7 @@ DROP FUNCTION IF EXISTS lapsed.lapse_saldod(l_kpv DATE, INTEGER);
 DROP FUNCTION IF EXISTS lapsed.lapse_saldod(l_kpv DATE, INTEGER, INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION lapsed.lapse_saldod(l_kpv DATE DEFAULT now(), l_laps_id INTEGER DEFAULT NULL,
-                                                l_rekv_id INTEGER DEFAULT NULL, l_kond INTEGER DEFAULT 0)
+                                               l_rekv_id INTEGER DEFAULT NULL, l_kond INTEGER DEFAULT 0)
     RETURNS TABLE (
         jaak       NUMERIC(14, 4),
         laps_id    INTEGER,
@@ -72,8 +72,11 @@ FROM (
                   INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid
                   INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                   INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
+                  INNER JOIN docs.doc d ON d.id = a.parentid
          WHERE at.kpv < l_kpv::DATE
            AND at.status <> 3
+           AND d.status < 3
+           AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
            AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
@@ -120,8 +123,11 @@ FROM (
                   INNER JOIN docs.arv a ON at.doc_arv_id = a.parentid
                   INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                   INNER JOIN lapsed.liidestamine l ON l.docid = a.parentid
+                  INNER JOIN docs.doc d ON d.id = a.parentid
          WHERE date_part('year', at.kpv) = date_part('year', l_kpv - 1)
            AND date_part('month', at.kpv) = date_part('month', l_kpv - 1)
+           AND d.status < 3
+           AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
            AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
