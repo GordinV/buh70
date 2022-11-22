@@ -59,7 +59,7 @@ class Input extends React.PureComponent {
                 <label style={styles.label} htmlFor={this.props.name} ref="label">
                     {this.props.title}
                 </label>
-                {this.state.readOnly ? null :
+                {this.state.readOnly || this.props.disabled ? null :
                     <Button
                         style={styles.button}
                         value={'-'}

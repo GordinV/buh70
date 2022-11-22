@@ -33,7 +33,7 @@ const userData = async function (req, _uuid) {
     if (userIndex < 0) {
         // потеряли хеш
         let uuidUser = await Userid.getUserByUuid(uuid);
-        if (uuidUser && uuidUser.data) {
+        if (uuidUser && uuidUser.data && uuidUser.data.length) {
             sqlUser.userId = uuidUser.data[0].userid;
             sqlUser.asutusId = uuidUser.data[0].asutusid;
             sqlUser.kasutaja = uuidUser.data[0].kasutaja;
