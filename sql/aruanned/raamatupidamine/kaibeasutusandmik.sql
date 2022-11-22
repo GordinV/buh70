@@ -2,11 +2,12 @@ DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, INTEGER, DATE, DAT
 DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, DATE, DATE, INTEGER);
 DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, DATE, DATE, INTEGER, TEXT);
 DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER);
-DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER, jsonb);
+DROP FUNCTION IF EXISTS docs.kaibeasutusandmik(TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER, JSONB);
 
 CREATE OR REPLACE FUNCTION docs.kaibeasutusandmik(l_konto TEXT, l_asutus INTEGER, l_kpv1 DATE, l_kpv2 DATE,
-                                                  l_rekvid INTEGER, l_tunnus TEXT DEFAULT '%', l_kond INTEGER DEFAULT 0,
-                                                  l_params JSONB DEFAULT NULL::JSONB)
+                                                   l_rekvid INTEGER, l_tunnus TEXT DEFAULT '%',
+                                                   l_kond INTEGER DEFAULT 0,
+                                                   l_params JSONB DEFAULT NULL::JSONB)
     RETURNS TABLE (
         alg_saldo NUMERIC(14, 2),
         deebet    NUMERIC(14, 2),
@@ -31,7 +32,11 @@ WITH params AS (
                                  -- kond
                                  THEN rekv_id
                              ELSE l_rekvid END
+     ),
+     docs_types AS (
+         SELECT id, kood FROM libs.library WHERE library.library = 'DOK' AND kood IN ('JOURNAL')
      )
+
 SELECT sum(qry.alg_saldo)     AS alg_saldo,
        sum(qry.deebet)        AS deebet,
        sum(qry.kreedit)       AS kreedit,
@@ -49,11 +54,13 @@ FROM (
                 trim(j1.deebet)::VARCHAR(20)                                                     AS konto
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id,
               params
          WHERE j.kpv < l_kpv1
            AND d.status <> 3
---           AND j.asutusid IS NOT NULL
+           AND d.doc_type_id IN (SELECT id FROM docs_types)
+           AND CASE WHEN (j1.kreedit = '650100' OR j1.deebet = '650100') THEN j.asutusid IS NOT NULL ELSE TRUE END
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
            AND (empty(l_konto) OR j1.deebet LIKE ltrim(rtrim(l_konto)) || '%')
            AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
@@ -62,7 +69,7 @@ FROM (
            AND (params.proj IS NULL OR coalesce(j1.proj, '') ILIKE coalesce(params.proj, '') || '%')
 
            -- поправка Калле 10.10.2022
-           AND (year(j.kpv) = year(l_kpv1) OR
+           AND (date_part('year', coalesce(a.kpv, j.kpv)) = date_part('year', l_kpv1::DATE) OR
                 ltrim(rtrim(j1.deebet)) IN (SELECT kood FROM com_kontoplaan WHERE tyyp IN (1, 2)))
 
          UNION ALL
@@ -76,23 +83,23 @@ FROM (
                 trim(j1.kreedit)::VARCHAR(20)                                                     AS konto
          FROM docs.doc D
                   INNER JOIN docs.journal j ON j.parentid = D.id
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id,
               params
          WHERE j.kpv < l_kpv1
            AND d.status <> 3
+           AND d.doc_type_id IN (SELECT id FROM docs_types)
+           AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
 --           AND j.asutusid IS NOT NULL
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
            AND (empty(l_konto) OR j1.kreedit LIKE ltrim(rtrim(l_konto)) || '%')
-           AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
            -- V. B. 19.10.2022
            AND (params.proj IS NULL OR coalesce(j1.proj, '') ILIKE coalesce(params.proj, '') || '%')
-
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
            -- поправка Калле 10.10.2022
 
-           AND (year(j.kpv) = year(l_kpv1) OR
+           AND (date_part('year', coalesce(a.kpv, j.kpv)) = date_part('year', l_kpv1::DATE) OR
                 ltrim(rtrim(j1.kreedit)) IN (SELECT kood FROM com_kontoplaan WHERE tyyp IN (1, 2)))
-
          UNION ALL
          -- db kaibed
          SELECT j.rekvid                                                                         AS rekv_id,
@@ -103,15 +110,18 @@ FROM (
                 trim(j1.deebet)                                                                  AS konto
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id,
               params
-         WHERE j.kpv >= l_kpv1
+         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
            AND j.kpv <= l_kpv2
+           AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
            AND d.status <> 3
+           AND d.doc_type_id IN (SELECT id FROM docs_types)
+
 --           AND j.asutusid IS NOT NULL
            AND (empty(l_konto) OR j1.deebet LIKE ltrim(rtrim(l_konto)) || '%')
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
-           AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
            -- V. B. 19.10.2022
            AND (params.proj IS NULL OR coalesce(j1.proj, '') ILIKE coalesce(params.proj, '') || '%')
@@ -126,15 +136,18 @@ FROM (
                 trim(j1.kreedit)                                                                  AS konto
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id,
               params
-         WHERE j.kpv >= l_kpv1
+         WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
            AND j.kpv <= l_kpv2
+           AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
            AND d.status <> 3
+           AND d.doc_type_id IN (SELECT id FROM docs_types)
+
 --           AND j.asutusid IS NOT NULL
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
            AND (empty(l_konto) OR j1.kreedit LIKE ltrim(rtrim(l_konto)) || '%')
-           AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
            AND (params.proj IS NULL OR coalesce(j1.proj, '') ILIKE coalesce(params.proj, '') || '%')
            AND coalesce(j1.tunnus, '') ILIKE l_tunnus
      ) qry
@@ -145,20 +158,22 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER, jsonb ) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER, jsonb ) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER , jsonb) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER, JSONB ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER, JSONB ) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INTEGER, TEXT, INTEGER , JSONB) TO dbkasutaja;
 
 
 /*
 SELECT *
-FROM docs.kaibeasutusandmik('201000',26901,'2022-01-01','2022-01-31', 3,'%',1)
-
+FROM docs.kaibeasutusandmik('650100',0,'2022-01-01','2022-12-31', 63,'%',1)
+--  (execution: 19 s 856 ms, fetching: 55 ms)
 -- 30.36,30.36
 
 select * from libs.asutus where nimetus Ilike '%Infotark%'
 
-select * from cur_journal where not empty(proj) order by id desc limit 10
+select * from cur_journal where kreedit = '650100' and kpv <= '2022-01-01'
+
+order by id desc limit 10
 
 -- proj 22065, 202000
 

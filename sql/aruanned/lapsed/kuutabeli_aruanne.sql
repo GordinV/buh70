@@ -17,13 +17,13 @@ CREATE OR REPLACE FUNCTION lapsed.kuutabeli_aruanne(l_rekvid INTEGER,
 AS
 $BODY$
 WITH preReport AS (
-    SELECT lt.yksus::TEXT                                AS ruhm,
+    SELECT lt.yksus::TEXT                                  AS ruhm,
            lt.nimi::TEXT,
            lt.isikukood::TEXT,
-           lapsed.get_viitenumber(lt.rekvid, l.id)::TEXT AS viitenumber,
+           lapsed.get_viitenumber(lt.rekvid, l.id)::TEXT   AS viitenumber,
 --           (CASE WHEN lt.tyyp IS NOT NULL AND lt.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END) *
-           lt.arv_summa - lt.arv_soodustus_kokku         AS arvestatud,
-           lt.arv_soodustus_kokku                        AS soodustus,
+           lt.arv_summa - lt.arv_soodustus_kokku - lt.vahe AS arvestatud,
+           lt.arv_soodustus_kokku                          AS soodustus,
            lt.kuu::INTEGER,
            lt.aasta::INTEGER
     FROM lapsed.cur_lapse_taabel lt

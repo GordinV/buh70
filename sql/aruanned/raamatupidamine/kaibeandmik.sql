@@ -232,7 +232,7 @@ FROM (
      ) qry
 WHERE NOT empty(qry.konto)
   --AND left(konto, 2) NOT IN ('90', '91', '92', '93', '94', '95', '96', '97', '98')
-  AND left(konto, 1) NOT IN ('8', '9')
+  AND left(konto, 1) NOT IN ('8', '9', '0')
   AND qry.konto NOT IN (SELECT kood
                         FROM com_kontoplaan
                         WHERE kas_virtual > 0)

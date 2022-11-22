@@ -3,6 +3,7 @@ const React = require('react'),
 const radium = require('radium');
 
 const PropTypes = require('prop-types');
+const Button = require('./../button-register/button-register.jsx');
 
 class Input extends React.PureComponent {
     constructor(props) {
@@ -14,6 +15,7 @@ class Input extends React.PureComponent {
             valid: props.valid
         };
         this.onChange = this.onChange.bind(this);
+//        this.handleClick = this.handleClick(this);
     }
 
     // will update state if props changed
@@ -34,6 +36,14 @@ class Input extends React.PureComponent {
         }
     }
 
+    handleClick() {
+        let value = -1 * Number(this.state.value);
+        this.setState({value: value});
+        if (this.props.onChange) {
+            this.props.onChange(this.props.name, value);
+        }
+    }
+
     render() {
         let inputPlaceHolder = this.props.placeholder || this.props.name,
             inputStyle = Object.assign({}, styles.input,
@@ -43,12 +53,21 @@ class Input extends React.PureComponent {
             ),
             inputMinValue = this.props.min,
             inputMaxValue = this.props.max;
-//
+
         return (
             <div style={styles.wrapper}>
                 <label style={styles.label} htmlFor={this.props.name} ref="label">
                     {this.props.title}
                 </label>
+                {this.state.readOnly ? null :
+                    <Button
+                        style={styles.button}
+                        value={'-'}
+                        ref="btnMinus"
+                        show={!this.state.readOnly}
+                        title={'Pane miinus'}
+                        onClick={(e) => this.handleClick(e)}>
+                    </Button>}
                 <input type={this.props.type ? this.props.type : 'number'}
                        id={this.props.name}
                        ref="input"
@@ -65,9 +84,9 @@ class Input extends React.PureComponent {
                        pattern="\d+(\.\d{2})?"
                        disabled={this.props.disabled}
                 />
-
             </div>)
     }
+
 
     /**
      * установит фокус на элементы

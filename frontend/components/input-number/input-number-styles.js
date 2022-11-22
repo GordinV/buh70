@@ -24,6 +24,12 @@ module.exports = {
     label : {
         width: '30%',
         margin: '5px'
+    },
+    button : {
+        border: '1px solid gray',
+        borderRadius: '50%',
+        display: 'block'
     }
+
 };
 

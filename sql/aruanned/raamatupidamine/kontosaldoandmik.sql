@@ -11,6 +11,13 @@ CREATE OR REPLACE FUNCTION docs.kontosaldoandmik(l_konto TEXT, l_asutus INTEGER,
     )
 AS
 $BODY$
+WITH rekv_ids AS (
+    SELECT rekv_id
+    FROM get_asutuse_struktuur(l_rekvid)
+),
+     docs_types AS (
+         SELECT id, kood FROM libs.library WHERE library.library = 'DOK' AND kood IN ('JOURNAL')
+     )
 SELECT sum(deebet) - sum(kreedit) AS saldo,
        konto,
        rekvid                     AS rekv_id,
@@ -36,13 +43,17 @@ FROM (
                     ELSE j.asutusid END      AS asutusid
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
          WHERE j.kpv <= l_kpv
+           AND d.doc_type_id IN (SELECT id FROM docs_types)
+           AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
            AND j.asutusid IS NOT NULL
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
-           AND d.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
            AND d.status <> 3
+           AND (date_part('year', coalesce(a.kpv, j.kpv)) = date_part('year', l_kpv::DATE) OR
+                ltrim(rtrim(j1.deebet)) IN (SELECT kood FROM com_kontoplaan WHERE tyyp IN (1, 2)))
+
          UNION ALL
          SELECT d.rekvid,
                 0 :: NUMERIC                  AS deebet,
@@ -53,13 +64,16 @@ FROM (
                     ELSE j.asutusid END       AS asutusid
          FROM docs.doc d
                   INNER JOIN docs.journal j ON j.parentid = d.id
+                  LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
          WHERE j.kpv <= l_kpv
            AND j.asutusid IS NOT NULL
            AND (empty(l_asutus) OR j.asutusid = l_asutus)
-           AND d.rekvid IN (SELECT rekv_id
-                            FROM get_asutuse_struktuur(l_rekvid))
+           AND d.doc_type_id IN (SELECT id FROM docs_types)
+           AND j.rekvid IN (SELECT rekv_id FROM rekv_ids)
            AND d.status <> 3
+           AND (date_part('year', coalesce(a.kpv, j.kpv)) = date_part('year', l_kpv::DATE) OR
+                ltrim(rtrim(j1.kreedit)) IN (SELECT kood FROM com_kontoplaan WHERE tyyp IN (1, 2)))
      ) qry
 WHERE NOT empty(konto)
   AND konto LIKE coalesce(ltrim(rtrim(l_konto)), '') || '%'

@@ -57,24 +57,26 @@ BEGIN
                            SELECT unnest(a_FinanseerimisTegevus)
             )
         ),
-             qryTaotlused AS (SELECT DISTINCT t1.kood5 AS artikkel, t.rekvid
+             rekv_ids AS (SELECT r.rekv_id
+                          FROM public.get_asutuse_struktuur(l_rekvid) r
+                          WHERE (r.rekv_id = l_rekvid
+                              OR l_kond = 1)
+                            AND r.rekv_id <> 9),
+             docs_types AS (
+                 SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood = 'JOURNAL'
+             ),
+
+             qryTaotlused AS (SELECT DISTINCT t.rekvid, t1.tunnus
                               FROM eelarve.taotlus t
                                        INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                               WHERE t1.tunnus IS NOT NULL
                                 AND NOT empty(t1.tunnus)
                                 AND t.status IN (3)
-                                AND t.rekvid = (CASE
-                                                    WHEN l_kond = 1 THEN t.rekvid
-                                                    ELSE l_rekvid END)
-                                AND t.rekvid IN (SELECT r.rekv_id
-                                                 FROM get_asutuse_struktuur(l_rekvid) r)
-                                AND t.aasta IN (year(l_kpv) - 1, year(l_kpv), year(l_kpv) + 1)
+                                AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
+                                AND t.aasta IN (YEAR(l_kpv) - 1, YEAR(l_kpv), YEAR(l_kpv) + 1)
                                 AND t1.kood2 NOT LIKE ('%RF%')
-                                AND t.rekvid <> 9
-
-                              GROUP BY t.aasta,
-                                       t.rekvid,
-                                       t1.kood5
+                              GROUP BY t.rekvid,
+                                       t1.tunnus
                               HAVING (count(*) > 0)
              ),
              tmp_andmik AS (
@@ -87,21 +89,21 @@ BEGIN
                         qry.rahavoog,
                         CASE WHEN qry.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE qry.tunnus END AS tunnus,
                         qry.summa                                                                             AS tegelik,
-                        year(l_kpv) - 1                                                                       AS aasta,
+                        YEAR(l_kpv) - 1                                                                       AS aasta,
                         12                                                                                    AS kuu,
                         qry.rekv_id
-                 FROM eelarve.tekke_taitmine(make_date(year(l_kpv) - 1, 1, 1), make_date(year(l_kpv) - 1, 12, 31),
+                 FROM eelarve.tekke_taitmine(make_date(YEAR(l_kpv) - 1, 1, 1), make_date(YEAR(l_kpv) - 1, 12, 31),
                                              l_rekvid, l_kond) qry
                  WHERE (l_params IS NULL OR
-                        coalesce(qry.tunnus, '') ILIKE coalesce((l_params ->> 'tunnus')::TEXT, '') + '%')
+                        COALESCE(qry.tunnus, '') ILIKE COALESCE((l_params ->> 'tunnus')::TEXT, '') + '%')
                    AND (l_params IS NULL OR
-                        coalesce(qry.tegev, '') ILIKE coalesce((l_params ->> 'tegev')::TEXT, '') + '%')
-                   AND (l_params IS NULL OR coalesce(qry.artikkel, '') ILIKE
-                                            coalesce((l_params ->> 'artikkel')::TEXT, '') + '%')
+                        COALESCE(qry.tegev, '') ILIKE COALESCE((l_params ->> 'tegev')::TEXT, '') + '%')
+                   AND (l_params IS NULL OR COALESCE(qry.artikkel, '') ILIKE
+                                            COALESCE((l_params ->> 'artikkel')::TEXT, '') + '%')
                    AND (l_params IS NULL OR
-                        coalesce(qry.allikas, '') ILIKE '%' + coalesce((l_params ->> 'allikas')::TEXT, '') + '%')
-                   AND (l_params IS NULL OR coalesce(qry.rahavoog, '') ILIKE
-                                            coalesce((l_params ->> 'rahavoog')::TEXT, '') + '%')
+                        COALESCE(qry.allikas, '') ILIKE '%' + COALESCE((l_params ->> 'allikas')::TEXT, '') + '%')
+                   AND (l_params IS NULL OR COALESCE(qry.rahavoog, '') ILIKE
+                                            COALESCE((l_params ->> 'rahavoog')::TEXT, '') + '%')
                    AND qry.allikas NOT LIKE ('%RF%')
                    AND qry.rekv_id <> 9
                    AND qry.artikkel NOT IN ('2586')
@@ -115,33 +117,44 @@ BEGIN
                         qry.kood3                                                                             AS rahavoog,
                         CASE WHEN qry.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE qry.tunnus END AS tunnus,
                         qry.summa                                                                             AS tegelik,
-                        year(l_kpv) - 1                                                                       AS aasta,
+                        date_part('year', l_kpv) - 1                                                          AS aasta,
                         12                                                                                    AS kuu,
                         qry.rekvid                                                                            AS rekv_id
-                 FROM cur_journal qry
-                 WHERE qry.rekvid = (CASE
-                                         WHEN l_kond = 1
-                                             THEN rekvid
-                                         ELSE l_rekvid END)
-                   AND qry.rekvid IN (SELECT r.rekv_id FROM get_asutuse_struktuur(l_rekvid) r)
-                   AND year(qry.kpv) = year(l_kpv) - 1
-                   AND qry.kood5 IS NOT NULL
-                   AND NOT empty(qry.kood5)
-                   AND qry.kood2 NOT LIKE ('%RF%')
-                   AND qry.kood3 = '06'
-                   AND LEFT(qry.deebet, 3) IN ('208', '258')
-                   AND (l_params IS NULL OR
-                        COALESCE(qry.tunnus
-                            , '') ILIKE COALESCE((l_params ->> 'tunnus')::TEXT
-                                            , '') + '%')
-                   AND (l_params IS NULL OR
-                        COALESCE(qry.kood1
-                            , '') ILIKE COALESCE((l_params ->> 'tegev')::TEXT
-                                            , '') + '%')
-                   AND (l_params IS NULL OR
-                        COALESCE(qry.kood2
-                            , '') ILIKE '%' + COALESCE((l_params ->> 'allikas')::TEXT
-                            , '') + '%')
+                 FROM (
+                          SELECT d.id,
+                                 d.rekvid,
+                                 j1.kood1,
+                                 j1.kood2,
+                                 j1.kood3,
+                                 j1.kood4,
+                                 j1.kood5,
+                                 j1.tunnus,
+                                 j1.summa
+                          FROM docs.doc d
+                                   INNER JOIN docs.journal j ON j.parentid = d.id
+                                   INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                          WHERE d.status < 3
+                            AND doc_type_id IN (SELECT id FROM docs_types)
+                            AND d.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
+                            AND date_part('year', j.kpv) = date_part('year', l_kpv) - 1
+                            AND j1.kood2 NOT LIKE ('%RF%')
+                            AND j1.kood3 = '06'
+                            AND LEFT(j1.deebet, 3) IN ('208', '258')
+                            AND j1.kood5 IS NOT NULL
+                            AND NOT empty(j1.kood5)
+                            AND (l_params IS NULL OR
+                                 COALESCE(j1.tunnus
+                                     , '') ILIKE COALESCE((l_params ->> 'tunnus')::TEXT
+                                                     , '') + '%')
+                            AND (l_params IS NULL OR
+                                 COALESCE(j1.kood1
+                                     , '') ILIKE COALESCE((l_params ->> 'tegev')::TEXT
+                                                     , '') + '%')
+                            AND (l_params IS NULL OR
+                                 COALESCE(j1.kood2
+                                     , '') ILIKE '%' + COALESCE((l_params ->> 'allikas')::TEXT
+                                     , '') + '%')
+                      ) qry
                  UNION ALL
 
 --  текущий год
@@ -191,66 +204,76 @@ BEGIN
                         qry.kood3                                                                             AS rahavoog,
                         CASE WHEN qry.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE qry.tunnus END AS tunnus,
                         qry.summa                                                                             AS tegelik,
-                        year(l_kpv)                                                                           AS aasta,
+                        date_part('year', l_kpv)                                                              AS aasta,
                         12                                                                                    AS kuu,
                         qry.rekvid                                                                            AS rekv_id
-                 FROM cur_journal qry
-                 WHERE qry.rekvid = (CASE
-                                         WHEN l_kond = 1
-                                             THEN rekvid
-                                         ELSE l_rekvid END)
-                   AND qry.rekvid IN (SELECT r.rekv_id FROM get_asutuse_struktuur(l_rekvid) r)
-                   AND qry.kpv >= make_date(YEAR(l_kpv), 1, 1)
-                   AND qry.kpv <= make_date(YEAR(l_kpv), 09, 30)
-                   AND qry.kood5 IS NOT NULL
-                   AND NOT empty(qry.kood5)
-                   AND left(qry.kood2, 2) NOT IN ('RF')
-                   AND qry.kood3 = '06'
-                   AND LEFT(qry.deebet, 3) IN ('208', '258')
-                   AND (l_params IS NULL OR
-                        COALESCE(qry.tunnus
-                            , '') ILIKE COALESCE((l_params ->> 'tunnus')::TEXT
-                                            , '') + '%')
-                   AND (l_params IS NULL OR
-                        COALESCE(qry.kood1
-                            , '') ILIKE COALESCE((l_params ->> 'tegev')::TEXT
-                                            , '') + '%')
-                   AND (l_params IS NULL OR
-                        COALESCE(qry.kood2
-                            , '') ILIKE '%' + COALESCE((l_params ->> 'allikas')::TEXT
-                            , '') + '%')
+                 FROM (SELECT d.id,
+                              d.rekvid,
+                              j1.kood1,
+                              j1.kood2,
+                              j1.kood3,
+                              j1.kood4,
+                              j1.kood5,
+                              j1.tunnus,
+                              j1.summa
+                       FROM docs.doc d
+                                INNER JOIN docs.journal j ON j.parentid = d.id
+                                INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                       WHERE d.status < 3
+                         AND doc_type_id IN (SELECT id FROM docs_types)
+                         AND d.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
+                         AND j.kpv >= make_date(YEAR(l_kpv), 1, 1)
+                         AND j.kpv <= make_date(YEAR(l_kpv), 09, 30)
+                         AND j1.kood2 NOT LIKE ('%RF%')
+                         AND j1.kood3 = '06'
+                         AND LEFT(j1.deebet, 3) IN ('208', '258')
+                         AND j1.kood5 IS NOT NULL
+                         AND NOT empty(j1.kood5)
+                         AND (l_params IS NULL OR
+                              COALESCE(j1.tunnus
+                                  , '') ILIKE COALESCE((l_params ->> 'tunnus')::TEXT
+                                                  , '') + '%')
+                         AND (l_params IS NULL OR
+                              COALESCE(j1.kood1
+                                  , '') ILIKE COALESCE((l_params ->> 'tegev')::TEXT
+                                                  , '') + '%')
+                         AND (l_params IS NULL OR
+                              COALESCE(j1.kood2
+                                  , '') ILIKE '%' + COALESCE((l_params ->> 'allikas')::TEXT
+                                  , '') + '%')
+                      ) qry
              ),
              qryAasta1 AS (
-                 SELECT s.rekv_id                                                                         AS rekvid,
-                        s.artikkel                                                                        AS artikkel,
-                        s.tegev                                                                           AS tegev,
-                        s.allikas                                                                         AS allikas,
-                        CASE WHEN s.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE s.tunnus END AS tunnus,
-                        sum(s.tegelik)                                                                    AS summa,
+                 SELECT S.rekv_id                                                                         AS rekvid,
+                        S.artikkel                                                                        AS artikkel,
+                        S.tegev                                                                           AS tegev,
+                        S.allikas                                                                         AS allikas,
+                        CASE WHEN S.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE S.tunnus END AS tunnus,
+                        sum(S.tegelik)                                                                    AS summa,
                         1                                                                                 AS idx
-                 FROM tmp_andmik s
-                 WHERE aasta = year(l_kpv) - 1
-                 GROUP BY s.rekv_id,
-                          s.artikkel,
-                          s.tegev,
-                          s.allikas,
-                          s.tunnus
+                 FROM tmp_andmik S
+                 WHERE aasta = YEAR(l_kpv) - 1
+                 GROUP BY S.rekv_id,
+                          S.artikkel,
+                          S.tegev,
+                          S.allikas,
+                          S.tunnus
              ),
              qryAasta2 AS (
-                 SELECT s.rekv_id      AS rekvid,
-                        s.artikkel     AS artikkel,
-                        s.tegev        AS tegev,
-                        s.allikas      AS allikas,
-                        s.tunnus       AS tunnus,
-                        sum(s.tegelik) AS summa,
+                 SELECT S.rekv_id      AS rekvid,
+                        S.artikkel     AS artikkel,
+                        S.tegev        AS tegev,
+                        S.allikas      AS allikas,
+                        S.tunnus       AS tunnus,
+                        sum(S.tegelik) AS summa,
                         1              AS idx
-                 FROM tmp_andmik s
-                 WHERE aasta = year(l_kpv)
-                 GROUP BY s.rekv_id,
-                          s.artikkel,
-                          s.tegev,
-                          s.allikas,
-                          s.tunnus
+                 FROM tmp_andmik S
+                 WHERE aasta = YEAR(l_kpv)
+                 GROUP BY S.rekv_id,
+                          S.artikkel,
+                          S.tegev,
+                          S.allikas,
+                          S.tunnus
              ),
              -- текущего года
 
@@ -269,19 +292,13 @@ BEGIN
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
                    AND t.status IN (3)
-                   AND rekvid = (CASE
-                                     WHEN $3 = 1
-                                         THEN rekvid
-                                     ELSE l_rekvid END)
-                   AND rekvid IN (SELECT a.rekv_id
-                                  FROM get_asutuse_struktuur(l_rekvid) a)
+                   AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                    AND t1.kood2 NOT ILIKE ('%RF%')
                    AND (l_allikas IS NULL OR t1.kood2 ILIKE '%' || l_allikas || '%')
                    AND t1.kood5 IN (
                      SELECT kood
                      FROM qryArtikkel
                  )
-                   AND t.rekvid <> 9
                  GROUP BY t1.kood5,
                           t1.kood1,
                           t1.kood2,
@@ -300,24 +317,19 @@ BEGIN
                         CASE WHEN t1.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE t1.tunnus END AS tunnus,
                         sum(summa_kassa)                                                                    AS summa,
                         sum(oodatav_taitmine)                                                               AS oodatav_taitmine,
-                        string_agg(replace(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
+                        string_agg(REPLACE(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
                    AND t.status IN (3)
-                   AND rekvid = (CASE
-                                     WHEN $3 = 1
-                                         THEN rekvid
-                                     ELSE l_rekvid END)
-                   AND rekvid IN (SELECT a.rekv_id
-                                  FROM get_asutuse_struktuur(l_rekvid) a)
+                   AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
+
                    AND t1.kood2 NOT ILIKE ('%RF%')
                    AND (l_allikas IS NULL OR t1.kood2 ILIKE '%' || l_allikas || '%')
                    AND t1.kood5 IN (
                      SELECT kood
                      FROM qryArtikkel
                  )
-                   AND t.rekvid <> 9
                  GROUP BY t1.kood5,
                           t1.kood1,
                           t1.kood2,
@@ -335,19 +347,13 @@ BEGIN
                         e.tunnus     AS tunnus,
                         sum(e.summa) AS summa
                  FROM eelarve.eelarve e
-                 WHERE rekvid = (CASE
-                                     WHEN $3 = 1
-                                         THEN rekvid
-                                     ELSE l_rekvid END)
-                   AND e.rekvid IN (SELECT a.rekv_id
-                                    FROM get_asutuse_struktuur(l_rekvid) a)
+                 WHERE e.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                    AND aasta = YEAR($1)
                    AND e.kood2 NOT ILIKE ('%RF%')
                    AND (l_allikas IS NULL OR e.kood2 ILIKE '%' || l_allikas || '%')
                    AND e.kpv IS NULL
                    AND e.status <> 3
                    AND kood5 IN (SELECT kood FROM qryArtikkel)
-                   AND e.rekvid <> 9
                  GROUP BY e.rekvid,
                           e.kood5,
                           e.kood1,
@@ -365,19 +371,13 @@ BEGIN
                         e.tunnus     AS tunnus,
                         sum(e.summa) AS summa
                  FROM eelarve.eelarve e
-                 WHERE rekvid = (CASE
-                                     WHEN $3 = 1
-                                         THEN rekvid
-                                     ELSE l_rekvid END)
-                   AND e.rekvid IN (SELECT a.rekv_id
-                                    FROM get_asutuse_struktuur(l_rekvid) a)
+                 WHERE e.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                    AND aasta = YEAR($1)
                    AND (e.kpv IS NULL OR e.kpv <= make_date(YEAR($1), 09, 30))
                    AND e.kood2 NOT ILIKE ('%RF%')
                    AND (l_allikas IS NULL OR e.kood2 ILIKE '%' || l_allikas || '%')
                    AND e.status <> 3
                    AND kood5 IN (SELECT kood FROM qryArtikkel)
-                   AND e.rekvid <> 9
                  GROUP BY e.rekvid,
                           e.kood5,
                           e.kood1,
@@ -392,24 +392,18 @@ BEGIN
                         t1.kood2                                                                            AS allikas,
                         CASE WHEN t1.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE t1.tunnus END AS tunnus,
                         sum(oodatav_taitmine)                                                               AS summa,
-                        string_agg(replace(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
+                        string_agg(REPLACE(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
-                 WHERE t.aasta = YEAR(l_kpv)+1
+                 WHERE t.aasta = YEAR(l_kpv) + 1
                    AND t.status IN (3)
-                   AND rekvid = (CASE
-                                     WHEN $3 = 1
-                                         THEN rekvid
-                                     ELSE l_rekvid END)
-                   AND rekvid IN (SELECT a.rekv_id
-                                  FROM get_asutuse_struktuur(l_rekvid) a)
+                   AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                    AND t1.kood2 NOT ILIKE ('%RF%')
                    AND (l_allikas IS NULL OR t1.kood2 ILIKE '%' || l_allikas || '%')
                    AND t1.kood5 IN (
                      SELECT kood
                      FROM qryArtikkel
                  )
-                   AND t.rekvid <> 9
                  GROUP BY t1.kood5,
                           t1.kood1,
                           t1.kood2,
@@ -422,15 +416,20 @@ BEGIN
                         qry.artikkel,
                         qry.tegev,
                         qry.allikas,
-                        CASE WHEN t.artikkel IS NULL THEN '' ELSE qry.tunnus END AS tunnus,
-                        sum(qry.aasta_1_tekke_taitmine)                          AS aasta_1_tekke_taitmine,
-                        sum(qry.aasta_2_tekke_taitmine)                          AS aasta_2_tekke_taitmine,
-                        sum(qry.aasta_2_oodatav_taitmine)                        AS aasta_2_oodatav_taitmine,
-                        sum(qry.aasta_3_eelnou)                                  AS aasta_3_eelnou,
-                        sum(qry.aasta_3_prognoos)                                AS aasta_3_prognoos,
-                        sum(qry.eelarve_tekkepohine_kinnitatud)                  AS eelarve_tekkepohine_kinnitatud,
-                        sum(qry.eelarve_tekkepohine_tapsustatud)                 AS eelarve_tekkepohine_tapsustatud,
-                        string_agg(rtrim(qry.selg, E'\r\n'), ',')::TEXT          AS selg
+                        CASE
+                            WHEN EXISTS(
+                                    SELECT 1 FROM qryTaotlused t WHERE t.tunnus = qry.tunnus AND rekvid = qry.rekvid)
+                                THEN qry.tunnus
+                            ELSE '' END                       AS tunnus,
+                        (qry.aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
+                        (qry.aasta_2_tekke_taitmine)          AS aasta_2_tekke_taitmine,
+                        (qry.aasta_2_oodatav_taitmine)        AS aasta_2_oodatav_taitmine,
+                        (qry.aasta_3_eelnou)                  AS aasta_3_eelnou,
+                        (qry.aasta_3_prognoos)                AS aasta_3_prognoos,
+                        (qry.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
+                        (qry.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud,
+                        rtrim(qry.selg, E'\r\n')              AS selg
+--                        string_agg(rtrim(qry.selg, E'\r\n'), ',')::TEXT AS selg
                  FROM (
                           -- oodatav taitmine
                           SELECT q.rekvid                 AS rekvid,
@@ -494,7 +493,7 @@ BEGIN
                                  0::NUMERIC(14, 2)     AS aasta_3_prognoos,
                                  0:: NUMERIC(14, 2)    AS eelarve_tekkepohine_kinnitatud,
                                  0::NUMERIC(14, 2)        eelarve_tekkepohine_tapsustatud,
-                                 ltrim(rtrim(replace(q.selg, E'\r\n', '')))::TEXT
+                                 ltrim(rtrim(REPLACE(q.selg, E'\r\n', '')))::TEXT
                           FROM qryAasta4 q
                           UNION ALL
                           SELECT rekvid                AS rekv_id,
@@ -545,66 +544,61 @@ BEGIN
                                  NULL::TEXT         AS selg
                           FROM qryAasta7 q
                       ) qry
-                          LEFT OUTER JOIN qryTaotlused t
-                                          ON trim(t.artikkel) = trim(qry.artikkel) AND t.rekvid = qry.rekvid
-                 GROUP BY qry.rekvid,
-                          qry.artikkel,
-                          qry.tegev,
-                          qry.allikas,
-                          CASE WHEN t.artikkel IS NULL THEN '' ELSE qry.tunnus END),
+             ),
              qryReport AS (
-                 SELECT s.rekvid:: INTEGER,
+                 SELECT S.rekvid:: INTEGER,
                         r.parentid,
                         CASE
-                            WHEN ARRAY [s.artikkel::TEXT] <@ a_Sotsiaaltoetused THEN 100
-                            WHEN ARRAY [s.artikkel::TEXT] <@ a_SihtotstarbelisedToetusedTegevuskuludeks THEN 200
-                            WHEN ARRAY [s.artikkel::TEXT] <@ a_MittesihtotstarbelisedToetused THEN 300
-                            WHEN ARRAY [s.artikkel::TEXT] <@ a_Toojoukulud THEN 400
-                            WHEN ARRAY [s.artikkel::TEXT] <@ a_Majandamiskulud THEN 500
-                            WHEN ARRAY [s.artikkel::TEXT] <@ a_MuudKulud THEN 600
-                            WHEN ARRAY [s.artikkel::TEXT] <@ a_PohivaraSoetus THEN 700
-                            WHEN ARRAY [s.artikkel::TEXT] <@ a_FinanseerimisTegevus THEN 800
-                            ELSE 900 END                     AS idx,
-                        s.artikkel::VARCHAR(20),
-                        coalesce(s.tegev, '')::VARCHAR(20)   AS tegev,
-                        coalesce(s.allikas, '')::VARCHAR(20) AS allikas,
-                        coalesce(s.tunnus, ''):: VARCHAR(20) AS tunnus,
-                        s.aasta_1_tekke_taitmine:: NUMERIC(14, 2),
-                        s.aasta_2_tekke_taitmine:: NUMERIC(14, 2),
-                        s.aasta_2_oodatav_taitmine:: NUMERIC(14, 2),
-                        s.aasta_3_eelnou:: NUMERIC(14, 2),
-                        s.aasta_3_prognoos::NUMERIC(14, 2),
-                        s.eelarve_tekkepohine_kinnitatud::NUMERIC(14, 2),
-                        s.eelarve_tekkepohine_tapsustatud::NUMERIC(14, 2),
-                        s.selg                               AS selg
-                 FROM preReport s
-                          INNER JOIN qryArtikkel l ON l.kood = s.artikkel
-                          INNER JOIN ou.rekv r ON r.id = s.rekvid
+                            WHEN ARRAY [S.artikkel::TEXT] <@ a_Sotsiaaltoetused THEN 100
+                            WHEN ARRAY [S.artikkel::TEXT] <@ a_SihtotstarbelisedToetusedTegevuskuludeks THEN 200
+                            WHEN ARRAY [S.artikkel::TEXT] <@ a_MittesihtotstarbelisedToetused THEN 300
+                            WHEN ARRAY [S.artikkel::TEXT] <@ a_Toojoukulud THEN 400
+                            WHEN ARRAY [S.artikkel::TEXT] <@ a_Majandamiskulud THEN 500
+                            WHEN ARRAY [S.artikkel::TEXT] <@ a_MuudKulud THEN 600
+                            WHEN ARRAY [S.artikkel::TEXT] <@ a_PohivaraSoetus THEN 700
+                            WHEN ARRAY [S.artikkel::TEXT] <@ a_FinanseerimisTegevus THEN 800
+                            ELSE 900 END                                       AS idx,
+                        S.artikkel::VARCHAR(20),
+                        COALESCE(S.tegev, '')::VARCHAR(20)                     AS tegev,
+                        COALESCE(S.allikas, '')::VARCHAR(20)                   AS allikas,
+                        COALESCE(S.tunnus, ''):: VARCHAR(20)                   AS tunnus,
+                        sum(S.aasta_1_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_1_tekke_taitmine,
+                        sum(S.aasta_2_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_2_tekke_taitmine,
+                        sum(S.aasta_2_oodatav_taitmine):: NUMERIC(14, 2)       AS aasta_2_oodatav_taitmine,
+                        sum(S.aasta_3_eelnou):: NUMERIC(14, 2)                 AS aasta_3_eelnou,
+                        sum(S.aasta_3_prognoos)::NUMERIC(14, 2)                AS aasta_3_prognoos,
+                        sum(S.eelarve_tekkepohine_kinnitatud)::NUMERIC(14, 2)  AS eelarve_tekkepohine_kinnitatud,
+                        sum(S.eelarve_tekkepohine_tapsustatud)::NUMERIC(14, 2) AS eelarve_tekkepohine_tapsustatud,
+                        string_agg(S.selg, ',')                                AS selg
+                 FROM preReport S
+                          INNER JOIN qryArtikkel l ON l.kood = S.artikkel
+                          INNER JOIN ou.rekv r ON r.id = S.rekvid
+                 GROUP BY S.rekvid, r.parentid, S.artikkel, S.tegev, S.allikas, S.tunnus
              ),
              -- kond
              qryKond AS (
-                 SELECT s.idx,
+                 SELECT S.idx,
                         999999:: INTEGER                                       AS rekv_id,
-                        coalesce(s.tunnus, ''):: VARCHAR(20)                   AS tunnus,
-                        coalesce(s.tegev, '')::VARCHAR(20)                     AS tegev,
-                        coalesce(s.allikas, '')::VARCHAR(20)                   AS allikas,
-                        s.artikkel::VARCHAR(20),
-                        sum(s.aasta_1_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_1_tekke_taitmine,
-                        sum(s.eelarve_tekkepohine_kinnitatud)::NUMERIC(14, 2)  AS eelarve_tekkepohine_kinnitatud,
-                        sum(s.eelarve_tekkepohine_tapsustatud)::NUMERIC(14, 2) AS eelarve_tekkepohine_tapsustatud,
-                        sum(s.aasta_2_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_2_tekke_taitmine,
-                        sum(s.aasta_2_oodatav_taitmine):: NUMERIC(14, 2)       AS aasta_2_oodatav_taitmine,
-                        sum(s.aasta_3_eelnou):: NUMERIC(14, 2)                 AS aasta_3_eelnou,
-                        sum(s.aasta_3_prognoos)::NUMERIC(14, 2)                AS aasta_3_prognoos,
+                        COALESCE(S.tunnus, ''):: VARCHAR(20)                   AS tunnus,
+                        COALESCE(S.tegev, '')::VARCHAR(20)                     AS tegev,
+                        COALESCE(S.allikas, '')::VARCHAR(20)                   AS allikas,
+                        S.artikkel::VARCHAR(20),
+                        sum(S.aasta_1_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_1_tekke_taitmine,
+                        sum(S.eelarve_tekkepohine_kinnitatud)::NUMERIC(14, 2)  AS eelarve_tekkepohine_kinnitatud,
+                        sum(S.eelarve_tekkepohine_tapsustatud)::NUMERIC(14, 2) AS eelarve_tekkepohine_tapsustatud,
+                        sum(S.aasta_2_tekke_taitmine):: NUMERIC(14, 2)         AS aasta_2_tekke_taitmine,
+                        sum(S.aasta_2_oodatav_taitmine):: NUMERIC(14, 2)       AS aasta_2_oodatav_taitmine,
+                        sum(S.aasta_3_eelnou):: NUMERIC(14, 2)                 AS aasta_3_eelnou,
+                        sum(S.aasta_3_prognoos)::NUMERIC(14, 2)                AS aasta_3_prognoos,
                         NULL::TEXT                                             AS selg
-                 FROM qryReport s
+                 FROM qryReport S
                  WHERE l_rekvid = 63
                    AND l_kond = 1 -- только для фин. департамента
-                 GROUP BY s.artikkel,
-                          s.idx,
-                          s.tunnus,
-                          s.tegev,
-                          s.allikas
+                 GROUP BY S.artikkel,
+                          S.idx,
+                          S.tunnus,
+                          S.tegev,
+                          S.allikas
              ),
              report AS (
                  WITH pre_report AS (
@@ -658,7 +652,7 @@ BEGIN
                  SELECT 0                                              AS idx,
                         qryReport.rekvId                               AS rekv_id,
                         ''                                             AS tunnus,
-                        left(qryReport.tegev, 2)::VARCHAR(20)          AS tegev,
+                        LEFT(qryReport.tegev, 2)::VARCHAR(20)          AS tegev,
                         ''                                             AS allikas,
                         ''                                             AS artikkel,
                         sum(qryReport.aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
@@ -672,12 +666,12 @@ BEGIN
                  FROM qryReport
                  WHERE NOT empty(qryReport.tegev)
                  GROUP BY qryreport.rekvid,
-                          left(qryReport.tegev, 2)
+                          LEFT(qryReport.tegev, 2)
                  UNION ALL
                  SELECT 0                                            AS idx,
                         qryKond.rekv_id                              AS rekv_id,
                         ''                                           AS tunnus,
-                        left(qryKond.tegev, 2)::VARCHAR(20)          AS tegev,
+                        LEFT(qryKond.tegev, 2)::VARCHAR(20)          AS tegev,
                         ''                                           AS allikas,
                         ''                                           AS artikkel,
                         sum(qryKond.aasta_1_tekke_taitmine)          AS aasta_1_tekke_taitmine,
@@ -691,7 +685,7 @@ BEGIN
                  FROM qryKond
                  WHERE NOT empty(qryKond.tegev)
                  GROUP BY qryKond.rekv_id,
-                          left(qryKond.tegev, 2)
+                          LEFT(qryKond.tegev, 2)
                  UNION ALL
                  SELECT *
                  FROM qryKond
