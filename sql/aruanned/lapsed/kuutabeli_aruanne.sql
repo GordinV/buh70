@@ -4,26 +4,39 @@ CREATE OR REPLACE FUNCTION lapsed.kuutabeli_aruanne(l_rekvid INTEGER,
                                                     l_kuu INTEGER DEFAULT month(current_date),
                                                     l_aasta INTEGER DEFAULT year(current_date))
     RETURNS TABLE (
-        ruhm        TEXT,
-        nimi        TEXT,
-        isikukood   TEXT,
-        viitenumber TEXT,
-        arvestatud  NUMERIC(14, 4),
-        soodustus   NUMERIC(14, 4),
-        kuu         INTEGER,
-        aasta       INTEGER
+        ruhm          TEXT,
+        nimi          TEXT,
+        isikukood     TEXT,
+        viitenumber   TEXT,
+        arvestatud    NUMERIC(14, 2),
+        soodustus     NUMERIC(14, 2),
+        umberarvestus NUMERIC(14, 2),
+        vahe          NUMERIC(14, 2),
+        vana_vn       TEXT,
+        kuu           INTEGER,
+        aasta         INTEGER
 
     )
 AS
 $BODY$
 WITH preReport AS (
-    SELECT lt.yksus::TEXT                                  AS ruhm,
+    SELECT lt.yksus::TEXT                                    AS ruhm,
            lt.nimi::TEXT,
            lt.isikukood::TEXT,
-           lapsed.get_viitenumber(lt.rekvid, l.id)::TEXT   AS viitenumber,
---           (CASE WHEN lt.tyyp IS NOT NULL AND lt.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END) *
-           lt.arv_summa - lt.arv_soodustus_kokku - lt.vahe AS arvestatud,
-           lt.arv_soodustus_kokku                          AS soodustus,
+           lapsed.get_viitenumber(lt.rekvid, l.id)::TEXT     AS viitenumber,
+           (CASE
+                WHEN lt.umberarvestus
+                    THEN 0
+                ELSE 1 END) *
+           (lt.arv_summa - lt.arv_soodustus_kokku - lt.vahe) AS arvestatud,
+           (CASE
+                WHEN lt.umberarvestus
+                    THEN 1
+                ELSE 0 END) *
+           (lt.arv_summa - lt.arv_soodustus_kokku - lt.vahe) AS umberarvestus,
+           lt.vahe                                           AS vahe,
+           lt.viitenr                                        AS vana_vn,
+           lt.arv_soodustus_kokku                            AS soodustus,
            lt.kuu::INTEGER,
            lt.aasta::INTEGER
     FROM lapsed.cur_lapse_taabel lt
@@ -41,12 +54,15 @@ SELECT ruhm::TEXT,
        nimi:: TEXT,
        isikukood:: TEXT,
        viitenumber:: TEXT,
-       sum(arvestatud):: NUMERIC(14, 2),
-       sum(soodustus):: NUMERIC(14, 2),
+       sum(arvestatud):: NUMERIC(14, 2)    AS arvestatud,
+       sum(soodustus):: NUMERIC(14, 2)     AS soodustus,
+       sum(umberarvestus):: NUMERIC(14, 2) AS umberarvestus,
+       sum(vahe)::NUMERIC(14, 2)           AS vahe,
+       vana_vn                             AS vana_vn,
        kuu:: INTEGER,
        aasta
 FROM preReport
-GROUP BY ruhm, nimi, isikukood, viitenumber, kuu, aasta
+GROUP BY ruhm, nimi, isikukood, viitenumber, vana_vn, kuu, aasta
 
 $BODY$
     LANGUAGE SQL

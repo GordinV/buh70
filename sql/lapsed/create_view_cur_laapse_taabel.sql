@@ -54,6 +54,7 @@ FROM lapsed.lapse_taabel lt
 WHERE lt.staatus <> 3
   --AND coealslt.kogus <> 0
   AND n.status <> 3
+  AND n.rekvid = lt.rekvid
   AND lt.hind <> 0
   AND NOT coalesce((lk.properties ->> 'kas_ettemaks')::BOOLEAN, FALSE)
 ORDER BY aasta, kuu, nimi, kood;

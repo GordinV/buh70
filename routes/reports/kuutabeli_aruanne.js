@@ -46,8 +46,11 @@ exports.get = async (req, res) => {
                 nimi: row.nimi,
                 isikukood: row.isikukood,
                 viitenumber: row.viitenumber,
+                vana_vn: row.vana_vn,
                 arvestatud: row.arvestatud,
                 soodustus: row.soodustus,
+                umberarvestus: row.umberarvestus,
+                vahe: row.vahe,
                 summa: row.summa
             };
 

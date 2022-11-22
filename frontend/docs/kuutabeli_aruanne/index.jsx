@@ -34,6 +34,8 @@ class Documents extends React.PureComponent {
             filtri_read: 0,
             arvestatud: 0,
             soodustus: 0,
+            umberarvestus: 0,
+            vahe: 0,
             summa: 0
         }
 
@@ -56,7 +58,7 @@ class Documents extends React.PureComponent {
                            ref="input-read"
                            value={String(this.state.filtri_read + '/' + this.state.read) || 0}
                            disabled={true}/>
-                <InputNumber title="Arvestatud (sh ümberarvestus) kokku:"
+                <InputNumber title="Arvestatud kokku:"
                              name='arvestatud_kokku'
                              style={styles.total}
                              ref="input-arvestatud"
@@ -68,10 +70,22 @@ class Documents extends React.PureComponent {
                              ref="input-soodustus"
                              value={Number(this.state.soodustus) || 0}
                              disabled={true}/>
-                <InputNumber title="Arvestatud ja Soodustus kokku:"
-                             name='arv_ja_soodustus_kokku'
+                <InputNumber title="Ümberarv. kokku:"
+                             name='umberarvestus_kokku'
                              style={styles.total}
-                             ref="input-arv_ja_soodustus"
+                             ref="input-umberarvestus"
+                             value={Number(this.state.umberarvestus) || 0}
+                             disabled={true}/>
+                <InputNumber title="Vahe kokku:"
+                             name='vahe_kokku'
+                             style={styles.total}
+                             ref="input-vahe"
+                             value={Number(this.state.vahe) || 0}
+                             disabled={true}/>
+                <InputNumber title="Kokku arvestatud kokku:"
+                             name='summa_kokku'
+                             style={styles.total}
+                             ref="input-summa"
                              value={Number(this.state.summa) || 0}
                              disabled={true}/>
 
@@ -84,6 +98,8 @@ class Documents extends React.PureComponent {
         if (self.gridData) {
             let arvestatud = self.gridData && self.gridData.length && self.gridData[0].arvestatud_total ? self.gridData[0].arvestatud_total : 0;
             let soodustus = self.gridData && self.gridData.length && self.gridData[0].soodustus_total ? self.gridData[0].soodustus_total : 0;
+            let umberarvestus = self.gridData && self.gridData.length && self.gridData[0].umberarvestus_total ? self.gridData[0].umberarvestus_total : 0;
+            let vahe = self.gridData && self.gridData.length && self.gridData[0].vahe_total ? self.gridData[0].vahe_total : 0;
             let summa = self.gridData && self.gridData.length && self.gridData[0].summa_total ? self.gridData[0].summa_total : 0;
 
             let filtri_read = self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : 0;
@@ -93,6 +109,8 @@ class Documents extends React.PureComponent {
                 read: read,
                 arvestatud: arvestatud,
                 soodustus: soodustus,
+                umberarvestus: umberarvestus,
+                vahe: vahe,
                 summa: summa,
                 filtri_read: filtri_read
             });
@@ -131,7 +149,6 @@ class Documents extends React.PureComponent {
             });
         }
     }
-
 
 
 }
