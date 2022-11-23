@@ -27,7 +27,8 @@ class Documents extends React.PureComponent {
         this.state = {
             summa: 0,
             soodustus: 0,
-            vahe: 0
+            vahe: 0,
+            kor_summa: 0
         };
         this.renderer = this.renderer.bind(this);
         this.onClickHandler = this.onClickHandler.bind(this);
@@ -63,6 +64,13 @@ class Documents extends React.PureComponent {
                              value={Number(this.state.vahe).toFixed(2) || 0}
                              disabled={true}
                 />
+                <InputNumber title="Kor. summa kokku:"
+                             name='kor_summa_kokku'
+                             style={styles.total}
+                             ref="input-vahe"
+                             value={Number(this.state.kor_summa).toFixed(2) || 0}
+                             disabled={true}
+                />
             </div>
         );
 
@@ -75,8 +83,9 @@ class Documents extends React.PureComponent {
         let summa = self.gridData && self.gridData.length ? self.gridData[0].summa_kokku : 0;
         let soodustus = self.gridData && self.gridData.length ? self.gridData[0].soodustus_kokku : 0;
         let vahe = self.gridData && self.gridData.length ? self.gridData[0].vahe_kokku : 0;
+        let kor_summa = self.gridData && self.gridData.length ? self.gridData[0].kor_summa_kokku : 0;
 
-        this.setState({summa: summa, read: self.gridData.length, soodustus: soodustus, vahe: vahe});
+        this.setState({summa: summa, read: self.gridData.length, soodustus: soodustus, vahe: vahe, kor_summa: kor_summa});
 
         return (
             <ToolbarContainer>

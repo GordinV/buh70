@@ -24,10 +24,9 @@ DECLARE
                                         INNER JOIN libs.asutus a ON a.id = v.asutusid
                                WHERE v.parentid = l_laps_id
                                  AND v.rekvid = l_rekvid
-                               ORDER BY v.arveldus DESC,
-                                        v.id DESC
-                               LIMIT
-                                   1);
+                                 AND arveldus
+                               ORDER BY v.id DESC
+                               LIMIT 1);
     l_doklausend_id INTEGER;
     l_liik          INTEGER = 0;
     v_taabel        RECORD;

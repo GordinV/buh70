@@ -5,7 +5,7 @@ DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGE
 
 
 CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER,
-                                                       l_params JSONB DEFAULT NULL)
+                                                        l_params JSONB DEFAULT NULL)
     RETURNS TABLE (
         rekv_id  INTEGER,
         konto    VARCHAR(20),
@@ -28,6 +28,10 @@ WITH rekv_ids AS (
                             THEN rekv_id
                         ELSE l_rekvid END
 ),
+     docs_types AS (
+         SELECT id, kood FROM libs.library WHERE library.library = 'DOK' AND kood IN ('JOURNAL')
+     ),
+
      qrySaldoAndmik AS (
          SELECT coalesce(a.kpv, j.kpv)                                          AS kpv,
                 j.rekvid,
@@ -49,6 +53,7 @@ WITH rekv_ids AS (
          WHERE d.rekvid IN (SELECT rekv_id FROM rekv_ids)
            -- если свод, то оставим только учреждение, иначе все под
            AND j.kpv <= l_kpv2
+           AND d.doc_type_id IN (SELECT id FROM docs_types)
            AND d.status <> 3
          GROUP BY coalesce(a.kpv, j.kpv), j.rekvid, j1.deebet, j1.lisa_d, j1.kood1, j1.kood2,
                   coalesce(CASE
@@ -81,6 +86,8 @@ WITH rekv_ids AS (
          WHERE d.rekvid IN (SELECT rekv_id FROM rekv_ids)
            -- если свод, то оставим только учреждение, иначе все под
            AND j.kpv <= l_kpv2
+           AND d.doc_type_id IN (SELECT id FROM docs_types)
+
 --           AND coalesce(j1.tunnus, '') ILIKE l_params
            AND d.status <> 3
          GROUP BY coalesce(a.kpv, j.kpv), j.rekvid, j1.kreedit, j1.lisa_k, j1.kood1, j1.kood2, (CASE
@@ -245,9 +252,14 @@ GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, JS
 
 
 /*
+
+execution: 5 s 606 ms , 124, 137795039.74,137795039.74
+75545499.52,120946102.82
+
 explain
-SELECT *
-FROM eelarve.saldoandmik_aruanne('2022-09-30' :: DATE, 64 :: INTEGER, 1 ::integer)
+
+SELECT sum(deebet) over(), sum(kreedit) over(), *
+FROM eelarve.saldoandmik_aruanne('2022-09-30' :: DATE, 119 :: INTEGER, 0 ::integer)
 WHERE konto like '155109%'
 --and rahavoog = '01'
 --GROUP BY konto, tp

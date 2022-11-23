@@ -259,7 +259,7 @@ class Arve extends React.PureComponent {
                         <InputNumber title="Summa "
                                      name='summa'
                                      ref="input-summa"
-                                     value={Number(self.docData.summa) || 0}
+                                     value={Number(self.docData.summa) || ''}
                                      disabled={true}
                                      style={styles.summa}
                         />
@@ -268,7 +268,7 @@ class Arve extends React.PureComponent {
                                      ref="input-kbm"
                                      disabled={true}
                                      style={styles.summa}
-                                     value={Number(self.docData.kbm) || 0}
+                                     value={Number(self.docData.kbm) || ''}
                         />
                         <InputNumber title="Jääk:"
                                      type='currency'
@@ -276,7 +276,7 @@ class Arve extends React.PureComponent {
                                      ref="input-jaak"
                                      disabled={true}
                                      style={styles.summa}
-                                     value={Number(self.docData.jaak) || 0}
+                                     value={Number(self.docData.jaak) || ''}
                         />
                     </div>
                     {self.state.gridRowEdit ?
@@ -370,7 +370,7 @@ class Arve extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <InputNumber title='Kogus '
                                          name='kogus'
-                                         value={Number(row.kogus ? row.kogus : 0)}
+                                         value={Number(row.kogus ? row.kogus : '')}
                                          readOnly={false}
                                          disabled={false}
                                          bindData={false}
@@ -383,7 +383,7 @@ class Arve extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <InputNumber title='Soodustus '
                                          name='soodustus'
-                                         value={Number(row.soodustus ? row.soodustus : 0)}
+                                         value={Number(row.soodustus ? row.soodustus : '')}
                                          readOnly={false}
                                          disabled={false}
                                          bindData={false}
@@ -392,7 +392,7 @@ class Arve extends React.PureComponent {
                                          onChange={self.handleGridRowInput}/>
                             <InputNumber title='Vahe '
                                          name='vahe'
-                                         value={Number(row.vahe ? row.vahe : 0)}
+                                         value={Number(row.vahe ? row.vahe : '')}
                                          readOnly={true}
                                          disabled={true}
                                          bindData={false}
@@ -404,7 +404,7 @@ class Arve extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <InputNumber title='Hind '
                                          name='hind'
-                                         value={Number(row.hind ? row.hind : 0)}
+                                         value={Number(row.hind ? row.hind : '')}
                                          readOnly={false}
                                          disabled={false}
                                          bindData={false}
@@ -418,7 +418,7 @@ class Arve extends React.PureComponent {
 
                             <InputNumber title='Kbm-ta: '
                                          name='kbmta'
-                                         value={Number(row.summa ? row.summa - row.kbm : 0)}
+                                         value={Number(row.summa ? row.summa - row.kbm : '')}
                                          disabled={true}
                                          bindData={false}
                                          ref='kbmta'
@@ -428,7 +428,7 @@ class Arve extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <InputNumber title='Kbm: '
                                          name='kbm'
-                                         value={Number(row.kbm ? row.kbm : 0)}
+                                         value={Number(row.kbm ? row.kbm : '')}
                                          disabled={true}
                                          bindData={false}
                                          ref='kbm'
@@ -441,7 +441,7 @@ class Arve extends React.PureComponent {
 
                             <InputNumber title='Summa: '
                                          name='Summa'
-                                         value={Number(row.summa ? row.summa : 0)}
+                                         value={Number(row.summa ? row.summa : '')}
                                          disabled={true}
                                          bindData={false}
                                          ref='summa'

@@ -298,7 +298,7 @@ class LapseKaart extends React.PureComponent {
                         <InputNumber ref="input-hind"
                                      title='Hind:'
                                      name='hind'
-                                     value={Number(self.docData.hind) || 0}
+                                     value={Number(self.docData.hind) || ''}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
                     </div>
@@ -306,7 +306,7 @@ class LapseKaart extends React.PureComponent {
                         <InputNumber ref="input-kogus"
                                      title='Kogus:'
                                      name='kogus'
-                                     value={Number(self.docData.kogus) || 0}
+                                     value={Number(self.docData.kogus) || ''}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
                     </div>
@@ -363,7 +363,7 @@ class LapseKaart extends React.PureComponent {
                                 ref="input-ettemaksu_period"
                                 title='Ettemaksu period:'
                                 name='ettemaksu_period'
-                                value={Number(self.docData.ettemaksu_period) || 0}
+                                value={Number(self.docData.ettemaksu_period) || ''}
                                 readOnly={!isEditMode}
                                 onChange={self.handleInputChange}
                             />
@@ -387,7 +387,7 @@ class LapseKaart extends React.PureComponent {
                                 ref="input-soodus"
                                 title='Soodustus:'
                                 name='soodus'
-                                value={Number(self.docData.soodus) || 0}
+                                value={Number(self.docData.soodus) || ''}
                                 readOnly={!isEditMode}
                                 onChange={self.handleInputChange}
                             />

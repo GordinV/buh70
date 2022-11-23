@@ -94,8 +94,8 @@ module.exports = {
                 {id: "nimi", name: "Nimi", width: "20%"},
                 {id: "viitenumber", name: "Viitenumber", width: "10%"},
                 {id: "viitenr", name: "Vana VN", width: "6%"},
-                {id: "teenus", name: "Teenus", width: "25%"},
-                {id: "yksus", name: "Üksus", width: "15%"},
+                {id: "teenus", name: "Teenus", width: "20%"},
+                {id: "yksus", name: "Üksus", width: "12%"},
                 {id: "kuu", name: "Kuu", width: "5%", type: "integer", interval: true},
                 {id: "aasta", name: "Aasta", width: "5%", type: "integer"},
                 {id: "kogus", name: "Kogus", width: "8%", type: "number", interval: true},
@@ -104,6 +104,7 @@ module.exports = {
                 {id: "arv_soodustus", name: "Soodustus", width: "10%", type: "number", show: true},
                 {id: "arv_summa", name: "Summa", width: "10%", type: "number", interval: true},
                 {id: "vahe", name: "Vahe", width: "5%", type: "number", interval: true},
+                {id: "kor_summa", name: "Kor. summa", width: "5%", type: "number", interval: true},
                 {id: "umberarvestus", name: "Ümberarv", width: "7%"},
                 {id: "tab_tyyp", name: "Tüüp", width: "10%", type: "text"},
                 {id: "select", name: "Valitud", width: "10%", show: false, type: 'boolean', hideFilter: true}
@@ -198,7 +199,7 @@ module.exports = {
                 SELECT id::integer, "select", parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, 
                             alus_soodustus, soodustus, arv_soodustus::NUMERIC(12, 2), arv_soodustus_kokku, summa, arv_summa,
                             isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                            
-                            tab_tyyp, kulastused, too_paevad, kovid, vahe,
+                            tab_tyyp, kulastused, too_paevad, kovid, vahe::numeric(12,2), (arv_summa - vahe)::NUMERIC(12, 2) as kor_summa,
                             lapsed.get_viitenumber(rekvid, parentid) AS viitenumber
                 FROM (
                          select false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, 
@@ -217,7 +218,7 @@ module.exports = {
             params: '',
             alias: 'curLapseTaabel',
             totals: `sum(arv_soodustus_kokku) over() as soodustus_kokku,  
-                   sum(arv_summa) over() as summa_kokku, sum(vahe) over() as vahe_kokku `
+                   sum(arv_summa) over() as summa_kokku, sum(vahe) over() as vahe_kokku, sum(arv_summa - vahe) over() as kor_summa_kokku `
         },
     print: [
         {

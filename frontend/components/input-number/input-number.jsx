@@ -81,7 +81,7 @@ class Input extends React.PureComponent {
                        min={inputMinValue}
                        max={inputMaxValue}
                        step="0.01"
-                       pattern="\d+(\.\d{2})?"
+                       pattern="^(-)?\d+(\.\d{2})?"
                        disabled={this.props.disabled}
                 />
             </div>)
