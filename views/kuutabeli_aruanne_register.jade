@@ -30,7 +30,6 @@ block content
                     th.th Arvestatud
                     th.th Soodustus
                     th.th Ümberarv.
-                    th.th Vahe
                     th.th Kokku arvestatud
 
             tbody
@@ -42,7 +41,6 @@ block content
                         td.td(align='center')=rea.arvestatud
                         td.td(align='center')=rea.soodustus
                         td.td(align='center')=rea.umberarvestus
-                        td.td(align='center')=rea.vahe
                         td.td(align='center')=rea.summa
 
             tr
@@ -52,5 +50,4 @@ block content
                 td(align='center')=Number(data[0].arvestatud_total).toFixed(2)
                 td(align='center')=Number(data[0].soodustus_total).toFixed(2)
                 td(align='center')=Number(data[0].umberarvestus_total).toFixed(2)
-                td(align='center')=Number(data[0].vahe_total).toFixed(2)
                 td(align='center')=Number(data[0].summa_total).toFixed(2)

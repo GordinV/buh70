@@ -6,7 +6,7 @@ exports.get = async (req, res) => {
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const filter = req.params.filter || [];// массив фильтров документов;
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
-    const user =await require('../../middleware/userData')(req, uuid); // данные пользователя
+    const user = await require('../../middleware/userData')(req, uuid); // данные пользователя
 
     let filterData = JSON.parse(filter);
 
@@ -41,16 +41,15 @@ exports.get = async (req, res) => {
         let header;
         let csv = getCSV(data.data.map(row => {
             //поправить если структура меняется
-            const obj =  {
+            const obj = {
                 ruhm: row.ruhm,
                 nimi: row.nimi,
                 isikukood: row.isikukood,
                 viitenumber: row.viitenumber,
                 vana_vn: row.vana_vn,
-                arvestatud: row.arvestatud,
+                arv_sh_vahe: row.arvestatud,
                 soodustus: row.soodustus,
                 umberarvestus: row.umberarvestus,
-                vahe: row.vahe,
                 summa: row.summa
             };
 
