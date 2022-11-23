@@ -9,10 +9,9 @@ module.exports = {
             {id: "nimi", name: "Nimi", width: "20%"},
             {id: "viitenumber", name: "Viitenumber", width: "7%", show: true},
             {id: "vana_vn", name: "Vana VN", width: "5%"},
-            {id: "arvestatud", name: "Arvestatud", width: "5%", show: true, type: "number", interval: true},
+            {id: "arvestatud", name: "Arvestatud (sh vahe)", width: "5%", show: true, type: "number", interval: true},
             {id: "soodustus", name: "Soodustus", width: "5%", show: true, type: "number", interval: true},
             {id: "umberarvestus", name: "Ümberarv.", width: "5%", show: true, type: "number", interval: true},
-            {id: "vahe", name: "Vahe", width: "3%", show: true, type: "number", interval: true},
             {id: "summa", name: "Kokku arvestatud", width: "5%", show: true, type: "number", interval: true}
         ],
         sqlString: `SELECT row_number() OVER ()                                            AS id,

@@ -49,6 +49,10 @@ module.exports = {
 
         const result = await Db.queryDb(sql, [nimi, rekvId]);
 
+        if (!result || !result.data || !result.data.length) {
+            console.error ('Viga', sql,nimi, rekvId, result )
+        }
+
         this.userId = result.data[0].id;
         this.loginName = result.data[0].kasutaja;
         this.userName = result.data[0].ametnik;

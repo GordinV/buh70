@@ -58,7 +58,7 @@ class Documents extends React.PureComponent {
                            ref="input-read"
                            value={String(this.state.filtri_read + '/' + this.state.read) || 0}
                            disabled={true}/>
-                <InputNumber title="Arvestatud kokku:"
+                <InputNumber title="Arvestatud (sh vahe) kokku:"
                              name='arvestatud_kokku'
                              style={styles.total}
                              ref="input-arvestatud"
@@ -75,12 +75,6 @@ class Documents extends React.PureComponent {
                              style={styles.total}
                              ref="input-umberarvestus"
                              value={Number(this.state.umberarvestus) || 0}
-                             disabled={true}/>
-                <InputNumber title="Vahe kokku:"
-                             name='vahe_kokku'
-                             style={styles.total}
-                             ref="input-vahe"
-                             value={Number(this.state.vahe) || 0}
                              disabled={true}/>
                 <InputNumber title="Kokku arvestatud kokku:"
                              name='summa_kokku'
