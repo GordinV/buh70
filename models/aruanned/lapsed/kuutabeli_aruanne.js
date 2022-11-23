@@ -12,6 +12,7 @@ module.exports = {
             {id: "arvestatud", name: "Arvestatud", width: "5%", show: true, type: "number", interval: true},
             {id: "soodustus", name: "Soodustus", width: "5%", show: true, type: "number", interval: true},
             {id: "umberarvestus", name: "Ümberarv.", width: "5%", show: true, type: "number", interval: true},
+            {id: "vahe", name: "Vahe", width: "3%", show: true, type: "number", interval: true},
             {id: "summa", name: "Kokku arvestatud", width: "5%", show: true, type: "number", interval: true}
         ],
         sqlString: `SELECT row_number() OVER ()                                            AS id,
@@ -25,7 +26,7 @@ module.exports = {
                            soodustus::NUMERIC(14, 2),
                            umberarvestus::NUMERIC(14, 2),
                            vahe,
-                           (arvestatud + soodustus + umberarvestus + vahe)::NUMERIC(14, 2) AS summa,
+                           (arvestatud + soodustus + umberarvestus - vahe)::NUMERIC(14, 2) AS summa,
                            kuu,
                            aasta,
                            vana_vn                                                         AS vana_vn
@@ -37,7 +38,7 @@ module.exports = {
                 sum(soodustus) over() as soodustus_total, 
                 sum(umberarvestus) over() as umberarvestus_total, 
                 sum(vahe) over() as vahe_total, 
-                sum(arvestatud + soodustus + umberarvestus + vahe) over() as summa_total`,
+                sum(arvestatud + soodustus + umberarvestus - vahe) over() as summa_total`,
         alias: 'kuutabeli_aruanne'
     },
     print: [
