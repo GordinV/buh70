@@ -398,7 +398,7 @@ class Smk extends React.PureComponent {
                         <div style={styles.docRow}>
                             <InputNumber title='Summa: '
                                          name='summa'
-                                         value={Number(row.summa)}
+                                         value={Number(row.summa) || ''}
                                          bindData={false}
                                          ref='summa'
                                          onChange={self.handleGridRowInput}/>

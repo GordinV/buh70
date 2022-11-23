@@ -181,27 +181,27 @@ class Laps extends React.PureComponent {
                         <InputNumber ref="input-kogus"
                                      title='Kogus:'
                                      name='kogus'
-                                     value={Number(self.docData.kogus) || Number(null)}
+                                     value={Number(self.docData.kogus) || ''}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
 
                         <InputNumber ref="input-hind"
                                      title='Hind:'
                                      name='hind'
-                                     value={Number(self.docData.hind) || Number(null)}
+                                     value={Number(self.docData.hind) ||  ''}
                                      readOnly={true}/>
 
                         <InputNumber ref="input-soodustus"
                                      title='Soodustus:'
                                      name='soodustus'
-                                     value={Number(self.docData.soodustus) || Number(null)}
+                                     value={Number(self.docData.soodustus) || ''}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
 
                         <InputNumber ref="input-summa"
                                      title='Summa:'
                                      name='summa'
-                                     value={(Number(self.docData.summa)).toFixed(2) || Number(null)}
+                                     value={(Number(self.docData.summa)).toFixed(2) || ''}
                                      readOnly={true}/>
 
                         <CheckBox title="Kas ümberarvestus?"

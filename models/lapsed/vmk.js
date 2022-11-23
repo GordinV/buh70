@@ -80,7 +80,8 @@ const Vmk = {
                               NULL::VARCHAR(120)                             AS dokprop,
                               NULL::VARCHAR(20)                              AS konto,
                               0                                              AS doklausid,
-                              NULL::INTEGER                                  AS lapsId
+                              NULL::INTEGER                                  AS lapsId,
+                              TRUE                                                 AS is_data_loaded       
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER`,
             query: null,

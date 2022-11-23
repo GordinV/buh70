@@ -33,6 +33,10 @@ WITH qryKontodKulud AS (
                                  THEN rekv_id
                              ELSE l_rekvid END
      ),
+     docs_types AS (
+         SELECT id, kood FROM libs.library WHERE library.library = 'DOK' AND kood IN ('JOURNAL')
+     ),
+
      qryArt AS (SELECT kood
                 FROM libs.library l
                 WHERE l.tun5 = 2 --kulud
@@ -69,6 +73,8 @@ FROM (
          WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
            AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+           AND d.status < 3
+           AND d.doc_type_id IN (SELECT id FROM docs_types)
            AND j1.kood5 IN (SELECT kood FROM qryArt)
            AND NOT empty(j1.kood5)
          GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood5, j1.tunnus, j.rekvid
@@ -94,6 +100,8 @@ FROM (
          WHERE coalesce(a.kpv, j.kpv) >= l_kpv1
            AND coalesce(a.kpv, j.kpv) <= l_kpv2
            AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+           AND d.status < 3
+           AND d.doc_type_id IN (SELECT id FROM docs_types)
            AND j1.kood5 IN (SELECT kood FROM qryArt)
            AND NOT empty(j1.kood5)
          GROUP BY j1.kood1, j1.kood2, j1.kood3, j1.kood5, j1.tunnus, j.rekvid

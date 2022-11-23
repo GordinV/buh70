@@ -243,7 +243,7 @@ class Sorder extends React.PureComponent {
                         <InputNumber title="Summa: "
                                      name='summa'
                                      ref="input-summa"
-                                     value={Number(self.docData.summa) || 0}
+                                     value={Number(self.docData.summa) || ''}
                                      width='auto'
                                      disabled={true}
                         />

@@ -728,7 +728,7 @@ GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO 
 
 /*
 SELECT  *
-FROM eelarve.kulud_eelnou('2022-12-31'::DATE, 63:: INTEGER, 0)
+FROM eelarve.kulud_eelnou('2022-12-31'::DATE, 63:: INTEGER, 1)
 where aasta_2_oodatav_taitmine > 0
 ORDER BY rekv_id, ARTIKKEL, tegev, TUNNUS
 

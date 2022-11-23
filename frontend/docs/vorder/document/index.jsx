@@ -241,7 +241,7 @@ class Vorder extends React.PureComponent {
 
                             <InputNumber title='Summa: '
                                          name='summa'
-                                         value={Number(row.summa) || 0}
+                                         value={Number(row.summa) || ''}
                                          bindData={false}
                                          ref='summa'
                                          onChange={self.handleGridRowInput}/>

@@ -59,6 +59,7 @@ class Input extends React.PureComponent {
                 <label style={styles.label} htmlFor={this.props.name} ref="label">
                     {this.props.title}
                 </label>
+                {/*
                 {this.state.readOnly || this.props.disabled ? null :
                     <Button
                         style={styles.button}
@@ -68,6 +69,7 @@ class Input extends React.PureComponent {
                         title={'Pane miinus'}
                         onClick={(e) => this.handleClick(e)}>
                     </Button>}
+*/}
                 <input type={this.props.type ? this.props.type : 'number'}
                        id={this.props.name}
                        ref="input"

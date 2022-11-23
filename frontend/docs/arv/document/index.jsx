@@ -370,12 +370,12 @@ class Arve extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <InputNumber title='Kogus '
                                          name='kogus'
-                                         value={Number(row.kogus ? row.kogus : '')}
+                                         value={Number(row.kogus ? row.kogus : '') || ''}
                                          readOnly={false}
                                          disabled={false}
                                          bindData={false}
                                          ref='kogus'
-                                         pattern="[0-9]{10}"
+//                                         pattern="[0-9]{10}"
                                          onChange={self.handleGridRowInput}/>
                         </div>
                     </div>
@@ -383,7 +383,7 @@ class Arve extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <InputNumber title='Soodustus '
                                          name='soodustus'
-                                         value={Number(row.soodustus ? row.soodustus : '')}
+                                         value={Number(row.soodustus ? row.soodustus : '') || ''}
                                          readOnly={false}
                                          disabled={false}
                                          bindData={false}
@@ -392,7 +392,7 @@ class Arve extends React.PureComponent {
                                          onChange={self.handleGridRowInput}/>
                             <InputNumber title='Vahe '
                                          name='vahe'
-                                         value={Number(row.vahe ? row.vahe : '')}
+                                         value={Number(row.vahe ? row.vahe : '') || ''}
                                          readOnly={true}
                                          disabled={true}
                                          bindData={false}
@@ -404,7 +404,7 @@ class Arve extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <InputNumber title='Hind '
                                          name='hind'
-                                         value={Number(row.hind ? row.hind : '')}
+                                         value={Number(row.hind ? row.hind : '') || ''}
                                          readOnly={false}
                                          disabled={false}
                                          bindData={false}
@@ -418,7 +418,7 @@ class Arve extends React.PureComponent {
 
                             <InputNumber title='Kbm-ta: '
                                          name='kbmta'
-                                         value={Number(row.summa ? row.summa - row.kbm : '')}
+                                         value={Number(row.summa ? row.summa - row.kbm : '') || ''}
                                          disabled={true}
                                          bindData={false}
                                          ref='kbmta'
@@ -428,7 +428,7 @@ class Arve extends React.PureComponent {
                         <div style={styles.docColumn}>
                             <InputNumber title='Kbm: '
                                          name='kbm'
-                                         value={Number(row.kbm ? row.kbm : '')}
+                                         value={Number(row.kbm ? row.kbm : '') || ''}
                                          disabled={true}
                                          bindData={false}
                                          ref='kbm'
@@ -441,7 +441,7 @@ class Arve extends React.PureComponent {
 
                             <InputNumber title='Summa: '
                                          name='Summa'
-                                         value={Number(row.summa ? row.summa : '')}
+                                         value={Number(row.summa ? row.summa : '') || ''}
                                          disabled={true}
                                          bindData={false}
                                          ref='summa'
