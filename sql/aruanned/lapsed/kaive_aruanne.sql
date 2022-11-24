@@ -191,11 +191,11 @@ FROM (
               ),
               arvestatud AS (
                   SELECT ld.parentid                                                                            AS laps_id,
-                         sum(a1.umberarvestus) ::NUMERIC(14, 4)                                                 AS umberarvestus,
+                         sum(a1.umberarvestus::NUMERIC(14, 2))                                                  AS umberarvestus,
                          sum(CASE
                                  WHEN kas_umberarvestus THEN 0
-                                 ELSE (a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus)) END) ::NUMERIC(14, 4) AS arvestatud,
-                         sum(COALESCE(a1.soodustus, 0) * a1.kogus)                                              AS soodustus,
+                                 ELSE (a1.summa + (COALESCE(a1.soodustus, 0) * a1.kogus)) END ::NUMERIC(14, 2)) AS arvestatud,
+                         sum((COALESCE(a1.soodustus, 0) * a1.kogus)::NUMERIC(14, 2))                            AS soodustus,
                          D.rekvid::INTEGER                                                                      AS rekv_id
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id

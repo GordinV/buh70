@@ -188,7 +188,7 @@ class Laps extends React.PureComponent {
                         <InputNumber ref="input-hind"
                                      title='Hind:'
                                      name='hind'
-                                     value={Number(self.docData.hind) ||  ''}
+                                     value={Number(self.docData.hind) || ''}
                                      readOnly={true}/>
 
                         <InputNumber ref="input-soodustus"
@@ -203,6 +203,13 @@ class Laps extends React.PureComponent {
                                      name='summa'
                                      value={(Number(self.docData.summa)).toFixed(2) || ''}
                                      readOnly={true}/>
+
+                        <InputNumber ref="input-vahe"
+                                     title='Vahe:'
+                                     name='vahe'
+                                     value={Number(self.docData.vahe)}
+                                     readOnly={!isEditMode}
+                                     onChange={self.handleInputChange}/>
 
                         <CheckBox title="Kas ümberarvestus?"
                                   name='kas_umberarvestus'
@@ -295,7 +302,7 @@ class Laps extends React.PureComponent {
         let doc = this.refs['document'];
 
         let summa = 0;
-        doc.docData['summa'] = ((Number(doc.docData['hind']) - Number(doc.docData['soodustus'])) * Number(doc.docData['kogus'])).toFixed(2)  ;
+        doc.docData['summa'] = ((Number(doc.docData['hind']) - Number(doc.docData['soodustus'])) * Number(doc.docData['kogus'])).toFixed(2);
     }
 
 }
