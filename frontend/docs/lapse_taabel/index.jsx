@@ -109,7 +109,7 @@ class Documents extends React.PureComponent {
                         mimeTypes={'.csv'}
                     /> : null}
                 <BtnGetCsv
-                    value={'Saama CSV fail'}
+                    value={'Eksport (muu vaade)'}
                     onClick={this.onClickHandler}
                     showDate={false}
                     ref={`btn-getcsv`}
@@ -167,7 +167,7 @@ class Documents extends React.PureComponent {
 
                 }
                 break;
-            case 'Saama CSV fail':
+            case 'Eksport (muu vaade)':
                 //Saama CSV fail
                 if (Doc.gridData && Doc.gridData.length) {
                     //делаем редайрект на конфигурацию
