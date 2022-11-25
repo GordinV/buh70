@@ -69,7 +69,7 @@ module.exports = {
                 sum(arvestatud + soodustus) over() as arv_ja_soodustus_total, 
                 sum(laekumised) over() as laekumised_total,
                 sum(mahakantud) over() as mahakantud_total,
-                -1 * sum(tagastused) over() as tagastused_total,
+                sum(tagastused) over() as tagastused_total,
                 sum(jaak) over() as jaak_total `,
         alias: 'kaive_aruanne_report',
         notReloadWithoutParameters: true
@@ -104,7 +104,7 @@ module.exports = {
                     row.soodustus_kokku = soodustus_kokku;
                     row.laekumised_kokku = laekumised_kokku;
                     row.mahakantud_kokku = mahakantud_kokku;
-                    row.tagastused_kokku = tagastused_kokku;
+                    row.tagastused_kokku = -1 * tagastused_kokku;
                     row.row_id = row_id;
                     return row;
                 })
