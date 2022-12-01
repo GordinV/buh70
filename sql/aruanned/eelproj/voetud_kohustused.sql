@@ -146,7 +146,7 @@ FROM (
                                           )) AS aasta_5_pohiosa,
                 sum(db) FILTER (WHERE konto = '910029' AND
                                       (rahavoo = '95' AND kpv = make_date((year(l_kpv)), 06, 30)
-                                          OR rahavoo = '96  ' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
+                                          OR rahavoo = '96' AND kpv = make_date((year(l_kpv) - 1), 12, 31)
                                           )) AS aasta_5_intress
 
          FROM eelarve.saldoandmik

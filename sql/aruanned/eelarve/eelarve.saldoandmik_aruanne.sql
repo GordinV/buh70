@@ -112,13 +112,37 @@ WITH rekv_ids AS (
          SELECT qry.rekvid                  AS rekv_id,
                 left(konto, 6)::TEXT        AS konto,
                 (CASE
+                    -- 155920
+                     WHEN left(konto, 6) IN ('155920') AND (qry.rahavoog = '00' OR qry.kpv <
+                                                                                   make_date(date_part('year', l_kpv2::DATE)::INTEGER, 1, 1))
+                         AND qry.kpv < '2022-10-01'
+                         THEN ''
+
                      WHEN is_tp AND left(konto, 6) IN ('150200', '150210', '150020') AND
                           ltrim(rtrim(coalesce(qry.rahavoog, ''))) IN ('01', '00', '17', '21') THEN tp
+                     WHEN l.is_tp AND
+                          (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(coalesce(qry.konto, ''))) = '155920')
+                         THEN tp
                      WHEN l.is_tp AND
                           (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(coalesce(qry.rahavoog, ''))) = '01')
                          THEN tp
                      ELSE '' END)::CHAR(20) AS tp,
                 (CASE
+                    -- 155920
+                     WHEN left(konto, 6) IN ('155920') AND (qry.rahavoog = '00' OR qry.kpv <
+                                                                                   make_date(date_part('year', l_kpv2::DATE)::INTEGER, 1, 1))
+                         AND qry.kpv < '2022-10-01'
+                         THEN ''
+
+                     WHEN is_tegev AND
+                          ltrim(rtrim(COALESCE(l.muud, ''))) = '*' AND
+                          ltrim(rtrim(COALESCE(CASE
+                                                   WHEN qry.kpv <
+                                                        make_date(date_part('year', l_kpv2::DATE)::INTEGER, 1, 1)
+                                                       THEN '00'
+                                                   ELSE qry.rahavoog END, ''))) = '00'
+                         AND NOT left(konto, 6) IN ('155920')
+                         THEN ''
                      WHEN is_tegev AND
                           ltrim(rtrim(coalesce(l.muud, ''))) = '*' AND ltrim(rtrim(coalesce(qry.rahavoog, ''))) = '00'
                          THEN
@@ -259,8 +283,8 @@ execution: 5 s 606 ms , 124, 137795039.74,137795039.74
 explain
 
 SELECT sum(deebet) over(), sum(kreedit) over(), *
-FROM eelarve.saldoandmik_aruanne('2022-09-30' :: DATE, 119 :: INTEGER, 0 ::integer)
-WHERE konto like '155109%'
+FROM eelarve.saldoandmik_aruanne('2022-10-31' :: DATE, 112 :: INTEGER, 0 ::integer)
+WHERE konto like '155920%'
 --and rahavoog = '01'
 --GROUP BY konto, tp
 */

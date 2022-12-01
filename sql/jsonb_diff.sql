@@ -8,4 +8,10 @@ WHERE a.value != b.value
 $json_diff$
     LANGUAGE SQL;
 
-SELECT jsonb_diff('{"a":1,"b":2}'::JSONB, '{"a":1,"b":null}'::JSONB);
+SELECT jsonb_diff('{
+  "a": 1,
+  "b": 2
+}'::JSONB, '{
+  "a": 1,
+  "b": null
+}'::JSONB);

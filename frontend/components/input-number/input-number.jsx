@@ -83,7 +83,7 @@ class Input extends React.PureComponent {
                        min={inputMinValue}
                        max={inputMaxValue}
                        step="0.01"
-                       pattern="^(-)?\d+(\.\d{2})?"
+                       pattern="[-+]?[0-9]*[.,]?[0-9]+"
                        disabled={this.props.disabled}
                 />
             </div>)
@@ -117,8 +117,7 @@ Input.defaultProps = {
     readOnly: false,
     disabled: false,
     valid: true,
-    min: -999999999,
-    max: 999999999
+
 };
 
 module.exports = radium(Input);

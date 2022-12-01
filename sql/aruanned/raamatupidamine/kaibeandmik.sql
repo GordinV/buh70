@@ -248,8 +248,11 @@ GRANT EXECUTE ON FUNCTION docs.kaibeandmik( DATE, DATE, INTEGER,INTEGER, TEXT, J
 
 
 /*
-select *
-FROM docs.kaibeandmik('2022-11-01', '2022-12-31':: DATE, 63,1,'%','{"konto":"","tunnus":""}'::jsonb)
+select  sum(alg_saldo) over() as alg,
+        sum(deebet) over() as db,
+        sum(kreedit) over() as kr,
+*
+FROM docs.kaibeandmik('2022-01-01', '2022-12-31':: DATE, 63,1,'%','{"konto":"","tunnus":""}'::jsonb)
 
 select sum(summa) over(), * from cur_journal where kpv >= '2022-01-01' and (deebet like '8%' or kreedit like '8%')
 

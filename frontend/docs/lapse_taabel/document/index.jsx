@@ -181,14 +181,14 @@ class Laps extends React.PureComponent {
                         <InputNumber ref="input-kogus"
                                      title='Kogus:'
                                      name='kogus'
-                                     value={Number(self.docData.kogus) || ''}
+                                     value={(self.docData.kogus) || ''}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
 
                         <InputNumber ref="input-hind"
                                      title='Hind:'
                                      name='hind'
-                                     value={Number(self.docData.hind) || ''}
+                                     value={(self.docData.hind) || ''}
                                      readOnly={true}/>
 
                         <InputNumber ref="input-soodustus"
@@ -201,13 +201,13 @@ class Laps extends React.PureComponent {
                         <InputNumber ref="input-summa"
                                      title='Summa:'
                                      name='summa'
-                                     value={(Number(self.docData.summa)).toFixed(2) || ''}
+                                     value={((self.docData.summa)).toFixed(2) || ''}
                                      readOnly={true}/>
 
                         <InputNumber ref="input-vahe"
                                      title='Vahe:'
                                      name='vahe'
-                                     value={Number(self.docData.vahe)}
+                                     value={(self.docData.vahe)}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
 
@@ -221,14 +221,14 @@ class Laps extends React.PureComponent {
                         <InputNumber ref="input-kuu"
                                      title='Kuu:'
                                      name='kuu'
-                                     value={Number(self.docData.kuu) || Number(kuu)}
+                                     value={(self.docData.kuu) || Number(kuu)}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
 
                         <InputNumber ref="input-aasta"
                                      title='Aasta:'
                                      name='aasta'
-                                     value={Number(self.docData.aasta) || Number(aasta)}
+                                     value={(self.docData.aasta) || Number(aasta)}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
                     </div>

@@ -1,0 +1,5 @@
+create_server.sql
+import_userid.sql
+import_noms.sql
+insert_dok_type_laps.sql
+paranda_gruppid.sql

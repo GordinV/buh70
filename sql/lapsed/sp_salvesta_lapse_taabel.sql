@@ -22,7 +22,7 @@ DECLARE
     doc_hind           NUMERIC = doc_data ->> 'hind';
     doc_soodustus      NUMERIC = doc_data ->> 'soodustus';
     doc_summa          NUMERIC = doc_data ->> 'summa';
-    doc_vahe           NUMERIC = doc_data ->> 'vahe';
+    doc_vahe           NUMERIC = CASE WHEN doc_data ->> 'vahe'::TEXT = '' THEN 0 ELSE (doc_data ->> 'vahe')::NUMERIC END;
     doc_kuu            INTEGER = doc_data ->> 'kuu';
     doc_aasta          INTEGER = doc_data ->> 'aasta';
     doc_muud           TEXT    = doc_data ->> 'muud';

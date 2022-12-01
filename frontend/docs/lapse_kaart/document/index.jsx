@@ -298,7 +298,7 @@ class LapseKaart extends React.PureComponent {
                         <InputNumber ref="input-hind"
                                      title='Hind:'
                                      name='hind'
-                                     value={Number(self.docData.hind) || ''}
+                                     value={self.docData.hind}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
                     </div>
@@ -306,7 +306,7 @@ class LapseKaart extends React.PureComponent {
                         <InputNumber ref="input-kogus"
                                      title='Kogus:'
                                      name='kogus'
-                                     value={Number(self.docData.kogus) || ''}
+                                     value={(self.docData.kogus) || ''}
                                      readOnly={!isEditMode}
                                      onChange={self.handleInputChange}/>
                     </div>

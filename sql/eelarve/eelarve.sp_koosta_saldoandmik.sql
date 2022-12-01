@@ -78,9 +78,6 @@ BEGIN
                   AND kassa = 2
                 LIMIT 1;
 
-                RAISE NOTICE 'rekvid -> %, l_kpv %, l_asutuse_tp %', v_rekv.id, l_kpv, l_asutuse_tp;
-
-
                 INSERT INTO eelarve.saldoandmik (nimetus, db, kr, konto, tegev, tp, allikas, rahavoo, kpv, aasta, kuu,
                                                  rekvid, omatp,
                                                  tyyp)
