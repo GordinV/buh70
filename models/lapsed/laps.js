@@ -141,6 +141,7 @@ module.exports = {
                   FROM lapsed.viitenr v
                            INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood
                            INNER JOIN ou.rekv r ON r.id = v.rekv_id
+                           INNER JOIN ou.userid u ON u.id = $2 AND r.id = u.rekvid
                   WHERE l.id = $1`,
             query: null,
             multiple: true,
