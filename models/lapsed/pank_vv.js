@@ -83,7 +83,7 @@ module.exports = {
                            $1                                                  AS not_in_use,
                            count(*) OVER ()                                    AS rows_total
                     FROM lapsed.pank_vv v
-                             LEFT OUTER JOIN lapsed.cur_lapsed_mk mk ON mk.id = v.doc_id
+                             LEFT OUTER JOIN docs.mk mk ON mk.parentid = v.doc_id
                              LEFT OUTER JOIN ou.rekv r ON r.id = mk.rekvid
                              LEFT OUTER JOIN ou.userid u ON u.id = $2
                     ORDER BY id DESC`,     //  $1 всегда ид учреждения, $2 - userId
