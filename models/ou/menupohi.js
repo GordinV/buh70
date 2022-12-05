@@ -26,6 +26,7 @@ module.exports = {
                      (m.properties -> 'modules') @> to_jsonb('LADU' :: TEXT)               AS is_ladu,
                      (m.properties -> 'modules') @> to_jsonb('HOOLDEKODU' :: TEXT)         AS is_hooldekodu,
                      (m.properties -> 'modules') @> to_jsonb('REKLMAKS' :: TEXT)           AS is_reklmaks,
+                     (m.properties -> 'modules') @> to_jsonb('HOOLDEKODU' :: TEXT)         AS is_hooldekodu,
                      (m.properties -> 'groups') @> to_jsonb('KASUTAJA' :: TEXT)            AS is_kasutaja,
                      (m.properties -> 'groups') @> to_jsonb('PEAKASUTAJA' :: TEXT)         AS is_peakasutaja,
                      (m.properties -> 'groups') @> to_jsonb('ADMIN' :: TEXT)               AS is_admin,
@@ -123,6 +124,6 @@ module.exports = {
     returnData: null,
     saveDoc: `select ou.sp_salvesta_menupohi($1, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid,
     deleteDoc: `SELECT error_code, result, error_message
-                FROM ou.sp_delete_menupohi($1, $2)`, // $1 - userId, $2 - docId,
+                FROM ou.sp_delete_menupohi($1, $2)`, // $1 - userId, $2 - docId, +
     requiredFields: null
 };

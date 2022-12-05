@@ -49,6 +49,7 @@ DECLARE
     l_uus_tasu_summa  NUMERIC = 0; -- uus tasu summa
     kas_muudatus      BOOLEAN = FALSE; -- если апдейт, то тру
     v_arvtasu         RECORD;
+    l_yksus           TEXT; -- код группы
 BEGIN
 
     SELECT kasutaja
@@ -114,7 +115,7 @@ BEGIN
 
         INSERT INTO docs.mk (parentid, rekvid, kpv, opt, aaId, number, muud, arvid, doklausid, maksepaev, selg, viitenr,
                              dokid)
-        VALUES (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, left(doc_number,20), doc_muud,
+        VALUES (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, left(doc_number, 20), doc_muud,
                 coalesce(doc_arvid, 0),
                 coalesce(doc_doklausid, 0), coalesce(doc_maksepaev, doc_kpv), coalesce(doc_selg, ''),
                 coalesce(doc_viitenr, ''), coalesce(doc_dok_id, 0)) RETURNING id
@@ -150,7 +151,7 @@ BEGIN
         UPDATE docs.mk
         SET kpv       = doc_kpv,
             aaid      = doc_aa_id,
-            number    = left(doc_number,20),
+            number    = left(doc_number, 20),
             muud      = doc_muud,
             arvid     = coalesce(doc_arvid, 0),
             doklausid = coalesce(doc_doklausid, 0),
@@ -238,6 +239,7 @@ BEGIN
             l_uus_tasu_summa = l_uus_tasu_summa + json_record.summa;
 
         END LOOP;
+
     -- правим сумму оплаты
     IF (kas_muudatus)
     THEN
@@ -277,19 +279,12 @@ BEGIN
         PERFORM docs.sp_tasu_arv(doc_id, doc_arvid, user_id);
     END IF;
 
-    raise notice 'doc_viitenr %, doc_lapsid %',doc_viitenr, doc_lapsid;
-
     -- lapse module
     IF doc_viitenr IS NOT NULL AND char_length(doc_viitenr) > 0 AND (doc_lapsid IS NULL OR doc_lapsid = 0)
     THEN
-        raise notice 'otsin vn %',char_length(doc_viitenr);
         -- попробуем найти ребенка по ссылке
         doc_lapsid = lapsed.get_laps_from_viitenumber(doc_viitenr);
-        raise notice 'otsin doc_lapsid %',doc_lapsid;
-
     END IF;
-
-    raise notice ' fin doc_viitenr %, doc_lapsid %',doc_viitenr, doc_lapsid;
 
     IF doc_lapsid IS NOT NULL AND doc_lapsid > 0
     THEN
@@ -297,6 +292,26 @@ BEGIN
         THEN
             INSERT INTO lapsed.liidestamine (parentid, docid) VALUES (doc_lapsid, doc_id);
         END IF;
+
+        -- присвоим платежу код группы по услугам
+        IF (SELECT properties ->> 'yksus'
+            FROM docs.mk
+            WHERE parentid = doc_id
+        ) IS NULL
+        THEN
+            l_yksus = (SELECT properties ->> 'yksus'
+                       FROM lapsed.lapse_kaart
+                       WHERE parentid = 4141
+                         AND staatus < 3
+                       ORDER BY (properties ->> 'lopp_kpv')::DATE DESC
+                       LIMIT 1);
+
+            UPDATE docs.mk
+            SET properties = coalesce(properties, '{}'::JSONB) || jsonb_build_object('yksus', l_yksus)
+            WHERE parentid = doc_id;
+
+        END IF;
+
     END IF;
 
     IF l_jaak > 0 AND doc_opt::INTEGER = 2 -- smk
@@ -304,6 +319,7 @@ BEGIN
         -- произведем поиск и оплату счета
         PERFORM docs.sp_loe_tasu(doc_id, user_id);
     END IF;
+
 
     RETURN doc_id;
 

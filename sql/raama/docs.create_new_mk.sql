@@ -32,13 +32,14 @@ DECLARE
                                       WHEN l_arv_id IS NOT NULL THEN (SELECT parentid
                                                                       FROM lapsed.liidestamine
                                                                       WHERE docid = l_arv_id
-                                                                      LIMIT 1)
+                                                                          LIMIT 1)
                                       ELSE left(right(l_viitenr::TEXT, 7), 6)::INTEGER END;
     l_opt        INTEGER;
     l_rekvId     INTEGER        = (SELECT rekvid
                                    FROM ou.userid
                                    WHERE id = user_id);
     l_nom_id     INTEGER;
+    v_nom_rea    RECORD;
 BEGIN
 
     IF (l_dokprop_id) IS NULL
@@ -47,8 +48,8 @@ BEGIN
                         FROM public.com_dokprop l
                         WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
                           AND kood = l_dok
-                        ORDER BY id DESC
-                        LIMIT 1
+                            ORDER BY id DESC
+                            LIMIT 1
         );
     END IF;
 
@@ -137,8 +138,8 @@ BEGIN
                      WHERE kassa = 1
                        AND parentid = l_rekvId
                        AND aa.arve::TEXT = l_asutus_aa::TEXT
-                     ORDER BY default_ DESC
-                     LIMIT 1);
+                         ORDER BY default_ DESC
+                         LIMIT 1);
 
     END IF;
 
@@ -151,8 +152,18 @@ BEGIN
                 FROM libs.nomenklatuur n
                 WHERE rekvid = l_rekvId
                   AND dok IN (l_dok, doc_type_id)
-                ORDER BY id DESC
-                LIMIT 1);
+                    ORDER BY id DESC
+                    LIMIT 1);
+
+    -- klassifikaatorit
+    SELECT coalesce(n.properties ->> 'tunnus', '')   AS tunnus,
+           coalesce(n.properties ->> 'tegev', '')    AS tegev,
+           coalesce(n.properties ->> 'konto', '')    AS konto,
+           coalesce(n.properties ->> 'artikkel', '') AS artikkel,
+           coalesce(n.properties ->> 'allikas', '')  AS allikas
+    INTO v_nom_rea
+    FROM libs.nomenklatuur n
+    WHERE id = l_nom_id;
 
     l_aa = CASE
                WHEN l_aa IS NULL THEN (COALESCE((
@@ -163,7 +174,7 @@ BEGIN
                                                                                      THEN '[]'::JSON
                                                                                  ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (ELEMENT)
                                                     WHERE a.id = l_asutus_id
-                                                    LIMIT 1
+                                                        LIMIT 1
                                                 ), ''))
                ELSE l_aa END;
 
@@ -187,19 +198,23 @@ BEGIN
         FROM docs.arv1 a1
         WHERE a1.
                   parentid = v_arv.id
-        ORDER BY kood5
-                , kood2 DESC
-                , kood1 DESC
-        LIMIT 1
-        INTO v_mk1;
+            ORDER BY kood5
+            , kood2 DESC
+            , kood1 DESC
+            LIMIT 1
+            INTO v_mk1;
 
     ELSE
-        SELECT 0           AS id,
-               l_nom_id    AS nomid,
-               l_asutus_id AS asutusid,
-               l_summa     AS summa,
-               l_aa        AS aa,
-               '103000'    AS konto
+        SELECT 0                  AS id,
+               l_nom_id           AS nomid,
+               l_asutus_id        AS asutusid,
+               l_summa            AS summa,
+               l_aa               AS aa,
+               '103000'           AS konto,
+               v_nom_rea.tegev    AS kood1,
+               v_nom_rea.allikas  AS kood2,
+               v_nom_rea.artikkel AS kood5,
+               v_nom_rea.tunnus
         INTO v_mk1;
     END IF;
 

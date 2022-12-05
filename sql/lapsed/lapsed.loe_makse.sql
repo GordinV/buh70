@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS lapsed.loe_makse(IN user_id INTEGER, IN INTEGER);
+DROP FUNCTION IF EXISTS lapsed.loe_makse(INTEGER,INTEGER);
 
 
 CREATE OR REPLACE FUNCTION lapsed.loe_makse(IN user_id INTEGER, IN l_id INTEGER,

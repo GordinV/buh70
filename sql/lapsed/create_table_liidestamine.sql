@@ -21,3 +21,4 @@ CREATE INDEX IF NOT EXISTS liidestamine_parentid_idx ON lapsed.liidestamine (par
 
 DROP INDEX IF EXISTS liidestamine_docid_idx;
 CREATE INDEX IF NOT EXISTS liidestamine_docid_idx ON lapsed.liidestamine (docid);
+

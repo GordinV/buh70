@@ -28,6 +28,7 @@ DECLARE
     doc_is_palk                INTEGER = doc_data ->> 'is_palk';
     doc_is_pv                  INTEGER = doc_data ->> 'is_pv';
     doc_is_reklmaks            INTEGER = doc_data ->> 'is_reklmaks';
+    doc_is_hooldekodu          INTEGER = doc_data ->> 'is_hooldekodu';
     doc_is_kasutaja            INTEGER = doc_data ->> 'is_kasutaja';
     doc_is_peakasutaja         INTEGER = doc_data ->> 'is_peakasutaja';
     doc_is_vaatleja            INTEGER = doc_data ->> 'is_vaatleja';
@@ -153,6 +154,11 @@ BEGIN
     IF doc_is_reklmaks
     THEN
         doc_modules = doc_modules || to_jsonb('REKLMAKS' :: TEXT);
+    END IF;
+
+    IF doc_is_hooldekodu
+    THEN
+        doc_modules = doc_modules || to_jsonb('HOOLDEKODU' :: TEXT);
     END IF;
 
     IF doc_is_pv

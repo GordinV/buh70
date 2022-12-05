@@ -178,7 +178,14 @@ module.exports = {
                     {id: 'hind', name: 'Hind', width: '8%', show: true, type: 'text', readOnly: false},
                     {id: 'all_yksus', name: 'All üksus', width: '5%', show: false, type: 'text', readOnly: false},
                     {id: 'inf3', name: 'INF3', width: '5%', show: true, type: 'text', readOnly: false},
-                    {id: 'umberarvestus', name: 'Ümberarvestus', width: '10%', show: true, type: 'text', readOnly: false},
+                    {
+                        id: 'umberarvestus',
+                        name: 'Ümberarvestus',
+                        width: '10%',
+                        show: true,
+                        type: 'text',
+                        readOnly: false
+                    },
                     {id: 'kehtivus', name: 'Period', width: '8%', show: true, type: 'text', readOnly: false},
                     {id: 'soodustus', name: 'Soodustus', width: '5%', show: true, type: 'text', readOnly: false},
                     {id: 'soodustuste_period', name: 'Kehtiv', width: '5%', show: true, type: 'text', readOnly: false},
@@ -373,6 +380,26 @@ module.exports = {
         type: 'sql',
         alias: 'koostaArved'
     },
+    koostaKoikArved: {
+        command: `SELECT row_number() OVER ()                                          AS id,
+                         tulemus -> 'result'                                           AS result,
+                         tulemus -> 'error_code'                                       AS error_code,
+                         coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
+                         tulemus -> 'error_message'                                    AS error_message,
+                         tulemus ->> 'viitenr'                                         AS viitenr
+                  FROM (
+                           SELECT to_jsonb(
+                                          lapsed.koosta_arve_taabeli_alusel($1::INTEGER, id::INTEGER, $2::DATE)) tulemus
+                           FROM lapsed.laps
+                           WHERE id IN (
+                               SELECT DISTINCT parentid
+                               FROM lapsed.lapse_kaart lk
+                               WHERE lk.staatus < 3
+                                 AND lk.rekvid IN (SELECT rekvid FROM ou.userid WHERE id = $1)
+                           )) qry`, //$1 docId, $2 - userId
+        type: 'sql',
+        alias: 'koostaArved'
+    },
 
     koostaEttemaksuArved: {
         command: `SELECT row_number() OVER ()                                          AS id,
@@ -412,6 +439,25 @@ module.exports = {
                            )) qry`,//$1 docId, $2 - userId
         type: 'sql',
         alias: 'arvestaTaabel'
+    },
+    arvestaKoikTaabelid: {
+        command: `SELECT row_number() OVER ()                                          AS id,
+                         tulemus -> 'result'                                           AS result,
+                         tulemus -> 'error_code'                                       AS error_code,
+                         coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
+                         tulemus ->> 'error_message'                                   AS error_message,
+                         tulemus ->> 'viitenr'                                         AS viitenr
+                  FROM (
+                           SELECT to_jsonb(lapsed.arvesta_taabel($1::INTEGER, id::INTEGER, $2::DATE)) tulemus
+                           FROM lapsed.laps
+                           WHERE id IN (
+                               SELECT DISTINCT parentid
+                               FROM lapsed.lapse_kaart lk
+                               WHERE lk.staatus < 3
+                                 AND lk.rekvid IN (SELECT rekvid FROM ou.userid WHERE id = $1)
+                           )) qry`,//$1 docId, $2 - userId
+        type: 'sql',
+        alias: 'arvestaKoikTaabelid'
     },
     importLapsed: {
         command: `SELECT error_code, result, error_message
@@ -455,16 +501,28 @@ module.exports = {
 
     bpm: [
         {
-            name: 'Arvesta taabel',
+            name: 'Arvesta taabel (kuni 1000)',
             task: 'arvestaTaabel',
             type: 'manual',
             action: 'arvestaTaabel',
         },
         {
-            name: 'Koosta arve taabeli alusel',
+            name: 'Arvesta taabel (kõik)',
+            task: 'arvestaKoikTaabelid',
+            type: 'manual',
+            action: 'arvestaKoikTaabelid',
+        },
+        {
+            name: 'Koosta arve taabeli alusel (kuni 1000)',
             task: 'koostaArve',
             type: 'manual',
             action: 'generateJournal',
+        },
+        {
+            name: 'Koosta arve taabeli alusel (kõik)',
+            task: 'koostaKoikArve',
+            type: 'manual',
+            action: 'koostaKoikArve',
         },
         {
             name: 'Koosta ettemaksuarve',

@@ -45,6 +45,13 @@ CREATE INDEX IF NOT EXISTS pank_vv_kpv_idx ON lapsed.pank_vv (kpv);
 DROP INDEX IF EXISTS pank_vv_viitenumber_idx;
 CREATE INDEX IF NOT EXISTS pank_vv_viitenumber_idx ON lapsed.pank_vv (viitenumber) WHERE doc_id is null  AND NOT left(coalesce(markused,''), 4) = 'Kuni';
 
+DROP INDEX IF EXISTS pank_vv_viitenumber_idx_1;
+CREATE INDEX IF NOT EXISTS pank_vv_viitenumber_idx_1 ON lapsed.pank_vv (viitenumber);
+
+DROP INDEX IF EXISTS pank_vv_number_idx;
+CREATE INDEX IF NOT EXISTS pank_vv_number_idx ON lapsed.pank_vv (number);
+
+
 /*
 pank_id TEXT, summa NUMERIC(12, 2), kpv DATE, maksja TEXT, iban TEXT,
                                             selg TEXT, viitenr TEXT

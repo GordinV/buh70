@@ -111,7 +111,9 @@ module.exports = function (app) {
     app.post('/calc/muuda_teenuste_tahtaeg', checkAuth, require('./lapsed/muuda_teenuste_tahtaeg').post); //checkAuth
     app.post('/calc/koostaEttemaksuArved', checkAuth, require('./lapsed/koostaEttemaksud').post); //checkAuth
     app.post('/calc/koostaArved', checkAuth, require('./lapsed/koostaArved').post); //checkAuth
+    app.post('/calc/koostaKoikArved', checkAuth, require('./lapsed/koostaKoikArved').post); //checkAuth
     app.post('/calc/arvestaTaabel', checkAuth, require('./lapsed/arvestaTaabel').post); //checkAuth
+    app.post('/calc/arvestaKoikTaabelid', checkAuth, require('./lapsed/arvestaKoikTaabelid').post); //checkAuth
     app.post('/calc/koostaTagasimakse', checkAuth, require('./raama/koostaTagasimakse').post); //checkAuth
     app.post('/calc/loe_makse', checkAuth, require('./lapsed/loe_makse').post); //checkAuth
     app.post('/calc/ebatoenaolised', checkAuth, require('./raama/ebatoenaolised').post); //checkAuth

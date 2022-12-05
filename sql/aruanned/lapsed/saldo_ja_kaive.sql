@@ -107,7 +107,9 @@ FROM (
                       -- laekumised (ettemaksed)
                       SELECT -1 * (CASE WHEN mk.opt = 2 THEN 1 ELSE -1 END) * mk.jaak AS summa,
                              l.id                                                     AS laps_id,
-                             ''                                                       AS yksus,
+                             CASE
+                                 WHEN mk.properties ->> 'yksus' IS NULL THEN ''
+                                 ELSE 'EM_' || (mk.properties ->> 'yksus') END         AS yksus,
                              D.rekvid                                                 AS rekv_id
                       FROM docs.doc D
                                INNER JOIN docs.Mk mk ON mk.parentid = D.id
@@ -304,7 +306,9 @@ FROM (
                                        WHEN mk.opt = 2 AND mk1.summa < 0 THEN mk.jaak
                                        WHEN mk.opt = 1 THEN -1 * mk.jaak
                                        ELSE 0 END)::NUMERIC(14, 4)                                                 AS tagastused,
-                                  ''                                                                               AS yksus,
+                                  CASE
+                                      WHEN mk.properties ->> 'yksus' IS NULL THEN ''
+                                      ELSE 'EM_' || (mk.properties ->> 'yksus') END                                 AS yksus,
                                   l.parentid                                                                       AS laps_id,
                                   d.rekvid
                   FROM docs.doc d

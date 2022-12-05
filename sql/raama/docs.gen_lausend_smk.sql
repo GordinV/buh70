@@ -29,6 +29,7 @@ DECLARE
     l_dok          TEXT;
     l_asutus_id    INTEGER;
     l_laps_id      INTEGER;
+    v_nom          RECORD;
 BEGIN
 
     RAISE NOTICE 'start gen_lausend %',tnid;
@@ -152,9 +153,15 @@ BEGIN
         SELECT k1.*,
                'EUR' :: VARCHAR                                                                     AS valuuta,
                1 :: NUMERIC                                                                         AS kuurs,
-               CASE WHEN k1.tp IS NULL OR empty(k1.tp) THEN coalesce(a.tp, '800599') ELSE k1.tp END AS tp
+               CASE WHEN k1.tp IS NULL OR empty(k1.tp) THEN coalesce(a.tp, '800599') ELSE k1.tp END AS tp,
+               coalesce(n.properties ->> 'tunnus', '')                                              AS n_tunnus,
+               coalesce(n.properties ->> 'tegev', '')                                               AS n_tegev,
+               coalesce(n.properties ->> 'konto', '')                                               AS n_konto,
+               coalesce(n.properties ->> 'artikkel', '')                                            AS n_artikkel,
+               coalesce(n.properties ->> 'allikas', '')                                             AS n_allikas
         FROM docs.mk1 k1
                  INNER JOIN libs.asutus a ON a.id = k1.asutusid
+                 INNER JOIN libs.nomenklatuur n ON n.id = k1.nomid
         WHERE k1.parentid = v_smk.Id
         LOOP
             l_asutus_id = v_smk1.asutusid;
@@ -193,21 +200,21 @@ BEGIN
 
             -- параметры для табличной части
 
-            SELECT 0                               AS id,
-                   coalesce(v_smk1.summa, 0)       AS summa,
-                   coalesce(v_smk1.valuuta, 'EUR') AS valuuta,
-                   coalesce(v_smk1.kuurs, 1)       AS kuurs,
-                   ltrim(rtrim(v_smk.konto))       AS deebet,
-                   coalesce(v_smk.tp, '800401')    AS lisa_d,
-                   ltrim(rtrim(v_smk1.konto))      AS kreedit,
-                   coalesce(v_smk1.tp, '800599')   AS lisa_k,
-                   coalesce(v_smk1.tunnus, '')     AS tunnus,
-                   coalesce(v_smk1.proj, '')       AS proj,
-                   coalesce(v_smk1.kood1, '')      AS kood1,
-                   coalesce(v_smk1.kood2, '')      AS kood2,
-                   coalesce(v_smk1.kood3, '')      AS kood3,
-                   coalesce(v_smk1.kood4, '')      AS kood4,
-                   coalesce(v_smk1.kood5, '')      AS kood5
+            SELECT 0                                         AS id,
+                   coalesce(v_smk1.summa, 0)                 AS summa,
+                   coalesce(v_smk1.valuuta, 'EUR')           AS valuuta,
+                   coalesce(v_smk1.kuurs, 1)                 AS kuurs,
+                   ltrim(rtrim(v_smk.konto))                 AS deebet,
+                   coalesce(v_smk.tp, '800401')              AS lisa_d,
+                   ltrim(rtrim(v_smk1.konto))                AS kreedit,
+                   coalesce(v_smk1.tp, '800599')             AS lisa_k,
+                   coalesce(v_smk1.tunnus, v_smk1.n_tunnus)  AS tunnus,
+                   coalesce(v_smk1.proj, '')                 AS proj,
+                   coalesce(v_smk1.kood1, v_smk1.n_tegev)    AS kood1,
+                   coalesce(v_smk1.kood2, v_smk1.n_allikas)  AS kood2,
+                   ''                                        AS kood3,
+                   ''                                        AS kood4,
+                   coalesce(v_smk1.kood5, v_smk1.n_artikkel) AS kood5
             INTO v_journal1;
 
             -- готовим параметры

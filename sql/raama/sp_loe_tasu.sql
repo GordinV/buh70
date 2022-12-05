@@ -19,8 +19,6 @@ BEGIN
     -- расчет сальдо платежа
     l_tasu_jaak = docs.sp_update_mk_jaak(l_tasu_id);
 
-    RAISE NOTICE 'l_tasu_jaak %', l_tasu_jaak;
-
     IF coalesce(l_tasu_jaak, 0) > 0
     THEN
 
@@ -69,7 +67,6 @@ BEGIN
             ORDER BY a.kpv, a.id
             LOOP
 
-                RAISE NOTICE 'v_arv.jaak %, l_tasu_jaak %', v_arv.jaak, l_tasu_jaak;
                 -- списываем в оплату сальдо счета (только остаток счета)
                 IF v_arv.jaak >= l_tasu_jaak
                 THEN
