@@ -507,22 +507,10 @@ module.exports = {
             action: 'arvestaTaabel',
         },
         {
-            name: 'Arvesta taabel (kõik)',
-            task: 'arvestaKoikTaabelid',
-            type: 'manual',
-            action: 'arvestaKoikTaabelid',
-        },
-        {
             name: 'Koosta arve taabeli alusel (kuni 1000)',
             task: 'koostaArve',
             type: 'manual',
             action: 'generateJournal',
-        },
-        {
-            name: 'Koosta arve taabeli alusel (kõik)',
-            task: 'koostaKoikArve',
-            type: 'manual',
-            action: 'koostaKoikArve',
         },
         {
             name: 'Koosta ettemaksuarve',
