@@ -43,7 +43,9 @@ module.exports = {
     },
 
 
-    requiredFields: ['viitenumber', 'rekv_id', 'laps_id'],
+    requiredFields: [{name: 'viitenumber', type: 'C', serverValidation: 'validateViitenumber'},
+        {name: 'rekv_id', type: 'I'},
+        {name: 'laps_id', type: 'I'}],
     saveDoc: `SELECT lapsed.sp_salvesta_viitenr($1::jsonb, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `SELECT error_code, result, error_message
                 FROM lapsed.sp_delete_viitenr($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
@@ -106,7 +108,16 @@ module.exports = {
             type: 'manual',
             action: 'updateTeenusedSetViitenr',
             hideDate: true
-        }]
+        }],
+    validateViitenumber: {
+        command: `SELECT id
+                  FROM lapsed.viitenr
+                  WHERE viitenumber = $1::TEXT
+                  ORDER BY id DESC
+                  LIMIT 1`,
+        type: 'sql',
+        alias: 'validateIsikukood'
+    },
 
 };
 
