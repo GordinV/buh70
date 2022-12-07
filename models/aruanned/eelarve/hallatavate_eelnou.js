@@ -54,11 +54,11 @@ module.exports = {
                                  WHEN r.parentid = 63 THEN 200
                                  WHEN r.parentid = 119 THEN 300
                                  ELSE 900 END * 1000, r.nimetus, qry.kas_tulud,
+                             CASE WHEN qry.tegev IS NULL THEN '000000' ELSE qry.tegev END,
                              CASE
                                  WHEN artikkel = 'KULUD' THEN '0'
                                  WHEN artikkel = 'TULUD' THEN '00'
-                                 ELSE qry.artikkel END,
-                             CASE WHEN qry.tegev IS NULL THEN '000000' ELSE qry.tegev END`,     // $1 - kpv $2 - rekvid, $3 - kond
+                                 ELSE qry.artikkel END`,     // $1 - kpv $2 - rekvid, $3 - kond
         params: '',
         alias: 'hallatavate_eelnou'
     }

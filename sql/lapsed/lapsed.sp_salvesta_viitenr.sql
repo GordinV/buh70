@@ -38,8 +38,18 @@ BEGIN
 
     IF doc_viitenumber IS NULL OR l_isikukood IS NULL
     THEN
+        RAISE NOTICE 'User not found %', user;
+        RETURN 0;
+    END IF;
+
+    -- validation
+    IF exists(SELECT id FROM lapsed.viitenr WHERE viitenumber = doc_viitenumber AND isikukood <> l_isikukood)
+    THEN
+        RAISE NOTICE 'VN juba kasutusel %', doc_viitenumber;
+        RETURN 0;
 
     END IF;
+
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0

@@ -17,7 +17,7 @@ const getConfigData = async function (user) {
 exports.swed = async (req, res) => {
     let ids = req.params.id || ''; // параметр id документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
-    const user = require('../middleware/userData')(req, uuid); // данные пользователя
+    const user = await require('../middleware/userData')(req, uuid); // данные пользователя
 
     if (!user) {
         console.error('error 401 newAPI');
@@ -95,7 +95,7 @@ exports.seb = async (req, res) => {
     let ids = req.params.id || ''; // параметр id документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
 
-    const user = require('../middleware/userData')(req, uuid); // данные пользователя
+    const user = await require('../middleware/userData')(req, uuid); // данные пользователя
 
     if (!user) {
         console.error('error 401 newAPI');

@@ -115,18 +115,18 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
             return {
                 '@invoiceId': arve.number,
                 '@serviceId': arve.viitenr,
-                '@regNumber': arve.regkood.trim(),
+                '@regNumber': arve.regkood,
                 '@channelId': asutusConfig.type ? asutusConfig.channelId : null,
                 '@channelAddress': asutusConfig.type ? arve.iban : null,
                 '@presentment': asutusConfig.type ? 'YES' : null,
                 '@invoiceGlobUniqId': asutusConfig.type ? arve.id : null,
                 '@sellerContractId': asutusConfig.type && asutusConfig.type == 'swed' ? asutusConfig.swed : asutusConfig.type ? asutusConfig.seb : null,
-                '@sellerRegnumber': asutusConfig.regkood.trim(),
+                '@sellerRegnumber': asutusConfig.regkood,
 
                 InvoiceParties: {
                     SellerParty: {
-                        Name: asutusConfig.asutus.trim(),
-                        RegNumber: asutusConfig.regkood.trim(),
+                        Name: asutusConfig.asutus,
+                        RegNumber: asutusConfig.regkood,
                         ContactData: {
                             LegalAddress: {
                                 PostalAddress1: 'Peetri pl. 1',
@@ -147,7 +147,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     },
                     BuyerParty: {
                         Name: arve.asutus,
-                        RegNumber: arve.regkood.trim(),
+                        RegNumber: arve.regkood,
                         ContactData: {
                             LegalAddress: {
                                 PostalAddress1: arve.aadress,

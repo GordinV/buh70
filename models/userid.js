@@ -79,7 +79,7 @@ module.exports = {
             const sql = _.findWhere(useridModel.executeSql, {alias: 'update_hash'}).sql;
 
             await Db.queryDb(sql, [userLogin, encryptedPassword]);
-            callback(err, true);
+            callback(null, this.login);
         }
     },
 

@@ -265,6 +265,15 @@ WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'S
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
+       'SALDO_JA_KA_KOKKU'                       AS kood,
+       'Saldo ja käibeandmik (kokkuvõte)'                       AS nimetus,
+       'DOK'                                     AS library,
+       '{"type":"aruanne", "module":["Lapsed"]}' AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'SALDO_JA_KA_KOKKU');
+
+
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
        'KAIVE_ARUANNE_KOKKU'                       AS kood,
        'Saldo ja käive aruanne (kokkuvõte)'                       AS nimetus,
        'DOK'                                     AS library,

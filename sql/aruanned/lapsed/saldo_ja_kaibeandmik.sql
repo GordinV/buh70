@@ -15,7 +15,8 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaibeandmik(l_rekvid INTEGER,
         mahakantud NUMERIC(14, 4),
         lopp_db    NUMERIC(14, 4),
         lopp_kr    NUMERIC(14, 4),
-        rekvid     INTEGER
+        rekvid     INTEGER,
+        isik_id    INTEGER
     )
 AS
 $BODY$
@@ -36,15 +37,17 @@ SELECT count(*) OVER (PARTITION BY report.rekv_id) AS id,
        mahakantud::NUMERIC(14, 4),
        lopp_db ::NUMERIC(14, 4)                    AS lopp_db,
        lopp_kr::NUMERIC(14, 4),
-       report.rekv_id
+       report.rekv_id,
+       report.isik_id
 FROM (
          WITH alg_saldo AS (
-             SELECT rekv_id, sum(db) AS alg_db, sum(kr) AS alg_kr
+             SELECT rekv_id, sum(db) AS alg_db, sum(kr) AS alg_kr, isik_id
              FROM (
                       -- laekumised
-                      SELECT 0         AS db,
-                             mk1.summa AS kr,
-                             mk.rekvid AS rekv_id
+                      SELECT 0          AS db,
+                             mk1.summa  AS kr,
+                             mk.rekvid  AS rekv_id,
+                             l.parentid AS isik_id
                       FROM docs.doc d
                                INNER JOIN docs.mk mk ON d.id = mk.parentid
                                INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
@@ -54,48 +57,47 @@ FROM (
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                         AND mk.opt = 2
-                          UNION ALL
-                        -- tagastused
-                          SELECT 0 AS db
-                          ,
-                          -1 * mk1.summa AS kr
-                          ,
-                          mk.rekvid AS rekv_id
-                          FROM docs.doc d
-                          INNER JOIN docs.mk mk ON d.id = mk.parentid
-                          INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
-                          INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-                          WHERE d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                      UNION ALL
+                      -- tagastused
+                      SELECT 0              AS db
+                              ,
+                             -1 * mk1.summa AS kr
+                              ,
+                             mk.rekvid      AS rekv_id,
+                             l.parentid     AS isik_id
+                      FROM docs.doc d
+                               INNER JOIN docs.mk mk ON d.id = mk.parentid
+                               INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
+                               INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+                      WHERE d.rekvid IN (SELECT rekv_id FROM rekv_ids)
                         AND d.status < 3
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                         AND mk.opt = 1
-                          UNION ALL
-                          SELECT a.summa AS db
-                          ,
-                          0 AS kr
-                          ,
-                          d.rekvid AS rekv_id
-                          FROM docs.doc d
-                          INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
-                          INNER JOIN docs.arv a ON a.parentid = d.id AND a.liik = 0 -- только счета исходящие
-                          WHERE coalesce((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
+                      UNION ALL
+                      SELECT a.summa     AS db,
+                             0           AS kr,
+                             d.rekvid    AS rekv_id,
+                             ld.parentid AS isik_id
+                      FROM docs.doc d
+                               INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
+                               INNER JOIN docs.arv a ON a.parentid = d.id AND a.liik = 0 -- только счета исходящие
+                      WHERE coalesce((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
                         AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
-                        AND a.liik = 0                                              -- только счета исходящие
+                        AND a.liik = 0 -- только счета исходящие
                         AND a.kpv < kpv_start
                         AND d.status < 3
 -- mahakandmine
-                          UNION ALL
-                          SELECT -1 * a.summa AS db
-                          ,
-                          0 AS kr
-                          ,
-                          a.rekvid AS rekv_id
-                          FROM docs.arvtasu a
-                          INNER JOIN lapsed.liidestamine l ON l.docid = a.doc_arv_id
-                          INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
-                          WHERE a.pankkassa = 3                                     -- только проводки
+                      UNION ALL
+                      SELECT -1 * a.summa AS db,
+                             0            AS kr,
+                             a.rekvid     AS rekv_id,
+                             l.parentid   AS isik_id
+                      FROM docs.arvtasu a
+                               INNER JOIN lapsed.liidestamine l ON l.docid = a.doc_arv_id
+                               INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
+                      WHERE a.pankkassa = 3 -- только проводки
                         AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
                         AND a.kpv < kpv_start
                         AND arv.liik = 0
@@ -104,80 +106,12 @@ FROM (
                              arv.properties ->> 'tyyp' <> 'ETTEMAKS') -- уберем предоплаты
 
                   ) alg_saldo
-             GROUP BY rekv_id
+             GROUP BY rekv_id, isik_id
          ),
-              lopp_saldo AS (
-                  SELECT rekv_id, sum(db) AS lopp_db, sum(kr) AS lopp_kr
-                  FROM (
-                           -- laekumised
-                           SELECT 0         AS db,
-                                  mk1.summa AS kr,
-                                  mk.rekvid AS rekv_id
-                           FROM docs.doc d
-                                    INNER JOIN docs.mk mk ON d.id = mk.parentid
-                                    INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
-                                    INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-                           WHERE d.rekvid IN (SELECT rekv_id FROM rekv_ids)
-                             AND d.status < 3
-                             AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
-                             AND mk.maksepaev <= kpv_end
-                             AND mk.opt = 2
-                               UNION ALL
-                             -- tagastused
-                               SELECT 0 AS db
-                               ,
-                               -1 * mk1.summa AS kr
-                               ,
-                               mk.rekvid AS rekv_id
-                               FROM docs.doc d
-                               INNER JOIN docs.mk mk ON d.id = mk.parentid
-                               INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
-                               INNER JOIN lapsed.liidestamine l ON l.docid = d.id
-                               WHERE d.rekvid IN (SELECT rekv_id FROM rekv_ids)
-                             AND d.status < 3
-                             AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
-                             AND mk.maksepaev <= kpv_end
-                             AND mk.opt = 1
-                               UNION ALL
-                               SELECT a.summa AS db
-                               ,
-                               0 AS kr
-                               ,
-                               d.rekvid AS rekv_id
-                               FROM docs.doc d
-                               INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
-                               INNER JOIN docs.arv a ON a.parentid = d.id AND a.liik = 0 -- только счета исходящие
-                               WHERE coalesce((a.properties ->> 'tyyp')::TEXT, '') <> 'ETTEMAKS'
-                             AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
-                             AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
-                             AND a.liik = 0                                              -- только счета исходящие
-                             AND a.kpv <= kpv_end
-                             AND d.status < 3
--- mahakandmine
-                               UNION ALL
-                               SELECT -1 * a.summa AS db
-                               ,
-                               0 AS kr
-                               ,
-                               a.rekvid AS rekv_id
-                               FROM docs.arvtasu a
-                               INNER JOIN lapsed.liidestamine l ON l.docid = a.doc_arv_id
-                               INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
-                               WHERE a.pankkassa = 3                                     -- только проводки
-                             AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
-                             AND a.kpv <= kpv_end
-                             AND arv.liik = 0
-                             AND a.status <> 3
-                             AND (arv.properties ->> 'tyyp' IS NULL OR
-                                  arv.properties ->> 'tyyp' <> 'ETTEMAKS') -- уберем предоплаты
-
-                       ) lopp_saldo
-                  GROUP BY rekv_id
-              ),
-
               mahakandmine AS (
                   SELECT sum(a.summa) AS summa,
-                         a.rekvid     AS rekv_id
+                         a.rekvid     AS rekv_id,
+                         l.parentid   AS isik_id
                   FROM docs.arvtasu a
                            INNER JOIN lapsed.liidestamine l ON l.docid = a.doc_arv_id
                            INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
@@ -188,12 +122,13 @@ FROM (
                     AND a.kpv <= kpv_end
                     AND (arv.properties ->> 'tyyp' IS NULL OR
                          arv.properties ->> 'tyyp' <> 'ETTEMAKS') -- уберем предоплаты
-                      GROUP BY a.rekvid
+                  GROUP BY a.rekvid, l.parentid
               ),
 
               laekumised AS (
                   SELECT sum(CASE WHEN mk.opt = 2 THEN 1 ELSE -1 END * mk1.summa) AS summa,
-                         d.rekvid                                                 AS rekv_id
+                         d.rekvid                                                 AS rekv_id,
+                         ld.parentid                                              AS isik_id
                   FROM docs.doc d
                            INNER JOIN docs.Mk mk ON mk.parentid = d.id
                            INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
@@ -203,12 +138,13 @@ FROM (
                     AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                     AND mk.maksepaev >= kpv_start
                     AND mk.maksepaev <= kpv_end
-                      GROUP BY d.rekvid
+                  GROUP BY d.rekvid, ld.parentid
               ),
 
               arvestatud AS (
                   SELECT sum(a.summa) ::NUMERIC(14, 4) AS arvestatud,
-                         D.rekvid::INTEGER             AS rekv_id
+                         D.rekvid::INTEGER             AS rekv_id,
+                         ld.parentid                   AS isik_id
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN docs.arv a ON a.parentid = D.id AND a.liik = 0 -- только счета исходящие
@@ -230,9 +166,38 @@ FROM (
                     AND a.liik = 0 -- только счета исходящие
                     AND a.kpv >= kpv_start
                     AND a.kpv <= kpv_end
-                      GROUP BY ld.parentid
-                      , D.rekvid
-              )
+                  GROUP BY ld.parentid
+                          , D.rekvid
+              ),
+              lopp_saldo AS (
+                  SELECT rekv_id, sum(lopp_saldo.summa) AS lopp_saldo, isik_id
+                  FROM (
+                           -- alg.saldo
+                           SELECT a.alg_db - a.alg_kr AS summa,
+                                  a.rekv_id           AS rekv_id,
+                                  a.isik_id
+                           FROM alg_saldo a
+                           UNION ALL
+                           -- laekumised
+                           SELECT -1 * l.summa AS summa,
+                                  l.rekv_id    AS rekv_id,
+                                  l.isik_id
+                           FROM laekumised l
+                           UNION ALL
+                           -- mahakandmine
+                           SELECT -1 * l.summa AS summa,
+                                  l.rekv_id    AS rekv_id,
+                                  l.isik_id
+                           FROM mahakandmine l
+                           UNION ALL
+                           -- arvestused
+                           SELECT k.arvestatud AS summa,
+                                  k.rekv_id    AS rekv_id,
+                                  k.isik_id
+                           FROM arvestatud k
+                       ) lopp_saldo
+                  GROUP BY rekv_id, isik_id)
+
          SELECT sum(alg_db)     AS alg_db,
                 sum(alg_kr)     AS alg_kr,
                 sum(db)         AS db,
@@ -240,7 +205,8 @@ FROM (
                 sum(mahakantud) AS mahakantud,
                 sum(lopp_db)    AS lopp_db,
                 sum(lopp_kr)    AS lopp_kr,
-                qry.rekv_id
+                qry.rekv_id,
+                qry.isik_id
          FROM (
                   -- alg.saldo
                   SELECT a.alg_db  AS alg_db,
@@ -250,7 +216,8 @@ FROM (
                          0         AS mahakantud,
                          0         AS lopp_db,
                          0         AS lopp_kr,
-                         a.rekv_id AS rekv_id
+                         a.rekv_id AS rekv_id,
+                         isik_id
                   FROM alg_saldo a
                   UNION ALL
                   -- laekumised
@@ -261,7 +228,8 @@ FROM (
                          0         AS mahakantud,
                          0         AS lopp_db,
                          0         AS lopp_kr,
-                         l.rekv_id AS rekv_id
+                         l.rekv_id AS rekv_id,
+                         l.isik_id
                   FROM laekumised l
                   UNION ALL
                   -- mahakandmine
@@ -272,7 +240,8 @@ FROM (
                          l.summa   AS mahakantud,
                          0         AS lopp_db,
                          0         AS lopp_kr,
-                         l.rekv_id AS rekv_id
+                         l.rekv_id AS rekv_id,
+                         l.isik_id
                   FROM mahakandmine l
                   UNION ALL
                   -- arvestused
@@ -283,21 +252,23 @@ FROM (
                          0            AS mahakantud,
                          0            AS lopp_db,
                          0            AS lopp_kr,
-                         k.rekv_id    AS rekv_id
+                         k.rekv_id    AS rekv_id,
+                         k.isik_id
                   FROM arvestatud k
                        -- lopp saldo
                   UNION ALL
-                  SELECT 0       AS alg_db,
-                         0       AS alg_kr,
-                         0       AS db,
-                         0       AS kr,
-                         0       AS mahakantud,
-                         lopp_db AS lopp_db,
-                         lopp_kr AS lopp_kr,
-                         rekv_id AS rekv_id
-                  FROM lopp_saldo
+                  SELECT 0                                                            AS alg_db,
+                         0                                                            AS alg_kr,
+                         0                                                            AS db,
+                         0                                                            AS kr,
+                         0                                                            AS mahakantud,
+                         CASE WHEN l.lopp_saldo > 0 THEN l.lopp_saldo ELSE 0 END      AS lopp_db,
+                         -1 * CASE WHEN l.lopp_saldo < 0 THEN l.lopp_saldo ELSE 0 END AS lopp_kr,
+                         rekv_id                                                      AS rekv_id,
+                         isik_id
+                  FROM lopp_saldo l
               ) qry
-         GROUP BY rekv_id
+         GROUP BY rekv_id, isik_id
      ) report
          INNER JOIN ou.rekv r ON r.id = report.rekv_id
 

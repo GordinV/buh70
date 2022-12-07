@@ -54,8 +54,6 @@ block content
         table.table.table-hover.grid_data
             thead.grid_head
                 tr
-                    th Lapse ees- ja perekonnanimi
-                    th Viitenumber
                     th Algsaldo deebet (nõuded)
                     th Algsaldo kreedit (ettemaksed)
                     th Käive deebet (arvestatud)
@@ -68,8 +66,6 @@ block content
             tbody
                 each rea in data
                     tr
-                        td=(rea.lapse_nimi)
-                        td=(rea.vn)
                         td(align='center')=Number(rea.alg_db).toFixed(2)
                         td(align='center')=Number(rea.alg_kr).toFixed(2)
                         td(align='center')=Number(rea.db).toFixed(2)
