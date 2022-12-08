@@ -27,6 +27,7 @@ class Documents extends React.PureComponent {
     constructor(props) {
         super(props);
         this.renderer = this.renderer.bind(this);
+        this.onClickHandler = this.onClickHandler.bind(this);
         this.state = {
             alg_db: 0,
             alg_kr: 0,
@@ -147,9 +148,38 @@ class Documents extends React.PureComponent {
             filtri_read: filtri_read
         });
 
-        return null;
+        return (<ToolbarContainer>
+                <BtnGetXml
+                    value={'Saama CSV fail'}
+                    onClick={this.onClickHandler}
+                    showDate={false}
+                    ref={`btn-getCsv`}
+                />
+            </ToolbarContainer>
+        );
     }
 
+    //handler для события клик на кнопках панели
+    onClickHandler() {
+        const Doc = this.refs['register'];
+
+        if (Doc.gridData && Doc.gridData.length) {
+            //делаем редайрект на конфигурацию
+            let sqlWhere = Doc.state.sqlWhere;
+            let url = `/reports/saldo_ja_kaibeandmik/${DocContext.userData.uuid}`;
+            let params = encodeURIComponent(`${sqlWhere}`);
+            let filter = encodeURIComponent(`${(JSON.stringify(Doc.filterData))}`);
+            let fullUrl = sqlWhere ? `${url}/${filter}/${params}` : `${url}/${filter}`;
+            window.open(fullUrl);
+
+        } else {
+            Doc.setState({
+                warning: 'Mitte ühtegi kirjed leidnud', // строка извещений
+                warningType: 'notValid',
+
+            });
+        }
+    }
 
 }
 

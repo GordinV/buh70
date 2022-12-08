@@ -209,14 +209,14 @@ FROM (
                 qry.isik_id
          FROM (
                   -- alg.saldo
-                  SELECT a.alg_db  AS alg_db,
-                         a.alg_kr  AS alg_kr,
-                         0         AS db,
-                         0         AS kr,
-                         0         AS mahakantud,
-                         0         AS lopp_db,
-                         0         AS lopp_kr,
-                         a.rekv_id AS rekv_id,
+                  SELECT CASE WHEN a.alg_db - a.alg_kr > 0 THEN a.alg_db - a.alg_kr ELSE 0 END AS alg_db,
+                         CASE WHEN a.alg_kr - a.alg_db > 0 THEN a.alg_kr - a.alg_db ELSE 0 END AS alg_kr,
+                         0                                                                     AS db,
+                         0                                                                     AS kr,
+                         0                                                                     AS mahakantud,
+                         0                                                                     AS lopp_db,
+                         0                                                                     AS lopp_kr,
+                         a.rekv_id                                                             AS rekv_id,
                          isik_id
                   FROM alg_saldo a
                   UNION ALL
@@ -286,5 +286,5 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE) TO db
 /*
 explain
 select *
-FROM lapsed.saldo_ja_kaibeandmik(119, '2021-01-01', '2021-01-31') qry
+FROM lapsed.saldo_ja_kaibeandmik(69, '2022-10-01', '2022-10-31') qry
 */

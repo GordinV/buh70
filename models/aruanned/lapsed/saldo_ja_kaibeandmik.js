@@ -30,6 +30,7 @@ module.exports = {
                                asutus::TEXT                            AS asutus,
                                qryReport.isik_id,
                                l.isikukood as lapse_isikukood,
+                               lapsed.get_viitenumber(qryReport.rekvid,qryReport.isik_id) as viitenumber,
                                l.nimi as lapse_nimi,
                                vn.vn
                         FROM lapsed.saldo_ja_kaibeandmik($1::INTEGER, $3::date, $4::date) qryReport
@@ -47,6 +48,7 @@ module.exports = {
                            lapse_isikukood,
                            lapse_nimi,
                            vn,
+                           viitenumber,
                            period,
                            (alg_db)                                 AS alg_db,
                            (alg_kr)                                 AS alg_kr,
