@@ -1,11 +1,14 @@
 'use strict';
 const getCSV = require('./../lapsed/get_csv');
+const getParameterFromFilter = require('./../../libs/getParameterFromFilter');
 
 exports.get = async (req, res) => {
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const kasKond = req.params.kond || false; // параметр kond
     const user =await require('../../middleware/userData')(req, uuid); // данные пользователя
+    const filter = req.params.filter || [];// массив фильтров документов;
+    let filterData = filter && filter.length ? JSON.parse(filter) : [];
 
     if (!user) {
         console.error('error 401 newAPI');
@@ -16,7 +19,13 @@ exports.get = async (req, res) => {
         // создать объект
         const Doc = require('./../../classes/DocumentTemplate');
         const doc = new Doc('lapse_kaart', null, user.userId, user.asutusId, 'lapsed');
-        const data = await doc.selectDocs('', sqlWhere, 100000);
+
+        let gridParams;
+        if (doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
+            gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
+        }
+
+        const data = await doc.selectDocs('', sqlWhere, 100000, gridParams);
 
         // get csv
 
