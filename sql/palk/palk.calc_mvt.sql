@@ -6,7 +6,7 @@ $BODY$
 
 DECLARE
   l_MVT               NUMERIC(14, 4) = 0;
-  l_max_lubatatud_MVT NUMERIC(14, 4) = 500;
+  l_max_lubatatud_MVT NUMERIC(14, 4) = (select tulubaas from palk.palk_config where rekvid = 63 limit 1);
   l_tulu_max_piir     NUMERIC(14, 4) = 1200;
   l_tulu_min_piir     NUMERIC(14, 4) = 900;
   l_max_MVT            NUMERIC(14, 4) = l_max_lubatatud_MVT - l_max_lubatatud_MVT / l_tulu_min_piir *
@@ -64,7 +64,7 @@ COST 100;
 GRANT EXECUTE ON FUNCTION palk.calc_mvt(NUMERIC, NUMERIC) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION palk.calc_mvt(NUMERIC, NUMERIC) TO dbpeakasutaja;
 /*
-select  palk.calc_mvt(1200, 500)
+select  palk.calc_mvt(1200, 00)
 select  palk.calc_mvt(1200, 0)
 select  palk.calc_mvt(2000, 500)
 select  palk.calc_mvt(200, 500)

@@ -75,8 +75,9 @@ BEGIN
                 LIMIT 1
             );
 
-            if l_asutus_id is null then
-                raise exception 'Maksja ei leidtud, l_asutus_id % json_record.vanem_ik %', l_asutus_id, json_record.vanem_ik;
+            IF l_asutus_id IS NULL
+            THEN
+                RAISE EXCEPTION 'Maksja ei leidtud, l_asutus_id % json_record.vanem_ik %', l_asutus_id, json_record.vanem_ik;
             END IF;
 
             -- ищем учреждение
@@ -114,7 +115,8 @@ BEGIN
                          INNER JOIN lapsed.liidestamine l ON l.docid = m.parentid
                 WHERE m1.asutusid = l_asutus_id
                   AND l.parentid = l_laps_id
-                  AND m.kpv = '2022-08-31'
+                  AND m.kpv = '2023-01-01'
+                  AND coalesce(m.muud, '') = 'Oppetasu algsaldo 2023'
                 LIMIT 1
             );
             RAISE NOTICE 'l_mk_id %',l_mk_id;
@@ -126,7 +128,7 @@ BEGIN
                                         INNER JOIN libs.library l ON l.id = dp.parentid
                                WHERE dp.rekvid = l_rekvid
                                  AND l.kood = 'SMK'
-                               ORDER BY dp.id DESC
+                               ORDER BY registr DESC, dp.id DESC
                                LIMIT 1
             );
 
@@ -166,7 +168,7 @@ BEGIN
                     SELECT *
                     FROM jsonb_to_recordset(data::JSONB)
                              AS x(yksus TEXT, laps_ik TEXT, vanem_ik TEXT, summa TEXT, kr TEXT, kood TEXT,
-                                  inf3 TEXT)
+                                  inf3 TEXT, tegev TEXT)
                 )
                 SELECT *
                 FROM qryJsons
@@ -188,12 +190,17 @@ BEGIN
                     LIMIT 1;
 
                     -- формируем строку
-                    SELECT 0            AS id,
-                           v_nom.id     AS nomid,
-                           l_asutus_id  AS asutusid,
-                           l_mk_summa   AS summa,
-                           v_aa.arve    AS aa,
-                           v_details.kr AS konto
+                    SELECT 0                 AS id,
+                           v_nom.id          AS nomid,
+                           l_asutus_id       AS asutusid,
+                           l_mk_summa        AS summa,
+                           v_aa.arve         AS aa,
+                           v_details.kr      AS konto,
+                           v_details.tegev   AS kood1,
+                           '80'              AS kood2,
+                           '3220'            AS kood5,
+                           json_record.yksus AS tunnus
+
                     INTO v_mk1;
 
                     json_mk1 = json_mk1::JSONB || (SELECT (row_to_json(v_mk1)))::JSONB;
@@ -202,19 +209,19 @@ BEGIN
 
             RAISE NOTICE 'json_mk1 %, v_aa %, v_details %', json_mk1, v_aa, v_details;
 
-            SELECT 0               AS id,
-                   l_doklausend_id AS doklausid,
-                   v_aa.id         AS aa_id,
-                   NULL            AS arvid,
-                   2               AS opt,
-                   l_viitenr       AS viitenr,
-                   NULL            AS number,
-                   '2022-08-31'    AS maksepaev,
-                   '2022-08-31'    AS kpv,
-                   'Alg.saldo'     AS selg,
-                   NULL            AS muud,
-                   json_mk1        AS "gridData",
-                   l_laps_id       AS lapsid
+            SELECT 0                        AS id,
+                   l_doklausend_id          AS doklausid,
+                   v_aa.id                  AS aa_id,
+                   NULL                     AS arvid,
+                   2                        AS opt,
+                   l_viitenr                AS viitenr,
+                   NULL                     AS number,
+                   '2023-01-01'             AS maksepaev,
+                   '2023-01-01'             AS kpv,
+                   'Oppetasu algsaldo 2023' AS selg,
+                   NULL                     AS muud,
+                   json_mk1                 AS "gridData",
+                   l_laps_id                AS lapsid
             INTO v_mk;
 
             json_object = (SELECT (row_to_json(v_mk)));

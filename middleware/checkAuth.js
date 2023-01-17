@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const log = require('./../libs/log');
+const UserContext = require('./../frontend/user-context');
 
 module.exports = async function (req, res, next) {
     const userId = req.body.userId;
@@ -7,9 +8,9 @@ module.exports = async function (req, res, next) {
     const user = await require('../middleware/userData')(req);
     let result = 0;
 
-    if (!uuid &&  req.session.users && req.session.users.length > 0) {
+    if (!uuid &&  UserContext.users && UserContext.users.length > 0) {
         // logs
-        let message = `Auth, !uuid && req.session.users.length > 0 -> ${userId},uuid -> ${uuid}`;
+        let message = `Auth, !uuid && UserContext.users.length > 0 -> ${userId},uuid -> ${uuid}`;
         log(message,'info');
 
         // get

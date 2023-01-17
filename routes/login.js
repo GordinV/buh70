@@ -7,6 +7,8 @@ const userid = require('../models/userid'),
     errorMessage = '';
 const _ = require('lodash');
 const log = require('./../libs/log');
+const UserContext = require('./../frontend/user-context');
+
 
 exports.get = function (req, res) {
     res.render('login', {"title": 'login', "errorMessage": errorMessage});
@@ -37,8 +39,8 @@ exports.post = function (req, res, next) {
 
                     errorMessage = null;
 
-                    if (!req.session.users) {
-                        req.session.users = [];
+                    if (!UserContext.users) {
+                        UserContext.users = [];
                     }
 
                     // user not loged In before
@@ -55,7 +57,7 @@ exports.post = function (req, res, next) {
                         roles: kasutaja.roles
                     }, kasutaja);
 
-                    req.session.users.push(newUser);
+                    UserContext.users.push(newUser);
                     user = newUser;
 
 // save user uuid
@@ -100,10 +102,10 @@ exports.post = function (req, res, next) {
                         return callback(err, null);
                     }
 
-                    let userIndex = _.findIndex(req.session.users, {id: kasutaja.id});
+                    let userIndex = _.findIndex(UserContext.users, {id: kasutaja.id});
 
                     //will set the list of allowed asutused to session object
-                    req.session.users[userIndex].userAllowedAsutused = result;
+                    UserContext.users[userIndex].userAllowedAsutused = result;
 
                     callback(err, result);
                 });

@@ -3,6 +3,7 @@
 const userid = require('../models/userid'),
     HttpError = require('./../error').HttpError;
 const log = require('./../libs/log');
+const UserContext = require('./../frontend/user-context');
 
 
 exports.post = async (req, res) => {
@@ -15,11 +16,16 @@ exports.post = async (req, res) => {
 
     let user = await require('./../middleware/userData')(req, userUuid);  // check for userid in session
 
+    if (!user) {
+        //send result and wait for reload
+        return res.send({status: 401, result: 'Logout'}); //пока нет новых данных
+
+    }
     // load new User data
     const userName = user.login;
 
     userid.getUserId(userName, rekvId, async function (err, userData) {
-        if (!userData || !req.session.users || req.session.users.length == 0) {
+        if (!userData || !UserContext.users || UserContext.users.length == 0) {
             // logs
             let message = `changeAsutus, tekkis viga !userData,userName-> ${userName} , rekvId-> ${rekvId}`;
             log(message, 'error');
@@ -28,9 +34,9 @@ exports.post = async (req, res) => {
             res.send({status: 403, result: 'error'});
         } else {
 
-            let users = req.session.users;
+            let users = UserContext.users;
             // меняем данные пользователя. все кроме индентификатора
-            req.session.users = users.map((userRow) => {
+            UserContext.users = users.map((userRow) => {
                 if (userUuid !== userRow.uuid) {
                     return userRow;
                 } else {

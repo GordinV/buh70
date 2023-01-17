@@ -51,8 +51,14 @@ CREATE INDEX IF NOT EXISTS pank_vv_viitenumber_idx_1 ON lapsed.pank_vv (viitenum
 DROP INDEX IF EXISTS pank_vv_number_idx;
 CREATE INDEX IF NOT EXISTS pank_vv_number_idx ON lapsed.pank_vv (number);
 
+DROP INDEX IF EXISTS pank_vv_pank_id_idx;
+CREATE UNIQUE INDEX IF NOT EXISTS pank_vv_pank_id_idx ON lapsed.pank_vv (pank_id);
 
 /*
 pank_id TEXT, summa NUMERIC(12, 2), kpv DATE, maksja TEXT, iban TEXT,
                                             selg TEXT, viitenr TEXT
+
+select * from lapsed.pank_vv where pank_id = 'RO2791156624L02'
+
+delete from lapsed.pank_vv where kpv < '2022-01-01'
  */

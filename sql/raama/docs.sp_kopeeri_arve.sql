@@ -50,8 +50,9 @@ BEGIN
            a.doklausid,
            dp.selg                                            AS dokprop,
            a.journalid,
-           coalesce(jid.number, 0) :: INTEGER                 AS laus_nr
-           INTO v_arv
+           coalesce(jid.number, 0) :: INTEGER                 AS laus_nr,
+           a.properties ->> 'aa'                              AS aa
+    INTO v_arv
     FROM docs.doc d
              INNER JOIN libs.library l ON l.id = d.doc_type_id
              INNER JOIN docs.arv a ON a.parentId = d.id
@@ -97,8 +98,9 @@ BEGIN
         WHERE a.parentid = doc_id
         LOOP
             l_details_json =
-                        coalesce(l_details_json, '') :: TEXT || CASE WHEN l_details_json IS NULL THEN '' ELSE ',' END ||
-                        row_to_json(v_arvread) :: TEXT;
+                            coalesce(l_details_json, '') :: TEXT ||
+                            CASE WHEN l_details_json IS NULL THEN '' ELSE ',' END ||
+                            row_to_json(v_arvread) :: TEXT;
         END LOOP;
 
     l_json = ('{"data":' || trim(TRAILING FROM l_doc_json, '}')::TEXT || ',"gridData":[' || l_details_json || ']}}');

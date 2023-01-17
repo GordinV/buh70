@@ -76,6 +76,8 @@ FROM (
          )
            -- J.Tsekanina, 11.10.2022 mitte residendid
            AND (CASE WHEN left(j.kood5, 2) = '50' AND left(j.lisa_d, 4) = '9006' THEN FALSE ELSE TRUE END)
+-- J. Tsekanina 14.12.2022
+           AND a.regkood NOT IN ('75024260-18510139')
      ) qry
 --WHERE saaja_tp <> '800699'
 

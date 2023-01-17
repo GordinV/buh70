@@ -1,10 +1,11 @@
 DROP FUNCTION IF EXISTS docs.gen_lausend_smk(INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS docs.gen_lausend_smk_(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.gen_lausend_smk(IN tnid INTEGER,
-                                                IN userid INTEGER,
-                                                OUT error_code INTEGER,
-                                                OUT result INTEGER,
-                                                OUT error_message TEXT)
+                                                 IN userid INTEGER,
+                                                 OUT error_code INTEGER,
+                                                 OUT result INTEGER,
+                                                 OUT error_message TEXT)
 AS
 $BODY$
 DECLARE
@@ -30,9 +31,9 @@ DECLARE
     l_asutus_id    INTEGER;
     l_laps_id      INTEGER;
     v_nom          RECORD;
+    l_parallel_doc INTEGER;
 BEGIN
 
-    RAISE NOTICE 'start gen_lausend %',tnid;
     SELECT d.docs_ids,
            k.*,
            aa.tp,
@@ -177,10 +178,72 @@ BEGIN
                                         INNER JOIN libs.asutus a ON a.id = v.asutusid
                                WHERE v.parentid = l_laps_id
                                  AND v.rekvid = v_smk.rekvid
-                               ORDER BY v.arveldus DESC, v.id DESC
+                               ORDER BY v.arveldus DESC
+                                       , v.id DESC
                                LIMIT 1);
+
+                IF l_asutus_id IS NULL
+                THEN
+                    l_asutus_id = v_smk1.asutusid;
+                END IF;
             END IF;
 
+            RAISE NOTICE 'l_laps_id %',l_laps_id;
+
+            IF l_laps_id IS NOT NULL
+            THEN
+                v_smk1.tp = '800699';
+                IF v_smk1.kood1 = 'null'
+                THEN
+                    v_smk1.kood1 = NULL;
+                END IF;
+                v_smk1.kood1 = coalesce(v_smk1.kood1, '09110');
+                IF v_smk1.kood2 = 'null'
+                THEN
+                    v_smk1.kood2 = NULL;
+                END IF;
+
+                v_smk1.kood2 = coalesce(v_smk1.kood2, '80');
+                IF v_smk1.kood5 = 'null'
+                THEN
+                    v_smk1.kood5 = NULL;
+                END IF;
+
+                v_smk1.kood5 = coalesce(v_smk1.kood5, '3220');
+                IF v_smk1.tunnus = 'null'
+                THEN
+                    v_smk1.tunnus = NULL;
+                END IF;
+
+                v_smk1.tunnus =
+                        coalesce(v_smk1.tunnus, (SELECT regexp_replace(nimetus, '[[:alpha:]]', '', 'g')
+                                                 FROM ou.rekv
+                                                 WHERE id = v_smk.rekvid
+                                                 LIMIT 1));
+
+/*                В проводках по поступлению денег в Selgitus-е хорошо бы поставить так:
+                    - при tegevusala 09110 поставить Lasteaiatasu
+                    - при tegevusala 08102 и 09510, 09500 поставить Huvikoolitasu
+                    - при tegevusala 08202 (это в Ругодиве) поставить Huviringitasu
+*/
+                lcSelg = CASE
+                             WHEN v_smk1.kood1 = '09110' THEN 'Lasteaiatasu'
+                             WHEN v_smk1.kood1 = '08102' THEN 'Huvikoolitasu'
+                             WHEN v_smk1.kood1 = '09510' THEN 'Huvikoolitasu'
+                             WHEN v_smk1.kood1 = '09500' THEN 'Huvikoolitasu'
+                             WHEN v_smk1.kood1 = '08202' THEN 'Huviringitasu'
+                             ELSE lcSelg END;
+
+                IF v_smk.selg = 'Oppetasu algsaldo 2023'
+                THEN
+                    -- alg saldo
+                    lcSelg = 'Oppetasu algsaldo 2023';
+                    v_smk.konto = '888888';
+                    v_smk1.konto = '103000';
+                    v_smk1.tp = '800699';
+                    v_smk.tp = '800699';
+                END IF;
+            END IF;
 
             -- готовим параментры для шапки проводки
             SELECT coalesce(v_smk1.journalid, 0) AS id,
@@ -270,10 +333,48 @@ BEGIN
                 EXIT;
             END IF;
 
+            -- параллельная проводка для нач. сальдо
+            IF v_smk.selg = 'Oppetasu algsaldo 2023'
+            THEN
+                RAISE NOTICE 'Parrallel lausend';
+                v_journal.asutusid = (SELECT id FROM libs.asutus WHERE regkood = '88888888880' AND staatus < 3 LIMIT 1);
+                v_journal.id = 0;
+                v_journal1.deebet = '203900';
+                v_journal1.kreedit = '888888';
+                l_json_details = row_to_json(v_journal1);
+
+                l_json = row_to_json(v_journal);
+                l_json = ('{"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":[' || l_json_details ||
+                          ']}}');
+
+                l_parallel_doc = docs.sp_salvesta_journal(l_json :: JSON, userId, v_smk.rekvId);
+                RAISE NOTICE 'Parrallel lausend l_parallel_doc %', l_parallel_doc;
+
+                IF l_parallel_doc IS NOT NULL AND l_parallel_doc > 0
+                THEN
+
+                    -- lausend
+                    SELECT docs_ids
+                    INTO a_docs_ids
+                    FROM docs.doc
+                    WHERE id = l_parallel_doc;
+
+                    -- add new id into docs. ref. array
+                    a_docs_ids = array(SELECT DISTINCT unnest(array_append(a_docs_ids, v_smk.parentId)));
+
+                    UPDATE docs.doc
+                    SET docs_ids = a_docs_ids
+                    WHERE id = l_parallel_doc;
+                END IF;
+
+
+            END IF;
+
+
         END LOOP;
     RAISE NOTICE 'result %',result;
     RETURN;
-END;
+END ;
 $BODY$
     LANGUAGE plpgsql
     VOLATILE
@@ -289,10 +390,22 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_smk(INTEGER, INTEGER) TO dbpeakasutaj
 
 
 SELECT
-  error_code,
-  result,
-  error_message
-FROM docs.gen_lausend_smk(2377148,(select id from ou.userid where kasutaja = 'vlad' and rekvid = 63 limit 1));
+docs.gen_lausend_smk(v.doc_id,(select id from ou.userid u where kasutaja = 'vlad' and u.rekvid = mk.rekvid limit 1))
+from lapsed.pank_vv v
+inner join docs.mk mk on v.doc_id = mk.parentid
+where v.kpv >= '2023-01-01'
+and mk.rekvid = 77
+
+and v.doc_id in (4448063,4448065,4448067)
+;
+
+
+select * from ou.rekv where nimetus ilike '%kunst%'
+-- 69
+select * from ou.rekv where id = 77
+
+
+select * from lapsed.pank_vv
 
 select * from libs.dokprop
 
@@ -308,6 +421,9 @@ select * from docs.mk1 where parentid in (select id from docs.mk where parentid 
 
 update docs.mk1 set kood1 = '01111', kood5 = '3220'
 where id = 1101234
+
+
+
 */
 
 

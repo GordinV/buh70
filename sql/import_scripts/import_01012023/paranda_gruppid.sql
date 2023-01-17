@@ -78,6 +78,7 @@ BEGIN
                             l_json_raw = l_json_raw || jsonb_build_object('nomid', l_uus_nom_id, 'id', l_uus_nom_id);
                             RAISE NOTICE 'l_vana_nomid ->> %, uus ->? %', l_vana_nom_id, l_uus_nom_id;
                             l_uus_teenused = l_uus_teenused || l_json_raw;
+                            raise notice 'l_uus_teenused %',l_uus_teenused;
                         END IF;
 
                     END LOOP;
@@ -116,11 +117,11 @@ $BODY$
     VOLATILE
     COST 100;
 
-SELECT parandata_gruppid(l.id)
-FROM libs.library l
-WHERE l.library IN ('LAPSE_GRUPP')
---  and id = 267983
-  AND l.status < 3
+        SELECT parandata_gruppid(l.id)
+        FROM libs.library l
+        WHERE l.library IN ('LAPSE_GRUPP')
+         and id = 268845
+          AND l.status < 3
 ;
 --DROP FUNCTION IF EXISTS parandata_gruppid(INTEGER);
 

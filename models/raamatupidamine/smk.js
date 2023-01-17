@@ -44,7 +44,9 @@ const Smk = {
                            LEFT OUTER JOIN ou.aa AS aa ON k.aaid = aa.Id
                            LEFT OUTER JOIN docs.arv AS arv ON k.arvid = arv.Id
                            LEFT OUTER JOIN libs.dokprop dp ON dp.id = k.doklausid
-                  WHERE d.id = $1`,
+                  WHERE d.id = $1
+                    AND d.status < 3
+            `,
             sqlAsNew: `SELECT $1 :: INTEGER                                  AS id,
                               $2 :: INTEGER                                  AS userid,
                               to_char(now(), 'DD.MM.YYYY HH:MM:SS') :: TEXT  AS created,

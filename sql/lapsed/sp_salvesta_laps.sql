@@ -21,6 +21,7 @@ DECLARE
     json_props       JSONB;
     json_props_vanem JSONB;
     json_ajalugu     JSONB;
+    l_vana_ik        TEXT;
 BEGIN
 
     IF (doc_id IS NULL)
@@ -28,7 +29,8 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -76,7 +78,7 @@ BEGIN
                    asutusId,
                    properties ->> 'arved'     AS arved,
                    properties ->> 'suhtumine' AS suhtumine
-                   INTO v_vanem
+            INTO v_vanem
             FROM lapsed.vanemad v
             WHERE id = doc_vanemId;
 
@@ -97,6 +99,8 @@ BEGIN
                                     userName AS user
                             ) row;
 
+        l_vana_ik = (SELECT isikukood FROM lapsed.laps WHERE id = doc_id LIMIT 1);
+
         UPDATE lapsed.laps
         SET isikukood  = doc_isikukood,
             nimi       = doc_nimi,
@@ -106,6 +110,10 @@ BEGIN
             staatus    = CASE WHEN staatus = 3 THEN 1 ELSE staatus END
         WHERE id = doc_id RETURNING id
             INTO doc_id;
+
+        -- обновим ик в связанном справочнике
+        UPDATE lapsed.viitenr SET isikukood = doc_isikukood WHERE isikukood = l_vana_ik;
+
 
     END IF;
 

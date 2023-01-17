@@ -19,6 +19,14 @@ DECLARE
   new_history   JSONB;
   a_docs_ids    INTEGER [];
 BEGIN
+
+    if coalesce(l_palkoper_id,0) = 0 then
+        error_code = 1;
+        error_message = 'Puudub dokument';
+        return;
+    END IF;
+
+
   SELECT
     kasutaja,
     rekvid
@@ -65,7 +73,7 @@ BEGIN
     result = 1;
     RETURN;
   END IF;
-
+raise notice 'v_palk_oper.palk_liik %, v_palk_oper.id %, l_palkoper_id %',v_palk_oper.palk_liik, v_palk_oper.id, l_palkoper_id;
   CASE WHEN v_palk_oper.palk_liik = 'ARVESTUSED'
     THEN
       --arv
@@ -169,6 +177,7 @@ BEGIN
             (row_to_json(v_journal1)) || ']}}');
 
   /* salvestan lausend */
+  raise notice 'l_json %',l_json;
   result = docs.sp_salvesta_journal(l_json :: JSON, user_id, v_palk_oper.rekvId);
 
   IF result IS NOT NULL AND result > 0

@@ -119,7 +119,7 @@ WITH rekv_ids AS (
                          THEN ''
 
                      WHEN is_tp AND left(konto, 6) IN ('150200', '150210', '150020') AND
-                          ltrim(rtrim(coalesce(qry.rahavoog, ''))) IN ('01', '00', '17', '21') THEN tp
+                          ltrim(rtrim(coalesce(qry.rahavoog, ''))) IN ('01', '00', '17', '21','18') THEN tp
                      WHEN l.is_tp AND
                           (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(coalesce(qry.konto, ''))) = '155920')
                          THEN tp
@@ -185,7 +185,7 @@ WITH rekv_ids AS (
                 -- 150020
                 (CASE
                      WHEN is_tp AND left(konto, 6) IN ('150200', '150210', '150020') AND
-                          ltrim(rtrim(coalesce(qry.rahavoog, ''))) IN ('01', '00', '17', '21') THEN tp
+                          ltrim(rtrim(coalesce(qry.rahavoog, ''))) IN ('01', '00', '17', '21','18') THEN tp
                      WHEN l.is_tp AND (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR
                                        ltrim(rtrim(coalesce(qry.rahavoog, ''))) = ('01'))
                          THEN tp

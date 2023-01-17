@@ -48,14 +48,16 @@ BEGIN
 
     IF userName IS NULL
     THEN
-        RAISE EXCEPTION 'User not found %', user;
-        RETURN 0;
+        RAISE EXCEPTION 'Viga, User not found %', user;
     END IF;
 
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
     END IF;
+
+    -- проверка на символы
+    PERFORM check_text(doc_muud);
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
@@ -105,20 +107,28 @@ BEGIN
             WHERE id = doc_id;
 
             UPDATE eelarve.taotlus
-            SET kpv        = doc_kpv,
-                ametnikid  = doc_ametnikid,
-                aasta      = doc_aasta,
-                kuu        = doc_kuu,
-                allkiri    = doc_allkiri,
-                tunnus     = doc_tunnus,
-                number     = doc_number,
-                muud       = doc_muud,
-                status     = CASE
-                                 WHEN is_import IS NOT NULL
-                                     THEN coalesce(doc_status, 0)
-                                 ELSE status END
+            SET kpv       = doc_kpv,
+                ametnikid = doc_ametnikid,
+                aasta     = doc_aasta,
+                kuu       = doc_kuu,
+                allkiri   = doc_allkiri,
+                tunnus    = doc_tunnus,
+                number    = doc_number,
+                muud      = doc_muud,
+                status    = CASE
+                                WHEN is_import IS NOT NULL
+                                    THEN coalesce(doc_status, 0)
+                                ELSE status END
             WHERE parentid = doc_id RETURNING id
                 INTO taotlus_id;
+        ELSE
+            -- taotlus aktsepteeritud, ainult muud lubatud parandada
+            UPDATE eelarve.taotlus
+            SET muud = doc_muud
+            WHERE parentid = doc_id
+              AND status < 4 RETURNING id
+                INTO taotlus_id;
+
 
         END IF;
 
@@ -138,6 +148,9 @@ BEGIN
                                            oodatav_taitmine NUMERIC(14, 2), tunnus TEXT, proj TEXT,
                                            kood1 TEXT, kood2 TEXT, kood3 TEXT, kood4 TEXT, kood5 TEXT, muud TEXT,
                                            selg TEXT, eelarveid INTEGER, eelprojid INTEGER);
+
+            -- проверка на символы
+            PERFORM check_text(json_record.selg);
 
             IF coalesce(doc_status, 0) < 3 AND
                (json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
@@ -172,7 +185,8 @@ BEGIN
                     kood5            = json_record.kood5,
                     muud             = json_record.muud,
                     selg             = replace(json_record.selg, ';', ',')
-                WHERE id = json_record.id :: INTEGER;
+                WHERE id = json_record.id :: INTEGER
+                  AND coalesce(doc_status, 0) < 3;
 
                 taotlus1_id = json_record.id :: INTEGER;
 
@@ -182,7 +196,7 @@ BEGIN
             END IF;
 
             -- delete record which not in json
-            IF (coalesce(doc_status, 0) <> 3)
+            IF (coalesce(doc_status, 0) < 3)
             THEN
                 DELETE
                 FROM eelarve.taotlus1

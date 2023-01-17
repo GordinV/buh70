@@ -1,5 +1,6 @@
 const _ = require('lodash');
 Userid = require('../models/userid');
+const UserContext = require('./../frontend/user-context');
 
 const log = require('./../libs/log');
 
@@ -25,15 +26,12 @@ exports.post = function(req, res) {
 
     Userid.deleteUserUuid(uuid);
 
-    if (userId && req.session.users.length) {
-        req.session.users = _.reject(req.session.users, (user) => {
+    if (userId && UserContext.users.length) {
+        UserContext.users = _.reject(UserContext.users, (user) => {
             return user.uuid !== uuid;
         });
     }
 
-    if (!userId || !req.session.users || req.session.users.length < 1) {
-        req.session.destroy();
-    }
 
     // log
     let message = `logout userId ${userId}, uuid ${uuid}`;

@@ -63,7 +63,7 @@ BEGIN
 
 
     --	ids =  v_doc.rigths->'delete';
-    IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
+/*    IF NOT v_doc.rigths -> 'delete' @> jsonb_build_array(user_id)
     THEN
         RAISE NOTICE 'У пользователя нет прав на удаление';
         error_code = 4;
@@ -72,13 +72,14 @@ BEGIN
         RETURN;
 
     END IF;
-
+*/
     IF NOT ou.fnc_aasta_kontrol(v_doc.rekvid, v_doc.kpv)
     THEN
         RAISE NOTICE 'Period on kinni';
         error_code = 4;
         error_message = 'Ei saa kustuta dokument. Period on kinni';
         result = 0;
+        RETURN;
     END IF;
 
 
@@ -217,12 +218,20 @@ BEGIN
 
 
     -- проверка и удаление из hooldekodu
-    IF exists(SELECT 1 FROM pg_class WHERE relname = 'hootehingud') AND
-       exists(SELECT id FROM hooldekodu.hootehingud ht WHERE ht.journalid = doc_id AND status < 3)
+    IF exists(SELECT 1 FROM pg_class WHERE relname = 'hootehingud')
     THEN
-        PERFORM (SELECT hooldekodu.sp_delete_hootehing(user_id, id)
-                 FROM hooldekodu.hootehingud ht
-                 WHERE journalid = doc_id);
+        IF exists(SELECT id FROM hooldekodu.hootehingud ht WHERE ht.journalid = doc_id AND status < 3)
+        THEN
+            FOR v_doc IN
+                SELECT id
+--                   hooldekodu.sp_delete_hootehing(user_id, id)
+                FROM hooldekodu.hootehingud ht
+                WHERE journalid = doc_id
+                LOOP
+                    PERFORM hooldekodu.sp_delete_hootehing(user_id, v_doc.id);
+
+                END LOOP;
+        END IF;
     END IF;
 
     result = 1;

@@ -45,5 +45,5 @@ GRANT EXECUTE ON FUNCTION lapsed.get_viitenumber(INTEGER, INTEGER) TO dbvaatleja
 GRANT EXECUTE ON FUNCTION lapsed.get_viitenumber(INTEGER, INTEGER) TO arvestaja;
 
 
-SELECT lapsed.get_viitenumber(119, 2516)
+SELECT lapsed.get_viitenumber(0, 804521)
 

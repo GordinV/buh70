@@ -95,7 +95,7 @@ GRANT EXECUTE ON FUNCTION palk.get_work_days( JSON ) TO dbpeakasutaja;
 
 
 /*
-SELECT sp_workdays(1, NULL :: JSON);
+SELECT palk.get_work_days(NULL :: JSON);
 
 SELECT sp_workdays('{"kuu":6,"aasta":2020}' :: JSON);
 

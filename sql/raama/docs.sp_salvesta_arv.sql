@@ -41,7 +41,7 @@ DECLARE
     doc_aa                TEXT           = doc_data ->> 'aa'; -- eri arve
     doc_viitenr           TEXT           = doc_data ->> 'viitenr'; -- viite number
     doc_lapsid            INTEGER        = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
-    doc_type              TEXT           = doc_data ->> 'tyyp'; -- ETTEMAKS - если счет на предоплату
+    doc_type              TEXT           = doc_data ->> 'tyyp'; -- ETTEMAKS - если счет на предоплату, hooldekodu
     doc_print             JSONB          = coalesce((doc_data ->> 'print')::JSONB, '[]'::JSONB); -- '["paber","email","earve"]'
     doc_ettemaksu_period  INTEGER        = doc_data ->> 'ettemaksu_period'; -- период в месяцах для счета на предоплату или номер периода в доходных
     doc_ettemaksu_arve_id INTEGER        = doc_data ->> 'ettemaksu_arve_id'; -- ссылка на счет предоплатв
@@ -66,7 +66,6 @@ DECLARE
     l_km                  TEXT;
     l_mks                 RECORD;
 BEGIN
-
     -- если есть ссылка на ребенка, то присвоим viitenumber
     IF doc_lapsid IS NOT NULL
     THEN
@@ -130,14 +129,12 @@ BEGIN
             ids = array_append(ids, doc_lepingId);
         END IF;
 
-
         INSERT INTO docs.doc (doc_type_id, history, rigths, rekvId)
         VALUES (doc_type_id, '[]' :: JSONB || new_history, new_rights, user_rekvid);
         -- RETURNING id             INTO doc_id;
         SELECT currval('docs.doc_id_seq') INTO doc_id;
 
         ids = NULL;
-
         INSERT INTO docs.arv (parentid, rekvid, userid, liik, operid, number, kpv, asutusid, lisa, tahtaeg, kbmta, kbm,
                               summa, muud, objektid, objekt, doklausid, properties)
         VALUES (doc_id, user_rekvid, user_id, doc_liik, doc_operid, doc_number, doc_kpv, doc_asutusid, doc_lisa,
@@ -205,7 +202,10 @@ BEGIN
                                             kood4 TEXT, kood5 TEXT,
                                             konto TEXT, tunnus TEXT, tp TEXT, proj TEXT, arve_id INTEGER, muud TEXT,
                                             km TEXT, yksus TEXT, all_yksus TEXT, lapse_taabel_id INTEGER,
-                                            soodustus NUMERIC(14, 4), soodus NUMERIC(14, 4));
+                                            soodustus NUMERIC(14, 4), soodus NUMERIC(14, 4), allikas_85 NUMERIC(12, 2),
+                                            allikas_vara NUMERIC(12, 2), allikas_muud NUMERIC(12, 2),
+                                            umardamine NUMERIC(12, 2), sugulane_osa NUMERIC(12, 2),
+                                            omavalitsuse_osa NUMERIC(12, 2));
 
 
             SELECT row_to_json(row)
@@ -216,7 +216,14 @@ BEGIN
                          CASE
                              WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
                                  THEN coalesce(json_record.soodus, 0)
-                             ELSE json_record.soodustus END AS soodustus) row;
+                             ELSE json_record.soodustus END        AS soodustus,
+                         coalesce(json_record.allikas_85, 0)       AS allikas_85,
+                         coalesce(json_record.allikas_vara, 0)     AS allikas_vara,
+                         coalesce(json_record.allikas_muud, 0)     AS allikas_muud,
+                         coalesce(json_record.umardamine, 0)       AS umardamine,
+                         coalesce(json_record.sugulane_osa, 0)     AS sugulane_osa,
+                         coalesce(json_record.omavalitsuse_osa, 0) AS omavalitsuse_osa
+                 ) row;
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
             THEN
@@ -295,7 +302,7 @@ BEGIN
                                      WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
                                          THEN coalesce(json_record.soodus, 0)
                                      ELSE json_record.soodustus END::NUMERIC(14, 4),
-                    properties = properties || arv1_rea_json
+                    properties = coalesce(properties, '{}'::JSONB) || arv1_rea_json
                 WHERE id = json_record.id :: INTEGER RETURNING id
                     INTO arv1_id;
 
@@ -454,17 +461,82 @@ GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbkasu
 GRANT EXECUTE ON FUNCTION docs.sp_salvesta_arv(JSON, INTEGER, INTEGER) TO dbpeakasutaja;
 
 /*
-select docs.sp_salvesta_arv('{"id":0,"data": {"aa":"EE422200221027849353","aadress":null,"arvid":null,"asutus":null,"asutusid":29426,"bpm":null,"created":"02.02.2021 12:02:22","doc":"Arved","doc_status":0,"doc_type_id":"ARV","doklausid":null,"dokprop":"","id":0,"is_show_journal":0,"jaak":-75.0900,"journalid":null,"kbm":0.2000,"kbmkonto":"","kbmta":1,"kmkr":null,"konto":"","koostaja":null,"kpv":"20210202","lastupdate":"02.02.2021 12:02:22","laus_nr":null,"liik":0,"lisa":"","muud":null,"number":"95","objekt":null,"objektid":0,"operid":null,"regkood":null,"rekvid":null,"status":"Eelnõu","summa":1.2000,"tahtaeg":"20210216","tasud":null,"tasudok":null,"userid":3311,"viitenr":"","gridData":[{"formula":"","hind":1,"id":0,"kbm":0.2000,"kbmta":1,"km":"20","kogus":1,"konto":"323320","kood":"323320","kood1":"08102","kood2":"80","kood3":"","kood4":"","kood5":"3233","kuurs":0,"muud":"","nimetus":"","nomid":10056,"proj":"","soodus":0,"summa":1.2000,"tp":"","tunnus":"0810202","uhik":"","userid":0,"valuuta":"","vastisik":""}]}}'::json,
-3311::integer,
-125::integer) as id;
+SELECT docs.sp_salvesta_arv('{
+  "id": 0,
+  "data": {
+    "kbm": 0.0000,
+    "kpv": "2022-12-19",
+    "jaak": 0.0000,
+    "liik": 0,
+    "lisa": "Perioodi eest 01-31.12.22.a (tekkepohised tulud on kajastatud 12.2022)                                                  ",
+    "muud": null,
+    "arvid": 0,
+    "kbmta": 866.8400,
+    "summa": 866.8400,
+    "tasud": "2023-01-03",
+    "number": "2022361             ",
+    "objekt": null,
+    "operid": null,
+    "rekvid": 119,
+    "userid": 8932,
+    "tahtaeg": "2022-12-19",
+    "tasudok": null,
+    "asutusid": 23720,
+    "objektid": 0,
+    "doklausid": 1570,
+    "properties": {
+      "aa": "EE652200221027849230",
+      "tyyp": "",
+      "print": [],
+      "viitenr": "8600017",
+      "ettemaksu_period": null
+    },
+    "gridData": [
+      {
+        "id": 0,
+        "tp": "240101",
+        "kbm": 0.0000,
+        "hind": 433.4200,
+        "maha": 0,
+        "muud": "",
+        "proj": "",
+        "kbmta": 866.8400,
+        "kogus": 2.000,
+        "konto": "322020",
+        "kood1": "09110",
+        "kood2": "80",
+        "kood3": "",
+        "kood4": "",
+        "kood5": "3220",
+        "nomid": 17235,
+        "summa": 866.8400,
+        "isikid": 0,
+        "soodus": 0.0000,
+        "tunnus": "0911064",
+        "tahtaeg": null,
+        "kbm_maar": "0",
+        "properties": {
+          "yksus": null,
+          "all_yksus": null,
+          "soodustus": 0.0000,
+          "lapse_taabel_id": null
+        }
+      }
+    ]
+  }
+}'::JSON,
+                            5435::INTEGER,
+                            119::INTEGER) AS id;
 
 
 
-select * from ou.rekv where id = 125
-select * from ou.userid where rekvid = 125 and kasutaja = 'vlad'
+SELECT *
+FROM ou.rekv
+WHERE id = 125
 
-select * from docs.arv where parentid = 1616296
-select * from docs.arv1 where parentid = 331
+SELECT *
+FROM ou.userid
+WHERE rekvid = 119
+  AND kasutaja = 'vlad'
 
-"gridData":[{"formula":"","hind":0,"id":0,"kbm":0,"kbmta":0,"km":"","kogus":0,"konto":"","kood":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":"","kuurs":0,"nimetus":"","nomid":0,"proj":"","soodus":0,"summa":0,"tp":"","tunnus":"","userid":0,"valuuta":"","vastisik":""}]
 */

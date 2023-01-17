@@ -1,6 +1,7 @@
 -- View: public.cur_ladu_jaak
 
-DROP VIEW IF EXISTS cur_journal CASCADE;
+DROP VIEW IF EXISTS cur_journal ;
+    --CASCADE;
 
 CREATE OR REPLACE VIEW cur_journal AS
 SELECT to_char(d.created, 'DD.MM.YYYY HH:MM')                                                 AS created,
@@ -57,7 +58,7 @@ GRANT SELECT ON TABLE cur_journal TO dbpeakasutaja;
 select * from libs.library where library = 'DOK'
 select j.*
             from cur_journal j
-where rekvid = 63
-and kpv >= '2022-09-10'
+where rekvid = 132
+and kpv >= '2022-01-01'
 limit 100
 */

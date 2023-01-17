@@ -24,27 +24,27 @@ SELECT j.jaak,
        coalesce(p.status, 2)                AS status
 FROM palk.palk_jaak j
          LEFT OUTER JOIN (
-    SELECT month(p.kpv)                                                           AS kuu,
-           year(p.kpv)                                                            AS aasta,
+    SELECT month(p.kpv)                                                       AS kuu,
+           year(p.kpv)                                                        AS aasta,
            sum(p.summa)
-               FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER = 1)  AS arv,
+           FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER = 1)  AS arv,
            sum(p.summa)
-               FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER = 6)  AS tasu,
+           FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER = 6)  AS tasu,
            sum(p.summa)
-               FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER = 2)  AS kinni,
+           FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER = 2)  AS kinni,
            sum(p.summa)
-               FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER = 3)  AS muud,
+           FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER = 3)  AS muud,
            sum(p.pensmaks)
-               FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER <> 6) AS pm,
+           FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER <> 6) AS pm,
            sum(p.summa)
-               FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER = 5)  AS sm,
-           sum(p.tulubaas)                                                        AS mvt,
+           FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER = 5)  AS sm,
+           sum(p.tulubaas)                                                    AS mvt,
            sum(p.tka)
-               FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER <> 6) AS tka,
+           FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER <> 6) AS tka,
            sum(p.tootumaks)
-               FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER <> 6) AS tki,
+           FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER <> 6) AS tki,
            sum(p.tulumaks)
-               FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER <> 6) AS tm,
+           FILTER (WHERE (lib.properties :: JSON ->> 'liik') :: INTEGER <> 6) AS tm,
            p.lepingid,
            t.status
     FROM docs.doc d
@@ -52,6 +52,8 @@ FROM palk.palk_jaak j
              INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
              INNER JOIN palk.tooleping t ON p.lepingid = t.id
     WHERE p.lepingid IS NOT NULL
+      AND d.doc_type_id IN (SELECT id FROM libs.library l WHERE l.library = 'DOK' AND l.kood = 'PALK_OPER')
+      AND d.status <> 3
       AND lib.status <> 3
       AND t.status <> 3
 --      AND p.period IS NULL

@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS lapsed.loe_makse(INTEGER,INTEGER);
+DROP FUNCTION IF EXISTS lapsed.loe_makse(INTEGER, INTEGER);
 
 
 CREATE OR REPLACE FUNCTION lapsed.loe_makse(IN user_id INTEGER, IN l_id INTEGER,
@@ -39,13 +39,14 @@ DECLARE
     l_viimane_rea    INTEGER;
     l_jsonb          JSONB;
 BEGIN
-    -- ищем платежи
+    -- ищем платежи позже 2022 года
     FOR v_pank_vv IN
         SELECT *
         FROM lapsed.pank_vv v
         WHERE v.id = l_id
           AND (doc_id IS NULL OR doc_id = 0)
           AND isikukood IS NOT NULL
+          AND v.kpv >= '2023-01-01'
         ORDER BY kpv, id
         LOOP
 
@@ -135,7 +136,7 @@ BEGIN
                                      INNER JOIN libs.library l ON l.id = dp.parentid
                             WHERE dp.rekvid = l_rekvid
                               AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
-                            ORDER BY dp.id DESC
+                            ORDER BY registr desc, dp.id DESC
                             LIMIT 1
             );
 
@@ -249,8 +250,6 @@ BEGIN
                 INTO l_mk_id, l_error
                 FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
 
-                raise notice 'create_new_mk %',l_error;
-
                 -- сохраняем пулученную информаци.
                 UPDATE lapsed.pank_vv v
                 SET doc_id   = l_mk_id,
@@ -354,7 +353,9 @@ GRANT EXECUTE ON FUNCTION lapsed.loe_makse(IN user_id INTEGER, IN INTEGER) TO ar
 
 /*
 47310123728
-SELECT lapsed.loe_makse(62, 69344)
-
-SELECT * from lapsed.pank_vv where id = 69344
+SELECT lapsed.loe_makse(62, id)
+from lapsed.pank_vv
+where kpv >= '2023-01-01'
+and id = 85245
+and doc_id is null
 */

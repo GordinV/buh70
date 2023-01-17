@@ -6,30 +6,32 @@ CREATE FUNCTION palk.sp_salvesta_palk_config(data JSON, user_id INTEGER, user_re
 AS
 $$
 DECLARE
-    config_id      INTEGER;
-    userName       TEXT;
-    doc_id         INTEGER = data ->> 'id';
-    doc_data       JSON    = data ->> 'data';
-    doc_minpalk    NUMERIC = doc_data ->> 'minpalk';
-    doc_tulubaas   NUMERIC = doc_data ->> 'tulubaas';
-    doc_round      NUMERIC = doc_data ->> 'round';
-    doc_jaak       NUMERIC = doc_data ->> 'jaak';
-    doc_genlausend INTEGER = doc_data ->> 'genlausend';
-    doc_suurasu    INTEGER = doc_data ->> 'suurasu';
-    doc_tm         NUMERIC = doc_data ->> 'tm';
-    doc_pm         NUMERIC = doc_data ->> 'pm';
-    doc_tka        NUMERIC = doc_data ->> 'tka';
-    doc_tki        NUMERIC = doc_data ->> 'tki';
-    doc_sm         NUMERIC = doc_data ->> 'sm';
-    doc_muud1      NUMERIC = doc_data ->> 'muud1';
-    doc_muud2      NUMERIC = doc_data ->> 'muud2';
-    doc_mmk        BOOLEAN = coalesce((doc_data ->> 'mmk')::BOOLEAN, FALSE);
+    config_id               INTEGER;
+    userName                TEXT;
+    doc_id                  INTEGER = data ->> 'id';
+    doc_data                JSON    = data ->> 'data';
+    doc_minpalk             NUMERIC = doc_data ->> 'minpalk';
+    doc_tulubaas            NUMERIC = doc_data ->> 'tulubaas';
+    doc_pensionari_tulubaas NUMERIC = coalesce((doc_data ->> 'pensionari_tulubaas'), 704)::NUMERIC;
+    doc_round               NUMERIC = doc_data ->> 'round';
+    doc_jaak                NUMERIC = doc_data ->> 'jaak';
+    doc_genlausend          INTEGER = doc_data ->> 'genlausend';
+    doc_suurasu             INTEGER = doc_data ->> 'suurasu';
+    doc_tm                  NUMERIC = doc_data ->> 'tm';
+    doc_pm                  NUMERIC = doc_data ->> 'pm';
+    doc_tka                 NUMERIC = doc_data ->> 'tka';
+    doc_tki                 NUMERIC = doc_data ->> 'tki';
+    doc_sm                  NUMERIC = doc_data ->> 'sm';
+    doc_muud1               NUMERIC = doc_data ->> 'muud1';
+    doc_muud2               NUMERIC = doc_data ->> 'muud2';
+    doc_mmk                 BOOLEAN = coalesce((doc_data ->> 'mmk')::BOOLEAN, FALSE);
 
-    new_history    JSONB;
-    l_jsonb        JSONB;
+    new_history             JSONB;
+    l_jsonb                 JSONB;
 BEGIN
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = user_id;
@@ -44,7 +46,8 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    SELECT row_to_json(row) INTO l_jsonb
+    SELECT row_to_json(row)
+    INTO l_jsonb
     FROM (SELECT NOT empty(doc_mmk) AS mmk) row;
 
 
@@ -52,7 +55,8 @@ BEGIN
 
     IF doc_id IS NULL OR doc_id = 0
     THEN
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;
 
@@ -64,7 +68,8 @@ BEGIN
 
     ELSE
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS updated,
                      userName AS user) row;
 

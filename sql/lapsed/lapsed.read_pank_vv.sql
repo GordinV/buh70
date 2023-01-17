@@ -83,20 +83,17 @@ BEGIN
 /*
 Для всех учреждениях КРОМЕ 0911008, 0911012, 0911018, 0911027, 0911036, 0911038 применить правило не разбирать оплаты,
 сделанные до 01.09.2022 (включительно 31.08.2022) с пометкой "Kuni 01.09.2022" (вместо"PUUDUB")
+
+расширено до 01.01.2023. А. Варгунин 02.01.2023
  */
 
-            IF v_pank_vv.kpv::DATE < '2022-09-01' AND l_rekvid IN (SELECT id
-                                                                   FROM ou.rekv r
-                                                                   WHERE left(nimetus, 7) NOT IN
-                                                                         ('0911008', '0911012', '0911018', '0911027', '0911036', '0911038')
-                                                                     AND parentid = 119
-            )
+            IF v_pank_vv.kpv::DATE < '2023-01-01'::DATE
             THEN
                 UPDATE lapsed.pank_vv v
-                SET markused = 'Kuni 01.09.2022'
+                SET markused = 'Kuni 01.01.2023'
                 WHERE id = v_pank_vv.id;
 
-                l_message = coalesce(l_message, '') || ', Kuni 01.09.2022 ';
+                l_message = coalesce(l_message, '') || ', Kuni 01.01.2023 ';
                 l_mk_id = NULL;
 
             ELSE
@@ -156,7 +153,7 @@ BEGIN
                                          INNER JOIN libs.library l ON l.id = dp.parentid
                                 WHERE dp.rekvid = l_rekvid
                                   AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
-                                ORDER BY dp.id DESC
+                                ORDER BY registr desc, dp.id DESC
                                 LIMIT 1
                 );
 
@@ -165,7 +162,7 @@ BEGIN
                     l_dokprop_id = (SELECT id
                                     FROM com_dokprop l
                                     WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
-                                      AND kood = 'SMK'
+                                      AND kood like 'SMK'
                                     ORDER BY id DESC
                                     LIMIT 1
                     );
@@ -297,12 +294,13 @@ GRANT EXECUTE ON FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN TEXT) TO ar
 select * from lapsed.pank_vv
 order by id desc limit 100
 
-SELECT lapsed.read_pank_vv(70, '2020-02-15 10:36:32.748115')
+SELECT lapsed.read_pank_vv(8, '2023-01-16 16:49:23.454950')
 
 
        SELECT *
         FROM lapsed.pank_vv v
-        WHERE timestamp::TIMESTAMP = '2020-02-15 10:36:32.748115'::TIMESTAMP
+where kpv = '2023-01-01'
+        WHERE timestamp::TIMESTAMP = '2023-01-16 16:49:23.454950'::TIMESTAMP
           AND (doc_id IS NULL OR doc_id = 0)
         ORDER BY kpv, id
 

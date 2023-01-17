@@ -2,7 +2,7 @@ import_algsaldo();
 
 async function import_algsaldo() {
     const fs = require('fs');
-    const path = 'c:/temp/csv/alg_kr_0911018.csv';
+    const path = 'c:/temp/csv/Saldo0951002Kreedit.csv';
     const util = require('util');
 
 // Convert fs.readFile into Promise version of same
@@ -35,11 +35,15 @@ const readCSV = async (csvContent, cb) => {
                     summa: row[3],
                     kr: row[5],
                     kood: row[6],
-                    konto: row[8]
+                    konto: row[8],
+                    tegev: row[9]
                 });
             }
 
         });
+
+        console.log(rows);
+
         if (rows.length) {
             // сохраняем
 
@@ -52,6 +56,7 @@ const readCSV = async (csvContent, cb) => {
 
             });
         }
+
 
     });
 //    return rows;

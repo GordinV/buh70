@@ -24,7 +24,8 @@ BEGIN
     SELECT d.*,
            u.ametnik AS user_name,
            a.kpv,
-           a.id      AS doc_arv_id
+           a.id      AS doc_arv_id,
+           a.properties
     INTO v_doc
     FROM docs.doc d
              LEFT OUTER JOIN ou.userid u ON u.id = user_id
@@ -202,6 +203,19 @@ BEGIN
         WHERE (params ->> 'kpv_end' IS NULL OR ((params ->> 'kpv_end')::DATE <= v_doc.kpv
             OR (params ->> 'kpv_start')::DATE >= v_doc.kpv))
           AND rekvid = v_doc.rekvid;
+    END IF;
+    -- удалим сссылку в табеле
+    IF exists(SELECT 1 FROM pg_class WHERE relname = 'hootaabel')
+    THEN
+        UPDATE hooldekodu.hootaabel
+        SET arvid      = 0,
+            properties = properties || jsonb_build_object('omavalitsus_osa', 0, 'isiku_osa', 0)
+        WHERE arvid = v_doc.id;
+        UPDATE hooldekodu.hootaabel
+        SET sugulane_arv_id = NULL,
+            properties      = properties || jsonb_build_object('sugulane_osa', 0)
+        WHERE sugulane_arv_id = v_doc.id;
+
     END IF;
 
 

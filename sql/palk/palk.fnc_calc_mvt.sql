@@ -16,10 +16,21 @@ DECLARE
     l_tki                   NUMERIC = coalesce((params ->> 'tki') :: NUMERIC, 0);
     l_pm                    NUMERIC = coalesce((params ->> 'pm') :: NUMERIC, 0);
 
+    kas_pensionar           BOOLEAN = coalesce((params ->> 'kas_pensionar') :: BOOLEAN, FALSE);
     l_isiku_MVT             NUMERIC = palk.calc_mvt((l_alus_summa + l_enne_arvestatud_tulud), l_mvt_kokku); -- сумма, которую можно использовать как мвт
+    l_taotluse_MVT          NUMERIC = CASE
+                                          WHEN NOT kas_pensionar THEN l_isiku_MVT
+                                          ELSE coalesce((params ->> 'taotluse_MVT') :: NUMERIC, 0) END; -- сумма, по заявлению
     l_MVT                   NUMERIC = l_isiku_MVT - l_kokku_kasutatud_mvt;
 
 BEGIN
+    RAISE NOTICE 'fnc params %',params;
+    IF (kas_pensionar)
+    THEN
+        l_isiku_MVT = l_mvt_kokku - l_kokku_kasutatud_mvt;
+        l_MVT = CASE WHEN l_isiku_MVT > 0 THEN l_isiku_MVT ELSE 0 END;
+    END IF;
+    RAISE NOTICE 'fnc l_isiku_MVT %, l_alus_summa %, l_MVT %',l_isiku_MVT, l_alus_summa, l_MVT;
 
     IF l_MVT > (l_alus_summa - l_tki - l_pm)
     THEN

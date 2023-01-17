@@ -53,7 +53,12 @@ DECLARE
     l_db_tp              VARCHAR(20);
     l_kr_tp              VARCHAR(20);
     kas_uus              BOOLEAN = FALSE;
+    v_prev_doc           RECORD;
+    v_tehing             RECORD;
+    l_arvtasu_id         INTEGER;
+
 BEGIN
+    SELECT 0 AS asutusid, 0 AS id INTO v_prev_doc;
 
     SELECT kasutaja,
            rekvid
@@ -63,7 +68,7 @@ BEGIN
       AND u.id = userId;
     IF is_import IS NULL AND userName IS NULL
     THEN
-        RAISE EXCEPTION 'Kasutaja ei leidnud või puuduvad õigused %', user;
+        RAISE EXCEPTION 'Viga, Kasutaja ei leidnud või puuduvad õigused %', user;
     END IF;
 
     IF (doc_id IS NULL)
@@ -74,8 +79,11 @@ BEGIN
     -- проверка на период
     IF is_import IS NULL AND NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv)
     THEN
-        RAISE EXCEPTION 'Period on kinni';
+        RAISE EXCEPTION 'Viga, Period on kinni';
     END IF;
+
+    -- проверка на символы
+    PERFORM check_text(doc_selg);
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0 OR NOT exists(SELECT id
@@ -111,9 +119,11 @@ BEGIN
 
         IF NOT ou.fnc_aasta_kontrol(user_rekvid, coalesce(l_prev_kpv, doc_kpv)) AND NOT is_import
         THEN
-            RAISE EXCEPTION 'Period on kinni';
+            RAISE EXCEPTION 'Viga, Period on kinni';
         END IF;
 
+        -- запомним прежнее значение
+        SELECT id, asutusid INTO v_prev_doc FROM docs.journal WHERE parentid = doc_id;
 
         SELECT row_to_json(row)
         INTO new_history
@@ -294,7 +304,8 @@ BEGIN
             END IF;
 
 
-            IF ((left(json_record.kreedit, 6) = '203630') or (left(json_record.deebet, 6) = '203630'))AND doc_selg <> 'Alg.saldo kreedit'
+            IF ((left(json_record.kreedit, 6) = '203630') OR (left(json_record.deebet, 6) = '203630')) AND
+               doc_selg <> 'Alg.saldo kreedit'
             THEN
                 is_hooldekodu_tehing = TRUE;
             END IF;
@@ -338,17 +349,38 @@ BEGIN
                         doc_id, l_arv_id, userid);
     END IF;
 
+    -- если номер документа отуствует, но есть связь со счетом, то удалыям оплату (В.Бешекерскас 15.01.2023)
+    IF exists(SELECT id FROM docs.arvtasu WHERE doc_tasu_id = doc_id AND status < 3) AND empty(doc_dok)
+    THEN
+        l_arvtasu_id = (SELECT id FROM docs.arvtasu WHERE doc_tasu_id = doc_id AND status < 3 ORDER BY id DESC LIMIT 1);
+        IF l_arvtasu_id IS NOT NULL
+        THEN
+            PERFORM docs.sp_delete_arvtasu(userid, l_arvtasu_id);
+        END IF;
+    END IF;
 
     -- hooldekodu
 -- hooldekodu
+
     IF is_hooldekodu_tehing AND exists(SELECT 1 FROM pg_proc WHERE proname = 'sp_koosta_hootehing')
     THEN
+        -- если изменилось имя пенсионера
+        IF NOT kas_uus AND v_prev_doc.asutusid <> doc_asutusid
+        THEN
+            -- удалем связанные старые операции
+            PERFORM hooldekodu.sp_delete_hootehing(userid, id)
+            FROM hooldekodu.hootehingud
+            WHERE hootehingud.journalid = doc_id
+              AND status < 3;
+        END IF;
+
         SELECT row_to_json(row)
         INTO json_params
         FROM (SELECT doc_id AS id,
                      1      AS liik) row;
 
         PERFORM hooldekodu.sp_koosta_hootehing(userid, json_params::JSONB);
+
     END IF;
     RETURN doc_id;
 
@@ -365,8 +397,6 @@ GRANT ALL ON FUNCTION docs.sp_salvesta_journal(JSON, INTEGER, INTEGER) TO dbadmi
 
 /*
 
-select docs.sp_salvesta_journal('{"data":{"id":0,"doc_type_id":"JOURNAL","kpv":"2018-03-04","selg":"Kulum","muud":null,"dok":"Inv.number RCT_76861","asutusid":null,"gridData":[{"id":0,"summa":100.0000,"valuuta":"EUR","kuurs":1.0000,"deebet":"5001","lisa_d":"800599","kreedit":"133","lisa_k":"800401","tunnus":"","proj":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":""}]}}'
-,1, 1);
 
 {"data":{"id":1436,"doc_type_id":"JOURNAL","kpv":"2018-05-17","selg":"Palk","muud":"test","asutusid":56},"gridData":[{"id":0,"summa":289.2000,"deebet":"2610","lisa_d":"800699","kreedit":"2530","lisa_k":"800699","tunnus":null,"proj":"","kood1":"","kood2":"","kood3":"","kood4":"","kood5":""}]}
 

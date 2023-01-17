@@ -2,7 +2,7 @@ import_algsaldo();
 
 async function import_algsaldo() {
     const fs = require('fs');
-    const path = 'c:/temp/csv/alg_db_0911018.csv';
+    const path = 'c:/temp/csv/Saldo0951002Deebet.csv';
     const util = require('util');
 
 // Convert fs.readFile into Promise version of same
@@ -35,11 +35,15 @@ const readCSV = async (csvContent, cb) => {
                     summa: row[3],
                     db: row[5],
                     kood: row[6],
-                    grupp: row[8]
+                    grupp: row[8],
+                    tegev: row[9]
                 });
             }
 
         });
+
+//        console.log('rows', rows);
+
         if (rows.length) {
             // сохраняем
 
@@ -48,12 +52,13 @@ const readCSV = async (csvContent, cb) => {
                    FROM lapsed.import_alg_saldo_deebet($1::JSONB, $2::INTEGER, $3::INTEGER)`;
 
              db.queryDb(sql, params).then(returnValue => {
-                console.log('tulemus->', returnValue, sql, params);
+                console.log('tulemus->', returnValue);
 
             });
         } else {
             console.log('fail tuhi')
         }
+
 
     });
 //    return rows;

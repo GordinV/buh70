@@ -50,6 +50,7 @@ DECLARE
     kas_muudatus      BOOLEAN = FALSE; -- если апдейт, то тру
     v_arvtasu         RECORD;
     l_yksus           TEXT; -- код группы
+    v_nom             RECORD;
 BEGIN
 
     SELECT kasutaja
@@ -94,6 +95,18 @@ BEGIN
             RAISE NOTICE 'pank not found %', doc_aa_id;
             RETURN 0;
         END IF;
+    END IF;
+
+    IF coalesce(doc_doklausid, 0) = 0
+    THEN
+        -- не задан профиль, укажем принудительно
+        doc_doklausid = (SELECT ID
+                         FROM libs.dokprop
+                         WHERE parentid IN
+                               (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood IN (doc_type_kood))
+                           AND rekvid = user_rekvid
+                         ORDER BY registr DESC, id DESC
+                         LIMIT 1);
     END IF;
 
 
@@ -186,6 +199,16 @@ BEGIN
                                            kood4 TEXT, kood5 TEXT, tp TEXT, valuuta TEXT, kuurs NUMERIC(14, 8),
                                            journalid INTEGER);
 
+            SELECT properties ->> 'tegev'    AS tegev,
+                   properties ->> 'artikkel' AS artikkel,
+                   properties ->> 'allikas'  AS allikas,
+                   *
+            INTO v_nom
+            FROM libs.nomenklatuur
+            WHERE id = json_record.nomid
+            LIMIT 1;
+
+
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW' OR
                NOT exists(SELECT id
                           FROM docs.mk1
@@ -197,7 +220,9 @@ BEGIN
                 VALUES (mk_id, json_record.asutusid, json_record.nomid, json_record.summa, json_record.aa,
                         json_record.pank,
                         json_record.tunnus, json_record.proj, json_record.konto,
-                        json_record.kood1, json_record.kood2, json_record.kood3, json_record.kood4, json_record.kood5,
+                        coalesce(json_record.kood1, v_nom.tegev), coalesce(json_record.kood2, v_nom.allikas),
+                        json_record.kood3, json_record.kood4,
+                        coalesce(json_record.kood5, v_nom.artikkel),
                         json_record.tp, json_record.journalid) RETURNING id
                            INTO mk1_id;
 
@@ -214,11 +239,11 @@ BEGIN
                     pank     = json_record.pank,
                     tunnus   = json_record.tunnus,
                     proj     = json_record.proj,
-                    kood1    = json_record.kood1,
-                    kood2    = json_record.kood2,
+                    kood1    = coalesce(json_record.kood1, v_nom.tegev),
+                    kood2    = coalesce(json_record.kood2, v_nom.allikas),
                     kood3    = json_record.kood3,
                     kood4    = json_record.kood4,
-                    kood5    = json_record.kood5,
+                    kood5    = coalesce(json_record.kood5, v_nom.artikkel),
                     tp       = json_record.tp
                 WHERE id = json_record.id :: INTEGER;
 
@@ -288,9 +313,17 @@ BEGIN
 
     IF doc_lapsid IS NOT NULL AND doc_lapsid > 0
     THEN
+
         IF NOT exists(SELECT id FROM lapsed.liidestamine WHERE parentid = doc_lapsid AND docid = doc_id)
         THEN
             INSERT INTO lapsed.liidestamine (parentid, docid) VALUES (doc_lapsid, doc_id);
+        END IF;
+
+        -- проверим на учреждение
+        IF NOT exists(SELECT id FROM lapsed.lapse_kaart WHERE parentid = doc_lapsid AND rekvid = user_rekvid)
+        THEN
+            -- чужой, удаляем связь (Kalle 17.01.2023)
+            DELETE FROM lapsed.liidestamine WHERE docid = doc_id AND parentid = doc_lapsid;
         END IF;
 
         -- присвоим платежу код группы по услугам

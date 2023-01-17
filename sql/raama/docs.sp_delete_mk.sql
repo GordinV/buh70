@@ -162,7 +162,13 @@ BEGIN
     THEN
         PERFORM docs.sp_delete_journal(l_user_id, parentid)
         FROM docs.journal
-        WHERE parentid IN (SELECT unnest(v_doc.docs_ids));
+        WHERE parentid IN (SELECT unnest(v_doc.docs_ids))
+          AND parentid NOT IN (
+            SELECT po.journalid
+            FROM palk.palk_oper po
+            WHERE po.rekvid = v_doc.rekvid
+              AND journalid IS NOT NULL
+        );
     END IF;
 
     -- Установка статуса ("Удален")  и сохранение истории

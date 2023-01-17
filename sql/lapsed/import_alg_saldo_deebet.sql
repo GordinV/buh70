@@ -33,7 +33,7 @@ DECLARE
     v_nom           RECORD;
     l_count         INTEGER = 0;
     l_user_id       INTEGER;
-    l_kpv           DATE    = '2022-08-31';
+    l_kpv           DATE    = '2023-01-01';
 
 BEGIN
 
@@ -43,7 +43,7 @@ BEGIN
             SELECT *
             FROM jsonb_to_recordset(data::JSONB)
                      AS x(yksus TEXT, laps_ik TEXT, vanem_ik TEXT, summa TEXT, db TEXT, kood TEXT,
-                          inf3 TEXT, grupp TEXT)
+                          inf3 TEXT, grupp TEXT, tegev TEXT)
         )
         SELECT DISTINCT yksus, laps_ik, vanem_ik
         FROM qryJsons
@@ -114,7 +114,7 @@ BEGIN
                                WHERE dp.rekvid = l_rekvid
                                  AND (dp.details ->> 'konto')::TEXT = '103000'::TEXT
                                  AND l.kood = 'ARV'
-                               ORDER BY dp.id DESC
+                               ORDER BY registr DESC, dp.id DESC
                                LIMIT 1
             );
 
@@ -127,7 +127,7 @@ BEGIN
                     SELECT *
                     FROM jsonb_to_recordset(data::JSONB)
                              AS x(yksus TEXT, laps_ik TEXT, vanem_ik TEXT, summa TEXT, db TEXT, kood TEXT,
-                                  inf3 TEXT, grupp TEXT)
+                                  inf3 TEXT, grupp TEXT, tegev TEXT)
                 )
                 SELECT *
                 FROM qryJsons
@@ -151,39 +151,41 @@ BEGIN
 
                     -- формируем строку
                     json_arvrea = json_arvrea || (SELECT row_to_json(row)
-                                                  FROM (SELECT v_nom.id                        AS nomid,
-                                                               1                               AS kogus,
-                                                               l_arve_summa                    AS hind,
-                                                               l_arve_summa                    AS kbmta,
-                                                               0                               AS kbm,
-                                                               l_arve_summa                    AS summa,
-                                                               v_nom.properties ->> 'tegev'    AS kood1,
-                                                               v_nom.properties ->> 'allikas'  AS kood2,
-                                                               v_nom.properties ->> 'rahavoog' AS kood3,
-                                                               v_nom.properties ->> 'artikkel' AS kood5,
-                                                               v_nom.properties ->> 'konto'    AS konto,
+                                                  FROM (SELECT v_nom.id                                  AS nomid,
+                                                               1                                         AS kogus,
+                                                               l_arve_summa                              AS hind,
+                                                               l_arve_summa                              AS kbmta,
+                                                               0                                         AS kbm,
+                                                               l_arve_summa                              AS summa,
+                                                               CASE
+                                                                   WHEN v_details.tegev IS NOT NULL THEN v_details.tegev
+                                                                   ELSE v_nom.properties ->> 'tegev' END AS kood1,
+                                                               v_nom.properties ->> 'allikas'            AS kood2,
+                                                               v_nom.properties ->> 'rahavoog'           AS kood3,
+                                                               v_nom.properties ->> 'artikkel'           AS kood5,
+                                                               v_nom.properties ->> 'konto'              AS konto,
                                                                v_nom.properties ->> 'tunnus',
                                                                v_nom.properties ->> 'projekt',
-                                                               v_nom.properties ->> 'yksus'    AS tunnus,
-                                                               'Alg. saldo'                    AS muud,
-                                                               v_details.grupp                 AS yksus,
-                                                               l_tp                            AS tp) row) :: JSONB;
+                                                               v_nom.properties ->> 'tunnus'              AS tunnus,
+                                                               'Oppetasu algsaldo 2023'                  AS muud,
+                                                               v_details.grupp                           AS yksus,
+                                                               l_tp                                      AS tp) row) :: JSONB;
 
                 END LOOP;
 
             -- создаем параметры
             l_json_arve = (SELECT to_json(row)
-                           FROM (SELECT coalesce(l_arv_id, 0) AS id,
-                                        NULL::TEXT            AS number,
-                                        l_doklausend_id       AS doklausid,
-                                        l_liik                AS liik,
-                                        l_kpv                 AS kpv,
-                                        l_asutus_id           AS asutusid,
-                                        l_aa                  AS aa,
-                                        l_laps_id             AS lapsid,
-                                        'Alg.saldo'           AS muud,
-                                        TRUE                  AS import,
-                                        json_arvrea           AS "gridData") row);
+                           FROM (SELECT coalesce(l_arv_id, 0)    AS id,
+                                        NULL::TEXT               AS number,
+                                        l_doklausend_id          AS doklausid,
+                                        l_liik                   AS liik,
+                                        l_kpv                    AS kpv,
+                                        l_asutus_id              AS asutusid,
+                                        l_aa                     AS aa,
+                                        l_laps_id                AS lapsid,
+                                        'Oppetasu algsaldo 2023' AS muud,
+                                        TRUE                     AS import,
+                                        json_arvrea              AS "gridData") row);
 
             SELECT row_to_json(row)
             INTO json_object

@@ -463,6 +463,6 @@ where qry.laekumised > 0
 where  is   IN ('0850136823')
 
 select *
-FROM lapsed.saldo_ja_kaive(99, '2022-01-01', '2022-01-31') qry
+FROM lapsed.saldo_ja_kaive(80, '2022-01-01', '2022-01-31') qry
 
 */

@@ -118,7 +118,11 @@ class LapseKaart extends React.PureComponent {
             if (yksus) {
                 if (DocContext.libs && DocContext.libs[yksus.id] && DocContext.libs[yksus.id].length) {
                     // берем из кеша
-                    nomData = DocContext.libs[yksus.id]
+                    nomData = DocContext.libs[yksus.id];
+                    // добавим пустую строку
+                    if (!(nomData.find(({id}) => id === 0))) {
+                        nomData.unshift({id: 0, kood: '', nimetus: '', hind: 0, kogus: 0, kas_inf3: false});
+                    }
                 } else {
                     nomData = (yksus.teenused && self.libs['nomenclature'].length > 0 ? yksus.teenused : []).map(nom => {
                         const row = self.libs['nomenclature'].find(lib => lib.id === Number(nom.nomid));
@@ -269,7 +273,7 @@ class LapseKaart extends React.PureComponent {
 
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
-                        <Select title={"Kood" + (self.docData.kas_umberarvestus ? '(Ümberarvestus)':'') + ":"}
+                        <Select title={"Kood" + (self.docData.kas_umberarvestus ? '(Ümberarvestus)' : '') + ":"}
                                 name='nomid'
                                 libs="nomenclature"
                                 data={nomData}

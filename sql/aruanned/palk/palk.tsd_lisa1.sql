@@ -110,6 +110,7 @@ FROM (
                AND algab <= l_kpv2
                AND (lopp IS NULL OR lopp >= l_kpv1)
                AND t.resident = 1
+               AND t.status < 3
              GROUP BY a.regkood, a.nimetus
          ),
               qryLisaSM AS (

@@ -1,16 +1,16 @@
 DROP FUNCTION IF EXISTS docs.create_new_mk(INTEGER, JSONB);
 
 CREATE OR REPLACE FUNCTION docs.create_new_mk(IN user_id INTEGER,
-                                              IN params JSONB,
-                                              OUT error_code INTEGER,
-                                              OUT result INTEGER,
-                                              OUT doc_type_id TEXT,
-                                              OUT error_message TEXT)
+                                               IN params JSONB,
+                                               OUT error_code INTEGER,
+                                               OUT result INTEGER,
+                                               OUT doc_type_id TEXT,
+                                               OUT error_message TEXT)
     RETURNS RECORD AS
 $BODY$
 DECLARE
     l_arv_id     INTEGER        = params ->> 'arv_id';
-    l_dok        TEXT           = coalesce((params ->> 'dok') :: TEXT, 'MK');
+    l_dok        TEXT           = coalesce((params ->> 'dok') :: TEXT, 'SMK');
     l_summa      NUMERIC(12, 2) = params ->> 'summa';
     l_dokprop_id INTEGER        = params ->> 'dokprop_id';
     l_viitenr    TEXT           = params ->> 'viitenumber';
@@ -32,8 +32,9 @@ DECLARE
                                       WHEN l_arv_id IS NOT NULL THEN (SELECT parentid
                                                                       FROM lapsed.liidestamine
                                                                       WHERE docid = l_arv_id
-                                                                          LIMIT 1)
+                                                                      LIMIT 1)
                                       ELSE left(right(l_viitenr::TEXT, 7), 6)::INTEGER END;
+    l_isikukood  TEXT;
     l_opt        INTEGER;
     l_rekvId     INTEGER        = (SELECT rekvid
                                    FROM ou.userid
@@ -42,14 +43,14 @@ DECLARE
     v_nom_rea    RECORD;
 BEGIN
 
-    IF (l_dokprop_id) IS NULL
+    IF (l_dokprop_id) IS NULL OR l_dokprop_id = 0
     THEN
         l_dokprop_id = (SELECT id
                         FROM public.com_dokprop l
                         WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
                           AND kood = l_dok
-                            ORDER BY id DESC
-                            LIMIT 1
+                        ORDER BY id DESC
+                        LIMIT 1
         );
     END IF;
 
@@ -73,6 +74,18 @@ BEGIN
         ELSE
             l_maksepaev = l_kpv;
         END IF;
+    END IF;
+
+    -- проверим на закрытый период
+    IF exists(SELECT id
+              FROM ou.aasta
+              WHERE rekvid = v_arv.rekvid
+                AND aasta = date_part('year', l_maksepaev)
+                AND kuu = date_part('month', l_maksepaev)
+                AND kinni = 1)
+    THEN
+        -- платеж попадает в закрытый период
+        l_maksepaev = current_date;
     END IF;
 
     -- viitenr
@@ -138,8 +151,8 @@ BEGIN
                      WHERE kassa = 1
                        AND parentid = l_rekvId
                        AND aa.arve::TEXT = l_asutus_aa::TEXT
-                         ORDER BY default_ DESC
-                         LIMIT 1);
+                     ORDER BY default_ DESC
+                     LIMIT 1);
 
     END IF;
 
@@ -151,9 +164,53 @@ BEGIN
     l_nom_id = (SELECT id
                 FROM libs.nomenklatuur n
                 WHERE rekvid = l_rekvId
+                  AND status < 3
                   AND dok IN (l_dok, doc_type_id)
-                    ORDER BY id DESC
-                    LIMIT 1);
+                ORDER BY kood, id DESC
+                LIMIT 1);
+
+    -- если род. плата , проверим на возраст и поищем подходящую номенклатуру
+    raise notice 'start check for age l_nom_id %',l_nom_id;
+    IF l_laps_id IS NOT NULL AND exists(SELECT id FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3)
+    THEN
+        -- проверка на возраст
+        l_isikukood = (SELECT isikukood FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3 LIMIT 1);
+        raise notice 'l_isikukood %',l_isikukood;
+        IF extract('year' FROM
+                   age(make_date(date_part('year', l_maksepaev)::INTEGER, 01, 01), palk.get_sunnipaev(l_isikukood))) >=
+           27
+        THEN
+            raise notice '> 27 ';
+
+            -- Начиная с 27 лет, ставим 09500.
+            IF exists((SELECT id
+                       FROM libs.nomenklatuur n
+                       WHERE rekvid = l_rekvId
+                         AND status < 3
+                         AND dok IN (l_dok, doc_type_id)
+                         AND n.properties ->> 'tegev' = '09500'
+                       ORDER BY kood, id DESC
+                       LIMIT 1)
+                )
+            THEN
+                l_nom_id = (SELECT id
+                            FROM libs.nomenklatuur n
+                            WHERE rekvid = l_rekvId
+                              AND status < 3
+                              AND dok IN (l_dok, doc_type_id)
+                              AND n.properties ->> 'tegev' = '09500'
+                            ORDER BY kood, id DESC
+                            LIMIT 1);
+
+            END IF;
+
+        END IF;
+
+
+    ELSE
+        -- обнулим ссылку на ребенка, если он не найден
+        l_laps_id = NULL;
+    END IF;
 
     -- klassifikaatorit
     SELECT coalesce(n.properties ->> 'tunnus', '')   AS tunnus,
@@ -163,7 +220,8 @@ BEGIN
            coalesce(n.properties ->> 'allikas', '')  AS allikas
     INTO v_nom_rea
     FROM libs.nomenklatuur n
-    WHERE id = l_nom_id;
+    WHERE id = l_nom_id
+      AND status < 3;
 
     l_aa = CASE
                WHEN l_aa IS NULL THEN (COALESCE((
@@ -174,7 +232,7 @@ BEGIN
                                                                                      THEN '[]'::JSON
                                                                                  ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (ELEMENT)
                                                     WHERE a.id = l_asutus_id
-                                                        LIMIT 1
+                                                    LIMIT 1
                                                 ), ''))
                ELSE l_aa END;
 
@@ -198,11 +256,11 @@ BEGIN
         FROM docs.arv1 a1
         WHERE a1.
                   parentid = v_arv.id
-            ORDER BY kood5
-            , kood2 DESC
-            , kood1 DESC
-            LIMIT 1
-            INTO v_mk1;
+        ORDER BY kood5
+                , kood2 DESC
+                , kood1 DESC
+        LIMIT 1
+        INTO v_mk1;
 
     ELSE
         SELECT 0                  AS id,

@@ -82,7 +82,8 @@ BEGIN
             ELSE
                 UPDATE ou.userid
                 SET properties = properties || v_user.properties,
-                    roles      = roles || v_user.roles
+                    roles      = roles || v_user.roles,
+                    status     = v_user.status
                 WHERE id = user_id;
             END IF;
 

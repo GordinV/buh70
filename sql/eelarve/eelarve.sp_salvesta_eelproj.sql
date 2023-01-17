@@ -76,7 +76,7 @@ BEGIN
       aasta     = doc_aasta,
       kuu       = doc_kuu,
       kinnitaja = doc_kinnitaja,
-      muud      = doc_muud,
+      muud      = coalesce(doc_muud, muud),
       ajalugu   = coalesce(ajalugu,'[]'::jsonb) || new_history::jsonb
     WHERE id = doc_id
       RETURNING id

@@ -34,8 +34,13 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    raise notice 'doc_id %, doc_muud %', doc_id, doc_muud;
+    RAISE NOTICE 'doc_id %, doc_muud %, doc_aasta %', doc_id, doc_muud, doc_aasta;
     -- вставка или апдейт docs.doc
+    IF coalesce(doc_id, 0) > 0 AND NOT exists(SELECT id FROM eelarve.eelarve WHERE id = doc_id AND status < 3)
+    THEN
+        doc_id = 0;
+    END IF;
+
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
@@ -78,7 +83,7 @@ BEGIN
         WHERE id = doc_id RETURNING id
             INTO eelarve_id;
     END IF;
-
+    RAISE NOTICE 'eelarve_id %, doc_is_kulud %',eelarve_id, doc_is_kulud;
     RETURN eelarve_id;
 
 END;

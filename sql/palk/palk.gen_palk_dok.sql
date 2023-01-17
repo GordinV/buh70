@@ -37,6 +37,20 @@ DECLARE
     l_journal_ids   INTEGER[];
     l_po_ids        INTEGER[];
 BEGIN
+
+    SELECT 0                                  AS id,
+           'VMK'                              AS doc_type_id,
+           NULL::TEXT                         AS number,
+           0 :: INTEGER                       AS id,
+           1                                  AS opt,
+           l_kpv                              AS kpv,
+           l_kpv                              AS maksepaev,
+           'Tasu töötamisest'                 AS muud,
+           'Tasu töötamisest'                 AS selg,
+           ou.get_aa(l_rekv_id, 'PALK'::TEXT) AS aaid,
+           NULL::NUMERIC                      AS summa
+    INTO v_mk;
+
     SELECT kasutaja,
            rekvid
     INTO v_user
@@ -100,16 +114,17 @@ BEGIN
     FOR v_po IN
         SELECT rekvid,
                isikid,
-               sum(summa)           AS summa,
+               sum(summa)                                                                   AS summa,
                tunnus,
                asutus_aa,
                nimi,
                aadress,
                tp,
                is_kassa,
-               array_agg(docs_ids)  AS docs_ids,
-               array_agg(journalid) AS journal_ids,
-               array_agg(qry.id)    AS po_ids
+               array_agg(CASE WHEN docs_ids = '{}' THEN '{0}'::INTEGER[] ELSE docs_ids END) AS docs_ids,
+--               array_agg(docs_ids)  AS docs_ids,
+               array_agg(journalid)                                                         AS journal_ids,
+               array_agg(qry.id)                                                            AS po_ids
 
         FROM (
                  SELECT d.id,
@@ -170,7 +185,6 @@ BEGIN
                    ltrim(rtrim(v_po.nimi)) AS error_message,
                    NULL::INTEGER           AS error_code
             INTO v_tulemus;
-
 
             -- создаем документ
 

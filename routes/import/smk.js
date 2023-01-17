@@ -29,7 +29,6 @@ module.exports = async (file, mimeType, user) => {
 
         let sql = Document.config.importDoc.command;
 
-
         response = await Document.save(params, true, sql);
         saved = response.data && response.data.length > 0 ? response.data[0].result : 0;
         returnData = response.data && response.data.length  ? response.data[0]: [];

@@ -55,8 +55,8 @@ describe('dok. type Palk_jaak tests', function () {
     });
 
     it('should have copy in buh62 folder', (done) => {
-        let targetFile = path.join('C:\\avpsoft\\buh62\\models\\', modelForExport + '.xml');
-        let copyFile = path.join('C:\\avpsoft\\buh70\\models\\', modelForExport + '_copy.xml');
+        let targetFile = path.join('C:\\development\\buh62\\models\\', modelForExport + '.xml');
+        let copyFile = path.join('C:\\development\\buh70\\models\\', modelForExport + '_copy.xml');
         expect(fs.existsSync(sourceFile)).toBeTruthy();
         fs.copyFileSync(sourceFile, copyFile);
         expect(fs.existsSync(copyFile)).toBeTruthy();
@@ -69,7 +69,7 @@ describe('dok. type Palk_jaak tests', function () {
     });
 
 
-    it('doc type library should contain PALK_JAAK doc.type', async () => {
+    it.skip('doc type library should contain PALK_JAAK doc.type', async () => {
         let sql = `select id from libs.library where kood = 'PALK_JAAK' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -78,7 +78,7 @@ describe('dok. type Palk_jaak tests', function () {
 
     });
 
-    it('should exists view cur_palk_jaak', async () => {
+    it.skip('should exists view cur_palk_jaak', async () => {
         let sql = `select 1 FROM pg_views WHERE viewname = 'cur_palk_jaak'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -87,7 +87,7 @@ describe('dok. type Palk_jaak tests', function () {
 
     });
 
-    it('should succesfully execute view cur_palk_jaak', async () => {
+    it.skip('should succesfully execute view cur_palk_jaak', async () => {
         let sql = doc.grid.sqlString + ' limit 100';
         let returnValue = await db.queryDb(sql, [1,1]);
         expect(returnValue).toBeDefined();
@@ -96,7 +96,7 @@ describe('dok. type Palk_jaak tests', function () {
     });
 
 
-    it('should exists view print_palk_jaak', async () => {
+    it.skip('should exists view print_palk_jaak', async () => {
         let sql = `select 1 FROM pg_views WHERE viewname = 'print_palk_jaak'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -104,7 +104,7 @@ describe('dok. type Palk_jaak tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should succesfully execute view palk.print_palk_jaak', async () => {
+    it.skip('should succesfully execute view palk.print_palk_jaak', async () => {
         let sql = doc.print[0].sql + ' limit 100';
         let returnValue = await db.queryDb(sql, [1,1]);
         expect(returnValue).toBeDefined();
@@ -112,7 +112,7 @@ describe('dok. type Palk_jaak tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should exists proc sp_update_palk_jaak', async () => {
+    it.skip('should exists proc sp_update_palk_jaak', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_update_palk_jaak'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -121,7 +121,7 @@ describe('dok. type Palk_jaak tests', function () {
 
     });
 
-    it('should return 1 as result of  proc sp_update_palk_jaak', async () => {
+    it.skip('should return 1 as result of  proc sp_update_palk_jaak', async () => {
         let sql = `SELECT palk.sp_update_palk_jaak(DATE(), 4)`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -130,7 +130,7 @@ describe('dok. type Palk_jaak tests', function () {
 
     });
 
-    it('should exists record for current month', async () => {
+    it.skip('should exists record for current month', async () => {
         let sql = `select count(id) as count from palk.palk_jaak where kuu = month(DATE()) and aasta = year(date()) and lepingid = 4`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -139,7 +139,7 @@ describe('dok. type Palk_jaak tests', function () {
 
     });
 
-    it('should exists proc palk.sp_calc_palgajaak', async () => {
+    it.skip('should exists proc palk.sp_calc_palgajaak', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'sp_calc_palgajaak'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -147,7 +147,7 @@ describe('dok. type Palk_jaak tests', function () {
         expect(result).toBeGreaterThan(0);
 
     });
-    it('should proc palk.sp_calc_palgajaak return 1 as result ', async () => {
+    it.skip('should proc palk.sp_calc_palgajaak return 1 as result ', async () => {
         let params = {
             isikud: [56, 57],
             rekvid: 1

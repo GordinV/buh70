@@ -5,7 +5,7 @@ DROP FUNCTION IF EXISTS libs.sp_salvesta_asutus(JSON, INTEGER, INTEGER);
 -- DROP FUNCTION libs.sp_salvesta_asutus(json, integer, integer);
 
 CREATE OR REPLACE FUNCTION libs.sp_salvesta_asutus(data JSON,
-                                                   userid INTEGER,
+                                                   user_id INTEGER,
                                                    user_rekvid INTEGER)
     RETURNS INTEGER
     LANGUAGE 'plpgsql'
@@ -42,6 +42,7 @@ DECLARE
     new_history    JSONB   = '[]'::JSONB;
     new_rights     JSONB;
     new_aa         JSONB;
+    l_old_regkood  TEXT;
 BEGIN
 
 
@@ -49,20 +50,21 @@ BEGIN
     INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
-      AND u.id = userId;
+      AND u.id = user_id;
     IF is_import IS NULL AND userName IS NULL
     THEN
-        RAISE NOTICE 'User not found %', user;
-        RETURN 0;
+        RAISE EXCEPTION 'Viga. Kasutaja ei leidnud %', user;
+    END IF;
+
+    IF empty(ltrim(rtrim(doc_regkood))) OR empty(ltrim(rtrim(doc_nimetus)))
+    THEN
+        RAISE EXCEPTION 'Viga. Puudub vajaliku andmed ';
     END IF;
 
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
     END IF;
-    RAISE NOTICE 'doc_details %', doc_details;
-    RAISE NOTICE 'doc_asutus_aa %', doc_asutus_aa;
-    RAISE NOTICE 'doc_aa %', doc_aa;
 
     -- расчетные счета
     IF doc_details IS NOT NULL
@@ -87,10 +89,6 @@ BEGIN
         doc_is_tootaja = TRUE;
     END IF;
 
-    RAISE NOTICE 'new aa %', CASE
-                                 WHEN doc_aa IS NOT NULL THEN '[]'::JSONB || new_aa :: JSONB
-                                 ELSE doc_asutus_aa :: JSONB END;
-
 
     SELECT row_to_json(row)
     INTO new_properties
@@ -104,7 +102,6 @@ BEGIN
                  doc_kmkr                                                                  AS kmkr) row;
 
     -- вставка или апдейт docs.doc
-    RAISE NOTICE 'new_properties %', new_properties;
     IF doc_id IS NULL OR doc_id = 0
     THEN
 
@@ -114,9 +111,9 @@ BEGIN
                      userName AS user) row;
         SELECT row_to_json(row)
         INTO new_rights
-        FROM (SELECT ARRAY [userId] AS "select",
-                     ARRAY [userId] AS "update",
-                     ARRAY [userId] AS "delete") row;
+        FROM (SELECT ARRAY [user_id] AS "select",
+                     ARRAY [user_id] AS "update",
+                     ARRAY [user_id] AS "delete") row;
 
         INSERT INTO libs.asutus (rekvid, regkood, nimetus, omvorm, kontakt, aadress, tel, email, mark, muud, properties,
                                  tp, ajalugu)
@@ -133,6 +130,17 @@ BEGIN
         FROM (SELECT now()    AS updated,
                      userName AS user) row;
 
+        SELECT ltrim(rtrim(regkood)) INTO l_old_regkood FROM libs.asutus WHERE id = doc_id;
+        IF NOT empty(l_old_regkood) AND len(l_old_regkood) >= 7 AND len(l_old_regkood) < 11
+        THEN
+            -- asutus, редактировать только по правам
+            IF NOT exists(SELECT id FROM ou.userid WHERE id = user_id AND (roles ->> 'is_asutuste_korraldaja')::BOOLEAN)
+            THEN
+                RAISE EXCEPTION 'Viga. Puudub õigused';
+                RETURN 0;
+            END IF;
+
+        END IF;
 
         UPDATE libs.asutus
         SET regkood    = doc_regkood,

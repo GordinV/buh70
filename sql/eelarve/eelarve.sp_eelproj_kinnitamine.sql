@@ -93,7 +93,8 @@ BEGIN
         LOOP
 
             -- Kontrollime aasta
-            IF not coalesce((SELECT ou.fnc_aasta_kontrol(v_taotlus.rekvid, v_taotlus.kpv)),true)
+            -- контроль снят, Валентина Бешекерскас, 02.01.2023
+/*            IF not coalesce((SELECT ou.fnc_aasta_kontrol(v_taotlus.rekvid, v_taotlus.kpv)),true)
             THEN
                 error_code = 1;
                 error_message = 'Period on kinnitatud';
@@ -101,7 +102,7 @@ BEGIN
                 RETURN;
 
             END IF;
-
+*/
             -- Salvestame eelarve
             SELECT coalesce(v_taotlus.eelarveid, 0)                                                        AS id,
                    v_taotlus.aasta,
@@ -136,7 +137,6 @@ BEGIN
 
 
             eelarve_id = eelarve.sp_salvesta_eelarve(eelarve_json, user_id, v_taotlus.rekvid);
-            RAISE NOTICE 'eelarve_id %, eelarve_json %', eelarve_id, eelarve_json;
 
 
             IF empty(eelarve_id)

@@ -64,6 +64,7 @@ FROM docs.doc d
          LEFT OUTER JOIN docs.journal j ON j.parentid = dd.id
          LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
 WHERE dok.kood = 'PALK_OPER'
+  AND d.doc_type_id IN (SELECT id FROM libs.library l WHERE l.library = 'DOK' AND l.kood = 'PALK_OPER')
   AND d.status <> 3;
 
 GRANT SELECT ON TABLE palk.cur_palkoper TO dbkasutaja;

@@ -275,7 +275,7 @@ WITH rekv_ids AS (
                   FROM cur_kulude_taitmine ft
                   WHERE ft.artikkel <>
                         '2586'
-                    -- Valentina B 24.10.2022
+                        -- Valentina B 24.10.2022
 --                    AND CASE WHEN ft.artikkel = '4502' AND coalesce(ft.rahavoog = '24') THEN FALSE ELSE TRUE END
                   UNION ALL
                   SELECT kt.rekv_id       AS rekvid,
@@ -382,8 +382,12 @@ WITH rekv_ids AS (
                            INNER JOIN docs.journal j ON D.id = j.parentid
                            INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
                   WHERE d.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                    AND d.status < 3
+                    AND d.doc_type_id IN
+                        (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood IN ('JOURNAL')
+                        )
                     AND j.kpv < gomonth(make_date(l_aasta, MONTH(l_kpv_2), 1), 1)
-                    AND j.kpv >= make_date(l_aasta, 1, 1)
+                    AND j.kpv >= make_date(l_aasta, month(l_kpv_1), 1)
 --                    AND YEAR(j.kpv) = l_aasta
                     AND j1.kood5 IS NOT NULL
                     AND NOT empty(j1.kood5)

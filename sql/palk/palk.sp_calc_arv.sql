@@ -1,82 +1,86 @@
 DROP FUNCTION IF EXISTS palk.sp_calc_arv(params JSONB);
-DROP FUNCTION IF EXISTS palk.sp_calc_arv(INTEGER, params JSON);
 DROP FUNCTION IF EXISTS palk.sp_calc_arv_(INTEGER, params JSON);
+DROP FUNCTION IF EXISTS palk.sp_calc_arv(INTEGER, params JSON);
 
 CREATE OR
     REPLACE FUNCTION palk.sp_calc_arv(IN user_id INTEGER, IN params JSON,
-                                      OUT selg TEXT,
-                                      OUT tki NUMERIC,
-                                      OUT tka NUMERIC,
-                                      OUT tm NUMERIC,
-                                      OUT tm_kokku NUMERIC,
-                                      OUT pm NUMERIC,
-                                      OUT sm NUMERIC,
-                                      OUT summa NUMERIC,
-                                      OUT mvt NUMERIC(14, 4),
-                                      OUT mvt_kokku NUMERIC(14, 4),
-                                      OUT error_code INTEGER,
-                                      OUT result INTEGER,
-                                      OUT error_message TEXT,
-                                      OUT data JSONB)
+                                       OUT selg TEXT,
+                                       OUT tki NUMERIC,
+                                       OUT tka NUMERIC,
+                                       OUT tm NUMERIC,
+                                       OUT tm_kokku NUMERIC,
+                                       OUT pm NUMERIC,
+                                       OUT sm NUMERIC,
+                                       OUT summa NUMERIC,
+                                       OUT mvt NUMERIC(14, 4),
+                                       OUT mvt_kokku NUMERIC(14, 4),
+                                       OUT error_code INTEGER,
+                                       OUT result INTEGER,
+                                       OUT error_message TEXT,
+                                       OUT data JSONB)
     LANGUAGE plpgsql
 AS
 $$
 DECLARE
-    l_lepingid         INTEGER         = params ->> 'lepingid';
-    l_libid            INTEGER         = params ->> 'libid';
-    l_kpv              DATE            = coalesce((params ->> 'kpv') :: DATE, current_date);
-    l_alus_summa       NUMERIC         = params ->> 'alus_summa'; -- для расчета налогов
-    l_used_mvt         NUMERIC         = params ->> 'mvt'; -- для учета применненого необлагаемого
-    is_umardamine      BOOLEAN         = coalesce((params ->> 'umardamine')::BOOLEAN, FALSE); -- если истина, то это округление
-    is_percent         BOOLEAN         = coalesce((params ->> 'is_percent') :: BOOLEAN,
-                                                  TRUE); -- kas pk summa percentis (100%)
-    l_palk_summa       NUMERIC         = coalesce((params ->> 'palk') :: NUMERIC, 0);
-    l_pk_summa         NUMERIC         = coalesce((params ->> 'summa') :: NUMERIC, CASE
-                                                                                       WHEN is_percent
-                                                                                           THEN 100
-                                                                                       ELSE l_palk_summa END);
-    is_alimentid       BOOLEAN         = coalesce((params ->> 'alimentid') :: BOOLEAN, FALSE); -- начисление алиментов
-    l_tund             INTEGER         = params ->> 'tund'; -- tunni liik
-    l_tunnid_kokku     NUMERIC         = params ->> 'tunnid_kokku'; -- tunnid taabeli jargi
+    l_lepingid            INTEGER         = params ->> 'lepingid';
+    l_libid               INTEGER         = params ->> 'libid';
+    l_kpv                 DATE            = coalesce((params ->> 'kpv') :: DATE, current_date);
+    l_alus_summa          NUMERIC         = params ->> 'alus_summa'; -- для расчета налогов
+    l_used_mvt            NUMERIC         = params ->> 'mvt'; -- для учета применненого необлагаемого
+    is_umardamine         BOOLEAN         = coalesce((params ->> 'umardamine')::BOOLEAN, FALSE); -- если истина, то это округление
+    is_percent            BOOLEAN         = coalesce((params ->> 'is_percent') :: BOOLEAN,
+                                                     TRUE); -- kas pk summa percentis (100%)
+    l_palk_summa          NUMERIC         = coalesce((params ->> 'palk') :: NUMERIC, 0);
+    l_pk_summa            NUMERIC         = coalesce((params ->> 'summa') :: NUMERIC, CASE
+                                                                                          WHEN is_percent
+                                                                                              THEN 100
+                                                                                          ELSE l_palk_summa END);
+    is_alimentid          BOOLEAN         = coalesce((params ->> 'alimentid') :: BOOLEAN, FALSE); -- начисление алиментов
+    l_tund                INTEGER         = params ->> 'tund'; -- tunni liik
+    l_tunnid_kokku        NUMERIC         = params ->> 'tunnid_kokku'; -- tunnid taabeli jargi
 
-    l_tululiik         TEXT            = coalesce((params ->> 'tululiik') :: TEXT, '10');
-    l_PM_maksustav     INTEGER         = coalesce((params ->> 'pm_maksustav') :: INTEGER, 1); -- является основой для ПН налога
-    l_SM_maksustav     INTEGER         = coalesce((params ->> 'sm_maksustav') :: INTEGER, 1); -- облагается соц. налогом
-    l_tasuliik         INTEGER         = array_position((enum_range(NULL :: PALK_TASU_LIIK)), 'ASTMEPALK');
-    l_koormus          NUMERIC         = 100;
+    l_tululiik            TEXT            = coalesce((params ->> 'tululiik') :: TEXT, '10');
+    l_PM_maksustav        INTEGER         = coalesce((params ->> 'pm_maksustav') :: INTEGER, 1); -- является основой для ПН налога
+    l_SM_maksustav        INTEGER         = coalesce((params ->> 'sm_maksustav') :: INTEGER, 1); -- облагается соц. налогом
+    l_tasuliik            INTEGER         = array_position((enum_range(NULL :: PALK_TASU_LIIK)), 'ASTMEPALK');
+    l_koormus             NUMERIC         = 100;
 
-    tdperiod           DATE;
-    l_hours            NUMERIC(20, 10) = 0;
-    l_rate             NUMERIC(20, 10); -- bruttopalk
-    lnBaas             NUMERIC(20, 10) = 0;
-    ltEnter            TEXT            = '(r)'; -- перевод строки
+    tdperiod              DATE;
+    l_hours               NUMERIC(20, 10) = 0;
+    l_rate                NUMERIC(20, 10); -- bruttopalk
+    lnBaas                NUMERIC(20, 10) = 0;
+    ltEnter               TEXT            = '(r)'; -- перевод строки
 
-    l_mvt_kokku        NUMERIC(14, 4)  = 0; -- mvt taotluse summa
-    l_kasutatud_mvt    NUMERIC(14, 4)  = 0;
-    l_isiku_mvt        NUMERIC(14, 4)  = 0; -- isiku kasutatud mvt
+    l_mvt_kokku           NUMERIC(14, 4)  = 0; -- mvt taotluse summa
+    l_kasutatud_mvt       NUMERIC(14, 4)  = 0;
+    l_isiku_mvt           NUMERIC(14, 4)  = 0; -- isiku kasutatud mvt
 
-    l_PM_maar          NUMERIC(8, 2)   = 2;
-    l_TKI_maar         NUMERIC(8, 2)   = 1.6;
-    l_TKA_maar         NUMERIC(8, 2)   = 0.8;
-    l_SM_maar          NUMERIC(8, 2)   = 33;
-    l_TM_maar          NUMERIC(8, 2)   = 20;
-    l_min_sots         INTEGER         = 0; -- kas arvesta min.sots.maks
-    l_kuu_alg          DATE            = date(year(l_kpv), month(l_kpv), 01);
-    l_kuu_lopp         DATE            = date(year(l_kpv), month(l_kpv), day(get_last_day(l_kpv)));
-    l_round            NUMERIC         = 0.01;
-    l_params           JSON;
-    l_min_palk         NUMERIC         = 500;
-    l_toopaev          NUMERIC         = 8;
-    l_rekvid           INTEGER;
-    l_isik_id          INTEGER;
-    l_kuupalk          INTEGER;
+    l_PM_maar             NUMERIC(8, 2)   = 2;
+    l_TKI_maar            NUMERIC(8, 2)   = 1.6;
+    l_TKA_maar            NUMERIC(8, 2)   = 0.8;
+    l_SM_maar             NUMERIC(8, 2)   = 33;
+    l_TM_maar             NUMERIC(8, 2)   = 20;
+    l_min_sots            INTEGER         = 0; -- kas arvesta min.sots.maks
+    l_kuu_alg             DATE            = date(year(l_kpv), month(l_kpv), 01);
+    l_kuu_lopp            DATE            = date(year(l_kpv), month(l_kpv), day(get_last_day(l_kpv)));
+    l_round               NUMERIC         = 0.01;
+    l_params              JSON;
+    l_min_palk            NUMERIC         = 500;
+    l_tulubaas            NUMERIC         = 0;
+    l_pensionari_tulubaas NUMERIC         = 0;
+    l_toopaev             NUMERIC         = 8;
+    l_rekvid              INTEGER;
+    l_isik_id             INTEGER;
+    l_isikukood           TEXT;
+    l_kuupalk             INTEGER;
 
-    l_tulud_kokku      NUMERIC; -- temp
-    is_pm              NUMERIC         = 1;
-    is_tki             NUMERIC         = 1;
-    doc_ids            INTEGER[];
-    l_tahtpaeva_tunnid NUMERIC         = 0;
-    l_work_days        INTEGER;
+    l_tulud_kokku         NUMERIC; -- temp
+    is_pm                 NUMERIC         = 1;
+    is_tki                NUMERIC         = 1;
+    doc_ids               INTEGER[];
+    l_tahtpaeva_tunnid    NUMERIC         = 0;
+    l_work_days           INTEGER;
+    kas_pensionar         BOOLEAN         = FALSE;
 
 BEGIN
 
@@ -84,6 +88,8 @@ BEGIN
     THEN
         SELECT t.toopaev,
                pc.minpalk,
+               pc.tulubaas,
+               pc.pensionari_tulubaas,
                t.rekvid,
                CASE
                    WHEN t.algab > l_kuu_alg AND month(t.algab) = month(l_kpv) AND
@@ -99,8 +105,9 @@ BEGIN
                t.koormus,
                t.palk,
                t.parentid,
-               t.kuupalk
-        INTO l_toopaev, l_min_palk, l_rekvid, l_kuu_alg, l_kuu_lopp, l_tasuliik, l_koormus, l_palk_summa, l_isik_id, l_kuupalk
+               t.kuupalk,
+               t.isikukood
+        INTO l_toopaev, l_min_palk, l_tulubaas, l_pensionari_tulubaas, l_rekvid, l_kuu_alg, l_kuu_lopp, l_tasuliik, l_koormus, l_palk_summa, l_isik_id, l_kuupalk, l_isikukood
         FROM palk.com_toolepingud t
                  LEFT OUTER JOIN palk.palk_config pc ON pc.rekvid = t.rekvid
         WHERE t.id = l_lepingid;
@@ -353,6 +360,8 @@ BEGIN
                            INNER JOIN palk.palk_oper p ON p.parentid = d.id
                            INNER JOIN libs.library lib ON p.libid = lib.id AND lib.library = 'PALK'
                            INNER JOIN palk.tooleping t ON p.lepingid = t.id
+                  WHERE d.status < 3
+                    AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'PALK_OPER')
                  ) po
                      INNER JOIN palk.com_toolepingud t ON t.id = po.lepingId
             WHERE t.parentid = l_isik_id
@@ -370,7 +379,18 @@ BEGIN
                                                                AND lepingid = l_lepingid
                                                                AND libid = l_libId));
 
+
+            -- если пенсионер, то не уменьшаем его необлагаемый миниум
+
+            IF palk.kas_soodustus_mvt(l_isikukood, l_kpv)
+            THEN
+                l_kasutatud_mvt = 0;
+                l_used_mvt = NULL;
+                kas_pensionar = TRUE;
+            END IF;
+
         END IF;
+
     END IF;
 
     mvt = 0;
@@ -395,6 +415,8 @@ BEGIN
         -- MVT  arvestus
         IF l_mvt_kokku > 0
         THEN
+
+            RAISE NOTICE 'calc mvt l_mvt_kokku %, l_isiku_mvt %, l_tulud_kokku %, tki %, pm %',l_mvt_kokku, l_isiku_mvt, l_tulud_kokku, tki, pm;
             SELECT row_to_json(row)
             INTO l_params
             FROM (SELECT summa                      AS summa,
@@ -405,9 +427,12 @@ BEGIN
                          -- enne arvestatud isiku tulud
                          -- should select from palk.palk_oper
                          coalesce(tki, 0)           AS tki,
+                         kas_pensionar              AS kas_pensionar,
                          coalesce(pm, 0)            AS pm) row;
 
             mvt = palk.fnc_calc_mvt(l_params :: JSONB);
+
+            RAISE NOTICE 'mvt tulemus mvt %', mvt;
 
             IF mvt > 0 AND mvt > summa
             THEN
@@ -465,8 +490,23 @@ $$;
 
 /*
 
-SELECT *
-FROM palk.sp_calc_arv(5439, {"kpv":"2022-03-31","lepingid":null::integer,"libid":null::integer,"alus_summa":117.0000,"mvt":117.00,"umardamine":true} :: JSON)
+select * from ou.userid where rekvid in (select id from ou.rekv where nimetus ilike '%tareke%') and kasutaja = 'vlad'
+
+select * from libs.asutus where regkood = '45902153725 '
+-- 21814
+
+select * from palk.tooleping where parentid = 21814
+
+select * from palk.palk_oper where kpv = '2023-02-28' and rekvid  in (select id from ou.rekv where nimetus ilike '%tareke%')
+and lepingid in (26632, 17851)
+and tululiik = '10'
+
 
 */
 
+SELECT *
+FROM palk.sp_calc_arv(5419, '{"kpv":"2023-02-28","lepingid":17851,"libid":153397}' :: JSON);
+
+
+SELECT *
+FROM palk.sp_calc_arv(5419, '{"kpv":"2023-05-31","lepingid":18173,"libid":147086}' :: JSON);

@@ -57,6 +57,17 @@ DECLARE
     l_arve_kogus    NUMERIC = 0; -- для проверки кол-ва услуг в счете
 
 BEGIN
+
+    IF date_part('year', l_kpv) < 2023
+    THEN
+        -- контроль года
+        result = 0;
+        error_message = 'Vale aasta';
+        error_code = 1;
+        RETURN;
+
+    END IF;
+
     SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr
     INTO v_laps
     FROM lapsed.laps l

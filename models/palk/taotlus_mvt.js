@@ -56,7 +56,15 @@ module.exports = {
             multiple: false,
             alias: 'v_isiku_mvt_taotlused',
             data: []
-        }],
+        },
+        {
+            sql:`SELECT palk.kas_soodustus_mvt($1::TEXT, $2::DATE)::INTEGER as tulemus`, //$1 - isikukood, $2 - seisuga
+            query: null,
+            multiple: false,
+            alias: 'v_pensionari_mvt_kontrol',
+            data: []
+        },
+    ],
     returnData: {
         row: {}
     },

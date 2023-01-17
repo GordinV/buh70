@@ -15,6 +15,7 @@ DECLARE
         END ;
 
 BEGIN
+
     FOR v_aa IN
         SELECT (e.element ->> 'aa') :: VARCHAR(20)       AS aa,
                (e.element ->> 'kas_palk') :: BOOLEAN     AS kas_palk,
@@ -25,10 +26,11 @@ BEGIN
         FROM libs.asutus a,
              json_array_elements(CASE
                                      WHEN (a.properties ->> 'asutus_aa') IS NULL THEN '[]'::JSON
+                                     WHEN (a.properties ->> 'asutus_aa') = '' THEN '[]'::JSON
                                      ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (element)
         WHERE a.id = asutus_id
+          AND ltrim(rtrim(coalesce((e.element ->> 'aa'), ''))) <> ''
         LOOP
-            RAISE NOTICE 'v_aa.aa %', v_aa.aa;
             CASE
                 WHEN module IS NULL THEN
                     aa = v_aa.aa;
