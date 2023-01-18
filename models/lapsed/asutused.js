@@ -1,6 +1,17 @@
 module.exports = {
     select: [{
-        sql: `SELECT *,
+        sql: `SELECT id,
+                     regkood,
+                     nimetus,
+                     omvorm,
+                     aadress,
+                     kontakt,
+                     tel,
+                     faks,
+                     email,
+                     muud,
+                     tp,
+                     staatus,
                      $2::INTEGER                                     AS userid,
                      'ASUTUSED'                                      AS doc_type_id,
                      (properties ->> 'pank')::VARCHAR(20)            AS pank,

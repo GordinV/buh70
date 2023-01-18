@@ -50,7 +50,8 @@ module.exports = {
         const result = await Db.queryDb(sql, [nimi, rekvId]);
 
         if (!result || !result.data || !result.data.length) {
-            console.error ('Viga', sql,nimi, rekvId, result )
+            console.error ('Viga', sql,nimi, rekvId, result );
+            return callback('Viga', null);
         }
 
         this.userId = result.data[0].id;

@@ -1,6 +1,17 @@
 module.exports = {
     select: [{
-        sql: `SELECT *,
+        sql: `SELECT id,
+                     regkood,
+                     nimetus,
+                     omvorm,
+                     aadress,
+                     kontakt,
+                     tel,
+                     faks,
+                     email,
+                     muud,
+                     tp,
+                     staatus,
                      $2::INTEGER                                     AS userid,
                      'ASUTUSED'                                      AS doc_type_id,
                      (properties ->> 'pank')::VARCHAR(20)            AS pank,
@@ -34,13 +45,13 @@ module.exports = {
         data: []
     },
         {
-            sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20)       AS aa,
-                         $2 :: INTEGER                             AS userid,
+            sql: `SELECT (e.element ->> 'aa') :: VARCHAR(20)                  AS aa,
+                         $2 :: INTEGER                                        AS userid,
                          ((e.element ->> 'kas_palk') :: BOOLEAN)::INTEGER     AS kas_palk,
                          ((e.element ->> 'kas_raama') :: BOOLEAN)::INTEGER    AS kas_raama,
                          ((e.element ->> 'kas_oppetasu') :: BOOLEAN)::INTEGER AS kas_oppetasu,
-                         row_number() OVER ()                      AS id,
-                         libs.get_asutuse_aa(a.id, 'RAAMA'::TEXT)  AS default_aa
+                         row_number() OVER ()                                 AS id,
+                         libs.get_asutuse_aa(a.id, 'RAAMA'::TEXT)             AS default_aa
                   FROM libs.asutus a,
                        json_array_elements(CASE
                                                WHEN (a.properties ->> 'asutus_aa') IS NULL THEN '[]'::JSON

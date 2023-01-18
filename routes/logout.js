@@ -7,6 +7,7 @@ const log = require('./../libs/log');
 exports.get = function(req, res) {
 // удалим  из таблицы данные сессии
     let uuid = req.body.uuid;
+
     Userid.deleteUserUuid(uuid);
 
     // log
@@ -14,7 +15,7 @@ exports.get = function(req, res) {
     log(message, 'info');
 
 
-    req.session.destroy();
+//    req.session.destroy();
     res.redirect('/login');
 
 };

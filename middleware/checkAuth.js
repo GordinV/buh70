@@ -7,23 +7,22 @@ module.exports = async function (req, res, next) {
     const uuid = req.body.uuid;
     const user = await require('../middleware/userData')(req);
     let result = 0;
-
-    if (!uuid &&  UserContext.users && UserContext.users.length > 0) {
+    if (!uuid && (user && user.userId || UserContext.users && UserContext.users.length > 0)) {
         // logs
-        let message = `Auth, !uuid && UserContext.users.length > 0 -> ${userId},uuid -> ${uuid}`;
+        let message = `Auth, !uuid && UserContext.users.length > 0 -> ${userId},uuid -> ${uuid} user.userId->> ${user.userId}`;
         log(message,'info');
 
         // get
         return next();
     }
 
-    if (!user) {
+    if (!user || !user.userId) {
         // logs
-        let message = `Auth, !user userId -> ${userId},uuid -> ${uuid}`;
+        let message = `Auth, !user userId -> ${user.userId},uuid -> ${uuid}`;
         log(message,'error');
 
         res.statusCode = 401;
-        res.redirect('/login');
+        return res.redirect('/login');
     }
 
     next();
