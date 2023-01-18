@@ -220,6 +220,7 @@ exports.put = async (req, res) => {
         }
 
     } catch (e) {
+        console.error('Erro in save, params %', JSON.stringify(params));
         return res.send({
             action: 'save',
             result: {error_code: 1, error_message: 'Error in save ', docId: 0}
