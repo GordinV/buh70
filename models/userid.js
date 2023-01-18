@@ -63,7 +63,7 @@ module.exports = {
 
         const userData = Object.assign({}, result.data[0]);
         UserContext.users.push(userData);
-
+//        return userData;
         return callback(null, userData);
 
     },
