@@ -193,35 +193,37 @@ exports.put = async (req, res) => {
     let savedData;
     try {
         savedData = await Document.save(params);
+
+        let l_error = '';
+        if (Document.config.bpm) {
+            // bpm proccess
+            const automatTask = await Document.config.bpm.filter(task => task.type === 'automat');
+
+            await automatTask.forEach(async (process) => {
+                const bpmResult = await Document.executeTask(process.action);
+                if (bpmResult && bpmResult.error_code) {
+                    // raise error
+                    l_error = l_error ? l_error : 'Lisa töö viga ' + bpmResult.error_message ? bpmResult.error_message : '';
+                    console.error('BPM error', l_error);
+                }
+
+            });
+        }
+
+        if (!savedData.row || savedData.row.length < 1 || l_error.length > 1) {
+            l_error = l_error + (savedData && savedData.error_message ? savedData.error_message : null);
+            return res.send({
+                action: 'save',
+                result: {error_code: 1, error_message: l_error ? l_error : 'Error in save ', docId: 0}
+            });
+
+        }
+
     } catch (e) {
         return res.send({
             action: 'save',
             result: {error_code: 1, error_message: 'Error in save ', docId: 0}
         });
-    }
-    let l_error = '';
-    if (Document.config.bpm) {
-        // bpm proccess
-        const automatTask = await Document.config.bpm.filter(task => task.type === 'automat');
-
-        await automatTask.forEach(async (process) => {
-            const bpmResult = await Document.executeTask(process.action);
-            if (bpmResult && bpmResult.error_code) {
-                // raise error
-                l_error = l_error ? l_error : 'Lisa töö viga ' + bpmResult.error_message ? bpmResult.error_message : '';
-                console.error('BPM error', l_error);
-            }
-
-        });
-    }
-
-    if (!savedData.row || savedData.row.length < 1 || l_error.length > 1) {
-        l_error = l_error + (savedData && savedData.error_message ? savedData.error_message : null);
-        return res.send({
-            action: 'save',
-            result: {error_code: 1, error_message: l_error ? l_error : 'Error in save ', docId: 0}
-        });
-
     }
 
     const prepairedData = Object.assign({}, savedData.row[0],
