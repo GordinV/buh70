@@ -190,9 +190,15 @@ exports.put = async (req, res) => {
             })
         }
     }
-
-    const savedData = await Document.save(params);
-
+    let savedData;
+    try {
+        savedData = await Document.save(params);
+    } catch (e) {
+        return res.send({
+            action: 'save',
+            result: {error_code: 1, error_message: 'Error in save ', docId: 0}
+        });
+    }
     let l_error = '';
     if (Document.config.bpm) {
         // bpm proccess
@@ -215,6 +221,7 @@ exports.put = async (req, res) => {
             action: 'save',
             result: {error_code: 1, error_message: l_error ? l_error : 'Error in save ', docId: 0}
         });
+
     }
 
     const prepairedData = Object.assign({}, savedData.row[0],
@@ -279,7 +286,7 @@ exports.delete = async (req, res) => {
     } else {
         errorCode = result.error_code;
         errorMessage = result.error_message;
-        console.error('error',data, result)
+        console.error('error', data, result)
     }
 
     if (deletedRows) {
