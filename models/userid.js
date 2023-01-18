@@ -14,6 +14,7 @@ const path = require('path');
 const pathToSSLCa = path.join(global.__base, 'config', 'client.crt');
 const pathToSSLKey = path.join(global.__base, 'config', 'server.key');
 const pathToSSLcert = path.join(global.__base, 'config', 'client.crt');
+const UserContext = require('./../frontend/user-context');
 
 
 module.exports = {
@@ -50,7 +51,7 @@ module.exports = {
         const result = await Db.queryDb(sql, [nimi, rekvId]);
 
         if (!result || !result.data || !result.data.length) {
-            console.error ('Viga', sql,nimi, rekvId, result );
+            console.error('Viga', sql, nimi, rekvId, result);
             return callback('Viga', null);
         }
 
@@ -61,6 +62,7 @@ module.exports = {
         this.encriptedPassword = result.data[0].parool;
 
         const userData = Object.assign({}, result.data[0]);
+        UserContext.users.push(userData);
 
         return callback(null, userData);
 

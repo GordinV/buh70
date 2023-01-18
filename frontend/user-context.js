@@ -1,4 +1,4 @@
 const UserContext = {
-    useris: []
+    users: []
 };
 module.exports = (UserContext);
