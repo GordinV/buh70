@@ -63,8 +63,8 @@ const Vmk = {
                                FROM ou.aa
                                WHERE parentid = u.rekvid
                                  AND kassa = 1
-                               ORDER BY default_ DESC
-                               LIMIT 1)                                      AS aa_id,
+                                   ORDER BY default_ DESC
+                                   LIMIT 1)                                  AS aa_id,
                               trim('')::VARCHAR(20)                          AS pank,
                               NULL::INTEGER                                  AS rekvId,
                               to_char(now(), 'YYYY-MM-DD')::TEXT             AS kpv,
@@ -81,7 +81,7 @@ const Vmk = {
                               NULL::VARCHAR(20)                              AS konto,
                               0                                              AS doklausid,
                               NULL::INTEGER                                  AS lapsId,
-                              TRUE                                                 AS is_data_loaded       
+                              TRUE                                           AS is_data_loaded
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER`,
             query: null,
@@ -103,6 +103,7 @@ const Vmk = {
                          k1.proj,
                          k1.summa,
                          k1.tunnus,
+                         k1.journalid,
                          'EUR'::VARCHAR(20) AS valuuta,
                          1::NUMERIC(12, 4)  AS kuurs,
                          jid.number         AS lausnr
@@ -151,8 +152,8 @@ const Vmk = {
                             INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid
                    WHERE t.doc_tasu_id = $1
                      AND t.status <> 3
-                   ORDER BY t.kpv
-                           , t.id`,
+                       ORDER BY t.kpv
+                       , t.id`,
             query: null,
             multiple: true,
             alias: 'queryArvTasu',

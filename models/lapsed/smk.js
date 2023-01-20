@@ -72,7 +72,7 @@ const Smk = {
                               0                                                            AS doklausid,
                               NULL::INTEGER                                                AS lapsId,
                               0                                                            AS jaak,
-                              TRUE                                                 AS is_data_loaded
+                              TRUE                                                         AS is_data_loaded
                        FROM ou.userid u
                        WHERE u.id = $2 :: INTEGER
             `,
@@ -88,6 +88,7 @@ const Smk = {
                          trim(a.nimetus)    AS asutus,
                          trim(a.aadress)    AS aadress,
                          k.parentid         AS parent_id,
+                         k1.journalid,
                          k1.aa::TEXT        AS aa,
                          k1.asutusid,
                          k1.konto,
@@ -143,8 +144,8 @@ const Smk = {
                             INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid
                    WHERE t.doc_tasu_id = $1
                      AND t.status <> 3
-                   ORDER BY t.kpv
-                           , t.id`,
+                       ORDER BY t.kpv
+                       , t.id`,
             query: null,
             multiple: true,
             alias: 'queryArvTasu',
@@ -194,7 +195,7 @@ const Smk = {
                                               FROM lapsed.viitenr vn
                                               WHERE vn.rekv_id IN (SELECT rekv_id
                                                                    FROM get_asutuse_struktuur($1))
-                                              GROUP BY vn.isikukood
+                                                  GROUP BY vn.isikukood
                     ) vn
                                              ON vn.isikukood = mk.isikukood
                     WHERE mk.opt = 2
