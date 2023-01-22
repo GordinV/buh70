@@ -2,6 +2,7 @@ const _ = require('lodash');
 const Userid = require('../models/userid');
 const log = require('./../libs/log');
 const UserContext = require('./../frontend/user-context');
+const DocContext = require('./../frontend/doc-context');
 
 
 const userData = async function (req, _uuid) {
@@ -33,7 +34,8 @@ const userData = async function (req, _uuid) {
         asutus: null,
         asutus_tais: null,
         regkood: null,
-        user_data: {}
+        user_data: {},
+        users: []
     };
 
 
@@ -47,13 +49,21 @@ const userData = async function (req, _uuid) {
             sqlUser.asutus = uuidUser.data[0].asutus;
             sqlUser.asutus_tais = uuidUser.data[0].taisnimetus;
             sqlUser.regkood = uuidUser.data[0].regkood;
-            sqlUser.user_data = uuidUser.data[0].user_data
+            sqlUser.user_data = uuidUser.data[0].user_data;
+            sqlUser.users = uuidUser.data[0].users;
+
+            if (!DocContext.getUuid) {
+                DocContext.userData = uuidUser.data[0].user_data;
+            }
+            // вернем пользователей
+            if (sqlUser.users) {
+                UserContext.users = sqlUser.users;
+            }
         }
 
         // logs
         let message = `userData, userIndex < 0 userId -> ${sqlUser.userId},asutusId -> ${sqlUser.asutusId}`;
         log(message, 'info');
-
     }
 
 

@@ -8,7 +8,8 @@ CREATE OR REPLACE FUNCTION ou.get_user_by_uuid(l_uuid TEXT)
         asutus      TEXT,
         taisnimetus TEXT,
         regkood     TEXT,
-        user_data   JSONB
+        user_data   JSONB,
+        users       JSONB
     )
 AS
 $BODY$
@@ -19,7 +20,8 @@ SELECT userId,
        r.nimetus::TEXT                 AS asutus,
        coalesce(r.muud, nimetus)::TEXT AS taisnimetus,
        r.regkood::TEXT,
-       uuid.user_data                  AS user_data
+       uuid.user_data                  AS user_data,
+       uuid.users                      AS users
 FROM ou.session_uuid uuid,
      ou.userid u,
      ou.rekv r

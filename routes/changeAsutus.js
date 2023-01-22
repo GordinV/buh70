@@ -3,10 +3,10 @@
 const userid = require('../models/userid'),
     HttpError = require('./../error').HttpError;
 const log = require('./../libs/log');
-const UserContext = require('./../frontend/user-context');
 
 
 exports.post = async (req, res) => {
+    const UserContext = require('./../frontend/user-context');
 
     let rekvId;
     if (req.params.rekvId) {
@@ -18,6 +18,8 @@ exports.post = async (req, res) => {
 
     if (!user || !userUuid) {
         //send result and wait for reload
+
+        console.error('User puudub või uuid puudub', userUuid, user);
         return res.send({status: 401, result: 'Logout'}); //пока нет новых данных
 
     }
@@ -57,8 +59,6 @@ exports.post = async (req, res) => {
 
                     }
                 }
-
-
             });
 
             // will save last login
@@ -66,7 +66,7 @@ exports.post = async (req, res) => {
             });
 
             // save user uuid
-            const params = {userId: userData.id, asutusId: userData.rekvid, uuid: userUuid, user_data: userData};
+            const params = {userId: userData.id, asutusId: userData.rekvid, uuid: userUuid, user_data: userData, users: UserContext.users};
             userid.storeUserUuid(params);
 
 

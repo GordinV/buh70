@@ -107,7 +107,6 @@ class App extends React.Component {
     render(history) {
         return (
             <StyleRoot>
-
                 <Route exact path="/lapsed"
                        render={(props) =>
                            <LasteRegister

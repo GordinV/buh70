@@ -61,7 +61,7 @@ exports.post = function (req, res, next) {
                     user = newUser;
 
 // save user uuid
-                    const params = {userId: newUser.userId, asutusId: newUser.asutusId, uuid: newUser.uuid, user_data: newUser};
+                    const params = {userId: newUser.userId, asutusId: newUser.asutusId, uuid: newUser.uuid, user_data: newUser, users: UserContext.users};
                     userid.storeUserUuid(params);
 
                     return callback(null, newUser);

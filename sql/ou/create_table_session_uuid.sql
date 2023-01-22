@@ -20,3 +20,4 @@ CREATE INDEX session_uuid_index
     ON ou.session_uuid (uuid);
 
 ALTER TABLE ou.session_uuid add COLUMN  if not EXISTS user_data jsonb;
+ALTER TABLE ou.session_uuid add COLUMN  if not EXISTS users jsonb;

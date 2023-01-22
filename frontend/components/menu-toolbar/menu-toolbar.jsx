@@ -91,6 +91,10 @@ class MenuToolBar extends React.Component {
             asutus = asutus_obj.name;
         }
 
+        if (!DocContext.getUuid) {
+            // потерял Uuid, на выход
+            this.btnLoginClick()
+        }
 
         return (
             <div style={style['container']}>
@@ -202,7 +206,7 @@ class MenuToolBar extends React.Component {
         } catch (e) {
             console.error(e);
         }
-        document.location.href = '/login';
+        window.location.href = '/login';
     }
 
 

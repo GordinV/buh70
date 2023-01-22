@@ -94,7 +94,6 @@ class ButtonTeatised extends React.PureComponent {
 
 
     render() {
-        console.log('render', this.state);
         return this.state.show ? this.modalPage() : (<Button
             value={this.state.value}
             ref="btnTeatised"
