@@ -30,7 +30,7 @@ SELECT d.id                                                                     
                     a.properties ->> 'tyyp' IS NULL)                                          AS kas_earved,
        coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN                      AS kas_email,
        coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN                    AS kas_paberil,
-       (va.properties ->> 'pank'):: TEXT                                                       AS pank,
+       coalesce((va.properties ->> 'pank'), ''):: TEXT                                        AS pank,
        CASE
            WHEN coalesce((a.properties ->> 'ebatoenaolised_2_id')::INTEGER, 0) > 0 THEN '100'
            WHEN coalesce((a.properties ->> 'ebatoenaolised_1_id')::INTEGER, 0) > 0 THEN '50'
@@ -42,7 +42,8 @@ FROM docs.doc d
          INNER JOIN lapsed.laps l ON l.id = ld.parentid
          INNER JOIN libs.asutus asutus ON a.asutusid = asutus.id
          INNER JOIN lapsed.vanemad v ON l.id = v.parentid AND v.asutusid = asutus.id
-         INNER JOIN lapsed.vanem_arveldus va ON l.id = va.parentid AND va.asutusid = asutus.id and va.rekvid = a.rekvid
+         LEFT OUTER JOIN lapsed.vanem_arveldus va
+                         ON l.id = va.parentid AND va.asutusid = asutus.id AND va.rekvid = a.rekvid
          LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
          LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
 WHERE d.status <> 3

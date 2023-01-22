@@ -16,7 +16,7 @@ const userData = async function (req, _uuid) {
         //log(message,'Error');
 
         //return null;
-        userIndex -1;
+        userIndex - 1;
     } else {
         userIndex = _.findIndex(UserContext.users, {uuid: uuid});
     }
@@ -32,8 +32,10 @@ const userData = async function (req, _uuid) {
         kasutaja: null,
         asutus: null,
         asutus_tais: null,
-        regkood: null
+        regkood: null,
+        user_data: {}
     };
+
 
     if (userIndex < 0) {
         // потеряли хеш
@@ -45,29 +47,31 @@ const userData = async function (req, _uuid) {
             sqlUser.asutus = uuidUser.data[0].asutus;
             sqlUser.asutus_tais = uuidUser.data[0].taisnimetus;
             sqlUser.regkood = uuidUser.data[0].regkood;
+            sqlUser.user_data = uuidUser.data[0].user_data
         }
 
         // logs
         let message = `userData, userIndex < 0 userId -> ${sqlUser.userId},asutusId -> ${sqlUser.asutusId}`;
-        log(message,'info');
+        log(message, 'info');
 
     }
 
+
     const user = Object.assign({
-        userId: userIndex > -1 ? UserContext.users && UserContext.users[userIndex].id : sqlUser.userId,
-        userName: userIndex > -1 ? UserContext.users && UserContext.users[userIndex].ametnik : sqlUser.kasutaja,
-        asutus: userIndex > -1 ? UserContext.users && UserContext.users[userIndex].asutus : sqlUser.asutus,
-        asutusTais: userIndex > -1 ? UserContext.users && UserContext.users[userIndex].asutus_tais : sqlUser.asutus_tais,
-        regkood: userIndex > -1 ? UserContext.users && UserContext.users[userIndex].regkood : sqlUser.regkood,
-        asutusId: userIndex > -1 ? UserContext.users && UserContext.users[userIndex].rekvid : sqlUser.asutusId,
-        lastLogin: userIndex > -1 ? UserContext.users && UserContext.users[userIndex].last_login : null,
-        userAccessList: userIndex > -1 ? UserContext.users && UserContext.users[userIndex].userAllowedAsutused : [],
+        userId: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].id : sqlUser.userId,
+        userName: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].ametnik : sqlUser.kasutaja,
+        asutus: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].asutus : sqlUser.asutus,
+        asutusTais: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].asutus_tais : sqlUser.asutus_tais,
+        regkood: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].regkood : sqlUser.regkood,
+        asutusId: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].rekvid : sqlUser.asutusId,
+        lastLogin: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].last_login : sqlUser.user_data.last_login,
+        userAccessList: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].userAllowedAsutused : sqlUser.user_data.allowed_access,
         userLibraryList: [],
-        parentid: userIndex > -1 && UserContext.users && UserContext.users[userIndex].parentid ? UserContext.users[userIndex].parentid : 0,
-        parent_asutus: userIndex > -1 && UserContext.users && UserContext.users[userIndex].parent_asutus,
-        login: userIndex > -1 ? UserContext.users && UserContext.users[userIndex].kasutaja : sqlUser.kasutaja,
-        roles: userIndex > -1 && UserContext.users && UserContext.users[userIndex].roles
-    }, userIndex > -1 ? UserContext.users && UserContext.users[userIndex] : {});
+        parentid: userIndex > -1 && UserContext.users && UserContext.users.length && UserContext.users[userIndex].parentid ? UserContext.users[userIndex].parentid : sqlUser.user_data.parentid,
+        parent_asutus: userIndex > -1 && UserContext.users && UserContext.users.length && UserContext.users[userIndex].parent_asutus ? UserContext.users[userIndex].parent_asutus: sqlUser.user_data.parent_asutus,
+        login: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].kasutaja : sqlUser.kasutaja,
+        roles: userIndex > -1 && UserContext.users && UserContext.users.length && UserContext.users[userIndex].roles ? UserContext.users[userIndex].roles: sqlUser.user_data.roles
+    }, userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex] : {});
 
     return user;
 };

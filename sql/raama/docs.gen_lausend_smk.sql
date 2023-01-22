@@ -178,7 +178,7 @@ BEGIN
                                         INNER JOIN libs.asutus a ON a.id = v.asutusid
                                WHERE v.parentid = l_laps_id
                                  AND v.rekvid = v_smk.rekvid
-                               ORDER BY v.arveldus DESC
+                               ORDER BY coalesce(v.arveldus, false) DESC
                                        , v.id DESC
                                LIMIT 1);
 
@@ -187,8 +187,6 @@ BEGIN
                     l_asutus_id = v_smk1.asutusid;
                 END IF;
             END IF;
-
-            RAISE NOTICE 'l_laps_id %',l_laps_id;
 
             IF l_laps_id IS NOT NULL
             THEN
@@ -242,6 +240,7 @@ BEGIN
                     v_smk1.konto = '103000';
                     v_smk1.tp = '800699';
                     v_smk.tp = '800699';
+                    v_smk.kpv = '2023-01-01'::date;
                 END IF;
             END IF;
 
@@ -388,6 +387,8 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_smk(INTEGER, INTEGER) TO dbpeakasutaj
 
 /*
 
+SELECT
+docs.gen_lausend_smk(4461175,5394)
 
 SELECT
 docs.gen_lausend_smk(v.doc_id,(select id from ou.userid u where kasutaja = 'vlad' and u.rekvid = mk.rekvid limit 1))

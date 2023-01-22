@@ -66,7 +66,7 @@ exports.post = async (req, res) => {
             });
 
             // save user uuid
-            const params = {userId: userData.id, asutusId: userData.rekvid, uuid: userUuid};
+            const params = {userId: userData.id, asutusId: userData.rekvid, uuid: userUuid, user_data: userData};
             userid.storeUserUuid(params);
 
 

@@ -19,13 +19,17 @@ DECLARE
     new_history     JSONB;
     DOC_STATUS      INTEGER = 3; -- документ удален
     v_mk            RECORD;
+    l_tasu_id       INTEGER; -- оплата счета пенсионера
 BEGIN
 
     SELECT d.*,
-           u.ametnik AS user_name,
+           u.ametnik               AS user_name,
            a.kpv,
-           a.id      AS doc_arv_id,
-           a.properties
+           a.id                    AS doc_arv_id,
+           a.properties,
+           a.properties ->> 'tyyp' AS tyyp,
+           a.liik,
+           a.asutusid
     INTO v_doc
     FROM docs.doc d
              LEFT OUTER JOIN ou.userid u ON u.id = user_id
@@ -47,6 +51,7 @@ BEGIN
         RETURN;
 
     END IF;
+
 
     -- проверка на права. Предполагает наличие прописанных прав на удаление для данного пользователя в поле rigths
 
@@ -80,6 +85,13 @@ BEGIN
         RETURN;
     END IF;
 */
+    IF v_doc.tyyp IS NOT NULL AND coalesce(v_doc.tyyp, '') = 'HOOLDEKODU_ISIKU_OSA' AND v_doc.liik = 0
+    THEN
+        l_tasu_id = (SELECT doc_tasu_id FROM docs.arvtasu WHERE doc_arv_id = doc_id AND status < 3 LIMIT 1);
+
+    END IF;
+
+
     -- Логгирование удаленного документа
     -- docs.arv
 
@@ -163,7 +175,6 @@ BEGIN
         );
     END IF;
 
-
     DELETE FROM docs.arv1 WHERE parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id);
     DELETE FROM docs.arv WHERE parentid = v_doc.id;
     --@todo констрейн на удаление
@@ -192,6 +203,22 @@ BEGIN
     IF exists(SELECT id FROM docs.leping1 WHERE parentid IN (SELECT unnest(v_doc.docs_ids)))
     THEN
         UPDATE docs.doc SET docs_ids = array_remove(docs_ids, doc_id) WHERE id IN (SELECT unnest(v_doc.docs_ids));
+    END IF;
+
+    IF v_doc.tyyp IS NOT NULL AND coalesce(v_doc.tyyp, '') = 'HOOLDEKODU_ISIKU_OSA' AND v_doc.liik = 0
+    THEN
+        -- удалим списание пенсии
+        raise notice 'l_tasu_id %', l_tasu_id;
+
+        IF l_tasu_id IS NOT NULL
+        THEN
+            PERFORM docs.sp_delete_journal(user_id, l_tasu_id);
+
+            -- расчет сальдо
+            PERFORM hooldekodu.sp_calc_hoojaak(v_doc.asutusId);
+
+        END IF;
+
     END IF;
 
 

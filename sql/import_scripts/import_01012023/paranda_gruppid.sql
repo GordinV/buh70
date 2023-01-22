@@ -120,7 +120,7 @@ $BODY$
         SELECT parandata_gruppid(l.id)
         FROM libs.library l
         WHERE l.library IN ('LAPSE_GRUPP')
-         and id = 268845
+         and id = 269284
           AND l.status < 3
 ;
 --DROP FUNCTION IF EXISTS parandata_gruppid(INTEGER);

@@ -58,7 +58,7 @@ BEGIN
                  INNER JOIN rekv ON rekv.id = pa.rekvid AND (rekv.parentid < 999 OR in_id IS NOT NULL)
                  INNER JOIN library o ON o.id = pa.osakondid
         WHERE l.library = 'AMET'
-          AND l.rekvid NOT IN (3, 63, 131)
+          AND l.rekvid IN (3, 63, 131)
           AND (in_id IS NULL OR l.id = in_id)
             LIMIT ALL
         LOOP

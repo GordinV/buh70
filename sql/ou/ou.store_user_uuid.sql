@@ -6,12 +6,13 @@ $BODY$
 
 
 DECLARE
-    l_uuid     TEXT    = data ->> 'uuid';
-    l_userId   INTEGER = data ->> 'userId';
-    l_asutusId INTEGER = data ->> 'asutusId';
+    l_uuid      TEXT    = data ->> 'uuid';
+    l_userId    INTEGER = data ->> 'userId';
+    l_asutusId  INTEGER = data ->> 'asutusId';
+    l_user_data JSONB   = data ->> 'user_data';
 
-    v_asutus   RECORD;
-    l_id       INTEGER;
+    v_asutus    RECORD;
+    l_id        INTEGER;
 
 BEGIN
     -- удаляем "старые сессии"
@@ -22,8 +23,8 @@ BEGIN
 
     SELECT * INTO v_asutus FROM ou.rekv WHERE id = l_asutusId LIMIT 1;
 
-    INSERT INTO ou.session_uuid (userid, asutusid, uuid)
-    VALUES (l_userId, l_asutusId, l_uuid) RETURNING id
+    INSERT INTO ou.session_uuid (userid, asutusid, uuid, user_data)
+    VALUES (l_userId, l_asutusId, l_uuid, l_user_data) RETURNING id
         INTO l_id;
     RETURN l_id;
 

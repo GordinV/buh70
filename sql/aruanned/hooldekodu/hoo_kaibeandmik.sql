@@ -35,6 +35,12 @@ WITH rekv_ids AS (
               WHEN l_kond = 1 THEN TRUE
               ELSE l_rekvid = rekv_id END
 ),
+     lepingud AS (
+         SELECT isikid
+         FROM hooldekodu.hooleping
+         WHERE rekvid IN (SELECT rekv_id FROM rekv_ids)
+           AND (loppkpv IS NULL OR loppkpv >= l_kpv1)
+     ),
      algsaldo AS (
          SELECT isik_id,
                 sum(pension_85) AS pension_85,
@@ -54,6 +60,7 @@ WITH rekv_ids AS (
                           ELSE 0 END                                                         AS muud
                FROM hooldekodu.hootehingud ht
                WHERE rekvid IN (SELECT rekv_id FROM rekv_ids)
+                 and ht.isikid in (select isikid from lepingud)
                  AND kpv < l_kpv1
                  AND status < 3) tmp
          GROUP BY isik_id),
@@ -75,6 +82,7 @@ WITH rekv_ids AS (
                           ELSE 0 END                                                         AS muud
                FROM hooldekodu.hootehingud ht
                WHERE rekvid IN (SELECT rekv_id FROM rekv_ids)
+                 and ht.isikid in (select isikid from lepingud)
                  AND kpv >= l_kpv1
                  AND kpv <= l_kpv2
                  AND ht.tyyp = 'TULUD'
@@ -98,6 +106,7 @@ WITH rekv_ids AS (
                                ELSE 0 END                                                         AS muud
                FROM hooldekodu.hootehingud ht
                WHERE rekvid IN (SELECT rekv_id FROM rekv_ids)
+                 and ht.isikid in (select isikid from lepingud)
                  AND kpv >= l_kpv1
                  AND kpv <= l_kpv2
                  AND ht.tyyp = 'KULUD'

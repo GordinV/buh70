@@ -283,8 +283,8 @@ execution: 5 s 606 ms , 124, 137795039.74,137795039.74
 explain
 
 SELECT sum(deebet) over(), sum(kreedit) over(), *
-FROM eelarve.saldoandmik_aruanne('2022-10-31' :: DATE, 112 :: INTEGER, 0 ::integer)
-WHERE konto like '155920%'
+FROM eelarve.saldoandmik_aruanne('2023-01-01' :: DATE, 64 :: INTEGER, 1 ::integer)
+WHERE konto like '203630%'
 --and rahavoog = '01'
 --GROUP BY konto, tp
 */

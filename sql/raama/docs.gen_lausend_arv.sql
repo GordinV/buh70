@@ -8,27 +8,32 @@ CREATE OR REPLACE FUNCTION docs.gen_lausend_arv(IN tnId INTEGER, IN userId INTEG
 AS
 $BODY$
 DECLARE
-    lcDbKonto      VARCHAR(20);
-    lcKrKonto      VARCHAR(20);
-    lcDbTp         VARCHAR(20);
-    lcKrTp         VARCHAR(20);
-    lcKood5        VARCHAR(20);
-    v_arv          RECORD;
-    v_dokprop      RECORD;
-    v_arv1         RECORD;
-    lcAllikas      VARCHAR(20);
-    lcSelg         TEXT;
-    v_selg         RECORD;
-    l_json         TEXT;
-    l_json_details JSONB          = '[]';
-    l_row_count    INTEGER        = 0;
-    new_history    JSONB;
-    userName       TEXT;
-    a_docs_ids     INTEGER[];
-    rows_fetched   INTEGER        = 0;
-    v_journal      RECORD;
-    l_allika_summa NUMERIC(12, 2) = 0;
-    kas_alg_saldo  BOOLEAN        = FALSE;
+    lcDbKonto           VARCHAR(20);
+    lcKrKonto           VARCHAR(20);
+    lcDbTp              VARCHAR(20);
+    lcKrTp              VARCHAR(20);
+    lcKood5             VARCHAR(20);
+    v_arv               RECORD;
+    v_dokprop           RECORD;
+    v_arv1              RECORD;
+    lcAllikas           VARCHAR(20);
+    lcSelg              TEXT;
+    v_selg              RECORD;
+    l_json              TEXT;
+    l_json_details      JSONB          = '[]';
+    l_json_tasu         TEXT;
+    l_json_details_tasu JSONB          = '[]';
+
+    l_row_count         INTEGER        = 0;
+    new_history         JSONB;
+    userName            TEXT;
+    a_docs_ids          INTEGER[];
+    rows_fetched        INTEGER        = 0;
+    v_journal           RECORD;
+    l_allika_summa      NUMERIC(12, 2) = 0;
+    kas_alg_saldo       BOOLEAN        = FALSE;
+    l_asutus_id         INTEGER;
+    l_parrallel_id      INTEGER; -- ид параллельной проводки
 BEGIN
 
     -- select dok data
@@ -36,11 +41,13 @@ BEGIN
            a.*,
            CASE WHEN empty(coalesce(asutus.tp, '')) THEN '800599' ELSE asutus.tp END AS asutus_tp,
            a.properties ->> 'tyyp'                                                   AS tyyp,
-           coalesce((a.properties ->> 'ettemaksu_period')::INTEGER, 0)               AS kas_tulu_arve
+           coalesce((a.properties ->> 'ettemaksu_period')::INTEGER, 0)               AS kas_tulu_arve,
+           l.parentid                                                                AS laps_id
     INTO v_arv
     FROM docs.arv a
              INNER JOIN docs.doc d ON d.id = a.parentId
              INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid
+             LEFT OUTER JOIN lapsed.liidestamine l ON l.docid = d.id
     WHERE d.id = tnId;
 
     GET DIAGNOSTICS rows_fetched = ROW_COUNT;
@@ -119,9 +126,10 @@ BEGIN
         lcDbKonto = '103000';
         lcDbTp = CASE
                      WHEN left(lcDbKonto, 6) IN ('601000', '103701', '203010', '203000') THEN '014001'
+                     WHEN coalesce(v_arv.laps_id, 0) > 0 THEN
+                         coalesce(v_arv.asutus_tp, '800699')
                      ELSE coalesce(v_arv.asutus_tp, '800599') END;
 
-        lcDbTp = '800699';
         -- koostame selg rea
         lcSelg = trim(v_dokprop.selg);
         IF (SELECT count(id)
@@ -142,6 +150,7 @@ BEGIN
             IF kas_alg_saldo
             THEN
                 lcSelg = 'Oppetasu algsaldo 2023';
+                v_arv.kpv = '2023-01-01'::DATE;
             END IF;
         ELSE
             lcSelg = trim(v_dokprop.selg);
@@ -150,12 +159,35 @@ BEGIN
         v_arv.asutus_tp = coalesce(v_arv.asutus_tp, '800599');
         lcKrTp = coalesce(v_arv.asutus_tp, '800599');
 
+        -- род. плата
+        IF v_arv.laps_id IS NOT NULL
+        THEN
+            -- меняем на ответственного ( Kalle 18/01/2023
+            l_asutus_id = (SELECT asutusid
+                           FROM lapsed.vanem_arveldus v
+                                    INNER JOIN libs.asutus a ON a.id = v.asutusid
+                           WHERE v.parentid = v_arv.laps_id
+                             AND v.rekvid = v_arv.rekvid
+                           ORDER BY coalesce(v.arveldus, FALSE) DESC
+                                   , v.id DESC
+                           LIMIT 1);
+
+            IF l_asutus_id IS NULL
+            THEN
+                l_asutus_id = v_arv.asutusid;
+            END IF;
+            v_arv.asutusid = l_asutus_id;
+
+        END IF;
+
         -- majandusamet
         -- подмена символов 16.01.2023 В. Бешекерскас
         IF (v_arv.rekvid = 130 OR v_arv.rekvid = 29) AND NOT empty(v_arv.lisa)
         THEN
-            lcSelg = lcSelg || ', ' || ltrim(rtrim(regexp_replace(v_arv.lisa, '[/"]', '.','g')));
+            lcSelg = lcSelg || ', ' || ltrim(rtrim(regexp_replace(v_arv.lisa, '[/"]', '.', 'g')));
         END IF;
+        lcSelg = regexp_replace(lcSelg, '[/"]', '.', 'g');
+
 
         SELECT v_arv.journalid,
                'JOURNAL'                         AS doc_type_id,
@@ -167,6 +199,7 @@ BEGIN
         INTO v_journal;
 
         l_json = row_to_json(v_journal);
+
 
 --    l_json_details = '';
         IF v_arv.tyyp IS NOT NULL AND v_arv.tyyp = 'HOOLDEKODU_ISIKU_OSA' AND v_arv.liik = 0
@@ -247,9 +280,8 @@ BEGIN
 
                     l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
 
-                    -- доп. строка для модуля дома попечения
-                    IF v_arv1.allikas_85::NUMERIC <> 0 AND
-                       v_arv1.umardamine = 0
+                    -- доп. строка для модуля дома попечения, оплата
+                    IF v_arv1.allikas_85::NUMERIC <> 0
                     THEN
                         -- если деньги по источнику 85
                         l_allika_summa = v_arv1.allikas_85;
@@ -270,11 +302,10 @@ BEGIN
                                coalesce(v_arv1.kood4, '')      AS kood4,
                                coalesce(v_arv1.kood5, '')      AS kood5
                         INTO v_journal;
-                        l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
+                        l_json_details_tasu = coalesce(l_json_details_tasu, '{}'::JSONB) || to_jsonb(v_journal);
 
                     END IF;
-                    IF v_arv1.allikas_vara <> 0 AND
-                       v_arv1.umardamine = 0
+                    IF v_arv1.allikas_vara <> 0
                     THEN
                         -- если деньги по источнику vara
                         l_allika_summa = v_arv1.allikas_vara;
@@ -295,11 +326,10 @@ BEGIN
                                coalesce(v_arv1.kood4, '')      AS kood4,
                                coalesce(v_arv1.kood5, '')      AS kood5
                         INTO v_journal;
-                        l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
+                        l_json_details_tasu = coalesce(l_json_details_tasu, '{}'::JSONB) || to_jsonb(v_journal);
 
                     END IF;
-                    IF v_arv1.allikas_vara <> 0 AND
-                       v_arv1.umardamine::NUMERIC = 0
+                    IF v_arv1.allikas_vara <> 0
                     THEN
                         -- если деньги по источнику muud
                         l_allika_summa = v_arv1.allikas_muud;
@@ -320,7 +350,7 @@ BEGIN
                                coalesce(v_arv1.kood4, '')      AS kood4,
                                coalesce(v_arv1.kood5, '')      AS kood5
                         INTO v_journal;
-                        l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
+                        l_json_details_tasu = coalesce(l_json_details_tasu, '{}'::JSONB) || to_jsonb(v_journal);
 
                     END IF;
                     l_row_count = l_row_count + 1;
@@ -518,7 +548,6 @@ BEGIN
 
         IF l_row_count > 0
         THEN
-            RAISE NOTICE 'l_json %',l_json;
             result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_arv.rekvId);
         ELSE
             error_message = 'Puudub kehtiv read';
@@ -527,6 +556,40 @@ BEGIN
 
         IF result IS NOT NULL AND result > 0
         THEN
+
+            RAISE NOTICE 'l_json_details_tasu %',l_json_details_tasu;
+            -- оплата счета холдекоду
+            IF (jsonb_array_length(l_json_details_tasu)) > 0 AND v_arv.tyyp = 'HOOLDEKODU_ISIKU_OSA' AND v_arv.liik = 0
+            THEN
+                SELECT 0,
+                       'JOURNAL'          AS doc_type_id,
+                       v_arv.kpv,
+                       lcSelg             AS selg,
+                       v_arv.muud,
+                       v_arv.Asutusid,
+                       v_arv.number::TEXT AS dok
+                INTO v_journal;
+
+                l_json_tasu = row_to_json(v_journal);
+
+
+                l_json_tasu = ('{"id": 0,"data":' ||
+                               trim(TRAILING FROM l_json_tasu, '}') :: TEXT || ',"gridData":' ||
+                               l_json_details_tasu::TEXT ||
+                               '}}');
+
+                /* salvestan lausend */
+                l_parrallel_id = docs.sp_salvesta_journal(l_json_tasu :: JSON, userId, v_arv.rekvId);
+
+                IF coalesce(l_parrallel_id, 0) > 0
+                THEN
+                    -- оплата
+                    PERFORM docs.sp_tasu_arv(
+                                    l_parrallel_id, v_arv.parentid, userId);
+                END IF;
+
+            END IF;
+
             /*
             ajalugu
             */
@@ -584,9 +647,14 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_arv(INTEGER, INTEGER) TO dbpeakasutaj
 /*
 
 
-SELECT error_code, result, error_message from docs.gen_lausend_arv(2486725, 5175)
+SELECT  docs.gen_lausend_arv(4478825, 5175)
 
-select parentid, * from docs.arv where number = 'HKOP264'
+select parentid , * from docs.arv where number = 'HKOP16775'
+
+
+select * from
+
+select parentid, * from docs.arv where number = 'HKOP16775'
 
 select array(select distinct unnest(array[1,1,2]))
 
@@ -604,4 +672,7 @@ select * from libs.library where library = 'DOK'
 
 select * from docs.arv
 
+select * ffrom docs.arv1 where
 */
+
+

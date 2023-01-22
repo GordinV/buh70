@@ -113,5 +113,28 @@ module.exports = {
         params: '',
         alias: 'curKontod'
     },
+    getLog: {
+        command: `SELECT ROW_NUMBER() OVER ()              AS id,
+                         (ajalugu ->> 'user')::VARCHAR(20) AS kasutaja,
+                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
+                                  '')::VARCHAR(20)         AS koostatud,
+                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
+                                  '')::VARCHAR(20)         AS muudatud,
+                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
+                                  '')::VARCHAR(20)         AS prinditud,
+                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
+                                  '')::VARCHAR(20)         AS kustutatud
+
+                  FROM (SELECT $2                                                      AS user_id,
+                               jsonb_array_elements(jsonb_agg(jsonb_build_object('updated', propertis ->> 'updated', 'user',
+                                                            ltrim(rtrim(u.kasutaja))))) AS ajalugu
+                        FROM ou.logs l
+                                 LEFT OUTER JOIN ou.userid u ON u.id = l.user_id
+                        WHERE propertis ->> 'table' = 'library'
+                          AND doc_id = $1) qry
+        `,
+        type: "sql",
+        alias: "getLogs"
+    },
 
 };

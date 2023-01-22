@@ -25,7 +25,7 @@ BEGIN
            j.asutusid,
            ''                                                 AS dok,
            l_kpv                                              AS kpv,
-           j.selg,
+           regexp_replace(j.selg, '[/"]', '.', 'g')           AS selg,
            j.muud
     INTO v_journal
     FROM docs.doc d
