@@ -89,9 +89,11 @@ app.use(session({
     store: new pgSession({
         pg: pg,                                  // Use global pg-module
         conString:   config.pg.session_connection,
+
         tableName: 'session'               // Use another table-name than the default "session" one
     }),
     secret: config.session.secret,
+    resave : true,
     cookie: {maxAge: config.session.cookie.maxAge}
 
 }));
