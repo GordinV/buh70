@@ -16,7 +16,7 @@ exports.post = async (req, res) => {
 
     let user = await require('./../middleware/userData')(req, userUuid);  // check for userid in session
 
-    if (!user) {
+    if (!user || !userUuid) {
         //send result and wait for reload
         return res.send({status: 401, result: 'Logout'}); //пока нет новых данных
 

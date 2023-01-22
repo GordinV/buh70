@@ -94,6 +94,7 @@ app.use(session({
     }),
     secret: config.session.secret,
     resave : true,
+    saveUninitialized: true,
     cookie: {maxAge: config.session.cookie.maxAge}
 
 }));
