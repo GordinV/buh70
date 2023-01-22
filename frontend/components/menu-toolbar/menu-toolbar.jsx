@@ -68,7 +68,7 @@ class MenuToolBar extends React.Component {
         let userAccessList = [];
 
 
-        if (('userAccessList' in DocContext.userData)) {
+        if (('userAccessList' in DocContext.userData && DocContext.userData.userAccessList && DocContext.userData.userAccessList.length)) {
             userAccessList = DocContext.userData.userAccessList.map((row) => {
                 let rowObject = JSON.parse(row);
                 return {id: rowObject.id, kood: '', name: rowObject.nimetus};
