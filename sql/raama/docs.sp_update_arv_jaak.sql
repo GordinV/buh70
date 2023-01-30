@@ -18,17 +18,17 @@ BEGIN
     SELECT coalesce(arv.summa, 0) :: NUMERIC,
            arv.jaak,
            d.status
-           INTO l_arv_summa, l_jaak, l_status
+    INTO l_arv_summa, l_jaak, l_status
     FROM docs.arv arv
              INNER JOIN docs.doc d ON d.id = arv.parentid
     WHERE d.id = l_arv_Id;
 
-    SELECT coalesce(sum(summa) FILTER ( WHERE arvtasu.kpv <= current_date ), 0),
+    SELECT coalesce(sum(summa) FILTER ( WHERE arvtasu.kpv <= current_date OR pankkassa = 3), 0),
            coalesce(max(arvtasu.kpv), NULL :: DATE)
-           INTO l_tasu_summa, l_kpv
+    INTO l_tasu_summa, l_kpv
     FROM docs.arvtasu arvtasu
     WHERE arvtasu.doc_arv_Id = l_arv_Id
-      and summa <> 0
+      AND summa <> 0
       AND arvtasu.status < 3;
 
     IF l_arv_summa < 0
@@ -68,7 +68,7 @@ GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_update_arv_jaak(INTEGER) TO dbpeakasutaja;
 /*
 
-SELECT docs.sp_update_arv_jaak(id, date())
+SELECT docs.sp_update_arv_jaak(4495326)
 FROM docs.arv
 
 */

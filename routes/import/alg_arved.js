@@ -2,7 +2,7 @@ import_algsaldo();
 
 async function import_algsaldo() {
     const fs = require('fs');
-    const path = 'c:/temp/csv/Saldo0951002Deebet.csv';
+    const path = 'c:/temp/csv/alg_db_0911038.csv';
     const util = require('util');
 
 // Convert fs.readFile into Promise version of same

@@ -12,8 +12,8 @@ const Avans = {
         {
             sql: `SELECT d.id,
                          d.docs_ids,
-                         (to_char(d.created, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                         AS created,
-                         (to_char(d.lastupdate, 'DD.MM.YYYY HH:MM:SS')) :: TEXT                      AS lastupdate,
+                         (to_char(d.created, 'DD.MM.YYYY HH:MI:SS')) :: TEXT                         AS created,
+                         (to_char(d.lastupdate, 'DD.MM.YYYY HH:MI:SS')) :: TEXT                      AS lastupdate,
                          d.bpm,
                          trim(l.nimetus)                                                             AS doc,
                          trim(l.kood)                                                                AS doc_type_id,
@@ -273,17 +273,17 @@ const Avans = {
     getLog: {
         command: `SELECT ROW_NUMBER() OVER ()                                                                        AS id,
                          (ajalugu ->> 'user')::VARCHAR(20)                                                           AS kasutaja,
-                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS koostatud,
-                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS muudatud,
-                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS prinditud,
-                         coalesce(to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'), '')::VARCHAR(20) AS
+                         coalesce(to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'), '')::VARCHAR(20) AS
                                                                                                                         email,
-                         coalesce(to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS earve,
-                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MM.SS'),
+                         coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)                                                                   AS kustutatud
                   FROM (
                            SELECT jsonb_array_elements(history) AS ajalugu, d.id, d.rekvid

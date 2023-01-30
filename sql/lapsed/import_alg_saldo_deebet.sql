@@ -33,7 +33,7 @@ DECLARE
     v_nom           RECORD;
     l_count         INTEGER = 0;
     l_user_id       INTEGER;
-    l_kpv           DATE    = '2023-01-01';
+    l_kpv           DATE    = '2022-12-31';
 
 BEGIN
 
@@ -56,17 +56,39 @@ BEGIN
                            AND l.staatus <> 3
                          LIMIT 1);
 
+            -- ищем учреждение
+            l_rekvid = (SELECT id
+                        FROM ou.rekv
+                        WHERE nimetus LIKE ltrim(rtrim(json_record.yksus)) + '%'
+                        LIMIT 1);
 
-            -- ищем котр-агента
+
             l_asutus_id = (
                 SELECT a.id
                 FROM libs.asutus a
-                         LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = a.id AND v.staatus <> 3
+                         INNER JOIN lapsed.vanemad v ON v.asutusid = a.id AND v.staatus <> 3
+                         INNER JOIN lapsed.laps l ON l.id = v.parentid
+                         INNER JOIN lapsed.vanem_arveldus va ON va.asutusid = a.id AND va.parentid = l.id AND arveldus
                 WHERE a.regkood = json_record.vanem_ik
-                  AND v.parentid = l_laps_id
+                  AND l.id = l_laps_id
+                  AND va.rekvid = l_rekvid
                 ORDER BY v.id DESC
                 LIMIT 1
             );
+
+            IF l_asutus_id IS NULL
+            THEN
+                -- ищем котр-агента, если он не ответственный
+                l_asutus_id = (
+                    SELECT a.id
+                    FROM libs.asutus a
+                             LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = a.id AND v.staatus <> 3
+                    WHERE a.regkood = json_record.vanem_ik
+                      AND v.parentid = l_laps_id
+                    ORDER BY v.id DESC
+                    LIMIT 1
+                );
+            END IF;
 
             IF (l_asutus_id IS NULL OR l_laps_id IS NULL)
             THEN
@@ -75,11 +97,6 @@ BEGIN
 
             RAISE NOTICE 'l_laps_id %, l_rekvid %, json_record.yksus %', l_laps_id, l_rekvid, json_record.yksus;
 
-            -- ищем учреждение
-            l_rekvid = (SELECT id
-                        FROM ou.rekv
-                        WHERE nimetus LIKE ltrim(rtrim(json_record.yksus)) + '%'
-                        LIMIT 1);
 
             l_user_id = (SELECT id
                          FROM ou.userid
@@ -166,7 +183,7 @@ BEGIN
                                                                v_nom.properties ->> 'konto'              AS konto,
                                                                v_nom.properties ->> 'tunnus',
                                                                v_nom.properties ->> 'projekt',
-                                                               v_nom.properties ->> 'tunnus'              AS tunnus,
+                                                               v_nom.properties ->> 'tunnus'             AS tunnus,
                                                                'Oppetasu algsaldo 2023'                  AS muud,
                                                                v_details.grupp                           AS yksus,
                                                                l_tp                                      AS tp) row) :: JSONB;

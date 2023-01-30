@@ -1,11 +1,11 @@
 DROP FUNCTION IF EXISTS docs.create_new_mk(INTEGER, JSONB);
 
 CREATE OR REPLACE FUNCTION docs.create_new_mk(IN user_id INTEGER,
-                                               IN params JSONB,
-                                               OUT error_code INTEGER,
-                                               OUT result INTEGER,
-                                               OUT doc_type_id TEXT,
-                                               OUT error_message TEXT)
+                                              IN params JSONB,
+                                              OUT error_code INTEGER,
+                                              OUT result INTEGER,
+                                              OUT doc_type_id TEXT,
+                                              OUT error_message TEXT)
     RETURNS RECORD AS
 $BODY$
 DECLARE
@@ -30,8 +30,10 @@ DECLARE
     l_pank_id    INTEGER;
     l_laps_id    INTEGER        = CASE
                                       WHEN l_arv_id IS NOT NULL THEN (SELECT parentid
-                                                                      FROM lapsed.liidestamine
+                                                                      FROM lapsed.liidestamine l
+                                                                               INNER JOIN docs.doc d ON d.id = l.docid
                                                                       WHERE docid = l_arv_id
+                                                                        AND d.rekvid in (select userid.rekvid from ou.userid where id = user_id)
                                                                       LIMIT 1)
                                       ELSE left(right(l_viitenr::TEXT, 7), 6)::INTEGER END;
     l_isikukood  TEXT;
@@ -170,17 +172,17 @@ BEGIN
                 LIMIT 1);
 
     -- если род. плата , проверим на возраст и поищем подходящую номенклатуру
-    raise notice 'start check for age l_nom_id %',l_nom_id;
+    RAISE NOTICE 'start check for age l_nom_id %',l_nom_id;
     IF l_laps_id IS NOT NULL AND exists(SELECT id FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3)
     THEN
         -- проверка на возраст
         l_isikukood = (SELECT isikukood FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3 LIMIT 1);
-        raise notice 'l_isikukood %',l_isikukood;
+        RAISE NOTICE 'l_isikukood %',l_isikukood;
         IF extract('year' FROM
                    age(make_date(date_part('year', l_maksepaev)::INTEGER, 01, 01), palk.get_sunnipaev(l_isikukood))) >=
            27
         THEN
-            raise notice '> 27 ';
+            RAISE NOTICE '> 27 ';
 
             -- Начиная с 27 лет, ставим 09500.
             IF exists((SELECT id

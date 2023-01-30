@@ -64,6 +64,19 @@ BEGIN
         RETURN 0;
     END IF;
 
+    IF doc_muud = 'Oppetasu algsaldo 2023' AND doc_kpv = '2022-12-31' AND user_id NOT IN (
+        SELECT id
+        FROM ou.userid
+        WHERE kasutaja IN ('temp', 'vlad')
+    )
+    THEN
+
+        RAISE NOTICE 'Vale kasutaja %', user;
+        RETURN 0;
+
+    END IF;
+
+
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
@@ -334,7 +347,7 @@ BEGIN
         THEN
             l_yksus = (SELECT properties ->> 'yksus'
                        FROM lapsed.lapse_kaart
-                       WHERE parentid = 4141
+                       WHERE parentid = doc_lapsid
                          AND staatus < 3
                        ORDER BY (properties ->> 'lopp_kpv')::DATE DESC
                        LIMIT 1);

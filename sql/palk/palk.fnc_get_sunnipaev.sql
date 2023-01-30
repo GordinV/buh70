@@ -35,6 +35,11 @@ END;$BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
 
+GRANT EXECUTE ON FUNCTION palk.fnc_get_sunnipaev( INTEGER, JSON ) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION palk.fnc_get_sunnipaev( INTEGER, JSON ) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION palk.fnc_get_sunnipaev( INTEGER, JSON ) TO dbvaatleja;
+
+
 /*
 SELECT *
 FROM palk.fnc_get_sunnipaev(1, '{

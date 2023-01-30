@@ -32,7 +32,8 @@ CREATE OR REPLACE FUNCTION palk.tsd_lisa_1(l_kpv1 DATE, l_kpv2 DATE, l_rekvid IN
         lisa_sm_alus       NUMERIC(14, 2),
         sm_kokku           NUMERIC(14, 2),
         lisa_sm_arvestatud NUMERIC(14, 2),
-        alus_sm_arvestatud NUMERIC(14, 2)
+        alus_sm_arvestatud NUMERIC(14, 2),
+        kas_pensionar      INTEGER
 
     )
 AS
@@ -74,11 +75,12 @@ SELECT isikukood,
        coalesce(min_sots_alus, 0)::NUMERIC(14, 2),
        coalesce(eri_tm, 0)::NUMERIC(14, 2),
        coalesce(eri_sm, 0)::NUMERIC(14, 2),
-       arv_min_sots * sm_arv  AS lisa_min_sots,
-       min_sots_alus * sm_arv AS lisa_sm_alus,
-       qrySMKokku.sm_kokku    AS sm_kokku,
+       arv_min_sots * sm_arv                                                 AS lisa_min_sots,
+       min_sots_alus * sm_arv                                                AS lisa_sm_alus,
+       qrySMKokku.sm_kokku                                                   AS sm_kokku,
        lisa_sm_arvestatud,
-       alus_sm_arvestatud
+       alus_sm_arvestatud,
+       CASE WHEN palk.kas_soodustus_mvt(isikukood, l_kpv1) THEN 1 ELSE 0 END AS kas_pensionar
 FROM (
          WITH qryKoormus AS (
              SELECT a.regkood :: VARCHAR(20)                   AS isikukood,
@@ -291,12 +293,12 @@ GRANT EXECUTE ON FUNCTION palk.tsd_lisa_1( DATE, DATE, INTEGER, INTEGER ) TO dbk
 
 /*
 
-SELECT sum(sm_kokku) as sm, sum(sm_kokku_1) as sm_1
+SELECT sum(qry.sm_kokku) as sm, sum(sm_kokku_1) as sm_1
 FROM
 (
-select sum(tm) over() as sm_kokku, * from
-palk.tsd_lisa_1('2022-09-01', '2022-09-30', 81, 1 :: INTEGER)
-where isikukood in ('46408083713','37502100015')
+select * from
+palk.tsd_lisa_1('2023-01-01', '2023-01-31', 63, 0 :: INTEGER)
+--where isikukood in ('46408083713','37502100015')
 
 
 ) qry

@@ -8,15 +8,21 @@ module.exports = {
         return axios.get(url)
             .then(res => res)
             .catch(error => {
-                console.error('fetchData status, error', error.response.status , error);
+                console.error('fetchData status, error', error.response.status, error);
                 return ({result: 'error', status: error.response.status});
             })
     },
     fetchDataPost(url, params) {
         return axios.post(url, params)
+            .then(res => {
+                return res;
+            })
             .catch(error => {
                 console.error('fetchData error', error);
-                return ({result: 'error', status: error.response && error.response.status ? error.response.status: 500});
+                return ({
+                    result: 'error',
+                    status: error.response && error.response.status ? error.response.status : 500
+                });
             })
     },
     fetchDataPut(url, params) {

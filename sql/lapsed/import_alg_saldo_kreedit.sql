@@ -63,8 +63,28 @@ BEGIN
                            AND l.staatus <> 3
                          LIMIT 1);
 
+            -- ищем учреждение
+            l_rekvid = (SELECT id
+                        FROM ou.rekv
+                        WHERE nimetus LIKE ltrim(rtrim(json_record.yksus)) + '%'
+                        LIMIT 1);
 
-            -- ищем котр-агента
+
+            l_asutus_id = (
+                SELECT a.id
+                FROM libs.asutus a
+                         INNER JOIN lapsed.vanemad v ON v.asutusid = a.id AND v.staatus <> 3
+                         INNER JOIN lapsed.laps l ON l.id = v.parentid
+                         INNER JOIN lapsed.vanem_arveldus va ON va.asutusid = a.id AND va.parentid = l.id AND arveldus
+                WHERE a.regkood = json_record.vanem_ik
+                  AND l.id = l_laps_id
+                  AND va.rekvid = l_rekvid
+                ORDER BY v.id DESC
+                LIMIT 1
+            );
+
+
+/*            -- ищем котр-агента
             l_asutus_id = (
                 SELECT a.id
                 FROM libs.asutus a
@@ -74,17 +94,11 @@ BEGIN
                 ORDER BY v.id ASC
                 LIMIT 1
             );
-
+*/
             IF l_asutus_id IS NULL
             THEN
                 RAISE EXCEPTION 'Maksja ei leidtud, l_asutus_id % json_record.vanem_ik %', l_asutus_id, json_record.vanem_ik;
             END IF;
-
-            -- ищем учреждение
-            l_rekvid = (SELECT id
-                        FROM ou.rekv
-                        WHERE nimetus LIKE ltrim(rtrim(json_record.yksus)) + '%'
-                        LIMIT 1);
 
             l_viitenr = lapsed.get_viitenumber(l_rekvid, l_laps_id);
 
@@ -115,7 +129,7 @@ BEGIN
                          INNER JOIN lapsed.liidestamine l ON l.docid = m.parentid
                 WHERE m1.asutusid = l_asutus_id
                   AND l.parentid = l_laps_id
-                  AND m.kpv = '2023-01-01'
+                  AND m.kpv = '2022-12-31'
                   AND coalesce(m.muud, '') = 'Oppetasu algsaldo 2023'
                 LIMIT 1
             );
@@ -216,8 +230,8 @@ BEGIN
                    2                        AS opt,
                    l_viitenr                AS viitenr,
                    NULL                     AS number,
-                   '2023-01-01'             AS maksepaev,
-                   '2023-01-01'             AS kpv,
+                   '2022-12-31'             AS maksepaev,
+                   '2022-12-31'             AS kpv,
                    'Oppetasu algsaldo 2023' AS selg,
                    NULL                     AS muud,
                    json_mk1                 AS "gridData",

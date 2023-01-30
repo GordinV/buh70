@@ -57,6 +57,6 @@ GRANT EXECUTE ON FUNCTION palk.kas_soodustus_mvt(TEXT, DATE) TO dbvaatleja;
 
 
 /*
-SELECT palk.kas_soodustus_mvt('48912303712 ', current_date)::INTEGER -- -> 0
+SELECT palk.kas_soodustus_mvt('44701313718', '2023-01-01')::INTEGER -- -> 0
 SELECT palk.kas_soodustus_mvt('37303023721', current_date)::INTEGER -- -> 0
 */

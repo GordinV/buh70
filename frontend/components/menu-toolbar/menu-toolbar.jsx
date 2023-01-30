@@ -261,6 +261,11 @@ class MenuToolBar extends React.Component {
 
             fetchData.fetchDataPost(localUrl, params).then(response => {
                 DocContext.setUserData = Object.assign(DocContext.userData, response.config.data);
+                // проверим данные
+                if (!response.data || !response.data.asutusId || rekvId !== response.data.asutusId) {
+                    // что-то пошло не так
+                    this.btnLoginClick();
+                }
 
                 // redirect to main
                 this.props.history.push({

@@ -79,8 +79,9 @@ exports.post = async (req, res) => {
             let message = `changeAsutus, userId-> ${JSON.stringify(userData.id)}, userData.rekvid-> ${userData.rekvid}, rekvId-> ${rekvId}`;
             log(message, 'info');
 
+            console.log('returning Ok',userData.rekvid );
             //send result and wait for reload
-            res.send({result: 'Ok'}); //пока нет новых данных
+            res.send({result: 'Ok', asutusId: userData.rekvid}); //пока нет новых данных
         }
     })
 };

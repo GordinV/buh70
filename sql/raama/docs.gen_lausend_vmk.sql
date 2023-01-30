@@ -27,13 +27,15 @@ DECLARE
     l_dok        TEXT;
     v_arv        RECORD;
     l_asutuse_tp TEXT    = '800599';
+    l_laps_id    INTEGER;
+    l_asutus_id  INTEGER;
 BEGIN
 
     SELECT d.docs_ids,
            k.*,
            aa.tp,
            aa.konto
-           INTO v_vmk
+    INTO v_vmk
     FROM docs.mk k
              INNER JOIN docs.doc d ON d.id = k.parentId
              LEFT OUTER JOIN ou.aa aa ON aa.id = k.aaid
@@ -57,7 +59,8 @@ BEGIN
         RETURN;
     END IF;
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = v_vmk.rekvId
       AND u.id = userId;
@@ -77,13 +80,13 @@ BEGIN
     SELECT library.kood,
            dokprop.*,
            details.*
-           INTO v_dokprop
+    INTO v_dokprop
     FROM libs.dokprop dokprop
              INNER JOIN libs.library library ON library.id = dokprop.parentid
             ,
          jsonb_to_record(dokprop.details) AS details(konto TEXT)
     WHERE dokprop.id = v_vmk.doklausid
-        LIMIT 1;
+    LIMIT 1;
 
 
     IF NOT Found OR v_dokprop.registr = 0
@@ -93,6 +96,9 @@ BEGIN
         error_message = 'Konteerimine pole vajalik';
         RETURN;
     END IF;
+
+
+    l_laps_id = (SELECT parentid FROM lapsed.liidestamine l WHERE docid = v_vmk.parentid LIMIT 1);
 
     -- koostame selg rea
     lcSelg = trim(v_dokprop.selg);
@@ -128,14 +134,36 @@ BEGIN
 
     FOR v_vmk1 IN
         SELECT k1.*,
-               'EUR' :: VARCHAR AS valuuta,
-               1 :: NUMERIC     AS kuurs,
-               CASE WHEN k1.tp IS NULL OR empty(k1.tp) THEN coalesce(a.tp, '800599') ELSE k1.tp END as a_tp
+               'EUR' :: VARCHAR                                                                     AS valuuta,
+               1 :: NUMERIC                                                                         AS kuurs,
+               CASE WHEN k1.tp IS NULL OR empty(k1.tp) THEN coalesce(a.tp, '800599') ELSE k1.tp END AS a_tp
         FROM docs.mk1 k1
                  INNER JOIN libs.asutus a ON a.id = k1.asutusid
         WHERE k1.parentid = v_vmk.Id
         LOOP
             l_jaak = v_vmk1.summa;
+
+            l_asutus_id = v_vmk1.asutusid;
+
+            IF l_laps_id IS NOT NULL
+            THEN
+
+/*                В проводках по поступлению денег в Selgitus-е хорошо бы поставить так:
+                    - при tegevusala 09110 поставить Lasteaiatasu
+                    - при tegevusala 08102 и 09510, 09500 поставить Huvikoolitasu
+                    - при tegevusala 08202 (это в Ругодиве) поставить Huviringitasu
+*/
+                lcSelg = CASE
+                             WHEN v_vmk1.kood1 = '09110' THEN 'Lasteaiatasu'
+                             WHEN v_vmk1.kood1 = '08102' THEN 'Huvikoolitasu'
+                             WHEN v_vmk1.kood1 = '09510' THEN 'Huvikoolitasu'
+                             WHEN v_vmk1.kood1 = '09500' THEN 'Huvikoolitasu'
+                             WHEN v_vmk1.kood1 = '08202' THEN 'Huviringitasu'
+                             ELSE lcSelg END;
+
+            END IF;
+
+
             SELECT coalesce(v_vmk1.journalid, 0)        AS id,
                    'JOURNAL'                            AS doc_type_id,
                    coalesce(v_vmk.maksepaev, v_vmk.kpv) AS kpv,
@@ -143,7 +171,7 @@ BEGIN
                    v_vmk.muud                           AS muud,
                    l_dok                                AS dok,
                    v_vmk1.asutusid                      AS asutusid
-                   INTO v_journal;
+            INTO v_journal;
 
             -- avans
             IF v_vmk.dokid IS NOT NULL AND exists(SELECT id FROM docs.avans1 WHERE parentid = v_vmk.dokid)
@@ -158,22 +186,22 @@ BEGIN
 
             IF (v_vmk.arvid IS NULL OR v_vmk.arvid = 0)
             THEN
-                SELECT 0                             AS id,
-                       coalesce(v_vmk1.summa, 0)     AS summa,
-                       'EUR'                         AS valuuta,
-                       1                             AS kuurs,
-                       ltrim(rtrim(v_vmk1.konto))    AS deebet,
+                SELECT 0                               AS id,
+                       coalesce(v_vmk1.summa, 0)       AS summa,
+                       'EUR'                           AS valuuta,
+                       1                               AS kuurs,
+                       ltrim(rtrim(v_vmk1.konto))      AS deebet,
                        coalesce(v_vmk1.a_tp, '800599') AS lisa_d,
-                       ltrim(rtrim(v_vmk.konto))     AS kreedit,
-                       coalesce(v_vmk.tp, '800401')  AS lisa_k,
-                       coalesce(v_vmk1.tunnus, '')   AS tunnus,
-                       coalesce(v_vmk1.proj, '')     AS proj,
-                       coalesce(v_vmk1.kood1, '')    AS kood1,
-                       coalesce(v_vmk1.kood2, '')    AS kood2,
-                       coalesce(v_vmk1.kood3, '')    AS kood3,
-                       coalesce(v_vmk1.kood4, '')    AS kood4,
-                       coalesce(v_vmk1.kood5, '')    AS kood5
-                       INTO v_journal1;
+                       ltrim(rtrim(v_vmk.konto))       AS kreedit,
+                       coalesce(v_vmk.tp, '800401')    AS lisa_k,
+                       coalesce(v_vmk1.tunnus, '')     AS tunnus,
+                       coalesce(v_vmk1.proj, '')       AS proj,
+                       coalesce(v_vmk1.kood1, '')      AS kood1,
+                       coalesce(v_vmk1.kood2, '')      AS kood2,
+                       coalesce(v_vmk1.kood3, '')      AS kood3,
+                       coalesce(v_vmk1.kood4, '')      AS kood4,
+                       coalesce(v_vmk1.kood5, '')      AS kood5
+                INTO v_journal1;
 
                 json_mk1 = coalesce(json_mk1, '[]'::JSONB) || to_jsonb(v_journal1);
 
@@ -184,7 +212,7 @@ BEGIN
                            'EUR'                                                     AS valuuta,
                            1                                                         AS kuurs,
                            ltrim(rtrim(v_vmk1.konto))                                AS deebet,
-                           coalesce(v_vmk1.a_tp, '800599')                             AS lisa_d,
+                           coalesce(v_vmk1.a_tp, '800599')                           AS lisa_d,
                            ltrim(rtrim(v_vmk.konto))                                 AS kreedit,
                            coalesce(v_vmk.tp, '800401')                              AS lisa_k,
                            coalesce(a1.tunnus, '')                                   AS tunnus,
@@ -197,7 +225,7 @@ BEGIN
                     FROM docs.arv1 a1
                              INNER JOIN docs.arv a ON a.id = a1.parentid
                     WHERE a.parentid = v_vmk.arvid
-                        ORDER BY a1.id
+                    ORDER BY a1.id
                     LOOP
                         l_jaak = l_jaak - v_journal1.summa;
                         json_mk1 = coalesce(json_mk1, '[]'::JSONB) || to_jsonb(v_journal1);
@@ -208,22 +236,22 @@ BEGIN
                     END LOOP;
                 IF l_jaak > 0
                 THEN
-                    SELECT 0                             AS id,
-                           l_jaak                        AS summa,
-                           'EUR'                         AS valuuta,
-                           1                             AS kuurs,
-                           v_vmk1.konto                  AS deebet,
+                    SELECT 0                               AS id,
+                           l_jaak                          AS summa,
+                           'EUR'                           AS valuuta,
+                           1                               AS kuurs,
+                           v_vmk1.konto                    AS deebet,
                            coalesce(v_vmk1.a_tp, '800599') AS lisa_d,
-                           v_vmk.konto                   AS kreedit,
-                           coalesce(v_vmk.tp, '800401')  AS lisa_k,
-                           coalesce(v_vmk1.tunnus, '')   AS tunnus,
-                           coalesce(v_vmk1.proj, '')     AS proj,
-                           coalesce(v_vmk1.kood1, '')    AS kood1,
-                           coalesce(v_vmk1.kood2, '')    AS kood2,
-                           coalesce(v_vmk1.kood3, '')    AS kood3,
-                           coalesce(v_vmk1.kood4, '')    AS kood4,
-                           coalesce(v_vmk1.kood5, '')    AS kood5
-                           INTO v_journal1;
+                           v_vmk.konto                     AS kreedit,
+                           coalesce(v_vmk.tp, '800401')    AS lisa_k,
+                           coalesce(v_vmk1.tunnus, '')     AS tunnus,
+                           coalesce(v_vmk1.proj, '')       AS proj,
+                           coalesce(v_vmk1.kood1, '')      AS kood1,
+                           coalesce(v_vmk1.kood2, '')      AS kood2,
+                           coalesce(v_vmk1.kood3, '')      AS kood3,
+                           coalesce(v_vmk1.kood4, '')      AS kood4,
+                           coalesce(v_vmk1.kood5, '')      AS kood5
+                    INTO v_journal1;
 
                     json_mk1 = coalesce(json_mk1, '[]'::JSONB) || to_jsonb(v_journal1);
 
@@ -242,9 +270,10 @@ BEGIN
                        v_journal.dok,
                        v_journal.asutusid,
                        json_mk1 AS "gridData"
-                       INTO v_journal;
+                INTO v_journal;
 
-                SELECT row_to_json(row) INTO l_json
+                SELECT row_to_json(row)
+                INTO l_json
                 FROM (SELECT coalesce(v_journal.id, 0) AS id,
                              v_journal                 AS data) row;
 
@@ -261,7 +290,8 @@ BEGIN
                 ajalugu
                 */
 
-                SELECT row_to_json(row) INTO new_history
+                SELECT row_to_json(row)
+                INTO new_history
                 FROM (SELECT now()    AS updated,
                              userName AS user) row;
 
@@ -275,7 +305,8 @@ BEGIN
                 WHERE id = v_vmk.parentId;
 
                 -- lausend
-                SELECT docs_ids INTO a_docs_ids
+                SELECT docs_ids
+                INTO a_docs_ids
                 FROM docs.doc
                 WHERE id = result;
 
