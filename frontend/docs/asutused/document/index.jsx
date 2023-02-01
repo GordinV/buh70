@@ -70,7 +70,7 @@ class Asutused extends React.PureComponent {
                         <InputText title="Om.vorm"
                                    name='omvorm'
                                    ref="input-omvorm"
-                                   readOnly={!isEditeMode}
+                                   readOnly={true}
                                    value={self.docData.omvorm || ''}
                                    onChange={self.handleInputChange}/>
 {/*

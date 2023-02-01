@@ -11,6 +11,7 @@ const
     InputNumber = require('../../../components/input-number/input-number.jsx'),
     CheckBox = require('../../../components/input-checkbox/input-checkbox.jsx'),
     styles = require('./nomenclature-styles');
+const Loading = require('./../../../components/loading/index.jsx');
 
 const {LIBRARIES, TAXIES, UHIK, TYYP, ALGORITMID} = require('./../../../../config/constants').NOMENCLATURE;
 
@@ -45,8 +46,10 @@ class Nomenclature extends React.PureComponent {
      * @returns {*}
      */
     renderer(self) {
-        if (!self.docData) {
-            return null;
+        if (!self || !self.docData || !self.state.loadedLibs)  {
+            return (<div style={styles.doc}>
+                <Loading label={'Laadimine...'}/>
+            </div>);
         }
 
         let isEditeMode = self.state.edited;

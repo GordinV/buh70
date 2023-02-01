@@ -82,7 +82,7 @@ WITH rekv_ids AS (
                            INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
                       -- если есть в таблице нач. сальдо, то используем дату из ьаблицы сальдо
                            LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
-                  WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) >= make_date(year(l_kpv1), 01, 01)
+                  WHERE docs.get_alg_saldo_kpv(a.kpv, j.kpv, make_date(year(l_kpv1), 01, 01), l_kpv2) >= make_date(year(l_kpv1), 01, 01)
                     AND docs.get_alg_saldo_kpv(a.kpv, j.kpv, l_kpv1, l_kpv2) < l_kpv1
                     AND d.status < 3
                     AND d.rekvid IN (SELECT rekv_id FROM rekv_ids)
@@ -252,7 +252,7 @@ select  sum(alg_saldo) over() as alg,
         sum(deebet) over() as db,
         sum(kreedit) over() as kr,
 *
-FROM docs.kaibeandmik('2022-01-01', '2022-12-31':: DATE, 63,1,'%','{"konto":"","tunnus":""}'::jsonb)
+FROM docs.kaibeandmik('2022-02-01', '2022-02-28':: DATE, 119,1,'%','{"konto":"","tunnus":""}'::jsonb)
 
 select sum(summa) over(), * from cur_journal where kpv >= '2022-01-01' and (deebet like '8%' or kreedit like '8%')
 

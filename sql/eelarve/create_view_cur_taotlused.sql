@@ -27,7 +27,8 @@ SELECT d.id,
        Rekv.nimetus,
        Userid.ametnik,
        t1.selg                              AS rea_selg,
-       t.muud                               AS dok_mark
+       t.muud                               AS dok_mark,
+       t1.eelarveid as eelarveid
 FROM docs.doc d
          INNER JOIN eelarve.taotlus t ON d.id = t.parentid
          INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid

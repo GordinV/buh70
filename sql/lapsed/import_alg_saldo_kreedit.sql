@@ -83,18 +83,20 @@ BEGIN
                 LIMIT 1
             );
 
+            IF (l_asutus_id IS NULL)
+            THEN
+                -- ищем котр-агента
+                l_asutus_id = (
+                    SELECT a.id
+                    FROM libs.asutus a
+                             INNER JOIN lapsed.vanemad v ON v.asutusid = a.id AND v.staatus <> 3
+                    WHERE a.regkood = json_record.vanem_ik
+                      AND v.parentid = l_laps_id
+                    ORDER BY v.id ASC
+                    LIMIT 1
+                );
+            END IF;
 
-/*            -- ищем котр-агента
-            l_asutus_id = (
-                SELECT a.id
-                FROM libs.asutus a
-                         LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = a.id AND v.staatus <> 3
-                WHERE a.regkood = json_record.vanem_ik
-                  AND v.parentid = l_laps_id
-                ORDER BY v.id ASC
-                LIMIT 1
-            );
-*/
             IF l_asutus_id IS NULL
             THEN
                 RAISE EXCEPTION 'Maksja ei leidtud, l_asutus_id % json_record.vanem_ik %', l_asutus_id, json_record.vanem_ik;

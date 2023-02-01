@@ -214,7 +214,7 @@ BEGIN
                 SELECT v_po.isikid    AS asutusid,
                        (SELECT id
                         FROM libs.nomenklatuur n
-                        WHERE dok = 'MK'
+                        WHERE dok in ('MK','VMK')
                           AND n.rekvid = v_po.rekvid
                           AND n.status < 3
                         ORDER BY id DESC
@@ -422,9 +422,9 @@ GRANT EXECUTE ON FUNCTION palk.gen_palk_dok(user_id INTEGER, params JSON) TO dbp
 
 /*
 
-select palk.gen_palk_dok(70, '{"isik_ids":[27042],
+select palk.gen_palk_dok(31, '{"isik_ids":[25531],
 		"osakond_ids":null,
-		"lib_ids":null,"kpv":20220930}'::json)
+		"lib_ids":null,"kpv":20230131}'::json)
 
 
 

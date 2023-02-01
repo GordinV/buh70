@@ -250,6 +250,7 @@ BEGIN
                     summa    = json_record.summa,
                     aa       = json_record.aa,
                     pank     = json_record.pank,
+                    konto   = json_record.konto,
                     tunnus   = json_record.tunnus,
                     proj     = json_record.proj,
                     kood1    = coalesce(json_record.kood1, v_nom.tegev),
@@ -348,6 +349,7 @@ BEGIN
             l_yksus = (SELECT properties ->> 'yksus'
                        FROM lapsed.lapse_kaart
                        WHERE parentid = doc_lapsid
+                         AND rekvid = user_rekvid
                          AND staatus < 3
                        ORDER BY (properties ->> 'lopp_kpv')::DATE DESC
                        LIMIT 1);

@@ -9,24 +9,25 @@ DECLARE
     v_mk    RECORD;
     l_yksus TEXT;
 BEGIN
-    /*    FOR v_mk IN
-            SELECT mk.parentid, l.parentid AS isik_id
-            FROM docs.mk mk
-                     INNER JOIN lapsed.liidestamine l ON l.docid = mk.parentid
-            LOOP
-                l_yksus = (SELECT properties ->> 'yksus'
-                           FROM lapsed.lapse_kaart
-                           WHERE parentid = v_mk.isik_id
-                             AND staatus < 3
-                           ORDER BY (properties ->> 'lopp_kpv')::DATE DESC
-                           LIMIT 1);
-
-                UPDATE docs.mk
-                SET properties = coalesce(properties, '{}'::JSONB) || jsonb_build_object('yksus', l_yksus)
-                WHERE parentid = v_mk.parentid;
-            END LOOP;
-    */
     FOR v_mk IN
+        SELECT mk.parentid, l.parentid AS isik_id, rekvid
+        FROM docs.mk mk
+                 INNER JOIN lapsed.liidestamine l ON l.docid = mk.parentid
+        LOOP
+            l_yksus = (SELECT properties ->> 'yksus'
+                       FROM lapsed.lapse_kaart
+                       WHERE parentid = v_mk.isik_id
+                         AND rekvid = v_mk.rekvid
+                         AND staatus < 3
+                       ORDER BY (properties ->> 'lopp_kpv')::DATE DESC
+                       LIMIT 1);
+
+            UPDATE docs.mk
+            SET properties = coalesce(properties, '{}'::JSONB) || jsonb_build_object('yksus', l_yksus)
+            WHERE parentid = v_mk.parentid;
+        END LOOP;
+
+/*    FOR v_mk IN
         SELECT coalesce(n.properties ->> 'tunnus', '')   AS tunnus,
                coalesce(n.properties ->> 'tegev', '')    AS tegev,
                coalesce(n.properties ->> 'konto', '')    AS konto,
@@ -47,7 +48,7 @@ BEGIN
             WHERE id = v_mk.mk1_id;
         END LOOP;
 
-    RETURN 1;
+*/ RETURN 1;
 END;
 
 $$;

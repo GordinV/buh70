@@ -77,7 +77,7 @@ exports.get = async (req, res) => {
             let soodustuseKogus = 0;
             let soodustuseSumma = 0;
 
-            console.log('row', JSON.stringify(row));
+//            console.log('row', JSON.stringify(row));
 
             if (Number(row.soodustus) > 0) {
                 // расчет суммы льготы
@@ -86,14 +86,19 @@ exports.get = async (req, res) => {
 //                if (soodustus == 25 || soodustus == 100 || soodustus == 26) {
                 kulastused = Number(row.kulastused) === 0 ? 1 : (row.kovid) / row.too_paevad;
 
-                soodustuseKogus = ((soodustus / 100) * kulastused).toFixed(4);
-                soodustuseSumma = (soodustuseKogus * row.kogus * row.hind * -1).toFixed(2);
+
+                if (Number(row.kulastused) === 0) {
+                    // нет ковида, преобразований не надо
+                    soodustuseKogus = 1;
+                    soodustuseSumma = row.hind * -1;
+                } else {
+                    soodustuseKogus = ((soodustus / 100) * kulastused).toFixed(4);
+                    soodustuseSumma = (soodustuseKogus * row.kogus * row.hind * -1).toFixed(2);
+                }
 
 
                 row.kogus = row.kogus ? row.kogus : soodustuseKogus;
                 row.summa = (Number(row.hind) * Number(row.kogus)).toFixed(2);
-
-//                }
 
                 //Вычисляется количество (часть от единицы)
                 // Пропорция посещений * скидку и результат округлить до 4 знаков после запятой
@@ -136,8 +141,14 @@ exports.get = async (req, res) => {
 
                 kulastused = Number(row.kulastused) === 0 ? 1 : (row.kovid) / row.too_paevad;
 
-                soodustuseKogus = ((soodustus / 100) * kulastused).toFixed(4);
-                soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
+                if (Number(row.kulastused) === 0) {
+                    // нет ковида, преобразований не надо
+                    soodustuseKogus = ((soodustus / 100) ).toFixed(4);
+                    soodustuseSumma = (Number(row.soodustus)  * -1).toFixed(2);
+                } else {
+                    soodustuseKogus = ((soodustus / 100) * kulastused).toFixed(4);
+                    soodustuseSumma = (soodustuseKogus * row.hind * -1).toFixed(2);
+                }
             }
 
 
