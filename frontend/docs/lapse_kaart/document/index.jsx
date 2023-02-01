@@ -116,26 +116,32 @@ class LapseKaart extends React.PureComponent {
         // берем только услуги для группы, добавляяем цену и ед.измерения и сортируем
         try {
             if (yksus) {
-                if (DocContext.libs && DocContext.libs[yksus.id] && DocContext.libs[yksus.id].length) {
+                if (DocContext.libs && yksus.id && DocContext.libs[yksus.id] && DocContext.libs[yksus.id].length) {
                     // берем из кеша
                     nomData = DocContext.libs[yksus.id];
                     // добавим пустую строку
-                    if (!(nomData.find(({id}) => id === 0))) {
+                    if (!nomData || nomData.length || !(nomData.find(({id}) => {
+                        return id === 0;
+                    }))) {
                         nomData.unshift({id: 0, kood: '', nimetus: '', hind: 0, kogus: 0, kas_inf3: false});
                     }
                 } else {
                     nomData = (yksus.teenused && self.libs['nomenclature'].length > 0 ? yksus.teenused : []).map(nom => {
-                        const row = self.libs['nomenclature'].find(lib => lib.id === Number(nom.nomid));
+                        const row = self.libs['nomenclature'].find(lib => {
+                            return lib.id ? lib.id === Number(nom.nomid) : false
+                        });
 
-                        if (row) {
+                        if (row && row.id) {
                             const teenuseNimetus = row.nimetus ? `${row.nimetus} (hind: ${Number(nom.hind).toFixed(2)}) ` : '';
                             return {...row, nimetus: teenuseNimetus, id: Number(nom.nomid)}
+                        } else {
+                            return {id: Number(nom.nomid), kood: 'Ei kehti', nimetus: 'Ei kehti', hind: 0, kogus: 0, kas_inf3: false};
                         }
                     }).sort((a, b) => {
                         return a.kood.localeCompare(b.kood)
                     });
 
-                    if (nomData.length) {
+                    if (nomData.length && yksus.id) {
                         // сохраним в кеше
                         DocContext.libs[yksus.id] = nomData;
 
