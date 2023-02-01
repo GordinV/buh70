@@ -44,6 +44,10 @@ class MenuToolBar extends React.Component {
 
     }
 
+    componentDidMount() {
+        console.log('did', this.state.rekvId, DocContext.getAsutusId)
+    }
+
     render() {
         let isEditMode = this.props.edited,
             toolbarParams = {
@@ -92,10 +96,11 @@ class MenuToolBar extends React.Component {
         }
 
         if (!DocContext.getUuid) {
-            // потерял Uuid, на выход
+            // потерял Uuid, на выход, или запрос ИД не соответвует стейту
             this.btnLoginClick()
         }
 
+        console.log('menu render', this.state.rekvId);
         return (
             <div style={style['container']}>
                 <p style={style['pageName']}> {DocContext.pageName ? DocContext.pageName : 'Laste register'} </p>

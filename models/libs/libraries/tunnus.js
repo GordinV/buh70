@@ -27,6 +27,7 @@ module.exports = {
                      (l.properties::JSONB ->> 'valid')::DATE AS valid
               FROM libs.library l
               WHERE l.library = 'TUNNUS'
+                AND l.rekvid IN (SELECT rekvid FROM ou.userid WHERE id = $2::INTEGER)
                 AND l.id = $1`,
         sqlAsNew: `select  
                     $1::integer as id , 
@@ -138,9 +139,10 @@ module.exports = {
                          coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)         AS kustutatud
 
-                  FROM (SELECT $2                                                      AS user_id,
-                               jsonb_array_elements(jsonb_agg(jsonb_build_object('updated', propertis ->> 'updated', 'user',
-                                                            ltrim(rtrim(u.kasutaja))))) AS ajalugu
+                  FROM (SELECT $2                                                               AS user_id,
+                               jsonb_array_elements(
+                                       jsonb_agg(jsonb_build_object('updated', propertis ->> 'updated', 'user',
+                                                                    ltrim(rtrim(u.kasutaja))))) AS ajalugu
                         FROM ou.logs l
                                  LEFT OUTER JOIN ou.userid u ON u.id = l.user_id
                         WHERE propertis ->> 'table' = 'library'

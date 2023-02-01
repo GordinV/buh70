@@ -398,7 +398,7 @@ BEGIN
 */
                         ELSIF (v_arv.tyyp IS NOT NULL AND v_arv.tyyp = 'HOOLDEKODU_SUGULUANE_OSA')
                         THEN
-                            lcDbKonto = '10300020';
+                            lcDbKonto = '10300019';
                             lcKrKonto = v_arv1.konto;
                             v_arv1.kood5 = '3224';
                             v_arv1.kood2 = '80';

@@ -198,7 +198,7 @@ class DocumentTemplate extends React.Component {
      */
     btnEditClick() {
         //в режим редактирования
-        this.setState({edited: true, reloadData: true,warning: '', warningType: ''});
+        this.setState({edited: true, reloadData: true, warning: '', warningType: ''});
         //бекап данных
         this.makeBackup();
 
@@ -720,6 +720,18 @@ class DocumentTemplate extends React.Component {
                                 });
                             }
 
+                            // проверим на соответствии данным учреждению
+                            let data = response.data.data[0];
+                            if (data && data.rekvid && data.rekvid !== DocContext.getAsutusId) {
+                                //что не так
+                                this.setState({
+                                    warning: `Tekkis viga: vale asutus`,
+                                    warningType: 'error'
+                                }, () => {
+                                    document.location = `/login`;
+                                })
+
+                            }
 
                             //should return data and called for reload
                             this.setState({reloadData: false, warning: '', warningType: null});

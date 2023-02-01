@@ -15,7 +15,15 @@ module.exports = {
     fetchDataPost(url, params) {
         return axios.post(url, params)
             .then(res => {
-                return res;
+                if (res.status == 401) {
+                    console.error('res.status = 401', res);
+                    return ({
+                        result: 'error, vale kasutaja ID',
+                        status: res.status
+                    });
+                } else {
+                    return res;
+                }
             })
             .catch(error => {
                 console.error('fetchData error', error);

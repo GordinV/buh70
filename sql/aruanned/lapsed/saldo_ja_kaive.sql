@@ -82,25 +82,6 @@ SELECT count(*) OVER (PARTITION BY laps_id)                        AS id,
            COALESCE(tagastused, 0))::NUMERIC(14, 2)                AS jaak,
        report.rekvid
 FROM (
-/*         WITH alg_saldo AS (
-             -- alg_saldo
-             SELECT kpv_start                                                     AS period,
-                    COALESCE(alg_saldo.yksus, '')::TEXT                           AS yksus,
-                    COALESCE(alg_saldo.jaak::NUMERIC(14, 2), 0) :: NUMERIC(14, 2) AS alg_saldo,
-                    alg_saldo.rekv_id::INTEGER                                    AS rekvid,
-                    l.id                                                          AS laps_id
-             FROM lapsed.laps l
-                      LEFT OUTER JOIN (SELECT COALESCE(jaak, 0)                AS jaak,
-                                              laps_id,
-                                              rekv_id,
-                                              yksus,
-                                              lapsed.get_last_maksja(docs_ids) AS asutus_id
-                                       FROM lapsed.lapse_saldod(kpv_start::DATE, NULL::INTEGER, l_rekvid, 1)) alg_saldo
-                                      ON alg_saldo.laps_id = l.id
-             WHERE alg_saldo.rekv_id IN (SELECT rekv_id FROM rekv_ids)
-         ),
-
-*/
          WITH alg_saldo AS (
              SELECT laps_id, rekv_id AS rekvid, sum(summa) AS alg_saldo, yksus
              FROM (
@@ -113,7 +94,6 @@ FROM (
                              D.rekvid                                                 AS rekv_id
                       FROM docs.doc D
                                INNER JOIN docs.Mk mk ON mk.parentid = D.id
-                               INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
                                INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                                INNER JOIN lapsed.laps l ON l.id = ld.parentid
                       WHERE D.status <> 3
