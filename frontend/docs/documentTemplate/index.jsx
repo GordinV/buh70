@@ -797,7 +797,7 @@ class DocumentTemplate extends React.Component {
 
             let hasSqlWhere = (lib in this.state.libParams);
 
-            new Date().toISOString().slice(0, 10); //ajutiselt
+            let kpv = new Date().toISOString().slice(0, 10); //ajutiselt
 
             let params = Object.assign({
                 module: this.props.module,

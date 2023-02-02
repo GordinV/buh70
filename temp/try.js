@@ -1,4 +1,3 @@
-let newTeatised = 1;
-let value =  newTeatised ? `Teatised (${newTeatised})`: `Teatised`;
+let time = new Date().toISOString().slice(0, 10);
 
-console.log('value',value);
+console.log(time);

@@ -116,6 +116,7 @@ class LapseKaart extends React.PureComponent {
         // берем только услуги для группы, добавляяем цену и ед.измерения и сортируем
         try {
             if (yksus) {
+                console.log('yksus', yksus);
                 if (DocContext.libs && yksus.id && DocContext.libs[yksus.id] && DocContext.libs[yksus.id].length) {
                     // берем из кеша
                     nomData = DocContext.libs[yksus.id];
@@ -127,6 +128,7 @@ class LapseKaart extends React.PureComponent {
                     }
                 } else {
                     nomData = (yksus.teenused && self.libs['nomenclature'].length > 0 ? yksus.teenused : []).map(nom => {
+                        console.log('nom', nom);
                         const row = self.libs['nomenclature'].find(lib => {
                             return lib.id ? lib.id === Number(nom.nomid) : false
                         });

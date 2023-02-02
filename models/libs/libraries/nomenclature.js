@@ -34,7 +34,7 @@ module.exports = {
             ''::varchar(20) as  kood,
             0::integer as rekvid,
             ''::varchar(254) as nimetus,
-            ''::varchar(20) as dok,
+            'ARV'::varchar(20) as dok,
             ''::varchar(20) as uhik,
             0::numeric as hind,
             0::numeric as ulehind,

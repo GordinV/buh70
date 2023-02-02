@@ -54,6 +54,8 @@ class Nomenclature extends React.PureComponent {
 
         let isEditeMode = self.state.edited;
 
+        console.log('dok lib',self.libs['document']);
+
         return (
             <div>
                 <div style={styles.doc}>
