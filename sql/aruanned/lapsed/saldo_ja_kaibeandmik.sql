@@ -3,7 +3,8 @@ DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaibeandmik(l_rekvid INTEGER,
                                                        kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
-                                                       kpv_end DATE DEFAULT current_date)
+                                                       kpv_end DATE DEFAULT current_date,
+                                                       l_isik_id INTEGER DEFAULT NULL)
     RETURNS TABLE (
         id         BIGINT,
         period     DATE,
@@ -57,6 +58,7 @@ FROM (
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                         AND mk.opt = 2
+                        AND (l_isik_id IS NULL OR l.parentid = l_isik_id)
                       UNION ALL
                       -- tagastused
                       SELECT 0              AS db
@@ -74,6 +76,7 @@ FROM (
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                         AND mk.opt = 1
+                        AND (l_isik_id IS NULL OR l.parentid = l_isik_id)
                       UNION ALL
                       SELECT a.summa     AS db,
                              0           AS kr,
@@ -88,6 +91,8 @@ FROM (
                         AND a.liik = 0 -- только счета исходящие
                         AND a.kpv < kpv_start
                         AND d.status < 3
+                        AND (l_isik_id IS NULL OR ld.parentid = l_isik_id)
+
 -- mahakandmine
                       UNION ALL
                       SELECT -1 * a.summa AS db,
@@ -97,14 +102,14 @@ FROM (
                       FROM docs.arvtasu a
                                INNER JOIN lapsed.liidestamine l ON l.docid = a.doc_arv_id
                                INNER JOIN docs.arv arv ON a.doc_arv_id = arv.parentid
-                      WHERE a.pankkassa = 3 -- только проводки
+                      WHERE a.pankkassa = 3                           -- только проводки
                         AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
                         AND a.kpv < kpv_start
                         AND arv.liik = 0
                         AND a.status <> 3
                         AND (arv.properties ->> 'tyyp' IS NULL OR
                              arv.properties ->> 'tyyp' <> 'ETTEMAKS') -- уберем предоплаты
-
+                        AND (l_isik_id IS NULL OR l.parentid = l_isik_id)
                   ) alg_saldo
              GROUP BY rekv_id, isik_id
          ),
@@ -122,6 +127,8 @@ FROM (
                     AND a.kpv <= kpv_end
                     AND (arv.properties ->> 'tyyp' IS NULL OR
                          arv.properties ->> 'tyyp' <> 'ETTEMAKS') -- уберем предоплаты
+                    AND (l_isik_id IS NULL OR l.parentid = l_isik_id)
+
                   GROUP BY a.rekvid, l.parentid
               ),
 
@@ -138,6 +145,8 @@ FROM (
                     AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                     AND mk.maksepaev >= kpv_start
                     AND mk.maksepaev <= kpv_end
+                    AND (l_isik_id IS NULL OR ld.parentid = l_isik_id)
+
                   GROUP BY d.rekvid, ld.parentid
               ),
 
@@ -166,6 +175,8 @@ FROM (
                     AND a.liik = 0 -- только счета исходящие
                     AND a.kpv >= kpv_start
                     AND a.kpv <= kpv_end
+                    AND (l_isik_id IS NULL OR ld.parentid = l_isik_id)
+
                   GROUP BY ld.parentid
                           , D.rekvid
               ),
@@ -278,13 +289,13 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE) TO arvestaja;
-GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER) TO arvestaja;
+GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER) TO dbvaatleja;
 
 /*
 explain
 select *
-FROM lapsed.saldo_ja_kaibeandmik(69, '2022-10-01', '2022-10-31') qry
+FROM lapsed.saldo_ja_kaibeandmik(69, '2023-01-01', '2023-01-31',7128) qry
 */

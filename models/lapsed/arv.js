@@ -18,7 +18,8 @@ const Arv = {
 
     select: [
         {
-            sql: `SELECT d.id,
+            sql: `with doc as (
+                    SELECT d.id,
                          $2 :: INTEGER                                             AS userid,
                          to_char(created, 'DD.MM.YYYY HH:MM:SS') :: TEXT           AS created,
                          to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT        AS lastupdate,
@@ -62,19 +63,15 @@ const Arv = {
                          lapsed.get_viitenumber(d.rekvid, l.id)                    AS viitenr,
                          a.properties ->> 'tyyp'::TEXT                             AS tyyp,
                          a.jaak::NUMERIC(12, 2)                                    AS jaak,
-                         to_char(docs.get_arve_period($1) - 1, 'YYYY-MM-DD')::TEXT AS period_alg,
-                         to_char(docs.get_arve_period($1) - 1, 'DD.MM.YYYY')::TEXT AS period_alg_print,
-                         coalesce(kaibed.laekumised, 0)::NUMERIC(12, 2)            AS laekumised,
-                         coalesce(saldod.jaak, 0)::NUMERIC(12, 2)                  AS alg_jaak,
-                         coalesce(kaibed.jaak, 0)::NUMERIC(12, 2)                  AS lopp_jaak,
-                         coalesce(kaibed.ettemaksud, 0)::NUMERIC(12, 2)            AS ettemaksud,
+                         to_char(make_date(year(a.kpv), month(a.kpv), 1)::DATE, 'DD.MM.YYYY') AS period_alg_print,
+--                         to_char(docs.get_arve_period($1) - 1, 'YYYY-MM-DD')::TEXT AS period_alg,
+--                         to_char(docs.get_arve_period($1) - 1, 'DD.MM.YYYY')::TEXT AS period_alg_print,                         
                          lpad(month(a.kpv)::TEXT, 2, '0') || '.' ||
                          year(a.kpv)::TEXT                                         AS laekumise_period,
-                         coalesce(kaibed.jaak, 0)::NUMERIC(12, 2)                  AS tasumisele,
-                         coalesce(kaibed.tagastused, 0)                            AS tagastused,
                          a.properties ->> 'ettemaksu_period'                       AS ettemaksu_period,
                          va.properties ->> 'pank'                                  AS pank,
-                         va.properties ->> 'iban'                                  AS iban
+                         va.properties ->> 'iban'                                  AS iban,
+                         a.kpv                                                     AS doc_kpv                         
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
@@ -85,35 +82,26 @@ const Arv = {
                            LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
                            LEFT OUTER JOIN lapsed.laps l
                                            ON l.id = ll.parentid
-
                            LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = asutus.id
                            LEFT OUTER JOIN lapsed.vanem_arveldus va
                                            ON va.asutusid = a.asutusid AND va.rekvid = d.rekvid AND va.parentid = l.id
                                                AND v.parentid = l.id
 
-                           LEFT OUTER JOIN (
-                      SELECT laps_id,
-                             rekv_id,
-                             sum(jaak) AS jaak
-                      FROM lapsed.lapse_saldod(docs.get_arve_period($1),
-                                               (SELECT parentid FROM lapsed.liidestamine WHERE docid = $1))
-                      GROUP BY laps_id, rekv_id
-                  ) saldod
-                                           ON saldod.laps_id = l.id AND saldod.rekv_id = d.rekvid
-                           LEFT OUTER JOIN (
-                      SELECT laps_id,
-                             rekv_id,
-                             sum(laekumised + arv_tasud) AS laekumised,
-                             sum(ettemaksud)             AS ettemaksud,
-                             sum(tagastused)             AS tagastused,
-                             sum(jaak)                   AS jaak
-                      FROM lapsed.lapse_saldod(gomonth(docs.get_arve_period($1), 1),
-                                               (SELECT parentid FROM lapsed.liidestamine WHERE docid = $1))
-                      GROUP BY laps_id, rekv_id
-                  ) kaibed
-                                           ON kaibed.laps_id = l.id AND kaibed.rekv_id = d.rekvid
-
-                  WHERE D.id = $1`,
+                  WHERE D.id = $1)
+                SELECT doc.*,
+                       coalesce(saldod.laekumised, 0)::NUMERIC(12, 2) AS laekumised,
+                       coalesce(saldod.jaak, 0)::NUMERIC(12, 2)       AS alg_jaak,
+                       coalesce(saldod.jaak, 0)::NUMERIC(12, 2)       AS lopp_jaak,
+                       coalesce(saldod.ettemaksud, 0)::NUMERIC(12, 2) AS ettemaksud,
+                       coalesce(saldod.jaak, 0)::NUMERIC(12, 2)       AS tasumisele
+                FROM doc,
+                     (
+                         SELECT (lopp_db - lopp_kr)                           AS jaak,
+                                kr                                            AS laekumised,
+                                CASE WHEN lopp_kr > 0 THEN lopp_kr ELSE 0 END AS ettemaksud
+                         FROM doc,
+                              lapsed.saldo_ja_kaibeandmik(doc.rekvid, make_date(year(doc.doc_kpv), month(doc.doc_kpv), 1)::DATE,
+                                                          gomonth(make_date(year(doc.doc_kpv), month(doc.doc_kpv), 01), 1)::date - 1, doc.lapsid)) saldod`,
             sqlAsNew: `SELECT $1 :: INTEGER                                                          AS id,
                               $2 :: INTEGER                                                          AS userid,
                               to_char(now(), 'YYYY-MM-DD HH:MM:SS') :: TEXT                          AS created,
@@ -172,23 +160,23 @@ const Arv = {
         },
         {
             sql: `SELECT a1.id,
-                         $2 :: INTEGER                                                                   AS userid,
+                         $2 :: INTEGER                                                                AS userid,
                          a1.nomid,
                          a1.kogus,
                          a1.hind::NUMERIC(12, 4),
                          a1.kbm::NUMERIC(12, 2),
                          a1.kbmta::NUMERIC(12, 2),
                          a1.summa::NUMERIC(12, 2),
-                         trim(n.kood) :: VARCHAR(20)                                                     AS kood,
-                         trim(n.nimetus) :: VARCHAR(254)                                                 AS nimetus,
-                         n.uhik :: TEXT                                                                  AS uhik,
+                         trim(n.kood) :: VARCHAR(20)                                                  AS kood,
+                         trim(n.nimetus) :: VARCHAR(254)                                              AS nimetus,
+                         n.uhik :: TEXT                                                               AS uhik,
                          coalesce((SELECT vahe
                                    FROM lapsed.cur_lapse_taabel
                                    WHERE id = (a1.properties ->> 'lapse_taabel_id')::INTEGER
                                    LIMIT 1)::NUMERIC(12, 4),
-                                  0)::NUMERIC(12, 4)                                                     AS vahe,
-                         coalesce((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4)    AS soodustus,
-                         a1.hind::NUMERIC(12, 4) AS tais_hind,
+                                  0)::NUMERIC(12, 4)                                                  AS vahe,
+                         coalesce((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4) AS soodustus,
+                         a1.hind::NUMERIC(12, 4)                                                      AS tais_hind,
                          a1.soodus::NUMERIC(12, 4),
                          a1.kood1,
                          a1.kood2,
@@ -199,21 +187,21 @@ const Arv = {
                          a1.proj,
                          a1.konto,
                          a1.tp,
-                         NULL :: TEXT                                                                    AS vastisik,
-                         NULL :: TEXT                                                                    AS formula,
-                         'EUR' :: VARCHAR(20)                                                            AS valuuta,
-                         1 :: NUMERIC                                                                    AS kuurs,
+                         NULL :: TEXT                                                                 AS vastisik,
+                         NULL :: TEXT                                                                 AS formula,
+                         'EUR' :: VARCHAR(20)                                                         AS valuuta,
+                         1 :: NUMERIC                                                                 AS kuurs,
                          (CASE
                               WHEN a1.kbm_maar IS NULL
                                   THEN COALESCE((n.properties :: JSONB ->>
                                                  'vat'),
                                                 '-') :: VARCHAR(20)
-                              ELSE a1.kbm_maar END)::VARCHAR(20)                                         AS km,
+                              ELSE a1.kbm_maar END)::VARCHAR(20)                                      AS km,
                          n.uhik,
                          a1.properties ->>
-                         'yksus'                                                                         AS yksus,
+                         'yksus'                                                                      AS yksus,
                          a1.muud,
-                         trim(n.nimetus) || ',' || a1.muud                                               AS markused
+                         trim(n.nimetus) || ',' || a1.muud                                            AS markused
                   FROM docs.arv1 a1
                            INNER JOIN docs.arv a
                                       ON a.id = a1.parentId
@@ -455,7 +443,7 @@ const Arv = {
     deleteDoc: `SELECT docs.sp_delete_arv($1::INTEGER, id::INTEGER)
                 FROM lapsed.cur_laste_arved
                 WHERE id::TEXT IN (SELECT unnest(string_to_array($2::TEXT, ',')))
-                `, // $1 - userId, $2 - docId
+    `, // $1 - userId, $2 - docId
     requiredFields: [
         {
             name: 'kpv',

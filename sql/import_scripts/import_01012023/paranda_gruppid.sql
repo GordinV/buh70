@@ -117,11 +117,11 @@ $BODY$
     VOLATILE
     COST 100;
 
-        SELECT parandata_gruppid(l.id)
+/*        SELECT parandata_gruppid(l.id)
         FROM libs.library l
         WHERE l.library IN ('LAPSE_GRUPP')
-         and id = 215269
+         and id = 269163
           AND l.status < 3
-;
+*/;
 --DROP FUNCTION IF EXISTS parandata_gruppid(INTEGER);
 
