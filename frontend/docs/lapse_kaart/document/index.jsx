@@ -509,6 +509,7 @@ class LapseKaart extends React.PureComponent {
 
     //обработчик события по клику кнопки Редактирование сноменклатуры
     btnEditNomClick() {
+
         let docNomId = this.refs['document'].docData.nomid;
 
         // осуществит переход на карточку контр-агента

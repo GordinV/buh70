@@ -797,7 +797,9 @@ class DocumentTemplate extends React.Component {
 
             let hasSqlWhere = (lib in this.state.libParams);
 
-            let kpv = new Date().toISOString().slice(0, 10); //ajutiselt
+            if (!kpv) {
+                kpv = new Date().toISOString().slice(0, 10); //ajutiselt
+            }
 
             let params = Object.assign({
                 module: this.props.module,
@@ -816,7 +818,8 @@ class DocumentTemplate extends React.Component {
                             this.libs[lib] = response.data.result.result.data;
 
                             // save lib in cache
-                            DocContext.setLib = {[lib]: this.libs[lib]};
+                            //DocContext.setLib = {[lib]: this.libs[lib]};
+                            DocContext.libs[lib] = this.libs[lib];
                             libsCount--;
                             // отметка что справочник загружен
                             this.loadingLibs[lib] = false;
@@ -882,7 +885,8 @@ class DocumentTemplate extends React.Component {
      * @returns {boolean}
      */
     hasLibInCache(lib) {
-        return (!DocContext.getLib || DocContext.getLib.length === 0) ? false : true;
+        return false;
+//        return (!DocContext.getLib || DocContext.getLib.length === 0) ? false : true;
     }
 
     /**

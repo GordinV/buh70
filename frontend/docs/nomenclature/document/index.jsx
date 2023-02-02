@@ -46,15 +46,14 @@ class Nomenclature extends React.PureComponent {
      * @returns {*}
      */
     renderer(self) {
-        if (!self || !self.docData || !self.state.loadedLibs)  {
+        if (!self || !self.docData || !self.state.loadedLibs) {
             return (<div style={styles.doc}>
                 <Loading label={'Laadimine...'}/>
             </div>);
         }
 
         let isEditeMode = self.state.edited;
-
-        console.log('dok lib',self.libs['document']);
+        let libTunnus = self.libs['tunnus'];
 
         return (
             <div>
@@ -164,7 +163,7 @@ class Nomenclature extends React.PureComponent {
                             <Select title="Tunnus:"
                                     name='tunnus'
                                     libs="tunnus"
-                                    data={self.libs['tunnus']}
+                                    data={libTunnus}
                                     readOnly={!isEditeMode}
                                     value={self.docData['tunnus'] || ''}
                                     ref='select_tunnus'

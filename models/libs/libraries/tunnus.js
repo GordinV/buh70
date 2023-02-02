@@ -27,7 +27,6 @@ module.exports = {
                      (l.properties::JSONB ->> 'valid')::DATE AS valid
               FROM libs.library l
               WHERE l.library = 'TUNNUS'
-                AND l.rekvid IN (SELECT rekvid FROM ou.userid WHERE id = $2::INTEGER)
                 AND l.id = $1`,
         sqlAsNew: `select  
                     $1::integer as id , 

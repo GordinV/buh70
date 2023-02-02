@@ -63,7 +63,6 @@ module.exports = {
                        INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                        INNER JOIN lapsed.laps l ON l.id = lk.parentid
               WHERE lk.id = $1::INTEGER
-                AND lk.rekvid IN (SELECT rekvid FROM ou.userid WHERE id = $2::INTEGER)
                 AND lk.staatus <> 3`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
