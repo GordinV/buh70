@@ -46,7 +46,7 @@ block content
             p.input #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
         div.row_wrapper
             p.label Maksta arvele:
-            p.input #{data[0].aa}
+            p.input #{data[0].arved}
 
         h1
             p #{`${data[0].tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
@@ -123,5 +123,9 @@ block content
         div.row_wrapper
             p.label_subtotal #{`${data[0].tasumisele > 0 ? 'Kuulub tasumisele': 'Teil on ettemaks'}`} :
             p.subtotal #{`${Number(data[0].tasumisele).toFixed(2)}`}
+        br
+        br
+        div.row_wrapper
+            p.label_subtotal Arve koostaja: #{`${data[0].koostaja}`}
 
 

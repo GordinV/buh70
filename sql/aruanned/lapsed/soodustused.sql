@@ -20,6 +20,13 @@ AS
 $BODY$
 WITH qry AS (
     (
+        WITH rekv_ids AS (
+            SELECT rekv_id
+            FROM public.get_asutuse_struktuur(l_rekvid) r
+            WHERE CASE
+                      WHEN l_kond = 1 THEN TRUE
+                      ELSE l_rekvid = rekv_id END
+        )
         SELECT l.isikukood::TEXT                       AS lapse_isikukood,
                l.nimi::TEXT                            AS lapse_nimi,
                lk.soodustus::NUMERIC(12, 2)            AS soodustus,
@@ -47,6 +54,9 @@ WITH qry AS (
                                AND ((lk.properties ->> 'sooduse_lopp')::DATE >= kpv_start OR
                                     (lk.properties ->> 'sooduse_lopp')::DATE <= kpv_start)
                                AND lk.staatus <> 3
+                               AND lk.hind > 0
+                               AND lk.rekvid IN (SELECT rekv_id FROM rekv_ids)
+
                              GROUP BY lk.rekvid, lk.parentid
         ) lk ON lk.parentid = l.id
                  INNER JOIN ou.rekv r ON r.id = lk.rekvid
@@ -68,7 +78,7 @@ SELECT soodustus::NUMERIC(12, 2)                                   AS soodustus,
        qry.rekvid,
        qry.viitenumber::TEXT
 FROM qry
-         INNER JOIN libs.asutus a ON a.id = qry.vanem_id
+         LEFT OUTER JOIN libs.asutus a ON a.id = qry.vanem_id
 
 
 $BODY$
@@ -84,6 +94,6 @@ GRANT EXECUTE ON FUNCTION lapsed.soodustused(INTEGER, INTEGER, DATE, DATE) TO db
 
 
 /*
-select * from lapsed.soodustused(63, 1)
+select * from lapsed.soodustused(119, 1, '2023-01-01','2023-12-31')
 order by vanem_isikukood, lapse_nimi, asutus
 */

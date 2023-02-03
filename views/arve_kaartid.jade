@@ -51,7 +51,7 @@ block content
                 p.input #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
             div.row_wrapper
                 p.label Maksta arvele:
-                p.input #{doc.aa}
+                p.input #{doc.arved}
 
             h1
                     p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
@@ -133,5 +133,8 @@ block content
                 div.row_wrapper
                     p.label_subtotal Kuulub tasumisele:
                     p.input #{`${Number(doc.tasumisele).toFixed(2)}`}
-
-           h3
+            br
+            br
+            div.row_wrapper
+                p.label_subtotal Arve koostaja: #{`${data[0].koostaja}`}
+            h3

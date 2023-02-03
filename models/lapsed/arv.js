@@ -93,7 +93,13 @@ const Arv = {
                        coalesce(saldod.jaak, 0)::NUMERIC(12, 2)       AS alg_jaak,
                        coalesce(saldod.jaak, 0)::NUMERIC(12, 2)       AS lopp_jaak,
                        coalesce(saldod.ettemaksud, 0)::NUMERIC(12, 2) AS ettemaksud,
-                       coalesce(saldod.jaak, 0)::NUMERIC(12, 2)       AS tasumisele
+                       coalesce(saldod.jaak, 0)::NUMERIC(12, 2)       AS tasumisele,
+                       (SELECT string_agg(arve::TEXT, ',') 
+                        FROM ou.aa
+                        WHERE parentid = 119
+                          AND kassa = 1
+                          AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)) AS arved
+                       
                 FROM doc,
                      (
                          SELECT (lopp_db - lopp_kr)                           AS jaak,

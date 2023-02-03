@@ -25,6 +25,7 @@ DECLARE
     json_object   JSON;
     l_user_id     INTEGER;
     l_aa_id       INTEGER;
+    l_tunnus      TEXT;
 BEGIN
     doc_type_id = 'SMK';
 
@@ -170,6 +171,23 @@ BEGIN
     v_mk.laps_id = l_laps_id;
     v_mk.viitenr = l_viitenumber;
     v_mk.aaid = l_aa_id;
+
+    -- правим признак
+    IF (l_rekvId IN (SELECT id FROM ou.rekv WHERE parentid = 119 OR id = 119))
+    THEN
+        l_tunnus = (SELECT left(nimetus, 7) FROM ou.rekv WHERE id = l_rekvId);
+
+        IF l_tunnus IS NOT NULL AND exists(SELECT id
+                                           FROM libs.library
+                                           WHERE rekvid = l_rekvid
+                                             AND kood = l_tunnus
+                                             AND status < 3
+                                             AND library = 'TUNNUS')
+        THEN
+            v_mk1.tunnus = l_tunnus;
+        END IF;
+    END IF;
+
 
     -- параметры нового платежа
     json_mk1 = array_to_json((SELECT array_agg(row_to_json(v_mk1))));
