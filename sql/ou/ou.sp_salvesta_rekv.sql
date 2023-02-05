@@ -193,10 +193,10 @@ properties = coalesce(properties :: JSONB, '{}' :: JSONB) || json_object :: JSON
                          json_object) AS x (id TEXT, parentid INTEGER, arve TEXT, nimetus TEXT, default_ BOOLEAN,
                                             pank INTEGER,
                                             konto TEXT, tp TEXT, muud TEXT, kassapank INTEGER, kas_tulud BOOLEAN,
-                                            kas_kulud BOOLEAN, kas_palk BOOLEAN);
+                                            kas_kulud BOOLEAN, kas_palk BOOLEAN, kas_oppetasu BOOLEAN);
 
             aa_jsonb = jsonb_build_object('kas_tulud', json_record.kas_tulud, 'kas_kulud', json_record.kas_kulud,
-                                          'kas_palk', json_record.kas_palk);
+                                          'kas_palk', json_record.kas_palk, 'kas_oppetasu', json_record.kas_oppetasu);
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'
             THEN

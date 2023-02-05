@@ -40,8 +40,6 @@ module.exports = {
     returnData: {
         row: {}
     },
-
-
     requiredFields: [],
     saveDoc: `SELECT lapsed.muuda_pank_vv($1::JSONB, $2::INTEGER, $3::INTEGER) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: ``, // $1 - userId, $2 - docId
@@ -119,8 +117,8 @@ module.exports = {
                   FROM lapsed.sp_salvesta_pank_vv($1::JSONB, $2::INTEGER, $3::INTEGER)`, // $1 - data json, $2 - userid, $3 - rekvid
         type: 'sql',
         alias: 'importVV'
-    }
-
+    },
+    logs: true
 
 };
 

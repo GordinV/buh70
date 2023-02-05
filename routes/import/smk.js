@@ -18,6 +18,9 @@ module.exports = async (file, mimeType, user) => {
     let saved = 0;
     let response = [];
     let returnData;
+
+    Document.setLog('XML/CSV', [file, mimeType], JSON.stringify({data: rows}));
+
     if (rows.length) {
         // сохраняем
 
@@ -30,8 +33,8 @@ module.exports = async (file, mimeType, user) => {
         let sql = Document.config.importDoc.command;
 
         response = await Document.save(params, true, sql);
-        saved = response.data && response.data.length > 0 ? response.data[0].result : 0;
-        returnData = response.data && response.data.length  ? response.data[0]: [];
+        saved = response && response.data && response.data.length > 0 ? response.data[0].result : 0;
+        returnData = response.data && response.data.length ? response.data[0] : [];
     }
 
     return {
@@ -62,7 +65,7 @@ const readXML = async (xmlContent) => {
             aa = rpts[0].Acct[0].Id[0].IBAN[0];
             Acct = rpts[0].Acct[0].Svcr[0].FinInstnId[0].BIC[0]; //banc code
             Ntres = rpts[0].Ntry;
-        } else  {
+        } else {
             let stmtes = result.Document.BkToCstmrStmt[0].Stmt;
 
             aa = stmtes[0].Acct[0].Id[0].IBAN[0];
@@ -96,7 +99,7 @@ const readXML = async (xmlContent) => {
                     iban: eban,
                     pank: Acct,
                     number: number,
-                    isikukood: isikukood ? isikukood: regkood,
+                    isikukood: isikukood ? isikukood : regkood,
                     aa: aa
                 });
 

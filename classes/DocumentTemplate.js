@@ -39,18 +39,41 @@ class Document {
         return config;
     }
 
+    /**
+     * Логирует запрос и его параметры
+     */
+    setLog(sql, params, result) {
+        let insert = `INSERT INTO ou.paringud (user_id, sql, params, tulemused)
+                      VALUES ($4, $1::TEXT, $2::TEXT, $3::TEXT)`;
+        db.queryDb(insert, [sql, params, result, this.userId]);
+    }
+
 
     /**
      * Создает новый объект из модели для нового документа
      */
     async createNew() {
+        let tulemused;
         if (!this.config) {
             throw new Error('No mpodel configuration found');
         }
         let sqls = [{alias: 'row', sql: this.config.select[0].sqlAsNew}];
-        return await db.executeQueries(sqls, [0, this.userId],
+
+/*
+        if (this.config.logs) {
+            this.setLog(sqls, [0, this.userId])
+        }
+*/
+        tulemused = await db.executeQueries(sqls, [0, this.userId],
             Object.assign({},
                 this.config.returnData));
+/*
+        if (this.config.logs) {
+            this.setLog(sqls, [0, this.userId], tulemused)
+        }
+*/
+
+        return tulemused;
     }
 
     /**
@@ -64,6 +87,7 @@ class Document {
             throw new Error('No model configuration found');
         }
         const objectTemplate = Object.assign({}, _config.returnData);
+        let tulemused;
 
         // фильтр на initial load (при загрузке документа)
         let initialLoad = _config.select.filter(row => {
@@ -72,7 +96,24 @@ class Document {
             }
         });
 
-        return await db.executeQueries(initialLoad, [this.documentId, this.userId], objectTemplate, dbConfig);
+        try {
+/*
+            if (_config.logs) {
+                this.setLog(initialLoad, [this.documentId, this.userId])
+            }
+*/
+
+            tulemused = await db.executeQueries(initialLoad, [this.documentId, this.userId], objectTemplate, dbConfig);
+/*
+            if (_config.logs) {
+                this.setLog(initialLoad, [this.documentId, this.userId], tulemused)
+            }
+*/
+        } catch (e) {
+            console.error('error', err);
+        }
+
+        return tulemused;
     }
 
     /**
@@ -92,8 +133,15 @@ class Document {
         if (!sql) {
             sql = this.config.saveDoc;
         }
+        if (this.config.logs) {
+            this.setLog(sql, [params.data, params.userId, params.asutusId]);
+        }
 
         let data = await db.queryDb(sql, [params.data, params.userId, params.asutusId]);
+
+        if (this.config.logs) {
+            this.setLog(sql, [params.data, params.userId, params.asutusId], JSON.stringify(data));
+        }
 
         if (data && data.error_code) {
             console.error('Viga', data.error_message, data);
@@ -117,7 +165,17 @@ class Document {
         if (!sql) {
             return {error: 'No task found'}
         }
-        return await db.queryDb(sql, _params);
+
+        if (this.config.logs) {
+            this.setLog(sql, [_params]);
+        }
+
+        let tulemused = await db.queryDb(sql, _params);
+
+        if (this.config.logs) {
+            this.setLog(sql, [_params], JSON.stringify(tulemused));
+        }
+        return tulemused;
     }
 
     /**
@@ -128,6 +186,7 @@ class Document {
 
         try {
             let sqlParamsQantity = (this.config.grid.params == '' ? 2 : this.config.grid.params.length);
+            let tulemused;
 
 // добавим при необходимости кол-во параметром
             let paramsToAdd = sqlParamsQantity - params.length;
@@ -147,8 +206,21 @@ class Document {
 
 
             }
+/*
+            if (this.config.logs) {
+                this.setLog(sql, [params, sortBy, sqlWhere, limit, subTotals]);
+            }
+*/
+            tulemused = await db.queryDb(sql, params, sortBy, sqlWhere, limit, subTotals);
 
-            return await db.queryDb(sql, params, sortBy, sqlWhere, limit, subTotals);
+/*
+            if (this.config.logs) {
+                this.setLog(sql, [params, sortBy, sqlWhere, limit, subTotals], JSON.stringify(tulemused));
+            }
+*/
+
+            return tulemused;
+
         } catch (e) {
             // logs
             let message = `selectDocs, tekkis viga, ${sql}, ${e}, ${params}`;
@@ -217,7 +289,18 @@ class Document {
                 return report;
             }
         }
-        return await db.queryDb(sql, params);
+        if (this.config.logs) {
+            this.setLog(sql, [params]);
+        }
+
+        let tulemused = await db.queryDb(sql, params);
+
+        if (this.config.logs) {
+            this.setLog(sql, [params], JSON.stringify(tulemused));
+        }
+
+        return tulemused;
+
     }
 
 }

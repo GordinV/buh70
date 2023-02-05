@@ -16,6 +16,149 @@ const Arv = {
         ]
     },
 
+    multiple_print_doc: {
+        command: `with doc as (
+                    SELECT d.id,
+                         a.id as doc_id,
+                         $2 :: INTEGER                                             AS userid,
+                         to_char(created, 'DD.MM.YYYY HH:MM:SS') :: TEXT           AS created,
+                         to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT        AS lastupdate,
+                         d.bpm,
+                         d.status                                                  AS doc_status,
+                         a.number::TEXT                                            AS number,
+                         a.rekvId,
+                         a.liik,
+                         a.operid,
+                         to_char(a.kpv, 'YYYY-MM-DD')::TEXT                        AS kpv,
+                         to_char(a.kpv, 'DD.MM.YYYY')::TEXT                        AS kpv_print,
+                         a.asutusid,
+                         a.arvId,
+                         a.lisa:: TEXT                                             AS lisa,
+                         to_char(a.tahtaeg, 'YYYY-MM-DD')::TEXT                    AS tahtaeg,
+                         to_char(a.tahtaeg, 'DD.MM.YYYY')::TEXT                    AS tahtaeg_print,
+                         a.kbmta,
+                         a.kbm,
+                         a.summa,
+                         a.tasud,
+                         a.tasudok::TEXT                                           AS tasudok,
+                         a.muud,
+                         asutus.regkood,
+                         asutus.nimetus::TEXT                                      AS asutus,
+                         asutus.aadress,
+                         asutus.email::TEXT                                        AS email,
+                         asutus.properties ->> 'kmkr'                              AS kmkr,
+                         asutus.properties::JSONB -> 'asutus_aa' -> 0 ->> 'aa'     AS asutuse_aa,
+                         a.doklausid,
+                         a.journalid,
+                         coalesce(jid.number, 0) :: INTEGER                        AS laus_nr,
+                         dp.details :: JSONB ->> 'konto'                           AS konto,
+                         dp.details :: JSONB ->> 'kbmkonto'                        AS kbmkonto,
+                         dp.selg :: TEXT                                           AS dokprop,
+                         dp.vaatalaus                                              AS is_show_journal,
+                         d.history -> 0 ->> 'user'                                 AS koostaja,
+                         a.properties ->> 'aa'                                     AS aa,
+                         l.id                                                      AS lapsId,
+                         l.isikukood::TEXT,
+                         l.nimi::TEXT                                              AS lapse_nimi,
+                         lapsed.get_viitenumber(d.rekvid, l.id)                    AS viitenr,
+                         a.properties ->> 'tyyp'::TEXT                             AS tyyp,
+                         a.jaak::NUMERIC(12, 2)                                    AS jaak,
+                         to_char(make_date(year(a.kpv), month(a.kpv), 1)::DATE, 'DD.MM.YYYY') AS period_alg_print,
+                         lpad(month(a.kpv)::TEXT, 2, '0') || '.' ||
+                         year(a.kpv)::TEXT                                         AS laekumise_period,
+                         a.properties ->> 'ettemaksu_period'                       AS ettemaksu_period,
+                         va.properties ->> 'pank'                                  AS pank,
+                         va.properties ->> 'iban'                                  AS iban,
+                           to_jsonb(lapsed.saldo_ja_kaibeandmik(d.rekvid, make_date(year(a.kpv), month(a.kpv), 01)::DATE,
+                                                                gomonth(make_date(year(a.kpv), month(a.kpv), 01), 1) - 1,
+                                                                l.id))                 AS kaibed                         
+                  FROM docs.doc d
+                           INNER JOIN docs.arv a ON a.parentId = d.id
+                           INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
+                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                           LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
+                           LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
+                           LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
+                           LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
+                           LEFT OUTER JOIN lapsed.laps l
+                                           ON l.id = ll.parentid
+--                           LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = asutus.id
+                           LEFT OUTER JOIN lapsed.vanem_arveldus va
+                                           ON va.asutusid = a.asutusid AND va.rekvid = d.rekvid AND va.parentid = l.id
+                                               AND va.parentid = l.id
+
+                  WHERE d.id in (SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER)                  
+                  )
+                SELECT doc.*,
+                    coalesce((doc.kaibed ->> 'lopp_db')::NUMERIC, 0) -
+                    coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0) AS tasumisele,
+                    coalesce((doc.kaibed ->> 'kr')::NUMERIC, 0)      AS laekumised,
+                    CASE
+                        WHEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0) > 0
+                            THEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0)
+                        ELSE 0 END                                   AS ettemaksud,
+                
+                       (SELECT string_agg(arve::TEXT, ',') 
+                        FROM ou.aa
+                        WHERE parentid = doc.rekvid
+                          AND kassa = 1
+                          AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)) AS arved
+                       
+                FROM doc`
+    },
+    multiple_print_details: {
+        command: `SELECT a1.id,
+                         a1.parentid,
+                         $2 :: INTEGER                                                                AS userid,
+                         a1.nomid,
+                         a1.kogus,
+                         a1.hind::NUMERIC(12, 4),
+                         a1.kbm::NUMERIC(12, 2),
+                         a1.kbmta::NUMERIC(12, 2),
+                         a1.summa::NUMERIC(12, 2),
+                         trim(n.kood) :: VARCHAR(20)                                                  AS kood,
+                         trim(n.nimetus) :: VARCHAR(254)                                              AS nimetus,
+                         n.uhik :: TEXT                                                               AS uhik,
+                         coalesce((SELECT vahe
+                                   FROM lapsed.cur_lapse_taabel
+                                   WHERE id = (a1.properties ->> 'lapse_taabel_id')::INTEGER
+                                   LIMIT 1)::NUMERIC(12, 4),
+                                  0)::NUMERIC(12, 4)                                                  AS vahe,
+                         coalesce((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4) AS soodustus,
+                         a1.hind::NUMERIC(12, 4)                                                      AS tais_hind,
+                         a1.soodus::NUMERIC(12, 4),
+                         a1.kood1,
+                         a1.kood2,
+                         a1.kood3,
+                         a1.kood4,
+                         a1.kood5,
+                         a1.tunnus,
+                         a1.proj,
+                         a1.konto,
+                         a1.tp,
+                         NULL :: TEXT                                                                 AS vastisik,
+                         NULL :: TEXT                                                                 AS formula,
+                         'EUR' :: VARCHAR(20)                                                         AS valuuta,
+                         1 :: NUMERIC                                                                 AS kuurs,
+                         (CASE
+                              WHEN a1.kbm_maar IS NULL
+                                  THEN COALESCE((n.properties :: JSONB ->>
+                                                 'vat'),
+                                                '-') :: VARCHAR(20)
+                              ELSE a1.kbm_maar END)::VARCHAR(20)                                      AS km,
+                         n.uhik,
+                         a1.properties ->>
+                         'yksus'                                                                      AS yksus,
+                         a1.muud,
+                         trim(n.nimetus) || ',' || a1.muud                                            AS markused
+                  FROM docs.arv1 a1
+                           INNER JOIN docs.arv a
+                                      ON a.id = a1.parentId
+                           INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
+                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
+                  WHERE a.parentid IN (SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER)
+                    AND a1.kogus <> 0`
+    },
     select: [
         {
             sql: `with doc as (
@@ -82,10 +225,9 @@ const Arv = {
                            LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
                            LEFT OUTER JOIN lapsed.laps l
                                            ON l.id = ll.parentid
-                           LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = asutus.id
                            LEFT OUTER JOIN lapsed.vanem_arveldus va
                                            ON va.asutusid = a.asutusid AND va.rekvid = d.rekvid AND va.parentid = l.id
-                                               AND v.parentid = l.id
+                                               AND va.parentid = l.id
 
                   WHERE D.id = $1)
                 SELECT doc.*,
@@ -96,7 +238,7 @@ const Arv = {
                        coalesce(saldod.jaak, 0)::NUMERIC(12, 2)       AS tasumisele,
                        (SELECT string_agg(arve::TEXT, ',') 
                         FROM ou.aa
-                        WHERE parentid = 119
+                        WHERE parentid = doc.rekvid
                           AND kassa = 1
                           AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)) AS arved
                        

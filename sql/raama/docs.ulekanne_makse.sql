@@ -100,7 +100,7 @@ BEGIN
            kood3,
            kood4,
            kood5,
-           konto                                                  AS konto,
+           '103000'                                               AS konto,
            tp,
            tunnus,
            proj

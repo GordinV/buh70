@@ -85,11 +85,12 @@ module.exports = {
                          aa.pank,
                          aa.konto::VARCHAR(20),
                          aa.tp,
-                         kassa::INTEGER                                                     AS kassapank,
-                         $2                                                                 AS userId,
-                         coalesce((aa.properties ->> 'kas_tulud')::BOOLEAN, FALSE)::INTEGER AS kas_tulud,
-                         coalesce((aa.properties ->> 'kas_kulud')::BOOLEAN, FALSE)::INTEGER AS kas_kulud,
-                         coalesce((aa.properties ->> 'kas_palk')::BOOLEAN, FALSE)::INTEGER  AS kas_palk
+                         kassa::INTEGER                                                        AS kassapank,
+                         $2                                                                    AS userId,
+                         coalesce((aa.properties ->> 'kas_tulud')::BOOLEAN, FALSE)::INTEGER    AS kas_tulud,
+                         coalesce((aa.properties ->> 'kas_kulud')::BOOLEAN, FALSE)::INTEGER    AS kas_kulud,
+                         coalesce((aa.properties ->> 'kas_palk')::BOOLEAN, FALSE)::INTEGER     AS kas_palk,
+                         coalesce((aa.properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)::INTEGER AS kas_oppetasu
                   FROM ou.Aa aa
                   WHERE Aa.parentid = $1`,
             query: null,
