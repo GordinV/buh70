@@ -170,9 +170,9 @@ const Arv = {
                   WHERE d.id in (SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER)                  
                   )
                 SELECT doc.*,
-                    coalesce((doc.kaibed ->> 'lopp_db')::NUMERIC, 0) -
-                    coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0) AS tasumisele,
-                    coalesce((doc.kaibed ->> 'kr')::NUMERIC, 0)      AS laekumised,
+                    coalesce((doc.kaibed->0 ->> 'lopp_db')::NUMERIC, 0) -
+                    coalesce((doc.kaibed->0 ->> 'lopp_kr')::NUMERIC, 0) AS tasumisele,
+                    coalesce((doc.kaibed->0 ->> 'kr')::NUMERIC, 0)      AS laekumised,
                     CASE
                         WHEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0) > 0
                             THEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0)
