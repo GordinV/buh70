@@ -18,6 +18,87 @@ const Arv = {
 
     multiple_print_doc: {
         command: `with doc as (
+         WITH params AS (
+                SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER AS ids
+             ),
+              arved AS (
+                 SELECT min(a.kpv) as alg_kpv, max(a.kpv) as lopp_kpv, a.rekvid
+                 FROM docs.arv a
+                 WHERE parentid IN (SELECT ids FROM params)
+                 group by a.rekvid
+             ),
+             
+         kaibed AS (
+              with lapsed AS (
+                      SELECT array_agg(parentid) AS isik_ids
+                      FROM lapsed.liidestamine l
+                      WHERE docid IN (SELECT ids FROM params)
+                  )
+             SELECT jsonb_build_object('alg_db', sum(kb.alg_db),
+                                       'alg_kr', sum(kb.alg_kr),
+                                       'db', sum(kb.db),
+                                       'kr', sum(kb.kr),
+                                       'lopp_db', sum(kb.lopp_db),
+                                       'lopp_kr', sum(kb.lopp_kr)) AS kaibed,
+                    kb.isik_id
+             FROM arved a,
+                  lapsed,
+                  lapsed.saldo_ja_kaibeandmik(a.rekvid,
+                                              make_date(year(a.alg_kpv), month(a.alg_kpv), 01)::DATE,
+                                              gomonth(make_date(year(a.lopp_kpv), month(a.lopp_kpv), 01), 1) - 1,
+                                              lapsed.isik_ids::INTEGER[]) kb
+             GROUP BY kb.isik_id
+         ),
+         details AS (
+             SELECT a.parentid,
+                    jsonb_build_object('id', a1.id, 'parentid', a1.parentid,
+                                       'nomid', a1.nomid,
+                                       'kogus', a1.kogus,
+                                       'hind', a1.hind::NUMERIC(12, 4),
+                                       'kbm', a1.kbm::NUMERIC(12, 2),
+                                       'kbmta', a1.kbmta::NUMERIC(12, 2),
+                                       'summa', a1.summa::NUMERIC(12, 2),
+                                       'kood', TRIM(n.kood):: VARCHAR(20),
+                                       'nimetus', TRIM(n.nimetus) :: VARCHAR(254),
+                                       'uhik', n.uhik :: TEXT,
+                                       'vahe', (COALESCE((SELECT vahe
+                                                          FROM lapsed.cur_lapse_taabel
+                                                          WHERE id = (a1.properties ->> 'lapse_taabel_id')::INTEGER
+                                                          LIMIT 1)::NUMERIC(12, 4),
+                                                         0)::NUMERIC(12, 4)),
+                                       'soodustus',
+                                       (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4)),
+                                       'tais_hind', a1.hind::NUMERIC(12, 4),
+                                       'soodus', a1.soodus::NUMERIC(12, 4),
+                                       'kood1', a1.kood1,
+                                       'kood2', a1.kood2,
+                                       'kood3', a1.kood3,
+                                       'kood4', a1.kood4,
+                                       'kood5', a1.kood5,
+                                       'tunnus', a1.tunnus,
+                                       'proj', a1.proj,
+                                       'konto', a1.konto,
+                                       'tp', a1.tp,
+                                       'km', ((CASE
+                                                   WHEN a1.kbm_maar IS NULL
+                                                       THEN COALESCE(
+                                                           (n.properties :: JSONB ->>
+                                                            'vat'),
+                                                           '-') :: VARCHAR(20)
+                                                   ELSE a1.kbm_maar END)::VARCHAR(20)),
+                                       'uhik', n.uhik,
+                                       'yksus', (a1.properties ->>
+                                                 'yksus'),
+                                       'muud', a1.muud,
+                                       'markused',
+                                       (TRIM(n.nimetus) || ',' || a1.muud)) AS details
+             FROM docs.arv1 a1
+                      INNER JOIN docs.arv a
+                                 ON a.id = a1.parentId
+                      INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
+             WHERE a.parentid IN (SELECT ids FROM params)
+               AND a1.kogus <> 0)
+
                     SELECT d.id,
                          a.id as doc_id,
                          $2 :: INTEGER                                             AS userid,
@@ -63,62 +144,15 @@ const Arv = {
                          lapsed.get_viitenumber(d.rekvid, l.id)                    AS viitenr,
                          a.properties ->> 'tyyp'::TEXT                             AS tyyp,
                          a.jaak::NUMERIC(12, 2)                                    AS jaak,
-                         to_char(make_date(year(a.kpv), month(a.kpv), 1)::DATE, 'DD.MM.YYYY') AS period_alg_print,
-                         lpad(month(a.kpv)::TEXT, 2, '0') || '.' ||
-                         year(a.kpv)::TEXT                                         AS laekumise_period,
+                         to_char(make_date(year(arved.alg_kpv), month(arved.alg_kpv), 1)::DATE, 'DD.MM.YYYY') AS period_alg_print,
+                         lpad(month(arved.lopp_kpv)::TEXT, 2, '0') || '.' ||
+                         year(arved.lopp_kpv)::TEXT                                AS laekumise_period,
                          a.properties ->> 'ettemaksu_period'                       AS ettemaksu_period,
                          va.properties ->> 'pank'                                  AS pank,
                          va.properties ->> 'iban'                                  AS iban,
-                           to_jsonb(lapsed.saldo_ja_kaibeandmik(d.rekvid, make_date(year(a.kpv), month(a.kpv), 01)::DATE,
-                                                                gomonth(make_date(year(a.kpv), month(a.kpv), 01), 1) - 1,
-                                                                l.id))                 AS kaibed, 
-                           to_jsonb('[]'::jsonb || (SELECT jsonb_build_object('id', a1.id, 'parentid', a1.parentid,
-                                               'nomid', a1.nomid,
-                                               'kogus', a1.kogus,
-                                               'hind', a1.hind::NUMERIC(12, 4),
-                                               'kbm', a1.kbm::NUMERIC(12, 2),
-                                               'kbmta', a1.kbmta::NUMERIC(12, 2),
-                                               'summa', a1.summa::NUMERIC(12, 2),
-                                               'kood', TRIM(n.kood):: VARCHAR(20),
-                                               'nimetus', TRIM(n.nimetus) :: VARCHAR(254),
-                                               'uhik', n.uhik :: TEXT,
-                                               'vahe', (COALESCE((SELECT vahe
-                                                                  FROM lapsed.cur_lapse_taabel
-                                                                  WHERE id = (a1.properties ->> 'lapse_taabel_id')::INTEGER
-                                                                  LIMIT 1)::NUMERIC(12, 4),
-                                                                 0)::NUMERIC(12, 4)),
-                                               'soodustus',
-                                               (COALESCE((a1.properties ->> 'soodustus')::NUMERIC(12, 4), 0)::NUMERIC(12, 4)),
-                                               'tais_hind', a1.hind::NUMERIC(12, 4),
-                                               'soodus', a1.soodus::NUMERIC(12, 4),
-                                               'kood1', a1.kood1,
-                                               'kood2', a1.kood2,
-                                               'kood3', a1.kood3,
-                                               'kood4', a1.kood4,
-                                               'kood5', a1.kood5,
-                                               'tunnus', a1.tunnus,
-                                               'proj', a1.proj,
-                                               'konto', a1.konto,
-                                               'tp', a1.tp,
-                                               'km', ((CASE
-                                                           WHEN a1.kbm_maar IS NULL
-                                                               THEN COALESCE((n.properties :: JSONB ->>
-                                                                              'vat'),
-                                                                             '-') :: VARCHAR(20)
-                                                           ELSE a1.kbm_maar END)::VARCHAR(20)),
-                                               'uhik', n.uhik,
-                                               'yksus', (a1.properties ->>
-                                                         'yksus'),
-                                               'muud', a1.muud,
-                                               'markused', (TRIM(n.nimetus) || ',' || a1.muud)) AS details
-                     FROM docs.arv1 a1
-                              INNER JOIN docs.arv a
-                                         ON a.id = a1.parentId
-                              INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
-                     WHERE a.parentid = d.id
-                       AND a1.kogus <> 0))                             AS details
-                                                                      
-                  FROM docs.doc d
+                       to_jsonb(array((SELECT kaibed FROM kaibed WHERE kaibed.isik_id = l.id))) AS kaibed,
+                       to_jsonb(array((SELECT details FROM details det WHERE det.parentid = d.id)))   AS details                                                                      
+                  FROM arved, docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
@@ -148,8 +182,7 @@ const Arv = {
                         FROM ou.aa
                         WHERE parentid = doc.rekvid
                           AND kassa = 1
-                          AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)) AS arved
-                       
+                          AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)) AS arved                       
                 FROM doc`
     },
     select: [
@@ -200,8 +233,6 @@ const Arv = {
                          a.properties ->> 'tyyp'::TEXT                             AS tyyp,
                          a.jaak::NUMERIC(12, 2)                                    AS jaak,
                          to_char(make_date(year(a.kpv), month(a.kpv), 1)::DATE, 'DD.MM.YYYY') AS period_alg_print,
---                         to_char(docs.get_arve_period($1) - 1, 'YYYY-MM-DD')::TEXT AS period_alg,
---                         to_char(docs.get_arve_period($1) - 1, 'DD.MM.YYYY')::TEXT AS period_alg_print,                         
                          lpad(month(a.kpv)::TEXT, 2, '0') || '.' ||
                          year(a.kpv)::TEXT                                         AS laekumise_period,
                          a.properties ->> 'ettemaksu_period'                       AS ettemaksu_period,

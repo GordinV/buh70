@@ -58,7 +58,7 @@ exports.arve = async (req, res) => {
     const docTypeId = 'ARV'; // параметр тип документа
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user = await require('../middleware/userData')(req, uuid); // данные пользователя
-    const rows = [];
+    let rows = [];
 
     if (!user) {
         console.error('error 401 newAPI');
@@ -75,16 +75,19 @@ exports.arve = async (req, res) => {
     const template = doc.config.print.find(templ => templ.params === 'id').view;
 
     console.log('start multiple');
-    res.setTimeout(400000);
+//    res.setTimeout(4000000);
 
     try {
         let doc_data = await doc.executeTask('multiple_print_doc', [ids.join(','), user.userId]);
 //        var doc_details = await doc.executeTask('multiple_print_details', [ids.join(','), user.userId]);
 
+/*
         doc_data.data.forEach(result => {
             rows.push({...result});
         });
-        console.log('lopp multiple');
+*/
+        rows = doc_data.data;
+        console.log('lopp multiple',doc_data.data,rows);
 
         if (!rows || rows.length === 0) {
             res.send({status: 200, result: 'Arved ei leidnum'});

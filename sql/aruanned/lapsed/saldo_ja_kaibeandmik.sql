@@ -1,10 +1,12 @@
 --DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaive(INTEGER, DATE, DATE);
 DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE);
+DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE, INTEGER);
+DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE, INTEGER[]);
 
 CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaibeandmik(l_rekvid INTEGER,
                                                        kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
                                                        kpv_end DATE DEFAULT current_date,
-                                                       l_isik_id INTEGER DEFAULT NULL)
+                                                       l_isik_ids INTEGER[] DEFAULT NULL)
     RETURNS TABLE (
         id         BIGINT,
         period     DATE,
@@ -58,13 +60,11 @@ FROM (
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                         AND mk.opt = 2
-                        AND (l_isik_id IS NULL OR l.parentid = l_isik_id)
+--                        AND (l_isik_ids IS NULL OR l.parentid IN (SELECT unnest(l_isik_ids)))
                       UNION ALL
                       -- tagastused
-                      SELECT 0              AS db
-                              ,
-                             -1 * mk1.summa AS kr
-                              ,
+                      SELECT 0              AS db,
+                             -1 * mk1.summa AS kr,
                              mk.rekvid      AS rekv_id,
                              l.parentid     AS isik_id
                       FROM docs.doc d
@@ -76,7 +76,7 @@ FROM (
                         AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                         AND mk.maksepaev < kpv_start
                         AND mk.opt = 1
-                        AND (l_isik_id IS NULL OR l.parentid = l_isik_id)
+--                        AND (l_isik_ids IS NULL OR l.parentid IN (SELECT unnest(l_isik_ids)))
                       UNION ALL
                       SELECT a.summa     AS db,
                              0           AS kr,
@@ -91,7 +91,7 @@ FROM (
                         AND a.liik = 0 -- только счета исходящие
                         AND a.kpv < kpv_start
                         AND d.status < 3
-                        AND (l_isik_id IS NULL OR ld.parentid = l_isik_id)
+--                        AND (l_isik_ids IS NULL OR ld.parentid IN (SELECT unnest(l_isik_ids)))
 
 -- mahakandmine
                       UNION ALL
@@ -109,7 +109,7 @@ FROM (
                         AND a.status <> 3
                         AND (arv.properties ->> 'tyyp' IS NULL OR
                              arv.properties ->> 'tyyp' <> 'ETTEMAKS') -- уберем предоплаты
-                        AND (l_isik_id IS NULL OR l.parentid = l_isik_id)
+--                        AND (l_isik_ids IS NULL OR l.parentid IN (SELECT unnest(l_isik_ids)))
                   ) alg_saldo
              GROUP BY rekv_id, isik_id
          ),
@@ -127,8 +127,7 @@ FROM (
                     AND a.kpv <= kpv_end
                     AND (arv.properties ->> 'tyyp' IS NULL OR
                          arv.properties ->> 'tyyp' <> 'ETTEMAKS') -- уберем предоплаты
-                    AND (l_isik_id IS NULL OR l.parentid = l_isik_id)
-
+--                    AND (l_isik_ids IS NULL OR l.parentid IN (SELECT unnest(l_isik_ids)))
                   GROUP BY a.rekvid, l.parentid
               ),
 
@@ -145,8 +144,7 @@ FROM (
                     AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
                     AND mk.maksepaev >= kpv_start
                     AND mk.maksepaev <= kpv_end
-                    AND (l_isik_id IS NULL OR ld.parentid = l_isik_id)
-
+--                    AND (l_isik_ids IS NULL OR ld.parentid IN (SELECT unnest(l_isik_ids)))
                   GROUP BY d.rekvid, ld.parentid
               ),
 
@@ -175,7 +173,7 @@ FROM (
                     AND a.liik = 0 -- только счета исходящие
                     AND a.kpv >= kpv_start
                     AND a.kpv <= kpv_end
-                    AND (l_isik_id IS NULL OR ld.parentid = l_isik_id)
+--                    AND (l_isik_ids IS NULL OR ld.parentid IN (SELECT unnest(l_isik_ids)))
 
                   GROUP BY ld.parentid
                           , D.rekvid
@@ -289,13 +287,13 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER) TO arvestaja;
-GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER[]) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER[]) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER[]) TO arvestaja;
+GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGER[]) TO dbvaatleja;
 
 /*
 explain
 select *
-FROM lapsed.saldo_ja_kaibeandmik(69, '2023-01-01', '2023-01-31',7128) qry
+FROM lapsed.saldo_ja_kaibeandmik(69, '2023-01-01', '2023-01-31', array[7128]::integer[]) qry
 */
