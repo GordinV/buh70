@@ -74,18 +74,17 @@ exports.arve = async (req, res) => {
     // ищем шаблон
     const template = doc.config.print.find(templ => templ.params === 'id').view;
 
+    console.log('start multiple');
+    res.setTimeout(400000);
+
     try {
         let doc_data = await doc.executeTask('multiple_print_doc', [ids.join(','), user.userId]);
-        var doc_details = await doc.executeTask('multiple_print_details', [ids.join(','), user.userId]);
+//        var doc_details = await doc.executeTask('multiple_print_details', [ids.join(','), user.userId]);
 
         doc_data.data.forEach(result => {
-            console.log('doc_details.data', doc_details.data);
-            let docDetails = doc_details.data.filter(row => {
-                console.log(row.parentid, result.doc_id);
-                return row.parentid === result.doc_id
-            });
-            rows.push({...result, details: docDetails});
+            rows.push({...result});
         });
+        console.log('lopp multiple');
 
         if (!rows || rows.length === 0) {
             res.send({status: 200, result: 'Arved ei leidnum'});
