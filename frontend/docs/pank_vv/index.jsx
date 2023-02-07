@@ -55,7 +55,7 @@ class Documents extends React.PureComponent {
                 show: true
             },
             btnDelete: {
-                show: false
+                show: true
             },
             btnPrint: {
                 show: false

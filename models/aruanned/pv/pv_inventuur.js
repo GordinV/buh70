@@ -25,13 +25,17 @@ module.exports = {
                                 AND liik = 2), 0) + p.algkulum AS arv_kulum,
                       coalesce((SELECT sum(summa)
                                 FROM docs.pv_oper po
-                                WHERE po.pv_kaart_id = p.id AND liik IN (1, 3)), 0)        AS soetmaks,
+                                WHERE po.pv_kaart_id = p.id 
+                                AND liik IN (1, 3)
+                                AND po.kpv <= $1::DATE
+                                ), 0)        AS soetmaks,
                       (SELECT eluiga FROM libs.get_pv_kaart_jaak(p.id::INTEGER, $1::DATE))::NUMERIC(12,4) AS eluiga,
                       p.*,
                       r.nimetus as asutus
                     FROM cur_pohivara p
                     inner join ou.rekv r on r.id = p.rekvid
                     WHERE (p.mahakantud IS NULL or p.mahakantud > $1)
+                      and soetkpv <= $1::DATE
                       AND p.rekvid IN (SELECT rekv_id FROM rekv_ids)`,
         // $1 - kpv, $2 - rekvid , $3 - kond
         params: '',

@@ -46,10 +46,13 @@ class Asutused extends React.PureComponent {
             return null;
         }
 
-        console.log('self.docData',self.docData);
         let isEditeMode = self.state.edited;
-        const gridData = self.docData.gridData ? self.docData.gridData: [],
-            gridColumns = self.docData.gridConfig ? self.docData.gridConfig: [];
+        const gridData = self.docData.gridData ? self.docData.gridData : [],
+            gridColumns = self.docData.gridConfig ? self.docData.gridConfig : [];
+
+        if (!self.docData.omvorm) {
+            self.docData.omvorm = 'ISIK';
+        }
 
         return (
             <div style={styles.doc}>
@@ -71,9 +74,9 @@ class Asutused extends React.PureComponent {
                                    name='omvorm'
                                    ref="input-omvorm"
                                    readOnly={true}
-                                   value={self.docData.omvorm || ''}
+                                   value={self.docData.omvorm || 'ISIK'}
                                    onChange={self.handleInputChange}/>
-{/*
+                        {/*
                         <InputText title="Arveldus arve:"
                                    name='aa'
                                    ref="input-aa"
@@ -192,30 +195,30 @@ class Asutused extends React.PureComponent {
                                    ref='number'
                                    onChange={self.handleGridRowInput}/>
                     </div>
-                        <div style={styles.docRow}>
-                            <CheckBox title="Palk"
-                                      name='kas_palk'
-                                      value={Boolean(row.kas_palk)}
-                                      ref={'checkbox_kas_palk'}
-                                      onChange={self.handleGridRowChange}
-                                      readOnly={false}
-                                      labelStyle = {styles.label ? styles.label: {}}
-                            />
-                            <CheckBox title="Õppetasu"
-                                      name='kas_oppetasu'
-                                      value={Boolean (row.kas_oppetasu)}
-                                      ref={'checkbox_kas_oppetasu'}
-                                      onChange={self.handleGridRowChange}
-                                      readOnly={false}
-                            />
-                            <CheckBox title="Raamatupidamine"
-                                      name='kas_raama'
-                                      value={Boolean(row.kas_raama)}
-                                      ref={'checkbox_kas_raama'}
-                                      onChange={self.handleGridRowChange}
-                                      readOnly={false}
-                            />
-                        </div>
+                    <div style={styles.docRow}>
+                        <CheckBox title="Palk"
+                                  name='kas_palk'
+                                  value={Boolean(row.kas_palk)}
+                                  ref={'checkbox_kas_palk'}
+                                  onChange={self.handleGridRowChange}
+                                  readOnly={false}
+                                  labelStyle={styles.label ? styles.label : {}}
+                        />
+                        <CheckBox title="Õppetasu"
+                                  name='kas_oppetasu'
+                                  value={Boolean(row.kas_oppetasu)}
+                                  ref={'checkbox_kas_oppetasu'}
+                                  onChange={self.handleGridRowChange}
+                                  readOnly={false}
+                        />
+                        <CheckBox title="Raamatupidamine"
+                                  name='kas_raama'
+                                  value={Boolean(row.kas_raama)}
+                                  ref={'checkbox_kas_raama'}
+                                  onChange={self.handleGridRowChange}
+                                  readOnly={false}
+                        />
+                    </div>
                 </div>
                 <div><span>{validateMessage}</span></div>
             </ModalPage>

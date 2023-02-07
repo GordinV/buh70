@@ -22,12 +22,15 @@ DECLARE
     doc_all_yksus_4 TEXT    = coalesce((doc_data ->> 'all_yksus_4'), '');
     doc_all_yksus_5 TEXT    = coalesce((doc_data ->> 'all_yksus_5'), '');
     doc_details     JSONB   = coalesce(doc_data ->> 'gridData', doc_data ->> 'griddata');
-    doc_tyyp        INTEGER    = doc_data ->> 'tyyp';
+    doc_tyyp        INTEGER = doc_data ->> 'tyyp';
 
     is_import       BOOLEAN = data ->> 'import';
     all_yksused     TEXT[]  = ARRAY [doc_all_yksus_1, doc_all_yksus_2, doc_all_yksus_3, doc_all_yksus_4, doc_all_yksus_5];
     json_object     JSONB;
+    l_prev_kood     TEXT;
+    l_tyyp_kood     TEXT;
 
+    l_error         TEXT    = '';
 BEGIN
 
     IF (doc_id IS NULL)
@@ -35,7 +38,8 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = user_id;
@@ -45,13 +49,34 @@ BEGIN
         RAISE EXCEPTION 'User not found %', user;
     END IF;
 
+    -- только согласно патт
+    -- Маска кода группы
+    -- "Koolituse tüüp""дефис""две цифры"ерну
+
+    IF coalesce((len(array_to_string(regexp_match(doc_kood, '[A-Z][A-Z][A-Z][A-Z]-[0-9][0-9][0-9]-[0-9][0-9]'), ''))),
+                0) <> 11
+    THEN
+        RAISE EXCEPTION 'Viga, kood peaks olla AAAA-999-99 aga sisestatud %',doc_kood;
+    END IF;
+
+    -- проверка на тип обучения
+
+    l_tyyp_kood = (SELECT kood FROM libs.library WHERE id = doc_tyyp LIMIT 1);
+    IF l_tyyp_kood IS NOT NULL AND doc_kood !~ l_tyyp_kood
+    THEN
+        l_error = 'Viga, kood peaks olla: ' + l_tyyp_kood || ' aga sisestatud';
+        RAISE EXCEPTION '% %', l_error ,doc_kood;
+    END IF;
+
+
 -- prepairing all yksused
 
-    SELECT to_jsonb(row) INTO json_object
+    SELECT to_jsonb(row)
+    INTO json_object
     FROM (SELECT all_yksused AS all_yksused,
                  doc_details AS teenused,
-                 doc_tyyp as tyyp
-                 ) row;
+                 doc_tyyp    AS tyyp
+         ) row;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
@@ -61,6 +86,8 @@ BEGIN
         VALUES (user_rekvid, doc_kood, doc_nimetus, doc_library, doc_muud, json_object) RETURNING id
             INTO lib_id;
     ELSE
+        -- прежнее значение
+        SELECT kood INTO l_prev_kood FROM libs.library WHERE id = doc_id LIMIT 1;
 
         UPDATE libs.library
         SET kood       = doc_kood,
@@ -71,17 +98,25 @@ BEGIN
         WHERE id = doc_id RETURNING id
             INTO lib_id;
 
+        -- подменим код в карточках
+
+        UPDATE lapsed.lapse_kaart
+        SET properties = properties || jsonb_build_object('yksus', doc_kood)
+        WHERE rekvid = user_rekvid
+          AND coalesce(properties ->> 'yksus', 'YKSUS') = l_prev_kood
+          AND staatus < 3;
+
     END IF;
 
     RETURN lib_id;
 
-EXCEPTION
+/*EXCEPTION
     WHEN OTHERS
         THEN
             RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
             RETURN 0;
 
-
+*/
 END;
 $BODY$
     LANGUAGE plpgsql

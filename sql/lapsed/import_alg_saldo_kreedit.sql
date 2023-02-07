@@ -38,7 +38,7 @@ DECLARE
                                FROM libs.library
                                WHERE library.library = 'DOK'
                                  AND kood = 'SMK'
-                               LIMIT 1);
+                                   LIMIT 1);
     v_mk1           RECORD;
     v_mk            RECORD;
     l_viitenr       TEXT;
@@ -61,13 +61,13 @@ BEGIN
                          FROM lapsed.laps l
                          WHERE l.isikukood = json_record.laps_ik
                            AND l.staatus <> 3
-                         LIMIT 1);
+                             LIMIT 1);
 
             -- ищем учреждение
             l_rekvid = (SELECT id
                         FROM ou.rekv
                         WHERE nimetus LIKE ltrim(rtrim(json_record.yksus)) + '%'
-                        LIMIT 1);
+                            LIMIT 1);
 
 
             l_asutus_id = (
@@ -79,8 +79,8 @@ BEGIN
                 WHERE a.regkood = json_record.vanem_ik
                   AND l.id = l_laps_id
                   AND va.rekvid = l_rekvid
-                ORDER BY v.id DESC
-                LIMIT 1
+                    ORDER BY v.id DESC
+                    LIMIT 1
             );
 
             IF (l_asutus_id IS NULL)
@@ -92,8 +92,8 @@ BEGIN
                              INNER JOIN lapsed.vanemad v ON v.asutusid = a.id AND v.staatus <> 3
                     WHERE a.regkood = json_record.vanem_ik
                       AND v.parentid = l_laps_id
-                    ORDER BY v.id ASC
-                    LIMIT 1
+                        ORDER BY v.id ASC
+                        LIMIT 1
                 );
             END IF;
 
@@ -109,7 +109,7 @@ BEGIN
                          FROM ou.userid
                          WHERE rekvid = l_rekvid
                            AND kasutaja = 'temp'
-                         LIMIT 1);
+                             LIMIT 1);
 
             SELECT *
             INTO v_aa
@@ -117,8 +117,8 @@ BEGIN
             WHERE parentid = l_rekvid
               AND kassa = 1
               AND konto = json_record.konto
-            ORDER BY default_ DESC
-            LIMIT 1;
+                ORDER BY default_ DESC
+                LIMIT 1;
 
             RAISE NOTICE 'v_aa %',v_aa;
 
@@ -133,7 +133,7 @@ BEGIN
                   AND l.parentid = l_laps_id
                   AND m.kpv = '2022-12-31'
                   AND coalesce(m.muud, '') = 'Oppetasu algsaldo 2023'
-                LIMIT 1
+                    LIMIT 1
             );
             RAISE NOTICE 'l_mk_id %',l_mk_id;
 
@@ -144,8 +144,9 @@ BEGIN
                                         INNER JOIN libs.library l ON l.id = dp.parentid
                                WHERE dp.rekvid = l_rekvid
                                  AND l.kood = 'SMK'
-                               ORDER BY registr DESC, dp.id DESC
-                               LIMIT 1
+                                   ORDER BY registr DESC
+                                   , dp.id DESC
+                                   LIMIT 1
             );
 
             IF (l_doklausend_id IS NULL)
@@ -203,19 +204,19 @@ BEGIN
                     WHERE rekvid = l_rekvid
                       AND n.dok IN ('SMK', 'MK')
                       AND status <> 3
-                    LIMIT 1;
+                        LIMIT 1;
 
                     -- формируем строку
-                    SELECT 0                 AS id,
-                           v_nom.id          AS nomid,
-                           l_asutus_id       AS asutusid,
-                           l_mk_summa        AS summa,
-                           v_aa.arve         AS aa,
-                           v_details.kr      AS konto,
-                           v_details.tegev   AS kood1,
-                           '80'              AS kood2,
-                           '3220'            AS kood5,
-                           json_record.yksus AS tunnus
+                    SELECT 0                                           AS id,
+                           v_nom.id                                    AS nomid,
+                           l_asutus_id                                 AS asutusid,
+                           l_mk_summa                                  AS summa,
+                           coalesce(v_aa.arve, 'EE712200221023241719') AS aa,
+                           v_details.kr                                AS konto,
+                           v_details.tegev                             AS kood1,
+                           '80'                                        AS kood2,
+                           '3220'                                      AS kood5,
+                           json_record.yksus                           AS tunnus
 
                     INTO v_mk1;
 

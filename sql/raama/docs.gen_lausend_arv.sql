@@ -329,7 +329,7 @@ BEGIN
                         l_json_details_tasu = coalesce(l_json_details_tasu, '{}'::JSONB) || to_jsonb(v_journal);
 
                     END IF;
-                    IF v_arv1.allikas_vara <> 0
+                    IF v_arv1.allikas_muud <> 0
                     THEN
                         -- если деньги по источнику muud
                         l_allika_summa = v_arv1.allikas_muud;

@@ -54,8 +54,18 @@ BEGIN
     -- проверка на тип справочника и роль
     IF NOT is_peakasutaja AND doc_library IN ('ALLIKAD', 'TEGEV', 'TULUDEALLIKAD', 'RAHA')
     THEN
-        RAISE NOTICE 'Puudub õigused';
-        RETURN 0;
+        RAISE exception 'Viga, Puudub õigused';
+    END IF;
+
+
+    -- проверка для типа обучения
+    IF doc_library = 'KOOLITUSE_TYYP'
+    THEN
+        IF coalesce((len(array_to_string(regexp_match(doc_kood, '[A-Z][A-Z][A-Z][A-Z]-[0-9][0-9][0-9]'), ''))), 0) <> 8
+        THEN
+            RAISE EXCEPTION 'Viga, kood peaks olla AAAA-999 aga sisestatud %',doc_kood;
+        END IF;
+
     END IF;
 
     SELECT row_to_json(row)
@@ -223,8 +233,10 @@ BEGIN
                                             WHERE rekvid = user_rekvid
                                               AND status < 3
                                               AND doc_type_id IN
-                                                  (SELECT id FROM libs.library WHERE library.library = 'DOK'
-                                                                                 AND kood = 'PV_OPER'))
+                                                  (SELECT id
+                                                   FROM libs.library
+                                                   WHERE library.library = 'DOK'
+                                                     AND kood = 'PV_OPER'))
                         AND po.kood4 = l_prev_doc)
             THEN
                 UPDATE docs.korder2
@@ -240,14 +252,8 @@ BEGIN
 
     RETURN lib_id;
 
-EXCEPTION
-    WHEN OTHERS
-        THEN
-            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-            RETURN 0;
 
-
-END;
+END ;
 $BODY$
     LANGUAGE plpgsql
     VOLATILE

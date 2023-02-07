@@ -31,8 +31,10 @@ DECLARE
     is_error   INTEGER;
 BEGIN
 
-    IF l_kpv <= make_date(2020, 12, 31)
+    IF l_kpv < make_date(2020, 12, 31)
     THEN
+        -- Valentina B. 07.02.2023
+        RAISE EXCEPTION 'Viga: Vale kuupäev %', l_kpv;
         RETURN l_msg;
     END IF;
 
@@ -43,7 +45,7 @@ BEGIN
     END IF;
 
 -- kontrollin oma TP
-    IF l_oma_tp IS NOT NULL AND NOT (char_length (l_oma_tp) = 0) AND (l_tp_d = l_oma_tp OR l_tp_k = l_oma_tp)
+    IF l_oma_tp IS NOT NULL AND NOT (char_length(l_oma_tp) = 0) AND (l_tp_d = l_oma_tp OR l_tp_k = l_oma_tp)
     THEN
         lcMsg1 = ' TP kood on vale, ei saa kasutada tehingus oma TP kood ';
         IF (left(l_oma_tp, 6) = '185101' OR l_oma_tp = '185130') AND (left(l_db, 1) = '7' OR left(l_kr, 1) = '7')
@@ -62,14 +64,14 @@ BEGIN
 
     -- Tp kontoll
 
-    IF left(ltrim(rtrim(l_tp_d)), 4) = '1851' AND char_length (ltrim(rtrim(l_tp_d))) = 6
+    IF left(ltrim(rtrim(l_tp_d)), 4) = '1851' AND char_length(ltrim(rtrim(l_tp_d))) = 6
     THEN
         lcMsg1 = 'TP-D Ei saa kasuta vana kohalik TP koodid';
         l_msg = l_msg + lcMsg1;
 
     END IF;
 
-    IF left(ltrim(rtrim(l_tp_k)), 4) = '1851' AND char_length (ltrim(rtrim(l_tp_k))) = 6
+    IF left(ltrim(rtrim(l_tp_k)), 4) = '1851' AND char_length(ltrim(rtrim(l_tp_k))) = 6
     THEN
         lcMsg1 = 'TP-K Ei saa kasuta vana kohalik TP koodid';
         l_msg = l_msg + lcMsg1;
@@ -81,8 +83,8 @@ BEGIN
 
     SELECT l.tun5 AS valid INTO v_lib FROM libs.library l WHERE kood = l_tp_k AND library = 'TP' LIMIT 1;
     IF v_lib IS NOT NULL AND v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
-        AND l_kpv > make_date((left(v_lib.valid::TEXT, 4))::integer, (substr(v_lib.valid::TEXT, 5, 2))::integer,
-                              (substr(v_lib.valid::TEXT, 7, 2))::integer)
+        AND l_kpv > make_date((left(v_lib.valid::TEXT, 4))::INTEGER, (substr(v_lib.valid::TEXT, 5, 2))::INTEGER,
+                              (substr(v_lib.valid::TEXT, 7, 2))::INTEGER)
     THEN
         lcMsg1 = 'TP-K,Ei saa kasuta, sest TP kood ei ole kehtiv';
         l_msg = l_msg + lcMsg1;
@@ -92,8 +94,8 @@ BEGIN
     SELECT l.tun5 AS valid, l.kood INTO v_lib FROM libs.library l WHERE kood = l_tp_d AND library = 'TP' LIMIT 1;
 
     IF v_lib IS NOT NULL AND v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
-        AND l_kpv > make_date((left(v_lib.valid::TEXT, 4))::integer, (substr(v_lib.valid::TEXT, 5, 2))::integer,
-                              (substr(v_lib.valid::TEXT, 7, 2))::integer)
+        AND l_kpv > make_date((left(v_lib.valid::TEXT, 4))::INTEGER, (substr(v_lib.valid::TEXT, 5, 2))::INTEGER,
+                              (substr(v_lib.valid::TEXT, 7, 2))::INTEGER)
     THEN
         lcMsg1 = 'TP-D,Ei saa kasuta, sest TP kood ei ole kehtiv';
         l_msg = l_msg + lcMsg1;
@@ -110,17 +112,18 @@ BEGIN
            l.tun4                          AS rahavoog,
            l.tun5                          AS tyyp,
            l.properties::JSONB ->> 'valid' AS valid
-           INTO v_konto_d
+    INTO v_konto_d
     FROM libs.library l
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_db::TEXT
       AND status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
-    IF v_konto_d.valid IS NOT NULL AND char_length (v_konto_d.valid::TEXT) = 8 AND NOT public.empty(v_konto_d.valid::TEXT)
+    IF v_konto_d.valid IS NOT NULL AND char_length(v_konto_d.valid::TEXT) = 8 AND
+       NOT public.empty(v_konto_d.valid::TEXT)
     THEN
-        ldKpv = make_date((left(v_konto_d.valid::TEXT, 4))::integer, (substr(v_konto_d.valid::TEXT, 5, 2))::integer,
-                          (substr(v_konto_d.valid::TEXT, 7, 2))::integer);
+        ldKpv = make_date((left(v_konto_d.valid::TEXT, 4))::INTEGER, (substr(v_konto_d.valid::TEXT, 5, 2))::INTEGER,
+                          (substr(v_konto_d.valid::TEXT, 7, 2))::INTEGER);
 
         IF l_kpv > ldKpv
         THEN
@@ -140,17 +143,17 @@ BEGIN
            l.tun4                          AS rahavoog,
            l.properties::JSONB ->> 'tyyp'  AS tyyp,
            l.properties::JSONB ->> 'valid' AS valid
-           INTO v_konto_k
+    INTO v_konto_k
     FROM libs.library l
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_kr::TEXT
       AND status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
-    IF v_konto_k.valid IS NOT NULL AND NOT public.empty(v_konto_k.valid) AND char_length (v_konto_k.valid::TEXT) = 8
+    IF v_konto_k.valid IS NOT NULL AND NOT public.empty(v_konto_k.valid) AND char_length(v_konto_k.valid::TEXT) = 8
     THEN
-        ldKpv = date((left(v_konto_k.valid::TEXT, 4))::integer, (substr(v_konto_k.valid::TEXT, 5, 2))::integer,
-                     (substr(v_konto_k.valid, 7, 2))::integer);
+        ldKpv = date((left(v_konto_k.valid::TEXT, 4))::INTEGER, (substr(v_konto_k.valid::TEXT, 5, 2))::INTEGER,
+                     (substr(v_konto_k.valid, 7, 2))::INTEGER);
         IF l_kpv > ldKpv
         THEN
             l_msg = l_msg + 'Konto K, Ei saa kasuta, sest kood ei ole kehtiv';
@@ -160,7 +163,7 @@ BEGIN
     -- deebet
 
 
-    IF v_konto_d.kood IS NULL OR NOT char_length (l_db) > 0 OR char_length(l_db) < 6
+    IF v_konto_d.kood IS NULL OR NOT char_length(l_db) > 0 OR char_length(l_db) < 6
     THEN
         l_msg = l_msg + ' Deebet konto: puudub või vale konto (' || l_db || ')' ;
     END IF;
@@ -185,7 +188,8 @@ BEGIN
     END IF;
 
     -- kontrollin 'RE' (только для отчетов)
-    if not public.empty(l_allikas) and l_allikas = 'RE' then
+    IF NOT public.empty(l_allikas) AND l_allikas = 'RE'
+    THEN
         l_msg = l_msg + ' Ei saa kasutada allikas RE';
     END IF;
 
@@ -297,13 +301,14 @@ BEGIN
 
     -- Kreedit
 
-    IF v_konto_k.kood IS NULL OR public.empty(l_kr) OR char_length (l_kr) < 6
+    IF v_konto_k.kood IS NULL OR public.empty(l_kr) OR char_length(l_kr) < 6
     THEN
         l_msg = l_msg + ' Kreedit konto: puudub või vale konto ';
     END IF;
 
 
-    IF v_konto_k.tegev IS NOT NULL AND v_konto_k.tegev::TEXT = '1' AND (public.empty(l_tt) OR public.empty(l_eelarve)) AND lnTT = 0
+    IF v_konto_k.tegev IS NOT NULL AND v_konto_k.tegev::TEXT = '1' AND
+       (public.empty(l_tt) OR public.empty(l_eelarve)) AND lnTT = 0
     THEN
         IF NOT public.empty(l_tt)
         THEN
@@ -508,12 +513,12 @@ BEGIN
 -- allikas, kehtivus
     SELECT l.kood,
            (l.properties::JSONB ->> 'valid')::DATE AS valid
-           INTO v_lib
+    INTO v_lib
     FROM libs.library l
     WHERE l.library = 'ALLIKAD'
       AND l.kood::TEXT = l_allikas::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -526,12 +531,12 @@ BEGIN
 -- artikkel, kehtivus
     SELECT l.kood,
            (l.properties::JSONB ->> 'valid')::DATE AS valid
-           INTO v_lib
+    INTO v_lib
     FROM libs.library l
     WHERE l.library = 'TULUDEALLIKAD'
       AND l.kood::TEXT = l_eelarve::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -544,12 +549,12 @@ BEGIN
 -- tegev, kehtivus
     SELECT l.kood,
            (l.properties::JSONB ->> 'valid')::DATE AS valid
-           INTO v_lib
+    INTO v_lib
     FROM libs.library l
     WHERE l.library = 'TEGEV'
       AND l.kood::TEXT = l_tt::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -562,12 +567,12 @@ BEGIN
 -- Rahavoog, kehtivus
     SELECT l.kood,
            (l.properties::JSONB ->> 'valid')::DATE AS valid
-           INTO v_lib
+    INTO v_lib
     FROM libs.library l
     WHERE l.library = 'RAHA'
       AND l.kood::TEXT = l_rahavoog::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
