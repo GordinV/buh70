@@ -176,6 +176,7 @@ BEGIN
           AND lt.kuu = month(l_kpv)
           AND lt.aasta = year(l_kpv)
           AND lk.rekvid = l_rekvid
+          and n.rekvid = lk.rekvid
           AND (lt.summa <> 0 OR lt.kogus <> 0)
         ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
 

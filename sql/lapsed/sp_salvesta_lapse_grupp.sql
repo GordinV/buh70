@@ -53,7 +53,7 @@ BEGIN
     -- Маска кода группы
     -- "Koolituse tüüp""дефис""две цифры"ерну
 
-    IF coalesce((len(array_to_string(regexp_match(doc_kood, '[A-Z][A-Z][A-Z][A-Z]-[0-9][0-9][0-9]-[0-9][0-9]'), ''))),
+    IF coalesce((len(array_to_string(regexp_match(doc_kood, '[A-Z][A-Z][A-Z][A-Z]-[0-9A-Z][0-9A-Z][0-9A-Z]-[0-9][0-9]'), ''))),
                 0) <> 11
     THEN
         RAISE EXCEPTION 'Viga, kood peaks olla AAAA-999-99 aga sisestatud %',doc_kood;
@@ -61,7 +61,7 @@ BEGIN
 
     -- проверка на тип обучения
 
-    l_tyyp_kood = (SELECT kood FROM libs.library WHERE id = doc_tyyp LIMIT 1);
+    l_tyyp_kood = (SELECT ltrim(rtrim(kood)) FROM libs.library WHERE id = doc_tyyp LIMIT 1);
     IF l_tyyp_kood IS NOT NULL AND doc_kood !~ l_tyyp_kood
     THEN
         l_error = 'Viga, kood peaks olla: ' + l_tyyp_kood || ' aga sisestatud';
@@ -100,11 +100,15 @@ BEGIN
 
         -- подменим код в карточках
 
-        UPDATE lapsed.lapse_kaart
-        SET properties = properties || jsonb_build_object('yksus', doc_kood)
-        WHERE rekvid = user_rekvid
-          AND coalesce(properties ->> 'yksus', 'YKSUS') = l_prev_kood
-          AND staatus < 3;
+        if (ltrim(rtrim(l_prev_kood)) <> ltrim(rtrim(doc_kood)))  then
+            UPDATE lapsed.lapse_kaart
+            SET properties = properties || jsonb_build_object('yksus', ltrim(rtrim(doc_kood)))
+            WHERE rekvid = user_rekvid
+              AND ltrim(rtrim(coalesce(properties ->> 'yksus', 'YKSUS'))) = ltrim(rtrim(l_prev_kood))
+              AND staatus < 3;
+
+        END IF;
+
 
     END IF;
 

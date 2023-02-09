@@ -416,7 +416,6 @@ BEGIN
         IF l_mvt_kokku > 0
         THEN
 
-            RAISE NOTICE 'calc mvt l_mvt_kokku %, l_isiku_mvt %, l_tulud_kokku %, tki %, pm %',l_mvt_kokku, l_isiku_mvt, l_tulud_kokku, tki, pm;
             SELECT row_to_json(row)
             INTO l_params
             FROM (SELECT summa                      AS summa,
@@ -431,8 +430,6 @@ BEGIN
                          coalesce(pm, 0)            AS pm) row;
 
             mvt = palk.fnc_calc_mvt(l_params :: JSONB);
-
-            RAISE NOTICE 'mvt tulemus mvt %', mvt;
 
             IF mvt > 0 AND mvt > summa
             THEN

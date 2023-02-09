@@ -16,7 +16,7 @@ module.exports = {
         select: ['kasutaja', 'arvestaja', 'vaatleja', 'peakasutaja'],
         add: ['kasutaja', 'peakasutaja','arvestaja'],
         edit: ['kasutaja', 'peakasutaja','arvestaja'],
-        delete: ['kasutaja', 'peakasutaja','arvestaja'],
+        delete: ['kasutaja', 'peakasutaja'],
     },
     VMK: {
         select: ['kasutaja', 'arvestaja', 'vaatleja', 'peakasutaja'],

@@ -304,8 +304,9 @@ BEGIN
             END IF;
 
 
-            IF ((left(json_record.kreedit, 6) = '203630') OR (left(json_record.deebet, 6) = '203630')) AND
-               doc_selg <> 'Alg.saldo kreedit'
+            IF (((left(json_record.kreedit, 6) = '203630') OR (left(json_record.deebet, 6) = '203630')) AND
+               doc_selg <> 'Alg.saldo kreedit')
+                   or exists (select id from hooldekodu.hootehingud where hootehingud.journalid = doc_id)
             THEN
                 is_hooldekodu_tehing = TRUE;
             END IF;
@@ -365,7 +366,7 @@ BEGIN
     IF is_hooldekodu_tehing AND exists(SELECT 1 FROM pg_proc WHERE proname = 'sp_koosta_hootehing')
     THEN
         -- если изменилось имя пенсионера
-        IF NOT kas_uus AND v_prev_doc.asutusid <> doc_asutusid
+        IF NOT kas_uus
         THEN
             -- удалем связанные старые операции
             PERFORM hooldekodu.sp_delete_hootehing(userid, id)

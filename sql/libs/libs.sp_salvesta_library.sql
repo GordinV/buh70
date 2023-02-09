@@ -61,9 +61,9 @@ BEGIN
     -- проверка для типа обучения
     IF doc_library = 'KOOLITUSE_TYYP'
     THEN
-        IF coalesce((len(array_to_string(regexp_match(doc_kood, '[A-Z][A-Z][A-Z][A-Z]-[0-9][0-9][0-9]'), ''))), 0) <> 8
+        IF coalesce((len(array_to_string(regexp_match(doc_kood, '[A-Z][A-Z][A-Z][A-Z]-[0-9A-Z][0-9A-Z][0-9A-Z]'), ''))), 0) <> 8
         THEN
-            RAISE EXCEPTION 'Viga, kood peaks olla AAAA-999 aga sisestatud %',doc_kood;
+            RAISE EXCEPTION 'Viga, kood peaks olla AAAA-999(AAA) aga sisestatud %',doc_kood;
         END IF;
 
     END IF;

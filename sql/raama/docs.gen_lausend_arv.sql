@@ -378,7 +378,7 @@ BEGIN
                     END IF;
 
                     lcKood5 = v_arv1.kood5;
-                    raise notice 'v_arv.tyyp %, v_arv.liik  %',v_arv.tyyp, v_arv.liik ;
+                    RAISE NOTICE 'v_arv.tyyp %, v_arv.liik  %',v_arv.tyyp, v_arv.liik;
                     IF v_arv.liik = 0
                     THEN
                         -- ettemaksu arve
@@ -396,7 +396,8 @@ BEGIN
                             v_arv1.kood2 = '80';
                             v_arv1.kood1 = '10200';
 */
-                        ELSIF (v_arv.tyyp IS NOT NULL AND v_arv.tyyp in ('HOOLDEKODU_SUGULUANE_OSA','HOOLDEKODU_SUGULUANE'))
+                        ELSIF (v_arv.tyyp IS NOT NULL AND
+                               v_arv.tyyp IN ('HOOLDEKODU_SUGULUANE_OSA', 'HOOLDEKODU_SUGULUANE'))
                         THEN
 
                             lcDbKonto = '10300019';
@@ -563,6 +564,24 @@ BEGIN
             -- оплата счета холдекоду
             IF (jsonb_array_length(l_json_details_tasu)) > 0 AND v_arv.tyyp = 'HOOLDEKODU_ISIKU_OSA' AND v_arv.liik = 0
             THEN
+                IF exists(SELECT id
+                          FROM hooldekodu.hooleping
+                          WHERE isikid = v_arv.Asutusid
+                            AND coalesce((properties ->> 'algoritm')::INTEGER, 0) = 1)
+                THEN
+                    -- меняем дату на дату поступления денег
+
+                    v_arv.kpv = (
+                        SELECT kpv
+                        FROM cur_journal
+                        WHERE asutusid = v_arv.Asutusid
+                          AND kpv >= v_arv.kpv
+                          AND deebet LIKE '100100%'
+                          AND kreedit LIKE '203630%'
+                        ORDER BY kpv
+                        LIMIT 1);
+                END IF;
+
                 SELECT 0,
                        'JOURNAL'          AS doc_type_id,
                        v_arv.kpv,
@@ -676,5 +695,4 @@ select * from docs.arv
 
 select * ffrom docs.arv1 where
 */
-
 

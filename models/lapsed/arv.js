@@ -45,8 +45,7 @@ const Arv = {
                   lapsed,
                   lapsed.saldo_ja_kaibeandmik(a.rekvid,
                                               make_date(year(a.alg_kpv), month(a.alg_kpv), 01)::DATE,
-                                              gomonth(make_date(year(a.lopp_kpv), month(a.lopp_kpv), 01), 1) - 1,
-                                              lapsed.isik_ids::INTEGER[]) kb
+                                              gomonth(make_date(year(a.lopp_kpv), month(a.lopp_kpv), 01), 1) - 1) kb
              GROUP BY kb.isik_id
          ),
          details AS (
@@ -273,7 +272,7 @@ const Arv = {
                                 CASE WHEN lopp_kr > 0 THEN lopp_kr ELSE 0 END AS ettemaksud
                          FROM doc,
                               lapsed.saldo_ja_kaibeandmik(doc.rekvid, make_date(year(doc.doc_kpv), month(doc.doc_kpv), 1)::DATE,
-                                                          gomonth(make_date(year(doc.doc_kpv), month(doc.doc_kpv), 01), 1)::date - 1, doc.lapsid)) saldod`,
+                                                          gomonth(make_date(year(doc.doc_kpv), month(doc.doc_kpv), 01), 1)::date - 1,doc.lapsId)) saldod`,
             sqlAsNew: `SELECT $1 :: INTEGER                                                          AS id,
                               $2 :: INTEGER                                                          AS userid,
                               to_char(now(), 'YYYY-MM-DD HH:MM:SS') :: TEXT                          AS created,

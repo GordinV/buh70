@@ -164,8 +164,16 @@ GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INT
 
 
 /*
-SELECT *
-FROM docs.kaibeasutusandmik('650100',0,'2022-01-01','2022-12-31', 63,'%',1)
+select * from (
+SELECT  a.nimetus, a.properties->>'kehtivus' as kehtivus, a.tp, rep.*
+FROM docs.kaibeasutusandmik('103000',0,'2023-01-01','2023-02-28', 119,'%',1) rep
+left outer join libs.asutus a on a.id = rep.asutus_id
+
+) qry
+where kehtivus is not null
+order by kehtivus
+
+
 --  (execution: 19 s 856 ms, fetching: 55 ms)
 -- 30.36,30.36
 
