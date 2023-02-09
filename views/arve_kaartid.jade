@@ -22,6 +22,7 @@ style(type='text/css').
     }
     .label {
         width:10%;
+        font-weight:normal;
     }
     .input {
         width:90%;
@@ -54,7 +55,7 @@ block content
                 p.input #{doc.arved}
 
             h1
-                    p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
+                p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
 
                 div.row_wrapper
                     p.label Number:
@@ -133,7 +134,6 @@ block content
                 div.row_wrapper
                     p.label_subtotal Kuulub tasumisele:
                     p.input #{`${Number(doc.tasumisele).toFixed(2)}`}
-            br
             br
             div.row_wrapper
                 p.label_subtotal Arve koostaja: #{`${data[0].koostaja}`}
