@@ -52,7 +52,7 @@ DECLARE
                                ORDER BY default_ DESC
                                LIMIT 1);
 
-    l_db_konto      TEXT    = '103000'; -- согдасно описанию отдела культуры
+    l_db_konto      TEXT    = '10300029'; -- согдасно описанию отдела культуры
     v_laps          RECORD;
     l_arve_kogus    NUMERIC = 0; -- для проверки кол-ва услуг в счете
 
@@ -176,7 +176,7 @@ BEGIN
           AND lt.kuu = month(l_kpv)
           AND lt.aasta = year(l_kpv)
           AND lk.rekvid = l_rekvid
-          and n.rekvid = lk.rekvid
+          AND n.rekvid = lk.rekvid
           AND (lt.summa <> 0 OR lt.kogus <> 0)
         ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
 
@@ -367,11 +367,8 @@ BEGIN
 
     IF l_arv_id IS NOT NULL AND l_arv_id > 0
     THEN
-        IF l_arve_summa > 0
-        THEN
-            -- контируем
-            PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
-        END IF;
+        -- контируем
+        PERFORM docs.gen_lausend_arv(l_arv_id, user_id);
         error_message = 'Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi || ', arveId:' ||
                         coalesce(l_arv_id, 0)::TEXT;
 

@@ -147,6 +147,7 @@ BEGIN
 
             IF l_laps_id IS NOT NULL
             THEN
+                v_vmk1.konto = '10300029';
 
 /*                В проводках по поступлению денег в Selgitus-е хорошо бы поставить так:
                     - при tegevusala 09110 поставить Lasteaiatasu

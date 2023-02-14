@@ -164,7 +164,7 @@ BEGIN
     result = 1;
     RETURN;
 
-EXCEPTION
+/*EXCEPTION
     WHEN OTHERS
         THEN
             RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
@@ -172,7 +172,7 @@ EXCEPTION
             error_code = 1;
             error_message = SQLERRM;
             RETURN;
-
+*/
 END;
 $$;
 

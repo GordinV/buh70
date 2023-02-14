@@ -165,9 +165,10 @@ GRANT EXECUTE ON FUNCTION docs.kaibeasutusandmik( TEXT, INTEGER, DATE, DATE, INT
 
 /*
 select * from (
-SELECT  a.nimetus, a.properties->>'kehtivus' as kehtivus, a.tp, rep.*
-FROM docs.kaibeasutusandmik('103000',0,'2023-01-01','2023-02-28', 119,'%',1) rep
+SELECT  a.nimetus, a.id, a.staatus, a.properties->>'kehtivus' as kehtivus, a.tp, rep.*
+FROM docs.kaibeasutusandmik('103000',0,'2023-01-01','2023-01-01', 71,'%',1) rep
 left outer join libs.asutus a on a.id = rep.asutus_id
+where kreedit = 37.90
 
 ) qry
 where kehtivus is not null
@@ -190,3 +191,7 @@ select * from ou.rekv where id = 130
 
 
 */
+
+select * from libs.asutus where id = 1804
+
+UPDATE  libs.asutus set staatus = 1 where id = 1804

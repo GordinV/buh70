@@ -51,7 +51,7 @@ BEGIN
 
   RETURN;
 
-  EXCEPTION WHEN OTHERS
+/*  EXCEPTION WHEN OTHERS
   THEN
     RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
     result = 0;
@@ -59,7 +59,7 @@ BEGIN
     error_message = SQLERRM;
 
     RETURN;
-
+*/
 END;
 $$;
 

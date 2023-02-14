@@ -11,37 +11,44 @@ module.exports = async (file, mimeType, user) => {
             rows = await readCSV(file);
         }
 
+
+        let saved = 0;
+        let response = [];
+        let returnData;
+
+        Document.setLog('XML/CSV', [file, mimeType], JSON.stringify({data: rows}));
+
+        if (rows.length) {
+            // сохраняем
+
+            const params = {
+                data: JSON.stringify({data: rows}),
+                userId: user.id,
+                asutusId: user.asutusId
+            };
+
+            let sql = Document.config.importDoc.command;
+
+            response = await Document.save(params, true, sql);
+            saved = response && response.data && response.data.length > 0 ? response.data[0].result : 0;
+            returnData = response.data && response.data.length ? response.data[0] : [];
+        }
+
+        return {
+            error_message: `Kokku leidsin ${rows.length} maksed, salvestatud kokku: ${saved}`,
+            result: saved,
+            data: returnData
+        };
     } catch (e) {
         console.error(e);
-    }
-
-    let saved = 0;
-    let response = [];
-    let returnData;
-
-    Document.setLog('XML/CSV', [file, mimeType], JSON.stringify({data: rows}));
-
-    if (rows.length) {
-        // сохраняем
-
-        const params = {
-            data: JSON.stringify({data: rows}),
-            userId: user.id,
-            asutusId: user.asutusId
+        return {
+            error_message: `Viga`,
+            result: 0,
+            data: []
         };
 
-        let sql = Document.config.importDoc.command;
-
-        response = await Document.save(params, true, sql);
-        saved = response && response.data && response.data.length > 0 ? response.data[0].result : 0;
-        returnData = response.data && response.data.length ? response.data[0] : [];
     }
 
-    return {
-        error_message: `Kokku leidsin ${rows.length} maksed, salvestatud kokku: ${saved}`,
-        result: saved,
-        data: returnData
-    };
 };
 
 const readXML = async (xmlContent) => {

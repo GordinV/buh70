@@ -2,10 +2,10 @@ DROP FUNCTION IF EXISTS docs.gen_lausend_smk(INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS docs.gen_lausend_smk_(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.gen_lausend_smk(IN tnid INTEGER,
-                                                 IN userid INTEGER,
-                                                 OUT error_code INTEGER,
-                                                 OUT result INTEGER,
-                                                 OUT error_message TEXT)
+                                                IN userid INTEGER,
+                                                OUT error_code INTEGER,
+                                                OUT result INTEGER,
+                                                OUT error_message TEXT)
 AS
 $BODY$
 DECLARE
@@ -178,7 +178,7 @@ BEGIN
                                         INNER JOIN libs.asutus a ON a.id = v.asutusid
                                WHERE v.parentid = l_laps_id
                                  AND v.rekvid = v_smk.rekvid
-                               ORDER BY coalesce(v.arveldus, false) DESC
+                               ORDER BY coalesce(v.arveldus, FALSE) DESC
                                        , v.id DESC
                                LIMIT 1);
 
@@ -186,11 +186,21 @@ BEGIN
                 THEN
                     l_asutus_id = v_smk1.asutusid;
                 END IF;
+
+
             END IF;
 
             IF l_laps_id IS NOT NULL
             THEN
+                v_smk1.konto = '10300029';
                 v_smk1.tp = '800699';
+                v_smk1.tp = coalesce((SELECT tp FROM libs.asutus WHERE id = l_asutus_id), '800699');
+                IF v_smk1.tp = '800698'
+                THEN
+                    -- Kalle, FIE меняекм на частные лица
+                    v_smk1.tp = '800699';
+                END IF;
+
                 IF v_smk1.kood1 = 'null'
                 THEN
                     v_smk1.kood1 = NULL;
@@ -237,10 +247,10 @@ BEGIN
                     -- alg saldo
                     lcSelg = 'Oppetasu algsaldo 2023';
                     v_smk.konto = '888888';
-                    v_smk1.konto = '103000';
+                    v_smk1.konto = '10300029';
                     v_smk1.tp = '800699';
                     v_smk.tp = '800699';
-                    v_smk.kpv = '2023-01-01'::date;
+                    v_smk.kpv = '2023-01-01'::DATE;
                 END IF;
             END IF;
 

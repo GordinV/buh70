@@ -53,7 +53,7 @@ DECLARE
                                   LIMIT 1);
     l_ettemaksu_period INTEGER = 1;
     l_tulu_arved       INTEGER = 0; -- кол-во доходных счетов, должно быть = кол-ву периодов
-    l_db_konto         TEXT    = '103000'; -- согдасно описанию отдела культуры
+    l_db_konto         TEXT    = '10300029'; -- согдасно описанию отдела культуры
     l_kr_konto         TEXT    = '203900';
     v_laps             RECORD;
     l_teenuste_arv     INTEGER = 0;

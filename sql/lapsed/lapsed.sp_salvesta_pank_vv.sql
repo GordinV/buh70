@@ -33,7 +33,7 @@ DECLARE
     l_viitenr     TEXT;
     l_kas_vigane  BOOLEAN   = FALSE;
     doc_id        INTEGER   = data ->> 'id';
-
+    l_context text;
 BEGIN
 
     SELECT kasutaja
@@ -132,8 +132,9 @@ BEGIN
 EXCEPTION
     WHEN OTHERS
         THEN
-            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-            error_message = SQLERRM;
+            GET STACKED DIAGNOSTICS l_context = PG_EXCEPTION_CONTEXT;
+            RAISE NOTICE 'error % %', l_context, SQLSTATE;
+            error_message = l_context;
             result = 0;
             json_object = to_jsonb(row.*)
                           FROM (
@@ -143,6 +144,9 @@ EXCEPTION
                                           1::INTEGER                        AS error_code
                                ) row;
             data = coalesce(data, '[]'::JSONB) || json_object::JSONB;
+
+            INSERT INTO ou.paringud (user_id, sql, params, tulemused, changes)
+            VALUES (user_id, NULL, import_data, l_context, NULL);
 
             RETURN;
 

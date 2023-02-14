@@ -130,6 +130,7 @@ BEGIN
                          coalesce(v_arv.asutus_tp, '800699')
                      ELSE coalesce(v_arv.asutus_tp, '800599') END;
 
+
         -- koostame selg rea
         lcSelg = trim(v_dokprop.selg);
         IF (SELECT count(id)
@@ -157,11 +158,20 @@ BEGIN
         END IF;
 
         v_arv.asutus_tp = coalesce(v_arv.asutus_tp, '800599');
-        lcKrTp = coalesce(v_arv.asutus_tp, '800599');
+        --lcKrTp = coalesce(v_arv.asutus_tp, '800599');
+
+        lcKrTp = CASE
+                     WHEN left(lcDbKonto, 6) IN ('601000', '103701', '203010', '203000') THEN '014001'
+                     WHEN coalesce(v_arv.laps_id, 0) > 0 THEN
+                         coalesce(v_arv.asutus_tp, '800699')
+                     ELSE coalesce(v_arv.asutus_tp, '800599') END;
 
         -- род. плата
         IF v_arv.laps_id IS NOT NULL
         THEN
+            -- новый балансовый субсчет для проводок по учебной плате вместо счета 103000 kalle 11.02.2023
+            lcDbKonto = '10300029';
+
             -- меняем на ответственного ( Kalle 18/01/2023
             l_asutus_id = (SELECT asutusid
                            FROM lapsed.vanem_arveldus v
@@ -177,6 +187,16 @@ BEGIN
                 l_asutus_id = v_arv.asutusid;
             END IF;
             v_arv.asutusid = l_asutus_id;
+
+            v_arv.asutus_tp = (SELECT tp FROM libs.asutus WHERE id = l_asutus_id);
+            IF v_arv.asutus_tp = '800698'
+            THEN
+                -- Kalle, FIE меняекм на частные лица
+                v_arv.asutus_tp = '800699';
+            END IF;
+
+            lcKrTp = coalesce(v_arv.asutus_tp, '800699');
+            lcDbTp = coalesce(v_arv.asutus_tp, '800699');
 
         END IF;
 
@@ -378,7 +398,6 @@ BEGIN
                     END IF;
 
                     lcKood5 = v_arv1.kood5;
-                    RAISE NOTICE 'v_arv.tyyp %, v_arv.liik  %',v_arv.tyyp, v_arv.liik;
                     IF v_arv.liik = 0
                     THEN
                         -- ettemaksu arve
@@ -388,14 +407,6 @@ BEGIN
                             -- 103000	203900
                             lcDbKonto = '103000';
                             lcKrKonto = '203900';
-/*                        ELSIF (v_arv.tyyp IS NOT NULL AND v_arv.tyyp = 'HOOLDEKODU_ISIKU_OSA')
-                        THEN
-                            lcDbKonto = '10300002';
-                            lcKrKonto = v_arv1.konto;
-                            v_arv1.kood5 = '3224';
-                            v_arv1.kood2 = '80';
-                            v_arv1.kood1 = '10200';
-*/
                         ELSIF (v_arv.tyyp IS NOT NULL AND
                                v_arv.tyyp IN ('HOOLDEKODU_SUGULUANE_OSA', 'HOOLDEKODU_SUGULUANE'))
                         THEN
@@ -417,7 +428,7 @@ BEGIN
                             lcKrKonto = v_arv1.konto;
                         END IF;
 
-                        SELECT 0                                   AS id,
+                        SELECT 0                               AS id,
                                CASE
                                    WHEN v_arv1.kbmta = 0 AND v_arv1.hind <> 0
                                        THEN v_arv1.hind * v_arv1.kogus
@@ -426,20 +437,20 @@ BEGIN
                                    WHEN v_arv1.kbm = 0 AND v_arv1.kbmta <> v_arv1.summa THEN
                                        -- коррекция округления в род. плате
                                        v_arv1.summa
-                                   ELSE v_arv1.kbmta END           AS summa,
-                               coalesce(v_arv1.valuuta, 'EUR')     AS valuuta,
-                               coalesce(v_arv1.kuurs, 1)           AS kuurs,
-                               lcDbKonto                           AS deebet,
-                               lcKrKonto                           AS kreedit,
-                               coalesce(lcDbTp, '800599')          AS lisa_d,
-                               coalesce(v_arv.asutus_tp, '800599') AS lisa_k,
-                               coalesce(v_arv1.tunnus, '')         AS tunnus,
-                               coalesce(v_arv1.proj, '')           AS proj,
-                               coalesce(v_arv1.kood1, '')          AS kood1,
-                               coalesce(v_arv1.kood2, '')          AS kood2,
-                               coalesce(v_arv1.kood3, '')          AS kood3,
-                               coalesce(v_arv1.kood4, '')          AS kood4,
-                               coalesce(v_arv1.kood5, '')          AS kood5
+                                   ELSE v_arv1.kbmta END       AS summa,
+                               coalesce(v_arv1.valuuta, 'EUR') AS valuuta,
+                               coalesce(v_arv1.kuurs, 1)       AS kuurs,
+                               lcDbKonto                       AS deebet,
+                               lcKrKonto                       AS kreedit,
+                               coalesce(lcDbTp, '800599')      AS lisa_d,
+                               coalesce(lcKrTp, '800599')      AS lisa_k,
+                               coalesce(v_arv1.tunnus, '')     AS tunnus,
+                               coalesce(v_arv1.proj, '')       AS proj,
+                               coalesce(v_arv1.kood1, '')      AS kood1,
+                               coalesce(v_arv1.kood2, '')      AS kood2,
+                               coalesce(v_arv1.kood3, '')      AS kood3,
+                               coalesce(v_arv1.kood4, '')      AS kood4,
+                               coalesce(v_arv1.kood5, '')      AS kood5
                         INTO v_journal;
 
                         l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
@@ -668,7 +679,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_arv(INTEGER, INTEGER) TO dbpeakasutaj
 /*
 
 
-SELECT  docs.gen_lausend_arv(4478825, 5175)
+SELECT  docs.gen_lausend_arv(4612167, 63)
 
 select parentid , * from docs.arv where number = 'HKOP16775'
 

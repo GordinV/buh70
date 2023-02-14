@@ -109,27 +109,18 @@ block content
                             td(align='center')=Number(row.summa).toFixed(2)
 
             div.row_wrapper
-                p.label_subtotal Summa käibemaksuta:
-                p.input #{`${Number(data[0].kbmta).toFixed(2)}`}
-            div.row_wrapper
-                p.label_subtotal Käibemaks:
-                p.input #{`${Number(data[0].kbm).toFixed(2)}`}
-            div.row_wrapper
                 p.label_subtotal Kokku:
                 p.input #{`${Number(data[0].summa).toFixed(2)}`}
             hr
             div.row_wrapper
-                p.label_subtotal Seisuga #{`${data[0].period_alg_print}`}
+                p.label_subtotal Seisuga #{`${data[0].period_alg_print}`} jääk:
                 p.subtotal #{`${Number(data[0].alg_jaak).toFixed(2)}`}
             div.row_wrapper
                 p.label_subtotal Laekumised periodis: #{`${data[0].laekumise_period}`}
                 p.subtotal #{`${Number(data[0].laekumised).toFixed(2)}`}
             div.row_wrapper
-                p.label_subtotal Seisuga #{`${data[0].kpv_print}`}:
+                p.label_subtotal Seisuga #{`${data[0].kpv_print}`} tasumisele:
                 p.subtotal #{`${Number(data[0].lopp_jaak).toFixed(2)}`}
-            div.row_wrapper
-                p.label_subtotal #{`${data[0].tasumisele > 0 ? 'Kuulub tasumisele': 'Teil on ettemaks'}`} :
-                p.subtotal #{`${Number(data[0].tasumisele).toFixed(2)}`}
             br
             div.row_wrapper
                 p.label_subtotal Arve koostaja: #{`${data[0].koostaja}`}
