@@ -72,7 +72,17 @@ block content
                         td=rea.asutus
                         td=rea.konto
                         td=rea.summa
+        div.row_wrapper
+            p.label Kokku üldsumma:
+            p.input #{Number(data[0].summa_total).toFixed(2)}
+        p Sealhulgas:
 
+        each row in data[0].kontod
+            div.row_wrapper
+                p.label Kokku konto
+                p.label #{row.konto}:
+                p.input #{row.summa}:
+        br
         p Raamatupidaja ______________________________
 
         br

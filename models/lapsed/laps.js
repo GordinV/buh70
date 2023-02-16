@@ -9,7 +9,7 @@ module.exports = {
                           NULL::DATE AS valid
                    FROM lapsed.laps l
                    WHERE l.staatus < 3
-                   ORDER BY nimi`,
+                       ORDER BY nimi`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},
@@ -62,12 +62,18 @@ module.exports = {
             sql: `SELECT v.id,
                          v.parentid,
                          v.asutusid,
+                         a.regkood as isikukood,
                          a.nimetus,
                          a.tel,
                          a.email,
-                         v.properties ->> 'arved'     AS arved,
-                         v.properties ->> 'suhtumine' AS suhtumine,
-                         $2                           AS userid
+                         coalesce((SELECT va.arveldus
+                                   FROM lapsed.vanem_arveldus va
+                                   WHERE va.parentid = $1
+                                     AND va.rekvid = (SELECT rekvid FROM ou.userid WHERE id = $2)
+                                     AND va.asutusid = a.id
+                                     AND arveldus
+                                       LIMIT 1)
+                             , FALSE)::BOOLEAN        AS arved
                   FROM lapsed.vanemad v
                            INNER JOIN libs.asutus a ON a.id = v.asutusid
                   WHERE v.parentid = $1
@@ -163,9 +169,11 @@ module.exports = {
                     {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
                     {id: 'parentid', name: 'parentid', width: '0px', show: false, type: 'text', readOnly: true},
                     {id: 'asutusid', name: 'asutusid', width: '0px', show: false, type: 'text', readOnly: true},
-                    {id: 'nimetus', name: 'Nimetus', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'tel', name: 'Tel. nr', width: '100px', show: true, type: 'text', readOnly: false},
-                    {id: 'email', name: 'E-mail', width: '100px', show: true, type: 'text', readOnly: false},
+                    {id: 'isikukood', name: 'Isikukood', width: '20%', show: true, type: 'text', readOnly: false},
+                    {id: 'nimetus', name: 'Nimetus', width: '40%', show: true, type: 'text', readOnly: false},
+                    {id: 'tel', name: 'Tel. nr', width: '20%', show: true, type: 'text', readOnly: false},
+                    {id: 'email', name: 'E-mail', width: '20%', show: true, type: 'text', readOnly: false},
+                    {id: 'arved', name: 'Arveldus', width: '10%', show: true, type: 'boolean', readOnly: false},
                 ],
             gridTeenusteConfig:
                 [
