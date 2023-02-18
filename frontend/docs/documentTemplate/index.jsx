@@ -98,6 +98,7 @@ class DocumentTemplate extends React.Component {
 
 
     render() {
+
         let isInEditMode = this.state.edited;
 
         if (this.props.libs.length && !this.state.loadedLibs) {
@@ -109,6 +110,7 @@ class DocumentTemplate extends React.Component {
             this.loadLibs(null, kpv);
         }
 
+        console.log('render loadedLibs',this.state.loadedLibs);
         const warningStyle = styles[this.state.warningType] ? styles[this.state.warningType] : null;
 
         let dialogString = this.serverValidation.length > 0 ? `Dokument ${this.serverValidation[0].name} = ${this.serverValidation[0].value} juba olemas. Kas jätka?` : '';
@@ -824,7 +826,7 @@ class DocumentTemplate extends React.Component {
                             // отметка что справочник загружен
                             this.loadingLibs[lib] = false;
 
-                            if (!libsCount && !this.state.loadedLibs) {
+                            if ((!libsCount || libsCount < 1) && !this.state.loadedLibs) {
                                 //all libs loaded;
                                 this.setState({
                                     loadedLibs: true,
@@ -833,7 +835,6 @@ class DocumentTemplate extends React.Component {
                                 });
 
                             }
-
                         }
 
                     })
@@ -854,7 +855,8 @@ class DocumentTemplate extends React.Component {
 
                 libsCount--;
 
-                if (!libsCount && !this.state.loadedLibs) {
+                const libs1 = libs;
+                if ((!libsCount || libsCount < 1) && !this.state.loadedLibs) {
                     //all libs loaded;
                     this.setState({
                         loadedLibs: true,
@@ -866,7 +868,8 @@ class DocumentTemplate extends React.Component {
 
             }
 
-            if (libsCount <= 1 && !this.state.loadedLibs) {
+            if (libsCount = 0 && !this.state.loadedLibs) {
+
                 //all libs loaded;
                 this.setState({
                     loadedLibs: true,

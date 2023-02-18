@@ -25,13 +25,14 @@ module.exports = {
                      lt.properties ->> 'too_paevad'                                            AS too_paevad,
                      lt.soodustus,
                      lt.vahe                                                                   AS vahe,
-                     lt.summa,
+                     lt.summa::NUMERIC(12, 2),
                      lt.muud,
                      l.isikukood,
                      l.nimi,
                      $2                                                                        AS userid,
                      n.kood,
-                     n.nimetus                                                                 AS teenus
+                     n.nimetus                                                                 AS teenus,
+                     TRUE                                                                      AS loaded_data
               FROM lapsed.lapse_taabel lt
                        INNER JOIN lapsed.laps l ON l.id = lt.parentid
                        INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
@@ -62,6 +63,7 @@ module.exports = {
                   null::text as nimi,
                   null::text as kood,
                   null::text as nimetus,
+                  true as loaded_data,
                   null::text as muud`,
         query: null,
         multiple: false,

@@ -29,7 +29,8 @@
                            docs_ids,
                            coalesce(a.arve, qry_aa.arve)::VARCHAR(20) AS aa,
                            a.viitenr::VARCHAR(120)                    AS viitenr,
-                           ebatoenaolised
+                           ebatoenaolised,
+                           korr_konto
                     FROM cur_arved a,
                          (SELECT arve
                           FROM ou.aa aa

@@ -116,7 +116,6 @@ class LapseKaart extends React.PureComponent {
         // берем только услуги для группы, добавляяем цену и ед.измерения и сортируем
         try {
             if (yksus) {
-                console.log('yksus', yksus);
                 if (DocContext.libs && yksus.id && DocContext.libs[yksus.id] && DocContext.libs[yksus.id].length) {
                     // берем из кеша
                     nomData = DocContext.libs[yksus.id];

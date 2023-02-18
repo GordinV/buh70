@@ -26,7 +26,6 @@ class Laps extends React.PureComponent {
             docId: props.docId ? props.docId : Number(props.match.params.docId),
             lapsId: props.lapsId ? props.lapsId : props.match.params.paramId ? Number(props.match.params.paramId) : 0
         };
-
         this.renderer = this.renderer.bind(this);
         this.handlePageClick = this.handlePageClick.bind(this);
         this.handleGridBtnClick = this.handleGridBtnClick.bind(this);
@@ -39,6 +38,7 @@ class Laps extends React.PureComponent {
         this.pages = [
             {pageName: 'Lapse taabel', docTypeId: 'LAPSE_TAABEL'}
         ];
+        this.nomData = [];
     }
 
     componentDidMount() {
@@ -84,166 +84,171 @@ class Laps extends React.PureComponent {
 
     renderer(self) {
         //|| !self.state.loadedLibs
-        if (!self || !self.docData || !self.libs['lapse_kaart']) {
+        if (!self || !self.docData || !self.docData.loaded_data || !self.state.loadedLibs) {
             // не загружены данные
             return (<div style={styles.doc}>
                 <Loading label={'Laadimine...'}/>
             </div>);
         }
+        try {
+            let nomData = [];
 
-        // не успевает подгрузиться справочник, перегрузка формы
-        if (!self.libs['lapse_kaart'].length) {
-            setTimeout(() => {
-                this.forceUpdate()
-            }, 1);
-        }
+            if (this.state.lapsId && self.docData.id == 0 && !self.docData.parentid) {
+                self.docData.parentid = this.state.lapsId;
+            }
 
-        let isEditMode = self.state.edited;
+            if (self.docData.parentid && self.libs['lapse_kaart']) {
+                //фильтр на используемы номенклатуры
+                nomData = self.libs['lapse_kaart'].length ? self.libs['lapse_kaart'].filter(row => row.lapsid === self.docData.parentid): [];
+                setTimeout(1);
+            }
+            let isEditMode = self.state.edited;
 
-        if ((self.docData.id === 0 || !self.docData.parentid) && this.state.lapsId) {
-            //new record
-            self.docData.parentid = this.state.lapsId;
-        }
+            if ((self.docData.id === 0 || !self.docData.parentid) && this.state.lapsId) {
+                //new record
+                self.docData.parentid = this.state.lapsId;
+            }
 
-        if (!this.state.lapsId && self.docData.parentid) {
-            this.setState({lapsId: self.docData.parentid})
-        }
+            if (!this.state.lapsId && self.docData.parentid) {
+                this.setState({lapsId: self.docData.parentid})
+            }
 
-        let kpv = new Date(),
-            kuu = kpv.getMonth(),
-            aasta = kpv.getFullYear();
+            let kpv = new Date(),
+                kuu = kpv.getMonth(),
+                aasta = kpv.getFullYear();
 
-        let buttonEditNom = styles.btnEditNom;
+            let buttonEditNom = styles.btnEditNom;
+            return (
+                <div style={styles.doc}>
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <SelectData title="Lapse nimi:"
+                                        name='parentid'
+                                        libName="laps"
+                                        sqlFields={['nimi', 'isikukood']}
+                                        data={[]}
+                                        value={self.docData.parentid || 0}
+                                        defaultValue={self.docData.nimi}
+                                        boundToGrid='nimi'
+                                        boundToData='nimi'
+                                        ref="select-parentid"
+                                        btnDelete={false}
+                                        userData={self.userData}
+                                        onChange={this.lapsIdChangehandler}
+                                        readOnly={!isEditMode}/>
+                        </div>
+                        <div style={styles.docColumn}>
+                            <ButtonEdit
+                                ref='btnEdit'
+                                value={'Muuda'}
+                                onClick={this.btnEditLapsClick}
+                                show={!isEditMode}
+                                style={buttonEditNom}
+                                disabled={false}
+                            />
+                        </div>
 
-        //фильтр на используемы номенклатуры
-        const nomData = self.libs['lapse_kaart'] ? self.libs['lapse_kaart'].filter(row => row.lapsid === self.docData.parentid) : [];
+                    </div>
 
-        return (
-            <div style={styles.doc}>
-                <div style={styles.docRow}>
-                    <div style={styles.docColumn}>
-                        <SelectData title="Lapse nimi:"
-                                    name='parentid'
-                                    libName="laps"
-                                    sqlFields={['nimi', 'isikukood']}
-                                    data={[]}
-                                    value={self.docData.parentid || 0}
-                                    defaultValue={self.docData.nimi}
-                                    boundToGrid='nimi'
-                                    boundToData='nimi'
-                                    ref="select-parentid"
-                                    btnDelete={false}
-                                    userData={self.userData}
-                                    onChange={this.lapsIdChangehandler}
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <Select title="Kood:"
+                                    name='lapse_kaart_id'
+                                    libs="lapse_kaart"
+                                    data={nomData}
+                                    value={self.docData.lapse_kaart_id || 0}
+                                    defaultValue={self.docData.nimetus}
+                                    ref="select-lapse_kaart_id"
+                                    btnDelete={isEditMode}
+                                    onChange={self.handleInputChange}
                                     readOnly={!isEditMode}/>
-                    </div>
-                    <div style={styles.docColumn}>
-                        <ButtonEdit
-                            ref='btnEdit'
-                            value={'Muuda'}
-                            onClick={this.btnEditLapsClick}
-                            show={!isEditMode}
-                            style={buttonEditNom}
-                            disabled={false}
-                        />
-                    </div>
+                        </div>
 
-                </div>
-
-                <div style={styles.docRow}>
-                    <div style={styles.docColumn}>
-                        <Select title="Kood:"
-                                name='lapse_kaart_id'
-                                libs="lapse_kaart"
-                                data={nomData}
-                                value={self.docData.lapse_kaart_id || 0}
-                                defaultValue={self.docData.nimetus}
-                                ref="select-lapse_kaart_id"
-                                btnDelete={isEditMode}
-                                onChange={self.handleInputChange}
-                                readOnly={!isEditMode}/>
+                        <div style={styles.docColumn}>
+                            <ButtonEdit
+                                ref='btnEdit'
+                                value={'Muuda'}
+                                onClick={this.btnEditNomClick}
+                                show={!isEditMode}
+                                style={buttonEditNom}
+                                disabled={false}
+                            />
+                        </div>
                     </div>
 
-                    <div style={styles.docColumn}>
-                        <ButtonEdit
-                            ref='btnEdit'
-                            value={'Muuda'}
-                            onClick={this.btnEditNomClick}
-                            show={!isEditMode}
-                            style={buttonEditNom}
-                            disabled={false}
-                        />
+                    <div style={styles.docRow}>
+                        <div style={styles.docColumn}>
+                            <InputNumber ref="input-kogus"
+                                         title='Kogus:'
+                                         name='kogus'
+                                         value={(self.docData.kogus) || ''}
+                                         readOnly={!isEditMode}
+                                         onChange={self.handleInputChange}/>
+
+                            <InputNumber ref="input-hind"
+                                         title='Hind:'
+                                         name='hind'
+                                         value={(self.docData.hind) || ''}
+                                         readOnly={true}/>
+
+                            <InputNumber ref="input-soodustus"
+                                         title='Soodustus:'
+                                         name='soodustus'
+                                         value={Number(self.docData.soodustus) || ''}
+                                         readOnly={!isEditMode}
+                                         onChange={self.handleInputChange}/>
+
+                            <InputNumber ref="input-summa"
+                                         title='Summa:'
+                                         name='summa'
+                                         value={self.docData.summa || ''}
+                                         readOnly={true}/>
+
+                            <InputNumber ref="input-vahe"
+                                         title='Vahe:'
+                                         name='vahe'
+                                         value={(self.docData.vahe)}
+                                         readOnly={!isEditMode}
+                                         onChange={self.handleInputChange}/>
+
+                            <CheckBox title="Kas ümberarvestus?"
+                                      name='kas_umberarvestus'
+                                      value={Boolean(self.docData.kas_umberarvestus)}
+                                      ref={'checkbox_kas_umberarvestus'}
+                                      readOnly={true}
+                            />
+
+                            <InputNumber ref="input-kuu"
+                                         title='Kuu:'
+                                         name='kuu'
+                                         value={(self.docData.kuu) || Number(kuu)}
+                                         readOnly={!isEditMode}
+                                         onChange={self.handleInputChange}/>
+
+                            <InputNumber ref="input-aasta"
+                                         title='Aasta:'
+                                         name='aasta'
+                                         value={(self.docData.aasta) || Number(aasta)}
+                                         readOnly={!isEditMode}
+                                         onChange={self.handleInputChange}/>
+                        </div>
                     </div>
-                </div>
 
-                <div style={styles.docRow}>
-                    <div style={styles.docColumn}>
-                        <InputNumber ref="input-kogus"
-                                     title='Kogus:'
-                                     name='kogus'
-                                     value={(self.docData.kogus) || ''}
-                                     readOnly={!isEditMode}
-                                     onChange={self.handleInputChange}/>
-
-                        <InputNumber ref="input-hind"
-                                     title='Hind:'
-                                     name='hind'
-                                     value={(self.docData.hind) || ''}
-                                     readOnly={true}/>
-
-                        <InputNumber ref="input-soodustus"
-                                     title='Soodustus:'
-                                     name='soodustus'
-                                     value={Number(self.docData.soodustus) || ''}
-                                     readOnly={!isEditMode}
-                                     onChange={self.handleInputChange}/>
-
-                        <InputNumber ref="input-summa"
-                                     title='Summa:'
-                                     name='summa'
-                                     value={((self.docData.summa)).toFixed(2) || ''}
-                                     readOnly={true}/>
-
-                        <InputNumber ref="input-vahe"
-                                     title='Vahe:'
-                                     name='vahe'
-                                     value={(self.docData.vahe)}
-                                     readOnly={!isEditMode}
-                                     onChange={self.handleInputChange}/>
-
-                        <CheckBox title="Kas ümberarvestus?"
-                                  name='kas_umberarvestus'
-                                  value={Boolean(self.docData.kas_umberarvestus)}
-                                  ref={'checkbox_kas_umberarvestus'}
-                                  readOnly={true}
-                        />
-
-                        <InputNumber ref="input-kuu"
-                                     title='Kuu:'
-                                     name='kuu'
-                                     value={(self.docData.kuu) || Number(kuu)}
-                                     readOnly={!isEditMode}
-                                     onChange={self.handleInputChange}/>
-
-                        <InputNumber ref="input-aasta"
-                                     title='Aasta:'
-                                     name='aasta'
-                                     value={(self.docData.aasta) || Number(aasta)}
-                                     readOnly={!isEditMode}
-                                     onChange={self.handleInputChange}/>
+                    <div style={styles.docRow}>
+                        <TextArea title="Märkused"
+                                  name='muud'
+                                  ref="textarea-muud"
+                                  onChange={self.handleInputChange}
+                                  value={self.docData.muud || ''}
+                                  readOnly={!isEditMode}/>
                     </div>
                 </div>
+            );
+        } catch (e) {
+            console.error('page error ', e);
+            return (<div> Andmed ei ole laadidud, proovi uuesti</div>)
 
-                <div style={styles.docRow}>
-                    <TextArea title="Märkused"
-                              name='muud'
-                              ref="textarea-muud"
-                              onChange={self.handleInputChange}
-                              value={self.docData.muud || ''}
-                              readOnly={!isEditMode}/>
-                </div>
-            </div>
-        );
+        }
     }
 
 
