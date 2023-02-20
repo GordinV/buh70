@@ -210,7 +210,7 @@ const Arv = {
                          a.tasud,
                          a.tasudok::TEXT                                           AS tasudok,
                          a.muud,
-                         asutus.regkood,
+                         ltrim(rtrim(asutus.regkood)) as regkood,
                          asutus.nimetus::TEXT                                      AS asutus,
                          asutus.aadress,
                          asutus.email::TEXT                                        AS email,
