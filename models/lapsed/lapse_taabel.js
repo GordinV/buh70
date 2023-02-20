@@ -106,7 +106,7 @@ module.exports = {
                 {id: "kogus", name: "Kogus", width: "8%", type: "number", interval: true},
                 {id: "hind", name: "Hind", width: "8%", type: "number", interval: true},
                 {id: "uhik", name: "Ühik", width: "5%"},
-                {id: "arv_soodustus", name: "Soodustus", width: "10%", type: "number", show: true},
+                {id: "arv_soodustus", name: "Soodustus", width: "10%", type: "number", show: true,interval: true},
                 {id: "arv_summa", name: "Summa", width: "10%", type: "number", interval: true},
                 {id: "vahe", name: "Vahe", width: "5%", type: "number", interval: true},
                 {id: "kor_summa", name: "Kor. summa", width: "5%", type: "number", interval: true},

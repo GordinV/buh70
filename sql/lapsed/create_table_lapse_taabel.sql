@@ -57,7 +57,7 @@ ALTER TABLE lapsed.lapse_taabel
     ADD COLUMN IF NOT EXISTS hind NUMERIC(14, 4);
 
 ALTER TABLE lapsed.lapse_taabel
-    ADD COLUMN IF NOT EXISTS umberarvestus BOOLEAN not null default false;
+    ADD COLUMN IF NOT EXISTS umberarvestus BOOLEAN NOT NULL DEFAULT FALSE;
 
 ALTER TABLE lapsed.lapse_taabel
     ADD COLUMN IF NOT EXISTS summa NUMERIC(14, 4);
@@ -69,3 +69,5 @@ ALTER TABLE lapsed.lapse_taabel
     ADD COLUMN IF NOT EXISTS vahe NUMERIC(14, 4);
 
 CREATE INDEX IF NOT EXISTS lapse_taabel_lapse_kaart_id_idx ON lapsed.lapse_taabel (lapse_kaart_id);
+
+CREATE INDEX IF NOT EXISTS lapse_taabel_lapse_kaart_id_soodustus_idx ON lapsed.lapse_taabel (lapse_kaart_id) WHERE soodustus <> 0;

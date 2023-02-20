@@ -5,6 +5,8 @@ CREATE OR REPLACE FUNCTION lapsed.soodustused(l_rekvid INTEGER, l_kond INTEGER D
                                               kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
         soodustus       NUMERIC(12, 2),
+        summa           NUMERIC(12, 2),
+        arv_percent     NUMERIC(12, 4),
         period          DATE,
         lapse_isikukood TEXT,
         lapse_nimi      TEXT,
@@ -14,69 +16,113 @@ CREATE OR REPLACE FUNCTION lapsed.soodustused(l_rekvid INTEGER, l_kond INTEGER D
         pered_kokku     INTEGER,
         asutus          TEXT,
         rekvid          INTEGER,
-        viitenumber     TEXT
+        viitenumber     TEXT,
+        vead_kokku      INTEGER,
+        percent         TEXT,
+        viga            TEXT
     )
 AS
 $BODY$
 WITH qry AS (
     (
-        WITH rekv_ids AS (
-            SELECT rekv_id
-            FROM public.get_asutuse_struktuur(l_rekvid) r
-            WHERE CASE
-                      WHEN l_kond = 1 THEN TRUE
-                      ELSE l_rekvid = rekv_id END
-        )
-        SELECT l.isikukood::TEXT                       AS lapse_isikukood,
-               l.nimi::TEXT                            AS lapse_nimi,
-               lk.soodustus::NUMERIC(12, 2)            AS soodustus,
-               r.nimetus::TEXT                         AS asutus,
-               (SELECT asutusid
-                FROM lapsed.vanemad v
-                WHERE v.parentid = l.id
-                  AND v.staatus <> 3
-                ORDER BY coalesce((v.properties ->> 'kas_esindaja')::BOOLEAN, FALSE) DESC
-                LIMIT 1)                               AS vanem_id,
-               lk.rekvid,
-               lapsed.get_viitenumber(lk.rekvid, l.id) AS viitenumber
+        WITH params AS (
+            SELECT alg_kpv,
+                   lopp_kpv,
+                   make_date(date_part('year', kp.alg_kpv)::INTEGER, date_part('month', kp.alg_kpv)::INTEGER,
+                             1) AS arv_alg_kpv,
+                   make_date(date_part('year', kp.lopp_kpv)::INTEGER, date_part('month', kp.lopp_kpv)::INTEGER,
+                             1) AS arv_lopp_kpv
+            FROM (
+                     SELECT kpv_start::DATE AS alg_kpv,
+                            kpv_end::DATE   AS lopp_kpv) kp
+        ),
+             rekv_ids AS (
+                 SELECT rekv_id
+                 FROM public.get_asutuse_struktuur(l_rekvid) r
+                 WHERE CASE
+                           WHEN l_kond = 1 THEN TRUE
+                           ELSE l_rekvid = rekv_id END
+             ),
+             soodostused AS (
+                 SELECT sum(summa)      AS summa,
+                        sum(soodustus)  AS soodustus,
+                        lt.parentid     AS laps_id,
+                        lt.rekvid,
+                        sum(tais_summa) AS tais_summa
+                 FROM (SELECT summa, soodustus, parentid, rekvid, (lt.hind * lt.kogus) AS tais_summa
+                       FROM lapsed.lapse_taabel lt,
+                            params
+                       WHERE lt.staatus <> 3
+                         AND lt.hind <> 0
+                         AND make_date(aasta, kuu, 1) >= params.arv_alg_kpv
+                         AND make_date(aasta, kuu, 1) <= params.arv_lopp_kpv
+                         AND lt.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                      ) lt
+                 WHERE lt.soodustus <> 0
+
+                 GROUP BY lt.parentid, lt.rekvid
+             ),
+             esindajad AS (
+                 SELECT asutusid,
+                        parentid                               AS laps_id,
+                        count(id) OVER (PARTITION BY asutusid) AS lapsed_peres
+                 FROM lapsed.vanemad v
+                 WHERE v.staatus <> 3
+                   AND coalesce((v.properties ->> 'kas_esindaja')::BOOLEAN, FALSE)
+             )
+
+        SELECT l.isikukood::TEXT                                                       AS lapse_isikukood,
+               l.nimi::TEXT                                                            AS lapse_nimi,
+               s.soodustus::NUMERIC(12, 2)                                             AS soodustus,
+               s.summa::NUMERIC(12, 2)                                                 AS summa,
+               round(s.soodustus / s.tais_summa * 100, 0)                              AS arv_percent,
+               r.nimetus::TEXT                                                         AS asutus,
+               e.asutusid                                                              AS vanem_id,
+               e.lapsed_peres                                                          AS lapsed_peres,
+               (SELECT count(*)
+                FROM (SELECT DISTINCT asutusid
+                      FROM esindajad es
+                      WHERE es.laps_id IN (SELECT sd.laps_id FROM soodostused sd)) es) AS pered_kokku,
+               s.rekvid,
+               lapsed.get_viitenumber(s.rekvid, l.id)                                  AS viitenumber
 
         FROM lapsed.laps l
-                 INNER JOIN (SELECT lk.parentid,
-                                    lk.rekvid,
-                                    max((CASE
-                                             WHEN (lk.properties ->> 'kas_protsent')::BOOLEAN
-                                                 THEN (lk.properties ->> 'soodus')::NUMERIC(12, 2)
-                                             ELSE (lk.properties ->> 'soodus')::NUMERIC / lk.hind * 100 END)::NUMERIC(12, 2)) AS soodustus
-                             FROM lapsed.lapse_kaart lk
-                             WHERE (lk.properties ->> 'soodus')::NUMERIC > 0
-                               AND ((lk.properties ->> 'sooduse_alg')::DATE >= kpv_start OR
-                                    (lk.properties ->> 'sooduse_alg')::DATE <= kpv_end)
-                               AND ((lk.properties ->> 'sooduse_lopp')::DATE >= kpv_start OR
-                                    (lk.properties ->> 'sooduse_lopp')::DATE <= kpv_start)
-                               AND lk.staatus <> 3
-                               AND lk.hind > 0
-                               AND lk.rekvid IN (SELECT rekv_id FROM rekv_ids)
-
-                             GROUP BY lk.rekvid, lk.parentid
-        ) lk ON lk.parentid = l.id
-                 INNER JOIN ou.rekv r ON r.id = lk.rekvid
+                 INNER JOIN soodostused s ON s.laps_id = l.id
+                 INNER JOIN ou.rekv r ON r.id = s.rekvid
+                 LEFT OUTER JOIN esindajad e ON e.laps_id = l.id
+        WHERE s.soodustus <> 0
     )
 )
-SELECT soodustus::NUMERIC(12, 2)                                   AS soodustus,
-       kpv_start::DATE                                             AS period,
+SELECT soodustus::NUMERIC(12, 2)            AS soodustus,
+       summa::NUMERIC(12, 2)                AS summa,
+       arv_percent::NUMERIC(12, 4)          AS arv_percent,
+       kpv_start::DATE                      AS period,
        lapse_isikukood,
        lapse_nimi,
-       a.nimetus::TEXT                                             AS vanem_nimi,
-       a.regkood::TEXT                                             AS vanem_isikukood,
-       (SELECT count(id)
-        FROM lapsed.vanemad v
-        WHERE v.asutusid = qry.vanem_id
-          AND v.staatus <> 3
-          AND (v.properties ->> 'kas_esindaja')::BOOLEAN)::INTEGER AS lapsed,
-       (SELECT count(DISTINCT vanem_id) FROM qry)::INTEGER         AS pered_kokku,
+       a.nimetus::TEXT                      AS vanem_nimi,
+       a.regkood::TEXT                      AS vanem_isikukood,
+       qry.lapsed_peres ::INTEGER           AS lapsed,
+       qry.pered_kokku ::INTEGER            AS pered_kokku,
        qry.asutus,
        qry.rekvid,
-       qry.viitenumber::TEXT
+       qry.viitenumber::TEXT,
+       sum(CASE
+               WHEN lapsed_peres < 2 AND soodustus > 0 THEN 1
+               WHEN lapsed_peres <= 2 AND arv_percent > 25 THEN 1
+               WHEN lapsed_peres = 2 AND arv_percent <> 25 THEN 1
+               WHEN lapsed_peres > 2 AND arv_percent < 100 THEN 1
+               ELSE 0 END) OVER ()::INTEGER AS vead_kokku,
+       CASE
+           WHEN lapsed_peres = 1 THEN '0'
+           WHEN lapsed_peres = 2 THEN '25'
+           WHEN lapsed_peres >= 3 THEN '100'
+           ELSE '' END::TEXT                AS percent,
+       CASE
+           WHEN lapsed_peres < 2 AND arv_percent > 0 THEN 'Viga, <> 0'
+           WHEN lapsed_peres = 2 AND arv_percent <> 25 THEN 'Viga, <> 25'
+           WHEN lapsed_peres > 2 AND arv_percent < 100 THEN 'Viga, < 100'
+           ELSE NULL::TEXT
+           END::TEXT                        AS viga
 FROM qry
          LEFT OUTER JOIN libs.asutus a ON a.id = qry.vanem_id
 
@@ -94,6 +140,6 @@ GRANT EXECUTE ON FUNCTION lapsed.soodustused(INTEGER, INTEGER, DATE, DATE) TO db
 
 
 /*
-select * from lapsed.soodustused(119, 1, '2023-01-01','2023-12-31')
+select * from lapsed.soodustused(82, 1, '2023-01-01','2023-12-31')
 order by vanem_isikukood, lapse_nimi, asutus
 */

@@ -48,7 +48,6 @@ block content
         each parameter in filter
             p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
 
-
         - var groupValue = Object.keys(data[0])[0];
         - var lapsedKokku = data[0][groupValue][0].lapsed_kokku;
         - var veadKokku = data[0][groupValue][0].vead_kokku;
@@ -69,7 +68,7 @@ block content
                     each rea in vanem_isikukood[Object.keys(vanem_isikukood)[0]]
                         tr
                             td=rea.lapse_nimi
-                            td=rea.viga
-                            td=rea.soodustus
-                            td=rea.asutus
+                            td(align='center')=rea.viga
+                            td(align='center')=rea.soodustus
+                            td(align='left')=rea.asutus
         h2 Lapsed kokku: #{lapsedKokku} Vead kokku: #{veadKokku} Pered kokku: #{peredKokku}

@@ -93,21 +93,6 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
             const qryeArvedDet = arve.details.map(rea => {
                 return {
                     Description: `${rea.nimetus.trim()} ${rea.muud ? rea.muud.trim() : ''}`,
-                    /*
-                                        ItemDetailInfo: {
-                                            ItemUnit: rea.uhik.trim(),
-                                            ItemAmount: rea.kogus,
-                                            ItemPrice: Number(rea.hind).toFixed(2),
-                                        },
-
-                                        ItemSum: Number(rea.summa - rea.kbm).toFixed(2),
-                                        VAT: {
-                                            SumBeforeVAT: rea.summa - rea.kbm,
-                                            VATRate: (!rea.km || rea.km == '-' || rea.km == '') ? '0' : rea.km,
-                                            VATSum: Number(rea.kbm).toFixed(2),
-                                            Currency: 'EUR',
-                                        },
-                    */
                     ItemTotal: Number(rea.summa).toFixed(2)
                 }
             });

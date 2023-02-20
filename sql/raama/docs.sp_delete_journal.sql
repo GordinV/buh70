@@ -140,11 +140,11 @@ BEGIN
 
     -- удалим (если есть связанные с проводкой предоплаты рекламного налога
 
-    DELETE
+/*    DELETE
     FROM rekl.ettemaksud e
-    WHERE e.journalid IN
-          (SELECT id FROM docs.journal1 WHERE parentid IN (SELECT id FROM docs.journal WHERE parentid = v_doc.id));
-
+    WHERE e.journalid = v_doc.id;
+*/
+    PERFORM rekl.sp_delete_ettemaksud(user_id, (SELECT id FROM rekl.ettemaksud e WHERE e.journalid = v_doc.id LIMIT 1));
 
     -- avans
     IF exists(SELECT id FROM docs.journal1 WHERE ltrim(rtrim(deebet)) IN ('202050') AND parentid = v_doc.parentid)

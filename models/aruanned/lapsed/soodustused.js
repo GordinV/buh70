@@ -13,16 +13,12 @@ module.exports = {
             {id: "viga", name: "Viga", width: "10%"},
             {id: "asutus", name: "Asutus", width: "10%"},
         ],
-        sqlString: `SELECT row_number() OVER ()                                                         AS id,
-                           count(*) OVER ()                                                             AS lapsed_kokku,
-                           sum(CASE
-                                   WHEN lapsed <= 2 AND soodustus > 25 THEN 1
-                                   WHEN lapsed = 2 AND soodustus <> 25 THEN 1
-                                   WHEN lapsed > 2 AND soodustus < 100 THEN 1
-                                   ELSE 0 END) OVER ()                                                  AS vead_kokku,
+        sqlString: `SELECT row_number() OVER () AS id,
+                           count(*) OVER ()     AS lapsed_kokku,
+                           vead_kokku           AS vead_kokku,
                            soodustus,
-                           CASE WHEN lapsed = 2 THEN '25' WHEN lapsed >= 3 THEN '100' ELSE '' END::TEXT AS percent,
-                           period                                                                       AS period,
+                           percent::TEXT        AS percent,
+                           period               AS period,
                            lapse_isikukood,
                            lapse_nimi,
                            vanem_nimi,
@@ -30,14 +26,9 @@ module.exports = {
                            lapsed,
                            pered_kokku,
                            asutus,
-                           CASE
-                               WHEN lapsed <= 2 AND soodustus > 25 THEN 'Viga, > 25'
-                               WHEN lapsed = 2 AND soodustus <> 25 THEN 'Viga, <> 25'
-                               WHEN lapsed > 2 AND soodustus < 100 THEN 'Viga, < 100'
-                               ELSE NULL::TEXT
-                               END::TEXT                                                                AS viga,
-                           $2                                                                           AS user_id,
-                           vn.vn                                                                        AS vana_vn,
+                           viga::TEXT           AS viga,
+                           $2                   AS user_id,
+                           vn.vn                AS vana_vn,
                            qry.viitenumber
                     FROM lapsed.soodustused($1, 1, $3, $4) qry
                              LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
@@ -47,9 +38,6 @@ module.exports = {
                                               GROUP BY vn.isikukood
                     ) vn
                                              ON vn.isikukood = qry.lapse_isikukood
-
-                    WHERE qry.rekvid IN (SELECT rekv_id
-                                         FROM get_asutuse_struktuur($1))
                     ORDER BY vanem_isikukood, lapse_nimi
         `,     // $1 - rekvid, $3 - kond
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
