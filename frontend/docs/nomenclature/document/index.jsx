@@ -53,8 +53,6 @@ class Nomenclature extends React.PureComponent {
         }
 
         let isEditeMode = self.state.edited;
-        let libTunnus = self.libs['tunnus'];
-
         return (
             <div>
                 <div style={styles.doc}>
@@ -163,7 +161,7 @@ class Nomenclature extends React.PureComponent {
                             <Select title="Tunnus:"
                                     name='tunnus'
                                     libs="tunnus"
-                                    data={libTunnus}
+                                    data={self.libs['tunnus']}
                                     readOnly={!isEditeMode}
                                     value={self.docData['tunnus'] || ''}
                                     ref='select_tunnus'

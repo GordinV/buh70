@@ -127,7 +127,6 @@ class LapseKaart extends React.PureComponent {
                     }
                 } else {
                     nomData = (yksus.teenused && self.libs['nomenclature'].length > 0 ? yksus.teenused : []).map(nom => {
-                        console.log('nom', nom);
                         const row = self.libs['nomenclature'].find(lib => {
                             return lib.id ? lib.id === Number(nom.nomid) : false
                         });
@@ -141,6 +140,7 @@ class LapseKaart extends React.PureComponent {
                     }).sort((a, b) => {
                         return a.kood.localeCompare(b.kood)
                     });
+                    setTimeout(1);
 
                     if (nomData.length && yksus.id) {
                         // сохраним в кеше
@@ -154,6 +154,7 @@ class LapseKaart extends React.PureComponent {
                 // фильтр на номенклатуры
                 nomData = [{id: 0, kood: '', nimetus: '', hind: 0, kogus: 0, kas_inf3: false}];
             }
+
 
         } catch (e) {
             console.error(e, nomData);
@@ -188,6 +189,7 @@ class LapseKaart extends React.PureComponent {
             if (teenus) {
                 kas_naida_soodustus = false;
             }
+            setTimeout(1);
         }
 
         return (

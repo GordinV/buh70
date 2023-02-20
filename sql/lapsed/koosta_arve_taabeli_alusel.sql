@@ -155,7 +155,9 @@ BEGIN
                coalesce((n.properties ->> 'vat')::NUMERIC, 0)::NUMERIC               AS vat,
                (n.properties::JSONB ->> 'konto')::VARCHAR(20)                        AS konto,
                (n.properties::JSONB ->> 'projekt')::VARCHAR(20)                      AS projekt,
-               (n.properties::JSONB ->> 'tunnus')::VARCHAR(20)                       AS tunnus,
+               CASE
+                   WHEN coalesce(lk.tunnus, 'TUHI') = 'TUHI' THEN (n.properties::JSONB ->> 'tunnus')
+                   ELSE lk.tunnus END ::VARCHAR(20)                 AS tunnus,
                (n.properties::JSONB ->> 'tegev')::VARCHAR(20)                        AS tegev,
                (n.properties::JSONB ->> 'allikas')::VARCHAR(20)                      AS allikas,
                (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)                     AS rahavoog,

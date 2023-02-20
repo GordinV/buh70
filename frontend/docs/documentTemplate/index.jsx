@@ -110,7 +110,6 @@ class DocumentTemplate extends React.Component {
             this.loadLibs(null, kpv);
         }
 
-        console.log('render loadedLibs',this.state.loadedLibs);
         const warningStyle = styles[this.state.warningType] ? styles[this.state.warningType] : null;
 
         let dialogString = this.serverValidation.length > 0 ? `Dokument ${this.serverValidation[0].name} = ${this.serverValidation[0].value} juba olemas. Kas jätka?` : '';
@@ -796,7 +795,6 @@ class DocumentTemplate extends React.Component {
         }
 
         libsToLoad.forEach((lib) => {
-
             let hasSqlWhere = (lib in this.state.libParams);
 
             if (!kpv) {
@@ -822,7 +820,8 @@ class DocumentTemplate extends React.Component {
                             // save lib in cache
                             //DocContext.setLib = {[lib]: this.libs[lib]};
                             DocContext.libs[lib] = this.libs[lib];
-                            libsCount--;
+                           libsCount--;
+
                             // отметка что справочник загружен
                             this.loadingLibs[lib] = false;
 
@@ -852,7 +851,6 @@ class DocumentTemplate extends React.Component {
                     }
                 });
                 this.loadingLibs[lib] = false;
-
                 libsCount--;
 
                 const libs1 = libs;
@@ -868,7 +866,7 @@ class DocumentTemplate extends React.Component {
 
             }
 
-            if (libsCount = 0 && !this.state.loadedLibs) {
+            if (libsCount == 0 && !this.state.loadedLibs) {
 
                 //all libs loaded;
                 this.setState({
