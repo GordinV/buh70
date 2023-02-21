@@ -79,6 +79,9 @@ module.exports = {
                                          AND d.doc_type_id IN (SELECT id FROM docs_types)
                                          AND d.status <> 3
                                          AND j.kpv <= qryParams.kpv::DATE
+                                         AND (j1.deebet = '155920' AND j1.kreedit <> '888888' AND d.rekvid IN (130, 28) OR
+                                              year(qryParams.kpv) < 2023 or j1.deebet <> '155920')
+                                         
                                        UNION ALL
                                        SELECT coalesce(a.kpv, j.kpv),
                                               j.rekvid,
@@ -97,6 +100,7 @@ module.exports = {
                                               j1.tunnus,
                                               j1.proj
 
+
                                        FROM docs.doc d
                                                 INNER JOIN docs.journal j
                                                            ON j.parentid = D.id
@@ -111,6 +115,9 @@ module.exports = {
                                          AND d.doc_type_id IN (SELECT id FROM docs_types)
                                          AND j.kpv <= qryParams.kpv::DATE
                                          AND d.status <> 3
+                                         AND (j1.kreedit = '155920' AND j1.deebet <> '888888' AND d.rekvid IN (130, 28) OR
+                                              year(qryParams.kpv) < 2023 or j1.kreedit <> '155920')
+                                         
                                    )
                               SELECT rekv_id,
                                      konto :: VARCHAR(20),
@@ -130,10 +137,12 @@ module.exports = {
                                        SELECT qry.rekvid                  AS rekv_id,
                                               konto::TEXT        AS konto,
                                               (CASE
-                                                   WHEN left(konto, 6) IN ('155920') AND (qry.rahavoog = '00' OR qry.kpv <
-                                                                                                                 make_date(date_part('year', qryParams.kpv::DATE)::INTEGER, 1, 1))                                                                                                                 
+                                                   WHEN left(konto, 6) IN ('155920')
                                                        AND qry.kpv < '2022-10-01'
-                                                       THEN ''                                              
+                                                       AND (qry.rahavoog = '00' OR qry.kpv <
+                                                                                   make_date(date_part('year', qryParams.kpv::DATE)::INTEGER, 1, 1))
+                                                       AND year(qryParams.kpv) < 2023
+                                                       THEN ''
                                                    WHEN l.is_tp AND left(konto, 6) IN ('150200', '150210', '150020') AND
                                                         ltrim(rtrim(coalesce(rahavoog, ''))) IN ('01', '00', '17', '21','18')
                                                        THEN tp
@@ -145,7 +154,7 @@ module.exports = {
                                               (CASE
                                                    WHEN left(konto, 6) IN ('155920') AND (qry.rahavoog = '00' OR qry.kpv <
                                                                                                                  make_date(date_part('year', qryParams.kpv::DATE)::INTEGER, 1, 1))
-                                                       AND qry.kpv < '2022-10-01'
+                                                       AND qry.kpv < '2022-10-01' AND year(qryParams.kpv) < 2023
                                                        THEN ''
                                                    WHEN l.is_tegev AND (ltrim(rtrim(COALESCE(l.muud, ''))) <> '*' OR
                                                                         ltrim(rtrim(qry.rahavoog)) = '01')

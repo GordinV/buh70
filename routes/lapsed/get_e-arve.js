@@ -99,7 +99,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
 
             return {
                 '@invoiceId': arve.number,
-                '@serviceId': arve.viitenr,
+                '@serviceId': arve.vana_viitenr, // viitenr
                 '@regNumber': arve.regkood,
                 '@channelId': asutusConfig.type ? asutusConfig.channelId : null,
                 '@channelAddress': asutusConfig.type ? arve.iban : null,
@@ -126,7 +126,8 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                         AccountInfo: {
                             AccountNumber: asutusConfig.payToAccount,
                             IBAN: asutusConfig.payToAccount,
-                            BIC: asutusConfig.channelId
+                            BIC: asutusConfig.channelId,
+                            BankName: asutusConfig.BankName
                         }
 
                     },
@@ -164,10 +165,10 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 },
                 InvoiceSumGroup: {
                     Balance: {
-                        BalanceDate: arve.period_alg,
+                        BalanceDate: arve.period_alg_print,
                         BalanceBegin: Number(arve.alg_jaak).toFixed(2),
                         Inbound: Number(arve.laekumised).toFixed(2),
-                        Outbound: Number(arve.tagastused).toFixed(2),
+                        Outbound: arve.tagastused ? Number(arve.tagastused).toFixed(2) : 0,
                         BalanceEnd: Number(arve.tasumisele).toFixed(2)
                     },
                     TotalSum: Number(arve.summa).toFixed(2),
@@ -181,7 +182,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 },
                 PaymentInfo: {
                     Currency: 'EUR',
-                    PaymentRefId: arve.viitenr,
+                    PaymentRefId: arve.vana_viitenr, //arve.viitenr
                     PaymentDescription: `Arve ${arve.number}`,
                     Payable: 'YES',
                     PayDueDate: payDueDate,
@@ -201,24 +202,38 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
         }
     };
 
-    const omnivaObj = {
-        'soapenv:Envelope': {
-            '@xmlns:soapenv': "http://schemas.xmlsoap.org/soap/envelope/",
-            '@xmlns:erp': "http://e-arvetekeskus.eu/erp",
-            'soapenv:Header': '',
-            'soapenv:Body': {
-                'erp:EInvoiceRequest': {
-                    '@authPhrase': asutusConfig.secret,
-                    E_Invoice: eArve
+    let obj;
+    let l_xml;
+    if (isOmniva) {
+        obj = {
+            'soapenv:Envelope': {
+                '@xmlns:soapenv': "http://schemas.xmlsoap.org/soap/envelope/",
+                '@xmlns:erp': "http://e-arvetekeskus.eu/erp",
+                'soapenv:Header': '',
+                'soapenv:Body': {
+                    'erp:EInvoiceRequest': {
+                        '@authPhrase': asutusConfig.secret,
+                        E_Invoice: eArve
+                    }
                 }
             }
-        }
-    };
+        };
+        l_xml = builder.create(obj, {encoding: 'utf-8'});
+        l_xml = l_xml.end({pretty: true});
 
+    } else {
+        obj = {
+            E_Invoice: eArve
+        };
 
-    const obj = isOmniva ? omnivaObj : {E_Invoice: eArve};
+        l_xml = builder.create(obj, {encoding: 'utf-8'});
+        l_xml.att('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
+        l_xml.att('xsi:noNamespaceSchemaLocation', 'e-invoice_ver1.11.xsde');
+        l_xml = l_xml.end({pretty: true});
 
-    return builder.create(obj, {encoding: 'utf-8'}).end({pretty: true});
+    }
+
+    return l_xml;
 };
 
 module.exports = get_earve;

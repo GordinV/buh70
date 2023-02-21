@@ -5,7 +5,7 @@ DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGE
 
 
 CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER,
-                                                        l_params JSONB DEFAULT NULL)
+                                                       l_params JSONB DEFAULT NULL)
     RETURNS TABLE (
         rekv_id  INTEGER,
         konto    VARCHAR(20),
@@ -55,6 +55,9 @@ WITH rekv_ids AS (
            AND j.kpv <= l_kpv2
            AND d.doc_type_id IN (SELECT id FROM docs_types)
            AND d.status <> 3
+           AND (j1.deebet = '155920' AND j1.kreedit <> '888888' AND d.rekvid IN (130, 28) OR
+                year(l_kpv2) < 2023 or j1.deebet <> '155920' )
+
          GROUP BY coalesce(a.kpv, j.kpv), j.rekvid, j1.deebet, j1.lisa_d, j1.kood1, j1.kood2,
                   coalesce(CASE
                                WHEN j.kpv < make_date(year(l_kpv2), 1, 1)
@@ -87,6 +90,8 @@ WITH rekv_ids AS (
            -- если свод, то оставим только учреждение, иначе все под
            AND j.kpv <= l_kpv2
            AND d.doc_type_id IN (SELECT id FROM docs_types)
+           AND (j1.kreedit = '155920' AND j1.deebet <> '888888' AND d.rekvid IN (130, 28) OR
+                year(l_kpv2) < 2023 or j1.kreedit <> '155920')
 
 --           AND coalesce(j1.tunnus, '') ILIKE l_params
            AND d.status <> 3
@@ -115,13 +120,14 @@ WITH rekv_ids AS (
                     -- 155920
                      WHEN left(konto, 6) IN ('155920') AND (qry.rahavoog = '00' OR qry.kpv <
                                                                                    make_date(date_part('year', l_kpv2::DATE)::INTEGER, 1, 1))
-                         AND qry.kpv < '2022-10-01'
+                         AND qry.kpv < '2022-10-01' AND year(l_kpv2) < 2023
                          THEN ''
 
                      WHEN is_tp AND left(konto, 6) IN ('150200', '150210', '150020') AND
-                          ltrim(rtrim(coalesce(qry.rahavoog, ''))) IN ('01', '00', '17', '21','18') THEN tp
+                          ltrim(rtrim(coalesce(qry.rahavoog, ''))) IN ('01', '00', '17', '21', '18') THEN tp
                      WHEN l.is_tp AND
-                          (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(coalesce(qry.konto, ''))) = '155920')
+                          (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR
+                           ltrim(rtrim(coalesce(qry.konto, ''))) = '155920')
                          THEN tp
                      WHEN l.is_tp AND
                           (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR ltrim(rtrim(coalesce(qry.rahavoog, ''))) = '01')
@@ -131,7 +137,7 @@ WITH rekv_ids AS (
                     -- 155920
                      WHEN left(konto, 6) IN ('155920') AND (qry.rahavoog = '00' OR qry.kpv <
                                                                                    make_date(date_part('year', l_kpv2::DATE)::INTEGER, 1, 1))
-                         AND qry.kpv < '2022-10-01'
+                         AND qry.kpv < '2022-10-01' AND year(l_kpv2) < 2023
                          THEN ''
 
                      WHEN is_tegev AND
@@ -185,7 +191,7 @@ WITH rekv_ids AS (
                 -- 150020
                 (CASE
                      WHEN is_tp AND left(konto, 6) IN ('150200', '150210', '150020') AND
-                          ltrim(rtrim(coalesce(qry.rahavoog, ''))) IN ('01', '00', '17', '21','18') THEN tp
+                          ltrim(rtrim(coalesce(qry.rahavoog, ''))) IN ('01', '00', '17', '21', '18') THEN tp
                      WHEN l.is_tp AND (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR
                                        ltrim(rtrim(coalesce(qry.rahavoog, ''))) = ('01'))
                          THEN tp

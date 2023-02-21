@@ -39,6 +39,7 @@ exports.swed = async (req, res) => {
         return new Promise(resolve => {
             earveDoc.setDocumentId(id);
             resolve(earveDoc['select'](earveDoc.config));
+            setTimeout(5);
         })
     });
 
@@ -55,14 +56,15 @@ exports.swed = async (req, res) => {
     const asutusConfig = {
         url: rekvData.row[0].earved_omniva, //'https://finance.omniva.eu/finance/erp/',
         secret: rekvData.row[0].earved, //'106549:elbevswsackajyafdoupavfwewuiafbeeiqatgvyqcqdqxairz',
-        asutus: rekvData.row[0].muud ? rekvData.row[0].muud : rekvData.row[0].nimetus,
-        regkood: rekvData.row[0].earve_regkood ? rekvData.row[0].earve_regkood: rekvData.row[0].regkood ,
+        asutus: 'Narva Linnavalitsuse Kultuuriosakond',
+        regkood: '75024260' ,
         swed: rekvData.row[0].swed ? rekvData.row[0].swed: '',
         seb: rekvData.row[0].seb ? rekvData.row[0].seb: '',
         user: user.userName,
         SenderId: 'NARVALVKO',
         ReceiverId: 'SWEDB',
         channelId: 'HABAEE2X',
+        BankName: 'Swedbank',
         type: 'swed',
         payToAccount: rekvData.row[0].swed_earve
     };
@@ -117,6 +119,7 @@ exports.seb = async (req, res) => {
         return new Promise(resolve => {
             earveDoc.setDocumentId(id);
             resolve(earveDoc['select'](earveDoc.config));
+            setTimeout(5);
         })
     });
 
@@ -133,8 +136,8 @@ exports.seb = async (req, res) => {
     const asutusConfig = {
         url: rekvData.row[0].earved_omniva, //'https://finance.omniva.eu/finance/erp/',
         secret: rekvData.row[0].earved, //'106549:elbevswsackajyafdoupavfwewuiafbeeiqatgvyqcqdqxairz',
-        asutus: rekvData.row[0].muud ? rekvData.row[0].muud : rekvData.row[0].nimetus,
-        regkood: rekvData.row[0].earve_regkood,
+        asutus: 'Narva Linnavalitsuse Kultuuriosakond',
+        regkood: '75024260',
         swed: rekvData.row[0].swed ? rekvData.row[0].swed: '',
         seb: rekvData.row[0].seb ? rekvData.row[0].seb: '',
         user: user.userName,
@@ -142,6 +145,7 @@ exports.seb = async (req, res) => {
         ReceiverId: 'eyp',
         channelId: 'EEUHEE2X',
         type: 'seb',
+        BankName: 'SEB Pank',
         payToAccount: rekvData.row[0].seb_earve
     };
 
