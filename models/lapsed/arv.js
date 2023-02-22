@@ -242,7 +242,8 @@ const Arv = {
                          a.properties ->> 'ettemaksu_period'                       AS ettemaksu_period,
                          va.properties ->> 'pank'                                  AS pank,
                          va.properties ->> 'iban'                                  AS iban,
-                         a.kpv                                                     AS doc_kpv                         
+                         a.kpv                                                     AS doc_kpv,
+                         to_char(make_date(year(a.kpv), month(a.kpv), 1) ,'YYYY-MM-DD') as balance_day                         
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId

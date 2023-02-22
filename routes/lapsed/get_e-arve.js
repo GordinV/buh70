@@ -42,6 +42,8 @@ const getVat = (data) => {
 const getPayDueDate = (kpv) => {
     let l_kpv = new Date(kpv);
     let l_pay_dt = new Date(l_kpv.getFullYear(), l_kpv.getMonth(), 20);
+    let l_balance_dt = new Date(l_kpv.getFullYear(), l_kpv.getMonth(),1);
+
     // Не так.Если счет выставлен с 10-го числа этого месяца по 9-е число следующего месяца, то ставим 20 число следующего
     if (l_kpv.getDate() > 10) {
         l_pay_dt = new Date(l_pay_dt.setMonth(l_pay_dt.getMonth() + 1));
@@ -165,7 +167,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 },
                 InvoiceSumGroup: {
                     Balance: {
-                        BalanceDate: arve.period_alg_print,
+                        BalanceDate: arve.balance_day,
                         BalanceBegin: Number(arve.alg_jaak).toFixed(2),
                         Inbound: Number(arve.laekumised).toFixed(2),
                         Outbound: arve.tagastused ? Number(arve.tagastused).toFixed(2) : 0,
