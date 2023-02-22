@@ -95,6 +95,20 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
             const qryeArvedDet = arve.details.map(rea => {
                 return {
                     Description: `${rea.nimetus.trim()} ${rea.muud ? rea.muud.trim() : ''}`,
+                    ItemDetailInfo: {
+                        ItemUnit: rea.uhik,
+                        ItemAmount: Number(rea.kogus).toFixed(4),
+                        ItemPrice: Number(rea.tais_hind).toFixed(2)
+                    },
+                    ItemSum: Number(rea.kbmta).toFixed(2),
+                        Addition: {
+                            AddContent: 'Soodustus',
+                            AddSum: rea.soodustus
+                        },
+                    VAT: {
+                        VATRate:rea.km,
+                        VATSum: rea.kbm
+                    },
                     ItemTotal: Number(rea.summa).toFixed(2)
                 }
             });
@@ -181,6 +195,10 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     InvoiceItemGroup: {
                         ItemEntry: qryeArvedDet
                     }
+                },
+                AdditionalInformation: {
+                    InformationName: 'Teenuste saaja',
+                    InformationContent: arve.lapse_nimi
                 },
                 PaymentInfo: {
                     Currency: 'EUR',

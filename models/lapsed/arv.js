@@ -347,7 +347,7 @@ const Arv = {
                          a1.summa::NUMERIC(12, 2),
                          trim(n.kood) :: VARCHAR(20)                                                  AS kood,
                          trim(n.nimetus) :: VARCHAR(254)                                              AS nimetus,
-                         n.uhik :: TEXT                                                               AS uhik,
+                         trim(n.uhik) :: TEXT                                                               AS uhik,
                          coalesce((SELECT vahe
                                    FROM lapsed.cur_lapse_taabel
                                    WHERE id = (a1.properties ->> 'lapse_taabel_id')::INTEGER

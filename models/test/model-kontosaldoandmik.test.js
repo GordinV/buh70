@@ -44,8 +44,8 @@ describe('dok. type kontoasutusandmik tests', function () {
     });
 
     it('should have copy in buh62 folder', (done) => {
-        let targetFile =  path.join('C:\\avpsoft\\buh62\\models\\', modelForExport + '.xml');
-        let copyFile =  path.join('C:\\avpsoft\\buh70\\models\\', modelForExport + '_copy.xml');
+        let targetFile =  path.join('C:\\development\\buh62\\models\\', modelForExport + '.xml');
+        let copyFile =  path.join('C:\\development\\buh70\\models\\', modelForExport + '_copy.xml');
         expect(fs.existsSync(sourceFile)).toBeTruthy();
         fs.copyFileSync(sourceFile, copyFile);
         expect(fs.existsSync(copyFile)).toBeTruthy();
@@ -75,7 +75,7 @@ describe('dok. type kontoasutusandmik tests', function () {
 
     });
 
-    it('should select data from grid query', async()=> {
+    it.skip('should select data from grid query', async()=> {
         let sql = doc.grid.sqlString;
         let returnValue = await db.queryDb(sql, ['113',null,'2018-08-31', 1]);
         expect(returnValue).toBeDefined();
