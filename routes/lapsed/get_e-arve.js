@@ -42,7 +42,7 @@ const getVat = (data) => {
 const getPayDueDate = (kpv) => {
     let l_kpv = new Date(kpv);
     let l_pay_dt = new Date(l_kpv.getFullYear(), l_kpv.getMonth(), 20);
-    let l_balance_dt = new Date(l_kpv.getFullYear(), l_kpv.getMonth(),1);
+    let l_balance_dt = new Date(l_kpv.getFullYear(), l_kpv.getMonth(), 1);
 
     // Не так.Если счет выставлен с 10-го числа этого месяца по 9-е число следующего месяца, то ставим 20 число следующего
     if (l_kpv.getDate() > 10) {
@@ -101,12 +101,13 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                         ItemPrice: Number(rea.tais_hind).toFixed(2)
                     },
                     ItemSum: Number(rea.kbmta).toFixed(2),
-                        Addition: {
-                            AddContent: 'Soodustus',
-                            AddSum: rea.soodustus
-                        },
+                    Addition: {
+                        AddContent: 'Soodustus',
+                        AddSum: rea.soodustus,
+                        '@addCode':"DSC"
+                    },
                     VAT: {
-                        VATRate:rea.km,
+                        VATRate: rea.km,
                         VATSum: rea.kbm
                     },
                     ItemTotal: Number(rea.summa).toFixed(2)

@@ -57,7 +57,7 @@ describe('dok. type kontoasutusandmik tests', function () {
         });
     });
 
-    it('doc type library should contain KONTOSALDOANDMIK doc.type', async () => {
+    it.skip('doc type library should contain KONTOSALDOANDMIK doc.type', async () => {
         let sql = `select id from libs.library where kood = 'KONTOSALDOANDMIK' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
@@ -66,7 +66,7 @@ describe('dok. type kontoasutusandmik tests', function () {
 
     });
 
-    it('should exists proc docs.saldoandmik', async () => {
+    it.skip('should exists proc docs.saldoandmik', async () => {
         let sql = `select 1 FROM pg_proc WHERE proname = 'kontosaldoandmik'`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();

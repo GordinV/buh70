@@ -120,11 +120,13 @@ class LapseKaart extends React.PureComponent {
                     // берем из кеша
                     nomData = DocContext.libs[yksus.id];
                     // добавим пустую строку
+/*
                     if (!nomData || nomData.length || !(nomData.find(({id}) => {
-                        return id === 0;
+                        return id == 0;
                     }))) {
                         nomData.unshift({id: 0, kood: '', nimetus: '', hind: 0, kogus: 0, kas_inf3: false});
                     }
+*/
                 } else {
                     nomData = (yksus.teenused && self.libs['nomenclature'].length > 0 ? yksus.teenused : []).map(nom => {
                         const row = self.libs['nomenclature'].find(lib => {
