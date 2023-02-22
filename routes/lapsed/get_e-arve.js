@@ -228,7 +228,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
 
         l_xml = builder.create(obj, {encoding: 'utf-8'});
         l_xml.att('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
-        l_xml.att('xsi:noNamespaceSchemaLocation', 'e-invoice_ver1.11.xsde');
+        l_xml.att('xsi:noNamespaceSchemaLocation', 'e-invoice_ver1.11.xsd');
         l_xml = l_xml.end({pretty: true});
 
     }
