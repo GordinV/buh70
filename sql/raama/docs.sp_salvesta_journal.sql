@@ -77,6 +77,7 @@ BEGIN
     END IF;
 
     -- проверка на период
+    raise notice 'save journal doc_kpv %',doc_kpv;
     IF is_import IS NULL AND NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv)
     THEN
         RAISE EXCEPTION 'Viga, Period on kinni';

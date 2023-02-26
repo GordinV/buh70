@@ -8,8 +8,9 @@ module.exports = async function (req, res, next) {
     const user = await require('../middleware/userData')(req);
     let result = 0;
 
-    console.log('userId',userId, user.userId, uuid);
     if (userId && user && user.userId && userId !== user.userId) {
+
+        console.error('Auth, parametrid puuduvad', userId, uuid, user);
         // ошибка
         res.statusCode = 401;
         return res.redirect('/login');

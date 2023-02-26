@@ -1,5 +1,5 @@
 DROP FUNCTION IF EXISTS docs.gen_lausend_smk(INTEGER, INTEGER);
-DROP FUNCTION IF EXISTS docs.gen_lausend_smk_(INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS docs.gen_lausend_smk(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.gen_lausend_smk(IN tnid INTEGER,
                                                 IN userid INTEGER,
@@ -19,9 +19,9 @@ DECLARE
     lcAllikas      VARCHAR(20);
     lcSelg         TEXT;
     v_selg         RECORD;
-    l_json         TEXT;
-    l_json_details TEXT;
-    l_json_row     TEXT;
+    l_json         JSONB;
+    l_json_details JSONB   = '[]';
+    l_json_row     JSONB;
     l_row_count    INTEGER = 0;
     new_history    JSONB;
     userName       TEXT;
@@ -32,6 +32,10 @@ DECLARE
     l_laps_id      INTEGER;
     v_nom          RECORD;
     l_parallel_doc INTEGER;
+    l_uur_summa    NUMERIC = 0;
+    l_uur_json     JSONB;
+    l_muud_docs    NUMERIC = 0;
+    l_arv_id       INTEGER;
 BEGIN
 
     SELECT d.docs_ids,
@@ -252,17 +256,84 @@ BEGIN
                     v_smk.tp = '800699';
                     v_smk.kpv = '2023-01-01'::DATE;
                 END IF;
-            END IF;
 
-            -- готовим параментры для шапки проводки
-            SELECT coalesce(v_smk1.journalid, 0) AS id,
-                   'JOURNAL'                     AS doc_type_id,
-                   v_smk.kpv                     AS kpv,
-                   lcSelg                        AS selg,
-                   v_smk.muud                    AS muud,
-                   l_dok                         AS dok,
-                   l_asutus_id                   AS asutusid
-            INTO v_journal;
+                -- Muusikakool, üür
+
+                IF v_smk.rekvid = 71 AND
+                   exists(SELECT id FROM docs.arv WHERE parentid IN (SELECT unnest(v_smk.docs_ids)))
+                THEN
+                    -- дополним пояснение
+                    lcSelg = lcSelg + ', muusikariistade uur';
+
+                    -- считаем сумму аренды инструмента
+
+                    SELECT sum(a1.summa)
+                    INTO l_uur_summa
+                    FROM docs.arv1 a1
+                             INNER JOIN docs.arv a ON a.id = a1.parentid
+                    WHERE a.parentid IN
+                          (SELECT at.doc_arv_id FROM docs.arvtasu at WHERE at.doc_tasu_id = v_smk.parentid)
+                      AND a1.konto IN ('323330');
+
+                    -- ид счета, с арендой, последний
+                    l_arv_id = (SELECT a.parentid
+                                FROM docs.arv a
+                                         INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
+                                WHERE a.parentid IN
+                                      (SELECT at.doc_arv_id
+                                       FROM docs.arvtasu at
+                                       WHERE at.doc_tasu_id = v_smk.parentid
+                                         AND at.status < 3)
+                                  AND a1.konto IN ('323330')
+                                ORDER BY a.kpv DESC
+                                LIMIT 1);
+
+                    -- ищем прочие платежи , связанные с оплатой этого счета
+                    IF l_arv_id IS NOT NULL AND l_uur_summa IS NOT NULL AND l_uur_summa > 0 AND NOT exists(
+                            SELECT 1
+                            FROM docs.journal j
+                                     INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
+                            WHERE 1 = 1
+                              AND kood5 IN ('3233', '3232')
+                              AND j.parentid IN (
+                                SELECT mk1.journalid
+                                FROM docs.doc d
+                                         INNER JOIN docs.mk mk ON mk.parentid = d.id
+                                         INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
+                                WHERE d.id IN (
+                                    (SELECT at.doc_tasu_id
+                                     FROM docs.arvtasu at
+                                     WHERE at.doc_arv_id = l_arv_id
+                                       AND doc_tasu_id <> v_smk.parentid
+                                       AND at.status < 3)
+                                )
+                            ))
+                    THEN
+
+                        -- формируем строку
+                        l_uur_json = jsonb_build_object('id', 0,
+                                                        'summa', COALESCE(l_uur_summa, 0),
+                                                        'deebet', ltrim(rtrim(v_smk.konto)),
+                                                        'lisa_d', COALESCE(v_smk.tp, '800401'),
+                                                        'kreedit', '323330',
+                                                        'lisa_k', COALESCE(v_smk1.tp, '800699'),
+                                                        'tunnus', COALESCE(v_smk1.tunnus, v_smk1.n_tunnus),
+                                                        'proj', COALESCE(v_smk1.proj, ''),
+                                                        'kood1', COALESCE(v_smk1.kood1, v_smk1.n_tegev),
+                                                        'kood2', COALESCE(v_smk1.kood2, v_smk1.n_allikas),
+                                                        'kood5', '3233'
+                            );
+
+                        -- уменьшаем сумму строки платежа на сумму аренды
+                        v_smk1.summa = v_smk1.summa - l_uur_summa;
+                    ELSE
+                        -- оплата инструмента уже списана
+                        l_uur_summa = 0;
+                    END IF;
+
+                END IF;
+
+            END IF;
 
 
             IF NOT empty(v_smk1.kood2)
@@ -290,11 +361,32 @@ BEGIN
             INTO v_journal1;
 
             -- готовим параметры
-            l_json_details = row_to_json(v_journal1);
-            l_json = row_to_json(v_journal);
-            l_json = ('{"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":[' || l_json_details ||
-                      ']}}');
+            l_json_details = l_json_details || to_jsonb(v_journal1);
 
+            -- сумма аренды, должны быть меньше или равной сумме платежа
+            IF (coalesce(l_uur_summa, 0) <> 0 AND coalesce(l_uur_summa, 0) <= v_smk1.summa)
+            THEN
+                -- есть корректирующая проводку строка аренды
+                l_json_details = coalesce(l_json_details, '[]'::JSONB)::JSONB || l_uur_json;
+
+
+            END IF;
+
+            SELECT coalesce(v_smk1.journalid, 0) AS id,
+                   'JOURNAL'                     AS doc_type_id,
+                   v_smk.kpv                     AS kpv,
+                   lcSelg                        AS selg,
+                   v_smk.muud                    AS muud,
+                   l_dok                         AS dok,
+                   l_asutus_id                   AS asutusid,
+                   l_json_details                AS gridData
+            INTO v_journal;
+            -- создаем параметры
+            l_json = jsonb_build_object('id', coalesce(v_smk1.journalid, 0), 'data', to_jsonb(v_journal));
+
+            -- подготавливаем параметры для создания проводки
+
+            result = 0;
             result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_smk.rekvId);
 
             /* salvestan lausend */
@@ -343,21 +435,29 @@ BEGIN
             END IF;
 
             -- параллельная проводка для нач. сальдо
-            IF v_smk.selg = 'Oppetasu algsaldo 2023'
+            IF v_smk.selg = 'Oppetasu algsaldo 2023' AND result IS NOT NULL AND result > 0
             THEN
-                RAISE NOTICE 'Parrallel lausend';
                 v_journal.asutusid = (SELECT id FROM libs.asutus WHERE regkood = '88888888880' AND staatus < 3 LIMIT 1);
                 v_journal.id = 0;
                 v_journal1.deebet = '203900';
                 v_journal1.kreedit = '888888';
-                l_json_details = row_to_json(v_journal1);
+                l_json_details = to_jsonb(v_journal1);
 
-                l_json = row_to_json(v_journal);
-                l_json = ('{"data":' || trim(TRAILING FROM l_json, '}') :: TEXT || ',"gridData":[' || l_json_details ||
-                          ']}}');
+
+                SELECT 0                                                                                  AS id,
+                       'JOURNAL'                                                                          AS doc_type_id,
+                       v_smk.kpv                                                                          AS kpv,
+                       lcSelg                                                                             AS selg,
+                       v_smk.muud                                                                         AS muud,
+                       l_dok                                                                              AS dok,
+                       (SELECT id FROM libs.asutus WHERE regkood = '88888888880' AND staatus < 3 LIMIT 1) AS asutusid,
+                       l_json_details                                                                     AS gridData
+                INTO v_journal;
+
+                -- создаем параметры
+                l_json = jsonb_build_object('id', 0, 'data', to_jsonb(v_journal));
 
                 l_parallel_doc = docs.sp_salvesta_journal(l_json :: JSON, userId, v_smk.rekvId);
-                RAISE NOTICE 'Parrallel lausend l_parallel_doc %', l_parallel_doc;
 
                 IF l_parallel_doc IS NOT NULL AND l_parallel_doc > 0
                 THEN
@@ -398,41 +498,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_smk(INTEGER, INTEGER) TO dbpeakasutaj
 /*
 
 SELECT
-docs.gen_lausend_smk(4461175,5394)
-
-SELECT
-docs.gen_lausend_smk(v.doc_id,(select id from ou.userid u where kasutaja = 'vlad' and u.rekvid = mk.rekvid limit 1))
-from lapsed.pank_vv v
-inner join docs.mk mk on v.doc_id = mk.parentid
-where v.kpv >= '2023-01-01'
-and mk.rekvid = 77
-
-and v.doc_id in (4448063,4448065,4448067)
-;
-
-
-select * from ou.rekv where nimetus ilike '%kunst%'
--- 69
-select * from ou.rekv where id = 77
-
-
-select * from lapsed.pank_vv
-
-select * from libs.dokprop
-
-select * from libs.library where library = 'DOK'
--- 7
-
-insert into libs.dokprop (parentid, registr, selg, details, tyyp)
-	values (7, 1, 'Sorder', '{"konto":"100000"}'::jsonb, 1 )
-
-update docs.korder1 set doklausid = 4 where tyyp = 1
-
-select * from docs.mk1 where parentid in (select id from docs.mk where parentid = 2377148)
-
-update docs.mk1 set kood1 = '01111', kood5 = '3220'
-where id = 1101234
-
+docs.gen_lausend_smk_(4453749,65)
 
 
 */

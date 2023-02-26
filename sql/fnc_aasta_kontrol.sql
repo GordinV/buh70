@@ -20,8 +20,6 @@ BEGIN
               AND a.rekvid = l_rekvid
               AND a.kinni = 1)
     THEN
-        RAISE NOTICE 'exists';
-
         --    RAISE EXCEPTION 'Ei tohi selles periodis töötada';
         RETURN FALSE;
     ELSE

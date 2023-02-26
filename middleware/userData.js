@@ -9,9 +9,9 @@ const userData = async function (req, _uuid) {
     let userId = req.body.userId,
         uuid = _uuid ? _uuid : req.body.uuid;
 
-    let userIndex;
+    let userIndex =-1;
 
-    if (!UserContext.users) {
+    if (!UserContext.users || UserContext.users.length == 0) {
         // logs
         //let message = `userData, !UserContext.users userId -> ${userId},uuid -> ${uuid}, ${UserContext}`;
         //log(message,'Error');
@@ -22,10 +22,12 @@ const userData = async function (req, _uuid) {
         userIndex = _.findIndex(UserContext.users, {uuid: uuid});
     }
 
+
     if (!uuid && UserContext.users) {
         // for get
         userIndex = 0;
     }
+
 
     let sqlUser = {
         userId: null,
@@ -37,7 +39,6 @@ const userData = async function (req, _uuid) {
         user_data: {},
         users: []
     };
-
 
     if (userIndex < 0) {
         // потеряли хеш

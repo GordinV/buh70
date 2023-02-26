@@ -1,6 +1,6 @@
 'use strict';
 
-const userid = require('../models/userid'),
+const Userid = require('../models/userid'),
     HttpError = require('./../error').HttpError;
 const log = require('./../libs/log');
 
@@ -23,10 +23,11 @@ exports.post = async (req, res) => {
         return res.send({status: 401, result: 'Logout'}); //пока нет новых данных
 
     }
+
     // load new User data
     const userName = user.login;
 
-    userid.getUserId(userName, rekvId, async function (err, userData) {
+    Userid.getUserId(userName, rekvId, async function (err, userData) {
         if (!userData || !UserContext.users || UserContext.users.length == 0) {
             // logs
             let message = `changeAsutus, tekkis viga !userData,userName-> ${userName} , rekvId-> ${rekvId}`;
@@ -62,13 +63,14 @@ exports.post = async (req, res) => {
             });
 
             // will save last login
-            userid.updateUseridLastLogin(userData.id, (err, result) => {
+            await Userid.updateUseridLastLogin(userData.id, (err, result) => {
             });
+
 
             // save user uuid
             const params = {userId: userData.id, asutusId: userData.rekvid, uuid: userUuid, user_data: userData, users: UserContext.users};
-            userid.storeUserUuid(params);
 
+            await Userid.storeUserUuid(params);
 
             //will load new userdata
             let newUser = await require('../middleware/userData')(req, userUuid); // данные пользователя
@@ -79,7 +81,6 @@ exports.post = async (req, res) => {
             let message = `changeAsutus, userId-> ${JSON.stringify(userData.id)}, userData.rekvid-> ${userData.rekvid}, rekvId-> ${rekvId}`;
             log(message, 'info');
 
-            console.log('returning Ok',userData.rekvid );
             //send result and wait for reload
             res.send({result: 'Ok', asutusId: userData.rekvid}); //пока нет новых данных
         }

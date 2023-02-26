@@ -270,15 +270,13 @@ class MenuToolBar extends React.Component {
                 // проверим данные
                 if (!response.data || !response.data.asutusId || rekvId !== response.data.asutusId) {
                     // что-то пошло не так
-                    this.btnLoginClick();
+                    console.error('Viga, puudub rekvId', rekvId)
                 }
-
-                // redirect to main
-                this.props.history.push({
-                    pathname: `/lapsed/`,
-                });
-                document.location.reload();
-
+                    // redirect to main
+                    this.props.history.push({
+                        pathname: `/lapsed/`,
+                    });
+                    document.location.reload();
             });
 
         } catch (e) {

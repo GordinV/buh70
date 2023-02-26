@@ -10,21 +10,28 @@ module.exports = {
             {id: "lopp_db", name: "Lõpp deebet", width: "100px"},
             {id: "lopp_kr", name: "Lõpp kreedit", width: "200px"}
         ],
-        sqlString: `SELECT
-                      qry.rekv_id,
-                      qry.asutus_id,
-                      qry.konto,
-                      l.nimetus,
-                      qry.saldo,
-                      a.regkood,
-                      a.nimetus as asutus,
-                      a.tp,
-                      a.aadress
-                    FROM docs.kontosaldoandmik($1::text, $2::integer, $3::date, $4::integer) qry
-                      INNER JOIN libs.asutus a on a.id = qry.asutus_id  
-                      INNER JOIN com_kontoplaan l ON l.kood = qry.konto
-                      WHERE qry.saldo <> 0
-                      ORDER BY qry.konto, a.nimetus`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- rekvid (svod)
+        sqlString: `SELECT qry.rekv_id,
+                           qry.asutus_id,
+                           qry.konto,
+                           l.nimetus,
+                           qry.saldo,
+                           a.regkood,
+                           a.nimetus                             AS asutus,
+                           a.tp,
+                           a.aadress,
+                           ltrim(rtrim(r.nimetus))::VARCHAR(254) AS rekv_nimetus
+                    FROM docs.kontosaldoandmik($1::TEXT, $2::INTEGER, $3::DATE, $4::INTEGER, $5::INTEGER) qry
+                             INNER JOIN libs.asutus a ON a.id = qry.asutus_id
+                             INNER JOIN com_kontoplaan l ON l.kood = qry.konto
+                             INNER JOIN (SELECT id, parentid, regkood, nimetus
+                                         FROM ou.rekv
+                                         WHERE parentid < 999
+                                         UNION ALL
+                                         SELECT 999999, 0, '' AS regkood, 'Kond' AS nimetus) r
+                                        ON r.id = qry.rekv_id
+
+                    WHERE qry.saldo <> 0
+                    ORDER BY r.parentid, r.id DESC, qry.konto, a.nimetus`,     // $1 - konto, $2 - asutus_id,$3 - kpv, $4- rekvid, $5 - kond
         params: '',
         alias: 'kontosaldoandmik_report'
     }
