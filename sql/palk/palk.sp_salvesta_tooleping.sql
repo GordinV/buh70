@@ -94,8 +94,7 @@ BEGIN
         SELECT row_to_json(row)
         INTO new_history
         FROM (SELECT now()       AS updated,
-                     userName    AS user,
-                     v_tooleping AS tooleping) row;
+                     userName    AS user) row;
 
         UPDATE palk.tooleping
         SET osakondid  = doc_osakondid,

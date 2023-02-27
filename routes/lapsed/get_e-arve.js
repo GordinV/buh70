@@ -104,7 +104,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     Addition: {
                         AddContent: 'Soodustus',
                         AddSum: rea.soodustus,
-                        '@addCode':"DSC"
+                        '@addCode': "DSC"
                     },
                     VAT: {
                         VATRate: rea.km,
@@ -178,7 +178,14 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     DueDate: arve.tahtaeg,
                     Period: {
                         PeriodName: arve.laekumise_period
-                    }
+                    },
+                    Extension: {
+                        InformationName: 'Käibemaksu kohustus',
+                        InformationContent: 'Piiratud käibemaksu kohustus',
+                        '@id': "kbm"
+                    },
+                    InvoiceContentCode: 'Andmete õigsus',
+                    InvoiceContentText: 'Kõik arves olevad andmed loetakse õigeks, kui maksja ei esita kirjalike pretensioone arves näidatud tasumise tähtajaks',
                 },
                 InvoiceSumGroup: {
                     Balance: {
