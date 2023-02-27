@@ -182,7 +182,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     Extension: {
                         InformationName: 'Käibemaksu kohustus',
                         InformationContent: 'Piiratud käibemaksu kohustus',
-                        '@id': "kbm"
+                        '@extensionId=': "kbm"
                     },
                     InvoiceContentCode: 'Andmete õigsus',
                     InvoiceContentText: 'Kõik arves olevad andmed loetakse õigeks, kui maksja ei esita kirjalike pretensioone arves näidatud tasumise tähtajaks',
