@@ -30,6 +30,7 @@ const userData = async function (req, _uuid) {
 
 
     let sqlUser = {
+        id: null,
         userId: null,
         asutusId: null,
         kasutaja: null,
@@ -69,6 +70,7 @@ const userData = async function (req, _uuid) {
 
 
     const user = Object.assign({
+        id: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].id : sqlUser.userId,
         userId: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].id : sqlUser.userId,
         userName: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].ametnik : sqlUser.kasutaja,
         asutus: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].asutus : sqlUser.asutus,

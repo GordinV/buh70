@@ -180,12 +180,18 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                         PeriodName: arve.laekumise_period
                     },
                     Extension: {
-                        InformationName: 'Käibemaksu kohustus',
+                        InformationName: 'Kohustus',
                         InformationContent: 'Piiratud käibemaksu kohustus',
-                        '@extensionId=': "kbm"
+                        '@extensionId': "kbm",
+                        CustomContent: {
+                            Kaibemaks: 'Piiratud käibemaksu kohustus',
+                            Teatis: 'Kõik arves olevad andmed loetakse õigeks, kui maksja ei esita kirjalike pretensioone arves näidatud tasumise tähtajaks',
+                            Andmed: 'Kõik arves olevad andmed loetakse õigeks, kui maksja ei esita kirjalike pretensioone arves näidatud tasumise tähtajaks'
+                        }
                     },
-                    InvoiceContentCode: 'Andmete õigsus',
+                    InvoiceContentCode: 'AND',
                     InvoiceContentText: 'Kõik arves olevad andmed loetakse õigeks, kui maksja ei esita kirjalike pretensioone arves näidatud tasumise tähtajaks',
+
                 },
                 InvoiceSumGroup: {
                     Balance: {

@@ -15,6 +15,7 @@ module.exports = async (file, mimeType, user) => {
         let saved = 0;
         let response = [];
         let returnData;
+        let returnObject = {};
 
         Document.setLog('XML/CSV', [file, mimeType], JSON.stringify({data: rows}));
 
@@ -23,7 +24,7 @@ module.exports = async (file, mimeType, user) => {
 
             const params = {
                 data: JSON.stringify({data: rows}),
-                userId: user.id,
+                userId: user.userId ? user.userId : user.id,
                 asutusId: user.asutusId
             };
 
@@ -32,13 +33,21 @@ module.exports = async (file, mimeType, user) => {
             response = await Document.save(params, true, sql);
             saved = response && response.data && response.data.length > 0 ? response.data[0].result : 0;
             returnData = response.data && response.data.length ? response.data[0] : [];
+
+            returnObject = {
+                error_message: `Kokku leidsin ${rows.length} maksed, salvestatud kokku: ${saved}`,
+                result: saved,
+                data: returnData
+            };
+        } else {
+            returnObject = {
+                error_message: `Kokku leidsin ${rows.length} maksed, salvestatud kokku: ${saved}`,
+                result: saved,
+                data: []
+            }
         }
 
-        return {
-            error_message: `Kokku leidsin ${rows.length} maksed, salvestatud kokku: ${saved}`,
-            result: saved,
-            data: returnData
-        };
+        return returnObject;
     } catch (e) {
         console.error(e);
         return {
@@ -56,6 +65,7 @@ const readXML = async (xmlContent) => {
     const parser = new xml2js.Parser({ignoreAttrs: true});
     const fileContent = [];
     const rows = [];
+    let l_error = false;
 
     const result = await parser.parseString(xmlContent, (err, result) => {
         if (err) {
@@ -88,9 +98,17 @@ const readXML = async (xmlContent) => {
                 let pankId = ntry.AcctSvcrRef[0];
                 let NtryDtls = ntry.NtryDtls[0].TxDtls[0];
                 let number = NtryDtls.Refs[0].InstrId ? NtryDtls.Refs[0].InstrId[0] : null;
-                let RmtInf = NtryDtls.RmtInf[0];
-                let viitenr = RmtInf.Strd ? RmtInf.Strd[0].CdtrRefInf[0].Ref[0] : null;
-                let selg = RmtInf.Ustrd ? RmtInf.Ustrd[0] : null;
+                let RmtInf;
+                let viitenr;
+                let selg = '';
+
+                if (NtryDtls.RmtInf && NtryDtls.RmtInf.length) {
+                    RmtInf = NtryDtls.RmtInf[0];
+                    viitenr = RmtInf.Strd ? RmtInf.Strd[0].CdtrRefInf[0].Ref[0] : null;
+                    selg = RmtInf.Ustrd ? RmtInf.Ustrd[0] : null;
+                } else {
+                    viitenr = NtryDtls.Refs[0].EndToEndId ? NtryDtls.Refs[0].EndToEndId[0] : null;
+                }
                 let maksja = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Nm[0] : null;
                 let isikukood = NtryDtls.RltdPties[0].Dbtr && NtryDtls.RltdPties[0].Dbtr[0].Id && NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId && NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0] ? NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0].Id[0] : null;
                 let regkood = NtryDtls.RltdPties[0].Dbtr && NtryDtls.RltdPties[0].Dbtr[0].Id && NtryDtls.RltdPties[0].Dbtr[0].Id[0].OrgId && NtryDtls.RltdPties[0].Dbtr[0].Id[0].OrgId[0].Othr[0] ? NtryDtls.RltdPties[0].Dbtr[0].Id[0].OrgId[0].Othr[0].Id[0] : null;
@@ -115,9 +133,7 @@ const readXML = async (xmlContent) => {
         });
         return `Ok ${rows.length}, xml`;
     });
-
     return rows;
-
 };
 
 const readCSV = async (csvContent) => {

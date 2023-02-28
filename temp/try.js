@@ -1,3 +1,3 @@
-let time = new Date().toISOString().slice(0, 10);
-
-console.log(time);
+let a1 = 2;
+let a2 = 2;
+console.log('2' + '2');

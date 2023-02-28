@@ -122,8 +122,9 @@ class Document {
      */
     async save(params, isNotSelect, sqlParam) {
         // {data, user.userId, user.asutusId}
+
         if (!params.data || !params.userId || !params.asutusId) {
-            console.error('Viga, Wrong params structure', 'Viga, Wrong params structure', null);
+            console.error('Viga, Wrong params structure', params.userId, params.asutusId, params.data);
             return null;
 
             throw new Error('Wrong params structure');
