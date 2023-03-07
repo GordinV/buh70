@@ -1,11 +1,11 @@
-DROP FUNCTION IF EXISTS palk.gen_palk_dok(INTEGER, JSON);
+--DROP FUNCTION IF EXISTS palk.gen_palk_dok(INTEGER, JSON);
 DROP FUNCTION IF EXISTS palk.gen_palk_dok_(INTEGER, JSON);
 
 
-CREATE OR REPLACE FUNCTION palk.gen_palk_dok(IN user_id INTEGER, IN params JSON, OUT result INTEGER,
-                                             OUT error_code INTEGER,
-                                             OUT error_message TEXT,
-                                             OUT data JSONB)
+CREATE OR REPLACE FUNCTION palk.gen_palk_dok_(IN user_id INTEGER, IN params JSON, OUT result INTEGER,
+                                              OUT error_code INTEGER,
+                                              OUT error_message TEXT,
+                                              OUT data JSONB)
     RETURNS RECORD AS
 $BODY$
 DECLARE
@@ -15,6 +15,7 @@ DECLARE
     l_isik_ids      JSON    = params -> 'isik_ids'; -- массив индентификаторов работников
     l_lib_ids       JSON    = params -> 'lib_ids'; -- массив индентификаторов операций
     l_osakond_ids   JSON    = params ->> 'osakond_ids'; -- массив отделов
+    l_proj_ids      JSON    = params ->> 'proj_ids'; -- массив отделов
     kas_mmk         BOOLEAN = FALSE;
 
     v_po            RECORD;
@@ -127,6 +128,13 @@ BEGIN
                array_agg(qry.id)                                                            AS po_ids
 
         FROM (
+                 WITH docs_types AS (
+                     SELECT id, kood
+                     FROM libs.library
+                     WHERE library.library = 'DOK'
+                       AND kood IN ('PALK_OPER', 'VMK', 'VORDER')
+                 )
+
                  SELECT d.id,
                         d.rekvid,
                         t.parentid                              AS isikid,
@@ -161,20 +169,41 @@ BEGIN
                                      ON l.id = po.libid AND (l.properties :: JSONB ->> 'liik') :: INTEGER = 6 -- только выплаты
                  WHERE t.parentid IN (SELECT value :: INTEGER
                                       FROM json_array_elements_text(l_isik_ids))
-                   AND po.kpv = l_kpv                                                -- только за определенную дату
-                   AND po.rekvid = v_user.rekvid                                     -- только свое учреждение
+                   AND po.kpv = l_kpv                                                        -- только за определенную дату
+                   AND D.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'PALK_OPER') -- оптимизация
+                   AND d.rekvid = v_user.rekvid
+                   AND po.rekvid = v_user.rekvid                                             -- только свое учреждение
                    AND l.id IN (SELECT value :: INTEGER
-                                FROM json_array_elements_text(l_lib_ids))            -- только указанные операции
+                                FROM json_array_elements_text(l_lib_ids))                    -- только указанные операции
                    AND t.osakondid IN (SELECT value :: INTEGER
-                                       FROM json_array_elements_text(l_osakond_ids)) -- только указанные отделы
-                   AND NOT exists(SELECT dd.id
-                                  FROM docs.doc dd
-                                           INNER JOIN libs.library l ON l.id = dd.doc_type_id
-                                  WHERE dd.id IN (SELECT *
-                                                  FROM unnest(d.docs_ids))
-                                    AND dd.status <> 3
-                                    AND l.kood IN
-                                        ('VMK', 'VORDER')) -- только те выплаты, на которые не созданы платежные документы
+                                       FROM json_array_elements_text(l_osakond_ids))         -- только указанные отделы
+                   AND (po.proj IS NULL OR po.proj IN (
+                     SELECT kood
+                     FROM (
+                              SELECT id, kood
+                              FROM libs.library
+                              WHERE library = 'PROJ'
+                                AND rekvid = v_user.rekvid
+                                AND id IN (
+                                  SELECT value :: INTEGER
+                                  FROM json_array_elements_text(l_proj_ids::JSON))
+                              UNION ALL
+                              SELECT 0 AS id, '' AS kood
+                          ) qry
+                 ) -- только указанные проекты
+
+                     OR json_array_length(coalesce(l_proj_ids::JSON, '[]'::JSON)) = 0
+                     )
+
+                   AND NOT
+                     exists(SELECT dd.id
+                            FROM docs.doc dd
+                            WHERE dd.id IN (SELECT *
+                                            FROM unnest(d.docs_ids))
+                              AND dd.rekvid = v_user.rekvid
+                              AND dd.status <> 3
+                              AND dd.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'PALK_OPER')
+                         )
              ) qry
         GROUP BY rekvid, isikid, nimi, aadress, tunnus, asutus_aa, tp,
                  is_kassa
@@ -214,7 +243,7 @@ BEGIN
                 SELECT v_po.isikid    AS asutusid,
                        (SELECT id
                         FROM libs.nomenklatuur n
-                        WHERE dok in ('MK','VMK')
+                        WHERE dok IN ('MK', 'VMK')
                           AND n.rekvid = v_po.rekvid
                           AND n.status < 3
                         ORDER BY id DESC

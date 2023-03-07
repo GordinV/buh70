@@ -228,8 +228,9 @@ BEGIN
                 selg = coalesce(selg, '') + 'Palk kokku:' + ltrim(rtrim(round(l_palk_summa, 2) :: VARCHAR)) + ltEnter;
                 lnBaas := (l_tunnid_kokku);
 
-                -- кол-во часов отработанных + если неполный отработанный месяц и указан месячный оклад, то добавляем считаем по дням
-                IF l_tunnid_kokku < l_hours AND l_kuupalk > 0
+                -- кол-во часов отработанных + если неполный отработанный месяц и указан месячный оклад, то добавляем считаем по дням, для полного дня (не переработка)
+                -- поправил 01.03.2023, ошибка для J. Belova
+                IF l_tund = 1 and l_tunnid_kokku < l_hours AND l_kuupalk > 0
                 THEN
                     l_work_days = palk.get_work_days(l_params :: JSON);
 
@@ -501,9 +502,10 @@ and tululiik = '10'
 
 */
 
-SELECT *
-FROM palk.sp_calc_arv(5419, '{"kpv":"2023-02-28","lepingid":17851,"libid":153397}' :: JSON);
+/*SELECT *
+FROM palk.sp_calc_arv_(5419, '{"kpv":"2023-02-28","lepingid":17851,"libid":153397}' :: JSON);
 
 
 SELECT *
-FROM palk.sp_calc_arv(5419, '{"kpv":"2023-05-31","lepingid":18173,"libid":147086}' :: JSON);
+FROM palk.sp_calc_arv_(5419, '{"kpv":"2023-05-31","lepingid":18173,"libid":147086}' :: JSON);
+*/

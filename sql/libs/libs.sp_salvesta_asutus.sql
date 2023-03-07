@@ -89,6 +89,10 @@ BEGIN
         doc_is_tootaja = TRUE;
     END IF;
 
+    IF doc_tp IS NULL OR empty(doc_tp)
+    THEN
+        doc_tp = '800699';
+    END IF;
 
     SELECT row_to_json(row)
     INTO new_properties

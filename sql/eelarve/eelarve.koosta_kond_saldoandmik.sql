@@ -15,6 +15,7 @@ DECLARE
     l_tulemus   INTEGER;
     l_timestamp VARCHAR(20) = left(now() :: TEXT, 20);
     l_rekvid    INTEGER     = 63; -- rahandusamet
+    l_ids       INTEGER[];
 BEGIN
 
     -- check for user_id
@@ -71,13 +72,56 @@ BEGIN
                    l_timestamp,
                    date(),
                    l_rekvid,
-                   s.docs_ids
+                   array[s.id]
             FROM eelarve.saldoandmik s
                      LEFT OUTER JOIN com_kontoplaan kontod ON (ltrim(rtrim(kontod.kood)) = ltrim(rtrim(s.konto)))
             WHERE s.aasta = year(l_kpv)
               AND s.kuu = month(l_kpv)
               AND ltrim(rtrim(s.omatp)) = ltrim(rtrim(v_omatp.omatp));
 
+        END LOOP;
+
+
+    -- убираем взаимные обороты для счета 150020 (Е. Чеканина 06.03.2023)
+/*    IF (
+           SELECT round(sum(db)) - round(sum(kr))
+           FROM eelarve.saldoandmik s
+           WHERE s.aasta = year(l_kpv)
+             AND s.kuu = month(l_kpv)
+             AND tyyp = 0
+             AND left(konto, 6) = '150020'
+             AND rahavoo IN ('15', '16')
+       ) = 0
+    THEN
+
+        SELECT array_agg(id)
+        INTO l_ids
+        FROM eelarve.saldoandmik s
+        WHERE s.aasta = year(l_kpv)
+          AND s.kuu = month(l_kpv)
+          AND tyyp = 0
+          AND left(konto, 6) = '150020'
+          AND rahavoo IN ('15', '16');
+
+        RAISE NOTICE 'deleteing 150020 l_ids %', l_ids;
+
+
+        DELETE
+        FROM tmp_saldoandmik
+        WHERE timestamp = l_timestamp
+          AND left(konto, 6) = '150020'
+          AND rahavoo IN ('15', '16');
+    END IF;
+*/
+
+    -- эллиминирование
+    FOR v_omatp IN
+        SELECT DISTINCT omatp
+        FROM eelarve.saldoandmik
+        WHERE aasta = year(l_kpv)
+          AND kuu = month(l_kpv)
+          AND left(omatp, 4) = left(l_oma_tp, 4)
+        LOOP
             FOR v_tp IN
                 SELECT DISTINCT tp
                 FROM eelarve.saldoandmik
@@ -87,6 +131,7 @@ BEGIN
                   AND ltrim(rtrim(tp)) <> ltrim(rtrim(omatp))
                   AND left(ltrim(rtrim(tp)), 4) = left(ltrim(rtrim(l_Oma_tp)), 4)
                   AND rekvid <> 999
+                  AND (l_ids IS NULL OR id NOT IN (SELECT unnest(l_ids)))
                 LOOP
 
                     -- kirjutame miinus summad
@@ -105,12 +150,13 @@ BEGIN
                            l_timestamp,
                            date(),
                            l_rekvid,
-                           docs_ids
-                    FROM eelarve.saldoandmik
+                           array[s.id]
+                    FROM eelarve.saldoandmik s
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
                       AND ltrim(rtrim(omatp)) = ltrim(rtrim(v_omatp.OmaTp))
                       AND ltrim(rtrim(tp)) = ltrim(rtrim(v_tp.tp))
+                      AND (l_ids IS NULL OR s.id NOT IN (SELECT unnest(l_ids)))
                       AND left(konto, 1) = '1';
 
                     -- kreedit
@@ -127,13 +173,14 @@ BEGIN
                            l_timestamp,
                            date(),
                            l_rekvId,
-                           docs_ids
-                    FROM eelarve.saldoandmik
+                           array[s.id]
+                    FROM eelarve.saldoandmik s
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
                       AND ltrim(rtrim(omatp)) = ltrim(rtrim(v_tp.tp))
                       AND left(omatp, 4) = left(l_oma_tp, 4)
                       AND ltrim(rtrim(tp)) = ltrim(rtrim(v_omatp.omatp))
+                      AND (l_ids IS NULL OR s.id NOT IN (SELECT unnest(l_ids)))
                       AND left(konto, 1) = '2';
 
                     -- (võrreldava saldoandmik (kõik kontod algusega 4 kuni 6, mille esitaja kood on TP kood on aruande koostaja kood (deebet miinus kreedit,
@@ -151,13 +198,14 @@ BEGIN
                            l_timestamp,
                            date(),
                            l_rekvId,
-                           docs_ids
-                    FROM eelarve.saldoandmik
+                           array[s.id]
+                    FROM eelarve.saldoandmik s
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
                       AND ltrim(rtrim(omatp)) = ltrim(rtrim(v_omatp.OmaTp))
                       AND ltrim(rtrim(tp)) = ltrim(rtrim(v_tp.tp))
                       AND left(konto, 1) IN ('4', '5', '6')
+                      AND (l_ids IS NULL OR s.id NOT IN (SELECT unnest(l_ids)))
                       AND konto NOT IN ('601000', '601001');
 
                     --(esitaja saldoandmik sum (kõik kontod algusega 3, mille TP kood on võrreldava kood (kreedit miinus deebet)))
@@ -175,13 +223,14 @@ BEGIN
                            l_timestamp,
                            date(),
                            l_rekvId,
-                           docs_ids
-                    FROM eelarve.saldoandmik
+                           array[s.id]
+                    FROM eelarve.saldoandmik s
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
                       AND ltrim(rtrim(omatp)) = ltrim(rtrim(v_tp.tp))
                       AND left(omatp, 4) = left(l_oma_tp, 4)
                       AND ltrim(rtrim(tp)) = ltrim(rtrim(v_omatp.omatp))
+                      AND (l_ids IS NULL OR s.id NOT IN (SELECT unnest(l_ids)))
                       AND left(konto, 1) = '3';
 
                     --(esitaja saldoandmik sum (kõik kontod algusega 7, mille TP kood on võrreldava kood (deebet miinus kreedit)))
@@ -198,12 +247,13 @@ BEGIN
                            l_timestamp,
                            date(),
                            l_rekvId,
-                           docs_ids
-                    FROM eelarve.saldoandmik
+                           array[s.id]
+                    FROM eelarve.saldoandmik s
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
                       AND ltrim(rtrim(omatp)) = ltrim(rtrim(v_omatp.OmaTp))
                       AND ltrim(rtrim(tp)) = ltrim(rtrim(v_tp.tp))
+                      AND (l_ids IS NULL OR s.id NOT IN (SELECT unnest(l_ids)))
                       AND left(konto, 2) = '70';
 
                     --(võrreldava saldoandmik (kõik kontod algusega 7, mille TP kood on aruande koostaja kood (kreedit miinus deebet)))
@@ -220,13 +270,14 @@ BEGIN
                            l_timestamp,
                            date(),
                            l_rekvId,
-                           docs_ids
-                    FROM eelarve.saldoandmik
+                           array[s.id]
+                    FROM eelarve.saldoandmik s
                     WHERE aasta = year(l_Kpv)
                       AND kuu = month(l_Kpv)
                       AND left(omatp, 4) = left(l_oma_tp, 4)
                       AND ltrim(rtrim(omatp)) = ltrim(rtrim(v_tp.tp))
                       AND ltrim(rtrim(tp)) = ltrim(rtrim(v_omatp.omatp))
+                      AND (l_ids IS NULL OR s.id NOT IN (SELECT unnest(l_ids)))
                       AND left(konto, 2) = '71';
 
                 END LOOP;
@@ -254,6 +305,7 @@ BEGIN
     SET nimetus = 'Kassa'
     WHERE konto = '100000'
       AND ltrim(rtrim(timestamp)) = ltrim(rtrim(l_timestamp));
+
 
     -- salvestame kond saldoandmik
 
@@ -337,8 +389,9 @@ GRANT EXECUTE ON FUNCTION eelarve.koosta_kond_saldoandmik(INTEGER, DATE) TO dbka
 
 
 /*
-select error_code, result, error_message from eelarve.koosta_kond_saldoandmik(2477,'2022-01-31')
-*/
+SELECT error_code, result, error_message
+  FROM eelarve.koosta_kond_saldoandmik(2477, '2022-12-31')
 
+*/
 
 --select * from ou.userid where rekvid = 63 and kasutaja = 'vlad'

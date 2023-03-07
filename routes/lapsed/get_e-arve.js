@@ -57,7 +57,6 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
 
     const data = [];
 
-
     arved.forEach((arve, index) => {
         //  подготовим данные
         data.push(Object.assign({}, arve.row[0], {details: arve.details}));
@@ -179,19 +178,6 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     Period: {
                         PeriodName: arve.laekumise_period
                     },
-                    Extension: {
-                        InformationName: 'Kohustus',
-                        InformationContent: 'Piiratud käibemaksu kohustus',
-                        '@extensionId': "kbm",
-                        CustomContent: {
-                            Kaibemaks: 'Piiratud käibemaksu kohustus',
-                            Teatis: 'Kõik arves olevad andmed loetakse õigeks, kui maksja ei esita kirjalike pretensioone arves näidatud tasumise tähtajaks',
-                            Andmed: 'Kõik arves olevad andmed loetakse õigeks, kui maksja ei esita kirjalike pretensioone arves näidatud tasumise tähtajaks'
-                        }
-                    },
-                    InvoiceContentCode: 'AND',
-                    InvoiceContentText: 'Kõik arves olevad andmed loetakse õigeks, kui maksja ei esita kirjalike pretensioone arves näidatud tasumise tähtajaks',
-
                 },
                 InvoiceSumGroup: {
                     Balance: {
@@ -211,8 +197,8 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     }
                 },
                 AdditionalInformation: {
-                    InformationName: 'Teenuste saaja',
-                    InformationContent: arve.lapse_nimi
+                    InformationName: 'Teenuste saaja, asutus',
+                    InformationContent: `${arve.lapse_nimi}, ${asutusConfig.uksus}`
                 },
                 PaymentInfo: {
                     Currency: 'EUR',

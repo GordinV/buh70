@@ -315,7 +315,7 @@ BEGIN
                                                         'summa', COALESCE(l_uur_summa, 0),
                                                         'deebet', ltrim(rtrim(v_smk.konto)),
                                                         'lisa_d', COALESCE(v_smk.tp, '800401'),
-                                                        'kreedit', '323330',
+                                                        'kreedit', '10300029',
                                                         'lisa_k', COALESCE(v_smk1.tp, '800699'),
                                                         'tunnus', COALESCE(v_smk1.tunnus, v_smk1.n_tunnus),
                                                         'proj', COALESCE(v_smk1.proj, ''),
