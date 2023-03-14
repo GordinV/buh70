@@ -9,7 +9,7 @@ module.exports = {
                           NULL::DATE AS valid
                    FROM lapsed.laps l
                    WHERE l.staatus < 3
-                       ORDER BY nimi`,
+                   ORDER BY nimi`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},
@@ -30,6 +30,7 @@ module.exports = {
                                                WHERE id = $2), l.id)    AS viitenumber,
                        $2::INTEGER                                      AS userid,
                        coalesce(ll.jaak, 0)::NUMERIC                    AS jaak,
+                       (l.properties ->> 'eritunnus')::TEXT                     AS eritunnus,
                        coalesce((SELECT count(id)
                                  FROM lapsed.vanem_arveldus va
                                  WHERE parentid = l.id
@@ -51,7 +52,8 @@ module.exports = {
                   null::text as nimi,
                   null::text as viitenumber,
                   null::text as muud,
-                  0::integer as arveldus
+                  0::integer as arveldus,
+                  NULL::TEXT as eritunnus,
                   0::numeric(14,2) as jaak`,
             query: null,
             multiple: false,
@@ -62,7 +64,7 @@ module.exports = {
             sql: `SELECT v.id,
                          v.parentid,
                          v.asutusid,
-                         a.regkood as isikukood,
+                         a.regkood             AS isikukood,
                          a.nimetus,
                          a.tel,
                          a.email,
@@ -72,8 +74,8 @@ module.exports = {
                                      AND va.rekvid = (SELECT rekvid FROM ou.userid WHERE id = $2)
                                      AND va.asutusid = a.id
                                      AND arveldus
-                                       LIMIT 1)
-                             , FALSE)::BOOLEAN        AS arved
+                                   LIMIT 1)
+                             , FALSE)::BOOLEAN AS arved
                   FROM lapsed.vanemad v
                            INNER JOIN libs.asutus a ON a.id = v.asutusid
                   WHERE v.parentid = $1

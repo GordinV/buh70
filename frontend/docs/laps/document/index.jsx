@@ -11,15 +11,17 @@ const compareDate = require('./../../../../libs/compareDates');
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
+    Select = require('../../../components/select/select.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     DataGrid = require('../../../components/data-grid/data-grid.jsx'),
     InputDate = require('../../../components/input-date/input-date.jsx'),
     styles = require('./laps.styles');
 
-const LIBRARIES = [{id: 'lapse_grupp', filter: ``}];
+//const LIBRARIES = [{id: 'lapse_grupp', filter: ``}];
 
-const DOCS = ['ARV', 'SMK', 'VMK', 'LAPSE_TAABEL'];
+//const DOCS = ['ARV', 'SMK', 'VMK', 'LAPSE_TAABEL'];
 
+const {LIBRARIES, ERITUNNUSED, DOCS} = require('./../../../../config/constants').LAPS;
 
 class Laps extends React.PureComponent {
     constructor(props) {
@@ -157,8 +159,17 @@ class Laps extends React.PureComponent {
                                    readOnly={true}
                                    style={styles.jaak}
                         />
+                        <Select title="Eritunnus:"
+                                name='eritunnus'
+                                data={ERITUNNUSED}
+                                collId='kood'
+                                value={self.docData.eritunnus || ''}
+                                defaultValue={self.docData.eritunnus}
+                                ref="select-eritunnus"
+                                btnDelete={isEditMode}
+                                onChange={self.handleInputChange}
+                                readOnly={!isEditMode}/>
                     </div>
-
                     <div style={styles.docColumn}>
                         <div style={styles.docRow}>
                             <label ref="label">

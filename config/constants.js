@@ -105,6 +105,13 @@ module.exports = {
         ]
 
     },
+    LAPS: {
+        LIBRARIES: [{id: 'lapse_grupp', filter: ``}],
+        ERITUNNUSED: [
+            {id: 1, kood: '3008', name: 'Kulud seoses pagulaste vastuvotmisega'},
+        ],
+        DOCS: ['ARV', 'SMK', 'VMK', 'LAPSE_TAABEL']
+    },
     LAPSE_KAART: {
         LIBRARIES: [
             {id: 'nomenclature', filter: `where dok = 'ARV'`},

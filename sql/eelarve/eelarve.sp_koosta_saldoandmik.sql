@@ -72,7 +72,8 @@ BEGIN
                          FROM get_asutuse_struktuur(l_rekvid))
             LOOP
 
-                SELECT tp INTO l_asutuse_tp
+                SELECT tp
+                INTO l_asutuse_tp
                 FROM ou.aa
                 WHERE parentid = v_rekv.id
                   AND kassa = 2
@@ -95,7 +96,18 @@ BEGIN
                        v_rekv.id,
                        l_asutuse_tp,
                        0
-                FROM eelarve.saldoandmik_aruanne(l_kpv2, v_rekv.id, NULL) qry
+                FROM (SELECT sum(deebet)                 AS deebet,
+                             sum(kreedit)                AS kreedit,
+                             left(konto, 6)::VARCHAR(20) AS konto,
+                             tp,
+                             allikas,
+                             rahavoog,
+                             tegev,
+                             rekv_id
+                      FROM eelarve.saldoandmik_aruanne(l_kpv2, v_rekv.id, 0, NULL::JSONB)
+                      GROUP BY left(konto, 6), tp, allikas, rahavoog, tegev, rekv_id) qry
+
+--                     eelarve.saldoandmik_aruanne(l_kpv2, v_rekv.id, NULL) qry
                          LEFT OUTER JOIN com_kontoplaan l ON ltrim(rtrim(l.kood)) = ltrim(rtrim(qry.konto))
                 WHERE qry.rekv_id = v_rekv.id;
 

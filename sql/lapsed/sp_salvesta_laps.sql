@@ -16,6 +16,7 @@ DECLARE
     doc_viitenr      TEXT    = doc_data ->> 'viitenumber';
     doc_vanemId      INTEGER = doc_data ->> 'vanemid';
     doc_muud         TEXT    = doc_data ->> 'muud';
+    doc_eritunnus    TEXT    = doc_data ->> 'eritunnus';
     is_import        BOOLEAN = coalesce((doc_data ->> 'import')::BOOLEAN, FALSE);
     v_vanem          RECORD;
     json_props       JSONB;
@@ -42,7 +43,9 @@ BEGIN
     END IF;
 
     json_props = to_jsonb(row)
-                 FROM (SELECT doc_viitenr AS viitenumber) row;
+                 FROM (SELECT doc_viitenr   AS viitenumber,
+                              doc_eritunnus AS eritunnus
+                      ) row;
 
 
     -- поиск на наличие в регистре
