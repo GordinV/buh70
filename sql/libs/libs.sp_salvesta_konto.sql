@@ -20,6 +20,10 @@ DECLARE
     doc_tun3        INTEGER = doc_data ->> 'tun3'; -- allikas
     doc_tun4        INTEGER = doc_data ->> 'tun4'; -- rahavoog
     doc_tyyp        INTEGER = doc_data ->> 'tyyp';
+    doc_tp_req      TEXT    = doc_data ->> 'tp_req';
+    doc_tt_req      TEXT    = doc_data ->> 'tt_req';
+    doc_a_req       TEXT    = doc_data ->> 'a_req';
+    doc_rv_req      TEXT    = doc_data ->> 'rv_req';
     doc_valid       DATE    = CASE
                                   WHEN empty(doc_data ->> 'valid') THEN NULL::DATE
                                   ELSE (doc_data ->> 'valid')::DATE END;
@@ -39,7 +43,7 @@ BEGIN
     SELECT kasutaja,
            (u.roles ->> 'is_peakasutaja')::BOOLEAN AS is_peakasutaja
 
-           INTO userName, is_peakasutaja
+    INTO userName, is_peakasutaja
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -50,9 +54,15 @@ BEGIN
         RETURN 0;
     END IF;
 
-    SELECT row_to_json(row) INTO json_object
+    SELECT row_to_json(row)
+    INTO json_object
     FROM (SELECT doc_valid       AS valid,
-                 doc_kas_virtual AS kas_virtual) row;
+                 doc_kas_virtual AS kas_virtual,
+                 doc_tp_req      AS tp_req,
+                 doc_tt_req      AS tt_req,
+                 doc_a_req       AS a_req,
+                 doc_rv_req      AS rv_req
+         ) row;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0

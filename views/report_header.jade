@@ -1,11 +1,13 @@
 doctype html
 html
     body
+        meta(charset='UTF-8')
+
         -var User = user ? user : {asutus: ''};
-        div.doc_wrapper
-            p.doc_header #{User.asutus_tais ? User.asutus_tais: User.asutus}, reg.kood: #{User.regkood}
-            p.doc_header #{User.aadress}
-            p.doc_header #{User.tel}
-            p.doc_header #{User.email}
+            div.doc_wrapper
+                p.doc_header #{User.asutus_tais ? User.asutus_tais: User.asutus}, reg.kood: #{User.regkood}
+                p.doc_header #{User.aadress}
+                p.doc_header #{User.tel}
+                p.doc_header #{User.email}
 
     block content

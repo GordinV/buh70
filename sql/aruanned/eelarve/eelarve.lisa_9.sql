@@ -64,6 +64,8 @@ FROM (
                     AND j.kood5::TEXT = '2586'::TEXT AND j.kood3::TEXT = '06'::TEXT)
            AND j.deebet NOT LIKE '100%'
            AND deebet NOT IN ('203620')
+           -- J. Tsekanina 13/03/2023
+           AND left(a.tp, 6) <> '185101'
            -- J.Tekanina
            AND j.id NOT IN (SELECT id
                             FROM cur_journal
@@ -96,12 +98,12 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO eelakt
 GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO dbvaatleja;
 /*
 
-select * from (
+select len(saaja_regkood), len(saaja_nimi), * from (
                     SELECT *
-                    FROM eelarve.lisa_9('2022-09-01', '2022-09-30', 63,  1)
+                    FROM eelarve.lisa_9('2023-02-01', '2023-02-28', 130,  0)
                 ) qry
   where  summa >= 100
-and saaja_tp like '9006%'
+and saaja_tp like '185%'
 
 select * from ou.rekv where parentid = 64
 

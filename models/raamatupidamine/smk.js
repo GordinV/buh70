@@ -82,15 +82,15 @@ const Smk = {
             data: []
         },
         {
-            sql: `SELECT $2 :: INTEGER           AS userid,
-                         trim(n.kood)            AS kood,
-                         trim(n.nimetus)         AS nimetus,
-                         trim(a.nimetus)         AS asutus,
-                         trim(a.aadress)         AS aadress,
-                         k.parentid              AS parent_id,
+            sql: `SELECT $2 :: INTEGER                 AS userid,
+                         trim(n.kood)::VARCHAR(20)     AS kood,
+                         trim(n.nimetus)::VARCHAR(254) AS nimetus,
+                         trim(a.nimetus)::VARCHAR(254) AS asutus,
+                         trim(a.aadress)               AS aadress,
+                         k.parentid                    AS parent_id,
                          k1.*,
-                         coalesce(l.number, 0)   AS lausnr,
-                         coalesce(l.lausend, '') AS lausend
+                         coalesce(l.number, 0)         AS lausnr,
+                         coalesce(l.lausend, '')       AS lausend
                   FROM docs.mk1 AS k1
                            INNER JOIN docs.mk k ON k.id = k1.parentId
                            INNER JOIN libs.nomenklatuur n ON n.id = k1.nomid

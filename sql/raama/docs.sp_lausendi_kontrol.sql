@@ -1,4 +1,5 @@
 DROP FUNCTION IF EXISTS docs.sp_lausendikontrol(params JSONB);
+DROP FUNCTION IF EXISTS docs.sp_lausendikontrol_(params JSONB);
 
 CREATE OR REPLACE FUNCTION docs.sp_lausendikontrol(params JSONB)
     RETURNS TEXT AS
@@ -55,13 +56,13 @@ BEGIN
         l_msg = l_msg + lcMsg1;
     END IF;
 
-    -- kontrollin tegevusalla
-    IF l_tt = '06601'
-    THEN
-        lcMsg1 = 'Tegevusalla ei kehti ';
-        l_msg = l_msg + lcMsg1;
-    END IF;
-
+    /*    -- kontrollin tegevusalla
+        IF l_tt = '06601'
+        THEN
+            lcMsg1 = 'Tegevusalla ei kehti ';
+            l_msg = l_msg + lcMsg1;
+        END IF;
+    */
     -- Tp kontoll
 
     IF left(ltrim(rtrim(l_tp_d)), 4) = '1851' AND char_length(ltrim(rtrim(l_tp_d))) = 6
@@ -106,18 +107,22 @@ BEGIN
     SELECT l.kood,
            l.nimetus,
            l.muud,
-           l.tun1                          AS tp,
-           l.tun2                          AS tegev,
-           l.tun3                          AS allikas,
-           l.tun4                          AS rahavoog,
-           l.tun5                          AS tyyp,
-           l.properties::JSONB ->> 'valid' AS valid
+           l.tun1                                                             AS tp,
+           l.tun2                                                             AS tegev,
+           l.tun3                                                             AS allikas,
+           l.tun4                                                             AS rahavoog,
+           l.tun5                                                             AS tyyp,
+           l.properties::JSONB ->> 'valid'                                    AS valid,
+           coalesce((l.properties::JSONB ->> 'tp_req')::CHAR(1), '')::CHAR(1) AS tp_req,
+           coalesce((l.properties::JSONB ->> 'tt_req')::CHAR(1), '')::CHAR(1) AS tt_req,
+           coalesce((l.properties::JSONB ->> 'a_req')::CHAR(1), '')::CHAR(1)  AS a_req,
+           coalesce((l.properties::JSONB ->> 'rv_req')::CHAR(1), '')::CHAR(1) AS rv_req
     INTO v_konto_d
     FROM libs.library l
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_db::TEXT
       AND status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_konto_d.valid IS NOT NULL AND char_length(v_konto_d.valid::TEXT) = 8 AND
        NOT public.empty(v_konto_d.valid::TEXT)
@@ -137,18 +142,23 @@ BEGIN
     SELECT l.kood,
            l.nimetus,
            l.muud,
-           l.tun1                          AS tp,
-           l.tun2                          AS tegev,
-           l.tun3                          AS allikas,
-           l.tun4                          AS rahavoog,
-           l.properties::JSONB ->> 'tyyp'  AS tyyp,
-           l.properties::JSONB ->> 'valid' AS valid
+           l.tun1                                                             AS tp,
+           l.tun2                                                             AS tegev,
+           l.tun3                                                             AS allikas,
+           l.tun4                                                             AS rahavoog,
+           l.properties::JSONB ->> 'tyyp'                                     AS tyyp,
+           l.properties::JSONB ->> 'valid'                                    AS valid,
+           coalesce((l.properties::JSONB ->> 'tp_req')::CHAR(1), '')::CHAR(1) AS tp_req,
+           coalesce((l.properties::JSONB ->> 'tt_req')::CHAR(1), '')::CHAR(1) AS tt_req,
+           coalesce((l.properties::JSONB ->> 'a_req')::CHAR(1), '')::CHAR(1)  AS a_req,
+           coalesce((l.properties::JSONB ->> 'rv_req')::CHAR(1), '')::CHAR(1) AS rv_req
+
     INTO v_konto_k
     FROM libs.library l
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_kr::TEXT
       AND status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_konto_k.valid IS NOT NULL AND NOT public.empty(v_konto_k.valid) AND char_length(v_konto_k.valid::TEXT) = 8
     THEN
@@ -162,15 +172,22 @@ BEGIN
 
     -- deebet
 
-
     IF v_konto_d.kood IS NULL OR NOT char_length(l_db) > 0 OR char_length(l_db) < 6
     THEN
         l_msg = l_msg + ' Deebet konto: puudub või vale konto (' || l_db || ')' ;
     END IF;
 
+-- Требование к ТП коду
     IF v_konto_d.tp::TEXT = '1' AND char_length(l_tp_d) = 0
     THEN
         lnTPD = 1;
+
+        -- если * и RV = 01 то требование остается, иначе нет
+        IF (v_konto_d.tp_req = '*' AND l_rahavoog <> '01')
+        THEN
+            lnTPD = 0;
+        END IF;
+
     END IF;
 
 
@@ -185,6 +202,15 @@ BEGIN
         THEN
             lnEelarve = 0;
         END IF;
+
+        -- если * и RV = 01 то требование остается, иначе нет
+        IF (v_konto_d.tt_req = '*' AND l_rahavoog <> '01')
+        THEN
+
+            lnTT = 0;
+            lnEelarve = 0;
+        END IF;
+
     END IF;
 
     -- kontrollin 'RE' (только для отчетов)
@@ -196,11 +222,23 @@ BEGIN
     IF v_konto_d.allikas::TEXT = '1' AND (public.empty(l_allikas) OR public.isdigit(l_allikas) = 0)
     THEN
         lnAllikas = 1;
+        -- если * и RV = 01 то требование остается, иначе нет
+        IF (v_konto_d.a_req = '*' AND l_rahavoog <> '01')
+        THEN
+            lnAllikas = 10;
+        END IF;
     END IF;
 
     IF v_konto_d.rahavoog::TEXT = '1' AND public.empty(l_rahavoog)
     THEN
         lnRahavoog = 1;
+
+        -- если * и RV = 01 то требование остается, иначе нет
+        IF (v_konto_d.rv_req = '*' AND l_rahavoog <> '01')
+        THEN
+            lnRahavoog = 0;
+        END IF;
+
     END IF;
 
 -- kontrollin kontogrupp '7'
@@ -215,19 +253,6 @@ BEGIN
         THEN
             l_msg = l_msg +
                     ' Ei saa kasutada see TP kood: saab siirdeid kajastada ainult nende TP koodidega, mille esimesed 4 numbrit on samad ';
-        END IF;
-    END IF;
-
-
-    IF NOT public.empty(v_konto_d.muud) AND v_konto_d.muud = '*'
-    THEN
-        IF l_rahavoog <> '01'
-        THEN
-            lnTPD = 0;
-            lnTPK = 0;
-            lnTT = 0;
-            lnEelarve = 0;
-            lnAllikas = 0;
         END IF;
     END IF;
 
@@ -320,17 +345,38 @@ BEGIN
         THEN
             lnEelarve = 0;
         END IF;
+
+        -- если * и RV = 01 то требование остается, иначе нет
+        IF (v_konto_k.tt_req = '*' AND l_rahavoog <> '01')
+        THEN
+            lnEelarve = 0;
+            lnTT = 0;
+        END IF;
+
     END IF;
 
     IF v_konto_k.allikas IS NOT NULL AND v_konto_k.allikas::TEXT = '1' AND
        (public.empty(l_allikas) OR public.isdigit(l_allikas) = 0) AND lnAllikas = 0
     THEN
         lnAllikas = 1;
+
+        -- если * и RV = 01 то требование остается, иначе нет
+        IF (v_konto_k.a_req = '*' AND l_rahavoog <> '01')
+        THEN
+            lnAllikas = 0;
+        END IF;
+
     END IF;
 
     IF v_konto_k.rahavoog IS NOT NULL AND v_konto_k.rahavoog::TEXT = '1' AND public.empty(l_rahavoog) AND lnRahavoog = 0
     THEN
         lnRahavoog = 1;
+        -- если * и RV = 01 то требование остается, иначе нет
+        IF (v_konto_k.rv_req = '*' AND l_rahavoog <> '01')
+        THEN
+            lnRahavoog = 0;
+        END IF;
+
     END IF;
 
     IF left(l_kr, 1) = '7'
@@ -346,18 +392,6 @@ BEGIN
                     ' Ei saa kasutada see TP kood: saab siirdeid kajastada ainult nende TP koodidega, mille esimesed 4 numbrit on samad ';
         END IF;
 
-    END IF;
-
-
-    IF NOT public.empty(v_konto_k.muud) AND v_konto_k.muud = '*'
-    THEN
-        IF l_rahavoog <> '01'
-        THEN
-            lnTPK = 0;
-            lnTT = 0;
-            lnEelarve = 0;
-            lnAllikas = 0;
-        END IF;
     END IF;
 
     --maksud
@@ -435,17 +469,6 @@ BEGIN
         END IF;
     END IF;
 
--- kontrollin RV 01 + TP
-    IF l_kr = '253800'
-    THEN
-        IF l_rahavoog = '01' AND public.empty(l_tp_k)
-        THEN
-            lnTPK = 1;
-        ELSE
-            lnTPK = 0;
-        END IF;
-    END IF;
-
     IF lnTPD = 1
     THEN
         l_msg = l_msg + 'TP-D ';
@@ -518,7 +541,7 @@ BEGIN
     WHERE l.library = 'ALLIKAD'
       AND l.kood::TEXT = l_allikas::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -536,7 +559,7 @@ BEGIN
     WHERE l.library = 'TULUDEALLIKAD'
       AND l.kood::TEXT = l_eelarve::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -554,7 +577,7 @@ BEGIN
     WHERE l.library = 'TEGEV'
       AND l.kood::TEXT = l_tt::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -572,7 +595,7 @@ BEGIN
     WHERE l.library = 'RAHA'
       AND l.kood::TEXT = l_rahavoog::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -600,14 +623,20 @@ GRANT EXECUTE ON FUNCTION docs.sp_lausendikontrol(params JSONB) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.sp_lausendikontrol(params JSONB) TO dbpeakasutaja;
 
 /*
-SELECT docs.sp_lausendikontrol('{
-  "db": "601000",
-  "tpd": "014001",
-  "kr": "155910",
-  "tpk": "",
+
+select rekvid, kpv, deebet, lisa_d, kreedit, lisa_k, kood1, kood2, kood3, kood4, kood5 from cur_journal where kreedit = '150020'
+order by kpv desc
+
+SELECT docs.sp_lausendikontrol_('{
+  "db": "700010",
+  "tpd": "",
+  "kr": "150020",
+  "tpk": "185301",
   "oma_tp": "18510130",
-  "allikas": "RE",
-  "rahavoog": "15",
-  "eelarve": "155",
-  "tt": "09110 "
-}'::JSONB);*/
+  "allikas": "",
+  "rahavoog": "16",
+  "eelarve": "",
+  "tt": ""
+}'::JSONB);
+
+*/

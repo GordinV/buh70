@@ -33,6 +33,7 @@ DECLARE
     v_nom          RECORD;
     l_parallel_doc INTEGER;
     l_uur_summa    NUMERIC = 0;
+    l_tasu_summa   NUMERIC = 0;
     l_uur_json     JSONB;
     l_muud_docs    NUMERIC = 0;
     l_arv_id       INTEGER;
@@ -260,20 +261,21 @@ BEGIN
                 -- Muusikakool, üür
 
                 IF v_smk.rekvid = 71 AND
-                   exists(SELECT id FROM docs.arv WHERE parentid IN (SELECT unnest(v_smk.docs_ids)))
+                   exists(SELECT a.id
+                          FROM docs.arv a
+                                   INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
+                                   INNER JOIN docs.arvtasu at
+                                              ON at.doc_arv_id = a.parentid AND at.doc_tasu_id = v_smk.parentid AND
+                                                 at.status < 3
+                          WHERE a.parentid IN (SELECT unnest(v_smk.docs_ids))
+                            AND a1.konto = '323330'
+                       )
                 THEN
+                    -- есть в оплате счета сумма аренды
                     -- дополним пояснение
                     lcSelg = lcSelg + ', muusikariistade uur';
 
                     -- считаем сумму аренды инструмента
-
-                    SELECT sum(a1.summa)
-                    INTO l_uur_summa
-                    FROM docs.arv1 a1
-                             INNER JOIN docs.arv a ON a.id = a1.parentid
-                    WHERE a.parentid IN
-                          (SELECT at.doc_arv_id FROM docs.arvtasu at WHERE at.doc_tasu_id = v_smk.parentid)
-                      AND a1.konto IN ('323330');
 
                     -- ид счета, с арендой, последний
                     l_arv_id = (SELECT a.parentid
@@ -288,26 +290,29 @@ BEGIN
                                 ORDER BY a.kpv DESC
                                 LIMIT 1);
 
+                    -- сумма аренды в счете
+                    SELECT sum(a1.summa)
+                    INTO l_uur_summa
+                    FROM docs.arv1 a1
+                             INNER JOIN docs.arv a ON a.id = a1.parentid
+                    WHERE a.parentid = l_arv_id
+                      AND a1.konto IN ('323330');
+
+                    -- сумма оплаты счета
+                    l_tasu_summa = (SELECT at.summa)
+                                   FROM docs.arvtasu at
+                                   WHERE at.doc_arv_id = l_arv_id
+                                     AND at.doc_tasu_id = v_smk.parentid
+                                     AND at.status < 3;
+
+                    IF l_tasu_summa < l_uur_summa
+                    THEN
+                        -- сумма оплаты в счете меньше стоимости аренды, уменьшим ее до суммы оплаты
+                        l_uur_summa = l_tasu_summa;
+                    END IF;
+
                     -- ищем прочие платежи , связанные с оплатой этого счета
-                    IF l_arv_id IS NOT NULL AND l_uur_summa IS NOT NULL AND l_uur_summa > 0 AND NOT exists(
-                            SELECT 1
-                            FROM docs.journal j
-                                     INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
-                            WHERE 1 = 1
-                              AND kood5 IN ('3233', '3232')
-                              AND j.parentid IN (
-                                SELECT mk1.journalid
-                                FROM docs.doc d
-                                         INNER JOIN docs.mk mk ON mk.parentid = d.id
-                                         INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
-                                WHERE d.id IN (
-                                    (SELECT at.doc_tasu_id
-                                     FROM docs.arvtasu at
-                                     WHERE at.doc_arv_id = l_arv_id
-                                       AND doc_tasu_id <> v_smk.parentid
-                                       AND at.status < 3)
-                                )
-                            ))
+                    IF l_arv_id IS NOT NULL AND l_uur_summa IS NOT NULL AND l_uur_summa > 0
                     THEN
 
                         -- формируем строку
@@ -326,9 +331,7 @@ BEGIN
 
                         -- уменьшаем сумму строки платежа на сумму аренды
                         v_smk1.summa = v_smk1.summa - l_uur_summa;
-                    ELSE
-                        -- оплата инструмента уже списана
-                        l_uur_summa = 0;
+
                     END IF;
 
                 END IF;
@@ -364,12 +367,10 @@ BEGIN
             l_json_details = l_json_details || to_jsonb(v_journal1);
 
             -- сумма аренды, должны быть меньше или равной сумме платежа
-            IF (coalesce(l_uur_summa, 0) <> 0 AND coalesce(l_uur_summa, 0) <= v_smk1.summa)
+            IF (coalesce(l_uur_summa, 0) > 0)
             THEN
                 -- есть корректирующая проводку строка аренды
                 l_json_details = coalesce(l_json_details, '[]'::JSONB)::JSONB || l_uur_json;
-
-
             END IF;
 
             SELECT coalesce(v_smk1.journalid, 0) AS id,
@@ -498,7 +499,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_smk(INTEGER, INTEGER) TO dbpeakasutaj
 /*
 
 SELECT
-docs.gen_lausend_smk_(4453749,65)
+docs.gen_lausend_smk(4631051,5396)
 
 
 */

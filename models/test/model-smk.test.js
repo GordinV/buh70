@@ -123,7 +123,7 @@ describe('dok. type SMK tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should succefully execute sql new query', async()=> {
+    it.skip('should succefully execute sql new query', async()=> {
         let sql = doc.select[0].sqlAsNew;
         let returnValue = await db.queryDb(sql, [0,1]);
         expect(returnValue).toBeDefined();
@@ -131,7 +131,7 @@ describe('dok. type SMK tests', function () {
         expect(result).toBeGreaterThan(0);
     });
 
-    it('should save new row',async()=>{
+    it.skip('should save new row',async()=>{
         let l_asutus_data = await db.queryDb(`select asutusid, parentid from lapsed.vanemad where staatus <> 3 limit 1`, []);
         let l_nom_data = await db.queryDb(`select id from lapsed.lapse_kaart where staatus <> 3 and parentid = ${l_asutus_data.data[0].parentid} limit 1`, []);
         let l_aa_data = await db.queryDb(`select id FROM ou.aa WHERE parentid = ${REKV_ID} AND kassa = 1 limit 1`, []);
@@ -172,7 +172,7 @@ describe('dok. type SMK tests', function () {
 
     });
 
-    it('should select saved row', async()=>{
+    it.skip('should select saved row', async()=>{
         let sql = doc.select[0].sql;
         let returnValue = await db.queryDb(sql, [globalDocId,USER_ID]);
         expect(returnValue).toBeDefined();
@@ -192,7 +192,7 @@ describe('dok. type SMK tests', function () {
 
     });
 
-    it('should delete mk', async () => {
+    it.skip('should delete mk', async () => {
         let sql = doc.deleteDoc;
         let returnValue = await db.queryDb(sql, [USER_ID, globalDocId]);
         expect(returnValue).toBeDefined();

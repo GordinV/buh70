@@ -1,11 +1,11 @@
---DROP FUNCTION IF EXISTS palk.gen_palk_dok(INTEGER, JSON);
+DROP FUNCTION IF EXISTS palk.gen_palk_dok(INTEGER, JSON);
 DROP FUNCTION IF EXISTS palk.gen_palk_dok_(INTEGER, JSON);
 
 
-CREATE OR REPLACE FUNCTION palk.gen_palk_dok_(IN user_id INTEGER, IN params JSON, OUT result INTEGER,
-                                              OUT error_code INTEGER,
-                                              OUT error_message TEXT,
-                                              OUT data JSONB)
+CREATE OR REPLACE FUNCTION palk.gen_palk_dok(IN user_id INTEGER, IN params JSON, OUT result INTEGER,
+                                             OUT error_code INTEGER,
+                                             OUT error_message TEXT,
+                                             OUT data JSONB)
     RETURNS RECORD AS
 $BODY$
 DECLARE
@@ -253,6 +253,11 @@ BEGIN
                        v_po.tp,
                        v_po.summa     AS summa
                 INTO v_mk1;
+
+                IF v_mk1.aa IS NULL OR empty(v_mk1.aa)
+                THEN
+                    RAISE EXCEPTION 'Viga, puudub arveldus arve %',v_po.nimi;
+                END IF;
 
                 l_grid_params = l_grid_params || to_jsonb(v_mk1);
 

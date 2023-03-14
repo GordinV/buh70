@@ -21,7 +21,11 @@ module.exports = {
                      l.tun5                                                        AS tyyp,
                      l.status,
                      coalesce((l.properties::JSONB ->> 'kas_virtual')::INTEGER, 0) AS kas_virtual,
-                     (l.properties::JSONB ->> 'valid')::DATE                       AS valid
+                     (l.properties::JSONB ->> 'valid')::DATE                       AS valid,
+                     coalesce((l.properties::JSONB ->> 'tp_req')::CHAR(1),'')::CHAR(1)                   AS tp_req,
+                     coalesce((l.properties::JSONB ->> 'tt_req')::CHAR(1),'')::CHAR(1)                   AS tt_req,
+                     coalesce((l.properties::JSONB ->> 'a_req')::CHAR(1),'')::CHAR(1)                    AS a_req,
+                     coalesce((l.properties::JSONB ->> 'rv_req')::CHAR(1),'')::CHAR(1)                   AS rv_req
               FROM libs.library l
               WHERE id = $1`,
         sqlAsNew: `select null::integer as rekvId, 
@@ -38,7 +42,11 @@ module.exports = {
             0 as status,
             0 as kas_virtual,
             null::text as muud,
-            null::date as valid`,
+            null::date as valid
+            ''::char(1) AS tp_req,
+            ''::char(1) AS tt_req,
+            ''::char(1) AS a_req,
+            ''::char(1) AS rv_req`,
         query: null,
         multiple: false,
         alias: 'row',
@@ -106,7 +114,18 @@ module.exports = {
                                WHEN l.tun5 = 2 THEN 'SK'
                                WHEN l.tun5 = 3 THEN 'D'
                                WHEN l.tun5 = 4 THEN 'K'
-                               ELSE NULL END::VARCHAR(20) AS konto_tyyp
+                               ELSE NULL END::VARCHAR(20) AS konto_tyyp,
+                           l.tun1,
+                           l.tun2,
+                           l.tun3,
+                           l.tun4,
+                           l.muud,
+                           coalesce((l.properties::JSONB ->> 'kas_virtual')::INTEGER, 0) AS kas_virtual,
+                           (l.properties::JSONB ->> 'valid')::DATE                       AS valid,
+                           coalesce((l.properties::JSONB ->> 'tp_req')::CHAR(1),'')::CHAR(1)                   AS tp_req,
+                           coalesce((l.properties::JSONB ->> 'tt_req')::CHAR(1),'')::CHAR(1)                   AS tt_req,
+                           coalesce((l.properties::JSONB ->> 'a_req')::CHAR(1),'')::CHAR(1)                    AS a_req,
+                           coalesce((l.properties::JSONB ->> 'rv_req')::CHAR(1),'')::CHAR(1)                   AS rv_req       
                     FROM libs.library l
                     WHERE library = 'KONTOD'
                       AND l.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
@@ -125,9 +144,10 @@ module.exports = {
                          coalesce(to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS'),
                                   '')::VARCHAR(20)         AS kustutatud
 
-                  FROM (SELECT $2                                                      AS user_id,
-                               jsonb_array_elements(jsonb_agg(jsonb_build_object('updated', propertis ->> 'updated', 'user',
-                                                            ltrim(rtrim(u.kasutaja))))) AS ajalugu
+                  FROM (SELECT $2                                                               AS user_id,
+                               jsonb_array_elements(
+                                       jsonb_agg(jsonb_build_object('updated', propertis ->> 'updated', 'user',
+                                                                    ltrim(rtrim(u.kasutaja))))) AS ajalugu
                         FROM ou.logs l
                                  LEFT OUTER JOIN ou.userid u ON u.id = l.user_id
                         WHERE propertis ->> 'table' = 'library'
