@@ -1,10 +1,10 @@
-DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne_(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER);
-DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne_(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER);
+DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_rekvid INTEGER);
+DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER);
 --DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, TEXT);
-DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne_(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, JSONB);
+DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, JSONB);
 
 
-CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne_(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER,
+CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER,
                                                         l_params JSONB DEFAULT NULL)
     RETURNS TABLE (
         rekv_id  INTEGER,
@@ -55,7 +55,12 @@ FROM (
                      NOT empty(l.tun3)   AS is_allikas,
                      NOT empty(l.tun4)   AS is_rahavoog,
                      coalesce(l.tun5, 1) AS tyyp,
-                     l.muud
+--                     l.muud,
+                     coalesce((l.properties::JSONB ->> 'tp_req')::CHAR(1),'')::CHAR(1)                   AS tp_req,
+                     coalesce((l.properties::JSONB ->> 'tt_req')::CHAR(1),'')::CHAR(1)                   AS tt_req,
+                     coalesce((l.properties::JSONB ->> 'a_req')::CHAR(1),'')::CHAR(1)                    AS a_req,
+                     coalesce((l.properties::JSONB ->> 'rv_req')::CHAR(1),'')::CHAR(1)                   AS rv_req
+
               FROM libs.library l
               WHERE l.library = 'KONTOD'
                 AND l.status <> 3)
@@ -153,11 +158,12 @@ FROM (
                                                               make_date(date_part('year', qryParams.kpv::DATE)::INTEGER, 1, 1))
                                   AND year(qryParams.kpv) < 2023
                                   THEN ''
-                              WHEN l.is_tp AND left(konto, 6) IN ('150200', '150210', '150020') AND
+/*                              WHEN l.is_tp AND left(konto, 6) IN ('150200', '150210', '150020') AND
                                    ltrim(rtrim(coalesce(rahavoog, ''))) IN ('01', '00', '17', '21','18')
                                   THEN tp
-                              WHEN l.is_tp AND
-                                   (ltrim(rtrim(coalesce(l.muud, ''))) <> '*' OR
+*/
+                             WHEN l.is_tp AND
+                                   (l.tp_req <> '*' OR
                                     ltrim(rtrim(coalesce(rahavoog, ''))) = '01')
                                   THEN tp
                               ELSE '' END)::CHAR(20) AS tp,
@@ -166,13 +172,14 @@ FROM (
                                                                                             make_date(date_part('year', qryParams.kpv::DATE)::INTEGER, 1, 1))
                                   AND qry.kpv < '2022-10-01' AND year(qryParams.kpv) < 2023
                                   THEN ''
-                              WHEN l.is_tegev AND (ltrim(rtrim(COALESCE(l.muud, ''))) <> '*' OR
+                              WHEN l.is_tegev AND (l.tt_req <> '*' OR
                                                    ltrim(rtrim(qry.rahavoog)) = '01')
                                   THEN tegev
                               ELSE
                                   '' END)::TEXT      AS tegev,
                          (CASE
-                              WHEN l.is_allikas
+                              WHEN l.is_allikas AND (l.a_req <> '*' OR
+                                                         ltrim(rtrim(qry.rahavoog)) = '01')
                                   THEN allikas
                               ELSE
                                   '' END)::TEXT      AS allikas,
@@ -210,19 +217,20 @@ FROM (
                   SELECT qry.rekvid                 AS rekv_id,
                          konto::TEXT       AS konto,
                          (CASE
-                              WHEN is_tp AND (ltrim(rtrim(COALESCE(l.muud, ''))) <> '*' OR
-                                              ltrim(rtrim(qry.rahavoog)) IN ('01', '00', '21', '17','18'))
+                              WHEN is_tp AND (l.tp_req <> '*' OR
+                                              ltrim(rtrim(qry.rahavoog)) IN ('01'))
                                   THEN tp
                               ELSE
                                   '' END)::CHAR(20) AS tp,
                          (CASE
-                              WHEN is_tegev AND (ltrim(rtrim(COALESCE(l.muud, ''))) <> '*' OR
+                              WHEN is_tegev AND (l.tt_req <> '*' OR
                                                  ltrim(rtrim(qry.rahavoog)) = '01')
                                   THEN tegev
                               ELSE
                                   '' END)::TEXT     AS tegev,
                          (CASE
-                              WHEN is_allikas
+                              WHEN is_allikas AND (l.a_req <> '*' OR
+                                                   ltrim(rtrim(qry.rahavoog)) = '01')
                                   THEN allikas
                               ELSE
                                   '' END)::TEXT     AS allikas,
@@ -279,10 +287,10 @@ $BODY$
     VOLATILE
     COST 100;
 
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne_(DATE, INTEGER, INTEGER, JSONB) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne_(DATE, INTEGER, INTEGER, JSONB) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne_(DATE, INTEGER, INTEGER, JSONB) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne_(DATE, INTEGER, INTEGER, JSONB) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, JSONB) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, JSONB) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, JSONB) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.saldoandmik_aruanne(DATE, INTEGER, INTEGER, JSONB) TO dbvaatleja;
 
 
 /*
@@ -293,8 +301,8 @@ execution: 5 s 606 ms , 124, 137795039.74,137795039.74
 explain
 
 SELECT sum(deebet) over(), sum(kreedit) over(), *
-FROM eelarve.saldoandmik_aruanne_('2022-12-31' :: DATE, 63 :: INTEGER, 1 ::integer)
-WHERE konto like '203630%'
+FROM eelarve.saldoandmik_aruanne_('2022-12-31' :: DATE, 130 :: INTEGER, 1 ::integer)
+WHERE konto like '150020%'
 --and rahavoog = '01'
 --GROUP BY konto, tp
 */

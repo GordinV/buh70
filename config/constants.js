@@ -107,7 +107,6 @@ module.exports = {
     },
     LAPSE_KAART: {
         LIBRARIES: [
-            {id: 'tunnus', filter: ''},
             {id: 'nomenclature', filter: `where dok = 'ARV'`},
             {id: 'lapse_grupp', filter: ``},
             {id: 'viitenr', filter: ``}

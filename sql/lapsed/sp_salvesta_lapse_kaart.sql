@@ -14,7 +14,6 @@ DECLARE
                                                ELSE (doc_data ->> 'id')::TEXT END)::INTEGER;
     doc_parentid         INTEGER = doc_data ->> 'parentid';
     doc_nomid            INTEGER = doc_data ->> 'nomid';
-    doc_tunnus           TEXT    = doc_data ->> 'tunnus';
     doc_hind             NUMERIC = doc_data ->> 'hind';
     doc_yksus            TEXT    = doc_data ->> 'yksus';
     doc_all_yksus        TEXT    = doc_data ->> 'all_yksus';
@@ -233,8 +232,8 @@ BEGIN
                        FROM (SELECT now()    AS created,
                                     userName AS user) row;
 
-        INSERT INTO lapsed.lapse_kaart (parentid, rekvid, nomid, hind, tunnus, muud, properties, ajalugu)
-        VALUES (doc_parentid, user_rekvid, doc_nomid, doc_hind, doc_tunnus, doc_muud, json_props,
+        INSERT INTO lapsed.lapse_kaart (parentid, rekvid, nomid, hind, muud, properties, ajalugu)
+        VALUES (doc_parentid, user_rekvid, doc_nomid, doc_hind,  doc_muud, json_props,
                 '[]' :: JSONB || json_ajalugu) RETURNING id
                    INTO doc_id;
 
@@ -251,7 +250,6 @@ BEGIN
 
         UPDATE lapsed.lapse_kaart
         SET nomid      = doc_nomid,
-            tunnus     = doc_tunnus,
             hind       = doc_hind,
             properties = coalesce(properties, '[]')::JSONB || json_props,
             muud       = doc_muud,

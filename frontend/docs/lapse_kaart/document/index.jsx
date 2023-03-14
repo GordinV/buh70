@@ -328,22 +328,6 @@ class LapseKaart extends React.PureComponent {
                 </div>
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
-                        <Select title="Tunnus:"
-                                name='tunnus'
-                                libs="tunnus"
-                                data={self.libs['tunnus']}
-                                value={self.docData.tunnus || ''}
-                                defaultValue={self.docData.tunnus || ''}
-                                ref="select-tunnus"
-                                collId={'kood'}
-                                btnDelete={isEditMode}
-                                onChange={self.handleInputChange}
-                                readOnly={!isEditMode}
-                        />
-                    </div>
-                </div>
-                <div style={styles.docRow}>
-                    <div style={styles.docColumn}>
                         <InputDate title='Kehtib alates:'
                                    name='alg_kpv'
                                    value={self.docData.alg_kpv || ''}
