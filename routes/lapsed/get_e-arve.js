@@ -198,7 +198,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 },
                 AdditionalInformation: {
                     InformationName: 'Teenuste saaja, asutus, periood',
-                    InformationContent: `${arve.lapse_nimi}, ${asutusConfig.uksus}, periood ${arve.laekumise_period}`
+                    InformationContent: `${arve.lapse_nimi}, ${asutusConfig.uksus}, ${arve.laekumise_period}`
                 },
                 PaymentInfo: {
                     Currency: 'EUR',
