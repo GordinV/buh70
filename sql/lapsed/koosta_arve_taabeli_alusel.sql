@@ -17,7 +17,7 @@ DECLARE
     l_rekvid        INTEGER = (SELECT rekvid
                                FROM ou.userid u
                                WHERE id = user_id
-                               LIMIT 1);
+                                   LIMIT 1);
 
     l_asutus_id     INTEGER = (SELECT asutusid
                                FROM lapsed.vanem_arveldus v
@@ -25,8 +25,8 @@ DECLARE
                                WHERE v.parentid = l_laps_id
                                  AND v.rekvid = l_rekvid
                                  AND arveldus
-                               ORDER BY v.id DESC
-                               LIMIT 1);
+                                   ORDER BY v.id DESC
+                                   LIMIT 1);
     l_doklausend_id INTEGER;
     l_liik          INTEGER = 0;
     v_taabel        RECORD;
@@ -49,8 +49,8 @@ DECLARE
                                FROM ou.aa
                                WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
                                  AND kassa = 1
-                               ORDER BY default_ DESC
-                               LIMIT 1);
+                                   ORDER BY default_ DESC
+                                   LIMIT 1);
 
     l_db_konto      TEXT    = '10300029'; -- согдасно описанию отдела культуры
     v_laps          RECORD;
@@ -68,7 +68,9 @@ BEGIN
 
     END IF;
 
-    SELECT *, lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr
+    SELECT *,
+           lapsed.get_viitenumber(l_rekvid, l_laps_id) AS viitenr,
+           l.properties ->> 'eritunnus'                AS eritunnus
     INTO v_laps
     FROM lapsed.laps l
     WHERE id = l_laps_id;
@@ -92,8 +94,8 @@ BEGIN
                        WHERE dp.rekvid = l_rekvid
                          AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
                          AND l.kood = 'ARV'
-                       ORDER BY dp.id DESC
-                       LIMIT 1
+                           ORDER BY dp.id DESC
+                           LIMIT 1
     );
 
 
@@ -178,10 +180,16 @@ BEGIN
           AND lk.rekvid = l_rekvid
           AND n.rekvid = lk.rekvid
           AND (lt.summa <> 0 OR lt.kogus <> 0)
-        ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
+            ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
 
 
         LOOP
+
+            -- если украинец, то ставим признак 3008
+            IF NOT empty(coalesce(v_laps.eritunnus, ''))
+            THEN
+                v_taabel.tunnus = v_laps.eritunnus;
+            END IF;
 
             l_arve_kogus = l_arve_kogus + v_taabel.kogus;
             -- формируем строку
@@ -242,9 +250,8 @@ BEGIN
                 WHERE l.parentid = l_laps_id
                   AND lk.id = v_taabel.lapse_kaart_id
                   AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
-
-                ORDER BY D.ID DESC
-                LIMIT 1;
+                    ORDER BY D.ID DESC
+                    LIMIT 1;
 
                 IF coalesce(l_status, 0) <> 2
                 THEN
@@ -308,9 +315,8 @@ BEGIN
       AND lt.aasta = date_part('year', l_kpv)
       AND lt.kuu = date_part('month', l_kpv)
       AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
-
-    ORDER BY D.ID DESC
-    LIMIT 1;
+        ORDER BY D.ID DESC
+        LIMIT 1;
 
     -- создаем параметры
     l_json_arve = (SELECT to_json(row)

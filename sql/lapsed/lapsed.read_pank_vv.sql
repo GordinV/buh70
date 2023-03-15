@@ -24,7 +24,7 @@ DECLARE
     l_user_kood      TEXT    = (SELECT kasutaja
                                 FROM ou.userid
                                 WHERE id = user_id
-                                LIMIT 1);
+                                    LIMIT 1);
     l_maksja_id      INTEGER;
     l_laps_id        INTEGER;
     v_vanem          RECORD;
@@ -37,6 +37,7 @@ DECLARE
     l_kas_vigane     BOOLEAN = FALSE;
     l_jsonb          JSONB;
     l_viimane_rea    INTEGER;
+    l_tunnus         TEXT;
 BEGIN
     -- ищем платежи
     FOR v_pank_vv IN
@@ -45,7 +46,8 @@ BEGIN
         WHERE timestamp::TIMESTAMP = l_timestamp::TIMESTAMP
           AND (doc_id IS NULL OR doc_id = 0)
           AND isikukood IS NOT NULL
-        ORDER BY kpv, id
+            ORDER BY kpv
+            , id
         LOOP
             l_message = 'Tehingu nr.: ' || ltrim(rtrim(v_pank_vv.pank_id)) ||
                         ',Maksja:' || ltrim(rtrim(v_pank_vv.maksja));
@@ -80,6 +82,15 @@ BEGIN
             -- получим ид ребенка
             l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
 
+            -- задаем признак
+            l_tunnus = (SELECT left(nimetus, 7) FROM ou.rekv WHERE id = l_rekvid);
+
+            IF NOT empty(coalesce((SELECT properties ->> 'eritunnus' FROM lapsed.laps WHERE id = l_laps_id), ''))
+            THEN
+                l_tunnus = (SELECT properties ->> 'eritunnus' FROM lapsed.laps WHERE id = l_laps_id);
+            END IF;
+
+
 /*
 Для всех учреждениях КРОМЕ 0911008, 0911012, 0911018, 0911027, 0911036, 0911038 применить правило не разбирать оплаты,
 сделанные до 01.09.2022 (включительно 31.08.2022) с пометкой "Kuni 01.09.2022" (вместо"PUUDUB")
@@ -104,7 +115,7 @@ BEGIN
                 FROM ou.userid
                 WHERE rekvid = l_rekvid
                   AND kasutaja::TEXT = l_user_kood::TEXT
-                LIMIT 1;
+                    LIMIT 1;
 
 
                 -- ищем родителя
@@ -153,8 +164,9 @@ BEGIN
                                          INNER JOIN libs.library l ON l.id = dp.parentid
                                 WHERE dp.rekvid = l_rekvid
                                   AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
-                                ORDER BY registr desc, dp.id DESC
-                                LIMIT 1
+                                    ORDER BY registr DESC
+                                    , dp.id DESC
+                                    LIMIT 1
                 );
 
                 IF l_dokprop_id IS NULL
@@ -162,9 +174,9 @@ BEGIN
                     l_dokprop_id = (SELECT id
                                     FROM com_dokprop l
                                     WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
-                                      AND kood like 'SMK'
-                                    ORDER BY id DESC
-                                    LIMIT 1
+                                      AND kood LIKE 'SMK'
+                                        ORDER BY id DESC
+                                        LIMIT 1
                     );
                 END IF;
 
@@ -186,7 +198,8 @@ BEGIN
                                  v_pank_vv.kpv    AS kpv,
                                  v_pank_vv.aa     AS aa,
                                  v_pank_vv.iban   AS maksja_arve,
-                                 v_pank_vv.summa  AS summa) row;
+                                 v_pank_vv.summa  AS summa,
+                                 l_tunnus as tunnus) row;
 
                     -- создаем платежку
                     SELECT fnc.result, fnc.error_message

@@ -21,6 +21,7 @@ DECLARE
     l_asutus_id  INTEGER        = params ->> 'maksja_id';
     l_aa         TEXT           = params ->> 'maksja_arve';
     l_asutus_aa  TEXT           = params ->> 'aa';
+    l_tunnus     TEXT           = params ->> 'tunnus';
     mk_id        INTEGER;
     v_arv        RECORD;
     v_mk1        RECORD;
@@ -33,8 +34,8 @@ DECLARE
                                                                       FROM lapsed.liidestamine l
                                                                                INNER JOIN docs.doc d ON d.id = l.docid
                                                                       WHERE docid = l_arv_id
-                                                                        AND d.rekvid in (select userid.rekvid from ou.userid where id = user_id)
-                                                                      LIMIT 1)
+                                                                        AND d.rekvid IN (SELECT userid.rekvid FROM ou.userid WHERE id = user_id)
+                                                                          LIMIT 1)
                                       ELSE left(right(l_viitenr::TEXT, 7), 6)::INTEGER END;
     l_isikukood  TEXT;
     l_opt        INTEGER;
@@ -51,8 +52,8 @@ BEGIN
                         FROM public.com_dokprop l
                         WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
                           AND kood = l_dok
-                        ORDER BY id DESC
-                        LIMIT 1
+                            ORDER BY id DESC
+                            LIMIT 1
         );
     END IF;
 
@@ -153,8 +154,8 @@ BEGIN
                      WHERE kassa = 1
                        AND parentid = l_rekvId
                        AND aa.arve::TEXT = l_asutus_aa::TEXT
-                     ORDER BY default_ DESC
-                     LIMIT 1);
+                         ORDER BY default_ DESC
+                         LIMIT 1);
 
     END IF;
 
@@ -168,11 +169,11 @@ BEGIN
                 WHERE rekvid = l_rekvId
                   AND status < 3
                   AND dok IN (l_dok, doc_type_id)
-                ORDER BY kood, id DESC
-                LIMIT 1);
+                    ORDER BY kood
+                    , id DESC
+                    LIMIT 1);
 
     -- если род. плата , проверим на возраст и поищем подходящую номенклатуру
-    RAISE NOTICE 'start check for age l_nom_id %',l_nom_id;
     IF l_laps_id IS NOT NULL AND exists(SELECT id FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3)
     THEN
         -- проверка на возраст
@@ -191,8 +192,9 @@ BEGIN
                          AND status < 3
                          AND dok IN (l_dok, doc_type_id)
                          AND n.properties ->> 'tegev' = '09500'
-                       ORDER BY kood, id DESC
-                       LIMIT 1)
+                           ORDER BY kood
+                           , id DESC
+                           LIMIT 1)
                 )
             THEN
                 l_nom_id = (SELECT id
@@ -201,8 +203,9 @@ BEGIN
                               AND status < 3
                               AND dok IN (l_dok, doc_type_id)
                               AND n.properties ->> 'tegev' = '09500'
-                            ORDER BY kood, id DESC
-                            LIMIT 1);
+                                ORDER BY kood
+                                , id DESC
+                                LIMIT 1);
 
             END IF;
 
@@ -225,6 +228,12 @@ BEGIN
     WHERE id = l_nom_id
       AND status < 3;
 
+    IF l_tunnus IS NOT NULL
+    THEN
+        -- если признак задан, то используем его
+        v_nom_rea.tunnus = l_tunnus;
+    END IF;
+
     l_aa = CASE
                WHEN l_aa IS NULL THEN (COALESCE((
                                                     SELECT (e.element ->> 'aa') :: VARCHAR(20) AS aa
@@ -234,7 +243,7 @@ BEGIN
                                                                                      THEN '[]'::JSON
                                                                                  ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (ELEMENT)
                                                     WHERE a.id = l_asutus_id
-                                                    LIMIT 1
+                                                        LIMIT 1
                                                 ), ''))
                ELSE l_aa END;
 
@@ -258,11 +267,11 @@ BEGIN
         FROM docs.arv1 a1
         WHERE a1.
                   parentid = v_arv.id
-        ORDER BY kood5
-                , kood2 DESC
-                , kood1 DESC
-        LIMIT 1
-        INTO v_mk1;
+            ORDER BY kood5
+            , kood2 DESC
+            , kood1 DESC
+            LIMIT 1
+            INTO v_mk1;
 
     ELSE
         SELECT 0                  AS id,

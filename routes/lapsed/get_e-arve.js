@@ -95,7 +95,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 return {
                     Description: `${rea.nimetus.trim()} ${rea.muud ? rea.muud.trim() : ''}`,
                     ItemDetailInfo: {
-                        ItemUnit: rea.uhik,
+                        ItemUnit: rea.uhik.trim(),
                         ItemAmount: Number(rea.kogus).toFixed(4),
                         ItemPrice: Number(rea.tais_hind).toFixed(2)
                     },
@@ -197,8 +197,8 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     }
                 },
                 AdditionalInformation: {
-                    InformationName: 'Teenuste saaja, asutus',
-                    InformationContent: `${arve.lapse_nimi}, ${asutusConfig.uksus}`
+                    InformationName: 'Teenuste saaja, asutus, periood',
+                    InformationContent: `${arve.lapse_nimi}, ${asutusConfig.uksus}, ${arve.laekumise_period}`
                 },
                 PaymentInfo: {
                     Currency: 'EUR',

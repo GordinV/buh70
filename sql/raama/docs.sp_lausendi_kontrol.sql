@@ -122,7 +122,7 @@ BEGIN
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_db::TEXT
       AND status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_konto_d.valid IS NOT NULL AND char_length(v_konto_d.valid::TEXT) = 8 AND
        NOT public.empty(v_konto_d.valid::TEXT)
@@ -158,7 +158,7 @@ BEGIN
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_kr::TEXT
       AND status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_konto_k.valid IS NOT NULL AND NOT public.empty(v_konto_k.valid) AND char_length(v_konto_k.valid::TEXT) = 8
     THEN
@@ -329,6 +329,19 @@ BEGIN
     IF v_konto_k.kood IS NULL OR public.empty(l_kr) OR char_length(l_kr) < 6
     THEN
         l_msg = l_msg + ' Kreedit konto: puudub või vale konto ';
+    END IF;
+
+-- Требование к ТП коду
+    IF v_konto_k.tp::TEXT = '1' AND char_length(l_tp_k) = 0
+    THEN
+        lnTPK = 1;
+
+        -- если * и RV = 01 то требование остается, иначе нет
+        IF (v_konto_k.tp_req = '*' AND l_rahavoog <> '01')
+        THEN
+            lnTPK = 0;
+        END IF;
+
     END IF;
 
 
@@ -541,7 +554,7 @@ BEGIN
     WHERE l.library = 'ALLIKAD'
       AND l.kood::TEXT = l_allikas::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -559,7 +572,7 @@ BEGIN
     WHERE l.library = 'TULUDEALLIKAD'
       AND l.kood::TEXT = l_eelarve::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -577,7 +590,7 @@ BEGIN
     WHERE l.library = 'TEGEV'
       AND l.kood::TEXT = l_tt::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -595,7 +608,7 @@ BEGIN
     WHERE l.library = 'RAHA'
       AND l.kood::TEXT = l_rahavoog::TEXT
       AND l.status <> 3
-    LIMIT 1;
+        LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -627,16 +640,16 @@ GRANT EXECUTE ON FUNCTION docs.sp_lausendikontrol(params JSONB) TO dbpeakasutaja
 select rekvid, kpv, deebet, lisa_d, kreedit, lisa_k, kood1, kood2, kood3, kood4, kood5 from cur_journal where kreedit = '150020'
 order by kpv desc
 
-SELECT docs.sp_lausendikontrol_('{
-  "db": "700010",
-  "tpd": "",
-  "kr": "150020",
-  "tpk": "185301",
-  "oma_tp": "18510130",
+SELECT docs.sp_lausendikontrol('{
+  "db": "10010008",
+  "tpd": "800401",
+  "kr": "10300029",
+  "tpk": "",
+  "oma_tp"  : "18510130",
   "allikas": "",
   "rahavoog": "16",
-  "eelarve": "",
-  "tt": ""
+  "eelarve": "3220",
+  "tt": "09110"
 }'::JSONB);
 
 */

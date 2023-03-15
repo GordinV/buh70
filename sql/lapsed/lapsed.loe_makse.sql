@@ -25,7 +25,7 @@ DECLARE
     l_user_kood      TEXT           = (SELECT kasutaja
                                        FROM ou.userid
                                        WHERE id = user_id
-                                       LIMIT 1);
+                                           LIMIT 1);
     l_maksja_id      INTEGER;
     l_laps_id        INTEGER;
     v_vanem          RECORD;
@@ -38,6 +38,7 @@ DECLARE
     l_kas_vigane     BOOLEAN        = TRUE;
     l_viimane_rea    INTEGER;
     l_jsonb          JSONB;
+    l_tunnus         TEXT;
 BEGIN
     -- ищем платежи позже 2022 года
     FOR v_pank_vv IN
@@ -47,7 +48,8 @@ BEGIN
           AND (doc_id IS NULL OR doc_id = 0)
           AND isikukood IS NOT NULL
           AND v.kpv >= '2023-01-01'
-        ORDER BY kpv, id
+            ORDER BY kpv
+            , id
         LOOP
 
             l_message = 'Tehingu nr.: ' || ltrim(rtrim(v_pank_vv.pank_id)) ||
@@ -81,13 +83,22 @@ BEGIN
             -- получим ид ребенка
             l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
 
+            -- задаем признак
+            l_tunnus = (SELECT left(nimetus, 7) FROM ou.rekv WHERE id = l_rekvid);
+
+            IF NOT empty(coalesce((SELECT properties ->> 'eritunnus' FROM lapsed.laps WHERE id = l_laps_id), ''))
+            THEN
+                l_tunnus = (SELECT properties ->> 'eritunnus' FROM lapsed.laps WHERE id = l_laps_id);
+            END IF;
+
+
             -- ищем пользователя в целевом цчреждении
             SELECT id
             INTO l_target_user_id
             FROM ou.userid
             WHERE rekvid = l_rekvid
               AND kasutaja::TEXT = l_user_kood::TEXT
-            LIMIT 1;
+                LIMIT 1;
 
 
             -- ищем родителя
@@ -136,8 +147,9 @@ BEGIN
                                      INNER JOIN libs.library l ON l.id = dp.parentid
                             WHERE dp.rekvid = l_rekvid
                               AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
-                            ORDER BY registr desc, dp.id DESC
-                            LIMIT 1
+                                ORDER BY registr DESC
+                                , dp.id DESC
+                                LIMIT 1
             );
 
             IF l_dokprop_id IS NULL
@@ -146,8 +158,8 @@ BEGIN
                                 FROM public.com_dokprop l
                                 WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
                                   AND kood = 'SMK'
-                                ORDER BY id DESC
-                                LIMIT 1
+                                    ORDER BY id DESC
+                                    LIMIT 1
                 );
             END IF;
 
@@ -168,7 +180,8 @@ BEGIN
                   AND a.jaak > 0
                   AND (arv.properties ->> 'ettemaksu_period' IS NULL OR
                        arv.properties ->> 'tyyp' = 'ETTEMAKS') -- только обычные счета или предоплаты
-                ORDER BY a.kpv, a.id
+                    ORDER BY a.kpv
+                    , a.id
                 LOOP
                     -- считаем остаток не списанной суммы
                     l_makse_summa = CASE
@@ -187,7 +200,8 @@ BEGIN
                                  v_pank_vv.kpv          AS kpv,
                                  left(v_pank_vv.aa, 27) AS aa,
                                  v_pank_vv.iban         AS maksja_arve,
-                                 l_makse_summa          AS summa) row;
+                                 l_makse_summa          AS summa,
+                                 l_tunnus               AS tunnus) row;
 
                     -- создаем платежку
                     SELECT fnc.result, fnc.error_message
