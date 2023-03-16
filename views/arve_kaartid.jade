@@ -4,36 +4,87 @@ style(type='text/css').
     .grid_head {
         background-color: lightgray;;
     }
+
     .doc_wrapper {
-        margin-left:5%;
-        margin-top:5%;
-        width:auto;
+        margin-left: 5%;
+        margin-top: 5%;
+        width: auto;
     }
+
     .grid_data {
         width: 100%;
         border: 1px solid lightgray;
     }
+
     .row_wrapper {
-        display:-webkit-box;
+        display: -webkit-box;
         flexDirection: row;
     }
+
     .row_hr {
         border-top: 1px solid lightgray;
     }
+
     .label {
-        width:10%;
-        font-weight:normal;
+        width: 10%;
+        font-weight: normal;
     }
+
     .input {
-        width:90%;
-        margin-left:5%;
+        width: 90%;
+        margin-left: 5%;
         font-weight: bold;
     }
+
     .label_subtotal {
-        width:70%;
+        width: 70%;
     }
+
     .hr_style {
         border-top: 1px solid #8c8b8b;
+    }
+
+    .label_subtotal_arve {
+        width: 15em;
+        margin-right: 10%;
+        text-align: right;
+        margin-left: -15%;
+
+    }
+
+    .input_subtotal_arve {
+        width: 2em;
+    }
+
+    .subtotal {
+        padding-left: 20%;
+        width: 90%;
+        margin-left: 5%;
+        font-weight: bold;
+    }
+
+    .kokku {
+        font-weight: bold;
+        margin-left: 10%;
+    }
+
+    .align_right {
+        text-align: end;
+        float: right;
+        margin-right: 6%;
+        margin-left: auto;
+    }
+
+    .doc_footer {
+        display: grid
+    }
+
+    .space {
+        width: 10px
+    }
+
+    .backspace {
+        margin-left: -5%;
     }
 
 
@@ -44,10 +95,18 @@ block content
         -var User = user ? user : {asutus: ''};
 
         each doc in data
-            p #{User.asutus}, reg.kood: #{User.regkood}
-            p #{User.aadress}
-            p #{User.tel}
-            p #{User.email}
+            div.row_wrapper
+                p.label Asutus:
+                p.input #{User.asutus}, reg.kood: #{User.regkood}
+            div.row_wrapper
+                p.label Aadress:
+                p.input #{User.aadress}
+            div.row_wrapper
+                p.label Telefon:
+                p.input #{User.tel}
+            div.row_wrapper
+                p.label E-post:
+                p.input #{User.email}
             div.row_wrapper
                 p.label Raha saaja:
                 p.input #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
@@ -55,8 +114,8 @@ block content
                 p.label Maksta arvele:
                 p.input #{doc.arved}
 
-            h1
-                p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
+            h3
+                p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ' : 'ARVE'}`}
 
                 div.row_wrapper
                     p.label Number:
@@ -87,7 +146,7 @@ block content
 
                 div.row_wrapper
                     p.label Lisa:
-                    p.input #{`${doc.lisa ? doc.lisa: ''}`}
+                    p.input #{`${doc.lisa ? doc.lisa : ''}`}
                 div.row_wrapper
                     p.label Märkused:
                     p.input #{`${doc.muud ? doc.muud : ''}`}
@@ -113,20 +172,20 @@ block content
                                 td(align='center')=row.uhik
                                 td(align='center')=row.kogus
                                 td(align='center')=Number(row.summa).toFixed(2)
-                div.row_wrapper
-                    p.label_subtotal Kokku:
-                    p.input #{`${Number(doc.summa).toFixed(2)}`}
-                div.row_hr
-                div.row_wrapper
-                    p.label_subtotal Seisuga #{`${data[0].period_alg_print}`} jääk:
-                    p.input #{`${Number(doc.alg_jaak).toFixed(2)}`}
-                div.row_wrapper
-                    p.label_subtotal Laekumised periodis: #{`${doc.laekumise_period}`}
-                    p.input #{`${Number(doc.laekumised).toFixed(2)}`}
-                div.row_wrapper
-                    p.label_subtotal Seisuga #{`${doc.kpv_print}`} tasumisele:
-                    p.input #{`${Number(doc.tasumisele).toFixed(2)}`}
-            br
-            div.row_wrapper
-                p.label_subtotal Arve koostaja: #{`${data[0].koostaja}`}
             h3
+                div.doc_footer
+                    div.row_wrapper.align_right
+                        p.label_subtotal_arve Kokku:
+                            p.kokku.input_subtotal_arve #{`${Number(data[0].summa).toFixed(2)}`}
+                    div.row_wrapper.align_right
+                        p.label_subtotal_arve Seisuga #{`${data[0].period_alg_print.trim()}`} jääk:
+                            p.kokku.input_subtotal_arve #{`${Number(data[0].alg_jaak).toFixed(2)}`}
+                    div.row_wrapper.align_right
+                        p.label_subtotal_arve Laekumised periodis #{`${data[0].laekumise_period}`}:
+                            p.kokku.input_subtotal_arve #{`${Number(data[0].laekumised).toFixed(2)}`}
+                    div.row_wrapper.align_right
+                        p.label_subtotal_arve Seisuga #{`${data[0].kpv_print}`} tasumisele:
+                            p.kokku.input_subtotal_arve #{`${Number(data[0].tasumisele).toFixed(2)}`}
+                    br
+                    div.row_wrapper
+                        p.label_subtotal Arve koostaja: #{`${data[0].koostaja}`}

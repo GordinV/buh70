@@ -50,6 +50,22 @@ DECLARE
     l_error               TEXT;
 
 BEGIN
+    -- check null as text
+    IF (coalesce(doc_tegev, '') = 'null')
+    THEN
+        doc_tegev = NULL;
+    END IF;
+
+    IF (coalesce(doc_artikkel, '') = 'null')
+    THEN
+        doc_artikkel = NULL;
+    END IF;
+
+    IF (coalesce(doc_tunnus, '') = 'null')
+    THEN
+        doc_tunnus = NULL;
+    END IF;
+
 
     IF (doc_id IS NULL)
     THEN
@@ -130,6 +146,35 @@ BEGIN
                  doc_algoritm                   AS algoritm,
                  doc_luhi_nimi                  AS luhi_nimi
          ) row;
+
+    -- контроль над классфикаторами, если задан кор.счет из группы 32
+    IF doc_konto IS NOT NULL AND left(doc_konto, 2) = '32'
+    THEN
+        IF empty(coalesce(doc_tunnus, '')) and user_rekvid in (
+            select id from ou.rekv where id = 119 or parentid = 119 or id = 64 or parentid = 64
+            )
+        THEN
+            -- только для соц. департамента и отдела культуры
+            l_error = coalesce(l_error, '') || ' tunnus, ';
+        END IF;
+        IF empty(coalesce(doc_tegev, ''))
+        THEN
+            l_error = coalesce(l_error, '') || ' tegevusala, ';
+        END IF;
+        IF empty(coalesce(doc_artikkel, ''))
+        THEN
+            l_error = coalesce(l_error, '') || ' artikkel, ';
+        END IF;
+        IF empty(coalesce(doc_allikas, ''))
+        THEN
+            l_error = coalesce(l_error, '') || ' allikas ';
+        END IF;
+
+        if len(coalesce(l_error ,'')) > 1 then
+            raise exception 'Viga, puuduvad vajalikud andmed: %', l_error;
+        END IF;
+
+    END IF;
 
     IF doc_id IS NULL OR doc_id = 0
     THEN

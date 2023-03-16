@@ -573,7 +573,7 @@ class DocumentTemplate extends React.Component {
             });
 
             if (notRequiredFields.length > 0) {
-                warning = warning + ' puudub vajalikud andmed (' + notRequiredFields.join(', ') + ') ';
+                warning = warning + ' puuduvad vajalikud andmed (' + notRequiredFields.join(', ') + ') ';
             }
 
             if (notMinMaxRule.length > 0) {

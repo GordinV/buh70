@@ -48,7 +48,7 @@ exports.post = async (req, res) => {
                 docTypeId: parameter,
                 result: {
                     error_code: 1,
-                    error_message: 'Puudub vajaliku parametrid',
+                    error_message: 'Puuduvad vajalikud parametrid',
                     data: []
                 },
                 gridConfig: gridConfig,

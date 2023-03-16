@@ -74,24 +74,21 @@ exports.arve = async (req, res) => {
     // ищем шаблон
     const template = doc.config.print.find(templ => templ.params === 'id').view;
 
-    console.log('start multiple');
-//    res.setTimeout(4000000);
 
     try {
         let doc_data = await doc.executeTask('multiple_print_doc', [ids.join(','), user.userId]);
-//        var doc_details = await doc.executeTask('multiple_print_details', [ids.join(','), user.userId]);
 
-/*
-        doc_data.data.forEach(result => {
-            rows.push({...result});
-        });
-*/
         rows = doc_data.data;
-        console.log('lopp multiple',doc_data.data,rows);
 
         if (!rows || rows.length === 0) {
             res.send({status: 200, result: 'Arved ei leidnum'});
         } else {
+            // register e-arve event
+            let sql = doc.config.multiple_print[0].register;
+            if (sql) {
+                let tulem  = await db.queryDb(sql, [ids.join(','),user.userId]);
+            }
+
             res.render('arve_kaartid', {title: 'Arved', data: rows, user: user});
         }
 

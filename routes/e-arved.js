@@ -23,8 +23,8 @@ exports.swed = async (req, res) => {
         console.error('error 401 newAPI');
         return res.status(401).end();
     }
-
     ids = ids.split(",").map(Number);
+    let arvedIds = ids.join(','); // параметр для регистрации в истории
 
     // данные предприятия
     const rekvDoc = new Doc('REKV', user.asutusId, user.userId, user.asutusId, 'lapsed');
@@ -76,6 +76,9 @@ exports.swed = async (req, res) => {
 
         // register e-arve event
         let sql = earveDoc.config.earve[0].register;
+        if (sql) {
+            let tulem  = await db.queryDb(sql, [arvedIds,user.userId]);
+        }
 
         // возвращаем его
         if (xml) {
@@ -106,6 +109,7 @@ exports.seb = async (req, res) => {
     }
 
     ids = ids.split(",").map(Number);
+    let arvedIds = ids.join(','); // параметр для регистрации в истории
 
     // данные предприятия
     const rekvDoc = new Doc('REKV', user.asutusId, user.userId, user.asutusId, 'lapsed');
@@ -157,6 +161,10 @@ exports.seb = async (req, res) => {
 
         // register e-arve event
         let sql = earveDoc.config.earve[0].register;
+
+        if (sql) {
+            let tulem  = await db.queryDb(sql, [arvedIds,user.userId]);
+        }
 
         // возвращаем его
         if (xml) {

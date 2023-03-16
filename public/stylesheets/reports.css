@@ -29,16 +29,11 @@
 .row_wrapper {
     display:-webkit-box;
     flexDirection: row;
+
 }
 
 .body_wrapper {
     margin-left:5%;
-    width:auto;
-}
-
-.doc_wrapper {
-    margin-left:5%;
-    margin-top:5%;
     width:auto;
 }
 

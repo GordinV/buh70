@@ -752,12 +752,12 @@ const Arv = {
     getLog: {
         command: `SELECT ROW_NUMBER() OVER ()                                               AS id,
                          (ajalugu ->> 'user')::TEXT                                         AS kasutaja,
-                         to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS') AS koostatud,
-                         to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS') AS muudatud,
-                         to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS')   AS prinditud,
-                         to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS')   AS email,
-                         to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS')   AS earve,
-                         to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH.MI.SS') AS kustutatud
+                         to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS') AS koostatud,
+                         to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS') AS muudatud,
+                         to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS')   AS prinditud,
+                         to_char((ajalugu ->> 'email')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS')   AS email,
+                         to_char((ajalugu ->> 'earve')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS')   AS earve,
+                         to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS') AS kustutatud
 
                   FROM (
                            SELECT jsonb_array_elements(history) AS ajalugu, d.id, d.rekvid
@@ -798,6 +798,23 @@ const Arv = {
             params: 'sqlWhere'
         },
     ],
+    multiple_print: [
+        {
+            view: 'arve_kaart',
+            params: 'id',
+            register: `UPDATE docs.doc
+                       SET history = history ||
+                                     (SELECT row_to_json(row)
+                                      FROM (SELECT now()                                                AS print,
+                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                       WHERE id = $1`
+        },
+        {
+            view: 'arve_register',
+            params: 'sqlWhere'
+        },
+    ],
+
     email: [
         {
             view: 'arve_email',
@@ -818,7 +835,9 @@ const Arv = {
                                      (SELECT row_to_json(row)
                                       FROM (SELECT now()                                                AS earve,
                                                    (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
-                       WHERE id = $1`
+                       WHERE id in (
+                           SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER                           
+                           )`
 
         }
     ]
