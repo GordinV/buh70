@@ -17,10 +17,18 @@ module.exports = {
             {id: "mahakantud", name: "Mahakantud", width: "5%", type: "number", interval: true},
             {id: "jaak", name: "Võlg", width: "5%", type: "number", interval: true},
             {id: "jaak", name: "Jääk", width: "5%", type: "number", show: false},
-            {id: "asutused_arv", name: "Asutused arv ", width: "5%", type: "number", show: false, interval: true},
+            {id: "lasteaed_count", name: "Lasteaede arv(jääk<>0) ", width: "5%", type: "number", show: false, interval: true},
             {id: "asutus", name: "Asutus", width: "8%"},
         ],
-        sqlString: `SELECT sum(qryReport.alg_saldo) OVER (PARTITION BY rekvid)                AS alg_saldo_group,
+        sqlString: `with lasteaeds as (
+                        select id from ou.rekv where parentid = 119 and nimetus ilike '%lasteaed%'
+                    ),
+                    qryReport as (
+                        select * ,
+                            case when r.rekvid in  (select id from lasteaeds) and jaak <> 0 then 1 else 0 end as lasteaed_count
+                            FROM lapsed.kaive_aruanne($1::INTEGER, $3, $4) r
+                    )
+                    SELECT sum(qryReport.alg_saldo) OVER (PARTITION BY rekvid)                AS alg_saldo_group,
                            sum(qryReport.arvestatud) OVER (PARTITION BY rekvid)               AS arvestatud_group,
                            sum(qryReport.umberarvestus) OVER (PARTITION BY rekvid)            AS umberarvestus_group,
                            sum(qryReport.soodustus) OVER (PARTITION BY rekvid)                AS soodustus_group,
@@ -31,7 +39,7 @@ module.exports = {
                            -1 * sum(qryReport.tagastused) OVER (PARTITION BY rekvid)          AS tagastused_group,
                            sum(qryReport.jaak) OVER (PARTITION BY rekvid)                     AS jaak_group,
                            count(*) OVER ()                                                   AS rows_total,
-                           count(*) OVER (PARTITION BY lapse_isikukood)               AS asutused_arv,
+                           sum(lasteaed_count) OVER (PARTITION BY lapse_isikukood)            AS lasteaed_count,
                            qryReport.id,
                            qryReport.period,
                            qryReport.kulastatavus,
@@ -53,7 +61,7 @@ module.exports = {
                            $2                                                                 AS user_id,
                            r.nimetus::TEXT                                                    AS asutus,
                            vn.vn                                                              AS vana_vn
-                    FROM lapsed.kaive_aruanne($1::INTEGER, $3, $4) qryReport
+                    FROM qryReport
                              INNER JOIN ou.rekv r ON r.id = qryReport.rekvid
                              LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                                               FROM lapsed.viitenr vn
