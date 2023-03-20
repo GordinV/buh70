@@ -16,6 +16,8 @@ module.exports = {
             {id: "tagastused", name: "Tagastused", width: "5%", type: "number", interval: true},
             {id: "mahakantud", name: "Mahakantud", width: "5%", type: "number", interval: true},
             {id: "jaak", name: "Võlg", width: "5%", type: "number", interval: true},
+            {id: "jaak", name: "Jääk", width: "5%", type: "number", show: false},
+            {id: "asutused_arv", name: "Asutused arv ", width: "5%", type: "number", show: false, interval: true},
             {id: "asutus", name: "Asutus", width: "8%"},
         ],
         sqlString: `SELECT sum(qryReport.alg_saldo) OVER (PARTITION BY rekvid)                AS alg_saldo_group,
@@ -29,6 +31,7 @@ module.exports = {
                            -1 * sum(qryReport.tagastused) OVER (PARTITION BY rekvid)          AS tagastused_group,
                            sum(qryReport.jaak) OVER (PARTITION BY rekvid)                     AS jaak_group,
                            count(*) OVER ()                                                   AS rows_total,
+                           count(*) OVER (PARTITION BY lapse_isikukood)               AS asutused_arv,
                            qryReport.id,
                            qryReport.period,
                            qryReport.kulastatavus,
@@ -56,7 +59,7 @@ module.exports = {
                                               FROM lapsed.viitenr vn
                                               WHERE vn.rekv_id IN (SELECT rekv_id
                                                                    FROM get_asutuse_struktuur($1))
-                                              GROUP BY vn.isikukood
+                                                  GROUP BY vn.isikukood
                     ) vn
                                              ON vn.isikukood = qryReport.lapse_isikukood
                     ORDER BY r.nimetus
