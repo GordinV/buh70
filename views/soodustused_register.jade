@@ -39,7 +39,9 @@ block content
         .label_subtotal {
             width: 70%;
         }
-
+        .div {
+            margin: 1%;
+        }
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
@@ -52,16 +54,21 @@ block content
         - var lapsedKokku = data[0][groupValue][0].lapsed_kokku;
         - var veadKokku = data[0][groupValue][0].vead_kokku;
         - var peredKokku = data[0][groupValue][0].pered_kokku;
+        - var pered = data[0][groupValue][0].pered_kokkuvote;
+        - var soodustused = data[0][groupValue][0].soodustus_kokkuvote;
 
-        each vanem_isikukood in data
-            p #{Object.keys(vanem_isikukood)[0]} lapsed kokku: #{vanem_isikukood[Object.keys(vanem_isikukood)[0]][0].lapsed}, % - #{vanem_isikukood[Object.keys(vanem_isikukood)[0]][0].percent}
-
+    each vanem_isikukood in data
+        p.div #{Object.keys(vanem_isikukood)[0]} lapsed kokku: #{vanem_isikukood[Object.keys(vanem_isikukood)[0]][0].lapsed}, % - #{vanem_isikukood[Object.keys(vanem_isikukood)[0]][0].percent}
+        div.div
             table.table.table-hover.grid_data
                 thead.grid_head
                     tr
                         th Lapse nimi
                         th Vead
                         th Arvestatud
+                        th Soodustus
+                        th (%)
+                        th Kood
                         th Asutus
 
                 tbody
@@ -69,6 +76,44 @@ block content
                         tr
                             td=rea.lapse_nimi
                             td(align='center')=rea.viga
+                            td(align='center')=rea.summa
                             td(align='center')=rea.soodustus
+                            td(align='center')=rea.arv_percent
+                            td(align='left')=rea.kood
                             td(align='left')=rea.asutus
-        h2 Lapsed kokku: #{lapsedKokku} Vead kokku: #{veadKokku} Pered kokku: #{peredKokku}
+        p.div Lapsed kokku: #{lapsedKokku} Vead kokku: #{veadKokku} Pered kokku: #{peredKokku}
+        div.row_wrapper
+            div.div
+                table.table.table-hover.grid_data
+                    thead.grid_head
+                        tr
+                            th Lapsed peres&nbsp;
+                            th laste arv soodustusega&nbsp;
+                    tbody
+                        each lapsed in pered
+                            tr
+                                td(align='center')=lapsed.lapsed
+                                td(align='center')=lapsed.pered_kokku
+                    tr.group
+                        td(align='right')='Kokku'
+                        td(align='center')=pered[0].kokku
+            div.div
+                table.table.table-hover.grid_data
+                    thead.grid_head
+                        tr
+                            th Kood&nbsp;
+                            th Sai soodustused&nbsp;
+                            th Percent&nbsp;
+                            th Summa&nbsp;
+                    tbody
+                        each Soodustus in soodustused
+                            tr
+                                td(align='center')=Soodustus.kood
+                                td(align='center')=Soodustus.kokku
+                                td(align='center')=Soodustus.percent
+                                td(align='right')=Soodustus.soodustus
+                    tr.group
+                        td(align='right')='Kokku'
+                        td(align='center')=soodustused[0].kokku_total
+                        td(align='center')
+                        td(align='right')=soodustused[0].soodustus_total

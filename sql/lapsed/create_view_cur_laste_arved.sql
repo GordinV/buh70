@@ -41,7 +41,7 @@ FROM docs.doc d
          INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
          INNER JOIN lapsed.laps l ON l.id = ld.parentid
          INNER JOIN libs.asutus asutus ON a.asutusid = asutus.id
-         INNER JOIN lapsed.vanemad v ON l.id = v.parentid AND v.asutusid = asutus.id
+         LEFT OUTER JOIN lapsed.vanemad v ON l.id = v.parentid AND v.asutusid = asutus.id
          LEFT OUTER JOIN lapsed.vanem_arveldus va
                          ON l.id = va.parentid AND va.asutusid = asutus.id AND va.rekvid = a.rekvid
          LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid

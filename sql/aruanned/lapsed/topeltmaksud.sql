@@ -21,7 +21,9 @@ CREATE OR REPLACE FUNCTION lapsed.topeltmaksud(l_rekvid INTEGER,
     )
 AS
 $BODY$
-WITH qryTabel AS (
+WITH qryRekv as (SELECT rekv_id
+                 FROM get_asutuse_struktuur(l_rekvid)),
+     qryTabel AS (
     SELECT lt.nimi::TEXT,
            lt.isikukood::TEXT,
            lapsed.get_viitenumber(lt.rekvid, l.id)::TEXT AS viitenumber,
@@ -48,7 +50,7 @@ WITH qryTabel AS (
         SELECT id, nimetus
         FROM ou.rekv r
         WHERE id IN (SELECT rekv_id
-                     FROM get_asutuse_struktuur(l_rekvid)
+                     FROM qryRekv
         )
           AND (r.properties ->> 'liik') = 'LASTEAED'
     ) r ON r.id = lt.rekvid
@@ -60,6 +62,7 @@ WITH qryTabel AS (
                          HAVING count(*) > 1) dbl ON dbl.isikukood = lt.isikukood AND dbl.kood = lt.kood
     WHERE lt.kuu = l_kuu
       AND lt.aasta = l_aasta
+      and l.staatus < 3
       AND coalesce((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE)
 ),
      qryKaart AS (
@@ -110,7 +113,7 @@ WITH qryTabel AS (
                           SELECT id, nimetus
                           FROM ou.rekv r
                           WHERE id IN (SELECT rekv_id
-                                       FROM get_asutuse_struktuur(l_rekvid)
+                                       FROM qryRekv
                           )
                             AND (r.properties ->> 'liik') = 'LASTEAED'
                       ) r ON r.id = lk.rekvid
@@ -203,7 +206,7 @@ GRANT EXECUTE ON FUNCTION lapsed.topeltmaksud(INTEGER, INTEGER, INTEGER) TO eela
 GRANT EXECUTE ON FUNCTION lapsed.topeltmaksud(INTEGER, INTEGER, INTEGER) TO dbvaatleja;
 GRANT EXECUTE ON FUNCTION lapsed.topeltmaksud(INTEGER, INTEGER, INTEGER) TO arvestaja;
 
-
+/*
 SELECT *
-FROM lapsed.topeltmaksud(119, 4, 2021);
-
+FROM lapsed.topeltmaksud(119, 1, 2023);
+*/

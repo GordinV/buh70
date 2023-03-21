@@ -19,7 +19,8 @@ CREATE OR REPLACE FUNCTION lapsed.soodustused(l_rekvid INTEGER, l_kond INTEGER D
         viitenumber     TEXT,
         vead_kokku      INTEGER,
         percent         TEXT,
-        viga            TEXT
+        viga            TEXT,
+        kood            TEXT
     )
 AS
 $BODY$
@@ -48,19 +49,23 @@ WITH qry AS (
                         sum(soodustus)  AS soodustus,
                         lt.parentid     AS laps_id,
                         lt.rekvid,
-                        sum(tais_summa) AS tais_summa
-                 FROM (SELECT summa, soodustus, parentid, rekvid, (lt.hind * lt.kogus) AS tais_summa
+                        sum(tais_summa) AS tais_summa,
+                        lt.kood
+                 FROM (SELECT lt.summa, lt.soodustus, lt.parentid, lt.rekvid, (lt.hind * lt.kogus) AS tais_summa, n.kood
                        FROM lapsed.lapse_taabel lt,
+                            libs.nomenklatuur n,
                             params
                        WHERE lt.staatus <> 3
                          AND lt.hind <> 0
+                         AND lt.nomid = n.id
                          AND make_date(aasta, kuu, 1) >= params.arv_alg_kpv
                          AND make_date(aasta, kuu, 1) <= params.arv_lopp_kpv
                          AND lt.rekvid IN (SELECT rekv_id FROM rekv_ids)
                       ) lt
                  WHERE lt.soodustus <> 0
-
-                 GROUP BY lt.parentid, lt.rekvid
+                     GROUP BY lt.parentid
+                     , lt.rekvid
+                     , lt.kood
              ),
              esindajad AS (
                  SELECT asutusid,
@@ -73,6 +78,7 @@ WITH qry AS (
 
         SELECT l.isikukood::TEXT                                                       AS lapse_isikukood,
                l.nimi::TEXT                                                            AS lapse_nimi,
+               s.kood,
                s.soodustus::NUMERIC(12, 2)                                             AS soodustus,
                s.summa::NUMERIC(12, 2)                                                 AS summa,
                round(s.soodustus / s.tais_summa * 100, 0)                              AS arv_percent,
@@ -122,7 +128,8 @@ SELECT soodustus::NUMERIC(12, 2)            AS soodustus,
            WHEN lapsed_peres = 2 AND arv_percent <> 25 THEN 'Viga, <> 25'
            WHEN lapsed_peres > 2 AND arv_percent < 100 THEN 'Viga, < 100'
            ELSE NULL::TEXT
-           END::TEXT                        AS viga
+           END::TEXT                        AS viga,
+       qry.kood::text
 FROM qry
          LEFT OUTER JOIN libs.asutus a ON a.id = qry.vanem_id
 
