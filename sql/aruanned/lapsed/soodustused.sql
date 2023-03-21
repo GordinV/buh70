@@ -63,9 +63,9 @@ WITH qry AS (
                          AND lt.rekvid IN (SELECT rekv_id FROM rekv_ids)
                       ) lt
                  WHERE lt.soodustus <> 0
-                     GROUP BY lt.parentid
-                     , lt.rekvid
-                     , lt.kood
+                 GROUP BY lt.parentid
+                         , lt.rekvid
+                         , lt.kood
              ),
              esindajad AS (
                  SELECT asutusid,
@@ -99,16 +99,16 @@ WITH qry AS (
         WHERE s.soodustus <> 0
     )
 )
-SELECT soodustus::NUMERIC(12, 2)            AS soodustus,
-       summa::NUMERIC(12, 2)                AS summa,
-       arv_percent::NUMERIC(12, 4)          AS arv_percent,
-       kpv_start::DATE                      AS period,
+SELECT soodustus::NUMERIC(12, 2)               AS soodustus,
+       summa::NUMERIC(12, 2)                   AS summa,
+       arv_percent::NUMERIC(12, 4)             AS arv_percent,
+       kpv_start::DATE                         AS period,
        lapse_isikukood,
        lapse_nimi,
-       a.nimetus::TEXT                      AS vanem_nimi,
-       a.regkood::TEXT                      AS vanem_isikukood,
-       qry.lapsed_peres ::INTEGER           AS lapsed,
-       qry.pered_kokku ::INTEGER            AS pered_kokku,
+       a.nimetus::TEXT                         AS vanem_nimi,
+       coalesce(a.regkood, 'Esindaja puudub')::TEXT                         AS vanem_isikukood,
+       coalesce(qry.lapsed_peres, 0) ::INTEGER AS lapsed,
+       qry.pered_kokku ::INTEGER               AS pered_kokku,
        qry.asutus,
        qry.rekvid,
        qry.viitenumber::TEXT,
@@ -117,19 +117,19 @@ SELECT soodustus::NUMERIC(12, 2)            AS soodustus,
                WHEN lapsed_peres <= 2 AND arv_percent > 25 THEN 1
                WHEN lapsed_peres = 2 AND arv_percent <> 25 THEN 1
                WHEN lapsed_peres > 2 AND arv_percent < 100 THEN 1
-               ELSE 0 END) OVER ()::INTEGER AS vead_kokku,
+               ELSE 0 END) OVER ()::INTEGER    AS vead_kokku,
        CASE
            WHEN lapsed_peres = 1 THEN '0'
            WHEN lapsed_peres = 2 THEN '25'
            WHEN lapsed_peres >= 3 THEN '100'
-           ELSE '' END::TEXT                AS percent,
+           ELSE '' END::TEXT                   AS percent,
        CASE
            WHEN lapsed_peres < 2 AND arv_percent > 0 THEN 'Viga, <> 0'
            WHEN lapsed_peres = 2 AND arv_percent <> 25 THEN 'Viga, <> 25'
            WHEN lapsed_peres > 2 AND arv_percent < 100 THEN 'Viga, < 100'
            ELSE NULL::TEXT
-           END::TEXT                        AS viga,
-       qry.kood::text
+           END::TEXT                           AS viga,
+       qry.kood::TEXT
 FROM qry
          LEFT OUTER JOIN libs.asutus a ON a.id = qry.vanem_id
 

@@ -81,39 +81,39 @@ block content
                             td(align='center')=rea.arv_percent
                             td(align='left')=rea.kood
                             td(align='left')=rea.asutus
-        p.div Lapsed kokku: #{lapsedKokku} Vead kokku: #{veadKokku} Pered kokku: #{peredKokku}
-        div.row_wrapper
-            div.div
-                table.table.table-hover.grid_data
-                    thead.grid_head
+    p.div Lapsed kokku: #{lapsedKokku} Vead kokku: #{veadKokku} Pered kokku: #{peredKokku}
+    div.row_wrapper
+        div.div
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Lapsed peres&nbsp;
+                        th laste arv soodustusega&nbsp;
+                tbody
+                    each lapsed in pered
                         tr
-                            th Lapsed peres&nbsp;
-                            th laste arv soodustusega&nbsp;
-                    tbody
-                        each lapsed in pered
-                            tr
-                                td(align='center')=lapsed.lapsed
-                                td(align='center')=lapsed.pered_kokku
-                    tr.group
-                        td(align='right')='Kokku'
-                        td(align='center')=pered[0].kokku
-            div.div
-                table.table.table-hover.grid_data
-                    thead.grid_head
+                            td(align='center')=lapsed.lapsed
+                            td(align='center')=lapsed.pered_kokku
+                tr.group
+                    td(align='right')='Kokku'
+                    td(align='center')=pered[0].kokku
+        div.div
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Kood&nbsp;
+                        th Sai soodustused&nbsp;
+                        th Percent&nbsp;
+                        th Summa&nbsp;
+                tbody
+                    each Soodustus in soodustused
                         tr
-                            th Kood&nbsp;
-                            th Sai soodustused&nbsp;
-                            th Percent&nbsp;
-                            th Summa&nbsp;
-                    tbody
-                        each Soodustus in soodustused
-                            tr
-                                td(align='center')=Soodustus.kood
-                                td(align='center')=Soodustus.kokku
-                                td(align='center')=Soodustus.percent
-                                td(align='right')=Soodustus.soodustus
-                    tr.group
-                        td(align='right')='Kokku'
-                        td(align='center')=soodustused[0].kokku_total
-                        td(align='center')
-                        td(align='right')=soodustused[0].soodustus_total
+                            td(align='center')=Soodustus.kood
+                            td(align='center')=Soodustus.kokku
+                            td(align='center')=Soodustus.percent
+                            td(align='right')=Soodustus.soodustus
+                tr.group
+                    td(align='right')='Kokku'
+                    td(align='center')=soodustused[0].kokku_total
+                    td(align='center')
+                    td(align='right')=soodustused[0].soodustus_total
