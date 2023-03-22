@@ -35,6 +35,9 @@ SELECT d.id                                                                     
            WHEN coalesce((a.properties ->> 'ebatoenaolised_2_id')::INTEGER, 0) > 0 THEN '100'
            WHEN coalesce((a.properties ->> 'ebatoenaolised_1_id')::INTEGER, 0) > 0 THEN '50'
            ELSE '0' END::VARCHAR(3)                                                           AS ebatoenaolised,
+       (SELECT exists(SELECT *
+                      FROM jsonb_array_elements(history) elem
+                      WHERE (elem ?| ARRAY ['print','email','earve'])))::BOOLEAN              AS kas_esitatud,
        l.id                                                                                   AS laps_id
 FROM docs.doc d
          INNER JOIN docs.arv a ON a.parentId = d.id
@@ -59,7 +62,8 @@ GRANT SELECT ON TABLE lapsed.cur_laste_arved TO arvestaja;
 GRANT ALL ON TABLE lapsed.cur_laste_arved TO dbadmin;
 
 /*
-select * from lapsed.cur_laste_arved where rekvid = 95
+execution: 516 ms, fetching: 476 ms)
+select * from lapsed.cur_laste_arved where rekvid = 95 and kpv >= '2023-01-01'::date
 -- 262
 
 --limit 10

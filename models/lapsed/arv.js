@@ -347,7 +347,7 @@ const Arv = {
                          a1.summa::NUMERIC(12, 2),
                          trim(n.kood) :: VARCHAR(20)                                                  AS kood,
                          trim(n.nimetus) :: VARCHAR(254)                                              AS nimetus,
-                         trim(n.uhik) :: TEXT                                                               AS uhik,
+                         trim(n.uhik) :: TEXT                                                         AS uhik,
                          coalesce((SELECT vahe
                                    FROM lapsed.cur_lapse_taabel
                                    WHERE id = (a1.properties ->> 'lapse_taabel_id')::INTEGER
@@ -567,9 +567,11 @@ const Arv = {
             {id: "isikukood", name: "Isikukood", width: "7%"},
             {id: "viitenr", name: "Viitenr", width: "5%"},
             {id: "vana_vn", name: "Vana VN", width: "5%"},
-            {id: "tyyp", name: "Tüüp", width: "5%"},
+            {id: "tyyp", name: "Tüüp", width: "5%", show: false},
             {id: "ebatoenaolised", name: "Ebatõenaolised", width: "5%"},
-            {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean', hideFilter: true}
+            {id: "ebatoenaolised", name: "Ebatõenaolised", width: "5%"},
+            {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean', hideFilter: true},
+            {id: "esitatud", name: "Kas esitatud?", width: "5%", type: 'select', data: ['', 'Jah', 'Ei'], show: false},
 
         ],
         sqlString: `SELECT id,
@@ -600,6 +602,9 @@ const Arv = {
                            kas_paberil::BOOLEAN                 AS kas_paberil,
                            kas_email::BOOLEAN                   AS kas_email,
                            kas_earved::BOOLEAN                  AS kas_earved,
+                           CASE
+                               WHEN kas_esitatud THEN 'JAH'
+                               ELSE 'EI' END::TEXT              AS esitatud,
                            pank::TEXT,
                            ebatoenaolised,
                            vn.vn                                AS vana_vn
@@ -750,8 +755,8 @@ const Arv = {
     },
 
     getLog: {
-        command: `SELECT ROW_NUMBER() OVER ()                                               AS id,
-                         (ajalugu ->> 'user')::TEXT                                         AS kasutaja,
+        command: `SELECT ROW_NUMBER() OVER ()                                                 AS id,
+                         (ajalugu ->> 'user')::TEXT                                           AS kasutaja,
                          to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS') AS koostatud,
                          to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS') AS muudatud,
                          to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH24.MI.SS')   AS prinditud,
@@ -835,9 +840,9 @@ const Arv = {
                                      (SELECT row_to_json(row)
                                       FROM (SELECT now()                                                AS earve,
                                                    (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
-                       WHERE id in (
-                           SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER                           
-                           )`
+                       WHERE id IN (
+                           SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER
+                       )`
 
         }
     ]

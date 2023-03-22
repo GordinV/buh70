@@ -6,10 +6,10 @@ module.exports = {
             {id: "vanem_nimi", name: "Vanem nimi", width: "15%"},
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "10%"},
             {id: "lapse_nimi", name: "Lapse nimi", width: "15%"},
-            {id: "lapsed", name: "Lapsed kokku", width: "15%"},
+            {id: "lapsed", name: "Lapsed kokku", width: "15%", type: "number",interval: true},
             {id: "viitenumber", name: "Viitenumber", width: "10%"},
             {id: "vana_vn", name: "Vana VN", width: "10%"},
-            {id: "soodustus", name: "%", width: "5%", type: "number"},
+            {id: "soodustus", name: "Soodustus", width: "5%", type: "number"},
             {id: "arv_percent", name: "Sood(%)", width: "5%", type: "number"},
             {id: "period", name: "Period", width: "5%", show: false, type: "date", interval: true},
             {id: "viga", name: "Viga", width: "10%"},
@@ -22,7 +22,7 @@ module.exports = {
                          FROM (
                                 select sum(pered_kokku) over() as kokku, pered_kokku, lapsed from (
                                   SELECT  count(*)  as pered_kokku , lapsed
-                                  FROM (select distinct vanem_isikukood, lapsed from report) report
+                                  FROM (select distinct vanem_id, lapsed from report) report
                                  group by lapsed order by lapsed) rep
                              ) qry
                      ),
@@ -30,14 +30,25 @@ module.exports = {
                          SELECT jsonb_agg(jsonb_build_object('kokku', kokku, 'kood', kood, 'soodustus', soodustus, 'percent', percent, 
                             'kokku_total',kokku_total, 'soodustus_total',soodustus_total)) AS kokkuvote
                          FROM (
-                                SELECT sum(kokku) over() as kokku_total, sum(soodustus) over() as soodustus_total, * FROM (
-                                      SELECT count(*) AS kokku, kood, percent, sum(soodustus) AS soodustus
-                                      FROM report
-                                      WHERE soodustus > 0
-                                      GROUP BY kood, percent
-                                      HAVING NOT empty(percent)
-                                         AND percent <> '0'
-                                      ORDER BY kood, percent) qry
+                  SELECT sum(kokku) OVER ()     AS kokku_total,
+                         sum(soodustus) OVER () AS soodustus_total,
+                         *
+                  FROM (
+                           SELECT count(*)            AS kokku,
+                                  CASE
+                                      WHEN left(kood, 6) IN ('322020', '322030')
+                                          THEN '322020,322030'
+                                      ELSE 'MUUD' END AS kood,
+                                  percent,
+                                  sum(soodustus)      AS soodustus
+                           FROM report
+                           WHERE soodustus > 0
+                           GROUP BY CASE
+                                        WHEN left(kood, 6) IN ('322020', '322030') THEN '322020,322030'
+                                        ELSE 'MUUD' END, percent
+                           HAVING NOT empty(percent)
+                              AND percent <> '0'
+                           ORDER BY percent) qry
                                   ) rep 
                      ),
                      kokku_lapsed as (

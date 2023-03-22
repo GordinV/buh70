@@ -208,5 +208,7 @@ GRANT EXECUTE ON FUNCTION lapsed.topeltmaksud(INTEGER, INTEGER, INTEGER) TO arve
 
 /*
 SELECT *
-FROM lapsed.topeltmaksud(119, 1, 2023);
+FROM lapsed.topeltmaksud(119, 12, 2024)
+where isikukood = '51705170216'
+;
 */
