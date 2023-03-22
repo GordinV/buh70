@@ -2,8 +2,8 @@ module.exports = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "0%", show: false},
-            {id: "vanem_isikukood", name: "Vanem isikukood", width: "10%"},
-            {id: "vanem_nimi", name: "Vanem nimi", width: "15%"},
+            {id: "vanem_isikukood", name: "Esindaja isikukood", width: "10%"},
+            {id: "vanem_nimi", name: "Esindaja nimi", width: "15%"},
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "10%"},
             {id: "lapse_nimi", name: "Lapse nimi", width: "15%"},
             {id: "lapsed", name: "Lapsed kokku", width: "15%", type: "number", interval: true},
@@ -26,8 +26,18 @@ module.exports = {
                                  group by lapsed order by lapsed) rep
                              ) qry
                      ),
+                     lapsed AS (
+                                      SELECT  count(*) AS kogus, percent
+                                      FROM (
+                                               SELECT DISTINCT lapse_isikukood, arv_percent as percent
+                                               FROM report
+                                           ) qry
+                                      GROUP BY percent
+                                  ),                     
                      soodtused AS (
                          SELECT jsonb_agg(jsonb_build_object('kokku', kokku_total,
+                                                             'lapsed', kogus,
+                                                             'lapsed_total', kogus_total,                         
                                                              'kood', kood_total,
                                                              'soodustus', soodustus,
                                                              'percent', percent,
@@ -54,6 +64,7 @@ module.exports = {
                                          sum(kokku_322030) OVER ()     AS kokku_322030_total,                                         
                                          sum(soodustus) OVER ()  AS soodustus_total,
                                          sum(kokku) over() as kokku_total,
+                                         sum(kogus) OVER ()            AS kogus_total,                                         
                                          soodustus,
                                          kokku,
                                          kood_total,
@@ -61,18 +72,18 @@ module.exports = {
                                          kokku_322030,
                                          soodustus_322020,
                                          soodustus_322030,
-                                         percent
+                                         pre_rep.percent,
+                                         l.kogus
                                   FROM (
                                            WITH qry AS (SELECT count(*)       AS kokku,
                                                                left(kood, 6)  AS kood,
-                                                               percent,
+                                                               arv_percent as percent,
                                                                sum(soodustus) AS soodustus
                                                         FROM report
                                                         WHERE soodustus > 0
-                                                        GROUP BY left(kood, 6), percent
-                                                        HAVING NOT empty(percent)
-                                                           AND percent <> '0'
-                                                        ORDER BY percent)
+                                                        GROUP BY left(kood, 6), arv_percent
+                                                        HAVING NOT empty(arv_percent)
+                                                        ORDER BY arv_percent)
                                            SELECT sum(kokku)                             AS kokku,
                                                   sum(soodustus)                         AS soodustus,
                                                   '322020,322030'                        AS kood_total,
@@ -88,6 +99,7 @@ module.exports = {
                                            FROM qry
                                            GROUP BY percent
                                        ) pre_rep
+                                           LEFT OUTER JOIN lapsed l ON l.percent = pre_rep.percent                                       
                               ) rep
                                      ),
                      
