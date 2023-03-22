@@ -6,7 +6,7 @@ module.exports = {
             {id: "vanem_nimi", name: "Vanem nimi", width: "15%"},
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "10%"},
             {id: "lapse_nimi", name: "Lapse nimi", width: "15%"},
-            {id: "lapsed", name: "Lapsed kokku", width: "15%", type: "number",interval: true},
+            {id: "lapsed", name: "Lapsed kokku", width: "15%", type: "number", interval: true},
             {id: "viitenumber", name: "Viitenumber", width: "10%"},
             {id: "vana_vn", name: "Vana VN", width: "10%"},
             {id: "soodustus", name: "Soodustus", width: "5%", type: "number"},
@@ -27,30 +27,70 @@ module.exports = {
                              ) qry
                      ),
                      soodtused AS (
-                         SELECT jsonb_agg(jsonb_build_object('kokku', kokku, 'kood', kood, 'soodustus', soodustus, 'percent', percent, 
-                            'kokku_total',kokku_total, 'soodustus_total',soodustus_total)) AS kokkuvote
+                         SELECT jsonb_agg(jsonb_build_object('kokku', kokku_total,
+                                                             'kood', kood_total,
+                                                             'soodustus', soodustus,
+                                                             'percent', percent,
+                                                             'kokku', kokku,
+                                                             'soodustus_total', soodustus_total,
+                                                             'kokku_total', kokku_total,                                                             
+                                                             'kokku_322020', kokku_322020,
+                                                             'soodustus_322020', soodustus_322020,
+                                                             'kokku_322030', kokku_322030,
+                                                             'soodustus_322030', soodustus_322030,
+                                                             'soodustus_322020_total', soodustus_322020_total,
+                                                             'soodustus_322030_total', soodustus_322030_total,
+                                                             'kokku_322020_total', kokku_322020_total,
+                                                             'kokku_322030_total', kokku_322030_total,
+                                                             'soodustus_rea_summa',(soodustus_322020 + soodustus_322030),                                                     
+                                                             'soodustus_rea_total',(soodustus_322020_total + soodustus_322030_total)                                                    
+                                                             
+                             )
+                                    ) AS kokkuvote
                          FROM (
-                  SELECT sum(kokku) OVER ()     AS kokku_total,
-                         sum(soodustus) OVER () AS soodustus_total,
-                         *
-                  FROM (
-                           SELECT count(*)            AS kokku,
-                                  CASE
-                                      WHEN left(kood, 6) IN ('322020', '322030')
-                                          THEN '322020,322030'
-                                      ELSE 'MUUD' END AS kood,
-                                  percent,
-                                  sum(soodustus)      AS soodustus
-                           FROM report
-                           WHERE soodustus > 0
-                           GROUP BY CASE
-                                        WHEN left(kood, 6) IN ('322020', '322030') THEN '322020,322030'
-                                        ELSE 'MUUD' END, percent
-                           HAVING NOT empty(percent)
-                              AND percent <> '0'
-                           ORDER BY percent) qry
-                                  ) rep 
-                     ),
+                                  SELECT sum(soodustus_322020) OVER () AS soodustus_322020_total,
+                                         sum(soodustus_322030) OVER () AS soodustus_322030_total,
+                                         sum(kokku_322020) OVER ()     AS kokku_322020_total,
+                                         sum(kokku_322030) OVER ()     AS kokku_322030_total,                                         
+                                         sum(soodustus) OVER ()  AS soodustus_total,
+                                         sum(kokku) over() as kokku_total,
+                                         soodustus,
+                                         kokku,
+                                         kood_total,
+                                         kokku_322020,
+                                         kokku_322030,
+                                         soodustus_322020,
+                                         soodustus_322030,
+                                         percent
+                                  FROM (
+                                           WITH qry AS (SELECT count(*)       AS kokku,
+                                                               left(kood, 6)  AS kood,
+                                                               percent,
+                                                               sum(soodustus) AS soodustus
+                                                        FROM report
+                                                        WHERE soodustus > 0
+                                                        GROUP BY left(kood, 6), percent
+                                                        HAVING NOT empty(percent)
+                                                           AND percent <> '0'
+                                                        ORDER BY percent)
+                                           SELECT sum(kokku)                             AS kokku,
+                                                  sum(soodustus)                         AS soodustus,
+                                                  '322020,322030'                        AS kood_total,
+                                                  sum(kokku) FILTER (WHERE kood =
+                                                                           '322020')     AS kokku_322020,
+                                                  sum(kokku) FILTER (WHERE kood =
+                                                                           '322030')     AS kokku_322030,
+                                                  sum(soodustus) FILTER (WHERE kood =
+                                                                               '322020') AS soodustus_322020,
+                                                  sum(soodustus) FILTER (WHERE kood =
+                                                                               '322030') AS soodustus_322030,
+                                                  percent
+                                           FROM qry
+                                           GROUP BY percent
+                                       ) pre_rep
+                              ) rep
+                                     ),
+                     
                      kokku_lapsed as (
                         select count(*) as kokku from (
                             SELECT DISTINCT lapse_isikukood FROM report

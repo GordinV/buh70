@@ -39,6 +39,7 @@ block content
         .label_subtotal {
             width: 70%;
         }
+
         .div {
             margin: 1%;
         }
@@ -101,19 +102,38 @@ block content
             table.table.table-hover.grid_data
                 thead.grid_head
                     tr
-                        th Kood&nbsp;
+                        th
                         th Sai soodustused&nbsp;
                         th Percent&nbsp;
                         th Summa&nbsp;
+                        th Sai(322020)&nbsp;
+                        th Summa(322020)&nbsp;
+                        th Sai(322030)&nbsp;
+                        th Summa(322030)&nbsp;
+                        th Kokku&nbsp;
+
                 tbody
                     each Soodustus in soodustused
                         tr
-                            td(align='center')=Soodustus.kood
+                            td
                             td(align='center')=Soodustus.kokku
                             td(align='center')=Soodustus.percent
                             td(align='right')=Soodustus.soodustus
-                tr.group
-                    td(align='right')='Kokku'
-                    td(align='center')=soodustused[0].kokku_total
-                    td(align='center')
-                    td(align='right')=soodustused[0].soodustus_total
+                            td(align='right')=Soodustus.kokku_322020
+                            td(align='right')=Soodustus.soodustus_322020
+                            td(align='right')=Soodustus.kokku_322030
+                            td(align='right')=Soodustus.soodustus_322030
+                            td(align='right')=Soodustus.soodustus_rea_summa
+
+                    tr.group
+                        td(align='right')='Kokku'
+                        td(align='center')=soodustused[0].kokku_total
+                        td(align='center')
+                        td(align='right')=soodustused[0].soodustus_total
+                        td(align='right')=soodustused[0].kokku_322020_total
+                        td(align='right')=soodustused[0].soodustus_322020_total
+                        td(align='right')=soodustused[0].kokku_322030_total
+                        td(align='right')=soodustused[0].soodustus_322030_total
+                        td(align='right')=soodustused[0].soodustus_rea_total
+
+

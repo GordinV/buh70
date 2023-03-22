@@ -31,9 +31,18 @@ WITH qry AS (
             SELECT alg_kpv,
                    lopp_kpv,
                    make_date(date_part('year', kp.alg_kpv)::INTEGER, date_part('month', kp.alg_kpv)::INTEGER,
-                             1) AS arv_alg_kpv,
+                             1)      AS arv_alg_kpv,
                    make_date(date_part('year', kp.lopp_kpv)::INTEGER, date_part('month', kp.lopp_kpv)::INTEGER,
-                             1) AS arv_lopp_kpv
+                             1)      AS arv_lopp_kpv,
+                   ('[' ||
+                    format_date(coalesce(kp.alg_kpv::TEXT, make_date(year(current_date), 01, 01)::TEXT))::TEXT ||
+                    ',' ||
+                    (format_date((kp.lopp_kpv::DATE + CASE
+                                                          WHEN kp.alg_kpv::DATE = kp.lopp_kpv::DATE
+                                                              THEN INTERVAL '1 day'
+                                                          ELSE INTERVAL '0 day' END)::TEXT)::TEXT) ||
+                    ')') ::DATERANGE AS range
+
             FROM (
                      SELECT kpv_start::DATE AS alg_kpv,
                             kpv_end::DATE   AS lopp_kpv) kp
@@ -83,8 +92,16 @@ WITH qry AS (
                    AND exists(SELECT id
                               FROM lapsed.lapse_kaart lk
                               WHERE lk.parentid = v.parentid
-                                AND (lk.properties ->> 'alg_kpv')::DATE <= params.arv_lopp_kpv
-                                AND (lk.properties ->> 'lopp_kpv')::DATE >= params.arv_alg_kpv
+                                AND (params.range && (('[' || ((lk.properties ->> 'alg_kpv')::DATE)::TEXT || ',' ||
+                                                       (CASE
+                                                            WHEN (lk.properties ->> 'alg_kpv')::DATE >=
+                                                                 (lk.properties ->> 'lopp_kpv')::DATE
+                                                                THEN (lk.properties ->> 'alg_kpv')::DATE
+                                                            ELSE (lk.properties ->> 'lopp_kpv')::DATE END)::TEXT ||
+                                                       ')') ::DATERANGE)
+                                  OR ((lk.properties ->> 'alg_kpv')::DATE,
+                                      (lk.properties ->> 'lopp_kpv')::DATE) OVERLAPS
+                                     (params.arv_alg_kpv, params.arv_lopp_kpv))
                                 AND lk.rekvid IN
                                     (SELECT id
                                      FROM ou.rekv rekv
@@ -144,7 +161,7 @@ SELECT soodustus::NUMERIC(12, 2)                    AS soodustus,
            WHEN lapsed_peres >= 3 THEN '100'
            ELSE '' END::TEXT                        AS percent,
        CASE
-           WHEN coalesce(lapsed_peres,0) < 2 AND arv_percent > 0 THEN 'Viga, <> 0'
+           WHEN coalesce(lapsed_peres, 0) < 2 AND arv_percent > 0 THEN 'Viga, <> 0'
            WHEN lapsed_peres = 2 AND arv_percent <> 25 THEN 'Viga, <> 25'
            WHEN lapsed_peres > 2 AND arv_percent < 100 THEN 'Viga, < 100'
            ELSE NULL::TEXT
