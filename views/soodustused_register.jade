@@ -43,6 +43,9 @@ block content
         .div {
             margin: 1%;
         }
+        .stat {
+            min-width: 75px;
+        }
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
@@ -107,27 +110,27 @@ block content
                         th Percent&nbsp;
                         th Summa&nbsp;
                         th Summa(322020)&nbsp;
-                        th Summa(322030)&nbsp;
+                        th Summa(322030)&nbsp;&nbsp;&nbsp;
                         th Kokku&nbsp;
 
                 tbody
                     each Soodustus in soodustused
                         tr
                             td
-                            td(align='center')=Soodustus.lapsed
-                            td(align='center')=Soodustus.percent
-                            td(align='right')=Soodustus.soodustus
-                            td(align='right')=Soodustus.soodustus_322020
-                            td(align='right')=Soodustus.soodustus_322030
-                            td(align='right')=Soodustus.soodustus_rea_summa
+                            td.stat(align='center')=Soodustus.lapsed
+                            td.stat(align='center')=Soodustus.percent
+                            td.stat(align='right')=Soodustus.soodustus
+                            td.stat(align='right')=Soodustus.soodustus_322020
+                            td.stat(align='right')=Soodustus.soodustus_322030
+                            td.stat(align='right', margin-left='10px')=Soodustus.soodustus_rea_summa
 
                     tr.group
-                        td(align='right')='Kokku'
-                        td(align='center')=soodustused[0].lapsed_total
-                        td(align='center')
-                        td(align='right')=soodustused[0].soodustus_total
-                        td(align='right')=soodustused[0].soodustus_322020_total
-                        td(align='right')=soodustused[0].soodustus_322030_total
-                        td(align='right')=soodustused[0].soodustus_rea_total
+                        td.stat(align='right')='Kokku'
+                        td.stat(align='center')=soodustused[0].lapsed_total
+                        td.stat(align='center')
+                        td.stat(align='right')=soodustused[0].soodustus_total
+                        td.stat(align='right')=soodustused[0].soodustus_322020_total
+                        td.stat(align='right')=soodustused[0].soodustus_322030_total
+                        td.stat(align='right')=soodustused[0].soodustus_rea_total
 
 
