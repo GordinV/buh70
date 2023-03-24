@@ -4,20 +4,20 @@ DROP FUNCTION IF EXISTS palk.sp_calc_arv(INTEGER, params JSON);
 
 CREATE OR
     REPLACE FUNCTION palk.sp_calc_arv(IN user_id INTEGER, IN params JSON,
-                                       OUT selg TEXT,
-                                       OUT tki NUMERIC,
-                                       OUT tka NUMERIC,
-                                       OUT tm NUMERIC,
-                                       OUT tm_kokku NUMERIC,
-                                       OUT pm NUMERIC,
-                                       OUT sm NUMERIC,
-                                       OUT summa NUMERIC,
-                                       OUT mvt NUMERIC(14, 4),
-                                       OUT mvt_kokku NUMERIC(14, 4),
-                                       OUT error_code INTEGER,
-                                       OUT result INTEGER,
-                                       OUT error_message TEXT,
-                                       OUT data JSONB)
+                                      OUT selg TEXT,
+                                      OUT tki NUMERIC,
+                                      OUT tka NUMERIC,
+                                      OUT tm NUMERIC,
+                                      OUT tm_kokku NUMERIC,
+                                      OUT pm NUMERIC,
+                                      OUT sm NUMERIC,
+                                      OUT summa NUMERIC,
+                                      OUT mvt NUMERIC(14, 4),
+                                      OUT mvt_kokku NUMERIC(14, 4),
+                                      OUT error_code INTEGER,
+                                      OUT result INTEGER,
+                                      OUT error_message TEXT,
+                                      OUT data JSONB)
     LANGUAGE plpgsql
 AS
 $$
@@ -230,7 +230,7 @@ BEGIN
 
                 -- кол-во часов отработанных + если неполный отработанный месяц и указан месячный оклад, то добавляем считаем по дням, для полного дня (не переработка)
                 -- поправил 01.03.2023, ошибка для J. Belova
-                IF l_tund = 1 and l_tunnid_kokku < l_hours AND l_kuupalk > 0
+                IF l_tund = 1 AND l_tunnid_kokku < l_hours AND l_kuupalk > 0
                 THEN
                     l_work_days = palk.get_work_days(l_params :: JSON);
 
@@ -340,10 +340,10 @@ BEGIN
 
         IF (l_mvt_kokku > 0)
         THEN
-            SELECT sum(po.tulubaas)                                        AS isiku_tulubaas,
+            SELECT sum(po.tulubaas)                                   AS isiku_tulubaas,
                    sum(po.tulubaas)
-                   FILTER (WHERE po.tululiik :: TEXT = l_tululiik :: TEXT) AS kasutatud_mvt,
-                   sum(po.summa)                                           AS tulud_kokku,
+                   FILTER (WHERE po.tululiik :: TEXT IN (l_tululiik)) AS kasutatud_mvt,
+                   sum(po.summa)                                      AS tulud_kokku,
                    array_agg(po.id)
             INTO l_isiku_mvt, l_kasutatud_mvt, l_tulud_kokku, doc_ids
             FROM (SELECT p.summa,
@@ -382,11 +382,13 @@ BEGIN
 
 
             -- если пенсионер, то не уменьшаем его необлагаемый миниум
+            RAISE NOTICE 'l_alus_summa %, l_lepingid %, l_libId %, l_isik_id %, l_tululiik %',l_alus_summa, l_lepingid, l_libId, l_isik_id, l_tululiik;
+            RAISE NOTICE 'l_isiku_mvt %, l_kasutatud_mvt %, l_tulud_kokku %',l_isiku_mvt, l_kasutatud_mvt, l_tulud_kokku;
 
             IF palk.kas_soodustus_mvt(l_isikukood, l_kpv)
             THEN
-                l_kasutatud_mvt = 0;
-                l_used_mvt = NULL;
+                --                l_kasutatud_mvt = 0;
+--                l_used_mvt = NULL;
                 kas_pensionar = TRUE;
             END IF;
 
@@ -406,12 +408,15 @@ BEGIN
         IF (l_tulud_kokku < l_min_palk)
         THEN
             mvt = coalesce(l_tulud_kokku, 0) - coalesce(pm, 0) - coalesce(tki, 0);
+            RAISE NOTICE 'umar korr, mvt arv prev mvt %, l_mvt_kokku %',mvt, l_mvt_kokku;
             IF mvt > l_mvt_kokku
             THEN
-                mvt = l_mvt_kokku;
+                -- поправка 24.03 на случай расчет с больничным листом
+                mvt = CASE
+                          WHEN COALESCE(l_kasutatud_mvt, 0) > 0 AND l_kasutatud_mvt < l_mvt_kokku THEN l_kasutatud_mvt
+                          ELSE l_mvt_kokku END;
             END IF;
         END IF;
-
     ELSE
         -- MVT  arvestus
         IF l_mvt_kokku > 0
@@ -507,5 +512,5 @@ FROM palk.sp_calc_arv_(5419, '{"kpv":"2023-02-28","lepingid":17851,"libid":15339
 
 
 SELECT *
-FROM palk.sp_calc_arv_(5419, '{"kpv":"2023-05-31","lepingid":18173,"libid":147086}' :: JSON);
+FROM palk.sp_calc_arv(5439, '{"kpv":"2023-03-31","lepingid":30183,"libid":138396,"kas_min_sots":false}' :: JSON);
 */

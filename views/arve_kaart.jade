@@ -12,6 +12,7 @@ style(type='text/css').
     .grid_data {
         width: 100%;
         border: 1px solid lightgray;
+        font-weight:normal;
     }
     .row_wrapper {
         display:-webkit-box;
@@ -32,9 +33,7 @@ style(type='text/css').
     }
     .label_subtotal_arve {
         width:15em;
-        margin-right: 10%;
         text-align: right;
-        margin-left: -15%;
 
     }
 
@@ -51,6 +50,7 @@ style(type='text/css').
     .kokku {
         font-weight: bold;
         margin-left: 10%;
+        min-width: min-content;
     }
     .align_right {
         text-align: end;
@@ -59,13 +59,11 @@ style(type='text/css').
         margin-left: auto;
     }
     .doc_footer {
-        display: grid
+        display: grid;
+        grid-auto-rows: 30px;
     }
-    .space {
-        width: 10px
-    }
-    .backspace {
-        margin-left: -5%;
+    .div {
+        line-height:1;
     }
 //extends report_header
 
@@ -73,97 +71,98 @@ block content
     link(rel='stylesheet', href='/stylesheets/reports.css')
     meta(charset='UTF-8')
     -var User = user ? user : {asutus: ''};
-    div.row_wrapper
-        p.label Asutus:
-        p.input #{User.asutus}, reg.kood: #{User.regkood}
-    div.row_wrapper
-        p.label Aadress:
-        p.input #{User.aadress}
-    div.row_wrapper
-        p.label Telefon:
-        p.input #{User.tel}
-    div.row_wrapper
-        p.label E-post:
-        p.input #{User.email}
-
-    div.row_wrapper
-        p.label Raha saaja:
-        p.input #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
-    div.row_wrapper
-        p.label Maksta arvele:
-        p.input #{data[0].arved}
-
-    h3
-        p #{`${data[0].tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
-
+    div.div
         div.row_wrapper
-            p.label Number:
-            p.input #{data[0].number}
-
-        div.row_wrapper
-            p.label Kuupäev:
-            p.input #{data[0].kpv_print}
-        div.row_wrapper
-            p.label Viitenumber:
-            p.input #{data[0].viitenr}
-        div.row_wrapper
-            p.label Tähtaeg:
-            p.input #{data[0].tahtaeg_print}
-        div.row_wrapper
-            p.label Maksja:
-            p.input #{`${data[0].asutus.trim()} isikukood/reg.kood: ${data[0].regkood}`}
-        div.row_wrapper
-            p.label Teenuse saaja:
-            p.input #{`${data[0].lapse_nimi.trim()}, isikukood: ${data[0].isikukood}`}
+            p.label Asutus:
+            p.input #{User.asutus}, reg.kood: #{User.regkood}
         div.row_wrapper
             p.label Aadress:
-            p.input #{`${data[0].aadress}`}
+            p.input #{User.aadress}
+        div.row_wrapper
+            p.label Telefon:
+            p.input #{User.tel}
+        div.row_wrapper
+            p.label E-post:
+            p.input #{User.email}
 
         div.row_wrapper
-            p.label Lisa:
-            p.input #{`${data[0].lisa ? data[0].lisa: ''}`}
-
+            p.label Raha saaja:
+            p.input #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
         div.row_wrapper
-            p.label Märkused :
-            p.input #{`${data[0].muud ? data[0].muud : ''}`}
+            p.label Maksta arvele:
+            p.input #{data[0].arved}
 
-        table.table.table-hover.grid_data
-            thead.grid_head
-                tr
-                    th Teenuse nimetus
-                    th Hind
-                    th Soodustus
-                    th Hind soodustusega
-                    th Ühik
-                    th Kogus
-                    th Rea summa
+        h3
+            p #{`${data[0].tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
 
-            tbody
-                each row in data.details
-                    tr
-                        td=(row.markused)
-                        td(align='center')=Number(row.tais_hind,2).toFixed(2)
-                        td(align='center')=Number(row.soodustus).toFixed(4)
-                        td(align='center')=(Number(row.tais_hind,2) - Number(row.soodustus)).toFixed(4)
-                        td(align='center')=row.uhik
-                        td(align='center')=row.kogus
-                        td(align='center')=Number(row.summa).toFixed(2)
-       h3
-        div.doc_footer
-            div.row_wrapper.align_right
-                p.label_subtotal_arve Kokku:
-                    p.kokku.input_subtotal_arve #{`${Number(data[0].summa).toFixed(2)}`}
-            div.row_wrapper.align_right
-                p.label_subtotal_arve Seisuga #{`${data[0].period_alg_print.trim()}`} jääk:
-                    p.kokku.input_subtotal_arve #{`${Number(data[0].alg_jaak).toFixed(2)}`}
-            div.row_wrapper.align_right
-                p.label_subtotal_arve Laekumised periodis #{`${data[0].laekumise_period}`}:
-                    p.kokku.input_subtotal_arve #{`${Number(data[0].laekumised).toFixed(2)}`}
-            div.row_wrapper.align_right
-                p.label_subtotal_arve Seisuga #{`${data[0].kpv_print}`} tasumisele:
-                    p.kokku.input_subtotal_arve #{`${Number(data[0].lopp_jaak).toFixed(2)}`}
-            br
             div.row_wrapper
-                p.label_subtotal Arve koostaja: #{`${data[0].koostaja}`}
+                p.label Number:
+                p.input #{data[0].number}
+
+
+            div.row_wrapper
+                p.label Kuupäev:
+                p.input #{data[0].kpv_print}
+            div.row_wrapper
+                p.label Viitenumber:
+                p.input #{data[0].viitenr}
+            div.row_wrapper
+                p.label Tähtaeg:
+                p.input #{data[0].tahtaeg_print}
+            div.row_wrapper
+                p.label Maksja:
+                p.input #{`${data[0].asutus.trim()} isikukood/reg.kood: ${data[0].regkood}`}
+            div.row_wrapper
+                p.label Teenuse saaja:
+                p.input #{`${data[0].lapse_nimi.trim()}, isikukood: ${data[0].isikukood}`}
+            div.row_wrapper
+                p.label Aadress:
+                p.input #{`${data[0].aadress}`}
+
+            div.row_wrapper
+                p.label Lisa:
+                p.input #{`${data[0].lisa ? data[0].lisa: ''}`}
+
+            div.row_wrapper
+                p.label Märkused :
+                p.input #{`${data[0].muud ? data[0].muud : ''}`}
+
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Teenuse nimetus
+                        th Hind
+                        th Soodustus
+                        th Hind soodustusega
+                        th Ühik
+                        th Kogus
+                        th Rea summa
+
+                tbody
+                    each row in data.details
+                        tr
+                            td=(row.markused)
+                            td(align='center')=Number(row.tais_hind,2).toFixed(2)
+                            td(align='center')=Number(row.soodustus).toFixed(4)
+                            td(align='center')=(Number(row.tais_hind,2) - Number(row.soodustus)).toFixed(4)
+                            td(align='center')=row.uhik
+                            td(align='center')=row.kogus
+                            td(align='center')=Number(row.summa).toFixed(2)
+
+            div.doc_footer.div
+                div.row_wrapper.align_right
+                    p.label_subtotal_arve Kokku:
+                        p.kokku.input_subtotal_arve #{`${Number(data[0].summa).toFixed(2)}`}
+                div.row_wrapper.align_right
+                    p.label_subtotal_arve Seisuga #{`${data[0].period_alg_print.trim()}`} jääk:
+                        p.kokku.input_subtotal_arve #{`${Number(data[0].alg_jaak).toFixed(2)}`}
+                div.row_wrapper.align_right
+                    p.label_subtotal_arve Laekumised periodis #{`${data[0].laekumise_period}`}:
+                        p.kokku.input_subtotal_arve #{`${Number(data[0].laekumised).toFixed(2)}`}
+                div.row_wrapper.align_right
+                    p.label_subtotal_arve Seisuga #{`${data[0].kpv_print}`} tasumisele:
+                        p.kokku.input_subtotal_arve #{`${Number(data[0].lopp_jaak).toFixed(2)}`}
+                br
+    p Küsimuste korral palun pöörduge asutuste esindaja poole
 
 

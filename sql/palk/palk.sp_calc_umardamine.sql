@@ -171,6 +171,7 @@ BEGIN
                          ) row;
 
                     -- вызов процедура расчета
+
                     SELECT *
                     FROM palk.sp_calc_arv(user_id, l_params)
                     INTO STRICT v_arv;
@@ -215,15 +216,6 @@ BEGIN
                       AND po.period IS NULL
                       AND po.rekvId = l_rekvid
                       AND po.palk_liik = 'ARVESTUSED';
-
-                    -- закоментировал 04.03.2022 так как дает ошибку при разных видах дохода
-
-/*                    IF coalesce(v_arv.tm, 0) = 0 AND coalesce(v_arv.tm_kokku, 0) > 0 AND v_tululiik.tululiik = '10'
-                    THEN
-                        -- если налог по виду дохода 0, но общий более нуля
-                        v_arv.tm = v_arv.tm_kokku;
-                    END IF;
-*/
 
                     -- check if we need to round taxes
                     IF coalesce(v_arv.tm, 0) - round(coalesce(v_fakt_arv.tm, 0), 2) <> 0 OR

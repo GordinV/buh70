@@ -53,13 +53,15 @@ block content
                     th Aadress
                     th E-mail
                     th Tel.
+                    th Esita arveid
 
             tbody
                 each vanem in data
                     tr
-                        td=vanem.isikukood
-                        td=vanem.nimi
-                        td=vanem.lapsed
-                        td=vanem.aadress
-                        td=vanem.email
-                        td=vanem.tel
+                        td(align='center')=vanem.isikukood
+                        td(align='center')=vanem.nimi
+                        td(align='center')=vanem.lapsed
+                        td(align='center')=vanem.aadress
+                        td(align='center')=vanem.email
+                        td(align='center')=vanem.tel
+                        td(align='center')=vanem.printimine

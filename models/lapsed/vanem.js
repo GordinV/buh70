@@ -119,9 +119,10 @@ module.exports = {
         gridConfiguration: [
             {id: "id", name: "id", width: "1%", show: false},
             {id: "row_id", name: "Jrk", width: "3%", show: true, hideFilter: true},
-            {id: "isikukood", name: "Isikukood", width: "20%"},
-            {id: "nimi", name: "Nimi", width: "25%"},
+            {id: "isikukood", name: "Isikukood", width: "10%"},
+            {id: "nimi", name: "Nimi", width: "20%"},
             {id: "email", name: "E-mail", width: "15%"},
+            {id: "printimine", name: "Arved esita", width: "10%"},
             {id: "lapsed", name: "Lapsed", width: "25%"}
         ],
         sqlString: `SELECT id,
@@ -131,6 +132,7 @@ module.exports = {
                            aadress,
                            email,
                            tel,
+                           printimine, 
                            $1::INTEGER      AS rekvid,
                            $2::INTEGER      AS user_id,
                            count(*) OVER () AS rows_total

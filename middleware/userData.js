@@ -41,9 +41,12 @@ const userData = async function (req, _uuid) {
         users: []
     };
 
+    let uuidUser;
+
     if (userIndex < 0) {
         // потеряли хеш
-        let uuidUser = await Userid.getUserByUuid(uuid);
+        uuidUser = await Userid.getUserByUuid(uuid);
+
         if (uuidUser && uuidUser.data && uuidUser.data.length) {
             sqlUser.userId = uuidUser.data[0].userid;
             sqlUser.asutusId = uuidUser.data[0].asutusid;
@@ -86,6 +89,9 @@ const userData = async function (req, _uuid) {
         roles: userIndex > -1 && UserContext.users && UserContext.users.length && UserContext.users[userIndex].roles ? UserContext.users[userIndex].roles: sqlUser.user_data.roles
     }, userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex] : {});
 
+    if (!user.asutusTais) {
+        user.asutusTais = sqlUser.asutus_tais;
+    }
     return user;
 };
 

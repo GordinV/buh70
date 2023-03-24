@@ -4,9 +4,16 @@ html(lang="et")
 block content
     link(rel='stylesheet', href='/stylesheets/emails.css')
     meta(charset='UTF-8')
+    -var User = user ? user : {asutus: '',asutusTais: '' };
+    -var Doc = doc ? doc : {laekumise_period: ''};
 
     div.body_wrapper
-        h1
-            p Email tekst
+        h3
+            p Austatud maksja!
+            br
+            p Teile on saabunud arve #{User.asutusTais} osutatud teenuste eest perioodis #{Doc.laekumise_period}.
+            br
+            p Küsimuste korral palun pöörduge esmalt #{User.asutusTais} esindaja poole.
+
 
 

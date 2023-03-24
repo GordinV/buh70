@@ -876,6 +876,7 @@ BEGIN
                             get_saldo('KD', '658', NULL, NULL) -
                             get_saldo('KD', '658950', NULL, NULL) -
                             get_saldo('KD', '652000', NULL, NULL) -
+                            get_saldo('KD', '652030', NULL, NULL) -
                             get_saldo('KD', '655400', NULL, NULL)                  AS saldoandmik
 -- KD652+KD655+KD658-KD658950
 
