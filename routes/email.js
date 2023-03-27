@@ -69,173 +69,191 @@ exports.post = async (req, res) => {
         return res.send({status: 200, result: null, error_message: `Valitud lapsed ei leidnud`});
     }
 
-    // создать объект
-    const emailDoc = new Doc(params.docTypeId, null, user.userId, user.asutusId, module);
+    try {
+        // создать объект
+        const emailDoc = new Doc(params.docTypeId, null, user.userId, user.asutusId, module);
 
-    if (!UserConfig.email) {
-        await getConfigData(user);
-    }
-
-    const printTemplates = emailDoc.config.print;
-    const emailTemplates = emailDoc.config.email ? emailDoc.config.email: '';
-
-    if (!printTemplates) {
-        // нет документов для отправки
-        return res.send({status: 500, result: null, error_message: `Templates ei leidnud`});
-    }
-    let template = null,
-        emailHtml = null,
-        attachment,
-        docNumber = '',
-        receiverEmail,
-        emailTemplate = null;
-    let printHtml = null;
-
-    const templateObject = printTemplates.find(templ => templ.params === (id ? 'id' : 'sqlWhere'));
-    template = templateObject.view;
-
-    // create reusable transporter object using the default SMTP transport
-    let transporter = nodemailer.createTransport({
-        host: UserConfig['email'].smtp,
-        port: UserConfig['email'].port,
-        secure: UserConfig['email'].port == 465 ? true : false, // true for 465, false for other ports
-        auth: {
-            user: UserConfig['email'].user,
-            pass: UserConfig['email'].pass
-
+        if (!UserConfig.email) {
+            await getConfigData(user);
         }
-    });
 
-    // выборка данных
-    // делаем массив промисов
-    const dataPromises = ids.map(id => {
-        return new Promise(resolve => {
-            emailDoc.setDocumentId(id);
-            resolve(emailDoc['select'](emailDoc.config));
-        })
-    });
+        const printTemplates = emailDoc.config.print;
+        const emailTemplates = emailDoc.config.email ? emailDoc.config.email : '';
 
-    // решаем их
-    const selectedDocs = [];
-    let promiseSelectResult = await Promise.all(dataPromises).then((result) => {
+        if (!printTemplates) {
+            // нет документов для отправки
+            return res.send({status: 500, result: null, error_message: `Templates ei leidnud`});
+        }
+        let template = null,
+            emailHtml = null,
+            attachment,
+            docNumber = '',
+            receiverEmail,
+            emailTemplate = null;
+        let printHtml = null;
 
-        // убираем из получателей тех, у кого нет адреса
-        result.forEach(arve => {
-            if (arve.row[0].email) {
-                selectedDocs.push({...arve.row[0], details: result[0].details});
+        const templateObject = printTemplates.find(templ => templ.params === (id ? 'id' : 'sqlWhere'));
+        template = templateObject.view;
+
+        // create reusable transporter object using the default SMTP transport
+        let transporter = nodemailer.createTransport({
+            host: UserConfig['email'].smtp,
+            port: UserConfig['email'].port,
+            secure: UserConfig['email'].port == 465 ? true : false, // true for 465, false for other ports
+            auth: {
+                user: UserConfig['email'].user,
+                pass: UserConfig['email'].pass
+            },
+            tls: {
+                rejectUnauthorized: false
             }
-        })
-
-    }).catch((err) => {
-        console.error('catched error->', err);
-        return res.send({status: 500, result: null, error_message: err});
-    });
-
-    // делаем массив промисов отправки почты
-    const emailPromises = selectedDocs.map(async arve => {
-        // вернуть отчет
-        docNumber = arve.number ? arve.number : null;
-        receiverEmail = arve.email ? arve.email : null;
-
-        let renderForm = 'arve_kaartid';
-        switch (params.docTypeId) {
-            case 'ARV':
-                renderForm = 'arve_kaartid';
-                break;
-            case 'TEATIS':
-                renderForm = 'teatis_kaartid';
-                break;
-        }
-        res.render(renderForm, {data: [arve], user: user}, (err, html) => {
-            printHtml = html;
         });
 
-        const emailTemplateObject = emailTemplates.find(templ => templ.params === 'id');
-        emailTemplate = emailTemplateObject.view;
+        // выборка данных
+        // делаем массив промисов
+        const dataPromises = ids.map(id => {
+            return new Promise(resolve => {
+                emailDoc.setDocumentId(id);
+                resolve(emailDoc['select'](emailDoc.config));
+                setTimeout(5);
+            })
+        });
 
-        if (emailTemplate) {
-            res.render(emailTemplate, {user: user, doc: arve}, (err, html) => {
-                emailHtml = html;
+        // решаем их
+        const selectedDocs = [];
+        let promiseSelectResult = await Promise.all(dataPromises).then((result) => {
+
+            // убираем из получателей тех, у кого нет адреса
+            result.forEach(arve => {
+                if (arve.row[0].email) {
+                    selectedDocs.push({...arve.row[0], details: result[0].details});
+                }
+            })
+
+        }).catch((err) => {
+            console.error('catched error->', err);
+            return res.send({status: 500, result: null, error_message: err});
+        });
+
+        // делаем массив промисов отправки почты
+        const emailPromises = selectedDocs.map(async arve => {
+            // вернуть отчет
+            docNumber = arve.number ? arve.number : null;
+            receiverEmail = arve.email ? arve.email : null;
+
+            let renderForm = 'arve_kaartid';
+            switch (params.docTypeId) {
+                case 'ARV':
+                    renderForm = 'arve_kaartid';
+                    break;
+                case 'TEATIS':
+                    renderForm = 'teatis_kaartid';
+                    break;
+            }
+            res.render(renderForm, {data: [arve], user: user}, (err, html) => {
+                printHtml = html;
             });
-        }
 
-        //attachment
-        let filePDF = await createPDF(printHtml, `doc_${arve.id}`);
-        if (!filePDF) {
-            // error in PDF create
-            throw new Error('PDF faili viga');
-        }
+            const emailTemplateObject = emailTemplates.find(templ => templ.params === 'id');
+            emailTemplate = emailTemplateObject.view;
 
-        // sending email
-        // send mail with defined transport object
-        return new Promise((resolve, reject) => {
-            transporter.sendMail({
-                    from: `"${user.userName}" <${UserConfig['email'].email}>`, //`${user.userName} <${config['email'].email}>`, // sender address
-                    to: `${receiverEmail}`, // (, baz@example.com) list of receivers
-                    subject: `Saadan dokument nr. ${arve.number}`, // Subject line
-                    text: 'Automaat e-mail', // plain text body
-                    html: emailHtml, // html body
-                    attachments: [
-                        // String attachment
-                        {
-                            filename: `doc.pdf`,
-                            content: 'Dokument ',
-                            path: filePDF
-                        }]
+            if (emailTemplate) {
+                res.render(emailTemplate, {user: user, doc: arve}, (err, html) => {
+                    emailHtml = html;
+                });
+            }
 
-                }, async (err, info) => {
-                    if (err) {
-                        return reject(err);
-                    } else {
-                        result++;
+            //attachment
+            let filePDF = await createPDF(printHtml, `doc_${arve.id}`);
+            if (!filePDF) {
+                // error in PDF create
+                throw new Error('PDF faili viga');
+            }
 
-                        // удаляем файл
+            // sending email
+            // send mail with defined transport object
+            return new Promise((resolve, reject) => {
+                transporter.sendMail({
+                        from: `"${user.userName}" <${UserConfig['email'].email}>`, //`${user.userName} <${config['email'].email}>`, // sender address
+                        to: `${receiverEmail}`, // (, baz@example.com) list of receivers
+                        subject: `Saadan dokument nr. ${arve.number}`, // Subject line
+                        text: 'Automaat e-mail', // plain text body
+                        html: emailHtml, // html body
+                        attachments: [
+                            // String attachment
+                            {
+                                filename: `doc.pdf`,
+                                content: 'Dokument ',
+                                path: filePDF
+                            }]
 
-                        await fs.unlink(filePDF, (err, data) => {
-                            if (err) {
-                                return reject(err);
+                    }, async (err, info) => {
+                        if (err) {
+                            console.error('email error', err);
+                            if (emailTemplateObject.register_error) {
+                                // если есть метод регистрации, отметим email
+                                let sql = emailTemplateObject.register_error,
+                                    params = [arve.id, user.userId, err];
+
+                                if (sql) {
+                                    db.queryDb(sql, params);
+                                }
                             }
-                        });
 
-                        // register emailing event
+                            return reject(err);
+                        } else {
+                            result++;
 
-                        if (emailTemplateObject.register) {
-                            // если есть метод регистрации, отметим email
-                            let sql = emailTemplateObject.register,
-                                params = [arve.id, user.userId];
+                            // удаляем файл
 
-                            if (sql) {
-                                db.queryDb(sql, params);
+                            await fs.unlink(filePDF, (err, data) => {
+                                if (err) {
+                                    return reject(err);
+                                }
+                            });
+
+                            // register emailing event
+
+                            if (emailTemplateObject.register) {
+                                // если есть метод регистрации, отметим email
+                                let sql = emailTemplateObject.register,
+                                    params = [arve.id, user.userId];
+
+                                if (sql) {
+                                    db.queryDb(sql, params);
+                                }
                             }
+
+
+                            return resolve(arve.id);
                         }
 
-
-                        return resolve(arve.id);
                     }
-
-                }
-            );
+                );
+            });
         });
-    });
 
-    // решаем их
+        // решаем их
 
-    let promiseEmailResult = await Promise.all(emailPromises).catch((err) => {
-        console.error('promiseEmailResult', err);
-        return res.send({status: 500, result: null, error_message: err});
-    });
+        let promiseEmailResult = await Promise.all(emailPromises).catch((err) => {
+            return res.send({status: 500, result: null, error_message: err});
+        });
 
-    //ответ
-    res.send({
-        status: 200, result: result, data: {
-            action: 'email',
-            result: {
-                error_code: 0,
-                error_message: null,
-            },
-            data: result
-        }
-    });
+        //ответ
+        res.send({
+            status: 200, result: result, data: {
+                action: 'email',
+                result: {
+                    error_code: 0,
+                    error_message: null,
+                },
+                data: result
+            }
+        });
+    } catch (e) {
+        console.error('error:', error); // @todo Обработка ошибок
+        res.send({status: 500, result: 'Error'});
+    }
 
 
 };
@@ -483,7 +501,7 @@ exports.sendPrintForm = async (req, res) => {
 
     if (!UserConfig['email'].smtp || !UserConfig['email'].port || !UserConfig['email'].user || !UserConfig['email'].pass) {
         let errorInfo = 'Puudub e-maili kasutaja andmed';
-        console.error(errorInfo,UserConfig['email']);
+        console.error(errorInfo, UserConfig['email']);
         return res.send({status: 500, result: null, error_message: errorInfo});
     }
 
@@ -491,7 +509,7 @@ exports.sendPrintForm = async (req, res) => {
     let transporter = nodemailer.createTransport({
         host: UserConfig['email'].smtp,
         port: UserConfig['email'].port,
-        secure: UserConfig['email'].port == 465  ? true : false, // true for 465, false for other ports
+        secure: UserConfig['email'].port == 465 ? true : false, // true for 465, false for other ports
         auth: {
             user: UserConfig['email'].user,
             pass: UserConfig['email'].pass
