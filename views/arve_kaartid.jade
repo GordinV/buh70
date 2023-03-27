@@ -1,14 +1,9 @@
 <!DOCTYPE html>
 html(lang="et")
+
 style(type='text/css').
     .grid_head {
         background-color: lightgray;;
-    }
-
-    .doc_wrapper {
-        margin-left: 5%;
-        margin-top: 5%;
-        width: auto;
     }
 
     .grid_data {
@@ -22,132 +17,127 @@ style(type='text/css').
         flexDirection: row;
     }
 
-    .row_hr {
-        border-top: 1px solid lightgray;
-    }
-
     .label {
-        width: 10%;
+        width: 20%;
         font-weight: normal;
     }
 
     .input {
-        width: 90%;
+        width: 80%;
         margin-left: 5%;
         font-weight: bold;
-    }
-
-    .label_subtotal {
-        width: 70%;
-    }
-
-    .hr_style {
-        border-top: 1px solid #8c8b8b;
-    }
-
-    .label_subtotal_arve {
-        width: 15em;
-        margin-right: 10%;
-        text-align: right;
-        margin-left: -15%;
-
-    }
-
-    .input_subtotal_arve {
-        width: 2em;
-    }
-
-    .subtotal {
-        padding-left: 20%;
-        width: 90%;
-        margin-left: 5%;
-        font-weight: bold;
-    }
-
-    .kokku {
-        font-weight: bold;
-        margin-left: 10%;
         min-width: min-content;
-    }
-
-    .align_right {
-        text-align: end;
-        float: right;
-        margin-right: 6%;
-        margin-left: auto;
+        text-align: left;
     }
 
     .doc_footer {
-        display: grid;
-        grid-auto-rows: 30px;
+        text-align: right;
     }
     .div {
         line-height:1;
     }
+    .div_column{
+        display: inline-block;
+    }
+    .div_column_left{
+        width: 600px;
+    }
+    .div_column_right{
+        width: 200px;
+    }
 
 
 block content
-    link(rel='stylesheet', href='/stylesheets/reports.css')
     meta(charset='UTF-8')
     div.body_wrapper.div
         -var User = user ? user : {asutus: ''};
-
         each doc in data
             div.row_wrapper
-                p.label Asutus:
-                p.input #{User.asutus}, reg.kood: #{User.regkood}
+                div.label
+                    span Asutus:
+                div.input
+                    span #{User.asutus}
             div.row_wrapper
-                p.label Aadress:
-                p.input #{User.aadress}
+               div.label
+                    span reg.kood:
+                div.input
+                    span #{User.regkood}
             div.row_wrapper
-                p.label Telefon:
-                p.input #{User.tel}
+                div.label
+                    span Aadress:
+                div.input
+                    span #{User.aadress}
             div.row_wrapper
-                p.label E-post:
-                p.input #{User.email}
+                div.label
+                    span Telefon:
+                div.input
+                    span #{User.tel}
             div.row_wrapper
-                p.label Raha saaja:
-                p.input #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
+                div.label
+                    span E-post:
+                div.input
+                    span #{User.email}
             div.row_wrapper
-                p.label Maksta arvele:
-                p.input #{doc.arved}
-
+                div.label
+                    span Raha saaja:
+                div.input
+                    span #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
+            div.row_wrapper
+                div.label
+                    span Maksta arvele:
+                div.input
+                    span #{doc.arved}
             h3
                 p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ' : 'ARVE'}`}
+                div.row_wrapper
+                    div.label
+                        span Number:
+                    div.input
+                        span #{doc.number}
 
                 div.row_wrapper
-                    p.label Number:
-                    p.input #{doc.number}
+                    div.label
+                        span Kuupäev:
+                    div.input
+                        div #{doc.kpv_print}
 
                 div.row_wrapper
-                    p.label Kuupäev:
-                    p.input #{doc.kpv_print}
+                    div.label
+                        span Viitenumber:
+                    div.input
+                        span #{doc.viitenr}
+                div.row_wrapper
+                    div.label
+                        span Tähtaeg:
+                    div.input
+                        span #{doc.tahtaeg_print}
+                div.row_wrapper
+                    div.label
+                        span Maksja:
+                    div.input
+                        span #{`${doc.asutus.trim()} reg.kood: ${doc.regkood}`}
+                div.row_wrapper
+                    div.label
+                        span Teenuse saaja:
+                    div.input
+                        span #{`${doc.lapse_nimi.trim()}, isikukood: ${doc.isikukood}`}
 
                 div.row_wrapper
-                    p.label Viitenumber:
-                    p.input #{doc.viitenr}
+                    div.label
+                        span Aadress:
+                    div.input
+                        span #{`${doc.aadress}`}
 
                 div.row_wrapper
-                    p.label Tähtaeg:
-                    p.input #{doc.tahtaeg_print}
-
+                    div.label
+                        span Lisa:
+                    div.input
+                        span #{`${doc.lisa ? doc.lisa : ''}`}
                 div.row_wrapper
-                    p.label Maksja:
-                    p.input #{`${doc.asutus.trim()} reg.kood: ${doc.regkood}`}
-                div.row_wrapper
-                    p.label Teenuse saaja:
-                    p.input #{`${doc.lapse_nimi.trim()}, isikukood: ${doc.isikukood}`}
-
-                div.row_wrapper
-                    p.label Aadress:
-                    p.input #{`${doc.aadress}`}
-
-                div.row_wrapper
-                    p.label Lisa:
-                    p.input #{`${doc.lisa ? doc.lisa : ''}`}
-                div.row_wrapper
-                    p.label Märkused:
-                    p.input #{`${doc.muud ? doc.muud : ''}`}
+                    div.label
+                        span Märkused:
+                    div.input
+                        span #{`${doc.muud ? doc.muud : ''}`}
 
                 table.table.table-hover.grid_data
                     thead.grid_head
@@ -172,17 +162,25 @@ block content
                                 td(align='center')=Number(row.summa).toFixed(2)
             h3
                 div.doc_footer
-                    div.row_wrapper.align_right
-                        p.label_subtotal_arve Kokku:
-                            p.kokku.input_subtotal_arve #{`${Number(data[0].summa).toFixed(2)}`}
-                    div.row_wrapper.align_right
-                        p.label_subtotal_arve Seisuga #{`${data[0].period_alg_print.trim()}`} jääk:
-                            p.kokku.input_subtotal_arve #{`${Number(data[0].alg_jaak).toFixed(2)}`}
-                    div.row_wrapper.align_right
-                        p.label_subtotal_arve Laekumised periodis #{`${data[0].laekumise_period}`}:
-                            p.kokku.input_subtotal_arve #{`${Number(data[0].laekumised).toFixed(2)}`}
-                    div.row_wrapper.align_right
-                        p.label_subtotal_arve Seisuga #{`${data[0].kpv_print}`} tasumisele:
-                            p.kokku.input_subtotal_arve #{`${Number(data[0].tasumisele).toFixed(2)}`}
+                    div.row_wrapper
+                        div.div_column.div_column_left
+                            span Kokku:
+                        div.div_column.div_column_right
+                            span #{`${Number(data[0].summa).toFixed(2)}`}
+                    div.row_wrapper
+                        div.div_column.div_column_left
+                            span Seisuga #{`${data[0].period_alg_print.trim()}`} jääk:
+                        div.div_column.div_column_right
+                            span #{`${Number(data[0].alg_jaak).toFixed(2)}`}
+                    div.row_wrapper
+                        div.div_column.div_column_left
+                            span Laekumised periodis #{`${data[0].laekumise_period}`}:
+                        div.div_column.div_column_right
+                            span #{`${Number(data[0].laekumised).toFixed(2)}`}
+                    div.row_wrapper
+                        div.div_column.div_column_left
+                            span Seisuga #{`${data[0].kpv_print}`} tasumisele:
+                        div.div_column.div_column_right
+                            span #{`${Number(data[0].tasumisele).toFixed(2)}`}
                     br
         p Küsimuste korral palun pöörduge asutuste esindaja poole
