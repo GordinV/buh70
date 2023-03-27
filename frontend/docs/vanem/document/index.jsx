@@ -81,6 +81,7 @@ class Vanem extends React.PureComponent {
             </div>);
         }
 
+
         let isEditMode = self.state.edited,
             gridLasteData = self.docData.lapsed,
             gridLasteColumns = self.docData.gridConfig;
@@ -96,6 +97,11 @@ class Vanem extends React.PureComponent {
 
         return (
             <div style={styles.doc}>
+                {self.docData && self.docData.asutusid && Boolean(self.docData.kas_email) && !Number(self.docData.email) ? (<div style={styles.docRow}>
+                    <div style={styles.warning}>Puudub e-posti aadress</div>
+                </div>) : null
+                }
+
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
                         <SelectData title="Vanem:"

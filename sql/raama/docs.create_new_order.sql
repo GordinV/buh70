@@ -29,14 +29,16 @@ DECLARE
 BEGIN
 
     -- выборка из "документа"
-    SELECT d.rekvid     AS rekv_id,
+    SELECT d.rekvid              AS rekv_id,
            a.*,
-           isik.nimetus AS nimi,
-           isik.aadress
-           INTO v_arv
+           isik.nimetus          AS nimi,
+           isik.aadress,
+           dp.details ->> 'konto' AS arv_konto
+    INTO v_arv
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
              INNER JOIN libs.asutus isik ON isik.id = a.asutusid
+             LEFT OUTER JOIN libs.dokprop dp ON a.doklausid = dp.id
     WHERE d.id = l_arv_id;
 
     IF l_arv_id IS NULL OR v_arv.id IS NULL OR empty(l_arv_id)
@@ -74,23 +76,25 @@ BEGIN
                   LIMIT 1);
 
     json_korder1 = array_to_json((SELECT array_agg(row_to_json(m1.*))
-                                  FROM (SELECT 0          AS id,
+                                  FROM (SELECT 0               AS id,
                                                (SELECT id
                                                 FROM libs.nomenklatuur n
                                                 WHERE rekvid = v_arv.rekvid
                                                   AND dok IN (l_dok)
-                                                ORDER BY id DESC
-                                                LIMIT 1)  AS nomid,
+                                                  AND status < 3
+                                                ORDER BY CASE WHEN kood = 'SORDER' THEN 0 ELSE 1 END, id DESC
+                                                LIMIT 1)       AS nomid,
                                                a1.kood1,
                                                a1.kood2,
                                                a1.kood3,
                                                a1.kood4,
                                                a1.kood5,
-                                               a1.konto,
+--                                               a1.konto,
+                                               v_arv.arv_konto AS konto,
                                                a1.tp,
                                                a1.tunnus,
                                                a1.proj,
-                                               v_arv.jaak AS summa
+                                               v_arv.jaak      AS summa
                                         FROM docs.arv1 a1
                                         WHERE a1.parentid = v_arv.id
                                         ORDER BY kood5, kood2 DESC, kood1 DESC
@@ -115,9 +119,10 @@ BEGIN
            NULL           AS muud,
            l_laps_id      AS lapsid,
            json_korder1   AS "gridData"
-           INTO v_params;
+    INTO v_params;
 
-    SELECT row_to_json(row) INTO json_object
+    SELECT row_to_json(row)
+    INTO json_object
     FROM (SELECT 0        AS id,
                  v_params AS data) row;
 

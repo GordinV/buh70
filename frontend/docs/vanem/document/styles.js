@@ -54,6 +54,11 @@ module.exports = {
 
     pank: {
         width: '30%'
+    },
+    warning: {
+        backgroundColor: 'lightcoral',
+        width: '100%',
+        textAlign: 'left'
     }
 
 

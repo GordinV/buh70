@@ -154,7 +154,7 @@ exports.post = async (req, res) => {
         emailTemplate = emailTemplateObject.view;
 
         if (emailTemplate) {
-            res.render(emailTemplate, {user: user}, (err, html) => {
+            res.render(emailTemplate, {user: user, doc: arve}, (err, html) => {
                 emailHtml = html;
             });
         }

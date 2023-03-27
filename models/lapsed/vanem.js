@@ -4,6 +4,7 @@ module.exports = {
                         a.nimetus                               AS nimi,
                         a.regkood                               AS isikukood,
                         $1::INTEGER                             AS rekvid,
+                        a.email                                 AS email,
                         NULL::DATE                              AS valid,
                         lk.parentid,
                         lapsed.get_viitenumber($1, lk.parentid) AS viitenr
@@ -11,8 +12,10 @@ module.exports = {
                  INNER JOIN libs.asutus a ON a.id = v.asutusid
                  INNER JOIN (SELECT DISTINCT parentid, rekvid
                              FROM lapsed.lapse_kaart lk
-                             WHERE rekvid = $1 AND staatus <> 3) lk ON lk.parentid = v.parentid
-        WHERE a.staatus <> 3 and v.staatus <> 3`,
+                             WHERE rekvid = $1
+                               AND staatus <> 3) lk ON lk.parentid = v.parentid
+        WHERE a.staatus <> 3
+          AND v.staatus <> 3`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},
@@ -79,7 +82,7 @@ module.exports = {
                   FROM lapsed.laps l
                            INNER JOIN lapsed.vanemad v ON l.id = v.parentid
                   WHERE l.staatus < 3
-                    and v.staatus < 3
+                    AND v.staatus < 3
                     AND v.asutusid IN (SELECT asutusid
                                        FROM lapsed.vanemad
                                        WHERE id = $1)`,
@@ -132,7 +135,7 @@ module.exports = {
                            aadress,
                            email,
                            tel,
-                           printimine, 
+                           printimine,
                            $1::INTEGER      AS rekvid,
                            $2::INTEGER      AS user_id,
                            count(*) OVER () AS rows_total
