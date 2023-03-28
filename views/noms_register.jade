@@ -53,13 +53,17 @@ block content
                     th Konto
                     th Tunnus
                     th Hind
+                    th Tüüp
+                    th Koolituse liik
 
             tbody
                 each nom in data
                     tr
-                        td=nom.kood
+                        td(align="center")=nom.kood
                         td=nom.nimetus
-                        td=nom.dok
-                        td=nom.konto
-                        td=nom.tunnus
-                        td=nom.hind
+                        td(align="center")=nom.dok
+                        td(align="center")=nom.konto
+                        td(align="center")=nom.tunnus
+                        td(align="right")=nom.hind
+                        td(align="center")=nom.tyyp
+                        td(align="center")=nom.liik

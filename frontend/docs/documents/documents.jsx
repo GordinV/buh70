@@ -787,7 +787,7 @@ class Documents extends React.Component {
                 console.error('fetch error', error);
                 // Something happened in setting up the request that triggered an Error
                 this.setState({
-                    warning: `Tekkis viga ${error}`,
+                    warning: `Tekkis viga ${JSON.stringify(error)}`,
                     warningType: 'error'
                 });
                 return rejected(error);

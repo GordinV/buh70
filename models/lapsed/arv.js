@@ -829,7 +829,14 @@ const Arv = {
                                      (SELECT row_to_json(row)
                                       FROM (SELECT now()                                                AS email,
                                                    (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                       WHERE id = $1`,
+            register_error: `UPDATE docs.doc
+                       SET history = history ||
+                                     (SELECT row_to_json(row)
+                                      FROM (SELECT now()                                                AS email_viga,
+                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
                        WHERE id = $1`
+
         }
     ],
     earve: [

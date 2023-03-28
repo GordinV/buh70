@@ -111,19 +111,21 @@ module.exports = {
             {id: "id", name: "id", width: "0%", show: false},
             {id: "kood", name: "Kood", width: "25%"},
             {id: "nimetus", name: "Nimetus", width: "40%"},
-            {id: "dok", name: "Dokument", width: "25%"},
-            {id: "tyyp", name: "Tüüp", width: "10%"}
+            {id: "dok", name: "Dokument", width: "15%"},
+            {id: "tyyp", name: "Tüüp", width: "10%"},
+            {id: "liik", name: "Koolituse liik", width: "10%"},
         ],
         sqlString: `SELECT id,
-                           coalesce(kood, '')::VARCHAR(20)     AS kood,
-                           coalesce(nimetus, '')::VARCHAR(254) AS nimetus,
-                           $2::INTEGER                         AS userId,
+                           coalesce(kood, '')::VARCHAR(20)      AS kood,
+                           coalesce(nimetus, '')::VARCHAR(254)  AS nimetus,
+                           $2::INTEGER                          AS userId,
                            n.dok,
-                           (n.properties ->> 'konto')::TEXT    AS konto,
-                           (n.properties ->> 'tunnus')::TEXT   AS tunnus,
+                           (n.properties ->> 'konto')::TEXT     AS konto,
+                           (n.properties ->> 'tunnus')::TEXT    AS tunnus,
                            n.hind,
-                           (n.properties ->> 'tyyp')::TEXT     AS tyyp,
-                           (n.properties ->> 'valid')::DATE    AS valid
+                           (n.properties ->> 'tyyp')::TEXT      AS tyyp,
+                           (n.properties ->> 'oppe_tyyp')::TEXT AS liik,
+                           (n.properties ->> 'valid')::DATE     AS valid
                     FROM libs.nomenklatuur n
                     WHERE (n.rekvId = $1 OR n.rekvid IS NULL)
                       AND n.status <> 3`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя

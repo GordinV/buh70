@@ -121,6 +121,7 @@ module.exports = {
             {id: "uhik", name: "Mõttühik", width: "10%"},
             {id: "dok", name: "Dokument", width: "10%"},
             {id: "tyyp", name: "Tüüp", width: "10%"},
+            {id: "liik", name: "Koolituse liik", width: "10%"},
             {id: "valid", name: "Kehtivus", width: "0%", type: 'date', show: false},
         ],
         sqlString: `SELECT id,
@@ -133,6 +134,7 @@ module.exports = {
                            n.hind::NUMERIC(12, 2),
                            n.uhik,
                            (n.properties ->> 'tyyp')::TEXT     AS tyyp,
+                           (n.properties ->> 'oppe_tyyp')::TEXT AS liik,       
                            (n.properties::JSON ->> 'valid')::DATE AS valid
                     FROM libs.nomenklatuur n
                     WHERE (n.rekvId = $1 OR n.rekvid IS NULL)
