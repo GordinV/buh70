@@ -106,10 +106,11 @@ BEGIN
                                FROM docs.korder1 k
                                WHERE k.parentid = l_tasu_id
                                UNION ALL
-                               SELECT summa
+                               SELECT j1.summa
                                FROM docs.journal j
                                         INNER JOIN docs.journal1 j1 ON j.id = j1.parentid
                                WHERE j.parentid = l_tasu_id
+                                 AND j1.deebet NOT IN ('20363005', '20363004')
                            ) tasud
                   )
                   ELSE tasu_summa END;
@@ -215,7 +216,7 @@ BEGIN
 
     RETURN l_doc_id;
 
-END;
+END ;
 $BODY$
     LANGUAGE plpgsql
     VOLATILE

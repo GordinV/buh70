@@ -858,6 +858,8 @@ BEGIN
                      UNION ALL
                      -- 655 KD652-KD652000-KD652030+ KD655+KD658-KD658950
                      -- KD652+KD655+KD658-KD658950-652000-652030-655400 (с 13.09.2022)
+
+                     -- поправка 29.03.2023 ВБ  KD652-KD652000-KD652030+ KD655+KD658-KD658950
                      SELECT '2.4.5',
                             1                                                      AS is_e,
                             $2                                                     AS rekvid,
@@ -871,13 +873,12 @@ BEGIN
                             coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2) AS eelarve_kassa_taps,
                             coalesce(sum(q.tegelik), 0)                            AS tegelik,
                             coalesce(sum(q.kassa), 0)                              AS kassa,
-                            get_saldo('KD', '652', NULL, NULL) +
+                            get_saldo('KD', '652', NULL, NULL) -
+                            get_saldo('KD', '652000', NULL, NULL) -
+                            get_saldo('KD', '652030', NULL, NULL) +
                             get_saldo('KD', '655', NULL, NULL) +
                             get_saldo('KD', '658', NULL, NULL) -
-                            get_saldo('KD', '658950', NULL, NULL) -
-                            get_saldo('KD', '652000', NULL, NULL) -
-                            get_saldo('KD', '652030', NULL, NULL) -
-                            get_saldo('KD', '655400', NULL, NULL)                  AS saldoandmik
+                            get_saldo('KD', '658950', NULL, NULL)                  AS saldoandmik
 -- KD652+KD655+KD658-KD658950
 
                      FROM tmp_andmik q
@@ -1280,7 +1281,7 @@ Tekke eelarve täps - это сумма из уточненного бюджет
                                      get_saldo('DK', '1532', '01', NULL) AS saldoandmik
                               UNION ALL
                               -- Korrigeerimine  (kõik tegevusalad)
-                              SELECT '3.1.099'::VARCHAR(20)                   AS idx,
+                              SELECT '3.1.099'::VARCHAR(20)               AS idx,
                                      1                                    AS is_e,
                                      l_rekvid                             AS rekvid,
                                      '     '                              AS tegev,

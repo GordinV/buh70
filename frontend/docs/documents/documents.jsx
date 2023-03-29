@@ -11,6 +11,8 @@ const createEmptyFilterData = require('./../../../libs/createEmptyFilterData');
 const prepareSqlWhereFromFilter = require('./../../../libs/prepareSqlWhereFromFilter');
 const Const = require('./../../../config/constants');
 const Liimit = Const.RECORDS_LIMIT;
+const maxLimit = Const.MAX_RECORDS_LIMIT;
+
 const prepareData = require('./../../../libs/prepaireFilterData');
 
 
@@ -240,7 +242,8 @@ class Documents extends React.Component {
 
     // обработчик изменений в инпут (лимит)
     handleInputChange(name, value) {
-        this.setState({limit: !value || value > Liimit ? Liimit : value});
+        console.log('Liimit', name, value, Liimit, maxLimit);
+        this.setState({limit: !value || value > maxLimit ? maxLimit : value});
     }
 
     /**

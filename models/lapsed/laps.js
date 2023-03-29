@@ -221,8 +221,8 @@ module.exports = {
     grid:
         {
             gridConfiguration: [
-                {id: "id", name: "id", width: "10%", show: false},
-                {id: "row_id", name: "Jrk", width: "3%", show: true, hideFilter: true},
+                {id: "id", name: "id", width: "1%", show: false},
+                {id: "row_id", name: "Jrk", width: "4%", show: true, hideFilter: true},
                 {id: "isikukood", name: "Isikukood", width: "15%"},
                 {id: "nimi", name: "Nimi", width: "25%"},
                 {id: "viitenumber", name: "Viitenumber", width: "25%"},

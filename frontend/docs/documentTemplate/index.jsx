@@ -151,6 +151,7 @@ class DocumentTemplate extends React.Component {
                     </div>
                 </Form>
                 <ModalPage
+                    ref='modalValidation'
                     show={this.serverValidation.length > 0}
                     modalPageName='Kontrol'
                     modalObjects={['btnOk', 'btnCancel']}

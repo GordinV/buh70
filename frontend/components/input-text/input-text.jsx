@@ -14,6 +14,7 @@ class Input extends React.PureComponent {
             valid: props.valid
         };
         this.onChange = this.onChange.bind(this);
+        this.onKeyUp = this.onKeyUp.bind(this);
     }
 
     // will update state if props changed
@@ -32,6 +33,18 @@ class Input extends React.PureComponent {
             this.props.onChange(this.props.name, fieldValue);
         }
     }
+
+    onKeyUp(e) {
+        if (this.props.self) {
+            let Modal = this.props.self.refs.document.refs.modalValidation ? this.props.self.refs.document.refs.modalValidation: null ;
+            let isShow = Modal.state.show;
+            if (Modal && Modal.state.show ? isShow: false) {
+                // модальное окно открыто
+                Modal.onKeyUp(e)
+            }
+        }
+    }
+
 
     render() {
         let inputPlaceHolder = this.props.placeholder || this.props.title,
@@ -57,6 +70,7 @@ class Input extends React.PureComponent {
                        pattern={this.props.pattern}
                        placeholder={inputPlaceHolder}
                        onChange={this.onChange}
+                       onKeyUp={this.onKeyUp}
                        maxLength={this.props.maxLength}
                        disabled={this.props.disabled}
                 />

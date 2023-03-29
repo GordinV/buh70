@@ -18,6 +18,14 @@ class ModalPage extends React.PureComponent {
         this.onKeyUp = this.onKeyUp.bind(this);
     }
 
+    componentDidMount() {
+        document.addEventListener('keyUp', this.onKeyUp, false);
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener("keyUp", this.onKeyUp, false);
+    }
+
     changeVisibilityModalPage() {
         this.setState({show: !this.state.show});
     }
@@ -95,6 +103,7 @@ class ModalPage extends React.PureComponent {
                                 width={('width' in styles.modalPageButtons) ? styles.modalPageButtons.width : null}
                                 height={('height' in styles.modalPageButtons) ? styles.modalPageButtons.height : null}
                                 onClick={this.handleBtnClick.bind(this, 'Ok')}
+                                onKeyUp={this.onKeyUp}
                                 id='btnOk'>
                                 <img ref="image" src={buttonStyles.icons['ok']}/>
                             </Button> : null
@@ -108,6 +117,7 @@ class ModalPage extends React.PureComponent {
                                 width={('width' in styles.modalPageButtons) ? styles.modalPageButtons.width : null}
                                 height={('height' in styles.modalPageButtons) ? styles.modalPageButtons.height : null}
                                 onClick={this.handleBtnClick.bind(this, 'Cancel')}
+                                onKeyUp={this.onKeyUp}
                                 className='modalPageButtons'
                                 id='btnCancel'>
                                 <img ref="image" src={buttonStyles.icons['cancel']}/>

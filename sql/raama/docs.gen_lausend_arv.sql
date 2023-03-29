@@ -329,12 +329,31 @@ BEGIN
                     THEN
                         -- если деньги по источнику vara
                         l_allika_summa = v_arv1.allikas_vara;
-
+                        -- первая часть
                         SELECT 0                               AS id,
                                l_allika_summa                  AS summa,
                                coalesce(v_arv1.valuuta, 'EUR') AS valuuta,
                                coalesce(v_arv1.kuurs, 1)       AS kuurs,
                                '20363004'                      AS deebet,
+                               '999999'                        AS kreedit,
+                               '800699'                        AS lisa_d,
+                               '800699'                        AS lisa_k,
+                               coalesce(v_arv1.tunnus, '')     AS tunnus,
+                               coalesce(v_arv1.proj, '')       AS proj,
+                               coalesce(v_arv1.kood1, '')      AS kood1,
+                               coalesce(v_arv1.kood2, '')      AS kood2,
+                               coalesce(v_arv1.kood3, '')      AS kood3,
+                               coalesce(v_arv1.kood4, '')      AS kood4,
+                               '2586'                          AS kood5
+                        INTO v_journal;
+                        l_json_details_tasu = coalesce(l_json_details_tasu, '{}'::JSONB) || to_jsonb(v_journal);
+
+                        -- вторая часть
+                        SELECT 0                               AS id,
+                               l_allika_summa                  AS summa,
+                               coalesce(v_arv1.valuuta, 'EUR') AS valuuta,
+                               coalesce(v_arv1.kuurs, 1)       AS kuurs,
+                               '999999'                        AS deebet,
                                '10300002'                      AS kreedit,
                                '800699'                        AS lisa_d,
                                '800699'                        AS lisa_k,
@@ -344,21 +363,42 @@ BEGIN
                                coalesce(v_arv1.kood2, '')      AS kood2,
                                coalesce(v_arv1.kood3, '')      AS kood3,
                                coalesce(v_arv1.kood4, '')      AS kood4,
-                               coalesce(v_arv1.kood5, '')      AS kood5
+                               '3224'                          AS kood5
                         INTO v_journal;
                         l_json_details_tasu = coalesce(l_json_details_tasu, '{}'::JSONB) || to_jsonb(v_journal);
+
 
                     END IF;
                     IF v_arv1.allikas_muud <> 0
                     THEN
                         -- если деньги по источнику muud
                         l_allika_summa = v_arv1.allikas_muud;
+                        -- первая часть
 
                         SELECT 0                               AS id,
                                l_allika_summa                  AS summa,
                                coalesce(v_arv1.valuuta, 'EUR') AS valuuta,
                                coalesce(v_arv1.kuurs, 1)       AS kuurs,
                                '20363005'                      AS deebet,
+                               '999999'                        AS kreedit,
+                               '800699'                        AS lisa_d,
+                               '800699'                        AS lisa_k,
+                               coalesce(v_arv1.tunnus, '')     AS tunnus,
+                               coalesce(v_arv1.proj, '')       AS proj,
+                               coalesce(v_arv1.kood1, '')      AS kood1,
+                               coalesce(v_arv1.kood2, '')      AS kood2,
+                               coalesce(v_arv1.kood3, '')      AS kood3,
+                               coalesce(v_arv1.kood4, '')      AS kood4,
+                               2586                            AS kood5
+                        INTO v_journal;
+                        l_json_details_tasu = coalesce(l_json_details_tasu, '{}'::JSONB) || to_jsonb(v_journal);
+
+                        -- вторая часть
+                        SELECT 0                               AS id,
+                               l_allika_summa                  AS summa,
+                               coalesce(v_arv1.valuuta, 'EUR') AS valuuta,
+                               coalesce(v_arv1.kuurs, 1)       AS kuurs,
+                               '999999'                        AS deebet,
                                '10300002'                      AS kreedit,
                                '800699'                        AS lisa_d,
                                '800699'                        AS lisa_k,
@@ -368,9 +408,10 @@ BEGIN
                                coalesce(v_arv1.kood2, '')      AS kood2,
                                coalesce(v_arv1.kood3, '')      AS kood3,
                                coalesce(v_arv1.kood4, '')      AS kood4,
-                               coalesce(v_arv1.kood5, '')      AS kood5
+                               '3224'                          AS kood5
                         INTO v_journal;
                         l_json_details_tasu = coalesce(l_json_details_tasu, '{}'::JSONB) || to_jsonb(v_journal);
+
 
                     END IF;
                     l_row_count = l_row_count + 1;

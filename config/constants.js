@@ -1,5 +1,6 @@
 module.exports = {
     RECORDS_LIMIT: 1000,
+    MAX_RECORDS_LIMIT: 5000,
     // таски
     events: {
         LAPS: [

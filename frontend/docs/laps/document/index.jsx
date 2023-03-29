@@ -138,6 +138,7 @@ class Laps extends React.PureComponent {
                                    value={self.docData.isikukood || ''}
                                    readOnly={!isEditMode}
                                    maxLength="11"
+                                   self={this}
                                    onChange={self.handleInputChange}/>
                         <InputText title='Nimi:'
                                    name='nimi'
