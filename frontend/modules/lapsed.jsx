@@ -68,6 +68,7 @@ const EmailDocument = require('./../docs/e-mail/document/index.jsx');
 
 const Inf3Report = require('./../docs/inf3/index.jsx');
 const ChildSummaryReport = require('./../docs/child_summary/index.jsx');
+const ChildSummaryKaibedReport = require('./../docs/child_summary_kaibed/index.jsx');
 const ArvedKoodiJargiReport = require('./../docs/arved_koodi_jargi/index.jsx');
 const SaldoJaKaiveReport = require('./../docs/saldo_ja_kaive/index.jsx');
 const SaldoJaKaibeAndmik = require('./../docs/saldo_ja_kaibeandmik/index.jsx');
@@ -277,6 +278,12 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/laps_kokkuvotte"
                        render={(props) => <ChildSummaryReport
+                           module={MODULE}
+                           history={props.history}
+                           initData={props.initData}/>}/>
+
+                <Route exact path="/lapsed/laps_kv_kaibed"
+                       render={(props) => <ChildSummaryKaibedReport
                            module={MODULE}
                            history={props.history}
                            initData={props.initData}/>}/>

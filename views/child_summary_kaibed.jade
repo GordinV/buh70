@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .label {
+            min-width: 150px;
+        }
+        .div {
+            margin: 1%;
+        }
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 SALDO JA KÄIBEANDMIK
+        h2 Vanematetasu
+
+    each lapse_isikukood in data
+        p.div
+            b Laps&nbsp;
+            span #{lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].lapse_isikukood}
+            span (#{lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].lapse_nimi})
+        p.div
+            b Maksja&nbsp;
+            span #{lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].vanem_nimi}
+
+        div.div
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Algsaldo deebet (nõuded)
+                        th Algsaldo kreedit (ettemaksed)
+                        th Kuu
+                        th Käive deebet (arvestatud)
+                        th Käive kreedit (maksed)
+                        th Mahakantud
+                        th Lõppsaldo deebet (nõuded)
+                        th Lõppsaldo kreedit (ettemaksed)
+                        th Asutus
+
+                tbody
+                    each rea in lapse_isikukood[Object.keys(lapse_isikukood)[0]]
+                        tr
+                            td(align='right')=Number(rea.alg_db).toFixed(2)
+                            td(align='right')=Number(rea.alg_kr).toFixed(2)
+                            td.label(align='center')=rea.arv_period
+                            td(align='right')=Number(rea.db).toFixed(2)
+                            td(align='right')=Number(rea.kr).toFixed(2)
+                            td(align='right')=Number(rea.mahakantud).toFixed(2)
+                            td(align='right')=Number(rea.lopp_db).toFixed(2)
+                            td(align='right')=Number(rea.lopp_kr).toFixed(2)
+                            td(align='left')=rea.asutus
+                tr.group
+                    td
+                    td
+                    td(align='center')='Kokku:'
+                    td(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].db_total).toFixed(2)
+                    td(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].kr_total).toFixed(2)
+                    td(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].mahakantud_total).toFixed(2)
+                    td
+                    td
+
+

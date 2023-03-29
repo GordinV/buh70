@@ -69,7 +69,7 @@ GRANT SELECT ON TABLE lapsed.cur_vanemad TO dbpeakasutaja;
 
 SELECT *
 FROM lapsed.cur_vanemad
-WHERE isikukood = '48701222218'
+WHERE isikukood = '39010040086'
 ORDER BY id DESC
 LIMIT 100
 /*
@@ -77,4 +77,8 @@ LIMIT 100
 select * from lapsed.cur_vanemad
 where isikukood like '3830411%'
 rekv_ids @>ARRAY[63]
+
+select * from lapsed.vanemad where id = 2894
+
+select * from ou.rekv where id = 97
  */

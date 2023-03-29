@@ -59,6 +59,11 @@ DECLARE
 
 BEGIN
 
+    IF doc_all_yksus IS NOT NULL AND empty(doc_all_yksus)
+    THEN
+        doc_all_yksus = NULL;
+    END IF;
+
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
@@ -178,7 +183,7 @@ BEGIN
                 AND lk.nomid = doc_nomid
                 AND lk.properties ->> 'yksus' = doc_yksus
 -- различаются по срокам
-                and (lk.properties->>'lopp_kpv')::date > doc_alg_kpv
+                AND (lk.properties ->> 'lopp_kpv')::DATE > doc_alg_kpv
                 AND lk.id <> coalesce(doc_id, 0)
                 AND lk.staatus < 3
         )
@@ -233,7 +238,7 @@ BEGIN
                                     userName AS user) row;
 
         INSERT INTO lapsed.lapse_kaart (parentid, rekvid, nomid, hind, muud, properties, ajalugu)
-        VALUES (doc_parentid, user_rekvid, doc_nomid, doc_hind,  doc_muud, json_props,
+        VALUES (doc_parentid, user_rekvid, doc_nomid, doc_hind, doc_muud, json_props,
                 '[]' :: JSONB || json_ajalugu) RETURNING id
                    INTO doc_id;
 
