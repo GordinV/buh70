@@ -75,7 +75,8 @@ module.exports = {
                            (lopp_db)                                AS lopp_db,
                            (lopp_kr)                                AS lopp_kr,
                            asutus,
-                           vanem_nimi                           
+                           vanem_nimi,
+                           to_char($3::date,'DD.MM.YYYY') || '-' || to_char($4::date,'DD.MM.YYYY') as print_period
                     FROM report
                     ORDER BY asutus,lapse_nimi, 
                         case when left(arv_period,1) = 'A' then 'a' when  left(arv_period,1) = 'L' then 'l' else 'k'  end,

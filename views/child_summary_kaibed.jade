@@ -21,6 +21,11 @@ block content
         .div {
             margin: 1%;
         }
+        .tab {
+            margin-left: 10px;
+            margin-right: 10px;
+            padding-right: 10px;
+        }
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
@@ -29,12 +34,15 @@ block content
 
     each lapse_isikukood in data
         p.div
-            b Laps&nbsp;
+            b Laps &nbsp;
             span #{lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].lapse_isikukood}
             span (#{lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].lapse_nimi})
         p.div
-            b Maksja&nbsp;
+            b Maksja &nbsp;
             span #{lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].vanem_nimi}
+        p.div
+            b Period &nbsp;
+            span #{lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].print_period}
 
         div.div
             table.table.table-hover.grid_data
@@ -53,22 +61,22 @@ block content
                 tbody
                     each rea in lapse_isikukood[Object.keys(lapse_isikukood)[0]]
                         tr
-                            td(align='right')=Number(rea.alg_db).toFixed(2)
-                            td(align='right')=Number(rea.alg_kr).toFixed(2)
-                            td.label(align='center')=rea.arv_period
-                            td(align='right')=Number(rea.db).toFixed(2)
-                            td(align='right')=Number(rea.kr).toFixed(2)
-                            td(align='right')=Number(rea.mahakantud).toFixed(2)
-                            td(align='right')=Number(rea.lopp_db).toFixed(2)
-                            td(align='right')=Number(rea.lopp_kr).toFixed(2)
-                            td(align='left')=rea.asutus
+                            td.tab(align='right')=Number(rea.alg_db).toFixed(2)
+                            td.tab(align='right')=Number(rea.alg_kr).toFixed(2)
+                            td.tab.label(align='center')=rea.arv_period
+                            td.tab(align='right')=Number(rea.db).toFixed(2)
+                            td.tab(align='right')=Number(rea.kr).toFixed(2)
+                            td.tab(align='right')=Number(rea.mahakantud).toFixed(2)
+                            td.tab(align='right')=Number(rea.lopp_db).toFixed(2)
+                            td.tab(align='right')=Number(rea.lopp_kr).toFixed(2)
+                            td.tab(align='left')=rea.asutus
                 tr.group
                     td
                     td
-                    td(align='center')='Kokku:'
-                    td(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].db_total).toFixed(2)
-                    td(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].kr_total).toFixed(2)
-                    td(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].mahakantud_total).toFixed(2)
+                    td.tab(align='center')='Kokku:'
+                    td.tab(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].db_total).toFixed(2)
+                    td.tab(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].kr_total).toFixed(2)
+                    td.tab(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].mahakantud_total).toFixed(2)
                     td
                     td
 
