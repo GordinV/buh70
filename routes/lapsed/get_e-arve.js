@@ -115,7 +115,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
 
             return {
                 '@invoiceId': arve.number,
-                '@serviceId': arve.vana_viitenr, // viitenr
+                '@serviceId': arve.viitenr, // viitenr
                 '@regNumber': arve.regkood,
                 '@channelId': asutusConfig.type ? asutusConfig.channelId : null,
                 '@channelAddress': asutusConfig.type ? arve.iban : null,
@@ -202,7 +202,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 },
                 PaymentInfo: {
                     Currency: 'EUR',
-                    PaymentRefId: arve.vana_viitenr, //arve.viitenr
+                    PaymentRefId: arve.viitenr, //arve.viitenr
                     PaymentDescription: `Arve ${arve.number}`,
                     Payable: 'YES',
                     PayDueDate: payDueDate,

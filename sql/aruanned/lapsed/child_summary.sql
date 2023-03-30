@@ -18,7 +18,10 @@ CREATE OR REPLACE FUNCTION lapsed.child_summary(l_rekvid INTEGER, l_kond INTEGER
         tasutud          NUMERIC(12, 2),
         mahakandmine     NUMERIC(12, 2),
         jaak             NUMERIC(12, 2),
-        rekvid           INTEGER
+        rekvid           INTEGER,
+        maksekpv         DATE,
+        maksesumma       NUMERIC(12, 2)
+
     )
 AS
 $BODY$
@@ -46,7 +49,8 @@ WITH qryRekv AS (
                 coalesce(t.summa, 0)::NUMERIC(12, 2)        AS tasutud,
                 coalesce(t.mahakandmine, 0)::NUMERIC(12, 2) AS mahakandmine,
                 a.jaak::NUMERIC(12, 2)                      AS jaak,
-                d.rekvid                                    AS rekvid
+                d.rekvid                                    AS rekvid,
+                d.id
          FROM docs.doc d
                   INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
                   INNER JOIN docs.arv a ON a.parentid = d.id
@@ -58,7 +62,8 @@ WITH qryRekv AS (
                                                        FROM qryRekv)
                                      AND at.status < 3
                                    GROUP BY doc_arv_id) t
-                                  ON t.doc_arv_id = d.id
+                                  ON t.doc_arv_id = d.id,
+              qryParams
          WHERE d.rekvid IN (SELECT rekv_id
                             FROM qryRekv)
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
@@ -69,22 +74,25 @@ WITH qryRekv AS (
                 l.parentid                          AS laps_id,
                 NULL::TEXT                          AS number,
                 mk.maksepaev                        AS kpv,
-                0                                   AS summa,
+                mk1.summa                           AS summa,
                 mk_tyyp * mk1.summa::NUMERIC(12, 2) AS tasutud,
                 0                                   AS mahakandmine,
---                -1 * mk_tyyp * ymk.summa::NUMERIC(12, 2) AS jaak,
                 -1 * mk_tyyp * mk.jaak,
-                d.rekvid                            AS rekvid
+                d.rekvid                            AS rekvid,
+                arv_ids
          FROM docs.doc D
                   INNER JOIN (SELECT mk.id,
                                      mk.parentid,
                                      mk.viitenr,
                                      mk.jaak,
                                      mk.maksepaev,
-                                     CASE WHEN mk.opt = 1 THEN -1 ELSE 1 END AS mk_tyyp
+                                     CASE WHEN mk.opt = 1 THEN -1 ELSE 1 END AS mk_tyyp,
+                                     (SELECT array_agg(doc_arv_id)
+                                      FROM docs.arvtasu at
+                                      WHERE doc_tasu_id = mk.parentid
+                                        AND at.status < 3)                   AS arv_ids
                               FROM docs.mk mk
-                              WHERE mk.jaak <> 0
-                                AND rekvid IN (SELECT rekv_id
+                              WHERE rekvid IN (SELECT rekv_id
                                                FROM qryRekv)
          ) mk ON mk.parentid = D.id
                   INNER JOIN lapsed.liidestamine l
@@ -96,14 +104,18 @@ WITH qryRekv AS (
                                 AND mk.rekvid IN (SELECT rekv_id
                                                   FROM qryRekv)
                               GROUP BY mk1.asutusid, mk1.parentid
-         ) mk1 ON mk1.parentid = mk.id
+         ) mk1 ON mk1.parentid = mk.id,
+              qryParams
               --                ,
               --             lapsed.get_group_part_from_mk(D.id, current_date) AS ymk
          WHERE D.status <> 3
            AND D.rekvid IN (SELECT rekv_id
                             FROM qryRekv)
            AND l.parentid IN (SELECT id FROM qryLapsed)
+           AND mk.maksepaev >= qryParams.kpv_1
+           AND mk.maksepaev <= qryParams.kpv_2
      )
+
 SELECT a.nimetus::TEXT   AS maksja_nimi,
        a.regkood::TEXT   AS maksja_isikukood,
        l.nimi::TEXT      AS lapse_nimi,
@@ -114,18 +126,27 @@ SELECT a.nimetus::TEXT   AS maksja_nimi,
        qryDoc.tasutud:: NUMERIC(12, 2),
        qryDoc.mahakandmine:: NUMERIC(12, 2),
        qryDoc.jaak:: NUMERIC(12, 2),
-       qryDoc.rekvid:: INTEGER
+       qryDoc.rekvid:: INTEGER,
+       qryDoc.maksekpv::DATE,
+       qryDoc.maksesumma::NUMERIC(12, 2)
 
 FROM (
-         SELECT qryArved.*
-         FROM qryArved, qryParams
-         WHERE kpv >= qryParams.kpv_1
-           AND kpv <= qryParams.kpv_2
-         UNION ALL
-         SELECT qrytasud.*
-         FROM qrytasud, qryParams
-         WHERE kpv >= qryParams.kpv_1
-           AND kpv <= qryParams.kpv_2
+         SELECT qryArved.asutusid,
+                qryArved.laps_id,
+                qryArved.number,
+                qryArved.kpv,
+                qryArved.summa,
+                qryArved.tasutud,
+                qryArved.mahakandmine,
+                qryArved.jaak,
+                qryArved.rekvid,
+                t.kpv::DATE AS maksekpv,
+                t.summa     AS maksesumma
+         FROM qryArved
+                  LEFT OUTER JOIN qrytasud t ON ARRAY [qryArved.id] <@ t.arv_ids,
+              qryParams
+         WHERE qryArved.kpv >= qryParams.kpv_1
+           AND qryArved.kpv <= qryParams.kpv_2
          UNION ALL
          SELECT asutusid,
                 laps_id               AS laps_id,
@@ -134,24 +155,53 @@ FROM (
                 summa                 AS summa,
                 0::NUMERIC(12, 2)     AS tasutud,
                 0                     AS mahakandmine,
-                summa,
-                rekvid
+                0                     AS jaak,
+                rekvid,
+                NULL::DATE            AS maksekpv,
+                0                     AS maksesumma
          FROM (
                   WITH qryAlg AS (
                       SELECT sum(-1 * tasutud) AS summa, laps_id, rekvid, asutusid
-                      FROM qrytasud t, qryParams
+                      FROM qrytasud t,
+                           qryParams
                       WHERE kpv < qryParams.kpv_1
                       GROUP BY laps_id, rekvid, asutusid
                       UNION ALL
                       SELECT sum(summa) AS summa, laps_id, rekvid, t.asutusid
-                      FROM qryArved t, qryParams
+                      FROM qryArved t,
+                           qryParams
                       WHERE kpv < qryParams.kpv_1
                       GROUP BY laps_id, rekvid, asutusid
                   )
                   SELECT sum(summa) AS summa, laps_id, rekvid, asutusid
                   FROM qryAlg
                   GROUP BY laps_id, rekvid, asutusid
-              ) alg, qryParams
+              ) alg,
+              qryParams
+         UNION ALL
+         SELECT qrytasud.asutusid,
+                qrytasud.laps_id      AS laps_id,
+                qrytasud.number::TEXT AS number,
+                qrytasud.kpv::DATE            AS kpv,
+                NULL::NUMERIC         AS summa,
+                NULL::NUMERIC(12, 2)  AS tasutud,
+                0                     AS mahakandmine,
+                0                     AS jaak,
+                qrytasud.rekvid,
+                qrytasud.kpv ::DATE   AS maksekpv,
+                qrytasud.summa        AS maksesumma
+         FROM qrytasud,
+              qryParams
+         WHERE (qrytasud.arv_ids IS NULL OR
+                NOT exists(SELECT (id)
+                           FROM qryArved
+                           WHERE ARRAY [id] @> qrytasud.arv_ids
+                             AND qryArved.kpv >= qryParams.kpv_1
+                             AND qryArved.kpv <= qryParams.kpv_2
+                    )
+             )
+           AND qrytasud.kpv >= qryParams.kpv_1
+           AND qrytasud.kpv <= qryParams.kpv_2
      ) qryDoc,
      libs.asutus a,
      qryLapsed l
@@ -173,7 +223,7 @@ GRANT EXECUTE ON FUNCTION lapsed.child_summary(INTEGER, INTEGER, TEXT, TEXT, DAT
 /*
 
 SELECT *
-FROM lapsed.child_summary(85, 1, '51503280040%','%', null::date,null::date)
+FROM lapsed.child_summary(97, 1, '36006133727%','%', '2023-01-01'::date,'2023-03-31'::date)
 
 
 select * from ou.rekv where id = 85
