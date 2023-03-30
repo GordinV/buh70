@@ -10,7 +10,7 @@ SELECT a.id                                                                AS va
        a.email::TEXT,
        a.tel::TEXT,
        array_to_string(get_unique_value_from_array(array_agg(l.nimi)), '') AS lapsed,
-       array_agg(lk.rekvid)                                                AS rekv_ids,
+       lk.rekvid                                                           AS rekv_id,
        array_to_string(get_unique_value_from_array(
                                array_agg(
                                        CASE
@@ -60,7 +60,7 @@ FROM lapsed.vanemad v
     AND va.rekvid = lk.rekvid
 
 WHERE v.staatus <> 3
-GROUP BY a.id, v.id, a.regkood, a.nimetus
+GROUP BY a.id, v.id, a.regkood, a.nimetus, lk.rekvid
 ORDER BY a.nimetus;
 
 GRANT SELECT ON TABLE lapsed.cur_vanemad TO arvestaja;

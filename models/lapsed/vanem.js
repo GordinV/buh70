@@ -140,7 +140,7 @@ module.exports = {
                            $2::INTEGER      AS user_id,
                            count(*) OVER () AS rows_total
                     FROM lapsed.cur_vanemad v
-                    WHERE rekv_ids @> ARRAY [$1::INTEGER] `,     //  $1 всегда ид учреждения, $2 - userId
+                    WHERE rekv_id = $1::INTEGER `,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
         alias: 'curLapsed',
         converter: function (data) {

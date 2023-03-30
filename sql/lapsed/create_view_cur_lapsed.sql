@@ -15,12 +15,7 @@ FROM lapsed.laps l
                         SELECT parentid,
                                rekvid,
                                (k.properties->>'lopp_kpv')::date as lopp_kpv,
-                               (get_unique_value_from_json(json_agg((k.properties ->> 'yksus')::TEXT || CASE
-                                                                                                            WHEN (k.properties ->> 'all_yksus') IS NOT NULL
-                                                                                                                THEN
-                                                                                                                    '-' ||
-                                                                                                                    (k.properties ->> 'all_yksus')::TEXT
-                                                                                                            ELSE '' END)::JSONB)) AS yksused
+                               (public.get_unique_value_from_json(jsonb_agg((k.properties ->> 'yksus')::TEXT))) AS yksused
                         FROM lapsed.lapse_kaart k
                         WHERE k.staatus <> 3
                         GROUP BY parentid, rekvid, (k.properties->>'lopp_kpv')

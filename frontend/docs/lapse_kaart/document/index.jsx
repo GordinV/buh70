@@ -253,19 +253,6 @@ class LapseKaart extends React.PureComponent {
                 </div>
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
-                        <Select title="All üksus:"
-                                name='all_yksus'
-                                libs="lapse_all_yksus"
-                                data={all_yksused}
-                                value={self.docData.all_yksus || ''}
-                                defaultValue={self.docData.all_yksys || ''}
-                                ref="select-lapse_all_yksus"
-                                collId={'nimetus'}
-                                onChange={self.handleInputChange}
-                                readOnly={!isEditMode}
-                        />
-                    </div>
-                    <div style={styles.docColumn}>
                         <Select title="Vana viitenumber:"
                                 name='viitenr'
                                 libs="viitenr"

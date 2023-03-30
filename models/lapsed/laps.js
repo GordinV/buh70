@@ -96,7 +96,6 @@ module.exports = {
                                   k.hind                                                                      hind,
                                   gr.nimetus::TEXT                                                         AS yksus,
                                   gr.kood::TEXT                                                            AS yksuse_kood,
-                                  k.properties ->> 'all_yksus'                                             AS all_yksus,
                                   CASE WHEN (n.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3,
                                   CASE
                                       WHEN (n.properties ->> 'kas_umberarvestus')::BOOLEAN THEN 'ÜMBERARVESTUS'
@@ -186,7 +185,6 @@ module.exports = {
                     {id: 'nimetus', name: 'Nimetus', width: '15%', show: true, type: 'text', readOnly: false},
                     {id: 'uhik', name: 'Ühik', width: '5%', show: true, type: 'text', readOnly: false},
                     {id: 'hind', name: 'Hind', width: '8%', show: true, type: 'text', readOnly: false},
-                    {id: 'all_yksus', name: 'All üksus', width: '5%', show: false, type: 'text', readOnly: false},
                     {id: 'inf3', name: 'INF3', width: '5%', show: true, type: 'text', readOnly: false},
                     {
                         id: 'umberarvestus',

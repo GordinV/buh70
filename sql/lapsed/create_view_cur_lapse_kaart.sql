@@ -12,7 +12,6 @@ CREATE OR REPLACE VIEW lapsed.cur_lapse_kaart AS
        lk.hind,
        grupp.kood::TEXT                                                         AS yksuse_kood,
        grupp.nimetus::TEXT                                                      AS yksus,
-       lk.properties ->> 'all_yksus'                                            AS all_yksus,
        ltrim(rtrim(n.kood))::TEXT                                               AS kood,
        ltrim(rtrim(n.nimetus))::TEXT                                            AS nimetus,
        n.uhik::TEXT,
