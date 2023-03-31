@@ -4,7 +4,6 @@ extends report_header
 
 block content
     meta(charset='utf-8')
-
     style(type='text/css').
         .grid_head {
             background-color: lightgray;;
@@ -38,6 +37,10 @@ block content
             span #{lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].lapse_isikukood}
             span (#{lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].lapse_nimi})
         p.div
+            b Viitenumber&nbsp;
+            span #{lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].viitenumber}
+
+        p.div
             b Maksja &nbsp;
             span #{lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].vanem_nimi}
         p.div
@@ -61,14 +64,14 @@ block content
                 tbody
                     each rea in lapse_isikukood[Object.keys(lapse_isikukood)[0]]
                         tr
-                            td.tab(align='right')=Number(rea.alg_db).toFixed(2)
-                            td.tab(align='right')=Number(rea.alg_kr).toFixed(2)
+                            td.tab(align='right')=(rea.alg_db)
+                            td.tab(align='right')=(rea.alg_kr)
                             td.tab.label(align='center')=rea.arv_period
                             td.tab(align='right')=Number(rea.db).toFixed(2)
                             td.tab(align='right')=Number(rea.kr).toFixed(2)
                             td.tab(align='right')=Number(rea.mahakantud).toFixed(2)
-                            td.tab(align='right')=Number(rea.lopp_db).toFixed(2)
-                            td.tab(align='right')=Number(rea.lopp_kr).toFixed(2)
+                            td.tab(align='right')=rea.lopp_db
+                            td.tab(align='right')=rea.lopp_kr
                             td.tab(align='left')=rea.asutus
                 tr.group
                     td
@@ -77,7 +80,7 @@ block content
                     td.tab(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].db_total).toFixed(2)
                     td.tab(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].kr_total).toFixed(2)
                     td.tab(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].mahakantud_total).toFixed(2)
-                    td
-                    td
+                    td.tab(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]].length)-1].lopp_db).toFixed(2)
+                    td.tab(align='right')=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]][Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]].length)-1].lopp_kr)
 
 

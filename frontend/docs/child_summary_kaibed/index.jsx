@@ -51,6 +51,7 @@ class Documents extends React.PureComponent {
                                   docTypeId={DOC_TYPE_ID}
                                   style={styles}
                                   render={this.renderer}/>
+                {/*
                 <InputText title="Filtri all / read kokku:"
                            name='read_kokku'
                            style={styles.total}
@@ -75,6 +76,7 @@ class Documents extends React.PureComponent {
                              ref="input-mahandmine"
                              value={Number(this.state.mahakantud) || 0}
                              disabled={true}/>
+*/}
             </div>
         )
     }
@@ -92,21 +94,23 @@ class Documents extends React.PureComponent {
             return null;
         }
 
-        let db = self.gridData ? self.gridData[0].db_total : 0;
-        let kr = self.gridData ? self.gridData[0].kr_total : 0;
-        let mahakantud = self.gridData ? self.gridData[0].mahakantud_total : 0;
+        /*
+                let db = self.gridData ? self.gridData[0].db_total : 0;
+                let kr = self.gridData ? self.gridData[0].kr_total : 0;
+                let mahakantud = self.gridData ? self.gridData[0].mahakantud_total : 0;
 
 
-        let read = self.gridData && self.gridData.length && self.gridData[0].rows_total ? self.gridData[0].rows_total : 0;
-        let filtri_read = self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : 0;
+                let read = self.gridData && self.gridData.length && self.gridData[0].rows_total ? self.gridData[0].rows_total : 0;
+                let filtri_read = self.gridData && self.gridData.length && self.gridData[0].filter_total ? self.gridData[0].filter_total : 0;
 
-        this.setState({
-            db: db,
-            kr: kr,
-            mahakantud: mahakantud,
-            read: read,
-            filtri_read: filtri_read
-        });
+                this.setState({
+                    db: db,
+                    kr: kr,
+                    mahakantud: mahakantud,
+                    read: read,
+                    filtri_read: filtri_read
+                });
+        */
 
         return (<div/>
         )
