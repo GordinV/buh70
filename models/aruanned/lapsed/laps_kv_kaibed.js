@@ -2,8 +2,8 @@ module.exports = {
     grid: {
         gridConfiguration: [
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "10%", filterValidation: true},
-            {id: "lapse_nimi", name: "Lapse nimi", width: "15%"},
-            {id: "viitenumber", name: "Viitenumber", width: "10%"},
+            {id: "lapse_nimi", name: "Lapse nimi", width: "15%",filterValidation: true},
+            {id: "viitenumber", name: "Viitenumber", width: "10%",filterValidation: true},
             {id: "vanem_nimi", name: "Maksja", width: "15%"},
             {
                 id: "period",
@@ -44,7 +44,7 @@ module.exports = {
                                l.nimi as lapse_nimi,
                                vn.vn,
                                a.nimetus                                                   AS vanem_nimi                               
-                        FROM lapsed.saldo_ja_kaibeandmik_period($1::INTEGER, $3::date, $4::date, $5::text) qryReport
+                        FROM lapsed.saldo_ja_kaibeandmik_period($1::INTEGER, $3::date, $4::date, $5::text, $6::text, $7::text) qryReport
                         inner join lapsed.laps l on l.id = qryReport.isik_id
                              LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                                               FROM lapsed.viitenr vn
@@ -82,7 +82,7 @@ module.exports = {
                     ORDER BY asutus,lapse_nimi, 
                         case when left(arv_period,1) = 'A' then 'a' when  left(arv_period,1) = 'L' then 'l' else 'k'  end,
                         arv_period`,
-        params: ['rekvid', 'userid', 'period_start', 'period_end', 'lapse_isikukood'],
+        params: ['rekvid', 'userid', 'period_start', 'period_end', 'lapse_isikukood','lapse_nimi','viitenumber'],
         notReloadWithoutParameters: true,
         alias: 'child_summary_report_period',
         totals: `sum(db) OVER ()               AS db_total,
