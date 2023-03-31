@@ -27,6 +27,7 @@ block content
                 tr
                     th.th Koolitava isiku ees- ja perekonnanimi
                     th.th Isikukood
+                    th.th Viitenumber
                     th.th Arve nr.
                     th.th Arve kpv
                     th.th Arve summa
@@ -42,30 +43,32 @@ block content
             tbody
                 each rea in data
                     tr
-                        td.col=rea.lapse_nimi
-                        td.col=rea.lapse_isikukood
-                        td.col=rea.number
-                        td.col=rea.kpv
-                        td.col=rea.summa
-                        td.col=rea.jaak
-                        td.col=rea.tasutud
-                        td.col=rea.maksesumma
-                        td.col=rea.maksekpv
-                        td.col=rea.mahakandmine
-                        td.col=rea.maksja_nimi
-                        td.col=rea.maksja_isikukood
-                        td.col=rea.asutus
+                        td.col(align='center')=rea.lapse_nimi
+                        td.col(align='center')=rea.lapse_isikukood
+                        td.col(align='center')=rea.viitenumber
+                        td.col(align='center')=rea.number
+                        td.col(align='center')=rea.kpv
+                        td.col(align='right')=rea.summa
+                        td.col(align='right')=rea.jaak
+                        td.col(align='right')=rea.tasutud
+                        td.col(align='right')=rea.maksesumma
+                        td.col(align='center')=rea.maksekpv
+                        td.col(align='right')=rea.mahakandmine
+                        td.col(align='center')=rea.maksja_nimi
+                        td.col(align='center')=rea.maksja_isikukood
+                        td.col(align='center')=rea.asutus
             tr.group
+                td
                 td
                 td(align='center')='Read kokku:'
                 td=Number(data.length)
                 td(align='center')='Kokku:'
-                td=Number(data[0].summa_kokku).toFixed(2)
-                td=Number(data[0].jaak_kokku).toFixed(2)
-                td=Number(data[0].tasutud_kokku).toFixed(2)
-                td=Number(data[0].maksesumma_kokku).toFixed(2)
+                td(align='right')=Number(data[0].summa_kokku).toFixed(2)
+                td(align='right')=Number(data[0].jaak_kokku).toFixed(2)
+                td(align='right')=Number(data[0].tasutud_kokku).toFixed(2)
+                td(align='right')=Number(data[0].maksesumma_kokku).toFixed(2)
                 td
-                td=Number(data[0].mahakandmine_kokku).toFixed(2)
+                td(align='right')=Number(data[0].mahakandmine_kokku).toFixed(2)
                 td
                 td
                 td

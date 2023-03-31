@@ -2,7 +2,8 @@ module.exports = {
     grid: {
         gridConfiguration: [
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "10%", filterValidation: true},
-            {id: "lapse_nimi", name: "Lapse nimi", width: "20%", filterValidation: true},
+            {id: "lapse_nimi", name: "Lapse nimi", width: "15%", filterValidation: true},
+            {id: "viitenumber", name: "Viitenumber", width: "10%"},
             {id: "number", name: "Arve nr", width: "10%"},
             {id: "kpv", name: "Kuupäev", width: "10%", type: "date", interval: true, filterValidation: true},
             {id: "summa", name: "Arve summa", width: "10%", type: "number", interval: true},
@@ -11,7 +12,7 @@ module.exports = {
             {id: "maksekpv", name: "Maksekuupäev", width: "10%", type: "date", interval: true},
             {id: "mahakandmine", name: "Mahakantud", width: "10%", type: "number", interval: true},
             {id: "jaak", name: "Jääk", width: "10%", type: "number", interval: true},
-            {id: "maksja_nimi", name: "Maksja nimi", width: "20%", show: true},
+            {id: "maksja_nimi", name: "Maksja nimi", width: "15%", show: true},
             {id: "maksja_isikukood", name: "Maksja isikukood", width: "10%"},
             {id: "asutus", name: "Asutus", width: "10%"},
         ],
@@ -23,6 +24,7 @@ module.exports = {
                            mahakandmine::NUMERIC(12, 2)              AS mahakandmine,
                            lapse_nimi,
                            lapse_isikukood,
+                           viitenumber,
                            maksja_nimi,
                            maksja_isikukood,
                            r.nimetus                                 AS asutus,
