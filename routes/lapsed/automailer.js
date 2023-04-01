@@ -37,7 +37,7 @@ const automailer = async () => {
     var l_user_mail = 'oppetasu@narva.ee';
     var l_pass;
     var l_userId = 11558;
-    var l_limit = 50;
+    var l_limit = 5;
     var result = 0;
 
     const user = {
@@ -305,6 +305,7 @@ FROM doc`;
         const emailPromises = selectedDocs.data.map(async arve => {
             // уточняем данные отправителя
             user.asutus = arve.tais_nimetus;
+            user.asutusTais = arve.tais_nimetus;
             user.tel = arve.tel;
             user.aadress = arve.aadress;
             user.email = arve.email;
@@ -314,7 +315,9 @@ FROM doc`;
             docNumber = arve.number ? arve.number : null;
             receiverEmail = arve.email ? arve.email : null;
 
-            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
+//            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
+            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
+
             let renderForm = 'arve_kaartid';
 
             let file = path.join(__dirname, './../..', 'views', `${renderForm}.jade`);
