@@ -317,8 +317,8 @@ FROM doc`;
             docNumber = arve.number ? arve.number : null;
             receiverEmail = arve.email ? arve.email : null;
 
-//            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
-            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
+            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
+//            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
 
             let renderForm = 'arve_kaartid';
 
