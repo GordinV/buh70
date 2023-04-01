@@ -310,6 +310,7 @@ FROM doc`;
             user.tel = arve.rekv_tel;
             user.aadress = arve.rekv_aadress;
             user.email = '';//arve.rekv_email;
+            user.parentid = 119;
 
             // вернуть отчет
 
