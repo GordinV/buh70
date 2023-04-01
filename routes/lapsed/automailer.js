@@ -307,9 +307,9 @@ FROM doc`;
             // уточняем данные отправителя
             user.asutus = arve.tais_nimetus;
             user.asutusTais = arve.tais_nimetus;
-            user.tel = arve.rekv_tel;
+            user.tel = '';
             user.aadress = arve.rekv_aadress;
-            user.email = '';//arve.rekv_email;
+            user.email = 'oppetasu@narvakultuur.ee';//arve.rekv_email;
             user.parentid = 119;
 
             // вернуть отчет

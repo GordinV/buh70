@@ -69,11 +69,6 @@ block content
                     span #{User.aadress}
             div.row_wrapper
                 div.label
-                    span Telefon:
-                div.input
-                    span #{User.tel}
-            div.row_wrapper
-                div.label
                     span E-post:
                 div.input
                     span #{User.email}
@@ -87,6 +82,11 @@ block content
                     span Maksta arvele:
                 div.input
                     span #{doc.arved}
+            div.row_wrapper
+                div.label
+                    span Viitenumber:
+            div.input
+                    span #{doc.viitenr}
             h3
                 p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ' : 'ARVE'}`}
                 div.row_wrapper
@@ -101,11 +101,6 @@ block content
                     div.input
                         div #{doc.kpv_print}
 
-                div.row_wrapper
-                    div.label
-                        span Viitenumber:
-                    div.input
-                        span #{doc.viitenr}
                 div.row_wrapper
                     div.label
                         span Tähtaeg:
