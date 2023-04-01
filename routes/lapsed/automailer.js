@@ -311,6 +311,7 @@ FROM doc`;
             user.aadress = arve.rekv_aadress;
             user.email = 'oppetasu@narvakultuur.ee';//arve.rekv_email;
             user.parentid = 119;
+            user.regkood = arve.rekv_regkood;
 
             // вернуть отчет
 
@@ -367,16 +368,16 @@ FROM doc`;
                                     db.queryDb(sql, params);
                                 }
                             }
-
                             return reject(err);
                         } else {
+                            setTimeout(100);
                             result++;
 
                             // удаляем файл
 
                             fs.unlink(filePDF, (err, data) => {
                                 if (err) {
-                                    console.error('PDF delete error',err);
+                                    console.error('PDF delete error', err);
 //                                    return reject(err);
                                 }
                             });
@@ -390,6 +391,7 @@ FROM doc`;
 
                                 if (sql) {
                                     db.queryDb(sql, params);
+                                    setTimeout(100);
                                 }
                             }
 
