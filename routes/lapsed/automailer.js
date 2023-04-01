@@ -37,7 +37,7 @@ const automailer = async () => {
     var l_user_mail = 'oppetasu@narva.ee';
     var l_pass;
     var l_userId = 11558;
-    var l_limit = 5;
+    var l_limit = 50;
     var result = 0;
 
     const user = {
@@ -306,17 +306,17 @@ FROM doc`;
             // уточняем данные отправителя
             user.asutus = arve.tais_nimetus;
             user.asutusTais = arve.tais_nimetus;
-            user.tel = arve.tel;
-            user.aadress = arve.aadress;
-            user.email = arve.email;
+            user.tel = arve.rekv_tel;
+            user.aadress = arve.rekv_aadress;
+            user.email = arve.rekv_email;
 
             // вернуть отчет
 
             docNumber = arve.number ? arve.number : null;
             receiverEmail = arve.email ? arve.email : null;
 
-//            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
-            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
+            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
+//            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
 
             let renderForm = 'arve_kaartid';
 
@@ -375,7 +375,7 @@ FROM doc`;
                             fs.unlink(filePDF, (err, data) => {
                                 if (err) {
                                     console.error('PDF delete error',err);
-                                    return reject(err);
+//                                    return reject(err);
                                 }
                             });
 
