@@ -370,7 +370,6 @@ FROM doc`;
                             }
                             return reject(err);
                         } else {
-                            setTimeout(100);
                             result++;
 
                             // удаляем файл
@@ -391,7 +390,6 @@ FROM doc`;
 
                                 if (sql) {
                                     db.queryDb(sql, params);
-                                    setTimeout(100);
                                 }
                             }
 
