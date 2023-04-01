@@ -37,7 +37,7 @@ const automailer = async () => {
     var l_user_mail = 'oppetasu@narva.ee';
     var l_pass;
     var l_userId = 11558;
-    var l_limit = 50;
+    var l_limit = 5;
     var result = 0;
 
     const user = {
@@ -45,6 +45,7 @@ const automailer = async () => {
         userId: l_userId,
         userName: l_user_name,
         asutus: 'Narva Linnavalitsuse Kultuuriosakond',
+        parent_asutus: 'Narva Linnavalitsuse Kultuuriosakond',
         asutusTais: 'Narva Linnavalitsuse Kultuuriosakond',
         aadress: 'Peetri plats 1, 20308 Narva',
         tel: '359 9120',
@@ -308,15 +309,15 @@ FROM doc`;
             user.asutusTais = arve.tais_nimetus;
             user.tel = arve.rekv_tel;
             user.aadress = arve.rekv_aadress;
-            user.email = arve.rekv_email;
+            user.email = '';//arve.rekv_email;
 
             // вернуть отчет
 
             docNumber = arve.number ? arve.number : null;
             receiverEmail = arve.email ? arve.email : null;
 
-            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
-//            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
+//            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
+            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
 
             let renderForm = 'arve_kaartid';
 
