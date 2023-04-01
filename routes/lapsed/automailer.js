@@ -37,7 +37,7 @@ const automailer = async () => {
     var l_user_mail = 'oppetasu@narva.ee';
     var l_pass;
     var l_userId = 11558;
-    var l_limit = 5;
+    var l_limit = 25;
     var result = 0;
 
     const user = {
@@ -88,6 +88,10 @@ const automailer = async () => {
                AND NOT (SELECT exists(SELECT *
                                       FROM jsonb_array_elements(history) elem
                                       WHERE (elem ?| ARRAY ['email'])))::BOOLEAN
+             AND NOT (SELECT exists(SELECT *
+                                    FROM jsonb_array_elements(history) elem
+                                    WHERE (elem ?| ARRAY ['email_viga'])))::BOOLEAN
+                                      
                AND a.rekvid IN (SELECT id FROM ou.rekv WHERE parentid = 119)
              LIMIT ${l_limit}
          ),
@@ -318,7 +322,7 @@ FROM doc`;
             docNumber = arve.number ? arve.number : null;
             receiverEmail = arve.email ? arve.email : null;
 
-            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
+//            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
 //            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
 
             let renderForm = 'arve_kaartid';
