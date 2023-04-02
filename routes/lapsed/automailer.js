@@ -196,7 +196,7 @@ const automailer = async () => {
            asutus.regkood,
            asutus.nimetus::TEXT                                                                 AS asutus,
            coalesce(asutus.aadress,'') as aadress,
-           asutus.email::TEXT                                                                   AS email,
+           ltrim(rtrim(asutus.email))::TEXT                                                                   AS email,
            asutus.properties ->> 'kmkr'                                                         AS kmkr,
            asutus.properties::JSONB -> 'asutus_aa' -> 0 ->> 'aa'                                AS asutuse_aa,
            a.doklausid,
@@ -278,12 +278,7 @@ FROM doc`;
         l_user = selectedDocs.data[0].user;
 
         let template = null,
-            emailHtml = null,
-            attachment,
-            docNumber = '',
-            receiverEmail,
             emailTemplate = null;
-        let printHtml = null;
 
         const templateObject = printTemplates.find(templ => templ.params === 'id');
         template = templateObject.view;
@@ -319,8 +314,8 @@ FROM doc`;
 
             // вернуть отчет
 
-            docNumber = arve.number ? arve.number : null;
-            receiverEmail = arve.email ? arve.email : null;
+            let docNumber = arve.number ? arve.number : null;
+            let receiverEmail = arve.email ? arve.email : null;
 
 //            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
 //            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
@@ -334,7 +329,7 @@ FROM doc`;
             emailTemplate = emailTemplateObject.view;
 
             file = path.join(__dirname, './../..', 'views', `${emailTemplate}.jade`);
-            emailHtml = await jade.renderFile(file, {doc: arve, user: user});
+            let emailHtml = await jade.renderFile(file, {doc: arve, user: user});
 
             //attachment
             let filePDF = await createPDF(printHtml, `doc_${arve.id}`);
@@ -348,7 +343,7 @@ FROM doc`;
             return new Promise((resolve, reject) => {
                 transporter.sendMail({
                         from: `"${l_user_name}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
-                        to: `${receiverEmail}`, // (, baz@example.com) list of receivers
+                        to: `${arve.email}`, // (, baz@example.com) list of receivers
                         subject: `Saadan dokument nr. ${arve.number}`, // Subject line
                         text: 'Automaat e-mail', // plain text body
                         html: emailHtml, // html body
