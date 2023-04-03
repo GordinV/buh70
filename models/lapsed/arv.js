@@ -184,7 +184,7 @@ const Arv = {
                             THEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0)
                         ELSE 0 END                                   AS ettemaksud,
                 
-                       (SELECT string_agg(arve::TEXT, ',') 
+                       (SELECT string_agg(case when left(arve,7) in ('EE47101') then 'SEB Pank IBAN ' WHEN left(arve,7) in ('EE71220') then 'SWEDPANK IBAN ' else '' end  || arve::TEXT, ',') 
                         FROM ou.aa
                         WHERE parentid = doc.rekvid
                           AND kassa = 1

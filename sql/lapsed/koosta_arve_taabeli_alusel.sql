@@ -17,7 +17,7 @@ DECLARE
     l_rekvid        INTEGER = (SELECT rekvid
                                FROM ou.userid u
                                WHERE id = user_id
-                                   LIMIT 1);
+                               LIMIT 1);
 
     l_asutus_id     INTEGER = (SELECT asutusid
                                FROM lapsed.vanem_arveldus v
@@ -25,8 +25,8 @@ DECLARE
                                WHERE v.parentid = l_laps_id
                                  AND v.rekvid = l_rekvid
                                  AND arveldus
-                                   ORDER BY v.id DESC
-                                   LIMIT 1);
+                               ORDER BY v.id DESC
+                               LIMIT 1);
     l_doklausend_id INTEGER;
     l_liik          INTEGER = 0;
     v_taabel        RECORD;
@@ -49,8 +49,8 @@ DECLARE
                                FROM ou.aa
                                WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
                                  AND kassa = 1
-                                   ORDER BY default_ DESC
-                                   LIMIT 1);
+                               ORDER BY default_ DESC
+                               LIMIT 1);
 
     l_db_konto      TEXT    = '10300029'; -- согдасно описанию отдела культуры
     v_laps          RECORD;
@@ -94,8 +94,8 @@ BEGIN
                        WHERE dp.rekvid = l_rekvid
                          AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
                          AND l.kood = 'ARV'
-                           ORDER BY dp.id DESC
-                           LIMIT 1
+                       ORDER BY dp.id DESC
+                       LIMIT 1
     );
 
 
@@ -146,10 +146,7 @@ BEGIN
                (lk.properties ->> 'sooduse_lopp')::DATE                              AS sooduse_lopp,
                coalesce(n.properties ->> 'tyyp', '')                                 AS tyyp,
                lt.soodustus                                                          AS real_soodus,
-               'Üksus: ' || (gr.nimetus::TEXT)::TEXT || CASE
-                                                            WHEN (lk.properties ->> 'all_yksus')::TEXT IS NOT NULL
-                                                                THEN '(' || (lk.properties ->> 'all_yksus')::TEXT || ')'
-                                                            ELSE '' END              AS muud,
+               'Üksus: ' || (gr.nimetus::TEXT)::TEXT                                 AS muud,
                lk.properties ->> 'yksus'                                             AS yksus,
                lk.properties ->> 'all_yksus'                                         AS all_yksus,
                lt.id                                                                 AS lapse_taabel_id,
@@ -180,7 +177,7 @@ BEGIN
           AND lk.rekvid = l_rekvid
           AND n.rekvid = lk.rekvid
           AND (lt.summa <> 0 OR lt.kogus <> 0)
-            ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
+        ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
 
 
         LOOP
@@ -250,8 +247,8 @@ BEGIN
                 WHERE l.parentid = l_laps_id
                   AND lk.id = v_taabel.lapse_kaart_id
                   AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
-                    ORDER BY D.ID DESC
-                    LIMIT 1;
+                ORDER BY D.ID DESC
+                LIMIT 1;
 
                 IF coalesce(l_status, 0) <> 2
                 THEN
@@ -263,6 +260,10 @@ BEGIN
                                                 l_doklausend_id                               AS doklausid,
                                                 l_liik                                        AS liik,
                                                 l_kpv                                         AS kpv,
+                                                l_kpv +
+                                                coalesce(
+                                                            (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid LIMIT 1),
+                                                            20)::DATE                         AS tahtaeg,
                                                 l_asutus_id                                   AS asutusid,
                                                 l_aa                                          AS aa,
                                                 l_laps_id                                     AS lapsid,
@@ -315,8 +316,8 @@ BEGIN
       AND lt.aasta = date_part('year', l_kpv)
       AND lt.kuu = date_part('month', l_kpv)
       AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
-        ORDER BY D.ID DESC
-        LIMIT 1;
+    ORDER BY D.ID DESC
+    LIMIT 1;
 
     -- создаем параметры
     l_json_arve = (SELECT to_json(row)

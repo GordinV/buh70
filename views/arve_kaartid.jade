@@ -40,10 +40,13 @@ style(type='text/css').
         display: inline-block;
     }
     .div_column_left{
-        width: 600px;
+        width: 500px;
     }
     .div_column_right{
         width: 200px;
+    }
+    .page {
+        page-break-after: always;
     }
 
 
@@ -52,130 +55,131 @@ block content
     div.body_wrapper.div
         -var User = user ? user : {asutus: ''};
         each doc in data
-            div.row_wrapper
-                div.label
-                    span Asutus:
-                div.input
-                    span #{User.asutus}
-            div.row_wrapper
-               div.label
-                    span reg.kood:
-                div.input
-                    span #{User.regkood}
-            div.row_wrapper
-                div.label
-                    span Aadress:
-                div.input
-                    span #{User.aadress}
-            div.row_wrapper
-                div.label
-                    span E-post:
-                div.input
-                    span #{User.email}
-            div.row_wrapper
-                div.label
-                    span Raha saaja:
-                div.input
-                    span #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
-            div.row_wrapper
-                div.label
-                    span Maksta arvele:
-                div.input
-                    span #{doc.arved}
-            div.row_wrapper
-                div.label
-                    span Viitenumber:
-                div.input
-                    span #{doc.viitenr}
-            h3
-                p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ' : 'ARVE'}`}
+            div.page
                 div.row_wrapper
                     div.label
-                        span Number:
+                        span Asutus:
                     div.input
-                        span #{doc.number}
-
+                        span #{User.asutus}
                 div.row_wrapper
-                    div.label
-                        span Kuupäev:
+                   div.label
+                        span reg.kood:
                     div.input
-                        div #{doc.kpv_print}
-
-                div.row_wrapper
-                    div.label
-                        span Tähtaeg:
-                    div.input
-                        span #{doc.tahtaeg_print}
-                div.row_wrapper
-                    div.label
-                        span Maksja:
-                    div.input
-                        span #{`${doc.asutus.trim()} reg.kood: ${doc.regkood}`}
-                div.row_wrapper
-                    div.label
-                        span Teenuse saaja:
-                    div.input
-                        span #{`${doc.lapse_nimi.trim()}, isikukood: ${doc.isikukood}`}
-
+                        span #{User.regkood}
                 div.row_wrapper
                     div.label
                         span Aadress:
                     div.input
-                        span #{`${doc.aadress}`}
-
+                        span #{User.aadress}
                 div.row_wrapper
                     div.label
-                        span Lisa:
+                        span E-post:
                     div.input
-                        span #{`${doc.lisa ? doc.lisa : ''}`}
+                        span #{'oppetasu@narvakultuur.ee'}
                 div.row_wrapper
                     div.label
-                        span Märkused:
+                        span Raha saaja:
                     div.input
-                        span #{`${doc.muud ? doc.muud : ''}`}
+                        span #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
+                div.row_wrapper
+                    div.label
+                        span Maksta arvele:
+                    div.input
+                        span #{doc.arved}
+                div.row_wrapper
+                    div.label
+                        span Viitenumber:
+                    div.input
+                        span #{doc.viitenr}
+                h3
+                    p #{`${doc.tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ' : 'ARVE'}`}
+                    div.row_wrapper
+                        div.label
+                            span Number:
+                        div.input
+                            span #{doc.number}
 
-                table.table.table-hover.grid_data
-                    thead.grid_head
-                        tr
-                            th Teenuse nimetus
-                            th Hind
-                            th Soodustus
-                            th Hind soodustusega
-                            th Ühik
-                            th Kogus
-                            th Rea summa
+                    div.row_wrapper
+                        div.label
+                            span Kuupäev:
+                        div.input
+                            div #{doc.kpv_print}
 
-                    tbody
-                        each row in doc.details
+                    div.row_wrapper
+                        div.label
+                            span Tähtaeg:
+                        div.input
+                            span #{doc.tahtaeg_print}
+                    div.row_wrapper
+                        div.label
+                            span Maksja:
+                        div.input
+                            span #{`${doc.asutus.trim()} reg.kood: ${doc.regkood}`}
+                    div.row_wrapper
+                        div.label
+                            span Teenuse saaja:
+                        div.input
+                            span #{`${doc.lapse_nimi.trim()}, isikukood: ${doc.isikukood}`}
+
+                    div.row_wrapper
+                        div.label
+                            span Aadress:
+                        div.input
+                            span #{`${doc.aadress}`}
+
+                    div.row_wrapper
+                        div.label
+                            span Lisa:
+                        div.input
+                            span #{`${doc.lisa ? doc.lisa : ''}`}
+                    div.row_wrapper
+                        div.label
+                            span Märkused:
+                        div.input
+                            span #{`${doc.muud ? doc.muud : ''}`}
+
+                    table.table.table-hover.grid_data
+                        thead.grid_head
                             tr
-                                td(align='left')=(row.markused)
-                                td(align='center')=Number(row.tais_hind).toFixed(2)
-                                td(align='center')=Number(row.soodustus).toFixed(2)
-                                td(align='center')=(Number(row.tais_hind, 2) - Number(row.soodustus)).toFixed(4)
-                                td(align='center')=row.uhik
-                                td(align='center')=row.kogus
-                                td(align='center')=Number(row.summa).toFixed(2)
-            h3
-                div.doc_footer
-                    div.row_wrapper
-                        div.div_column.div_column_left
-                            span Kokku:
-                        div.div_column.div_column_right
-                            span #{`${Number(data[0].summa).toFixed(2)}`}
-                    div.row_wrapper
-                        div.div_column.div_column_left
-                            span Seisuga #{`${data[0].period_alg_print.trim()}`} jääk:
-                        div.div_column.div_column_right
-                            span #{`${Number(data[0].alg_jaak).toFixed(2)}`}
-                    div.row_wrapper
-                        div.div_column.div_column_left
-                            span Laekumised periodis #{`${data[0].laekumise_period}`}:
-                        div.div_column.div_column_right
-                            span #{`${Number(data[0].laekumised).toFixed(2)}`}
-                    div.row_wrapper
-                        div.div_column.div_column_left
-                            span Seisuga #{`${data[0].kpv_print}`} tasumisele:
-                        div.div_column.div_column_right
-                            span #{`${Number(data[0].tasumisele).toFixed(2)}`}
-                    br
-        p Küsimuste korral palun pöörduge asutuste esindaja poole
+                                th Teenuse nimetus
+                                th Hind
+                                th Soodustus
+                                th Hind soodustusega
+                                th Ühik
+                                th Kogus
+                                th Rea summa
+
+                        tbody
+                            each row in doc.details
+                                tr
+                                    td(align='left')=(row.markused)
+                                    td(align='center')=Number(row.tais_hind).toFixed(2)
+                                    td(align='center')=Number(row.soodustus).toFixed(2)
+                                    td(align='center')=(Number(row.tais_hind, 2) - Number(row.soodustus)).toFixed(4)
+                                    td(align='center')=row.uhik
+                                    td(align='center')=row.kogus
+                                    td(align='center')=Number(row.summa).toFixed(2)
+                h3
+                    div.doc_footer
+                        div.row_wrapper
+                            div.div_column.div_column_left
+                                span Kokku:
+                            div.div_column.div_column_right
+                                span #{`${Number(data[0].summa).toFixed(2)}`}
+                        div.row_wrapper
+                            div.div_column.div_column_left
+                                span Seisuga #{`${data[0].period_alg_print.trim()}`} jääk:
+                            div.div_column.div_column_right
+                                span #{`${Number(data[0].alg_jaak).toFixed(2)}`}
+                        div.row_wrapper
+                            div.div_column.div_column_left
+                                span Laekumised periodis #{`${data[0].laekumise_period}`}:
+                            div.div_column.div_column_right
+                                span #{`${Number(data[0].laekumised).toFixed(2)}`}
+                        div.row_wrapper
+                            div.div_column.div_column_left
+                                span Seisuga #{`${data[0].kpv_print}`} tasumisele:
+                            div.div_column.div_column_right
+                                span #{`${Number(data[0].tasumisele).toFixed(2)}`}
+                        br
+                p Küsimuste korral palun pöörduge asutuste esindaja poole
