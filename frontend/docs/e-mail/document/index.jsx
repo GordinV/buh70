@@ -144,6 +144,7 @@ class Email extends React.Component {
     }
 
     btnEmailClickHandler() {
+
         const params = {
             docTypeId: DocContext['email-params'].docTypeId,
             id: DocContext['email-params'].queryType == 'id' ? DocContext['email-params'].docId : null,

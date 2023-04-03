@@ -126,22 +126,83 @@ module.exports = {
             {id: "nimi", name: "Nimi", width: "20%"},
             {id: "email", name: "E-mail", width: "15%"},
             {id: "printimine", name: "Arved esita", width: "10%"},
-            {id: "lapsed", name: "Lapsed", width: "25%"}
+            {id: "lapsed", name: "Lapsed", width: "20%"},
+            {id: "kehtiv_kpv", name: "Kehtiv seisuga", width: "15%", type: 'date', show: false},
+            {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
+
         ],
-        sqlString: `SELECT id,
-                           isikukood,
-                           nimi,
-                           lapsed,
-                           aadress,
-                           email,
-                           tel,
-                           printimine,
-                           $1::INTEGER      AS rekvid,
-                           $2::INTEGER      AS user_id,
-                           count(*) OVER () AS rows_total
-                    FROM lapsed.cur_vanemad v
-                    WHERE rekv_id = $1::INTEGER `,     //  $1 всегда ид учреждения, $2 - userId
-        params: '',
+        sqlString: `WITH range_parameters AS (
+                        SELECT 
+                            CASE
+                                WHEN $3::DATE::TEXT IS NOT NULL AND $3::DATE::TEXT = '' THEN NULL::DATE
+                                ELSE $3::DATE::DATE END::DATE AS kehtiv_kpv,
+                            $1::integer                                    AS rekv_id
+                        ),
+                     cur_lapsed AS (
+                         SELECT l.id,
+                                lk.lopp_kpv,
+                                lk_range
+                         FROM lapsed.laps l
+                                  JOIN (SELECT parentid,
+                                               array_agg(lk_range) AS lk_range,
+                                               max(lopp_kpv)       AS lopp_kpv
+                                        FROM (
+                                                 SELECT parentid,
+                                                        (k.properties ->> 'lopp_kpv')::DATE AS lopp_kpv,
+                                                        ('[' || ((k.properties ->> 'alg_kpv')::DATE)::TEXT || ',' || (CASE
+                                                                                                                          WHEN (k.properties ->> 'alg_kpv')::DATE >=
+                                                                                                                               (k.properties ->> 'lopp_kpv')::DATE
+                                                                                                                              THEN (k.properties ->> 'alg_kpv')::DATE
+                                                                                                                          ELSE (k.properties ->> 'lopp_kpv')::DATE END)::TEXT ||
+                                                         ')') ::DATERANGE                   AS lk_range
+                                                 FROM lapsed.lapse_kaart k,
+                                                      range_parameters
+                                                 WHERE k.staatus <> 3
+                                                   AND k.rekvid = range_parameters.rekv_id
+                                                 GROUP BY parentid,  (k.properties ->> 'alg_kpv'), (k.properties ->> 'lopp_kpv')
+                                             ) qry,
+                                             range_parameters
+                                        GROUP BY parentid) lk ON lk.parentid = l.id
+                         WHERE l.staatus <> 3
+                     ),
+
+                     qry_range AS (
+                         WITH qry_range AS (
+                             SELECT DISTINCT unnest(lk.lk_range) AS range,
+                                             lk.id
+                             FROM cur_lapsed lk)
+                         SELECT DISTINCT bool_or(lk.range @> range_parameters.kehtiv_kpv) AS kehtivus,
+                                         lk.id,
+                                         array_agg(lk.range)                              AS range
+                         FROM qry_range lk,
+                              range_parameters
+                         GROUP BY lk.id
+                     )
+                
+                
+                SELECT v.id,
+                       v.laps_id,
+                       isikukood,
+                       nimi,
+                       lapsed,
+                       aadress,
+                       email,v.
+                       tel,
+                       printimine,
+                       range_parameters.rekv_id::INTEGER      AS rekvid,
+                       $2::INTEGER    AS user_id,
+                       count(*) OVER () AS rows_total,
+                       CASE
+                           WHEN coalesce(qr.kehtivus, FALSE) IS TRUE THEN
+                               'Jah'
+                           ELSE
+                               'Ei' END                      AS kehtivus,
+                       range_parameters.kehtiv_kpv::date as kehtiv_kpv
+                FROM lapsed.cur_vanemad v
+                         LEFT OUTER JOIN (SELECT * FROM qry_range WHERE coalesce(kehtivus, false) IS TRUE) qr ON qr.id = v.laps_id     ,
+                     range_parameters
+                WHERE v.rekv_id = range_parameters.rekv_id::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
+        params: ['rekvid', 'userid', 'kehtiv_kpv'],
         alias: 'curLapsed',
         converter: function (data) {
             let row_id = 0;

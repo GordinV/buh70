@@ -53,7 +53,7 @@ BEGIN
     -- Маска кода группы
     -- "Koolituse tüüp""дефис""две цифры"ерну
 
-    IF coalesce((len(array_to_string(regexp_match(doc_kood, '[A-Z][A-Z][A-Z][A-Z]-[0-9A-Z][0-9A-Z][0-9A-Z]-[0-9][0-9]'), ''))),
+    IF coalesce((len(array_to_string(regexp_match(doc_kood, '[A-Z][A-Z][A-Z][A-Z]-[0-9A-Z][0-9A-Z][0-9A-Z]-[0-9A-Z][0-9A-Z]'), ''))),
                 0) <> 11
     THEN
         RAISE EXCEPTION 'Viga, kood peaks olla AAAA-999-99 aga sisestatud %',doc_kood;

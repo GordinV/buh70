@@ -40,7 +40,8 @@ SELECT a.id                                                                AS va
                                                                         (va.properties ->> 'pank') = 'SWED' THEN 'SWED;'
                                                                    ELSE '' END) END)
                            ), '')::TEXT
-                                                                           AS printimine
+                                                                           AS printimine,
+       v.parentid                                                                AS laps_id
 FROM lapsed.vanemad v
          INNER JOIN libs.asutus a ON a.id = v.asutusid
          INNER JOIN (
@@ -52,7 +53,7 @@ FROM lapsed.vanemad v
          INNER JOIN (SELECT DISTINCT lk.parentid, lk.rekvid
                      FROM lapsed.lapse_kaart lk
                      WHERE lk.staatus <> 3
-                       AND date_part('year', (lk.properties ->> 'lopp_kpv')::DATE) >= date_part('year', current_date)
+--                       AND date_part('year', (lk.properties ->> 'lopp_kpv')::DATE) >= date_part('year', current_date)
 ) lk
                     ON lk.parentid = v.parentid
          LEFT OUTER JOIN lapsed.vanem_arveldus va ON va.parentid = l.id
@@ -60,7 +61,7 @@ FROM lapsed.vanemad v
     AND va.rekvid = lk.rekvid
 
 WHERE v.staatus <> 3
-GROUP BY a.id, v.id, a.regkood, a.nimetus, lk.rekvid
+GROUP BY a.id, v.id, a.regkood, a.nimetus, lk.rekvid, v.parentid
 ORDER BY a.nimetus;
 
 GRANT SELECT ON TABLE lapsed.cur_vanemad TO arvestaja;

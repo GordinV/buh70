@@ -573,7 +573,7 @@ const Arv = {
             {id: "nimi", name: "Nimi", width: "15%"},
             {id: "isikukood", name: "Isikukood", width: "7%"},
             {id: "viitenr", name: "Viitenr", width: "5%"},
-            {id: "vana_vn", name: "Vana VN", width: "5%"},
+            {id: "printimine", name: "Arve esitatakse", width: "5%"},
             {id: "tyyp", name: "Tüüp", width: "5%", show: false},
             {id: "ebatoenaolised", name: "Ebatõenaolised", width: "5%"},
             {id: "ebatoenaolised", name: "Ebatõenaolised", width: "5%"},
@@ -614,7 +614,30 @@ const Arv = {
                                ELSE 'EI' END::TEXT              AS esitatud,
                            pank::TEXT,
                            ebatoenaolised,
-                           vn.vn                                AS vana_vn
+                           vn.vn                                AS vana_vn,
+                           CASE
+                               WHEN (kas_email)::BOOLEAN
+                                   THEN 'email;'
+                               ELSE '' END ||
+                           CASE
+                               WHEN (kas_paberil)::BOOLEAN
+                                   THEN 'paber;'
+                               ELSE '' END ||
+                           CASE
+                               WHEN (kas_earved)::BOOLEAN AND
+                                    empty(pank)
+                                   THEN 'e-arve;'
+                               ELSE '' END ||
+                           CASE
+                               WHEN (kas_earved)::BOOLEAN AND
+                                    NOT empty(pank) AND
+                                    pank = 'SEB' THEN 'SEB;'
+                               ELSE '' END ||
+                           CASE
+                               WHEN (kas_earved)::BOOLEAN AND
+                                    NOT empty(pank) AND
+                                    pank = 'SWED' THEN 'SWED;'
+                               ELSE '' END ::TEXT               AS printimine
                     FROM lapsed.cur_laste_arved a
                              LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                                               FROM lapsed.viitenr vn
@@ -838,11 +861,11 @@ const Arv = {
                                                    (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
                        WHERE id = $1`,
             register_error: `UPDATE docs.doc
-                       SET history = history ||
-                                     (SELECT row_to_json(row)
-                                      FROM (SELECT now()                                                AS email_viga,
-                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
-                       WHERE id = $1`
+                             SET history = history ||
+                                           (SELECT row_to_json(row)
+                                            FROM (SELECT now()                                                AS email_viga,
+                                                         (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                             WHERE id = $1`
 
         }
     ],
