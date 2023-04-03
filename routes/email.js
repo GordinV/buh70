@@ -453,7 +453,7 @@ exports.sendPrintForm = async (req, res) => {
     let id = params.id || null; // параметр id документа
 
     const sqlWhere = params.sqlWhere || '';// параметр sqlWhere документа
-    let filterData = []; // параметр filter документов;
+    let filterData = params.filterData; // параметр filter документов;
 
     if (id && !sqlWhere) {
         // only 1 id
@@ -475,6 +475,12 @@ exports.sendPrintForm = async (req, res) => {
         id = null;
     }
 
+    // выкинем лишние (без данных) параметры
+    filterData = filterData.filter(row => {
+        if (row.value && row.value !== 'null') {
+            return row;
+        }
+    });
 
     let subject = params.subject ? params.subject : null;
     let context = params.context ? params.context : null;
