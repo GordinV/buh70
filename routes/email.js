@@ -88,7 +88,6 @@ exports.post = async (req, res) => {
             emailHtml = null,
             attachment,
             docNumber = '',
-            receiverEmail,
             emailTemplate = null;
         let printHtml = null;
 
@@ -138,8 +137,8 @@ exports.post = async (req, res) => {
         // делаем массив промисов отправки почты
         const emailPromises = selectedDocs.map(async arve => {
             // вернуть отчет
-            docNumber = arve.number ? arve.number : null;
-            receiverEmail = arve.email ? arve.email : null;
+            let docNumber = arve.number ? arve.number : null;
+            let receiverEmail = arve.email ? arve.email : null;
 
             let renderForm = 'arve_kaartid';
             switch (params.docTypeId) {

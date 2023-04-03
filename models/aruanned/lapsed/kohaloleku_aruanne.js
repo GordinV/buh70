@@ -29,6 +29,7 @@ module.exports = {
                     ORDER BY asutus, koolituse_tyyp
         `,     // $1 - rekvid, $2-KUU $3 - aasta
         params: ['rekvid', 'kuu', 'aasta'],
+        min_params: 1,
         alias: 'kohaloleku_report',
         subtotals: ['yksuse_kogus', 'nimekirje_kogus', 'faktiline_kogus', 'kogus'],
         notReloadWithoutParameters: true

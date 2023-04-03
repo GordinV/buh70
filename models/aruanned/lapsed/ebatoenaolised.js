@@ -38,6 +38,7 @@ module.exports = {
                     ORDER BY asutus, number
         `,     // $1 - rekvid, $3 - kond
         params: ['rekvid', 'userid', 'kpv'],
+        min_params: 1,
         alias: 'ebatoenaolised_report',
         notReloadWithoutParameters: true
 

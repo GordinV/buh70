@@ -34,6 +34,7 @@ module.exports = {
                     FROM report,
                          kond`,     // $1 - rekvid, $3 - kond
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
+        min_params: 2,
         totals: ` sum(summa) over() as summa_total, 
         sum(summa_322000) over() as summa_322000_total,
         sum(summa_322020) over() as summa_322020_total,

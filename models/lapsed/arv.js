@@ -148,10 +148,17 @@ const Arv = {
                          va.properties ->> 'pank'                                  AS pank,
                          va.properties ->> 'iban'                                  AS iban,
                        to_jsonb(array((SELECT kaibed FROM kaibed WHERE kaibed.isik_id = l.id))) AS kaibed,
-                       to_jsonb(array((SELECT details FROM details det WHERE det.parentid = d.id)))   AS details                                                                      
+                       to_jsonb(array((SELECT details FROM details det WHERE det.parentid = d.id)))   AS details,
+                        r.muud as tais_nimetus,
+                        r.tel as rekv_tel,
+                        r.email as rekv_email,
+                        r.aadress as rekv_aadress,
+                        r.regkood as rekv_regkood
+                                                                                             
                   FROM arved, docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
+                           inner join ou.rekv r on r.id = d.rekvid
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                            LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
                            LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
@@ -181,7 +188,7 @@ const Arv = {
                         FROM ou.aa
                         WHERE parentid = doc.rekvid
                           AND kassa = 1
-                          AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)) AS arved                       
+                          AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)) AS arved                                                 
                 FROM doc`
     },
     select: [

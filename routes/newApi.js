@@ -42,7 +42,9 @@ exports.post = async (req, res) => {
         // оставим только "заданные" параметры
         let paramsWithData = gridParams ? gridParams.filter(param => param) : [];
 
-        if (doc.config.grid.notReloadWithoutParameters && doc.config.grid.params.length > 2 && paramsWithData.length <= 4) {
+        let minimum = doc.config.grid.min_params ? (doc.config.grid.min_params): 4;
+
+        if (doc.config.grid.notReloadWithoutParameters && doc.config.grid.params.length > 2 && paramsWithData.length < minimum) {
             // если задан параметр, то не делать выборку, пока нет параметров (для отчетов)
             data = {
                 docTypeId: parameter,

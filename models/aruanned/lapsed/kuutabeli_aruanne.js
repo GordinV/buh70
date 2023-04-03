@@ -32,6 +32,7 @@ module.exports = {
                     FROM lapsed.kuutabeli_aruanne($1::INTEGER, $3, $4) qryReport
                     ORDER BY nimi, ruhm`,     // $1 - rekvid, $3 - kuu, $4 - aasta
         params: ['rekvid', 'userid', 'kuu', 'aasta'],
+        min_params: 2,
         notReloadWithoutParameters: true,
         totals: ` sum(arvestatud) over() as arvestatud_total,
                 sum(soodustus) over() as soodustus_total, 

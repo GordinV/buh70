@@ -36,6 +36,7 @@ module.exports = {
                     ORDER BY lapse_nimi, r.nimetus, (kpv::DATE)
         `,     // $1 - rekvid, $3 - kond? removed jaak = 0
         params: ['rekvid', 'lapse_isikukood', 'lapse_nimi', 'kpv_start', 'kpv_end'],
+        min_params: 3,
         notReloadWithoutParameters: true,
         alias: 'child_summary_report',
         subtotals: ['summa', 'jaak', 'tasutud', 'mahakandmine','maksesumma']

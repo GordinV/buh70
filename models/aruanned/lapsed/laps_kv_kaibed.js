@@ -83,6 +83,7 @@ module.exports = {
                         case when left(arv_period,1) = 'A' then 'a' when  left(arv_period,1) = 'L' then 'l' else 'k'  end,
                         arv_period`,
         params: ['rekvid', 'userid', 'period_start', 'period_end', 'lapse_isikukood','lapse_nimi','viitenumber'],
+        min_params: 5,
         notReloadWithoutParameters: true,
         alias: 'child_summary_report_period',
         totals: `sum(db) OVER ()               AS db_total,

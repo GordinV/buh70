@@ -42,6 +42,7 @@ module.exports = {
                          left outer JOIN ou.rekv r ON report.rekv_id = r.id`,
         params: '',
         notReloadWithoutParameters: true,
+        min_params: 0,
         alias: 'selgemata_maksed',
     },
     print: [

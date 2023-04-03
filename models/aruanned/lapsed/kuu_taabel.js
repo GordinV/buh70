@@ -239,6 +239,7 @@ module.exports = {
             ORDER BY tyyp, yksus, is_osa DESC, teenus, is_row
         `,     // $1 - rekvid, $2-KUU $3 - aasta
         params: ['rekvid', 'kuu', 'aasta'],
+        min_params: 1,
         notReloadWithoutParameters: true,
         alias: 'kuu_taabel_report',
         subtotals: []
