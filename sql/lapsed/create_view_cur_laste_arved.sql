@@ -38,7 +38,8 @@ SELECT d.id                                                                     
        (SELECT exists(SELECT *
                       FROM jsonb_array_elements(history) elem
                       WHERE (elem ?| ARRAY ['print','email','earve'])))::BOOLEAN              AS kas_esitatud,
-       l.id                                                                                   AS laps_id
+       l.id                                                                                   AS laps_id,
+       a.id as arv_id
 FROM docs.doc d
          INNER JOIN docs.arv a ON a.parentId = d.id
          INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id

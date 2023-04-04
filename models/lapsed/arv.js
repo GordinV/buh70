@@ -272,11 +272,11 @@ const Arv = {
                        coalesce(saldod.lopp_jaak, 0)::NUMERIC(12, 2)       AS lopp_jaak,
                        coalesce(saldod.ettemaksud, 0)::NUMERIC(12, 2) AS ettemaksud,
                        coalesce(saldod.lopp_jaak, 0)::NUMERIC(12, 2)       AS tasumisele,
-                       (SELECT string_agg(arve::TEXT, ',') 
-                        FROM ou.aa
-                        WHERE parentid = doc.rekvid
-                          AND kassa = 1
-                          AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)) AS arved
+                (SELECT jsonb_agg(jsonb_build_object ('pank', case when left(arve,7) in ('EE47101') then 'SEB Pank IBAN ' WHEN left(arve,7) in ('EE71220') then 'SWEDPANK IBAN ' else '' end, 'arve',arve)) as arved
+                FROM ou.aa
+                WHERE parentid = doc.rekvid
+                    AND kassa = 1
+                    AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE))  AS arved
                        
                 FROM doc,
                      (
@@ -565,23 +565,24 @@ const Arv = {
             {id: "id", name: "id", width: "1px", show: false},
             {id: "number", name: "Number", width: "5%", type: "text"},
             {id: "kpv", name: "Kuupaev", width: "5%", type: 'date', interval: true},
-            {id: "asutus", name: "Maksja", width: "15%"},
+            {id: "asutus", name: "Maksja", width: "10%"},
             {id: "summa", name: "Summa", width: "5%", type: "number", interval: true},
             {id: "tahtaeg", name: "Tähtaeg", width: "5%", type: 'date', interval: true},
             {id: "jaak", name: "Jääk", width: "5%", type: "number", interval: true},
             {id: "tasud", name: "Tasud", width: "5%", type: 'date', interval: true},
-            {id: "nimi", name: "Nimi", width: "15%"},
+            {id: "yksus", name: "Üksus", width: "7%"},
+            {id: "nimi", name: "Nimi", width: "10%"},
             {id: "isikukood", name: "Isikukood", width: "7%"},
-            {id: "viitenr", name: "Viitenr", width: "5%"},
+            {id: "viitenr", name: "Viitenr", width: "6%"},
             {id: "printimine", name: "Arve esitatakse", width: "5%"},
             {id: "tyyp", name: "Tüüp", width: "5%", show: false},
-            {id: "ebatoenaolised", name: "Ebatõenaolised", width: "5%"},
             {id: "ebatoenaolised", name: "Ebatõenaolised", width: "5%"},
             {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean', hideFilter: true},
             {id: "esitatud", name: "Kas esitatud?", width: "5%", type: 'select', data: ['', 'Jah', 'Ei'], show: false},
 
         ],
-        sqlString: `SELECT id,
+        sqlString: `WITH arved AS (
+                        SELECT a.id,
                            number :: TEXT,
                            rekvid,
                            to_char(kpv, 'DD.MM.YYYY') :: TEXT   AS kpv,
@@ -637,7 +638,8 @@ const Arv = {
                                WHEN (kas_earved)::BOOLEAN AND
                                     NOT empty(pank) AND
                                     pank = 'SWED' THEN 'SWED;'
-                               ELSE '' END ::TEXT               AS printimine
+                               ELSE '' END ::TEXT               AS printimine,
+                               a.arv_id
                     FROM lapsed.cur_laste_arved a
                              LEFT OUTER JOIN (SELECT string_agg(viitenumber, ', ') AS vn, vn.isikukood
                                               FROM lapsed.viitenr vn
@@ -647,7 +649,18 @@ const Arv = {
                     ) vn
                                              ON vn.isikukood = a.isikukood
 
-                    WHERE a.rekvId = $1::INTEGER`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+                    WHERE a.rekvId = $1::INTEGER),
+                  yksused AS (
+                      SELECT array_to_string(public.get_unique_value_from_array(array_agg(a1.properties ->> 'yksus')),',') AS yksus,
+                             a1.parentid                                                        AS arv_id
+                      FROM docs.arv1 a1
+                      WHERE a1.parentid IN (SELECT arv_id FROM arved)
+                      GROUP BY a1.parentid
+                  )
+         SELECT a.*, y.yksus
+         FROM arved a
+                  LEFT OUTER JOIN yksused y ON y.arv_id = a.arv_id
+         order by yksus`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curLasteArved'
     },

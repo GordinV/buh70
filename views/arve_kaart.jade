@@ -49,66 +49,102 @@ style(type='text/css').
     .div {
         line-height:1;
     }
+    .auto {
+        width: auto;
+    }
 
 block content
-    link(rel='stylesheet', href='/stylesheets/reports.css')
     meta(charset='UTF-8')
     -var User = user ? user : {asutus: ''};
-    div.div
+    div.body_wrapper.div
         div.row_wrapper
-            p.label Asutus:
-            p.input #{User.asutus}, reg.kood: #{User.regkood}
+            div.label
+                span Asutus:
+            div.input
+                span #{User.asutus}, reg.kood: #{User.regkood}
         div.row_wrapper
-            p.label Aadress:
-            p.input #{User.aadress}
+            div.label
+                span Aadress:
+            div.input
+                span #{User.aadress}
         div.row_wrapper
-            p.label Telefon:
-            p.input #{User.tel}
+            div.label
+                span Telefon:
+            div.input
+                span #{User.tel}
         div.row_wrapper
-            p.label E-post:
-            p.input #{'oppetasu@narvakultuur.ee'}
+            div.label
+                span E-post:
+            div.input
+                span #{'oppetasu@narvakultuur.ee'}
 
         div.row_wrapper
-            p.label Raha saaja:
-            p.input #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
+            div.label
+                span Raha saaja:
+            div.input
+                span #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
         div.row_wrapper
-            p.label Maksta arvele:
-            p.input #{data[0].arved}
+            div.label
+                span Maksta arvele:
+            table.input.auto
+                tbody
+                each aa in data[0].arved
+                    tr
+                        td #{aa.pank}
+                        td #{aa.arve}
 
         h3
             p #{`${data[0].tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
 
             div.row_wrapper
-                p.label Number:
-                p.input #{data[0].number}
+                div.label
+                    span Number:
+                div.input
+                    span #{data[0].number}
 
 
             div.row_wrapper
-                p.label Kuupäev:
-                p.input #{data[0].kpv_print}
+                div.label
+                    span Kuupäev:
+                div.input
+                    span #{data[0].kpv_print}
             div.row_wrapper
-                p.label Viitenumber:
-                p.input #{data[0].viitenr}
+                div.label
+                    span Viitenumber:
+                div.input
+                    span #{data[0].viitenr}
             div.row_wrapper
-                p.label Tähtaeg:
-                p.input #{data[0].tahtaeg_print}
+                div.label
+                    span Tähtaeg:
+                div.input
+                    span #{data[0].tahtaeg_print}
             div.row_wrapper
-                p.label Maksja:
-                p.input #{`${data[0].asutus.trim()} isikukood/reg.kood: ${data[0].regkood}`}
+                div.label
+                    div Maksja:
+                div.input
+                    span #{`${data[0].asutus.trim()} isikukood/reg.kood: ${data[0].regkood}`}
             div.row_wrapper
-                p.label Teenuse saaja:
-                p.input #{`${data[0].lapse_nimi.trim()}, isikukood: ${data[0].isikukood}`}
+                div.label
+                    span Teenuse saaja:
+                p.input
+                    span #{`${data[0].lapse_nimi.trim()}, isikukood: ${data[0].isikukood}`}
             div.row_wrapper
-                p.label Aadress:
-                p.input #{`${data[0].aadress}`}
+                div.label
+                    span Aadress:
+                div.input
+                    span #{`${data[0].aadress}`}
 
             div.row_wrapper
-                p.label Lisa:
-                p.input #{`${data[0].lisa ? data[0].lisa: ''}`}
+                div.label
+                    span Lisa:
+                div.input
+                    span #{`${data[0].lisa ? data[0].lisa: ''}`}
 
             div.row_wrapper
-                p.label Märkused :
-                p.input #{`${data[0].muud ? data[0].muud : ''}`}
+                div.label
+                    span Märkused :
+                div.input
+                    span #{`${data[0].muud ? data[0].muud : ''}`}
 
             table.table.table-hover.grid_data
                 thead.grid_head
