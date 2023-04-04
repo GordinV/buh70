@@ -321,7 +321,7 @@ FROM doc`;
             let receiverEmail = arve.email ? arve.email : null;
 
 //            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
-            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
+//            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
 
             let renderForm = 'arve_kaartid';
 
@@ -346,7 +346,7 @@ FROM doc`;
             return new Promise((resolve, reject) => {
                 transporter.sendMail({
                         from: `"${l_user_name}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
-                        to: `${receiverEmail}`, // (, baz@example.com) list of receivers (arve.email)
+                        to: `${arve.email}`, // (, baz@example.com) list of receivers (arve.email)
                         subject: `Saadan dokument nr. ${arve.number}`, // Subject line
                         text: 'Automaat e-mail', // plain text body
                         html: emailHtml, // html body
