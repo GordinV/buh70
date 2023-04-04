@@ -101,6 +101,13 @@ const automailer = async () => {
              WHERE parentid IN (SELECT id from docs)
              GROUP BY a.rekvid
          ),
+         aa as (
+             SELECT jsonb_agg(jsonb_build_object ('pank', case when left(arve,7) in ('EE47101') then 'SEB Pank IBAN ' WHEN left(arve,7) in ('EE71220') then 'SWEDPANK IBAN ' else '' end, 'arve',arve)) as arved
+             FROM ou.aa
+             WHERE parentid in (select rekvid from ou.userid where id = ${l_userId}::integer)
+               AND kassa = 1
+               AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)
+         ),
 
          kaibed AS (
              WITH lapsed AS (
@@ -201,7 +208,6 @@ const automailer = async () => {
            asutus.properties::JSONB -> 'asutus_aa' -> 0 ->> 'aa'                                AS asutuse_aa,
            a.doklausid,
            a.journalid,
-           coalesce(jid.number, 0) :: INTEGER                                                   AS laus_nr,
            dp.details :: JSONB ->> 'konto'                                                      AS konto,
            dp.details :: JSONB ->> 'kbmkonto'                                                   AS kbmkonto,
            dp.selg :: TEXT                                                                      AS dokprop,
@@ -230,17 +236,16 @@ const automailer = async () => {
             r.tel as rekv_tel,
             r.email as rekv_email,
             r.aadress as rekv_aadress,
-            r.regkood as rekv_regkood
+            r.regkood as rekv_regkood,
+           aa.arved AS arved
                        
-    FROM arved,
+    FROM arved,aa,
          docs.doc d
              INNER JOIN docs.arv a ON a.parentId = d.id
              INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
              INNER JOIN ou.userid u ON u.id = ${l_userId} :: INTEGER
              inner join ou.rekv r on r.id = d.rekvid
              LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
-             LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
-             LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
              LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
              LEFT OUTER JOIN lapsed.laps l
                              ON l.id = ll.parentid
@@ -260,13 +265,7 @@ SELECT doc.*,
        CASE
            WHEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0) > 0
                THEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0)
-           ELSE 0 END                                                    AS ettemaksud,
-
-       (SELECT string_agg(arve::TEXT, ',')
-        FROM ou.aa
-        WHERE parentid = doc.rekvid
-          AND kassa = 1
-          AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)) AS arved
+           ELSE 0 END                                                    AS ettemaksud
 FROM doc`;
 
         let selectedDocs = await db.queryDb(sql, null, null, null, null, null, config);
@@ -318,7 +317,7 @@ FROM doc`;
             let receiverEmail = arve.email ? arve.email : null;
 
 //            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
-//            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
+            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
 
             let renderForm = 'arve_kaartid';
 
@@ -343,7 +342,7 @@ FROM doc`;
             return new Promise((resolve, reject) => {
                 transporter.sendMail({
                         from: `"${l_user_name}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
-                        to: `${arve.email}`, // (, baz@example.com) list of receivers
+                        to: `${receiverEmail}`, // (, baz@example.com) list of receivers (arve.email)
                         subject: `Saadan dokument nr. ${arve.number}`, // Subject line
                         text: 'Automaat e-mail', // plain text body
                         html: emailHtml, // html body
