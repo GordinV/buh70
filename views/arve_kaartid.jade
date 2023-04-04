@@ -168,27 +168,27 @@ block content
                                     td(align='center')=row.uhik
                                     td(align='center')=row.kogus
                                     td(align='center')=Number(row.summa).toFixed(2)
-                h3
-                    div.doc_footer
-                        div.row_wrapper
-                            div.div_column.div_column_left
-                                span Kokku:
-                            div.div_column.div_column_right
-                                span #{`${Number(data[0].summa).toFixed(2)}`}
-                        div.row_wrapper
-                            div.div_column.div_column_left
-                                span Seisuga #{`${data[0].period_alg_print.trim()}`} jääk:
-                            div.div_column.div_column_right
-                                span #{`${Number(data[0].alg_jaak).toFixed(2)}`}
-                        div.row_wrapper
-                            div.div_column.div_column_left
-                                span Laekumised periodis #{`${data[0].laekumise_period}`}:
-                            div.div_column.div_column_right
-                                span #{`${Number(data[0].laekumised).toFixed(2)}`}
-                        div.row_wrapper
-                            div.div_column.div_column_left
-                                span Seisuga #{`${data[0].kpv_print}`} tasumisele:
-                            div.div_column.div_column_right
-                                span #{`${Number(data[0].tasumisele).toFixed(2)}`}
-                        br
-                p Küsimuste korral palun pöörduge asutuste esindaja poole
+                    h3
+                        div.doc_footer
+                            div.row_wrapper
+                                div.div_column.div_column_left
+                                    span Kokku:
+                                div.div_column.div_column_right
+                                    span #{`${Number(doc.summa).toFixed(2)}`}
+                            div.row_wrapper
+                                div.div_column.div_column_left
+                                    span Seisuga #{`${doc.period_alg_print.trim()}`} jääk:
+                                div.div_column.div_column_right
+                                    span #{`${Number(doc.alg_jaak).toFixed(2)}`}
+                            div.row_wrapper
+                                div.div_column.div_column_left
+                                    span Laekumised periodis #{`${doc.laekumise_period}`}:
+                                div.div_column.div_column_right
+                                    span #{`${Number(doc.laekumised).toFixed(2)}`}
+                            div.row_wrapper
+                                div.div_column.div_column_left
+                                    span Seisuga #{`${doc.kpv_print}`} tasumisele:
+                                div.div_column.div_column_right
+                                    span #{`${Number(doc.tasumisele).toFixed(2)}`}
+                            br
+                    p Küsimuste korral palun pöörduge asutuste esindaja poole
