@@ -17,7 +17,14 @@ module.exports = {
             {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean', hideFilter: true}
 
         ],
-        sqlString: ` SELECT liik.nimetus                       AS liik,
+        sqlString: ` 
+            WITH rekv_ids AS (
+                SELECT rekv_id
+                FROM public.get_asutuse_struktuur($1)),
+                 docs_types AS (
+                     SELECT id, kood FROM libs.library WHERE library.library = 'DOK' AND kood IN ('ARV')
+                 )
+                SELECT liik.nimetus                       AS liik,
                             sum(a1.summa) OVER ()              AS summa_kokku,
                             to_char(a.kpv, 'DD.MM.YYYY')       AS kpv,
                             year(a.kpv)                        AS aasta,
@@ -30,9 +37,9 @@ module.exports = {
                             a1.summa,
                             r.nimetus::TEXT                    AS asutus,
                             $2                                 AS user_id,
-                            v.properties ->> 'pank'            AS pank,
-                            v.properties ->> 'iban'            AS iban,
-                            v.properties ->> 'e-arve'          AS earve,
+                            case when coalesce((va.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN and not empty(va.properties ->> 'pank') then va.properties ->> 'pank' else '' end            AS pank,
+                            case when coalesce((va.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN and not empty(va.properties ->> 'pank') then va.properties ->> 'iban' else '' end            AS iban,
+                            va.properties ->> 'e-arve'          AS earve,
                             TRUE                               AS select,
                             d.id,
                             a1.properties ->> 'yksus'          AS yksus,
@@ -43,24 +50,24 @@ module.exports = {
                               INNER JOIN libs.nomenklatuur n ON a1.nomid = n.id
                               INNER JOIN lapsed.liidestamine l ON l.docid = d.id
                               INNER JOIN ou.rekv r ON r.id = d.rekvid
-                              LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = a.asutusid
-                         AND v.parentid = l.parentid
+                              LEFT OUTER JOIN lapsed.vanem_arveldus va
+                                    ON l.parentid = va.parentid AND va.asutusid = a.asutusid AND va.rekvid = a.rekvid                              
                               LEFT OUTER JOIN libs.library yksus ON (a1.properties ->> 'yksus')::TEXT = yksus.kood::TEXT
                          AND yksus.rekvid = a.rekvid AND yksus.status <> 3
                          AND yksus.library = 'LAPSE_GRUPP'
                               LEFT OUTER JOIN libs.library liik ON r.properties ->> 'liik' = liik.kood
                          AND liik.library = 'ASUTUSE_LIIK'
                          AND liik.status <> 3
-
                      WHERE d.status <> 3
-                       AND a.rekvid IN (SELECT rekv_id
-                                        FROM get_asutuse_struktuur($1))
+                        AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                        AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')                     
                        AND ((a.properties ->> 'ettemaksu_period') IS NULL
                          OR a.properties ->> 'tyyp' = 'ETTEMAKS')
                      ORDER BY aasta, kuu, a.number, r.nimetus
         `,     // $1 - rekvid, $3 - kond
         params: '',
-        alias: 'arved_koodi_jargi_report'
+        alias: 'arved_koodi_jargi_report',
+
 
     },
     print: [

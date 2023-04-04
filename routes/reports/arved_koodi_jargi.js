@@ -29,7 +29,8 @@ exports.get = async (req, res) => {
                 kood: row.kood,
                 hind: row.hind,
                 kogus: row.kogus,
-                summa: row.summa
+                summa: row.summa,
+                asutus: row.asutus
             };
 
             if (!header) {
