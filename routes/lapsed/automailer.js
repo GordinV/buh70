@@ -84,6 +84,7 @@ const automailer = async () => {
                AND d.status <> 3
                AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood = 'ARV')
 
+/*
                AND coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN
                AND NOT (SELECT exists(SELECT *
                                       FROM jsonb_array_elements(history) elem
@@ -91,8 +92,11 @@ const automailer = async () => {
              AND NOT (SELECT exists(SELECT *
                                     FROM jsonb_array_elements(history) elem
                                     WHERE (elem ?| ARRAY ['email_viga'])))::BOOLEAN
+*/
                                       
                AND a.rekvid IN (SELECT id FROM ou.rekv WHERE parentid = 119)
+                and  d.id in (4815112,4815187,4815208,4815529,4815608)
+
              LIMIT ${l_limit}
          ),
          arved AS (
