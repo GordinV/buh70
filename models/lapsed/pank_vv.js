@@ -84,6 +84,7 @@ module.exports = {
                              LEFT OUTER JOIN docs.mk mk ON mk.parentid = v.doc_id
                              LEFT OUTER JOIN ou.rekv r ON r.id = mk.rekvid
                              LEFT OUTER JOIN ou.userid u ON u.id = $2
+                    WHERE v.selg not like '%intres%'
                     ORDER BY id DESC`,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
         alias: 'curPankVV'

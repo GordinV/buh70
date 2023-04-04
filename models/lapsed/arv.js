@@ -27,7 +27,13 @@ const Arv = {
                  WHERE parentid IN (SELECT ids FROM params)
                  group by a.rekvid
              ),
-             
+             aa as (
+                SELECT jsonb_agg(jsonb_build_object ('pank', case when left(arve,7) in ('EE47101') then 'SEB Pank IBAN ' WHEN left(arve,7) in ('EE71220') then 'SWEDPANK IBAN ' else '' end, 'arve',arve)) as arved
+                FROM ou.aa
+                WHERE parentid in (select rekvid from ou.userid where id = $2::integer)
+                    AND kassa = 1
+                    AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)                         
+             ),
          kaibed AS (
               with lapsed AS (
                       SELECT array_agg(parentid) AS isik_ids
@@ -95,7 +101,6 @@ const Arv = {
                       INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
              WHERE a.parentid IN (SELECT ids FROM params)
                AND a1.kogus <> 0)
-
                     SELECT d.id,
                          a.id as doc_id,
                          $2 :: INTEGER                                             AS userid,
@@ -153,9 +158,10 @@ const Arv = {
                         r.tel as rekv_tel,
                         r.email as rekv_email,
                         r.aadress as rekv_aadress,
-                        r.regkood as rekv_regkood
+                        r.regkood as rekv_regkood,
+                        aa.arved AS arved                                                 
                                                                                              
-                  FROM arved, docs.doc d
+                  FROM arved, aa, docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
                            inner join ou.rekv r on r.id = d.rekvid
@@ -182,13 +188,7 @@ const Arv = {
                     CASE
                         WHEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0) > 0
                             THEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0)
-                        ELSE 0 END                                   AS ettemaksud,
-                
-                       (SELECT string_agg(case when left(arve,7) in ('EE47101') then 'SEB Pank IBAN ' WHEN left(arve,7) in ('EE71220') then 'SWEDPANK IBAN ' else '' end  || arve::TEXT, ',') 
-                        FROM ou.aa
-                        WHERE parentid = doc.rekvid
-                          AND kassa = 1
-                          AND coalesce((properties ->> 'kas_oppetasu')::BOOLEAN, FALSE)) AS arved                                                 
+                        ELSE 0 END                                   AS ettemaksud
                 FROM doc`
     },
     select: [

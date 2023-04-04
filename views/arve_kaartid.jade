@@ -48,6 +48,10 @@ style(type='text/css').
     .page {
         page-break-after: always;
     }
+    .auto {
+        width: auto;
+    }
+
 
 
 block content
@@ -84,8 +88,13 @@ block content
                 div.row_wrapper
                     div.label
                         span Maksta arvele:
-                    div.input
-                        span #{doc.arved}
+                    table.input.auto
+                        tbody
+                        each aa in doc.arved
+                            tr
+                                td #{aa.pank}
+                                td #{aa.arve}
+
                 div.row_wrapper
                     div.label
                         span Viitenumber:

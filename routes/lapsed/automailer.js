@@ -244,12 +244,12 @@ const automailer = async () => {
              LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
              LEFT OUTER JOIN lapsed.laps l
                              ON l.id = ll.parentid
---                           LEFT OUTER JOIN lapsed.vanemad v ON v.asutusid = asutus.id
              LEFT OUTER JOIN lapsed.vanem_arveldus va
                              ON va.asutusid = a.asutusid AND va.rekvid = d.rekvid AND va.parentid = l.id
                                  AND va.parentid = l.id
 
-    WHERE d.id IN (SELECT id from docs)
+    WHERE d.id in (4815112,4815187,4815208,4815529,4815608)
+    --d.id IN (SELECT id from docs)
 )
 SELECT doc.*,
        coalesce((doc.kaibed -> 0 ->> 'alg_db')::NUMERIC, 0) -
