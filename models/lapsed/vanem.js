@@ -201,7 +201,8 @@ module.exports = {
                 FROM lapsed.cur_vanemad v
                          LEFT OUTER JOIN (SELECT * FROM qry_range WHERE coalesce(kehtivus, false) IS TRUE) qr ON qr.id = v.laps_id     ,
                      range_parameters
-                WHERE v.rekv_id = range_parameters.rekv_id::INTEGER`,     //  $1 всегда ид учреждения, $2 - userId
+                WHERE v.rekv_id = range_parameters.rekv_id::INTEGER
+                ORDER by v.isikukood`,     //  $1 всегда ид учреждения, $2 - userId
         params: ['rekvid', 'userid', 'kehtiv_kpv'],
         alias: 'curLapsed',
         converter: function (data) {
