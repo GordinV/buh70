@@ -322,17 +322,22 @@ FROM doc`;
 
 //            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
             receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
+            let data = {
+                '0': arve,
+                details: arve.details
+            };
+            console.log('arve', data);
 
             let renderForm = 'arve_kaart';
 
             let file = path.join(__dirname, './../..', 'views', `${renderForm}.jade`);
-            let printHtml = await jade.renderFile(file, {data: arve, user: user});
+            let printHtml = await jade.renderFile(file, {data: data, user: user});
 
             const emailTemplateObject = emailTemplates.find(templ => templ.params === 'id');
             emailTemplate = emailTemplateObject.view;
 
             file = path.join(__dirname, './../..', 'views', `${emailTemplate}.jade`);
-            let emailHtml = await jade.renderFile(file, {doc: arve, user: user});
+            let emailHtml = await jade.renderFile(file, {doc: [arve], user: user});
 
             //attachment
             let filePDF = await createPDF(printHtml, `doc_${arve.id}`);
@@ -364,11 +369,18 @@ FROM doc`;
                             if (emailTemplateObject.register_error) {
                                 // если есть метод регистрации, отметим email
                                 let sql = emailTemplateObject.register_error,
-                                    params = [arve.id, user.userId, err];
+                                    params = [arve.id, user.userId, JSON.stringify(err)];
 
                                 if (sql) {
-                                    db.queryDb(sql, params);
+                                  let tulemus =  await db.queryDb(sql, params);
                                 }
+                                sql = emailTemplateObject.log,
+                                    params = [arve.id, user.userId,JSON.stringify(err)];
+
+                                if (sql) {
+                                    let tulemus_log =  await db.queryDb(sql, params);
+                                }
+
                             }
                             return reject(err);
                         } else {
@@ -391,8 +403,16 @@ FROM doc`;
                                     params = [arve.id, l_userId];
 
                                 if (sql) {
-                                    db.queryDb(sql, params);
+                                  let tulemus = await db.queryDb(sql, params);
                                 }
+
+                                sql = emailTemplateObject.log,
+                                    params = [arve.id, user.userId,JSON.stringify(info)];
+
+                                if (sql) {
+                                    let tulemus_log =  await db.queryDb(sql, params);
+                                }
+
                             }
 
                             return resolve(arve.id);
