@@ -98,6 +98,11 @@ block content
                     tr
                         td #{aa.pank}
                         td #{aa.arve}
+        div.row_wrapper
+            div.label
+                span Viitenumber:
+            div.input
+                span #{data[0].viitenr}
 
         h3
             p #{`${data[0].tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
@@ -114,11 +119,6 @@ block content
                     span Kuupäev:
                 div.input
                     span #{data[0].kpv_print}
-            div.row_wrapper
-                div.label
-                    span Viitenumber:
-                div.input
-                    span #{data[0].viitenr}
             div.row_wrapper
                 div.label
                     span Tähtaeg:
