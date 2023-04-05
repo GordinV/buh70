@@ -133,7 +133,6 @@ const Arv = {
                          asutus.properties::JSONB -> 'asutus_aa' -> 0 ->> 'aa'     AS asutuse_aa,
                          a.doklausid,
                          a.journalid,
-                         coalesce(jid.number, 0) :: INTEGER                        AS laus_nr,
                          dp.details :: JSONB ->> 'konto'                           AS konto,
                          dp.details :: JSONB ->> 'kbmkonto'                        AS kbmkonto,
                          dp.selg :: TEXT                                           AS dokprop,
@@ -167,8 +166,6 @@ const Arv = {
                            inner join ou.rekv r on r.id = d.rekvid
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                            LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
-                           LEFT OUTER JOIN docs.journal j ON j.parentid = a.journalid
-                           LEFT OUTER JOIN docs.journalid jid ON jid.journalid = j.id
                            LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
                            LEFT OUTER JOIN lapsed.laps l
                                            ON l.id = ll.parentid
@@ -877,9 +874,15 @@ const Arv = {
                              SET history = history ||
                                            (SELECT row_to_json(row)
                                             FROM (SELECT now()                                                AS email_viga,
+                                                         $3::TEXT                                             AS info,
                                                          (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
-                             WHERE id = $1`
-
+                             WHERE id = $1`,
+            log: `INSERT INTO ou.logs (rekvid, user_id, doc_id, timestamp, propertis)
+                  SELECT (SELECT rekvid FROM ou.userid WHERE id = $2 LIMIT 1) AS rekv_id,
+                         $2                                                   AS user_id,
+                         $1                                                   AS doc_id,
+                         now(),
+                         jsonb_build_object('table', 'arv', 'event', 'email', 'info', $3::JSONB)`
         }
     ],
     earve: [

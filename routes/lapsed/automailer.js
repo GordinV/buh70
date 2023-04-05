@@ -372,13 +372,16 @@ FROM doc`;
                                     params = [arve.id, user.userId, JSON.stringify(err)];
 
                                 if (sql) {
-                                  let tulemus =  await db.queryDb(sql, params);
+                                    let tulemus = await db.queryDb(sql, params);
                                 }
+
+                                // логгирование ответа почтового сервера
+
                                 sql = emailTemplateObject.log,
-                                    params = [arve.id, user.userId,JSON.stringify(err)];
+                                    params = [arve.id, user.userId, JSON.stringify(err)];
 
                                 if (sql) {
-                                    let tulemus_log =  await db.queryDb(sql, params);
+                                    let tulemus_log = await db.queryDb(sql, params);
                                 }
 
                             }
@@ -403,17 +406,19 @@ FROM doc`;
                                     params = [arve.id, l_userId];
 
                                 if (sql) {
-                                  let tulemus = await db.queryDb(sql, params);
+                                    let tulemus = await db.queryDb(sql, params);
                                 }
+                            }
 
-                                sql = emailTemplateObject.log,
-                                    params = [arve.id, user.userId,JSON.stringify(info)];
+                            if (emailTemplateObject.log) {
+                                let sql = emailTemplateObject.log,
+                                    params = [arve.id, user.userId, JSON.stringify(info)];
 
                                 if (sql) {
-                                    let tulemus_log =  await db.queryDb(sql, params);
+                                    let tulemus_log = await db.queryDb(sql, params);
                                 }
-
                             }
+
 
                             return resolve(arve.id);
                         }

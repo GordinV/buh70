@@ -52,6 +52,12 @@ style(type='text/css').
     .auto {
         width: auto;
     }
+    .div_column_left{
+        width: 500px;
+    }
+    .div_column_right{
+        width: 200px;
+    }
 
 block content
     meta(charset='UTF-8')
@@ -168,20 +174,29 @@ block content
                             td(align='center')=row.kogus
                             td(align='center')=Number(row.summa).toFixed(2)
 
-            div.doc_footer.div
-                div.row_wrapper.align_right
-                    p.label_subtotal_arve Kokku:
-                        p.kokku.input_subtotal_arve #{`${Number(data[0].summa).toFixed(2)}`}
-                div.row_wrapper.align_right
-                    p.label_subtotal_arve Seisuga #{`${data[0].period_alg_print.trim()}`} jääk:
-                        p.kokku.input_subtotal_arve #{`${Number(data[0].alg_jaak).toFixed(2)}`}
-                div.row_wrapper.align_right
-                    p.label_subtotal_arve Laekumised periodis #{`${data[0].laekumise_period}`}:
-                        p.kokku.input_subtotal_arve #{`${Number(data[0].laekumised).toFixed(2)}`}
-                div.row_wrapper.align_right
-                    p.label_subtotal_arve Seisuga #{`${data[0].kpv_print}`} tasumisele:
-                        p.kokku.input_subtotal_arve #{`${Number(data[0].lopp_jaak).toFixed(2)}`}
-                br
-    p Küsimuste korral palun pöörduge asutuste esindaja poole
+            h3
+                div.doc_footer
+                    div.row_wrapper
+                        div.div_column.div_column_left
+                            span Kokku:
+                        div.div_column.div_column_right
+                            span #{`${Number(data[0].summa).toFixed(2)}`}
+                    div.row_wrapper
+                        div.div_column.div_column_left
+                            span Seisuga #{`${data[0].period_alg_print.trim()}`} jääk:
+                        div.div_column.div_column_right
+                            span #{`${Number(data[0].alg_jaak).toFixed(2)}`}
+                    div.row_wrapper
+                        div.div_column.div_column_left
+                            span Laekumised periodis #{`${data[0].laekumise_period}`}:
+                        div.div_column.div_column_right
+                            span #{`${Number(data[0].laekumised).toFixed(2)}`}
+                    div.row_wrapper
+                        div.div_column.div_column_left
+                            span Seisuga #{`${data[0].kpv_print}`} tasumisele:
+                        div.div_column.div_column_right
+                            span #{`${Number(data[0].lopp_jaak).toFixed(2)}`}
+                    br
+        p Küsimuste korral palun pöörduge asutuste esindaja poole
 
 
