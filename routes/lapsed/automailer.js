@@ -265,6 +265,8 @@ SELECT doc.*,
        coalesce((doc.kaibed -> 0 ->> 'alg_kr')::NUMERIC, 0)              AS alg_jaak,
        coalesce((doc.kaibed -> 0 ->> 'lopp_db')::NUMERIC, 0) -
        coalesce((doc.kaibed -> 0 ->> 'lopp_kr')::NUMERIC, 0)             AS tasumisele,
+       coalesce((doc.kaibed -> 0 ->> 'lopp_db')::NUMERIC, 0) -
+       coalesce((doc.kaibed -> 0 ->> 'lopp_kr')::NUMERIC, 0)             as lopp_jaak,
        coalesce((doc.kaibed -> 0 ->> 'kr')::NUMERIC, 0)                  AS laekumised,
        CASE
            WHEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0) > 0
