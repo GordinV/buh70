@@ -393,6 +393,16 @@ exports.sendTeatis = async (req, res) => {
 
                 }, async (err, info) => {
                     if (err) {
+                        //логгирование ответа почты
+                        if (emailTemplateObject.log) {
+                            let sql = emailTemplateObject.log,
+                                params = [doc.id, user.userId, JSON.stringify(err)];
+
+                            if (sql) {
+                                let tulemus_log = await db.queryDb(sql, params);
+                            }
+                        }
+
                         return reject(err);
                     } else {
                         result++;
@@ -413,7 +423,16 @@ exports.sendTeatis = async (req, res) => {
                                 params = [doc.id, user.userId];
 
                             if (sql) {
-                                db.queryDb(sql, params);
+                              await db.queryDb(sql, params);
+                            }
+                        }
+                        //логгирование ответа почты
+                        if (emailTemplateObject.log) {
+                            let sql = emailTemplateObject.log,
+                                params = [doc.id, user.userId, JSON.stringify(info)];
+
+                            if (sql) {
+                                let tulemus_log = await db.queryDb(sql, params);
                             }
                         }
 

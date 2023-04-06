@@ -83,20 +83,14 @@ const automailer = async () => {
                AND a.kpv < params.kpv2
                AND d.status <> 3
                AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood = 'ARV')
-
-/*
                AND coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN
                AND NOT (SELECT exists(SELECT *
                                       FROM jsonb_array_elements(history) elem
                                       WHERE (elem ?| ARRAY ['email'])))::BOOLEAN
              AND NOT (SELECT exists(SELECT *
                                     FROM jsonb_array_elements(history) elem
-                                    WHERE (elem ?| ARRAY ['email_viga'])))::BOOLEAN
-*/
-                                      
+                                    WHERE (elem ?| ARRAY ['email_viga'])))::BOOLEAN                                      
                AND a.rekvid IN (SELECT id FROM ou.rekv WHERE parentid = 119)
-                and  d.id in (4815112,4815187,4815208,4815529,4815608)
-
              LIMIT ${l_limit}
          ),
          arved AS (
@@ -257,8 +251,7 @@ const automailer = async () => {
                              ON va.asutusid = a.asutusid AND va.rekvid = d.rekvid AND va.parentid = l.id
                                  AND va.parentid = l.id
 
-    WHERE d.id in (4815112,4815187,4815208,4815529,4815608)
-    --d.id IN (SELECT id from docs)
+    WHERE d.id IN (SELECT id from docs)
 )
 SELECT doc.*,
        coalesce((doc.kaibed -> 0 ->> 'alg_db')::NUMERIC, 0) -
@@ -322,8 +315,6 @@ FROM doc`;
             let docNumber = arve.number ? arve.number : null;
             let receiverEmail = arve.email ? arve.email : null;
 
-//            receiverEmail = 'oppetasu@narvakultuur.ee'; //'vladislav.gordin@gmail.com';
-//            receiverEmail = 'vladislav.gordin@gmail.com'; //'vladislav.gordin@gmail.com';
             let data = {
                 '0': arve,
                 details: arve.details
@@ -395,7 +386,6 @@ FROM doc`;
                             fs.unlink(filePDF, (err, data) => {
                                 if (err) {
                                     console.error('PDF delete error', err);
-//                                    return reject(err);
                                 }
                             });
 
@@ -419,7 +409,6 @@ FROM doc`;
                                     let tulemus_log = await db.queryDb(sql, params);
                                 }
                             }
-
 
                             return resolve(arve.id);
                         }
