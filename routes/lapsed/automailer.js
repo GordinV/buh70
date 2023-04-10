@@ -40,21 +40,6 @@ const automailer = async () => {
     var l_limit = 25;
     var result = 0;
 
-    const user = {
-        id: l_userId,
-        userId: l_userId,
-        userName: l_user_name,
-        asutus: 'Narva Linnavalitsuse Kultuuriosakond',
-        parent_asutus: 'Narva Linnavalitsuse Kultuuriosakond',
-        asutusTais: 'Narva Linnavalitsuse Kultuuriosakond',
-        aadress: 'Peetri plats 1, 20308 Narva',
-        tel: '359 9120',
-        email: 'kultuur@narva.ee',
-        regkood: '75024260',
-        asutusId: 119,
-        parentid: 63,
-    };
-
     try {
         // создать объект
         const emailDoc = new Doc('ARV', null, l_userId, 119, 'lapsed');
@@ -293,6 +278,22 @@ FROM doc`;
 
         // делаем массив промисов отправки почты
         const emailPromises = selectedDocs.data.map(async arve => {
+
+            let user = {
+                id: l_userId,
+                userId: l_userId,
+                userName: l_user_name,
+                asutus: 'Narva Linnavalitsuse Kultuuriosakond',
+                parent_asutus: 'Narva Linnavalitsuse Kultuuriosakond',
+                asutusTais: 'Narva Linnavalitsuse Kultuuriosakond',
+                aadress: 'Peetri plats 1, 20308 Narva',
+                tel: '359 9120',
+                email: 'kultuur@narva.ee',
+                regkood: '75024260',
+                asutusId: 119,
+                parentid: 63,
+            };
+
             // уточняем данные отправителя
             user.asutus = arve.tais_nimetus;
             user.asutusTais = arve.tais_nimetus;
@@ -321,7 +322,7 @@ FROM doc`;
             emailTemplate = emailTemplateObject.view;
 
             file = path.join(__dirname, './../..', 'views', `${emailTemplate}.jade`);
-            let emailHtml = await jade.renderFile(file, {doc: [arve], user: user});
+            let emailHtml = await jade.renderFile(file, {doc: arve, user: user});
 
             //attachment
             let filePDF = await createPDF(printHtml, `doc_${arve.id}`);
