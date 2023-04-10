@@ -201,10 +201,6 @@ const automailer = async () => {
            asutus.properties::JSONB -> 'asutus_aa' -> 0 ->> 'aa'                                AS asutuse_aa,
            a.doklausid,
            a.journalid,
-           dp.details :: JSONB ->> 'konto'                                                      AS konto,
-           dp.details :: JSONB ->> 'kbmkonto'                                                   AS kbmkonto,
-           dp.selg :: TEXT                                                                      AS dokprop,
-           dp.vaatalaus                                                                         AS is_show_journal,
            d.history -> 0 ->> 'user'                                                            AS koostaja,
            a.properties ->> 'aa'                                                                AS aa,
            l.id                                                                                 AS lapsId,
@@ -238,7 +234,6 @@ const automailer = async () => {
              INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
              INNER JOIN ou.userid u ON u.id = ${l_userId} :: INTEGER
              inner join ou.rekv r on r.id = d.rekvid
-             LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
              LEFT OUTER JOIN lapsed.liidestamine ll ON ll.docid = d.id
              LEFT OUTER JOIN lapsed.laps l
                              ON l.id = ll.parentid
@@ -248,6 +243,7 @@ const automailer = async () => {
 
     WHERE d.id IN (SELECT id from docs)
     and not empty(asutus.email)
+    and arved.rekvid = d.rekvid
 )
 SELECT doc.*,
        coalesce((doc.kaibed -> 0 ->> 'alg_db')::NUMERIC, 0) -
