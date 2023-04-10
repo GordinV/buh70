@@ -247,6 +247,7 @@ const automailer = async () => {
                                  AND va.parentid = l.id
 
     WHERE d.id IN (SELECT id from docs)
+    and d.id = 4802315
 )
 SELECT doc.*,
        coalesce((doc.kaibed -> 0 ->> 'alg_db')::NUMERIC, 0) -
@@ -310,15 +311,15 @@ FROM doc`;
             let docNumber = arve.number ? arve.number : null;
             let receiverEmail = arve.email ? arve.email : null;
 
-            let data = {
-                '0': arve,
-                details: arve.details
-            };
-
             let renderForm = 'arve_kaart';
 
             let file = path.join(__dirname, './../..', 'views', `${renderForm}.jade`);
-            let printHtml = await jade.renderFile(file, {data: data, user: user});
+            let printHtml = await jade.renderFile(file, {
+                data: {
+                    '0': arve,
+                    details: arve.details
+                }, user: user
+            });
 
             const emailTemplateObject = emailTemplates.find(templ => templ.params === 'id');
             emailTemplate = emailTemplateObject.view;
@@ -352,7 +353,7 @@ FROM doc`;
 
                     }, async (err, info) => {
                         if (err) {
-                            console.error('email error',arve.email, info, err);
+                            console.error('email error', arve.email, info, err);
                             if (emailTemplateObject.register_error) {
                                 // если есть метод регистрации, отметим email
                                 let sql = emailTemplateObject.register_error,
