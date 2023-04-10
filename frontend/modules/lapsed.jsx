@@ -88,7 +88,7 @@ const KohalolekuAruanne = require('./../docs/kohaloleku_aruanne/index.jsx');
 const Topeltmaksud = require('./../docs/topeltmaksud/index.jsx');
 const Kuutabeli_aruanne = require('./../docs/kuutabeli_aruanne/index.jsx');
 const Selgemata_maksed = require('./../docs/selgemata_maksed/index.jsx');
-
+const PankEarve = require('./../docs/pank_earve/index.jsx');
 
 const {Route, Redirect} = require('react-router-dom');
 
@@ -390,6 +390,11 @@ class App extends React.Component {
                            history={props.history}
                            initData={props.initData}/>}/>
 
+                <Route exact path="/lapsed/pank_earve"
+                       render={(props) => <PankEarve
+                           module={MODULE}
+                           history={props.history}
+                           initData={props.initData}/>}/>
 
                 <Route exact path="/lapsed/asutuse_liik"
                        render={(props) => <AsutuseLiikRegister

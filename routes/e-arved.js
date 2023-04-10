@@ -30,27 +30,15 @@ exports.swed = async (req, res) => {
     const rekvDoc = new Doc('REKV', user.asutusId, user.userId, user.asutusId, 'lapsed');
     const rekvData = await rekvDoc['select'](rekvDoc.config);
 
+
     // создать объект
     const earveDoc = new Doc('ARV', null, user.userId, user.asutusId, 'lapsed');
+    let doc_data = await earveDoc.executeTask('multiple_print_doc', [ids.join(','), user.userId]);
+
+    let selectedDocs = doc_data.data;
+
 
     // выборка данных
-    // делаем массив промисов
-    const dataPromises = ids.map(id => {
-        return new Promise(resolve => {
-            earveDoc.setDocumentId(id);
-            resolve(earveDoc['select'](earveDoc.config));
-            setTimeout(5);
-        })
-    });
-
-    // решаем их
-    const selectedDocs = [];
-    let promiseSelectResult = await Promise.all(dataPromises).then((result) => {
-        selectedDocs.push(result);
-    }).catch((err) => {
-        console.error('catched error->', err);
-        return res.send({status: 500, result: null, error_message: err});
-    });
 
     // готовим параметры
     const asutusConfig = {
@@ -72,13 +60,15 @@ exports.swed = async (req, res) => {
 
     try {
         // делаем XML
-        const xml = getEarve(selectedDocs[0], asutusConfig, false);
+        const xml = getEarve(selectedDocs, asutusConfig, false);
 
         // register e-arve event
+
         let sql = earveDoc.config.earve[0].register;
         if (sql) {
             let tulem  = await db.queryDb(sql, [arvedIds,user.userId]);
         }
+
 
         // возвращаем его
         if (xml) {
@@ -117,25 +107,11 @@ exports.seb = async (req, res) => {
 
     // создать объект
     const earveDoc = new Doc('ARV', null, user.userId, user.asutusId, 'lapsed');
+    let doc_data = await earveDoc.executeTask('multiple_print_doc', [ids.join(','), user.userId]);
+
+    let selectedDocs = doc_data.data;
 
     // выборка данных
-    // делаем массив промисов
-    const dataPromises = ids.map(id => {
-        return new Promise(resolve => {
-            earveDoc.setDocumentId(id);
-            resolve(earveDoc['select'](earveDoc.config));
-            setTimeout(5);
-        })
-    });
-
-    // решаем их
-    const selectedDocs = [];
-    let promiseSelectResult = await Promise.all(dataPromises).then((result) => {
-        selectedDocs.push(result);
-    }).catch((err) => {
-        console.error('catched error->', err);
-        return res.send({status: 500, result: null, error_message: err});
-    });
 
     // готовим параметры
     const asutusConfig = {
@@ -157,14 +133,16 @@ exports.seb = async (req, res) => {
 
     try {
         // делаем XML
-        const xml = getEarve(selectedDocs[0], asutusConfig, false);
+        const xml = getEarve(selectedDocs, asutusConfig, false);
 
         // register e-arve event
+
         let sql = earveDoc.config.earve[0].register;
 
         if (sql) {
             let tulem  = await db.queryDb(sql, [arvedIds,user.userId]);
         }
+
 
         // возвращаем его
         if (xml) {

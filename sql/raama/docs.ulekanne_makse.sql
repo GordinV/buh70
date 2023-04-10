@@ -50,7 +50,7 @@ BEGIN
     INTO l_user_id
     FROM ou.userid
     WHERE rekvid = l_rekvid
-      AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_id)
+      AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_id )
       AND status <> 3
     LIMIT 1;
 
@@ -252,6 +252,6 @@ GRANT EXECUTE ON FUNCTION docs.ulekanne_makse(INTEGER, JSONB) TO dbpeakasutaja;
 
 
 /*
-SELECT docs.ulekanne_makse(70, '{"mk_id":2336336, "maksepaev":"20211006", "viitenumber":"0630055739","kogus":20}')
+SELECT docs.ulekanne_makse(6973, '{"mk_id":4739819, "maksepaev":"20230406", "viitenumber":"1000086117","kogus":119}')
 
 */

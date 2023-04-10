@@ -59,11 +59,13 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
 
     arved.forEach((arve, index) => {
         //  подготовим данные
-        data.push(Object.assign({}, arve.row[0], {details: arve.details}));
+        data.push(Object.assign({}, arve, {details: arve.details}));
     });
 
     data.forEach(arve => {
-        totalAmount = totalAmount + Number(arve.tasumisele);
+        if (Number(arve.tasumisele) > 0 ) {
+            totalAmount = totalAmount + Number(arve.tasumisele);
+        }
     });
 
     let Header = {
@@ -152,7 +154,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                         RegNumber: arve.regkood,
                         ContactData: {
                             LegalAddress: {
-                                PostalAddress1: arve.aadress,
+                                PostalAddress1: arve.aadress ? arve.aadress: '',
                                 City: 'Narva',
                                 PostalCode: '',
                                 Country: 'EE'
@@ -198,7 +200,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 },
                 AdditionalInformation: {
                     InformationName: 'Teenuste saaja, asutus, periood',
-                    InformationContent: `${arve.lapse_nimi}, ${asutusConfig.uksus}, ${arve.laekumise_period}`
+                    InformationContent: `${arve.lapse_nimi}, ${arve.tais_nimetus}, ${arve.laekumise_period}`
                 },
                 PaymentInfo: {
                     Currency: 'EUR',
@@ -206,7 +208,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     PaymentDescription: `Arve ${arve.number}`,
                     Payable: 'YES',
                     PayDueDate: payDueDate,
-                    PaymentTotalSum: Number(arve.tasumisele).toFixed(2),
+                    PaymentTotalSum: Number(arve.tasumisele) < 0 ? 0 : Number(arve.tasumisele).toFixed(2),
                     PayerName: arve.asutus,
                     PaymentId: arve.number,
                     PayToAccount: asutusConfig.payToAccount,

@@ -81,7 +81,7 @@ WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'L
 
 INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
 SELECT 1::INTEGER,
-       'LAPS_KV_KAIBED'                  AS kood,
+       'LAPS_KV_KAIBED'                          AS kood,
        'Lapse kokkuvõtte seis (Käibed)'          AS nimetus,
        'DOK'                                     AS library,
        '{"type":"aruanne", "module":["Lapsed"]}' AS properties
@@ -296,3 +296,11 @@ SELECT 1::INTEGER,
        'DOK'                                     AS library,
        '{"type":"aruanne", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'SELGEMATA_MAKSED');
+
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
+       'PANK_EARVE'                              AS kood,
+       'Arved, e-arve esitamiseks'               AS nimetus,
+       'DOK'                                     AS library,
+       '{"type":"aruanne", "module":["Lapsed"]}' AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'PANK_EARVE');

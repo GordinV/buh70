@@ -110,7 +110,7 @@ class Document {
             }
 */
         } catch (e) {
-            console.error('error', err);
+            console.error('error', e);
         }
 
         return tulemused;

@@ -1,6 +1,6 @@
 DROP FUNCTION IF EXISTS ou.get_user_data(l_kasutaja TEXT, l_rekvid INTEGER, l_module TEXT);
 
-CREATE OR REPLACE FUNCTION ou.get_user_data(l_kasutaja TEXT, l_rekvid INTEGER, l_module TEXT default 'lapsed')
+CREATE OR REPLACE FUNCTION ou.get_user_data(l_kasutaja TEXT, l_rekvid INTEGER, l_module TEXT DEFAULT 'lapsed')
     RETURNS TABLE (
         id             INTEGER,
         rekvid         INTEGER,
@@ -23,7 +23,8 @@ CREATE OR REPLACE FUNCTION ou.get_user_data(l_kasutaja TEXT, l_rekvid INTEGER, l
         parentid       INTEGER,
         parent_asutus  TEXT,
         roles          JSONB
-    ) AS
+    )
+AS
 $BODY$
 
 SELECT u.id,
@@ -53,7 +54,8 @@ SELECT u.id,
        u.roles
 
 FROM ou.userid u
-         JOIN ou.rekv r ON r.id = u.rekvid AND rtrim(ltrim(u.kasutaja))::TEXT = ltrim(rtrim(l_kasutaja)) and parentid < 999
+         JOIN ou.rekv r
+              ON r.id = u.rekvid AND rtrim(ltrim(u.kasutaja))::TEXT = ltrim(rtrim(l_kasutaja)) AND parentid < 999
          LEFT OUTER JOIN ou.rekv parent_r ON parent_r.id = r.parentid
          JOIN (
     SELECT array_agg('{"id":'::TEXT || r.id::TEXT || ',"nimetus":"'::TEXT || r.nimetus || '"}') AS a
@@ -82,6 +84,7 @@ FROM ou.userid u
          ) lib
 ) allowed_modules ON allowed_modules.libs IS NOT NULL
 WHERE (r.id = l_rekvid OR l_rekvid IS NULL)
+  AND u.status <> 3
 ORDER BY u.last_login DESC
 LIMIT 1;
 
