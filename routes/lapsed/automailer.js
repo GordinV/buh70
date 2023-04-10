@@ -99,13 +99,14 @@ const automailer = async () => {
                                        'kr', sum(kb.kr),
                                        'lopp_db', sum(kb.lopp_db),
                                        'lopp_kr', sum(kb.lopp_kr)) AS kaibed,
-                    kb.isik_id
+                    kb.isik_id,
+                    kb.rekvid
              FROM arved a,
                   lapsed,
                   lapsed.saldo_ja_kaibeandmik(a.rekvid,
                                               make_date(year(a.alg_kpv), month(a.alg_kpv), 01)::DATE,
                                               gomonth(make_date(year(a.lopp_kpv), month(a.lopp_kpv), 01), 1) - 1) kb
-             GROUP BY kb.isik_id
+             GROUP BY kb.isik_id, kb.rekvid
          ),
          details AS (
              SELECT a.parentid,
@@ -200,7 +201,7 @@ const automailer = async () => {
            a.properties ->> 'ettemaksu_period'                                                  AS ettemaksu_period,
            va.properties ->> 'pank'                                                             AS pank,
            va.properties ->> 'iban'                                                             AS iban,
-           to_jsonb(array((SELECT kaibed FROM kaibed WHERE kaibed.isik_id = l.id)))             AS kaibed,
+           to_jsonb(array((SELECT kaibed FROM kaibed WHERE kaibed.isik_id = l.id and kaibed.rekvid = d.rekvid)))             AS kaibed,
            to_jsonb(array((SELECT details FROM details det WHERE det.parentid = d.id)))         AS details,
             u.properties->>'smtp' AS smtp, 
             u.properties->>'port' AS port, 
@@ -304,9 +305,6 @@ FROM doc`;
             user.regkood = arve.rekv_regkood;
 
             // вернуть отчет
-
-            let docNumber = arve.number ? arve.number : null;
-            let receiverEmail = arve.email ? arve.email : null;
 
             let renderForm = 'arve_kaart';
 
