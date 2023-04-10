@@ -64,17 +64,17 @@ block content
                     div.label
                         span Asutus:
                     div.input
-                        span #{User.asutus}
+                        span #{doc.tais_nimetus}
                 div.row_wrapper
                    div.label
                         span reg.kood:
                     div.input
-                        span #{User.regkood}
+                        span #{doc.rekv_regkood}
                 div.row_wrapper
                     div.label
                         span Aadress:
                     div.input
-                        span #{User.aadress}
+                        span #{doc.rekv_aadress}
                 div.row_wrapper
                     div.label
                         span E-post:
@@ -84,7 +84,7 @@ block content
                     div.label
                         span Raha saaja:
                     div.input
-                        span #{User.parentid == 119 ? User.parent_asutus : User.asutusTais }
+                        span #{'Narva Linnavalitsuse Kultuuriosakond'}
                 div.row_wrapper
                     div.label
                         span Maksta arvele:
