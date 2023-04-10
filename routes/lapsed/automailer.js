@@ -247,7 +247,7 @@ const automailer = async () => {
                                  AND va.parentid = l.id
 
     WHERE d.id IN (SELECT id from docs)
-    and d.id = 4802315
+    and not empty(asutus.email)
 )
 SELECT doc.*,
        coalesce((doc.kaibed -> 0 ->> 'alg_db')::NUMERIC, 0) -
