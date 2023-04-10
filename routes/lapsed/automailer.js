@@ -352,7 +352,7 @@ FROM doc`;
 
                     }, async (err, info) => {
                         if (err) {
-                            console.error('email error', info, err);
+                            console.error('email error',arve.email, info, err);
                             if (emailTemplateObject.register_error) {
                                 // если есть метод регистрации, отметим email
                                 let sql = emailTemplateObject.register_error,
