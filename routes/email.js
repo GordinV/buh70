@@ -140,16 +140,21 @@ exports.post = async (req, res) => {
             let docNumber = arve.number ? arve.number : null;
             let receiverEmail = arve.email ? arve.email : null;
 
-            let renderForm = 'arve_kaartid';
+            let renderForm = 'arve_kaart';
+            let doc = {
+                0:arve,
+                details: arve.details
+            };
             switch (params.docTypeId) {
                 case 'ARV':
-                    renderForm = 'arve_kaartid';
+                    renderForm = 'arve_kaart';
                     break;
                 case 'TEATIS':
                     renderForm = 'teatis_kaartid';
                     break;
             }
-            res.render(renderForm, {data: [arve], user: user}, (err, html) => {
+
+            res.render(renderForm, {data: doc, user: user}, (err, html) => {
                 printHtml = html;
             });
 
