@@ -388,7 +388,7 @@ class Documents extends React.PureComponent {
 
                 // будет сформирован файл для отправки в банк SWED
                 Doc.gridData.forEach(row => {
-                    if (row.kas_earved && row.select && row.pank && row.pank == 'SWED' && Number(row.summa) > 0) {
+                    if (row.kas_earved && row.select && row.pank && row.pank == 'SWED' ) {
                         // && row.kas_swed
                         // выбрано для печати
                         ids.add(row.id);

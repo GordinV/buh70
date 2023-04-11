@@ -62,11 +62,13 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
         data.push(Object.assign({}, arve, {details: arve.details}));
     });
 
+
     data.forEach(arve => {
         if (Number(arve.tasumisele) > 0 ) {
             totalAmount = totalAmount + Number(arve.tasumisele);
         }
     });
+
 
     let Header = {
         Test: 'NO',
@@ -206,7 +208,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                     Currency: 'EUR',
                     PaymentRefId: arve.viitenr, //arve.viitenr
                     PaymentDescription: `Arve ${arve.number}`,
-                    Payable: 'YES',
+                    Payable: Number(arve.tasumisele) > 0 ? 'YES': 'NO',
                     PayDueDate: payDueDate,
                     PaymentTotalSum: Number(arve.tasumisele) < 0 ? 0 : Number(arve.tasumisele).toFixed(2),
                     PayerName: arve.asutus,
