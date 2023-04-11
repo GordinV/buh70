@@ -100,7 +100,9 @@ const Arv = {
                                  ON a.id = a1.parentId
                       INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
              WHERE a.parentid IN (SELECT ids FROM params)
-               AND a1.kogus <> 0)
+               AND a1.kogus <> 0
+               order by n.nimetus
+               )
                     SELECT d.id,
                          a.id as doc_id,
                          $2 :: INTEGER                                             AS userid,
@@ -390,7 +392,8 @@ const Arv = {
                            INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                   WHERE a.parentid = $1 :: INTEGER
-                    AND a1.kogus <> 0`,
+                    AND a1.kogus <> 0
+                    ORDER BY n.nimetus`,
             query: null,
             multiple: true,
             alias: 'details',

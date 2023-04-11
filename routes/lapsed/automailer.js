@@ -154,7 +154,9 @@ const automailer = async () => {
                                  ON a.id = a1.parentId
                       INNER JOIN libs.nomenklatuur n ON n.id = a1.nomId
              WHERE a.parentid IN (SELECT id from docs)
-               AND a1.kogus <> 0)
+               AND a1.kogus <> 0
+               order by n.nimetus
+               )
 
     SELECT d.id,
            a.id                                                                                 AS doc_id,
