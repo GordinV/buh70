@@ -26,18 +26,14 @@ block content
             flexDirection: row;
         }
 
-        .label {
-            width: 10%;
+        .sub_total {
+            font-size: medium;
+            font-weight:bold;
         }
 
-        .input {
-            width: 90%;
-            margin-left: 5%;
-            font-weight: bold;
-        }
-
-        .label_subtotal {
-            width: 70%;
+        .total {
+            font-size: medium;
+            font-weight:bold;
         }
 
         .kulastavus {
@@ -52,53 +48,111 @@ block content
             p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
 
         each asutus in data
-            p #{Object.keys(asutus)[0]}
+            -var Asutus = Object.keys(asutus)[0];
+            -var alg_saldo_asutus = 0;
+            -var arvestatud_asutus = 0;
+            -var soodustus_asutus = 0;
+            -var umberarvestus_asutus = 0;
+            -var arv_kokku_asutus = 0;
+            -var laekumised_asutus = 0;
+            -var tagastused_asutus = 0;
+            -var mahakantud_asutus = 0;
+            -var jaak_asutus = 0;
+            p.total #{Asutus}
+            each yksus in asutus[Asutus]
+                -var Yksus = Object.keys(yksus)[0];
+                p.sub_total #{Yksus}
+                table.table.table-hover.grid_data
+                        thead.grid_head
+                            tr
+                                th.kulastavus(width='5%') Külastatavus
+                                th(width='100px') Üksus(Rühm)
+                                th(width='200px') Lapse ees- ja perekonnanimi
+                                th(width='100px') Viitenumber
+                                th(width='75px') Alg.saldo
+                                th(width='75px') Arvestatud
+                                th(width='75px') Soodustus
+                                th(width='75px') Ümberarv.
+                                th(width='75px') Kokku arvestatud
+                                th(width='75px') Laekumised
+                                th(width='75px') Tagastatud
+                                th(width='75px') Mahakantud
+                                th(width='75px') Võlg
 
+                        tbody
+                            -var alg_saldo_group = 0;
+                            -var arvestatud_group = 0;
+                            -var soodustus_group = 0;
+                            -var umberarvestus_group = 0;
+                            -var arv_kokku_group = 0;
+                            -var laekumised_group = 0;
+                            -var tagastused_group = 0;
+                            -var mahakantud_group = 0;
+                            -var jaak_group = 0;
+
+                            each rea in yksus[Yksus]
+                                -alg_saldo_group += Number(rea.alg_saldo);
+                                -arvestatud_group += Number(rea.arvestatud);
+                                -soodustus_group += Number(rea.soodustus);
+                                -umberarvestus_group +=Number(rea.umberarvestus);
+                                -arv_kokku_group += (Number(rea.arvestatud) - Number(rea.soodustus)+Number(rea.umberarvestus))
+                                -laekumised_group += Number(rea.laekumised)
+                                -tagastused_group += Number(rea.tagastused)
+                                -mahakantud_group += Number(rea.mahakantud)
+                                -jaak_group += Number(rea.jaak)
+                                tr
+                                    td(align='center').kulastavus=rea.kulastatavus
+                                    td(align='center')=rea.yksus
+                                    td(align='center')=rea.lapse_nimi
+                                    td(align='center')=rea.viitenumber
+                                    td(align='right')=rea.alg_saldo
+                                    td(align='right')=rea.arvestatud
+                                    td(align='right')=rea.soodustus
+                                    td(align='right')=rea.umberarvestus
+                                    td(align='right')=((Number(rea.arvestatud) - Number(rea.soodustus)+Number(rea.umberarvestus)).toFixed(2))
+                                    td(align='right')=rea.laekumised
+                                    td(align='right')=rea.tagastused
+                                    td(align='right')=rea.mahakantud
+                                    td(align='right')=rea.jaak
+                            tr.group.sub_total
+                                td.group.sub_total=Yksus + ' Read kokku:'
+                                td.group.sub_total=Number(asutus[Object.keys(asutus)[0]].length)
+                                td.group.sub_total=''
+                                td.group.sub_total(align='right')='Kokku:'
+                                td.group.sub_total(align='right')=alg_saldo_group.toFixed(2)
+                                td.group.sub_total(align='right')=Number(arvestatud_group).toFixed(2)
+                                td.group.sub_total(align='right')=Number(soodustus_group).toFixed(2)
+                                td.group.sub_total(align='right')=Number(umberarvestus_group).toFixed(2)
+                                td.group.sub_total(align='right')=Number(arv_kokku_group).toFixed(2)
+                                td.group.sub_total(align='right')=Number(laekumised_group).toFixed(2)
+                                td.group.sub_total(align='right')=Number(tagastused_group).toFixed(2)
+                                td.group.sub_total(align='right')=Number(mahakantud_group).toFixed(2)
+                                td.group.sub_total(align='right')=Number(jaak_group).toFixed(2)
+
+                            -alg_saldo_asutus += Number(alg_saldo_group);
+                            -arvestatud_asutus += Number(arvestatud_group);
+                            -soodustus_asutus += Number(soodustus_group);
+                            -umberarvestus_asutus +=Number(umberarvestus_group);
+                            -arv_kokku_asutus += Number(arv_kokku_group);
+                            -laekumised_asutus += Number(laekumised_group);
+                            -tagastused_asutus += Number(tagastused_group);
+                            -mahakantud_asutus += Number(mahakantud_group);
+                            -jaak_asutus += Number(jaak_group);
+
+            br
             table.table.table-hover.grid_data
-                thead.grid_head
-                    tr
-                        th.kulastavus Külastatavus
-                        th Üksus(Rühm)
-                        th Lapse ees- ja perekonnanimi
-                        th Viitenumber
-                        th Alg.saldo
-                        th Arvestatud
-                        th Soodustus
-                        th Ümberarv.
-                        th Kokku arvestatud
-                        th Laekumised
-                        th Tagastatud
-                        th Mahakantud
-                        th Võlg
 
-                tbody
-                    each rea in asutus[Object.keys(asutus)[0]]
-                        tr
-                            td.kulastavus=rea.kulastatavus
-                            td=rea.yksus
-                            td=rea.lapse_nimi
-                            td=rea.viitenumber
-                            td=rea.alg_saldo
-                            td=rea.arvestatud
-                            td=rea.soodustus
-                            td=rea.umberarvestus
-                            td=((Number(rea.arvestatud) - Number(rea.soodustus)+Number(rea.umberarvestus)).toFixed(2))
-                            td=rea.laekumised
-                            td=rea.tagastused
-                            td=rea.mahakantud
-                            td=rea.jaak
-                    tr.group
-                        td.group=Object.keys(asutus)[0] + ' Read kokku:'
-                        td.group=Number(asutus[Object.keys(asutus)[0]].length)
-                        td.group=''
-                        td.group='Kokku:'
-                        td.group=Number(asutus[Object.keys(asutus)[0]][0].alg_saldo_group).toFixed(2)
-                        td.group=Number(asutus[Object.keys(asutus)[0]][0].arvestatud_group).toFixed(2)
-                        td.group=Number(asutus[Object.keys(asutus)[0]][0].soodustus_group).toFixed(2)
-                        td.group=Number(asutus[Object.keys(asutus)[0]][0].umberarvestus_group).toFixed(2)
-                        td.group=Number((Number(asutus[Object.keys(asutus)[0]][0].arvestatud_group) - Number(asutus[Object.keys(asutus)[0]][0].soodustus_group)+Number(asutus[Object.keys(asutus)[0]][0].umberarvestus_group)).toFixed(2))
-                        td.group=Number(asutus[Object.keys(asutus)[0]][0].laekumised_group).toFixed(2)
-                        td.group=Number(asutus[Object.keys(asutus)[0]][0].tagastused_group).toFixed(2)
-                        td.group=Number(asutus[Object.keys(asutus)[0]][0].mahakantud_group).toFixed(2)
-                        td.group=Number(asutus[Object.keys(asutus)[0]][0].jaak_group).toFixed(2)
+                tr.group
+                    td.group.total(width='300px')=Object.keys(asutus)[0] + ' Read kokku:'
+                    td(width='50px').group.total=Number(asutus[Asutus].length)
+                    td(width='130px',align='right').group.total='Kokku:'
+                    td(width='75px',align='right').group.sub_total=alg_saldo_asutus.toFixed(2)
+                    td(width='75px',align='right').group.sub_total=arvestatud_asutus.toFixed(2)
+                    td(width='75px',align='right').group.sub_total=soodustus_asutus.toFixed(2)
+                    td(width='75px',align='right').group.sub_total=umberarvestus_asutus.toFixed(2)
+                    td(width='75px',align='right').group.sub_total=arv_kokku_asutus.toFixed(2)
+                    td(width='75px',align='right').group.sub_total=laekumised_asutus.toFixed(2)
+                    td(width='75px',align='right').group.sub_total=tagastused_asutus.toFixed(2)
+                    td(width='75px',align='right').group.sub_total=mahakantud_asutus.toFixed(2)
+                    td(width='75px',align='right').group.sub_total=jaak_asutus.toFixed(2)
 

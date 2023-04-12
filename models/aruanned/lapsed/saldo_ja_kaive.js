@@ -19,16 +19,16 @@ module.exports = {
             {id: "jaak", name: "Võlg", width: "5%", type: "number", interval: true},
             {id: "asutus", name: "Asutus", width: "8%"},
         ],
-        sqlString: `SELECT sum(qryReport.alg_saldo) OVER (PARTITION BY rekvid)                AS alg_saldo_group,
-                           sum(qryReport.arvestatud) OVER (PARTITION BY rekvid)               AS arvestatud_group,
-                           sum(qryReport.umberarvestus) OVER (PARTITION BY rekvid)            AS umberarvestus_group,
-                           sum(qryReport.soodustus) OVER (PARTITION BY rekvid)                AS soodustus_group,
-                           sum(qryReport.laekumised) OVER (PARTITION BY rekvid)               AS laekumised_group,
-                           sum(qryReport.mahakantud) OVER (PARTITION BY rekvid)               AS mahakantud_group,
+        sqlString: `SELECT sum(qryReport.alg_saldo) OVER (PARTITION BY qryReport.rekvid)                AS alg_saldo_group,
+                           sum(qryReport.arvestatud) OVER (PARTITION BY qryReport.rekvid)               AS arvestatud_group,
+                           sum(qryReport.umberarvestus) OVER (PARTITION BY qryReport.rekvid)            AS umberarvestus_group,
+                           sum(qryReport.soodustus) OVER (PARTITION BY qryReport.rekvid)                AS soodustus_group,
+                           sum(qryReport.laekumised) OVER (PARTITION BY qryReport.rekvid)               AS laekumised_group,
+                           sum(qryReport.mahakantud) OVER (PARTITION BY qryReport.rekvid)               AS mahakantud_group,
                            sum(qryReport.arvestatud - qryReport.soodustus)
-                           OVER (PARTITION BY rekvid)                                         AS arv_ja_soodustus_group,
-                           sum(qryReport.tagastused) OVER (PARTITION BY rekvid)               AS tagastused_group,
-                           sum(qryReport.jaak) OVER (PARTITION BY rekvid)                     AS jaak_group,
+                           OVER (PARTITION BY qryReport.rekvid)                                         AS arv_ja_soodustus_group,
+                           sum(qryReport.tagastused) OVER (PARTITION BY qryReport.rekvid)               AS tagastused_group,
+                           sum(qryReport.jaak) OVER (PARTITION BY qryReport.rekvid)                     AS jaak_group,
                            count(*) OVER ()                                                   AS rows_total,
                            qryReport.id,
                            qryReport.period,
@@ -36,6 +36,8 @@ module.exports = {
                            qryReport.lapse_nimi,
                            lapse_isikukood,
                            yksus,
+                           ltrim(rtrim(kt.kood)) as koolituse_tyyp,
+                           ltrim(rtrim(kt.nimetus)) as koolitus_nimetus,       
                            viitenumber,
                            coalesce(alg_saldo, 0)::NUMERIC(14, 2)                             AS alg_saldo,
                            coalesce(arvestatud, 0)::NUMERIC(14, 2)                            AS arvestatud,
@@ -48,7 +50,7 @@ module.exports = {
                            (coalesce(arvestatud, 0) - coalesce(soodustus, 0) +
                             coalesce(umberarvestus, 0))::NUMERIC(14, 2)                       AS arv_kokku,
                            coalesce(jaak, 0)::NUMERIC(14, 2)                                  AS jaak,
-                           rekvid,
+                           qryReport.rekvid,
                            $2                                                                 AS user_id,
                            r.nimetus::TEXT                                                    AS asutus,
                            vn.vn                                                              AS vana_vn
@@ -61,7 +63,8 @@ module.exports = {
                                               GROUP BY vn.isikukood
                     ) vn
                                              ON vn.isikukood = qryReport.lapse_isikukood
-
+                             left outer JOIN libs.library l on (l.kood = ltrim(qryReport.yksus,'EM_'))  and l.library = 'LAPSE_GRUPP' and l.status < 3 and l.rekvid = qryReport.rekvid
+                             left outer join libs.library kt on kt.id = (l.properties::jsonb->'tyyp')::integer
                     ORDER BY r.nimetus
         `,     // $1 - rekvid, $3 - alg_kpv, $4 - lopp_kpv
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
@@ -82,7 +85,8 @@ module.exports = {
         {
             view: 'saldo_ja_kaive_register',
             params: 'sqlWhere',
-            group: 'asutus',
+            group: ['asutus','koolitus_nimetus'],
+            //,
             converter: function (data) {
                 let alg_saldo_kokku = 0;
                 let arvestatud_kokku = 0;
