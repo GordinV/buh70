@@ -422,32 +422,19 @@ BEGIN
                      WHERE q.artikkel LIKE '452%'
                        AND tyyp = 1
                      UNION ALL
-                     SELECT '2.12'::VARCHAR(20)
-                             ,
-                            1                                                           AS is_e
-                             ,
-                            $2                                                          AS rekvid
-                             ,
-                            ''::VARCHAR(20)                                             AS tegev
-                             ,
-                            ''::VARCHAR(20)                                             AS allikas
-                             ,
-                            '50'::VARCHAR(20)                                           AS artikkel
-                             ,
-                            'Tööjõukulud'                                               AS nimetus
-                             ,
-                            -1 * coalesce(sum(q.eelarve), 0)                            AS eelarve
-                             ,
-                            -1 * coalesce(sum(q.eelarve_kassa), 0)                      AS eelarve_kassa
-                             ,
-                            -1 * coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)       AS eelarve_taps
-                             ,
-                            -1 * coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2) AS eelarve_kassa_taps
-                             ,
-                            -1 * coalesce(sum(q.tegelik), 0)                            AS tegelik
-                             ,
-                            -1 * coalesce(sum(q.kassa), 0)                              AS kassa
-                             ,
+                     SELECT '2.12'::VARCHAR(20),
+                            1                                                           AS is_e,
+                            $2                                                          AS rekvid,
+                            ''::VARCHAR(20)                                             AS tegev,
+                            ''::VARCHAR(20)                                             AS allikas,
+                            '50'::VARCHAR(20)                                           AS artikkel ,
+                            'Tööjõukulud'                                               AS nimetus,
+                            -1 * coalesce(sum(q.eelarve), 0)                            AS eelarve,
+                            -1 * coalesce(sum(q.eelarve_kassa), 0)                      AS eelarve_kassa,
+                            -1 * coalesce(sum(q.eelarve_taps), 0)::NUMERIC(12, 2)       AS eelarve_taps,
+                            -1 * coalesce(sum(q.eelarve_kassa_taps), 0)::NUMERIC(12, 2) AS eelarve_kassa_taps,
+                            -1 * coalesce(sum(q.tegelik), 0)                            AS tegelik,
+                            -1 * coalesce(sum(q.kassa), 0)                              AS kassa,
                             get_saldo('KD', '50', NULL, NULL)                           AS saldoandmik
                      FROM tmp_andmik q
                      WHERE q.artikkel LIKE '50%'

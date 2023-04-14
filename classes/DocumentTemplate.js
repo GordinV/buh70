@@ -219,13 +219,14 @@ class Document {
                 this.setLog(sql, [params, sortBy, sqlWhere, limit, subTotals], JSON.stringify(tulemused));
             }
 */
-
+            console.log('tulemused',tulemused);
             return tulemused;
 
         } catch (e) {
             // logs
             let message = `selectDocs, tekkis viga, ${sql}, ${e}, ${params}`;
             log(message, 'error');
+            console.error('Error', e);
             return null;
         }
     }

@@ -2147,6 +2147,20 @@ FROM (
                          saldoandmik
                   FROM qryEelarveTaitmine
                   WHERE artikkel LIKE '50%'
+                  UNION ALL
+                  -- Строка  50* Tekke täitmine (Lisa 1) в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
+                  -- Сумма всех строк с бюджетом 50* в отчете Eelarve täitmine (A, TT, RV, Tunnus, Art) Tekke täitmine +
+                  -- Jooksva per saldoandmikust (без элиминирования) конто 50* TP 185101=0
+
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         -1 * CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN db - kr ELSE 0 END
+                  FROM qrySaldoandmik
+                  WHERE left(konto, 2) = '50'
+                    AND left(tp, 6) = '185101'
               ) qry50
          UNION ALL
          -- Строка 55* Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5) +
@@ -2749,7 +2763,7 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO
 
 
 SELECT *
-FROM eelarve.lisa1_lisa5_kontrol('2022-09-30'::DATE, 130, 0)
+FROM eelarve.lisa1_lisa5_kontrol('2023-02-28'::DATE, 63, 1)
 WHERE nimetus = 'PÕHITEGEVUSE KULUDE JA INVESTEERIMIS TEGEVUSE VÄLJAMINEKUTE JAOTUS TEGEVUSALADE JÄRGI'
 ORDER BY idx, nimetus
 

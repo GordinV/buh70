@@ -3,6 +3,10 @@
 const React = require('react');
 
 const Menu = require('./../components/menu-toolbar/menu-toolbar.jsx');
+
+const ArveteSaatmine = require('./../docs/arvete_saatmine/index.jsx');
+const ArveteSaatmineDokument = require('./../docs/arvete_saatmine/document/index.jsx');
+
 const JournalDocument = require('../docs/journal/document/index.jsx');
 
 const LapseDokument = require('./../docs/laps/document/index.jsx');
@@ -108,6 +112,18 @@ class App extends React.Component {
     render(history) {
         return (
             <StyleRoot>
+                <Route exact path="/lapsed/arvete_saatmine"
+                       render={(props) =>
+                           <ArveteSaatmine
+                               history={props.history}
+                               initData={this.props.initData}
+                               module={MODULE}/>}
+                />
+                <Route exact path="/lapsed/arvete_saatmine/:docId"
+                       render={(props) => <ArveteSaatmineDokument {...props}
+                                                         history={props.history}
+                       />}/>
+
                 <Route exact path="/lapsed"
                        render={(props) =>
                            <LasteRegister

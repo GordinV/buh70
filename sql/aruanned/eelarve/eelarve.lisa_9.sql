@@ -98,12 +98,17 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO eelakt
 GRANT EXECUTE ON FUNCTION eelarve.lisa_9(DATE, DATE, INTEGER, INTEGER) TO dbvaatleja;
 /*
 
-select len(saaja_regkood), len(saaja_nimi), * from (
+select qry.*,  (a.ajalugu->0->'updated')::timestamp as updated from (
+select len(saaja_regkood) as len_regkood, len(saaja_nimi), * from (
                     SELECT *
-                    FROM eelarve.lisa_9('2023-02-01', '2023-02-28', 130,  0)
+                    FROM eelarve.lisa_9('2023-03-01', '2023-03-31', 63,  1)
                 ) qry
   where  summa >= 100
-and saaja_tp like '185%'
+) qry
+inner join libs.asutus a on a.regkood = qry.saaja_regkood
+
+where len_regkood > 15
+and saaja_tp like '185101%'
 
 select * from ou.rekv where parentid = 64
 
@@ -111,5 +116,6 @@ select * from cur_journal where id = 3198106
 
 select * from libs.asutus where id = 7455
 */
+
 
 

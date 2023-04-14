@@ -295,7 +295,7 @@ GRANT EXECUTE ON FUNCTION docs.kontoasutusandmik( TEXT, INTEGER, DATE, DATE, INT
 -- 156094.56, 0
 
 SELECT sum(deebet) OVER (), sum(kreedit) OVER (), *
-FROM docs.kontoasutusandmik('650100'::TEXT, NULL :: INTEGER, '2022-01-01', '2022-10-30' :: DATE, 63, '{
+FROM docs.kontoasutusandmik('103000'::TEXT, NULL :: INTEGER, '2023-03-01', '2023-03-31' :: DATE, 63, '{
   "konto": "%",
   "tegevus": "%",
   "proj": "%"
