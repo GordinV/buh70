@@ -1,4 +1,10 @@
 module.exports = {
+    ARVETE_SAATMINE: {
+        select: ['kasutaja', 'arvestaja', 'vaatleja', 'peakasutaja'],
+        add: ['admin'],
+        edit: ['admin'],
+        delete: [],
+    },
     ARV: {
         select: ['kasutaja', 'arvestaja', 'vaatleja', 'peakasutaja'],
         add: ['kasutaja', 'peakasutaja'],
