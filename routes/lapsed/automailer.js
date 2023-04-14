@@ -53,6 +53,16 @@ const automailer = async () => {
         SELECT make_date(year(current_date), month(current_date), 1)              AS kpv2,
                gomonth(make_date(year(current_date), month(current_date), 1), -1) AS kpv1
     ),
+         kas_lubatud AS (
+             SELECT rekvid, kas_alusta
+             FROM ou.arvete_meil a,
+                  params
+             WHERE a.alg_kpv >= params.kpv1
+               AND a.lopp_kpv <= params.kpv2
+             ORDER BY id DESC
+             LIMIT 1
+         ),
+    
          docs AS (
              SELECT d.id
              FROM docs.arv a
@@ -62,8 +72,8 @@ const automailer = async () => {
                       LEFT OUTER JOIN lapsed.vanemad v ON l.id = v.parentid AND v.asutusid = a.asutusid
                       LEFT OUTER JOIN lapsed.vanem_arveldus va
                                       ON l.id = va.parentid AND va.asutusid = a.asutusid AND va.rekvid = a.rekvid
-                     ,
-                  params
+                      INNER JOIN kas_lubatud ON kas_lubatud.rekvid = d.rekvid                                      
+                     , params
              WHERE a.kpv >= params.kpv1
                AND a.kpv < params.kpv2
                AND d.status <> 3
@@ -71,6 +81,7 @@ const automailer = async () => {
                AND coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN
                and d.history::text not ilike '%email%'
                AND a.rekvid IN (SELECT id FROM ou.rekv WHERE parentid = 119)
+               AND kas_lubatud.kas_alusta
              LIMIT ${l_limit}
          ),
          arved AS (
