@@ -260,10 +260,10 @@ BEGIN
                                                 l_doklausend_id                               AS doklausid,
                                                 l_liik                                        AS liik,
                                                 l_kpv                                         AS kpv,
-                                                l_kpv +
-                                                coalesce(
-                                                            (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid LIMIT 1),
-                                                            20)::DATE                         AS tahtaeg,
+                                                (l_kpv +
+                                                 coalesce(
+                                                             (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid LIMIT 1),
+                                                             20)::INTEGER)::DATE              AS tahtaeg,
                                                 l_asutus_id                                   AS asutusid,
                                                 l_aa                                          AS aa,
                                                 l_laps_id                                     AS lapsid,
@@ -277,13 +277,14 @@ BEGIN
                     INTO json_object
                     FROM (SELECT coalesce(l_arv_id, 0) AS id, l_json_arve AS data) row;
 
-                    IF (v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus > 0 OR l_arve_kogus <> 0
+                    IF (v_taabel.hind - v_taabel.real_soodus) * v_taabel.kogus <> 0 OR l_arve_kogus <> 0
                     THEN
                         SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
                     ELSE
                         l_arve_kogus = 0; -- обнулим кол-во услуг
                     END IF;
                 END IF;
+
                 -- обнуляем строку
                 l_json_arve = '[]'::JSONB;
                 l_taabel_ids[i] = v_taabel.lapse_taabel_id;
@@ -296,6 +297,7 @@ BEGIN
             END IF;
             i = i + 1;
         END LOOP;
+
 
     -- проверяем на имеющийся счет
     SELECT d.id,
@@ -326,7 +328,10 @@ BEGIN
                                 l_doklausend_id                               AS doklausid,
                                 l_liik                                        AS liik,
                                 l_kpv                                         AS kpv,
-                                l_kpv + 15                                    AS tahtaeg,
+                                (l_kpv +
+                                 coalesce(
+                                             (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid LIMIT 1),
+                                             20)::INTEGER)::DATE              AS tahtaeg,
                                 l_asutus_id                                   AS asutusid,
                                 l_laps_id                                     AS lapsid,
                                 l_aa                                          AS aa,
@@ -336,6 +341,7 @@ BEGIN
                                 json_arvread                                  AS "gridData") row);
 
 
+    RAISE NOTICE 'l_arve_kogus %, jsonb_array_length(json_arvread) %, l_arv_id %',l_arve_kogus, jsonb_array_length(json_arvread), l_arv_id;
     IF (jsonb_array_length(json_arvread) > 0)
     THEN
 
@@ -355,18 +361,22 @@ BEGIN
     ELSE
 */
 
+
         IF l_arve_kogus <> 0
         THEN
             SELECT docs.sp_salvesta_arv(json_object :: JSON, user_id, l_rekvid) INTO l_arv_id;
 
         END IF;
     ELSE
-        l_arv_id = NULL;
-        result = 0;
-        error_code = 1;
-        error_message =
-                        'Kehtiv teenused ei leidnud,  Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
-        RETURN;
+        IF l_arve_kogus = 0
+        THEN
+            l_arv_id = NULL;
+            result = 0;
+            error_code = 1;
+            error_message =
+                            'Kehtiv teenused ei leidnud,  Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
+            RETURN;
+        END IF;
     END IF;
 
 
@@ -381,22 +391,29 @@ BEGIN
 
         result = l_arv_id;
     ELSE
-        error_code = 1;
-        error_message =
-                        'Dokumendi koostamise viga,  Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
-
+        IF l_arve_kogus = 0
+        THEN
+            error_code = 1;
+            error_message =
+                            'Dokumendi koostamise viga,  Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
+        ELSE
+            -- счет создан как отдельный
+            error_message = 'Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi ;
+            result = l_arve_kogus;
+        END IF;
     END IF;
     RETURN;
 
 EXCEPTION
     WHEN OTHERS
         THEN
-            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+            RAISE NOTICE ' error % %', SQLERRM, SQLSTATE;
             error_code = 1;
             error_message = SQLERRM;
             result = 0;
             RETURN;
 END ;
+
 $BODY$
     LANGUAGE plpgsql
     VOLATILE
@@ -410,6 +427,10 @@ REVOKE EXECUTE ON FUNCTION lapsed.koosta_arve_taabeli_alusel(INTEGER, INTEGER, D
 
 
 /*
-select lapsed.koosta_arve_taabeli_alusel(70, 47, '2019-11-30')
+N user_id INTEGER,
+                                                             IN l_laps_id INTEGER,
+                                                             IN l_kpv DATE DEFAULT current_date,
+
+select lapsed.koosta_arve_taabeli_alusel(5394, 6636, '2023-04-18')
  */
 
