@@ -65,7 +65,7 @@ module.exports = {
                                              ON vn.isikukood = qryReport.lapse_isikukood
                              left outer JOIN libs.library l on (l.kood = ltrim(qryReport.yksus,'EM_'))  and l.library = 'LAPSE_GRUPP' and l.status < 3 and l.rekvid = qryReport.rekvid
                              left outer join libs.library kt on kt.id = (l.properties::jsonb->'tyyp')::integer
-                    ORDER BY r.nimetus
+                    ORDER BY r.nimetus, koolituse_tyyp, lapse_nimi
         `,     // $1 - rekvid, $3 - alg_kpv, $4 - lopp_kpv
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
         min_params: 2,
@@ -97,11 +97,15 @@ module.exports = {
                 let tagastused_kokku = 0;
                 let row_id = 0;
 
+/*
                 let dataSort = data.sort((a, b) => {
                     let fa = a.lapse_nimi.toLowerCase();
                     let fb = b.lapse_nimi.toLowerCase();
                     return (fa < fb ? -1 : 1);
                 });
+*/
+
+                dataSort = data;
 
                 dataSort.forEach(row => {
                     alg_saldo_kokku = Number(alg_saldo_kokku) + Number(row.alg_saldo);
