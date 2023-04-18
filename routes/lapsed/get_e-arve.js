@@ -172,7 +172,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                 },
                 InvoiceInformation: {
                     Type: {
-                        '@type': "DEB"
+                        '@type': Number(arve.tasumisele) < 0 ? "CRE" : "DEB"
                     },
                     ContractNumber: arve.lisa,
                     DocumentName: 'Arve',
