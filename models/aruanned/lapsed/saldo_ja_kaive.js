@@ -96,8 +96,14 @@ module.exports = {
                 let mahakantud_kokku = 0;
                 let tagastused_kokku = 0;
                 let row_id = 0;
-                let groupedData = {};
-                data.forEach(row => {
+
+                let dataSort = data.sort((a, b) => {
+                    let fa = a.lapse_nimi.toLowerCase();
+                    let fb = b.lapse_nimi.toLowerCase();
+                    return (fa < fb ? -1 : 1);
+                });
+
+                dataSort.forEach(row => {
                     alg_saldo_kokku = Number(alg_saldo_kokku) + Number(row.alg_saldo);
                     arvestatud_kokku = Number(arvestatud_kokku) + Number(row.arvestatud);
                     umberarvestus_kokku = Number(umberarvestus_kokku) + Number(row.umberarvestus);
@@ -107,7 +113,7 @@ module.exports = {
                     tagastused_kokku = Number(tagastused_kokku) + Number(row.tagastused);
                 });
 
-                return data.map(row => {
+                return dataSort.map(row => {
                     row_id++;
                     row.alg_saldo_kokku = alg_saldo_kokku;
                     row.arvestatud_kokku = arvestatud_kokku;

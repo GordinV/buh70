@@ -16,7 +16,7 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
         arvestatud      NUMERIC(14, 2),
         umberarvestus   NUMERIC(14, 2),
         soodustus       NUMERIC(14, 2),
-        laekumised      NUMERIC(14, 2),
+        laekumised      NUMERIC(14, 4),
         mahakantud      NUMERIC(14, 2),
         tagastused      NUMERIC(14, 2),
         jaak            NUMERIC(14, 2),
@@ -70,7 +70,7 @@ SELECT count(*) OVER (PARTITION BY laps_id)                        AS id,
        sum(coalesce(arvestatud, 0))::NUMERIC(14, 2),
        sum(coalesce(umberarvestus, 0))::NUMERIC(14, 2),
        sum(coalesce(soodustus, 0))::NUMERIC(14, 2),
-       sum(coalesce(laekumised, 0))::NUMERIC(14, 2),
+       sum(coalesce(laekumised, 0))::NUMERIC(14, 4),
        sum(coalesce(mahakantud, 0))::NUMERIC(14, 2),
        sum(coalesce(-1 * tagastused, 0))::NUMERIC(14, 2),
        sum(COALESCE(alg_saldo, 0) +
@@ -79,7 +79,7 @@ SELECT count(*) OVER (PARTITION BY laps_id)                        AS id,
            COALESCE(laekumised, 0) -
            COALESCE(mahakantud, 0) -
            COALESCE(soodustus, 0) +
-           COALESCE(tagastused, 0))::NUMERIC(14, 2)                AS jaak,
+           COALESCE(tagastused, 0))::NUMERIC(14, 4)                AS jaak,
        report.rekvid
 FROM (
          WITH alg_saldo AS (
@@ -418,7 +418,9 @@ select * from (
 SELECT sum(alg_saldo) over() as alg_kokku, sum(arvestatud) over() as arv_kokku, sum(soodustus) over() as soodustus_kokku,
 sum(umberarvestus) over() as u_kokku,
 sum(laekumised) over() as laek_kokku, sum(jaak) over() as jaak_kokku, *, 'new' as report
-FROM lapsed.saldo_ja_kaive_(99, '2022-01-01'::date, '2022-01-31'::date) qry
+FROM lapsed.saldo_ja_kaive(72, '2023-03-01'::date, '2023-03-31'::date) qry
+where lapse_nimi = 'Jakovleva Ksenia'
+
 union all
 SELECT sum(alg_saldo) over() as alg_kokku, sum(arvestatud) over() as arv_kokku, sum(soodustus) over() as soodustus_kokku,
 sum(laekumised) over() as laek_kokku, sum(jaak) over() as jaak_kokku, * , 'old' as report

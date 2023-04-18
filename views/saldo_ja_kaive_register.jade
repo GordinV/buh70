@@ -58,6 +58,7 @@ block content
             -var tagastused_asutus = 0;
             -var mahakantud_asutus = 0;
             -var jaak_asutus = 0;
+            -var read_asutus = 0;
             p.total #{Asutus}
             each yksus in asutus[Asutus]
                 -var Yksus = Object.keys(yksus)[0];
@@ -89,6 +90,7 @@ block content
                             -var tagastused_group = 0;
                             -var mahakantud_group = 0;
                             -var jaak_group = 0;
+                            -var read_group = 0;
 
                             each rea in yksus[Yksus]
                                 -alg_saldo_group += Number(rea.alg_saldo);
@@ -100,6 +102,9 @@ block content
                                 -tagastused_group += Number(rea.tagastused)
                                 -mahakantud_group += Number(rea.mahakantud)
                                 -jaak_group += Number(rea.jaak)
+                                -read_group +=1;
+                                -read_asutus += 1;
+
                                 tr
                                     td(align='center').kulastavus=rea.kulastatavus
                                     td(align='left')=rea.yksus
@@ -116,7 +121,7 @@ block content
                                     td(align='right')=rea.jaak
                             tr.group.sub_total
                                 td.group.sub_total=Yksus + ' Read kokku:'
-                                td.group.sub_total=Number(asutus[Object.keys(asutus)[0]].length)
+                                td.group.sub_total=Number(read_group)
                                 td.group.sub_total=''
                                 td.group.sub_total(align='right')='Kokku:'
                                 td.group.sub_total(align='right')=alg_saldo_group.toFixed(2)
@@ -133,7 +138,7 @@ block content
                             -arvestatud_asutus += Number(arvestatud_group);
                             -soodustus_asutus += Number(soodustus_group);
                             -umberarvestus_asutus +=Number(umberarvestus_group);
-                            -arv_kokku_asutus += Number(arv_kokku_group);
+                            -arv_kokku_asutus += Number(arvestatud_group) + Number(umberarvestus_group) + Number(soodustus_group);
                             -laekumised_asutus += Number(laekumised_group);
                             -tagastused_asutus += Number(tagastused_group);
                             -mahakantud_asutus += Number(mahakantud_group);
@@ -144,7 +149,7 @@ block content
 
                 tr.group
                     td.group.total(width='300px')=Object.keys(asutus)[0] + ' Read kokku:'
-                    td(width='50px').group.total=Number(asutus[Asutus].length)
+                    td(width='50px').group.total=Number(read_asutus)
                     td(width='130px',align='right').group.total='Kokku:'
                     td(width='75px',align='right').group.sub_total=alg_saldo_asutus.toFixed(2)
                     td(width='75px',align='right').group.sub_total=arvestatud_asutus.toFixed(2)
