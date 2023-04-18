@@ -19,7 +19,7 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
         laekumised      NUMERIC(14, 4),
         mahakantud      NUMERIC(14, 2),
         tagastused      NUMERIC(14, 2),
-        jaak            NUMERIC(14, 2),
+        jaak            NUMERIC(14, 4),
         rekvid          INTEGER
     )
 AS
@@ -62,7 +62,7 @@ SELECT count(*) OVER (PARTITION BY laps_id)                        AS id,
        CASE
            WHEN k.lopp_kpv >= kpv_end THEN 'Jah'
            ELSE 'Ei' END::TEXT                                     AS kulastatavus,
-       l.nimi::TEXT                                                AS lapse_nimi,
+       ltrim(rtrim(l.nimi))::TEXT                                                AS lapse_nimi,
        l.isikukood::TEXT                                           AS lapse_isikukood,
        coalesce(yksus, '')::TEXT,
        lapsed.get_viitenumber(report.rekvid, report.laps_id)::TEXT AS viitenumber,

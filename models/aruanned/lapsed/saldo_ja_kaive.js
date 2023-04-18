@@ -49,7 +49,7 @@ module.exports = {
                            (coalesce(arvestatud, 0) - coalesce(soodustus, 0))::NUMERIC(14, 2) AS arv_ja_soodustus,
                            (coalesce(arvestatud, 0) - coalesce(soodustus, 0) +
                             coalesce(umberarvestus, 0))::NUMERIC(14, 2)                       AS arv_kokku,
-                           coalesce(jaak, 0)::NUMERIC(14, 2)                                  AS jaak,
+                           coalesce(jaak, 0)::NUMERIC(14, 4)                                  AS jaak,
                            qryReport.rekvid,
                            $2                                                                 AS user_id,
                            r.nimetus::TEXT                                                    AS asutus,
