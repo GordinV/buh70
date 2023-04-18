@@ -43,7 +43,7 @@ module.exports = {
                            coalesce(arvestatud, 0)::NUMERIC(14, 2)                            AS arvestatud,
                            coalesce(umberarvestus, 0)::NUMERIC(14, 2)                         AS umberarvestus,
                            -1 * coalesce(soodustus, 0)::NUMERIC(14, 2)                        AS soodustus,
-                           coalesce(laekumised, 0)::NUMERIC(14, 2)                            AS laekumised,
+                           coalesce(laekumised, 0)::NUMERIC(14, 4)                            AS laekumised,
                            coalesce(mahakantud, 0)::NUMERIC(14, 2)                            AS mahakantud,
                            coalesce(tagastused, 0)::NUMERIC(14, 2)                            AS tagastused,
                            (coalesce(arvestatud, 0) - coalesce(soodustus, 0))::NUMERIC(14, 2) AS arv_ja_soodustus,
