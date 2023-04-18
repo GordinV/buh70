@@ -34,7 +34,7 @@ module.exports = {
                           FROM lapsed.pank_vv vv
                                    LEFT OUTER JOIN lapsed.viitenr v ON vv.viitenumber = v.viitenumber
                           WHERE coalesce(doc_id,0) = 0 
-                            and vv.selg not ilike '%intres%'
+                            and coalesce(vv.selg,'') not ilike '%intres%'
                             AND kpv >= '2022-01-01'
                             AND NOT left(coalesce(markused, ''), 4) = 'Kuni'
                          )
