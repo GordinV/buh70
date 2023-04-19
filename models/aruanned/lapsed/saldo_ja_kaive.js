@@ -65,7 +65,7 @@ module.exports = {
                                              ON vn.isikukood = qryReport.lapse_isikukood
                              left outer JOIN libs.library l on (l.kood = ltrim(qryReport.yksus,'EM_'))  and l.library = 'LAPSE_GRUPP' and l.status < 3 and l.rekvid = qryReport.rekvid
                              left outer join libs.library kt on kt.id = (l.properties::jsonb->'tyyp')::integer
-                    ORDER BY r.nimetus, koolituse_tyyp, lapse_nimi
+                    ORDER BY r.nimetus, koolituse_tyyp, regexp_replace(yksus, '[a-zA-Z_-]', '', 'g'), lapse_nimi
         `,     // $1 - rekvid, $3 - alg_kpv, $4 - lopp_kpv
         params: ['rekvid', 'userid', 'period_start', 'period_end'],
         min_params: 2,
