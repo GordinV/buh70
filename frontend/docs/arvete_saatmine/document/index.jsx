@@ -87,9 +87,8 @@ class ArveteSaatmine extends React.PureComponent {
                     </div>
                     {Boolean(self.docData.kas_alusta) ?
                         <div style={styles.docColumn}>
-                            <label style={styles.label}>Saatmine algab {self.docData.saatmine_alustatakse} </label>
-                            <label style={styles.label}>{'Vastav kasutaja:'}</label>
-                            <label style={styles.label}>{self.docData.al_ametnik ? self.docData.al_ametnik : self.docData.kasutaja} </label>
+                            <label style={styles.label}>Saatmine algab: {self.docData.saatmine_alustatakse} </label>
+                            <label style={styles.label}>Vastav kasutaja: {self.docData.al_ametnik ? self.docData.al_ametnik : self.docData.kasutaja} </label>
 
                         </div>
                          : null}

@@ -2,8 +2,8 @@
 DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaive(INTEGER, DATE, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
-                                                  kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
-                                                  kpv_end DATE DEFAULT current_date)
+                                                 kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
+                                                 kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
         id              BIGINT,
         period          DATE,
@@ -34,6 +34,7 @@ WITH rekv_ids AS (
      kulastavus AS (
          SELECT parentid,
                 rekvid,
+                yksus,
                 min(alg_kpv)            AS alg_kpv,
                 max(lopp_kpv)           AS lopp_kpv,
                 CASE
@@ -42,6 +43,7 @@ WITH rekv_ids AS (
          FROM (
                   SELECT parentid,
                          rekvid,
+                         lk.properties ->> 'yksus'                                                  AS yksus,
                          coalesce(
                                  (lk.properties ->> 'alg_kpv')::DATE,
                                  make_date(date_part('year', current_date)::INTEGER, 1, 1))::DATE   AS alg_kpv,
@@ -54,7 +56,8 @@ WITH rekv_ids AS (
               ) qry
 
          GROUP BY parentid,
-                  rekvid
+                  rekvid,
+                  yksus
      )
 
 SELECT count(*) OVER (PARTITION BY laps_id)                        AS id,
@@ -62,9 +65,9 @@ SELECT count(*) OVER (PARTITION BY laps_id)                        AS id,
        CASE
            WHEN k.lopp_kpv >= kpv_end THEN 'Jah'
            ELSE 'Ei' END::TEXT                                     AS kulastatavus,
-       ltrim(rtrim(l.nimi))::TEXT                                                AS lapse_nimi,
+       ltrim(rtrim(l.nimi))::TEXT                                  AS lapse_nimi,
        l.isikukood::TEXT                                           AS lapse_isikukood,
-       coalesce(yksus, '')::TEXT,
+       coalesce(report.yksus, '')::TEXT,
        lapsed.get_viitenumber(report.rekvid, report.laps_id)::TEXT AS viitenumber,
        sum(coalesce(alg_saldo, 0))::NUMERIC(14, 2),
        sum(coalesce(arvestatud, 0))::NUMERIC(14, 2),
@@ -90,7 +93,7 @@ FROM (
                              l.id                                                     AS laps_id,
                              CASE
                                  WHEN mk.properties ->> 'yksus' IS NULL THEN ''
-                                 ELSE 'EM_' || (mk.properties ->> 'yksus') END         AS yksus,
+                                 ELSE 'EM_' || (mk.properties ->> 'yksus') END        AS yksus,
                              D.rekvid                                                 AS rekv_id
                       FROM docs.doc D
                                INNER JOIN docs.Mk mk ON mk.parentid = D.id
@@ -288,7 +291,7 @@ FROM (
                                        ELSE 0 END)::NUMERIC(14, 4)                                                 AS tagastused,
                                   CASE
                                       WHEN mk.properties ->> 'yksus' IS NULL THEN ''
-                                      ELSE 'EM_' || (mk.properties ->> 'yksus') END                                 AS yksus,
+                                      ELSE 'EM_' || (mk.properties ->> 'yksus') END                                AS yksus,
                                   l.parentid                                                                       AS laps_id,
                                   d.rekvid
                   FROM docs.doc d
@@ -387,29 +390,14 @@ FROM (
          GROUP BY COALESCE(yksus, ''), rekvid, laps_id
      ) report
          LEFT OUTER JOIN kulastavus k
-                         ON k.parentid = report.laps_id AND k.rekvid = report.rekvid
+                         ON k.parentid = report.laps_id AND k.rekvid = report.rekvid AND report.yksus like '%' || k.yksus
          INNER JOIN lapsed.laps l ON l.id = report.laps_id
-where  exists(
-        select 1
-        where (alg_saldo <> 0 OR arvestatud <> 0 OR umberarvestus <> 0 OR soodustus <> 0 OR laekumised <> 0 OR mahakantud <> 0 OR
-               jaak <> 0
-                  )
-        union all
-        SELECT 1
-        FROM lapsed.lapse_kaart lk
-        WHERE lk.parentid = report.laps_id
-          AND lk.rekvid = report.rekvid
-          AND lk.properties ->> 'yksus' = report.yksus
-          AND (lk.properties ->> 'lopp_kpv')::date >= kpv_start::date
-    )
-
-
 GROUP BY (CASE
               WHEN k.lopp_kpv >= kpv_end THEN 'Jah'
               ELSE 'Ei' END),
          l.nimi,
          l.isikukood,
-         COALESCE(yksus, ''),
+         COALESCE(report.yksus, ''),
          laps_id,
          report.rekvid
 
@@ -429,9 +417,9 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 
 select
 *
-FROM lapsed.saldo_ja_kaive_(89, '2023-03-01', '2023-04-30') qry
+FROM lapsed.saldo_ja_kaive(89, '2023-03-01', '2023-04-30') qry
 where 1=1
-and      viitenumber = '0890085727'
+and      viitenumber = '0890152812'
 and  exists(
     select 1
     where (alg_saldo <> 0 OR arvestatud <> 0 OR umberarvestus <> 0 OR soodustus <> 0 OR laekumised <> 0 OR mahakantud <> 0 OR

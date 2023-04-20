@@ -64,10 +64,11 @@ module.exports = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "10%", show: false},
-            {id: "period", name: "Period", width: "40%"},
+            {id: "period", name: "Period", width: "20%"},
             {id: "alustatud", name: "Kas alustatud", width: "10%"},
-            {id: "ametnik", name: "Kasutaja", width: "30%"},
+            {id: "ametnik", name: "Kasutaja", width: "40%"},
             {id: "paus", name: "Paus", width: "10%"},
+            {id: "paus_timestamp", name: "Paus alates", width: "20%"},
         ],
 
         sqlString: `SELECT am.id,
@@ -85,7 +86,8 @@ module.exports = {
                                WHEN NOT coalesce(am.kas_alusta, FALSE) THEN ''
                                WHEN am.paus
                                    THEN 'Jah'
-                               ELSE 'Ei' END :: TEXT                                                      AS paus
+                               ELSE 'Ei' END :: TEXT                                                      AS paus,
+                           to_char(am.paus_timestamp, 'DD.MM.YYYY HH-MI-SS')                              AS paus_timestamp
                     FROM ou.arvete_meil am
                              INNER JOIN ou.userid u ON u.id = am.user_id
                     WHERE am.rekvid = $1
