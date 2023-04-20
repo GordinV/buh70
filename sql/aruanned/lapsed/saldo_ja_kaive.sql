@@ -419,12 +419,12 @@ select
 *
 FROM lapsed.saldo_ja_kaive(89, '2023-03-01', '2023-04-30') qry
 where 1=1
-and      viitenumber = '0890152812'
-and  exists(
-    select 1
-    where (alg_saldo <> 0 OR arvestatud <> 0 OR umberarvestus <> 0 OR soodustus <> 0 OR laekumised <> 0 OR mahakantud <> 0 OR
+and      viitenumber = '0890086108'
+and   (kulastatavus = 'Jah'  or (alg_saldo <> 0 OR arvestatud <> 0 OR umberarvestus <> 0 OR soodustus <> 0 OR laekumised <> 0 OR mahakantud <> 0 OR
            jaak <> 0
               )
+)
+
     union all
     SELECT 1
                          FROM lapsed.laps l

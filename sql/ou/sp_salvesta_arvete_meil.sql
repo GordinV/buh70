@@ -28,7 +28,9 @@ BEGIN
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = user_id
-      AND (u.roles ->> 'is_admin')::BOOLEAN;
+      AND ((u.roles ->> 'is_admin')::BOOLEAN
+        OR (u.roles ->> 'is_kasutaja')::BOOLEAN
+        );
 
     IF userName IS NULL
     THEN
@@ -99,7 +101,7 @@ BEGIN
         IF doc_kas_alusta
         THEN
             -- отправка начата, отрабатываем паузу
-            IF doc_paus IS NOT NULL AND doc_paus <> coalesce(v_dok.paus,false)
+            IF doc_paus IS NOT NULL AND doc_paus <> coalesce(v_dok.paus, FALSE)
             THEN
                 l_paus_ametnik = user_id;
                 l_paus_timestamp = now();

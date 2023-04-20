@@ -67,23 +67,10 @@ module.exports = {
                                                                l.library = 'LAPSE_GRUPP' AND l.status < 3 AND
                                                                l.rekvid = qryReport.rekvid
                              LEFT OUTER JOIN libs.library kt ON kt.id = (l.properties::JSONB -> 'tyyp')::INTEGER
-                    WHERE exists(
-                                  SELECT 1
-                                  FROM lapsed.laps l
-                                           INNER JOIN lapsed.lapse_kaart lk ON l.id = lk.parentid
-                                  WHERE l.isikukood = qryReport.lapse_isikukood
-                                      AND lk.rekvid = qryReport.rekvid
-                                      AND coalesce(lk.properties ->> 'yksus', '') = qryReport.yksus
-                                      AND coalesce((lk.properties ->> 'lopp_kpv')::DATE, current_date) ::DATE >=
-                                          qryReport.period::DATE
-                                     OR (coalesce(qryReport.alg_saldo, 0) <> 0 OR
-                                         coalesce(qryReport.arvestatud, 0) <> 0 OR
-                                         coalesce(qryReport.umberarvestus, 0) <> 0 OR
-                                         coalesce(qryReport.soodustus, 0) <> 0 OR
-                                         coalesce(qryReport.laekumised, 0) <> 0 OR
-                                         coalesce(qryReport.mahakantud, 0) <> 0 OR
-                                         coalesce(qryReport.jaak, 0) <> 0
-                                      )
+                    WHERE (kulastatavus = 'Jah' OR
+                           (alg_saldo <> 0 OR arvestatud <> 0 OR umberarvestus <> 0 OR soodustus <> 0 OR
+                            laekumised <> 0 OR mahakantud <> 0 OR
+                            jaak <> 0)
                               )
                     ORDER BY r.nimetus, koolituse_tyyp, regexp_replace(yksus, '[a-zA-Z_-]', '', 'g'), lapse_nimi
         `,     // $1 - rekvid, $3 - alg_kpv, $4 - lopp_kpv
