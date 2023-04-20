@@ -22,6 +22,13 @@ CREATE UNIQUE INDEX arvete_meil_period
 
 alter TABLE ou.arvete_meil add COLUMN if not exists muud text;
 
+alter TABLE ou.arvete_meil add COLUMN if not exists alusta_ametnik integer,
+    add COLUMN if not exists kas_alusta_timestamp TIMESTAMP ;
+
+alter TABLE ou.arvete_meil add column if not exists paus BOOLEAN default false not null;
+
+alter TABLE ou.arvete_meil add column if not exists paus_ametnik integer, add column if not exists paus_timestamp timestamp;
+
 
 
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE ou.arvete_meil TO dbpeakasutaja;

@@ -59,6 +59,8 @@ const automailer = async () => {
                   params
              WHERE a.alg_kpv >= params.kpv1
                AND a.lopp_kpv <= params.kpv2
+               AND coalesce(a.kas_alusta, FALSE)
+               AND NOT coalesce(a.paus, FALSE)               
              ORDER BY id DESC
              LIMIT 1
          ),

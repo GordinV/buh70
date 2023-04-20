@@ -1,5 +1,5 @@
 DROP FUNCTION IF EXISTS docs.sp_lausendikontrol(params JSONB);
-DROP FUNCTION IF EXISTS docs.sp_lausendikontrol_(params JSONB);
+DROP FUNCTION IF EXISTS docs.sp_lausendikontrol(params JSONB);
 
 CREATE OR REPLACE FUNCTION docs.sp_lausendikontrol(params JSONB)
     RETURNS TEXT AS
@@ -122,13 +122,19 @@ BEGIN
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_db::TEXT
       AND status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
-    IF v_konto_d.valid IS NOT NULL AND char_length(v_konto_d.valid::TEXT) = 8 AND
+    IF v_konto_d.valid IS NOT NULL AND char_length(v_konto_d.valid::TEXT) >= 8 AND
        NOT public.empty(v_konto_d.valid::TEXT)
     THEN
-        ldKpv = make_date((left(v_konto_d.valid::TEXT, 4))::INTEGER, (substr(v_konto_d.valid::TEXT, 5, 2))::INTEGER,
-                          (substr(v_konto_d.valid::TEXT, 7, 2))::INTEGER);
+        IF char_length(v_konto_d.valid::TEXT) = 8
+        THEN
+            ldKpv = make_date((left(v_konto_d.valid::TEXT, 4))::INTEGER, (substr(v_konto_d.valid::TEXT, 5, 2))::INTEGER,
+                              (substr(v_konto_d.valid::TEXT, 7, 2))::INTEGER);
+        ELSE
+            -- новый формат
+            ldKpv = v_konto_d.valid::DATE;
+        END IF;
 
         IF l_kpv > ldKpv
         THEN
@@ -158,12 +164,17 @@ BEGIN
     WHERE l.library = 'KONTOD'
       AND l.kood::TEXT = l_kr::TEXT
       AND status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
-    IF v_konto_k.valid IS NOT NULL AND NOT public.empty(v_konto_k.valid) AND char_length(v_konto_k.valid::TEXT) = 8
+    IF v_konto_k.valid IS NOT NULL AND NOT public.empty(v_konto_k.valid) AND char_length(v_konto_k.valid::TEXT) >= 8
     THEN
-        ldKpv = date((left(v_konto_k.valid::TEXT, 4))::INTEGER, (substr(v_konto_k.valid::TEXT, 5, 2))::INTEGER,
-                     (substr(v_konto_k.valid, 7, 2))::INTEGER);
+        IF char_length(v_konto_k.valid::TEXT) = 8
+        THEN
+            ldKpv = date((left(v_konto_k.valid::TEXT, 4))::INTEGER, (substr(v_konto_k.valid::TEXT, 5, 2))::INTEGER,
+                         (substr(v_konto_k.valid, 7, 2))::INTEGER);
+        ELSE
+            ldKpv = v_konto_k.valid::DATE;
+        END IF;
         IF l_kpv > ldKpv
         THEN
             l_msg = l_msg + 'Konto K, Ei saa kasuta, sest kood ei ole kehtiv';
@@ -554,7 +565,7 @@ BEGIN
     WHERE l.library = 'ALLIKAD'
       AND l.kood::TEXT = l_allikas::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -572,7 +583,7 @@ BEGIN
     WHERE l.library = 'TULUDEALLIKAD'
       AND l.kood::TEXT = l_eelarve::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -590,7 +601,7 @@ BEGIN
     WHERE l.library = 'TEGEV'
       AND l.kood::TEXT = l_tt::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -608,7 +619,7 @@ BEGIN
     WHERE l.library = 'RAHA'
       AND l.kood::TEXT = l_rahavoog::TEXT
       AND l.status <> 3
-        LIMIT 1;
+    LIMIT 1;
 
     IF v_lib.valid IS NOT NULL AND NOT public.empty(v_lib.valid)
     THEN
@@ -640,10 +651,10 @@ GRANT EXECUTE ON FUNCTION docs.sp_lausendikontrol(params JSONB) TO dbpeakasutaja
 select rekvid, kpv, deebet, lisa_d, kreedit, lisa_k, kood1, kood2, kood3, kood4, kood5 from cur_journal where kreedit = '150020'
 order by kpv desc
 
-SELECT docs.sp_lausendikontrol('{
+SELECT docs.sp_lausendikontrol_('{
   "db": "10010008",
   "tpd": "800401",
-  "kr": "10300029",
+  "kr": "350050",
   "tpk": "",
   "oma_tp"  : "18510130",
   "allikas": "",

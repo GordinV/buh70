@@ -7,21 +7,28 @@ CREATE OR REPLACE FUNCTION ou.sp_salvesta_arvete_meil(data JSON,
 $BODY$
 
 DECLARE
-    userName       TEXT;
-    doc_id         INTEGER = data ->> 'id';
-    doc_data       JSON    = data ->> 'data';
-    doc_alg_kpv    DATE    = doc_data ->> 'alg_kpv';
-    doc_lopp_kpv   DATE    = doc_data ->> 'lopp_kpv';
-    doc_kas_alusta BOOLEAN = coalesce((doc_data ->> 'kas_alusta')::BOOLEAN, FALSE);
-    doc_muud       TEXT    = doc_data ->> 'muud';
-    new_history    JSONB;
+    userName         TEXT;
+    doc_id           INTEGER = data ->> 'id';
+    doc_data         JSON    = data ->> 'data';
+    doc_alg_kpv      DATE    = doc_data ->> 'alg_kpv';
+    doc_lopp_kpv     DATE    = doc_data ->> 'lopp_kpv';
+    doc_kas_alusta   BOOLEAN = coalesce((doc_data ->> 'kas_alusta')::BOOLEAN, FALSE);
+    doc_muud         TEXT    = doc_data ->> 'muud';
+    doc_paus         BOOLEAN = (doc_data ->> 'paus')::BOOLEAN;
+    l_alus_ametnik   INTEGER = user_id;
+    l_alus_timestamp TIMESTAMP;
+    l_paus_timestamp TIMESTAMP;
+    l_paus_ametnik   INTEGER;
+    new_history      JSONB;
+    v_dok            RECORD;
+
 BEGIN
     SELECT kasutaja
     INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = user_id
-    and (u.roles->>'is_admin')::boolean;
+      AND (u.roles ->> 'is_admin')::BOOLEAN;
 
     IF userName IS NULL
     THEN
@@ -41,12 +48,24 @@ BEGIN
         FROM (SELECT now()    AS created,
                      userName AS user) row;
 
-        INSERT INTO ou.arvete_meil (rekvid, user_id, kas_alusta, alg_kpv, lopp_kpv,  muud, ajalugu)
-        VALUES (user_rekvid, user_id , doc_kas_alusta, doc_alg_kpv, doc_lopp_kpv, doc_muud, new_history) RETURNING id
+        IF (doc_kas_alusta)
+        THEN
+            l_alus_ametnik = user_id;
+            l_alus_timestamp = now();
+        END IF;
+
+        INSERT INTO ou.arvete_meil (rekvid, user_id, kas_alusta, kas_alusta_timestamp, alusta_ametnik, alg_kpv,
+                                    lopp_kpv, muud, ajalugu)
+        VALUES (user_rekvid, user_id, doc_kas_alusta, l_alus_timestamp, l_alus_ametnik, doc_alg_kpv, doc_lopp_kpv,
+                doc_muud, new_history) RETURNING id
                    INTO doc_id;
 
     ELSE
 
+        -- прежнее значение
+        SELECT * INTO v_dok FROM ou.arvete_meil WHERE id = doc_id;
+
+        -- логгируем историю
         SELECT to_jsonb(row)
         INTO new_history
         FROM (SELECT now()    AS updated,
@@ -54,17 +73,55 @@ BEGIN
                      a.alg_kpv,
                      a.lopp_kpv,
                      a.kas_alusta,
+                     a.paus,
                      a.muud
               FROM ou.arvete_meil a
               WHERE a.id = doc_id) row;
 
+        -- если отметка о начале изменилась, то запомним кто и когда
+        IF (doc_kas_alusta AND NOT v_dok.kas_alusta)
+        THEN
+            l_alus_ametnik = user_id;
+            l_alus_timestamp = now();
+        ELSE
+            l_alus_ametnik = v_dok.alusta_ametnik;
+            l_alus_timestamp = v_dok.kas_alusta_timestamp;
+        END IF;
+
+        -- если отправка счетов еще не начата, то пауза не имеет смысла
+        IF NOT doc_kas_alusta AND coalesce(doc_paus, FALSE)
+        THEN
+            doc_paus = NULL;
+            l_paus_ametnik = NULL;
+            l_paus_timestamp = NULL;
+        END IF;
+
+        IF doc_kas_alusta
+        THEN
+            -- отправка начата, отрабатываем паузу
+            IF doc_paus IS NOT NULL AND doc_paus <> coalesce(v_dok.paus,false)
+            THEN
+                l_paus_ametnik = user_id;
+                l_paus_timestamp = now();
+            ELSE
+                l_paus_ametnik = v_dok.paus_ametnik;
+                l_paus_timestamp = v_dok.paus_timestamp;
+            END IF;
+
+        END IF;
+
+
         UPDATE ou.arvete_meil
-        SET
-            alg_kpv = doc_alg_kpv,
-            lopp_kpv = doc_lopp_kpv,
-            kas_alusta = doc_kas_alusta,
-            muud       = doc_muud,
-            ajalugu    = arvete_meil.ajalugu || new_history
+        SET alg_kpv              = doc_alg_kpv,
+            lopp_kpv             = doc_lopp_kpv,
+            kas_alusta           = doc_kas_alusta,
+            kas_alusta_timestamp = l_alus_timestamp,
+            alusta_ametnik       = l_alus_ametnik,
+            paus                 = doc_paus,
+            paus_timestamp       = l_paus_timestamp,
+            paus_ametnik         = l_paus_ametnik,
+            muud                 = doc_muud,
+            ajalugu              = arvete_meil.ajalugu || new_history
         WHERE id = doc_id RETURNING id
             INTO doc_id;
     END IF;

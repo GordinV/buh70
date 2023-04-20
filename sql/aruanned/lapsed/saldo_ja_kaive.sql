@@ -2,8 +2,8 @@
 DROP FUNCTION IF EXISTS lapsed.saldo_ja_kaive(INTEGER, DATE, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaive(l_rekvid INTEGER,
-                                                 kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
-                                                 kpv_end DATE DEFAULT current_date)
+                                                  kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
+                                                  kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
         id              BIGINT,
         period          DATE,
@@ -389,6 +389,21 @@ FROM (
          LEFT OUTER JOIN kulastavus k
                          ON k.parentid = report.laps_id AND k.rekvid = report.rekvid
          INNER JOIN lapsed.laps l ON l.id = report.laps_id
+where  exists(
+        select 1
+        where (alg_saldo <> 0 OR arvestatud <> 0 OR umberarvestus <> 0 OR soodustus <> 0 OR laekumised <> 0 OR mahakantud <> 0 OR
+               jaak <> 0
+                  )
+        union all
+        SELECT 1
+        FROM lapsed.lapse_kaart lk
+        WHERE lk.parentid = report.laps_id
+          AND lk.rekvid = report.rekvid
+          AND lk.properties ->> 'yksus' = report.yksus
+          AND (lk.properties ->> 'lopp_kpv')::date >= kpv_start::date
+    )
+
+
 GROUP BY (CASE
               WHEN k.lopp_kpv >= kpv_end THEN 'Jah'
               ELSE 'Ei' END),
@@ -411,40 +426,25 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaive(INTEGER, DATE, DATE) TO dbvaatle
 
 
 /*
-143
-4801.42,167.22
 
-select * from (
-SELECT sum(alg_saldo) over() as alg_kokku, sum(arvestatud) over() as arv_kokku, sum(soodustus) over() as soodustus_kokku,
-sum(umberarvestus) over() as u_kokku,
-sum(laekumised) over() as laek_kokku, sum(jaak) over() as jaak_kokku, *, 'new' as report
-FROM lapsed.saldo_ja_kaive(72, '2023-03-01'::date, '2023-03-31'::date) qry
-where lapse_nimi = 'Jakovleva Ksenia'
-
-union all
-SELECT sum(alg_saldo) over() as alg_kokku, sum(arvestatud) over() as arv_kokku, sum(soodustus) over() as soodustus_kokku,
-sum(laekumised) over() as laek_kokku, sum(jaak) over() as jaak_kokku, * , 'old' as report
-FROM lapsed.saldo_ja_kaive(95, '2022-10-01', '2022-10-30') qry
-) qry
-order by lapse_isikukood, report , yksus
-
-select sum(arvestatud) from (
-
-SELECT * FROM lapsed.saldo_ja_kaive(96, '2021-01-01', '2021-01-31') qry
-left outer join  lapsed.saldo_ja_kaive(84, '2021-01-01', '2021-01-31') qry1
-on qry1.lapse_isikukood =  qry.lapse_isikukood
-where qry.jaak <> qry1.alg_saldo
-
-
-where lapse_isikukood in ('51608190242')
-inner join (select sum()
-where qry.laekumised > 0
-
-
-) qry
-where  is   IN ('0850136823')
-
-select *
-FROM lapsed.saldo_ja_kaive(80, '2022-01-01', '2022-01-31') qry
+select
+*
+FROM lapsed.saldo_ja_kaive_(89, '2023-03-01', '2023-04-30') qry
+where 1=1
+and      viitenumber = '0890085727'
+and  exists(
+    select 1
+    where (alg_saldo <> 0 OR arvestatud <> 0 OR umberarvestus <> 0 OR soodustus <> 0 OR laekumised <> 0 OR mahakantud <> 0 OR
+           jaak <> 0
+              )
+    union all
+    SELECT 1
+                         FROM lapsed.laps l
+                                  INNER JOIN lapsed.lapse_kaart lk ON l.id = lk.parentid
+                         WHERE l.isikukood = qry.lapse_isikukood
+                           AND lk.rekvid = qry.rekvid
+                           AND lk.properties ->> 'yksus' = qry.yksus
+                           AND (lk.properties ->> 'lopp_kpv')::date >= qry.period::date
+        )
 
 */

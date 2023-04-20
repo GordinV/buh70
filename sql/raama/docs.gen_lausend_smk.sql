@@ -198,8 +198,11 @@ BEGIN
             IF l_laps_id IS NOT NULL
             THEN
                 v_smk1.konto = '10300029';
-                v_smk1.tp = '800699';
                 v_smk1.tp = coalesce((SELECT tp FROM libs.asutus WHERE id = l_asutus_id), '800699');
+                IF empty(v_smk1.tp)
+                THEN
+                    v_smk1.tp = '800699';
+                END IF;
                 IF v_smk1.tp = '800698'
                 THEN
                     -- Kalle, FIE меняекм на частные лица

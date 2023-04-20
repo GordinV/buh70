@@ -12,4 +12,7 @@ module.exports = {
         display: 'flex',
         flexDirection: 'column',
     },
+    label :{
+        color: 'red'
+    }
 };
