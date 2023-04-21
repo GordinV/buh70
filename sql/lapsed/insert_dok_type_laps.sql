@@ -304,3 +304,11 @@ SELECT 1::INTEGER,
        'DOK'                                     AS library,
        '{"type":"aruanne", "module":["Lapsed"]}' AS properties
 WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'PANK_EARVE');
+
+INSERT INTO libs.library (rekvid, kood, nimetus, library, properties)
+SELECT 1::INTEGER,
+       'SALDOD_ASUTUSTES'                              AS kood,
+       'Laste saldod asutustes'               AS nimetus,
+       'DOK'                                     AS library,
+       '{"type":"aruanne", "module":["Lapsed"], "rekv_ids":[119]}' AS properties
+WHERE NOT exists(SELECT id FROM libs.library WHERE library = 'DOK' AND kood = 'SALDOD_ASUTUSTES');

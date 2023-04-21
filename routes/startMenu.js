@@ -8,7 +8,7 @@ exports.post = async (req, res) => {
     let module = req.params.module;
 
     const sqlString = menuModel.sqlString,
-        params = [module];
+        params = [module, user.asutusId];
 
     try {
         if (!user) {

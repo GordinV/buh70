@@ -1,5 +1,5 @@
 module.exports = {
-    sqlString: `SELECT DISTINCT *
+    sqlString: `SELECT DISTINCT *, $2::INTEGER AS rekv_id
                 FROM (
                          SELECT trim(BOTH '"' FROM module::TEXT)::TEXT AS id,
                                 '0'                                    AS parentId,
@@ -12,9 +12,9 @@ module.exports = {
                                WHERE l.library = 'DOK'
                                  AND l.status < 3) modules
                          UNION ALL
-                         SELECT 'document' AS id,
+                         SELECT 'document'   AS id,
                                 'Lapsed'     AS parentId,
-                                'document' AS kood,
+                                'document'   AS kood,
                                 'Dokumendid' AS name,
                                 NULL::TEXT   AS props,
                                 TRUE         AS is_node
@@ -28,19 +28,19 @@ module.exports = {
                                 TRUE         AS is_node
                          UNION ALL
                          -- groups
-                         SELECT 'aruanne'    AS id,
-                                'Lapsed'     AS parentId,
-                                'aruanne'    AS kood,
+                         SELECT 'aruanne'  AS id,
+                                'Lapsed'   AS parentId,
+                                'aruanne'  AS kood,
                                 'Aruanned' AS name,
-                                NULL::TEXT   AS props,
-                                TRUE         AS is_node
+                                NULL::TEXT AS props,
+                                TRUE       AS is_node
                          UNION ALL
-                         SELECT 'settings'    AS id,
-                                'Lapsed'     AS parentId,
-                                'settings'    AS kood,
+                         SELECT 'settings'     AS id,
+                                'Lapsed'       AS parentId,
+                                'settings'     AS kood,
                                 'Häälestamine' AS name,
-                                NULL::TEXT   AS props,
-                                TRUE         AS is_node
+                                NULL::TEXT     AS props,
+                                TRUE           AS is_node
                          UNION ALL
                          SELECT l.id::TEXT,
                                 CASE
@@ -61,9 +61,12 @@ module.exports = {
                                                      AND l.library = 'DOK'
                          ) modules ON (properties::JSONB -> 'module')::JSONB @> modules.module
                          WHERE l.library = 'DOK'
-                           AND l.status < 3) qry
+                           AND l.status < 3
+                           AND (l.properties::JSONB ->> 'rekv_ids' IS NULL OR
+                                l.properties::JSONB -> 'rekv_ids' @> to_jsonb($2::integer))
+                     ) qry
                 WHERE (props::JSONB -> 'module')::JSONB @> '["Lapsed"]'::JSONB
                    OR (upper(id) = upper($1) OR upper(parentid) = upper($1))
     `,
-    params: ['rekvId', 'module'] // $1 module
+    params: ['rekvId', 'module'] // $1 module, $2 rekvid
 };

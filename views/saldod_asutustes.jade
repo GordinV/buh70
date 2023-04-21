@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+        .kulastavus {
+            width: 100px
+        }
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+
+    div.body_wrapper
+        h1 LASTE SALDOD ASUTUSTES ARUANNE
+        h2 Vanematetasu
+        each parameter in filter
+            p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+
+        each lapse_isikukood in data
+            p #{Object.keys(lapse_isikukood)[0]}
+
+            table.table.table-hover.grid_data
+                thead.grid_head
+                    tr
+                        th Isikukood
+                        th Lapse ees- ja perekonnanimi
+                        th Viitenumber
+                        th Saldo
+                        th Asutus
+
+                tbody
+                    each rea in lapse_isikukood[Object.keys(lapse_isikukood)[0]]
+                        tr
+                            td=rea.lapse_isikukood
+                            td=rea.lapse_nimi
+                            td=rea.viitenumber
+                            td=rea.jaak
+                            td=rea.asutus
+                    tr.group
+                        td.group=Object.keys(lapse_isikukood)[0] + ' Read kokku:'
+                        td.group=Number(lapse_isikukood[Object.keys(lapse_isikukood)[0]].length)
+                        td.group='Kokku:'
+                        td.group=lapse_isikukood[Object.keys(lapse_isikukood)[0]][0].jaak_group
+                        td.group
+

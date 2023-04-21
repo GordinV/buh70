@@ -63,10 +63,9 @@ class StartMenu extends React.PureComponent {
     fetchData(props) {
         let url = URL + `/${DocContext.getModule}`;
         let params = {userId: DocContext.getUserId, uuid: DocContext.getUuid};
-
         try {
             // will check in cache
-            if (!DocContext.getMenu.length === 0) {
+            if (DocContext.getMenu.length == 0) {
                 fetchData.fetchDataPost(url, params)
                     .then(response => {
                         if (response.status && response.status == 401) {

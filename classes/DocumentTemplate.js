@@ -219,7 +219,6 @@ class Document {
                 this.setLog(sql, [params, sortBy, sqlWhere, limit, subTotals], JSON.stringify(tulemused));
             }
 */
-            console.log('tulemused',tulemused);
             return tulemused;
 
         } catch (e) {
