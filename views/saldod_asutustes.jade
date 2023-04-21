@@ -46,7 +46,7 @@ block content
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
-        h1 LASTE SALDOD ASUTUSTES ARUANNE
+        h1 Teenuste ostjate saldod viitenumride lõikes (kellel on rohkem kui üks viitenumber)
         h2 Vanematetasu
         each parameter in filter
             p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}

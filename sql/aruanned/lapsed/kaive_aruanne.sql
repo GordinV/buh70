@@ -370,6 +370,6 @@ GRANT EXECUTE ON FUNCTION lapsed.kaive_aruanne(INTEGER, DATE, DATE) TO dbvaatlej
 
 /*
 select *
-FROM lapsed.kaive_aruanne(99, '2022-01-01', '2022-01-31') qry
+FROM lapsed.kaive_aruanne(119, '2022-01-01', '2022-01-31') qry
 where viitenumber= '0990090706'
 */

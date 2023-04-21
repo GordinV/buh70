@@ -9,7 +9,7 @@ module.exports = {
             {id: "jaak", name: "Jääk", width: "5%", type: "number", show: false},
             {
                 id: "asutuste_count",
-                name: "Asutuste arv(jääk<>0) ",
+                name: "Asutuste arv",
                 width: "5%",
                 type: "number",
                 show: true,
@@ -17,7 +17,7 @@ module.exports = {
             },
             {
                 id: "lasteaed_count",
-                name: "Lasteaede arv(jääk<>0) ",
+                name: "Lasteaede arv",
                 width: "5%",
                 type: "number",
                 show: true,
@@ -31,8 +31,8 @@ module.exports = {
                     ),
                     qryReport as (
                         select * ,
-                            case when r.rekvid in  (select id from lasteaeds WHERE liik = 'LASTEAED') and jaak <> 0 then 1 else 0 end as lasteaed_count,
-                            case when r.rekvid in  (select id from lasteaeds) and jaak <> 0 then 1 else 0 end as asutuste_count
+                            case when r.rekvid in  (select id from lasteaeds WHERE liik = 'LASTEAED') then 1 else 0 end as lasteaed_count,
+                            1 as asutuste_count
                             FROM lapsed.kaive_aruanne($1::INTEGER, $3, $4) r
                     )
                     SELECT sum(qryReport.jaak) OVER (PARTITION BY lapse_isikukood)            AS jaak_group,
