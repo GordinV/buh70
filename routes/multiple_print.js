@@ -86,7 +86,7 @@ exports.arve = async (req, res) => {
             // register e-arve event
             let sql = doc.config.multiple_print[0].register;
             if (sql) {
-                let tulem  = await db.queryDb(sql, [ids.join(','),user.userId]);
+                let tulem  = await db.queryDb(sql, [ids,user.userId]);
             }
 
             res.render('arve_kaartid', {title: 'Arved', data: rows, user: user});
