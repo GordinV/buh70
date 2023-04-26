@@ -74,7 +74,7 @@ id
 35412
 36557
 
-SELECT  palk.get_projekt_jaak(35412, DATE(2023,03,31), '23001'::TEXT);
+SELECT  palk.get_projekt_jaak(38542, DATE(2023,04,30), '22104'::TEXT);
 
 
 */

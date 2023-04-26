@@ -42,7 +42,7 @@ block content
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
     div.body_wrapper
-        h1 SALDO JA KÄIVE ARUANNE
+        h1 SALDO JA KÄIVE ARUANNE (INFOKS)
         h2 Vanematetasu
         each parameter in filter
             p #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}

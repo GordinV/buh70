@@ -301,6 +301,7 @@ WITH qryEelarve AS (
       AND e.rekvid IN (SELECT rekv_id
                        FROM get_asutuse_struktuur(l_rekvid))
       AND (kpv IS NULL OR kpv <= l_kpv)
+    and e.status < 3
     GROUP BY e.rekvid, a.is_kulud, e.kood1, e.kood5, a.nimetus
     UNION ALL
     --kulud, taitmine
@@ -365,6 +366,8 @@ WITH qryEelarve AS (
                           ELSE l_rekvid END)
       AND e.rekvid IN (SELECT rekv_id
                        FROM get_asutuse_struktuur(l_rekvid))
+      and e.status < 3
+
 )
 -- Põhitegevusts tulud kokku
 SELECT rekv_id,
