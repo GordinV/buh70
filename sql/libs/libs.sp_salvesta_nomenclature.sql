@@ -50,6 +50,7 @@ DECLARE
     l_error               TEXT;
 
 BEGIN
+
     -- check null as text
     IF (coalesce(doc_tegev, '') = 'null')
     THEN
@@ -66,12 +67,10 @@ BEGIN
         doc_tunnus = NULL;
     END IF;
 
-
     IF (doc_id IS NULL)
     THEN
         doc_id = doc_data ->> 'id';
     END IF;
-
 
     SELECT kasutaja
     INTO userName
@@ -150,9 +149,9 @@ BEGIN
     -- контроль над классфикаторами, если задан кор.счет из группы 32
     IF doc_konto IS NOT NULL AND left(doc_konto, 2) = '32'
     THEN
-        IF empty(coalesce(doc_tunnus, '')) and user_rekvid in (
-            select id from ou.rekv where id = 119 or parentid = 119 or id = 64 or parentid = 64
-            )
+        IF empty(coalesce(doc_tunnus, '')) AND user_rekvid IN (
+            SELECT id FROM ou.rekv WHERE id = 119 OR parentid = 119 OR id = 64 OR parentid = 64
+        )
         THEN
             -- только для соц. департамента и отдела культуры
             l_error = coalesce(l_error, '') || ' tunnus, ';
@@ -170,14 +169,26 @@ BEGIN
             l_error = coalesce(l_error, '') || ' allikas ';
         END IF;
 
-        if len(coalesce(l_error ,'')) > 1 then
-            raise exception 'Viga, puuduvad vajalikud andmed: %', l_error;
+        IF len(coalesce(l_error, '')) > 1
+        THEN
+            RAISE EXCEPTION 'Viga, puuduvad vajalikud andmed: %', l_error;
         END IF;
 
     END IF;
 
     IF doc_id IS NULL OR doc_id = 0
     THEN
+
+        -- проверка на уникальность кода
+        IF exists(SELECT id
+                  FROM libs.nomenklatuur
+                  WHERE rekvid = user_rekvid
+                    AND ltrim(rtrim(kood)) = ltrim(rtrim(doc_kood))
+                    AND status < 3)
+        THEN
+            -- такой код уже есть, возвращаем ошибку
+            RAISE EXCEPTION 'Viga, kood juba kasutusel: %', doc_dok;
+        END IF;
 
         SELECT row_to_json(row)
         INTO new_history
@@ -199,6 +210,18 @@ BEGIN
 
 
     ELSE
+        -- проверка на уникальность кода
+        IF exists(SELECT id
+                  FROM libs.nomenklatuur
+                  WHERE rekvid = user_rekvid
+                    AND kood = doc_kood
+                    AND id <> doc_id
+                    AND status < 3)
+        THEN
+            -- такой код уже есть, возвращаем ошибку
+            RAISE EXCEPTION 'Viga, kood juba kasutusel: %', doc_dok;
+        END IF;
+
         -- muuda
 
         UPDATE libs.nomenklatuur
@@ -229,10 +252,15 @@ BEGIN
 
     END IF;
 
-
     RETURN coalesce(nom_id, 0);
+EXCEPTION
+    WHEN OTHERS
+        THEN
+            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
+            RETURN 0;
 
-END;
+
+END ;
 $BODY$
     LANGUAGE 'plpgsql'
     VOLATILE

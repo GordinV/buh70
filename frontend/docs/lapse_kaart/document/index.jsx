@@ -284,6 +284,8 @@ class LapseKaart extends React.PureComponent {
                                 readOnly={!isEditMode}/>
 
                     </div>
+{/*
+// А. Варгунин 28.04.2023
                     <div style={styles.docColumn}>
                         <ButtonEdit
                             ref='btnEdit'
@@ -294,6 +296,7 @@ class LapseKaart extends React.PureComponent {
                             style={buttonEditNom}
                         />
                     </div>
+*/}
                 </div>
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
