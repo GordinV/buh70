@@ -17,7 +17,7 @@ module.exports = {
             {id: "tagastused", name: "Tagastused", width: "5%", type: "number", interval: true},
             {id: "mahakantud", name: "Mahakantud", width: "5%", type: "number", interval: true},
             {id: "jaak", name: "Võlg", width: "5%", type: "number", interval: true},
-            {id: "lopp_jaak", name: "Lapse võlg kokku", width: "5%", type: "number", interval: true, show: false},
+            {id: "lopp_jaak", name: "Lapse võlg kokku", width: "5%", type: "number", interval: true, show: true},
             {id: "asutus", name: "Asutus", width: "8%"},
         ],
         sqlString: `SELECT sum(qryReport.alg_saldo) OVER (PARTITION BY qryReport.rekvid)               AS alg_saldo_group,
