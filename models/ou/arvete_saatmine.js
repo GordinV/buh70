@@ -9,9 +9,18 @@ module.exports = {
                      am.kas_alusta::BOOLEAN,
                      am.kas_alusta                                     AS eelmise_alus_status,
                      am.muud,
-                     to_char(gomonth(make_date(date_part('year', am.lopp_kpv)::INTEGER,
-                                               date_part('month', am.lopp_kpv)::INTEGER, 01),
-                                     1)::DATE, 'DD.MM.YYYY')::TEXT     AS saatmine_alustatakse,
+                     CASE
+                         WHEN gomonth(make_date(date_part('year', am.lopp_kpv)::INTEGER,
+                                                date_part('month', am.lopp_kpv)::INTEGER, 01),
+                                      1)::DATE < am.kas_alusta_timestamp::DATE
+                             THEN
+                             to_char(am.kas_alusta_timestamp::TIMESTAMP, 'DD.MM.YYYY HH24:MI:SS')
+                         ELSE
+                             to_char(gomonth(make_date(date_part('year', am.lopp_kpv)::INTEGER,
+                                                       date_part('month', am.lopp_kpv)::INTEGER, 01),
+                                             1)::DATE, 'DD.MM.YYYY HH24:MI:SS')::TEXT
+                         END
+                                                                       AS saatmine_alustatakse,
                      CASE
                          WHEN am.kas_alusta
                              THEN 'Jah'
@@ -23,7 +32,7 @@ module.exports = {
                              THEN 'Jah'
                          ELSE 'Ei' END :: TEXT                         AS kas_paus,
                      am.paus,
-                     to_char(am.paus_timestamp, 'DD.MM.YYYY HH-MI-SS') AS paus_timestamp,
+                     to_char(am.paus_timestamp, 'DD.MM.YYYY HH24-MI-SS') AS paus_timestamp,
                      coalesce(u_p.ametnik, '')                         AS p_ametnik,
                      u.ametnik                                         AS kasutaja
               FROM ou.arvete_meil am
