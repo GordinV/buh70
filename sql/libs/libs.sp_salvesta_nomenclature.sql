@@ -253,12 +253,12 @@ BEGIN
     END IF;
 
     RETURN coalesce(nom_id, 0);
-EXCEPTION
+/*EXCEPTION
     WHEN OTHERS
         THEN
             RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
             RETURN 0;
-
+*/
 
 END ;
 $BODY$

@@ -66,7 +66,6 @@ BEGIN
 
                 -- вызывает оплату
                 -- l_tasu_id integer, l_arv_id integer,
-                raise notice 'calling sp_tasu_arv';
                 result = docs.sp_tasu_arv(v_mk.id, v_arve.id, l_user_id, l_tasu);
 
                 IF result IS NOT NULL AND result > 0

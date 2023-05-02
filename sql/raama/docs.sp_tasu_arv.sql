@@ -24,6 +24,7 @@ DECLARE
     v_tulu_arved     RECORD;
     l_tasu_summa     NUMERIC = 0;
     is_refund        BOOLEAN = FALSE;
+    v_arvtasu        RECORD;
 BEGIN
     IF exists(SELECT 1 FROM docs.arv WHERE journalid = l_tasu_id)
     THEN
@@ -37,7 +38,8 @@ BEGIN
            a.properties ->> 'tyyp'                                AS tyyp,
            CASE WHEN a.liik = 1 THEN 'KULU' ELSE 'TULU' END::TEXT AS arve_tyyp,
            a.properties ->> 'ebatoenaolised_1_id'                 AS ebatoenaolised_1_id,
-           a.properties ->> 'ebatoenaolised_2_id'                 AS ebatoenaolised_2_id
+           a.properties ->> 'ebatoenaolised_2_id'                 AS ebatoenaolised_2_id,
+           a.jaak
     INTO v_arv
     FROM docs.doc d
              INNER JOIN docs.arv a ON a.parentid = d.id
@@ -52,6 +54,7 @@ BEGIN
                END     AS maksepaev,
            l.kood      AS doc_type,
            m.opt,
+           m.jaak,
            ld.parentid AS laps_id
     INTO v_tasu
     FROM docs.doc d
@@ -125,6 +128,19 @@ BEGIN
         LIMIT 1
     );
 
+
+
+/*    IF (l_doc_tasu_id IS NOT NULL AND v_arv.jaak > 0 AND v_tasu.jaak > 0 AND NOT empty(tasu_summa))
+    THEN
+        -- есть сальдо счета и не распределенное сальдо платежа. Увеличиваем сумма списание на сумму платежа
+        RAISE NOTICE 'v_arv.jaak %, v_tasu.jaak %, l_summa %', v_arv.jaak, v_tasu.jaak, l_summa;
+        SELECT *
+        INTO v_arvtasu
+        FROM docs.arvtasu
+        WHERE id = l_doc_tasu_id;
+        l_summa = v_arvtasu.summa + tasu_summa;
+    END IF;
+*/
     SELECT coalesce(l_doc_tasu_id, 0)                         AS id,
            v_tasu.rekvid                                      AS rekvid,
            l_arv_id                                           AS doc_arv_id,
