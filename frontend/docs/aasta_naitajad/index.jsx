@@ -139,6 +139,7 @@ class Documents extends React.PureComponent {
     }
 
     renderer(self) {
+        console.log('self', self.gridData);
         let jaanuar = self.gridData ? getSum (self.gridData,'jaanuar') : 0;
         let veebruar = self.gridData ? getSum (self.gridData,'veebruar') : 0;
         let marts = self.gridData ? getSum (self.gridData,'marts') : 0;

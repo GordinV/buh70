@@ -114,6 +114,6 @@ GRANT EXECUTE ON FUNCTION lapsed.aasta_naitajad(INTEGER, DATE, TEXT, TEXT) TO db
 
 /*
 SELECT *
-FROM lapsed.aasta_naitajad(85, '2021-03-31')
+FROM lapsed.aasta_naitajad(119, '2023-04-30')
 
 */
