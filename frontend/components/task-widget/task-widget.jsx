@@ -132,9 +132,14 @@ class TaskWidget extends React.PureComponent {
     }
 
     modalPageClick(btnEvent) {
+        if (btnEvent !== 'Ok') {
+            this.setState({showModal: false});
+            return;
+        }
+
         // проверим на заполнение полей
-        if (this.state.showViitenumber && !this.state.viitenumber) {
-            this.setState({warning: 'Puudub vajaliku andmed: viitenumber'});
+        if (this.state.showViitenumber && (!this.state.viitenumber || !this.state.viitenumber.length !== 10)) {
+            this.setState({warning: 'Puudub vajaliku andmed: viitenumber või vale viitenumbri pikkus'});
             return false;
         }
         if (this.state.showKogus && !this.state.kogus) {

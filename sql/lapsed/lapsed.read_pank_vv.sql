@@ -76,11 +76,25 @@ BEGIN
 
             END IF;
 
+            -- контроль длины
+            IF len(l_new_viitenr) <> 10
+            THEN
+                -- ошибка на ВН
+                l_new_viitenr = null;
+            END IF;
+
+
             -- читаем ссылку и ищем учреждение
-            l_rekvid = substr(l_new_viitenr, 1, char_length(l_new_viitenr::TEXT) - 7)::INTEGER;
+--            l_rekvid = substr(l_new_viitenr, 1, char_length(l_new_viitenr::TEXT) - 7)::INTEGER;
+            l_rekvid = left(l_new_viitenr, 3)::INTEGER;
+
 
             -- получим ид ребенка
             l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
+            -- проверим на наличие этого ид в бд
+            if not exists (select id from lapsed.laps where id = l_laps_id and staatus < 3) then
+                l_laps_id = null;
+            END IF;
 
             -- задаем признак
             l_tunnus = (SELECT left(nimetus, 7) FROM ou.rekv WHERE id = l_rekvid);

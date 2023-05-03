@@ -29,8 +29,20 @@ DECLARE
 BEGIN
     doc_type_id = 'SMK';
 
+    -- контроль длины
+    IF len(l_viitenumber) <> 10
+    THEN
+        -- ошибка на ВН
+        result = 0;
+        error_message = 'Viitenumber vigane';
+        error_code = 1;
+
+        RAISE EXCEPTION 'Vale viitenumber, < 10';
+    END IF;
+
+
     -- читаем ссылку и ищем учреждение
-    l_rekvid = substr(l_viitenumber, 1, len(l_viitenumber::TEXT) - 7)::INTEGER;
+    l_rekvid = substr(l_viitenumber, 3)::INTEGER;
 
 
     -- получим ид ребенка
