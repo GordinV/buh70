@@ -118,7 +118,9 @@ exports.get = async (req, res) => {
                 Nach: (Number(row.summa)).toFixed(2),
                 Info: row.muud && row.muud !== '0' ? row.muud.replace('päeva', 'pv') : '',
                 SrokOpl: tahtaeg,
-                VhSaldo: false
+                VhSaldo: false,
+                isikukood: row.isikukood,
+                viitenr: row.viitenumber
             };
 
             if (Number(row.soodustus) > 0 && Number(row.hind) > 0) {
@@ -177,7 +179,10 @@ exports.get = async (req, res) => {
                     Nach: soodustuseSumma,
                     Info: row.muud && row.muud !== '0' ? row.muud.replace('päeva', 'pv') : '',
                     SrokOpl: tahtaeg,
-                    VhSaldo: false
+                    VhSaldo: false,
+                    isikukood: row.isikukood,
+                    viitenr: row.viitenumber
+
                 };
                 // вставка доп. строки (льготы)
                 csvData.push(obj);
