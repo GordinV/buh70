@@ -42,7 +42,7 @@ BEGIN
 
 
     -- читаем ссылку и ищем учреждение
-    l_rekvid = substr(l_viitenumber, 3)::INTEGER;
+    l_rekvid = left(l_viitenumber, 3)::INTEGER;
 
 
     -- получим ид ребенка

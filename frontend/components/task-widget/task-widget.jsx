@@ -138,8 +138,8 @@ class TaskWidget extends React.PureComponent {
         }
 
         // проверим на заполнение полей
-        if (this.state.showViitenumber && (!this.state.viitenumber || !this.state.viitenumber.length !== 10)) {
-            this.setState({warning: 'Puudub vajaliku andmed: viitenumber või vale viitenumbri pikkus'});
+        if (this.state.showViitenumber && (!this.state.viitenumber || this.state.viitenumber.length !== 10)) {
+            this.setState({warning: 'Puudub vajaliku andmed: viitenumber või vale viitenumbri pikkus: ' + this.state.viitenumber.length});
             return false;
         }
         if (this.state.showKogus && !this.state.kogus) {
