@@ -54,7 +54,7 @@ const automailer = async () => {
                gomonth(make_date(year(current_date), month(current_date), 1), -1) AS kpv1
     ),
          kas_lubatud AS (
-             SELECT distinct rekvid, kas_alusta
+             SELECT rekvid, kas_alusta
              FROM ou.arvete_meil a,
                   params
              WHERE a.alg_kpv >= params.kpv1
