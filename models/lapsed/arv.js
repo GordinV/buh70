@@ -152,7 +152,7 @@ const Arv = {
                          year(arved.lopp_kpv)::TEXT                                AS laekumise_period,
                          a.properties ->> 'ettemaksu_period'                       AS ettemaksu_period,
                          va.properties ->> 'pank'                                  AS pank,
-                         va.properties ->> 'iban'                                  AS iban,
+                         REPLACE((va.properties ->> 'iban')::TEXT, E'\r', '')  AS iban,
                        to_jsonb(array((SELECT kaibed FROM kaibed WHERE kaibed.isik_id = l.id))) AS kaibed,
                        to_jsonb(array((SELECT details FROM details det WHERE det.parentid = d.id)))   AS details,
                         r.muud as tais_nimetus,
@@ -393,7 +393,7 @@ const Arv = {
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
                   WHERE a.parentid = $1 :: INTEGER
                     AND a1.kogus <> 0
-                    ORDER BY n.nimetus`,
+                  ORDER BY n.nimetus`,
             query: null,
             multiple: true,
             alias: 'details',
