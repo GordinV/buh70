@@ -36,6 +36,7 @@ class Vanem extends React.PureComponent {
         this.handleLasteGridBtnClick = this.handleLasteGridBtnClick.bind(this);
         this.btnEditAsutusClick = this.btnEditAsutusClick.bind(this);
         this.setFilter = this.setFilter.bind(this);
+        this.readBankName = this.readBankName.bind(this);
 
         this.pages = [
             {pageName: 'Vanem kaart', docTypeId: 'VANEM'},
@@ -81,6 +82,10 @@ class Vanem extends React.PureComponent {
             </div>);
         }
 
+        if (self.docData.iban) {
+            // прочитаем название банка
+            this.readBankName(self);
+        }
 
         let isEditMode = self.state.edited,
             gridLasteData = self.docData.lapsed,
@@ -97,9 +102,10 @@ class Vanem extends React.PureComponent {
 
         return (
             <div style={styles.doc}>
-                {self.docData && self.docData.asutusid && Boolean(self.docData.kas_email) && !(self.docData.email) ? (<div style={styles.docRow}>
-                    <div style={styles.warning}>Puudub e-posti aadress</div>
-                </div>) : null
+                {self.docData && self.docData.asutusid && Boolean(self.docData.kas_email) && !(self.docData.email) ? (
+                    <div style={styles.docRow}>
+                        <div style={styles.warning}>Puudub e-posti aadress</div>
+                    </div>) : null
                 }
 
                 <div style={styles.docRow}>
@@ -107,7 +113,7 @@ class Vanem extends React.PureComponent {
                         <SelectData title="Vanem:"
                                     name='asutusid'
                                     libName="asutused"
-                                    history = {this.props.history}
+                                    history={this.props.history}
                                     sqlFields={['nimetus', 'regkood']}
                                     data={[]}
                                     value={self.docData.asutusid || 0}
@@ -189,24 +195,6 @@ class Vanem extends React.PureComponent {
                 {self.docData.arved && self.docData.kas_earve ?
                     <div style={styles.docRow}>
                         <div style={styles.docColumn}>
-                            <Select title="E-arve pank:"
-                                    name='pank'
-                                    data={[{id: 0, kood: '', nimetus: ''}, {
-                                        id: 1,
-                                        kood: 'SWED',
-                                        nimetus: 'Swedpank'
-                                    }, {id: 2, kood: 'SEB', nimetus: 'Seb pank'}]}
-                                    collId='kood'
-                                    value={self.docData.pank || ''}
-                                    defaultValue={self.docData.pank}
-                                    ref="select-pank"
-                                    btnDelete={isEditMode}
-                                    onChange={self.handleInputChange}
-                                    readOnly={!isEditMode}
-                                    style={styles.pank}
-                            />
-                        </div>
-                        <div style={styles.docColumn}>
                             <InputText title='E-arve IBAN:'
                                        name='iban'
                                        value={self.docData.iban || ''}
@@ -214,6 +202,14 @@ class Vanem extends React.PureComponent {
                                        readOnly={!isEditMode}
                                        onChange={self.handleInputChange}/>
 
+                        </div>
+                        <div style={styles.docColumn}>
+                            <InputText title="E-arve pank:"
+                                       name='pank'
+                                       value={self.docData.pank || ''}
+                                       ref="input-pank"
+                                       readOnly={true}
+                            />
                         </div>
                     </div>
                     : null}
@@ -247,6 +243,48 @@ class Vanem extends React.PureComponent {
 
             </div>
         );
+    }
+
+    /**
+     * вернет название банка, по номеру счета
+     * @param self
+     */
+    readBankName(self) {
+/*
+        Coop Pank aktsiaselts	EKRDEE22	42
+        Eesti Pank	EPBEEE2X	16
+        AS SEB Pank	EEUHEE2X	10
+        Swedbank AS	HABAEE2X	22
+
+        EE 99 00
+*/
+
+        if (self.docData.iban ) {
+            let bancCode = self.docData.iban.substring(4,6);
+            switch (bancCode) {
+                case '10': {
+                    self.docData.pank ='SEB';
+                    break;
+                }
+                case '22': {
+                    self.docData.pank ='SWED';
+                    break;
+                }
+                case '16': {
+                    self.docData.pank ='EESTI PANK';
+                    break;
+                }
+                case '42': {
+                    self.docData.pank ='COOP';
+                    break;
+                }
+                default:
+                    self.docData.pank = '';
+                    break;
+            }
+
+
+        }
     }
 
 
@@ -339,7 +377,6 @@ class Vanem extends React.PureComponent {
 
         return fetchData['fetchDataPost'](url, params)
     }
-
 
 
     // обработчик события клиска на кнопке редактирования контр-агента

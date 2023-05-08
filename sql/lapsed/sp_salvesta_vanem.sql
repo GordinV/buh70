@@ -29,14 +29,19 @@ BEGIN
         doc_id = doc_data ->> 'id';
     END IF;
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
     IF userName IS NULL
     THEN
-        RAISE NOTICE 'User not found %', user;
-        RETURN 0;
+        RAISE EXCEPTION 'User not found %', user;
+    END IF;
+
+    IF NOT empty(coalesce(doc_iban, '')) AND left(doc_iban, 2) = 'EE' AND length(ltrim(rtrim(doc_iban))) <> 20
+    THEN
+        RAISE EXCEPTION 'Viga: Vale IBAN pikkus (<> 20) %', doc_iban;
     END IF;
 
     json_props = to_jsonb(row)
@@ -50,7 +55,8 @@ BEGIN
     -- ищем ранее удаленные записи
     IF doc_id IS NULL OR doc_id = 0
     THEN
-        SELECT id INTO doc_id
+        SELECT id
+        INTO doc_id
         FROM lapsed.vanemad
         WHERE parentid = doc_parentid
           AND asutusid = doc_asutusid;
