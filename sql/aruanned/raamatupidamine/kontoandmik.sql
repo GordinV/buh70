@@ -209,51 +209,80 @@ SELECT coalesce(a.alg_saldo, 0)::NUMERIC(14, 2)                         AS alg_s
 FROM alg_kaibed a
          FULL OUTER JOIN
      (
-         SELECT j.id      AS id,
-                j.kpv     AS kpv,
-                j.number,
-                j.rekvId,
-                j.asutusid,
-                j.selg    AS selg,
-                j.dok     AS dok,
-                j.konto,
-                j.korr_konto,
-                j.summa   AS db,
-                0         AS kr,
-                j.kood1   AS kood1,
-                j.kood2   AS kood2,
-                j.kood3   AS kood3,
-                j.kood4   AS kood4,
-                j.kood5   AS kood5,
-                j.proj    AS proj,
-                j.asutus  AS asutus,
-                j.tunnus  AS tunnus,
-                r.nimetus AS rekv_nimi
-         FROM db_kaibed j
-                  INNER JOIN ou.rekv r ON r.id = j.rekvid
+         WITH kaibed AS (
+             SELECT j.id      AS id,
+                    j.kpv     AS kpv,
+                    j.number,
+                    j.rekvId,
+                    j.asutusid,
+                    j.selg    AS selg,
+                    j.dok     AS dok,
+                    j.konto,
+                    j.korr_konto,
+                    j.summa   AS db,
+                    0         AS kr,
+                    j.kood1   AS kood1,
+                    j.kood2   AS kood2,
+                    j.kood3   AS kood3,
+                    j.kood4   AS kood4,
+                    j.kood5   AS kood5,
+                    j.proj    AS proj,
+                    j.asutus  AS asutus,
+                    j.tunnus  AS tunnus,
+                    r.nimetus AS rekv_nimi
+             FROM db_kaibed j
+                      INNER JOIN ou.rekv r ON r.id = j.rekvid
+             UNION ALL
+             SELECT j.id      AS id,
+                    j.kpv     AS kpv,
+                    j.number,
+                    j.rekvId,
+                    j.asutusid,
+                    j.selg    AS selg,
+                    j.dok     AS dok,
+                    j.konto,
+                    j.korr_konto,
+                    0         AS db,
+                    j.summa   AS kr,
+                    j.kood1   AS kood1,
+                    j.kood2   AS kood2,
+                    j.kood3   AS kood3,
+                    j.kood4   AS kood4,
+                    j.kood5   AS kood5,
+                    j.proj    AS proj,
+                    j.asutus  AS asutus,
+                    j.tunnus  AS tunnus,
+                    r.nimetus AS rekv_nimi
+             FROM kr_kaibed j
+                      INNER JOIN ou.rekv r ON r.id = j.rekvid
+         )
+         SELECT *
+         FROM kaibed
          UNION ALL
-         SELECT j.id      AS id,
-                j.kpv     AS kpv,
-                j.number,
-                j.rekvId,
-                j.asutusid,
-                j.selg    AS selg,
-                j.dok     AS dok,
-                j.konto,
-                j.korr_konto,
+         SELECT 0         AS id,
+                l_kpv1    AS kpv,
+                NULL      AS number,
+                l_rekvid  AS rekvId,
+                NULL      AS asutusid,
+                ''        AS selg,
+                ''        AS dok,
+                a.konto   AS konto,
+                ''        AS korr_konto,
                 0         AS db,
-                j.summa   AS kr,
-                j.kood1   AS kood1,
-                j.kood2   AS kood2,
-                j.kood3   AS kood3,
-                j.kood4   AS kood4,
-                j.kood5   AS kood5,
-                j.proj    AS proj,
-                j.asutus  AS asutus,
-                j.tunnus  AS tunnus,
+                0         AS kr,
+                ''        AS kood1,
+                ''        AS kood2,
+                ''        AS kood3,
+                ''        AS kood4,
+                ''        AS kood5,
+                ''        AS proj,
+                ''        AS asutus,
+                ''        AS tunnus,
                 r.nimetus AS rekv_nimi
-         FROM kr_kaibed j
-                  INNER JOIN ou.rekv r ON r.id = j.rekvid
+         FROM ou.rekv r,
+              alg_kaibed a
+         WHERE r.id = l_rekvid
+           AND NOT exists(SELECT id FROM kaibed)
      ) j
      ON j.rekvid = a.rekvid AND a.konto = j.konto
          INNER JOIN ou.rekv r ON r.id = coalesce(a.rekvid, j.rekvid),
@@ -272,7 +301,7 @@ GRANT EXECUTE ON FUNCTION docs.kontoandmik( TEXT, DATE, DATE, INTEGER, JSONB ) T
 select sum(deebet), sum(kreedit) from (
 SELECT qry.*, l.nimetus,
                         (qry.alg_saldo + db_kokku - kr_kokku) as lopp_saldo
-                        FROM docs.kontoandmik_('100100'::text, '2023-03-01'::date, '2023-03-31'::date, 28::integer, '{"kond":1}'::jsonb) qry
+                        FROM docs.kontoandmik_('10000002'::text, '2023-04-15'::date, '2023-04-16'::date, 28::integer, '{"kond":1}'::jsonb) qry
                         inner join com_kontoplaan l on l.kood = qry.konto
 
                         ) qry

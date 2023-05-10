@@ -44,10 +44,22 @@ class Documents extends React.PureComponent {
             jaak: 0,
             read: 0
         };
-
     }
 
     render() {
+        let docRights = DocRights['ARV'] ? DocRights['ARV'] : {};
+        let userRoles = DocContext.getRoles;
+
+        let toolbarProps = {
+            add: checkRights(userRoles, docRights, 'add'),
+            edit: true, // А Варгунин, открыть для просмотра счет
+            delete: checkRights(userRoles, docRights, 'delete'),
+            print: checkRights(userRoles, docRights, 'print'),
+            pdf: true,
+            email: true,
+            start:true
+        };
+
         return (
             <div>
                 <DocumentRegister initData={this.props.initData}
@@ -55,6 +67,7 @@ class Documents extends React.PureComponent {
                                   module={this.props.module}
                                   ref='register'
                                   docTypeId={DOC_TYPE_ID}
+                                  toolbarProps={toolbarProps}
                                   style={styles}
                                   render={this.renderer}/>
                 <InputNumber title="Read kokku:"

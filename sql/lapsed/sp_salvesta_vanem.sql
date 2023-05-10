@@ -149,13 +149,6 @@ BEGIN
 
     RETURN doc_id;
 
-EXCEPTION
-    WHEN OTHERS
-        THEN
-            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-            RETURN 0;
-
-
 END;
 $BODY$
     LANGUAGE plpgsql

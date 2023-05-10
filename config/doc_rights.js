@@ -9,6 +9,7 @@ module.exports = {
         select: ['kasutaja', 'arvestaja', 'vaatleja', 'peakasutaja'],
         add: ['kasutaja', 'peakasutaja'],
         edit: ['kasutaja', 'peakasutaja'],
+        view: ['arvestaja','kasutaja', 'peakasutaja'],
         delete: ['kasutaja', 'peakasutaja']
     },
     SMK: {

@@ -144,6 +144,8 @@ exports.put = async (req, res) => {
     const module = req.params.module || 'lapsed';
     let data = req.body;
 
+    console.log('put start');
+
     if (!user) {
         console.error('No user', user);
         return res.send({
@@ -177,6 +179,8 @@ exports.put = async (req, res) => {
             let raport = tulemused.data.map((row, index) => {
                 return {id: index, result: 0, kas_vigane: true, error_message: row.error_message};
             });
+
+            console.log('save tulem', tulemused);
 
             if (tulemused.error_code && !tulemused.data.length) {
                 // одно сообщение не массив
@@ -212,6 +216,7 @@ exports.put = async (req, res) => {
 
         if (!savedData.row || savedData.row.length < 1 || l_error.length > 1) {
             l_error = l_error + (savedData && savedData.error_message ? savedData.error_message : null);
+            console.error('saving error',savedData );
             return res.send({
                 action: 'save',
                 result: {error_code: 1, error_message: l_error ? l_error : 'Error in save ', docId: 0}

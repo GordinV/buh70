@@ -32,7 +32,8 @@ DECLARE
     is_import      BOOLEAN        = data ->> 'import';
 BEGIN
 
-    SELECT kasutaja INTO userName
+    SELECT kasutaja
+    INTO userName
     FROM ou.userid u
     WHERE u.rekvid = user_rekvid
       AND u.id = userId;
@@ -48,6 +49,7 @@ BEGIN
                 FROM palk.palk_kaart
                 WHERE lepingid = doc_lepingid
                   AND libid = doc_libid
+                  AND status < 3
                   AND (doc_id = 0 OR id <> doc_id));
 
     IF kaart_id IS NOT NULL
@@ -73,7 +75,8 @@ BEGIN
     THEN
 
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()    AS created,
                      userName AS user) row;
 
@@ -91,11 +94,13 @@ BEGIN
 
     ELSE
         -- history
-        SELECT * INTO v_palk_kaart
+        SELECT *
+        INTO v_palk_kaart
         FROM palk.palk_kaart
         WHERE id = doc_id;
 
-        SELECT row_to_json(row) INTO new_history
+        SELECT row_to_json(row)
+        INTO new_history
         FROM (SELECT now()        AS updated,
                      userName     AS user,
                      v_palk_kaart AS palk_kaart) row;
@@ -113,7 +118,7 @@ BEGIN
             ajalugu   = coalesce(ajalugu, '[]'::JSONB) || new_history::JSONB,
             muud      = doc_muud,
             timestamp = now(),
-            status    =  doc_status
+            status    = doc_status
         WHERE id = doc_id RETURNING id
             INTO kaart_id;
 
@@ -123,7 +128,7 @@ BEGIN
 EXCEPTION
     WHEN OTHERS
         THEN
-            raise notice 'error %', SQLERRM;
+            RAISE NOTICE 'error %', SQLERRM;
             RETURN 0;
 END;
 $BODY$;
@@ -134,7 +139,7 @@ GRANT EXECUTE ON FUNCTION palk.sp_salvesta_palk_kaart(JSON, INTEGER, INTEGER) TO
 
 
 /*
-select palk.sp_salvesta_tooleping('{"id":0,"data":{"algab":"20180327","ametid":379,"ametnik":0,"doc_type_id":"TOOLEPING","id":0,"koormus":100,"lopp":null,"muud":null,"osakondid":377,"palgamaar":null,"palk":100,"parentid":57,"pohikoht":1,"rekvid":1,"resident":1,"riik":null,"tasuliik":1,"toend":null,"toopaev":8,"userid":1}}',1, 1);
+select palk.sp_salvesta_palk_kaart('{"id":295562,"data":{"alimentid":0,"amet":"Sotsiaalhooldaja","asutusest":1,"doc_type_id":"PALK_KAART","id":295562,"kood":"SMAKS-ETTEM-2201LEP","kuurs":1,"lepingid":35812,"libid":236727,"liik":5,"maks":0,"minsots":0,"muud":"","nimetus":"NSTK SOTSIAALMAKSU ETTEMAKS 10201-506-2201-LE-P","osakond":"NSTK SM (p.k.k.t.)","osakondid":235983,"parentid":29860,"percent_":0,"status":1,"summa":33,"tululiik":"","tulumaar":1,"tulumaks":0,"tund":1,"tunnus":"2201","userid":5175,"valuuta":"EUR"}}',5175, 132);
 
 select * from libs.asutus
 
