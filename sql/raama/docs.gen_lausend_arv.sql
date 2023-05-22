@@ -3,37 +3,42 @@
 DROP FUNCTION IF EXISTS docs.gen_lausend_arv(INTEGER, INTEGER);
 DROP FUNCTION IF EXISTS docs.gen_lausend_arv_(INTEGER, INTEGER);
 
-CREATE OR REPLACE FUNCTION docs.gen_lausend_arv(IN tnId INTEGER, IN userId INTEGER, OUT error_code INTEGER,
+CREATE OR REPLACE FUNCTION docs.gen_lausend_arv(IN tnId INTEGER, IN user_Id INTEGER, OUT error_code INTEGER,
                                                 OUT result INTEGER, OUT error_message TEXT)
 AS
 $BODY$
 DECLARE
-    lcDbKonto           VARCHAR(20);
-    lcKrKonto           VARCHAR(20);
-    lcDbTp              VARCHAR(20);
-    lcKrTp              VARCHAR(20);
-    lcKood5             VARCHAR(20);
-    v_arv               RECORD;
-    v_dokprop           RECORD;
-    v_arv1              RECORD;
-    lcAllikas           VARCHAR(20);
-    lcSelg              TEXT;
-    v_selg              RECORD;
-    l_json              TEXT;
-    l_json_details      JSONB          = '[]';
-    l_json_tasu         TEXT;
-    l_json_details_tasu JSONB          = '[]';
+    lcDbKonto              VARCHAR(20);
+    lcKrKonto              VARCHAR(20);
+    lcDbTp                 VARCHAR(20);
+    lcKrTp                 VARCHAR(20);
+    lcKood5                VARCHAR(20);
+    v_arv                  RECORD;
+    v_dokprop              RECORD;
+    v_arv1                 RECORD;
+    lcAllikas              VARCHAR(20);
+    lcSelg                 TEXT;
+    v_selg                 RECORD;
+    l_json                 TEXT;
+    l_json_details         JSONB          = '[]';
+    l_json_tasu            TEXT;
+    l_json_asendus_details JSONB          = '[]';
+    l_json_asendus_header  JSONB          = '{}';
+    l_json_asendus         JSONB= '[]'::JSONB;
+    l_json_details_tasu    JSONB          = '[]';
 
-    l_row_count         INTEGER        = 0;
-    new_history         JSONB;
-    userName            TEXT;
-    a_docs_ids          INTEGER[];
-    rows_fetched        INTEGER        = 0;
-    v_journal           RECORD;
-    l_allika_summa      NUMERIC(12, 2) = 0;
-    kas_alg_saldo       BOOLEAN        = FALSE;
-    l_asutus_id         INTEGER;
-    l_parrallel_id      INTEGER; -- ид параллельной проводки
+    l_row_count            INTEGER        = 0;
+    new_history            JSONB;
+    userName               TEXT;
+    a_docs_ids             INTEGER[];
+    rows_fetched           INTEGER        = 0;
+    v_journal              RECORD;
+    l_allika_summa         NUMERIC(12, 2) = 0;
+    kas_alg_saldo          BOOLEAN        = FALSE;
+    l_asutus_id            INTEGER;
+    l_parrallel_id         INTEGER; -- ид параллельной проводки
+    v_asendus_taabel       RECORD;
+    l_asendus_user_id      INTEGER;
 BEGIN
 
     -- select dok data
@@ -42,7 +47,8 @@ BEGIN
            CASE WHEN empty(coalesce(asutus.tp, '')) THEN '800599' ELSE asutus.tp END AS asutus_tp,
            a.properties ->> 'tyyp'                                                   AS tyyp,
            coalesce((a.properties ->> 'ettemaksu_period')::INTEGER, 0)               AS kas_tulu_arve,
-           l.parentid                                                                AS laps_id
+           l.parentid                                                                AS laps_id,
+           (a.properties ->> 'asendus_id')::INTEGER                                  AS asendus_id
     INTO v_arv
     FROM docs.arv a
              INNER JOIN docs.doc d ON d.id = a.parentId
@@ -74,10 +80,10 @@ BEGIN
     INTO userName
     FROM ou.userid u
     WHERE u.rekvid = v_arv.rekvId
-      AND u.id = userId;
+      AND u.id = user_Id;
     IF userName IS NULL
     THEN
-        RAISE NOTICE 'User not found %', userId;
+        RAISE NOTICE 'User not found %', user_Id;
         error_message = 'User not found';
         error_code = 3;
         RETURN;
@@ -169,6 +175,27 @@ BEGIN
         -- род. плата
         IF v_arv.laps_id IS NOT NULL
         THEN
+            -- удалим если есть замещающие проводки
+            IF v_arv.asendus_id IS NOT NULL
+            THEN
+                PERFORM docs.sp_delete_journal(qry.userid, qry.id)
+                FROM (SELECT j.parentid AS id,
+                             (SELECT id
+                              FROM ou.userid u
+                              WHERE u.rekvid = j.rekvid
+                                AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_Id)
+                                AND status < 3
+                              LIMIT 1)  AS userid
+                      FROM docs.journal j
+                      WHERE j.properties IS NOT NULL
+                        AND (j.properties ->> 'asendus_id')::INTEGER IN (
+                          SELECT (properties ->> 'asendus_id')::INTEGER
+                          FROM docs.arv1 a1
+                          WHERE a1.properties ->> 'asendus_id' IS NOT NULL
+                            AND a1.parentid = v_arv.id)) qry;
+
+            END IF;
+
             -- новый балансовый субсчет для проводок по учебной плате вместо счета 103000 kalle 11.02.2023
             lcDbKonto = '10300029';
 
@@ -245,22 +272,14 @@ BEGIN
                 FROM docs.arv1 arv1
                 WHERE arv1.summa <> 0
                   AND arv1.parentid = v_arv.id
-                GROUP BY arv1.tp
-                        ,
-                         arv1.kood1
-                        ,
-                         arv1.kood2
-                        ,
-                         arv1.kood3
-                        ,
-                         arv1.kood4
-                        ,
-                         arv1.kood5
-                        ,
-                         arv1.tunnus
-                        ,
-                         arv1.proj
-                        ,
+                GROUP BY arv1.tp,
+                         arv1.kood1,
+                         arv1.kood2,
+                         arv1.kood3,
+                         arv1.kood4,
+                         arv1.kood5,
+                         arv1.tunnus,
+                         arv1.proj,
                          arv1.konto
                 LOOP
 
@@ -421,8 +440,9 @@ BEGIN
             -- прочие счета
             FOR v_arv1 IN
                 SELECT arv1.*,
-                       'EUR' :: VARCHAR AS valuuta,
-                       1 :: NUMERIC     AS kuurs
+                       'EUR' :: VARCHAR                            AS valuuta,
+                       1 :: NUMERIC                                AS kuurs,
+                       (arv1.properties ->> 'asendus_id')::INTEGER AS asendus_id
                 FROM docs.arv1 arv1
                 WHERE arv1.summa <> 0
                   AND arv1.parentid = v_arv.id
@@ -457,7 +477,6 @@ BEGIN
                             v_arv1.kood5 = '3224';
                             v_arv1.kood2 = '80';
                             v_arv1.kood1 = '10200';
-                            RAISE NOTICE 'sugulane osa%',lcDbKonto;
 
                         ELSIF NOT empty(v_arv.kas_tulu_arve)
                         THEN
@@ -494,7 +513,73 @@ BEGIN
                                coalesce(v_arv1.kood5, '')      AS kood5
                         INTO v_journal;
 
-                        l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
+                        l_json_details = coalesce(l_json_details, '[]'::JSONB) || to_jsonb(v_journal);
+
+                        -- Доп. проводка для род.платы, если услуга была оказана в другом учреждении
+                        IF v_arv1.properties ->> 'asendus_id' IS NOT NULL AND exists(SELECT id
+                                                                                     FROM lapsed.asendus_taabel
+                                                                                     WHERE id = (v_arv.properties ->> 'asendus_id')::INTEGER)
+                        THEN
+
+                            -- табель (признак)
+                            SELECT l.kood AS tunnus, at.rekvid
+                            INTO v_asendus_taabel
+                            FROM lapsed.asendus_taabel at
+                                     INNER JOIN ou.rekv r ON r.id = at.rekvid
+                                     LEFT OUTER JOIN libs.library l
+                                                     ON l.rekvid = r.id AND l.kood = left(r.nimetus, 7) AND
+                                                        l.library = 'TUNNUS' AND l.status < 3
+                            WHERE at.id = (v_arv1.properties ->> 'asendus_id')::INTEGER
+                            ORDER BY l.id DESC
+                            LIMIT 1;
+
+                            -- Перевод дохода в другое учреждение
+                            SELECT 0                                AS id,
+                                   -1 * (CASE
+                                             WHEN v_arv1.kbmta = 0 AND v_arv1.hind <> 0
+                                                 THEN v_arv1.hind * v_arv1.kogus
+                                             WHEN v_arv1.kbmta = 0 AND v_arv1.hind = 0
+                                                 THEN v_arv1.summa - v_arv1.kbm
+                                             WHEN v_arv1.kbm = 0 AND v_arv1.kbmta <> v_arv1.summa THEN
+                                                 -- коррекция округления в род. плате
+                                                 v_arv1.summa
+                                             ELSE v_arv1.kbmta END) AS summa,
+                                   coalesce(v_arv1.valuuta, 'EUR')  AS valuuta,
+                                   coalesce(v_arv1.kuurs, 1)        AS kuurs,
+                                   '20363005'                       AS deebet,
+                                   lcKrKonto                        AS kreedit,
+                                   coalesce(lcDbTp, '800699')       AS lisa_d,
+                                   coalesce(lcKrTp, '800699')       AS lisa_k,
+                                   coalesce(v_arv1.tunnus, '')      AS tunnus,
+                                   coalesce(v_arv1.proj, '')        AS proj,
+                                   coalesce(v_arv1.kood1, '')       AS kood1,
+                                   coalesce(v_arv1.kood2, '')       AS kood2,
+                                   coalesce(v_arv1.kood3, '')       AS kood3,
+                                   coalesce(v_arv1.kood4, '')       AS kood4,
+                                   coalesce(v_arv1.kood5, '')       AS kood5,
+                                   v_arv1.asendus_id,
+                                   v_asendus_taabel.tunnus          AS asendus_tunnus,
+                                   v_asendus_taabel.rekvid          AS asendus_rekvid
+                            INTO v_journal;
+
+                            l_json_details = coalesce(l_json_details, '[]'::JSONB) || to_jsonb(v_journal);
+                            -- запомним эту часть проводки
+
+                            l_json_asendus_header = l_json;
+                            v_journal.tunnus = v_asendus_taabel.tunnus;
+
+                            -- поправим знак
+                            v_journal.summa = -1 * v_journal.summa;
+
+                            l_json_asendus_details = l_json_asendus_details || to_jsonb(v_journal)::JSONB;
+
+                            -- сохраним параметры для проводки
+                            l_json_asendus = l_json_asendus ||
+                                             jsonb_build_object('header', l_json_asendus_header, 'details',
+                                                                l_json_asendus_details);
+
+
+                        END IF;
 
                         IF v_arv1.kbm <> 0
                         THEN
@@ -604,7 +689,7 @@ BEGIN
 
         IF l_row_count > 0
         THEN
-            result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_arv.rekvId);
+            result = docs.sp_salvesta_journal(l_json :: JSON, user_Id, v_arv.rekvId);
         ELSE
             error_message = 'Puudub kehtiv read';
             result = 0;
@@ -612,6 +697,47 @@ BEGIN
 
         IF result IS NOT NULL AND result > 0
         THEN
+            -- род. плата, если есть импорт услуг из другого учреждения
+            -- Доп. проводка для род.платы, если услуга была оказана в другом учреждении
+            IF v_arv.properties ->> 'asendus_id' IS NOT NULL AND exists(SELECT id
+                                                                        FROM lapsed.asendus_taabel
+                                                                        WHERE id = (v_arv.properties ->> 'asendus_id')::INTEGER)
+            THEN
+
+                FOR i IN 1..jsonb_array_length(l_json_asendus_details::JSONB)
+                    LOOP
+                        lcSelg = 'Tulud üleviimine: ' || ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_tunnus');
+
+                        SELECT 0                                                                             AS id,
+                               'JOURNAL'                                                                     AS doc_type_id,
+                               v_arv.kpv                                                                     AS kpv,
+                               lcSelg                                                                        AS selg,
+                               v_arv.muud                                                                    AS muud,
+                               'Arve nr. ' || v_arv.number::TEXT                                             AS dok,
+                               l_asutus_id                                                                   AS asutusid,
+                               ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_id')::INTEGER AS asendus_id,
+                               '[]'::JSONB || (l_json_asendus_details::JSONB -> (i - 1))::JSONB              AS gridData
+                        INTO v_journal;
+                        -- создаем параметры
+                        l_json = jsonb_build_object('id', 0, 'data', to_jsonb(v_journal));
+
+                        -- пользователь другого учреждения
+                        -- подготавливаем параметры для создания проводки
+                        l_asendus_user_id = (SELECT id
+                                             FROM ou.userid u
+                                             WHERE u.rekvid =
+                                                   ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_rekvid')::INTEGER
+                                               AND u.kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_Id)
+                                               AND status < 3
+                                             LIMIT 1);
+
+
+                        l_parrallel_id =
+                                docs.sp_salvesta_journal(l_json :: JSON, l_asendus_user_id, ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_rekvid')::INTEGER);
+                    END LOOP;
+
+
+            END IF;
 
             -- оплата счета холдекоду
             IF (jsonb_array_length(l_json_details_tasu)) > 0 AND v_arv.tyyp = 'HOOLDEKODU_ISIKU_OSA' AND v_arv.liik = 0
@@ -652,16 +778,17 @@ BEGIN
                                '}}');
 
                 /* salvestan lausend */
-                l_parrallel_id = docs.sp_salvesta_journal(l_json_tasu :: JSON, userId, v_arv.rekvId);
+                l_parrallel_id = docs.sp_salvesta_journal(l_json_tasu :: JSON, user_Id, v_arv.rekvId);
 
                 IF coalesce(l_parrallel_id, 0) > 0
                 THEN
                     -- оплата
                     PERFORM docs.sp_tasu_arv(
-                                    l_parrallel_id, v_arv.parentid, userId);
+                                    l_parrallel_id, v_arv.parentid, user_Id);
                 END IF;
 
             END IF;
+
 
             /*
             ajalugu
@@ -720,31 +847,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_arv(INTEGER, INTEGER) TO dbpeakasutaj
 /*
 
 
-SELECT  docs.gen_lausend_arv(4612167, 63)
+SELECT  docs.gen_lausend_arv(2486774, 2477)
 
-select parentid , * from docs.arv where number = 'HKOP16775'
-
-
-select * from
-
-select parentid, * from docs.arv where number = 'HKOP16775'
-
-select array(select distinct unnest(array[1,1,2]))
-
-
-select id, docs_ids from docs.doc where id = 75
-
-select * from docs.arv where parentid = 81
-
-select * from docs.arv where parentid = 75
-
-
-update docs.arv set doklausid = 1
-
-select * from libs.library where library = 'DOK'
-
-select * from docs.arv
-
-select * ffrom docs.arv1 where
 */
 

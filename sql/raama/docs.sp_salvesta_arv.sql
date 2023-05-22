@@ -45,6 +45,7 @@ DECLARE
     doc_print             JSONB          = coalesce((doc_data ->> 'print')::JSONB, '[]'::JSONB); -- '["paber","email","earve"]'
     doc_ettemaksu_period  INTEGER        = doc_data ->> 'ettemaksu_period'; -- период в месяцах для счета на предоплату или номер периода в доходных
     doc_ettemaksu_arve_id INTEGER        = doc_data ->> 'ettemaksu_arve_id'; -- ссылка на счет предоплатв
+    doc_asendus_id        INTEGER        = doc_data ->> 'asendus_id'; -- на основании импортированного табеля из замещения
 
 -- Hooldekodu
     doc_isik_id           INTEGER        = doc_data ->> 'isik_id'; -- kui arve salvestatud hooldekodu modulist
@@ -77,6 +78,7 @@ BEGIN
                               doc_type             AS tyyp,
                               doc_ettemaksu_period AS ettemaksu_period,
                               doc_isik_id          AS isik_id,
+                              doc_asendus_id       AS asendus_id,
                               doc_print            AS print) row);
 
     IF (doc_id IS NULL)
@@ -202,6 +204,7 @@ BEGIN
                                             kood4 TEXT, kood5 TEXT,
                                             konto TEXT, tunnus TEXT, tp TEXT, proj TEXT, arve_id INTEGER, muud TEXT,
                                             km TEXT, yksus TEXT, all_yksus TEXT, lapse_taabel_id INTEGER,
+                                            asendus_id INTEGER,
                                             soodustus NUMERIC(14, 4), soodus NUMERIC(14, 4), allikas_85 NUMERIC(12, 2),
                                             allikas_vara NUMERIC(12, 2), allikas_muud NUMERIC(12, 2),
                                             umardamine NUMERIC(12, 2), sugulane_osa NUMERIC(12, 2),
@@ -213,6 +216,7 @@ BEGIN
             FROM (SELECT json_record.yksus,
                          json_record.all_yksus,
                          json_record.lapse_taabel_id,
+                         json_record.asendus_id,
                          CASE
                              WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
                                  THEN coalesce(json_record.soodus, 0)

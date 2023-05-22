@@ -4,8 +4,8 @@ DROP VIEW IF EXISTS cur_journal ;
     --CASCADE;
 
 CREATE OR REPLACE VIEW cur_journal AS
-SELECT to_char(d.created, 'DD.MM.YYYY HH:MM')                                                 AS created,
-       to_char(d.lastupdate, 'DD.MM.YYYY HH:MM')                                              AS lastupdate,
+SELECT to_char(d.created, 'DD.MM.YYYY HH:MI')                                                 AS created,
+       to_char(d.lastupdate, 'DD.MM.YYYY HH:MI')                                              AS lastupdate,
        s.nimetus                                                                              AS status,
        d.id                                                                                   AS id,
        j.kpv                                                                                  AS kpv,

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 Asendus taabel
+
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Isikukood
+                    th Nimi
+                    th Üksus
+                    th Kuu
+                    th Aasta
+                    th Teenuse nimetus
+                    th Kogus
+                    th Hind
+                    th Summa
+                    th Asutus
+
+            tbody
+                each taabel in data
+                    tr
+                        td=taabel.isikukood
+                        td=taabel.nimi
+                        td=taabel.yksus
+                        td=taabel.kuu
+                        td=taabel.aasta
+                        td=taabel.teenus
+                        td(align='center')=taabel.kogus
+                        td(align='center')=Number(taabel.hind).toFixed(2)
+                        td(align='center')=Number(taabel.summa).toFixed(2)
+                        td=taabel.asutus
+                td.group=' Kokku:'
+                td.group
+                td.group
+                td.group
+                td.group
+                td.group
+                td.group
+                td.group
+                td(align='center').group=Number(data[0].summa_kokku).toFixed(2)
+                td.group
+

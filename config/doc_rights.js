@@ -156,7 +156,8 @@ module.exports = {
         add: ['kasutaja'],
         edit: ['kasutaja'],
         delete: ['kasutaja'],
-        importTaabel: ['admin']
+        importTaabel: ['admin'],
+        importAsendusTaable: ['kasutaja']
     },
     PAEVA_TAABEL: {
         select: ['arvestaja'],

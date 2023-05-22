@@ -19,7 +19,7 @@ BEGIN
            volg,
            intress,
            staatus
-           INTO v_luba
+    INTO v_luba
     FROM rekl.luba
     WHERE luba.parentid = l_luba_id;
 
@@ -40,7 +40,7 @@ BEGIN
                                                 tahtaeg < current_date), 0)                   AS volg,
                coalesce(sum(jaak) FILTER (WHERE tyyp IN ('DEKL', 'PARANDUS', 'ALGSALDO')), 0) AS jaak,
                coalesce(sum(jaak) FILTER (WHERE tyyp = 'INTRESS'), 0)                         AS intress
-               INTO l_volg, l_jaak, l_intress
+        INTO l_volg, l_jaak, l_intress
         FROM (SELECT COALESCE(rekl.fnc_dekl_jaak(D.ID), 0) AS jaak, t.tyyp, t.tahtaeg
               FROM rekl.toiming t
                        INNER JOIN docs.doc d ON d.id = t.parentid
@@ -48,15 +48,11 @@ BEGIN
                 AND d.status <> 3
                 AND staatus <> 'deleted') qry;
 
-        IF coalesce(v_luba.Jaak, 0) <> l_jaak OR coalesce(v_luba.volg, 0) <> l_volg OR
-           coalesce(v_luba.intress, 0) <> l_intress
-        THEN
-            UPDATE rekl.luba
-            SET jaak    = l_jaak,
-                volg    = l_volg,
-                intress = l_intress
-            WHERE parentid = l_luba_id;
-        END IF;
+        UPDATE rekl.luba
+        SET jaak    = l_jaak,
+            volg    = l_volg,
+            intress = l_intress
+        WHERE parentid = l_luba_id;
 
     ELSE
         error_message = 'Luba anuleeritud, nullime saldo:';
@@ -77,7 +73,7 @@ GRANT EXECUTE ON FUNCTION rekl.sp_recalc_rekl_jaak(INTEGER, JSON) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION rekl.sp_recalc_rekl_jaak(INTEGER, JSON) TO dbpeakasutaja;
 
 /*
-select rekl.sp_recalc_rekl_jaak(4862, '{"id":2284825}'::JSON)
+select rekl.sp_recalc_rekl_jaak(4862, '{"id":2578558}'::JSON)
 
 2275773
 2288031

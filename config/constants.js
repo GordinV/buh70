@@ -132,6 +132,12 @@ module.exports = {
             {id: 'koolituse_tyyp', filter: ``}
         ],
     },
+    ASENDUS_TAABEL: {
+        LIBRARIES: [
+            {id: 'nomenclature', filter: `where dok = 'ARV'`},
+            {id: 'lapse_grupp', filter: ``},
+        ],
+    },
     PAEVA_TAABEL: {
         LIBRARIES: [
             {

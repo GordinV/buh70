@@ -106,7 +106,7 @@ module.exports = {
                 {id: "kogus", name: "Kogus", width: "8%", type: "number", interval: true},
                 {id: "hind", name: "Hind", width: "8%", type: "number", interval: true},
                 {id: "uhik", name: "Ühik", width: "5%"},
-                {id: "arv_soodustus", name: "Soodustus", width: "10%", type: "number", show: true,interval: true},
+                {id: "arv_soodustus", name: "Soodustus", width: "10%", type: "number", show: true, interval: true},
                 {id: "arv_summa", name: "Summa", width: "10%", type: "number", interval: true},
                 {id: "vahe", name: "Vahe", width: "5%", type: "number", interval: true},
                 {id: "kor_summa", name: "Kor. summa", width: "5%", type: "number", interval: true},
@@ -154,7 +154,8 @@ module.exports = {
                                  lt.kulastused,
                                  lt.too_paevad,
                                  lt.kovid,
-                                 lt.vahe::numeric
+                                 lt.vahe::numeric,
+                                 lt.kas_asendus
                           FROM lapsed.cur_lapse_taabel lt
                           WHERE lt.rekvid in
                           (SELECT rekv_id
@@ -210,7 +211,7 @@ module.exports = {
                          select false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, 
                             alus_soodustus, soodustus, arv_soodustus, arv_soodustus_kokku, summa, arv_summa, 
                             isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                           
-                            'Tavaline' as tab_tyyp, kulastused, too_paevad, kovid, vahe
+                            case when kas_asendus then 'Import' else 'Tavaline' end as tab_tyyp, kulastused, too_paevad, kovid, vahe
                          from qryTabs
                          UNION ALL
                          SELECT false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, 
@@ -258,7 +259,20 @@ module.exports = {
                   FROM lapsed.import_laste_taabelid($1::JSONB, $2::INTEGER, $3::INTEGER)`,//$1 data [], $2 - userId, $3 rekvid
         type: 'sql',
         alias: 'importTaabel'
-    }
+    },
+    importAsendusTaabel: {
+        command: `SELECT row_number() OVER ()                                          AS id,
+                         tulemus -> 'result'                                           AS result,
+                         tulemus -> 'error_code'                                       AS error_code,
+                         coalesce((tulemus ->> 'error_code')::INTEGER, 0)::INTEGER > 0 AS kas_vigane,
+                         tulemus ->> 'error_message'                                   AS error_message,
+                         tulemus ->> 'viitenr'                                         AS viitenr
+                  FROM (
+                           SELECT to_jsonb(lapsed.import_asendus_taabelid($1::INTEGER, $2::INTEGER, $3::DATE)) tulemus
+                           ) qry`,//$1 userId, $2 - rekvId, $3 kpv
+        type: 'sql',
+        alias: 'importAsendusTaabel'
+    },
 
 
 };

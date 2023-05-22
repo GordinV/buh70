@@ -8,42 +8,46 @@ SELECT lt.id,
        lt.nomid,
        lt.kuu,
        lt.aasta,
-       coalesce(lt.kogus, 0)                                                     AS kogus,
-       lt.hind                                                                   AS hind,
-       coalesce(n.properties ->> 'tyyp', '')                                     AS tyyp,
-       coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN AS umberarvestus,
-       lt.soodustus                                                              AS soodustus,
-       (lk.properties ->> 'kas_protsent')::BOOLEAN                               AS kas_protsent,
-       CASE WHEN lt.properties ->> 'sooduse_alg' IS NULL THEN 1 ELSE 0 END       AS sooduse_kehtivus,
-       (lt.properties ->> 'alus_soodustus')::NUMERIC(12, 2)                      AS alus_soodustus,
-       coalesce(lt.summa, 0)                                                     AS summa,
+       coalesce(lt.kogus, 0)                                                                                   AS kogus,
+       lt.hind                                                                                                 AS hind,
+       coalesce(n.properties ->> 'tyyp', '')                                                                   AS tyyp,
+       coalesce((n.properties ->> 'kas_umberarvestus')::BOOLEAN, FALSE)::BOOLEAN                               AS umberarvestus,
+       lt.soodustus                                                                                            AS soodustus,
+       (lk.properties ->> 'kas_protsent')::BOOLEAN                                                             AS kas_protsent,
+       CASE WHEN lt.properties ->> 'sooduse_alg' IS NULL THEN 1 ELSE 0 END                                     AS sooduse_kehtivus,
+       (lt.properties ->> 'alus_soodustus')::NUMERIC(12, 2)                                                    AS alus_soodustus,
+       coalesce(lt.summa, 0)                                                                                   AS summa,
        CASE
            WHEN coalesce(n.properties ->> 'tyyp', '') = 'SOODUSTUS' THEN coalesce(lt.summa, 0)
-           ELSE 0 END + (-1 * lt.soodustus * lt.kogus)                           AS arv_soodustus_kokku,
+           ELSE 0 END +
+       (-1 * lt.soodustus * lt.kogus)                                                                          AS arv_soodustus_kokku,
        CASE
            WHEN coalesce(n.properties ->> 'tyyp', '') = 'SOODUSTUS' THEN -1 * coalesce(lt.summa, 0)
-           ELSE 0 END + (lt.soodustus)                                           AS arv_soodustus,
+           ELSE 0 END +
+       (lt.soodustus)                                                                                          AS arv_soodustus,
 
        CASE
            WHEN coalesce(n.properties ->> 'tyyp', '') = 'SOODUSTUS' THEN lt.summa
            ELSE coalesce(lt.summa, 0) END
-                                                                                 AS arv_summa,
+                                                                                                               AS arv_summa,
        l.isikukood,
        l.nimi,
        n.kood::TEXT,
-       n.nimetus::TEXT                                                           AS teenus,
+       n.nimetus::TEXT                                                                                         AS teenus,
        n.uhik::TEXT,
-       grupp.nimetus::TEXT                                                       AS yksus,
-       lk.properties ->> 'all_yksus'                                             AS all_yksus,
+       grupp.nimetus::TEXT                                                                                     AS yksus,
+       lk.properties ->> 'all_yksus'                                                                           AS all_yksus,
        lt.lapse_kaart_id,
-       (lt.properties ->> 'sooduse_alg')::DATE                                   AS sooduse_alg,
-       (lt.properties ->> 'sooduse_lopp')::DATE                                  AS sooduse_lopp,
-       (lk.properties ->> 'viitenr')::TEXT                                       AS viitenr,
+       (lt.properties ->> 'sooduse_alg')::DATE                                                                 AS sooduse_alg,
+       (lt.properties ->> 'sooduse_lopp')::DATE                                                                AS sooduse_lopp,
+       (lk.properties ->> 'viitenr')::TEXT                                                                     AS viitenr,
        lt.muud,
-       coalesce((lt.properties ->> 'kulastused')::INTEGER, 0)                    AS kulastused,
-       coalesce((lt.properties ->> 'too_paevad')::INTEGER, 0)                    AS too_paevad,
-       coalesce((lt.properties ->> 'kovid')::INTEGER, 0)                         AS kovid,
-       lt.vahe
+       coalesce((lt.properties ->> 'kulastused')::INTEGER, 0)                                                  AS kulastused,
+       coalesce((lt.properties ->> 'too_paevad')::INTEGER, 0)                                                  AS too_paevad,
+       coalesce((lt.properties ->> 'kovid')::INTEGER, 0)                                                       AS kovid,
+       lt.vahe,
+       coalesce((lt.properties ->> 'kas_asendus')::BOOLEAN, (lt.properties ->> 'kas_asendus')::BOOLEAN,
+                FALSE)                                                                                         AS kas_asendus
 FROM lapsed.lapse_taabel lt
          INNER JOIN lapsed.laps l ON l.id = lt.parentid
          INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
@@ -55,7 +59,7 @@ WHERE lt.staatus <> 3
   --AND coealslt.kogus <> 0
   AND n.status <> 3
   AND n.rekvid = lt.rekvid
-  AND (lt.hind <> 0 or lt.soodustus <> 0)
+  AND (lt.hind <> 0 OR lt.soodustus <> 0)
   AND NOT coalesce((lk.properties ->> 'kas_ettemaks')::BOOLEAN, FALSE)
 ORDER BY aasta, kuu, nimi, kood;
 

@@ -55,6 +55,7 @@ DECLARE
     l_db_konto      TEXT    = '10300029'; -- согдасно описанию отдела культуры
     v_laps          RECORD;
     l_arve_kogus    NUMERIC = 0; -- для проверки кол-ва услуг в счете
+    l_selg          TEXT; -- доп. пояснение
 
 BEGIN
 
@@ -160,13 +161,19 @@ BEGIN
                (n.properties::JSONB ->> 'rahavoog')::VARCHAR(20)                     AS rahavoog,
                (n.properties::JSONB ->> 'artikkel')::VARCHAR(20)                     AS artikkel,
                lt.umberarvestus,
-               coalesce(lt.muud, '')                                                 AS markused
+               coalesce(lt.muud, '')                                                 AS markused,
+               lt.properties ->> 'kas_asendus'                                       AS kas_asendus,
+               at.rekvid                                                             AS asendus_rekvid,
+               ltrim(rtrim(r.nimetus))                                               AS asendus_asutus,
+               at.id                                                                 AS asendus_id
         FROM lapsed.lapse_taabel lt
                  INNER JOIN lapsed.lapse_kaart lk
                             ON lk.id = lt.lapse_kaart_id AND lt.nomid = lk.nomid AND lt.rekvid = lk.rekvid
                  INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
                  LEFT OUTER JOIN libs.library gr ON gr.library = 'LAPSE_GRUPP' AND gr.rekvid = lt.rekvid AND
                                                     gr.kood::TEXT = (lk.properties ->> 'yksus')::TEXT
+                 LEFT OUTER JOIN lapsed.asendus_taabel at ON at.id = (lt.properties ->> 'asendus_id')::INTEGER
+                 LEFT OUTER JOIN ou.rekv r ON r.id = at.rekvid
 
         WHERE lt.parentid = l_laps_id
           AND lt.staatus <> 3
@@ -225,7 +232,16 @@ BEGIN
                                                                                 THEN ' Ümberarvestus '
                                                                             ELSE (CASE WHEN len(coalesce(v_taabel.muud, '')) > 0 THEN ',' ELSE '' END) ||
                                                                                  v_taabel.markused END AS muud,
+                                                       v_taabel.asendus_id as asendus_id,
                                                        l_tp                                            AS tp) row) :: JSONB;
+
+            IF v_taabel.kas_asendus IS NOT NULL
+            THEN
+                l_selg = CASE
+                             WHEN v_taabel.asendus_asutus IS NOT NULL
+                                 THEN ' (Osutatavad teenused: ' || v_taabel.asendus_asutus || ')'
+                             ELSE '' END;
+            END IF;
 
 
             IF v_taabel.kas_eraldi
@@ -255,22 +271,23 @@ BEGIN
 
                     -- создаем параметры
                     l_json_arve = (SELECT to_json(row)
-                                   FROM (SELECT coalesce(l_arv_id, 0)                         AS id,
-                                                l_number                                      AS number,
-                                                l_doklausend_id                               AS doklausid,
-                                                l_liik                                        AS liik,
-                                                l_kpv                                         AS kpv,
+                                   FROM (SELECT coalesce(l_arv_id, 0)                                   AS id,
+                                                l_number                                                AS number,
+                                                l_doklausend_id                                         AS doklausid,
+                                                l_liik                                                  AS liik,
+                                                l_kpv                                                   AS kpv,
                                                 (l_kpv +
                                                  coalesce(
                                                              (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid LIMIT 1),
-                                                             20)::INTEGER)::DATE              AS tahtaeg,
-                                                l_asutus_id                                   AS asutusid,
-                                                l_aa                                          AS aa,
-                                                l_laps_id                                     AS lapsid,
+                                                             20)::INTEGER)::DATE                        AS tahtaeg,
+                                                l_asutus_id                                             AS asutusid,
+                                                l_aa                                                    AS aa,
+                                                l_laps_id                                               AS lapsid,
                                                 'Arve, taabeli alus ' || date_part('month', l_kpv)::TEXT ||
                                                 '/' ||
-                                                date_part('year', l_kpv)::TEXT || ' kuu eest' AS muud,
-                                                json_arvrea                                   AS "gridData") row);
+                                                date_part('year', l_kpv)::TEXT || ' kuu eest' || l_selg AS muud,
+                                                v_taabel.asendus_id                                     AS asendus_id,
+                                                json_arvrea                                             AS "gridData") row);
 
                     -- подготавливаем параметры для создания счета
                     SELECT row_to_json(row)
@@ -323,25 +340,25 @@ BEGIN
 
     -- создаем параметры
     l_json_arve = (SELECT to_json(row)
-                   FROM (SELECT coalesce(l_arv_id, 0)                         AS id,
-                                l_number                                      AS number,
-                                l_doklausend_id                               AS doklausid,
-                                l_liik                                        AS liik,
-                                l_kpv                                         AS kpv,
+                   FROM (SELECT coalesce(l_arv_id, 0)                                   AS id,
+                                l_number                                                AS number,
+                                l_doklausend_id                                         AS doklausid,
+                                l_liik                                                  AS liik,
+                                l_kpv                                                   AS kpv,
                                 (l_kpv +
                                  coalesce(
                                              (SELECT tahtpaev FROM ou.config WHERE rekvid = l_rekvid LIMIT 1),
-                                             20)::INTEGER)::DATE              AS tahtaeg,
-                                l_asutus_id                                   AS asutusid,
-                                l_laps_id                                     AS lapsid,
-                                l_aa                                          AS aa,
+                                             20)::INTEGER)::DATE                        AS tahtaeg,
+                                l_asutus_id                                             AS asutusid,
+                                l_laps_id                                               AS lapsid,
+                                l_aa                                                    AS aa,
                                 'Arve, taabeli alus ' || date_part('month', l_kpv)::TEXT || '/' ||
-                                date_part('year', l_kpv)::TEXT || ' kuu eest' AS muud,
-                                jsonb_print                                   AS print,
-                                json_arvread                                  AS "gridData") row);
+                                date_part('year', l_kpv)::TEXT || ' kuu eest' || l_selg AS muud,
+                                jsonb_print                                             AS print,
+                                v_taabel.asendus_id                                     AS asendus_id,
+                                json_arvread                                            AS "gridData") row);
 
 
-    RAISE NOTICE 'l_arve_kogus %, jsonb_array_length(json_arvread) %, l_arv_id %',l_arve_kogus, jsonb_array_length(json_arvread), l_arv_id;
     IF (jsonb_array_length(json_arvread) > 0)
     THEN
 
@@ -398,7 +415,7 @@ BEGIN
                             'Dokumendi koostamise viga,  Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
         ELSE
             -- счет создан как отдельный
-            error_message = 'Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi ;
+            error_message = 'Isikukood: ' || v_laps.isikukood || ', Nimi:' || v_laps.nimi;
             result = l_arve_kogus;
         END IF;
     END IF;

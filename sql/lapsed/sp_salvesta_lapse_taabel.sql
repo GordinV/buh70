@@ -31,6 +31,8 @@ DECLARE
     doc_sooduse_alg    DATE    = doc_data ->> 'sooduse_alg';
     doc_sooduse_lopp   DATE    = doc_data ->> 'sooduse_lopp';
     doc_umberarvestus  BOOLEAN = coalesce((doc_data ->> 'umberarvestus')::BOOLEAN, FALSE);
+    doc_kas_asendus    BOOLEAN = coalesce((doc_data ->> 'kas_asendus')::BOOLEAN, FALSE);
+    doc_asendus_id     INTEGER = doc_data ->> 'asendus_id';
     doc_staatus        INTEGER = 1;
     json_ajalugu       JSONB;
     json_props         JSONB;
@@ -68,7 +70,10 @@ BEGIN
                               doc_alus_hind      AS alus_hind,
                               doc_alus_soodustus AS alus_soodustus,
                               doc_sooduse_alg    AS sooduse_alg,
-                              doc_sooduse_lopp   AS sooduse_lopp) row;
+                              doc_sooduse_lopp   AS sooduse_lopp,
+                              doc_kas_asendus    AS kas_asendus,
+                              doc_asendus_id     AS asendus_id
+                      ) row;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0
@@ -120,6 +125,13 @@ BEGIN
         WHERE id = doc_id RETURNING id
             INTO doc_id;
 
+    END IF;
+
+    -- для импортированный из замещения
+    IF (doc_kas_asendus AND doc_asendus_id IS NOT NULL)
+    THEN
+        -- отметим статус - импортирован
+        UPDATE lapsed.asendus_taabel SET staatus = 2 WHERE id = doc_asendus_id;
     END IF;
 
 

@@ -17,8 +17,10 @@ DECLARE
 BEGIN
 
     SELECT l.*,
-           u.ametnik::TEXT                       AS kasutaja,
-           (u.roles ->> 'is_arvestaja')::BOOLEAN AS is_arvestaja
+           u.ametnik::TEXT                           AS kasutaja,
+           (u.roles ->> 'is_arvestaja')::BOOLEAN     AS is_arvestaja,
+           (l.properties ->> 'kas_asendus')::BOOLEAN AS kas_asendus,
+           (l.properties ->> 'asendus_id')::INTEGER  AS asendus_id
     INTO v_doc
     FROM lapsed.lapse_taabel l
              JOIN ou.userid u ON u.id = user_id
@@ -79,6 +81,12 @@ BEGIN
           AND t1.laps_id = v_doc.parentid
           AND t1.nom_id = v_doc.nomid
     );
+
+    -- если табель импортирован, снять ограничение там
+    IF (v_doc.kas_asendus IS NOT NULL AND coalesce(v_doc.asendus_id, 0) > 0)
+    THEN
+        UPDATE lapsed.asendus_taabel SET staatus = 1 WHERE id = v_doc.asendus_id AND staatus = 2;
+    END IF;
 
     -- Логгирование удаленного документа
 

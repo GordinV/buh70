@@ -25,6 +25,7 @@ DECLARE
     doc_kpv              DATE    = doc_data ->> 'kpv';
     doc_selg             TEXT    = doc_data ->> 'selg';
     doc_muud             TEXT    = doc_data ->> 'muud';
+    doc_asendus_id       INTEGER = doc_data ->> 'asendus_id'; -- при создании проводки из счета , по замещающему табелю в другом учреждении
     l_number             INTEGER = coalesce((SELECT max(number) + 1
                                              FROM docs.journalid
                                              WHERE rekvId = user_rekvid
@@ -56,6 +57,8 @@ DECLARE
     v_prev_doc           RECORD;
     v_tehing             RECORD;
     l_arvtasu_id         INTEGER;
+    l_json_props         JSONB;
+
 
 BEGIN
     SELECT 0 AS asutusid, 0 AS id INTO v_prev_doc;
@@ -77,7 +80,7 @@ BEGIN
     END IF;
 
     -- проверка на период
-    raise notice 'save journal doc_kpv %',doc_kpv;
+    RAISE NOTICE 'save journal doc_kpv %',doc_kpv;
     IF is_import IS NULL AND NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv)
     THEN
         RAISE EXCEPTION 'Viga, Period on kinni';
@@ -85,6 +88,12 @@ BEGIN
 
     -- проверка на символы
     PERFORM check_text(doc_selg);
+
+    -- props
+    IF doc_asendus_id IS NOT NULL
+    THEN
+        l_json_props = jsonb_build_object('asendus_id', doc_asendus_id);
+    END IF;
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0 OR NOT exists(SELECT id
@@ -104,9 +113,9 @@ BEGIN
         --RETURNING id INTO doc_id;
         SELECT currval('docs.doc_id_seq') INTO doc_id;
 
-        INSERT INTO docs.journal (parentid, rekvid, userid, kpv, asutusid, dok, selg, muud, objekt)
+        INSERT INTO docs.journal (parentid, rekvid, userid, kpv, asutusid, dok, selg, muud, objekt, properties)
         VALUES (doc_id, user_rekvid, userId, doc_kpv, doc_asutusid, doc_dok, doc_selg, doc_muud,
-                doc_objekt);
+                doc_objekt, l_json_props);
 --                RETURNING id INTO journal_id;
         SELECT currval('docs.journal_id_seq') INTO journal_id;
 
@@ -137,12 +146,13 @@ BEGIN
         WHERE id = doc_id;
 
         UPDATE docs.journal
-        SET kpv      = doc_kpv,
-            asutusid = doc_asutusid,
-            dok      = doc_dok,
-            objekt   = doc_objekt,
-            muud     = doc_muud,
-            selg     = doc_selg
+        SET kpv        = doc_kpv,
+            asutusid   = doc_asutusid,
+            dok        = doc_dok,
+            objekt     = doc_objekt,
+            muud       = doc_muud,
+            selg       = doc_selg,
+            properties = coalesce(properties, '{}'::JSONB) || l_json_props
         WHERE parentid = doc_id RETURNING id
             INTO journal_id;
 
@@ -153,7 +163,6 @@ BEGIN
         SELECT *
         FROM json_array_elements(doc_details)
         LOOP
-
 
             SELECT *
             INTO json_record
@@ -306,8 +315,8 @@ BEGIN
 
 
             IF (((left(json_record.kreedit, 6) = '203630') OR (left(json_record.deebet, 6) = '203630')) AND
-               doc_selg <> 'Alg.saldo kreedit')
-                   or exists (select id from hooldekodu.hootehingud where hootehingud.journalid = doc_id)
+                doc_selg <> 'Alg.saldo kreedit')
+                OR exists(SELECT id FROM hooldekodu.hootehingud WHERE hootehingud.journalid = doc_id)
             THEN
                 is_hooldekodu_tehing = TRUE;
             END IF;

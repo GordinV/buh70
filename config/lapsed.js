@@ -58,4 +58,6 @@ module.exports = {
     pank_earve:'/aruanned/lapsed/pank_earve',
     arvete_saatmine:'/ou/arvete_saatmine',
     saldod_asutustes:'/aruanned/lapsed/saldod_asutustes',
+    asendus_taabel:'/lapsed/asendus_taabel',
+
 };

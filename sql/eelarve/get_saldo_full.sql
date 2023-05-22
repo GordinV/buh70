@@ -1,4 +1,11 @@
-CREATE FUNCTION eelarve.get_saldo_full(l_kpv date, l_rekvid integer, l_kond integer, formula text, l_konto text, rv text, l_tegevus text) RETURNS numeric
+DROP FUNCTION IF EXISTS eelarve.get_saldo_full(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER, formula TEXT, l_konto TEXT,
+    rv TEXT, l_tegevus TEXT);
+
+DROP FUNCTION IF EXISTS eelarve.get_saldo_full(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER, formula TEXT, l_konto TEXT,
+    rv TEXT, l_tegevus TEXT, l_allikas TEXT);
+
+CREATE FUNCTION eelarve.get_saldo_full(l_kpv DATE, l_rekvid INTEGER, l_kond INTEGER, formula TEXT, l_konto TEXT,
+                                       rv TEXT, l_tegevus TEXT, l_allikas TEXT DEFAULT NULL) RETURNS NUMERIC
     LANGUAGE SQL
 AS
 $$
@@ -6,6 +13,7 @@ WITH tmp_andmik AS (
     SELECT tegev,
            konto,
            rahavoo,
+           allikas,
            nimetus,
            sum(CASE WHEN db = 0 THEN (kr - db) ELSE (db - kr) END) AS saldoandmik,
            sum(db)                                                 AS db,
@@ -38,6 +46,7 @@ WITH tmp_andmik AS (
     GROUP BY tegev
             , konto
             , rahavoo
+            , allikas
             , nimetus
 
     UNION ALL
@@ -45,6 +54,7 @@ WITH tmp_andmik AS (
     SELECT tegev,
            l_konto,
            rahavoo,
+           allikas,
            nimetus,
            sum(CASE WHEN db = 0 THEN (kr - db) ELSE (db - kr) END) AS saldoandmik,
            sum(db)                                                 AS db,
@@ -82,12 +92,13 @@ SELECT coalesce((SELECT sum(CASE
                  WHERE s.aasta = CASE WHEN left(formula, 1) = 'M' THEN aasta.eelmine_aasta ELSE aasta.aasta END
                    AND (l_konto IS NULL OR s.konto LIKE trim(l_konto::TEXT || '%'))
                    AND (rv IS NULL OR trim(s.rahavoo) = rv)
-                   AND (l_tegevus IS NULL OR trim(s.tegev) = l_tegevus)), 0);
+                   AND (l_tegevus IS NULL OR trim(s.tegev) = l_tegevus)
+                   AND (l_allikas IS NULL OR trim(s.allikas) = l_allikas)), 0)
+    ;
 $$;
 
-ALTER FUNCTION eelarve.get_saldo_full(DATE, INTEGER, INTEGER, TEXT, TEXT, TEXT, TEXT) OWNER TO vlad;
 
-GRANT EXECUTE ON FUNCTION eelarve.get_saldo_full(DATE, INTEGER, INTEGER, TEXT, TEXT, TEXT, TEXT) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.get_saldo_full(DATE, INTEGER, INTEGER, TEXT, TEXT, TEXT, TEXT) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION eelarve.get_saldo_full(DATE, INTEGER, INTEGER, TEXT, TEXT, TEXT, TEXT) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION eelarve.get_saldo_full(DATE, INTEGER, INTEGER, TEXT, TEXT, TEXT, TEXT) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION eelarve.get_saldo_full(DATE, INTEGER, INTEGER, TEXT, TEXT, TEXT, TEXT, TEXT) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.get_saldo_full(DATE, INTEGER, INTEGER, TEXT, TEXT, TEXT, TEXT, TEXT) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION eelarve.get_saldo_full(DATE, INTEGER, INTEGER, TEXT, TEXT, TEXT, TEXT, TEXT) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION eelarve.get_saldo_full(DATE, INTEGER, INTEGER, TEXT, TEXT, TEXT, TEXT, TEXT) TO dbvaatleja;

@@ -5,22 +5,23 @@ CREATE OR REPLACE FUNCTION lapsed.sp_salvesta_vanem(data JSONB,
 $BODY$
 
 DECLARE
-    userName         TEXT;
-    doc_data         JSON    = data ->> 'data';
-    doc_id           INTEGER = doc_data ->> 'id';
-    doc_parentid     INTEGER = doc_data ->> 'parentid';
-    doc_asutusid     INTEGER = doc_data ->> 'asutusid';
-    doc_arved        BOOLEAN = coalesce((doc_data ->> 'arved')::BOOLEAN, FALSE);
-    doc_suhtumine    TEXT    = doc_data ->> 'suhtumine';
-    doc_kas_paberil  BOOLEAN = coalesce((doc_data ->> 'kas_paberil')::BOOLEAN, FALSE);
-    doc_kas_email    BOOLEAN = coalesce((doc_data ->> 'kas_email')::BOOLEAN, FALSE);
-    doc_kas_earve    BOOLEAN = coalesce((doc_data ->> 'kas_earve')::BOOLEAN, FALSE);
-    doc_pank         TEXT    = doc_data ->> 'pank';
-    doc_iban         TEXT    = doc_data ->> 'iban';
-    doc_kas_esindaja BOOLEAN = coalesce((doc_data ->> 'kas_esindaja')::BOOLEAN, FALSE);
-    doc_muud         TEXT    = doc_data ->> 'muud';
-    json_props       JSONB;
-    json_ajalugu     JSONB;
+    userName           TEXT;
+    doc_data           JSON    = data ->> 'data';
+    doc_id             INTEGER = doc_data ->> 'id';
+    doc_parentid       INTEGER = doc_data ->> 'parentid';
+    doc_asutusid       INTEGER = doc_data ->> 'asutusid';
+    doc_arved          BOOLEAN = coalesce((doc_data ->> 'arved')::BOOLEAN, FALSE);
+    doc_suhtumine      TEXT    = doc_data ->> 'suhtumine';
+    doc_kas_paberil    BOOLEAN = coalesce((doc_data ->> 'kas_paberil')::BOOLEAN, FALSE);
+    doc_kas_email      BOOLEAN = coalesce((doc_data ->> 'kas_email')::BOOLEAN, FALSE);
+    doc_kas_earve      BOOLEAN = coalesce((doc_data ->> 'kas_earve')::BOOLEAN, FALSE);
+    doc_pank           TEXT    = doc_data ->> 'pank';
+    doc_iban           TEXT    = doc_data ->> 'iban';
+    doc_kas_esindaja   BOOLEAN = coalesce((doc_data ->> 'kas_esindaja')::BOOLEAN, FALSE);
+    doc_muud           TEXT    = doc_data ->> 'muud';
+    json_props         JSONB;
+    json_ajalugu       JSONB;
+    l_prev_arv_isik_id INTEGER;
 
 BEGIN
 
@@ -42,6 +43,17 @@ BEGIN
     IF NOT empty(coalesce(doc_iban, '')) AND left(doc_iban, 2) = 'EE' AND length(ltrim(rtrim(doc_iban))) <> 20
     THEN
         RAISE EXCEPTION 'Viga: Vale IBAN pikkus (<> 20) %', doc_iban;
+    END IF;
+
+    -- сохраняем ид прежнего ответственного
+    IF doc_arved
+    THEN
+        l_prev_arv_isik_id = (SELECT va.asutusid
+                              FROM lapsed.vanem_arveldus va
+                              WHERE va.parentid = doc_parentid
+                                AND va.rekvid = user_rekvid
+                                AND va.arveldus
+                              LIMIT 1);
     END IF;
 
     json_props = to_jsonb(row)
@@ -146,8 +158,17 @@ BEGIN
           AND arveldus = TRUE;
     END IF;
 
+    -- делаем перенос сальдо
+/*    IF (l_prev_arv_isik_id IS NOT NULL AND doc_arved and l_prev_arv_isik_id <> doc_asutusid)
+    THEN
+        PERFORM docs.saldo_ulekanne_lausend(userId,
+                                            l_prev_arv_isik_id,
+                                            doc_asutusid,
+                                            current_date,
+                                            doc_parentid);
 
-    RETURN doc_id;
+    END IF;
+*/    RETURN doc_id;
 
 END;
 $BODY$

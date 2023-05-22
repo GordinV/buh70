@@ -15,6 +15,9 @@ const LasteRegister = require('./../docs/laps/index.jsx');
 const LasteTeenustRegister = require('./../docs/lapse_kaart/index.jsx');
 const LapseKaartDokument = require('./../docs/lapse_kaart/document/index.jsx');
 
+const AsendusTaabelRegister = require('./../docs/asendus_taabel/index.jsx');
+const AsendusTaabelDokument = require('./../docs/asendus_taabel/document/index.jsx');
+
 const LasteTaabelRegister = require('./../docs/lapse_taabel/index.jsx');
 const LapseTaabelDokument = require('./../docs/lapse_taabel/document/index.jsx');
 
@@ -179,6 +182,12 @@ class App extends React.Component {
                                                                 module={MODULE}/>}
                 />
                 <Route exact path="/lapsed/lapse_kaart/:docId" component={LapseKaartDokument}/>
+
+                <Route exact path="/lapsed/asendus_taabel"
+                       render={(props) => <AsendusTaabelRegister history={props.history}
+                                                               initData={props.initData}
+                                                               module={MODULE}/>}/>
+                <Route exact path="/lapsed/asendus_taabel/:docId" component={AsendusTaabelDokument}/>
 
                 <Route exact path="/lapsed/lapse_taabel"
                        render={(props) => <LasteTaabelRegister history={props.history}

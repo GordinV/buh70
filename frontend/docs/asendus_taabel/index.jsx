@@ -13,7 +13,7 @@ const BtnGetCsv = require('./../../components/button-register/button-task/index.
 
 
 const styles = require('./styles');
-const DOC_TYPE_ID = 'LAPSE_TAABEL';
+const DOC_TYPE_ID = 'ASENDUS_TAABEL';
 const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
 const DocContext = require('./../../doc-context.js');
 
@@ -38,6 +38,7 @@ class Documents extends React.PureComponent {
     render() {
         return (
             <div>
+
                 <DocumentRegister history={this.props.history ? this.props.history : null}
                                   module={this.props.module}
                                   ref='register'
@@ -50,26 +51,6 @@ class Documents extends React.PureComponent {
                              ref="input-summa"
                              value={Number(this.state.summa).toFixed(2) || 0}
                              disabled={true}/>
-                <InputNumber title="Soodustus kokku:"
-                             name='soodustus_kokku'
-                             style={styles.total}
-                             ref="input-soodustus"
-                             value={Number(this.state.soodustus).toFixed(2) || 0}
-                             disabled={true}/>
-                <InputNumber title="Vahe kokku:"
-                             name='vahe_kokku'
-                             style={styles.total}
-                             ref="input-vahe"
-                             value={Number(this.state.vahe).toFixed(2) || 0}
-                             disabled={true}
-                />
-                <InputNumber title="Kor. summa kokku:"
-                             name='kor_summa_kokku'
-                             style={styles.total}
-                             ref="input-vahe"
-                             value={Number(this.state.kor_summa).toFixed(2) || 0}
-                             disabled={true}
-                />
             </div>
         );
 
@@ -80,11 +61,7 @@ class Documents extends React.PureComponent {
         let userRoles = DocContext.userData ? DocContext.userData.roles : [];
 
         let summa = self.gridData && self.gridData.length ? self.gridData[0].summa_kokku : 0;
-        let soodustus = self.gridData && self.gridData.length ? self.gridData[0].soodustus_kokku : 0;
-        let vahe = self.gridData && self.gridData.length ? self.gridData[0].vahe_kokku : 0;
-        let kor_summa = self.gridData && self.gridData.length ? self.gridData[0].kor_summa_kokku : 0;
-
-        this.setState({summa: summa, read: self.gridData.length, soodustus: soodustus, vahe: vahe, kor_summa: kor_summa});
+        this.setState({summa: summa, read: self.gridData.length});
 
         return (
             <ToolbarContainer>
@@ -98,38 +75,12 @@ class Documents extends React.PureComponent {
                         mimeTypes={'.csv'}
                         value={'Kustuta kõik valitud tabelid?'}
                     /> : null}
-
-                {checkRights(userRoles, docRights, 'importTaabel') ?
-                    <ButtonUpload
-                        ref='btnUpload'
-                        docTypeId={DOC_TYPE_ID}
-                        onClick={this.onClickHandler}
-                        show={true}
-                        mimeTypes={'.csv'}
-                    /> : null}
-                <BtnGetCsv
-                    value={'Eksport (muu vaade)'}
-                    onClick={this.onClickHandler}
-                    showDate={false}
-                    ref={`btn-getcsv`}
-                />
-                {checkRights(userRoles, docRights, 'importAsendusTaable') ?
-                    <BtnArvesta
-                        ref='btnImportAsendusTaable'
-                        docTypeId={DOC_TYPE_ID}
-                        onClick={this.onClickHandler}
-                        showDate={true}
-                        show={true}
-                        mimeTypes={'.csv'}
-                        value={'Import asendus taabel'}
-                    /> : null}
-
             </ToolbarContainer>
         );
     }
 
     //handler для события клик на кнопках панели
-    onClickHandler(event, seisuga) {
+    onClickHandler(event) {
         const Doc = this.refs['register'];
         let ids = new Set; // сюда пишем ид счетом, которые под обработку
         let message = '';
@@ -146,37 +97,7 @@ class Documents extends React.PureComponent {
         // конвертация в массив
         ids = Array.from(ids);
 
-        console.log('event',event, seisuga);
         switch (event) {
-            case 'Import asendus taabel':
-                Doc.fetchData(`calc/importAsendusTaabel`, {seisuga: seisuga}).then((data) => {
-                    if (data.result) {
-                        message = `task saadetud täitmisele`;
-                        Doc.setState({warning: `${message}`, warningType: 'ok'});
-
-                        let tulemused = data.data.result.tulemused;
-                        // открываем отчет
-                        this.setState({isReport: true, txtReport: tulemused});
-
-                    } else {
-                        if (data.error_message) {
-                            Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
-                        } else {
-                            Doc.setState({
-                                warning: `Kokku impporteeritud : ${data.result}, ${message}`,
-                                warningType: 'notValid'
-                            });
-                        }
-
-                    }
-
-                });
-
-                setTimeout(() => {
-                    Doc.fetchData('selectDocs')
-                }, 3000);
-
-                break;
             case 'Kustuta kõik valitud tabelid?':
                 if (!ids.length) {
                     Doc.setState({
@@ -207,21 +128,6 @@ class Documents extends React.PureComponent {
 
                 }
                 break;
-            case 'Eksport (muu vaade)':
-                //Saama CSV fail
-                if (Doc.gridData && Doc.gridData.length) {
-                    //делаем редайрект на конфигурацию
-                    let sqlWhere = Doc.state.sqlWhere;
-                    let url = `/reports/${DOC_TYPE_ID.toLowerCase()}/${DocContext.userData.uuid}`;
-                    let params = encodeURIComponent(`${sqlWhere}`);
-                    window.open(`${url}/${params}`);
-                } else {
-                    Doc.setState({
-                        warning: 'Mitte ühtegi kirjed leidnud', // строка извещений
-                        warningType: 'notValid',
-
-                    });
-                }
         }
 
     }

@@ -144,8 +144,6 @@ exports.put = async (req, res) => {
     const module = req.params.module || 'lapsed';
     let data = req.body;
 
-    console.log('put start');
-
     if (!user) {
         console.error('No user', user);
         return res.send({
@@ -331,7 +329,7 @@ exports.executeTask = async (req, res) => {
 
     let taskParams;
 
-    if ((params.docTypeId === 'LAPS' || params.docTypeId === 'PAEVA_TAABEL' || params.docTypeId === 'LAPSE_GRUPP' || params.docTypeId === 'SMK' || params.docTypeId === 'NOMENCLATURE')) {
+    if ((params.docTypeId === 'LAPS' || params.docTypeId === 'ASENDUS_TAABEL' || params.docTypeId === 'PAEVA_TAABEL' || params.docTypeId === 'LAPSE_GRUPP' || params.docTypeId === 'SMK' || params.docTypeId === 'NOMENCLATURE')) {
         //@TODO сделать универсальный набор параметров
         taskParams = [params.docId, user.userId, seisuga];
         if (viitenumber) {

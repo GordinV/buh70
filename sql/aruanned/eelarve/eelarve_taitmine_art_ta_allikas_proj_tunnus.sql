@@ -261,10 +261,7 @@ WITH params AS (
          FROM (
                   -- выберем, где используются проекты
                   WITH used_projects AS (
-                      SELECT DISTINCT e.kood1 AS tegev,
-                                      e.kood2 AS allikas,
-                                      e.kood5 AS artikkel,
-                                      t1.proj AS proj,
+                      SELECT DISTINCT t1.proj AS proj,
                                       e.rekvid
                       FROM eelarve.kulud e
                                INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
@@ -272,18 +269,9 @@ WITH params AS (
                       WHERE e.rekvid IN (SELECT rekv_id FROM rekv_ids)
                         AND t1.proj IS NOT NULL
                         AND NOT empty(t1.proj)
-                        AND e.aasta = params.aasta
                         AND e.kood5 NOT LIKE '3%'
                         AND e.status <> 3
-                        AND COALESCE(e.tunnus, '') ILIKE params.tunnus
-                        AND COALESCE(e.kood1, '') ILIKE params.tegev
-                        AND COALESCE(e.kood5, '') ILIKE params.artikkel
-                        AND COALESCE(e.kood2, '') ILIKE params.allikas
                         AND coalesce(t1.proj, '') ILIKE params.proj
-                        AND COALESCE((CASE
-                                          WHEN e.kood5 = '2586'
-                                              AND e.kood2 LIKE 'LE%' THEN '06'
-                                          ELSE e.kood3 END::VARCHAR(20)), '') ILIKE params.rahavoog
                   ),
                        -- выберем, где используются  мероприятия
                        used_tunnused AS (
@@ -298,7 +286,6 @@ WITH params AS (
                            WHERE e.rekvid IN (SELECT rekv_id FROM rekv_ids)
                              AND e.tunnus IS NOT NULL
                              AND NOT empty(e.tunnus)
-                             AND e.aasta = params.aasta
                              AND e.kood5 NOT LIKE '3%'
                              AND e.status <> 3
                              AND COALESCE(e.tunnus, '') ILIKE params.tunnus
@@ -314,10 +301,7 @@ WITH params AS (
                        ),
                        -- выберем, где используются  мероприятия
                        used_uritused AS (
-                           SELECT DISTINCT e.kood1  AS tegev,
-                                           e.kood2  AS allikas,
-                                           e.kood5  AS artikkel,
-                                           t1.kood4 AS uritus,
+                           SELECT DISTINCT t1.kood4 AS uritus,
                                            e.rekvid
                            FROM eelarve.kulud e
                                     INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
@@ -325,19 +309,9 @@ WITH params AS (
                            WHERE e.rekvid IN (SELECT rekv_id FROM rekv_ids)
                              AND t1.kood4 IS NOT NULL
                              AND NOT empty(t1.kood4)
-                             AND e.aasta = params.aasta
                              AND e.kood5 NOT LIKE '3%'
                              AND e.status <> 3
-                             AND COALESCE(e.tunnus, '') ILIKE params.tunnus
-                             AND COALESCE(e.kood1, '') ILIKE params.tegev
-                             AND COALESCE(e.kood5, '') ILIKE params.artikkel
-                             AND COALESCE(e.kood2, '') ILIKE params.allikas
-                             AND coalesce(t1.proj, '') ILIKE params.proj
                              AND coalesce(t1.kood4, '') ILIKE params.uritus
-                             AND COALESCE((CASE
-                                               WHEN e.kood5 = '2586'
-                                                   AND e.kood2 LIKE 'LE%' THEN '06'
-                                               ELSE e.kood3 END::VARCHAR(20)), '') ILIKE params.rahavoog
                        )
 
                   SELECT e.rekvid,
@@ -440,20 +414,14 @@ WITH params AS (
                              WHEN proj IS NOT NULL AND NOT empty(proj) AND exists
                                  (SELECT 1
                                   FROM used_projects up
-                                  WHERE up.artikkel = ft.artikkel
-                                    AND up.tegev = ft.tegev
-                                    AND up.allikas = ft.allikas
-                                    AND up.proj = ft.proj
+                                  WHERE up.proj = ft.proj
                                     AND up.rekvid = ft.rekv_id) THEN proj
                              ELSE '' END        AS proj,
                          CASE
                              WHEN uritus IS NOT NULL AND NOT empty(uritus) AND exists
                                  (SELECT 1
                                   FROM used_uritused up
-                                  WHERE up.artikkel = ft.artikkel
-                                    AND up.tegev = ft.tegev
-                                    AND up.allikas = ft.allikas
-                                    AND up.uritus = ft.uritus
+                                  WHERE up.uritus = ft.uritus
                                     AND up.rekvid = ft.rekv_id) THEN uritus
                              ELSE '' END        AS uritus,
                          CASE
@@ -493,20 +461,14 @@ WITH params AS (
                              WHEN proj IS NOT NULL AND NOT empty(proj) AND exists
                                  (SELECT 1
                                   FROM used_projects up
-                                  WHERE up.artikkel = kt.artikkel
-                                    AND up.tegev = kt.tegev
-                                    AND up.allikas = kt.allikas
-                                    AND up.proj = kt.proj
+                                  WHERE up.proj = kt.proj
                                     AND up.rekvid = kt.rekv_id) THEN proj
                              ELSE '' END  AS proj,
                          CASE
                              WHEN uritus IS NOT NULL AND NOT empty(uritus) AND exists
                                  (SELECT 1
                                   FROM used_uritused up
-                                  WHERE up.artikkel = kt.artikkel
-                                    AND up.tegev = kt.tegev
-                                    AND up.allikas = kt.allikas
-                                    AND up.uritus = kt.uritus
+                                  WHERE up.uritus = kt.uritus
                                     AND up.rekvid = kt.rekv_id) THEN uritus
                              ELSE '' END  AS uritus,
                          CASE
@@ -547,20 +509,14 @@ WITH params AS (
                              WHEN proj IS NOT NULL AND NOT empty(proj) AND exists
                                  (SELECT 1
                                   FROM used_projects up
-                                  WHERE up.artikkel = kt.artikkel
-                                    AND up.tegev = kt.tegev
-                                    AND up.allikas = kt.allikas
-                                    AND up.proj = kt.proj
+                                  WHERE up.proj = kt.proj
                                     AND up.rekvid = kt.rekv_id) THEN proj
                              ELSE '' END  AS proj,
                          CASE
                              WHEN uritus IS NOT NULL AND NOT empty(uritus) AND exists
                                  (SELECT 1
                                   FROM used_uritused up
-                                  WHERE up.artikkel = kt.artikkel
-                                    AND up.tegev = kt.tegev
-                                    AND up.allikas = kt.allikas
-                                    AND up.uritus = kt.uritus
+                                  WHERE up.uritus = kt.uritus
                                     AND up.rekvid = kt.rekv_id) THEN uritus
                              ELSE '' END  AS uritus,
                          CASE
@@ -601,20 +557,14 @@ WITH params AS (
                              WHEN proj IS NOT NULL AND NOT empty(proj) AND exists
                                  (SELECT 1
                                   FROM used_projects up
-                                  WHERE up.artikkel = kt.artikkel
-                                    AND up.tegev = kt.tegev
-                                    AND up.allikas = kt.allikas
-                                    AND up.proj = kt.proj
+                                  WHERE up.proj = kt.proj
                                     AND up.rekvid = kt.rekv_id) THEN proj
                              ELSE '' END AS proj,
                          CASE
                              WHEN uritus IS NOT NULL AND NOT empty(uritus) AND exists
                                  (SELECT 1
                                   FROM used_uritused up
-                                  WHERE up.artikkel = kt.artikkel
-                                    AND up.tegev = kt.tegev
-                                    AND up.allikas = kt.allikas
-                                    AND up.uritus = kt.uritus
+                                  WHERE up.uritus = kt.uritus
                                     AND up.rekvid = kt.rekv_id) THEN uritus
                              ELSE '' END AS uritus,
                          100             AS idx
@@ -650,9 +600,6 @@ WITH params AS (
                                   FROM used_projects up
                                   WHERE up.proj IS NOT NULL
                                     AND NOT empty(up.proj)
-                                    AND up.artikkel = j1.kood5
-                                    AND up.tegev = j1.kood1
-                                    AND up.allikas = j1.kood2
                                     AND up.proj = j1.proj
                                     AND up.rekvid = j.rekvid) THEN j1.proj
                              ELSE '' END        AS proj,
@@ -660,10 +607,7 @@ WITH params AS (
                              WHEN j1.kood4 IS NOT NULL AND NOT empty(j1.kood4) AND exists
                                  (SELECT 1
                                   FROM used_uritused up
-                                  WHERE up.artikkel = j1.kood5
-                                    AND up.tegev = j1.kood1
-                                    AND up.allikas = j1.kood2
-                                    AND up.uritus = j1.kood4
+                                  WHERE up.uritus = j1.kood4
                                     AND up.rekvid = j.rekvid) THEN j1.kood4
                              ELSE '' END        AS uritus,
                          210                    AS idx
@@ -838,10 +782,8 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_art_ta_allikas_proj_tunnus(IN
 /*
 --artikkel like
          SELECT *
-         FROM eelarve.eelarve_taitmine_art_ta_allikas_proj_tunnus(2023::INTEGER,'2023-01-01'::date, '2023-03-31'::DATE, 63, 1,'{"tunnus":null,"allikas":null}')
+         FROM eelarve.eelarve_taitmine_art_ta_allikas_proj_tunnus(2023::INTEGER,'2023-01-01'::date, '2023-05-31'::DATE, 130, 0,'{"tunnus":null,"allikas":"LE-LAOF", "artikkel":"155"}')
 
 
-         SELECT *
-         FROM eelarve.eelarve_taitmine_allikas_artikkel(2023::INTEGER,'2023-01-01'::date, '2023-03-31'::DATE, 63, 1,'{"tunnus":null,"allikas":null}')
 
 */

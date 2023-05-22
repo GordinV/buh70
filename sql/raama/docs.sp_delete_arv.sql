@@ -23,13 +23,14 @@ DECLARE
 BEGIN
 
     SELECT d.*,
-           u.ametnik               AS user_name,
+           u.ametnik                                AS user_name,
            a.kpv,
-           a.id                    AS doc_arv_id,
+           a.id                                     AS doc_arv_id,
            a.properties,
-           a.properties ->> 'tyyp' AS tyyp,
+           a.properties ->> 'tyyp'                  AS tyyp,
            a.liik,
-           a.asutusid
+           a.asutusid,
+           (a.properties ->> 'asendus_id')::INTEGER AS asendus_id
     INTO v_doc
     FROM docs.doc d
              LEFT OUTER JOIN ou.userid u ON u.id = user_id
@@ -88,6 +89,23 @@ BEGIN
     IF v_doc.tyyp IS NOT NULL AND coalesce(v_doc.tyyp, '') = 'HOOLDEKODU_ISIKU_OSA' AND v_doc.liik = 0
     THEN
         l_tasu_id = (SELECT doc_tasu_id FROM docs.arvtasu WHERE doc_arv_id = doc_id AND status < 3 LIMIT 1);
+
+    END IF;
+
+    -- удалим если есть замещающие проводки
+    IF v_doc.asendus_id IS NOT NULL
+    THEN
+        PERFORM docs.sp_delete_journal(qry.userid, qry.id)
+        FROM (SELECT j.parentid AS id,
+                     (SELECT id
+                      FROM ou.userid u
+                      WHERE u.rekvid = j.rekvid
+                        AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_Id)
+                        AND status < 3
+                      LIMIT 1)  AS userid
+              FROM docs.journal j
+              WHERE j.properties IS NOT NULL
+                AND (j.properties ->> 'asendus_id')::INTEGER = v_doc.asendus_id) qry;
 
     END IF;
 
@@ -208,7 +226,7 @@ BEGIN
     IF v_doc.tyyp IS NOT NULL AND coalesce(v_doc.tyyp, '') = 'HOOLDEKODU_ISIKU_OSA' AND v_doc.liik = 0
     THEN
         -- удалим списание пенсии
-        raise notice 'l_tasu_id %', l_tasu_id;
+        RAISE NOTICE 'l_tasu_id %', l_tasu_id;
 
         IF l_tasu_id IS NOT NULL
         THEN
