@@ -17,7 +17,7 @@ DECLARE
     l_rekvid        INTEGER = (SELECT rekvid
                                FROM ou.userid u
                                WHERE id = user_id
-                               LIMIT 1);
+                                   LIMIT 1);
 
     l_asutus_id     INTEGER = (SELECT asutusid
                                FROM lapsed.vanem_arveldus v
@@ -25,8 +25,8 @@ DECLARE
                                WHERE v.parentid = l_laps_id
                                  AND v.rekvid = l_rekvid
                                  AND arveldus
-                               ORDER BY v.id DESC
-                               LIMIT 1);
+                                   ORDER BY v.id DESC
+                                   LIMIT 1);
     l_doklausend_id INTEGER;
     l_liik          INTEGER = 0;
     v_taabel        RECORD;
@@ -49,8 +49,8 @@ DECLARE
                                FROM ou.aa
                                WHERE parentid IN (SELECT rekvid FROM ou.userid WHERE id = user_id)
                                  AND kassa = 1
-                               ORDER BY default_ DESC
-                               LIMIT 1);
+                                   ORDER BY default_ DESC
+                                   LIMIT 1);
 
     l_db_konto      TEXT    = '10300029'; -- согдасно описанию отдела культуры
     v_laps          RECORD;
@@ -95,8 +95,8 @@ BEGIN
                        WHERE dp.rekvid = l_rekvid
                          AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
                          AND l.kood = 'ARV'
-                       ORDER BY dp.id DESC
-                       LIMIT 1
+                           ORDER BY dp.id DESC
+                           LIMIT 1
     );
 
 
@@ -164,7 +164,7 @@ BEGIN
                coalesce(lt.muud, '')                                                 AS markused,
                lt.properties ->> 'kas_asendus'                                       AS kas_asendus,
                at.rekvid                                                             AS asendus_rekvid,
-               ltrim(rtrim(r.nimetus))                                               AS asendus_asutus,
+               ltrim(rtrim(CASE WHEN r.muud IS NULL or empty(r.muud)  THEN r.nimetus ELSE r.muud END)) AS asendus_asutus,
                at.id                                                                 AS asendus_id
         FROM lapsed.lapse_taabel lt
                  INNER JOIN lapsed.lapse_kaart lk
@@ -184,7 +184,7 @@ BEGIN
           AND lk.rekvid = l_rekvid
           AND n.rekvid = lk.rekvid
           AND (lt.summa <> 0 OR lt.kogus <> 0)
-        ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
+            ORDER BY coalesce((lk.properties ->> 'kas_eraldi')::BOOLEAN, FALSE) DESC
 
 
         LOOP
@@ -230,19 +230,21 @@ BEGIN
 */
                                                                             WHEN v_taabel.umberarvestus
                                                                                 THEN ' Ümberarvestus '
+                                                                            WHEN v_taabel.asendus_id IS NOT NULL THEN
+                                                                                ' (Osutatavad teenused: ' || v_taabel.asendus_asutus || ')'
                                                                             ELSE (CASE WHEN len(coalesce(v_taabel.muud, '')) > 0 THEN ',' ELSE '' END) ||
                                                                                  v_taabel.markused END AS muud,
-                                                       v_taabel.asendus_id as asendus_id,
+                                                       v_taabel.asendus_id                             AS asendus_id,
                                                        l_tp                                            AS tp) row) :: JSONB;
 
-            IF v_taabel.kas_asendus IS NOT NULL
+/*            IF v_taabel.kas_asendus IS NOT NULL
             THEN
                 l_selg = CASE
                              WHEN v_taabel.asendus_asutus IS NOT NULL
                                  THEN ' (Osutatavad teenused: ' || v_taabel.asendus_asutus || ')'
                              ELSE '' END;
             END IF;
-
+*/
 
             IF v_taabel.kas_eraldi
             THEN
@@ -263,8 +265,8 @@ BEGIN
                 WHERE l.parentid = l_laps_id
                   AND lk.id = v_taabel.lapse_kaart_id
                   AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
-                ORDER BY D.ID DESC
-                LIMIT 1;
+                    ORDER BY D.ID DESC
+                    LIMIT 1;
 
                 IF coalesce(l_status, 0) <> 2
                 THEN
@@ -335,8 +337,8 @@ BEGIN
       AND lt.aasta = date_part('year', l_kpv)
       AND lt.kuu = date_part('month', l_kpv)
       AND d.rekvid IN (SELECT rekvid FROM ou.userid u WHERE id = user_id)
-    ORDER BY D.ID DESC
-    LIMIT 1;
+        ORDER BY D.ID DESC
+        LIMIT 1;
 
     -- создаем параметры
     l_json_arve = (SELECT to_json(row)

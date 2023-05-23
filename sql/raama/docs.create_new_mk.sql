@@ -19,6 +19,11 @@ DECLARE
     l_maksepaev  DATE           = params ->> 'maksepaev';
     l_selg       TEXT           = params ->> 'selg';
     l_asutus_id  INTEGER        = params ->> 'maksja_id';
+    l_tp         TEXT           = (SELECT tp
+                                   FROM libs.asutus
+                                   WHERE id = l_asutus_id
+                                     AND staatus < 3
+                                   LIMIT 1);
     l_aa         TEXT           = params ->> 'maksja_arve';
     l_asutus_aa  TEXT           = params ->> 'aa';
     l_tunnus     TEXT           = params ->> 'tunnus';
@@ -35,7 +40,7 @@ DECLARE
                                                                                INNER JOIN docs.doc d ON d.id = l.docid
                                                                       WHERE docid = l_arv_id
                                                                         AND d.rekvid IN (SELECT userid.rekvid FROM ou.userid WHERE id = user_id)
-                                                                          LIMIT 1)
+                                                                      LIMIT 1)
                                       ELSE left(right(l_viitenr::TEXT, 7), 6)::INTEGER END;
     l_isikukood  TEXT;
     l_opt        INTEGER;
@@ -52,8 +57,8 @@ BEGIN
                         FROM public.com_dokprop l
                         WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
                           AND kood = l_dok
-                            ORDER BY id DESC
-                            LIMIT 1
+                        ORDER BY id DESC
+                        LIMIT 1
         );
     END IF;
 
@@ -154,8 +159,8 @@ BEGIN
                      WHERE kassa = 1
                        AND parentid = l_rekvId
                        AND aa.arve::TEXT = l_asutus_aa::TEXT
-                         ORDER BY default_ DESC
-                         LIMIT 1);
+                     ORDER BY default_ DESC
+                     LIMIT 1);
 
     END IF;
 
@@ -169,16 +174,15 @@ BEGIN
                 WHERE rekvid = l_rekvId
                   AND status < 3
                   AND dok IN (l_dok, doc_type_id)
-                    ORDER BY kood
-                    , id DESC
-                    LIMIT 1);
+                ORDER BY kood
+                        , id DESC
+                LIMIT 1);
 
     -- если род. плата , проверим на возраст и поищем подходящую номенклатуру
     IF l_laps_id IS NOT NULL AND exists(SELECT id FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3)
     THEN
         -- проверка на возраст
         l_isikukood = (SELECT isikukood FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3 LIMIT 1);
-        RAISE NOTICE 'l_isikukood %',l_isikukood;
         IF extract('year' FROM
                    age(make_date(date_part('year', l_maksepaev)::INTEGER, 01, 01), palk.get_sunnipaev(l_isikukood))) >=
            27
@@ -192,9 +196,9 @@ BEGIN
                          AND status < 3
                          AND dok IN (l_dok, doc_type_id)
                          AND n.properties ->> 'tegev' = '09500'
-                           ORDER BY kood
-                           , id DESC
-                           LIMIT 1)
+                       ORDER BY kood
+                               , id DESC
+                       LIMIT 1)
                 )
             THEN
                 l_nom_id = (SELECT id
@@ -203,9 +207,9 @@ BEGIN
                               AND status < 3
                               AND dok IN (l_dok, doc_type_id)
                               AND n.properties ->> 'tegev' = '09500'
-                                ORDER BY kood
-                                , id DESC
-                                LIMIT 1);
+                            ORDER BY kood
+                                    , id DESC
+                            LIMIT 1);
 
             END IF;
 
@@ -243,7 +247,7 @@ BEGIN
                                                                                      THEN '[]'::JSON
                                                                                  ELSE (a.properties -> 'asutus_aa') :: JSON END) AS e (ELEMENT)
                                                     WHERE a.id = l_asutus_id
-                                                        LIMIT 1
+                                                    LIMIT 1
                                                 ), ''))
                ELSE l_aa END;
 
@@ -267,11 +271,11 @@ BEGIN
         FROM docs.arv1 a1
         WHERE a1.
                   parentid = v_arv.id
-            ORDER BY kood5
-            , kood2 DESC
-            , kood1 DESC
-            LIMIT 1
-            INTO v_mk1;
+        ORDER BY kood5
+                , kood2 DESC
+                , kood1 DESC
+        LIMIT 1
+        INTO v_mk1;
 
     ELSE
         SELECT 0                  AS id,
@@ -283,6 +287,7 @@ BEGIN
                v_nom_rea.tegev    AS kood1,
                v_nom_rea.allikas  AS kood2,
                v_nom_rea.artikkel AS kood5,
+               l_tp as tp,
                v_nom_rea.tunnus
         INTO v_mk1;
     END IF;

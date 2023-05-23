@@ -59,6 +59,7 @@ BEGIN
       AND aasta = date_part('year', l_kpv)::INTEGER
       AND rekvid = l_rekvid
 --      AND NOT umberarvestus
+      AND t.properties ->> 'kas_asendus' IS NULL
       AND staatus < 2;
 
     -- делаем выборку услуг, не предоплатных
@@ -253,7 +254,8 @@ BEGIN
               AND aasta = date_part('year'::TEXT, l_kpv::DATE)
               AND kuu = date_part('month'::TEXT, l_kpv::DATE)
               AND NOT lt.umberarvestus
-              AND lt.staatus <> 3 -- удаленный
+              AND lt.properties ->> 'kas_asendus' IS NULL -- импортированные игнорируем
+              AND lt.staatus <> 3                        -- удаленный
             LIMIT 1;
 
             -- расчет разницы алгоритмов
@@ -279,8 +281,6 @@ BEGIN
                 v_kaart.sooduse_lopp = NULL;
                 v_kaart.alus_soodustus = NULL;
             END IF;
-
-            RAISE NOTICE 'l_taabel_id %, l_status %, v_kaart.alus_soodustus %', l_taabel_id, l_status, v_kaart.alus_soodustus;
 
             IF l_taabel_id IS NULL OR l_status <> 2
             THEN

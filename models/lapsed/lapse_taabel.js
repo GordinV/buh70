@@ -155,8 +155,11 @@ module.exports = {
                                  lt.too_paevad,
                                  lt.kovid,
                                  lt.vahe::numeric,
-                                 lt.kas_asendus
+                                 lt.kas_asendus,
+                                 ar.nimetus AS asendus_asutus                                 
                           FROM lapsed.cur_lapse_taabel lt
+                             LEFT OUTER JOIN lapsed.asendus_taabel at ON at.id = lt.asendus_id
+                             LEFT OUTER JOIN ou.rekv ar ON ar.id = at.rekvid
                           WHERE lt.rekvid in
                           (SELECT rekv_id
                                                          FROM get_asutuse_struktuur($1::INTEGER))                         
@@ -211,7 +214,7 @@ module.exports = {
                          select false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, 
                             alus_soodustus, soodustus, arv_soodustus, arv_soodustus_kokku, summa, arv_summa, 
                             isikukood,  nimi, kood, teenus, yksus, viitenr, userid, muud,                           
-                            case when kas_asendus then 'Import' else 'Tavaline' end as tab_tyyp, kulastused, too_paevad, kovid, vahe
+                            case when kas_asendus then 'Import (' || left(asendus_asutus,7) || ')'  else 'Tavaline' end as tab_tyyp, kulastused, too_paevad, kovid, vahe
                          from qryTabs
                          UNION ALL
                          SELECT false:: boolean as select, id::integer, parentid, rekvid, nomid, kuu, aasta, kogus, hind, uhik, umberarvestus, 
@@ -269,7 +272,7 @@ module.exports = {
                          tulemus ->> 'viitenr'                                         AS viitenr
                   FROM (
                            SELECT to_jsonb(lapsed.import_asendus_taabelid($1::INTEGER, $2::INTEGER, $3::DATE)) tulemus
-                           ) qry`,//$1 userId, $2 - rekvId, $3 kpv
+                       ) qry`,//$1 userId, $2 - rekvId, $3 kpv
         type: 'sql',
         alias: 'importAsendusTaabel'
     },

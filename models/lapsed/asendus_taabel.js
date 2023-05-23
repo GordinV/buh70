@@ -189,7 +189,7 @@ module.exports = {
                                     l.nimi,
                                     r.nimetus AS                                                              asutus
                                  FROM
-                                    (SELECT laps_id FROM params, lapsed.get_laps_from_viitenumber(params.vn)) lid,
+                                    (SELECT l.laps_id as laps_id FROM params, lapsed.get_laps_from_viitenumber(params.vn) l) lid,
                                     lapsed.laps                                                               l,
                                     ou.rekv                                                                   r,
                                     params
