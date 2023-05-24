@@ -34,6 +34,7 @@ module.exports = {
                      (va.properties ->> 'pank')::TEXT                                     AS pank,
                      (va.properties ->> 'iban')::TEXT                                     AS iban,
                      coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN    AS kas_email,
+                     to_char((v.properties ->> 'email_alates')::DATE, 'YYYY-MM-DD')::TEXT AS email_alates,
                      coalesce((v.properties ->> 'kas_esindaja')::BOOLEAN, FALSE)::BOOLEAN AS kas_esindaja,
                      v.muud,
                      a.nimetus::TEXT                                                      AS vanem_nimi,
@@ -64,6 +65,7 @@ module.exports = {
                   null::text as suhtumine,
                   false as kas_paberil,
                   true as kas_email,
+                  NULL::date as email_alates,
                   true as kas_earve,
                   null::text as pank,
                   null::text as iban,
@@ -256,12 +258,12 @@ module.exports = {
         ALIAS: 'validateEsindaja'
     },
     getLog: {
-        command: `SELECT ROW_NUMBER() OVER () AS id,
-                         (ajalugu ->> 'user')::TEXT                                         AS kasutaja,       
+        command: `SELECT ROW_NUMBER() OVER ()                                               AS id,
+                         (ajalugu ->> 'user')::TEXT                                         AS kasutaja,
                          to_char((ajalugu ->> 'created')::TIMESTAMP, 'DD.MM.YYYY HH:MI:SS') AS koostatud,
-                         to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH:MI:SS' ) AS muudatud,
-                         to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH:MI:SS')  AS prinditud,
-                         to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH:MI:SS' ) AS kustutatud
+                         to_char((ajalugu ->> 'updated')::TIMESTAMP, 'DD.MM.YYYY HH:MI:SS') AS muudatud,
+                         to_char((ajalugu ->> 'print')::TIMESTAMP, 'DD.MM.YYYY HH:MI:SS')   AS prinditud,
+                         to_char((ajalugu ->> 'deleted')::TIMESTAMP, 'DD.MM.YYYY HH:MI:SS') AS kustutatud
                   FROM (
                            SELECT jsonb_array_elements(d.ajalugu)
                                       AS

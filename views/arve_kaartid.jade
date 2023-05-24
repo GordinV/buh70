@@ -51,6 +51,10 @@ style(type='text/css').
     .auto {
         width: auto;
     }
+    .td_align {
+        text-align: center;
+        vertical-align: top;
+    }
 
 
 
@@ -161,13 +165,13 @@ block content
                         tbody
                             each row in doc.details
                                 tr
-                                    td(align='left')=(row.markused)
-                                    td(align='center')=Number(row.tais_hind).toFixed(2)
-                                    td(align='center')=Number(row.soodustus).toFixed(2)
-                                    td(align='center')=(Number(row.tais_hind, 2) - Number(row.soodustus)).toFixed(4)
-                                    td(align='center')=row.uhik
-                                    td(align='center')=row.kogus
-                                    td(align='center')=Number(row.summa).toFixed(2)
+                                    td=(row.markused)
+                                    td.td_align=Number(row.tais_hind).toFixed(2)
+                                    td.td_align=Number(row.soodustus).toFixed(2)
+                                    td.td_align=(Number(row.tais_hind, 2) - Number(row.soodustus)).toFixed(4)
+                                    td.td_align=row.uhik
+                                    td.td_align=row.kogus
+                                    td.td_align=Number(row.summa).toFixed(2)
                     h3
                         div.doc_footer
                             div.row_wrapper

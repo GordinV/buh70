@@ -54,7 +54,7 @@ const automailer = async () => {
                gomonth(make_date(year(current_date), month(current_date), 1), -1) AS kpv1
     ),
          kas_lubatud AS (
-             SELECT rekvid, kas_alusta
+             SELECT rekvid, kas_alusta, a.alg_kpv
              FROM ou.arvete_meil a,
                   params
              WHERE a.alg_kpv >= params.kpv1
@@ -80,6 +80,7 @@ const automailer = async () => {
                AND d.status <> 3
                AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood = 'ARV')
                AND coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN
+               AND (v.properties ->> 'email_alates' is null or (v.properties ->> 'email_alates')::date >= kas_lubatud.alg_kpv)
                and d.history::text not ilike '%email%'
                AND a.rekvid IN (SELECT id FROM ou.rekv WHERE parentid = 119)
                AND kas_lubatud.kas_alusta

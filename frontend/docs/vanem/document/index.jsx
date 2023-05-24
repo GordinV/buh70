@@ -6,6 +6,7 @@ const React = require('react');
 const
     DocumentTemplate = require('../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
+    InputDate = require('../../../components/input-date/input-date.jsx'),
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
     SelectData = require('../../../components/select-data/select-data.jsx'),
     Select = require('../../../components/select/select.jsx'),
@@ -161,6 +162,18 @@ class Vanem extends React.PureComponent {
                                       readOnly={!isEditMode}
                             /> : null
                         }
+                        <CheckBox title="Lapse seaduslik esindaja"
+                                  name='kas_esindaja'
+                                  value={Boolean(self.docData.kas_esindaja)}
+                                  ref={'checkbox_kas_esindaja'}
+                                  onChange={self.handleInputChange}
+                                  readOnly={!isEditMode}
+                        />
+
+                    </div>
+                </div>
+                <div style={styles.docRow}>
+                    <div style={styles.docColumn}>
                         {self.docData.arved ?
                             <CheckBox title="Kas email ?"
                                       name='kas_email'
@@ -170,13 +183,13 @@ class Vanem extends React.PureComponent {
                                       readOnly={!isEditMode}
                             /> : null
                         }
-                        <CheckBox title="Lapse seaduslik esindaja"
-                                  name='kas_esindaja'
-                                  value={Boolean(self.docData.kas_esindaja)}
-                                  ref={'checkbox_kas_esindaja'}
-                                  onChange={self.handleInputChange}
-                                  readOnly={!isEditMode}
-                        />
+                        {self.docData.arved && Boolean(self.docData.kas_email) ?
+                            <InputDate title='Arveid saadatakse alates '
+                                       name='email_alates'
+                                       value={self.docData.email_alates || ''}
+                                       ref='input-email_alates'
+                                       onChange={self.handleInputChange}
+                                       readOnly={!isEditMode}/> : null}
                     </div>
                 </div>
 
@@ -250,32 +263,32 @@ class Vanem extends React.PureComponent {
      * @param self
      */
     readBankName(self) {
-/*
-        Coop Pank aktsiaselts	EKRDEE22	42
-        Eesti Pank	EPBEEE2X	16
-        AS SEB Pank	EEUHEE2X	10
-        Swedbank AS	HABAEE2X	22
+        /*
+                Coop Pank aktsiaselts	EKRDEE22	42
+                Eesti Pank	EPBEEE2X	16
+                AS SEB Pank	EEUHEE2X	10
+                Swedbank AS	HABAEE2X	22
 
-        EE 99 00
-*/
+                EE 99 00
+        */
 
-        if (self.docData.iban ) {
-            let bancCode = self.docData.iban.substring(4,6);
+        if (self.docData.iban) {
+            let bancCode = self.docData.iban.substring(4, 6);
             switch (bancCode) {
                 case '10': {
-                    self.docData.pank ='SEB';
+                    self.docData.pank = 'SEB';
                     break;
                 }
                 case '22': {
-                    self.docData.pank ='SWED';
+                    self.docData.pank = 'SWED';
                     break;
                 }
                 case '16': {
-                    self.docData.pank ='EESTI PANK';
+                    self.docData.pank = 'EESTI PANK';
                     break;
                 }
                 case '42': {
-                    self.docData.pank ='COOP';
+                    self.docData.pank = 'COOP';
                     break;
                 }
                 default:

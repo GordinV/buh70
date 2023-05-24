@@ -95,17 +95,20 @@ BEGIN
     -- удалим если есть замещающие проводки
     IF v_doc.asendus_id IS NOT NULL
     THEN
-        PERFORM docs.sp_delete_journal(qry.userid, qry.id)
-        FROM (SELECT j.parentid AS id,
-                     (SELECT id
-                      FROM ou.userid u
-                      WHERE u.rekvid = j.rekvid
-                        AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_Id)
-                        AND status < 3
-                      LIMIT 1)  AS userid
-              FROM docs.journal j
-              WHERE j.properties IS NOT NULL
-                AND (j.properties ->> 'asendus_id')::INTEGER = v_doc.asendus_id) qry;
+        PERFORM docs.sp_delete_journal(u.id, j.parentid)
+        FROM docs.journal j,
+             (SELECT id, rekvid
+              FROM ou.userid u
+              WHERE kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_Id)
+                AND status < 3) u
+        WHERE j.rekvid = u.rekvid
+          AND j.properties IS NOT NULL
+          AND (j.properties ->> 'asendus_id')::INTEGER IN
+              (SELECT (a1.properties ->> 'asendus_id')::INTEGER AS asendus_id
+               FROM docs.arv1 a1
+                        INNER JOIN docs.arv a ON a.id = a1.parentid
+               WHERE a.parentid = v_doc.id
+                 AND a1.properties ->> 'asendus_id' IS NOT NULL);
 
     END IF;
 
@@ -164,7 +167,7 @@ BEGIN
     IF (SELECT (properties ->> 'arve_id') AS arve_id
         FROM docs.arv1 a1
         WHERE a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id)
-        LIMIT 1) IS NOT NULL
+            LIMIT 1) IS NOT NULL
     THEN
         -- есть ссылка, надо снять
         UPDATE docs.doc

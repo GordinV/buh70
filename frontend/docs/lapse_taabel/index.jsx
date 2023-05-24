@@ -120,8 +120,7 @@ class Documents extends React.PureComponent {
                         onClick={this.onClickHandler}
                         showDate={true}
                         show={true}
-                        mimeTypes={'.csv'}
-                        value={'Import asendus taabel'}
+                        value={'Ülemineku tabel lastele'}
                     /> : null}
 
             </ToolbarContainer>
@@ -146,9 +145,8 @@ class Documents extends React.PureComponent {
         // конвертация в массив
         ids = Array.from(ids);
 
-        console.log('event',event, seisuga);
         switch (event) {
-            case 'Import asendus taabel':
+            case 'Ülemineku tabel lastele':
                 Doc.fetchData(`calc/importAsendusTaabel`, {seisuga: seisuga}).then((data) => {
                     if (data.result) {
                         message = `task saadetud täitmisele`;

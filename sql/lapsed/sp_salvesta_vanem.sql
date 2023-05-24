@@ -15,6 +15,7 @@ DECLARE
     doc_kas_paberil    BOOLEAN = coalesce((doc_data ->> 'kas_paberil')::BOOLEAN, FALSE);
     doc_kas_email      BOOLEAN = coalesce((doc_data ->> 'kas_email')::BOOLEAN, FALSE);
     doc_kas_earve      BOOLEAN = coalesce((doc_data ->> 'kas_earve')::BOOLEAN, FALSE);
+    doc_email_alates   DATE    = doc_data ->> 'email_alates';
     doc_pank           TEXT    = doc_data ->> 'pank';
     doc_iban           TEXT    = doc_data ->> 'iban';
     doc_kas_esindaja   BOOLEAN = coalesce((doc_data ->> 'kas_esindaja')::BOOLEAN, FALSE);
@@ -61,6 +62,7 @@ BEGIN
                               doc_arved        AS arved,
                               doc_kas_paberil  AS kas_paberil,
                               doc_kas_email    AS kas_email,
+                              doc_email_alates as email_alates,
                               doc_kas_esindaja AS kas_esindaja
                       ) row;
 
@@ -168,7 +170,8 @@ BEGIN
                                             doc_parentid);
 
     END IF;
-*/    RETURN doc_id;
+*/
+    RETURN doc_id;
 
 END;
 $BODY$
@@ -180,6 +183,8 @@ GRANT EXECUTE ON FUNCTION lapsed.sp_salvesta_vanem(JSONB, INTEGER, INTEGER) TO a
 
 
 /*
+
+select * from lapsed.vanemad where id = 1
 
 select lapsed.sp_salvesta_vanem('{"data":{"id":0,"parentid":7,"asutusid":31825,"arved":"jah","muud":"test","userid":70}}'::jsonb, 70::integer, 63::integer) as id
 select lapsed.sp_salvesta_vanem('{"data":{"id":2,"parentid":1,"asutusid":1621,"arved":"Jah","muud":"test","userid":70}}'::jsonb, 70::integer, 63::integer) as id
