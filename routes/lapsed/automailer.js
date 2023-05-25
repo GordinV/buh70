@@ -161,7 +161,7 @@ const automailer = async () => {
                                        'uhik', n.uhik,
                                        'yksus', (a1.properties ->> 'yksus'),
                                        'muud', a1.muud,
-                                       'markused', (TRIM(n.nimetus) || ',' || a1.muud)) AS details
+                                       'markused', (TRIM(n.nimetus) || ', ' || a1.muud)) AS details
              FROM docs.arv1 a1
                       INNER JOIN docs.arv a
                                  ON a.id = a1.parentId
