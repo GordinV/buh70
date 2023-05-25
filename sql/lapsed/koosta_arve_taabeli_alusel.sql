@@ -231,7 +231,7 @@ BEGIN
                                                                             WHEN v_taabel.umberarvestus
                                                                                 THEN ' Ümberarvestus '
                                                                             WHEN v_taabel.asendus_id IS NOT NULL THEN
-                                                                                ' (' || ltrim(v_taabel.asendus_asutus,'Narva') || ')'
+                                                                                ' (' || ltrim(ltrim(v_taabel.asendus_asutus,'Narva')) || ')'
                                                                             ELSE (CASE WHEN len(coalesce(v_taabel.muud, '')) > 0 THEN ',' ELSE '' END) ||
                                                                                  v_taabel.markused END AS muud,
                                                        v_taabel.asendus_id                             AS asendus_id,
