@@ -221,7 +221,7 @@ exports.post = async (req, res) => {
                             if (emailTemplateObject.register) {
                                 // если есть метод регистрации, отметим email
                                 let sql = emailTemplateObject.register,
-                                    params = [arve.id, user.userId];
+                                    params = [arve.id, user.userId, receiverEmail];
 
                                 if (sql) {
                                     db.queryDb(sql, params);
@@ -255,7 +255,7 @@ exports.post = async (req, res) => {
             }
         });
     } catch (e) {
-        console.error('error:', error); // @todo Обработка ошибок
+        console.error('error:', e); // @todo Обработка ошибок
         res.send({status: 500, result: 'Error'});
     }
 
@@ -327,7 +327,11 @@ exports.sendTeatis = async (req, res) => {
         auth: {
             user: UserConfig['email'].user,
             pass: UserConfig['email'].pass
+        },
+        tls: {
+            rejectUnauthorized: false
         }
+
     });
 
     // выборка данных
@@ -542,8 +546,13 @@ exports.sendPrintForm = async (req, res) => {
         auth: {
             user: UserConfig['email'].user,
             pass: UserConfig['email'].pass
+        },
+        tls: {
+            rejectUnauthorized: false
         }
+
     });
+
 
     // обрабатываем параметры
 

@@ -232,7 +232,7 @@ BEGIN
                                                                                 THEN ' Ümberarvestus '
                                                                             WHEN v_taabel.asendus_id IS NOT NULL THEN
                                                                                 ' (' || ltrim(ltrim(v_taabel.asendus_asutus,'Narva')) || ')'
-                                                                            ELSE (CASE WHEN len(coalesce(v_taabel.muud, '')) > 0 THEN ',' ELSE '' END) ||
+                                                                            ELSE (CASE WHEN len(coalesce(v_taabel.muud, '')) > 0 THEN ', ' ELSE '' END) ||
                                                                                  v_taabel.markused END AS muud,
                                                        v_taabel.asendus_id                             AS asendus_id,
                                                        l_tp                                            AS tp) row) :: JSONB;
