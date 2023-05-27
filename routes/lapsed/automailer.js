@@ -258,7 +258,8 @@ SELECT doc.*,
            WHEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0) > 0
                THEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0)
            ELSE 0 END                                                    AS ettemaksud
-FROM doc`;
+FROM doc
+where FALSE`;
 
         let selectedDocs = await db.queryDb(sql, null, null, null, null, null, config);
 
