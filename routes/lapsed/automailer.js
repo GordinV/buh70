@@ -258,8 +258,7 @@ SELECT doc.*,
            WHEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0) > 0
                THEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0)
            ELSE 0 END                                                    AS ettemaksud
-FROM doc
-where FALSE`;
+FROM doc`;
 
         let selectedDocs = await db.queryDb(sql, null, null, null, null, null, config);
 
@@ -401,7 +400,7 @@ where FALSE`;
                             if (emailTemplateObject.register) {
                                 // если есть метод регистрации, отметим email
                                 let sql = emailTemplateObject.register,
-                                    params = [arve.id, l_userId];
+                                    params = [arve.id, l_userId, arve.email];
 
                                 if (sql) {
                                     let tulemus = await db.queryDb(sql, params);
