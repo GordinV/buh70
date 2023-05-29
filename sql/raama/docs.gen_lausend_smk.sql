@@ -484,6 +484,8 @@ BEGIN
             END IF;
 
 
+            -- проверка на замещение и передачу кассовых доходов
+            PERFORM docs.kassatulude_uleviimine(userid, tnid);
         END LOOP;
     RAISE NOTICE 'result %',result;
     RETURN;
@@ -502,7 +504,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_smk(INTEGER, INTEGER) TO dbpeakasutaj
 /*
 
 SELECT
-docs.gen_lausend_smk(4631051,5396)
+docs.gen_lausend_smk(2486841,2477)
 
 
 */

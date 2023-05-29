@@ -68,7 +68,7 @@ module.exports = {
                              LEFT OUTER JOIN libs.library l ON (l.kood = ltrim(qryReport.yksus, 'EM_')) AND
                                                                l.library = 'LAPSE_GRUPP' AND l.status < 3 AND
                                                                l.rekvid = qryReport.rekvid
-                             LEFT OUTER JOIN libs.library kt ON kt.id = (l.properties::JSONB -> 'tyyp')::INTEGER
+                             LEFT OUTER JOIN libs.library kt ON kt.id = (l.properties::JSONB ->> 'tyyp')::INTEGER
                     WHERE (kulastatavus = 'Jah' OR
                            (alg_saldo <> 0 OR arvestatud <> 0 OR umberarvestus <> 0 OR soodustus <> 0 OR
                             laekumised <> 0 OR mahakantud <> 0 OR

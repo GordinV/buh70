@@ -314,7 +314,8 @@ BEGIN
             END IF;
 
 
-            IF (((left(json_record.kreedit, 6) = '203630') OR (left(json_record.deebet, 6) = '203630')) AND
+            IF (user_rekvid IN (64, 132) AND
+                ((left(json_record.kreedit, 6) = '203630') OR (left(json_record.deebet, 6) = '203630')) AND
                 doc_selg <> 'Alg.saldo kreedit')
                 OR exists(SELECT id FROM hooldekodu.hootehingud WHERE hootehingud.journalid = doc_id)
             THEN

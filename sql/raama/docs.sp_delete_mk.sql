@@ -133,10 +133,13 @@ BEGIN
 
     -- удаляем оплату
 
-    DELETE
+/*    DELETE
     FROM docs.arvtasu
     WHERE doc_tasu_id = v_doc.id;
-
+*/
+    PERFORM docs.sp_delete_arvtasu(l_user_id, at.id)
+    FROM docs.arvtasu at
+    WHERE doc_tasu_id = v_doc.id;
 
     -- удаляем ссылку на данные из выписки
     UPDATE lapsed.pank_vv SET doc_id = NULL WHERE pank_vv.doc_id = v_doc.id;
