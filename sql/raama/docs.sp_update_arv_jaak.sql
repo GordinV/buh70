@@ -56,6 +56,8 @@ BEGIN
                      ELSE DOC_STATUS_ACTIVE END
     WHERE id = l_arv_Id;
 
+
+    raise notice 'l_jaak %, l_kpv %', l_jaak, l_kpv;
     RETURN l_jaak;
 END;
 $BODY$

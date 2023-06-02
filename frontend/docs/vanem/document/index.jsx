@@ -162,13 +162,14 @@ class Vanem extends React.PureComponent {
                                       readOnly={!isEditMode}
                             /> : null
                         }
-                        <CheckBox title="Lapse seaduslik esindaja"
-                                  name='kas_esindaja'
-                                  value={Boolean(self.docData.kas_esindaja)}
-                                  ref={'checkbox_kas_esindaja'}
-                                  onChange={self.handleInputChange}
-                                  readOnly={!isEditMode}
-                        />
+                        {self.docData.kas_lasteaed ?
+                            <CheckBox title="Lapse seaduslik esindaja"
+                                      name='kas_esindaja'
+                                      value={Boolean(self.docData.kas_esindaja)}
+                                      ref={'checkbox_kas_esindaja'}
+                                      onChange={self.handleInputChange}
+                                      readOnly={!isEditMode}
+                            /> : null}
 
                     </div>
                 </div>

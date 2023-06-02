@@ -26,6 +26,8 @@ DECLARE
     l_user_id     INTEGER;
     l_aa_id       INTEGER;
     l_tunnus      TEXT;
+    l_nom_id      INTEGER;
+    v_new_nom record;
 BEGIN
     doc_type_id = 'SMK';
 
@@ -62,7 +64,7 @@ BEGIN
     INTO l_user_id
     FROM ou.userid
     WHERE rekvid = l_rekvid
-      AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_id )
+      AND kasutaja IN (SELECT kasutaja FROM ou.userid WHERE id = user_id)
       AND status <> 3
     LIMIT 1;
 
@@ -184,22 +186,20 @@ BEGIN
     v_mk.viitenr = l_viitenumber;
     v_mk.aaid = l_aa_id;
 
-    -- правим признак
-    IF (l_rekvId IN (SELECT id FROM ou.rekv WHERE parentid = 119 OR id = 119))
-    THEN
-        l_tunnus = (SELECT left(nimetus, 7) FROM ou.rekv WHERE id = l_rekvId);
+    SELECT id, properties->>'tegev' as tegev, properties->>'artikkel' as artikkel, properties->>'tunnus' as tunnus
+    into v_new_nom
+                FROM libs.nomenklatuur n
+                WHERE kood IN (SELECT kood FROM libs.nomenklatuur n WHERE id = v_mk1.nomid)
+                  AND rekvid = l_rekvId
+                  AND n.status < 3
+                LIMIT 1;
 
-        IF l_tunnus IS NOT NULL AND exists(SELECT id
-                                           FROM libs.library
-                                           WHERE rekvid = l_rekvid
-                                             AND kood = l_tunnus
-                                             AND status < 3
-                                             AND library = 'TUNNUS')
-        THEN
-            v_mk1.tunnus = l_tunnus;
-        END IF;
+    if v_new_nom.id  is not null then
+        v_mk1.nomid = v_new_nom.id;
+        v_mk1.kood1 = coalesce(v_new_nom.tegev, v_mk1.kood1);
+        v_mk1.kood5 = coalesce(v_new_nom.artikkel, v_mk1.kood5);
+        v_mk1.tunnus = coalesce(v_new_nom.tunnus, v_mk1.tunnus);
     END IF;
-
 
     -- параметры нового платежа
     json_mk1 = array_to_json((SELECT array_agg(row_to_json(v_mk1))));

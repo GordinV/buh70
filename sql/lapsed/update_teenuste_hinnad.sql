@@ -54,6 +54,7 @@ BEGIN
         FROM libs.library l
         WHERE l.library = 'LAPSE_GRUPP'
           AND l.rekvid = l_rekvid
+          and status < 3
           AND l_nom_id IN (
             SELECT qry.nomid
             FROM (
@@ -64,6 +65,8 @@ BEGIN
                   (CASE WHEN n.hind::TEXT = '' THEN '0' ELSE n.hind::TEXT END)::NUMERIC
         )
         LOOP
+            raise notice 'grupp_id %', v_groups.id;
+
             -- salvestame grupp
             SELECT row_to_json(row)
             INTO json_object

@@ -12,6 +12,8 @@ DECLARE
     l_parrallel_id_to   INTEGER;
     l_asendus_user_id   INTEGER;
     l_deleted           BOOLEAN = FALSE;
+    l_jaak              NUMERIC = 0;
+    l_tasu_summa        NUMERIC = 0;
 BEGIN
     -- род. плата , перенос оплат на замещающие услуги
     IF exists(
@@ -20,7 +22,7 @@ BEGIN
                      INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
             WHERE a.parentid IN
                   (SELECT at.doc_arv_id FROM docs.arvtasu at WHERE doc_tasu_id = l_tasu_id AND at.status < 3)
-              AND a.jaak = 0
+--              AND a.jaak = 0
               AND a1.properties ->> 'asendus_id' IS NOT NULL
               AND (a1.properties ->> 'asendus_id')::INTEGER > 0)
     THEN
@@ -37,10 +39,13 @@ BEGIN
                j1.tunnus,
                j1.proj,
                j.kpv,
-               at.doc_arv_id AS doc_arv_id
+               at.doc_arv_id AS doc_arv_id,
+               a.jaak,
+               a.summa
         INTO v_makse
         FROM docs.arvtasu at
                  INNER JOIN docs.doc d ON d.id = at.doc_tasu_id
+                 INNER JOIN docs.arv a ON a.parentid = at.doc_arv_id
                  LEFT OUTER JOIN docs.mk mk ON mk.parentid = d.id
                  LEFT OUTER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
                  LEFT OUTER JOIN docs.journal j ON j.parentid = mk1.journalid
@@ -49,6 +54,25 @@ BEGIN
           AND left(j1.deebet, 6) IN ('100100', '999999')
         ORDER BY j1.id
         LIMIT 1;
+
+        IF v_makse.jaak > 0
+        THEN
+            -- проверка и перерасчет
+            SELECT sum(summa)
+            INTO l_tasu_summa
+            FROM docs.arvtasu arvtasu
+            WHERE arvtasu.doc_arv_Id = v_makse.doc_arv_id
+              AND summa <> 0
+              AND arvtasu.status < 3;
+
+            l_jaak = v_makse.summa - coalesce(l_tasu_summa, 0);
+        END IF;
+
+        IF l_jaak > 0
+        THEN
+            -- сальдо не равно нулю
+            RETURN FALSE;
+        END IF;
 
         FOR v_arv1 IN
             SELECT 0                                            AS id,

@@ -59,7 +59,7 @@ BEGIN
       AND aasta = date_part('year', l_kpv)::INTEGER
       AND rekvid = l_rekvid
 --      AND NOT umberarvestus
-      AND t.properties ->> 'kas_asendus' IS NULL
+      AND t.properties ->> 'asendus_id' is null
       AND staatus < 2;
 
     -- делаем выборку услуг, не предоплатных

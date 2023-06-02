@@ -483,11 +483,11 @@ BEGIN
 
             END IF;
 
-
-            -- проверка на замещение и передачу кассовых доходов
-            PERFORM docs.kassatulude_uleviimine(userid, tnid);
         END LOOP;
-    RAISE NOTICE 'result %',result;
+
+        -- проверка на замещение и передачу кассовых доходов
+        PERFORM docs.kassatulude_uleviimine(userid, tnid);
+
     RETURN;
 END ;
 $BODY$

@@ -233,7 +233,8 @@ BEGIN
                             AND LEFT(j1.deebet, 3) IN ('208', '258')
                             AND j1.kood5 IS NOT NULL
                             AND NOT empty(j1.kood5)
-                      ) qry, params
+                      ) qry,
+                      params
                  UNION ALL
 
 --  текущий год
@@ -285,7 +286,7 @@ BEGIN
                         qry.rahavoog                                                                          AS rahavoog,
                         CASE WHEN qry.tunnus IN ('null', '04', '1.', '3.3', '13') THEN '' ELSE qry.tunnus END AS tunnus,
                         qry.summa                                                                             AS tegelik,
-                        date_part('year', params.kpv)                                                              AS aasta,
+                        date_part('year', params.kpv)                                                         AS aasta,
                         12                                                                                    AS kuu,
                         qry.rekvid                                                                            AS rekv_id,
                         CASE
@@ -332,7 +333,8 @@ BEGIN
                          AND LEFT(j1.deebet, 3) IN ('208', '258')
                          AND j1.kood5 IS NOT NULL
                          AND NOT empty(j1.kood5)
-                      ) qry, params
+                      ) qry,
+                      params
              ),
              qryAasta1 AS (
                  SELECT S.rekv_id                                                                         AS rekvid,
@@ -343,8 +345,10 @@ BEGIN
                         coalesce(s.proj, '')                                                              AS proj,
                         coalesce(s.uritus, '')                                                            AS uritus,
                         sum(S.tegelik)                                                                    AS summa,
-                        1                                                                                 AS idx
-                 FROM tmp_andmik S, params
+                        1                                                                                 AS idx,
+                        NULL::TEXT                                                                        AS selg
+                 FROM tmp_andmik S,
+                      params
                  WHERE aasta = YEAR(params.kpv) - 1
                  GROUP BY S.rekv_id,
                           S.artikkel,
@@ -363,8 +367,10 @@ BEGIN
                         coalesce(s.proj, '')   AS proj,
                         coalesce(s.uritus, '') AS uritus,
                         sum(S.tegelik)         AS summa,
-                        1                      AS idx
-                 FROM tmp_andmik S, params
+                        1                      AS idx,
+                        NULL::TEXT             AS selg
+                 FROM tmp_andmik S,
+                      params
                  WHERE aasta = YEAR(params.kpv)
                  GROUP BY S.rekv_id,
                           S.artikkel,
@@ -388,7 +394,7 @@ BEGIN
                         coalesce(t1.kood4, '')                                                              AS uritus,
                         sum(summa)                                                                          AS summa,
                         sum(oodatav_taitmine)                                                               AS oodatav_taitmine,
-                        NULL::TEXT                                                                          AS selg
+                        string_agg(REPLACE(t1.selg::TEXT, E'\r\n', ''), ' '::TEXT)                          AS selg
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid,
                       params
@@ -455,7 +461,8 @@ BEGIN
                         e.tunnus               AS tunnus,
                         coalesce(t1.proj, '')  AS proj,
                         coalesce(t1.kood4, '') AS uritus,
-                        sum(e.summa)           AS summa
+                        sum(e.summa)           AS summa,
+                        NULL::TEXT             AS selg
                  FROM eelarve.eelarve e
                           INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
                       params
@@ -485,7 +492,8 @@ BEGIN
                         e.tunnus               AS tunnus,
                         coalesce(t1.proj, '')  AS proj,
                         coalesce(t1.kood4, '') AS uritus,
-                        sum(e.summa)           AS summa
+                        sum(e.summa)           AS summa,
+                        NULL::TEXT             AS selg
                  FROM eelarve.eelarve e
                           INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id,
                       params
@@ -556,7 +564,6 @@ BEGIN
                         (qry.eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
                         (qry.eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud,
                         rtrim(qry.selg, E'\r\n')              AS selg
---                        string_agg(rtrim(qry.selg, E'\r\n'), ',')::TEXT AS selg
                  FROM (
                           -- oodatav taitmine
                           SELECT q.rekvid                 AS rekvid,
@@ -574,7 +581,7 @@ BEGIN
                                  0:: NUMERIC(14, 2)       AS aasta_3_prognoos,
                                  0:: NUMERIC(14, 2)       AS eelarve_tekkepohine_kinnitatud,
                                  0::NUMERIC(14, 2)           eelarve_tekkepohine_tapsustatud,
-                                 NULL::TEXT               AS selg
+                                 q.selg::TEXT               AS selg
                           FROM qryAasta8 q
                           UNION ALL
                           SELECT q.rekvid           AS rekvid,
@@ -592,7 +599,7 @@ BEGIN
                                  0                  AS aasta_3_prognoos,
                                  0:: NUMERIC(14, 2) AS eelarve_tekkepohine_kinnitatud,
                                  0::NUMERIC(14, 2)     eelarve_tekkepohine_tapsustatud,
-                                 NULL::TEXT         AS selg
+                                 q.selg::TEXT         AS selg
                           FROM qryAasta1 q
                           UNION ALL
                           SELECT q.rekvid           AS rekvid,
@@ -610,7 +617,7 @@ BEGIN
                                  0                  AS aasta_3_prognoos,
                                  0:: NUMERIC(14, 2) AS eelarve_tekkepohine_kinnitatud,
                                  0::NUMERIC(14, 2)     eelarve_tekkepohine_tapsustatud,
-                                 NULL::TEXT         AS selg
+                                 q.selg::TEXT         AS selg
                           FROM qryAasta2 q
                           UNION ALL
                           SELECT q.rekvid              AS rekv_id,
@@ -664,7 +671,7 @@ BEGIN
                                  0::NUMERIC(14, 2)      AS aasta_3_prognoos,
                                  summa:: NUMERIC(14, 2) AS eelarve_tekkepohine_kinnitatud,
                                  0::NUMERIC(14, 2)         eelarve_tekkepohine_tapsustatud,
-                                 NULL::TEXT             AS selg
+                                 q.selg::TEXT             AS selg
                           FROM qryAasta6 q
                           UNION ALL
                           SELECT rekvid             AS rekv_id,
@@ -682,7 +689,7 @@ BEGIN
                                  0::NUMERIC(14, 2)  AS aasta_3_prognoos,
                                  0:: NUMERIC(14, 2) AS eelarve_tekkepohine_kinnitatud,
                                  summa::NUMERIC(14, 2) eelarve_tekkepohine_tapsustatud,
-                                 NULL::TEXT         AS selg
+                                 q.selg::TEXT         AS selg
                           FROM qryAasta7 q
                       ) qry,
                       params
@@ -743,7 +750,8 @@ BEGIN
                         sum(S.aasta_3_eelnou):: NUMERIC(14, 2)                 AS aasta_3_eelnou,
                         sum(S.aasta_3_prognoos)::NUMERIC(14, 2)                AS aasta_3_prognoos,
                         NULL::TEXT                                             AS selg
-                 FROM qryReport S, params
+                 FROM qryReport S,
+                      params
                  WHERE params.rekv_id = 63
                    AND params.kond = 1 -- только для фин. департамента
                  GROUP BY S.artikkel,

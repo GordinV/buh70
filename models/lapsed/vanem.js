@@ -47,7 +47,12 @@ module.exports = {
                      a.regkood::TEXT                                                                   AS isikukood,
                      a.aadress::TEXT,
                      a.email::TEXT,
-                     a.tel::TEXT
+                     a.tel::TEXT,
+                     exists(
+                             (SELECT id
+                              FROM ou.rekv r
+                              WHERE r.nimetus ILIKE '%lasteaed%' AND r.id = va.rekvid))::BOOLEAN       AS kas_lasteaed
+
               FROM lapsed.vanemad v
                        INNER JOIN libs.asutus a ON a.id = v.asutusId
                        LEFT OUTER JOIN lapsed.vanem_arveldus va ON v.parentid = va.parentid
@@ -73,6 +78,7 @@ module.exports = {
                   null::text as pank,
                   null::text as iban,
                   false as kas_esindaja,
+                  false as kas_lasteaed,
                   null::text as muud`,
         query: null,
         multiple: false,
