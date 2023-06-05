@@ -81,7 +81,7 @@ module.exports = {
                     FROM report
                     ORDER BY asutus,lapse_nimi, 
                         case when left(arv_period,1) = 'A' then 'a' when  left(arv_period,1) = 'L' then 'l' else 'k'  end,
-                        arv_period`,
+                        period`,
         params: ['rekvid', 'userid', 'period_start', 'period_end', 'lapse_isikukood','lapse_nimi','viitenumber'],
         min_params: 5,
         notReloadWithoutParameters: true,
