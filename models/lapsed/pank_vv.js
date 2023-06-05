@@ -85,6 +85,7 @@ module.exports = {
                              LEFT OUTER JOIN ou.rekv r ON r.id = mk.rekvid
                              LEFT OUTER JOIN ou.userid u ON u.id = $2
                     WHERE coalesce(v.selg,'') not like '%intres%'
+                      and v.isikukood  not in ('75024260')
                     ORDER BY id DESC`,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
         alias: 'curPankVV'

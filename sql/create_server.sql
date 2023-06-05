@@ -1,3 +1,5 @@
+drop EXTENSION postgres_fdw  CASCADE ;
+
 CREATE EXTENSION postgres_fdw;
 
 CREATE SERVER dbarch_narva_ee FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host '213.184.47.198', dbname 'narvalv', port '5436');

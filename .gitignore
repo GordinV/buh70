@@ -49,3 +49,6 @@ config/default.json
 #ssl
 *.key
 *.crt
+
+#exe
+*.exe
