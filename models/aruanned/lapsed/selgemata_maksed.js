@@ -35,7 +35,7 @@ module.exports = {
                                    LEFT OUTER JOIN lapsed.viitenr v ON vv.viitenumber = v.viitenumber
                           WHERE coalesce(doc_id,0) = 0 
                             and coalesce(vv.selg,'') not ilike '%intres%'
-                            and v.isikukood  not in ('75024260')                            
+                            AND coalesce(vv.isikukood,'') NOT in ('75024260')
                             AND kpv >= '2022-01-01'
                             AND NOT left(coalesce(markused, ''), 4) = 'Kuni'
                          )
