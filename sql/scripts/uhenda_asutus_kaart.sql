@@ -6,19 +6,19 @@ CREATE FUNCTION uhenda_asutus_kaart(oige_id INTEGER, vale_id INTEGER)
 AS
 $$
 DECLARE
-    v_vn    RECORD;
-    l_count INTEGER = 0;
+    v_vn          RECORD;
+    l_count       INTEGER = 0;
+    v_oige_asutus RECORD;
+    v_vale_asutus RECORD;
 BEGIN
-    /*
-    select * from libs.asutus where regkood = '49607193722' and staatus < 3 ;
-    -- oige 41813
-    -- vale 5269, 30971
 
-     */
     IF NOT exists(SELECT id FROM libs.asutus WHERE id = oige_id AND staatus < 3)
     THEN
         RAISE EXCEPTION 'Õige valik puudub või kustutatud';
     END IF;
+
+    SELECT * INTO v_oige_asutus FROM libs.asutus WHERE id = oige_id;
+    SELECT * INTO v_vale_asutus FROM libs.asutus WHERE id = vale_id;
 
     -- journal
     IF exists(SELECT id FROM docs.journal WHERE asutusid = vale_id)
@@ -154,6 +154,20 @@ BEGIN
         UPDATE hooldekodu.hoouhendused SET isikid = oige_id WHERE isikid = vale_id;
     END IF;
 
+    -- email kontrol
+    IF empty(v_oige_asutus.email) AND NOT empty(v_vale_asutus.email) AND exists(
+            SELECT 1
+            FROM docs.arv arv
+                     INNER JOIN ou.logs l ON l.doc_id = arv.parentid
+            WHERE arv.asutusid = vale_id
+        )
+    THEN
+
+        -- есть верифицированная почта
+        UPDATE libs.asutus SET email = v_vale_asutus.email WHERE id = oige_id AND empty(email);
+
+    END IF;
+
     -- vanem
     IF exists(SELECT id FROM lapsed.vanemad WHERE asutusid = vale_id AND staatus < 3)
     THEN
@@ -176,12 +190,21 @@ END;
 $$;
 
 /*
-SELECT uhenda_asutus_kaart(41813, 30971)
+SELECT uhenda_asutus_kaart(4228, 5866)
+
+select * from libs.asutus where regkood like '%38411063726%'
 
 
-select * from lapsed.vanemad where asutusid in (41813, 30971)
+select * from lapsed.vanemad where asutusid in (16682, 14309) order by parentid
+delete from lapsed.vanemad where id in (5658)
+
+select * from lapsed.vanem_arveldus where asutusid in (16682, 14309) order by parentid
+delete from lapsed.vanem_arveldus where id in (22965)
+
+select * from ou.logs where doc_id in (select id from docs.arv where asutusid = 11158)
 
 update lapsed.vanemad set staatus = 3 where id = 284
 */
 
+select * from lapsed.pank_vv where selg ilike '%0670108264%'
 --30971
