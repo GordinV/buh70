@@ -176,7 +176,8 @@ const Arv = {
                                            ON va.asutusid = a.asutusid AND va.rekvid = d.rekvid AND va.parentid = l.id
                                                AND va.parentid = l.id
 
-                  WHERE d.id in (SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER)                  
+                  WHERE d.id in (SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER)
+                  and arved.rekvid = d.rekvid                  
                   )
                 SELECT doc.*,
                     coalesce((doc.kaibed->0 ->> 'alg_db')::NUMERIC, 0) -

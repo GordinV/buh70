@@ -190,21 +190,28 @@ END;
 $$;
 
 /*
-SELECT uhenda_asutus_kaart(4228, 5866)
+--update libs.asutus set regkood = '47209243719' where id = 29519
 
-select * from libs.asutus where regkood like '%38411063726%'
+SELECT uhenda_asutus_kaart(16682, 16891)
+
+select * from libs.asutus where regkood like '%47505233713%'
+
+37210122248
 
 
-select * from lapsed.vanemad where asutusid in (16682, 14309) order by parentid
-delete from lapsed.vanemad where id in (5658)
+select staatus, * from lapsed.vanemad where asutusid in (31668, 7063)
+--and staatus < 3
+order by parentid
 
-select * from lapsed.vanem_arveldus where asutusid in (16682, 14309) order by parentid
-delete from lapsed.vanem_arveldus where id in (22965)
+delete from lapsed.vanemad where id in (3864, 9940)
 
-select * from ou.logs where doc_id in (select id from docs.arv where asutusid = 11158)
+select * from lapsed.vanem_arveldus where asutusid in (31668, 7063) order by parentid
+delete from lapsed.vanem_arveldus where id in (20525,24352 )
+
+select * from ou.logs where doc_id in (select parentid from docs.arv where asutusid = 5461)
 
 update lapsed.vanemad set staatus = 3 where id = 284
+
+select * from palk.tooleping where parentid = 29913
 */
 
-select * from lapsed.pank_vv where selg ilike '%0670108264%'
---30971

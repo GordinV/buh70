@@ -23,6 +23,7 @@ DECLARE
     json_props         JSONB;
     json_ajalugu       JSONB;
     l_prev_arv_isik_id INTEGER;
+    v_eelmise_vanem record; -- прежнее состояние
 
 BEGIN
 
@@ -55,6 +56,15 @@ BEGIN
                                 AND va.rekvid = user_rekvid
                                 AND va.arveldus
                               LIMIT 1);
+    END IF;
+
+    if l_prev_arv_isik_id <> doc_asutusid then
+        -- происходит смена ответственного, проверяем на не отправленные счета
+        if exists (select id from lapsed.cur_laste_arved a where asutusid = l_prev_arv_isik_id  and not a.kas_esitatud and rekvid = user_rekvid) then
+            -- ошибка. нельзя менять ответственного, пока есть не отправленные счета
+            RAISE EXCEPTION 'Viga: Olemas mitte saadetud arveid';
+
+        END IF;
     END IF;
 
     json_props = to_jsonb(row)
