@@ -10,14 +10,19 @@ module.exports = {
         add: ['kasutaja', 'peakasutaja'],
         edit: ['kasutaja', 'peakasutaja'],
         view: ['arvestaja','kasutaja', 'peakasutaja'],
-        delete: ['kasutaja', 'peakasutaja']
+        delete: ['kasutaja', 'peakasutaja'],
+        generatePaymentOrder: ['kasutaja', 'peakasutaja'],
+        generateCashOrder:['kasutaja', 'peakasutaja'],
+        ebatoenaolised: ['kasutaja', 'peakasutaja']
     },
     SMK: {
         select: ['kasutaja', 'arvestaja', 'vaatleja', 'peakasutaja'],
         add: ['kasutaja', 'peakasutaja'],
         edit: ['kasutaja', 'peakasutaja'],
         delete: ['kasutaja', 'peakasutaja'],
-        import: ['admin']
+        import: ['admin'],
+        KoostaTagasimakse: ['kasutaja', 'peakasutaja'],
+        KoostaUlekanneMakse: ['kasutaja', 'peakasutaja']
     },
     PANK_VV: {
         select: ['kasutaja', 'arvestaja', 'vaatleja', 'peakasutaja'],
