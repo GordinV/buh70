@@ -23,7 +23,8 @@ DECLARE
     json_props         JSONB;
     json_ajalugu       JSONB;
     l_prev_arv_isik_id INTEGER;
-    v_eelmise_vanem record; -- прежнее состояние
+    v_eelmise_vanem    RECORD; -- прежнее состояние
+    json_va_props      JSONB;
 
 BEGIN
 
@@ -58,13 +59,20 @@ BEGIN
                               LIMIT 1);
     END IF;
 
-    if l_prev_arv_isik_id <> doc_asutusid then
+    IF l_prev_arv_isik_id <> doc_asutusid
+    THEN
         -- происходит смена ответственного, проверяем на не отправленные счета
-        if exists (select id from lapsed.cur_laste_arved a where asutusid = l_prev_arv_isik_id  and not a.kas_esitatud and rekvid = user_rekvid) then
+        IF exists(SELECT id FROM lapsed.cur_laste_arved a WHERE asutusid = l_prev_arv_isik_id AND NOT a.kas_esitatud)
+        THEN
             -- ошибка. нельзя менять ответственного, пока есть не отправленные счета
             RAISE EXCEPTION 'Viga: Olemas mitte saadetud arveid';
 
         END IF;
+    END IF;
+
+    -- контроль за наличием каналов отправки счета
+    if (doc_arved and not doc_kas_paberil and not doc_kas_email and not doc_kas_earve) then
+        RAISE EXCEPTION 'Viga: mitte ühtegi arvelduse kanal märgistatud';
     END IF;
 
     json_props = to_jsonb(row)
@@ -72,7 +80,7 @@ BEGIN
                               doc_arved        AS arved,
                               doc_kas_paberil  AS kas_paberil,
                               doc_kas_email    AS kas_email,
-                              doc_email_alates as email_alates,
+                              doc_email_alates AS email_alates,
                               doc_kas_esindaja AS kas_esindaja
                       ) row;
 
@@ -139,6 +147,8 @@ BEGIN
     END IF;
 
 -- arveldused
+    json_va_props = json_build_object('kas_earve', doc_kas_earve, 'pank', doc_pank, 'iban', doc_iban, 'email_alates', doc_email_alates);
+
     IF exists(SELECT id
               FROM lapsed.vanem_arveldus
               WHERE parentid = doc_parentid
@@ -147,15 +157,16 @@ BEGIN
     THEN
 
         UPDATE lapsed.vanem_arveldus
-        SET arveldus   = doc_arved,
-            properties = json_build_object('kas_earve', doc_kas_earve, 'pank', doc_pank, 'iban', doc_iban)
+        SET arveldus    = doc_arved,
+            kas_email   = doc_kas_email,
+            kas_paberil = doc_kas_paberil,
+            properties  = coalesce(properties, '{}'::JSONB)::JSONB || json_va_props
         WHERE parentid = doc_parentid
           AND asutusid = doc_asutusid
           AND rekvid = user_rekvid;
     ELSE
         INSERT INTO lapsed.vanem_arveldus (parentid, asutusid, rekvid, arveldus, properties)
-        VALUES (doc_parentid, doc_asutusid, user_rekvid, doc_arved,
-                json_build_object('kas_earve', doc_kas_earve, 'pank', doc_pank, 'iban', doc_iban));
+        VALUES (doc_parentid, doc_asutusid, user_rekvid, doc_arved, json_va_props);
 
     END IF;
 

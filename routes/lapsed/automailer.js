@@ -79,8 +79,8 @@ const automailer = async () => {
                AND a.kpv < params.kpv2
                AND d.status <> 3
                AND d.doc_type_id IN (SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood = 'ARV')
-               AND coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN
-               AND (v.properties ->> 'email_alates' is null or (v.properties ->> 'email_alates')::date <= current_date)
+               AND va.kas_email
+               AND (va.properties ->> 'email_alates' is null or (va.properties ->> 'email_alates')::date <= current_date)
                and d.history::text not ilike '%email%'
                AND a.rekvid IN (SELECT id FROM ou.rekv WHERE parentid = 119)
                AND kas_lubatud.kas_alusta

@@ -17,11 +17,11 @@ SELECT a.id                                                                AS va
                                            WHEN NOT coalesce(va.arveldus::BOOLEAN, FALSE) THEN ''
                                            ELSE (
                                                                CASE
-                                                                   WHEN (v.properties ->> 'kas_email')::BOOLEAN
+                                                                   WHEN va.kas_email
                                                                        THEN 'email;'
                                                                    ELSE '' END ||
                                                                CASE
-                                                                   WHEN (v.properties ->> 'kas_paberil')::BOOLEAN
+                                                                   WHEN va.kas_paberil
                                                                        THEN 'paber;'
                                                                    ELSE '' END ||
                                                                CASE

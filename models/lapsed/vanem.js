@@ -29,11 +29,11 @@ module.exports = {
                      v.asutusid,
                      coalesce((va.arveldus)::BOOLEAN, FALSE)::BOOLEAN                                  AS arved,
                      v.properties ->> 'suhtumine'                                                      AS suhtumine,
-                     coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN               AS kas_paberil,
+                     va.kas_paberil                                                                    AS kas_paberil,
                      coalesce((va.properties ->> 'kas_earve')::BOOLEAN, FALSE)::BOOLEAN                AS kas_earve,
                      (va.properties ->> 'pank')::TEXT                                                  AS pank,
                      (va.properties ->> 'iban')::TEXT                                                  AS iban,
-                     coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN                 AS kas_email,
+                     va.kas_email                                                                      AS kas_email,
                      to_char(CASE
                                  WHEN NOT coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN
                                      THEN gomonth(make_date(year(current_date), month(current_date), 1), 1)
@@ -51,7 +51,8 @@ module.exports = {
                      exists(
                              (SELECT id
                               FROM ou.rekv r
-                              WHERE r.nimetus ILIKE '%lasteaed%' AND r.id = va.rekvid))::BOOLEAN       AS kas_lasteaed
+                              WHERE r.nimetus ILIKE '%lasteaed%'
+                                AND r.id = va.rekvid))::BOOLEAN                                        AS kas_lasteaed
 
               FROM lapsed.vanemad v
                        INNER JOIN libs.asutus a ON a.id = v.asutusId

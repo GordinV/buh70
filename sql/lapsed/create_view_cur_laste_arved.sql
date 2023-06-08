@@ -28,8 +28,8 @@ SELECT d.id                                                                     
            AND NOT ((a.properties ->> 'ettemaksu_period') IS NOT NULL
            AND
                     a.properties ->> 'tyyp' IS NULL)                                          AS kas_earved,
-       coalesce((v.properties ->> 'kas_email')::BOOLEAN, FALSE)::BOOLEAN                      AS kas_email,
-       coalesce((v.properties ->> 'kas_paberil')::BOOLEAN, FALSE)::BOOLEAN                    AS kas_paberil,
+       va.kas_email                                                                           AS kas_email,
+       va.kas_paberil                                                                         AS kas_paberil,
        coalesce((va.properties ->> 'pank'), ''):: TEXT                                        AS pank,
        CASE
            WHEN coalesce((a.properties ->> 'ebatoenaolised_2_id')::INTEGER, 0) > 0 THEN '100'
@@ -39,7 +39,7 @@ SELECT d.id                                                                     
                       FROM jsonb_array_elements(history) elem
                       WHERE (elem ?| ARRAY ['print','email','earve'])))::BOOLEAN              AS kas_esitatud,
        l.id                                                                                   AS laps_id,
-       a.id as arv_id
+       a.id                                                                                   AS arv_id
 FROM docs.doc d
          INNER JOIN docs.arv a ON a.parentId = d.id
          INNER JOIN lapsed.liidestamine ld ON ld.docid = d.id
