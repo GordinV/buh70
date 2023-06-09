@@ -201,7 +201,11 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                 auth: {
                     user: l_user_mail,
                     pass: l_pass
+                },
+                tls: {
+                    rejectUnauthorized: false
                 }
+
             });
 
             let now = new Date();
