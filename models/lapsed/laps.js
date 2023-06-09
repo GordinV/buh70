@@ -20,30 +20,35 @@ module.exports = {
 
     select: [
         {
-            sql: `
-                SELECT l.id,
-                       l.isikukood,
-                       l.nimi,
-                       l.muud,
-                       lapsed.get_viitenumber((SELECT rekvid
-                                               FROM ou.userid
-                                               WHERE id = $2), l.id)    AS viitenumber,
-                       $2::INTEGER                                      AS userid,
-                       coalesce(ll.jaak, 0)::NUMERIC                    AS jaak,
-                       (l.properties ->> 'eritunnus')::TEXT                     AS eritunnus,
-                       coalesce((SELECT count(id)
-                                 FROM lapsed.vanem_arveldus va
-                                 WHERE parentid = l.id
-                                   AND arveldus
-                                   AND rekvid IN (SELECT rekvid
-                                                  FROM ou.userid u
-                                                  WHERE u.id = $2)), 0) AS arveldus
-                FROM lapsed.laps l
-                         LEFT OUTER JOIN lapsed.lapse_saldod(current_date, $1) ll ON ll.laps_id = l.id AND
-                                                                                     ll.rekv_id IN (SELECT rekvid
-                                                                                                    FROM ou.userid u
-                                                                                                    WHERE u.id = $2)
-                WHERE l.id = $1::INTEGER`,
+            sql: `WITH params AS (
+                        SELECT (SELECT rekvid
+                                FROM ou.userid u
+                                WHERE u.id = $2::integer) AS rekv_id,
+                               $1::integer                AS laps_id
+                    ),
+                         ll AS (
+                             SELECT sum(jaak) AS jaak
+                             FROM params,
+                                  lapsed.lapse_saldod(current_date, params.laps_id, params.rekv_id)
+                         )
+                    SELECT l.id,
+                           l.isikukood,
+                           l.nimi,
+                           l.muud,
+                           lapsed.get_viitenumber((SELECT rekvid
+                                                   FROM ou.userid
+                                                   WHERE id = 5391), l.id)     AS viitenumber,
+                           $2::INTEGER                                      AS userid,
+                           coalesce(ll.jaak, 0)::NUMERIC(12,2) AS jaak,
+                           (l.properties ->> 'eritunnus')::TEXT                AS eritunnus,
+                           coalesce((SELECT count(id)
+                                     FROM lapsed.vanem_arveldus va
+                                     WHERE parentid = l.id
+                                       AND arveldus
+                                       AND rekvid = params.rekv_id), 0)        AS arveldus
+                    FROM params,
+                         lapsed.laps l, ll 
+                    WHERE l.id = params.laps_id::INTEGER`,
             sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid,

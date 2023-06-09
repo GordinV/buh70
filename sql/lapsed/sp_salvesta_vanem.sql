@@ -15,7 +15,9 @@ DECLARE
     doc_kas_paberil    BOOLEAN = coalesce((doc_data ->> 'kas_paberil')::BOOLEAN, FALSE);
     doc_kas_email      BOOLEAN = coalesce((doc_data ->> 'kas_email')::BOOLEAN, FALSE);
     doc_kas_earve      BOOLEAN = coalesce((doc_data ->> 'kas_earve')::BOOLEAN, FALSE);
-    doc_email_alates   DATE    = doc_data ->> 'email_alates';
+    doc_email_alates   DATE    = CASE
+                                     WHEN doc_data ->> 'email_alates' = '' THEN NULL::DATE
+                                     ELSE (doc_data ->> 'email_alates')::DATE END;
     doc_pank           TEXT    = doc_data ->> 'pank';
     doc_iban           TEXT    = doc_data ->> 'iban';
     doc_kas_esindaja   BOOLEAN = coalesce((doc_data ->> 'kas_esindaja')::BOOLEAN, FALSE);
@@ -71,7 +73,8 @@ BEGIN
     END IF;
 
     -- контроль за наличием каналов отправки счета
-    if (doc_arved and not doc_kas_paberil and not doc_kas_email and not doc_kas_earve) then
+    IF (doc_arved AND NOT doc_kas_paberil AND NOT doc_kas_email AND NOT doc_kas_earve)
+    THEN
         RAISE EXCEPTION 'Viga: mitte ühtegi arvelduse kanal märgistatud';
     END IF;
 
@@ -147,7 +150,8 @@ BEGIN
     END IF;
 
 -- arveldused
-    json_va_props = json_build_object('kas_earve', doc_kas_earve, 'pank', doc_pank, 'iban', doc_iban, 'email_alates', doc_email_alates);
+    json_va_props = json_build_object('kas_earve', doc_kas_earve, 'pank', doc_pank, 'iban', doc_iban, 'email_alates',
+                                      doc_email_alates);
 
     IF exists(SELECT id
               FROM lapsed.vanem_arveldus
@@ -158,15 +162,15 @@ BEGIN
 
         UPDATE lapsed.vanem_arveldus
         SET arveldus    = doc_arved,
-            kas_email   = doc_kas_email,
-            kas_paberil = doc_kas_paberil,
+            kas_email   = coalesce(doc_kas_email, FALSE),
+            kas_paberil = coalesce(doc_kas_paberil, TRUE),
             properties  = coalesce(properties, '{}'::JSONB)::JSONB || json_va_props
         WHERE parentid = doc_parentid
           AND asutusid = doc_asutusid
           AND rekvid = user_rekvid;
     ELSE
-        INSERT INTO lapsed.vanem_arveldus (parentid, asutusid, rekvid, arveldus, properties)
-        VALUES (doc_parentid, doc_asutusid, user_rekvid, doc_arved, json_va_props);
+        INSERT INTO lapsed.vanem_arveldus (parentid, asutusid, rekvid, arveldus, properties, kas_email, kas_paberil)
+        VALUES (doc_parentid, doc_asutusid, user_rekvid, doc_arved, json_va_props, FALSE, TRUE);
 
     END IF;
 
