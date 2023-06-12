@@ -35,9 +35,7 @@ module.exports = {
                            l.isikukood,
                            l.nimi,
                            l.muud,
-                           lapsed.get_viitenumber((SELECT rekvid
-                                                   FROM ou.userid
-                                                   WHERE id = 5391), l.id)     AS viitenumber,
+                           lapsed.get_viitenumber(params.rekv_id, l.id)     AS viitenumber,
                            $2::INTEGER                                      AS userid,
                            coalesce(ll.jaak, 0)::NUMERIC(12,2) AS jaak,
                            (l.properties ->> 'eritunnus')::TEXT                AS eritunnus,

@@ -53,6 +53,21 @@ BEGIN
 
     END IF;
 
+    -- нельзя удалять отправленный по эл. каналам счет
+    IF exists(
+            SELECT id
+            FROM docs.doc
+            WHERE id = doc_id
+              AND (history::TEXT LIKE '%"email":%'
+                OR history::TEXT LIKE '%"earve":%'))
+    THEN
+
+        error_code = 5;
+        error_message = 'Viga: Arve oli esitatud, kustutamine keelatud';
+        result = 0;
+        RAISE EXCEPTION 'Viga: Arve oli esitatud, kustutamine keelatud';
+    END IF;
+
 
     -- проверка на права. Предполагает наличие прописанных прав на удаление для данного пользователя в поле rigths
 
@@ -167,7 +182,7 @@ BEGIN
     IF (SELECT (properties ->> 'arve_id') AS arve_id
         FROM docs.arv1 a1
         WHERE a1.parentid IN (SELECT id FROM docs.arv WHERE parentid = v_doc.id)
-            LIMIT 1) IS NOT NULL
+        LIMIT 1) IS NOT NULL
     THEN
         -- есть ссылка, надо снять
         UPDATE docs.doc
