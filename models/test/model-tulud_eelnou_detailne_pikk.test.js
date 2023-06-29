@@ -7,12 +7,12 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-describe('dok. type TULUD_EELNOU tests', function () {
+describe('dok. type TULUD_EELNOU pikk tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../aruanned/eelarve/tulud_eelnou_detailne'),
-        docTypeId = 'TULUD_EELNOU'.toLowerCase(),
-        modelForExport = 'aruanned/eelarve/tulud_eelnou_detailne';
+    const doc = require('../aruanned/eelarve/tulud_eelnou_detailne_pikk'),
+        docTypeId = 'TULUD_EELNOU_PIKK'.toLowerCase(),
+        modelForExport = 'aruanned/eelarve/tulud_eelnou_detailne_pikk';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -56,8 +56,8 @@ describe('dok. type TULUD_EELNOU tests', function () {
         });
     });
 
-    it.skip('doc type library should contain TULUD_EELNOU_PIKK doc.type', async () => {
-        let sql = `select id from libs.library where kood = 'TULUD_EELNOU_PIKK' and  library = 'DOK' limit 1`;
+    it.skip('doc type library should contain TULUD_EELNOU doc.type', async () => {
+        let sql = `select id from libs.library where kood = 'TULUD_EELNOU' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;

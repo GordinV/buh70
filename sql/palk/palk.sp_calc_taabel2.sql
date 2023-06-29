@@ -157,8 +157,6 @@ BEGIN
                                     AND p.kpv2 <= make_date(year(l_kpv), month(l_kpv), l_lopp_paev) )
                              ) * 3;
 
-        raise notice 'l_tahtpaeva_tunnid %, l_kpv %, l_alg_paev %, l_lopp_paev %', l_tahtpaeva_tunnid, l_kpv, l_alg_paev, l_lopp_paev;
-
         l_toopaevad = (SELECT palk.get_work_days(l_params::JSON));
 
         l_hours = l_toopaevad * v_Tooleping.toopaev - l_tahtpaeva_tunnid;

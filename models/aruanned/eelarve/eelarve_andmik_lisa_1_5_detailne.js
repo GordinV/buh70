@@ -12,15 +12,20 @@ module.exports = {
         ],
         sqlString: `SELECT report.idx:: VARCHAR(20),
                            report.rekvid:: INTEGER,
-                           report.tegev:: VARCHAR(20),
+                           report.tegevus:: VARCHAR(20),
                            report.allikas:: VARCHAR(20),
                            report.artikkel:: VARCHAR(20),
                            report.nimetus:: VARCHAR(254),
                            report.kassa:: NUMERIC(14, 2),
-                           r.nimetus::VARCHAR(254) AS asutus
+                           r.nimetus::VARCHAR(254) AS asutus,
+                           report.tunnus
                     FROM eelarve.eelarve_andmik_lisa_1_5_detailne($1::DATE, $2::INTEGER,
                                                                   $3::INTEGER) report
-                             LEFT OUTER JOIN ou.rekv r ON r.id = report.rekvid`,     // $1 - kpv $2 - rekvid, $3 - kond
+                             LEFT OUTER JOIN (SELECT id, nimetus
+                                              FROM ou.rekv
+                                              UNION ALL
+                                              SELECT 999 AS id, 'Kokku' AS nimetus
+                    ) r ON r.id = report.rekvid`,     // $1 - kpv $2 - rekvid, $3 - kond
         params: '',
         alias: 'eelarve_andmik_lisa_1_5_report'
     },

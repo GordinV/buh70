@@ -130,6 +130,8 @@ BEGIN
 
             l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
 
+            raise notice 'l_puudu_paevad %', l_puudu_paevad;
+
 
             IF coalesce(l_puudu_paevad, 0) > 0
             THEN
@@ -201,6 +203,8 @@ BEGIN
             THEN
                 l_sotsmaks_min_palgast = (l_min_palk * l_min_sots * l_pk_summa * 0.01);
             END IF;
+
+            raise notice 'l_sotsmaks_min_palgast %, l_min_palk %, l_min_sots %,l_puudu_paevad %', l_sotsmaks_min_palgast, l_min_palk, l_min_sots, l_puudu_paevad;
 
             IF l_sotsmaks_min_palgast > l_enne_arvestatud_sotsmaks_palgast -- Поправка 17.06.2022 . Берем в зачет только соц. налог без учета отпускных
             THEN

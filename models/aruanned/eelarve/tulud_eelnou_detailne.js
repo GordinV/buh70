@@ -11,7 +11,7 @@ module.exports = {
             {id: "lopp_kr", name: "Lõpp kreedit", width: "200px"}
         ],
         sqlString: `WITH preReport AS (
-                        SELECT * FROM eelarve.tulud_eelnou($1::DATE, $2::INTEGER, $3::INTEGER)
+                        SELECT * FROM eelarve.tulud_eelnou($1::DATE, $2::INTEGER, $3::INTEGER,$4::jsonb)
                     ),
          qryKond AS (
              SELECT rekv_id,

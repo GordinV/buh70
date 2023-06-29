@@ -31,6 +31,11 @@ DECLARE
     a_MuudKulud                                TEXT[] = ARRAY ['601','608'];
     a_PohivaraSoetus                           TEXT[] = ARRAY ['155','156','157','158','4502','1501','1511','1531','650'];
     a_FinanseerimisTegevus                     TEXT[] = ARRAY ['2586'];
+    kas_ainult_aktsepteeritud                  BOOLEAN   = coalesce((l_params ->> 'taotlus_statusid')::BOOLEAN, FALSE);
+    taotlus_statusid                           INTEGER[] = CASE
+                                                               WHEN kas_ainult_aktsepteeritud THEN ARRAY [3]
+                                                               ELSE ARRAY [0,1,2,3] END;
+
 BEGIN
     -- оздаем выборку данных для отчета
     -- eelmise aasta
@@ -84,7 +89,8 @@ BEGIN
                                    params
                               WHERE t1.tunnus IS NOT NULL
                                 AND NOT empty(t1.tunnus)
-                                AND t.status IN (3)
+--                                AND t.status IN (3)
+                                AND t.status IN (SELECT unnest(taotlus_statusid))
                                 AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                                 AND t.aasta IN (YEAR(params.kpv) - 1, YEAR(params.kpv), YEAR(params.kpv) + 1)
                                 AND t1.kood2 NOT LIKE ('%RF%')
@@ -399,7 +405,8 @@ BEGIN
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid,
                       params
                  WHERE t.aasta = YEAR(params.kpv) + 1
-                   AND t.status IN (3)
+--                   AND t.status IN (3)
+                   AND t.status IN (SELECT unnest(taotlus_statusid))
                    AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                    AND t1.kood2 NOT ILIKE ('%RF%')
                    AND t1.kood2 ILIKE params.allikas
@@ -434,7 +441,8 @@ BEGIN
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid,
                       params
                  WHERE t.aasta = YEAR(params.kpv) + 1
-                   AND t.status IN (3)
+--                   AND t.status IN (3)
+                   AND t.status IN (SELECT unnest(taotlus_statusid))
                    AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                    AND t1.kood2 NOT ILIKE ('%RF%')
                    AND t1.kood2 ILIKE params.allikas
@@ -527,7 +535,8 @@ BEGIN
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid,
                       params
                  WHERE t.aasta = YEAR(params.kpv) + 1
-                   AND t.status IN (3)
+--                   AND t.status IN (3)
+                   AND t.status IN (SELECT unnest(taotlus_statusid))
                    AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                    AND t1.kood2 NOT ILIKE ('%RF%')
                    AND t1.kood2 ILIKE params.allikas
@@ -904,9 +913,9 @@ GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou_detailne(DATE, INTEGER, INTEGER,J
 
 /*
 SELECT  *
-FROM eelarve.kulud_eelnou_detailne('2023-03-31'::DATE, 63:: INTEGER, 1)
-where aasta_2_oodatav_taitmine > 0
-ORDER BY rekv_id, ARTIKKEL, tegev, TUNNUS
+FROM eelarve.kulud_eelnou_detailne('2022-12-31'::DATE, 64:: INTEGER, 0, jsonb_build_object('taotlus_statusid', 0))
+where artikkel = '506'
+and tegev = '07600'
 
 */--where idx = 100
 

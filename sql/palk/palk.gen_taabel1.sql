@@ -4,11 +4,11 @@ DROP FUNCTION IF EXISTS palk.gen_taabel1(user_id INTEGER, params JSON);
 DROP FUNCTION IF EXISTS palk.gen_taabel1_(user_id INTEGER, params JSON);
 
 CREATE FUNCTION palk.gen_taabel1(IN user_id INTEGER,
-                                  IN params JSON,
-                                  OUT error_code INTEGER,
-                                  OUT result INTEGER,
-                                  OUT error_message TEXT,
-                                  OUT data JSONB)
+                                 IN params JSON,
+                                 OUT error_code INTEGER,
+                                 OUT result INTEGER,
+                                 OUT error_message TEXT,
+                                 OUT data JSONB)
     RETURNS RECORD
     LANGUAGE plpgsql
 AS
@@ -134,17 +134,18 @@ BEGIN
                 END IF;
             ELSE
                 --delete
+                l_result = l_result + 1;
                 IF coalesce(l_id, 0) > 0
                 THEN
                     -- delete previous table version
                     PERFORM palk.sp_delete_palk_taabel(user_id, l_id);
                 END IF;
 
-                v_tulemus.error_code = 0;
+/*                v_tulemus.error_code = 0;
                 v_tulemus.error_message = v_tulemus.error_message || ',' || ' taabel on tühi';
                 l_params = to_jsonb(v_tulemus);
                 data = coalesce(data, '[]'::JSONB) || l_params::JSONB;
-
+*/
             END IF;
 
         END LOOP;

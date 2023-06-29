@@ -52,7 +52,6 @@ exports.get = async (req, res) => {
         // установим таймаут для ожидания тяжелых отчетов
         res.setTimeout(400000);
 
-        const printTemplates = doc.config.print;
 
         let templateObject;
 
@@ -93,12 +92,12 @@ exports.get = async (req, res) => {
         });
 
         docData.data.details = {...detailsData.data};
-
+        let printTemplates = docData.data.tunnus ? 'taotlus_hidden_oodav': 'taotlus';
         // вернуть отчет
         if (isPdf) {
             var printHtml;
 
-            res.render('taotlus', {data: docData.data, user: user, filter: filterData}, (err, html) => {
+            res.render(printTemplates, {data: docData.data, user: user, filter: filterData}, (err, html) => {
                 printHtml = html;
             });
 
@@ -123,8 +122,7 @@ exports.get = async (req, res) => {
 
         } else {
             // вернуть отчет
-            res.render('taotlus', {title: 'Report', data: docData.data, user: user, filter: filterData});
-
+            res.render(printTemplates, {title: 'Report', data: docData.data, user: user, filter: filterData});
         }
 
     } catch (error) {

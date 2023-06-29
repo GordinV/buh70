@@ -21,15 +21,20 @@ CREATE OR REPLACE FUNCTION eelarve.kulud_eelnou(l_kpv DATE, l_rekvid INTEGER, l_
 AS
 $$
 DECLARE
-    a_Sotsiaaltoetused                         TEXT[] = ARRAY ['4130','4131','4132','4133','4134','4137','4138','4139'];
-    a_SihtotstarbelisedToetusedTegevuskuludeks TEXT[] = ARRAY ['4500'];
-    a_MittesihtotstarbelisedToetused           TEXT[] = ARRAY ['452'];
-    a_Toojoukulud                              TEXT[] = ARRAY ['5000','5001','5002','5005','5008','505','506'];
-    a_Majandamiskulud                          TEXT[] = ARRAY ['5500','5502','5503','5504','5511','5512','5513','5514','5515','5516','5521','5522','5523','5524','5525','5526','5529','5531','5532','5539','5540'];
-    a_MuudKulud                                TEXT[] = ARRAY ['601','608'];
-    a_PohivaraSoetus                           TEXT[] = ARRAY ['155','156','157','158','4502','1501','1511','1531','650'];
-    a_FinanseerimisTegevus                     TEXT[] = ARRAY ['2586'];
-    l_allikas                                  TEXT   = l_params ->> 'allikas';
+    a_Sotsiaaltoetused                         TEXT[]    = ARRAY ['4130','4131','4132','4133','4134','4137','4138','4139'];
+    a_SihtotstarbelisedToetusedTegevuskuludeks TEXT[]    = ARRAY ['4500'];
+    a_MittesihtotstarbelisedToetused           TEXT[]    = ARRAY ['452'];
+    a_Toojoukulud                              TEXT[]    = ARRAY ['5000','5001','5002','5005','5008','505','506'];
+    a_Majandamiskulud                          TEXT[]    = ARRAY ['5500','5502','5503','5504','5511','5512','5513','5514','5515','5516','5521','5522','5523','5524','5525','5526','5529','5531','5532','5539','5540'];
+    a_MuudKulud                                TEXT[]    = ARRAY ['601','608'];
+    a_PohivaraSoetus                           TEXT[]    = ARRAY ['155','156','157','158','4502','1501','1511','1531','650'];
+    a_FinanseerimisTegevus                     TEXT[]    = ARRAY ['2586'];
+    l_allikas                                  TEXT      = l_params ->> 'allikas';
+    kas_ainult_aktsepteeritud                  BOOLEAN   = coalesce((l_params ->> 'taotlus_statusid')::BOOLEAN, FALSE);
+    taotlus_statusid                           INTEGER[] = CASE
+                                                               WHEN kas_ainult_aktsepteeritud THEN ARRAY [3]
+                                                               ELSE ARRAY [0,1,2,3] END;
+
 BEGIN
     -- оздаем выборку данных для отчета
     -- eelmise aasta
@@ -71,7 +76,8 @@ BEGIN
                                        INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                               WHERE t1.tunnus IS NOT NULL
                                 AND NOT empty(t1.tunnus)
-                                AND t.status IN (3)
+--                                AND t.status IN (3)
+                                AND t.status IN (SELECT unnest(taotlus_statusid))
                                 AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                                 AND t.aasta IN (YEAR(l_kpv) - 1, YEAR(l_kpv), YEAR(l_kpv) + 1)
                                 AND t1.kood2 NOT LIKE ('%RF%')
@@ -291,7 +297,8 @@ BEGIN
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
-                   AND t.status IN (3)
+--                   AND t.status IN (3)
+                   AND t.status IN (SELECT unnest(taotlus_statusid))
                    AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                    AND t1.kood2 NOT ILIKE ('%RF%')
                    AND (l_allikas IS NULL OR t1.kood2 ILIKE '%' || l_allikas || '%')
@@ -321,9 +328,9 @@ BEGIN
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
-                   AND t.status IN (3)
+--                   AND t.status IN (3)
+                   AND t.status IN (select unnest(taotlus_statusid))
                    AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
-
                    AND t1.kood2 NOT ILIKE ('%RF%')
                    AND (l_allikas IS NULL OR t1.kood2 ILIKE '%' || l_allikas || '%')
                    AND t1.kood5 IN (
@@ -371,6 +378,7 @@ BEGIN
                         e.tunnus     AS tunnus,
                         sum(e.summa) AS summa
                  FROM eelarve.eelarve e
+                          INNER JOIN eelarve.taotlus1 t1 ON t1.eelarveid = e.id
                  WHERE e.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                    AND aasta = YEAR($1)
                    AND (e.kpv IS NULL OR e.kpv <= make_date(YEAR($1), 09, 30))
@@ -396,7 +404,8 @@ BEGIN
                  FROM eelarve.taotlus t
                           INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
                  WHERE t.aasta = YEAR(l_kpv) + 1
-                   AND t.status IN (3)
+--                   AND t.status IN (3)
+                   AND t.status IN (select unnest(taotlus_statusid))
                    AND t.rekvid IN (SELECT r.rekv_id FROM rekv_ids r)
                    AND t1.kood2 NOT ILIKE ('%RF%')
                    AND (l_allikas IS NULL OR t1.kood2 ILIKE '%' || l_allikas || '%')
@@ -727,12 +736,15 @@ GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO 
 GRANT EXECUTE ON FUNCTION eelarve.kulud_eelnou(DATE, INTEGER, INTEGER,JSONB) TO dbvaatleja;
 
 /*
-SELECT  *
-FROM eelarve.kulud_eelnou('2022-12-31'::DATE, 63:: INTEGER, 1)
-where aasta_2_oodatav_taitmine > 0
+SELECT  sum(aasta_3_eelnou) over() as kinni, sum(aasta_3_prognoos) over() as taps, *
+FROM eelarve.kulud_eelnou('2022-06-30'::DATE, 64:: INTEGER, 0, jsonb_build_object('taotlus_statusid', 1))
+where artikkel = '506'
+and tegev = '07600'
 ORDER BY rekv_id, ARTIKKEL, tegev, TUNNUS
 
 */--where idx = 100
+kinni;taps
+267326;317607
 
 
 

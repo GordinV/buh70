@@ -21,6 +21,10 @@ block content
             border-left: 1px solid black;
         }
 
+        .th {
+            font-size: smaller;
+        }
+
         .table {
             border-spacing: 0px;
             margin-top: -50px;
@@ -48,6 +52,11 @@ block content
             font-size:  x-large;
         }
 
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
 
     link(rel='stylesheet', href='/stylesheets/reports.css')
 
@@ -80,7 +89,6 @@ block content
                     th Üritus
                     th Tekkepõhine summa
                     th Kassapõhine summa
-                    th Oodatav täitmine #{Number(data.aasta) - 1}
                     th Rea selgitus
 
             tbody
@@ -94,7 +102,6 @@ block content
                         td.td(align='center')=row.kood4
                         td.td(align='center')=Number(row.summa).toFixed(2)
                         td.td(align='center')=Number(row.summa_kassa).toFixed(2)
-                        td.td(align='center')=Number(row.oodatav_taitmine).toFixed(2)
                         td.td(align='left')=row.selg
             tr.group
                 td
@@ -105,7 +112,6 @@ block content
                 td(align='center')='Kokku:'
                 td=Number(data.details[0].summa_kokku).toFixed(2)
                 td=Number(data.details[0].kassa_kokku).toFixed(2)
-                td=Number(data.details[0].oodatav_kokku).toFixed(2)
                 td
             br
 

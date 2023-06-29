@@ -21,7 +21,7 @@ module.exports = {
                            sum(aasta_3_prognoos)                AS aasta_3_prognoos,
                            sum(eelarve_tekkepohine_kinnitatud)  AS eelarve_tekkepohine_kinnitatud,
                            sum(eelarve_tekkepohine_tapsustatud) AS eelarve_tekkepohine_tapsustatud
-                    FROM eelarve.tulud_eelnou($1::DATE, $2::INTEGER, $3::INTEGER) qryReport
+                    FROM eelarve.tulud_eelnou($1::DATE, $2::INTEGER, $3::INTEGER, $4::jsonb) qryReport
                                 where artikkel <> ''
                     GROUP BY qryReport.rekv_id, qryReport.idx, qryReport.artikkel
                 ),
@@ -296,7 +296,7 @@ module.exports = {
 
              WHEN r.parentid = 63 THEN 200
              WHEN r.parentid = 119 THEN 300
-             ELSE 900 END * 1000, r.nimetus, qryReport.idx,coalesce(a.kood, '')`,     // $1 - kpv $2 - rekvid, $3 - kond
+             ELSE 900 END * 1000, r.nimetus, qryReport.idx,coalesce(a.kood, '')`,     // $1 - kpv $2 - rekvid, $3 - kond, $4- lisa parametrid
         params: '',
         alias: 'tulud_eelnou'
     }

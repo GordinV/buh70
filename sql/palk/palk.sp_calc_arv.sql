@@ -228,6 +228,8 @@ BEGIN
                 selg = coalesce(selg, '') + 'Palk kokku:' + ltrim(rtrim(round(l_palk_summa, 2) :: VARCHAR)) + ltEnter;
                 lnBaas := (l_tunnid_kokku);
 
+                raise notice 'palk summa %, l_rate %, l_tunnid_kokku % ', summa, l_rate, l_tunnid_kokku;
+
                 -- кол-во часов отработанных + если неполный отработанный месяц и указан месячный оклад, то добавляем считаем по дням, для полного дня (не переработка)
                 -- поправил 01.03.2023, ошибка для J. Belova
                 IF l_tund = 1 AND l_tunnid_kokku < l_hours AND l_kuupalk > 0
@@ -242,6 +244,7 @@ BEGIN
                     summa = f_round(l_rate * l_pk_summa * 0.01 *
                                     ((l_tunnid_kokku + l_tahtpaeva_tunnid) / l_toopaev),
                                     l_round);
+                    raise notice 'korrekt summa %, l_work_days %, l_rate %, l_tunnid_kokku %, l_hours %, l_tahtpaeva_tunnid %', summa, l_work_days, l_rate, l_tunnid_kokku, l_hours, l_tahtpaeva_tunnid;
 
                 END IF;
 

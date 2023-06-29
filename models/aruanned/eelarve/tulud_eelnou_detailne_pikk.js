@@ -1,12 +1,23 @@
-<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
-<VFPData>
-  <grid>
-    <sql>WITH preReport AS (
-                        SELECT * FROM eelarve.tulud_eelnou($1::DATE, $2::INTEGER, $3::INTEGER,$4::jsonb)
+module.exports = {
+    grid: {
+        gridConfiguration: [
+            {id: "konto", name: "konto", width: "25px", show: false},
+            {id: "nimetus", name: "Nimetus", width: "100px"},
+            {id: "alg_db", name: "Alg.Deebet", width: "100px"},
+            {id: "alg_kr", name: "Alg.Kreedit", width: "75px"},
+            {id: "deebet", name: "Deebet", width: "100px"},
+            {id: "kreedit", name: "Kreedit", width: "100px"},
+            {id: "lopp_db", name: "Lõpp deebet", width: "100px"},
+            {id: "lopp_kr", name: "Lõpp kreedit", width: "200px"}
+        ],
+        sqlString: `WITH preReport AS (
+                        SELECT * FROM eelarve.tulud_eelnou_pikk($1::DATE, $2::INTEGER, $3::INTEGER, $4::jsonb)
                     ),
          qryKond AS (
              SELECT rekv_id,
                 ''                                   AS tunnus,
+                '' as proj,
+                '' as uritus,
                 '01-10'                              AS tegev,
                 ''                                   AS allikas,
                 ''                                   AS artikkel,
@@ -26,6 +37,8 @@
      qryReport AS (
          SELECT rekv_id,
                 tunnus,
+                proj,
+                uritus,
                 allikas,
                 artikkel,
                 tegev,
@@ -41,6 +54,8 @@
              UNION ALL
          SELECT rekv_id,
                 tunnus,
+                proj,
+                uritus,
                 allikas,
                 artikkel,
                 tegev,
@@ -61,6 +76,8 @@ SELECT CASE WHEN r.parentid NOT IN (0, 63) THEN ltrim(rtrim(r.nimetus)) ELSE '' 
            WHEN r.parentid NOT IN (0, 63) THEN coalesce(ltrim(rtrim(p.nimetus)), '')
            ELSE '' END::VARCHAR(254)                                                               AS parent_asutus,
            coalesce(qryReport.tunnus, '')::VARCHAR(20)                                                 AS tunnus,
+           coalesce(qryReport.proj, '')::VARCHAR(20)                                                 AS proj,
+           coalesce(qryReport.uritus, '')::VARCHAR(20)                                                 AS uritus,           
            coalesce(qryReport.tegev, '')::VARCHAR(20)                                                  AS tegev,
            coalesce(t.nimetus, '')::VARCHAR(254)                                                       AS tegev_nimetus,
            coalesce(qryReport.allikas, '')::VARCHAR(20)                                                AS allikas,
@@ -77,7 +94,7 @@ SELECT CASE WHEN r.parentid NOT IN (0, 63) THEN ltrim(rtrim(r.nimetus)) ELSE '' 
             FROM qryReport
             INNER JOIN (SELECT id, parentid, regkood, nimetus
                      FROM ou.rekv
-                     WHERE parentid &lt; 999
+                     WHERE parentid < 999
                      UNION ALL
                      SELECT 999999, 0, '' AS regkood, 'Kond' AS nimetus
                      WHERE $3::INTEGER = 1
@@ -89,18 +106,18 @@ SELECT CASE WHEN r.parentid NOT IN (0, 63) THEN ltrim(rtrim(r.nimetus)) ELSE '' 
                     ) r  ON r.id = qryReport.rekv_id
          LEFT OUTER JOIN (  SELECT *
                             FROM ou.rekv
-                            WHERE parentid &lt; 999
-                              AND id &lt;&gt; 63
+                            WHERE parentid < 999
+                              AND id <> 63
                         ) p ON r.parentid = p.id
                                  LEFT OUTER JOIN (SELECT id, kood, nimetus
                                                   FROM libs.library a
                                                   WHERE library = 'TULUDEALLIKAD'
-                                                    AND status &lt; 3) a
+                                                    AND status < 3) a
                                                  ON a.kood = qryReport.artikkel
                                  LEFT OUTER JOIN (SELECT id, kood, nimetus
                                                   FROM libs.library
                                                   WHERE library = 'TEGEV'
-                                                    AND status &lt; 3
+                                                    AND status < 3
                                                   UNION ALL
                                                   SELECT id, kood, nimetus
                                                   FROM cur_tegev_kond
@@ -108,54 +125,14 @@ SELECT CASE WHEN r.parentid NOT IN (0, 63) THEN ltrim(rtrim(r.nimetus)) ELSE '' 
                          ON trim(t.kood)::TEXT = trim(qryReport.tegev)::TEXT
 
         WHERE CASE
-                  WHEN qryReport.rekv_id &gt; 999
+                  WHEN qryReport.rekv_id > 999
                       AND (tegev IS NULL
                           OR empty(tegev)) THEN FALSE
                   ELSE TRUE END
-        ORDER BY CASE WHEN r.id &gt; 999 THEN 0 ELSE 1 END, 
-            CASE WHEN r.parentid &gt; 0 AND r.parentid &lt;&gt; 63 THEN '63-' else '' end + r.parentid::text + '-' + qryReport.rekv_id::TEXT, 
-            CASE WHEN tegev = '01-10' then '0' ELSE qryReport.tegev END, qryReport.tunnus, qryReport.artikkel</sql>
-    <alias>tulud_eelnou</alias>
-  </grid>
-  <select></select>
-  <selectAsLibs>
-    <sql></sql>
-    <alias>selectAsLibs</alias>
-  </selectAsLibs>
-  <saveDoc>
-    <sql></sql>
-    <alias>saveDoc</alias>
-  </saveDoc>
-  <deleteDoc>
-    <sql></sql>
-    <alias>deleteDoc</alias>
-  </deleteDoc>
-  <requiredFields>
-    <validate></validate>
-  </requiredFields>
-  <executeSql>
-    <sql></sql>
-    <alias></alias>
-  </executeSql>
-  <executeCommand>
-    <sql></sql>
-    <alias></alias>
-  </executeCommand>
-  <register>
-    <sql></sql>
-    <alias></alias>
-  </register>
-  <endProcess>
-    <sql />
-    <alias />
-  </endProcess>
-  <generateJournal>
-    <sql />
-    <alias />
-  </generateJournal>
-  <print></print>
-  <getLog>
-    <sql />
-    <alias />
-  </getLog>
-</VFPData>
+        ORDER BY CASE WHEN r.id > 999 THEN 0 ELSE 1 END, 
+            CASE WHEN r.parentid > 0 AND r.parentid <> 63 THEN '63-' else '' end + r.parentid::text + '-' + qryReport.rekv_id::TEXT, 
+            CASE WHEN tegev = '01-10' then '0' ELSE qryReport.tegev END, qryReport.tunnus, qryReport.artikkel`,
+        params: '',
+        alias: 'tulud_eelnou'
+    }
+};

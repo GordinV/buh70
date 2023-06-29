@@ -471,9 +471,11 @@ GRANT EXECUTE ON FUNCTION eelarve.tulude_taitmine_allikas_artikkel(INTEGER, DATE
 /*
 SELECT *
 FROM (
-         SELECT *
-         FROM eelarve.tulude_taitmine_allikas_artikkel(2021::INTEGER, '2021-01-01'::DATE, '2021-06-30', 63, 1,'{"tunnus":null}')
-where allikas = '80'
+SELECT sum(tegelik) over(), sum(kassa) over(), sum(eelarve_kinni) over(), sum(eelarve_parandatud) over(), sum(eelarve_kassa_kinni) over(), sum(eelarve_kassa_parandatud) over(), *
+         FROM eelarve.tulude_taitmine_allikas_artikkel(2023::INTEGER, '2023-01-01'::DATE, '2023-06-30', 63, 1,'{"tunnus":null}')
+where idx = 200
+
+allikas = '80'
 and artikkel = '3044'
      ) qry
 WHERE left(artikkel, 3) IN ('655')

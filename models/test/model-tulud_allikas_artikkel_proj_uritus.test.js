@@ -7,12 +7,12 @@ const _ = require('lodash');
 const path = require('path');
 const db = require('./../../libs/db');
 
-describe('dok. type TULUD_EELNOU tests', function () {
+describe('dok. type Eelarve tulude allikas ja artikkel ja proj ja uritus täitmine aruanne tests', function () {
     let globalDocId = 0; // для сохранения ид документа
 
-    const doc = require('../aruanned/eelarve/tulud_eelnou_detailne'),
-        docTypeId = 'TULUD_EELNOU'.toLowerCase(),
-        modelForExport = 'aruanned/eelarve/tulud_eelnou_detailne';
+    const doc = require('../aruanned/eelarve/tulud_allikas_artikkel_proj_uritus'),
+        docTypeId = 'TULUD_ALLIKAS_ART_PROJ_URITUS'.toLowerCase(),
+        modelForExport = 'aruanned/eelarve/tulud_allikas_artikkel_proj_uritus';
 
     moduleLocator.register(docTypeId, doc);
 
@@ -56,8 +56,8 @@ describe('dok. type TULUD_EELNOU tests', function () {
         });
     });
 
-    it.skip('doc type library should contain TULUD_EELNOU_PIKK doc.type', async () => {
-        let sql = `select id from libs.library where kood = 'TULUD_EELNOU_PIKK' and  library = 'DOK' limit 1`;
+    it.skip('doc type library should contain TULUD_ALL_ART doc.type', async () => {
+        let sql = `select id from libs.library where kood = 'TULUD_ALL_ART' and  library = 'DOK' limit 1`;
         let returnValue = await db.queryDb(sql, []);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
@@ -67,7 +67,7 @@ describe('dok. type TULUD_EELNOU tests', function () {
 
     it.skip('should select data from grid query', async()=> {
         let sql = doc.grid.sqlString;
-        let returnValue = await db.queryDb(sql, ['2019-12-31',63, 1]);
+        let returnValue = await db.queryDb(sql, [2020,'2020-12-31',63, 0]);
         expect(returnValue).toBeDefined();
         let result = returnValue.result;
         let err = returnValue.error_code;

@@ -30,6 +30,12 @@ DECLARE
     l_miinus_holidays  INTEGER = 0; -- days with - holidays
     l_miinus_weekends  INTEGER = 0; -- days with - weekend
 BEGIN
+    IF l_lopp_paev = 30
+    THEN
+        -- конец месяца, включим 31 число
+        l_lopp_paev = 31;
+    END IF;
+
     --selecting data
     FOR qryPuhkused IN
         SELECT p.*,

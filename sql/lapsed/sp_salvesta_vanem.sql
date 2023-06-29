@@ -64,7 +64,11 @@ BEGIN
     IF l_prev_arv_isik_id <> doc_asutusid
     THEN
         -- происходит смена ответственного, проверяем на не отправленные счета
-        IF exists(SELECT id FROM lapsed.cur_laste_arved a WHERE asutusid = l_prev_arv_isik_id AND NOT a.kas_esitatud)
+        IF exists(SELECT id
+                  FROM lapsed.cur_laste_arved a
+                  WHERE asutusid = l_prev_arv_isik_id
+                    AND a.rekvid = user_rekvid
+                    AND NOT a.kas_esitatud)
         THEN
             -- ошибка. нельзя менять ответственного, пока есть не отправленные счета
             RAISE EXCEPTION 'Viga: Olemas mitte saadetud arveid';
