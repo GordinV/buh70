@@ -96,39 +96,50 @@ module.exports = {
                                   k.nomid,
                                   n.kood,
                                   n.nimetus,
-                                  k.hind                                                                      hind,
-                                  gr.nimetus::TEXT                                                         AS yksus,
-                                  gr.kood::TEXT                                                            AS yksuse_kood,
-                                  CASE WHEN (n.properties ->> 'kas_inf3')::BOOLEAN THEN 'INF3' ELSE '' END AS inf3,
+                                  k.hind                                                            hind,
+                                  (SELECT nimetus
+                                   FROM libs.library
+                                   WHERE k.rekvid = k.rekvid
+                                     AND kood = k.properties ->> 'yksus'
+                                     AND library = 'LAPSE_GRUPP'
+                                     AND n.status < 3
+                                   ORDER BY id DESC
+                                   LIMIT 1)                                                      AS yksus,
+                                  k.properties ->> 'yksus'::TEXT                                 AS yksuse_kood,
+                                  CASE
+                                      WHEN (n.properties ->>'kas_inf3')::BOOLEAN
+                                          THEN
+                                          'INF3'
+                                      ELSE ''
+                                      END                                                        AS inf3,
                                   CASE
                                       WHEN (n.properties ->> 'kas_umberarvestus')::BOOLEAN THEN 'ÜMBERARVESTUS'
-                                      ELSE '' END                                                          AS umberarvestus,
+                                      ELSE ''
+                                      END                                                        AS umberarvestus,
                                   n.uhik,
-                                  n.properties ->> 'tyyp'                                                  AS tyyp,
-                                  to_char(coalesce((k.properties ->> 'alg_kpv')::DATE, date(year(), 1, 1)),
+                                  n.properties ->> 'tyyp'                                        AS tyyp,
+                                  to_char(COALESCE((k.properties ->> 'alg_kpv')::DATE, date(YEAR(), 1, 1)),
                                           'DD.MM.YYYY') ||
                                   ' - ' ||
-                                  to_char(coalesce((k.properties ->> 'lopp_kpv')::DATE, date(year(), 12, 31)),
-                                          'DD.MM.YYYY')                                                    AS kehtivus,
-                                  coalesce((k.properties ->> 'lopp_kpv')::DATE,
-                                           date(year(), 12, 31))                                           AS lopp_kpv,
+                                  to_char(COALESCE((k.properties ->> 'lopp_kpv')::DATE, date(YEAR(), 12, 31)),
+                                          'DD.MM.YYYY')                                          AS kehtivus,
+                                  COALESCE((k.properties ->> 'lopp_kpv')::DATE,
+                                           date(YEAR(), 12, 31))                                 AS lopp_kpv,
                                   CASE
                                       WHEN n.properties ->> 'tyyp' IS NOT NULL AND n.properties ->> 'tyyp' = 'SOODUSTUS'
                                           THEN (-1 * k.hind)::NUMERIC
-                                      ELSE coalesce((k.properties ->> 'soodus')::NUMERIC, 0)::NUMERIC END  AS soodustus,
+                                      ELSE COALESCE((k.properties ->> 'soodus')::NUMERIC, 0)::NUMERIC
+                                      END                                                        AS soodustus,
                                   CASE
-                                      WHEN coalesce((k.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN
+                                      WHEN COALESCE((k.properties ->> 'kas_protsent')::BOOLEAN, FALSE)::BOOLEAN
                                           THEN 'Jah'
-                                      ELSE 'Ei' END::TEXT                                                  AS kas_protsent,
+                                      ELSE 'Ei'
+                                      END::TEXT                                                  AS kas_protsent,
                                   to_char((k.properties ->> 'sooduse_alg')::DATE, 'DD.MM.YYYY') || ' ' ||
-                                  to_char((k.properties ->> 'sooduse_lopp')::DATE, 'DD.MM.YYYY')           AS soodustuste_period,
-                                  k.properties ->> 'viitenr'                                               AS viitenr
+                                  to_char((k.properties ->> 'sooduse_lopp')::DATE, 'DD.MM.YYYY') AS soodustuste_period,
+                                  k.properties ->> 'viitenr'                                     AS viitenr
                            FROM lapsed.lapse_kaart k
                                     INNER JOIN libs.nomenklatuur n ON n.id = k.nomid
-                                    LEFT OUTER JOIN libs.library gr
-                                                    ON gr.library = 'LAPSE_GRUPP' AND gr.status <> 3 AND
-                                                       gr.rekvid = k.rekvid
-                                                        AND gr.kood::TEXT = (k.properties ->> 'yksus')::TEXT
                            WHERE k.parentid = $1
                              AND k.staatus <> 3
                              AND k.rekvid IN (SELECT rekvid
