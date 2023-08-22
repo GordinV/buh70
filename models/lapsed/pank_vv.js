@@ -116,12 +116,13 @@ module.exports = {
                     SELECT $1 AS nimi,
                     $2 as isikukood
                     )
-                SELECT nimi, regexp_split_to_array(nimi, '\\s+') AS nimed
+                SELECT nimi, regexp_split_to_array(nimi, '\\s+') AS nimed, isikukood    
                 FROM nimed
             ),
                  lapsed AS
                      (SELECT get_unique_value_from_array(rekv_ids::TEXT[]) AS asutused,
                              l.nimi,
+                             l.isikukood,
                              a.id                                          AS asutus_id,
                              l.id                                          AS laps_id
                       FROM libs.asutus a
@@ -163,8 +164,10 @@ module.exports = {
                               INNER JOIN ou.rekv r ON r.id = m.rekv_id
                      GROUP BY laps_id, maksja_id
                  )
-            SELECT a.nimetus                        AS maksja,
+            SELECT l.laps_id as id,
+                   a.nimetus                        AS maksja,
                    l.nimi,
+                   l.isikukood,
                    m.kpv                            AS viimane_makse,
                    array_to_string(vn.vn_s, ' ')    AS vn_s,
                    array_to_string(r.asutused, ',') AS asutused

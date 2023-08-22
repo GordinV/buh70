@@ -135,7 +135,7 @@ class Tunnus extends React.PureComponent {
                                          libName="pank_vv"
                                          lisaParameter={true}
                                          history={this.props.history}
-                                         sqlFields={['maksja', 'isikukood']}
+                                         sqlFields={['maksja']}
                                          data={[]}
                                          value={self.docData.maksja || ''}
                                          defaultValue={self.docData.maksja}

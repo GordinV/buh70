@@ -321,9 +321,22 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_andmik_lisa_1_5_detailne(DATE, INTEGER
 
 
 /*SELECT len(tegevus), len(tunnus), *
-FROM eelarve.eelarve_andmik_lisa_1_5_detailne(DATE(2023, 05, 31), 119, 1) qry
-WHERE tunnus LIKE '%0951002%'
-*/
+FROM eelarve.eelarve_andmik_lisa_1_5_detailne(DATE(2023, 06, 30), 69, 1) qry
+WHERE
+
+
+  SELECT DISTINCT t.rekvid, t1.tunnus
+                             FROM eelarve.taotlus t
+                                      INNER JOIN eelarve.taotlus1 t1 ON t.id = t1.parentid
+                             WHERE t1.tunnus IS NOT NULL
+                               AND NOT empty(t1.tunnus)
+                               AND t.status IN (3)
+                               AND t.rekvid = 69
+                               AND t.aasta = 2023
+
+  */
+
+
 
 /*WHERE allikas = '80'
   AND artikkel = '3044'

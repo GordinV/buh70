@@ -39,7 +39,6 @@ class Button extends React.PureComponent {
     render() {
         // visibility
         let visibility = this.props.show ? 'initial' : 'hidden';
-        console.log('this.props.style',this.props.style);
 
         let propStyle  = ('style' in this.props)? this.props.style: {},
             style = Object.assign({}, styles.button, propStyle, {visibility: visibility});

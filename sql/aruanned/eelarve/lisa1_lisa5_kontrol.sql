@@ -1551,6 +1551,17 @@ FROM (
                          0
                   FROM qryLisa1Lisa5
                   WHERE artikkel = '381'
+                  UNION ALL
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         -1 * CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN db - kr ELSE 0 END
+                  FROM qrySaldoandmik
+                  WHERE left(konto, 2) = '38'
+                    AND left(tp, 6) = '185101'
+
               ) qry38
          UNION ALL
          SELECT 1010                    AS idx,
@@ -1594,6 +1605,17 @@ FROM (
                          0
                   FROM qryJournal
                   WHERE artikkel LIKE '3818%'
+                  UNION ALL
+                  SELECT 0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         -1 * CASE WHEN l_rekvid = 63 AND l_kond = 1 THEN db - kr ELSE 0 END
+                  FROM qrySaldoandmik
+                  WHERE left(konto, 4) = '3818'
+                    AND left(tp, 6) = '185101'
+
               ) qry3818
          UNION ALL
          -- Строка 382 Tekke eelarve kinn в отчете EELARVEARUANNE (Lisa 1, Lisa 5) -
@@ -2763,8 +2785,8 @@ GRANT EXECUTE ON FUNCTION eelarve.lisa1_lisa5_kontrol(DATE, INTEGER, INTEGER) TO
 
 
 SELECT *
-FROM eelarve.lisa1_lisa5_kontrol('2023-02-28'::DATE, 63, 1)
-WHERE nimetus = 'PÕHITEGEVUSE KULUDE JA INVESTEERIMIS TEGEVUSE VÄLJAMINEKUTE JAOTUS TEGEVUSALADE JÄRGI'
+FROM eelarve.lisa1_lisa5_kontrol('2023-06-30'::DATE, 63, 1)
+WHERE  nimetus like '38%'
 ORDER BY idx, nimetus
 
 

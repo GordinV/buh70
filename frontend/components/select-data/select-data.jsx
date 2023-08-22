@@ -90,8 +90,14 @@ class SelectData extends React.PureComponent {
 
     handleClick() {
         this.setState({
-            show: true
+            show: true,
+            loading: false
         });
+
+        if (this.state.fieldValue) {
+            // выполним сразу предварительный запрос
+            this.loadLibs(this.state.fieldValue);
+        }
     }
 
     modalPage() {
@@ -175,7 +181,7 @@ class SelectData extends React.PureComponent {
                     //выполним запрос
                     setTimeout(() => {
                         this.loadLibs(value);
-                    }, 500);
+                    }, 100);
                 }
 
             });
@@ -237,6 +243,7 @@ class SelectData extends React.PureComponent {
         let limit = this.state.limit ? this.state.limit : 100;
         let searchValue = this.state.fieldValue;
         let isSeachById = (this.state.value && !fieldValue);
+        // для задержки времени
         let params = this.props.lisaParameter ? this.state.fieldValue : null;
 
         if (this.props.sqlFields && this.props.sqlFields.length && searchValue && searchValue.length > 0) {
@@ -254,13 +261,13 @@ class SelectData extends React.PureComponent {
         sqlWhere = `where ${sqlWhere}`;
 
         let libParams = Object.assign({uuid: DocContext.getUuid}, sqlWhere.length ? {
-            sql: sqlWhere,
+            sql: this.props.lisaParameter ? '': sqlWhere, // используем переданный параметр в поиске
             limit: limit,
             kpv: kpv ? kpv: new Date().toISOString().slice(0,10),
             params: params
         } : {});
 
-        if (sqlWhere.length > 0 && !this.state.loading) {
+        if (sqlWhere.length > 0  && !this.state.loading) {
             this.setState({loading: true});
             fetchData.fetchDataPost(`${POST_LOAD_LIBS_URL}/${lib}`, libParams).then(response => {
                 let gridData = [],
@@ -285,6 +292,8 @@ class SelectData extends React.PureComponent {
                     } else {
                        this.setState({gridData: gridData, gridConfig: gridConfig, show: true, loading: false});
                     }
+                } else {
+                    this.setState({loading: false});
                 }
 
             }).catch(error => {

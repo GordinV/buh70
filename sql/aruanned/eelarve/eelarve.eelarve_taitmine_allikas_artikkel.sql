@@ -545,8 +545,12 @@ GRANT EXECUTE ON FUNCTION eelarve.eelarve_taitmine_allikas_artikkel(INTEGER, DAT
 --artikkel like
 SELECT *
 FROM (
-         SELECT *
-         FROM eelarve.eelarve_taitmine_allikas_artikkel(2022::INTEGER,'2022-01-01'::date, '2022-09-30'::DATE, 63, 1,'{"tunnus":null,"allikas":null}')
+         SELECT sum(kassa) over() as kassa_kokku,
+*
+         FROM eelarve.eelarve_taitmine_allikas_artikkel(2023::INTEGER,'2023-01-01'::date, '2023-06-30'::DATE, 63, 1)
+where rekv_id < 999
+and artikkel in (select kood from com_artikkel where is_kulud)
+
      ) qry
 WHERE artikkel = '4502'
 '15,2586,4,5,6%'

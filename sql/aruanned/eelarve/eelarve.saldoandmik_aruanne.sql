@@ -2,10 +2,11 @@ DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv1 DATE, l_kpv2 DATE, l_
 DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER);
 --DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, TEXT);
 DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, JSONB);
+DROP FUNCTION IF EXISTS eelarve.saldoandmik_aruanne_(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER, JSONB);
 
 
 CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INTEGER, l_kond INTEGER,
-                                                        l_params JSONB DEFAULT NULL)
+                                                       l_params JSONB DEFAULT NULL)
     RETURNS TABLE (
         rekv_id  INTEGER,
         konto    VARCHAR(20),
@@ -20,15 +21,17 @@ CREATE OR REPLACE FUNCTION eelarve.saldoandmik_aruanne(l_kpv2 DATE, l_rekvid INT
 AS
 $BODY$
 WITH qryParams AS (
-    SELECT l_kpv2::DATE      AS kpv,
-           l_rekvid::INTEGER AS rekvid,
-           l_kond::INTEGER   AS kond,
-           l_params::JSONB   AS jsonb_params
+    SELECT l_kpv2::DATE                                              AS kpv,
+           l_rekvid::INTEGER                                         AS rekvid,
+           l_kond::INTEGER                                           AS kond,
+           l_params::JSONB                                           AS jsonb_params,
+           make_date(date_part('year', l_kpv2::DATE)::INTEGER, 1, 1) AS alg_kpv
 ),
 
      rekv_ids AS (
          SELECT rekv_id
-         FROM qryParams, public.get_asutuse_struktuur(qryParams.rekvid)
+         FROM qryParams,
+              public.get_asutuse_struktuur(qryParams.rekvid)
 
          WHERE rekv_id = CASE
                              WHEN qryParams.kond = 1
@@ -50,36 +53,31 @@ SELECT rekv_id,
 FROM (
          WITH qryKontod AS (
              (SELECT l.kood,
-                     NOT empty(l.tun1)   AS is_tp,
-                     NOT empty(l.tun2)   AS is_tegev,
-                     NOT empty(l.tun3)   AS is_allikas,
-                     NOT empty(l.tun4)   AS is_rahavoog,
-                     coalesce(l.tun5, 1) AS tyyp,
+                     NOT empty(l.tun1)                                                  AS is_tp,
+                     NOT empty(l.tun2)                                                  AS is_tegev,
+                     NOT empty(l.tun3)                                                  AS is_allikas,
+                     NOT empty(l.tun4)                                                  AS is_rahavoog,
+                     coalesce(l.tun5, 1)                                                AS tyyp,
 --                     l.muud,
-                     coalesce((l.properties::JSONB ->> 'tp_req')::CHAR(1),'')::CHAR(1)                   AS tp_req,
-                     coalesce((l.properties::JSONB ->> 'tt_req')::CHAR(1),'')::CHAR(1)                   AS tt_req,
-                     coalesce((l.properties::JSONB ->> 'a_req')::CHAR(1),'')::CHAR(1)                    AS a_req,
-                     coalesce((l.properties::JSONB ->> 'rv_req')::CHAR(1),'')::CHAR(1)                   AS rv_req
+                     coalesce((l.properties::JSONB ->> 'tp_req')::CHAR(1), '')::CHAR(1) AS tp_req,
+                     coalesce((l.properties::JSONB ->> 'tt_req')::CHAR(1), '')::CHAR(1) AS tt_req,
+                     coalesce((l.properties::JSONB ->> 'a_req')::CHAR(1), '')::CHAR(1)  AS a_req,
+                     coalesce((l.properties::JSONB ->> 'rv_req')::CHAR(1), '')::CHAR(1) AS rv_req
 
               FROM libs.library l
               WHERE l.library = 'KONTOD'
                 AND l.status <> 3)
          ),
-
               qrySaldoAndmik AS (
-                  SELECT coalesce(a.kpv, j.kpv)                AS kpv,
+                  -- alg db kaived
+                  SELECT qryParams.alg_kpv - 1                 AS kpv,
                          j.rekvid,
                          j1.deebet                             AS konto,
                          j1.lisa_d                             AS tp,
                          coalesce(j1.kood1, ''):: VARCHAR(20)  AS tegev,
                          coalesce(j1.kood2, '') :: VARCHAR(20) AS allikas,
-                         coalesce(CASE
-                                      WHEN j.kpv <
-                                           make_date(date_part('year', qryParams.kpv::DATE)::INTEGER, 1, 1)
-                                          THEN '00'
-                                      ELSE j1.kood3 :: VARCHAR(20) END,
-                                  '')::VARCHAR(20)             AS rahavoog,
-                         (j1.summa)                            AS deebet,
+                         '00'::VARCHAR(20)                     AS rahavoog,
+                         sum(j1.summa)                         AS deebet,
                          0 :: NUMERIC                          AS kreedit,
                          j1.tunnus,
                          j1.proj
@@ -93,29 +91,56 @@ FROM (
                                      FROM rekv_ids)
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
                     AND d.status <> 3
-                    AND j.kpv <= qryParams.kpv::DATE
+                    AND coalesce(a.kpv, j.kpv) <= qryParams.kpv::DATE
+                    AND coalesce(a.kpv, j.kpv) < qryParams.alg_kpv::DATE
                     AND (j1.deebet = '155920' AND j1.kreedit <> '888888' AND d.rekvid IN (130, 28) OR
-                         year(qryParams.kpv) < 2023 or j1.deebet <> '155920')
+                         year(qryParams.kpv) < 2023 OR j1.deebet <> '155920')
+                  GROUP BY qryParams.alg_kpv, j.rekvid, j1.deebet, j1.lisa_d, j1.kood1, j1.kood2, j1.tunnus,
+                           j1.proj
+                  UNION ALL
+                  -- db kaived
+
+                  SELECT qryParams.kpv                         AS kpv,
+                         j.rekvid,
+                         j1.deebet                             AS konto,
+                         j1.lisa_d                             AS tp,
+                         coalesce(j1.kood1, ''):: VARCHAR(20)  AS tegev,
+                         coalesce(j1.kood2, '') :: VARCHAR(20) AS allikas,
+                         coalesce(j1.kood3, '')::VARCHAR(20)   AS rahavoog,
+                         sum(j1.summa)                         AS deebet,
+                         0 :: NUMERIC                          AS kreedit,
+                         j1.tunnus,
+                         j1.proj
+                  FROM docs.doc d
+                           INNER JOIN docs.journal j ON j.parentid = d.id
+                           INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                           LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id
+                           INNER JOIN qryKontod l ON ltrim(rtrim(l.kood)) = ltrim(rtrim(j1.deebet)),
+                       qryParams
+                  WHERE d.rekvid IN (SELECT rekv_id
+                                     FROM rekv_ids)
+                    AND d.doc_type_id IN (SELECT id FROM docs_types)
+                    AND d.status <> 3
+                    AND coalesce(a.kpv, j.kpv) <= qryParams.kpv::DATE
+                    AND coalesce(a.kpv, j.kpv) >= qryParams.alg_kpv::DATE
+                    AND (j1.deebet = '155920' AND j1.kreedit <> '888888' AND d.rekvid IN (130, 28) OR
+                         year(qryParams.kpv) < 2023 OR j1.deebet <> '155920')
+                  GROUP BY qryParams.kpv, j.rekvid, j1.deebet, j1.lisa_d, j1.kood1, j1.kood2, j1.kood3, j1.tunnus,
+                           j1.proj
 
                   UNION ALL
-                  SELECT coalesce(a.kpv, j.kpv),
+                  --                   -- alg kr kaived
+                  SELECT qryParams.alg_kpv - 1                 AS kpv,
                          j.rekvid,
                          j1.kreedit                            AS konto,
                          coalesce(j1.lisa_k, ''):: VARCHAR(20) AS tp,
-                         j1.kood1 :: VARCHAR(20)               AS tegev,
+                         coalesce(j1.kood1, '') :: VARCHAR(20) AS tegev,
                          coalesce(j1.kood2, '') :: VARCHAR(20) AS allikas,
-                         coalesce(CASE
-                                      WHEN j.kpv <
-                                           make_date(date_part('year', qryParams.kpv::DATE)::INTEGER, 1, 1)
-                                          THEN '00'
-                                      ELSE j1.kood3 :: VARCHAR(20) END,
-                                  '')::VARCHAR(20)             AS rahavoog,
+                         '00'::VARCHAR(20)                     AS rahavoog,
                          0 :: NUMERIC                          AS deebet,
-                         (j1.summa)                            AS kreedit,
+                         sum(j1.summa)                         AS kreedit,
                          j1.tunnus,
                          j1.proj
-
-
                   FROM docs.doc d
                            INNER JOIN docs.journal j
                                       ON j.parentid = D.id
@@ -128,11 +153,47 @@ FROM (
                   WHERE d.rekvid IN (SELECT rekv_id
                                      FROM rekv_ids)
                     AND d.doc_type_id IN (SELECT id FROM docs_types)
-                    AND j.kpv <= qryParams.kpv::DATE
+--                    AND j.kpv <= qryParams.kpv::DATE
+                    AND coalesce(a.kpv, j.kpv) <= qryParams.kpv::DATE
+                    AND coalesce(a.kpv, j.kpv) < qryParams.alg_kpv::DATE
                     AND d.status <> 3
                     AND (j1.kreedit = '155920' AND j1.deebet <> '888888' AND d.rekvid IN (130, 28) OR
-                         year(qryParams.kpv) < 2023 or j1.kreedit <> '155920')
-
+                         year(qryParams.kpv) < 2023 OR j1.kreedit <> '155920')
+                  GROUP BY qryParams.alg_kpv, j.rekvid, j1.kreedit, j1.lisa_k, j1.kood1, j1.kood2, j1.tunnus,
+                           j1.proj
+                  UNION ALL
+                  -- kr kaived
+                  SELECT qryParams.kpv                         AS kpv,
+                         j.rekvid,
+                         j1.kreedit                            AS konto,
+                         coalesce(j1.lisa_k, ''):: VARCHAR(20) AS tp,
+                         coalesce(j1.kood1, '') :: VARCHAR(20) AS tegev,
+                         coalesce(j1.kood2, '') :: VARCHAR(20) AS allikas,
+                         coalesce(j1.kood3, '')::VARCHAR(20)   AS rahavoog,
+                         0 :: NUMERIC                          AS deebet,
+                         sum(j1.summa)                         AS kreedit,
+                         j1.tunnus,
+                         j1.proj
+                  FROM docs.doc d
+                           INNER JOIN docs.journal j
+                                      ON j.parentid = D.id
+                           INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                           INNER JOIN libs.library l ON l.library = 'KONTOD' AND
+                                                        l.status <> 3 AND
+                                                        ltrim(rtrim(l.kood)) = ltrim(rtrim(j1.kreedit))
+                           LEFT OUTER JOIN docs.alg_saldo a ON a.journal_id = d.id,
+                       qryParams
+                  WHERE d.rekvid IN (SELECT rekv_id
+                                     FROM rekv_ids)
+                    AND d.doc_type_id IN (SELECT id FROM docs_types)
+--                    AND j.kpv <= qryParams.kpv::DATE
+                    AND coalesce(a.kpv, j.kpv) <= qryParams.kpv::DATE
+                    AND coalesce(a.kpv, j.kpv) >= qryParams.alg_kpv::DATE
+                    AND d.status <> 3
+                    AND (j1.kreedit = '155920' AND j1.deebet <> '888888' AND d.rekvid IN (130, 28) OR
+                         year(qryParams.kpv) < 2023 OR j1.kreedit <> '155920')
+                  GROUP BY qryParams.kpv, j.rekvid, j1.kreedit, j1.lisa_k, j1.kood1, j1.kood2, j1.kood3, j1.tunnus,
+                           j1.proj
               )
          SELECT rekv_id,
                 konto :: VARCHAR(20),
@@ -150,7 +211,7 @@ FROM (
                 qry.tyyp::INTEGER
          FROM (
                   SELECT qry.rekvid                  AS rekv_id,
-                         konto::TEXT        AS konto,
+                         konto::TEXT                 AS konto,
                          (CASE
                               WHEN left(konto, 6) IN ('155920')
                                   AND qry.kpv < '2022-10-01'
@@ -162,7 +223,7 @@ FROM (
                                    ltrim(rtrim(coalesce(rahavoog, ''))) IN ('01', '00', '17', '21','18')
                                   THEN tp
 */
-                             WHEN l.is_tp AND
+                              WHEN l.is_tp AND
                                    (l.tp_req <> '*' OR
                                     ltrim(rtrim(coalesce(rahavoog, ''))) = '01')
                                   THEN tp
@@ -179,7 +240,7 @@ FROM (
                                   '' END)::TEXT      AS tegev,
                          (CASE
                               WHEN l.is_allikas AND (l.a_req <> '*' OR
-                                                         ltrim(rtrim(qry.rahavoog)) = '01')
+                                                     ltrim(rtrim(qry.rahavoog)) = '01')
                                   THEN allikas
                               ELSE
                                   '' END)::TEXT      AS allikas,
@@ -211,11 +272,9 @@ FROM (
                     AND ((qryParams.jsonb_params::JSONB ->> 'proj') IS NULL OR
                          coalesce(qry.proj, '') ILIKE
                          coalesce((qryParams.jsonb_params::JSONB ->> 'proj'), '') || '%')
-
-
                   UNION ALL
                   SELECT qry.rekvid                 AS rekv_id,
-                         konto::TEXT       AS konto,
+                         konto::TEXT                AS konto,
                          (CASE
                               WHEN is_tp AND (l.tp_req <> '*' OR
                                               ltrim(rtrim(qry.rahavoog)) IN ('01'))
@@ -280,7 +339,7 @@ GROUP BY rekv_id
         , tegev
         , allikas
         , rahavoog
-        , tyyp    ;
+        , tyyp ;
 
 $BODY$
     LANGUAGE SQL
