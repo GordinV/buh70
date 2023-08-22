@@ -44,8 +44,9 @@ WITH preReport AS (
              INNER JOIN (
         SELECT id, nimetus
         FROM ou.rekv r
-        WHERE id = l_rekvid
-        -- id IN (SELECT rekv_id                 FROM get_asutuse_struktuur(l_rekvid))
+        WHERE 
+              -- id = l_rekvid
+         id IN (SELECT rekv_id                 FROM get_asutuse_struktuur(l_rekvid))
     ) r ON r.id = lt.rekvid
     WHERE lt.kuu = l_kuu
       AND lt.aasta = l_aasta

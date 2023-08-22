@@ -24,6 +24,7 @@ DECLARE
     doc_konto             TEXT    = doc_data ->> 'konto';
     doc_projekt           TEXT    = doc_data ->> 'projekt';
     doc_tunnus            TEXT    = doc_data ->> 'tunnus';
+    doc_uritus            TEXT    = doc_data ->> 'uritus';
     doc_tegev             TEXT    = doc_data ->> 'tegev';
     doc_allikas           TEXT    = doc_data ->> 'allikas';
     doc_rahavoog          TEXT    = doc_data ->> 'rahavoog';
@@ -93,6 +94,7 @@ BEGIN
                                doc_allikas   AS allikas,
                                doc_rahavoog  AS rahavoog,
                                doc_artikkel  AS artikkel,
+                               doc_uritus    AS uritus,
                                doc_grupp     AS grupp,
                                doc_oppe_tyyp AS oppe_tyyp
                        ) row;
@@ -132,6 +134,7 @@ BEGIN
                  coalesce(doc_allikas, 'null')  AS allikas,
                  coalesce(doc_rahavoog, 'null') AS rahavoog,
                  coalesce(doc_artikkel, 'null') AS artikkel,
+                 coalesce(doc_uritus, 'null')   AS uritus,
                  doc_kalor                      AS kalor,
                  doc_valid                      AS valid,
                  doc_sahharid                   AS sahharid,

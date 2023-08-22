@@ -52,7 +52,8 @@ const Arv = {
                          (d.history -> 0 ->> 'user') :: VARCHAR(120)                       AS koostaja,
                          coalesce((a.properties ->> 'aa')::TEXT, qry_aa.arve)::VARCHAR(20) AS aa,
                          coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120)    AS viitenr,
-                         coalesce((a.properties ->> 'tyyp')::TEXT, '')::VARCHAR(20)        AS tyyp
+                         coalesce((a.properties ->> 'tyyp')::TEXT, '')::VARCHAR(20)        AS tyyp,
+                         coalesce((a.properties ->> 'taskuraha_kov')::NUMERIC, 0)          AS taskuraha_kov
 
                   FROM docs.doc d
                            INNER JOIN libs.library l ON l.id = d.doc_type_id
@@ -116,7 +117,8 @@ const Arv = {
                               NULL :: INTEGER                                                        AS laus_nr,
                               NULL :: VARCHAR(120)                                                   AS koostaja,
                               0 ::INTEGER                                                            AS is_show_journal,
-                              ''::VARCHAR(120)                                                       AS viitenr
+                              ''::VARCHAR(120)                                                       AS viitenr,
+                              0::numeric as taskuraha_kov
                        FROM libs.library l,
                             libs.library s,
                             ou.userid u
@@ -132,15 +134,15 @@ const Arv = {
         },
         {
             sql: `SELECT a1.id,
-                         $2 :: INTEGER                                                                AS userid,
+                         $2 :: INTEGER                                                                 AS userid,
                          a1.nomid,
                          a1.kogus,
                          a1.hind,
                          a1.kbm,
                          a1.kbmta,
                          a1.summa,
-                         trim(n.kood) :: VARCHAR(20)                                                  AS kood,
-                         trim(n.nimetus) :: VARCHAR(254)                                              AS nimetus,
+                         trim(n.kood) :: VARCHAR(20)                                                   AS kood,
+                         trim(n.nimetus) :: VARCHAR(254)                                               AS nimetus,
                          a1.soodus,
                          a1.kood1,
                          a1.kood2,
@@ -151,20 +153,23 @@ const Arv = {
                          a1.proj,
                          a1.konto,
                          a1.tp,
-                         NULL :: TEXT                                                                 AS vastisik,
-                         NULL :: TEXT                                                                 AS formula,
-                         'EUR' :: VARCHAR(20)                                                         AS valuuta,
-                         1 :: NUMERIC                                                                 AS kuurs,
+                         NULL :: TEXT                                                                  AS vastisik,
+                         NULL :: TEXT                                                                  AS formula,
+                         'EUR' :: VARCHAR(20)                                                          AS valuuta,
+                         1 :: NUMERIC                                                                  AS kuurs,
                          (CASE
                               WHEN a1.kbm_maar IS NULL
                                   THEN coalesce((n.properties :: JSONB ->> 'vat'), '-') :: VARCHAR(20)
-                              ELSE a1.kbm_maar END)::VARCHAR(20)                                      AS km,
+                              ELSE a1.kbm_maar END)::VARCHAR(20)                                       AS km,
                          n.uhik,
-                         coalesce((a1.properties ->> 'allikas_85')::NUMERIC, 0)::NUMERIC(12, 2)       AS allikas_85,
-                         coalesce((a1.properties ->> 'allikas_muud')::NUMERIC, 0)::NUMERIC(12, 2)     AS allikas_muud,
-                         coalesce((a1.properties ->> 'allikas_vara')::NUMERIC, 0)::NUMERIC(12, 2)     AS allikas_vara,
-                         coalesce((a1.properties ->> 'omavalitsuse_osa')::NUMERIC, 0)::NUMERIC(12, 2) AS omavalitsuse_osa,
-                         coalesce((a1.properties ->> 'sugulane_osa')::NUMERIC, 0)::NUMERIC(12, 2)     AS sugulane_osa,
+                         coalesce((a1.properties ->> 'allikas_85')::NUMERIC, 0)::NUMERIC(12, 2)        AS allikas_85,
+                         coalesce((a1.properties ->> 'allikas_muud')::NUMERIC, 0)::NUMERIC(12, 2)      AS allikas_muud,
+                         coalesce((a1.properties ->> 'allikas_vara')::NUMERIC, 0)::NUMERIC(12, 2)      AS allikas_vara,
+                         coalesce((a1.properties ->> 'omavalitsuse_osa')::NUMERIC, 0)::NUMERIC(12, 2)  AS omavalitsuse_osa,
+                         coalesce((a1.properties ->> 'sugulane_osa')::NUMERIC, 0)::NUMERIC(12, 2)      AS sugulane_osa,
+                         coalesce((a1.properties ->> 'allikas_taskuraha')::NUMERIC, 0)::NUMERIC(12, 2) AS taskuraha,
+                         coalesce((a1.properties ->> 'allikas_taskuraha')::NUMERIC, 0)::NUMERIC(12, 2) AS allikas_taskuraha,
+                         coalesce((a1.properties ->> 'umardamine')::NUMERIC, 0)::NUMERIC(12, 2)        AS umardamine,
                          a1.muud
                   FROM docs.arv1 AS a1
                            INNER JOIN docs.arv a ON a.id = a1.parentId

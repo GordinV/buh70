@@ -168,14 +168,16 @@ class Laps extends React.PureComponent {
                             <InputNumber ref="input-hind"
                                          title='Hind:'
                                          name='hind'
+                                         onChange={this.handleInput}
                                          value={(self.docData.hind) || ''}
-                                         readOnly={true}/>
+                                         readOnly={!isEditMode}/>
 
                             <InputNumber ref="input-summa"
                                          title='Summa:'
                                          name='summa'
+                                         onChange={this.handleInput}
                                          value={self.docData.summa || ''}
-                                         readOnly={true}/>
+                                         readOnly={!isEditMode}/>
 
                             <InputNumber ref="input-kuu"
                                          title='Kuu:'

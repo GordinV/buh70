@@ -11,8 +11,6 @@ BEGIN
         SELECT id INTO laps_id FROM lapsed.laps WHERE id = public.left(right(viitenr::TEXT, 7), 6)::INTEGER;
     END IF;
 
-    raise notice 'laps_id %',laps_id;
-
     IF laps_id IS NULL
     THEN
         -- ищем в старых

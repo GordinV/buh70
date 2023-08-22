@@ -5,9 +5,11 @@ const PropTypes = require('prop-types');
 const DocumentTemplate = require('./../../documentTemplate/index.jsx'),
     InputText = require('../../../components/input-text/input-text.jsx'),
     InputDate = require('../../../components/input-date/input-date.jsx'),
+    SelectData = require('../../../components/select-data/select-data.jsx'),
     InputNumber = require('../../../components/input-number/input-number.jsx'),
     TextArea = require('../../../components/text-area/text-area.jsx'),
     ButtonEdit = require('../../../components/button-register/button-register-edit/button-register-edit.jsx'),
+    ButtonSearch = require('../../../components/button-register/button-register-filter/button-register-filter.jsx'),
     Loading = require('./../../../components/loading/index.jsx');
 
 const styles = require('./styles');
@@ -21,11 +23,13 @@ class Tunnus extends React.PureComponent {
 
         this.state = {
             docId: props.docId ? props.docId : Number(props.match.params.docId),
-            loadedData: false
+            loadedData: false,
+            isShowSearch: false
         };
         this.renderer = this.renderer.bind(this);
         this.btnEditMKClick = this.btnEditMKClick.bind(this);
-
+        this.searchSuccess = this.searchSuccess.bind(this);
+        this.btnSearchClick = this.btnSearchClick.bind(this);
     }
 
     render() {
@@ -124,6 +128,28 @@ class Tunnus extends React.PureComponent {
                                    value={self.docData.maksja || ''}
                                    onChange={self.handleInputChange}/>
                     </div>
+                    <div style={styles.docColumn}>
+                        {this.state.isShowSearch ?
+                            (<SelectData title="Leia maksja:"
+                                         name='maksja'
+                                         libName="pank_vv"
+                                         lisaParameter={true}
+                                         history={this.props.history}
+                                         sqlFields={['maksja', 'isikukood']}
+                                         data={[]}
+                                         value={self.docData.maksja || ''}
+                                         defaultValue={self.docData.maksja}
+                                         boundToGrid='maksja'
+                                         boundToData='maksja'
+                                         ref="select-maksja"
+                                         btnDelete={false}
+                                         onChange={this.searchSuccess}
+                                         readOnly={false}/>) :
+                            <ButtonSearch
+                                style={styles.ButtonSearch}
+                                onClick={this.btnSearchClick}
+                            />}
+                    </div>
                 </div>
                 <div style={styles.docRow}>
                     <div style={styles.docColumn}>
@@ -186,6 +212,32 @@ class Tunnus extends React.PureComponent {
 
         // осуществит переход на карточку контр-агента
         this.props.history.push(`/lapsed/smk/${docMkId}`);
+    }
+
+    /**
+     * при успешном результате поиска, скопируем результат
+     */
+    searchSuccess() {
+        let docData = this.refs['document'].docData;
+        let obj = this.refs['document']['refs']['select-maksja'];
+        let result;
+        if (obj && obj.state) {
+            let activeRow = obj.state.gridActiveRow;
+            result = obj.state.gridData[activeRow];
+        }
+
+        if (result && result.vn_s && !docData.viitenumber) {
+            // получили результат. копируем ВН
+            docData.viitenumber = result.vn_s;
+            docData.nimi = result.nimi;
+        }
+        this.setState({isShowSearch: !this.state.isShowSearch});
+//        this.forceUpdate()
+
+    }
+
+    btnSearchClick() {
+        this.setState({isShowSearch: !this.state.isShowSearch});
     }
 
 

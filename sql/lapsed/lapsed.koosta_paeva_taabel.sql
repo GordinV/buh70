@@ -59,6 +59,7 @@ BEGIN
                    ELSE NULL END
                            AS kogus
         FROM lapsed.lapse_kaart lk
+                 INNER JOIN lapsed.laps laps ON laps.id = lk.parentid AND laps.staatus < 3
                  INNER JOIN libs.library l ON l.kood = lk.properties ->> 'yksus'
             AND l.library = 'LAPSE_GRUPP'
             AND l.status <> 3

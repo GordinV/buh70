@@ -29,6 +29,7 @@ BEGIN
             l_sql = 'select (max(SUBSTRING(''0'' || coalesce(tbl.number,''0''), ' || quote_literal('Y*[0-9]\d+') ||
                     ')::bigint) ::bigint) from docs.' || l_dok || ' tbl where rekvid = $1 ' ||
                     CASE WHEN l_dok = 'ARV' THEN ' and liik = 0' ELSE '' END;
+
             EXECUTE l_sql INTO l_number USING l_rekvid;
 
             IF char_length(l_number) > 6
@@ -39,16 +40,16 @@ BEGIN
             l_number = '1';
         END IF;
 
-        l_sql = 'CREATE SEQUENCE ' || l_sequence_name || ' AS integer;' ||
-                'GRANT ALL ON SEQUENCE public.' || l_sequence_name || ' TO public;';
+        l_sql = 'CREATE SEQUENCE ' || (l_sequence_name) || ' AS integer;' ||
+                'GRANT ALL ON SEQUENCE ' || (l_sequence_name) || ' TO public;';
 
         IF l_number IS NOT NULL AND l_number::INTEGER > 0
         THEN
             -- will store last value
-            l_sql = l_sql || 'select setval(public.' || quote_literal(l_sequence_name) || ',' || l_number || ');';
+            l_sql = l_sql || 'select setval(' || quote_literal(l_sequence_name) || ',' || l_number || ');';
 
         END IF;
-        raise notice 'l_sql %', l_sql;
+        raise notice '%',l_sql;
 
         -- execute sequnce
         EXECUTE l_sql;
@@ -57,9 +58,8 @@ BEGIN
         l_sql = '';
         IF l_number IS NOT NULL AND l_number::INTEGER > 0
         THEN
-            raise notice 'l_sql %', l_sql;
             -- will store last value
-            l_sql = l_sql || 'select setval(public.' || quote_literal(l_sequence_name) || ',0);';
+            l_sql = l_sql || 'select setval(' || quote_literal(l_sequence_name) || ',0);';
             EXECUTE l_sql;
         END IF;
 

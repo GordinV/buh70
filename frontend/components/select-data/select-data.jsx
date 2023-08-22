@@ -27,7 +27,9 @@ class SelectData extends React.PureComponent {
             gridConfig: props.config,
             gridActiveRow: 0,
             show: this.props.show,
-            limit: '10'
+            viitenumber: '',
+            limit: '10',
+            loading: false
         };
         this.handleInputChange = this.handleInputChange.bind(this);
         this.handleGridClick = this.handleGridClick.bind(this);
@@ -177,7 +179,6 @@ class SelectData extends React.PureComponent {
                 }
 
             });
-
         }
 
 
@@ -234,9 +235,11 @@ class SelectData extends React.PureComponent {
         let lib = this.props.libName;
         let sqlWhere = '';
         let limit = this.state.limit ? this.state.limit : 100;
+        let searchValue = this.state.fieldValue;
         let isSeachById = (this.state.value && !fieldValue);
+        let params = this.props.lisaParameter ? this.state.fieldValue : null;
 
-        if (this.props.sqlFields && this.props.sqlFields.length && fieldValue && fieldValue.length > 0) {
+        if (this.props.sqlFields && this.props.sqlFields.length && searchValue && searchValue.length > 0) {
             this.props.sqlFields.forEach((field) => {
                 let isOr = sqlWhere.length > 0 ? ' or ' : '';
                 sqlWhere = sqlWhere.concat(` ${isOr} encode(${field}::bytea, 'escape') ilike '%${fieldValue.trim()}%'`);
@@ -253,10 +256,12 @@ class SelectData extends React.PureComponent {
         let libParams = Object.assign({uuid: DocContext.getUuid}, sqlWhere.length ? {
             sql: sqlWhere,
             limit: limit,
-            kpv: kpv ? kpv: new Date().toISOString().slice(0,10)
+            kpv: kpv ? kpv: new Date().toISOString().slice(0,10),
+            params: params
         } : {});
 
-        if (sqlWhere.length > 0) {
+        if (sqlWhere.length > 0 && !this.state.loading) {
+            this.setState({loading: true});
             fetchData.fetchDataPost(`${POST_LOAD_LIBS_URL}/${lib}`, libParams).then(response => {
                 let gridData = [],
                     gridConfig = [];
@@ -273,15 +278,18 @@ class SelectData extends React.PureComponent {
                             fieldValue: gridData[0][this.props.boundToGrid],
                             value: gridData[0]['id'],
                             gridData: gridData,
-                            gridConfig: gridConfig
+                            viitenumber: gridData[0]['vn_s'] ? gridData[0]['vn_s']: '',
+                            gridConfig: gridConfig,
+                            loading: false
                         });
                     } else {
-                       this.setState({gridData: gridData, gridConfig: gridConfig, show: true});
+                       this.setState({gridData: gridData, gridConfig: gridConfig, show: true, loading: false});
                     }
                 }
 
             }).catch(error => {
                 console.error('loadLibs error', error);
+                this.setState({loading: false});
             });
         }
     }

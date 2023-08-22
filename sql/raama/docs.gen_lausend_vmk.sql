@@ -34,7 +34,8 @@ BEGIN
     SELECT d.docs_ids,
            k.*,
            aa.tp,
-           aa.konto
+           aa.konto,
+           (k.properties ->> 'kasusaaja_id')::INTEGER AS kasusaaja_id
     INTO v_vmk
     FROM docs.mk k
              INNER JOIN docs.doc d ON d.id = k.parentId
@@ -141,9 +142,17 @@ BEGIN
                  INNER JOIN libs.asutus a ON a.id = k1.asutusid
         WHERE k1.parentid = v_vmk.Id
         LOOP
+            -- инициализируем детали проводки
+            json_mk1 = '[]'::JSONB;
             l_jaak = v_vmk1.summa;
 
             l_asutus_id = v_vmk1.asutusid;
+
+            IF (v_vmk.kasusaaja_id IS NOT NULL AND NOT empty(v_vmk.kasusaaja_id))
+            THEN
+                -- hooldekodu
+                l_asutus_id = v_vmk.kasusaaja_id;
+            END IF;
 
             IF l_laps_id IS NOT NULL
             THEN
@@ -171,7 +180,7 @@ BEGIN
                    lcSelg                               AS selg,
                    v_vmk.muud                           AS muud,
                    l_dok                                AS dok,
-                   v_vmk1.asutusid                      AS asutusid
+                   l_asutus_id                          AS asutusid
             INTO v_journal;
 
             -- avans
@@ -279,6 +288,8 @@ BEGIN
                              v_journal                 AS data) row;
 
                 result = docs.sp_salvesta_journal(l_json :: JSON, userId, v_vmk.rekvId);
+                l_json = NULL;
+                json_mk1 = '[]'::JSONB;
             ELSE
                 RAISE NOTICE 'null';
             END IF;
@@ -346,22 +357,9 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_vmk(INTEGER, INTEGER) TO dbpeakasutaj
 SELECT error_code,
        result,
        error_message
-FROM docs.gen_lausend_vmk(2277264, 70);
+FROM docs.gen_lausend_vmk(5198596, 5162);
 
-select * from cur_pank where rekvid = 63
---and journalid > 0
-order by id desc limit 10
+select * from docs.mk where rekvid = 132 and number = '9658'
 
-select * from cur_journal where id = 2283699
-
--- MK nr. 203
-select * from libs.dokprop
-
-select * from libs.library where library = 'DOK'
--- 7
-
-insert into libs.dokprop (parentid, registr, selg, details, tyyp)
-	values (7, 1, 'Sorder', '{"konto":"100000"}'::jsonb, 1 )
-
-update docs.korder1 set doklausid = 4 where tyyp = 1
+select * from ou.userid where rekvid = 132 and kasutaja = 'valentina.besekerskas'
 */

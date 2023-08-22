@@ -1,34 +1,107 @@
 module.exports = {
-    selectAsLibs: ``,
+    selectAsLibs: `WITH params AS (
+            WITH nimed AS (
+                SELECT $1 AS nimi,
+                       ''             AS isikukood
+            )
+            SELECT isikukood, nimi, regexp_split_to_array(nimi, '\\s+') AS nimed
+            FROM nimed
+        ),
+             lapsed AS
+                 (SELECT get_unique_value_from_array(rekv_ids::TEXT[]) AS asutused,
+                         l.nimi,
+                         a.id                                          AS asutus_id,
+                         l.id                                          AS laps_id
+                  FROM libs.asutus a
+                           INNER JOIN lapsed.vanemad v ON v.asutusid = a.id
+                           INNER JOIN lapsed.cur_lapsed l ON l.id = v.parentid
+                          ,
+                       params
+                  WHERE (a.nimetus ILIKE '%' || coalesce(params.nimed[1], '') || '%'
+                      AND a.nimetus ILIKE '%' || coalesce(params.nimed[2], '') || '%'
+                      AND a.regkood ILIKE coalesce(params.isikukood, '') || '%'
+                            )
+                 ),
+             maksjad AS (
+                 SELECT maksja_id,
+                        max(kpv)                                                  AS kpv,
+                        get_unique_value_from_array(array_agg(mk.rekvid)::TEXT[]) AS rekv_ids,
+                        laps_id
+                 FROM lapsed.cur_lapsed_mk mk
+                 WHERE maksja_id IN (
+                     SELECT asutus_id
+                     FROM lapsed
+                 )
+                 GROUP BY maksja_id, laps_id
+             ),
+             vn AS (
+                 WITH vns AS (
+                     SELECT (lapsed.get_viitenumber(unnest(m.rekv_ids)::INTEGER, laps_id)) AS vn_s, laps_id
+                     FROM maksjad m)
+                 SELECT array_agg(vn_s) AS vn_s, laps_id
+                 FROM vns
+                 GROUP BY laps_id
+             )
+                ,
+             rekvs AS (
+                 SELECT m.laps_id,
+                        m.maksja_id,
+                        array_agg(left(r.nimetus, 7)) AS asutused
+                 FROM (SELECT laps_id, maksja_id, unnest(rekv_ids)::INTEGER AS rekv_id FROM maksjad) m
+                          INNER JOIN ou.rekv r ON r.id = m.rekv_id
+                 GROUP BY laps_id, maksja_id
+             )
+        SELECT a.id,
+                null::date as valid,
+                a.nimetus                        AS maksja,
+               a.regkood                        AS isikukood,
+               l.nimi,
+               to_char(m.kpv,'DD.MM.YYYY')         AS viimane_makse,
+               array_to_string(vn.vn_s, ' ')    AS vn_s,
+               array_to_string(r.asutused, ',') AS asutused
+        FROM lapsed l
+                 INNER JOIN maksjad m ON l.asutus_id = m.maksja_id AND l.laps_id = m.laps_id
+                 INNER JOIN vn ON vn.laps_id = l.laps_id
+                 INNER JOIN libs.asutus a ON a.id = m.maksja_id
+                 INNER JOIN rekvs r ON r.laps_id = m.laps_id AND r.maksja_id = m.maksja_id`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},
+            {id: "maksja", name: "Maksja", width: "20%", show: true},
+            {id: "isikukood", name: "Isikukood", width: "10%", show: false},
+            {id: "nimi", name: "Lapse nimi", width: "20%", show: true},
+            {id: "viimane_makse", name: "Viimane makse", width: "10%", show: true},
+            {id: "vn_s", name: "Viitenumbrid", width: "10%", show: true},
+            {id: "asutused", name: "Asutused", width: "20%", show: true},
         ]
     },
     select: [{
-        sql: `SELECT $2                                       AS userid,
-                     pank_vv.id,
-                     to_char(pank_vv.kpv, 'YYYY-MM-DD')::TEXT AS kpv,
-                     pank_vv.pank_id,
-                     pank_vv.viitenumber,
-                     pank_vv.maksja,
-                     pank_vv.isikukood,
-                     pank_vv.selg,
-                     pank_vv.doc_id,
-                     pank_vv.summa,
-                     pank_vv.iban,
-                     pank_vv.pank,
-                     pank_vv.aa,
-                     mk.number,
-                     l.nimi,
-                     r.nimetus                                AS asutus
-              FROM lapsed.pank_vv pank_vv
-                       LEFT OUTER JOIN docs.mk mk ON mk.parentid = pank_vv.doc_id
-                       LEFT OUTER JOIN lapsed.viitenr v ON v.viitenumber = pank_vv.viitenumber
-                       LEFT OUTER JOIN lapsed.laps l ON l.isikukood = v.isikukood
-                       LEFT OUTER JOIN ou.rekv r ON r.id = v.rekv_id
-
-              WHERE pank_vv.id = $1::INTEGER`,
+        sql: `with pank_vv as (
+                select *,
+                       lapsed.get_laps_from_viitenumber(pank_vv.viitenumber) as laps_id,
+                       lapsed.get_rekv_id_from_viitenumber(pank_vv.viitenumber)::integer as rekv_id
+                from lapsed.pank_vv  WHERE pank_vv.id = $1::INTEGER
+            )
+            SELECT $2                                       AS userid,
+                   pank_vv.id,
+                   to_char(pank_vv.kpv, 'YYYY-MM-DD')::TEXT AS kpv,
+                   pank_vv.pank_id,
+                   pank_vv.viitenumber,
+                   pank_vv.maksja,
+                   pank_vv.isikukood,
+                   pank_vv.selg,
+                   pank_vv.doc_id,
+                   pank_vv.summa,
+                   pank_vv.iban,
+                   pank_vv.pank,
+                   pank_vv.aa,
+                   mk.number,
+                   l.nimi,
+                   r.nimetus                                AS asutus
+            FROM  pank_vv
+                     LEFT OUTER JOIN docs.mk mk ON mk.parentid = pank_vv.doc_id
+                     LEFT OUTER JOIN lapsed.laps l ON l.id =pank_vv.laps_id
+                     LEFT OUTER JOIN ou.rekv r ON r.id = pank_vv.rekv_id`,
         sqlAsNew: `SELECT
                   $1 :: INTEGER        AS id,
                   $2 :: INTEGER        AS userid`,
@@ -36,7 +109,77 @@ module.exports = {
         multiple: false,
         alias: 'row',
         data: []
-    }],
+    },
+        {
+            sql: `WITH params AS (
+                WITH nimed AS (
+                    SELECT $1 AS nimi,
+                    $2 as isikukood
+                    )
+                SELECT nimi, regexp_split_to_array(nimi, '\\s+') AS nimed
+                FROM nimed
+            ),
+                 lapsed AS
+                     (SELECT get_unique_value_from_array(rekv_ids::TEXT[]) AS asutused,
+                             l.nimi,
+                             a.id                                          AS asutus_id,
+                             l.id                                          AS laps_id
+                      FROM libs.asutus a
+                               INNER JOIN lapsed.vanemad v ON v.asutusid = a.id
+                               INNER JOIN lapsed.cur_lapsed l ON l.id = v.parentid
+                              ,
+                           params
+                      WHERE (nimetus ILIKE '%' || coalesce(params.nimed[1], '') || '%'
+                          AND nimetus ILIKE '%' || coalesce(params.nimed[2], '') || '%'
+                           AND a.regkood ILIKE coalesce(params.isikukood, '') || '%'
+                                )
+                     ),
+                 maksjad AS (
+                     SELECT maksja_id,
+                            max(kpv)                                                  AS kpv,
+                            get_unique_value_from_array(array_agg(mk.rekvid)::TEXT[]) AS rekv_ids,
+                            laps_id
+                     FROM lapsed.cur_lapsed_mk mk
+                     WHERE maksja_id IN (
+                         SELECT asutus_id
+                         FROM lapsed
+                     )
+                     GROUP BY maksja_id, laps_id
+                 ),
+                 vn AS (
+                     WITH vns AS (
+                         SELECT (lapsed.get_viitenumber(unnest(m.rekv_ids)::INTEGER, laps_id)) AS vn_s, laps_id
+                         FROM maksjad m)
+                     SELECT array_agg(vn_s) as vn_s, laps_id
+                     FROM vns
+                     GROUP BY laps_id
+                 )
+                    ,
+                 rekvs AS (
+                     SELECT m.laps_id,
+                            m.maksja_id,
+                            array_agg(left(r.nimetus, 7)) AS asutused
+                     FROM (SELECT laps_id, maksja_id, unnest(rekv_ids)::INTEGER AS rekv_id FROM maksjad) m
+                              INNER JOIN ou.rekv r ON r.id = m.rekv_id
+                     GROUP BY laps_id, maksja_id
+                 )
+            SELECT a.nimetus                        AS maksja,
+                   l.nimi,
+                   m.kpv                            AS viimane_makse,
+                   array_to_string(vn.vn_s, ' ')    AS vn_s,
+                   array_to_string(r.asutused, ',') AS asutused
+            FROM lapsed l
+                     INNER JOIN maksjad m ON l.asutus_id = m.maksja_id AND l.laps_id = m.laps_id
+                     INNER JOIN vn ON vn.laps_id = l.laps_id
+                     INNER JOIN libs.asutus a ON a.id = m.maksja_id
+                     INNER JOIN rekvs r ON r.laps_id = m.laps_id AND r.maksja_id = m.maksja_id`,
+            not_initial_load: true,
+            query: null,
+            multiple: true,
+            alias: 'maksjad',
+            data: []
+        }
+    ],
     returnData: {
         row: {}
     },
@@ -84,8 +227,8 @@ module.exports = {
                              LEFT OUTER JOIN docs.mk mk ON mk.parentid = v.doc_id
                              LEFT OUTER JOIN ou.rekv r ON r.id = mk.rekvid
                              LEFT OUTER JOIN ou.userid u ON u.id = $2
-                    WHERE coalesce(v.selg,'') not like '%intres%'
-                      and coalesce(v.isikukood,'')  not in ('75024260')
+                    WHERE coalesce(v.selg, '') NOT LIKE '%intres%'
+                      AND coalesce(v.isikukood, '') NOT IN ('75024260')
                     ORDER BY id DESC`,     //  $1 всегда ид учреждения, $2 - userId
         params: '',
         alias: 'curPankVV'

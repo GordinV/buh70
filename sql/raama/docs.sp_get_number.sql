@@ -16,6 +16,7 @@ DECLARE
     l_seq_name        TEXT;
 BEGIN
 
+    raise notice 'tcDok %', tcDok;
     IF tnDokPropId IS NOT NULL
     THEN
         SELECT ltrim(rtrim(proc_))
@@ -72,6 +73,8 @@ BEGIN
             THEN
                 lcTableName = 'docs.mk';
                 lcAdditionalWhere = ' and OPT = 2 ';
+                l_seq_name = docs.create_number_sequence(tnrekvid, tcDok, FALSE);
+                SELECT nextval('public.' || l_seq_name) AS number INTO v_number;
         WHEN tcDok = 'LEPING'
             THEN
                 lcTableName = 'docs.leping1';
@@ -84,7 +87,7 @@ BEGIN
                         '(select left(l.number,2)::text as number, l.parentid, l.rekvid, l.algkpv as kpv from rekl.luba l)';
         END CASE;
 
-    IF tcDok NOT IN ('ARV', 'SMK', 'TEATIS', 'HOOLEPING')
+    IF tcDok NOT IN ('ARV', 'SMK','VMK','TEATIS', 'HOOLEPING')
     THEN
         -- building sql query with regexp for only numbers
         lcSqlString = 'select (max(right(SUBSTRING(''0'' || coalesce(tbl.number,''0''), ' || quote_literal('Y*[0-9]\d+') ||

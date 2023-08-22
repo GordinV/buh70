@@ -18,6 +18,7 @@ DECLARE
     new_history     JSONB;
     DOC_STATUS      INTEGER = 3; -- документ удален
 
+
 BEGIN
 
     SELECT d.*,
@@ -120,6 +121,11 @@ BEGIN
                  arvtasu_history AS arvtasu) row;
 
     -- Удаление данных из связанных таблиц (удаляем проводки)
+    PERFORM docs.sp_delete_journal(l_user_id, mk.journalid)
+    FROM (SELECT k1.*
+          FROM docs.mk1 k1
+                   INNER JOIN docs.mk k ON k.id = k1.parentid
+          WHERE k.parentid = doc_id) mk;
 
     DELETE
     FROM docs.mk1
@@ -184,15 +190,6 @@ BEGIN
         status     = DOC_STATUS
     WHERE id = doc_id;
 
-    --удалим из кеша отчета, если он там
-    IF exists(SELECT 1 FROM pg_class WHERE relname = 'saldo_ja_kaive')
-    THEN
-        DELETE
-        FROM lapsed.saldo_ja_kaive
-        WHERE (params ->> 'kpv_end' IS NULL OR ((params ->> 'kpv_end')::DATE <= v_doc.maksepaev
-            OR (params ->> 'kpv_start')::DATE >= v_doc.maksepaev))
-          AND rekvid = v_doc.rekvid;
-    END IF;
 
     result = 1;
     RETURN;

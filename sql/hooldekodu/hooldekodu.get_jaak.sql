@@ -2,7 +2,7 @@ DROP FUNCTION IF EXISTS hooldekodu.get_jaak(INTEGER, INTEGER, DATE);
 
 CREATE FUNCTION hooldekodu.get_jaak(IN l_rekv_id INTEGER, IN l_isik_id INTEGER, IN l_kpv DATE DEFAULT current_date,
                                     OUT pension_85 NUMERIC, OUT pension_15 NUMERIC, OUT toetus NUMERIC,
-                                    OUT vara NUMERIC, OUT muud NUMERIC)
+                                    OUT vara NUMERIC, OUT muud NUMERIC, OUT taskuraha NUMERIC)
     LANGUAGE plpgsql
 AS
 $$
@@ -13,8 +13,9 @@ BEGIN
            coalesce(sum(summa) FILTER ( WHERE ltrim(rtrim(ht.allikas)) = 'PENSION15'), 0) AS pension_15,
            coalesce(sum(summa) FILTER ( WHERE ltrim(rtrim(ht.allikas)) = 'TOETUS'), 0)    AS toetus,
            coalesce(sum(summa) FILTER ( WHERE ltrim(rtrim(ht.allikas)) = 'VARA'), 0)      AS vara,
-           coalesce(sum(summa) FILTER ( WHERE ltrim(rtrim(ht.allikas)) = 'MUUD'), 0)      AS muud
-    INTO pension_85, pension_15, toetus, vara, muud
+           coalesce(sum(summa) FILTER ( WHERE ltrim(rtrim(ht.allikas)) = 'MUUD'), 0)      AS muud,
+           coalesce(sum(summa) FILTER ( WHERE ltrim(rtrim(ht.allikas)) = 'TASKURAHA'), 0) AS taskuraha
+    INTO pension_85, pension_15, toetus, vara, muud, taskuraha
     FROM hooldekodu.hootehingud ht
     WHERE isikid = l_isik_id
       AND kpv < l_kpv

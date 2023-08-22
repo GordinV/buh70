@@ -36,9 +36,11 @@ DECLARE
     doc_viitenr       TEXT    = doc_data ->> 'viitenr';
     doc_lapsid        INTEGER = doc_data ->> 'lapsid'; -- kui arve salvestatud lapse modulis
     doc_dok_id        INTEGER = doc_data ->> 'dokid'; -- kui mk salvestatud avansiaruanne alusel
+    doc_kasusaaja_id  INTEGER = doc_data ->> 'kasusaaja_id'; -- дл модуля Hooldekodu
 
     json_object       JSON;
     json_record       RECORD;
+    json_properties   JSONB   = '{}'::JSONB;
     new_history       JSONB;
     ids               INTEGER[];
     docs              INTEGER[];
@@ -85,7 +87,7 @@ BEGIN
     IF doc_number IS NULL OR doc_number = ''
     THEN
         -- присвоим новый номер
-        doc_number = docs.sp_get_number(user_rekvid, 'SMK', YEAR(doc_kpv), doc_doklausid);
+        doc_number = docs.sp_get_number(user_rekvid, doc_type_kood, YEAR(doc_kpv), doc_doklausid);
     END IF;
 
 -- проверим расч. счет
@@ -122,6 +124,12 @@ BEGIN
                          LIMIT 1);
     END IF;
 
+    -- для модуля Hooldekodu укажем бенефициара платежа, если получателем денег является отличное от их владельца лицо
+    IF (doc_kasusaaja_id IS NOT NULL AND NOT empty(doc_kasusaaja_id))
+    THEN
+        json_properties = jsonb_build_object('kasusaaja_id', doc_kasusaaja_id);
+    END IF;
+
 
     -- вставка или апдейт docs.doc
 
@@ -140,11 +148,11 @@ BEGIN
         SELECT currval('docs.doc_id_seq') INTO doc_id;
 
         INSERT INTO docs.mk (parentid, rekvid, kpv, opt, aaId, number, muud, arvid, doklausid, maksepaev, selg, viitenr,
-                             dokid)
+                             dokid, properties)
         VALUES (doc_id, user_rekvid, doc_kpv, doc_opt :: INTEGER, doc_aa_id, left(doc_number, 20), doc_muud,
                 coalesce(doc_arvid, 0),
                 coalesce(doc_doklausid, 0), coalesce(doc_maksepaev, doc_kpv), coalesce(doc_selg, ''),
-                coalesce(doc_viitenr, ''), coalesce(doc_dok_id, 0)) RETURNING id
+                coalesce(doc_viitenr, ''), coalesce(doc_dok_id, 0), json_properties) RETURNING id
                    INTO mk_id;
 
     ELSE
@@ -175,16 +183,17 @@ BEGIN
         WHERE id = doc_id;
 
         UPDATE docs.mk
-        SET kpv       = doc_kpv,
-            aaid      = doc_aa_id,
-            number    = left(doc_number, 20),
-            muud      = doc_muud,
-            arvid     = coalesce(doc_arvid, 0),
-            doklausid = coalesce(doc_doklausid, 0),
-            maksepaev = coalesce(doc_maksepaev, doc_kpv),
-            selg      = coalesce(doc_selg, ''),
-            viitenr   = coalesce(doc_viitenr, ''),
-            dokid     = coalesce(doc_dok_id, 0)
+        SET kpv        = doc_kpv,
+            aaid       = doc_aa_id,
+            number     = left(doc_number, 20),
+            muud       = doc_muud,
+            arvid      = coalesce(doc_arvid, 0),
+            doklausid  = coalesce(doc_doklausid, 0),
+            maksepaev  = coalesce(doc_maksepaev, doc_kpv),
+            selg       = coalesce(doc_selg, ''),
+            viitenr    = coalesce(doc_viitenr, ''),
+            dokid      = coalesce(doc_dok_id, 0),
+            properties = coalesce(properties, '{}'::JSONB) || coalesce(json_properties, '{}'::JSONB)
         WHERE parentid = doc_id RETURNING id
             INTO mk_id;
 
@@ -250,7 +259,7 @@ BEGIN
                     summa    = json_record.summa,
                     aa       = json_record.aa,
                     pank     = json_record.pank,
-                    konto   = json_record.konto,
+                    konto    = json_record.konto,
                     tunnus   = json_record.tunnus,
                     proj     = json_record.proj,
                     kood1    = coalesce(json_record.kood1, v_nom.tegev),

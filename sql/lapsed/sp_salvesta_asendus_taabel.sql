@@ -29,15 +29,22 @@ BEGIN
     END IF;
 
     SELECT kasutaja
-        INTO userName
-        FROM ou.userid u
-        WHERE u.rekvid = user_rekvid
-               AND u.id = userId;
+    INTO userName
+    FROM ou.userid u
+    WHERE u.rekvid = user_rekvid
+      AND u.id = userId;
+
     IF userName IS NULL
     THEN
-        RAISE NOTICE 'User not found %', user;
-        RETURN 0;
+        RAISE EXCEPTION 'Viga, User not found %', user;
     END IF;
+
+    -- проверка на сохранение для "своих" детей
+    IF lapsed.get_rekv_id_from_viitenumber(doc_viitenumber) = user_rekvid
+    THEN
+        RAISE EXCEPTION 'Viga, Ei saa sisesta selle asutuse lapsed %', doc_viitenumber;
+    END IF;
+
 
     -- вставка или апдейт docs.doc
     IF doc_id IS NULL OR doc_id = 0

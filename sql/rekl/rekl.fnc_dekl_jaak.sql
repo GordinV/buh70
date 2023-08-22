@@ -35,6 +35,6 @@ WHERE id = l_dekl_id
 $$;
 
 /*
-SELECT rekl.fnc_dekl_jaak(1443427)
+SELECT rekl.fnc_dekl_jaak(4644388)
 
 */

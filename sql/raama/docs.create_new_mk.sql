@@ -43,7 +43,7 @@ DECLARE
                                                                       LIMIT 1)
                                       ELSE left(right(l_viitenr::TEXT, 7), 6)::INTEGER END;
     l_isikukood  TEXT;
-    l_opt        INTEGER;
+    l_opt        INTEGER        = CASE WHEN l_dok = 'VMK' THEN 1 ELSE 2 END;
     l_rekvId     INTEGER        = (SELECT rekvid
                                    FROM ou.userid
                                    WHERE id = user_id);
@@ -62,16 +62,20 @@ BEGIN
         );
     END IF;
 
-    SELECT dp.details ->> 'konto'                                         AS konto,
-           a.*,
-           coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120) AS viitenr
-    INTO v_arv
-    FROM docs.doc d
-             INNER JOIN docs.arv a ON a.parentid = d.id
-             LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
-    WHERE d.id = l_arv_id;
+    IF l_arv_id IS NOT NULL
+    THEN
 
-    doc_type_id = CASE WHEN v_arv.liik = 0 OR v_arv.id IS NULL THEN 'SMK' ELSE 'VMK' END;
+        SELECT dp.details ->> 'konto'                                         AS konto,
+               a.*,
+               coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120) AS viitenr
+        INTO v_arv
+        FROM docs.doc d
+                 INNER JOIN docs.arv a ON a.parentid = d.id
+                 LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
+        WHERE d.id = l_arv_id;
+
+        doc_type_id = CASE WHEN v_arv.liik = 0 OR v_arv.id IS NULL THEN 'SMK' ELSE 'VMK' END;
+    END IF;
 
     -- maksepaev
     IF l_maksepaev IS NULL
@@ -287,7 +291,7 @@ BEGIN
                v_nom_rea.tegev    AS kood1,
                v_nom_rea.allikas  AS kood2,
                v_nom_rea.artikkel AS kood5,
-               l_tp as tp,
+               l_tp               AS tp,
                v_nom_rea.tunnus
         INTO v_mk1;
     END IF;

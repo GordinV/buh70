@@ -1,11 +1,11 @@
 DROP FUNCTION IF EXISTS lapsed.import_asendus_taabelid(INTEGER, INTEGER, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.import_asendus_taabelid(IN user_id INTEGER,
-                                                          IN user_rekvid INTEGER,
-                                                          IN l_kpv DATE,
-                                                          OUT error_code INTEGER,
-                                                          OUT result INTEGER,
-                                                          OUT error_message TEXT)
+                                                           IN user_rekvid INTEGER,
+                                                           IN l_kpv DATE,
+                                                           OUT error_code INTEGER,
+                                                           OUT result INTEGER,
+                                                           OUT error_message TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -40,6 +40,7 @@ BEGIN
           AND at.aasta = date_part('year', l_kpv)
           AND at.kuu = date_part('month', l_kpv)
           AND at.staatus = 1 -- только не импортированные
+--          AND l.isikukood = '62006290071'
         LOOP
 
             -- ищем услугу по коду другово учреждения
@@ -96,6 +97,7 @@ BEGIN
                          json_object AS data) row;
 
             SELECT lapsed.sp_salvesta_lapse_taabel(json_save_params :: JSONB, user_id, user_rekvid) INTO l_id;
+            RAISE NOTICE 'json_save_params %, l_id %', json_save_params, l_id;
             IF l_id > 0
             THEN
                 count = count + 1;

@@ -1,7 +1,7 @@
 ﻿DROP FUNCTION IF EXISTS docs.gen_lausend_arv(INTEGER);
 
 DROP FUNCTION IF EXISTS docs.gen_lausend_arv(INTEGER, INTEGER);
-DROP FUNCTION IF EXISTS docs.gen_lausend_arv_(INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS docs.gen_lausend_arv(INTEGER, INTEGER);
 
 CREATE OR REPLACE FUNCTION docs.gen_lausend_arv(IN tnId INTEGER, IN user_Id INTEGER, OUT error_code INTEGER,
                                                 OUT result INTEGER, OUT error_message TEXT)
@@ -60,7 +60,6 @@ BEGIN
 
     IF v_arv IS NULL
     THEN
-        RAISE NOTICE 'rows_fetched = 0';
         error_code = 4; -- No documents found
         error_message = 'No documents found';
         result = 0;
@@ -69,7 +68,6 @@ BEGIN
 
     IF v_arv.doklausid = 0
     THEN
-        RAISE NOTICE 'v_arv.doklausid = 0';
         error_code = 1; -- Konteerimine pole vajalik
         error_message = 'Konteerimine pole vajalik';
         result = 0;
@@ -83,7 +81,6 @@ BEGIN
       AND u.id = user_Id;
     IF userName IS NULL
     THEN
-        RAISE NOTICE 'User not found %', user_Id;
         error_message = 'User not found';
         error_code = 3;
         RETURN;
@@ -247,8 +244,6 @@ BEGIN
 
         l_json = row_to_json(v_journal);
 
-
---    l_json_details = '';
         IF v_arv.tyyp IS NOT NULL AND v_arv.tyyp = 'HOOLDEKODU_ISIKU_OSA' AND v_arv.liik = 0
         THEN
             FOR v_arv1 IN
@@ -261,14 +256,15 @@ BEGIN
                        arv1.kood5,
                        arv1.tunnus,
                        arv1.konto,
-                       sum(arv1.summa)                                                 AS summa,
-                       sum(arv1.kbmta)                                                 AS kbmta,
-                       sum(coalesce((arv1.properties ->> 'allikas_85')::NUMERIC, 0))   AS allikas_85,
-                       sum(coalesce((arv1.properties ->> 'allikas_vara')::NUMERIC, 0)) AS allikas_vara,
-                       sum(coalesce((arv1.properties ->> 'allikas_muud')::NUMERIC, 0)) AS allikas_muud,
-                       sum(coalesce((arv1.properties ->> 'umardamine')::NUMERIC, 0))   AS umardamine,
-                       'EUR' :: VARCHAR                                                AS valuuta,
-                       1 :: NUMERIC                                                    AS kuurs
+                       sum(arv1.summa)                                                      AS summa,
+                       sum(arv1.kbmta)                                                      AS kbmta,
+                       sum(coalesce((arv1.properties ->> 'allikas_85')::NUMERIC, 0))        AS allikas_85,
+                       sum(coalesce((arv1.properties ->> 'allikas_vara')::NUMERIC, 0))      AS allikas_vara,
+                       sum(coalesce((arv1.properties ->> 'allikas_muud')::NUMERIC, 0))      AS allikas_muud,
+                       sum(coalesce((arv1.properties ->> 'allikas_taskuraha')::NUMERIC, 0)) AS allikas_taskuraha,
+                       sum(coalesce((arv1.properties ->> 'umardamine')::NUMERIC, 0))        AS umardamine,
+                       'EUR' :: VARCHAR                                                     AS valuuta,
+                       1 :: NUMERIC                                                         AS kuurs
                 FROM docs.arv1 arv1
                 WHERE arv1.summa <> 0
                   AND arv1.parentid = v_arv.id
@@ -317,10 +313,14 @@ BEGIN
                            coalesce(v_arv1.kood5, '')      AS kood5
                     INTO v_journal;
 
-                    l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
+                    IF coalesce(v_arv1.allikas_taskuraha, 0) = 0
+                    THEN
+                        -- исключим из проводки сумму карманных денег
+                        l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_journal);
+                    END IF;
 
                     -- доп. строка для модуля дома попечения, оплата
-                    IF v_arv1.allikas_85::NUMERIC <> 0
+                    IF coalesce(v_arv1.allikas_85, 0)::NUMERIC <> 0
                     THEN
                         -- если деньги по источнику 85
                         l_allika_summa = v_arv1.allikas_85;
@@ -344,7 +344,7 @@ BEGIN
                         l_json_details_tasu = coalesce(l_json_details_tasu, '{}'::JSONB) || to_jsonb(v_journal);
 
                     END IF;
-                    IF v_arv1.allikas_vara <> 0
+                    IF coalesce(v_arv1.allikas_vara, 0) <> 0
                     THEN
                         -- если деньги по источнику vara
                         l_allika_summa = v_arv1.allikas_vara;
@@ -388,7 +388,7 @@ BEGIN
 
 
                     END IF;
-                    IF v_arv1.allikas_muud <> 0
+                    IF coalesce(v_arv1.allikas_muud, 0) <> 0
                     THEN
                         -- если деньги по источнику muud
                         l_allika_summa = v_arv1.allikas_muud;
@@ -433,6 +433,32 @@ BEGIN
 
 
                     END IF;
+                    IF coalesce(v_arv1.allikas_taskuraha, 0) <> 0
+                    THEN
+                        -- если деньги по источнику taskuraha (kov)
+                        l_allika_summa = v_arv1.allikas_taskuraha;
+                        -- доп. строка
+
+                        SELECT 0                               AS id,
+                               l_allika_summa                  AS summa,
+                               coalesce(v_arv1.valuuta, 'EUR') AS valuuta,
+                               coalesce(v_arv1.kuurs, 1)       AS kuurs,
+                               '20356001'                      AS deebet,
+                               '10300002'                      AS kreedit,
+                               '800699'                        AS lisa_d,
+                               '800699'                        AS lisa_k,
+                               v_arv1.tunnus                   AS tunnus,
+                               coalesce(v_arv1.proj, '')       AS proj,
+                               coalesce(v_arv1.kood1, '')      AS kood1,
+                               coalesce(v_arv1.kood2, '')      AS kood2,
+                               coalesce(v_arv1.kood3, '')      AS kood3,
+                               coalesce(v_arv1.kood4, '')      AS kood4,
+                               coalesce(v_arv1.kood5, '')      AS kood5
+                        INTO v_journal;
+                        l_json_details_tasu = coalesce(l_json_details_tasu, '{}'::JSONB) || to_jsonb(v_journal);
+
+                    END IF;
+
                     l_row_count = l_row_count + 1;
 
                 END LOOP;
@@ -515,10 +541,11 @@ BEGIN
 
                         l_json_details = coalesce(l_json_details, '[]'::JSONB) || to_jsonb(v_journal);
 
+
                         -- Доп. проводка для род.платы, если услуга была оказана в другом учреждении
                         IF v_arv1.properties ->> 'asendus_id' IS NOT NULL AND exists(SELECT id
                                                                                      FROM lapsed.asendus_taabel
-                                                                                     WHERE id = (v_arv.properties ->> 'asendus_id')::INTEGER)
+                                                                                     WHERE id = (v_arv1.properties ->> 'asendus_id')::INTEGER)
                         THEN
 
                             -- табель (признак)
@@ -565,19 +592,25 @@ BEGIN
                             l_json_details = coalesce(l_json_details, '[]'::JSONB) || to_jsonb(v_journal);
                             -- запомним эту часть проводки
 
+
                             l_json_asendus_header = l_json;
                             v_journal.tunnus = v_asendus_taabel.tunnus;
+                            IF (v_arv1.tunnus = '3008')
+                            THEN
+                                -- если украинцы, то оставляем признак уцкраинцев
+                                v_journal.tunnus = v_arv1.tunnus;
+                            END IF;
 
                             -- поправим знак
                             v_journal.summa = -1 * v_journal.summa;
 
-                            l_json_asendus_details = l_json_asendus_details || to_jsonb(v_journal)::JSONB;
+                            l_json_asendus_details =
+                                        coalesce(l_json_asendus_details, '[]')::JSONB || to_jsonb(v_journal)::JSONB;
 
                             -- сохраним параметры для проводки
                             l_json_asendus = l_json_asendus ||
                                              jsonb_build_object('header', l_json_asendus_header, 'details',
                                                                 l_json_asendus_details);
-
 
                         END IF;
 
@@ -699,14 +732,20 @@ BEGIN
         THEN
             -- род. плата, если есть импорт услуг из другого учреждения
             -- Доп. проводка для род.платы, если услуга была оказана в другом учреждении
-            IF v_arv.properties ->> 'asendus_id' IS NOT NULL AND exists(SELECT id
-                                                                        FROM lapsed.asendus_taabel
-                                                                        WHERE id = (v_arv.properties ->> 'asendus_id')::INTEGER)
-            THEN
 
+            IF jsonb_array_length(l_json_asendus_details::JSONB) > 0 AND exists(SELECT id
+                                                                                FROM lapsed.asendus_taabel
+                                                                                WHERE id IN
+                                                                                      (SELECT (arv1.properties ->> 'asendus_id')::INTEGER AS asendus_id
+                                                                                       FROM docs.arv1 arv1
+                                                                                       WHERE arv1.summa <> 0
+                                                                                         AND arv1.parentid = v_arv.id))
+            THEN
                 FOR i IN 1..jsonb_array_length(l_json_asendus_details::JSONB)
                     LOOP
-                        lcSelg = 'Tulud üleviimine: ' || ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_tunnus');
+
+                        lcSelg = 'Tulud üleviimine: ' ||
+                                 ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_tunnus');
 
                         SELECT 0                                                                             AS id,
                                'JOURNAL'                                                                     AS doc_type_id,
@@ -733,7 +772,8 @@ BEGIN
 
 
                         l_parrallel_id =
-                                docs.sp_salvesta_journal(l_json :: JSON, l_asendus_user_id, ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_rekvid')::INTEGER);
+                                docs.sp_salvesta_journal(l_json :: JSON, l_asendus_user_id,
+                                                         ((l_json_asendus_details::JSONB -> (i - 1))::JSONB ->> 'asendus_rekvid')::INTEGER);
                     END LOOP;
 
 
@@ -747,16 +787,16 @@ BEGIN
                           WHERE isikid = v_arv.Asutusid
                             AND coalesce((properties ->> 'algoritm')::INTEGER, 0) = 1)
                 THEN
-                    -- меняем дату на дату поступления денег
+                    -- меняем дату на дату поступления денег на последнее поступление (31.07.2023)
 
                     v_arv.kpv = (
                         SELECT kpv
                         FROM cur_journal
                         WHERE asutusid = v_arv.Asutusid
-                          AND kpv >= v_arv.kpv
+--                          AND kpv >= v_arv.kpv
                           AND deebet LIKE '100100%'
                           AND kreedit LIKE '203630%'
-                        ORDER BY kpv
+                        ORDER BY kpv DESC
                         LIMIT 1);
                 END IF;
 
@@ -836,8 +876,7 @@ BEGIN
 
 
 END;
-$BODY$
-    LANGUAGE plpgsql
+$BODY$ LANGUAGE plpgsql
     VOLATILE
     COST 100;
 
@@ -847,7 +886,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_arv(INTEGER, INTEGER) TO dbpeakasutaj
 /*
 
 
-SELECT  docs.gen_lausend_arv(2486774, 2477)
+SELECT  docs.gen_lausend_arv(5134869, 5420)
 
 */
 

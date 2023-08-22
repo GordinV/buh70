@@ -19,9 +19,12 @@ class ButtonRegisterFilter extends React.PureComponent {
     }
 
     render() {
+
+        let style = this.props.style ?  Object.assign({}, styles, this.props.style): styles;
         return <Button
             ref="btnFilter"
             value = 'Filter'
+            style={style}
             show={this.props.show}
             disabled={this.props.disabled}
             onClick={(e) => this.handleClick(e)}>

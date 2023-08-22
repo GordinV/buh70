@@ -101,7 +101,7 @@ BEGIN
                  CASE WHEN doc_id IS NULL OR doc_id = 0 THEN FALSE ELSE doc_is_tootaja END AS is_tootaja,
                  doc_palk_email                                                            AS palk_email,
                  CASE
-                     WHEN doc_aa IS NOT NULL THEN '[]'::JSONB || new_aa :: JSONB
+                     WHEN doc_aa IS NOT NULL AND NOT empty(doc_aa) THEN '[]'::JSONB || new_aa :: JSONB
                      ELSE doc_asutus_aa :: JSONB END                                       AS asutus_aa,
                  doc_kmkr                                                                  AS kmkr) row;
 

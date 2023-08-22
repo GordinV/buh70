@@ -23,7 +23,8 @@ SELECT pk.id,
        (l.properties::JSONB ->> 'maks')::INTEGER                                             AS tulumaks,
        (l.properties::JSONB ->> 'asutusest')::INTEGER                                        AS asutusest,
        (l.properties::JSONB ->> 'round')::NUMERIC                                            AS round,
-       pk.status
+       pk.status,
+       l.tun1 as liikmemaks
 FROM libs.library l
          INNER JOIN palk.palk_kaart pk ON pk.libId = l.id
          LEFT OUTER JOIN libs.library t ON (l.properties::JSON ->> 'tunnusid')::INTEGER = t.id

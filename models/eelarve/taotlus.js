@@ -163,7 +163,7 @@ module.exports = {
     ],
     saveDoc: `select eelarve.sp_salvesta_taotlus($1::json, $2::integer, $3::integer) as id`, // $1 - data json, $2 - userid, $3 - rekvid
     deleteDoc: `SELECT error_code, result, error_message
-                FROM eelarve.sp_delete_taotlus($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
+                FROM eelarve.sp_delete_hoo_config($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     executeCommand: {
         command: `SELECT error_code, result, error_message
                   FROM sp_execute_task($1::INTEGER, $2::JSON, $3::TEXT)`, //$1- userId, $2 - params, $3 - task

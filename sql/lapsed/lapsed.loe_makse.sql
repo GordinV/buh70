@@ -79,6 +79,8 @@ BEGIN
             -- контроль длины
             IF len(l_new_viitenr) <> 10
             THEN
+                raise notice 'len(l_new_viitenr) %, l_new_viitenr %', len(l_new_viitenr), l_new_viitenr;
+
                 -- ошибка на ВН
                 RAISE EXCEPTION 'Vale viitenumber, < 10';
             END IF;
@@ -389,10 +391,11 @@ GRANT EXECUTE ON FUNCTION lapsed.loe_makse(IN user_id INTEGER, IN INTEGER) TO ar
 
 
 /*
-47310123728
-SELECT lapsed.loe_makse(62, id)
+--47310123728
+SELECT lapsed.loe_makse(4824, id)
 from lapsed.pank_vv
-where kpv >= '2023-01-01'
-and id = 85245
+where id = 116022
+--kpv >= '2023-01-01'
+--and id = 116017
 and doc_id is null
 */

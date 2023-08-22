@@ -17,13 +17,15 @@ module.exports = {
                    allikas,
                    artikkel,
                    tunnus,
+                   proj,
+                   uritus,
                    a.nimetus,
                    eelarve,
                    eelarve_kassa,
                    taitmine,
                    taitmine_kassa,
                    r.nimetus AS asutus
-            FROM eelarve.eelarve_taitmine_jaak($1::DATE, $2::INTEGER, $3::INTEGER) qryReport
+            FROM eelarve.eelarve_taitmine_jaak($1::DATE, $2::INTEGER, $3::INTEGER, $4::jsonb) qryReport
                      LEFT OUTER JOIN com_artikkel a ON ltrim(rtrim(a.kood)) = ltrim(rtrim(qryReport.artikkel))
                      INNER JOIN (SELECT id, parentid, regkood, nimetus
                                  FROM ou.rekv
@@ -42,6 +44,8 @@ module.exports = {
                ''                  AS allikas,
                '15,2586,4,5,6'     AS artikkel,
                ''                  AS tunnus,
+               '' as proj,
+               '' as uritus,
                'Kulud'             AS nimetus,
                sum(eelarve)        AS eelarve,
                sum(eelarve_kassa)  AS eelarve_kassa,
@@ -60,6 +64,8 @@ module.exports = {
             allikas,
             artikkel,
             tunnus,
+            proj,
+            uritus,
             nimetus,
             (eelarve) AS eelarve,
             (eelarve_kassa) AS eelarve_kassa,

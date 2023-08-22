@@ -9,9 +9,9 @@ module.exports = {
             {id: "lapse_nimi", name: "Lapse nimi", width: "15%"},
             {id: "maksja_isikukood", name: "Maksja nimi", width: "10%"},
             {id: "maksja_nimi", name: "Maksja nimi", width: "15%"},
-            {id: "noude_50", name: "50%", width: "7%", type: "number"},
-            {id: "noude_100", name: "100%", width: "7%", type: "number"},
-            {id: "jaak", name: "Võlg", width: "7%", type: "number"},
+            {id: "noude_50", name: "50%", width: "7%", type: "number", interval: true},
+            {id: "noude_100", name: "100%", width: "7%", type: "number", interval: true},
+            {id: "jaak", name: "Võlg", width: "7%", type: "number", interval: true},
             {id: "asutus", name: "Asutus", width: "10"},
 
         ],

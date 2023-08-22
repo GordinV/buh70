@@ -46,6 +46,7 @@ DECLARE
     doc_ettemaksu_period  INTEGER        = doc_data ->> 'ettemaksu_period'; -- период в месяцах для счета на предоплату или номер периода в доходных
     doc_ettemaksu_arve_id INTEGER        = doc_data ->> 'ettemaksu_arve_id'; -- ссылка на счет предоплатв
     doc_asendus_id        INTEGER        = doc_data ->> 'asendus_id'; -- на основании импортированного табеля из замещения
+    doc_taskuraha_kov     NUMERIC        = doc_data ->> 'taskuraha_kov'; -- сумма карманных денег, по алгоритму замещения
 
 -- Hooldekodu
     doc_isik_id           INTEGER        = doc_data ->> 'isik_id'; -- kui arve salvestatud hooldekodu modulist
@@ -79,6 +80,7 @@ BEGIN
                               doc_ettemaksu_period AS ettemaksu_period,
                               doc_isik_id          AS isik_id,
                               doc_asendus_id       AS asendus_id,
+                              doc_taskuraha_kov    AS taskuraha_kov,
                               doc_print            AS print) row);
 
     IF (doc_id IS NULL)
@@ -207,6 +209,7 @@ BEGIN
                                             asendus_id INTEGER,
                                             soodustus NUMERIC(14, 4), soodus NUMERIC(14, 4), allikas_85 NUMERIC(12, 2),
                                             allikas_vara NUMERIC(12, 2), allikas_muud NUMERIC(12, 2),
+                                            allikas_taskuraha NUMERIC(12, 2),
                                             umardamine NUMERIC(12, 2), sugulane_osa NUMERIC(12, 2),
                                             omavalitsuse_osa NUMERIC(12, 2));
 
@@ -220,13 +223,14 @@ BEGIN
                          CASE
                              WHEN json_record.soodustus IS NULL OR empty(json_record.soodustus)
                                  THEN coalesce(json_record.soodus, 0)
-                             ELSE json_record.soodustus END        AS soodustus,
-                         coalesce(json_record.allikas_85, 0)       AS allikas_85,
-                         coalesce(json_record.allikas_vara, 0)     AS allikas_vara,
-                         coalesce(json_record.allikas_muud, 0)     AS allikas_muud,
-                         coalesce(json_record.umardamine, 0)       AS umardamine,
-                         coalesce(json_record.sugulane_osa, 0)     AS sugulane_osa,
-                         coalesce(json_record.omavalitsuse_osa, 0) AS omavalitsuse_osa
+                             ELSE json_record.soodustus END         AS soodustus,
+                         coalesce(json_record.allikas_85, 0)        AS allikas_85,
+                         coalesce(json_record.allikas_vara, 0)      AS allikas_vara,
+                         coalesce(json_record.allikas_muud, 0)      AS allikas_muud,
+                         coalesce(json_record.allikas_taskuraha, 0) AS allikas_taskuraha,
+                         coalesce(json_record.umardamine, 0)        AS umardamine,
+                         coalesce(json_record.sugulane_osa, 0)      AS sugulane_osa,
+                         coalesce(json_record.omavalitsuse_osa, 0)  AS omavalitsuse_osa
                  ) row;
 
             IF json_record.id IS NULL OR json_record.id = '0' OR substring(json_record.id FROM 1 FOR 3) = 'NEW'

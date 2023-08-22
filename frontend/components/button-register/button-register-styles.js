@@ -6,7 +6,8 @@ module.exports = {
         minHeight: '30px',
         height: 'max-content',
         display: 'flex',
-        border: '1px solid gray'
+        border: '1px solid gray',
+        width:'fit-content'
     },
     buttonAccount: {
         width: '50%'

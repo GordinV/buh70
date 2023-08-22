@@ -73,7 +73,10 @@ GRANT EXECUTE ON FUNCTION rekl.sp_recalc_rekl_jaak(INTEGER, JSON) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION rekl.sp_recalc_rekl_jaak(INTEGER, JSON) TO dbpeakasutaja;
 
 /*
-select rekl.sp_recalc_rekl_jaak(4862, '{"id":2578558}'::JSON)
+
+select *
+
+select rekl.sp_recalc_rekl_jaak(4862, '{"id":4644387}'::JSON)
 
 2275773
 2288031

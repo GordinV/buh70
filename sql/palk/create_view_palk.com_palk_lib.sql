@@ -27,7 +27,8 @@ SELECT l.id,
        (l.properties :: JSONB ->> 'artikkel') :: VARCHAR(20)  AS artikkel,
        (l.properties :: JSONB ->> 'tululiik') :: VARCHAR(20)  AS tululiik,
        (l.properties::JSONB ->> 'valid')::DATE                AS valid,
-       l.muud
+       l.muud,
+       l.tun1 as liikmemaks       
 FROM libs.library l
 WHERE l.library = 'PALK'
   AND empty(l.tun5)

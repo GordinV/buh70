@@ -81,6 +81,13 @@ BEGIN
 
     -- проверка на период
     RAISE NOTICE 'save journal doc_kpv %',doc_kpv;
+
+    IF doc_kpv IS NULL
+    THEN
+        RAISE NOTICE 'Viga, Null kpv';
+        RETURN 0;
+    END IF;
+
     IF is_import IS NULL AND NOT ou.fnc_aasta_kontrol(user_rekvid, doc_kpv)
     THEN
         RAISE EXCEPTION 'Viga, Period on kinni';
@@ -315,7 +322,8 @@ BEGIN
 
 
             IF (user_rekvid IN (64, 132) AND
-                ((left(json_record.kreedit, 6) = '203630') OR (left(json_record.deebet, 6) = '203630')) AND
+                ((left(json_record.kreedit, 6) IN ('203630', '203560')) OR
+                 (left(json_record.deebet, 6) IN ('203630', '203560'))) AND
                 doc_selg <> 'Alg.saldo kreedit')
                 OR exists(SELECT id FROM hooldekodu.hootehingud WHERE hootehingud.journalid = doc_id)
             THEN
@@ -380,8 +388,13 @@ BEGIN
         IF NOT kas_uus
         THEN
             -- удалем связанные старые операции
-            PERFORM hooldekodu.sp_delete_hootehing(userid, id)
+/*            PERFORM hooldekodu.sp_delete_hootehing(userid, id, true)
             FROM hooldekodu.hootehingud
+            WHERE hootehingud.journalid = doc_id
+              AND status < 3;
+*/
+            UPDATE hooldekodu.hootehingud
+            SET status = 3
             WHERE hootehingud.journalid = doc_id
               AND status < 3;
         END IF;

@@ -32,7 +32,7 @@ SELECT lt.id,
        lt.staatus <> 3
            AND n.status <> 3
            AND n.id = lt.nomid
-           AND (lt.hind <> 0 OR lt.soodustus <> 0)
+--           AND (lt.hind <> 0 OR lt.soodustus <> 0)
     ORDER BY
        aasta,
        kuu,

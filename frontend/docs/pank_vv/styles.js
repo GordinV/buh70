@@ -20,5 +20,8 @@ module.exports = {
     total: {
         width: 'auto'
     },
+    ButtonSearch: {
+        width: 'fit-content'
+    }
 
 };

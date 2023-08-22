@@ -233,9 +233,9 @@ class Document {
     /**
      * грузит гриды
      */
-    async selectLibs(sqlWhere, sqlLimit, kpv) {
+    async selectLibs(sqlWhere, sqlLimit, kpv, lisaParams) {
         let sql = this.config.selectAsLibs,
-            params = [this.rekvId],
+            params = lisaParams ? [lisaParams]: [this.rekvId],
             libGridConfig = this.config.libGridConfig ? this.config.libGridConfig.grid : [],
             libSearchFields = this.config.libGridConfig ? this.config.libGridConfig.searchFields : [];
 
