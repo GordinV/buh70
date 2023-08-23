@@ -60,10 +60,10 @@ module.exports = {
                array_to_string(vn.vn_s, ' ')    AS vn_s,
                array_to_string(r.asutused, ',') AS asutused
         FROM lapsed l
-                 INNER JOIN maksjad m ON l.asutus_id = m.maksja_id AND l.laps_id = m.laps_id
-                 INNER JOIN vn ON vn.laps_id = l.laps_id
-                 INNER JOIN libs.asutus a ON a.id = m.maksja_id
-                 INNER JOIN rekvs r ON r.laps_id = m.laps_id AND r.maksja_id = m.maksja_id`,
+         LEFT OUTER JOIN maksjad m ON l.asutus_id = m.maksja_id AND l.laps_id = m.laps_id
+         LEFT OUTER JOIN vn ON vn.laps_id = l.laps_id
+         LEFT OUTER JOIN libs.asutus a ON a.id = l.asutus_id
+         LEFT OUTER JOIN rekvs r ON r.laps_id = l.laps_id AND r.maksja_id = l.asutus_id`,
     libGridConfig: {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},

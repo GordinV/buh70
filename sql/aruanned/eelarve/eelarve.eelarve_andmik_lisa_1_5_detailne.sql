@@ -1,11 +1,11 @@
 DROP FUNCTION IF EXISTS eelarve.eelarve_andmik_lisa_1_5_detailne(DATE, INTEGER, INTEGER);
-DROP FUNCTION IF EXISTS eelarve.eelarve_andmik_lisa_1_5_detailne_(DATE, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS eelarve.eelarve_andmik_lisa_1_5_detailne(DATE, INTEGER, INTEGER);
 
 
 
 CREATE OR REPLACE FUNCTION eelarve.eelarve_andmik_lisa_1_5_detailne(IN l_kpv DATE,
-                                                                    IN l_rekvid INTEGER,
-                                                                    IN l_kond INTEGER)
+                                                                     IN l_rekvid INTEGER,
+                                                                     IN l_kond INTEGER)
     RETURNS TABLE (
         idx      VARCHAR(20),
         rekvid   INTEGER,
@@ -50,7 +50,7 @@ BEGIN
              tmp_andmik AS (
                  SELECT qry.idx,
                         qry.rekvid,
-                        sum(qry.kassa)  AS kassa,
+                        sum(qry.kassa)                  AS kassa,
                         qry.allikas,
                         qry.artikkel,
                         qry.nimetus,
@@ -61,14 +61,14 @@ BEGIN
                                 THEN qry.tunnus
                             ELSE '' END AS tunnus
                  FROM (
-                          SELECT '2.1'     AS idx,
-                                 q.rekv_id AS rekvid,
-                                 q.summa   AS kassa,
+                          SELECT '2.1'                  AS idx,
+                                 q.rekv_id              AS rekvid,
+                                 q.summa                AS kassa,
                                  q.allikas,
                                  q.artikkel,
                                  a.nimetus,
                                  q.tegev,
-                                 q.tunnus
+                                 ltrim(rtrim(q.tunnus)) AS tunnus
                           FROM params,
                                eelarve.uus_kassa_tulu_taitmine(make_date(year(params.kpv), 01, 01), params.kpv,
                                                                params.rekvid,
@@ -81,14 +81,14 @@ BEGIN
                                 ('3000', '3500', '352', '35200', '35201', '38250', '38254', '3882', '3500')
                           UNION ALL
                           -- возврат кассовых доходов
-                          SELECT '2.1'   AS idx,
+                          SELECT '2.1'                          AS idx,
                                  kassakulu.rekvid,
-                                 (summa) AS kassa,
+                                 (summa)                        AS kassa,
                                  kassakulu.allikas::VARCHAR(20),
                                  kassakulu.artikkel::VARCHAR(20),
                                  a.nimetus,
                                  tegev,
-                                 kassakulu.tunnus
+                                 ltrim(rtrim(kassakulu.tunnus)) AS tunnus
                           FROM (
                                    SELECT j.rekvid,
                                           sum(- 1 * j1.summa) AS summa,
@@ -141,7 +141,7 @@ BEGIN
                         ltrim(rtrim(qry.tunnus)) ::VARCHAR(20)  AS tunnus
                  FROM (
                           SELECT '2.1'::VARCHAR(20)                                     AS idx,
-                                 999                                               AS rekvid,
+                                 999                                                    AS rekvid,
                                  q.allikas::VARCHAR(20)                                 AS allikas,
                                  '32'::VARCHAR(20)                                      AS artikkel,
                                  'Tulud kaupade ja teenuste müügist'::VARCHAR(254)      AS nimetus,
@@ -335,7 +335,6 @@ WHERE
                                AND t.aasta = 2023
 
   */
-
 
 
 /*WHERE allikas = '80'
