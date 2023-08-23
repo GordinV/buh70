@@ -36,19 +36,19 @@ module.exports = {
              ),
              vn AS (
                  WITH vns AS (
-                     SELECT (lapsed.get_viitenumber(unnest(m.rekv_ids)::INTEGER, laps_id)) AS vn_s, laps_id
-                     FROM maksjad m)
+                     SELECT (lapsed.get_viitenumber(unnest(l.asutused)::INTEGER, laps_id)) AS vn_s, laps_id
+                     FROM lapsed l)
                  SELECT array_agg(vn_s) AS vn_s, laps_id
                  FROM vns
                  GROUP BY laps_id
              )
                 ,
              rekvs AS (
-                 SELECT m.laps_id,
-                        m.maksja_id,
-                        array_agg(left(r.nimetus, 7)) AS asutused
-                 FROM (SELECT laps_id, maksja_id, unnest(rekv_ids)::INTEGER AS rekv_id FROM maksjad) m
-                          INNER JOIN ou.rekv r ON r.id = m.rekv_id
+                 SELECT M.laps_id,
+                        M.maksja_id,
+                        array_agg(LEFT(r.nimetus, 7)) AS asutused
+                 FROM (SELECT laps_id, asutus_id AS maksja_id, unnest(asutused)::INTEGER AS rekv_id FROM lapsed) M
+                          INNER JOIN ou.rekv r ON r.id = M.rekv_id
                  GROUP BY laps_id, maksja_id
              )
         SELECT a.id,
