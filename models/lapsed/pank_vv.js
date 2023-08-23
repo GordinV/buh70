@@ -51,7 +51,7 @@ module.exports = {
                           INNER JOIN ou.rekv r ON r.id = M.rekv_id
                  GROUP BY laps_id, maksja_id
              )
-        SELECT a.id,
+        SELECT l.laps_id as id,
                 null::date as valid,
                 a.nimetus                        AS maksja,
                a.regkood                        AS isikukood,
@@ -68,7 +68,7 @@ module.exports = {
         grid: [
             {id: "id", name: "id", width: "50px", show: false},
             {id: "maksja", name: "Maksja", width: "20%", show: true},
-            {id: "isikukood", name: "Isikukood", width: "10%", show: false},
+            {id: "isikukood", name: "Isikukood", width: "10%", show: true},
             {id: "nimi", name: "Lapse nimi", width: "20%", show: true},
             {id: "viimane_makse", name: "Viimane makse", width: "10%", show: true},
             {id: "vn_s", name: "Viitenumbrid", width: "10%", show: true},
