@@ -246,7 +246,8 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                 to: `vladislav.gordin@gmail.com`,
                 subject: `Palgakviitung ${period}`, // Subject line
                 text: 'Automaat e-mail', // plain text body
-                html: emailHtml, // html body
+//                html: emailHtml, // html body
+                html:'',
                 attachments: [
                     // String attachment
                     {
