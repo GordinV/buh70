@@ -50,7 +50,7 @@ let promise = new Promise((resolve, reject) => {
                       AND month((timestamp)::DATE) = month(current_date)
                       AND year(timestamp::DATE) = year(current_date)
                       )
-                      ORDER BY t.id, t.rekvid LIMIT 25`;
+                      ORDER BY t.id, t.rekvid LIMIT 50`;
 
     let data = db.queryDb(sql, null, null, null, null, null, config);
     resolve(data);
