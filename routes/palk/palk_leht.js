@@ -187,12 +187,12 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                 groupData: group_data
             });
         }
-    ).then((html) => {
+    ).then(async(html) => {
             if (html) {
                 //attachment
                 let l_file_name = `doc_${tootajaId}_${asutusId}`;
 
-                filePDF = createPDF(html, l_file_name);
+                filePDF = await createPDF(html, l_file_name);
                 let message = `Palk leht, pdf`;
                 log(message, 'info');
                 return 'Ok'
@@ -240,14 +240,14 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
             let message = `Palk leht, mail`;
             log(message, 'info');
 
+            console.log('params', l_user, l_user_mail, filePDF, period);
             transporter.sendMail({
                 from: `"${l_user}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
 //                to: `${row.email}`, // (, baz@example.com) list of receivers
                 to: `vladislav.gordin@gmail.com`,
                 subject: `Palgakviitung ${period}`, // Subject line
                 text: 'Automaat e-mail', // plain text body
-//                html: emailHtml, // html body
-                html:'',
+                html: emailHtml, // html body
                 attachments: [
                     // String attachment
                     {
