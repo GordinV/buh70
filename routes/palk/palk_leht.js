@@ -73,7 +73,7 @@ let promise = new Promise((resolve, reject) => {
 }).then((tasks) => {
     // выполнить последовательно задачи
     async.series(tasks, (tulemus) => {
-        console.log('tasks', tulemus)
+        console.log('tasks')
     }, (err, results) => {
         console.log('finish 1');
 //        console.log(err, results);
@@ -196,11 +196,23 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                 let message = `Palk leht, pdf`;
                 log(message, 'info');
                 return 'Ok'
-
+            } else {
+                return false
             }
         }
     ).then(async (tulemus) => {
             if (!tulemus ) {
+                console.log('!tulemus', tulemus);
+                    log_data.status = 'ERROR';
+                    log_data.content = 'Mitte saadetud, puudub andmed';
+                    log_data.mail_info = tulemus ? tulemus: null;
+
+                    // регистрируем событие
+                    let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
+                    let tulem =  await db.queryDb(sql, null, null, null, null, null, config);
+
+                    let message = `Palk leht, register logis, ${tulem}`;
+                    log(message, 'error');
                 return false;
             }
             // create reusable transporter object using the default SMTP transport
@@ -244,7 +256,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                     }]
 
             },   (err, info) => {
-                console.log('cb', err, info);
+                console.log('cb', info, err);
                     if (err) {
                         log_data.status = 'ERROR';
                         log_data.content = 'Mitte saadetud';
@@ -268,6 +280,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         let data =  db.queryDb(sql, null, null, null, null, null, config);
 
                         // удаляем файл
+                        console.log('unlink');
                         fs.unlink(filePDF, (data, err) => {
                             let message = `Palk leht, delete pdf, ${data}, ${err}`;
                             log(message, 'info');
