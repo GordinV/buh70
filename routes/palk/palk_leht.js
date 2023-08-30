@@ -228,7 +228,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
             let message = `Palk leht, mail`;
             log(message, 'info');
 
-            (transporter.sendMail({
+            transporter.sendMail({
                 from: `"${l_user}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
 //                to: `${row.email}`, // (, baz@example.com) list of receivers
                 to: `vladislav.gordin@gmail.com`,
@@ -243,7 +243,8 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         path: filePDF
                     }]
 
-            },  async (err, info) => {
+            },   (err, info) => {
+                console.log('cb', err, info);
                     if (err) {
                         log_data.status = 'ERROR';
                         log_data.content = 'Mitte saadetud';
@@ -251,7 +252,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
 
                         // регистрируем событие
                         let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
-                        let tulemus = await db.queryDb(sql, null, null, null, null, null, config);
+                        let tulemus =  db.queryDb(sql, null, null, null, null, null, config);
 
                         let message = `Palk leht, register logis, ${tulemus}`;
                         log(message, 'error');
@@ -261,6 +262,10 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         result++;
                         let message = `Palk leht, saadetud, log_data.mail_info -> ${log_data.mail_info}`;
                         log(message, 'info');
+
+                        // регистрируем событие
+                        let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
+                        let data =  db.queryDb(sql, null, null, null, null, null, config);
 
                         // удаляем файл
                         fs.unlink(filePDF, (data, err) => {
@@ -275,7 +280,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                     }
                 }
 
-                ));
+                );
         }
     ).catch(async(error) => {
         // rejection
