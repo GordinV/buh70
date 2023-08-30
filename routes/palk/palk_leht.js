@@ -73,8 +73,10 @@ let promise = new Promise((resolve, reject) => {
 }).then((tasks) => {
     // выполнить последовательно задачи
     async.series(tasks, (tulemus) => {
+        console.log('tasks', tulemus)
     }, (err, results) => {
-        console.log(err, results);
+        console.log('finish 1');
+//        console.log(err, results);
         // results is now equal to: { 1: 'one', 2: 'two', 3:'three' }
     })
 });
