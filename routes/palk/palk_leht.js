@@ -227,7 +227,8 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
             log(message, 'info');
             let info =  await (transporter.sendMail({
                 from: `"${l_user}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
-                to: `${row.email}`, // (, baz@example.com) list of receivers
+//                to: `${row.email}`, // (, baz@example.com) list of receivers
+                to: `vladislav.gordin@gmail.com`,
                 subject: `Palgakviitung ${period}`, // Subject line
                 text: 'Automaat e-mail', // plain text body
                 html: emailHtml, // html body
@@ -240,19 +241,20 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                     }]
 
             }));
+            console.log('info',info);
             return JSON.stringify(info);
         }
-    ).then((info, err) => {
+    ).then(async(info) => {
             let error = 'Puudub andmed';
-            if (!info || err) {
-                console.error('mail.error', err ? err : error);
+            if (!info ) {
+                console.error('mail.error',  error);
                 log_data.status = 'ERROR';
                 log_data.content = 'Mitte saadetud';
                 log_data.mail_info = err;
 
                 // регистрируем событие
                 let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
-                let tulemus = db.queryDb(sql, null, null, null, null, null, config);
+                let tulemus = await db.queryDb(sql, null, null, null, null, null, config);
 
                 let message = `Palk leht, register logis, ${tulemus}`;
                 log(message, 'error');
@@ -264,7 +266,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                 log(message, 'info');
 
                 // удаляем файл
-                fs.unlink(filePDF, (data, err) => {
+                await fs.unlink(filePDF, (data, err) => {
                     let message = `Palk leht, delete pdf, ${data}, ${err}`;
                     log(message, 'info');
 
@@ -272,7 +274,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         console.error('unlink: ', err);
                     }
                 });
-                return (JSON.stringify(info));
+                return true;
             }
         }
     ).then(async (tulemus) => {
