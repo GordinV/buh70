@@ -227,7 +227,8 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
             // send mail with defined transport object
             let message = `Palk leht, mail`;
             log(message, 'info');
-            let info =  await (transporter.sendMail({
+
+            (transporter.sendMail({
                 from: `"${l_user}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
 //                to: `${row.email}`, // (, baz@example.com) list of receivers
                 to: `vladislav.gordin@gmail.com`,
@@ -242,57 +243,39 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         path: filePDF
                     }]
 
-            }));
-            console.log('info',info);
-            return JSON.stringify(info);
-        }
-    ).then(async(info) => {
-        console.log('reg.event', info);
-            let error = 'Puudub andmed';
-            if (!info ) {
-                console.error('mail.error',  error);
-                log_data.status = 'ERROR';
-                log_data.content = 'Mitte saadetud';
-                log_data.mail_info = error;
-
-                // регистрируем событие
-                let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
-                let tulemus = await db.queryDb(sql, null, null, null, null, null, config);
-
-                let message = `Palk leht, register logis, ${tulemus}`;
-                log(message, 'error');
-                return false;
-            } else {
-                log_data.mail_info = JSON.stringify(info);
-                result++;
-                let message = `Palk leht, saadetud, log_data.mail_info -> ${log_data.mail_info}`;
-                log(message, 'info');
-
-                // удаляем файл
-                fs.unlink(filePDF, (data, err) => {
-                    let message = `Palk leht, delete pdf, ${data}, ${err}`;
-                    log(message, 'info');
-
+            },  async (err, info) => {
                     if (err) {
-                        console.error('unlink: ', err);
+                        log_data.status = 'ERROR';
+                        log_data.content = 'Mitte saadetud';
+                        log_data.mail_info = err;
+
+                        // регистрируем событие
+                        let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
+                        let tulemus = await db.queryDb(sql, null, null, null, null, null, config);
+
+                        let message = `Palk leht, register logis, ${tulemus}`;
+                        log(message, 'error');
+                        return (err);
+                    } else {
+                        log_data.mail_info = JSON.stringify(info);
+                        result++;
+                        let message = `Palk leht, saadetud, log_data.mail_info -> ${log_data.mail_info}`;
+                        log(message, 'info');
+
+                        // удаляем файл
+                        fs.unlink(filePDF, (data, err) => {
+                            let message = `Palk leht, delete pdf, ${data}, ${err}`;
+                            log(message, 'info');
+
+                            if (err) {
+                                console.error('unlink: ', err);
+                            }
+                        });
+                        return (tootajaId);
                     }
-                });
-                return true;
-            }
-        }
-    ).then(async (tulemus) => {
-        console.log('tulemus', tulemus);
-            // register emailing event
-            if (!tulemus) {
-                return false;
-            }
+                }
 
-            // регистрируем событие
-            let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
-            let data = await db.queryDb(sql, null, null, null, null, null, config);
-            let message = `Palk leht, register logis, ${data}`;
-            log(message, 'info');
-
+                ));
         }
     ).catch(async(error) => {
         // rejection
