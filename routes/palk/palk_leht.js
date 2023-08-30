@@ -245,12 +245,13 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
             return JSON.stringify(info);
         }
     ).then(async(info) => {
+        console.log('reg.event', info);
             let error = 'Puudub andmed';
             if (!info ) {
                 console.error('mail.error',  error);
                 log_data.status = 'ERROR';
                 log_data.content = 'Mitte saadetud';
-                log_data.mail_info = err;
+                log_data.mail_info = error;
 
                 // регистрируем событие
                 let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
@@ -266,7 +267,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                 log(message, 'info');
 
                 // удаляем файл
-                await fs.unlink(filePDF, (data, err) => {
+                fs.unlink(filePDF, (data, err) => {
                     let message = `Palk leht, delete pdf, ${data}, ${err}`;
                     log(message, 'info');
 
@@ -278,6 +279,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
             }
         }
     ).then(async (tulemus) => {
+        console.log('tulemus', tulemus);
             // register emailing event
             if (!tulemus) {
                 return false;
