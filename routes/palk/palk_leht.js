@@ -271,7 +271,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         console.error('unlink: ', err);
                     }
                 });
-                return (info);
+                return (JSON.stringify(info));
             }
         }
     ).then(async (tulemus) => {
