@@ -49,7 +49,7 @@ let promise = new Promise((resolve, reject) => {
                       AND month((timestamp)::DATE) = month(current_date)
                       AND year(timestamp::DATE) = year(current_date)
                       )
-                      ORDER BY t.id, t.rekvid LIMIT 50`;
+                      ORDER BY t.id, t.rekvid LIMIT 5`;
 
     let data = db.queryDb(sql, null, null, null, null, null, config);
     resolve(data);
@@ -193,12 +193,12 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                 filePDF = createPDF(html, l_file_name);
                 let message = `Palk leht, pdf`;
                 log(message, 'info');
-                return true
+                return 'Ok'
 
             }
         }
     ).then(async (tulemus) => {
-            if (!tulemus) {
+            if (!tulemus ) {
                 return false;
             }
             // create reusable transporter object using the default SMTP transport
@@ -225,7 +225,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
             // send mail with defined transport object
             let message = `Palk leht, mail`;
             log(message, 'info');
-            return await (transporter.sendMail({
+            let info =  await (transporter.sendMail({
                 from: `"${l_user}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
                 to: `${row.email}`, // (, baz@example.com) list of receivers
                 subject: `Palgakviitung ${period}`, // Subject line
@@ -240,6 +240,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                     }]
 
             }));
+            return JSON.stringify(info);
         }
     ).then((info, err) => {
             let error = 'Puudub andmed';
@@ -263,7 +264,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                 log(message, 'info');
 
                 // удаляем файл
-                return fs.unlink(filePDF, (data, err) => {
+                fs.unlink(filePDF, (data, err) => {
                     let message = `Palk leht, delete pdf, ${data}, ${err}`;
                     log(message, 'info');
 
