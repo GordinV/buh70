@@ -17,7 +17,6 @@ const async = require('async');
 const doc_id = 213041; // palk_leht dok.tyyp
 const log = require('./../../libs/log');
 
-
 const getConfigData = async function (user) {
     const docConfig = new Doc('config', user.asutusId, user.userId, user.asutusId, 'lapsed');
     const configData = await docConfig.select(null, config);
@@ -126,8 +125,8 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                  AND t.id = ${tootajaId}
                  AND t.rekvid = ${asutusId}`;
 
-            return await db.queryDb(sql, null, null, null, null, null, config);
-
+            let data = await db.queryDb(sql, null, null, null, null, null, config);
+            return data;
         }
     ).then(async (data) => {
             row = {
@@ -156,45 +155,54 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                     FROM palk.palk_leht( (make_date(year(current_date), month(current_date),1) - INTERVAL '1 month')::DATE,
                     (make_date(year(current_date), month(current_date),1) -1)::DATE, ${asutusId}::INTEGER, 0::INTEGER,0::INTEGER, ${tootajaId}::INTEGER) qry`;
 
-            leht = await (db.queryDb(sql, null, null, null, null, null, config));
+            let leht = await (db.queryDb(sql, null, null, null, null, null, config));
             // logs
             let message = `Palk leht, asutus -> ${asutusId},tootaja_id -> ${tootajaId}`;
             log(message, 'info');
-
+            return leht;
         }
-    ).then(() => {
+    ).then((leht) => {
             // groups
             //преобразуем данные по группам
             group_data = getGroupedData(leht.data, 'leping_id');
-            return true;
+//            resolve(leht, group_data);
+            return [leht, group_data]
         }
-    ).then(async () => {
+    ).then(async(data) => {
+            let leht = data[0];
+            let group_data = data[1];
+            if (!leht || !leht.result) {
+                console.log('samm4 , no data', leht);
+                return false;
+            }
             // вернуть отчет
             let printHtml;
             let file = path.join(__dirname, './../..', 'views', `${template}.jade`);
-            html = jade.renderFile(file, {
+            return await jade.renderFile(file, {
                 title: 'palk leht',
                 data: leht.data,
                 user: User,
                 groupData: group_data
             });
-            // logs
-            let message = `Palk leht, html`;
-            log(message, 'info');
-
         }
-    ).then(async () => {
-            //attachment
-            let l_file_name = `doc_${tootajaId}_${asutusId}`;
+    ).then((html) => {
+            if (html) {
+                //attachment
+                let l_file_name = `doc_${tootajaId}_${asutusId}`;
 
-            filePDF = await createPDF(html, l_file_name);
-            let message = `Palk leht, pdf`;
-            log(message, 'info');
+                filePDF = createPDF(html, l_file_name);
+                let message = `Palk leht, pdf`;
+                log(message, 'info');
+                return true
 
+            }
         }
-    ).then(async () => {
+    ).then(async (tulemus) => {
+            if (!tulemus) {
+                return false;
+            }
             // create reusable transporter object using the default SMTP transport
-            const transporter = await nodemailer.createTransport({
+            const transporter = nodemailer.createTransport({
                 host: l_smtp,
                 port: l_port,
                 secure: l_port === 465, // true for 465, false for other ports
@@ -217,7 +225,7 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
             // send mail with defined transport object
             let message = `Palk leht, mail`;
             log(message, 'info');
-            return transporter.sendMail({
+            return await (transporter.sendMail({
                 from: `"${l_user}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
                 to: `${row.email}`, // (, baz@example.com) list of receivers
                 subject: `Palgakviitung ${period}`, // Subject line
@@ -231,22 +239,23 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         path: filePDF
                     }]
 
-            });
+            }));
         }
-    ).then(async (info, err) => {
-            if (err) {
-                console.error('mail.error', err);
+    ).then((info, err) => {
+            let error = 'Puudub andmed';
+            if (!info || err) {
+                console.error('mail.error', err ? err : error);
                 log_data.status = 'ERROR';
                 log_data.content = 'Mitte saadetud';
                 log_data.mail_info = err;
 
                 // регистрируем событие
                 let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
-                let tulemus = await db.queryDb(sql, null, null, null, null, null, config);
+                let tulemus = db.queryDb(sql, null, null, null, null, null, config);
+
                 let message = `Palk leht, register logis, ${tulemus}`;
                 log(message, 'error');
-
-
+                return false;
             } else {
                 log_data.mail_info = JSON.stringify(info);
                 result++;
@@ -262,25 +271,37 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         console.error('unlink: ', err);
                     }
                 });
+                return (info);
             }
-
         }
-    ).then(async () => {
+    ).then(async (tulemus) => {
             // register emailing event
+            if (!tulemus) {
+                return false;
+            }
 
             // регистрируем событие
             let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
-            let tulemus = await db.queryDb(sql, null, null, null, null, null, config);
-            let message = `Palk leht, register logis, ${tulemus}`;
+            let data = await db.queryDb(sql, null, null, null, null, null, config);
+            let message = `Palk leht, register logis, ${data}`;
             log(message, 'info');
 
-
         }
-    ).catch((error) => {
+    ).catch(async(error) => {
         // rejection
-        console.error('rejected', error);
-        let message = `Palk leht, reject, ${error}`;
-        log(message, 'info');
+        let message_log = `Palk leht, reject, ${error}`;
+        log(message_log, 'info');
+
+        log_data.status = 'ERROR';
+        log_data.content = 'Mitte saadetud';
+        log_data.mail_info = error;
+
+        // регистрируем событие
+        let sql = `select ou.register_events('${JSON.stringify(log_data)}'::json, ${row.user_id})`;
+        let tulemus = await db.queryDb(sql, null, null, null, null, null, config);
+        let message = `Palk leht, register logis, ${tulemus}`;
+        log(message, 'error');
+        return false;
 
     });
 
