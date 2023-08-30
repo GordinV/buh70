@@ -49,7 +49,7 @@ let promise = new Promise((resolve, reject) => {
                       AND month((timestamp)::DATE) = month(current_date)
                       AND year(timestamp::DATE) = year(current_date)
                       )
-                      ORDER BY t.id, t.rekvid LIMIT 5`;
+                      ORDER BY t.id, t.rekvid LIMIT 50`;
 
     let data = db.queryDb(sql, null, null, null, null, null, config);
     resolve(data);
@@ -240,11 +240,9 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
             let message = `Palk leht, mail`;
             log(message, 'info');
 
-            console.log('params', l_user, l_user_mail, filePDF, period);
             transporter.sendMail({
                 from: `"${l_user}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
-//                to: `${row.email}`, // (, baz@example.com) list of receivers
-                to: `vladislav.gordin@gmail.com`,
+                to: `${row.email}`, // (, baz@example.com) list of receivers
                 subject: `Palgakviitung ${period}`, // Subject line
                 text: 'Automaat e-mail', // plain text body
                 html: emailHtml, // html body
@@ -257,7 +255,6 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                     }]
 
             },   (err, info) => {
-                console.log('cb', info, err);
                     if (err) {
                         log_data.status = 'ERROR';
                         log_data.content = 'Mitte saadetud';
@@ -281,7 +278,6 @@ async function saada_palga_kvitung_mailiga(tootajaId, asutusId) {
                         let data =  db.queryDb(sql, null, null, null, null, null, config);
 
                         // удаляем файл
-                        console.log('unlink');
                         fs.unlink(filePDF, (data, err) => {
                             let message = `Palk leht, delete pdf, ${data}, ${err}`;
                             log(message, 'info');
