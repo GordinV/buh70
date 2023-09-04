@@ -97,12 +97,12 @@ module.exports = {
                                   n.kood,
                                   n.nimetus,
                                   k.hind                                                            hind,
-                                  (SELECT nimetus
-                                   FROM libs.library
-                                   WHERE k.rekvid = k.rekvid
-                                     AND kood = k.properties ->> 'yksus'
-                                     AND library = 'LAPSE_GRUPP'
-                                     AND n.status < 3
+                                  (SELECT l.nimetus
+                                   FROM libs.library l 
+                                   WHERE l.rekvid = k.rekvid
+                                     AND l.kood = k.properties ->> 'yksus'
+                                     AND l.library = 'LAPSE_GRUPP'
+                                     AND l.status < 3
                                    ORDER BY id DESC
                                    LIMIT 1)                                                      AS yksus,
                                   k.properties ->> 'yksus'::TEXT                                 AS yksuse_kood,
