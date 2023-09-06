@@ -4,21 +4,34 @@ CREATE OR REPLACE FUNCTION lapsed.get_laps_from_viitenumber(IN viitenr TEXT, OUT
 AS
 $BODY$
 BEGIN
-    IF laps_id IS NULL AND exists(SELECT id FROM ou.rekv WHERE id = public.left(viitenr, 3)::INTEGER)
+    IF laps_id IS NULL AND exists(SELECT id
+                                  FROM ou.rekv
+                                  WHERE id = public.left(viitenr, 3)::INTEGER
+                                    AND parentid = 119
+        )
     THEN
         -- получим ид ребенка
         -- 0710055785
-        SELECT id INTO laps_id FROM lapsed.laps WHERE id = public.left(right(viitenr::TEXT, 7), 6)::INTEGER;
+        SELECT id
+        INTO laps_id
+        FROM lapsed.laps
+        WHERE id = public.left(right(viitenr::TEXT, 7), 6)::INTEGER;
     END IF;
 
     IF laps_id IS NULL
     THEN
         -- ищем в старых
-        SELECT l.id AS laps_id INTO laps_id
+        SELECT l.id AS laps_id
+        INTO laps_id
         FROM lapsed.viitenr v
                  INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood
         WHERE v.viitenumber = viitenr
         LIMIT 1;
+    END IF;
+
+    IF len(ltrim(rtrim(viitenr))::TEXT) > 10
+    THEN
+        laps_id = NULL;
     END IF;
 
     RETURN;

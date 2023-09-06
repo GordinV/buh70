@@ -51,6 +51,8 @@ DECLARE
     v_nom_rea    RECORD;
 BEGIN
 
+    doc_type_id = 'SMK';
+
     IF (l_dokprop_id) IS NULL OR l_dokprop_id = 0
     THEN
         l_dokprop_id = (SELECT id
@@ -75,6 +77,15 @@ BEGIN
         WHERE d.id = l_arv_id;
 
         doc_type_id = CASE WHEN v_arv.liik = 0 OR v_arv.id IS NULL THEN 'SMK' ELSE 'VMK' END;
+    ELSE
+        SELECT dp.details ->> 'konto'                                         AS konto,
+               a.*,
+               coalesce((a.properties ->> 'viitenr')::TEXT, '')::VARCHAR(120) AS viitenr
+        INTO v_arv
+        FROM docs.doc d
+                 INNER JOIN docs.arv a ON a.parentid = d.id
+                 LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
+        WHERE d.id = 99999999999999;
     END IF;
 
     -- maksepaev
@@ -91,7 +102,7 @@ BEGIN
     -- проверим на закрытый период
     IF exists(SELECT id
               FROM ou.aasta
-              WHERE rekvid = v_arv.rekvid
+              WHERE rekvid = l_rekvId
                 AND aasta = date_part('year', l_maksepaev)
                 AND kuu = date_part('month', l_maksepaev)
                 AND kinni = 1)
@@ -101,9 +112,19 @@ BEGIN
     END IF;
 
     -- viitenr
-    IF l_viitenr IS NULL AND v_arv.viitenr IS NOT NULL AND NOT public.empty(v_arv.viitenr)
+    IF l_viitenr IS NULL AND l_arv_id IS NOT NULL
     THEN
-        l_viitenr = v_arv.viitenr;
+        IF v_arv.viitenr IS NOT NULL AND NOT public.empty(v_arv.viitenr)
+        THEN
+            l_viitenr = v_arv.viitenr;
+        END IF;
+    END IF;
+
+    -- уберем ссылку на ребенка, если это входящий счет
+    IF l_laps_id IS NOT NULL AND NOT empty(l_viitenr) AND
+       ((l_arv_id IS NOT NULL AND v_arv.liik = 1) OR len(l_viitenr) <> 10)
+    THEN
+        l_laps_id = NULL;
     END IF;
 
     -- добавим пояснение
@@ -113,11 +134,11 @@ BEGIN
     END IF;
 
     l_opt = (CASE
-                 WHEN v_arv.liik = 0 OR v_arv.id IS NULL
+                 WHEN l_arv_id IS NOT NULL AND (v_arv.liik = 0 OR v_arv.id IS NULL)
                      THEN 2 -- если счет доходный, то мк на поступление средств, иначе расзодное поручение
                  ELSE 1 END);
 
-    IF l_summa IS NULL
+    IF l_summa IS NULL AND l_arv_id IS NOT NULL
     THEN
         l_summa = v_arv.jaak;
         IF v_arv.jaak IS NULL OR v_arv.jaak = 0
@@ -127,7 +148,7 @@ BEGIN
     END IF;
 
     -- если счет имеет обратное сальдо , то меняем тип на противоположный
-    IF v_arv.id IS NOT NULL AND v_arv.jaak < 0
+    IF l_arv_id IS NOT NULL AND v_arv.id IS NOT NULL AND v_arv.jaak < 0
     THEN
         l_opt = CASE WHEN l_opt = 1 THEN 2 ELSE 1 END;
         l_summa = coalesce(l_summa, -1 * v_arv.jaak);
@@ -140,7 +161,7 @@ BEGIN
         RETURN;
     END IF;
 
-    IF (l_asutus_id IS NULL AND v_arv.id IS NULL)
+    IF (l_asutus_id IS NULL AND l_arv_id IS NOT NULL AND v_arv.id IS NULL)
     THEN
         -- платильщик не идентифицирован
         error_message = 'Maksja puudub';
@@ -148,7 +169,7 @@ BEGIN
 
     END IF;
 
-    IF l_asutus_id IS NULL
+    IF l_asutus_id IS NULL AND l_arv_id IS NOT NULL
     THEN
         l_asutus_id = v_arv.asutusid;
     END IF;
@@ -191,7 +212,6 @@ BEGIN
                    age(make_date(date_part('year', l_maksepaev)::INTEGER, 01, 01), palk.get_sunnipaev(l_isikukood))) >=
            27
         THEN
-            RAISE NOTICE '> 27 ';
 
             -- Начиная с 27 лет, ставим 09500.
             IF exists((SELECT id
@@ -321,6 +341,8 @@ BEGIN
 
     SELECT docs.sp_salvesta_mk(json_object :: JSON, user_id, l_rekvId) INTO mk_id;
 
+    raise notice 'new mk mk_id %, doc_type_id %',mk_id, doc_type_id;
+
     IF mk_id IS NOT NULL AND mk_id > 0 AND doc_type_id = 'VMK'
     THEN
         result = mk_id;
@@ -337,15 +359,9 @@ BEGIN
         error_message = 'Dokumendi koostamise viga';
         error_code = 1;
     END IF;
+
+    raise notice 'mk koostamise lopp, mk_id %', mk_id;
     RETURN;
-EXCEPTION
-    WHEN OTHERS
-        THEN
-            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-            error_code = 1;
-            error_message = SQLERRM;
-            result = 0;
-            RETURN;
 END;
 $BODY$
     LANGUAGE plpgsql
@@ -357,7 +373,9 @@ GRANT EXECUTE ON FUNCTION docs.create_new_mk(INTEGER, JSONB) TO dbpeakasutaja;
 
 
 /*
-SELECT docs.create_new_mk(70, '{"arv_id":1902365}')
+SELECT docs.create_new_mk(8914, '{"arv_id":5273997, "dok":"VMK"}')
+
+
 select * from docs.arv where rekvid = 63
 and number = 'SN1079106'
 order by id desc limit 1

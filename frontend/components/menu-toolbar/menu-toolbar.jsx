@@ -44,12 +44,6 @@ class MenuToolBar extends React.Component {
 
     }
 
-/*
-    componentDidMount() {
-        console.log('did', this.state.rekvId, DocContext.getAsutusId)
-    }
-*/
-
     render() {
         let isEditMode = this.props.edited,
             toolbarParams = {
@@ -104,7 +98,17 @@ class MenuToolBar extends React.Component {
 
         return (
             <div style={style['container']}>
-                <p style={style['pageName']}> {DocContext.pageName ? DocContext.pageName : 'Laste register'} </p>
+                <ToolbarContainer
+                    ref='menuToolbarContainer'
+                    position="left">
+                    <span
+                        style={style['pageName']}> {DocContext.pageName ? DocContext.pageName : 'Laste register'}
+                    </span>
+                    <span
+                        style={style['asutusName']}> {asutus ? asutus : ''}
+                    </span>
+                </ToolbarContainer>
+
                 <ToolbarContainer
                     ref='menuToolbarContainer'
                     position="left">
@@ -272,11 +276,11 @@ class MenuToolBar extends React.Component {
                     // что-то пошло не так
                     console.error('Viga, puudub rekvId', rekvId)
                 }
-                    // redirect to main
-                    this.props.history.push({
-                        pathname: `/lapsed/`,
-                    });
-                    document.location.reload();
+                // redirect to main
+                this.props.history.push({
+                    pathname: `/lapsed/`,
+                });
+                document.location.reload();
             });
 
         } catch (e) {

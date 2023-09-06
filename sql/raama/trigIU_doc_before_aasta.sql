@@ -18,7 +18,7 @@ BEGIN
         -- 1 закрыт
         IF NOT docs.is_period_opened(new.id)
         THEN
-            RAISE EXCEPTION 'Period on suletatud';
+            RAISE EXCEPTION 'Period on suletatud docId %', new.id;
         END IF;
 
         END IF;

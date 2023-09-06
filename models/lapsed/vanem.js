@@ -118,7 +118,9 @@ module.exports = {
     requiredFields: [
         {name: 'parentid', type: 'I'},
         {name: 'asutusid', type: 'I'},
+
     ],
+
     /*
     executeCommand: {
         command: `SELECT result, selgitus, summa

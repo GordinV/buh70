@@ -357,7 +357,7 @@ GRANT EXECUTE ON FUNCTION docs.gen_lausend_vmk(INTEGER, INTEGER) TO dbpeakasutaj
 SELECT error_code,
        result,
        error_message
-FROM docs.gen_lausend_vmk(5198596, 5162);
+FROM docs.gen_lausend_vmk(5274000, 5162);
 
 select * from docs.mk where rekvid = 132 and number = '9658'
 

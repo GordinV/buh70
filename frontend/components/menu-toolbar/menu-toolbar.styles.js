@@ -10,6 +10,12 @@ module.exports = {
     pageName: {
         fontWeight: 'bold',
         fontSize:'x-large'
+    },
+    asutusName: {
+        fontWeight: 'bold',
+        fontSize:'x-large',
+        color: 'blue',
+        margin:'auto'
     }
 
 };

@@ -177,7 +177,6 @@ class Documents extends React.Component {
         };
         return (
             <div style={_style.doc}>
-
                 <Menu params={btnParams}
                       ref='menu'
                       history={this.props.history}
@@ -242,7 +241,6 @@ class Documents extends React.Component {
 
     // обработчик изменений в инпут (лимит)
     handleInputChange(name, value) {
-        console.log('Liimit', name, value, Liimit, maxLimit);
         this.setState({limit: !value || value > maxLimit ? maxLimit : value});
     }
 
@@ -440,7 +438,6 @@ class Documents extends React.Component {
                     console.error('error in fetch-> ', err);
                 })
                 .then((data) => {
-                    console.log('data', data);
                     let error;
 
                     if (data.error_message || (data.data && data.data.error_message)) {

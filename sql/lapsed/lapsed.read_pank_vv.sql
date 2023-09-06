@@ -24,7 +24,7 @@ DECLARE
     l_user_kood      TEXT    = (SELECT kasutaja
                                 FROM ou.userid
                                 WHERE id = user_id
-                                    LIMIT 1);
+                                LIMIT 1);
     l_maksja_id      INTEGER;
     l_laps_id        INTEGER;
     v_vanem          RECORD;
@@ -46,8 +46,8 @@ BEGIN
         WHERE timestamp::TIMESTAMP = l_timestamp::TIMESTAMP
           AND (doc_id IS NULL OR doc_id = 0)
           AND isikukood IS NOT NULL
-            ORDER BY kpv
-            , id
+        ORDER BY kpv
+                , id
         LOOP
             l_message = 'Tehingu nr.: ' || ltrim(rtrim(v_pank_vv.pank_id)) ||
                         ',Maksja:' || ltrim(rtrim(v_pank_vv.maksja));
@@ -80,7 +80,7 @@ BEGIN
             IF len(l_new_viitenr) <> 10
             THEN
                 -- ошибка на ВН
-                l_new_viitenr = null;
+                l_new_viitenr = NULL;
             END IF;
 
 
@@ -92,8 +92,9 @@ BEGIN
             -- получим ид ребенка
             l_laps_id = left(right(l_new_viitenr::TEXT, 7), 6)::INTEGER;
             -- проверим на наличие этого ид в бд
-            if not exists (select id from lapsed.laps where id = l_laps_id and staatus < 3) then
-                l_laps_id = null;
+            IF NOT exists(SELECT id FROM lapsed.laps WHERE id = l_laps_id AND staatus < 3)
+            THEN
+                l_laps_id = NULL;
             END IF;
 
             -- задаем признак
@@ -129,7 +130,7 @@ BEGIN
                 FROM ou.userid
                 WHERE rekvid = l_rekvid
                   AND kasutaja::TEXT = l_user_kood::TEXT
-                    LIMIT 1;
+                LIMIT 1;
 
 
                 -- ищем родителя
@@ -178,9 +179,9 @@ BEGIN
                                          INNER JOIN libs.library l ON l.id = dp.parentid
                                 WHERE dp.rekvid = l_rekvid
                                   AND (dp.details ->> 'konto')::TEXT = l_db_konto::TEXT
-                                    ORDER BY registr DESC
-                                    , dp.id DESC
-                                    LIMIT 1
+                                ORDER BY registr DESC
+                                        , dp.id DESC
+                                LIMIT 1
                 );
 
                 IF l_dokprop_id IS NULL
@@ -189,8 +190,8 @@ BEGIN
                                     FROM com_dokprop l
                                     WHERE (l.rekvId = l_rekvId OR l.rekvid IS NULL)
                                       AND kood LIKE 'SMK'
-                                        ORDER BY id DESC
-                                        LIMIT 1
+                                    ORDER BY id DESC
+                                    LIMIT 1
                     );
                 END IF;
 
@@ -213,35 +214,46 @@ BEGIN
                                  v_pank_vv.aa     AS aa,
                                  v_pank_vv.iban   AS maksja_arve,
                                  v_pank_vv.summa  AS summa,
-                                 l_tunnus as tunnus) row;
+                                 l_tunnus         AS tunnus) row;
 
                     -- создаем платежку
+
                     SELECT fnc.result, fnc.error_message
                     INTO l_mk_id, l_error
                     FROM docs.create_new_mk(l_target_user_id, json_object) fnc;
-                END IF;
 
-                IF l_mk_id IS NOT NULL AND l_mk_id > 0
-                THEN
-                    l_count = l_count + 1;
-                    l_count_kokku = l_count_kokku + 1;
-                    l_kas_vigane = FALSE;
-                    l_message = coalesce(l_message, '') || ', MK ' || ltrim(rtrim(v_pank_vv.number)) || ' koostatud';
+                    IF l_mk_id IS NOT NULL AND l_mk_id > 0
+                    THEN
+                        l_count = l_count + 1;
+                        l_count_kokku = l_count_kokku + 1;
+                        l_kas_vigane = FALSE;
+                        l_message = coalesce(l_message, '') || ', MK ' || ltrim(rtrim(v_pank_vv.number)) ||
+                                    ' koostatud';
 
-                    -- lausend
-                    PERFORM docs.gen_lausend_smk(l_mk_id, l_target_user_id);
+                        -- lausend
+                        PERFORM docs.gen_lausend_smk(l_mk_id, l_target_user_id);
 
-                    -- сохраняем полученную информаци.
-                    UPDATE lapsed.pank_vv v
-                    SET doc_id   = l_mk_id,
-                        markused = l_error
-                    WHERE id = v_pank_vv.id;
+                        -- сохраняем полученную информаци.
+                        UPDATE lapsed.pank_vv v
+                        SET doc_id   = l_mk_id,
+                            markused = l_error
+                        WHERE id = v_pank_vv.id;
 
+                    ELSE
+
+                        l_mk_number = '';
+
+                        -- отчет об ошибке
+                        l_jsonb = jsonb_build_object('viga', TRUE, 'error_message', l_message);
+                        -- сохраняем полученную информаци.
+                        UPDATE lapsed.pank_vv v
+                        SET properties = coalesce(properties, '{}'::JSONB) || l_jsonb
+                        WHERE id = v_pank_vv.id;
+
+                    END IF;
                 ELSE
-                    l_mk_number = '';
-
                     -- отчет об ошибке
-                    l_jsonb = jsonb_build_object('viga', TRUE, 'error_message', l_message);
+                    l_jsonb = jsonb_build_object('viga', TRUE, 'error_message', 'Puudub maksja');
                     -- сохраняем полученную информаци.
                     UPDATE lapsed.pank_vv v
                     SET properties = coalesce(properties, '{}'::JSONB) || l_jsonb
@@ -276,7 +288,7 @@ BEGIN
     error_message = l_message;
 
     RETURN;
-EXCEPTION
+/*EXCEPTION
     WHEN OTHERS
         THEN
             RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
@@ -296,6 +308,8 @@ EXCEPTION
             -- попробуем сохранить ошибку
             IF l_viimane_rea IS NOT NULL
             THEN
+
+                RAISE NOTICE 'Tekkis viga, l_viimane_rea % ',l_viimane_rea;
                 -- отчет об ошибке
                 l_jsonb = jsonb_build_object('viga', TRUE, 'error_message', l_message);
 
@@ -306,7 +320,7 @@ EXCEPTION
             END IF;
 
             RETURN;
-END;
+*/END;
 $BODY$
     LANGUAGE plpgsql
     VOLATILE
@@ -321,7 +335,7 @@ GRANT EXECUTE ON FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN TEXT) TO ar
 select * from lapsed.pank_vv
 order by id desc limit 100
 
-SELECT lapsed.read_pank_vv(8, '2023-01-16 16:49:23.454950')
+SELECT lapsed.read_pank_vv(8901, '2023-09-05 09:00:53.258643')
 
 
        SELECT *

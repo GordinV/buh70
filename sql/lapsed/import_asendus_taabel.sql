@@ -1,11 +1,11 @@
 DROP FUNCTION IF EXISTS lapsed.import_asendus_taabelid(INTEGER, INTEGER, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.import_asendus_taabelid(IN user_id INTEGER,
-                                                           IN user_rekvid INTEGER,
-                                                           IN l_kpv DATE,
-                                                           OUT error_code INTEGER,
-                                                           OUT result INTEGER,
-                                                           OUT error_message TEXT)
+                                                          IN user_rekvid INTEGER,
+                                                          IN l_kpv DATE,
+                                                          OUT error_code INTEGER,
+                                                          OUT result INTEGER,
+                                                          OUT error_message TEXT)
     RETURNS RECORD AS
 $BODY$
 
@@ -61,6 +61,7 @@ BEGIN
               AND nomid = l_nom_id
               AND rekvid = user_rekvid
               AND staatus <> 3
+              AND (lk.properties ->> 'alg_kpv')::DATE <= l_kpv
             ORDER BY (lk.properties ->> 'lopp_kpv')::DATE DESC
             LIMIT 1;
 
@@ -113,7 +114,7 @@ BEGIN
     result = count;
     RETURN;
 
-END;
+END ;
 $BODY$ LANGUAGE plpgsql
     VOLATILE
     COST 100;

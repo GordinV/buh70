@@ -17,7 +17,7 @@ DECLARE
                               FROM libs.library
                               WHERE ltrim(rtrim(upper(kood))) = ltrim(rtrim(upper(doc_type_kood)))
                                 AND library = 'DOK'
-                              LIMIT 1);
+                                  LIMIT 1);
     doc_details    JSON    = doc_data ->> 'gridData';
     doc_kpv        DATE    = doc_data ->> 'kpv';
     doc_number     TEXT    = coalesce(doc_data ->> 'number',
@@ -27,7 +27,7 @@ DECLARE
     doc_ametnikid  INTEGER = doc_data ->> 'ametnikid';
     doc_aktseptid  INTEGER = doc_data ->> 'aktseptid';
     doc_aasta      INTEGER = doc_data ->> 'aasta';
-    doc_kuu        INTEGER = doc_data ->> 'kuu';
+    doc_kuu        INTEGER = 0; --doc_data ->> 'kuu';
     doc_allkiri    INTEGER = coalesce((doc_data ->> 'allkiri') :: INTEGER, 0);
     doc_tunnus     INTEGER = doc_data ->> 'tunnus';
     doc_muud       TEXT    = doc_data ->> 'muud';
@@ -205,6 +205,8 @@ BEGIN
             END IF;
 
         END LOOP;
+
+    DELETE FROM eelarve.taotlus1 WHERE parentid = taotlus_id AND Summa = 0 AND Summa_kassa = 0 AND oodatav_taitmine = 0;
 
     RETURN doc_id;
 

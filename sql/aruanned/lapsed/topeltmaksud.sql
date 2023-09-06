@@ -21,56 +21,58 @@ CREATE OR REPLACE FUNCTION lapsed.topeltmaksud(l_rekvid INTEGER,
     )
 AS
 $BODY$
-WITH qryRekv as (SELECT rekv_id
+WITH qryRekv AS (SELECT rekv_id
                  FROM get_asutuse_struktuur(l_rekvid)),
      qryTabel AS (
-    SELECT lt.nimi::TEXT,
-           lt.isikukood::TEXT,
-           lapsed.get_viitenumber(lt.rekvid, l.id)::TEXT AS viitenumber,
-           r.nimetus::TEXT                               AS asutus,
-           lt.kood::TEXT,
-           ltrim(rtrim(lt.teenus))::TEXT                 AS nimetus,
-           lt.hind,
-           lt.kogus::NUMERIC(14, 4),
-           ((lt.hind * lt.kogus - (CASE
-                                       WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
-                                                                 ((lt.soodustus * lt.sooduse_kehtivus) / 100)
-                                       ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus *
-                                            (CASE WHEN lt.tyyp IS NOT NULL AND lt.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END)
-               END)))::NUMERIC(12, 2)
-                                                         AS summa,
-           lt.kuu::INTEGER,
-           lt.aasta::INTEGER,
-           'KUUTABEL'                                    AS koht,
-           1                                             AS id
-    FROM lapsed.cur_lapse_taabel lt
-             INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
-             INNER JOIN lapsed.laps l ON l.id = lt.parentid
-             INNER JOIN (
-        SELECT id, nimetus
-        FROM ou.rekv r
-        WHERE id IN (SELECT rekv_id
-                     FROM qryRekv
-        )
-          AND (r.properties ->> 'liik') = 'LASTEAED'
-    ) r ON r.id = lt.rekvid
-             INNER JOIN (SELECT isikukood, kood
-                         FROM lapsed.cur_lapse_taabel
-                         WHERE kuu = l_kuu
-                           AND aasta = l_aasta
-                         GROUP BY isikukood, kood
-                         HAVING count(*) > 1) dbl ON dbl.isikukood = lt.isikukood AND dbl.kood = lt.kood
-    WHERE lt.kuu = l_kuu
-      AND lt.aasta = l_aasta
-      and l.staatus < 3
-      AND coalesce((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE)
-),
+         SELECT lt.nimi::TEXT,
+                lt.isikukood::TEXT,
+                lapsed.get_viitenumber(lt.rekvid, l.id)::TEXT AS viitenumber,
+                r.nimetus::TEXT                               AS asutus,
+                ltrim(rtrim(lt.teenus))::TEXT                 AS nimetus,
+                n.kood,
+                lt.hind,
+                lt.kogus::NUMERIC(14, 4),
+                ((lt.hind * lt.kogus - (CASE
+                                            WHEN lt.kas_protsent THEN (lt.hind * lt.kogus)::NUMERIC(12, 2) *
+                                                                      ((lt.soodustus * lt.sooduse_kehtivus) / 100)
+                                            ELSE lt.soodustus * lt.kogus * lt.sooduse_kehtivus *
+                                                 (CASE WHEN lt.tyyp IS NOT NULL AND lt.tyyp = 'SOODUSTUS' THEN 0 ELSE 1 END)
+                    END)))::NUMERIC(12, 2)
+                                                              AS summa,
+                lt.kuu::INTEGER,
+                lt.aasta::INTEGER,
+                'KUUTABEL'                                    AS koht,
+                1                                             AS id
+         FROM lapsed.cur_lapse_taabel lt
+                  INNER JOIN libs.nomenklatuur n ON n.id = lt.nomid
+                  INNER JOIN lapsed.laps l ON l.id = lt.parentid
+                  INNER JOIN (
+             SELECT id, nimetus
+             FROM ou.rekv r
+             WHERE id IN (SELECT rekv_id
+                          FROM qryRekv
+             )
+               AND (r.properties ->> 'liik') = 'LASTEAED'
+         ) r ON r.id = lt.rekvid
+                  INNER JOIN (SELECT isikukood, ltrim(rtrim(teenus)) AS teenus
+                              FROM lapsed.cur_lapse_taabel
+                              WHERE kuu = l_kuu
+                                AND aasta = l_aasta
+                                AND teenus IN ('Õppetasu', 'Kohatasu')
+                              GROUP BY isikukood, ltrim(rtrim(teenus))
+                              HAVING count(*) > 1) dbl
+                             ON dbl.isikukood = lt.isikukood AND ltrim(rtrim(dbl.teenus)) = ltrim(rtrim(lt.teenus))
+         WHERE lt.kuu = l_kuu
+           AND lt.aasta = l_aasta
+           AND n.nimetus IN ('Õppetasu', 'Kohatasu')
+           AND l.staatus < 3
+     ),
      qryKaart AS (
          WITH laste_kaart AS
                   (
                       SELECT lk.id,
                              n.kood,
-                             n.nimetus,
+                             ltrim(rtrim(n.nimetus))                     AS nimetus,
                              lk.parentid                                 AS laps_id,
                              lk.rekvid                                   AS rekv_id,
                              (lk.properties ->> 'alg_kpv')::DATE         AS alg_kpv,
@@ -108,7 +110,8 @@ WITH qryRekv as (SELECT rekv_id
                              coalesce(n.properties ->> 'tyyp', '')       AS tyyp,
                              r.nimetus::TEXT                             AS asutus
                       FROM lapsed.lapse_kaart lk
-                               INNER JOIN libs.nomenklatuur n ON n.id = lk.nomid
+                               INNER JOIN libs.nomenklatuur n
+                                          ON n.id = lk.nomid AND ltrim(rtrim(n.nimetus)) IN ('Õppetasu', 'Kohatasu')
                                INNER JOIN (
                           SELECT id, nimetus
                           FROM ou.rekv r
@@ -154,21 +157,21 @@ WITH qryRekv as (SELECT rekv_id
                     AND lopp_kpv >= make_date(l_aasta, l_kuu, 1)
               ) hind
                   INNER JOIN (
-             SELECT lk.kood, lk.laps_id
+             SELECT lk.nimetus, lk.laps_id
              FROM laste_kaart lk
              WHERE alg_kpv <= (make_date(l_aasta, l_kuu, 1) + INTERVAL '1 month')::DATE - 1
                AND lopp_kpv >= make_date(l_aasta, l_kuu, 1)
-             GROUP BY lk.kood, lk.laps_id
+             GROUP BY lk.nimetus, lk.laps_id
              HAVING count(*) > 1) dbl
-                             ON hind.teenuse_kood = dbl.kood AND
+                             ON hind.nimetus = dbl.nimetus AND
                                 hind.laps_id = dbl.laps_id
      )
 SELECT nimi,
-       isikukood,
-       viitenumber,
-       t.asutus,
-       kood,
-       nimetus,
+       isikukood::TEXT,
+       viitenumber::TEXT,
+       t.asutus::TEXT,
+       kood::TEXT,
+       nimetus::TEXT,
        hind,
        kogus,
        summa,
@@ -208,7 +211,7 @@ GRANT EXECUTE ON FUNCTION lapsed.topeltmaksud(INTEGER, INTEGER, INTEGER) TO arve
 
 /*
 SELECT *
-FROM lapsed.topeltmaksud(119, 07, 2023)
-where isikukood = '52005010030'
+FROM lapsed.topeltmaksud(119, 08, 2023)
+where isikukood = '52006030027'
 ;
 */

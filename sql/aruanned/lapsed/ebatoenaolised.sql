@@ -14,36 +14,46 @@ CREATE OR REPLACE FUNCTION lapsed.ebatoenaolised(l_rekvid INTEGER,
         noude_50         NUMERIC(12, 2),
         noude_100        NUMERIC(12, 2),
         jaak             NUMERIC(12, 2)
-    ) AS
+    )
+AS
 $BODY$
 SELECT rekvid,
-       l_kpv                                                        AS kpv,
+       l_kpv                                                                      AS kpv,
        number,
        tahtaeg,
        lapse_nimi,
        lapse_isikukood,
        maksja_nimi,
        maksja_isikukood,
-       CASE WHEN paevad >= 90 AND paevad < 180 THEN jaak ELSE 0 END AS noude_50,
-       CASE WHEN paevad >= 180 THEN jaak ELSE 0 END                 AS noude_100,
+       CASE WHEN paevad >= 90 AND paevad < 180 THEN round(jaak / 2, 2) ELSE 0 END AS noude_50,
+       CASE WHEN paevad >= 180 THEN jaak ELSE 0 END                               AS noude_100,
        jaak
 FROM (
+         WITH arvtasu AS (
+             SELECT doc_arv_id AS arv_id, sum(summa) AS summa
+             FROM docs.arvtasu at
+             WHERE at.status < 3
+               AND at.kpv <= l_kpv
+               AND at.rekvid = l_rekvid
+             GROUP BY doc_arv_id
+         )
          SELECT d.rekvid,
                 a.kpv,
                 a.number::TEXT,
                 a.tahtaeg,
-                (l_kpv - coalesce(a.tahtaeg, a.kpv)) AS paevad,
-                a.jaak::NUMERIC(12, 2),
-                laps.isikukood::TEXT                 AS lapse_isikukood,
-                laps.nimi::TEXT                      AS lapse_nimi,
-                m.regkood::TEXT                      AS maksja_isikukood,
-                m.nimetus::TEXT                      AS maksja_nimi
+                (l_kpv - coalesce(a.tahtaeg, a.kpv))              AS paevad,
+                (a.summa - coalesce(at.summa, 0))::NUMERIC(12, 2) AS jaak,
+                laps.isikukood::TEXT                              AS lapse_isikukood,
+                laps.nimi::TEXT                                   AS lapse_nimi,
+                m.regkood::TEXT                                   AS maksja_isikukood,
+                m.nimetus::TEXT                                   AS maksja_nimi
          FROM docs.doc d
                   INNER JOIN docs.arv a ON a.parentid = d.id
-                  INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
+--                  INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                   INNER JOIN lapsed.liidestamine l ON l.docid = d.id
                   INNER JOIN lapsed.laps laps ON laps.id = l.parentid
                   INNER JOIN libs.asutus m ON m.id = a.asutusid
+                  LEFT OUTER JOIN arvtasu at ON d.id = at.arv_id
          WHERE a.jaak > 0
            AND a.tahtaeg <= l_kpv
            AND d.rekvid IN (SELECT rekv_id
@@ -64,5 +74,6 @@ GRANT EXECUTE ON FUNCTION lapsed.ebatoenaolised(INTEGER, DATE) TO dbvaatleja;
 
 
 /*
-select * from lapsed.ebatoenaolised(63, '2020-03-31')
+select lapsed.ebatoenaolised(id, current_date)
+from ou.rekv where parentid = 119
 */

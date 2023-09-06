@@ -183,7 +183,7 @@ WITH params AS (
 
                   UNION ALL
                   -- востановление расходов
-                  SELECT DISTINCT (-1 * j1.summa) AS summa,
+                  SELECT  (-1 * j1.summa) AS summa,
                                   j1.kood1::TEXT  AS tegev,
                                   j1.kood2::TEXT  AS allikas,
                                   j1.kood3::TEXT  AS rahavoog,
@@ -448,9 +448,10 @@ sum(eelarve_kassa) over() as eelarve_kassa_kokku,
 sum(taitmine) over() as taitmine_kokku,
 sum(taitmine_kassa) over() as taitmine_kassa_kokku,
 *
-from eelarve.eelarve_taitmine_jaak('2023-06-30', 63, 1)
+from eelarve.eelarve_taitmine_jaak('2023-07-31', 125, 1)
 where rekv_id < 999
 and artikkel in (select kood from com_artikkel)
+and artikkel = '5511'
 
 eelarve_kokku;eelarve_kassa_kokku;taitmine_kokku;taitmine_kassa_kokku
 177563172;170506730;52687539.89;56723908.68

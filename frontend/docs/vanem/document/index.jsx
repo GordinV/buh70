@@ -101,6 +101,15 @@ class Vanem extends React.PureComponent {
             this.setFilter(self.docData.vanem_nimi)
         }
 
+        // ищем эл.адрес
+        if (self.docData && self.docData.asutusid && Boolean(self.docData.kas_email) && !(self.docData.email)) {
+            let obj = this.refs['document']['refs']['select-asutusid'];
+            // есть найденный эл. адрес. сохраним его
+            if (obj && obj.state) {
+                self.docData.email = obj.state.email;
+            }
+        }
+
         return (
             <div style={styles.doc}>
                 {self.docData && self.docData.asutusid && Boolean(self.docData.kas_email) && !(self.docData.email) ? (

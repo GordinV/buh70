@@ -190,22 +190,27 @@ END;
 $$;
 
 /*
+id
+46371
+41057
+
+
 --update libs.asutus set regkood = '47209243719' where id = 29519
 
-SELECT uhenda_asutus_kaart(16682, 16891)
+SELECT uhenda_asutus_kaart(41057, 46371)
 
 select * from libs.asutus where regkood like '%47505233713%'
 
 37210122248
 
 
-select staatus, * from lapsed.vanemad where asutusid in (31668, 7063)
+select staatus, * from lapsed.vanemad where asutusid in (41057, 46371)
 --and staatus < 3
 order by parentid
 
-delete from lapsed.vanemad where id in (3864, 9940)
+delete from lapsed.vanemad where id in (11061, 11060)
 
-select * from lapsed.vanem_arveldus where asutusid in (31668, 7063) order by parentid
+select * from lapsed.vanem_arveldus where asutusid in (41057, 46371) order by parentid
 delete from lapsed.vanem_arveldus where id in (20525,24352 )
 
 select * from ou.logs where doc_id in (select parentid from docs.arv where asutusid = 5461)

@@ -12,7 +12,7 @@ DECLARE
     doc_data                JSON    = data ->> 'data';
     doc_minpalk             NUMERIC = doc_data ->> 'minpalk';
     doc_tulubaas            NUMERIC = doc_data ->> 'tulubaas';
-    doc_pensionari_tulubaas NUMERIC = coalesce((doc_data ->> 'pensionari_tulubaas'), 704)::NUMERIC;
+    doc_pensionari_tulubaas NUMERIC = coalesce((doc_data ->> 'pensionari_tulubaas')::numeric, 704)::NUMERIC;
     doc_round               NUMERIC = doc_data ->> 'round';
     doc_jaak                NUMERIC = doc_data ->> 'jaak';
     doc_genlausend          INTEGER = doc_data ->> 'genlausend';
@@ -48,7 +48,7 @@ BEGIN
 
     SELECT row_to_json(row)
     INTO l_jsonb
-    FROM (SELECT NOT empty(doc_mmk) AS mmk) row;
+    FROM (SELECT NOT (doc_mmk) AS mmk) row;
 
 
     -- вставка или апдейт docs.doc
@@ -95,11 +95,6 @@ BEGIN
     END IF;
 
     RETURN config_id;
-EXCEPTION
-    WHEN OTHERS
-        THEN
-            RAISE NOTICE 'error % %', SQLERRM, SQLSTATE;
-            RETURN 0;
 END;
 $$;
 

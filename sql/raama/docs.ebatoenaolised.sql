@@ -18,6 +18,8 @@ DECLARE
     userName       TEXT           = 'temp'; -- имя пользователя, который выполняет таску
     l_journal_id   INTEGER;
     l_summa        NUMERIC(14, 2) = 0;
+    v_aasta        RECORD;
+    l_selg         TEXT           = 'Ebatõenäolised nõuded';
 BEGIN
     -- формируем список просроченных счетов (50%)
     FOR v_arv IN
@@ -29,12 +31,24 @@ BEGIN
                a.asutusid,
                a.number,
                CASE
-                   WHEN (a.tahtaeg + 90) > make_date(year(a.kpv), 03, 31) AND
-                        (a.tahtaeg + 90) <= make_date(year(a.kpv), 06, 30) THEN make_date(year(a.kpv), 06, 30)
-                   WHEN (a.tahtaeg + 90) > make_date(year(a.kpv), 06, 30) AND
-                        (a.tahtaeg + 90) <= make_date(year(a.kpv), 09, 30) THEN make_date(year(a.kpv), 09, 30)
-                   WHEN (a.tahtaeg + 90) > make_date(year(a.kpv), 09, 30) AND
-                        (a.tahtaeg + 90) <= make_date(year(a.kpv), 12, 31) THEN make_date(year(a.kpv), 12, 31)
+                   WHEN (a.tahtaeg +
+                         90 * CASE WHEN (a.properties ->> 'ebatoenaolised_1_id') IS NOT NULL THEN 2 ELSE 1 END) >
+                        make_date(year(a.kpv), 03, 31) AND
+                        (a.tahtaeg +
+                         90 * CASE WHEN (a.properties ->> 'ebatoenaolised_1_id') IS NOT NULL THEN 2 ELSE 1 END) <=
+                        make_date(year(a.kpv), 06, 30) THEN make_date(year(a.kpv), 06, 30)
+                   WHEN (a.tahtaeg +
+                         90 * CASE WHEN (a.properties ->> 'ebatoenaolised_1_id') IS NOT NULL THEN 2 ELSE 1 END) >
+                        make_date(year(a.kpv), 06, 30) AND
+                        (a.tahtaeg +
+                         90 * CASE WHEN (a.properties ->> 'ebatoenaolised_1_id') IS NOT NULL THEN 2 ELSE 1 END) <=
+                        make_date(year(a.kpv), 09, 30) THEN make_date(year(a.kpv), 09, 30)
+                   WHEN (a.tahtaeg +
+                         90 * CASE WHEN (a.properties ->> 'ebatoenaolised_1_id') IS NOT NULL THEN 2 ELSE 1 END) >
+                        make_date(year(a.kpv), 09, 30) AND
+                        (a.tahtaeg +
+                         90 * CASE WHEN (a.properties ->> 'ebatoenaolised_1_id') IS NOT NULL THEN 2 ELSE 1 END) <=
+                        make_date(year(a.kpv), 12, 31) THEN make_date(year(a.kpv), 12, 31)
                    ELSE
                        make_date(year(a.kpv) + 1, 03, 31)
                    END                                           AS lausendi_period,
@@ -44,7 +58,7 @@ BEGIN
                  INNER JOIN docs.arv a ON a.parentid = d.id
         WHERE (d.rekvid = l_rekv_id OR l_rekv_id IS NULL)
           AND a.jaak > 0
-          AND year(a.kpv) >= 2020               -- начиная с 2020 года
+          AND (a.kpv) >= date(2022, 12, 31)     -- начиная с 2023 года
           AND (a.properties ->> 'tyyp') IS NULL -- исключить предоплатные счета
           AND (l_kpv - a.tahtaeg) > 3 * 30      -- просрочен более чем на 4 месяца
           AND ((a.properties ->> 'ebatoenaolised_1_id') IS NULL -- помметка, что на счет начислено списание
@@ -52,6 +66,28 @@ BEGIN
           AND a.liik = 0 -- только доходы
         LOOP
             RAISE NOTICE 'number %', v_arv.number;
+            -- проверяем период
+            IF exists(SELECT id
+                      FROM ou.aasta
+                      WHERE rekvid = v_arv.rekv_id
+                        AND kuu = month(v_arv.lausendi_period)
+                        AND aasta = year(v_arv.lausendi_period)
+                        AND kinni = 1)
+            THEN
+                -- То есть тогда, если вдруг по каким-то причинам период закрыт, то алгоритм должен это учитывать и делать проводки в первом месяце открытого периода.
+                SELECT *
+                INTO v_aasta
+                FROM ou.aasta
+                WHERE rekvid = v_arv.rekv_id
+                  AND aasta = year(v_arv.lausendi_period)
+                  AND kinni = 1
+                ORDER BY make_date(aasta, kuu, 1) DESC
+                LIMIT 1;
+
+                v_arv.lausendi_period = get_last_day(gomonth(make_date(v_aasta.aasta, v_aasta.kuu, 1)::DATE, 1));
+                RAISE NOTICE 'new kpv v_arv.lausendi_period %', v_arv.lausendi_period;
+            END IF;
+
             l_json_details = '[]'::JSONB; -- инициализируем массив под проводку
 
             l_user_id = (SELECT id FROM ou.userid WHERE kasutaja::TEXT = userName AND rekvid = v_arv.rekv_id LIMIT 1);
@@ -62,15 +98,22 @@ BEGIN
             IF v_arv.ebatoenaolised_1_id IS NOT NULL AND v_arv.ebatoenaolised_1_id > 0 AND
                exists(SELECT id FROM cur_journal WHERE id = v_arv.ebatoenaolised_1_id)
             THEN
+                -- первое начисление уже сделано, это второе
+                l_selg  = 'Ebatõenäolised nõuded (100)';
+
                 -- расчет суммы
                 l_summa = v_arv.jaak - coalesce((SELECT sum(j1.summa)
                                                  FROM docs.journal1 j1
                                                           INNER JOIN docs.journal j ON j.id = j1.parentid
                                                  WHERE j.parentid IN (coalesce(v_arv.ebatoenaolised_1_id, 0),
                                                                       coalesce(v_arv.ebatoenaolised_2_id, 0))));
+            ELSE
+                -- первое начисление (50%)
+                l_selg  = 'Ebatõenäolised nõuded (50)';
+
             END IF;
 
-            IF l_summa > 0
+            IF l_summa > 0 and v_arv.lausendi_period <= l_kpv
             THEN
                 -- делаем проводку
 
@@ -103,7 +146,7 @@ BEGIN
                 SELECT 0                                AS id,
                        'JOURNAL'                        AS doc_type_id,
                        v_arv.lausendi_period            AS kpv,
-                       'Ebatõenäolised nõuded'          AS selg,
+                       l_selg                           AS selg,
                        v_arv.Asutusid,
                        'Arve nr.' || v_arv.number::TEXT AS dok,
                        l_json_details                   AS "gridData"
@@ -114,6 +157,8 @@ BEGIN
                                       v_params AS data) row;
 
                 l_journal_id = docs.sp_salvesta_journal(l_json :: JSON, l_user_id, v_arv.rekv_Id);
+
+                RAISE NOTICE 'l_journal_id %', l_journal_id;
                 IF (l_journal_id IS NOT NULL AND l_journal_id > 0)
                 THEN
                     -- проводка создана, сохраняем ссылку
@@ -176,7 +221,9 @@ ALTER FUNCTION docs.ebatoenaolised( INTEGER, DATE )
 GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE) TO dbkasutaja;
 GRANT EXECUTE ON FUNCTION docs.ebatoenaolised(INTEGER, DATE) TO dbpeakasutaja;
 
---SELECT docs.ebatoenaolised(63, '2021-03-31'::DATE);
+/*SELECT docs.ebatoenaolised(id, '2023-08-29'::DATE)
+from ou.rekv where parentid = 119
+*/
 
 /*
 

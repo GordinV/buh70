@@ -28,6 +28,7 @@ class SelectData extends React.PureComponent {
             gridActiveRow: 0,
             show: this.props.show,
             viitenumber: '',
+            email: '',
             limit: '10',
             loading: false
         };
@@ -203,11 +204,12 @@ class SelectData extends React.PureComponent {
 
             let activeRow = this.state.gridActiveRow,
                 value = this.state.gridData[activeRow]['id'],
+                email = this.state.gridData[activeRow]['email'] ? this.state.gridData[activeRow]['email']: '',
                 fieldValue = this.state.gridData[activeRow][boundField];
             // получить данные полей и установить состояние для виджета
 
             // показать новое значение
-            this.setState({value: value, fieldValue: fieldValue, show: false});
+            this.setState({value: value, fieldValue: fieldValue, show: false, email: email});
 
             // вернуть значение наверх
 
@@ -234,7 +236,9 @@ class SelectData extends React.PureComponent {
     }
 
     handleGridClick(event, value, activeRow) {
-        this.setState({gridActiveRow: activeRow, value: value});
+        let email = this.state.gridData[activeRow]['email'] ? this.state.gridData[activeRow]['email']: '';
+        // заодно запомним эл. адрес если есть такой
+        this.setState({gridActiveRow: activeRow, value: value, email: email});
     }
 
     loadLibs(fieldValue, kpv) {
@@ -286,6 +290,7 @@ class SelectData extends React.PureComponent {
                             value: gridData[0]['id'],
                             gridData: gridData,
                             viitenumber: gridData[0]['vn_s'] ? gridData[0]['vn_s']: '',
+                            email: gridData[0]['email'] ? gridData[0]['email']: '',
                             gridConfig: gridConfig,
                             loading: false
                         });

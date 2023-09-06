@@ -7,7 +7,7 @@ module.exports = {
             {id: "tahtaeg", name: "Tähtaeg", width: "10%", show: true, type: "date", interval: true},
             {id: "lapse_isikukood", name: "Lapse IK", width: "10%"},
             {id: "lapse_nimi", name: "Lapse nimi", width: "15%"},
-            {id: "maksja_isikukood", name: "Maksja nimi", width: "10%"},
+            {id: "maksja_isikukood", name: "Maksja IK", width: "10%"},
             {id: "maksja_nimi", name: "Maksja nimi", width: "15%"},
             {id: "noude_50", name: "50%", width: "7%", type: "number", interval: true},
             {id: "noude_100", name: "100%", width: "7%", type: "number", interval: true},
