@@ -136,13 +136,16 @@ module.exports = {
         gridConfiguration: [
             {id: "id", name: "id", width: "1%", show: false},
             {id: "row_id", name: "Jrk", width: "3%", show: true, hideFilter: true},
-            {id: "isikukood", name: "Isikukood", width: "10%"},
-            {id: "nimi", name: "Nimi", width: "20%"},
-            {id: "email", name: "E-mail", width: "15%"},
-            {id: "printimine", name: "Arved esita", width: "10%"},
-            {id: "lapsed", name: "Lapsed", width: "20%"},
-            {id: "kehtiv_kpv", name: "Kehtiv seisuga", width: "15%", type: 'date', show: false},
+            {id: "isikukood", name: "Isikukood", width: "8%"},
+            {id: "nimi", name: "Nimi", width: "15%"},
+            {id: "email", name: "E-mail", width: "12%"},
+            {id: "printimine", name: "Arved esita", width: "9%"},
+            {id: "lapsed", name: "Lapsed", width: "15%"},
+            {id: "kehtiv_kpv", name: "Kehtiv seisuga", width: "12%", type: 'date', show: false},
             {id: "kehtivus", name: "Kehtivus", width: "10%", type: 'select', data: ['', 'Jah', 'Ei']},
+            {id: "iban", name: "Iban", width: "10%"},
+            {id: "asutused", name: "Asutused", width: "10%"},
+            {id: "aa", name: "Aa", width: "1%", show:false},
 
         ],
         sqlString: `WITH range_parameters AS (
@@ -152,6 +155,11 @@ module.exports = {
                                 ELSE $3::DATE::DATE END::DATE AS kehtiv_kpv,
                             $1::integer                                    AS rekv_id
                         ),
+                     rekv_ids AS (
+                         SELECT a.rekv_id
+                         FROM range_parameters,
+                              get_asutuse_struktuur(range_parameters.rekv_id) a
+                     ),                        
                      cur_lapsed AS (
                          SELECT l.id,
                                 lk.lopp_kpv,
@@ -191,32 +199,46 @@ module.exports = {
                          FROM qry_range lk,
                               range_parameters
                          GROUP BY lk.id
+                     ),
+                     asutused AS (SELECT v.id,
+                                         array_agg(r.id)                    AS a_ids,
+                                         array_agg(ltrim(rtrim(r.nimetus))) AS asutused,
+                                         array_agg(v.printimine)            AS printimine,
+                                         get_unique_value_from_array(array_agg(v.iban))                  AS iban,
+                                         array_agg(v.aa)                    AS aa
+                                  FROM lapsed.cur_vanemad v
+                                           INNER JOIN ou.rekv r ON r.id = v.rekv_id
+                                  WHERE v.rekv_id IN (SELECT r.rekv_id FROM rekv_ids r)
+                                  GROUP BY v.id
                      )
-                
-                
-                SELECT v.id,
-                       v.laps_id,
-                       isikukood,
-                       nimi,
-                       lapsed,
-                       aadress,
-                       email,v.
-                       tel,
-                       printimine,
-                       range_parameters.rekv_id::INTEGER      AS rekvid,
-                       $2::INTEGER    AS user_id,
-                       count(*) OVER () AS rows_total,
-                       CASE
-                           WHEN coalesce(qr.kehtivus, FALSE) IS TRUE THEN
-                               'Jah'
-                           ELSE
-                               'Ei' END                      AS kehtivus,
-                       range_parameters.kehtiv_kpv::date as kehtiv_kpv
-                FROM lapsed.cur_vanemad v
-                         LEFT OUTER JOIN (SELECT * FROM qry_range WHERE coalesce(kehtivus, false) IS TRUE) qr ON qr.id = v.laps_id     ,
-                     range_parameters
-                WHERE v.rekv_id = range_parameters.rekv_id::INTEGER
-                ORDER by v.isikukood`,     //  $1 всегда ид учреждения, $2 - userId
+                         select * from (                                
+                            SELECT DISTINCT v.id,
+                                   v.laps_id,
+                                   isikukood,
+                                   nimi,
+                                   lapsed,
+                                   aadress,
+                                   email,v.
+                                   tel,
+                                   range_parameters.rekv_id::INTEGER      AS rekvid,
+                                   $2::INTEGER    AS user_id,
+                                   count(*) OVER () AS rows_total,
+                                   CASE
+                                       WHEN coalesce(qr.kehtivus, FALSE) IS TRUE THEN
+                                           'Jah'
+                                       ELSE
+                                           'Ei' END                      AS kehtivus,
+                                   range_parameters.kehtiv_kpv::date as kehtiv_kpv,
+                                    array_to_string(a.printimine, ',')          AS printimine,
+                                    array_to_string(a.asutused, ',')            AS asutused,
+                                    trim(array_to_string(a.iban, ','), ',')     AS iban,
+                                    array_to_string(a.aa, ',')                  AS aa,
+                                    a.a_ids @> ARRAY [range_parameters.rekv_id] AS kas_muuda                       
+                            FROM lapsed.cur_vanemad v
+                                     INNER JOIN asutused a ON a.id = v.id                
+                                     LEFT OUTER JOIN (SELECT * FROM qry_range WHERE coalesce(kehtivus, false) IS TRUE) qr ON qr.id = v.laps_id     ,
+                                 range_parameters) qry
+                                 order by isikukood`,     //  $1 всегда ид учреждения, $2 - userId
         params: ['rekvid', 'userid', 'kehtiv_kpv'],
         alias: 'curLapsed',
         converter: function (data) {
