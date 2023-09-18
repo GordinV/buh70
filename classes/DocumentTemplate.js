@@ -207,18 +207,8 @@ class Document {
 
 
             }
-/*
-            if (this.config.logs) {
-                this.setLog(sql, [params, sortBy, sqlWhere, limit, subTotals]);
-            }
-*/
             tulemused = await db.queryDb(sql, params, sortBy, sqlWhere, limit, subTotals);
 
-/*
-            if (this.config.logs) {
-                this.setLog(sql, [params, sortBy, sqlWhere, limit, subTotals], JSON.stringify(tulemused));
-            }
-*/
             return tulemused;
 
         } catch (e) {

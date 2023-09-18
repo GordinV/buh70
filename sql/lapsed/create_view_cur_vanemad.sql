@@ -41,7 +41,13 @@ SELECT a.id                                                                AS va
                                                                    ELSE '' END) END)
                            ), '')::TEXT
                                                                            AS printimine,
-       v.parentid                                                                AS laps_id
+       v.parentid                                                          AS laps_id,
+       array_to_string(array_agg(CASE
+                                     WHEN (va.properties ->> 'kas_earve')::BOOLEAN AND
+                                          NOT empty(va.properties ->> 'pank') AND va.properties ->> 'iban' IS NOT NULL
+                                         THEN va.properties ->> 'iban'
+                                     ELSE '' END), ',')                    AS iban,
+       array_to_string(array_agg(a.properties ->> 'asutus_aa'), ',')       AS aa
 FROM lapsed.vanemad v
          INNER JOIN libs.asutus a ON a.id = v.asutusid
          INNER JOIN (
@@ -70,7 +76,7 @@ GRANT SELECT ON TABLE lapsed.cur_vanemad TO dbpeakasutaja;
 
 SELECT *
 FROM lapsed.cur_vanemad
-WHERE isikukood = '39010040086'
+WHERE isikukood = '48206192238'
 ORDER BY id DESC
 LIMIT 100
 /*

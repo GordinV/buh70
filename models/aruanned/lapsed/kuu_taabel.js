@@ -133,11 +133,16 @@ module.exports = {
             {
                 id: "kogus", name: "Kokku", width: "2%", hideFilter: true,
                 type: "integer"
-            }
+            },
+            {id: "alates", name: "Alates", width: "5%", type: "date", interval: false, show: false},
+            {id: "kuni", name: "Kuni", width: "5%", type: "date", interval: false, show: false},
+
         ],
         sqlString: `
             SELECT 
-                   row_number()  over(PARTITION BY tyyp, yksus order by tyyp, yksus, nom_id desc, is_row) as rea_count,                   
+                   row_number()  over(PARTITION BY tyyp, yksus order by tyyp, yksus, nom_id desc, is_row) as rea_count,
+                   $4::date as alates,
+                   $5::date as kuni,
                    *
             FROM (
                      WITH kuu_taabel AS (
@@ -180,7 +185,7 @@ module.exports = {
                                 day_30,
                                 day_31,
                                 week_ends::INTEGER[] AS week_ends
-                         FROM lapsed.kuu_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER) qryReport
+                         FROM lapsed.kuu_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER, $4::date, $5::date) qryReport
                          order by tyyp, yksus, nom_id desc
                      )
                      SELECT TRUE AS is_row,
@@ -238,7 +243,7 @@ module.exports = {
                  ) qry
             ORDER BY tyyp, yksus, is_osa DESC, teenus, is_row
         `,     // $1 - rekvid, $2-KUU $3 - aasta
-        params: ['rekvid', 'kuu', 'aasta'],
+        params: ['rekvid', 'kuu', 'aasta', 'alates','kuni'],
         min_params: 1,
         notReloadWithoutParameters: true,
         alias: 'kuu_taabel_report',

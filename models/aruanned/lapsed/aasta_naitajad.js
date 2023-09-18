@@ -3,8 +3,7 @@ module.exports = {
         gridConfiguration: [
             {id: "period", name: "Seisuga", width: "0%", type: "date", interval: false, show: false, filterValidation: true},
             {id: "grupp_liik", name: "Grupi liik", width: "0%", show: false, toolTip: 'LASTEAED,HUVIKOOL,KOOL'},
-            {
-                id: "koolituse_tyyp",
+            {id: "koolituse_tyyp",
                 name: "Koolituse tüüp",
                 width: "0%",
                 show: false,

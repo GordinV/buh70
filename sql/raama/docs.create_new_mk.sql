@@ -76,7 +76,12 @@ BEGIN
                  LEFT OUTER JOIN libs.dokprop dp ON dp.id = a.doklausid
         WHERE d.id = l_arv_id;
 
-        doc_type_id = CASE WHEN v_arv.liik = 0 OR v_arv.id IS NULL THEN 'SMK' ELSE 'VMK' END;
+        doc_type_id = CASE WHEN coalesce(v_arv.liik, 0) = 0 THEN 'SMK' ELSE 'VMK' END;
+        l_opt = (CASE
+                     WHEN doc_type_id = 'SMK'
+                         THEN 2 -- если счет доходный, то мк на поступление средств, иначе расзодное поручение
+                     ELSE 1 END);
+
     ELSE
         SELECT dp.details ->> 'konto'                                         AS konto,
                a.*,
@@ -133,10 +138,6 @@ BEGIN
         l_selg = 'Arve nr.' || ltrim(rtrim(v_arv.number))::TEXT;
     END IF;
 
-    l_opt = (CASE
-                 WHEN l_arv_id IS NOT NULL AND (v_arv.liik = 0 OR v_arv.id IS NULL)
-                     THEN 2 -- если счет доходный, то мк на поступление средств, иначе расзодное поручение
-                 ELSE 1 END);
 
     IF l_summa IS NULL AND l_arv_id IS NOT NULL
     THEN
@@ -341,7 +342,7 @@ BEGIN
 
     SELECT docs.sp_salvesta_mk(json_object :: JSON, user_id, l_rekvId) INTO mk_id;
 
-    raise notice 'new mk mk_id %, doc_type_id %',mk_id, doc_type_id;
+    RAISE NOTICE 'new mk mk_id %, doc_type_id %',mk_id, doc_type_id;
 
     IF mk_id IS NOT NULL AND mk_id > 0 AND doc_type_id = 'VMK'
     THEN
@@ -360,7 +361,7 @@ BEGIN
         error_code = 1;
     END IF;
 
-    raise notice 'mk koostamise lopp, mk_id %', mk_id;
+    RAISE NOTICE 'mk koostamise lopp, mk_id %', mk_id;
     RETURN;
 END;
 $BODY$

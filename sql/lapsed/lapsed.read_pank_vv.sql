@@ -54,7 +54,8 @@ BEGIN
             l_viitenr = v_pank_vv.viitenumber;
 
             l_viimane_rea = v_pank_vv.id;
-
+            l_target_user_id = NULL;
+            l_new_viitenr = v_pank_vv.viitenumber;
             -- ишем плательшика
             SELECT row_to_json(row)
             INTO json_object
@@ -72,7 +73,7 @@ BEGIN
                 l_new_viitenr = lapsed.get_viitenumber_from_old(v_pank_vv.viitenumber::TEXT);
 
             ELSE
-                l_new_viitenr = v_pank_vv.viitenumber;
+                l_new_viitenr = ltrim(rtrim(v_pank_vv.viitenumber));
 
             END IF;
 
@@ -85,7 +86,6 @@ BEGIN
 
 
             -- читаем ссылку и ищем учреждение
---            l_rekvid = substr(l_new_viitenr, 1, char_length(l_new_viitenr::TEXT) - 7)::INTEGER;
             l_rekvid = left(l_new_viitenr, 3)::INTEGER;
 
 
@@ -320,7 +320,8 @@ BEGIN
             END IF;
 
             RETURN;
-*/END;
+*/
+END;
 $BODY$
     LANGUAGE plpgsql
     VOLATILE
@@ -333,15 +334,16 @@ GRANT EXECUTE ON FUNCTION lapsed.read_pank_vv(IN user_id INTEGER, IN TEXT) TO ar
 
 /*
 select * from lapsed.pank_vv
+where timestamp = '2023-09-07 08:28:28.953320'
 order by id desc limit 100
 
-SELECT lapsed.read_pank_vv(8901, '2023-09-05 09:00:53.258643')
+SELECT lapsed.read_pank_vv(8901, '2023-09-06 08:30:58.983564')
 
 
        SELECT *
         FROM lapsed.pank_vv v
 where kpv = '2023-01-01'
-        WHERE timestamp::TIMESTAMP = '2023-01-16 16:49:23.454950'::TIMESTAMP
+        WHERE timestamp::TIMESTAMP = '2023-09-06 08:30:58.983564'::TIMESTAMP
           AND (doc_id IS NULL OR doc_id = 0)
         ORDER BY kpv, id
 

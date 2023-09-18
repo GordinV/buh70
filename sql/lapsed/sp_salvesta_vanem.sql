@@ -18,8 +18,8 @@ DECLARE
     doc_email_alates   DATE    = CASE
                                      WHEN doc_data ->> 'email_alates' = '' THEN NULL::DATE
                                      ELSE (doc_data ->> 'email_alates')::DATE END;
-    doc_pank           TEXT    = doc_data ->> 'pank';
-    doc_iban           TEXT    = doc_data ->> 'iban';
+    doc_pank           TEXT    = ltrim(rtrim(doc_data ->> 'pank'));
+    doc_iban           TEXT    = ltrim(rtrim(doc_data ->> 'iban'));
     doc_kas_esindaja   BOOLEAN = coalesce((doc_data ->> 'kas_esindaja')::BOOLEAN, FALSE);
     doc_muud           TEXT    = doc_data ->> 'muud';
     json_props         JSONB;

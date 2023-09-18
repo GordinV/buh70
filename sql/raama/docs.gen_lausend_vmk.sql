@@ -153,9 +153,26 @@ BEGIN
                 -- hooldekodu
                 l_asutus_id = v_vmk.kasusaaja_id;
             END IF;
+            -- если есть ребенок, то используем ответственного родителя для контировки
 
             IF l_laps_id IS NOT NULL
             THEN
+
+                l_asutus_id = (SELECT asutusid
+                               FROM lapsed.vanem_arveldus v
+                                        INNER JOIN libs.asutus a ON a.id = v.asutusid
+                               WHERE v.parentid = l_laps_id
+                                 AND v.rekvid = v_vmk.rekvid
+                               ORDER BY coalesce(v.arveldus, FALSE) DESC
+                                       , v.id DESC
+                               LIMIT 1);
+
+                IF l_asutus_id IS NULL
+                THEN
+                    l_asutus_id = v_vmk1.asutusid;
+                END IF;
+
+
                 v_vmk1.konto = '10300029';
 
 /*                В проводках по поступлению денег в Selgitus-е хорошо бы поставить так:

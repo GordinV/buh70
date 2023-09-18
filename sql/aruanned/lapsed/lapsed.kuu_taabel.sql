@@ -1,7 +1,9 @@
 DROP FUNCTION IF EXISTS lapsed.kuu_taabel(JSONB, INTEGER);
 DROP FUNCTION IF EXISTS lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER, DATE, DATE);
 
-CREATE OR REPLACE FUNCTION lapsed.kuu_taabel(l_rekvid INTEGER, l_kuu INTEGER, l_aasta INTEGER)
+CREATE OR REPLACE FUNCTION lapsed.kuu_taabel(l_rekvid INTEGER, l_kuu INTEGER, l_aasta INTEGER, l_kpv1 DATE DEFAULT null,
+                                              l_kpv2 DATE DEFAULT null)
     RETURNS TABLE (
         rekv_id   INTEGER,
         asutus    TEXT,
@@ -45,7 +47,8 @@ CREATE OR REPLACE FUNCTION lapsed.kuu_taabel(l_rekvid INTEGER, l_kuu INTEGER, l_
         day_31    INTEGER,
         week_ends INTEGER[]
 
-    ) AS
+    )
+AS
 $BODY$
 SELECT qry.rekv_id,
        r.nimetus::TEXT                                                AS asutus,
@@ -54,7 +57,7 @@ SELECT qry.rekv_id,
        n.id                                                           AS nom_id,
        coalesce((l.properties::JSONB ->> 'luno')::TEXT, n.kood)::TEXT AS teenus,
        coalesce(l_kuu, month(current_date))::INTEGER                  AS kuu,
-       coalesce(l_aasta, year(current_date))::INTEGER                AS aasta,
+       coalesce(l_aasta, year(current_date))::INTEGER                 AS aasta,
        sum(coalesce(qry.day_1, 0) +
            coalesce(qry.day_2, 0) +
            coalesce(qry.day_3, 0) +
@@ -163,6 +166,8 @@ FROM (
            AND year(t.kpv) = coalesce(l_aasta, month(current_date))::INTEGER
            AND t.rekv_id = l_rekvid
            AND t.staatus <> 3
+           AND (t.kpv >= l_kpv1 OR l_kpv1 IS NULL)
+           AND (t.kpv <= l_kpv2 OR l_kpv2 IS NULL)
          GROUP BY t.rekv_id, t.grupp_id, t1.nom_id
          UNION ALL
          SELECT t.rekv_id,
@@ -207,15 +212,18 @@ FROM (
            AND year(t.kpv) = coalesce(l_aasta, year(current_date))::INTEGER
            AND t.rekv_id = l_rekvid
            AND t.staatus <> 3
+           AND (t.kpv >= l_kpv1 OR l_kpv1 IS NULL)
+           AND (t.kpv <= l_kpv2 OR l_kpv2 IS NULL)
+
          GROUP BY t.rekv_id, t.grupp_id, t1.laps_id
      ) qry
          INNER JOIN (
     SELECT id,
-           coalesce(n.properties ->> 'luno',kood)::text as kood,
+           coalesce(n.properties ->> 'luno', kood)::TEXT AS kood,
            nimetus
     FROM libs.nomenklatuur n
     WHERE n.rekvid = l_rekvid
-             AND (n.uhik) IN ('paev', 'päev', 'PAEV','PÄEV')
+      AND (n.uhik) IN ('paev', 'päev', 'PAEV', 'PÄEV')
     UNION ALL
     SELECT 999999999 AS id, 'Külastamine' AS kood, 'Külastamine' AS nimetus
 ) n ON n.id = qry.nom_id
@@ -231,12 +239,12 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER) TO arvestaja;
-GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER, DATE, DATE) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER, DATE, DATE) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER, DATE, DATE) TO arvestaja;
+GRANT EXECUTE ON FUNCTION lapsed.kuu_taabel(INTEGER, INTEGER, INTEGER, DATE, DATE) TO dbvaatleja;
 
 
 /*
-select * from lapsed.kuu_taabel(63, 4, 2020)
+select * from lapsed.kuu_taabel_(100, 9, 2023, '2023-09-09', '2023-09-15')
 */

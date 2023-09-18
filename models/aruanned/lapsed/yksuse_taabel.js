@@ -260,12 +260,16 @@ module.exports = {
                 type: "integer"
 
             },
-            {id: "kogus", name: "kokku", width: "2%", hideFilter: true, type: "integer"}
-//            {id: "tuhi", name: " ", width: "1px", hideFilter: true},
+            {id: "kogus", name: "kokku", width: "2%", hideFilter: true, type: "integer"},
+            {id: "alates", name: "Alates", width: "5%", type: "date", interval: false, show: false},
+            {id: "kuni", name: "Kuni", width: "5%", type: "date", interval: false, show: false},
+
         ],
         sqlString: `
             SELECT qry.*,
-                   vn.vn AS vana_vn
+                   vn.vn AS vana_vn,
+                   $4::date as alates,
+                   $5::date as kuni                  
             FROM (
                      SELECT row_number() OVER (PARTITION BY yksus, isikukood
                          ORDER BY
@@ -318,7 +322,7 @@ module.exports = {
                                          CASE WHEN nom_id <> 999999999 AND day_30 = 0 THEN 0 ELSE day_30 END AS day_30,
                                          CASE WHEN nom_id <> 999999999 AND day_31 = 0 THEN 0 ELSE day_31 END AS day_31,
                                          week_ends::INTEGER[]                                                AS week_ends
-                                  FROM lapsed.yksuse_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER) qryReport
+                                  FROM lapsed.yksuse_taabel($1::INTEGER, $2::INTEGER, $3::INTEGER, $4::date, $5::date) qryReport
                                   ORDER BY yksus,
                                            nimi,
                                            nom_id DESC
@@ -545,7 +549,7 @@ module.exports = {
                      is_row DESC,
                      nimi,
                      is_osa DESC, teenus`,     // $1 - rekvid, $2-KUU $3 - aasta
-        params: ['rekvid', 'kuu', 'aasta'],
+        params: ['rekvid', 'kuu', 'aasta','alates','kuni'],
         min_params: 1,
         notReloadWithoutParameters: true,
         alias: 'yksuse_taabel_report',
