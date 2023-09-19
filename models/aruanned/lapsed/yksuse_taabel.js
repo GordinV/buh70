@@ -276,8 +276,8 @@ module.exports = {
                              yksus,
                              nimi,
                              isikukood,
-                             nom_id DESC
-                             ,is_row) AS rea_count,
+                             case when nom_id = 999999999 then '' else teenus end,
+                             is_row) AS rea_count,
                             *
                      FROM (
                               WITH yksuse_taabel AS (
@@ -559,7 +559,18 @@ module.exports = {
         {
             view: 'yksuse_taabel_register',
             params: 'sqlWhere',
-            group: 'yksus'
+            group: 'yksus',
+            converter: function (data) {
+                // min rea_count
+                let min_rea_count = 10; //Külastamine
+                data.forEach(row => {
+                    min_rea_count = Math.min(min_rea_count, row.rea_count);
+                });
+                return data.map(row => {
+                    row.min_rea_count = min_rea_count;
+                    return row;
+                })
+            }
 
         },
     ],

@@ -1,2 +1,7 @@
-let iban = 'EE52XX10010082001010';
-console.log(iban.substring(4,6));
+let min = 10;
+let arr = [{id:4}, {id:1}, {id: 2}];
+arr.forEach(row => {
+   min = Math.min(min, row.id)
+});
+
+console.log('min', min);

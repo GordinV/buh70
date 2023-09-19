@@ -57,7 +57,7 @@ block content
         h2.doc_header ASUTUSE KÜLASTUSTE KUUTABEL
         h2.doc_header Vanematetasu
         each parameter in filter
-            p.doc_header #{parameter.name}: #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
+            p.doc_header #{parameter.name}: #{parameter.sqlNo == 1? '': 'Ei sisalda'} #{!parameter.start ? parameter.value : parameter.start} #{parameter.start ? ` - ${parameter.end}` : null}
 
         each tyyp in data
             p.doc_header.doc_grupp #{Object.keys(tyyp)[0]}
@@ -105,8 +105,8 @@ block content
                     each rea in tyyp[Object.keys(tyyp)[0]]
                         if rea.is_row
                             tr
-                                td.doc_grouped_data(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid black' : 'none'})=rea.rea_count == 1 ? id++: id
-                                td.doc_grouped_data(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid black' : 'none'})=rea.yksus
+                                td.doc_grouped_data(style={visibility: rea.rea_count == rea.min_rea_count ? 'visible' : 'hidden', "border-top": rea.rea_count == rea.min_rea_count ? '1px solid black' : 'none'})=rea.rea_count == rea.min_rea_count ? id++: id
+                                td.doc_grouped_data(style={visibility: rea.rea_count == rea.min_rea_count ? 'visible' : 'hidden', "border-top": rea.rea_count == rea.min_rea_count ? '1px solid black' : 'none'})=rea.yksus
                                 td.td=rea.teenus
                                 td.td(align='center' style={"background-color": rea.day_1 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen': 'pink': null)})= rea.day_1
                                 td.td(align='center' style={"background-color": rea.day_2 == null ? 'lightgray': (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen': 'pink': null)})=rea.day_2
@@ -142,8 +142,8 @@ block content
                                 td.td(align='center')=rea.kogus
                         else
                             tr
-                                td(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid black' : 'none'})
-                                td.doc_grouped_data(style={visibility: rea.rea_count == 1 ? 'visible' : 'hidden', "border-top": rea.rea_count == 1 ? '1px solid black' : 'none'})=rea.yksus
+                                td(style={visibility: rea.rea_count == rea.min_rea_count ? 'visible' : 'hidden', "border-top": rea.rea_count == rea.min_rea_count ? '1px solid black' : 'none'})
+                                td.doc_grouped_data(style={visibility: rea.rea_count == rea.min_rea_count ? 'visible' : 'hidden', "border-top": rea.rea_count == rea.min_rea_count ? '1px solid black' : 'none'})=rea.yksus
                                 td.doc_grouped_data.td=rea.teenus
                                 td.doc_grouped_data.td(align='center' style={"border-left":rea.day_1 == null || rea.day_1 == '' ? '1px solid black': null, "background-color": rea.day_1 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_1 > 0 ? 'lightgreen': 'pink' : null)})= rea.day_1
                                 td.doc_grouped_data.td(align='center' style={"border-left":rea.day_2 == null || rea.day_1 == '' ? '1px solid black': null, "background-color": rea.day_2 == null ? 'lightgray' : (rea.nom_id == 999999999 ? rea.day_2 > 0 ? 'lightgreen': 'pink' : null)})=rea.day_2

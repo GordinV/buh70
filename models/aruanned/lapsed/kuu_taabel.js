@@ -140,7 +140,7 @@ module.exports = {
         ],
         sqlString: `
             SELECT 
-                   row_number()  over(PARTITION BY tyyp, yksus order by tyyp, yksus, nom_id desc, is_row) as rea_count,
+                   row_number()  over(PARTITION BY tyyp, yksus order by tyyp, yksus, case when nom_id = 999999999 then '' else teenus end, is_row) as rea_count,
                    $4::date as alates,
                    $5::date as kuni,
                    *
@@ -253,7 +253,18 @@ module.exports = {
         {
             view: 'kuu_taabel_register',
             params: 'sqlWhere',
-            group: 'tyyp'
+            group: 'tyyp',
+            converter: function (data) {
+                // min rea_count
+                let min_rea_count = 10; //Külastamine
+                data.forEach(row => {
+                    min_rea_count = Math.min(min_rea_count, row.rea_count);
+                });
+                return data.map(row => {
+                    row.min_rea_count = min_rea_count;
+                    return row;
+                })
+            }
 
         },
     ],
