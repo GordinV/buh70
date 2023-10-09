@@ -350,7 +350,7 @@ FROM doc`;
                 transporter.sendMail({
                         from: `"${l_user_name}" <${l_user_mail}>`, //`${user.userName} <${config['email'].email}>`, // sender address
                         to: `${arve.email}`, // (, baz@example.com) list of receivers (arve.email)
-                        subject: `Saadan dokument nr. ${arve.number}`, // Subject line
+                        subject: `Saadan dokument nr. ${arve.number}, ${arve.viitenr}`, // Subject line
                         text: 'Automaat e-mail', // plain text body
                         html: emailHtml, // html body
                         attachments: [
