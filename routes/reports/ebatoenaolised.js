@@ -46,13 +46,14 @@ exports.get = async (req, res) => {
             //поправить если структура меняется
             const obj = {
                 number: row.number,
+                tahtaeg: row.tahtaeg,
                 lapse_nimi: row.lapse_nimi,
                 lapse_ik: row.lapse_isikukood,
                 maksja_nimi: row.maksja_nimi,
                 maksja_ik: row.maksja_isikukood,
                 noude_50: row.noude_50,
                 noude_100: row.noude_100,
-                volg: row.vold,
+                volg: row.jaak,
                 asutus: row.asutus
 
             };
