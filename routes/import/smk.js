@@ -106,9 +106,14 @@ const readXML = async (xmlContent) => {
                     RmtInf = NtryDtls.RmtInf[0];
                     viitenr = RmtInf.Strd ? RmtInf.Strd[0].CdtrRefInf[0].Ref[0] : null;
                     selg = RmtInf.Ustrd ? RmtInf.Ustrd[0] : null;
+                    // убираем ковычки, если есть
+                    if (selg) {
+                        selg = selg.replace(/"/g, '');
+                    }
                 } else {
                     viitenr = NtryDtls.Refs[0].EndToEndId ? NtryDtls.Refs[0].EndToEndId[0] : null;
                 }
+
                 let maksja = NtryDtls.RltdPties[0].Dbtr ? NtryDtls.RltdPties[0].Dbtr[0].Nm[0] : null;
                 let isikukood = NtryDtls.RltdPties[0].Dbtr && NtryDtls.RltdPties[0].Dbtr[0].Id && NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId && NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0] ? NtryDtls.RltdPties[0].Dbtr[0].Id[0].PrvtId[0].Othr[0].Id[0] : null;
                 let regkood = NtryDtls.RltdPties[0].Dbtr && NtryDtls.RltdPties[0].Dbtr[0].Id && NtryDtls.RltdPties[0].Dbtr[0].Id[0].OrgId && NtryDtls.RltdPties[0].Dbtr[0].Id[0].OrgId[0].Othr[0] ? NtryDtls.RltdPties[0].Dbtr[0].Id[0].OrgId[0].Othr[0].Id[0] : null;
