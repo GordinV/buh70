@@ -54,7 +54,8 @@ exports.get = async (req, res) => {
                 noude_50: row.noude_50,
                 noude_100: row.noude_100,
                 volg: row.jaak,
-                asutus: row.asutus
+                asutus: row.asutus,
+                juhi_otsus: ''
 
             };
 
