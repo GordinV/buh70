@@ -685,6 +685,7 @@ const Arv = {
            WHEN em.arv_id IS NOT NULL THEN 'Maha kantud'
            WHEN et.arv_id IS NOT NULL AND a.jaak = 0 THEN 'Tasutud'
            WHEN et.arv_id IS NOT NULL AND a.jaak > 0 THEN 'Tasutud osaliselt'
+           WHEN a.ebatoenaolised IS NOT NULL AND a.ebatoenaolised <> '0' AND a.jaak > 0 THEN 'Sulgemata'
            ELSE ''
            END AS ebatoenaolised_status
          
