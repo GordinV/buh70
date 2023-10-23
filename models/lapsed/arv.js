@@ -564,20 +564,21 @@ const Arv = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "1px", show: false},
-            {id: "number", name: "Number", width: "5%", type: "text"},
+            {id: "number", name: "Number", width: "3%", type: "text"},
             {id: "kpv", name: "Kuupaev", width: "5%", type: 'date', interval: true},
             {id: "asutus", name: "Maksja", width: "10%"},
             {id: "summa", name: "Summa", width: "5%", type: "number", interval: true},
             {id: "tahtaeg", name: "Tähtaeg", width: "5%", type: 'date', interval: true},
             {id: "jaak", name: "Jääk", width: "5%", type: "number", interval: true},
             {id: "tasud", name: "Tasud", width: "5%", type: 'date', interval: true},
-            {id: "yksus", name: "Üksus", width: "7%"},
+            {id: "yksus", name: "Üksus", width: "5%"},
             {id: "nimi", name: "Nimi", width: "10%"},
             {id: "isikukood", name: "Isikukood", width: "7%"},
             {id: "viitenr", name: "Viitenr", width: "6%"},
             {id: "printimine", name: "Arve esitatakse", width: "5%"},
             {id: "tyyp", name: "Tüüp", width: "5%", show: false},
-            {id: "ebatoenaolised", name: "Ebatõenaolised", width: "5%"},
+            {id: "ebatoenaolised", name: "Ebatõenäöl", width: "5%"},
+            {id: "ebatoenaolised_status", name: "Ebatõen. hetkeseis", width: "5%"},
             {id: "select", name: "Valitud", width: "5%", show: false, type: 'boolean', hideFilter: true},
             {id: "esitatud", name: "Kas esitatud?", width: "5%", type: 'select', data: ['', 'Jah', 'Ei'], show: false},
 
@@ -657,10 +658,41 @@ const Arv = {
                       FROM docs.arv1 a1
                       WHERE a1.parentid IN (SELECT arv_id FROM arved)
                       GROUP BY a1.parentid
-                  )
-         SELECT a.*, y.yksus
+                  ),
+                 ebatoenaolised_tagastamine AS (
+                     SELECT DISTINCT doc_arv_id AS arv_id
+                     FROM docs.arvtasu
+                     WHERE rekvid = $1::INTEGER
+                       AND status < 3
+                       AND (properties ->> 'ebatoenaolised_tagastamine_id' IS NOT NULL AND
+                            (properties ->> 'ebatoenaolised_tagastamine_id')::INTEGER > 0)
+                 ),
+                 ebatoenaolised_mahakandmine AS (
+                     SELECT doc_arv_id    AS arv_id,
+                            sum(at.summa) AS summa
+                     FROM docs.arvtasu at
+                              INNER JOIN docs.journal j ON at.doc_tasu_id = j.parentid
+                              INNER JOIN docs.journal1 j1 ON j1.parentid = j.id
+                     WHERE at.rekvid = $1::INTEGER
+                       AND at.status < 3
+                       AND j1.deebet = '103009'
+                       AND status < 3
+                     GROUP BY at.doc_arv_id
+                 )
+                  
+         SELECT a.*, y.yksus,
+       CASE
+           WHEN em.arv_id IS NOT NULL THEN 'Maha kantud'
+           WHEN et.arv_id IS NOT NULL AND a.jaak = 0 THEN 'Tasutud'
+           WHEN et.arv_id IS NOT NULL AND a.jaak > 0 THEN 'Tasutud osaliselt'
+           WHEN a.ebatoenaolised IS NOT NULL AND a.ebatoenaolised <> '0' AND a.jaak > 0 THEN 'Sulgemata'
+           ELSE ''
+           END AS ebatoenaolised_status
+         
          FROM arved a
-                  LEFT OUTER JOIN yksused y ON y.arv_id = a.arv_id
+                 LEFT OUTER JOIN yksused y ON y.arv_id = a.arv_id
+                 LEFT OUTER JOIN ebatoenaolised_mahakandmine em ON em.arv_id = a.id
+                 LEFT JOIN ebatoenaolised_tagastamine et ON et.arv_id = a.id                  
          order by yksus`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curLasteArved'
