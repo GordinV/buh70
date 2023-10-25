@@ -56,6 +56,7 @@ DECLARE
                                     WHERE parentid = doc_parentid
                                       AND nomid = doc_nomid
                                       AND staatus <> 3);
+    l_prev_nom_id        INTEGER;
 
 BEGIN
 
@@ -99,6 +100,19 @@ BEGIN
         RAISE EXCEPTION 'Vale kuupäevad alg.kpv > lõpp kpv, %', doc_row.isikukood;
     END IF;
 
+    -- проверка на номид
+
+    IF coalesce(doc_id, 0) > 0
+    THEN
+        -- прежнее значение номид
+        SELECT nomid INTO l_prev_nom_id FROM lapsed.lapse_kaart WHERE id = doc_id;
+        IF l_prev_nom_id <> doc_nomid AND
+           exists(SELECT id FROM lapsed.lapse_taabel WHERE lapse_kaart_id = doc_id AND staatus < 3)
+        THEN
+            RAISE EXCEPTION 'Ei saa muuta teenus. Kuutabelid olemas';
+
+        END IF;
+    END IF;
     -- проверка на табеля
 --    По нач. дате - не должно оставлять вне периода дневные табеля , которые оформлены ранее даты нач. срока действия услуги
     IF exists(SELECT dt.id
@@ -138,14 +152,16 @@ BEGIN
 
 
     -- дата нач. услуги - нельзя ставить позже , чем есть табель
-    IF exists(SELECT lt.id
-              FROM lapsed.lapse_taabel lt
-              WHERE lt.parentid = doc_parentid
-                AND (make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day')::DATE < doc_alg_kpv
-                AND lt.nomid = doc_nomid
-                AND lt.staatus < 3
-                AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
-              LIMIT 1
+    IF coalesce(doc_id, 0) > 0 AND exists(SELECT lt.id
+                                          FROM lapsed.lapse_taabel lt
+                                          WHERE lt.parentid = doc_parentid
+                                            AND lt.lapse_kaart_id = doc_id
+                                            AND (make_date(lt.aasta, lt.kuu, 1) + INTERVAL '1 month' - INTERVAL '1 day')::DATE <
+                                                doc_alg_kpv
+--                AND lt.nomid = doc_nomid
+                                            AND lt.staatus < 3
+--                AND coalesce(l_noms, 0) < 2 -- при условии, что услуга только одна
+                                          LIMIT 1
         )
     THEN
         RAISE EXCEPTION 'Vale alg.kuupäev. Leidnud tabel varem kui alg. kpv, isikukood %, nom_id %', doc_row.isikukood, doc_nomid;

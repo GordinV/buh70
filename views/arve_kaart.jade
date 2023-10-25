@@ -109,7 +109,7 @@ block content
                 span #{data[0].viitenr}
 
         h3
-            p #{`${data[0].tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`}
+            p #{`${data[0].tyyp == 'ETTEMAKS' ? 'ETTEMAKSUARVE ': 'ARVE'}`} #{`${data[0].kr_number ? '(Kreeditarve arvele Nr.' + data[0].kr_number + ')': ''} `}
 
             div.row_wrapper
                 div.label
@@ -149,7 +149,6 @@ block content
                     span Lisa:
                 div.input
                     span #{`${data[0].lisa ? data[0].lisa: ''}`}
-
             div.row_wrapper
                 div.label
                     span Märkused :

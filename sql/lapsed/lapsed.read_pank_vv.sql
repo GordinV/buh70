@@ -84,9 +84,14 @@ BEGIN
                 l_new_viitenr = NULL;
             END IF;
 
-
             -- читаем ссылку и ищем учреждение
             l_rekvid = left(l_new_viitenr, 3)::INTEGER;
+
+            -- проверка на закрытые учреждения
+            IF l_rekvid IN (SELECT id FROM ou.rekv WHERE parentid > 999)
+            THEN
+                l_new_viitenr = NULL;
+            END IF;
 
 
             -- получим ид ребенка

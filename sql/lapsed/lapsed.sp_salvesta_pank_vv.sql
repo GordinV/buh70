@@ -129,7 +129,7 @@ BEGIN
 
     RETURN;
 
-EXCEPTION
+/*EXCEPTION
     WHEN OTHERS
         THEN
             GET STACKED DIAGNOSTICS l_context = PG_EXCEPTION_CONTEXT;
@@ -149,7 +149,7 @@ EXCEPTION
             VALUES (user_id, NULL, import_data, l_context, NULL);
 
             RETURN;
-
+*/
 
 END;
 $BODY$

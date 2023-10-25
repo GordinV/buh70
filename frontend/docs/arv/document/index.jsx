@@ -101,6 +101,13 @@ class Arve extends React.PureComponent {
             <div>
                 <div style={styles.doc}>
                     <div style={styles.docRow}>
+                        {self.docData.kr_number ? (
+                            <div style={styles.info}>
+                                <label> {'Kreeditarve arvele Nr.' + self.docData.kr_number} </label>
+                            </div>
+                        ) : null}
+                    </div>
+                    <div style={styles.docRow}>
                         <div style={styles.docColumn}>
                             <InputText ref="input-number"
                                        title='Number'
@@ -375,7 +382,7 @@ class Arve extends React.PureComponent {
                                          disabled={false}
                                          bindData={false}
                                          ref='kogus'
-//                                         pattern="[0-9]{10}"
+                                //                                         pattern="[0-9]{10}"
                                          onChange={self.handleGridRowInput}/>
                         </div>
                     </div>

@@ -9,13 +9,19 @@ DECLARE
 BEGIN
     SELECT v.rekv_id,
            l.id AS laps_id
-           INTO rekv_id, laps_id
+    INTO rekv_id, laps_id
     FROM lapsed.viitenr v
              INNER JOIN lapsed.laps l ON l.isikukood = v.isikukood
     WHERE v.viitenumber = old_viitenr
     LIMIT 1;
 
     viitenumber = lapsed.get_viitenumber(rekv_id, laps_id);
+    -- проверка на закрытые учреждения
+    IF rekv_id IN (SELECT id FROM ou.rekv WHERE parentid > 999)
+    THEN
+        viitenumber = NULL;
+    END IF;
+
     RETURN;
 END;
 $BODY$
@@ -29,5 +35,5 @@ GRANT EXECUTE ON FUNCTION lapsed.get_viitenumber_from_old(TEXT) TO dbvaatleja;
 GRANT EXECUTE ON FUNCTION lapsed.get_viitenumber_from_old(TEXT) TO arvestaja;
 
 
-SELECT lapsed.get_viitenumber_from_old('1010096511');
+SELECT lapsed.get_viitenumber_from_old('34270');
 

@@ -91,6 +91,7 @@ BEGIN
     IF exists(SELECT id FROM palk.tooleping WHERE parentid = vale_id)
     THEN
         UPDATE palk.tooleping SET parentid = oige_id WHERE parentid = vale_id;
+        update libs.asutus set properties = properties || '{"is_tootaja":true}'::jsonb where id = oige_id;
     END IF;
 
     -- palk_kaart

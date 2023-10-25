@@ -2,24 +2,29 @@ module.exports = {
     docRow: {
         display: 'flex',
         flexDirection: 'row',
-/*
-        border: '1px solid blue'
-*/
+        /*
+                border: '1px solid blue'
+        */
+    },
+    info: {
+        fontSize: 'x-large',
+        fontWeight: 'bolt',
+        margin: '5px'
     },
     docColumn: {
         display: 'flex',
         flexDirection: 'column',
-/*
-        border: '1px solid yellow',
-*/
+        /*
+                border: '1px solid yellow',
+        */
         width: '50%'
     },
     doc: {
         display: 'flex',
         flexDirection: 'column',
-/*
-        border: '1px solid brown'
-*/
+        /*
+                border: '1px solid brown'
+        */
     },
     summa: {
         width: 'auto'
@@ -30,7 +35,7 @@ module.exports = {
             width: '100%'
         },
         headerTable: {
-            width:'100%',
+            width: '100%',
         },
 
         gridContainer: {
@@ -40,9 +45,9 @@ module.exports = {
     },
 
     gridRow: {
-/*
-        border: '1px solid black',
-*/
+        /*
+                border: '1px solid black',
+        */
         backgroundColor: 'white',
         position: 'relative',
         margin: '10% 30% 10% 30%',

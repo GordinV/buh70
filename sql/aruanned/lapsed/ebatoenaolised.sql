@@ -54,11 +54,12 @@ FROM (
                   INNER JOIN lapsed.laps laps ON laps.id = l.parentid
                   INNER JOIN libs.asutus m ON m.id = a.asutusid
                   LEFT OUTER JOIN arvtasu at ON d.id = at.arv_id
-         WHERE a.jaak > 0
-           AND a.tahtaeg <= l_kpv
+         WHERE a.tahtaeg <= l_kpv
+           AND coalesce((a.properties ->> 'ebatoenaolised_1_id')::INTEGER, 0) > 0
            AND d.rekvid IN (SELECT rekv_id
                             FROM get_asutuse_struktuur(l_rekvid))
      ) qry
+WHERE qry.jaak > 0
 
 
 $BODY$
@@ -74,6 +75,7 @@ GRANT EXECUTE ON FUNCTION lapsed.ebatoenaolised(INTEGER, DATE) TO dbvaatleja;
 
 
 /*
-select lapsed.ebatoenaolised(id, current_date)
+select * from lapsed.ebatoenaolised(69, '2023-09-30')
+where maksja_nimi ilike '%Pidvy%'
 from ou.rekv where parentid = 119
 */

@@ -27,6 +27,8 @@ DECLARE
     l_prev_arv_isik_id INTEGER;
     v_eelmise_vanem    RECORD; -- прежнее состояние
     json_va_props      JSONB;
+    l_jaak             NUMERIC = 0; -- расчетное сальдо на счете
+    l_konto text = '10300029'; -- счет род.платы
 
 BEGIN
 
@@ -174,7 +176,8 @@ BEGIN
           AND rekvid = user_rekvid;
     ELSE
         INSERT INTO lapsed.vanem_arveldus (parentid, asutusid, rekvid, arveldus, properties, kas_email, kas_paberil)
-        VALUES (doc_parentid, doc_asutusid, user_rekvid, doc_arved, json_va_props, FALSE, TRUE);
+        VALUES (doc_parentid, doc_asutusid, user_rekvid, doc_arved, json_va_props, coalesce(doc_kas_email, FALSE),
+                coalesce(doc_kas_paberil, TRUE));
 
     END IF;
 
@@ -190,16 +193,41 @@ BEGIN
     END IF;
 
     -- делаем перенос сальдо
-/*    IF (l_prev_arv_isik_id IS NOT NULL AND doc_arved and l_prev_arv_isik_id <> doc_asutusid)
+    IF (l_prev_arv_isik_id IS NOT NULL AND doc_arved AND l_prev_arv_isik_id <> doc_asutusid)
     THEN
-        PERFORM docs.saldo_ulekanne_lausend(userId,
-                                            l_prev_arv_isik_id,
-                                            doc_asutusid,
-                                            current_date,
-                                            doc_parentid);
+        -- проверяем на сальдо
+        SELECT sum(rep.alg_saldo + deebet - kreedit)
+        INTO l_jaak
+        FROM docs.kaibeasutusandmik(l_konto, l_prev_arv_isik_id, current_date, current_date, user_rekvid, '%', 0) rep
+                 INNER JOIN libs.asutus a ON a.id = rep.asutus_id;
+
+        IF coalesce(l_jaak, 0) <> 0 AND NOT exists(SELECT u.id
+                                                   FROM ou.userid u
+                                                   WHERE u.id = userid
+                                                     AND (coalesce((u.roles ->> 'is_kasutaja')::BOOLEAN, FALSE)
+                                                       OR
+                                                          coalesce((u.roles ->> 'is_peakasutaja')::BOOLEAN, FALSE)
+                                                       )
+            )
+        THEN
+            -- нет прав, запрет ((Каллеб 03.10.2023)
+            RAISE EXCEPTION 'Viga: saldo <> 0, puudub vajaliku õigused %',l_jaak;
+        END IF;
+
+        -- если сальдо не равно 0, делаем перенос
+        IF (coalesce(l_jaak,0)) <> 0
+        THEN
+
+            PERFORM docs.saldo_ulekanne_lausend(userId,
+                                                l_prev_arv_isik_id,
+                                                doc_asutusid,
+                                                current_date,
+                                                doc_parentid);
+
+        END IF;
 
     END IF;
-*/
+
     RETURN doc_id;
 
 END;
