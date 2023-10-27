@@ -17,6 +17,7 @@ const DocContext = require('./../../doc-context.js');
 const docRights = DocRights[DOC_TYPE_ID] ? DocRights[DOC_TYPE_ID] : [];
 const userRoles = DocContext.userData ? DocContext.userData.roles : [];
 const getSum = require('./../../../libs/getSum');
+const BtnGetXml = require('./../../components/button-register/button-task/index.jsx');
 
 
 /**
@@ -29,6 +30,7 @@ class Documents extends React.PureComponent {
         this.renderer = this.renderer.bind(this);
         this.render = this.render.bind(this);
         this.onClickHandler = this.onClickHandler.bind(this);
+
         this.state = {
             summa: 0,
             read: 0,
@@ -130,6 +132,12 @@ class Documents extends React.PureComponent {
                     ref={`btn-loe_makse`}
                     key={`key-loe_makse`}
                 /> : null}
+                <BtnGetXml
+                    value={'Saama CSV fail'}
+                    onClick={this.onClickHandler}
+                    ref={`btn-getXml`}
+                    showDate={false}
+                />
 
             </ToolbarContainer>
         )
@@ -140,42 +148,63 @@ class Documents extends React.PureComponent {
         const Doc = this.refs['register'];
         let message = 'Edukalt';
 
-        Doc.fetchData(`calc/loe_makse`, {makse_id: this.makse.id}).then((data) => {
-            if (data.result) {
-                if (data.result && data.result.error_code) {
-                    // error
-                    Doc.setState({warning: `Tekkis viga: ${data.result.error_message}`, warningType: 'error'});
-                } else {
-                    if (data.result.data[0].error_message) {
+        if (event == 'Loe makse') {
+            Doc.fetchData(`calc/loe_makse`, {makse_id: this.makse.id}).then((data) => {
+                if (data.result) {
+                    if (data.result && data.result.error_code) {
                         // error
-                        Doc.setState({
-                            warning: `Tekkis viga: ${data.result.data[0].error_message}`,
-                            warningType: 'error'
-                        });
+                        Doc.setState({warning: `Tekkis viga: ${data.result.error_message}`, warningType: 'error'});
                     } else {
-                        Doc.setState({warning: `${message}`, warningType: 'ok'}, () =>
-                            Doc.fetchData('selectDocs'));
+                        if (data.result.data[0].error_message) {
+                            // error
+                            Doc.setState({
+                                warning: `Tekkis viga: ${data.result.data[0].error_message}`,
+                                warningType: 'error'
+                            });
+                        } else {
+                            Doc.setState({warning: `${message}`, warningType: 'ok'}, () =>
+                                Doc.fetchData('selectDocs'));
+                        }
                     }
+
+                    // открываем отчет
+
+                } else {
+                    if (data.error_message) {
+                        Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
+                    } else {
+                        Doc.setState({
+                            warning: `Kokku arvestatud : ${data.result}, ${message}`,
+                            warningType: 'notValid'
+                        });
+                    }
+
                 }
 
-                // открываем отчет
+            });
+        } // loe makse
+        if (event == 'Saama CSV fail') {
+            const Doc = this.refs['register'];
+
+            if (Doc.gridData && Doc.gridData.length) {
+                //делаем редайрект на конфигурацию
+                let sqlWhere = Doc.state.sqlWhere;
+                let url = `/reports/pank_vv/${DocContext.userData.uuid}`;
+                let params = encodeURIComponent(`${sqlWhere}`);
+                let filter = encodeURIComponent(`${(JSON.stringify(Doc.filterData))}`);
+                let fullUrl = sqlWhere ? `${url}/${filter}/${params}`: `${url}/${filter}`;
+                window.open(fullUrl);
 
             } else {
-                if (data.error_message) {
-                    Doc.setState({warning: `Tekkis viga: ${data.error_message}`, warningType: 'error'});
-                } else {
-                    Doc.setState({
-                        warning: `Kokku arvestatud : ${data.result}, ${message}`,
-                        warningType: 'notValid'
-                    });
-                }
+                Doc.setState({
+                    warning: 'Tulemus 0', // строка извещений
+                    warningType: 'notValid',
 
+                });
             }
-
-        });
+        } // csv
 
     }
-
 
 }
 

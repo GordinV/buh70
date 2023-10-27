@@ -93,6 +93,8 @@ module.exports = function (app) {
     app.get('/reports/lapse_kaart/:uuid/:kond/:filter/:params*?', require('./reports/lapse_kaart').get);
     app.get('/reports/lapse_kaart/:uuid/:kond/', require('./reports/lapse_kaart').get);
     app.get('/reports/lapse_taabel/:uuid/:params*?/', require('./reports/lapse_taabel').get);
+    app.get('/reports/pank_vv/:uuid/:filter/:params*?/', require('./reports/pank_vv').get);
+    app.get('/reports/pank_vv/:uuid/:params*?/', require('./reports/pank_vv').get);
 
     app.get('/pdf/:documentType/:uuid/:id/:params', require('./pdf').get); //checkAuth
     app.get('/pdf/:documentType/:uuid/:id/', require('./pdf').get); //checkAuth
