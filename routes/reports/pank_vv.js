@@ -33,7 +33,7 @@ exports.get = async (req, res) => {
                 pank: row.pank,
                 maksepaev: row.kpv,
                 summa: row.summa,
-                selgitus:  row.selg.replace(/\n/g, ''),
+                selgitus:  row.selg,
                 markused: row.markused,
                 number: row.number,
                 asutus: row.asutus
