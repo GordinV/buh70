@@ -38,7 +38,8 @@ const userData = async function (req, _uuid) {
         asutus_tais: null,
         regkood: null,
         user_data: {},
-        users: []
+        users: [],
+        email:null
     };
 
     let uuidUser;
@@ -56,6 +57,7 @@ const userData = async function (req, _uuid) {
             sqlUser.regkood = uuidUser.data[0].regkood;
             sqlUser.user_data = uuidUser.data[0].user_data;
             sqlUser.users = uuidUser.data[0].users;
+            sqlUser.email = uuidUser.data[0].email;
 
             if (!DocContext.getUuid) {
                 DocContext.userData = uuidUser.data[0].user_data;
@@ -80,6 +82,7 @@ const userData = async function (req, _uuid) {
         asutusTais: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].asutus_tais : sqlUser.asutus_tais,
         regkood: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].regkood : sqlUser.regkood,
         asutusId: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].rekvid : sqlUser.asutusId,
+        email: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].email : sqlUser.email,
         lastLogin: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].last_login : sqlUser.user_data.last_login,
         userAccessList: userIndex > -1 ? UserContext.users && UserContext.users.length && UserContext.users[userIndex].userAllowedAsutused : sqlUser.user_data.allowed_access,
         userLibraryList: [],

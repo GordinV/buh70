@@ -315,10 +315,15 @@ FROM doc`;
             user.asutusTais = arve.tais_nimetus;
             user.tel = '';
             user.aadress = arve.rekv_aadress;
-            user.email = 'oppetasu@narvakultuur.ee';//arve.rekv_email;
+            user.email = arve.rekv_email;//arve.rekv_email;
+//            user.email = 'oppetasu@narvakultuur.ee';//arve.rekv_email;
             user.parentid = 119;
             user.regkood = arve.rekv_regkood;
 
+            if (arve.rekv_email) {
+                //Хочу закрыть адрес oppetasu@narvakultuur.ee (он свое... дело сделал 🙂), но для этого еще нужно подставить в рассылаемые плательщикам счета адреса конкретных учреждений, чтобы перенаправить весь поток вопросов плательщиков сначала туда.
+                l_user_mail = arve.rekv_email;
+            }
             // вернуть отчет
 
             let renderForm = 'arve_kaart';
