@@ -18,7 +18,7 @@ exports.get = async (req, res) => {
         const Doc = require('./../../classes/DocumentTemplate');
         const doc = new Doc(DOC_TYPE_ID, null, user.userId, user.asutusId, 'lapsed');
 
-        const data = await doc.selectDocs('', sqlWhere, 10000, [user.userId, user.asutusId]);
+        const data = await doc.selectDocs('', sqlWhere, 1000000, [user.userId, user.asutusId]);
 
         // get xml
         let header;
