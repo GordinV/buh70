@@ -29,6 +29,7 @@ exports.get = async (req, res) => {
                 maksja: row.maksja,
                 maksja_ik: row.maksja_ik,
                 viitenumber: row.viitenumber,
+                isikukood: row.isikukood,
                 iban: row.iban,
                 pank: row.pank,
                 maksepaev: row.kpv,
