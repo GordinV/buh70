@@ -194,16 +194,17 @@ module.exports = {
             {id: "id", name: "id", width: "1%", show: false},
             {id: "maksja", name: "Maksja", width: "10%"},
             {id: "maksja_ik", name: "Maksja IK", width: "7%"},
-            {id: "viitenumber", name: "Viitenr", width: "10%"},
-            {id: "iban", name: "Arveldus arve", width: "12%"},
-            {id: "pank", name: "Pank", width: "7%"},
-            {id: "kpv", name: "Maksepäev", width: "7%", show: true, type: 'date', interval: true},
+            {id: "viitenumber", name: "Viitenr", width: "7%"},
+            {id: "isikukood", name: "Lapse IK", width: "7%"},
+            {id: "iban", name: "Arveldus arve", width: "10%"},
+            {id: "pank", name: "Pank", width: "5%"},
+            {id: "kpv", name: "Maksepäev", width: "5%", show: true, type: 'date', interval: true},
             {id: "summa", name: "Summa", width: "5%", type: 'number', interval: true},
-            {id: "pank_id", name: "Tehingu nr.", width: "10%"},
-            {id: "selg", name: "Makse selgitus", width: "10%"},
+            {id: "pank_id", name: "Tehingu nr.", width: "8%"},
+            {id: "selg", name: "Makse selgitus", width: "8%"},
             {id: "markused", name: "Impordi märkused", width: "5%"},
             {id: "number", name: "MK number", width: "5%"},
-            {id: "asutus", name: "Asutus", width: "10%"}
+            {id: "asutus", name: "Asutus", width: "8%"}
         ],
         sqlString: `SELECT v.id                                                AS id,
                            v.doc_id                                            AS doc_id,
@@ -225,11 +226,14 @@ module.exports = {
                            v.pank                                              AS pank,
                            to_char(v.timestamp, 'DD.MM.YYYY HH.MM.SSSS')::TEXT AS timestamp,
                            $1                                                  AS not_in_use,
-                           count(*) OVER ()                                    AS rows_total
+                           count(*) OVER ()                                    AS rows_total,
+                           laps.isikukood
                     FROM lapsed.pank_vv v
                              LEFT OUTER JOIN docs.mk mk ON mk.parentid = v.doc_id
                              LEFT OUTER JOIN ou.rekv r ON r.id = mk.rekvid
                              LEFT OUTER JOIN ou.userid u ON u.id = $2
+                             LEFT OUTER JOIN lapsed.liidestamine l ON l.docid = v.doc_id
+                             LEFT OUTER JOIN lapsed.laps laps ON l.parentid = laps.id
                     WHERE coalesce(v.selg, '') NOT LIKE '%intres%'
                       AND coalesce(v.isikukood, '') NOT IN ('75024260')
                     ORDER BY id DESC`,     //  $1 всегда ид учреждения, $2 - userId
