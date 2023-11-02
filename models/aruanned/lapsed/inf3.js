@@ -16,7 +16,7 @@ module.exports = {
                            aasta,
                            3                          AS liik,
                            $2                         AS user_id
-                    FROM lapsed.inf3($1::INTEGER, $3::INTEGER) qryReport
+                    FROM lapsed.inf3($1::INTEGER, $3::TEXT) qryReport
                     GROUP BY lapse_nimi, lapse_isikukood, maksja_nimi, maksja_isikukood, aasta
                     ORDER BY lapse_nimi
         `,     // $1 - rekvid, $3 - kond
