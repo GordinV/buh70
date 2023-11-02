@@ -434,18 +434,18 @@ const Arv = {
         {
             sql: `SELECT Arvtasu.id,
                          arvtasu.kpv,
-                         to_char(arvtasu.kpv, 'DD.MM.YYYY')                            AS print_kpv,
+                         to_char(arvtasu.kpv, 'DD.MM.YYYY')                             AS print_kpv,
                          arvtasu.summa,
-                         coalesce(arvtasu.inf3_summa, 0)                               AS inf3_summa,
-                         CASE WHEN mk.opt = 2 THEN 'SMK' ELSE 'VMK' END :: VARCHAR(20) AS dok,
-                         'PANK' :: VARCHAR                                             AS liik,
-                         mk.number                                                     AS dok_nr,
+                         lapsed.get_inf3_summa(Arvtasu.doc_arv_id, arvtasu.doc_tasu_id) AS inf3_summa,
+                         CASE WHEN mk.opt = 2 THEN 'SMK' ELSE 'VMK' END :: VARCHAR(20)  AS dok,
+                         'PANK' :: VARCHAR                                              AS liik,
+                         mk.number                                                      AS dok_nr,
                          pankkassa,
                          mk1.journalid,
                          doc_tasu_id,
-                         coalesce(journalid.number, 0)                                 AS number,
-                         a.nimetus                                                     AS maksja,
-                         $2                                                            AS userid
+                         coalesce(journalid.number, 0)                                  AS number,
+                         a.nimetus                                                      AS maksja,
+                         $2                                                             AS userid
                   FROM docs.arvtasu arvtasu
                            INNER JOIN docs.mk mk ON (arvtasu.doc_tasu_id = mk.parentid AND arvtasu.pankkassa = 1)
                            INNER JOIN docs.mk1 mk1 ON (mk.id = mk1.parentid)
@@ -457,18 +457,18 @@ const Arv = {
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
-                         to_char(arvtasu.kpv, 'DD.MM.YYYY') AS print_kpv,
+                         to_char(arvtasu.kpv, 'DD.MM.YYYY')                             AS print_kpv,
                          arvtasu.summa,
-                         coalesce(arvtasu.inf3_summa, 0)    AS inf3_summa,
-                         'KASSAORDER' :: VARCHAR(20)        AS dok,
-                         'KASSA' :: VARCHAR                 AS liik,
-                         korder1.number                     AS dok_nr,
+                         lapsed.get_inf3_summa(Arvtasu.doc_arv_id, arvtasu.doc_tasu_id) AS inf3_summa,
+                         'KASSAORDER' :: VARCHAR(20)                                    AS dok,
+                         'KASSA' :: VARCHAR                                             AS liik,
+                         korder1.number                                                 AS dok_nr,
                          pankkassa,
                          korder1.journalid,
                          doc_tasu_id,
-                         coalesce(journalid.number, 0)      AS number,
-                         a.nimetus                          AS maksja,
-                         $2                                 AS userid
+                         coalesce(journalid.number, 0)                                  AS number,
+                         a.nimetus                                                      AS maksja,
+                         $2                                                             AS userid
                   FROM docs.arvtasu arvtasu
                            INNER JOIN docs.korder1 korder1
                                       ON (arvtasu.doc_tasu_id = korder1.parentid AND arvtasu.pankkassa = 2)
@@ -480,18 +480,18 @@ const Arv = {
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
-                         to_char(arvtasu.kpv, 'DD.MM.YYYY') AS print_kpv,
+                         to_char(arvtasu.kpv, 'DD.MM.YYYY')                             AS print_kpv,
                          arvtasu.summa,
-                         coalesce(arvtasu.inf3_summa, 0)    AS inf3_summa,
-                         'PAEVARAAMAT' :: VARCHAR(20)       AS dok,
-                         'JOURNAL' :: VARCHAR               AS liik,
-                         NULL::TEXT                         AS dok_nr,
+                         lapsed.get_inf3_summa(Arvtasu.doc_arv_id, arvtasu.doc_tasu_id) AS inf3_summa,
+                         'PAEVARAAMAT' :: VARCHAR(20)                                   AS dok,
+                         'JOURNAL' :: VARCHAR                                           AS liik,
+                         NULL::TEXT                                                     AS dok_nr,
                          pankkassa,
-                         arvtasu.doc_tasu_id                AS journalid,
+                         arvtasu.doc_tasu_id                                            AS journalid,
                          doc_tasu_id,
-                         coalesce(journalid.number, 0)      AS number,
-                         a.nimetus                          AS maksja,
-                         $2                                 AS userid
+                         coalesce(journalid.number, 0)                                  AS number,
+                         a.nimetus                                                      AS maksja,
+                         $2                                                             AS userid
                   FROM docs.arvtasu arvtasu
                            LEFT OUTER JOIN docs.journal journal
                                            ON (arvtasu.doc_tasu_id = journal.parentId AND arvtasu.pankkassa = 3)
@@ -504,18 +504,18 @@ const Arv = {
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
-                         to_char(arvtasu.kpv, 'DD.MM.YYYY') AS print_kpv,
+                         to_char(arvtasu.kpv, 'DD.MM.YYYY')                             AS print_kpv,
                          arvtasu.summa,
-                         coalesce(arvtasu.inf3_summa, 0)    AS inf3_summa,
-                         'KREEDITARVE' :: VARCHAR(20)       AS dok,
-                         'MUUD' :: VARCHAR                  AS liik,
-                         a.number::TEXT                     AS dok_nr,
+                         lapsed.get_inf3_summa(Arvtasu.doc_arv_id, arvtasu.doc_tasu_id) AS inf3_summa,
+                         'KREEDITARVE' :: VARCHAR(20)                                   AS dok,
+                         'MUUD' :: VARCHAR                                              AS liik,
+                         a.number::TEXT                                                 AS dok_nr,
                          pankkassa,
-                         journal.parentid                   AS journalid,
+                         journal.parentid                                               AS journalid,
                          doc_tasu_id,
-                         coalesce(journalid.number, 0)      AS number,
-                         m.nimetus::TEXT                    AS maksja,
-                         $2                                 AS userid
+                         coalesce(journalid.number, 0)                                  AS number,
+                         m.nimetus::TEXT                                                AS maksja,
+                         $2                                                             AS userid
                   FROM docs.arvtasu arvtasu
                            INNER JOIN docs.arv a ON a.parentid = arvtasu.doc_tasu_id
                            INNER JOIN libs.asutus m ON m.id = a.asutusid
@@ -529,18 +529,18 @@ const Arv = {
                   UNION ALL
                   SELECT Arvtasu.id,
                          arvtasu.kpv,
-                         to_char(arvtasu.kpv, 'DD.MM.YYYY') AS print_kpv,
+                         to_char(arvtasu.kpv, 'DD.MM.YYYY')                             AS print_kpv,
                          arvtasu.summa,
-                         coalesce(arvtasu.inf3_summa, 0)    AS inf3_summa,
-                         '' :: VARCHAR(20)                  AS dok,
-                         'MUUD' :: VARCHAR                  AS liik,
-                         NULL::TEXT                         AS dok_nr,
+                         lapsed.get_inf3_summa(Arvtasu.doc_arv_id, arvtasu.doc_tasu_id) AS inf3_summa,
+                         '' :: VARCHAR(20)                                              AS dok,
+                         'MUUD' :: VARCHAR                                              AS liik,
+                         NULL::TEXT                                                     AS dok_nr,
                          pankkassa,
-                         0                                  AS journalid,
+                         0                                                              AS journalid,
                          NULL,
-                         0                                  AS number,
-                         ''::TEXT                           AS maksja,
-                         $2                                 AS userid
+                         0                                                              AS number,
+                         ''::TEXT                                                       AS maksja,
+                         $2                                                             AS userid
                   FROM docs.arvtasu arvtasu
                   WHERE Arvtasu.doc_arv_id = $1
                     AND arvtasu.summa <> 0

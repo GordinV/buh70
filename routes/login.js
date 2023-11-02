@@ -54,6 +54,7 @@ exports.post = function (req, res, next) {
                         login: kasutaja.kasutaja,
                         parentid: kasutaja.parentid,
                         parent_asutus: kasutaja.parent_asutus,
+                        email: kasutaja.email,
                         roles: kasutaja.roles
                     }, kasutaja);
 

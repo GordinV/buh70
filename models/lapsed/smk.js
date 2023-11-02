@@ -132,7 +132,7 @@ const Smk = {
                           t.summa                      AS tasu_summa,
                           a.summa                      AS arv_summa,
                           CASE WHEN coalesce((a.properties ->> 'tyyp'), '') = 'ETTEMAKS' THEN 0 ELSE 1 END *
-                          coalesce(t.inf3_summa, 0)    AS inf3_summa,
+                          lapsed.get_inf3_summa(t.doc_arv_id, t.doc_tasu_id)    AS inf3_summa,
                           a.number,
                           asutus.nimetus               AS asutus,
                           a.properties ->> 'tyyp'      AS tyyp,

@@ -16,14 +16,17 @@ class ModalPage extends React.PureComponent {
             show: this.props.show
         };
         this.onKeyUp = this.onKeyUp.bind(this);
+        this.onMouseDownUp = this.onMouseDownUp.bind(this);
     }
 
     componentDidMount() {
         document.addEventListener('keyUp', this.onKeyUp, false);
+        document.addEventListener('mousedown', this.onMouseDown, false);
     }
 
     componentWillUnmount() {
         document.removeEventListener("keyUp", this.onKeyUp, false);
+        document.removeEventListener("mousedown", this.onMouseDownUp, false);
     }
 
     changeVisibilityModalPage() {
@@ -47,6 +50,25 @@ class ModalPage extends React.PureComponent {
             this.props.modalPageBtnClick(btnEvent);
         }
     }
+
+    onMouseDownUp(e) {
+        console.log('MouseDown')
+/*
+        switch (e.key) {
+            case 'Enter':
+                if (this.refs['btnOk']) {
+                    this.handleBtnClick('Ok');
+                }
+                break;
+            case 'Escape':
+                if (this.refs['btnCancel']) {
+                    this.handleBtnClick('Cancel');
+                }
+                break;
+        }
+*/
+    }
+
 
     /**
      * перехватит сыбтия нажатия кнопки и вызовет дефолтные методы
