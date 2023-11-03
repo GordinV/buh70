@@ -1,8 +1,11 @@
 'use strict';
 const getCSV = require('./../lapsed/get_csv');
+const getParameterFromFilter = require('./../../libs/getParameterFromFilter');
 
 exports.get = async (req, res) => {
     const sqlWhere = req.params.params || '';// параметр sqlWhere документа
+    const filter = req.params.filter || [];// массив фильтров документов;
+
     const uuid = req.params.uuid || ''; // параметр uuid пользователя
     const user = await require('../../middleware/userData')(req, uuid); // данные пользователя
 
@@ -11,11 +14,28 @@ exports.get = async (req, res) => {
         return res.status(401).end();
     }
 
+console.log('filter',filter);
+    let filterData = JSON.parse(filter);
+
+    filterData = filterData.filter(row => {
+        if (row.value) {
+            return row;
+        }
+    });
+
+
+
     try {
         // создать объект
         const Doc = require('./../../classes/DocumentTemplate');
         const doc = new Doc('arved_koodi_jargi', null, user.userId, user.asutusId, 'lapsed');
-        const data = await doc.selectDocs('', sqlWhere, 10000);
+
+        let gridParams;
+        if (doc.config.grid.params && typeof doc.config.grid.params !== 'string') {
+            gridParams = getParameterFromFilter(user.asutusId, user.userId, doc.config.grid.params, filterData);
+        }
+
+        const data = await doc.selectDocs('', sqlWhere, 1000000, gridParams);
 
 
         // get xml
@@ -30,7 +50,9 @@ exports.get = async (req, res) => {
                 hind: row.hind,
                 kogus: row.kogus,
                 summa: row.summa,
-                asutus: row.asutus
+                asutus: row.asutus,
+                isikukood: row.isikukood,
+                inf3: row.inf3
             };
 
             if (!header) {
