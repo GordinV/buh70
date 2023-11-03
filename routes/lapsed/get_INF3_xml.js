@@ -21,7 +21,7 @@ let aasta = data[0].aasta;
             koolitusmaksja_isikukood: kiri.maksja_isikukood,
             koolitatava_isikukood: kiri.lapse_isikukood,
             makstud_summa: kiri.summa,
-            koolituse_liik: 3
+            koolituse_liik: kiri.liik
         };
 
     });

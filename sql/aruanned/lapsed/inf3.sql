@@ -9,7 +9,8 @@ CREATE OR REPLACE FUNCTION lapsed.inf3(l_rekvid INTEGER, l_aasta TEXT DEFAULT ye
         lapse_nimi       TEXT,
         lapse_isikukood  TEXT,
         aasta            INTEGER,
-        rekvid           INTEGER
+        rekvid           INTEGER,
+        liik             INTEGER
     )
 AS
 $BODY$
@@ -25,7 +26,8 @@ SELECT sum(summa)            AS summa,
        lapse_nimi::TEXT      AS lapse_nimi,
        lapse_isikukood::TEXT AS lapse_isikukood,
        qry.aasta::INTEGER    AS aasta,
-       qry.rekvid            AS rekvid
+       qry.rekvid            AS rekvid,
+       CASE WHEN coalesce((r.properties ->> 'liik')::TEXT, '') = 'LASTEAED' THEN 1 ELSE 3 END::INTEGER
 FROM (
          WITH rekv_ids AS (
              SELECT rekv_id
@@ -75,13 +77,14 @@ FROM (
                              FROM rekv_ids)
            AND AT.status <> 3
      ) qry
+         INNER JOIN ou.rekv r ON r.id = qry.rekvid
          INNER JOIN libs.asutus a ON a.id = qry.asutusId,
      params
 WHERE qry.summa IS NOT NULL
   AND len(ltrim(rtrim(a.regkood))) >= 11 -- только частники
   AND extract('year' FROM age(make_date(params.aasta, 01, 01), palk.get_sunnipaev(qry.lapse_isikukood))) <
       18                                 -- только до 18 лет
-GROUP BY lapse_isikukood, lapse_nimi, a.nimetus, a.regkood, qry.aasta, qry.rekvid;
+GROUP BY lapse_isikukood, lapse_nimi, a.nimetus, a.regkood, qry.aasta, qry.rekvid, r.properties ->> 'liik';
 
 $BODY$
     LANGUAGE SQL
@@ -99,6 +102,6 @@ GRANT EXECUTE ON FUNCTION lapsed.inf3(INTEGER, TEXT) TO arvestaja;
 /*
 
 SELECT *
-FROM lapsed.inf3(83, '2023')
+FROM lapsed.inf3(119, '2023')
 
 */

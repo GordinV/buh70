@@ -15,7 +15,7 @@ exports.get = async (req, res) => {
         // создать объект
         const Doc = require('./../../classes/DocumentTemplate');
         const doc = new Doc('inf3', null, user.userId, user.asutusId, 'lapsed');
-        const data =  await doc.selectDocs('', sqlWhere, 10000);
+        const data =  await doc.selectDocs('', sqlWhere, 100000);
 
         // get xml
         const xml = await getINF3(data.data, user);

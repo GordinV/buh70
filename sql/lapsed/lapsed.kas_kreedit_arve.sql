@@ -71,5 +71,5 @@ GRANT EXECUTE ON FUNCTION docs.kas_kreedit_arve(INTEGER, INTEGER) TO dbpeakasuta
 GRANT EXECUTE ON FUNCTION docs.kas_kreedit_arve(INTEGER, INTEGER) TO arvestaja;
 
 /*
-SELECT docs.kas_kreedit_arve(4626981, 5399 )
+SELECT docs.kas_kreedit_arve(5476765, 5394 )
 */

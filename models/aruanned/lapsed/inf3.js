@@ -14,10 +14,10 @@ module.exports = {
                            maksja_nimi,
                            maksja_isikukood,
                            aasta,
-                           3                          AS liik,
+                           liik                       AS liik,
                            $2                         AS user_id
                     FROM lapsed.inf3($1::INTEGER, $3::TEXT) qryReport
-                    GROUP BY lapse_nimi, lapse_isikukood, maksja_nimi, maksja_isikukood, aasta
+                    GROUP BY lapse_nimi, lapse_isikukood, maksja_nimi, maksja_isikukood, aasta, liik
                     ORDER BY lapse_nimi
         `,     // $1 - rekvid, $3 - kond
         params: ['rekvid', 'userid', 'aasta'],
