@@ -52,6 +52,7 @@ console.log('filter',filter);
                 summa: row.summa,
                 asutus: row.asutus,
                 isikukood: row.isikukood,
+                yksus: row.yksus,
                 inf3: row.inf3
             };
 
