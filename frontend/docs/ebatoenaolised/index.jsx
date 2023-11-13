@@ -33,6 +33,7 @@ class Documents extends React.PureComponent {
         this.state = {
             noude_50: 0,
             noude_100: 0,
+            noude_kokku: 0,
             jaak: 0,
             read: 0
         };
@@ -68,6 +69,12 @@ class Documents extends React.PureComponent {
                              ref="input-noude_100"
                              value={Number(this.state.noude_100).toFixed(2) || 0}
                              disabled={true}/>
+                <InputNumber title="Nõuded kokku:"
+                             name='nouded_kokku'
+                             style={styles.total}
+                             ref="input-nouded"
+                             value={Number(this.state.noude_kokku).toFixed(2) || 0}
+                             disabled={true}/>
                 <InputNumber title="Jääk kokku:"
                              name='jaak_kokku'
                              style={styles.total}
@@ -87,6 +94,7 @@ class Documents extends React.PureComponent {
             this.setState({
                 noude_50: noude_50,
                 noude_100: noude_100,
+                noude_kokku: Number(noude_100) + Number(noude_50),
                 jaak: jaak,
                 read: self.gridData.length});
         }
