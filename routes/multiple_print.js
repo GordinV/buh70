@@ -121,49 +121,18 @@ exports.teatis = async (req, res) => {
     // ищем шаблон
     const template = doc.config.print.find(templ => templ.params === 'id');
 
-    const promises = ids.map(id => {
-        return new Promise(resolve => {
-            doc.setDocumentId(id);
-            resolve(doc['select']())
-        })
-    });
+    let doc_data = await doc.executeTask('multiple_print_doc', [ids.join(','), user.userId]);
 
-    let promiseResult = await Promise.all(promises).then((data) => {
-        data.forEach(result => {
-            rows.push({...result.row[0]});
-        })
-
-    });
-
-    // register print event
-    if (template) {
-
-        const registerPromises = ids.map(id => {
-            return new Promise(resolve => {
-                let sql = template.register,
-                    params = [id, user.userId];
-
-                if (sql) {
-                    resolve(db.queryDb(sql, params));
-                }
-            })
-        });
-
-        Promise.all(registerPromises);
-    }
-
-    if (!rows || rows.length === 0) {
+    if (!doc_data.data || doc_data.data.length === 0) {
         res.send({status: 200, result: 'Teatised ei leidnum'});
     } else {
-        try {
-            res.render('teatis_kaartid', {title: 'Teatised', data: rows, user: user});
-
-        } catch (e) {
-            console.error(e);
-            res.send({status: 500, result: 'Error'});
-
+        // register e-arve event
+        let sql = doc.config.print[0].register;
+        if (sql) {
+            let tulem  = await db.queryDb(sql, [ids.join(','),user.userId]);
         }
 
+        res.render('teatis_kaartid', {title: 'Teatised', data: doc_data.data, user: user});
     }
 
 };

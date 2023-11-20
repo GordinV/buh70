@@ -3,12 +3,15 @@ module.exports = {
                    FROM com_rekv
                    ORDER BY nimetus`,
     select: [{
-        sql: `SELECT 'REKV'                                                           AS doc_type_id,
-                     $2::INTEGER                                                      AS userid,
+        sql: `SELECT 'REKV'                                                                                         AS doc_type_id,
+                     $2::INTEGER                                                                                    AS userid,
                      r.id,
                      r.parentid,
                      r.nimetus::VARCHAR(254),
-                     coalesce(r.muud, nimetus)::VARCHAR(254)                          AS taisnimetus,
+                     coalesce(r.muud, nimetus)::VARCHAR(254)                                                        AS taisnimetus,
+                     (SELECT coalesce(rekv.muud, rekv.nimetus)::VARCHAR(254) AS nimetus
+                      FROM ou.rekv rekv
+                      WHERE rekv.id = r.parentid)                                                                        AS parent_asutus,
                      r.aadress,
                      r.email::VARCHAR(254),
                      r.faks::VARCHAR(254),
@@ -19,24 +22,24 @@ module.exports = {
                      r.muud,
                      r.regkood::VARCHAR(20),
                      r.tel::VARCHAR(254),
-                     ((r.properties ->> 'arved')::JSONB ->> 'tahtpaev')::INTEGER      AS tahtpaev,
-                     ((r.properties ->> 'reklftp')::JSONB ->> 'ftp')::VARCHAR(120)    AS ftp,
-                     ((r.properties ->> 'reklftp')::JSONB ->> 'login')::VARCHAR(120)  AS login,
-                     ((r.properties ->> 'reklftp')::JSONB ->> 'parool')::VARCHAR(120) AS parool,
-                     (r.properties ->> 'earved') ::VARCHAR(254)                       AS earved,
-                     (u.properties ->> 'earved')::VARCHAR(254)                        AS earved_omniva,
-                     (r.properties ->> 'earve_asutuse_nimi')::VARCHAR(254)            AS earve_asutuse_nimi,
-                     (r.properties ->> 'earve_regkood')::VARCHAR(254)                 AS earve_regkood,
-                     coalesce((r.properties ->> 'seb_earve'), '')::VARCHAR(254)       AS seb_earve,
-                     coalesce((r.properties ->> 'swed_earve'), '')::VARCHAR(254)      AS swed_earve,
-                     (r.properties ->> 'liik') :: VARCHAR(20)                         AS liik,
-                     (r.properties ->> 'swed') ::VARCHAR(254)                         AS swed,
-                     (r.properties ->> 'seb') ::VARCHAR(254)                          AS seb,
+                     ((r.properties ->> 'arved')::JSONB ->> 'tahtpaev')::INTEGER                                    AS tahtpaev,
+                     ((r.properties ->> 'reklftp')::JSONB ->> 'ftp')::VARCHAR(120)                                  AS ftp,
+                     ((r.properties ->> 'reklftp')::JSONB ->> 'login')::VARCHAR(120)                                AS login,
+                     ((r.properties ->> 'reklftp')::JSONB ->> 'parool')::VARCHAR(120)                               AS parool,
+                     (r.properties ->> 'earved') ::VARCHAR(254)                                                     AS earved,
+                     (u.properties ->> 'earved')::VARCHAR(254)                                                      AS earved_omniva,
+                     (r.properties ->> 'earve_asutuse_nimi')::VARCHAR(254)                                          AS earve_asutuse_nimi,
+                     (r.properties ->> 'earve_regkood')::VARCHAR(254)                                               AS earve_regkood,
+                     coalesce((r.properties ->> 'seb_earve'), '')::VARCHAR(254)                                     AS seb_earve,
+                     coalesce((r.properties ->> 'swed_earve'), '')::VARCHAR(254)                                    AS swed_earve,
+                     (r.properties ->> 'liik') :: VARCHAR(20)                                                       AS liik,
+                     (r.properties ->> 'swed') ::VARCHAR(254)                                                       AS swed,
+                     (r.properties ->> 'seb') ::VARCHAR(254)                                                        AS seb,
                      (SELECT tp
                       FROM ou.aa
                       WHERE parentid = $1
                         AND kassa = 2
-                      LIMIT 1)::VARCHAR(20)                                           AS oma_tp
+                      LIMIT 1)::VARCHAR(20)                                                                         AS oma_tp
 
               FROM ou.rekv r,
                    ou.userid u

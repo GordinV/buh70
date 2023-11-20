@@ -21,20 +21,36 @@ style(type='text/css').
         margin-left:5%;
         font-weight: bold;
     }
-
+    .page {
+        page-break-after: always;
+    }
 
 block content
     link(rel='stylesheet', href='/stylesheets/reports.css')
     -var User = user ? user : {asutus: ''};
 
     each doc in data
-        div.body_wrapper
-            h1
-        div.doc_wrapper
-            p #{User.asutus_tais ? User.asutus_tais : User.asutus}, reg.kood: #{User.regkood}
-            p #{User.aadress}
-            p #{User.tel}
-            p #{User.email}
+        div.page.body_wrapper
+            div.row_wrapper
+                div.label
+                    span Asutus:
+                div.input
+                    span #{doc.tais_nimetus}
+            div.row_wrapper
+                div.label
+                    span reg.kood:
+                div.input
+                    span #{doc.rekv_regkood}
+            div.row_wrapper
+                div.label
+                    span Aadress:
+                div.input
+                    span #{doc.rekv_aadress}
+            div.row_wrapper
+                div.label
+                    span E-post:
+                div.input
+                    span #{doc.rekv_email}
 
             h1 #{`TEATIS`}
 
@@ -44,7 +60,7 @@ block content
 
             div.row_wrapper
                 p.label Kuupäev:
-                p.input #{doc.kpv_print}
+                p.input #{doc.kpv}
 
             div.row_wrapper
                 p.label Saaja:
@@ -58,11 +74,52 @@ block content
                 p.label E-mail:
                 p.input #{`${doc.email}`}
 
-            div.row_wrapper
-                p.text #{`${doc.sisu}`}
+            table.table.table-hover.grid_data
+                thead.grid_head.auto
+                    tr
+                        th Arve number
+                        th Viitenumber
+                        th Arvestatud seisuga
+                        th Arve tasumata osa
+
+                tbody.auto
+                    each row in doc.arved
+                        tr
+                            td.td_align=(row.number)
+                            td.td_align=(row.viitenr)
+                            td.td_align=(row.kpv)
+                            td=Number(row.jaak).toFixed(2)
+
+            h4
+                div.doc_footer
+                    div.row_wrapper
+                        div.div_column
+                            span Võlgnevus seisuga
+                        div.div_column.auto
+                            span #{`${doc.kpv_print}`}
+                        div.div_column.auto
+                            span #{`${Number(doc.arved[0].kokku).toFixed(2)}`}
+
+            h4
+                div.doc_footer
+                    div.row_wrapper
+                        span Võla sissenõudmise menetluse etapid:
+                    div.row_wrapper.font_text
+                        span 1. Meeldetuletus
+                    div.row_wrapper.font_text
+                        span 2. Maksehäire register (https://www.e-krediidiinfo.ee)
+                    div.row_wrapper.font_text
+                        span 3. Kohtu maksekäsu kiirmenetlus või kohtumenetlus (https://www.e-toimik.ee)
+            h4
+                div.doc_footer
+                    div.row_wrapper
+                        span Võla sissenõudmise menetluse etapid:
+                div.row_wrapper.font_text
+                    span 1. Kohene tasumine - täissummana hiljemalt järgneva 14 kalendripäeva jooksul meeldetuletuse kuupäevast arvates
+                div.row_wrapper.font_text
+                    span 2. Ajatatud tasumine - osadena maksegraafiku alusel vastavalt eraldi sõlmitud lepingules
+            p Täname, kui olete käesoleva meeldetuletuse kättesaamise hetkeks nõutud summa juba tasunud.
 
 
             p.text Dokumendi koostaja: #{User.userName}
-            p Välatükkitatud: #{doc.print_aeg}
-
-            h3
+            p Väljatrükkitatud: #{doc.print_aeg}

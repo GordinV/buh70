@@ -9,7 +9,7 @@ SELECT qry.id,
 FROM (SELECT 0                         AS id,
              ''::CHARACTER VARYING(20) AS kood,
              ''::CHARACTER VARYING(20) AS nimetus,
-             0::INTEGER             AS rekvid,
+             NULL::INTEGER             AS rekvid,
              NULL::DATE                AS valid
       UNION
       SELECT l.id,

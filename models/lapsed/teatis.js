@@ -5,29 +5,68 @@ let now = new Date();
 const Teatis = {
     select: [
         {
-            sql: `SELECT d.id,
-                         $2 :: INTEGER                                      AS userid,
-                         to_char(created, 'DD.MM.YYYY HH:MM:SS') :: TEXT    AS created,
-                         to_char(lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT AS lastupdate,
-                         d.status                                           AS doc_status,
-                         t.number::TEXT                                     AS number,
-                         d.rekvId,
-                         to_char(t.kpv, 'YYYY-MM-DD')::TEXT                 AS kpv,
-                         to_char(t.kpv, 'DD.MM.YYYY')::TEXT                 AS kpv_print,
-                         t.asutusid,
-                         asutus.regkood,
-                         asutus.nimetus::TEXT                               AS asutus,
-                         asutus.aadress,
-                         asutus.email::TEXT                                 AS email,
-                         d.history -> 0 ->> 'user'                          AS koostaja,
-                         to_char(current_date, 'DD.MM.YYYY HH:MM:SS')       AS print_aeg,
-                         t.sisu,
-                         t.muud
-                  FROM docs.doc d
-                           INNER JOIN docs.teatis t ON t.parentId = d.id
-                           INNER JOIN libs.asutus AS asutus ON asutus.id = t.asutusId
-                           INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                  WHERE d.id = $1`,
+            sql: `WITH params as (
+                    SELECT $1:: INTEGER as id,
+                           $2:: INTEGER as user_id
+                ),
+                teatis AS (
+                    SELECT t.number,
+                           t.kpv,
+                           to_char(t.kpv, 'DD.MM.YYYY') as print_kpv,
+                           t.asutusid,
+                           t.parentid AS id,
+                           t.sisu,
+                           t.muud,
+                           d.docs_ids,
+                           to_char(d.created, 'DD.MM.YYYY HH:MM:SS') :: TEXT    AS created,
+                           to_char(d.lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT AS lastupdate,
+                           d.status                                           AS doc_status,
+                           d.rekvid,
+                           d.history -> 0 ->> 'user'                          AS koostaja
+                    FROM docs.teatis t,
+                         docs.doc d,
+                         params
+                    where t.parentid = params.id
+                         and d.id = params.id
+                     ),
+                     arved as (
+                         select jsonb_build_object('kokku',
+                                sum(a.jaak) over(),
+                                'number',a.number,
+                                'kpv',to_char(a.kpv,'DD.MM.YYYY'),
+                                'viitenr', lapsed.get_viitenumber(a.rekvid, l.id),
+                                'rekvid', a.rekvid,
+                                 'jaak',a.jaak) as arve,
+                            teatis.id
+                         from docs.arv a
+                              left outer join lapsed.liidestamine l on l.docid = a.parentid,
+                              teatis
+                         where a.parentid in (
+                                select unnest(docs_ids) from teatis
+                             )
+                     )
+                SELECT t.id,
+                       t.created,
+                       t.lastupdate,
+                       t.doc_status,
+                       t.number::TEXT                                     AS number,
+                       t.rekvId,
+                       to_char(t.kpv, 'YYYY-MM-DD')::TEXT                 AS kpv,
+                       to_char(t.kpv, 'DD.MM.YYYY')::TEXT                 AS kpv_print,
+                       t.asutusid,
+                       asutus.regkood,
+                       asutus.nimetus::TEXT                               AS asutus,
+                       asutus.aadress,
+                       asutus.email::TEXT                                 AS email,
+                       t.koostaja,
+                       to_char(current_date, 'DD.MM.YYYY HH:MM:SS')       AS print_aeg,
+                       t.sisu,
+                       t.muud,
+                       to_jsonb(array(SELECT arve FROM arved a WHERE a.id = t.id))   AS arved
+                FROM teatis t
+                        INNER JOIN libs.asutus AS asutus ON asutus.id = t.asutusId,
+                     params
+                WHERE t.id = params.id`,
             sqlAsNew: `SELECT $1 :: INTEGER                                                             AS id,
                               $2 :: INTEGER                                                             AS userid,
                               to_char(now(), 'YYYY-MM-DD HH:MM:SS') :: TEXT                             AS created,
@@ -60,7 +99,7 @@ const Teatis = {
                            LEFT OUTER JOIN libs.library l ON rd.doc_type_id = l.id
                            LEFT OUTER JOIN docs.arv a ON a.parentid = rd.id
                            INNER JOIN ou.userid u ON u.id = $2 :: INTEGER
-                  WHERE d.id = $1 :: INTEGER`,
+                      WHERE d.id = $1 :: INTEGER`,
             query: null,
             multiple: true,
             alias: 'relations',
@@ -68,28 +107,87 @@ const Teatis = {
         },
 
     ],
+    multiple_print_doc: {
+        command: `WITH params AS (
+                        SELECT unnest(string_to_array($1::TEXT, ','::TEXT))::INTEGER AS ids,
+                            $2::integer as user_id                               
+                    ),                    
+                         arved AS (
+                             SELECT jsonb_build_object('kokku',
+                                                       sum(a.jaak) OVER (PARTITION BY a.asutusid),
+                                                       'number', a.number,
+                                                       'kpv', to_char(a.kpv, 'DD.MM.YYYY'),
+                                                       'viitenr', lapsed.get_viitenumber(a.rekvid, l.id),
+                                                       'rekvid', a.rekvid,
+                                                       'jaak', a.jaak) AS arve,
+                                    a.parentid                         AS id
+                             FROM docs.arv a
+                                      LEFT OUTER JOIN lapsed.liidestamine l ON l.docid = a.parentid
+                                 WHERE
+                                  a.parentid IN (
+                                      SELECT unnest(t.docs)
+                                      FROM docs.teatis t
+                                      where t.parentid in (SELECT ids FROM params)
+                                  )
+                                     
+                         )
+                        SELECT
+                         t.id,
+                         t.number :: TEXT,
+                         t.rekvid,
+                         to_char(t.kpv, 'DD.MM.YYYY') :: TEXT AS kpv,
+                         t.asutus :: TEXT AS asutus,
+                         t.regkood::text as regkood,
+                         t.aadress::text as aadress,
+                         t.email::text as email,
+                         to_char(t.saadetud, 'DD.MM.YYYY') AS saadetud,
+                         to_char(t.print, 'DD.MM.YYYY HH24:MI:SS') AS print,
+                         to_jsonb(array((SELECT arve
+                                         FROM arved WHERE arved.id IN (SELECT unnest(t.docs))))) AS arved,
+                        r.muud as tais_nimetus,
+                        r.tel as rekv_tel,
+                        r.email as rekv_email,
+                        r.aadress as rekv_aadress,
+                        r.regkood as rekv_regkood,                                         
+                         TRUE AS select
+                        FROM cur_teatised t
+                             INNER JOIN ou.rekv r ON r.id = t.rekvid
+                        WHERE  t.id IN (SELECT ids FROM params)`
+    },
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "0%", show: false},
             {id: "number", name: "Number", width: "10%"},
             {id: "kpv", name: "Kuupaev", width: "15%", type: "date", interval: true},
             {id: "asutus", name: "Saaja", width: "30%"},
-            {id: "saadetud", name: "Saadetud", width: "15%", type:"date", interval: true },
-            {id: "print", name: "Trükitud", width: "15%", type:"date", interval: true },
+            {id: "saadetud", name: "Saadetud", width: "15%", type: "date", interval: true},
+            {id: "print", name: "Trükitud", width: "15%", type: "date", interval: true},
             {id: "select", name: "Valitud", width: "10%", show: false}
 
         ],
-        sqlString: `SELECT id,
-                           number :: TEXT,
-                           rekvid,
-                           to_char(kpv, 'DD.MM.YYYY') :: TEXT      AS kpv,
-                           $2::INTEGER                             AS userId,
-                           asutus :: TEXT                          AS asutus,
-                           to_char(t.saadetud, 'DD.MM.YYYY')       AS saadetud,
-                           to_char(t.print, 'DD.MM.YYYY HH24:MI:SS') AS print,
-                           TRUE                                    AS select
-                    FROM cur_teatised t
-                    WHERE t.rekvId = $1::INTEGER`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
+        sqlString: `WITH params AS (
+                        SELECT $1::integer AS rekv_id,
+                               $2::integer  AS user_id
+                    ) SELECT
+                         t.id,
+                         t.number :: TEXT,
+                         t.rekvid,
+                         to_char(t.kpv, 'DD.MM.YYYY') :: TEXT AS kpv,
+                         params.user_id::INTEGER AS userId,
+                         t.asutus :: TEXT AS asutus,
+                         to_char(t.saadetud, 'DD.MM.YYYY') AS saadetud,
+                         to_char(t.print, 'DD.MM.YYYY HH24:MI:SS') AS print,
+                        r.muud as tais_nimetus,
+                        r.tel as rekv_tel,
+                        r.email as rekv_email,
+                        r.aadress as rekv_aadress,
+                        r.regkood as rekv_regkood,                                         
+                         TRUE AS select
+                        FROM cur_teatised t,
+                         params,
+                         ou.rekv r 
+                        WHERE r.id = t.rekvId
+                         and t.rekvId = params.rekv_id::INTEGER`,     //  $1 всегда ид учреждения $2 - всегда ид пользователя
         params: '',
         alias: 'curTeatised'
     },
@@ -102,7 +200,7 @@ const Teatis = {
                 FROM docs.sp_delete_teatis($1::INTEGER, $2::INTEGER)`, // $1 - userId, $2 - docId
     koostaTeatis: {
         command: `SELECT error_code, result, error_message, doc_type_id
-                  FROM docs.koosta_teatis($1::INTEGER, $2::date)`, //$1  - userId, $2 - seisuga
+                  FROM docs.koosta_teatis($1::INTEGER, $2::DATE)`, //$1  - userId, $2 - seisuga
         type: "sql",
         alias: 'koostaTeatis'
     },
@@ -132,13 +230,13 @@ const Teatis = {
                            SELECT jsonb_array_elements(history) AS ajalugu, d.id, d.rekvid
                            FROM docs.doc d,
                                 ou.userid u
-                           WHERE d.id = $1
-                             AND u.id = $2
+                               WHERE
+                                d.id = $1
+                                    AND u.id = $2
                        ) qry`,
         type: "sql",
         alias: "getLogs"
     },
-
     print: [
         {
             view: 'teatis_kaart',
@@ -146,8 +244,9 @@ const Teatis = {
             register: `UPDATE docs.doc
                        SET history = history ||
                                      (SELECT row_to_json(row)
-                                      FROM (SELECT now()                                                AS print,
-                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                                      FROM (SELECT now()                                AS print,
+                                                   (SELECT kasutaja
+                                                    FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
                        WHERE id = $1`
         },
         {
@@ -162,8 +261,9 @@ const Teatis = {
             register: `UPDATE docs.doc
                        SET history = history ||
                                      (SELECT row_to_json(row)
-                                      FROM (SELECT now()                                                AS email,
-                                                   (SELECT kasutaja FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
+                                      FROM (SELECT now()                                AS email,
+                                                   (SELECT kasutaja
+                                                    FROM ou.userid WHERE id = $2)::TEXT AS user) row)::JSONB
                        WHERE id = $1`
         }
     ],

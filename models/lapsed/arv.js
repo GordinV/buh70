@@ -258,7 +258,8 @@ const Arv = {
                             and at.doc_tasu_id = a.parentid
                             and at.status < 3
                             limit 1
-                            )                                                      AS kr_number                                                  
+                            )                                                      AS kr_number,
+                            (a.properties->> 'alus_arve_id')::integer as alus_arve_id                                                  
                   FROM docs.doc d
                            INNER JOIN docs.arv a ON a.parentId = d.id
                            INNER JOIN libs.asutus AS asutus ON asutus.id = a.asutusId
