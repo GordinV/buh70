@@ -2,12 +2,12 @@ module.exports = {
     grid: {
         gridConfiguration: [
             {id: "maksja_nimi", name: "Maksja nimi", width: "20%", show: true},
-            {id: "maksja_isikukood", name: "Maksja isikukood", width: "20%"},
+            {id: "maksja_isikukood", name: "Maksja isikukood", width: "15%"},
             {id: "lapse_nimi", name: "Lapse nimi", width: "20%"},
-            {id: "lapse_isikukood", name: "Lapse isikukood", width: "20%"},
+            {id: "lapse_isikukood", name: "Lapse isikukood", width: "15%"},
             {id: "summa", name: "Summa", width: "10%", type: "number"},
             {id: "aasta", name: "Aasta", width: "5%", type: "integer"},
-            {id: "liik_name", name: "Liik", width: "5%"},
+            {id: "liik_name", name: "Liik", width: "10%", type: 'select', data: ['', 'LASTEAED', 'HUVIKOOL']},
         ],
         sqlString: `SELECT sum(summa)::NUMERIC(12, 2) AS summa,
                            lapse_nimi,
