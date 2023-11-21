@@ -34,7 +34,8 @@ FROM (
              FROM docs.arvtasu at
              WHERE at.status < 3
                AND at.kpv <= l_kpv
-               AND at.rekvid = l_rekvid
+               AND at.rekvid IN (SELECT rekv_id
+                                 FROM get_asutuse_struktuur(l_rekvid))
              GROUP BY doc_arv_id
          )
          SELECT d.rekvid,
@@ -75,7 +76,7 @@ GRANT EXECUTE ON FUNCTION lapsed.ebatoenaolised(INTEGER, DATE) TO dbvaatleja;
 
 
 /*
-select * from lapsed.ebatoenaolised(69, '2023-09-30')
+select * from lapsed.ebatoenaolised(119, '2023-10-31')
 where maksja_nimi ilike '%Pidvy%'
 from ou.rekv where parentid = 119
 */

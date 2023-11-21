@@ -1,12 +1,13 @@
 module.exports = {
     grid: {
         gridConfiguration: [
-            {id: "maksja_nimi", name: "Maksja nimi", width: "25%", show: true},
+            {id: "maksja_nimi", name: "Maksja nimi", width: "20%", show: true},
             {id: "maksja_isikukood", name: "Maksja isikukood", width: "20%"},
-            {id: "lapse_nimi", name: "Lapse nimi", width: "25%"},
+            {id: "lapse_nimi", name: "Lapse nimi", width: "20%"},
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "20%"},
             {id: "summa", name: "Summa", width: "10%", type: "number"},
             {id: "aasta", name: "Aasta", width: "5%", type: "integer"},
+            {id: "liik_name", name: "Liik", width: "5%"},
         ],
         sqlString: `SELECT sum(summa)::NUMERIC(12, 2) AS summa,
                            lapse_nimi,
@@ -15,6 +16,7 @@ module.exports = {
                            maksja_isikukood,
                            aasta,
                            liik                       AS liik,
+                           case when liik = 1 then 'LASTEAED' else 'HUVIKOOL' end as liik_name,
                            $2                         AS user_id
                     FROM lapsed.inf3($1::INTEGER, $3::TEXT) qryReport
                     GROUP BY lapse_nimi, lapse_isikukood, maksja_nimi, maksja_isikukood, aasta, liik
