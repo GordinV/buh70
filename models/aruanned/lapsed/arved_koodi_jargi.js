@@ -6,7 +6,7 @@ module.exports = {
             {id: "kuu", name: "Kuu", width: "5%", type: "integer", "interval": true},
             {id: "number", name: "Arve nr", width: "7%"},
             {id: "kood", name: "Kood", width: "5%"},
-            {id: "inf3", name: "INF3",  width: "3%"},
+            {id: "inf3", name: "INF3",  width: "3%", type: 'select', data: ['', 'JAH', 'EI']},
             {id: "hind", name: "Hind", width: "7%", type: "number", "interval": true},
             {id: "uhik", name: "Ühik", width: "5%"},
             {id: "kogus", name: "Kogus", width: "5%", type: "number", "interval": true},
