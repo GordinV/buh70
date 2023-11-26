@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+html(lang="et")
+extends report_header
+
+block content
+    meta(charset='utf-8')
+
+    style(type='text/css').
+        .grid_head {
+            background-color: lightgray;;
+        }
+
+        .doc_wrapper {
+            margin-left: 5%;
+            margin-top: 5%;
+            width: auto;
+        }
+
+        .grid_data {
+            width: 100%;
+            border: 1px solid lightgray;
+        }
+
+        .row_wrapper {
+            display: -webkit-box;
+            flexDirection: row;
+        }
+
+        .label {
+            width: 10%;
+        }
+
+        .input {
+            width: 90%;
+            margin-left: 5%;
+            font-weight: bold;
+        }
+
+        .label_subtotal {
+            width: 70%;
+        }
+
+
+    link(rel='stylesheet', href='/stylesheets/reports.css')
+    div.body_wrapper
+        h1 INF3 ANALÜÜS
+        p INF3 Aasta #{data[0].aasta}
+        table.table.table-hover.grid_data
+            thead.grid_head
+                tr
+                    th Maksja nimi
+                    th Maksja isikukood
+                    th Lapse nimi
+                    th Lapse isikukood
+                    th Asutus
+                    th Dok.number
+                    th Kuupäev
+                    th Summa
+                    th Märkused
+
+            tbody
+                each rea in data
+                    tr
+                        td=rea.maksja_nimi
+                        td=rea.maksja_isikukood
+                        td=rea.lapse_nimi
+                        td=rea.lapse_isikukood
+                        td=rea.asutus
+                        td=rea.number
+                        td=rea.kpv
+                        td=rea.summa
+                        td=rea.markused
+            tr.group
+                td
+                td(align='center')='Read kokku:'
+                td=Number(data.length)
+                td
+

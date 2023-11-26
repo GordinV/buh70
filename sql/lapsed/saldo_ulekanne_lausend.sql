@@ -66,7 +66,7 @@ BEGIN
             -- ставим сальдо
 
             l_json_details =
-                    json_build_object('id', 0, 'summa', (v_saldo.lopp_saldo), 'valuuta', 'EUR', 'kuurs', 1, 'kreedit',
+                    json_build_object('id', 0, 'summa', (-1 * v_saldo.lopp_saldo), 'valuuta', 'EUR', 'kuurs', 1, 'kreedit',
                                       l_konto, 'lisa_k', v_saldo.tp,
                                       'deebet', '888888', 'lisa_d', '', 'tunnus', l_tunnus, 'kood1', '09110',
                                       'kood2', '80', 'kood5', '3220');

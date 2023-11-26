@@ -33,6 +33,7 @@ module.exports = {
     teatis: '/lapsed/teatis',
     config: '/ou/config',
     inf3:'/aruanned/lapsed/inf3',
+    inf3_analuus:'/aruanned/lapsed/inf3_analuus',
     laps_kokkuvotte:'/aruanned/lapsed/laps_kokkuvotte',
     laps_kv_kaibed:'/aruanned/lapsed/laps_kv_kaibed',
     arved_koodi_jargi:'/aruanned/lapsed/arved_koodi_jargi',

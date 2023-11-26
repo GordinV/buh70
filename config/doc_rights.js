@@ -30,6 +30,9 @@ module.exports = {
         edit: ['kasutaja', 'peakasutaja','arvestaja'],
         delete: ['kasutaja', 'peakasutaja'],
     },
+    INF3_ANALUUS: {
+        select: ['kasutaja', 'peakasutaja']
+    },
     VMK: {
         select: ['kasutaja', 'arvestaja', 'vaatleja', 'peakasutaja'],
         add: ['kasutaja', 'peakasutaja'],

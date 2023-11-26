@@ -74,6 +74,8 @@ const UserDocument = require('./../docs/userid/document/index.jsx');
 const EmailDocument = require('./../docs/e-mail/document/index.jsx');
 
 const Inf3Report = require('./../docs/inf3/index.jsx');
+const Inf3Analuus = require('./../docs/inf3_analuus/index.jsx');
+
 const ChildSummaryReport = require('./../docs/child_summary/index.jsx');
 const ChildSummaryKaibedReport = require('./../docs/child_summary_kaibed/index.jsx');
 const ArvedKoodiJargiReport = require('./../docs/arved_koodi_jargi/index.jsx');
@@ -298,6 +300,12 @@ class App extends React.Component {
 
                 <Route exact path="/lapsed/inf3"
                        render={(props) => <Inf3Report
+                           module={MODULE}
+                           history={props.history}
+                           initData={props.initData}/>}/>
+
+                <Route exact path="/lapsed/inf3_analuus"
+                       render={(props) => <Inf3Analuus
                            module={MODULE}
                            history={props.history}
                            initData={props.initData}/>}/>

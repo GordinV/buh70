@@ -88,6 +88,8 @@ module.exports = function (app) {
     app.get('/reports/arved_koodi_jargi/:uuid/:params*?', require('./reports/arved_koodi_jargi').get);
     app.get('/reports/inf3/:uuid/:params/', require('./reports/inf3').get);
     app.get('/reports/inf3/:uuid/', require('./reports/inf3').get);
+    app.get('/reports/inf3_analuus/:uuid/:params/', require('./reports/inf3_analuus').get);
+    app.get('/reports/inf3_analuus/:uuid/', require('./reports/inf3_analuus').get);
     app.get('/reports/kuu_taabel/:uuid/:filter/:params*?', require('./reports/kuu_taabel').get);
     app.get('/reports/yksuse_taabel/:uuid/:filter/:params*?', require('./reports/yksuse_taabel').get);
     app.get('/reports/kohaoleku_aruanne/:uuid/:filter/:params*?', require('./reports/kohaoleku_aruanne').get);
