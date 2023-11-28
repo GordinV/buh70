@@ -1,6 +1,9 @@
 DROP FUNCTION IF EXISTS lapsed.inf3_analuus(INTEGER, TEXT);
+DROP FUNCTION IF EXISTS lapsed.inf3_analuus(INTEGER, TEXT, DATE, DATE);
 
-CREATE OR REPLACE FUNCTION lapsed.inf3_analuus(l_rekvid INTEGER, l_aasta TEXT DEFAULT year(current_date)::TEXT)
+CREATE OR REPLACE FUNCTION lapsed.inf3_analuus(l_rekvid INTEGER, l_aasta TEXT DEFAULT year(current_date)::TEXT,
+                                               kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
+                                               kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
         lapse_isikukood  TEXT,
         lapse_nimi       TEXT,
@@ -10,7 +13,8 @@ CREATE OR REPLACE FUNCTION lapsed.inf3_analuus(l_rekvid INTEGER, l_aasta TEXT DE
         number           TEXT,
         kpv              DATE,
         summa            NUMERIC(14, 2),
-        markused         TEXT
+        markused         TEXT,
+        kas_inf3_liik    BOOLEAN -- входит в INF3 или нет (NULL, true, false)
     )
 AS
 $BODY$
@@ -18,7 +22,9 @@ WITH params AS (
     SELECT CASE
                WHEN l_aasta IS NULL OR l_aasta::TEXT = '' THEN year(current_date)::TEXT
                ELSE l_aasta END::INTEGER AS aasta,
-           l_rekvid                      AS rekv_id
+           l_rekvid                      AS rekv_id,
+           kpv_start::DATE               AS kpv1,
+           kpv_end::DATE                 AS kpv2
 ),
      rekv_ids AS (
          SELECT a.rekv_id
@@ -42,16 +48,42 @@ WITH params AS (
                 a1.summa,
                 a.asutusid                                              AS maksja_id,
                 l.parentid                                              AS laps_id,
-                coalesce((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE) AS kas_inf
+                coalesce((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE) AS kas_inf,
+                TRUE                                                    AS inf3
          FROM docs.doc D
                   INNER JOIN docs.arv a ON D.id = a.parentid
                   INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
                   INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
-                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id,
+              params
          WHERE D.rekvid IN (SELECT rekv_id FROM rekv_ids)
            AND D.status < 3
            AND D.doc_type_id IN (SELECT id FROM docs_types)
+           AND a.kpv >= params.kpv1
+           AND a.kpv <= params.kpv2
            AND D.id IN (SELECT id::INTEGER FROM arv_ids WHERE id <> '')
+         UNION ALL
+         SELECT D.id,
+                D.rekvid,
+                a.kpv,
+                a.number,
+                a1.summa,
+                a.asutusid                                              AS maksja_id,
+                l.parentid                                              AS laps_id,
+                coalesce((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE) AS kas_inf,
+                FALSE                                                   AS inf3
+         FROM docs.doc D
+                  INNER JOIN docs.arv a ON D.id = a.parentid
+                  INNER JOIN docs.arv1 a1 ON a1.parentid = a.id
+                  INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid
+                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id,
+              params
+         WHERE D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+           AND D.status < 3
+           AND D.doc_type_id IN (SELECT id FROM docs_types)
+           AND a.kpv >= params.kpv1
+           AND a.kpv <= params.kpv2
+           AND D.id NOT IN (SELECT id::INTEGER FROM arv_ids WHERE id <> '')
      ),
      tasud AS (
          WITH docs_types AS (
@@ -64,18 +96,45 @@ WITH params AS (
                 d.rekvid,
                 mk.number,
                 mk.maksepaev AS kpv,
-                at.summa,
+                mk1.summa,
                 mk1.asutusid AS maksja_id,
-                l.parentid   AS laps_id
+                l.parentid   AS laps_id,
+                TRUE         AS inf3
          FROM docs.doc d
                   INNER JOIN docs.mk mk ON mk.parentid = d.id
                   INNER JOIN docs.mk1 mk1 ON mk.id = mk1.parentid
-                  INNER JOIN docs.arvtasu at ON at.doc_tasu_id = mk.parentid
-                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+--                  INNER JOIN docs.arvtasu at ON at.doc_tasu_id = mk.parentid
+                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id,
+              params
          WHERE D.rekvid IN (SELECT rekv_id FROM rekv_ids)
            AND D.status < 3
            AND D.doc_type_id IN (SELECT id FROM docs_types)
            AND D.id IN (SELECT id::INTEGER FROM tasu_ids WHERE id <> '')
+           AND mk.maksepaev >= params.kpv1
+           AND mk.maksepaev <= params.kpv2
+           AND mk.opt = 2
+           AND mk1.summa > 0
+         UNION ALL
+         SELECT d.id,
+                d.rekvid,
+                mk.number,
+                mk.maksepaev AS kpv,
+                mk1.summa,
+                mk1.asutusid AS maksja_id,
+                l.parentid   AS laps_id,
+                FALSE        AS inf3
+         FROM docs.doc d
+                  INNER JOIN docs.mk mk ON mk.parentid = d.id
+                  INNER JOIN docs.mk1 mk1 ON mk.id = mk1.parentid
+--                  INNER JOIN docs.arvtasu at ON at.doc_tasu_id = mk.parentid
+                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id,
+              params
+         WHERE D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+           AND D.status < 3
+           AND D.doc_type_id IN (SELECT id FROM docs_types)
+           AND D.id NOT IN (SELECT id::INTEGER FROM tasu_ids WHERE id <> '')
+           AND mk.maksepaev >= params.kpv1
+           AND mk.maksepaev <= params.kpv2
            AND mk.opt = 2
            AND mk1.summa > 0
      ),
@@ -92,15 +151,41 @@ WITH params AS (
                 mk.maksepaev AS kpv,
                 mk1.summa,
                 mk1.asutusid AS maksja_id,
-                l.parentid   AS laps_id
+                l.parentid   AS laps_id,
+                TRUE         AS inf3
          FROM docs.doc d
                   INNER JOIN docs.mk mk ON mk.parentid = d.id
                   INNER JOIN docs.mk1 mk1 ON mk.id = mk1.parentid
-                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id
+                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id,
+              params
          WHERE D.rekvid IN (SELECT rekv_id FROM rekv_ids)
            AND D.status < 3
            AND D.doc_type_id IN (SELECT id FROM docs_types)
            AND D.id IN (SELECT id::INTEGER FROM tasu_ids WHERE id <> '')
+           AND mk.maksepaev >= params.kpv1
+           AND mk.maksepaev <= params.kpv2
+           AND mk.opt = 2
+           AND mk1.summa > 0
+         UNION ALL
+         SELECT d.id,
+                d.rekvid,
+                mk.number,
+                mk.maksepaev AS kpv,
+                mk1.summa,
+                mk1.asutusid AS maksja_id,
+                l.parentid   AS laps_id,
+                FALSE        AS inf3
+         FROM docs.doc d
+                  INNER JOIN docs.mk mk ON mk.parentid = d.id
+                  INNER JOIN docs.mk1 mk1 ON mk.id = mk1.parentid
+                  INNER JOIN lapsed.liidestamine l ON l.docid = d.id,
+              params
+         WHERE D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+           AND D.status < 3
+           AND D.doc_type_id IN (SELECT id FROM docs_types)
+           AND D.id NOT IN (SELECT id::INTEGER FROM tasu_ids WHERE id <> '')
+           AND mk.maksepaev >= params.kpv1
+           AND mk.maksepaev <= params.kpv2
            AND mk.opt = 2
            AND mk1.summa > 0
      )
@@ -113,7 +198,8 @@ SELECT l.isikukood::TEXT AS lapse_isikukood,
        docs.number::TEXT,
        docs.kpv::DATE,
        docs.summa::NUMERIC(14, 2),
-       docs.markused::TEXT
+       docs.markused::TEXT,
+       kas_inf3_liik
 FROM (
          SELECT a.laps_id,
                 a.maksja_id,
@@ -121,7 +207,8 @@ FROM (
                 a.number::TEXT,
                 a.kpv::DATE,
                 a.summa:: NUMERIC(14, 2),
-                'Usluga INF3 ' || CASE WHEN a.kas_inf THEN 'YES' ELSE 'NO' END::TEXT AS markused
+                'Usluga INF3 ' || CASE WHEN a.kas_inf THEN 'YES' ELSE 'NO' END::TEXT AS markused,
+                a.inf3                                                               AS kas_inf3_liik
          FROM arved a
          UNION ALL
          SELECT t.laps_id,
@@ -130,7 +217,8 @@ FROM (
                 t.number::TEXT,
                 t.kpv::DATE,
                 t.summa:: NUMERIC(14, 2),
-                'Oplata'::TEXT AS markused
+                'Oplata'::TEXT AS markused,
+                t.inf3         AS kas_inf3_liik
          FROM tasud t
          UNION ALL
          SELECT t.laps_id,
@@ -139,7 +227,8 @@ FROM (
                 t.number::TEXT,
                 t.kpv::DATE,
                 -1 * t.summa:: NUMERIC(14, 2),
-                'Vozvrat'::TEXT AS markused
+                'Vozvrat'::TEXT AS markused,
+                t.inf3          AS kas_inf3_liik
          FROM tagastused t
      ) docs
          INNER JOIN lapsed.laps l ON l.id = docs.laps_id
@@ -156,7 +245,8 @@ SELECT inf3.lapse_isikukood::TEXT                                             AS
        'INF3 deklaratsioon'::TEXT                                             AS number,
        make_date(inf3.aasta, 01, 01) ::DATE                                   AS kpv,
        inf3.summa:: NUMERIC(14, 2)                                            AS summa,
-       'INF3 ' || CASE WHEN inf3.liik = 1 THEN 'LASTEAED' ELSE 'HUVIKOOL' END AS markused
+       'INF3 ' || CASE WHEN inf3.liik = 1 THEN 'LASTEAED' ELSE 'HUVIKOOL' END AS markused,
+       NULL::BOOLEAN                                                          AS kas_inf3_liik
 FROM inf3
          INNER JOIN ou.rekv r
                     ON r.id = inf3.rekvid
@@ -167,25 +257,19 @@ $BODY$
     COST 100;
 
 
-GRANT EXECUTE ON FUNCTION lapsed.inf3_analuus(INTEGER, TEXT) TO dbkasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.inf3_analuus(INTEGER, TEXT) TO dbpeakasutaja;
-GRANT EXECUTE ON FUNCTION lapsed.inf3_analuus(INTEGER, TEXT) TO eelaktsepterja;
-GRANT EXECUTE ON FUNCTION lapsed.inf3_analuus(INTEGER, TEXT) TO dbvaatleja;
-GRANT EXECUTE ON FUNCTION lapsed.inf3_analuus(INTEGER, TEXT) TO arvestaja;
-
-
-SELECT *
-FROM lapsed.inf3_analuus(119, '2023')
+GRANT EXECUTE ON FUNCTION lapsed.inf3_analuus(INTEGER, TEXT, DATE, DATE) TO dbkasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.inf3_analuus(INTEGER, TEXT, DATE, DATE) TO dbpeakasutaja;
+GRANT EXECUTE ON FUNCTION lapsed.inf3_analuus(INTEGER, TEXT, DATE, DATE) TO eelaktsepterja;
+GRANT EXECUTE ON FUNCTION lapsed.inf3_analuus(INTEGER, TEXT, DATE, DATE) TO dbvaatleja;
+GRANT EXECUTE ON FUNCTION lapsed.inf3_analuus(INTEGER, TEXT, DATE, DATE) TO arvestaja;
 
 
 /*
 
 select * from (
 SELECT *
-FROM lapsed.inf3(119, '2023')
+FROM lapsed.inf3_analuus(119, '2023')
 ) qry
-where lapse_isikukood ilike '%51909200101%'
-
-select get_asutuse_struktuur(119)
-
+where lapse_isikukood ilike '%60708172747%'
+and number = '2327'
 */

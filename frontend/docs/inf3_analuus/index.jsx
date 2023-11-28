@@ -27,7 +27,8 @@ class Documents extends React.PureComponent {
         this.onClickHandler = this.onClickHandler.bind(this);
         this.renderer = this.renderer.bind(this);
         this.state = {
-            read: 0
+            read: 0,
+            summa: 0
         }
     }
 
@@ -48,16 +49,30 @@ class Documents extends React.PureComponent {
                              ref="input-read"
                              value={Number(this.state.read).toFixed(2) || 0}
                              disabled={true}/>
+                <InputNumber title="Summa kokku:"
+                             name='summa_kokku'
+                             style={styles.total}
+                             ref="input-read"
+                             value={Number(this.state.summa) || 0}
+                             disabled={true}/>
+
             </div>
         )
     }
 
     renderer(self) {
-        this.setState({read: self.gridData.length});
+        if (!self || !self.gridData || !self.gridData.length) {
+            // пока нет данных
+            this.setState({read: 0, summa: 0})
+        } else {
+            let summa = self.gridData ? self.gridData[0].summa_total : 0;
+            this.setState({read: self.gridData.length, summa: summa});
+        }
 
         return (<ToolbarContainer>
                 <BtnGetXml
                     value={'Saama CSV fail'}
+                    showDate={false}
                     onClick={this.onClickHandler}
                     ref={`btn-getCsv`}
                 />
@@ -74,8 +89,9 @@ class Documents extends React.PureComponent {
             let sqlWhere = Doc.state.sqlWhere;
             let url = `/reports/inf3_analuus/${DocContext.userData.uuid}`;
             let params = encodeURIComponent(`${sqlWhere}`);
-            window.open(`${url}/${params}`);
-
+            let filter = encodeURIComponent(`${(JSON.stringify(Doc.filterData))}`);
+            let fullUrl = sqlWhere ? `${url}/${filter}/${params}` : `${url}/${filter}`;
+            window.open(fullUrl);
 
 
         } else {
@@ -90,6 +106,7 @@ class Documents extends React.PureComponent {
 }
 
 
-module.exports = (Documents);
+module
+    .exports = (Documents);
 
 

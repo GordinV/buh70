@@ -11,25 +11,31 @@ module.exports = {
             {id: "summa", name: "Summa", width: "10%", type: "number", interval: true},
             {id: "aasta", name: "Aasta", width: "5%", type: "integer", show: false},
             {id: "markused", name: "Märkused", width: "10%"},
+            {id: "kas_inf3", name: "Kas INF3 sisu", width: "10%", type: 'select', data: ['', 'JAH', 'EI']},
         ],
-        sqlString: `SELECT summa::NUMERIC(12, 2) AS summa,
+        sqlString: `SELECT summa::NUMERIC(12, 2)                                                     AS summa,
                            lapse_nimi,
                            lapse_isikukood,
                            maksja_nimi,
                            maksja_isikukood,
                            asutus,
-                           case when empty($3::TEXT) then year(current_date)::text else $3::text end              AS aasta,
+                           CASE WHEN empty($3::TEXT) THEN year(current_date)::TEXT ELSE $3::TEXT END AS aasta,
                            number,
-                           to_char(kpv,'DD.MM.YYYY') as kpv,
-                           summa,
+                           to_char(kpv, 'DD.MM.YYYY')                                                AS kpv,
                            markused,
-                           $2                    AS user_id
-                    FROM lapsed.inf3_analuus($1::INTEGER, $3::TEXT) qryReport
+                           $2                                                                        AS user_id,
+                           CASE
+                               WHEN qryReport.kas_inf3_liik IS NULL THEN NULL
+                               WHEN qryReport.kas_inf3_liik IS NOT NULL AND qryReport.kas_inf3_liik::BOOLEAN THEN 'JAH'
+                               ELSE 'EI' END::TEXT                                                   AS kas_inf3
+                    FROM lapsed.inf3_analuus($1::INTEGER, $3::TEXT, $4::DATE, $5::DATE) qryReport
                     ORDER BY lapse_nimi, kpv, number
         `,     // $1 - rekvid, $3 - kond
-        params: ['rekvid', 'userid', 'aasta'],
+        params: ['rekvid', 'userid', 'aasta', 'kpv_start', 'kpv_end'],
         min_params: 3,
         alias: 'inf3_report',
+        notReloadWithoutParameters: true,
+        totals: ` sum(summa) over() as summa_total`,
     },
     print: [
         {

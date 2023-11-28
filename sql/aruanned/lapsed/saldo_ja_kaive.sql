@@ -93,7 +93,7 @@ FROM (
                              l.id                                                     AS laps_id,
                              CASE
                                  WHEN mk.properties ->> 'yksus' IS NULL THEN ''
-                                 ELSE 'EM_' || (mk.properties ->> 'yksus') END        AS yksus,
+                                 ELSE 'EM' END                                        AS yksus,
                              D.rekvid                                                 AS rekv_id
                       FROM docs.doc D
                                INNER JOIN docs.Mk mk ON mk.parentid = D.id
@@ -291,7 +291,7 @@ FROM (
                                        ELSE 0 END)::NUMERIC(14, 4)                                                 AS tagastused,
                                   CASE
                                       WHEN mk.properties ->> 'yksus' IS NULL THEN ''
-                                      ELSE 'EM_' || (mk.properties ->> 'yksus') END                                AS yksus,
+                                      ELSE 'EM' END                                                                AS yksus,
                                   l.parentid                                                                       AS laps_id,
                                   d.rekvid
                   FROM docs.doc d
@@ -390,7 +390,8 @@ FROM (
          GROUP BY COALESCE(yksus, ''), rekvid, laps_id
      ) report
          LEFT OUTER JOIN kulastavus k
-                         ON k.parentid = report.laps_id AND k.rekvid = report.rekvid AND report.yksus like '%' || k.yksus
+                         ON k.parentid = report.laps_id AND k.rekvid = report.rekvid AND
+                            report.yksus LIKE '%' || k.yksus
          INNER JOIN lapsed.laps l ON l.id = report.laps_id
 GROUP BY (CASE
               WHEN k.lopp_kpv >= kpv_end THEN 'Jah'
