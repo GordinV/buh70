@@ -45,6 +45,7 @@ exports.get = async (req, res) => {
                 kpv: row.kpv,
                 aasta: row.aasta,
                 summa: row.summa,
+                inf3_summa: row.inf3_summa,
                 markused: row.markused
 
             };
