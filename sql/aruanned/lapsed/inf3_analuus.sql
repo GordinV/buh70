@@ -2,8 +2,8 @@ DROP FUNCTION IF EXISTS lapsed.inf3_analuus(INTEGER, TEXT);
 DROP FUNCTION IF EXISTS lapsed.inf3_analuus(INTEGER, TEXT, DATE, DATE);
 
 CREATE OR REPLACE FUNCTION lapsed.inf3_analuus(l_rekvid INTEGER, l_aasta TEXT DEFAULT year(current_date)::TEXT,
-                                                kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
-                                                kpv_end DATE DEFAULT current_date)
+                                               kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
+                                               kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
         lapse_isikukood  TEXT,
         lapse_nimi       TEXT,
@@ -32,8 +32,8 @@ WITH params AS (
          FROM params p,
               get_asutuse_struktuur(p.rekv_id) a
      ),
-     inf3 AS (SELECT *
-              FROM lapsed.inf3((SELECT rekv_id FROM params), (SELECT aasta::TEXT FROM params))
+     inf3 AS (SELECT *, params.kpv2 as kpv_end
+              FROM params,lapsed.inf3(params.rekv_id, params.aasta::text)
      ),
      arved AS (
          WITH docs_types AS (
@@ -314,7 +314,7 @@ SELECT inf3.lapse_isikukood::TEXT                                             AS
        inf3.maksja_nimi::TEXT,
        r.nimetus::TEXT                                                        AS asutus,
        'INF3 deklaratsioon'::TEXT                                             AS number,
-       make_date(inf3.aasta, 01, 01) ::DATE                                   AS kpv,
+       inf3.kpv_end ::DATE                                                     AS kpv,
        inf3.summa:: NUMERIC(14, 2)                                            AS summa,
        inf3.summa:: NUMERIC(14, 2)                                            AS inf3_summa,
        'INF3 ' || CASE WHEN inf3.liik = 1 THEN 'LASTEAED' ELSE 'HUVIKOOL' END AS markused,
