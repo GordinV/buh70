@@ -5,6 +5,7 @@ CREATE OR REPLACE FUNCTION lapsed.inf3_analuus(l_rekvid INTEGER, l_aasta TEXT DE
                                                kpv_start DATE DEFAULT make_date(date_part('year', current_date)::INTEGER, 1, 1),
                                                kpv_end DATE DEFAULT current_date)
     RETURNS TABLE (
+        doc_id           INTEGER,
         lapse_isikukood  TEXT,
         lapse_nimi       TEXT,
         maksja_isikukood TEXT,
@@ -32,8 +33,9 @@ WITH params AS (
          FROM params p,
               get_asutuse_struktuur(p.rekv_id) a
      ),
-     inf3 AS (SELECT *, params.kpv2 as kpv_end
-              FROM params,lapsed.inf3(params.rekv_id, params.aasta::text)
+     inf3 AS (SELECT *, params.kpv2 AS kpv_end
+              FROM params,
+                   lapsed.inf3(params.rekv_id, params.aasta::TEXT)
      ),
      arved AS (
          WITH docs_types AS (
@@ -143,7 +145,7 @@ WITH params AS (
      ),
      tagastused AS (
          WITH docs_types AS (
-             SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood IN ('VMK', 'MK')
+             SELECT id FROM libs.library WHERE library.library = 'DOK' AND kood IN ('VMK', 'MK', 'SMK')
          ),
               tasu_ids AS (SELECT unnest(string_to_array(inf3.doc_tagastused_ids, ','))::TEXT AS id
                            FROM inf3)
@@ -151,11 +153,11 @@ WITH params AS (
          SELECT d.id,
                 d.rekvid,
                 mk.number,
-                mk.maksepaev AS kpv,
-                mk1.summa,
-                mk1.asutusid AS maksja_id,
-                l.parentid   AS laps_id,
-                TRUE         AS inf3
+                mk.maksepaev   AS kpv,
+                -1 * mk1.summa AS summa,
+                mk1.asutusid   AS maksja_id,
+                l.parentid     AS laps_id,
+                TRUE           AS inf3
          FROM docs.doc d
                   INNER JOIN docs.mk mk ON mk.parentid = d.id
                   INNER JOIN docs.mk1 mk1 ON mk.id = mk1.parentid
@@ -173,11 +175,11 @@ WITH params AS (
          SELECT d.id,
                 d.rekvid,
                 mk.number,
-                mk.maksepaev AS kpv,
-                mk1.summa,
-                mk1.asutusid AS maksja_id,
-                l.parentid   AS laps_id,
-                FALSE        AS inf3
+                mk.maksepaev   AS kpv,
+                -1 * mk1.summa AS summa,
+                mk1.asutusid   AS maksja_id,
+                l.parentid     AS laps_id,
+                FALSE          AS inf3
          FROM docs.doc d
                   INNER JOIN docs.mk mk ON mk.parentid = d.id
                   INNER JOIN docs.mk1 mk1 ON mk.id = mk1.parentid
@@ -235,7 +237,8 @@ WITH params AS (
            AND mk.opt = 1
      )
 
-SELECT l.isikukood::TEXT AS lapse_isikukood,
+SELECT doc_id::INTEGER,
+       l.isikukood::TEXT AS lapse_isikukood,
        l.nimi::TEXT      AS lapse_nimi,
        i.regkood::TEXT   AS maksja_isikukood,
        i.nimetus::TEXT   AS maksja_nimi,
@@ -247,7 +250,8 @@ SELECT l.isikukood::TEXT AS lapse_isikukood,
        docs.markused::TEXT,
        kas_inf3_liik
 FROM (
-         SELECT a.laps_id,
+         SELECT a.id                                                                 AS doc_id,
+                a.laps_id,
                 a.maksja_id,
                 a.rekvid,
                 a.number::TEXT,
@@ -258,40 +262,26 @@ FROM (
                 a.inf3                                                               AS kas_inf3_liik
          FROM arved a
          UNION ALL
-         SELECT laps_id,
-                maksja_id,
-                rekvid,
-                number,
-                kpv,
-                sum(summa)      AS summa,
-                sum(inf3_summa) AS inf3_summa,
-                'Oplata'::TEXT  AS markused,
-                kas_inf3_liik
-         FROM (
-                  SELECT t.laps_id,
-                         t.maksja_id,
-                         t.rekvid,
-                         t.number::TEXT,
-                         t.kpv::DATE,
-                         summa  AS summa,
-                         0      AS inf3_summa,
-                         t.inf3 AS kas_inf3_liik
-                  FROM tasud t
-                  UNION ALL
-                  SELECT t.laps_id,
-                         t.maksja_id,
-                         t.rekvid,
-                         t.number::TEXT,
-                         t.kpv::DATE,
-                         0                                                    AS summa,
-                         lapsed.get_inf3_summa(at.doc_arv_id, at.doc_tasu_id) AS inf3_summa,
-                         t.inf3                                               AS kas_inf3_liik
-                  FROM tasud t
-                           INNER JOIN docs.arvtasu at ON at.doc_tasu_id = t.id
-              ) tasud
-         GROUP BY laps_id, maksja_id, rekvid, number, kpv, kas_inf3_liik
+         SELECT t.id                       AS doc_id,
+                t.laps_id,
+                t.maksja_id,
+                t.rekvid,
+                t.number::TEXT,
+                t.kpv::DATE,
+                summa                      AS summa,
+                coalesce(at.inf3_summa, 0) AS inf3_summa,
+                'Oplata'                   AS markused,
+                t.inf3                     AS kas_inf3_liik
+         FROM tasud t
+                  LEFT OUTER JOIN (
+             SELECT t.id, sum(lapsed.get_inf3_summa(at.doc_arv_id, at.doc_tasu_id)) AS inf3_summa
+             FROM tasud t
+                      INNER JOIN docs.arvtasu at ON at.doc_tasu_id = t.id
+             GROUP BY t.id
+         ) at ON at.id = t.id
          UNION ALL
-         SELECT t.laps_id,
+         SELECT t.id                                          AS doc_id,
+                t.laps_id,
                 t.maksja_id,
                 t.rekvid,
                 t.number::TEXT,
@@ -300,21 +290,22 @@ FROM (
                 CASE WHEN t.inf3 THEN -1 ELSE 0 END * t.summa AS inf3_summa,
                 'Vozvrat'::TEXT                               AS markused,
                 t.inf3                                        AS kas_inf3_liik
-         FROM tagastused t
-     ) docs
-         INNER JOIN lapsed.laps l ON l.id = docs.laps_id
+         FROM tagastused t) docs
+         INNER JOIN lapsed.laps l
+                    ON l.id = docs.laps_id
          INNER JOIN libs.asutus i ON i.id = docs.maksja_id
          INNER JOIN ou.rekv r
                     ON r.id = docs.rekvid
 
 UNION ALL
-SELECT inf3.lapse_isikukood::TEXT                                             AS lapse_isikukood,
+SELECT 0                                                                      AS doc_id,
+       inf3.lapse_isikukood::TEXT                                             AS lapse_isikukood,
        inf3.lapse_nimi::TEXT,
        inf3.maksja_isikukood::TEXT                                            AS maksja_isikukood,
        inf3.maksja_nimi::TEXT,
        r.nimetus::TEXT                                                        AS asutus,
        'INF3 deklaratsioon'::TEXT                                             AS number,
-       inf3.kpv_end ::DATE                                                     AS kpv,
+       inf3.kpv_end ::DATE                                                    AS kpv,
        inf3.summa:: NUMERIC(14, 2)                                            AS summa,
        inf3.summa:: NUMERIC(14, 2)                                            AS inf3_summa,
        'INF3 ' || CASE WHEN inf3.liik = 1 THEN 'LASTEAED' ELSE 'HUVIKOOL' END AS markused,

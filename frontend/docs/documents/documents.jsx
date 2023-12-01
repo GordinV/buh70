@@ -64,6 +64,7 @@ class Documents extends React.Component {
 
         this.state = {
             value: this.gridData.length ? this.gridData[0].id : 0,
+            idx: 0,
             sortBy: {},
             sqlWhere: '',
             getFilter: false,
@@ -279,7 +280,9 @@ class Documents extends React.Component {
      */
     clickHandler(action, docId, idx) {
         if (docId && typeof docId === 'number') {
-            this.setState({value: docId});
+            this.setState({value: docId, idx: idx});
+        } else {
+            this.setState({idx: idx});
         }
     }
 

@@ -13,6 +13,7 @@ exports.post = async (req, res) => {
         method = req.body.method ? req.body.method : 'selectDocs', //порядок сортировки
         sqlWhere = req.body.sqlWhere, //динамический фильтр
         filterData = req.body.filterData || []; // параметры фильтры
+    let paring_id = req.body.paring_id; // ид запроса, вернем его , если задан
 
     if (!user) {
         console.error('error 401 newAPI');
@@ -20,10 +21,15 @@ exports.post = async (req, res) => {
 
     }
 
+    if (!paring_id) {
+        paring_id = 0;
+    }
+
     try {
         // создать объект
         const Doc = require('./../classes/DocumentTemplate');
         const doc = new Doc(parameter, null, user.userId, user.asutusId, module);
+
 
         let gridConfig = doc.config.grid.gridConfiguration;
 
@@ -44,6 +50,7 @@ exports.post = async (req, res) => {
 
         let minimum = doc.config.grid.min_params ? (doc.config.grid.min_params): 4;
 
+
         if (doc.config.grid.notReloadWithoutParameters && doc.config.grid.params.length > 2 && paramsWithData.length < minimum) {
             // если задан параметр, то не делать выборку, пока нет параметров (для отчетов)
             data = {
@@ -51,19 +58,22 @@ exports.post = async (req, res) => {
                 result: {
                     error_code: 1,
                     error_message: 'Puuduvad vajalikud parametrid',
-                    data: []
+                    data: [],
                 },
                 gridConfig: gridConfig,
-                subtotals: subtotals
+                subtotals: subtotals,
+                paring_id: paring_id
             };
 
         } else {
             // вызвать метод
+
             data = {
                 docTypeId: parameter,
                 result: await doc[method](sortBy, sqlWhere, limit, gridParams, filterTotals),
                 gridConfig: gridConfig,
-                subtotals: subtotals
+                subtotals: subtotals,
+                paring_id: paring_id
             };
         }
 
@@ -76,7 +86,7 @@ exports.post = async (req, res) => {
         res.status(200).send(data);
     } catch (error) {
         console.error('error:', error); // @todo Обработка ошибок
-        res.send({status: 500, result: 'Error'});
+        res.send({status: 500, result: 'Error', paring_id: paring_id});
 
     }
 };

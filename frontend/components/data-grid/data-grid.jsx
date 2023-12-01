@@ -93,6 +93,7 @@ class DataGrid extends React.Component {
 
         // примем в зачет переданные стили
         styles = {...styles, ...this.props.style};
+
         return (
             <div style={styles.main}>
                 {this.props.showToolBar ?

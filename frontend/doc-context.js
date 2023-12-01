@@ -1,6 +1,7 @@
 const createEmptyFilterData = require('./../libs/createEmptyFilterData');
 
 const DocContext = {
+    paring_id: 0,
     filter: {},
     libs: {},
     menu: [],

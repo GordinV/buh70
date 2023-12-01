@@ -5,7 +5,7 @@ module.exports = {
             {id: "maksja_isikukood", name: "Maksja isikukood", width: "15%"},
             {id: "lapse_nimi", name: "Lapse nimi", width: "20%"},
             {id: "lapse_isikukood", name: "Lapse isikukood", width: "15%"},
-            {id: "summa", name: "Summa", width: "10%", type: "number"},
+            {id: "summa", name: "Summa", width: "10%", type: "number", interval: true},
             {id: "aasta", name: "Aasta", width: "5%", type: "integer"},
             {id: "liik_name", name: "Liik", width: "10%", type: 'select', data: ['', 'LASTEAED', 'HUVIKOOL']},
         ],
