@@ -22,56 +22,126 @@ WITH params AS (
                WHEN l_aasta IS NULL OR l_aasta::TEXT = '' THEN year(current_date)::TEXT
                ELSE l_aasta END::INTEGER AS aasta
 )
-SELECT sum(summa)                             AS summa,
-       a.nimetus::TEXT                        AS maksja_nimi,
-       a.regkood::TEXT                        AS maksja_isikukood,
-       lapse_nimi::TEXT                       AS lapse_nimi,
-       lapse_isikukood::TEXT                  AS lapse_isikukood,
-       qry.aasta::INTEGER                     AS aasta,
-       qry.rekvid::INTEGER                    AS rekvid,
-       CASE WHEN coalesce((r.properties ->> 'liik')::TEXT, '') = 'LASTEAED' THEN 1 ELSE 3 END::INTEGER,
-       string_agg(DISTINCT doc_arv_id, ',')   AS docs_arv_ids,
-       string_agg(DISTINCT doc_tasud_id, ',') AS docs_tasu_ids,
-       string_agg(doc_tagastused_id, ',')     AS doc_tagastused_ids
-
+SELECT CASE WHEN report.summa < 0 THEN 0 ELSE report.summa END::NUMERIC(14, 2) AS summa,
+       report.maksja_nimi,
+       report.maksja_isikukood,
+       report.lapse_nimi,
+       report.lapse_isikukood,
+       report.aasta::INTEGER,
+       report.rekvid::INTEGER,
+       report.liik::INTEGER,
+       report.docs_arv_ids::TEXT,
+       report.docs_tasu_ids::TEXT,
+       report.doc_tagastused_ids::TEXT
 FROM (
-         WITH rekv_ids AS (
-             SELECT rekv_id
-             FROM get_asutuse_struktuur(l_rekvid)
-         ),
-              arved AS (
-                  SELECT a.parentid    AS id,
-                         sum(a1.summa) AS a1_summa,
-                         a.summa       AS a_kokku
-                  FROM docs.arv a
-                           INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
-                           INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid,
-                       params
-                  WHERE a.rekvid IN (SELECT rekv_id
-                                     FROM rekv_ids)
-                    AND a.tasud IS NOT NULL
-                    AND YEAR(a.tasud) >= params.aasta
-                    AND COALESCE((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE)
-                    AND COALESCE(a.properties ->> 'tyyp', '') <> 'ETTEMAKS'
-                  GROUP BY a.parentid,
-                           a.summa
-              ),
-              lapsed AS (
-                  SELECT DISTINCT l.parentid AS laps_id, a.rekvid
-                  FROM lapsed.liidestamine l,
-                       docs.arv a
-                  WHERE a.parentid = l.docid
-                    AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
-              ),
+         SELECT sum(summa)                             AS summa,
+                a.nimetus::TEXT                        AS maksja_nimi,
+                a.regkood::TEXT                        AS maksja_isikukood,
+                lapse_nimi::TEXT                       AS lapse_nimi,
+                lapse_isikukood::TEXT                  AS lapse_isikukood,
+                qry.aasta::INTEGER                     AS aasta,
+                qry.rekvid::INTEGER                    AS rekvid,
+                CASE
+                    WHEN coalesce((r.properties ->> 'liik')::TEXT, '') = 'LASTEAED' THEN 1
+                    ELSE 3 END::INTEGER                AS liik,
+                string_agg(DISTINCT doc_arv_id, ',')   AS docs_arv_ids,
+                string_agg(DISTINCT doc_tasud_id, ',') AS docs_tasu_ids,
+                string_agg(doc_tagastused_id, ',')     AS doc_tagastused_ids
 
-              tagastused AS (
-                  SELECT sum(summa) AS summa,
-                         asutusid,
-                         laps_id,
-                         rekvid,
-                         string_agg(doc_id::text,',')::TEXT as doc_id
-                  FROM (
-                           SELECT asutusid, (m1.summa) AS summa, l.parentid AS laps_id, m.rekvid, m.parentid AS doc_id
+         FROM (
+                  WITH rekv_ids AS (
+                      SELECT rekv_id
+                      FROM get_asutuse_struktuur(l_rekvid)
+                  ),
+                       arved AS (
+                           SELECT a.parentid    AS id,
+                                  sum(a1.summa) AS a1_summa,
+                                  a.summa       AS a_kokku
+                           FROM docs.arv a
+                                    INNER JOIN docs.arv1 a1 ON a.id = a1.parentid
+                                    INNER JOIN libs.nomenklatuur n ON n.id = a1.nomid,
+                                params
+                           WHERE a.rekvid IN (SELECT rekv_id
+                                              FROM rekv_ids)
+                             AND a.tasud IS NOT NULL
+                             AND YEAR(a.tasud) >= params.aasta
+                             AND COALESCE((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE)
+                             AND COALESCE(a.properties ->> 'tyyp', '') <> 'ETTEMAKS'
+                             AND a.liik = 0
+                           GROUP BY a.parentid,
+                                    a.summa
+                       ),
+                       lapsed AS (
+                           SELECT DISTINCT l.parentid AS laps_id, a.rekvid
+                           FROM lapsed.liidestamine l,
+                                docs.arv a
+                           WHERE a.parentid = l.docid
+                             AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                       ),
+
+                       tagastused AS (
+                           SELECT sum(summa)                          AS summa,
+                                  asutusid,
+                                  laps_id,
+                                  rekvid,
+                                  string_agg(doc_id::TEXT, ',')::TEXT AS doc_id
+                           FROM (
+                                    SELECT asutusid,
+                                           (m1.summa) AS summa,
+                                           l.parentid AS laps_id,
+                                           m.rekvid,
+                                           m.parentid AS doc_id
+                                    FROM docs.mk M
+                                             INNER JOIN docs.mk1 m1 ON M.id = m1.parentid
+                                             INNER JOIN lapsed.liidestamine l ON l.docid = M.parentid
+                                             INNER JOIN lapsed ON lapsed.laps_id = l.parentid AND lapsed.rekvid = m.rekvid,
+                                         params
+                                    WHERE M.rekvid IN (SELECT rekv_id
+                                                       FROM rekv_ids)
+                                      AND YEAR(M.maksepaev) = params.aasta
+                                      AND m.opt = 1 -- только возвраты
+                                    UNION ALL
+                                    -- минусовые платежи
+                                    SELECT asutusid,
+                                           -1 * (m.jaak) AS summa,
+                                           l.parentid    AS laps_id,
+                                           m.rekvid,
+                                           m.parentid    AS doc_id
+                                    FROM docs.mk M
+                                             INNER JOIN docs.mk1 m1 ON M.id = m1.parentid
+                                             INNER JOIN lapsed.liidestamine l ON l.docid = M.parentid
+                                             INNER JOIN lapsed ON lapsed.laps_id = l.parentid AND lapsed.rekvid = m.rekvid,
+                                         params
+                                    WHERE M.rekvid IN (SELECT rekv_id
+                                                       FROM (SELECT rekv_id
+                                                             FROM rekv_ids) r)
+                                      AND YEAR(M.maksepaev) = params.aasta
+                                      AND m.opt = 2 -- только поступления
+                                      AND m1.summa < 0
+                                    UNION ALL
+                                    -- предоплаты
+                                    SELECT asutusid,
+                                           -1 * (m.jaak) AS summa,
+                                           l.parentid    AS laps_id,
+                                           m.rekvid,
+                                           m.parentid    AS doc_id
+                                    FROM docs.mk M
+                                             INNER JOIN docs.mk1 m1 ON M.id = m1.parentid
+                                             INNER JOIN lapsed.liidestamine l ON l.docid = M.parentid
+                                             INNER JOIN lapsed ON lapsed.laps_id = l.parentid AND lapsed.rekvid = m.rekvid,
+                                         params
+                                    WHERE M.rekvid IN (SELECT rekv_id
+                                                       FROM (SELECT rekv_id
+                                                             FROM rekv_ids) r)
+                                      AND year(M.maksepaev) = params.aasta
+                                      AND m.opt = 2 -- только поступления
+                                      AND m.jaak > 0
+                                ) qry
+                           GROUP BY asutusid, laps_id, rekvid
+                       ),
+
+                       tasud AS (
+                           SELECT DISTINCT asutusid, M.parentid AS tasu_id
                            FROM docs.mk M
                                     INNER JOIN docs.mk1 m1 ON M.id = m1.parentid
                                     INNER JOIN lapsed.liidestamine l ON l.docid = M.parentid
@@ -80,111 +150,62 @@ FROM (
                            WHERE M.rekvid IN (SELECT rekv_id
                                               FROM rekv_ids)
                              AND YEAR(M.maksepaev) = params.aasta
-                             AND m.opt = 1 -- только возвраты
-                           UNION ALL
-                           -- минусовые платежи
-                           SELECT asutusid,
-                                  -1 * (m.jaak) AS summa,
-                                  l.parentid    AS laps_id,
-                                  m.rekvid,
-                                  m.parentid    AS doc_id
-                           FROM docs.mk M
-                                    INNER JOIN docs.mk1 m1 ON M.id = m1.parentid
-                                    INNER JOIN lapsed.liidestamine l ON l.docid = M.parentid
-                                    INNER JOIN lapsed ON lapsed.laps_id = l.parentid AND lapsed.rekvid = m.rekvid,
-                                params
-                           WHERE M.rekvid IN (SELECT rekv_id
-                                              FROM (SELECT rekv_id
-                                                    FROM rekv_ids) r)
-                             AND YEAR(M.maksepaev) = params.aasta
                              AND m.opt = 2 -- только поступления
-                             AND m1.summa < 0
-                           UNION ALL
-                           -- предоплаты
-                           SELECT asutusid,
-                                  -1 * (m.jaak) AS summa,
-                                  l.parentid    AS laps_id,
-                                  m.rekvid,
-                                  m.parentid    AS doc_id
-                           FROM docs.mk M
-                                    INNER JOIN docs.mk1 m1 ON M.id = m1.parentid
-                                    INNER JOIN lapsed.liidestamine l ON l.docid = M.parentid
-                                    INNER JOIN lapsed ON lapsed.laps_id = l.parentid AND lapsed.rekvid = m.rekvid,
-                                params
-                           WHERE M.rekvid IN (SELECT rekv_id
-                                              FROM (SELECT rekv_id
-                                                    FROM rekv_ids) r)
-                             AND year(M.maksepaev) = params.aasta
-                             AND m.opt = 2 -- только поступления
-                             AND m.jaak > 0
-                       ) qry
-                  GROUP BY asutusid, laps_id, rekvid
-              ),
-
-              tasud AS (
-                  SELECT DISTINCT asutusid, M.parentid AS tasu_id
-                  FROM docs.mk M
-                           INNER JOIN docs.mk1 m1 ON M.id = m1.parentid
-                           INNER JOIN lapsed.liidestamine l ON l.docid = M.parentid
-                           INNER JOIN lapsed ON lapsed.laps_id = l.parentid AND lapsed.rekvid = m.rekvid,
+                             AND m1.summa > 0
+                       )
+                  SELECT AT.rekvid                                             AS rekvid,
+                         l.nimi                                                AS lapse_nimi,
+                         l.isikukood                                           AS lapse_isikukood,
+                         round((arved.a1_summa / arved.a_kokku) * AT.summa, 2) AS summa,
+                         tasud.asutusid                                        AS asutusId,
+                         YEAR(AT.kpv)                                          AS aasta,
+                         AT.doc_arv_id::TEXT                                   AS doc_arv_id,
+                         at.doc_tasu_id::TEXT                                  AS doc_tasud_id,
+                         ''::TEXT                                              AS doc_tagastused_id
+                  FROM docs.arvtasu AT
+                           INNER JOIN lapsed.liidestamine ld
+                                      ON ld.docid = AT.doc_tasu_id
+                           INNER JOIN lapsed.laps l ON l.id = ld.parentid
+                           INNER JOIN arved ON arved.id = AT.doc_arv_id
+                           INNER JOIN tasud ON tasud.tasu_id = AT.doc_tasu_id
+                  WHERE AT.rekvid IN (SELECT rekv_id
+                                      FROM rekv_ids)
+                    AND AT.status <> 3
+                  UNION ALL
+                  -- убираем суммы возвратов
+                  SELECT t.rekvid       AS rekvid,
+                         l.nimi         AS lapse_nimi,
+                         l.isikukood    AS lapse_isikukood,
+                         (-1 * t.summa) AS summa,
+                         t.asutusid     AS asutusId,
+                         params.aasta   AS aasta,
+                         ''::TEXT       AS doc_arv_id,
+                         ''::TEXT       AS doc_tasud_id,
+                         t.doc_id::TEXT AS doc_tagastused_id
+                  FROM tagastused t
+                           INNER JOIN lapsed.laps l ON l.id = t.laps_id,
                        params
-                  WHERE M.rekvid IN (SELECT rekv_id
+                  WHERE t.rekvid IN (SELECT rekv_id
                                      FROM rekv_ids)
-                    AND YEAR(M.maksepaev) = params.aasta
-                    AND m.opt = 2 -- только поступления
-                    AND m1.summa > 0
-              )
-         SELECT AT.rekvid                                             AS rekvid,
-                l.nimi                                                AS lapse_nimi,
-                l.isikukood                                           AS lapse_isikukood,
-                round((arved.a1_summa / arved.a_kokku) * AT.summa, 2) AS summa,
-                tasud.asutusid                                        AS asutusId,
-                YEAR(AT.kpv)                                          AS aasta,
-                AT.doc_arv_id::TEXT                                   AS doc_arv_id,
-                at.doc_tasu_id::TEXT                                  AS doc_tasud_id,
-                ''::TEXT                                              AS doc_tagastused_id
-         FROM docs.arvtasu AT
-                  INNER JOIN lapsed.liidestamine ld
-                             ON ld.docid = AT.doc_tasu_id
-                  INNER JOIN lapsed.laps l ON l.id = ld.parentid
-                  INNER JOIN arved ON arved.id = AT.doc_arv_id
-                  INNER JOIN tasud ON tasud.tasu_id = AT.doc_tasu_id
-         WHERE AT.rekvid IN (SELECT rekv_id
-                             FROM rekv_ids)
-           AND AT.status <> 3
-         UNION ALL
-         -- убираем суммы возвратов
-         SELECT t.rekvid                              AS rekvid,
-                l.nimi                                AS lapse_nimi,
-                l.isikukood                           AS lapse_isikukood,
-                (-1 * t.summa)                     AS summa,
-                t.asutusid                            AS asutusId,
-                params.aasta                          AS aasta,
-                ''::TEXT                              AS doc_arv_id,
-                ''::TEXT                              AS doc_tasud_id,
-                t.doc_id::TEXT AS doc_tagastused_id
-         FROM tagastused t
-                  INNER JOIN lapsed.laps l ON l.id = t.laps_id,
-              params
-         WHERE t.rekvid IN (SELECT rekv_id
-                            FROM rekv_ids)
-           AND t.summa > 0
+                    AND t.summa > 0
 --         GROUP BY t.rekvid, l.nimi, l.isikukood, t.asutusid, params.aasta
-     ) qry
-         INNER JOIN ou.rekv r ON r.id = qry.rekvid
-         INNER JOIN libs.asutus a ON a.id = qry.asutusId,
-     params
-WHERE qry.summa IS NOT NULL
-  AND len(ltrim(rtrim(a.regkood))) >= 11 -- только частники
-  AND extract('year' FROM age(make_date(params.aasta, 01, 01), palk.get_sunnipaev(qry.lapse_isikukood))) <
-      18                                 -- только до 18 лет
-GROUP BY lapse_isikukood,
-         lapse_nimi,
-         a.nimetus,
-         a.regkood,
-         qry.aasta,
-         qry.rekvid,
-         r.properties ->> 'liik';
+              ) qry
+                  INNER JOIN ou.rekv r ON r.id = qry.rekvid
+                  INNER JOIN libs.asutus a ON a.id = qry.asutusId,
+              params
+         WHERE qry.summa IS NOT NULL
+           AND len(ltrim(rtrim(a.regkood))) >= 11 -- только частники
+           AND extract('year' FROM
+                       age(make_date(params.aasta, 01, 01), palk.get_sunnipaev(qry.lapse_isikukood))) <
+               18                                 -- только до 18 лет
+         GROUP BY lapse_isikukood,
+                  lapse_nimi,
+                  a.nimetus,
+                  a.regkood,
+                  qry.aasta,
+                  qry.rekvid,
+                  r.properties ->> 'liik'
+     ) report;
 
 $BODY$
     LANGUAGE SQL

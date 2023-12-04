@@ -332,7 +332,10 @@ GRANT EXECUTE ON FUNCTION lapsed.inf3_analuus(INTEGER, TEXT, DATE, DATE) TO arve
 select * from (
 SELECT *
 FROM lapsed.inf3_analuus(119, '2023')
+--order by lapse_isikukood, maksja_isikukood
 ) qry
 where lapse_isikukood ilike '%50906227132%'
 and number = '2327'
 */
+
+-- Aleksandr Kazimov IK 30.07.2003

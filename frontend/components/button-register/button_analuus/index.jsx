@@ -142,7 +142,7 @@ class ButtonTask extends React.PureComponent {
             uuid: DocContext.getUuid,
             module: 'Lapsed',
             limit: 1000,
-            sortBy: {},
+            sortBy: [{column: 'kpv', direction: 'asc', type: 'date'}],
             paring_id: DocContext.paring_id
         };
 
