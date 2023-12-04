@@ -25,7 +25,8 @@ FROM libs.asutus a
          LEFT OUTER JOIN libs.library amet ON amet.id = t.ametid
 WHERE coalesce((a.properties ->> 'is_tootaja') :: BOOLEAN, FALSE)
   AND a.staatus <> array_position((enum_range(NULL :: DOK_STATUS)), 'deleted')
-and not empty(t.ametid)
+  AND NOT empty(t.ametid)
+  AND t.status < 3
 ORDER BY a.nimetus, osakond.kood, amet.kood;
 
 GRANT SELECT ON TABLE palk.cur_tootajad TO dbkasutaja;

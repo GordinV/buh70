@@ -22,7 +22,8 @@ WITH params AS (
                WHEN l_aasta IS NULL OR l_aasta::TEXT = '' THEN year(current_date)::TEXT
                ELSE l_aasta END::INTEGER AS aasta
 )
-SELECT CASE WHEN report.summa < 0 THEN 0 ELSE report.summa END::NUMERIC(14, 2) AS summa,
+SELECT report.summa,
+       --CASE WHEN report.summa < 0 THEN 0 ELSE report.summa END::NUMERIC(14, 2) AS summa,
        report.maksja_nimi,
        report.maksja_isikukood,
        report.lapse_nimi,
@@ -68,14 +69,21 @@ FROM (
                              AND COALESCE((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE)
                              AND COALESCE(a.properties ->> 'tyyp', '') <> 'ETTEMAKS'
                              AND a.liik = 0
+                             AND a1.summa <> 0
                            GROUP BY a.parentid,
                                     a.summa
                        ),
                        lapsed AS (
                            SELECT DISTINCT l.parentid AS laps_id, a.rekvid
                            FROM lapsed.liidestamine l,
-                                docs.arv a
+                                docs.arv a,
+                                docs.arv1 a1,
+                                libs.nomenklatuur n
                            WHERE a.parentid = l.docid
+                             AND a.id = a1.parentid
+                             AND n.id = a1.nomid
+                             AND COALESCE((n.properties ->> 'kas_inf3')::BOOLEAN, FALSE)
+                             AND a1.summa <> 0
                              AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
                        ),
 

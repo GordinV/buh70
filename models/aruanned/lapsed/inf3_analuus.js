@@ -30,10 +30,10 @@ module.exports = {
                                WHEN qryReport.kas_inf3_liik IS NULL THEN NULL
                                WHEN qryReport.kas_inf3_liik IS NOT NULL AND qryReport.kas_inf3_liik::BOOLEAN THEN 'JAH'
                                ELSE 'EI' END::TEXT                                                   AS kas_inf3
-                    FROM lapsed.inf3_analuus($1::INTEGER, $3::TEXT, $4::DATE, $5::DATE) qryReport
+                    FROM lapsed.inf3_analuus($1::INTEGER, $3::TEXT, $4::DATE, $5::DATE, $6::TEXT, $7::TEXT) qryReport
                     ORDER BY lapse_nimi, kpv, number
         `,     // $1 - rekvid, $3 - kond
-        params: ['rekvid', 'userid', 'aasta', 'kpv_start', 'kpv_end'],
+        params: ['rekvid', 'userid', 'aasta', 'kpv_start', 'kpv_end', 'lapse_isikukood', 'maksja_isikukood'],
         min_params: 3,
         alias: 'inf3_report',
         notReloadWithoutParameters: true,

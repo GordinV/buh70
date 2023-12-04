@@ -29,7 +29,6 @@ DECLARE
     new_history             JSONB;
     l_jsonb                 JSONB;
 BEGIN
-
     SELECT kasutaja
     INTO userName
     FROM ou.userid u
@@ -48,7 +47,7 @@ BEGIN
 
     SELECT row_to_json(row)
     INTO l_jsonb
-    FROM (SELECT NOT (doc_mmk) AS mmk) row;
+    FROM (SELECT (doc_mmk) AS mmk) row;
 
 
     -- вставка или апдейт docs.doc
@@ -100,6 +99,6 @@ $$;
 
 /*
 SELECT palk.sp_salvesta_palk_config(
-    '{"id":1,"data":{"genlausend":1,"id":1,"jaak":0,"kuurs":0,"minpalk":,"pm":2,"rekvid":1,"round":,"sm":33,"suurasu":0,"tka":0.80,"tki":1.60,"tm":20,"tulubaas":,"valuuta":""}}',
+    '{"id":1,"data":{"doc_type_id":"PALK_CONFIG","genlausend":1,"id":1,"jaak":0,"minpalk":654,"mmk":0,"muud1":null,"muud2":null,"pensionari_tulubaas":704,"pm":2,"rekvid":28,"round":0.01,"sm":33,"status":"active","suurasu":0,"tka":0.800000,"tki":1.600000,"tm":20,"tulubaas":654,"userid":4862}}',
     1, 1)
 */

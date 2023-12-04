@@ -97,9 +97,16 @@ class Documents extends React.PureComponent {
     }
 
     setFilterData(row) {
-        let sqlWhere = `where kas_inf3 = 'JAH' and lapse_isikukood ilike '%${row.lapse_isikukood}%' and maksja_isikukood ilike '%${row.maksja_isikukood}%' and number not ilike '%INF3 deklaratsioon%'`;
+        let sqlWhere = `where kas_inf3 = 'JAH' and lapse_isikukood ilike '%${row.lapse_isikukood}%' and number not ilike '%INF3 deklaratsioon%'`;
         let kpv_index = INF3_ANALUUS_FILTER.findIndex(row=>  row.id === 'kpv');
         let aasta_index = INF3_ANALUUS_FILTER.findIndex(row=>  row.id === 'aasta');
+        let lapseIk_index = INF3_ANALUUS_FILTER.findIndex(row=>  row.id === 'lapse_isikukood');
+        let maksjaIk_index = INF3_ANALUUS_FILTER.findIndex(row=>  row.id === 'maksja_isikukood');
+
+        INF3_ANALUUS_FILTER[aasta_index].value =  row.aasta;
+        INF3_ANALUUS_FILTER[lapseIk_index].value =  row.lapse_isikukood;
+        INF3_ANALUUS_FILTER[maksjaIk_index].value =  row.maksja_isikukood;
+
         INF3_ANALUUS_FILTER[kpv_index].kpv_start = row.aasta + '-01-01';
         if (INF3_ANALUUS_FILTER[kpv_index].kpv_start === '2023-01-01') {
             INF3_ANALUUS_FILTER[kpv_index].kpv_start = '2022-12-31';
@@ -108,7 +115,6 @@ class Documents extends React.PureComponent {
         INF3_ANALUUS_FILTER[kpv_index].value =  INF3_ANALUUS_FILTER[kpv_index].kpv_start;
         INF3_ANALUUS_FILTER[kpv_index].start =  INF3_ANALUUS_FILTER[kpv_index].kpv_start;
         INF3_ANALUUS_FILTER[kpv_index].end = INF3_ANALUUS_FILTER[kpv_index].kpv_end;
-        INF3_ANALUUS_FILTER[aasta_index].value =  row.aasta;
 
         return sqlWhere;
     }

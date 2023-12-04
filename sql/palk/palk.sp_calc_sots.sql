@@ -130,9 +130,6 @@ BEGIN
 
             l_puudu_paevad = palk.get_puudumine(l_params :: JSONB);
 
-            raise notice 'l_puudu_paevad %', l_puudu_paevad;
-
-
             IF coalesce(l_puudu_paevad, 0) > 0
             THEN
                 --parandame tööpäevad, kui töötaja töötas mitte täis kuu

@@ -11,7 +11,6 @@ DECLARE
     l_kuu       INTEGER;
     l_paev      INTEGER;
 BEGIN
-    RAISE NOTICE 'l_isikukood %, l_paev %', l_isikukood, l_paev;
     IF l_isikukood IS NULL OR l_isikukood = '' OR len(l_isikukood) < 7 OR l_paev < 1 OR l_paev > 31 OR l_kuu < 1 OR
        l_kuu > 12
     THEN
