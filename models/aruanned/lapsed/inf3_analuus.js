@@ -34,7 +34,7 @@ module.exports = {
                     ORDER BY lapse_nimi, kpv, number
         `,     // $1 - rekvid, $3 - kond
         params: ['rekvid', 'userid', 'aasta', 'kpv_start', 'kpv_end', 'lapse_isikukood', 'maksja_isikukood'],
-        min_params: 3,
+        min_params: 6,
         alias: 'inf3_report',
         notReloadWithoutParameters: true,
         totals: ` sum(summa) over() as summa_total`,
