@@ -19,6 +19,7 @@ const Tulud = {
                     e.kood3::varchar(20) as kood3,
                     e.kood4::varchar(20) as kood4,
                     e.kood5::varchar(20) as kood5,
+                    e.objekt::varchar(20) as objekt,
                     e.tunnus,
                     e.is_parandus,
                     coalesce(e.is_kulud,0)::integer as is_kulud,

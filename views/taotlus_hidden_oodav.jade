@@ -87,6 +87,7 @@ block content
                     th Allikas
                     th Projekt
                     th Üritus
+                    th Objekt
                     th Tekkepõhine summa
                     th Kassapõhine summa
                     th Rea selgitus
@@ -100,10 +101,12 @@ block content
                         td.td(align='center')=row.kood2
                         td.td(align='center')=row.proj
                         td.td(align='center')=row.kood4
+                        td.td(align='center')=row.objekt
                         td.td(align='center')=Number(row.summa).toFixed(2)
                         td.td(align='center')=Number(row.summa_kassa).toFixed(2)
                         td.td(align='left')=row.selg
             tr.group
+                td
                 td
                 td
                 td
