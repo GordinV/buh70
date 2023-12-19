@@ -80,8 +80,6 @@ exports.get = async (req, res) => {
             data = getGroupedData(data,templateObject.group);
         }
 
-        console.log('print data', data);
-
         // вернуть отчет
         res.render(template, {title: 'Report', data: data, user: user, filter: filterData});
 

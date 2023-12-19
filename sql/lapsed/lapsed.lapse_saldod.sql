@@ -129,6 +129,7 @@ FROM (
            AND d.status < 3
            AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+           AND a.properties ->> 'alus_arve_id' IS NULL           
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)
            AND a.rekvid IN (SELECT rekv_id FROM rekv_ids)
          UNION ALL
@@ -148,6 +149,7 @@ FROM (
                   INNER JOIN lapsed.liidestamine l ON l.docid = d.id
          WHERE (a.kpv < l_kpv)
            AND (a.properties ->> 'tyyp' IS NULL OR a.properties ->> 'tyyp' <> 'ETTEMAKS')
+           AND a.properties ->> 'alus_arve_id' IS NULL
            AND d.status <> 3
            AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood = 'ARV')
            AND (l.parentid = l_laps_id OR l_laps_id IS NULL)

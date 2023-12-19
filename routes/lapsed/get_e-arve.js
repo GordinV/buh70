@@ -188,7 +188,7 @@ const get_earve = (arved, asutusConfig, isOmniva = true) => {
                         BalanceDate: arve.balance_day,
                         BalanceBegin: Number(arve.alg_jaak).toFixed(2),
                         Inbound: Number(arve.laekumised).toFixed(2),
-                        Outbound: arve.tagastused ? Number(arve.tagastused).toFixed(2) : 0,
+                        Outbound: (Number(arve.tagasimakse) + Number(arve.ulekanne)).toFixed(2),
                         BalanceEnd: Number(arve.tasumisele).toFixed(2)
                     },
                     TotalSum: Number(arve.summa).toFixed(2),

@@ -19,6 +19,7 @@ module.exports = {
                    tunnus,
                    proj,
                    uritus,
+                   objekt,
                    a.nimetus,
                    eelarve,
                    eelarve_kassa,
@@ -37,7 +38,7 @@ module.exports = {
                                      , 'Kond' AS nimetus) r
                                 ON r.id = qryReport.rekv_id
                      LEFT OUTER JOIN ou.rekv p ON r.parentid = p.id
-            ORDER BY rekv_id DESC, artikkel, allikas, tegev, tunnus
+            ORDER BY rekv_id DESC, artikkel, allikas, tegev, tunnus, objekt
         )
         SELECT rekv_id,
                ''                  AS tegev,
@@ -46,6 +47,7 @@ module.exports = {
                ''                  AS tunnus,
                '' as proj,
                '' as uritus,
+               '' as objekt,
                'Kulud'             AS nimetus,
                sum(eelarve)        AS eelarve,
                sum(eelarve_kassa)  AS eelarve_kassa,
@@ -66,6 +68,7 @@ module.exports = {
             tunnus,
             proj,
             uritus,
+            objekt,
             nimetus,
             (eelarve) AS eelarve,
             (eelarve_kassa) AS eelarve_kassa,

@@ -85,6 +85,7 @@ BEGIN
             INTO v_row;
 
             l_json_details = coalesce(l_json_details, '{}'::JSONB) || to_jsonb(v_row);
+
         END LOOP;
 
     -- сохранить

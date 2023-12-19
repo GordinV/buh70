@@ -128,24 +128,24 @@ const Smk = {
         {
             sql: ` SELECT t.id,
                           t.kpv,
-                          to_char(a.kpv, 'DD.MM.YYYY') AS print_kpv,
-                          t.summa                      AS tasu_summa,
-                          a.summa                      AS arv_summa,
+                          to_char(a.kpv, 'DD.MM.YYYY')                       AS print_kpv,
+                          t.summa                                            AS tasu_summa,
+                          a.summa                                            AS arv_summa,
                           CASE WHEN coalesce((a.properties ->> 'tyyp'), '') = 'ETTEMAKS' THEN 0 ELSE 1 END *
-                          lapsed.get_inf3_summa(t.doc_arv_id, t.doc_tasu_id)    AS inf3_summa,
+                          lapsed.get_inf3_summa(t.doc_arv_id, t.doc_tasu_id) AS inf3_summa,
                           a.number,
-                          asutus.nimetus               AS asutus,
-                          a.properties ->> 'tyyp'      AS tyyp,
+                          asutus.nimetus                                     AS asutus,
+                          a.properties ->> 'tyyp'                            AS tyyp,
                           a.jaak,
-                          $2                           AS user_id
+                          $2                                                 AS user_id
                    FROM docs.arvtasu t
                             INNER JOIN docs.doc d ON d.id = t.doc_arv_id
                             INNER JOIN docs.arv a ON a.parentid = d.id
                             INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid
                    WHERE t.doc_tasu_id = $1
                      AND t.status <> 3
-                       ORDER BY t.kpv
-                       , t.id`,
+                   ORDER BY t.kpv
+                           , t.id`,
             query: null,
             multiple: true,
             alias: 'queryArvTasu',
@@ -156,15 +156,16 @@ const Smk = {
     grid: {
         gridConfiguration: [
             {id: "id", name: "id", width: "0%", show: false},
-            {id: "kpv", name: "Maksepäev", width: "10%", type: "date", interval: true},
+            {id: "kpv", name: "Maksepäev", width: "9%", type: "date", interval: true},
             {id: "number", name: "Number", width: "5%"},
-            {id: "asutus", name: "Maksja", width: "15%"},
+            {id: "asutus", name: "Maksja", width: "12%"},
             {id: "vanem_isikukood", name: "Maksja IK", width: "7%"},
             {id: "deebet", name: "Summa", width: "7%", type: "number", interval: true},
-            {id: "aa", name: "Arveldus arve", width: "15%"},
+            {id: "jaak", name: "Ettemaks", width: "7%", type: "number", interval: true},
+            {id: "aa", name: "Arveldus arve", width: "12%"},
             {id: "viitenr", name: "Viite number", width: "7%"},
             {id: "vana_vn", name: "Vana VN", width: "5%"},
-            {id: "nimi", name: "Nimi", width: "13%"},
+            {id: "nimi", name: "Nimi", width: "12%"},
             {id: "isikukood", name: "Isikukood", width: "7%"},
             {id: "yksused", name: "Yksus", width: "7%"},
 
@@ -178,6 +179,7 @@ const Smk = {
                            mk.rekvid,
                            mk.deebet::NUMERIC(12, 2),
                            mk.kreedit::NUMERIC(12, 2),
+                           mk.jaak::NUMERIC(12, 2)                   AS jaak,
                            mk.number,
                            mk.journalid,
                            mk.aa,
@@ -196,7 +198,7 @@ const Smk = {
                                               FROM lapsed.viitenr vn
                                               WHERE vn.rekv_id IN (SELECT rekv_id
                                                                    FROM get_asutuse_struktuur($1))
-                                                  GROUP BY vn.isikukood
+                                              GROUP BY vn.isikukood
                     ) vn
                                              ON vn.isikukood = mk.isikukood
                     WHERE mk.opt = 2

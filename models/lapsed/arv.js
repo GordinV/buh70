@@ -43,7 +43,10 @@ const Arv = {
              SELECT jsonb_build_object('alg_db', sum(kb.alg_db),
                                        'alg_kr', sum(kb.alg_kr),
                                        'db', sum(kb.db),
-                                       'kr', sum(kb.kr),
+                                       'kr', sum(kb.kr - kb.ulekanne),
+                                       'laekumised', sum(kb.laekumine),
+                                       'ulekanne', sum(kb.ulekanne),
+                                       'tagasimakse', sum(kb.tagasimakse),
                                        'lopp_db', sum(kb.lopp_db),
                                        'lopp_kr', sum(kb.lopp_kr)) AS kaibed,
                     kb.isik_id, kb.rekvid
@@ -181,14 +184,16 @@ const Arv = {
                   )
                 SELECT doc.*,
                     coalesce((doc.kaibed->0 ->> 'alg_db')::NUMERIC, 0) -
-                    coalesce((doc.kaibed->0 ->> 'alg_kr')::NUMERIC, 0) AS alg_jaak,
+                    coalesce((doc.kaibed->0 ->> 'alg_kr')::NUMERIC, 0)      AS alg_jaak,
                     coalesce((doc.kaibed->0 ->> 'lopp_db')::NUMERIC, 0) -
-                    coalesce((doc.kaibed->0 ->> 'lopp_kr')::NUMERIC, 0) AS tasumisele,
-                    coalesce((doc.kaibed->0 ->> 'kr')::NUMERIC, 0)      AS laekumised,
+                coalesce((doc.kaibed->0 ->> 'lopp_kr')::NUMERIC, 0)         AS tasumisele,
+                    coalesce((doc.kaibed->0 ->> 'laekumised')::NUMERIC, 0)  AS laekumised,
+                    coalesce((doc.kaibed->0 ->> 'ulekanne')::NUMERIC, 0)    AS ulekanne,
+                    coalesce((doc.kaibed->0 ->> 'tagasimakse')::NUMERIC, 0) AS tagasimakse,
                     CASE
                         WHEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0) > 0
                             THEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0)
-                        ELSE 0 END                                   AS ettemaksud
+                        ELSE 0 END                                          AS ettemaksud
                 FROM doc`
     },
     select: [
@@ -276,11 +281,13 @@ const Arv = {
 
                   WHERE D.id = $1)
                 SELECT doc.*,
-                       coalesce(saldod.laekumised, 0)::NUMERIC(12, 2) AS laekumised,
-                       coalesce(saldod.alg_jaak, 0)::NUMERIC(12, 2)       AS alg_jaak,
-                       coalesce(saldod.lopp_jaak, 0)::NUMERIC(12, 2)       AS lopp_jaak,
-                       coalesce(saldod.ettemaksud, 0)::NUMERIC(12, 2) AS ettemaksud,
-                       coalesce(saldod.lopp_jaak, 0)::NUMERIC(12, 2)       AS tasumisele,
+                       coalesce(saldod.laekumised, 0)::NUMERIC(12, 2)       AS laekumised,
+                       coalesce(saldod.ulekanne, 0)::NUMERIC(12, 2)         AS ulekanne,
+                       coalesce(saldod.tagasimakse, 0)::NUMERIC(12, 2)      AS tagasimakse,
+                       coalesce(saldod.alg_jaak, 0)::NUMERIC(12, 2)         AS alg_jaak,
+                       coalesce(saldod.lopp_jaak, 0)::NUMERIC(12, 2)        AS lopp_jaak,
+                       coalesce(saldod.ettemaksud, 0)::NUMERIC(12, 2)       AS ettemaksud,
+                       coalesce(saldod.lopp_jaak, 0)::NUMERIC(12, 2)        AS tasumisele,
                 (SELECT jsonb_agg(jsonb_build_object ('pank', case when left(arve,7) in ('EE47101') then 'SEB Pank IBAN ' WHEN left(arve,7) in ('EE71220') then 'SWEDPANK IBAN ' else '' end, 'arve',arve)) as arved
                 FROM ou.aa
                 WHERE parentid = doc.rekvid
@@ -289,10 +296,12 @@ const Arv = {
                        
                 FROM doc,
                      (
-                         SELECT (lopp_db - lopp_kr)                           AS lopp_jaak,
-                                (alg_db - alg_kr)                           AS alg_jaak,
-                                kr                                            AS laekumised,
-                                CASE WHEN lopp_kr > 0 THEN lopp_kr ELSE 0 END AS ettemaksud
+                         SELECT (lopp_db - lopp_kr)                             AS lopp_jaak,
+                                (alg_db - alg_kr)                               AS alg_jaak,
+                                (laekumine)                                   AS laekumised,
+                                (ulekanne)                                      AS ulekanne,
+                                (tagasimakse)                                   AS tagasimakse,
+                                CASE WHEN lopp_kr > 0 THEN lopp_kr ELSE 0 END   AS ettemaksud
                          FROM doc,
                               lapsed.saldo_ja_kaibeandmik(doc.rekvid, make_date(year(doc.doc_kpv), month(doc.doc_kpv), 1)::DATE,
                                                           gomonth(make_date(year(doc.doc_kpv), month(doc.doc_kpv), 01), 1)::date - 1,doc.lapsId)) saldod`,
@@ -379,6 +388,7 @@ const Arv = {
                          a1.kood5,
                          a1.tunnus,
                          a1.proj,
+                         a1.objekt,
                          a1.konto,
                          a1.tp,
                          NULL :: TEXT                                                                 AS vastisik,

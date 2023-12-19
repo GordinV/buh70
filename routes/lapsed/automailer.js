@@ -109,7 +109,11 @@ const automailer = async () => {
              SELECT jsonb_build_object('alg_db', sum(kb.alg_db),
                                        'alg_kr', sum(kb.alg_kr),
                                        'db', sum(kb.db),
-                                       'kr', sum(kb.kr),
+                                       'kr', sum(kb.kr - kb.ulekanne),
+                                       'laekumised', sum(kb.laekumine),
+                                       'ulekanne', sum(kb.ulekanne),
+                                       'tagasimakse', sum(kb.tagasimakse),
+                                       
                                        'lopp_db', sum(kb.lopp_db),
                                        'lopp_kr', sum(kb.lopp_kr)) AS kaibed,
                     kb.isik_id,
@@ -253,7 +257,9 @@ SELECT doc.*,
        coalesce((doc.kaibed -> 0 ->> 'lopp_kr')::NUMERIC, 0)             AS tasumisele,
        coalesce((doc.kaibed -> 0 ->> 'lopp_db')::NUMERIC, 0) -
        coalesce((doc.kaibed -> 0 ->> 'lopp_kr')::NUMERIC, 0)             as lopp_jaak,
-       coalesce((doc.kaibed -> 0 ->> 'kr')::NUMERIC, 0)                  AS laekumised,
+        coalesce((doc.kaibed->0 ->> 'laekumised')::NUMERIC, 0)  AS laekumised,
+        coalesce((doc.kaibed->0 ->> 'ulekanne')::NUMERIC, 0)    AS ulekanne,
+        coalesce((doc.kaibed->0 ->> 'tagasimakse')::NUMERIC, 0) AS tagasimakse,
        CASE
            WHEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0) > 0
                THEN coalesce((doc.kaibed ->> 'lopp_kr')::NUMERIC, 0)

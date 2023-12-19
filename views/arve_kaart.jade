@@ -45,6 +45,7 @@ style(type='text/css').
     .doc_footer {
         display: grid;
         grid-auto-rows: 30px;
+        text-align: right;
     }
     .div {
         line-height:1;
@@ -61,6 +62,9 @@ style(type='text/css').
     .td_align {
         text-align: center;
         vertical-align: top;
+    }
+    .fontLarger {
+        font-size: larger;
     }
 
 block content
@@ -181,25 +185,36 @@ block content
                 div.doc_footer
                     div.row_wrapper
                         div.div_column.div_column_left
-                            span Kokku:
+                            span Kokku arve summa:
                         div.div_column.div_column_right
                             span #{`${Number(data[0].summa).toFixed(2)}`}
                     div.row_wrapper
                         div.div_column.div_column_left
-                            span Seisuga #{`${data[0].period_alg_print.trim()}`} jääk:
+                            span Seisuga #{`${data[0].period_alg_print.trim()}`} #{`${Number(data[0].alg_jaak) > 0 ? 'Teil on võlgnevus:' : Number(data[0].alg_jaak) == 0 ? 'Teie jääk on:' : 'Teil on ettemaks:' }`}
                         div.div_column.div_column_right
-                            span #{`${Number(data[0].alg_jaak).toFixed(2)}`}
+                            span #{`${Math.abs(Number(data[0].alg_jaak)).toFixed(2)}`}
                     div.row_wrapper
                         div.div_column.div_column_left
-                            span Laekumised periodis #{`${data[0].laekumise_period}`}:
+                            span Olete tasunud perioodis #{`${data[0].laekumise_period}`}:
                         div.div_column.div_column_right
                             span #{`${Number(data[0].laekumised).toFixed(2)}`}
                     div.row_wrapper
                         div.div_column.div_column_left
-                            span Seisuga #{`${data[0].kpv_print}`} tasumisele:
+                            span  #{`${Number(data[0].ulekanne) ? 'On tehtud makse ülekanne teis(t)ele viitenumbri(te)le:': '' }`}
                         div.div_column.div_column_right
-                            span #{`${Number(data[0].tasumisele).toFixed(2)}`}
-                    br
-        p Küsimuste korral palun pöörduge asutuse esindaja poole
+                            span #{`${Number(data[0].ulekanne) ? Math.abs(Number(data[0].ulekanne)).toFixed(2): ''}`}
+                    div.row_wrapper
+                        div.div_column.div_column_left
+                            span  #{`${Number(data[0].tagasimakse) ? 'Teile on tagastatud perioodis ' + data[0].laekumise_period : ''}`}
+                        div.div_column.div_column_right
+                            span #{`${Number(data[0].tagasimakse) ? Math.abs(Number(data[0].tagasimakse)).toFixed(2) : ''}`}
+
+                    div.row_wrapper
+                        div.div_column.div_column_left
+                            span Seisuga #{`${data[0].kpv_print}`} #{`${data[0].tasumisele < 0 ? 'Teil on ettemaks:' : 'kuulub tasumisele:'}`}
+                        div.div_column.div_column_right
+                            span #{`${Math.abs(Number(data[0].tasumisele)).toFixed(2)}`}
+            br
+        p.fontLarger Küsimuste korral palun pöörduge asutusse #{`${User.asutus}`}
 
 

@@ -8,18 +8,21 @@ CREATE OR REPLACE FUNCTION lapsed.saldo_ja_kaibeandmik(l_rekvid INTEGER,
                                                        kpv_end DATE DEFAULT current_date,
                                                        l_isik_id INTEGER DEFAULT NULL)
     RETURNS TABLE (
-        id         BIGINT,
-        period     DATE,
-        asutus     TEXT,
-        alg_db     NUMERIC(14, 4),
-        alg_kr     NUMERIC(14, 4),
-        db         NUMERIC(14, 4),
-        kr         NUMERIC(14, 4),
-        mahakantud NUMERIC(14, 4),
-        lopp_db    NUMERIC(14, 4),
-        lopp_kr    NUMERIC(14, 4),
-        rekvid     INTEGER,
-        isik_id    INTEGER
+        id          BIGINT,
+        period      DATE,
+        asutus      TEXT,
+        alg_db      NUMERIC(14, 4),
+        alg_kr      NUMERIC(14, 4),
+        db          NUMERIC(14, 4),
+        kr          NUMERIC(14, 4),
+        mahakantud  NUMERIC(14, 4),
+        ulekanne    NUMERIC(14, 4),
+        tagasimakse NUMERIC(14, 4),
+        laekumine   NUMERIC(14, 4),
+        lopp_db     NUMERIC(14, 4),
+        lopp_kr     NUMERIC(14, 4),
+        rekvid      INTEGER,
+        isik_id     INTEGER
     )
 AS
 $BODY$
@@ -38,6 +41,9 @@ SELECT count(*) OVER (PARTITION BY report.rekv_id) AS id,
        db::NUMERIC(14, 4),
        kr::NUMERIC(14, 4),
        mahakantud::NUMERIC(14, 4),
+       ulekanne::NUMERIC(14, 4),
+       tagasimakse::NUMERIC(14, 4),
+       laekumine::NUMERIC(14, 4),
        lopp_db ::NUMERIC(14, 4)                    AS lopp_db,
        lopp_kr::NUMERIC(14, 4),
        report.rekv_id,
@@ -133,6 +139,16 @@ FROM (
 
               laekumised AS (
                   SELECT sum(CASE WHEN mk.opt = 2 THEN 1 ELSE -1 END * mk1.summa) AS summa,
+                         sum(CASE
+                                 WHEN mk.opt = 2 AND mk1.summa < 0 AND mk.selg LIKE 'Tagasimakse%' THEN mk1.summa
+                                 WHEN mk.opt = 2 AND mk1.summa > 0 AND mk.selg LIKE 'Ülekannemakse%' THEN mk1.summa
+                                 ELSE 0 END)                                      AS ulekanne,
+                         sum(CASE
+                                 WHEN mk.opt = 1 THEN mk1.summa
+                                 ELSE 0 END)                                      AS tagasimakse,
+                         sum(CASE
+                                 WHEN mk.opt = 2 AND mk1.summa > 0 THEN mk1.summa
+                                 ELSE 0 END)                                      AS laekumine,
                          d.rekvid                                                 AS rekv_id,
                          ld.parentid                                              AS isik_id
                   FROM docs.doc d
@@ -150,8 +166,8 @@ FROM (
 
               arvestatud AS (
                   SELECT sum(a.summa_kokku) ::NUMERIC(14, 4) AS arvestatud,
-                         D.rekvid::INTEGER             AS rekv_id,
-                         ld.parentid                   AS isik_id
+                         D.rekvid::INTEGER                   AS rekv_id,
+                         ld.parentid                         AS isik_id
                   FROM docs.doc D
                            INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
                            INNER JOIN (SELECT a1.parentid   AS arv_id,
@@ -205,13 +221,16 @@ FROM (
                        ) lopp_saldo
                   GROUP BY rekv_id, isik_id)
 
-         SELECT sum(alg_db)     AS alg_db,
-                sum(alg_kr)     AS alg_kr,
-                sum(db)         AS db,
-                sum(kr)         AS kr,
-                sum(mahakantud) AS mahakantud,
-                sum(lopp_db)    AS lopp_db,
-                sum(lopp_kr)    AS lopp_kr,
+         SELECT sum(alg_db)::NUMERIC(14, 4)      AS alg_db,
+                sum(alg_kr)::NUMERIC(14, 4)      AS alg_kr,
+                sum(db)::NUMERIC(14, 4)          AS db,
+                sum(kr)::NUMERIC(14, 4)          AS kr,
+                sum(mahakantud)::NUMERIC(14, 4)  AS mahakantud,
+                sum(ulekanne)::NUMERIC(14, 4)    AS ulekanne,
+                sum(tagasimakse)::NUMERIC(14, 4) AS tagasimakse,
+                sum(laekumine)::NUMERIC(14, 4)   AS laekumine,
+                sum(lopp_db)::NUMERIC(14, 4)     AS lopp_db,
+                sum(lopp_kr)::NUMERIC(14, 4)     AS lopp_kr,
                 qry.rekv_id,
                 qry.isik_id
          FROM (
@@ -221,6 +240,9 @@ FROM (
                          0                                                                     AS db,
                          0                                                                     AS kr,
                          0                                                                     AS mahakantud,
+                         0                                                                     AS ulekanne,
+                         0                                                                     AS tagasimakse,
+                         0                                                                     AS laekumine,
                          0                                                                     AS lopp_db,
                          0                                                                     AS lopp_kr,
                          a.rekv_id                                                             AS rekv_id,
@@ -228,14 +250,17 @@ FROM (
                   FROM alg_saldo a
                   UNION ALL
                   -- laekumised
-                  SELECT 0         AS alg_db,
-                         0         AS alg_kr,
-                         0         AS db,
-                         l.summa   AS kr,
-                         0         AS mahakantud,
-                         0         AS lopp_db,
-                         0         AS lopp_kr,
-                         l.rekv_id AS rekv_id,
+                  SELECT 0             AS alg_db,
+                         0             AS alg_kr,
+                         0             AS db,
+                         l.summa       AS kr,
+                         0             AS mahakantud,
+                         l.ulekanne    AS ulekanne,
+                         l.tagasimakse AS tagasimakse,
+                         l.laekumine   AS laekumine,
+                         0             AS lopp_db,
+                         0             AS lopp_kr,
+                         l.rekv_id     AS rekv_id,
                          l.isik_id
                   FROM laekumised l
                   UNION ALL
@@ -245,6 +270,9 @@ FROM (
                          0         AS db,
                          0         AS kr,
                          l.summa   AS mahakantud,
+                         0         AS ulekanne,
+                         0         AS tagasimakse,
+                         0         AS laekumine,
                          0         AS lopp_db,
                          0         AS lopp_kr,
                          l.rekv_id AS rekv_id,
@@ -257,6 +285,9 @@ FROM (
                          k.arvestatud AS db,
                          0            AS kr,
                          0            AS mahakantud,
+                         0            AS ulekanne,
+                         0            AS tagasimakse,
+                         0            AS laekumine,
                          0            AS lopp_db,
                          0            AS lopp_kr,
                          k.rekv_id    AS rekv_id,
@@ -269,6 +300,9 @@ FROM (
                          0                                                            AS db,
                          0                                                            AS kr,
                          0                                                            AS mahakantud,
+                         0                                                            AS ulekanne,
+                         0                                                            AS tagasimakse,
+                         0                                                            AS laekumine,
                          CASE WHEN l.lopp_saldo > 0 THEN l.lopp_saldo ELSE 0 END      AS lopp_db,
                          -1 * CASE WHEN l.lopp_saldo < 0 THEN l.lopp_saldo ELSE 0 END AS lopp_kr,
                          rekv_id                                                      AS rekv_id,
@@ -292,10 +326,14 @@ GRANT EXECUTE ON FUNCTION lapsed.saldo_ja_kaibeandmik(INTEGER, DATE, DATE,INTEGE
 
 /*
 explain
-select *
-FROM lapsed.saldo_ja_kaibeandmik(69, '2023-01-01', '2023-01-31', 7128::integer) qry
+select
+kr-ulekanne as laekumised,
+*
+FROM lapsed.saldo_ja_kaibeandmik(97, '2023-06-01', '2023-06-30', 9436::integer) qry
 
 select *
 FROM lapsed.saldo_ja_kaibeandmik(69, '2023-01-01', '2023-01-31') qry
+
+execution: 2 s 61 ms, fetching: 184 ms)
 
 */
