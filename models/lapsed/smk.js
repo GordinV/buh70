@@ -126,26 +126,76 @@ const Smk = {
             data: []
         },
         {
-            sql: ` SELECT t.id,
-                          t.kpv,
-                          to_char(a.kpv, 'DD.MM.YYYY')                       AS print_kpv,
-                          t.summa                                            AS tasu_summa,
-                          a.summa                                            AS arv_summa,
-                          CASE WHEN coalesce((a.properties ->> 'tyyp'), '') = 'ETTEMAKS' THEN 0 ELSE 1 END *
-                          lapsed.get_inf3_summa(t.doc_arv_id, t.doc_tasu_id) AS inf3_summa,
-                          a.number,
-                          asutus.nimetus                                     AS asutus,
-                          a.properties ->> 'tyyp'                            AS tyyp,
-                          a.jaak,
-                          $2                                                 AS user_id
-                   FROM docs.arvtasu t
-                            INNER JOIN docs.doc d ON d.id = t.doc_arv_id
-                            INNER JOIN docs.arv a ON a.parentid = d.id
-                            INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid
-                   WHERE t.doc_tasu_id = $1
-                     AND t.status <> 3
-                   ORDER BY t.kpv
-                           , t.id`,
+            sql: `SELECT *
+                  FROM (
+                           WITH params AS (
+                               SELECT $1::integer AS doc_id,
+                                      $2::integer    AS user_id
+                           )
+                           SELECT t.id,
+                                  t.kpv,
+                                  to_char(a.kpv, 'DD.MM.YYYY')                       AS print_kpv,
+                                  t.summa                                            AS tasu_summa,
+                                  a.summa                                            AS arv_summa,
+                                  CASE WHEN coalesce((a.properties ->> 'tyyp'), '') = 'ETTEMAKS' THEN 0 ELSE 1 END *
+                                  lapsed.get_inf3_summa(t.doc_arv_id, t.doc_tasu_id) AS inf3_summa,
+                                  a.number,
+                                  asutus.nimetus                                     AS asutus,
+                                  'ARVE' || coalesce((a.properties ->> 'tyyp'), '')  AS tyyp,
+                                  a.jaak,
+                                  params.user_id                                     AS user_id
+                           FROM docs.arvtasu t
+                                    INNER JOIN docs.doc d ON d.id = t.doc_arv_id
+                                    INNER JOIN docs.arv a ON a.parentid = d.id
+                                    INNER JOIN libs.asutus asutus ON asutus.id = a.asutusid,
+                                params
+                           WHERE t.doc_tasu_id = params.doc_id
+                             AND t.status <> 3
+                           UNION ALL
+                           SELECT t.id,
+                                  t.kpv,
+                                  to_char(mk.kpv, 'DD.MM.YYYY') AS print_kpv,
+                                  t.summa                       AS tasu_summa,
+                                  mk1.summa                     AS arv_summa,
+                                  0                             AS inf3_summa,
+                                  mk.number,
+                                  asutus.nimetus                AS asutus,
+                                  'ETTEMAKS'                    AS tyyp,
+                                  mk.jaak,
+                                  params.user_id                AS user_id
+                           FROM docs.arvtasu t
+                                    INNER JOIN docs.doc d ON d.id = t.doc_arv_id
+                                    INNER JOIN docs.mk mk ON mk.parentid = d.id
+                                    INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
+                                    INNER JOIN libs.asutus asutus ON asutus.id = mk1.asutusid,
+                                params
+                           WHERE t.doc_tasu_id = params.doc_id
+                             AND t.pankkassa = 4 -- ettemaksu ulekanne
+                             AND t.status <> 3
+                           UNION ALL
+                           SELECT t.id,
+                                  t.kpv,
+                                  to_char(mk.kpv, 'DD.MM.YYYY') AS print_kpv,
+                                  t.summa                       AS tasu_summa,
+                                  mk1.summa                     AS arv_summa,
+                                  0                             AS inf3_summa,
+                                  mk.number,
+                                  asutus.nimetus                AS asutus,
+                                  'ÜLEKANNE'                    AS tyyp,
+                                  mk.jaak,
+                                  params.user_id                AS user_id
+                           FROM docs.arvtasu t
+                                    INNER JOIN docs.doc d ON d.id = t.doc_arv_id
+                                    INNER JOIN docs.mk mk ON mk.parentid = d.id
+                                    INNER JOIN docs.mk1 mk1 ON mk1.parentid = mk.id
+                                    INNER JOIN libs.asutus asutus ON asutus.id = mk1.asutusid,
+                                params
+                           WHERE t.doc_arv_id = params.doc_id
+                             AND t.pankkassa = 4 -- ettemaksu ulekanne
+                             AND t.status <> 3
+                      
+                       ) qry
+                  ORDER BY kpv, id`,
             query: null,
             multiple: true,
             alias: 'queryArvTasu',
@@ -226,13 +276,13 @@ const Smk = {
         gridArvConfig:
             [
                 {id: 'id', name: 'id', width: '0px', show: false, type: 'text', readOnly: true},
-                {id: 'tyyp', name: 'Arv. tüüp', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'tyyp', name: 'Dok. tüüp', width: '10%', show: true, type: 'text', readOnly: true},
                 {id: 'number', name: 'Number', width: '10%', show: true, type: 'text', readOnly: true},
                 {id: 'print_kpv', name: 'Kuupäev', width: '10%', show: true, type: 'text', readOnly: true},
                 {id: 'asutus', name: 'Maksja', width: '20%', show: true, type: 'text', readOnly: true},
                 {id: 'tasu_summa', name: 'Tasu summa', width: '10%', show: true, type: 'text', readOnly: true},
-                {id: 'arv_summa', name: 'Arve summa', width: '10%', show: true, type: 'text', readOnly: true},
-                {id: 'jaak', name: 'Arve jääk', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'arv_summa', name: 'Arve (ettemaksu) summa', width: '10%', show: true, type: 'text', readOnly: true},
+                {id: 'jaak', name: 'Arve (ettemaksu) jääk', width: '10%', show: true, type: 'text', readOnly: true},
                 {id: 'inf3_summa', name: 'INF3 Summa', width: '10%', show: true, readOnly: true},
             ]
 
