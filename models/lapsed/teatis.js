@@ -22,12 +22,19 @@ const Teatis = {
                            to_char(d.lastupdate, 'DD.MM.YYYY HH:MM:SS') :: TEXT AS lastupdate,
                            d.status                                           AS doc_status,
                            d.rekvid,
-                           d.history -> 0 ->> 'user'                          AS koostaja
+                           d.history -> 0 ->> 'user'                          AS koostaja,
+                            r.muud as tais_nimetus,
+                            r.tel as rekv_tel,
+                            r.email as rekv_email,
+                            r.aadress as rekv_aadress,
+                            r.regkood as rekv_regkood                                                                    
                     FROM docs.teatis t,
                          docs.doc d,
+                         ou.rekv r,
                          params
                     where t.parentid = params.id
                          and d.id = params.id
+                         and r.id = d.rekvid
                      ),
                      arved as (
                          select jsonb_build_object('kokku',
@@ -62,7 +69,12 @@ const Teatis = {
                        to_char(current_date, 'DD.MM.YYYY HH:MM:SS')       AS print_aeg,
                        t.sisu,
                        t.muud,
-                       to_jsonb(array(SELECT arve FROM arved a WHERE a.id = t.id))   AS arved
+                       to_jsonb(array(SELECT arve FROM arved a WHERE a.id = t.id))   AS arved,
+                       t.tais_nimetus,
+                       t.rekv_tel,
+                       t.rekv_aadress,
+                       t.rekv_regkood,
+                       t.rekv_email
                 FROM teatis t
                         INNER JOIN libs.asutus AS asutus ON asutus.id = t.asutusId,
                      params
