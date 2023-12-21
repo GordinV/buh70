@@ -114,7 +114,7 @@ block content
                         td=Number(row.jaak).toFixed(2)
 
         h3
-            div.doc_footer
+            div
                 div.row_wrapper
                     div.div_column
                         span Võlgnevus seisuga
@@ -122,9 +122,7 @@ block content
                         span #{`${data[0].kpv_print}`}
                     div.div_column.auto
                         span #{`${Number(data[0].arved[0].kokku).toFixed(2)}`}
-
-        h3
-            div.doc_footer
+            div
                 div.row_wrapper
                     span Võla sissenõudmise menetluse etapid:
                 div.row_wrapper.font_text
@@ -133,7 +131,6 @@ block content
                     span 2. Maksehäire register (https://www.e-krediidiinfo.ee)
                 div.row_wrapper.font_text
                     span 3. Kohtu maksekäsu kiirmenetlus või kohtumenetlus (https://www.e-toimik.ee)
-        h3
             div.doc_footer
                 div.row_wrapper
                     span Võla sissenõudmise menetluse etapid:
@@ -141,7 +138,7 @@ block content
                 span 1. Kohene tasumine - täissummana hiljemalt järgneva 14 kalendripäeva jooksul meeldetuletuse kuupäevast arvates
             div.row_wrapper.font_text
                 span 2. Ajatatud tasumine - osadena maksegraafiku alusel vastavalt eraldi sõlmitud lepingules
-        p Täname, kui olete käesoleva meeldetuletuse kättesaamise hetkeks nõutud summa juba tasunud.
+            p Täname, kui olete käesoleva meeldetuletuse kättesaamise hetkeks nõutud summa juba tasunud.
 
-        p.text Dokumendi koostaja: #{User.userName}
-        p Väljatrükkitatud: #{data[0].print_aeg}
+            p.text Dokumendi koostaja: #{User.userName}
+            p Väljatrükkitatud: #{data[0].print_aeg}
