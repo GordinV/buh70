@@ -18,6 +18,7 @@ CREATE OR REPLACE FUNCTION lapsed.kaive_aruanne(l_rekvid INTEGER,
         laekumised      NUMERIC(14, 2),
         mahakantud      NUMERIC(14, 2),
         tagastused      NUMERIC(14, 2),
+        ulekanned       NUMERIC(14, 2),
         jaak            NUMERIC(14, 2),
         rekvid          INTEGER
     )
@@ -73,13 +74,15 @@ SELECT count(*) OVER (PARTITION BY report.laps_id)                  AS id,
        laekumised::NUMERIC(14, 2),
        mahakantud::NUMERIC(14, 2),
        tagastused::NUMERIC(14, 2),
-       COALESCE(alg_saldo, 0) +
-       COALESCE(arvestatud, 0) +
-       COALESCE(umberarvestus, 0) -
-       COALESCE(soodustus, 0) -
-       COALESCE(laekumised, 0) -
-       COALESCE(mahakantud, 0) +
-       COALESCE(tagastused, 0)::NUMERIC(14, 2)                      AS jaak,
+       ulekanned::NUMERIC(14, 2),
+       (COALESCE(alg_saldo, 0) +
+        COALESCE(arvestatud, 0) +
+        COALESCE(umberarvestus, 0) -
+        COALESCE(soodustus, 0) -
+        COALESCE(laekumised, 0) -
+        COALESCE(mahakantud, 0) +
+        COALESCE(tagastused, 0) +
+        COALESCE(ulekanned, 0))::NUMERIC(14, 2)                     AS jaak,
        report.rekv_id
 FROM (
          WITH alg_saldo AS (
@@ -173,9 +176,9 @@ FROM (
                   GROUP BY l.id, D.rekvid
               ),
               tagastused AS (
-                  SELECT sum(CASE WHEN mk.opt = 2 THEN -1 ELSE 1 END * mk1.summa) AS summa,
-                         l.id                                                     AS laps_id,
-                         D.rekvid                                                 AS rekv_id
+                  SELECT sum(mk1.summa) AS summa,
+                         l.id           AS laps_id,
+                         D.rekvid       AS rekv_id
                   FROM docs.doc D
                            INNER JOIN docs.Mk mk ON mk.parentid = D.id
                            INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
@@ -183,7 +186,24 @@ FROM (
                            INNER JOIN lapsed.laps l ON l.id = ld.parentid
                   WHERE D.status <> 3
                     AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
-                    AND (mk.opt = 1 OR (mk.opt = 2 AND mk1.summa < 0))
+                    AND mk.opt = 1
+                    AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
+                    AND mk.maksepaev >= kpv_start
+                    AND mk.maksepaev <= kpv_end
+                  GROUP BY l.id, D.rekvid
+              ),
+              ulekanned AS (
+                  SELECT sum(-1 * mk1.summa) AS summa,
+                         l.id                AS laps_id,
+                         D.rekvid            AS rekv_id
+                  FROM docs.doc D
+                           INNER JOIN docs.Mk mk ON mk.parentid = D.id
+                           INNER JOIN docs.Mk1 mk1 ON mk.id = mk1.parentid
+                           INNER JOIN lapsed.liidestamine ld ON ld.docid = D.id
+                           INNER JOIN lapsed.laps l ON l.id = ld.parentid
+                  WHERE D.status <> 3
+                    AND d.doc_type_id IN (SELECT id FROM docs_types WHERE kood <> 'ARV')
+                    AND (mk.opt = 2 AND mk1.summa < 0)
                     AND D.rekvid IN (SELECT rekv_id FROM rekv_ids)
                     AND mk.maksepaev >= kpv_start
                     AND mk.maksepaev <= kpv_end
@@ -287,6 +307,7 @@ FROM (
                 sum(laekumised)    AS laekumised,
                 sum(mahakantud)    AS mahakantud,
                 sum(tagastused)    AS tagastused,
+                sum(ulekanned)     AS ulekanned,
                 qry.rekv_id,
                 qry.laps_id
          FROM (
@@ -298,6 +319,7 @@ FROM (
                          0         AS laekumised,
                          0         AS mahakantud,
                          0         AS tagastused,
+                         0         AS ulekanned,
                          a.rekv_id AS rekv_id,
                          a.laps_id
                   FROM alg_saldo a
@@ -310,6 +332,7 @@ FROM (
                          l.summa   AS laekumised,
                          0         AS mahakantud,
                          0         AS tagastused,
+                         0         AS ulekanned,
                          l.rekv_id AS rekv_id,
                          l.laps_id
                   FROM laekumised l
@@ -322,6 +345,7 @@ FROM (
                          0         AS laekumised,
                          l.summa   AS mahakantud,
                          0         AS tagastused,
+                         0         AS ulekanned,
                          l.rekv_id AS rekv_id,
                          l.laps_id
                   FROM mahakandmine l
@@ -334,9 +358,23 @@ FROM (
                          0                    AS laekumised,
                          0                    AS mahakantud,
                          COALESCE(t.summa, 0) AS tagastused,
+                         0                    AS ulekanned,
                          t.rekv_id            AS rekv_id,
                          t.laps_id
                   FROM tagastused t
+                  UNION ALL
+                  -- ulekanned
+                  SELECT 0                    AS alg_saldo,
+                         0                    AS arvestatud,
+                         0                    AS umberarvestus,
+                         0                    AS soodustus,
+                         0                    AS laekumised,
+                         0                    AS mahakantud,
+                         0                    AS tagastused,
+                         coalesce(t.summa, 0) AS ulekanned,
+                         t.rekv_id            AS rekv_id,
+                         t.laps_id
+                  FROM ulekanned t
                   UNION ALL
                   -- arvestused
                   SELECT 0               AS alg_saldo,
@@ -346,6 +384,7 @@ FROM (
                          0               AS laekumised,
                          0               AS mahakantud,
                          0               AS tagastused,
+                         0               AS ulekanned,
                          k.rekv_id       AS rekv_id,
                          k.laps_id
                   FROM arvestatud k

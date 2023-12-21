@@ -6,7 +6,6 @@ module.exports = {
             {id: "lapse_nimi", name: "Lapse nimi", width: "7%"},
             {id: "lapse_isikukood", name: "Lapse IK", width: "0%", show: false},
             {id: "viitenumber", name: "Viitenumber", width: "7%", show: true},
-            {id: "vana_vn", name: "Vana VN", width: "5%"},
             {id: "alg_saldo", name: "Alg.saldo", width: "5%", type: "number", interval: true},
             {id: "arvestatud", name: "Arvestatud", width: "5%", type: "number", interval: true},
             {id: "soodustus", name: "Soodustus", width: "5%", type: "number", interval: true},
@@ -14,6 +13,7 @@ module.exports = {
             {id: "arv_kokku", name: "Kokku arvestatud", width: "5%", type: "number", interval: true},
             {id: "laekumised", name: "Laekumised", width: "5%", type: "number", interval: true},
             {id: "tagastused", name: "Tagastused", width: "5%", type: "number", interval: true},
+            {id: "ulekanned", name: "Ülekanned", width: "5%", type: "number", interval: true},
             {id: "mahakantud", name: "Mahakantud", width: "5%", type: "number", interval: true},
             {id: "jaak", name: "Võlg", width: "5%", type: "number", interval: true},
             {id: "jaak", name: "Jääk", width: "5%", type: "number", show: false},
@@ -39,6 +39,7 @@ module.exports = {
                            sum(qryReport.arvestatud - qryReport.soodustus)
                            OVER (PARTITION BY rekvid)                                         AS arv_ja_soodustus_group,
                            -1 * sum(qryReport.tagastused) OVER (PARTITION BY rekvid)          AS tagastused_group,
+                           -1 * sum(qryReport.ulekanned) OVER (PARTITION BY rekvid)          AS ulekanned_group,
                            sum(qryReport.jaak) OVER (PARTITION BY rekvid)                     AS jaak_group,
                            count(*) OVER ()                                                   AS rows_total,
                            sum(lasteaed_count) OVER (PARTITION BY lapse_isikukood)            AS lasteaed_count,
@@ -56,6 +57,7 @@ module.exports = {
                            coalesce(laekumised, 0)::NUMERIC(14, 2)                            AS laekumised,
                            coalesce(mahakantud, 0)::NUMERIC(14, 2)                            AS mahakantud,
                            -1 * coalesce(tagastused, 0)::NUMERIC(14, 2)                       AS tagastused,
+                           -1 * coalesce(ulekanned, 0)::NUMERIC(14, 2)                       AS ulekanned,
                            (coalesce(arvestatud, 0) - coalesce(soodustus, 0))::NUMERIC(14, 4) AS arv_ja_soodustus,
                            (coalesce(arvestatud, 0) - coalesce(soodustus, 0) +
                             coalesce(umberarvestus, 0))::NUMERIC(14, 2)                       AS arv_kokku,
@@ -85,6 +87,7 @@ module.exports = {
                 sum(laekumised) over() as laekumised_total,
                 sum(mahakantud) over() as mahakantud_total,
                 sum(tagastused) over() as tagastused_total,
+                sum(ulekanned) over() as ulekanned_total,
                 sum(jaak) over() as jaak_total `,
         alias: 'kaive_aruanne_report',
         notReloadWithoutParameters: true

@@ -23,7 +23,7 @@ module.exports = {
                            sum(-1 * coalesce(soodustus, 0))::NUMERIC(14, 2)                             AS soodustus,
                            sum(coalesce(laekumised, 0))::NUMERIC(14, 2)                            AS laekumised,
                            sum(coalesce(mahakantud, 0))::NUMERIC(14, 2)                            AS mahakantud,
-                           sum(coalesce(tagastused, 0))::NUMERIC(14, 2)                            AS tagastused,
+                           sum(coalesce(tagastused, 0) + coalesce(ulekanned, 0))::NUMERIC(14, 2)                            AS tagastused,
                            sum((coalesce(arvestatud, 0) - coalesce(soodustus, 0) + coalesce(umberarvestus, 0)))::NUMERIC(14, 2) AS arv_kokku,
                            sum(coalesce(jaak, 0))::NUMERIC(14, 4)                                  AS jaak,
                            rekvid,

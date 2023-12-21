@@ -37,6 +37,7 @@ class Documents extends React.PureComponent {
             laekumised: 0,
             mahakantud: 0,
             tagastused: 0,
+            ulekanned: 0,
             jaak: 0,
             read: 0,
             filtri_read: 0
@@ -104,6 +105,12 @@ class Documents extends React.PureComponent {
                              ref="input-tagastused"
                              value={Number(this.state.tagastused) || 0}
                              disabled={true}/>
+                <InputNumber title="Ülekanned kokku:"
+                             name='ulekanned_kokku'
+                             style={styles.total}
+                             ref="input-ulekanned"
+                             value={Number(this.state.ulekanned) || 0}
+                             disabled={true}/>
                 <InputNumber title="Mahakantud kokku:"
                              name='mahakantud_kokku'
                              style={styles.total}
@@ -133,6 +140,7 @@ class Documents extends React.PureComponent {
                 laekumised: 0,
                 mahakantud: 0,
                 tagastused: 0,
+                ulekanned: 0,
                 jaak: 0,
                 read: 0,
                 filtri_read: 0
@@ -148,6 +156,7 @@ class Documents extends React.PureComponent {
         let laekumised = self.gridData ? self.gridData[0].laekumised_total : 0;
         let mahakantud = self.gridData ? self.gridData[0].mahakantud_total : 0;
         let tagastused = self.gridData ? self.gridData[0].tagastused_total : 0;
+        let ulekanned = self.gridData ? self.gridData[0].ulekanned_total : 0;
         let jaak = self.gridData ? self.gridData[0].jaak_total : 0;
 
 
@@ -164,6 +173,7 @@ class Documents extends React.PureComponent {
             laekumised: laekumised,
             mahakantud: mahakantud,
             tagastused: tagastused,
+            ulekanned: ulekanned,
             jaak: jaak,
             read: read,
             filtri_read: filtri_read

@@ -67,6 +67,7 @@ block content
                         th Kokku arvestatud
                         th Laekumised
                         th Tagastatud
+                        th Ülekanne
                         th Mahakantud
                         th Võlg
 
@@ -83,6 +84,7 @@ block content
                             td=((Number(rea.arvestatud) - Number(rea.soodustus)+Number(rea.umberarvestus)).toFixed(2))
                             td=rea.laekumised
                             td=rea.tagastused
+                            td=rea.ulekanned
                             td=rea.mahakantud
                             td=rea.jaak
                     tr.group
@@ -96,6 +98,7 @@ block content
                         td.group=((Number(asutus[Object.keys(asutus)[0]][0].arvestatud_group) - Number(asutus[Object.keys(asutus)[0]][0].soodustus_group) + Number(asutus[Object.keys(asutus)[0]][0].umberarvestus_group)).toFixed(2))
                         td.group=asutus[Object.keys(asutus)[0]][0].laekumised_group
                         td.group=asutus[Object.keys(asutus)[0]][0].tagastused_group
+                        td.group=asutus[Object.keys(asutus)[0]][0].ulekanned_group
                         td.group=asutus[Object.keys(asutus)[0]][0].mahakantud_group
                         td.group=asutus[Object.keys(asutus)[0]][0].jaak_group
 

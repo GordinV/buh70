@@ -52,6 +52,7 @@ exports.get = async (req, res) => {
                 arv_kokku: (Number(row.arvestatud) + Number(row.soodustus) + Number(row.umberarvestus)).toFixed(2),
                 laekumised: (row.laekumised),
                 tagastatud: (row.tagastused),
+                ulekanned: (row.ulekanned),
                 mahakantud: row.mahakantud,
                 jaak: row.jaak
 
