@@ -43,7 +43,6 @@ exports.get = async (req, res) => {
                 lapse_nimi: row.lapse_nimi,
                 lapse_isikukood: row.lapse_isikukood,
                 viitenumber: row.viitenumber,
-                vana_vn: row.vana_vn,
                 number: row.number,
                 alg_saldo: (row.alg_saldo),
                 arvestatud: (row.arvestatud),
@@ -54,7 +53,8 @@ exports.get = async (req, res) => {
                 tagastatud: (row.tagastused),
                 ulekanned: (row.ulekanned),
                 mahakantud: row.mahakantud,
-                jaak: row.jaak
+                jaak: row.jaak,
+                asutus: row.asutus
 
             };
             if (!header) {
